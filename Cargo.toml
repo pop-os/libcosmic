@@ -7,7 +7,7 @@ edition = "2021"
 cascade = "1"
 gdk4 = "0.3.1"
 gdk4-x11 = "0.3.0"
-glib = "0.14.8"
+gio = "0.14.8"
 gtk4 = "0.3.1"
 x11 = { version = "2", features = ["xlib"] }
 # examples/launcher
