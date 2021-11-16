@@ -1,7 +1,5 @@
-use gdk4 as gdk;
 use gtk4 as gtk;
 
-use gdk::prelude::*;
 use gtk::prelude::*;
 use libcosmic::x;
 use std::{
@@ -22,61 +20,49 @@ fn main() {
         .build();
 
     app.connect_activate(move |app| {
-        let display = gdk::Display::default().unwrap();
-        let monitors = display.monitors().unwrap();
+        let window = gtk::ApplicationWindow::builder()
+            .application(app)
+            .default_width(480)
+            .default_height(440)
+            .title("Launcher")
+            .build();
 
-        for i in 0..monitors.n_items() {
-            let monitor: gdk::Monitor = monitors.item(i).unwrap().downcast().unwrap();
-            let rect = monitor.geometry();
-            //TODO: get monitor with mouse cursor
-            if i == 0 {
-                let window = gtk::ApplicationWindow::builder()
-                    .application(app)
-                    .default_width(480)
-                    .default_height(440)
-                    .title("Launcher")
-                    .build();
+        let vbox = gtk::Box::new(gtk::Orientation::Vertical, 4);
+        window.set_child(Some(&vbox));
 
-                let vbox = gtk::Box::new(gtk::Orientation::Vertical, 4);
-                window.set_child(Some(&vbox));
+        let search = gtk::Entry::new();
+        vbox.append(&search);
 
-                let search = gtk::Entry::new();
-                vbox.append(&search);
+        {
+            let launcher = launcher.clone();
+            search.connect_changed(move |search| {
+                let response = launcher.borrow_mut().request(
+                    pop_launcher::Request::Search(search.text().to_string())
+                ).expect("failed to access launcher service");
 
-                {
-                    let launcher = launcher.clone();
-                    search.connect_changed(move |search| {
-                        let response = launcher.borrow_mut().request(
-                            pop_launcher::Request::Search(search.text().to_string())
-                        ).expect("failed to access launcher service");
-
-                        println!("{:?}", response);
-                    });
-                }
-
-                window.show();
-
-                if let Some((display, surface)) = x::get_window_x11(&window) {
-                    unsafe {
-                        x::change_property(
-                            &display,
-                            &surface,
-                            "_NET_WM_WINDOW_TYPE",
-                            x::PropMode::Replace,
-                            &[x::Atom::new(&display, "_NET_WM_WINDOW_TYPE_DIALOG").unwrap()],
-                        );
-                        x::set_position(
-                            &display,
-                            &surface,
-                            rect.x + (rect.width - 480) / 2,
-                            rect.y + (rect.height - 440) / 2
-                        );
-                    }
-                } else {
-                    println!("Failed to get X11 window");
-                }
-            }
+                println!("{:?}", response);
+            });
         }
+
+        // Setting the window to dialog type must happen between realize and show. Dialog windows
+        // show up centered on the display with the cursor, so we do not have to set position
+        window.connect_realize(move |window| {
+            if let Some((display, surface)) = x::get_window_x11(window) {
+                unsafe {
+                    x::change_property(
+                        &display,
+                        &surface,
+                        "_NET_WM_WINDOW_TYPE",
+                        x::PropMode::Replace,
+                        &[x::Atom::new(&display, "_NET_WM_WINDOW_TYPE_DIALOG").unwrap()],
+                    );
+                }
+            } else {
+                println!("failed to get X11 window");
+            }
+        });
+
+        window.show();
     });
 
     app.run();
