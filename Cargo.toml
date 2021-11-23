@@ -13,3 +13,6 @@ x11 = { version = "2", features = ["xlib"] }
 # examples/launcher
 pop-launcher = "1.0.3"
 serde_json = "1.0.70"
+
+[[example]]
+name = "launcher" # examples/launcher/main.rs
