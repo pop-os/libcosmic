@@ -51,7 +51,7 @@ fn main() {
         vbox.set_margin_bottom(16);
         window.set_child(Some(&vbox));
 
-        let search = gtk::Entry::new();
+        let search = gtk::SearchEntry::new();
         search.set_placeholder_text(Some(" Type to search apps, or type '?' for more options."));
         vbox.append(&search);
 
@@ -60,7 +60,7 @@ fn main() {
 
         {
             let launcher = launcher.clone();
-            let search_changed = move |search: &gtk::Entry| {
+            let search_changed = move |search: &gtk::SearchEntry| {
                 //TODO: is this the best way to clear a listbox?
                 while let Some(child) = listbox.last_child() {
                     listbox.remove(&child);
