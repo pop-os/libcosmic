@@ -21,7 +21,6 @@ fn icon_source(icon: &gtk::Image, source: &Option<pop_launcher::IconSource>) {
     }
 }
 
-
 enum Event {
     Response(pop_launcher::Response),
     Search(String),
@@ -70,7 +69,7 @@ fn main() {
         search.set_placeholder_text(Some(" Type to search apps, or type '?' for more options."));
         vbox.append(&search);
 
-        let listbox = gtk::ListBox::new();
+        let mut listbox = gtk::ListBox::new();
         vbox.append(&listbox);
 
         {
@@ -109,10 +108,11 @@ fn main() {
             while let Some(event) = rx.recv().await {
                 match event {
                     Event::Search(search) => {
-                        //TODO: is this the best way to clear a listbox?
-                        while let Some(child) = listbox.last_child() {
-                            listbox.remove(&child);
+                        if let Some(child) = vbox.last_child() {
+                            vbox.remove(&child);
                         }
+                        listbox = gtk::ListBox::new();
+                        vbox.append(&listbox);
 
                         let _ = launcher.send(pop_launcher::Request::Search(search)).await;
                     }
