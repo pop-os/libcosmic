@@ -1,12 +1,9 @@
+mod application_row;
 mod window;
 
-use gtk4 as gtk;
-mod application_row;
-use application_row::ApplicationRow;
 use gtk::gdk::Display;
 use gtk::prelude::*;
-use gtk::{gio, glib};
-use libcosmic::x;
+use gtk4 as gtk;
 
 use window::Window;
 
