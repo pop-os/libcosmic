@@ -210,7 +210,6 @@ impl Window {
             if !win.is_active() {
                 win.close();
             }
-            println!("active or not lets find out...");
         });
     }
 
@@ -228,9 +227,6 @@ impl Window {
                 .unwrap()
                 .downcast::<gio::AppInfo>()
                 .unwrap();
-            println!("position: {}", &list_item.position());
-            println!("{}", app_info.name());
-            // println!("{}", app_info.description());
 
             let child = list_item
                 .child()
