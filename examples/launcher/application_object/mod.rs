@@ -1,9 +1,9 @@
 mod imp;
 
 use gdk4::glib::Object;
+use glib::ObjectExt;
+use glib::ToVariant;
 use gtk4::glib;
-use std::cell::RefCell;
-use std::rc::Rc;
 
 glib::wrapper! {
     pub struct ApplicationObject(ObjectSubclass<imp::ApplicationObject>);
@@ -11,8 +11,46 @@ glib::wrapper! {
 
 impl ApplicationObject {
     pub fn new(application_search_result: &pop_launcher::SearchResult) -> Self {
-        Object::new(&[("name", &application_search_result.name)])
-            .expect("Failed to create `ApplicationObject`.")
+        let self_: Self = Object::new(&[
+            ("id", &application_search_result.id),
+            ("name", &application_search_result.name),
+            ("description", &application_search_result.description),
+        ])
+        .expect("Failed to create `ApplicationObject`.");
+        if let Some(icon) = &application_search_result.icon {
+            if let Err(e) = self_.set_property(
+                "icon",
+                match icon {
+                    pop_launcher::IconSource::Name(name) => {
+                        (pop_launcher::IconSource::Name as i32, name.to_string()).to_variant()
+                    }
+                    pop_launcher::IconSource::Mime(name) => {
+                        (pop_launcher::IconSource::Mime as i32, name.to_string()).to_variant()
+                    }
+                },
+            ) {
+                println!("failed to set icon property");
+                dbg!(e);
+            };
+        }
+        if let Some(icon) = &application_search_result.category_icon {
+            if let Err(e) = self_.set_property(
+                "categoryicon",
+                match icon {
+                    pop_launcher::IconSource::Name(name) => {
+                        (pop_launcher::IconSource::Name as i32, name.to_string()).to_variant()
+                    }
+                    pop_launcher::IconSource::Mime(name) => {
+                        (pop_launcher::IconSource::Mime as i32, name.to_string()).to_variant()
+                    }
+                },
+            ) {
+                println!("failed to set category icon property");
+                dbg!(e);
+            };
+        }
+
+        self_
     }
 }
 
