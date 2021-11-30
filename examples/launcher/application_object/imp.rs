@@ -1,7 +1,4 @@
-use glib::{
-    types::Type, FromVariant, ParamFlags, ParamSpec, ParamSpecObject, ToVariant, Value, Variant,
-    VariantTy,
-};
+use glib::{FromVariant, ParamFlags, ParamSpec, ToVariant, Value, Variant, VariantTy};
 use gtk4::glib;
 use gtk4::prelude::*;
 use gtk4::subclass::prelude::*;
@@ -21,7 +18,7 @@ pub struct ApplicationObject {
 // The central trait for subclassing a GObject
 #[glib::object_subclass]
 impl ObjectSubclass for ApplicationObject {
-    const NAME: &'static str = "LibCosmicLauncherApplicationObject";
+    const NAME: &'static str = "ApplicationObject";
     type Type = super::ApplicationObject;
     type ParentType = glib::Object;
 }
@@ -31,6 +28,20 @@ impl ObjectImpl for ApplicationObject {
     fn properties() -> &'static [ParamSpec] {
         static PROPERTIES: Lazy<Vec<ParamSpec>> = Lazy::new(|| {
             vec![
+                ParamSpec::new_uint(
+                    // Name
+                    "id",
+                    // Nickname
+                    "id",
+                    // Short description
+                    "ID of application in launcher search result",
+                    0,
+                    u32::MAX,
+                    // Default value
+                    0,
+                    // The property can be read and written to
+                    ParamFlags::READWRITE,
+                ),
                 ParamSpec::new_string(
                     // Name
                     "name",
@@ -102,6 +113,10 @@ impl ObjectImpl for ApplicationObject {
 
     fn set_property(&self, _obj: &Self::Type, _id: usize, value: &Value, pspec: &ParamSpec) {
         match pspec.name() {
+            "id" => {
+                let id = value.get().expect("The value needs to be of type `u32`.");
+                self.data.borrow_mut().0.id = id;
+            }
             "name" => {
                 let name = value
                     .get()
@@ -115,46 +130,44 @@ impl ObjectImpl for ApplicationObject {
                 self.data.borrow_mut().0.description = description;
             }
             "icon" => {
-                let icon = <Option<(i32, String)>>::from_variant(
+                let icon = <(i32, String)>::from_variant(
                     &value
                         .get::<Variant>()
                         .expect("The icon needs to be a Variant"),
                 )
-                .expect("The icon variant needs to be an Option<(i32, String)>");
-                if let Some(icon) = icon {
-                    self.data.borrow_mut().0.icon = match icon {
-                        (i_type, name) if i_type == pop_launcher::IconSource::Name as i32 => {
-                            Some(pop_launcher::IconSource::Name(name.into()))
-                        }
-                        (i_type, name) if i_type == pop_launcher::IconSource::Mime as i32 => {
-                            Some(pop_launcher::IconSource::Mime(name.into()))
-                        }
-                        _ => None,
-                    };
-                } else {
-                    self.data.borrow_mut().0.icon = None;
-                }
+                .expect("The icon variant needs to be an (i32, String)");
+                self.data.borrow_mut().0.icon = match icon {
+                    (i_type, name) if i_type == pop_launcher::IconSource::Name as i32 => {
+                        Some(pop_launcher::IconSource::Name(name.into()))
+                    }
+                    (i_type, name) if i_type == pop_launcher::IconSource::Mime as i32 => {
+                        Some(pop_launcher::IconSource::Mime(name.into()))
+                    }
+                    (i_type, name) => {
+                        println!("Failed to set icon. {} {}", i_type, name);
+                        None
+                    }
+                };
             }
             "categoryicon" => {
-                let icon = <Option<(i32, String)>>::from_variant(
+                let icon = <(i32, String)>::from_variant(
                     &value
                         .get::<Variant>()
                         .expect("The icon needs to be a Variant"),
                 )
                 .expect("The icon variant needs to be an Option<(i32, String)>");
-                if let Some(icon) = icon {
-                    self.data.borrow_mut().0.icon = match icon {
-                        (i_type, name) if i_type == pop_launcher::IconSource::Name as i32 => {
-                            Some(pop_launcher::IconSource::Name(name.into()))
-                        }
-                        (i_type, name) if i_type == pop_launcher::IconSource::Mime as i32 => {
-                            Some(pop_launcher::IconSource::Mime(name.into()))
-                        }
-                        _ => None,
-                    };
-                } else {
-                    self.data.borrow_mut().0.icon = None;
-                }
+                self.data.borrow_mut().0.category_icon = match icon {
+                    (i_type, name) if i_type == pop_launcher::IconSource::Name as i32 => {
+                        Some(pop_launcher::IconSource::Name(name.into()))
+                    }
+                    (i_type, name) if i_type == pop_launcher::IconSource::Mime as i32 => {
+                        Some(pop_launcher::IconSource::Mime(name.into()))
+                    }
+                    (i_type, name) => {
+                        println!("Failed to set icon. {} {}", i_type, name);
+                        None
+                    }
+                };
             }
             "window" => {
                 unimplemented!()
@@ -165,8 +178,9 @@ impl ObjectImpl for ApplicationObject {
 
     fn property(&self, _obj: &Self::Type, _id: usize, pspec: &ParamSpec) -> Value {
         match pspec.name() {
+            "id" => self.data.borrow().0.id.to_value(),
             "name" => self.data.borrow().0.name.to_value(),
-            "description" => self.data.borrow().0.name.to_value(),
+            "description" => self.data.borrow().0.description.to_value(),
             "icon" => match &self.data.borrow().0.icon {
                 Some(pop_launcher::IconSource::Name(icon_name)) => {
                     (pop_launcher::IconSource::Name as i32, icon_name.to_string())

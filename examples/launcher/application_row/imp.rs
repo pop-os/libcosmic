@@ -16,6 +16,8 @@ pub struct ApplicationRow {
     pub shortcut: TemplateChild<gtk::Label>,
     #[template_child]
     pub image: TemplateChild<gtk::Image>,
+    #[template_child]
+    pub categoryimage: TemplateChild<gtk::Image>,
 }
 
 #[glib::object_subclass]
