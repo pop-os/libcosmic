@@ -69,10 +69,10 @@ impl Window {
                     let id = id.get::<u32>().expect("App ID must be u32");
 
                     glib::MainContext::default().spawn_local(async move {
-                        if let Ok(tx) = TX.lock() {
-                        if let Some(tx) = &*tx {
-                            let _ = tx.clone().send(crate::Event::Activate(id)).await;
-                        }}
+                        if let Some(tx) = TX.get() {
+                            let mut tx = tx.clone();
+                            let _ = tx.send(crate::Event::Activate(id)).await;
+                        }
                     });
                 }
             }));
@@ -89,10 +89,9 @@ impl Window {
                 let id = id.get::<u32>().expect("App ID must be u32");
 
                 glib::MainContext::default().spawn_local(async move {
-                    if let Ok(tx) = TX.lock() {
-                        if let Some(tx) = &*tx {
-                            let _ = tx.clone().send(crate::Event::Activate(id)).await;
-                        }
+                    if let Some(tx) = TX.get() {
+                        let mut tx = tx.clone();
+                        let _ = tx.send(crate::Event::Activate(id)).await;
                     }
                 });
             }
@@ -102,10 +101,9 @@ impl Window {
             let search = search.text().to_string();
 
             glib::MainContext::default().spawn_local(async move {
-                if let Ok(tx) = TX.lock() {
-                    if let Some(tx) = &*tx {
-                        let _ = tx.clone().send(crate::Event::Search(search)).await;
-                    }
+                if let Some(tx) = TX.get() {
+                    let mut tx = tx.clone();
+                    let _ = tx.send(crate::Event::Search(search)).await;
                 }
             });
         });
@@ -114,10 +112,9 @@ impl Window {
             let search = search.text().to_string();
 
             glib::MainContext::default().spawn_local(async move {
-                if let Ok(tx) = TX.lock() {
-                    if let Some(tx) = &*tx {
-                        let _ = tx.clone().send(crate::Event::Search(search)).await;
-                    }
+                if let Some(tx) = TX.get() {
+                    let mut tx = tx.clone();
+                    let _ = tx.send(crate::Event::Search(search)).await;
                 }
             });
         });
