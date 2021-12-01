@@ -4,6 +4,7 @@
     <property name="width-request">600</property>
     <property name="title">Gtk Pop Launcher</property>
     <property name="decorated">false</property>
+    <property name="resizable">false</property>
     <child>
       <object class="GtkBox">
         <property name="orientation">vertical</property>
