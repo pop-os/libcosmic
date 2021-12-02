@@ -29,6 +29,7 @@
         <child>
           <object class="GtkLabel" id="name">
             <property name="halign">start</property>
+            <property name="ellipsize">end</property>
             <style>
               <class name="title-4" />
             </style>

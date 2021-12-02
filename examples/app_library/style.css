@@ -1,0 +1,15 @@
+description {
+    line-height: 1.5em;
+    background-image: none;
+    background-color: red;
+}
+
+row.row1 {
+    background-image: none;
+    background-color: black;
+}
+
+shortcut {
+    background-image: none;
+    background-color: green;
+}
