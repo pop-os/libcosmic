@@ -1,4 +1,4 @@
-mod application_row;
+mod app_item;
 mod window;
 
 use gtk::gdk::Display;
