@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <interface>
-  <template class="AppItem" parent="GtkBox">
+  <template class="GridItem" parent="GtkBox">
     <property name="orientation">vertical</property>
     <property name="halign">center</property>
     <property name="hexpand">true</property>

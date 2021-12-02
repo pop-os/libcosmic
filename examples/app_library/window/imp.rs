@@ -1,4 +1,6 @@
 use gtk4 as gtk;
+use std::cell::RefCell;
+use std::rc::Rc;
 
 use glib::subclass::InitializingObject;
 use gtk::prelude::*;
@@ -16,6 +18,9 @@ pub struct Window {
     #[template_child]
     pub app_grid_view: TemplateChild<GridView>,
     pub app_model: OnceCell<gio::ListStore>,
+    #[template_child]
+    pub group_grid_view: TemplateChild<GridView>,
+    pub group_model: OnceCell<gio::ListStore>,
 }
 
 // The central trait for subclassing a GObject

@@ -44,19 +44,11 @@
           </object>
         </child>
         <child>
-          <object class="GtkScrolledWindow">
-            <property name="hscrollbar-policy">never</property>
-            <property name="min-content-height">100</property>
-            <property name="max-content-height">200</property>
-            <property name="vexpand">true</property>
-            <child>
-              <object class="GtkGridView" id="group_grid_view">
-                <property name="min-columns">8</property>
-                <property name="max-columns">8</property>
-                <property name="single-click-activate">true</property>
-                <property name="enable-rubberband">true</property>
-              </object>
-            </child>
+          <object class="GtkGridView" id="group_grid_view">
+            <property name="min-columns">8</property>
+            <property name="max-columns">8</property>
+            <property name="single-click-activate">true</property>
+            <property name="enable-rubberband">true</property>
           </object>
         </child>
       </object>

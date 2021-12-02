@@ -1,4 +1,5 @@
-mod app_item;
+mod app_group;
+mod grid_item;
 mod window;
 
 use gtk::gdk::Display;

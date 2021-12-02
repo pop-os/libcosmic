@@ -1,7 +1,10 @@
 mod imp;
+use crate::app_group::AppGroup;
+use crate::app_group::AppGroupData;
 use gtk4 as gtk;
+use std::path::Path;
 
-use crate::app_item::AppItem;
+use crate::grid_item::GridItem;
 use glib::Object;
 use gtk::prelude::*;
 use gtk::subclass::prelude::*;
@@ -36,21 +39,40 @@ impl Window {
 
     fn setup_model(&self) {
         // Create new model
-        let model = gio::ListStore::new(gio::AppInfo::static_type());
-        gio::AppInfo::all().iter().for_each(|app_info| {
-            model.append(app_info);
-        });
-
+        let app_model = gio::ListStore::new(gio::DesktopAppInfo::static_type());
         // Get state and set model
         let imp = imp::Window::from_instance(self);
         imp.app_model
-            .set(model.clone())
+            .set(app_model.clone())
             .expect("Could not set model");
 
         // A sorter used to sort AppInfo in the model by their name
+        xdg::BaseDirectories::new()
+            .expect("could not access XDG Base directory")
+            .get_data_dirs()
+            .iter_mut()
+            .for_each(|xdg_data_path| {
+                xdg_data_path.push("applications");
+                if let Ok(dir_iter) = std::fs::read_dir(xdg_data_path) {
+                    dir_iter.for_each(|dir_entry| {
+                        if let Ok(dir_entry) = dir_entry {
+                            if let Some(path) = dir_entry.path().file_name() {
+                                if let Some(path) = path.to_str() {
+                                    if let Some(app_info) = gio::DesktopAppInfo::new(path) {
+                                        if !app_info.should_show() {
+                                            app_model.append(&app_info)
+                                        };
+                                    }
+                                }
+                            }
+                        }
+                    })
+                }
+            });
+
         let sorter = gtk::CustomSorter::new(move |obj1, obj2| {
-            let app_info1 = obj1.downcast_ref::<gio::AppInfo>().unwrap();
-            let app_info2 = obj2.downcast_ref::<gio::AppInfo>().unwrap();
+            let app_info1 = obj1.downcast_ref::<gio::DesktopAppInfo>().unwrap();
+            let app_info2 = obj2.downcast_ref::<gio::DesktopAppInfo>().unwrap();
 
             app_info1
                 .name()
@@ -59,12 +81,49 @@ impl Window {
                 .into()
         });
         let filter = gtk::CustomFilter::new(|_obj| true);
-        let filter_model = gtk::FilterListModel::new(Some(&model), Some(filter).as_ref());
+        let filter_model = gtk::FilterListModel::new(Some(&app_model), Some(filter).as_ref());
         let sorted_model = gtk::SortListModel::new(Some(&filter_model), Some(&sorter));
         let selection_model = gtk::SingleSelection::new(Some(&sorted_model));
 
         // Wrap model with selection and pass it to the list view
         imp.app_grid_view.set_model(Some(&selection_model));
+
+        let group_model = gio::ListStore::new(AppGroup::static_type());
+        imp.group_model
+            .set(group_model.clone())
+            .expect("Could not set group model");
+        vec![
+            AppGroup::new(AppGroupData {
+                id: 0,
+                name: "Library Home".to_string(),
+                icon: "user-home".to_string(),
+                mutable: false,
+                app_names: Vec::new(),
+                category: "".to_string(),
+            }),
+            AppGroup::new(AppGroupData {
+                id: 0,
+                name: "System".to_string(),
+                icon: "folder".to_string(),
+                mutable: false,
+                app_names: Vec::new(),
+                category: "System".to_string(),
+            }),
+            AppGroup::new(AppGroupData {
+                id: 0,
+                name: "Utilities".to_string(),
+                icon: "folder".to_string(),
+                mutable: false,
+                app_names: Vec::new(),
+                category: "Utility".to_string(),
+            }),
+        ]
+        .iter()
+        .for_each(|group| {
+            group_model.append(group);
+        });
+        imp.group_grid_view
+            .set_model(Some(&gtk4::SingleSelection::new(Some(&group_model))));
     }
 
     fn setup_callbacks(&self) {
@@ -94,7 +153,7 @@ impl Window {
             let app_info = model
                 .item(position)
                 .unwrap()
-                .downcast::<gio::AppInfo>()
+                .downcast::<gio::DesktopAppInfo>()
                 .unwrap();
 
             let context = grid_view.display().app_launch_context();
@@ -116,14 +175,14 @@ impl Window {
             glib::clone!(@weak filter_model, @weak sorted_model => move |search: &gtk::SearchEntry| {
                 let search_text = search.text().to_string().to_lowercase();
                 let new_filter: gtk::CustomFilter = gtk::CustomFilter::new(move |obj| {
-                    let search_res = obj.downcast_ref::<gio::AppInfo>()
+                    let search_res = obj.downcast_ref::<gio::DesktopAppInfo>()
                         .expect("The Object needs to be of type AppInfo");
                     search_res.name().to_string().to_lowercase().contains(&search_text)
                 });
                 let search_text = search.text().to_string().to_lowercase();
                 let new_sorter: gtk::CustomSorter = gtk::CustomSorter::new(move |obj1, obj2| {
-                    let app_info1 = obj1.downcast_ref::<gio::AppInfo>().unwrap();
-                    let app_info2 = obj2.downcast_ref::<gio::AppInfo>().unwrap();
+                    let app_info1 = obj1.downcast_ref::<gio::DesktopAppInfo>().unwrap();
+                    let app_info2 = obj2.downcast_ref::<gio::DesktopAppInfo>().unwrap();
                     if search_text == "" {
                         return app_info1
                             .name()
@@ -181,25 +240,41 @@ impl Window {
     }
 
     fn setup_factory(&self) {
-        let factory = SignalListItemFactory::new();
-        factory.connect_setup(move |_factory, item| {
-            let row = AppItem::new();
+        let app_factory = SignalListItemFactory::new();
+        app_factory.connect_setup(move |_factory, item| {
+            let row = GridItem::new();
             item.set_child(Some(&row));
         });
 
         // the bind stage is used for "binding" the data to the created widgets on the "setup" stage
-        factory.connect_bind(move |_factory, grid_item| {
+        app_factory.connect_bind(move |_factory, grid_item| {
             let app_info = grid_item
                 .item()
                 .unwrap()
-                .downcast::<gio::AppInfo>()
+                .downcast::<gio::DesktopAppInfo>()
                 .unwrap();
 
-            let child = grid_item.child().unwrap().downcast::<AppItem>().unwrap();
+            let child = grid_item.child().unwrap().downcast::<GridItem>().unwrap();
             child.set_app_info(&app_info);
         });
         // Set the factory of the list view
         let imp = imp::Window::from_instance(self);
-        imp.app_grid_view.set_factory(Some(&factory));
+        imp.app_grid_view.set_factory(Some(&app_factory));
+
+        let group_factory = SignalListItemFactory::new();
+        group_factory.connect_setup(move |_factory, item| {
+            let row = GridItem::new();
+            item.set_child(Some(&row));
+        });
+
+        // the bind stage is used for "binding" the data to the created widgets on the "setup" stage
+        group_factory.connect_bind(move |_factory, grid_item| {
+            let group_info = grid_item.item().unwrap().downcast::<AppGroup>().unwrap();
+
+            let child = grid_item.child().unwrap().downcast::<GridItem>().unwrap();
+            child.set_group_info(group_info);
+        });
+        // Set the factory of the list view
+        imp.group_grid_view.set_factory(Some(&group_factory));
     }
 }
