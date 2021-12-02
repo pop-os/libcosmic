@@ -6,8 +6,8 @@ use gtk4 as gtk;
 use gtk::CompositeTemplate;
 
 #[derive(Debug, Default, CompositeTemplate)]
-#[template(file = "application_row.ui")]
-pub struct ApplicationRow {
+#[template(file = "app_item.ui")]
+pub struct AppItem {
     #[template_child]
     pub name: TemplateChild<gtk::Label>,
     #[template_child]
@@ -15,9 +15,9 @@ pub struct ApplicationRow {
 }
 
 #[glib::object_subclass]
-impl ObjectSubclass for ApplicationRow {
-    const NAME: &'static str = "ApplicationRow";
-    type Type = super::ApplicationRow;
+impl ObjectSubclass for AppItem {
+    const NAME: &'static str = "AppItem";
+    type Type = super::AppItem;
     type ParentType = gtk::Box;
 
     fn class_init(klass: &mut Self::Class) {
@@ -29,6 +29,6 @@ impl ObjectSubclass for ApplicationRow {
     }
 }
 
-impl ObjectImpl for ApplicationRow {}
-impl WidgetImpl for ApplicationRow {}
-impl BoxImpl for ApplicationRow {}
+impl ObjectImpl for AppItem {}
+impl WidgetImpl for AppItem {}
+impl BoxImpl for AppItem {}

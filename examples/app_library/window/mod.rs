@@ -1,7 +1,7 @@
 mod imp;
 use gtk4 as gtk;
 
-use crate::application_row::ApplicationRow;
+use crate::app_item::AppItem;
 use glib::Object;
 use gtk::prelude::*;
 use gtk::subclass::prelude::*;
@@ -183,7 +183,7 @@ impl Window {
     fn setup_factory(&self) {
         let factory = SignalListItemFactory::new();
         factory.connect_setup(move |_factory, item| {
-            let row = ApplicationRow::new();
+            let row = AppItem::new();
             item.set_child(Some(&row));
         });
 
@@ -195,11 +195,7 @@ impl Window {
                 .downcast::<gio::AppInfo>()
                 .unwrap();
 
-            let child = grid_item
-                .child()
-                .unwrap()
-                .downcast::<ApplicationRow>()
-                .unwrap();
+            let child = grid_item.child().unwrap().downcast::<AppItem>().unwrap();
             child.set_app_info(&app_info);
         });
         // Set the factory of the list view
