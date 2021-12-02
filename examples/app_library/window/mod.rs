@@ -53,15 +53,20 @@ impl Window {
             .iter_mut()
             .for_each(|xdg_data_path| {
                 xdg_data_path.push("applications");
+                dbg!(&xdg_data_path);
                 if let Ok(dir_iter) = std::fs::read_dir(xdg_data_path) {
                     dir_iter.for_each(|dir_entry| {
                         if let Ok(dir_entry) = dir_entry {
                             if let Some(path) = dir_entry.path().file_name() {
                                 if let Some(path) = path.to_str() {
                                     if let Some(app_info) = gio::DesktopAppInfo::new(path) {
-                                        if !app_info.should_show() {
+                                        if app_info.should_show() {
                                             app_model.append(&app_info)
-                                        };
+                                        } else {
+                                            println!("Ignoring {}", path);
+                                        }
+                                    } else {
+                                        println!("error loading {}", path);
                                     }
                                 }
                             }
