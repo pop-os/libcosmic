@@ -138,6 +138,14 @@ impl Window {
                 app_names: vec!["Firefox Web Browser".to_string()],
                 category: "".to_string(),
             }),
+            AppGroup::new(AppGroupData {
+                id: 0,
+                name: "New Group".to_string(),
+                icon: "folder-new".to_string(),
+                mutable: true,
+                app_names: vec![],
+                category: "".to_string(),
+            }),
         ]
         .iter()
         .for_each(|group| {
@@ -200,6 +208,12 @@ impl Window {
 
         // on activation change the group filter model to use the app names, and category
         group_grid_view.connect_activate(glib::clone!(@weak app_filter_model => move |grid_view, position| {
+            // if last item in the model, don't change filter, instead show dialog for adding new group!
+            if position == grid_view.model().unwrap().n_items() - 1 {
+                println!("TODO: launch action to show the Add/Edit Group Window");
+                return;
+            };
+            // update the application filter
             let model = grid_view.model().unwrap();
             let app_info = model
                 .item(position)
@@ -226,7 +240,7 @@ impl Window {
                     .expect("The Object needs to be of type AppInfo");
                 if app_names.len() > 0 {
                     return app_names.contains(&String::from(app.name().as_str()));
-                } 
+                }
                 match app.categories() {
                     Some(categories) => categories.to_string().to_lowercase().contains(&category),
                     None => false,
