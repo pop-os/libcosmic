@@ -2,6 +2,7 @@ use gtk::glib;
 use gtk::prelude::*;
 use gtk::subclass::prelude::*;
 use gtk4 as gtk;
+use std::cell::Cell;
 
 use gtk::CompositeTemplate;
 
@@ -12,6 +13,7 @@ pub struct GridItem {
     pub name: TemplateChild<gtk::Label>,
     #[template_child]
     pub image: TemplateChild<gtk::Image>,
+    pub index: Cell<u32>,
 }
 
 #[glib::object_subclass]
