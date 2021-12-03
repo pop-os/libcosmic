@@ -7,8 +7,9 @@ use gtk::subclass::prelude::*;
 use gtk::{gio, glib};
 
 glib::wrapper! {
-    pub struct GridItem(ObjectSubclass<imp::GridItem>)
-        @extends gtk::Widget, gtk::Box;
+pub struct GridItem(ObjectSubclass<imp::GridItem>)
+    @extends gtk::Widget, gtk::Box,
+    @implements gtk::Accessible, gtk::Actionable, gtk::Buildable, gtk::ConstraintTarget;
 }
 
 impl Default for GridItem {
@@ -40,11 +41,15 @@ impl GridItem {
             );
         }
         if let Ok(icon) = app_group.property("icon") {
-            &self_.image.set_from_icon_name(Some(
+            self_.image.set_from_icon_name(Some(
                 &icon
                     .get::<String>()
                     .expect("Property name needs to be a String."),
             ));
         }
+    }
+
+    pub fn set_index(&self, index: u32) {
+        imp::GridItem::from_instance(self).index.set(index);
     }
 }

@@ -1,7 +1,10 @@
 mod imp;
 use crate::app_group::AppGroup;
 use crate::app_group::AppGroupData;
+use glib::FromVariant;
+use glib::Variant;
 use gtk4 as gtk;
+use gtk4::Button;
 use std::path::Path;
 
 use crate::grid_item::GridItem;
@@ -127,13 +130,21 @@ impl Window {
                 app_names: Vec::new(),
                 category: "Utility".to_string(),
             }),
+            AppGroup::new(AppGroupData {
+                id: 0,
+                name: "Web".to_string(),
+                icon: "folder".to_string(),
+                mutable: true,
+                app_names: vec!["Firefox Web Browser".to_string()],
+                category: "".to_string(),
+            }),
         ]
         .iter()
         .for_each(|group| {
             group_model.append(group);
         });
-        imp.group_grid_view
-            .set_model(Some(&gtk4::SingleSelection::new(Some(&group_model))));
+        let group_selection = gtk4::SingleSelection::new(Some(&group_model));
+        imp.group_grid_view.set_model(Some(&group_selection));
     }
 
     fn setup_callbacks(&self) {
@@ -187,7 +198,6 @@ impl Window {
             }
         });
 
-        // TODO connect to custom signal from app group grid item activation
         // on activation change the group filter model to use the app names, and category
         group_grid_view.connect_activate(glib::clone!(@weak app_filter_model => move |grid_view, position| {
             let model = grid_view.model().unwrap();
@@ -196,16 +206,27 @@ impl Window {
                 .unwrap()
                 .downcast::<AppGroup>()
                 .unwrap();
-            let category: String;
+            let category =
             if let Ok(category_prop) = app_info.property("category") {
-                category = category_prop.get::<String>().unwrap_or("".to_string()).to_lowercase();
+                category_prop.get::<String>().unwrap_or("".to_string()).to_lowercase()
             } else {
-                category = "".to_string();
-            }
+                "".to_string()
+            };
+
+            let app_names =
+                if let Ok(app_names_prop) = app_info.property("appnames") {
+                    <Vec<String>>::from_variant(&app_names_prop.get::<Variant>().expect("appnames nneds to be a variant.")).unwrap_or_default()
+            } else {
+                vec![]
+            };
+            dbg!(&app_names);
             let new_filter: gtk::CustomFilter = gtk::CustomFilter::new(move |obj| {
                 let app = obj
                     .downcast_ref::<gio::DesktopAppInfo>()
                     .expect("The Object needs to be of type AppInfo");
+                if app_names.len() > 0 {
+                    return app_names.contains(&String::from(app.name().as_str()));
+                } 
                 match app.categories() {
                     Some(categories) => categories.to_string().to_lowercase().contains(&category),
                     None => false,
@@ -213,6 +234,35 @@ impl Window {
             });
             group_filter_model.set_filter(Some(new_filter).as_ref());
         }));
+        // can't listen to select signal on grid view, but this a good to know example...
+        // if group_grid_view.connect_local("select", true, glib::clone!(@weak group_filter_model => @default-return None, move |args| {
+        //     let grid_view = args[0].get::<gtk::GridView>().unwrap();
+        //     let position = args[1].get::<u32>().unwrap();
+        // // on activation change the group filter model to use the app names, and category
+        //     let model = grid_view.model().unwrap();
+        //     let app_info = model
+        //         .item(position)
+        //         .unwrap()
+        //         .downcast::<AppGroup>()
+        //         .unwrap();
+        //     let category: String;
+        //     if let Ok(category_prop) = app_info.property("category") {
+        //         category = category_prop.get::<String>().unwrap_or("".to_string()).to_lowercase();
+        //     } else {
+        //         category = "".to_string();
+        //     }
+        //     let new_filter: gtk::CustomFilter = gtk::CustomFilter::new(move |obj| {
+        //         let app = obj
+        //             .downcast_ref::<gio::DesktopAppInfo>()
+        //             .expect("The Object needs to be of type AppInfo");
+        //         match app.categories() {
+        //             Some(categories) => categories.to_string().to_lowercase().contains(&category),
+        //             None => false,
+        //         }
+        //     });
+        //     group_filter_model.set_filter(Some(new_filter).as_ref());
+        //     None
+        // })).is_err() { println!("Failed to connect to grid view select...") };
 
         entry.connect_changed(
             glib::clone!(@weak app_filter_model, @weak sorted_model => move |search: &gtk::SearchEntry| {
@@ -289,20 +339,23 @@ impl Window {
             item.set_child(Some(&row));
         });
 
-        // the bind stage is used for "binding" the data to the created widgets on the "setup" stage
-        app_factory.connect_bind(move |_factory, grid_item| {
-            let app_info = grid_item
-                .item()
-                .unwrap()
-                .downcast::<gio::DesktopAppInfo>()
-                .unwrap();
-
-            let child = grid_item.child().unwrap().downcast::<GridItem>().unwrap();
-            child.set_app_info(&app_info);
-        });
-        // Set the factory of the list view
         let imp = imp::Window::from_instance(self);
-        imp.app_grid_view.set_factory(Some(&app_factory));
+        // the bind stage is used for "binding" the data to the created widgets on the "setup" stage
+        let app_grid_view = &imp.app_grid_view.get();
+        app_factory.connect_bind(
+            glib::clone!(@weak app_grid_view => move |_factory, grid_item| {
+                let app_info = grid_item
+                    .item()
+                    .unwrap()
+                    .downcast::<gio::DesktopAppInfo>()
+                    .unwrap();
+
+                let child = grid_item.child().unwrap().downcast::<GridItem>().unwrap();
+                child.set_app_info(&app_info);
+            }),
+        );
+        // Set the factory of the list view
+        app_grid_view.set_factory(Some(&app_factory));
 
         let group_factory = SignalListItemFactory::new();
         group_factory.connect_setup(move |_factory, item| {
