@@ -82,7 +82,7 @@ fn load_css() {
 
 fn main() {
     let app = gtk::Application::builder()
-        .application_id("com.system76.Launcher")
+        .application_id("com.cosmic.Launcher")
         .build();
 
     app.connect_startup(|app| {
@@ -99,7 +99,7 @@ fn main() {
 
         let window = Window::new(app);
         let wclone = window.clone();
-         window.show();
+        window.show();
 
         glib::MainContext::default().spawn_local(async move {
             while let Some(event) = rx.recv().await {
