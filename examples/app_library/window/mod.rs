@@ -34,10 +34,16 @@ impl Window {
         Object::new(&[("application", app)]).expect("Failed to create `Window`.")
     }
 
-    fn model(&self) -> &gio::ListStore {
+    fn app_model(&self) -> &gio::ListStore {
         // Get state
         let imp = imp::Window::from_instance(self);
         imp.app_model.get().expect("Could not get model")
+    }
+
+    fn group_model(&self) -> &gio::ListStore {
+        // Get state
+        let imp = imp::Window::from_instance(self);
+        imp.group_model.get().expect("Could not get model")
     }
 
     fn setup_model(&self) {
@@ -94,7 +100,6 @@ impl Window {
         let filter = gtk::CustomFilter::new(|_obj| true);
         let group_filter_model =
             gtk::FilterListModel::new(Some(&search_filter_model), Some(filter).as_ref());
-        // TODO add app group filter model
         let sorted_model = gtk::SortListModel::new(Some(&group_filter_model), Some(&sorter));
         let selection_model = gtk::SingleSelection::new(Some(&sorted_model));
 
@@ -132,7 +137,7 @@ impl Window {
             }),
             AppGroup::new(AppGroupData {
                 id: 0,
-                name: "Web".to_string(),
+                name: "Custom Web".to_string(),
                 icon: "folder".to_string(),
                 mutable: true,
                 app_names: vec!["Firefox Web Browser".to_string()],
@@ -210,7 +215,7 @@ impl Window {
         group_grid_view.connect_activate(glib::clone!(@weak app_filter_model => move |grid_view, position| {
             // if last item in the model, don't change filter, instead show dialog for adding new group!
             if position == grid_view.model().unwrap().n_items() - 1 {
-                println!("TODO: launch action to show the Add/Edit Group Window");
+                println!("TODO: launch action to show the Add/Edit Group Overlay");
                 return;
             };
             // update the application filter
