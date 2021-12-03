@@ -86,8 +86,13 @@ impl Window {
                 .into()
         });
         let filter = gtk::CustomFilter::new(|_obj| true);
-        let filter_model = gtk::FilterListModel::new(Some(&app_model), Some(filter).as_ref());
-        let sorted_model = gtk::SortListModel::new(Some(&filter_model), Some(&sorter));
+        let search_filter_model =
+            gtk::FilterListModel::new(Some(&app_model), Some(filter).as_ref());
+        let filter = gtk::CustomFilter::new(|_obj| true);
+        let group_filter_model =
+            gtk::FilterListModel::new(Some(&search_filter_model), Some(filter).as_ref());
+        // TODO add app group filter model
+        let sorted_model = gtk::SortListModel::new(Some(&group_filter_model), Some(&sorter));
         let selection_model = gtk::SingleSelection::new(Some(&sorted_model));
 
         // Wrap model with selection and pass it to the list view
@@ -136,6 +141,7 @@ impl Window {
         let imp = imp::Window::from_instance(self);
         let window = self.clone().upcast::<gtk::Window>();
         let app_grid_view = &imp.app_grid_view;
+        let group_grid_view = &imp.group_grid_view;
         let sorted_model = app_grid_view
             .model()
             .expect("List view missing selection model")
@@ -144,7 +150,12 @@ impl Window {
             .model()
             .downcast::<gtk::SortListModel>()
             .expect("sorted list model could not be downcast");
-        let filter_model = sorted_model
+        let group_filter_model = sorted_model
+            .model()
+            .expect("missing model for sort list model.")
+            .downcast::<gtk::FilterListModel>()
+            .expect("could not downcast sort list model to filter list model");
+        let app_filter_model = group_filter_model
             .model()
             .expect("missing model for sort list model.")
             .downcast::<gtk::FilterListModel>()
@@ -176,8 +187,35 @@ impl Window {
             }
         });
 
+        // TODO connect to custom signal from app group grid item activation
+        // on activation change the group filter model to use the app names, and category
+        group_grid_view.connect_activate(glib::clone!(@weak app_filter_model => move |grid_view, position| {
+            let model = grid_view.model().unwrap();
+            let app_info = model
+                .item(position)
+                .unwrap()
+                .downcast::<AppGroup>()
+                .unwrap();
+            let category: String;
+            if let Ok(category_prop) = app_info.property("category") {
+                category = category_prop.get::<String>().unwrap_or("".to_string()).to_lowercase();
+            } else {
+                category = "".to_string();
+            }
+            let new_filter: gtk::CustomFilter = gtk::CustomFilter::new(move |obj| {
+                let app = obj
+                    .downcast_ref::<gio::DesktopAppInfo>()
+                    .expect("The Object needs to be of type AppInfo");
+                match app.categories() {
+                    Some(categories) => categories.to_string().to_lowercase().contains(&category),
+                    None => false,
+                }
+            });
+            group_filter_model.set_filter(Some(new_filter).as_ref());
+        }));
+
         entry.connect_changed(
-            glib::clone!(@weak filter_model, @weak sorted_model => move |search: &gtk::SearchEntry| {
+            glib::clone!(@weak app_filter_model, @weak sorted_model => move |search: &gtk::SearchEntry| {
                 let search_text = search.text().to_string().to_lowercase();
                 let new_filter: gtk::CustomFilter = gtk::CustomFilter::new(move |obj| {
                     let search_res = obj.downcast_ref::<gio::DesktopAppInfo>()
@@ -188,7 +226,7 @@ impl Window {
                 let new_sorter: gtk::CustomSorter = gtk::CustomSorter::new(move |obj1, obj2| {
                     let app_info1 = obj1.downcast_ref::<gio::DesktopAppInfo>().unwrap();
                     let app_info2 = obj2.downcast_ref::<gio::DesktopAppInfo>().unwrap();
-                    if search_text == "" {
+                    if search_text == "" { 
                         return app_info1
                             .name()
                             .to_lowercase()
@@ -210,7 +248,7 @@ impl Window {
                     }
                 });
 
-                filter_model.set_filter(Some(new_filter).as_ref());
+                app_filter_model.set_filter(Some(new_filter).as_ref());
                 sorted_model.set_sorter(Some(new_sorter).as_ref());
             }),
         );
