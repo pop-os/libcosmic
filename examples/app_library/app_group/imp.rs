@@ -12,7 +12,7 @@ use super::AppGroupData;
 // Object holding the state
 #[derive(Default)]
 pub struct AppGroup {
-    data: Rc<RefCell<AppGroupData>>,
+    pub data: Rc<RefCell<AppGroupData>>,
 }
 
 // The central trait for subclassing a GObject

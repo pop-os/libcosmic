@@ -1,9 +1,10 @@
 mod imp;
 
-use gdk4::glib::Object;
+use glib::Object;
 use glib::ObjectExt;
 use glib::ToVariant;
 use gtk4::glib;
+use gtk4::subclass::prelude::*;
 use serde::{Deserialize, Serialize};
 
 glib::wrapper! {
@@ -25,6 +26,11 @@ impl AppGroup {
             dbg!(e);
         };
         self_
+    }
+
+    pub fn group_data(&self) -> AppGroupData {
+        let imp = imp::AppGroup::from_instance(self);
+        imp.data.borrow().clone()
     }
 }
 

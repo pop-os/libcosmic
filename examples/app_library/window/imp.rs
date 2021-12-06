@@ -1,13 +1,16 @@
 use gtk4 as gtk;
-use std::cell::RefCell;
-use std::rc::Rc;
+use std::fs::File;
 
+use glib::signal::Inhibit;
 use glib::subclass::InitializingObject;
 use gtk::prelude::*;
 use gtk::subclass::prelude::*;
 use gtk::{gio, glib};
 use gtk::{CompositeTemplate, GridView, SearchEntry};
 use once_cell::sync::OnceCell;
+
+use crate::app_group::AppGroup;
+use crate::utils::data_path;
 
 // Object holding the state
 #[derive(CompositeTemplate, Default)]
@@ -47,6 +50,7 @@ impl ObjectImpl for Window {
 
         // Setup
         obj.setup_model();
+        obj.restore_data();
         obj.setup_callbacks();
         obj.setup_factory();
     }
@@ -55,7 +59,34 @@ impl ObjectImpl for Window {
 impl WidgetImpl for Window {}
 
 // Trait shared by all windows
-impl WindowImpl for Window {}
+impl WindowImpl for Window {
+    fn close_request(&self, window: &Self::Type) -> Inhibit {
+        // Store todo data in vector
+        let mut backup_data = Vec::new();
+        let mut position = 3;
+        while let Some(item) = window.group_model().item(position) {
+            if position == window.group_model().n_items() - 1 {
+                break;
+            }
+            // Get `AppGroup` from `glib::Object`
+            let group_data = item
+                .downcast_ref::<AppGroup>()
+                .expect("The object needs to be of type `AppGroupData`.")
+                .group_data();
+            // Add todo data to vector and increase position
+            backup_data.push(group_data);
+            position += 1;
+        }
+
+        // Save state in file
+        let file = File::create(data_path()).expect("Could not create json file.");
+        serde_json::to_writer_pretty(file, &backup_data)
+            .expect("Could not write data to json file");
+
+        // Pass close request on to the parent
+        self.parent_close_request(window)
+    }
+}
 
 // Trait shared by all application
 impl ApplicationWindowImpl for Window {}

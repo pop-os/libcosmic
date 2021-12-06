@@ -23,7 +23,9 @@
             <property name="min-content-height">500</property>
             <property name="vexpand">true</property>
             <child>
-              <object class="GtkListView" id="list_view"/>
+              <object class="GtkListView" id="list_view">
+                <property name="single-click-activate">true</property>
+              </object>
             </child>
           </object>
         </child>
