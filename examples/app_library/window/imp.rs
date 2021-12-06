@@ -53,7 +53,7 @@ impl ObjectImpl for Window {
 
         // Setup
         obj.setup_model();
-        // obj.restore_data();
+        obj.restore_data();
         obj.setup_callbacks();
         obj.setup_factory();
     }
