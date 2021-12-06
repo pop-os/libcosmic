@@ -1,4 +1,5 @@
 use gtk4 as gtk;
+use gtk4::ScrolledWindow;
 use std::fs::File;
 
 use glib::signal::Inhibit;
@@ -23,6 +24,8 @@ pub struct Window {
     pub app_model: OnceCell<gio::ListStore>,
     #[template_child]
     pub group_grid_view: TemplateChild<GridView>,
+    #[template_child]
+    pub group_scroll_window: TemplateChild<ScrolledWindow>,
     pub group_model: OnceCell<gio::ListStore>,
 }
 
@@ -50,7 +53,7 @@ impl ObjectImpl for Window {
 
         // Setup
         obj.setup_model();
-        obj.restore_data();
+        // obj.restore_data();
         obj.setup_callbacks();
         obj.setup_factory();
     }

@@ -2,15 +2,14 @@ mod imp;
 use crate::app_group::AppGroup;
 use crate::app_group::AppGroupData;
 use crate::utils::data_path;
+use crate::utils::set_group_scroll_policy;
 use glib::FromVariant;
 use glib::Variant;
 use gtk4 as gtk;
-use gtk4::Button;
 use gtk4::Dialog;
 use gtk4::Entry;
 use gtk4::Label;
 use std::fs::File;
-use std::path::Path;
 
 use crate::grid_item::GridItem;
 use glib::Object;
@@ -39,7 +38,7 @@ impl Window {
         Object::new(&[("application", app)]).expect("Failed to create `Window`.")
     }
 
-    fn app_model(&self) -> &gio::ListStore {
+    fn _app_model(&self) -> &gio::ListStore {
         // Get state
         let imp = imp::Window::from_instance(self);
         imp.app_model.get().expect("Could not get model")
@@ -140,6 +139,7 @@ impl Window {
                 app_names: Vec::new(),
                 category: "Utility".to_string(),
             }),
+            // Example of group with app name
             // AppGroup::new(AppGroupData {
             //     id: 0,
             //     name: "Custom Web".to_string(),
@@ -191,7 +191,14 @@ impl Window {
             .expect("could not downcast sort list model to filter list model");
 
         let entry = &imp.entry;
+        let scroll_window = &imp.group_scroll_window.get();
 
+        // dynamically set scroll method bc of buggy gtk scroll behavior
+        self.group_model().connect_items_changed(
+            glib::clone!(@weak scroll_window => move |scroll_list_model, _i, _rmv_cnt, _add_cnt| {
+                set_group_scroll_policy(&scroll_window, scroll_list_model.n_items());
+            }),
+        );
         // Launch the application when an item of the list is activated
         app_grid_view.connect_activate(move |grid_view, position| {
             let model = grid_view.model().unwrap();
@@ -218,14 +225,16 @@ impl Window {
 
         // on activation change the group filter model to use the app names, and category
         group_grid_view.connect_activate(glib::clone!(@weak app_filter_model, @weak window => move |grid_view, position| {
+            println!("grid view activated.");
             let group_model = grid_view.model().unwrap().downcast::<gtk::SingleSelection>()
                 .expect("could not downcast app group view model to single selection model")
                 .model()
                 .downcast::<gio::ListStore>()
                 .expect("could not downcast app group view selection model to list store model");
-            // if last item in the model, don't change filter, instead show dialog for adding new group!
+
+           // if last item in the model, don't change filter, instead show dialog for adding new group!
             if position == group_model.n_items() - 1 {
-                let entry = Entry::new();
+                let dialog_entry = Entry::new();
                 let label = Label::new(Some("Name"));
                 label.set_justify(gtk4::Justification::Left);
                 label.set_xalign(0.0);
@@ -237,12 +246,11 @@ impl Window {
                     .margin_bottom(12)
                     .margin_end(12)
                     .margin_start(12)
-
                     .build();
                 vbox.append(&label);
-                vbox.append(&entry);
+                vbox.append(&dialog_entry);
 
-               let dialog = Dialog::builder()
+                let dialog = Dialog::builder()
                     .modal(true)
                     .resizable(false)
                     .use_header_bar(true.into())
@@ -251,26 +259,49 @@ impl Window {
                     .title("New App Group")
                     .child(&vbox)
                     .build();
-                dialog.add_buttons(&[("Apply", gtk4::ResponseType::Apply), ("Cancel", gtk4::ResponseType::Cancel)]);
-                // dialog.add_action_widget(&gtk4::Button::new(),  gtk4::ResponseType::Apply);
-                dialog.connect_response(glib::clone!(@weak entry, @weak group_model => move |dialog, response_type| {
-                    println!("dialog should be closing...");
-                    if response_type == gtk4::ResponseType::Apply {
-                        let new_app_group = AppGroup::new(AppGroupData {
-                        id: 0,
-                        name: entry.text().to_string(),
-                        icon: "folder".to_string(),
-                        mutable: true,
-                        app_names: vec![],
-                        category: "".to_string(),
-                    });
-                        group_model.insert(group_model.n_items() - 1, &new_app_group);
+                let app = window
+                    .application()
+                    .expect("could not get application from window");
+
+                dialog.set_application(Some(&app));
+                dialog.add_buttons(&[
+                    ("Apply", gtk4::ResponseType::Apply),
+                    ("Cancel", gtk4::ResponseType::Cancel),
+                ]);
+
+               dialog.connect_response(
+                    glib::clone!(@weak dialog_entry, @weak group_model => move |dialog, response_type| {
+                        println!("dialog should be closing...");
+                        let name = dialog_entry.text().to_string();
+                        if response_type == gtk4::ResponseType::Apply && name != "" {
+                            let new_app_group = AppGroup::new(AppGroupData {
+                                id: 0,
+                                name: name,
+                                icon: "folder".to_string(),
+                                mutable: true,
+                                app_names: vec![],
+                                category: "".to_string(),
+                            });
+                            group_model.insert(group_model.n_items() - 1, &new_app_group);
+                        }
+                        dialog.emit_close();
+                    }),
+                );
+                dialog.connect_is_active_notify(move |win| {
+                    let app = win
+                        .application()
+                        .expect("could not get application from window");
+                    let active_window = app
+                        .active_window()
+                        .expect("no active window available, closing app library.");
+                    dbg!(&active_window);
+                    if win == &active_window && !win.is_active() {
+                        println!("no focus");
+                        // close top level window
+                        window.close();
                     }
-                    dialog.emit_close();
-                }));
-                // let flags = gtk4::DialogFlags::MODAL;
-                // let dialog = Dialog::with_buttons(Some("New App Group"), Some(&window), flags,  &[("Apply", gtk4::ResponseType::Apply), ("Cancel", gtk4::ResponseType::Cancel)]);
-                dialog.present();
+                });
+                dialog.show();
                 return;
             };
             // update the application filter
@@ -308,35 +339,6 @@ impl Window {
             });
             group_filter_model.set_filter(Some(new_filter).as_ref());
         }));
-        // can't listen to select signal on grid view, but this a good to know example...
-        // if group_grid_view.connect_local("select", true, glib::clone!(@weak group_filter_model => @default-return None, move |args| {
-        //     let grid_view = args[0].get::<gtk::GridView>().unwrap();
-        //     let position = args[1].get::<u32>().unwrap();
-        // // on activation change the group filter model to use the app names, and category
-        //     let model = grid_view.model().unwrap();
-        //     let app_info = model
-        //         .item(position)
-        //         .unwrap()
-        //         .downcast::<AppGroup>()
-        //         .unwrap();
-        //     let category: String;
-        //     if let Ok(category_prop) = app_info.property("category") {
-        //         category = category_prop.get::<String>().unwrap_or("".to_string()).to_lowercase();
-        //     } else {
-        //         category = "".to_string();
-        //     }
-        //     let new_filter: gtk::CustomFilter = gtk::CustomFilter::new(move |obj| {
-        //         let app = obj
-        //             .downcast_ref::<gio::DesktopAppInfo>()
-        //             .expect("The Object needs to be of type AppInfo");
-        //         match app.categories() {
-        //             Some(categories) => categories.to_string().to_lowercase().contains(&category),
-        //             None => false,
-        //         }
-        //     });
-        //     group_filter_model.set_filter(Some(new_filter).as_ref());
-        //     None
-        // })).is_err() { println!("Failed to connect to grid view select...") };
 
         entry.connect_changed(
             glib::clone!(@weak app_filter_model, @weak sorted_model => move |search: &gtk::SearchEntry| {
@@ -398,19 +400,18 @@ impl Window {
             window.close();
         }));
         self.add_action(&action_quit);
-
-        // window.connect_is_active_notify(|win| {
-        //     let app = win
-        //         .application()
-        //         .expect("could not get application from window");
-        //     let active_window = app
-        //         .active_window()
-        //         .expect("no active window available, closing app library.");
-        //     dbg!(&active_window);
-        //     if !active_window.is_active() {
-        //         win.close();
-        //     }
-        // });
+        window.connect_is_active_notify(move |win| {
+            let app = win
+                .application()
+                .expect("could not get application from window");
+            let active_window = app
+                .active_window()
+                .expect("no active window available, closing app library.");
+            dbg!(&active_window);
+            if win == &active_window && !win.is_active() {
+                win.close();
+            }
+        });
     }
 
     fn setup_factory(&self) {
@@ -465,9 +466,11 @@ impl Window {
                 .into_iter()
                 .map(|data| AppGroup::new(data).upcast::<Object>())
                 .collect();
+            let scroll_window = &imp::Window::from_instance(self).group_scroll_window;
 
             // Insert restored objects into model
             self.group_model().splice(3, 0, &app_group_objects);
+            set_group_scroll_policy(&scroll_window, self.group_model().n_items());
         } else {
             println!("Backup file does not exist yet {:?}", data_path());
         }
