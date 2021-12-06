@@ -1,10 +1,15 @@
 mod imp;
 use crate::app_group::AppGroup;
 use crate::app_group::AppGroupData;
+use crate::utils::data_path;
 use glib::FromVariant;
 use glib::Variant;
 use gtk4 as gtk;
 use gtk4::Button;
+use gtk4::Dialog;
+use gtk4::Entry;
+use gtk4::Label;
+use std::fs::File;
 use std::path::Path;
 
 use crate::grid_item::GridItem;
@@ -135,14 +140,14 @@ impl Window {
                 app_names: Vec::new(),
                 category: "Utility".to_string(),
             }),
-            AppGroup::new(AppGroupData {
-                id: 0,
-                name: "Custom Web".to_string(),
-                icon: "folder".to_string(),
-                mutable: true,
-                app_names: vec!["Firefox Web Browser".to_string()],
-                category: "".to_string(),
-            }),
+            // AppGroup::new(AppGroupData {
+            //     id: 0,
+            //     name: "Custom Web".to_string(),
+            //     icon: "folder".to_string(),
+            //     mutable: true,
+            //     app_names: vec!["Firefox Web Browser".to_string()],
+            //     category: "".to_string(),
+            // }),
             AppGroup::new(AppGroupData {
                 id: 0,
                 name: "New Group".to_string(),
@@ -212,10 +217,60 @@ impl Window {
         });
 
         // on activation change the group filter model to use the app names, and category
-        group_grid_view.connect_activate(glib::clone!(@weak app_filter_model => move |grid_view, position| {
+        group_grid_view.connect_activate(glib::clone!(@weak app_filter_model, @weak window => move |grid_view, position| {
+            let group_model = grid_view.model().unwrap().downcast::<gtk::SingleSelection>()
+                .expect("could not downcast app group view model to single selection model")
+                .model()
+                .downcast::<gio::ListStore>()
+                .expect("could not downcast app group view selection model to list store model");
             // if last item in the model, don't change filter, instead show dialog for adding new group!
-            if position == grid_view.model().unwrap().n_items() - 1 {
-                println!("TODO: launch action to show the Add/Edit Group Overlay");
+            if position == group_model.n_items() - 1 {
+                let entry = Entry::new();
+                let label = Label::new(Some("Name"));
+                label.set_justify(gtk4::Justification::Left);
+                label.set_xalign(0.0);
+                let vbox = gtk4::Box::builder()
+                    .spacing(12)
+                    .hexpand(true)
+                    .orientation(gtk4::Orientation::Vertical)
+                    .margin_top(12)
+                    .margin_bottom(12)
+                    .margin_end(12)
+                    .margin_start(12)
+
+                    .build();
+                vbox.append(&label);
+                vbox.append(&entry);
+
+               let dialog = Dialog::builder()
+                    .modal(true)
+                    .resizable(false)
+                    .use_header_bar(true.into())
+                    .destroy_with_parent(true)
+                    .transient_for(&window)
+                    .title("New App Group")
+                    .child(&vbox)
+                    .build();
+                dialog.add_buttons(&[("Apply", gtk4::ResponseType::Apply), ("Cancel", gtk4::ResponseType::Cancel)]);
+                // dialog.add_action_widget(&gtk4::Button::new(),  gtk4::ResponseType::Apply);
+                dialog.connect_response(glib::clone!(@weak entry, @weak group_model => move |dialog, response_type| {
+                    println!("dialog should be closing...");
+                    if response_type == gtk4::ResponseType::Apply {
+                        let new_app_group = AppGroup::new(AppGroupData {
+                        id: 0,
+                        name: entry.text().to_string(),
+                        icon: "folder".to_string(),
+                        mutable: true,
+                        app_names: vec![],
+                        category: "".to_string(),
+                    });
+                        group_model.insert(group_model.n_items() - 1, &new_app_group);
+                    }
+                    dialog.emit_close();
+                }));
+                // let flags = gtk4::DialogFlags::MODAL;
+                // let dialog = Dialog::with_buttons(Some("New App Group"), Some(&window), flags,  &[("Apply", gtk4::ResponseType::Apply), ("Cancel", gtk4::ResponseType::Cancel)]);
+                dialog.present();
                 return;
             };
             // update the application filter
@@ -344,11 +399,18 @@ impl Window {
         }));
         self.add_action(&action_quit);
 
-        window.connect_is_active_notify(|win| {
-            if !win.is_active() {
-                win.close();
-            }
-        });
+        // window.connect_is_active_notify(|win| {
+        //     let app = win
+        //         .application()
+        //         .expect("could not get application from window");
+        //     let active_window = app
+        //         .active_window()
+        //         .expect("no active window available, closing app library.");
+        //     dbg!(&active_window);
+        //     if !active_window.is_active() {
+        //         win.close();
+        //     }
+        // });
     }
 
     fn setup_factory(&self) {
@@ -391,5 +453,23 @@ impl Window {
         });
         // Set the factory of the list view
         imp.group_grid_view.set_factory(Some(&group_factory));
+    }
+
+    fn restore_data(&self) {
+        if let Ok(file) = File::open(data_path()) {
+            // Deserialize data from file to vector
+            let backup_data: Vec<AppGroupData> =
+                serde_json::from_reader(file).expect("Could not get backup data from json file.");
+
+            let app_group_objects: Vec<Object> = backup_data
+                .into_iter()
+                .map(|data| AppGroup::new(data).upcast::<Object>())
+                .collect();
+
+            // Insert restored objects into model
+            self.group_model().splice(3, 0, &app_group_objects);
+        } else {
+            println!("Backup file does not exist yet {:?}", data_path());
+        }
     }
 }
