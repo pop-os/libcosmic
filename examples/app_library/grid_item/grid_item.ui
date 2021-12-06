@@ -5,13 +5,14 @@
     <property name="halign">center</property>
     <property name="hexpand">true</property>
     <property name="margin-top">4</property>
+    <property name="margin-start">4</property>
     <property name="margin-end">4</property>
     <property name="margin-bottom">4</property>
     <child>
        <object class="GtkImage" id="image">
          <property name="margin-top">4</property>
          <property name="margin-bottom">4</property>
-         <property name="pixel-size">80</property>
+         <property name="pixel-size">64</property>
        </object>
      </child>
     <child>
