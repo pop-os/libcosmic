@@ -57,7 +57,7 @@ impl GridItem {
                         gtk4::TextDirection::None,
                         gtk4::IconLookupFlags::empty(),
                     ) {
-                        drag.set_icon(Some(&paintable_icon), 0, 0);
+                        drag.set_icon(Some(&paintable_icon), 32, 32);
                     }
                 }
             }
