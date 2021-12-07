@@ -50,7 +50,6 @@
             <property name="propagate-natural-height">true</property>
             <property name="min-content-height">150</property>
             <property name="max-content-height">300</property>
-            <property name="margin-top">12</property>
             <child>
               <object class="GtkGridView" id="group_grid_view">
                 <property name="min-columns">8</property>

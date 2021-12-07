@@ -13,11 +13,14 @@ use window::Window;
 
 fn main() {
     let app = gtk::Application::new(Some("com.cosmic.app_library"), Default::default());
-    app.connect_startup(|_app| load_css());
-
-    app.connect_activate(|app| {
-        build_ui(app);
+    app.connect_startup(|app| {
+        load_css();
+        build_ui(&app);
     });
+
+    // app.connect_activate(|app| {
+    //     build_ui(app);
+    // });
 
     app.run();
 }
