@@ -105,10 +105,16 @@ impl Window {
         let group_filter_model =
             gtk::FilterListModel::new(Some(&search_filter_model), Some(filter).as_ref());
         let sorted_model = gtk::SortListModel::new(Some(&group_filter_model), Some(&sorter));
-        let selection_model = gtk::SingleSelection::new(Some(&sorted_model));
+        let selection_model = gtk::SingleSelection::builder()
+            .model(&sorted_model)
+            .autoselect(false)
+            .can_unselect(true)
+            .selected(gtk4::INVALID_LIST_POSITION)
+            .build();
 
         // Wrap model with selection and pass it to the list view
         imp.app_grid_view.set_model(Some(&selection_model));
+        selection_model.unselect_all();
 
         let group_model = gio::ListStore::new(AppGroup::static_type());
         imp.group_model
@@ -171,24 +177,30 @@ impl Window {
         let window = self.clone().upcast::<gtk::Window>();
         let app_grid_view = &imp.app_grid_view;
         let group_grid_view = &imp.group_grid_view;
-        let sorted_model = app_grid_view
+        let app_selection_model = app_grid_view
             .model()
             .expect("List view missing selection model")
             .downcast::<gtk::SingleSelection>()
-            .expect("could not downcast listview model to single selection model")
+            .expect("could not downcast listview model to single selection model");
+        let app_sorted_model = app_selection_model
             .model()
             .downcast::<gtk::SortListModel>()
             .expect("sorted list model could not be downcast");
-        let group_filter_model = sorted_model
+        let app_group_filter_model = app_sorted_model
             .model()
             .expect("missing model for sort list model.")
             .downcast::<gtk::FilterListModel>()
             .expect("could not downcast sort list model to filter list model");
-        let app_filter_model = group_filter_model
+        let app_filter_model = app_group_filter_model
             .model()
             .expect("missing model for sort list model.")
             .downcast::<gtk::FilterListModel>()
             .expect("could not downcast sort list model to filter list model");
+        let group_selection_model = group_grid_view
+            .model()
+            .expect("List view missing selection model")
+            .downcast::<gtk::SingleSelection>()
+            .expect("could not downcast listview model to single selection model");
 
         let entry = &imp.entry;
         let scroll_window = &imp.group_scroll_window.get();
@@ -199,35 +211,34 @@ impl Window {
                 set_group_scroll_policy(&scroll_window, scroll_list_model.n_items());
             }),
         );
-        // Launch the application when an item of the list is activated
-        app_grid_view.connect_activate(move |grid_view, position| {
-            let model = grid_view.model().unwrap();
-            let app_info = model
-                .item(position)
-                .unwrap()
-                .downcast::<gio::DesktopAppInfo>()
-                .unwrap();
+        app_selection_model.connect_selected_notify(glib::clone!(@weak window => move |model| {
+             // on activation change the group filter model to use the app names, and category
+            let position = model.selected();
+            println!("selected app {}", position);
+            // Launch the application when an item of the list is activated
+            if let Some(item) = model.item(position) {
+                let app_info = item.downcast::<gio::DesktopAppInfo>().unwrap();
+                let context = window.display().app_launch_context();
+                if let Err(err) = app_info.launch(&[], Some(&context)) {
+                    gtk::MessageDialog::builder()
+                        .text(&format!("Failed to start {}", app_info.name()))
+                        .secondary_text(&err.to_string())
+                        .message_type(gtk::MessageType::Error)
+                        .modal(true)
+                        .transient_for(&window)
+                        .build()
+                        .show();
+                }
 
-            let context = grid_view.display().app_launch_context();
-            if let Err(err) = app_info.launch(&[], Some(&context)) {
-                let parent_window = grid_view.root().unwrap().downcast::<gtk::Window>().unwrap();
-
-                gtk::MessageDialog::builder()
-                    .text(&format!("Failed to start {}", app_info.name()))
-                    .secondary_text(&err.to_string())
-                    .message_type(gtk::MessageType::Error)
-                    .modal(true)
-                    .transient_for(&parent_window)
-                    .build()
-                    .show();
             }
-        });
+        }));
 
-        // on activation change the group filter model to use the app names, and category
-        group_grid_view.connect_activate(glib::clone!(@weak app_filter_model, @weak window => move |grid_view, position| {
-            println!("grid view activated.");
-            let group_model = grid_view.model().unwrap().downcast::<gtk::SingleSelection>()
-                .expect("could not downcast app group view model to single selection model")
+        group_selection_model.connect_selected_notify(glib::clone!(@weak app_filter_model, @weak window => move |group_selection_model| {
+            // on activation change the group filter model to use the app names, and category
+            let position = group_selection_model.selected();
+            println!("grid view activated. {}", position);
+        // group_grid_view.connect_activate(glib::clone!(@weak app_filter_model, @weak window => move |grid_view, position| {
+            let group_model = group_selection_model
                 .model()
                 .downcast::<gio::ListStore>()
                 .expect("could not downcast app group view selection model to list store model");
@@ -270,7 +281,7 @@ impl Window {
                 ]);
 
                dialog.connect_response(
-                    glib::clone!(@weak dialog_entry, @weak group_model => move |dialog, response_type| {
+                    glib::clone!(@weak dialog_entry, @weak group_selection_model, @weak group_model => move |dialog, response_type| {
                         println!("dialog should be closing...");
                         let name = dialog_entry.text().to_string();
                         if response_type == gtk4::ResponseType::Apply && name != "" {
@@ -283,6 +294,9 @@ impl Window {
                                 category: "".to_string(),
                             });
                             group_model.insert(group_model.n_items() - 1, &new_app_group);
+                            group_selection_model.set_selected(position - 1);
+                        } else {
+                            group_selection_model.set_selected(0);
                         }
                         dialog.emit_close();
                     }),
@@ -305,8 +319,7 @@ impl Window {
                 return;
             };
             // update the application filter
-            let model = grid_view.model().unwrap();
-            let app_info = model
+            let app_info = group_model
                 .item(position)
                 .unwrap()
                 .downcast::<AppGroup>()
@@ -337,11 +350,11 @@ impl Window {
                     None => false,
                 }
             });
-            group_filter_model.set_filter(Some(new_filter).as_ref());
+            app_group_filter_model.set_filter(Some(new_filter).as_ref());
         }));
 
         entry.connect_changed(
-            glib::clone!(@weak app_filter_model, @weak sorted_model => move |search: &gtk::SearchEntry| {
+            glib::clone!(@weak app_filter_model, @weak app_sorted_model => move |search: &gtk::SearchEntry| {
                 let search_text = search.text().to_string().to_lowercase();
                 let new_filter: gtk::CustomFilter = gtk::CustomFilter::new(move |obj| {
                     let search_res = obj.downcast_ref::<gio::DesktopAppInfo>()
@@ -375,7 +388,7 @@ impl Window {
                 });
 
                 app_filter_model.set_filter(Some(new_filter).as_ref());
-                sorted_model.set_sorter(Some(new_sorter).as_ref());
+                app_sorted_model.set_sorter(Some(new_sorter).as_ref());
             }),
         );
 
