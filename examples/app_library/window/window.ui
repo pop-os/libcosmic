@@ -29,7 +29,7 @@
               <object class="GtkGridView" id="app_grid_view">
                 <property name="min-columns">7</property>
                 <property name="max-columns">7</property>
-                <property name="single-click-activate">true</property>
+                <property name="single-click-activate">false</property>
                 <property name="enable-rubberband">false</property>
               </object>
             </child>
@@ -54,7 +54,7 @@
               <object class="GtkGridView" id="group_grid_view">
                 <property name="min-columns">8</property>
                 <property name="max-columns">8</property>
-                <property name="single-click-activate">true</property>
+                <property name="single-click-activate">false</property>
                 <property name="enable-rubberband">false</property>
               </object>
             </child>

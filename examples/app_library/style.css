@@ -1,1 +1,9 @@
 
+child:hover {
+    transition: 100ms;
+    background: #a6a6a6;
+}
+child {
+    border-radius: 5px;
+}
+
