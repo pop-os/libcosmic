@@ -1,9 +1,14 @@
-
 child:hover {
     transition: 100ms;
-    background: #a6a6a6;
+    background: #b1a6a6;
 }
 child {
     border-radius: 5px;
 }
-
+gridview {
+    background: #474141;
+}
+window {
+    background: #474141;
+    border-radius: 15px;
+}
