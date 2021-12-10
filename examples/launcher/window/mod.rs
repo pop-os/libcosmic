@@ -40,7 +40,12 @@ impl Window {
         let model = gio::ListStore::new(ApplicationObject::static_type());
 
         let slice_model = gtk::SliceListModel::new(Some(&model), 0, NUM_LAUNCHER_ITEMS.into());
-        let selection_model = gtk::SingleSelection::new(Some(&slice_model));
+        let selection_model = gtk::SingleSelection::builder()
+            .model(&slice_model)
+            .autoselect(false)
+            .can_unselect(true)
+            .selected(gtk4::INVALID_LIST_POSITION)
+            .build();
 
         imp.model.set(model).expect("Could not set model");
         // Wrap model with selection and pass it to the list view
@@ -77,9 +82,16 @@ impl Window {
                 }
             }));
         }
-        list_view.connect_activate(move |list_view, i| {
+
+        let app_selection_model = list_view
+            .model()
+            .expect("List view missing selection model")
+            .downcast::<gtk::SingleSelection>()
+            .expect("could not downcast listview model to single selection model");
+
+        app_selection_model.connect_selected_notify(glib::clone!(@weak window => move |model| {
+            let i = model.selected();
             println!("acitvating... {}", i + 1);
-            let model = list_view.model().unwrap();
             let app_info = model.item(i);
             if app_info.is_none() {
                 println!("oops no app for this row...");
@@ -95,9 +107,9 @@ impl Window {
                     }
                 });
             }
-        });
+        }));
 
-        entry.connect_changed(move |search: &gtk::Entry| {
+        entry.connect_changed(glib::clone!(@weak lv => move |search: &gtk::Entry| {
             let search = search.text().to_string();
 
             glib::MainContext::default().spawn_local(async move {
@@ -106,9 +118,9 @@ impl Window {
                     let _ = tx.send(crate::Event::Search(search)).await;
                 }
             });
-        });
+        }));
 
-        entry.connect_realize(move |search: &gtk::Entry| {
+        entry.connect_realize(glib::clone!(@weak lv => move |search: &gtk::Entry| {
             let search = search.text().to_string();
 
             glib::MainContext::default().spawn_local(async move {
@@ -117,7 +129,7 @@ impl Window {
                     let _ = tx.send(crate::Event::Search(search)).await;
                 }
             });
-        });
+        }));
 
         window.connect_realize(move |window| {
             if let Some((display, surface)) = x::get_window_x11(window) {
