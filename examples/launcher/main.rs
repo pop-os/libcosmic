@@ -98,7 +98,6 @@ fn main() {
         };
 
         let window = Window::new(app);
-        let wclone = window.clone();
         window.show();
 
         glib::MainContext::default().spawn_local(async move {
@@ -131,7 +130,7 @@ fn main() {
                                 DesktopAppInfo::new(&path.file_name().expect("desktop entry path needs to be a valid filename").to_string_lossy())
                                     .expect("failed to create a Desktop App info for launching the application.");
                             app_info
-                                .launch(&[], Some(&wclone.display().app_launch_context().clone())).expect("failed to launch the application.");
+                                .launch(&[], Some(&window.display().app_launch_context())).expect("failed to launch the application.");
                         }
                     }
                 }
