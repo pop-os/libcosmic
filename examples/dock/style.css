@@ -1,0 +1,14 @@
+row:hover {
+    transition: 100ms;
+    background: #888888;
+}
+row {
+    background: #333333;
+}
+listview {
+    background: #333333;
+}
+window {
+    background: #333333;
+    border-radius: 15px;
+}
