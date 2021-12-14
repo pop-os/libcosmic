@@ -6,6 +6,7 @@ use gio::DesktopAppInfo;
 use gtk::Application;
 use gtk4 as gtk;
 use gtk4::CssProvider;
+use gtk4::Revealer;
 use gtk4::StyleContext;
 use once_cell::sync::OnceCell;
 
@@ -98,14 +99,12 @@ fn main() {
             std::process::exit(1);
         };
 
-        let (conn, screen_num) = x11rb::connect(None).expect("Failed to connect to X");
+        let (conn, _screen_num) = x11rb::connect(None).expect("Failed to connect to X");
         if X11_CONN.set(conn).is_err() {
             println!("failed to set X11_CONN. Exiting");
             std::process::exit(1);
         };
-       
         let window = Window::new(app);
-        let wclone = window.clone();
         window.show();
 
         glib::MainContext::default().spawn_local(async move {
@@ -138,7 +137,7 @@ fn main() {
                                 DesktopAppInfo::new(&path.file_name().expect("desktop entry path needs to be a valid filename").to_string_lossy())
                                     .expect("failed to create a Desktop App info for launching the application.");
                             app_info
-                                .launch(&[], Some(&wclone.display().app_launch_context().clone())).expect("failed to launch the application.");
+                                .launch(&[], Some(&window.display().app_launch_context())).expect("failed to launch the application.");
                         }
                     }
                 }

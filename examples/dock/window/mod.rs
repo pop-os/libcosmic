@@ -7,6 +7,7 @@ use gdk4::Surface;
 use gdk4_x11::X11Surface;
 use gtk4 as gtk;
 use gtk4::Allocation;
+use gtk4::EventControllerMotion;
 use postage::prelude::Sink;
 use x11rb::connection::Connection;
 use x11rb::protocol::xproto::ConnectionExt;
@@ -62,8 +63,15 @@ impl Window {
         // Get state
         let imp = imp::Window::from_instance(self);
         let window = self.clone().upcast::<gtk::Window>();
-        let list_view = &imp.list_view;
-        let lv = list_view.get();
+        // let list_view = &imp.list_view;
+        // let lv = list_view.get();
+
+        // let revealer = Revealer::builder()
+        //     .child(&window)
+        //     .reveal_child(false)
+        //     .transition_duration(200)
+        //     .transition_type(gtk4::RevealerTransitionType::SlideUp)
+        //     .build();
 
         // let app_selection_model = list_view
         //     .model()
@@ -91,6 +99,16 @@ impl Window {
         //     }
         // }));
 
+        let event_controller = &imp.event_controller.get().unwrap();
+        let revealer = &imp.revealer.get();
+        window.connect_show(
+            glib::clone!(@weak revealer, @weak event_controller => move |_| {
+                dbg!(!event_controller.contains_pointer());
+                if !event_controller.contains_pointer() {
+                    revealer.set_reveal_child(false);
+                }
+            }),
+        );
         window.connect_realize(move |window| {
             if let Some((display, surface)) = x::get_window_x11(window) {
                 unsafe {
@@ -143,10 +161,34 @@ impl Window {
                 s.connect_height_notify(surface_resize_handler.clone());
                 s.connect_width_notify(surface_resize_handler.clone());
                 s.connect_scale_factor_notify(surface_resize_handler);
+                // s.connect_enter_monitor(glib::clone!(@weak rv => move |s, monitor| {
+                //     monitor.connect_connector_notify
+                // }));
             } else {
                 println!("failed to get X11 window");
             }
         });
+        event_controller.connect_enter(glib::clone!(@weak revealer => move |_evc, _x, _y| {
+            dbg!("hello, mouse entered me :)");
+            revealer.set_reveal_child(true);
+        }));
+        event_controller.connect_leave(glib::clone!(@weak revealer => move |_evc| {
+            dbg!("hello, mouse left me :)");
+            revealer.set_reveal_child(false);
+        }));
+    }
+
+    fn setup_event_controller(&self) {
+        let imp = imp::Window::from_instance(self);
+        let window = &imp.revealer.get();
+        let ev = EventControllerMotion::builder()
+            .propagation_limit(gtk4::PropagationLimit::None)
+            .propagation_phase(gtk4::PropagationPhase::Capture)
+            .build();
+        window.add_controller(&ev);
+        imp.event_controller
+            .set(ev)
+            .expect("Could not set event controller");
     }
 
     fn setup_factory(&self) {
@@ -174,6 +216,6 @@ impl Window {
         // });
         // Set the factory of the list view
         let imp = imp::Window::from_instance(self);
-        imp.list_view.set_factory(Some(&factory));
+        // imp.list_view.set_factory(Some(&factory));
     }
 }

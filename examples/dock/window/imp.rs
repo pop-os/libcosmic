@@ -1,4 +1,7 @@
 use gtk4 as gtk;
+use gtk4::EventController;
+use gtk4::EventControllerMotion;
+use gtk4::Revealer;
 
 use glib::subclass::InitializingObject;
 use gtk::prelude::*;
@@ -11,9 +14,12 @@ use once_cell::sync::OnceCell;
 #[derive(CompositeTemplate, Default)]
 #[template(file = "window.ui")]
 pub struct Window {
+    // #[template_child]
+    // pub list_view: TemplateChild<ListView>,
     #[template_child]
-    pub list_view: TemplateChild<ListView>,
+    pub revealer: TemplateChild<Revealer>,
     pub model: OnceCell<gio::ListStore>,
+    pub event_controller: OnceCell<EventControllerMotion>,
 }
 
 // The central trait for subclassing a GObject
@@ -39,6 +45,7 @@ impl ObjectImpl for Window {
         self.parent_constructed(obj);
 
         // Setup
+        obj.setup_event_controller();
         obj.setup_model();
         obj.setup_callbacks();
         obj.setup_factory();
