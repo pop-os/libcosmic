@@ -102,18 +102,17 @@ impl Window {
                         &[x::Atom::new(&display, "_NET_WM_WINDOW_TYPE_DOCK").unwrap()],
                     );
                 }
-                let s = window.surface().unwrap();
-
-                s.connect_height_notify(glib::clone!(@weak window => move |s| {
+                let s = window.surface().expect("Failed to get Surface for Window");
+                let surface_resize_handler = glib::clone!(@weak window => move |s: &Surface| {
                     if let Some((display, _surface)) = x::get_window_x11(&window) {
                         let width = s.width() * s.scale_factor();
                         let height = s.height() * s.scale_factor();
                         let monitor = display
-                            .monitor_at_surface(s)
+                            .primary_monitor()
                             .expect("Failed to get Monitor");
                         let Rectangle {
-                            x: _,
-                            y: _,
+                            x: monitor_x,
+                            y: monitor_y,
                             width: monitor_width,
                             height: monitor_height,
                         } = monitor.geometry();
@@ -122,8 +121,8 @@ impl Window {
                         dbg!(width);
                         dbg!(height);
                         let w_conf = xproto::ConfigureWindowAux::default()
-                            .x(monitor_width / 2 - width / 2)
-                            .y(monitor_height - height);
+                            .x(monitor_x + monitor_width / 2 - width / 2)
+                            .y(monitor_y + monitor_height - height);
                         let conn = X11_CONN.get().expect("Failed to get X11_CONN");
 
                         let x11surface = gdk4_x11::X11Surface::xid(
@@ -140,7 +139,10 @@ impl Window {
                    } else {
                         println!("failed to get X11 window");
                     }
-                }));
+                });
+                s.connect_height_notify(surface_resize_handler.clone());
+                s.connect_width_notify(surface_resize_handler.clone());
+                s.connect_scale_factor_notify(surface_resize_handler);
             } else {
                 println!("failed to get X11 window");
             }
