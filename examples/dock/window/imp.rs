@@ -1,5 +1,4 @@
 use gtk4 as gtk;
-use gtk4::EventController;
 use gtk4::EventControllerMotion;
 use gtk4::Revealer;
 
@@ -7,15 +6,15 @@ use glib::subclass::InitializingObject;
 use gtk::prelude::*;
 use gtk::subclass::prelude::*;
 use gtk::{gio, glib};
-use gtk::{CompositeTemplate, Entry, ListView};
+use gtk::{CompositeTemplate, ListView};
 use once_cell::sync::OnceCell;
 
 // Object holding the state
 #[derive(CompositeTemplate, Default)]
 #[template(file = "window.ui")]
 pub struct Window {
-    // #[template_child]
-    // pub list_view: TemplateChild<ListView>,
+    #[template_child]
+    pub list_view: TemplateChild<ListView>,
     #[template_child]
     pub revealer: TemplateChild<Revealer>,
     pub model: OnceCell<gio::ListStore>,

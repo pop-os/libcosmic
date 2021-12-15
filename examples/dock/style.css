@@ -1,13 +1,21 @@
 row:hover {
     transition: 100ms;
     background: #888888;
+    border-radius: 10px;
 }
 row {
     background: #333333;
+    border-radius: 10px;
 }
 listview {
+    border-radius: 10px;
     background: #333333;
 }
 window {
     background: rgba(50,50,50,0.0);
+}
+box#dock-container {
+    padding-right: 10px;
+    border-radius: 10px;
+    background: #333333;
 }
