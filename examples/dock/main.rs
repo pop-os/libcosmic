@@ -120,7 +120,7 @@ fn main() {
 
                     Event::Response(event) => {
                         if let pop_launcher::Response::Update(results) = event {
-                            let model = window.model();
+                            let model = window.saved_app_model();
                             let model_len = model.n_items();
                             dbg!(&results);
                             let new_results: Vec<glib::Object> = results

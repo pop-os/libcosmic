@@ -33,23 +33,25 @@ impl Window {
         self_
     }
 
-    pub fn model(&self) -> &gio::ListStore {
+    pub fn saved_app_model(&self) -> &gio::ListStore {
         // Get state
         let imp = imp::Window::from_instance(self);
-        imp.model.get().expect("Could not get model")
+        imp.saved_app_model
+            .get()
+            .expect("Could not get saved_app_model")
     }
 
     fn setup_model(&self) {
         // Get state and set model
 
         let imp = imp::Window::from_instance(self);
-        let model = gio::ListStore::new(DesktopAppInfo::static_type());
+        let saved_app_model = gio::ListStore::new(DesktopAppInfo::static_type());
 
         let selection_model = gtk::SingleSelection::builder()
             .autoselect(false)
             .can_unselect(true)
             .selected(gtk4::INVALID_LIST_POSITION)
-            .model(&model)
+            .model(&saved_app_model)
             .build();
         xdg::BaseDirectories::new()
             .expect("could not access XDG Base directory")
@@ -69,7 +71,7 @@ impl Window {
                                             && defaults.contains(&app_info.name().as_str())
                                         {
                                             dbg!(app_info.name());
-                                            model.append(&app_info)
+                                            saved_app_model.append(&app_info)
                                         } else {
                                             // println!("Ignoring {}", path);
                                         }
@@ -83,42 +85,46 @@ impl Window {
                 }
             });
 
-        imp.model.set(model).expect("Could not set model");
+        imp.saved_app_model
+            .set(saved_app_model)
+            .expect("Could not set model");
         // Wrap model with selection and pass it to the list view
-        imp.list_view.set_model(Some(&selection_model));
+        imp.saved_app_list_view.set_model(Some(&selection_model));
     }
 
     fn setup_callbacks(&self) {
         // Get state
         let imp = imp::Window::from_instance(self);
         let window = self.clone().upcast::<gtk::Window>();
-        let list_view = &imp.list_view;
+        let saved_app_list_view = &imp.saved_app_list_view;
 
-        let app_selection_model = list_view
+        let saved_app_selection_model = saved_app_list_view
             .model()
             .expect("List view missing selection model")
             .downcast::<gtk::SingleSelection>()
             .expect("could not downcast listview model to single selection model");
 
-        app_selection_model.connect_selected_notify(glib::clone!(@weak window => move |model| {
-            let position = model.selected();
-            println!("selected app {}", position);
-            // Launch the application when an item of the list is activated
-            if let Some(item) = model.item(position) {
-                let app_info = item.downcast::<gio::DesktopAppInfo>().unwrap();
-                let context = window.display().app_launch_context();
-                if let Err(err) = app_info.launch(&[], Some(&context)) {
-                    gtk::MessageDialog::builder()
-                        .text(&format!("Failed to start {}", app_info.name()))
-                        .secondary_text(&err.to_string())
-                        .message_type(gtk::MessageType::Error)
-                        .modal(true)
-                        .transient_for(&window)
-                        .build()
-                        .show();
+        saved_app_selection_model.connect_selected_notify(
+            glib::clone!(@weak window => move |model| {
+                let position = model.selected();
+                println!("selected app {}", position);
+                // Launch the application when an item of the list is activated
+                if let Some(item) = model.item(position) {
+                    let app_info = item.downcast::<gio::DesktopAppInfo>().unwrap();
+                    let context = window.display().app_launch_context();
+                    if let Err(err) = app_info.launch(&[], Some(&context)) {
+                        gtk::MessageDialog::builder()
+                            .text(&format!("Failed to start {}", app_info.name()))
+                            .secondary_text(&err.to_string())
+                            .message_type(gtk::MessageType::Error)
+                            .modal(true)
+                            .transient_for(&window)
+                            .build()
+                            .show();
+                    }
                 }
-            }
-        }));
+            }),
+        );
 
         let enter_event_controller = &imp.enter_event_controller.get().unwrap();
         let leave_event_controller = &imp.leave_event_controller.get().unwrap();
@@ -242,6 +248,6 @@ impl Window {
         });
         // Set the factory of the list view
         let imp = imp::Window::from_instance(self);
-        imp.list_view.set_factory(Some(&factory));
+        imp.saved_app_list_view.set_factory(Some(&factory));
     }
 }

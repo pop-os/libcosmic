@@ -15,14 +15,17 @@ use once_cell::sync::OnceCell;
 #[template(file = "window.ui")]
 pub struct Window {
     #[template_child]
-    pub list_view: TemplateChild<ListView>,
+    pub saved_app_list_view: TemplateChild<ListView>,
+    #[template_child]
+    pub unsaved_open_app_list_view: TemplateChild<ListView>,
     #[template_child]
     pub revealer: TemplateChild<Revealer>,
     #[template_child]
     pub cursor_enter_handle: TemplateChild<Box>,
     #[template_child]
     pub cursor_leave_handle: TemplateChild<Box>,
-    pub model: OnceCell<gio::ListStore>,
+    pub saved_app_model: OnceCell<gio::ListStore>,
+    pub unsaved_open_app_model: OnceCell<gio::ListStore>,
     pub enter_event_controller: OnceCell<EventControllerMotion>,
     pub leave_event_controller: OnceCell<EventControllerMotion>,
 }
