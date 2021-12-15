@@ -120,12 +120,13 @@ impl Window {
             }
         }));
 
-        let event_controller = &imp.event_controller.get().unwrap();
+        let enter_event_controller = &imp.enter_event_controller.get().unwrap();
+        let leave_event_controller = &imp.leave_event_controller.get().unwrap();
         let revealer = &imp.revealer.get();
         window.connect_show(
-            glib::clone!(@weak revealer, @weak event_controller => move |_| {
-                dbg!(!event_controller.contains_pointer());
-                if !event_controller.contains_pointer() {
+            glib::clone!(@weak revealer, @weak leave_event_controller => move |_| {
+                dbg!(!leave_event_controller.contains_pointer());
+                if !leave_event_controller.contains_pointer() {
                     revealer.set_reveal_child(false);
                 }
             }),
@@ -186,11 +187,11 @@ impl Window {
                 println!("failed to get X11 window");
             }
         });
-        event_controller.connect_enter(glib::clone!(@weak revealer => move |_evc, _x, _y| {
+        enter_event_controller.connect_enter(glib::clone!(@weak revealer => move |_evc, _x, _y| {
             dbg!("hello, mouse entered me :)");
             revealer.set_reveal_child(true);
         }));
-        event_controller.connect_leave(glib::clone!(@weak revealer => move |_evc| {
+        leave_event_controller.connect_leave(glib::clone!(@weak revealer => move |_evc| {
             dbg!("hello, mouse left me :)");
             revealer.set_reveal_child(false);
         }));
@@ -198,14 +199,24 @@ impl Window {
 
     fn setup_event_controller(&self) {
         let imp = imp::Window::from_instance(self);
-        let window = &imp.revealer.get();
-        let ev = EventControllerMotion::builder()
+        let enter_handle = &imp.cursor_enter_handle.get();
+        let enter_ev = EventControllerMotion::builder()
             .propagation_limit(gtk4::PropagationLimit::None)
             .propagation_phase(gtk4::PropagationPhase::Capture)
             .build();
-        window.add_controller(&ev);
-        imp.event_controller
-            .set(ev)
+        enter_handle.add_controller(&enter_ev);
+        let leave_handle = &imp.cursor_leave_handle.get();
+        let leave_ev = EventControllerMotion::builder()
+            .propagation_limit(gtk4::PropagationLimit::None)
+            .propagation_phase(gtk4::PropagationPhase::Capture)
+            .build();
+        enter_handle.add_controller(&enter_ev);
+        leave_handle.add_controller(&leave_ev);
+        imp.enter_event_controller
+            .set(enter_ev)
+            .expect("Could not set event controller");
+        imp.leave_event_controller
+            .set(leave_ev)
             .expect("Could not set event controller");
     }
 
