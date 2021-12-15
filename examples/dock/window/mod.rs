@@ -1,14 +1,13 @@
 mod imp;
 // use crate::ApplicationObject;
-use crate::TX;
+use crate::dock_item::DockItem;
 use crate::X11_CONN;
 use gdk4::Rectangle;
 use gdk4::Surface;
 use gdk4_x11::X11Surface;
+use gio::DesktopAppInfo;
 use gtk4 as gtk;
-use gtk4::Allocation;
 use gtk4::EventControllerMotion;
-use postage::prelude::Sink;
 use x11rb::connection::Connection;
 use x11rb::protocol::xproto::ConnectionExt;
 
@@ -28,8 +27,6 @@ glib::wrapper! {
                     gtk::ConstraintTarget, gtk::Native, gtk::Root, gtk::ShortcutManager;
 }
 
-const NUM_LAUNCHER_ITEMS: u8 = 9;
-
 impl Window {
     pub fn new(app: &Application) -> Self {
         let self_: Self = Object::new(&[("application", app)]).expect("Failed to create `Window`.");
@@ -44,60 +41,84 @@ impl Window {
 
     fn setup_model(&self) {
         // Get state and set model
+
         let imp = imp::Window::from_instance(self);
-        // let model = gio::ListStore::new(ApplicationObject::static_type());
+        let model = gio::ListStore::new(DesktopAppInfo::static_type());
 
-        // let selection_model = gtk::SingleSelection::builder()
-        //     .model(&slice_model)
-        //     .autoselect(false)
-        //     .can_unselect(true)
-        //     .selected(gtk4::INVALID_LIST_POSITION)
-        //     .build();
+        let selection_model = gtk::SingleSelection::builder()
+            .autoselect(false)
+            .can_unselect(true)
+            .selected(gtk4::INVALID_LIST_POSITION)
+            .model(&model)
+            .build();
+        xdg::BaseDirectories::new()
+            .expect("could not access XDG Base directory")
+            .get_data_dirs()
+            .iter_mut()
+            .for_each(|xdg_data_path| {
+                let defaults = ["Firefox Web Browser", "Files", "Terminal", "Pop!_Shop"];
+                xdg_data_path.push("applications");
+                dbg!(&xdg_data_path);
+                if let Ok(dir_iter) = std::fs::read_dir(xdg_data_path) {
+                    dir_iter.for_each(|dir_entry| {
+                        if let Ok(dir_entry) = dir_entry {
+                            if let Some(path) = dir_entry.path().file_name() {
+                                if let Some(path) = path.to_str() {
+                                    if let Some(app_info) = gio::DesktopAppInfo::new(path) {
+                                        if app_info.should_show()
+                                            && defaults.contains(&app_info.name().as_str())
+                                        {
+                                            dbg!(app_info.name());
+                                            model.append(&app_info)
+                                        } else {
+                                            // println!("Ignoring {}", path);
+                                        }
+                                    } else {
+                                        // println!("error loading {}", path);
+                                    }
+                                }
+                            }
+                        }
+                    })
+                }
+            });
 
-        // imp.model.set(model).expect("Could not set model");
-        // // Wrap model with selection and pass it to the list view
-        // imp.list_view.set_model(Some(&selection_model));
+        imp.model.set(model).expect("Could not set model");
+        // Wrap model with selection and pass it to the list view
+        imp.list_view.set_model(Some(&selection_model));
     }
 
     fn setup_callbacks(&self) {
         // Get state
         let imp = imp::Window::from_instance(self);
         let window = self.clone().upcast::<gtk::Window>();
-        // let list_view = &imp.list_view;
-        // let lv = list_view.get();
+        let list_view = &imp.list_view;
 
-        // let revealer = Revealer::builder()
-        //     .child(&window)
-        //     .reveal_child(false)
-        //     .transition_duration(200)
-        //     .transition_type(gtk4::RevealerTransitionType::SlideUp)
-        //     .build();
+        let app_selection_model = list_view
+            .model()
+            .expect("List view missing selection model")
+            .downcast::<gtk::SingleSelection>()
+            .expect("could not downcast listview model to single selection model");
 
-        // let app_selection_model = list_view
-        //     .model()
-        //     .expect("List view missing selection model")
-        //     .downcast::<gtk::SingleSelection>()
-        //     .expect("could not downcast listview model to single selection model");
-
-        // app_selection_model.connect_selected_notify(glib::clone!(@weak window => move |model| {
-        //     let i = model.selected();
-        //     println!("acitvating... {}", i + 1);
-        //     let app_info = model.item(i);
-        //     if app_info.is_none() {
-        //         println!("oops no app for this row...");
-        //         return;
-        //     }
-        //     if let Ok(id) = app_info.unwrap().property("id") {
-        //         let id = id.get::<u32>().expect("App ID must be u32");
-
-        //         glib::MainContext::default().spawn_local(async move {
-        //             if let Some(tx) = TX.get() {
-        //                 let mut tx = tx.clone();
-        //                 let _ = tx.send(crate::Event::Activate(id)).await;
-        //             }
-        //         });
-        //     }
-        // }));
+        app_selection_model.connect_selected_notify(glib::clone!(@weak window => move |model| {
+            let position = model.selected();
+            println!("selected app {}", position);
+            // Launch the application when an item of the list is activated
+            if let Some(item) = model.item(position) {
+                let app_info = item.downcast::<gio::DesktopAppInfo>().unwrap();
+                let context = window.display().app_launch_context();
+                if let Err(err) = app_info.launch(&[], Some(&context)) {
+                    gtk::MessageDialog::builder()
+                        .text(&format!("Failed to start {}", app_info.name()))
+                        .secondary_text(&err.to_string())
+                        .message_type(gtk::MessageType::Error)
+                        .modal(true)
+                        .transient_for(&window)
+                        .build()
+                        .show();
+                }
+            }
+        }));
 
         let event_controller = &imp.event_controller.get().unwrap();
         let revealer = &imp.revealer.get();
@@ -161,9 +182,6 @@ impl Window {
                 s.connect_height_notify(surface_resize_handler.clone());
                 s.connect_width_notify(surface_resize_handler.clone());
                 s.connect_scale_factor_notify(surface_resize_handler);
-                // s.connect_enter_monitor(glib::clone!(@weak rv => move |s, monitor| {
-                //     monitor.connect_connector_notify
-                // }));
             } else {
                 println!("failed to get X11 window");
             }
@@ -193,29 +211,26 @@ impl Window {
 
     fn setup_factory(&self) {
         let factory = SignalListItemFactory::new();
-        // factory.connect_setup(move |_, list_item| {
-        //     let row = ApplicationRow::new():q ;
-        //     list_item.set_child(Some(&row))
-        // });
-        // factory.connect_bind(move |_, list_item| {
-        //     let application_object = list_item
-        //         .item()
-        //         .expect("The item has to exist.")
-        //         .downcast::<ApplicationObject>()
-        //         .expect("The item has to be an `ApplicationObject`");
-        //     let row = list_item
-        //         .child()
-        //         .expect("The list item child needs to exist.")
-        //         .downcast::<ApplicationRow>()
-        //         .expect("The list item type needs to be `ApplicationRow`");
-        //     if list_item.position() < 9 {
-        //         row.set_shortcut(list_item.position() + 1);
-        //     }
+        factory.connect_setup(move |_, list_item| {
+            let dock_item = DockItem::new();
+            list_item.set_child(Some(&dock_item));
+        });
+        factory.connect_bind(move |_, list_item| {
+            let application_object = list_item
+                .item()
+                .expect("The item has to exist.")
+                .downcast::<DesktopAppInfo>()
+                .expect("The item has to be a `DesktopAppInfo`");
+            let dock_item = list_item
+                .child()
+                .expect("The list item child needs to exist.")
+                .downcast::<DockItem>()
+                .expect("The list item type needs to be `DockItem`");
 
-        //     row.set_app_info(application_object);
-        // });
+            dock_item.set_app_info(&application_object);
+        });
         // Set the factory of the list view
         let imp = imp::Window::from_instance(self);
-        // imp.list_view.set_factory(Some(&factory));
+        imp.list_view.set_factory(Some(&factory));
     }
 }

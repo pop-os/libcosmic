@@ -1,59 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <interface>
-  <template class="ApplicationRow" parent="GtkBox">
+  <template class="DockItem" parent="GtkBox">
     <property name="orientation">vertical</property>
     <property name="spacing">4</property>
-    <property name="margin-start">4</property>
-    <property name="margin-end">4</property>
-     <child>
-      <object class="GtkImage" id="categoryimage">
-        <property name="pixel-size">64</property>
-      </object>
-     </child>
-     <child>
+   <child>
       <object class="GtkImage" id="image">
-        <property name="margin-top">4</property>
-        <property name="margin-bottom">4</property>
-        <property name="pixel-size">36</property>
-      </object>
-    </child>
-    <child>
-      <object class="GtkBox">
-        <property name="orientation">vertical</property>
-        <property name="halign">fill</property>
-        <property name="hexpand">true</property>
-        <property name="margin-top">4</property>
+        <property name="margin-start">4</property>
         <property name="margin-end">4</property>
+        <property name="margin-top">4</property>
         <property name="margin-bottom">4</property>
-        <child>
-          <object class="GtkLabel" id="name">
-            <property name="halign">start</property>
-            <property name="ellipsize">end</property>
-            <property name="max-width-chars">40</property>
-            <style>
-              <class name="title-4" />
-            </style>
-          </object>
-        </child>
-        <child>
-          <object class="GtkLabel" id="description">
-            <property name="halign">start</property>
-            <property name="ellipsize">end</property>
-            <property name="max-width-chars">50</property>
-            <style>
-              <class name="body" />
-            </style>
-          </object>
-        </child>
-      </object>
-    </child>
-    <child type="end">
-      <object class="GtkLabel" id="shortcut">
-        <property name="halign">end</property>
-        <property name="wrap">false</property>
-        <style>
-          <class name="body" />
-        </style>
+        <property name="pixel-size">48</property>
       </object>
     </child>
   </template>

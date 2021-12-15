@@ -6,24 +6,16 @@ use gtk4 as gtk;
 use gtk::CompositeTemplate;
 
 #[derive(Debug, Default, CompositeTemplate)]
-#[template(file = "application_row.ui")]
-pub struct ApplicationRow {
-    #[template_child]
-    pub name: TemplateChild<gtk::Label>,
-    #[template_child]
-    pub description: TemplateChild<gtk::Label>,
-    #[template_child]
-    pub shortcut: TemplateChild<gtk::Label>,
+#[template(file = "dock_item.ui")]
+pub struct DockItem {
     #[template_child]
     pub image: TemplateChild<gtk::Image>,
-    #[template_child]
-    pub categoryimage: TemplateChild<gtk::Image>,
 }
 
 #[glib::object_subclass]
-impl ObjectSubclass for ApplicationRow {
-    const NAME: &'static str = "ApplicationRow";
-    type Type = super::ApplicationRow;
+impl ObjectSubclass for DockItem {
+    const NAME: &'static str = "DockItem";
+    type Type = super::DockItem;
     type ParentType = gtk::Box;
 
     fn class_init(klass: &mut Self::Class) {
@@ -35,6 +27,6 @@ impl ObjectSubclass for ApplicationRow {
     }
 }
 
-impl ObjectImpl for ApplicationRow {}
-impl WidgetImpl for ApplicationRow {}
-impl BoxImpl for ApplicationRow {}
+impl ObjectImpl for DockItem {}
+impl WidgetImpl for DockItem {}
+impl BoxImpl for DockItem {}

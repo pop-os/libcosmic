@@ -55,9 +55,6 @@ impl Window {
         let app_model = gio::ListStore::new(gio::DesktopAppInfo::static_type());
         // Get state and set model
         let imp = imp::Window::from_instance(self);
-        imp.app_model
-            .set(app_model.clone())
-            .expect("Could not set model");
 
         // A sorter used to sort AppInfo in the model by their name
         xdg::BaseDirectories::new()
@@ -87,6 +84,9 @@ impl Window {
                     })
                 }
             });
+        imp.app_model
+            .set(app_model.clone())
+            .expect("Could not set model");
 
         let sorter = gtk::CustomSorter::new(move |obj1, obj2| {
             let app_info1 = obj1.downcast_ref::<gio::DesktopAppInfo>().unwrap();
