@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <interface>
   <template class="LauncherWindow" parent="GtkApplicationWindow">
-    <property name="height-request">70</property>
+    <property name="height-request">80</property>
     <property name="title">Gtk Pop Dock</property>
     <property name="decorated">false</property>
     <property name="resizable">false</property>
@@ -27,7 +27,7 @@
                 <property name="spacing">4</property>
                 <property name="name">dock-container</property>
                 <child>
-                  <object class="GtkListView" id="list_view">
+                  <object class="GtkListView" id="saved_app_list_view">
                     <property name="orientation">horizontal</property>
                     <property name="hexpand">true</property>
                   </object>
@@ -39,13 +39,19 @@
                     <property name="orientation">vertical</property>
                   </object>
                 </child>
+                <child>
+                  <object class="GtkListView" id="unsaved_open_app_list_view">
+                    <property name="orientation">horizontal</property>
+                    <property name="hexpand">true</property>
+                  </object>
+                </child>
               </object>
             </child>
           </object>
         </child>
         <child>
           <object class="GtkBox" id="cursor_enter_handle">
-            <property name="height-request">10</property>
+            <property name="height-request">4</property>
           </object>
         </child>
       </object>
