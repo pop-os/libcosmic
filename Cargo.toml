@@ -24,6 +24,3 @@ once_cell = "1.8.0"
 xdg = "2.4.0"
 serde = "1.0.130"
 x11rb = "0.9.0"
-
-[dependencies.wnck]
-path = "../wnck"
