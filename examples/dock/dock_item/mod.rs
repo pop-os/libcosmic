@@ -28,7 +28,7 @@ impl DockItem {
     pub fn new() -> Self {
         let dc = DragSource::builder()
             .name("dock drag source")
-            .actions(gdk4::DragAction::MOVE)
+            .actions(gdk4::DragAction::COPY)
             .build();
 
         let self_: DockItem = glib::Object::new(&[]).expect("Failed to create DockItem");
@@ -60,14 +60,10 @@ impl DockItem {
         self_.image.set_tooltip_text(Some(&app_info.name()));
 
         if let Some(drag_controller) = self_.drag_controller.get() {
-            // if let Some(file) = app_info.filename() {
-            // let file = File::for_path(file);
             if let Some(file) = app_info.filename() {
-                let file = File::for_path(file);
-                let provider = ContentProvider::for_value(&file.to_value());
+                let provider = ContentProvider::for_value(&file.to_string_lossy().to_value());
                 drag_controller.set_content(Some(&provider));
             }
-            // }
             drag_controller.connect_drag_end(move |_self, _drag, delete_data| {
                 dbg!("removing", delete_data);
             });
@@ -94,7 +90,8 @@ impl DockItem {
                 .icon()
                 .unwrap_or(Icon::for_string("image-missing").expect("Failed to set default icon"));
             drag_controller.connect_drag_begin(glib::clone!(@weak icon, => move |_self, drag| {
-                drag.set_selected_action(gdk4::DragAction::MOVE);
+                // drag.set_selected_action(gdk4::DragAction::MOVE);
+                // override formats
                 // set drag source icon if possible...
                 // gio Icon is not easily converted to a Paintable, but this seems to be the correct method
                 if let Some(default_display) = &Display::default() {

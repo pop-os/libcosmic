@@ -2,15 +2,19 @@ mod imp;
 // use crate::ApplicationObject;
 use crate::dock_item::DockItem;
 use crate::X11_CONN;
+use gdk4::ContentProvider;
 use gdk4::Rectangle;
 use gdk4::Surface;
 use gdk4_x11::X11Surface;
 use gio::Cancellable;
 use gio::DesktopAppInfo;
+use glib::Type;
 use gtk4 as gtk;
+use gtk4::prelude::ListModelExt;
 use gtk4::DropTarget;
 use gtk4::DropTargetAsync;
 use gtk4::EventControllerMotion;
+use gtk4::ListStore;
 use gtk4::TreeIter;
 use std::path::Path;
 use x11rb::connection::Connection;
@@ -225,31 +229,52 @@ impl Window {
         // });
 
         let saved_app_list_view = saved_app_list_view.get();
+
         drop_controller.connect_drop(
             glib::clone!(@weak saved_app_model, @weak saved_app_list_view => @default-return true, move |_self, drop_value, x, y| {
-                dbg!(x);
-                dbg!(y);
-                let max_y = saved_app_list_view.allocated_height();
-                let max_x = saved_app_list_view.allocated_width();
-                dbg!(max_x);
-                dbg!(max_y);
-                let n_buckets = saved_app_model.n_items() * 2;
-
-                let drop_bucket = (x * n_buckets as f64 / (max_x as f64 + 0.1)) as u32;
-                let index = if drop_bucket == 0 {
-                    0
-                } else if drop_bucket == n_buckets - 1 {
-                    saved_app_model.n_items()
-                } else {
-                    (drop_bucket + 1) / 2
-                };
-                dbg!(index);
-                dbg!("dropped it!");
-                if let Ok(Some(path)) = drop_value.get::<Option<String>>() {
-                    dbg!(&path);
-                    if let Some(path) = &Path::new(&path).file_name() {
-                        if let Some(app_info) = gio::DesktopAppInfo::new(&path.to_string_lossy()) {
+                if let Ok(Some(path_str)) = drop_value.get::<Option<String>>() {
+                    dbg!(&path_str);
+                    let desktop_path = &Path::new(&path_str);
+                    if let Some(pathbase) = desktop_path.file_name() {
+                        if let Some(app_info) = gio::DesktopAppInfo::new(&pathbase.to_string_lossy()) {
+                            let mut i: u32 = 0;
+                            let mut index_of_existing_app: Option<u32> = None;
+                            while let Some(item) = saved_app_model.item(i) {
+                                if let Ok(cur_app_info) = item.downcast::<gio::DesktopAppInfo>() {
+                                    dbg!(cur_app_info.filename());
+                                    if cur_app_info.filename() == Some(Path::new(&path_str).to_path_buf()) {
+                                        index_of_existing_app = Some(i);
+                                    }
+                                }
+                                i += 1;
+                            }
                             dbg!(app_info.name());
+                            dbg!(index_of_existing_app);
+                            if let Some(index_of_existing_app) = index_of_existing_app {
+                                // remove existing entry
+                                saved_app_model.remove(index_of_existing_app);
+                            }
+
+                            //calculate insertion location
+                            dbg!(x);
+                            dbg!(y);
+                            let max_y = saved_app_list_view.allocated_height();
+                            let max_x = saved_app_list_view.allocated_width();
+                            dbg!(max_x);
+                            dbg!(max_y);
+                            let n_buckets = saved_app_model.n_items() * 2;
+
+                            let drop_bucket = (x * n_buckets as f64 / (max_x as f64 + 0.1)) as u32;
+                            let index = if drop_bucket == 0 {
+                                0
+                            } else if drop_bucket == n_buckets - 1 {
+                                saved_app_model.n_items()
+                            } else {
+                                (drop_bucket + 1) / 2
+                            };
+                            dbg!(index);
+                            dbg!("dropped it!");
+                            dbg!(drop_value.type_());
                             saved_app_model.insert(index, &app_info);
                         }
                     }
@@ -289,12 +314,19 @@ impl Window {
     fn setup_drop_target(&self) {
         let imp = imp::Window::from_instance(self);
         let drop_target_widget = &imp.saved_app_list_view;
-        let mut drop_actions = gdk4::DragAction::COPY;
-        drop_actions.toggle(gdk4::DragAction::MOVE);
+        let drop_actions = gdk4::DragAction::COPY;
+        // drop_actions.toggle(gdk4::DragAction::MOVE);
+        let drop_format = gdk4::ContentFormats::for_type(Type::STRING);
+        let provider =
+            ContentProvider::for_value(&DesktopAppInfo::new("firefox.desktop").to_value());
+        let desktop_type = provider.formats().types()[0];
+        // causes error for some reason...
+        // let desktop_type = Type::from_name("GDesktopAppInfo").expect("Invalid GType");
+        drop_format.union(&gdk4::ContentFormats::for_type(desktop_type));
         let drop_target_controller = DropTarget::builder()
             .preload(true)
             .actions(drop_actions)
-            .formats(&gdk4::ContentFormats::for_type(glib::types::Type::STRING))
+            .formats(&drop_format)
             .build();
         drop_target_widget.add_controller(&drop_target_controller);
         imp.drop_controller
