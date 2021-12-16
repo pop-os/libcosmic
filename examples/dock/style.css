@@ -15,7 +15,6 @@ window {
     background: rgba(50,50,50,0.0);
 }
 box#dock-container {
-    padding-right: 12px;
     border-radius: 12px;
     background: #333333;
 }

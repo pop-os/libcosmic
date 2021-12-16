@@ -2,6 +2,7 @@
 <interface>
   <template class="LauncherWindow" parent="GtkApplicationWindow">
     <property name="height-request">80</property>
+    <property name="width-request">128</property>
     <property name="title">Gtk Pop Dock</property>
     <property name="decorated">false</property>
     <property name="resizable">false</property>
@@ -22,6 +23,7 @@
             <child>
               <object class="GtkBox">
                 <property name="orientation">horizontal</property>
+                <property name="height-request">64</property>
                 <property name="margin-start">4</property>
                 <property name="margin-end">4</property>
                 <property name="spacing">4</property>
@@ -34,6 +36,8 @@
                 </child>
                 <child>
                   <object class="GtkSeparator">
+                    <property name="margin-start">12</property>
+                    <property name="margin-end">12</property>
                     <property name="margin-top">4</property>
                     <property name="margin-bottom">4</property>
                     <property name="orientation">vertical</property>

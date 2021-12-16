@@ -1,5 +1,6 @@
 use gtk4 as gtk;
 use gtk4::Box;
+use gtk4::DropTarget;
 use gtk4::EventControllerMotion;
 use gtk4::Revealer;
 
@@ -28,6 +29,7 @@ pub struct Window {
     pub unsaved_open_app_model: OnceCell<gio::ListStore>,
     pub enter_event_controller: OnceCell<EventControllerMotion>,
     pub leave_event_controller: OnceCell<EventControllerMotion>,
+    pub drop_controller: OnceCell<DropTarget>,
 }
 
 // The central trait for subclassing a GObject
@@ -54,6 +56,7 @@ impl ObjectImpl for Window {
 
         // Setup
         obj.setup_event_controller();
+        obj.setup_drop_target();
         obj.setup_model();
         obj.setup_callbacks();
         obj.setup_factory();
