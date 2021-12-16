@@ -1,5 +1,6 @@
 mod application_object;
 mod dock_item;
+mod utils;
 mod window;
 
 use gdk4::Display;

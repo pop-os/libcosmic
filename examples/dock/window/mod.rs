@@ -5,9 +5,14 @@ use crate::X11_CONN;
 use gdk4::Rectangle;
 use gdk4::Surface;
 use gdk4_x11::X11Surface;
+use gio::Cancellable;
 use gio::DesktopAppInfo;
 use gtk4 as gtk;
+use gtk4::DropTarget;
+use gtk4::DropTargetAsync;
 use gtk4::EventControllerMotion;
+use gtk4::TreeIter;
+use std::path::Path;
 use x11rb::connection::Connection;
 use x11rb::protocol::xproto::ConnectionExt;
 
@@ -97,6 +102,10 @@ impl Window {
         let imp = imp::Window::from_instance(self);
         let window = self.clone().upcast::<gtk::Window>();
         let saved_app_list_view = &imp.saved_app_list_view;
+        let saved_app_model = &imp
+            .saved_app_model
+            .get()
+            .expect("Failed to get saved app model");
 
         let saved_app_selection_model = saved_app_list_view
             .model()
@@ -128,12 +137,14 @@ impl Window {
 
         let enter_event_controller = &imp.enter_event_controller.get().unwrap();
         let leave_event_controller = &imp.leave_event_controller.get().unwrap();
+        let drop_controller = &imp.drop_controller.get().unwrap();
         let revealer = &imp.revealer.get();
         window.connect_show(
             glib::clone!(@weak revealer, @weak leave_event_controller => move |_| {
                 dbg!(!leave_event_controller.contains_pointer());
                 if !leave_event_controller.contains_pointer() {
-                    revealer.set_reveal_child(false);
+                    // TODO uncomment
+                    // revealer.set_reveal_child(false);
                 }
             }),
         );
@@ -197,10 +208,40 @@ impl Window {
             dbg!("hello, mouse entered me :)");
             revealer.set_reveal_child(true);
         }));
+        // TODO uncomment..
+        // Temporarily disable hiding for dnd testing while the other options are being figured out..
         leave_event_controller.connect_leave(glib::clone!(@weak revealer => move |_evc| {
             dbg!("hello, mouse left me :)");
-            revealer.set_reveal_child(false);
+            // revealer.set_reveal_child(false);
         }));
+
+        // drop_controller.connect_enter(move |_self, drag, x, y| {
+        //     dbg!(x);
+        //     dbg!(y);
+        //     match drag.drag() {
+        //         Some(d) => d.selected_action(),
+        //         None => drag.actions(),
+        //     }
+        // });
+        drop_controller.connect_drop(
+            glib::clone!(@weak saved_app_model => @default-return true, move |_self, drop_value, x, y| {
+                dbg!("dropped it!");
+                if let Ok(Some(path)) = drop_value.get::<Option<String>>() {
+                    dbg!(&path);
+                    if let Some(path) = &Path::new(&path).file_name() {
+                        if let Some(app_info) = gio::DesktopAppInfo::new(&path.to_string_lossy()) {
+                            dbg!(app_info.name());
+                            saved_app_model.append(&app_info);
+                        }
+                    }
+                }
+                else {
+                    dbg!("rejecting drop");
+                    _self.reject();
+                }
+                true
+            }),
+        );
     }
 
     fn setup_event_controller(&self) {
@@ -226,13 +267,34 @@ impl Window {
             .expect("Could not set event controller");
     }
 
+    fn setup_drop_target(&self) {
+        let imp = imp::Window::from_instance(self);
+        let drop_target_widget = &imp.saved_app_list_view;
+        let mut drop_actions = gdk4::DragAction::COPY;
+        drop_actions.toggle(gdk4::DragAction::MOVE);
+        let drop_target_controller = DropTarget::builder()
+            .preload(true)
+            .actions(drop_actions)
+            .formats(&gdk4::ContentFormats::for_type(glib::types::Type::STRING))
+            .build();
+        drop_target_widget.add_controller(&drop_target_controller);
+        imp.drop_controller
+            .set(drop_target_controller)
+            .expect("Could not set dock dnd drop controller");
+    }
+
     fn setup_factory(&self) {
         let factory = SignalListItemFactory::new();
         factory.connect_setup(move |_, list_item| {
             let dock_item = DockItem::new();
             list_item.set_child(Some(&dock_item));
         });
-        factory.connect_bind(move |_, list_item| {
+        let imp = imp::Window::from_instance(self);
+        let saved_app_model = imp
+            .saved_app_model
+            .get()
+            .expect("Failed to get saved app model.");
+        factory.connect_bind(glib::clone!(@weak saved_app_model => move |_, list_item| {
             let application_object = list_item
                 .item()
                 .expect("The item has to exist.")
@@ -244,10 +306,10 @@ impl Window {
                 .downcast::<DockItem>()
                 .expect("The list item type needs to be `DockItem`");
 
-            dock_item.set_app_info(&application_object);
-        });
+            let i = list_item.position();
+            dock_item.set_app_info(&application_object, i, &saved_app_model);
+        }));
         // Set the factory of the list view
-        let imp = imp::Window::from_instance(self);
         imp.saved_app_list_view.set_factory(Some(&factory));
     }
 }
