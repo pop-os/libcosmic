@@ -62,12 +62,16 @@ impl DockItem {
         if let Some(drag_controller) = self_.drag_controller.get() {
             // if let Some(file) = app_info.filename() {
             // let file = File::for_path(file);
-            let provider = ContentProvider::for_value(&app_info.to_value());
-            drag_controller.set_content(Some(&provider));
+            if let Some(file) = app_info.filename() {
+                let file = File::for_path(file);
+                let provider = ContentProvider::for_value(&file.to_value());
+                drag_controller.set_content(Some(&provider));
+            }
             // }
             drag_controller.connect_drag_end(move |_self, _drag, delete_data| {
                 dbg!("removing", delete_data);
             });
+            //TODO investigate X11 errors when reordering dock items
             drag_controller.connect_drag_cancel(
                 glib::clone!(@weak saved_app_model => @default-return true, move |_self, _drag, _delete_data| {
                     dbg!("removing {}", i);

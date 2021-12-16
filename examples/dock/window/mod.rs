@@ -223,15 +223,34 @@ impl Window {
         //         None => drag.actions(),
         //     }
         // });
+
+        let saved_app_list_view = saved_app_list_view.get();
         drop_controller.connect_drop(
-            glib::clone!(@weak saved_app_model => @default-return true, move |_self, drop_value, x, y| {
+            glib::clone!(@weak saved_app_model, @weak saved_app_list_view => @default-return true, move |_self, drop_value, x, y| {
+                dbg!(x);
+                dbg!(y);
+                let max_y = saved_app_list_view.allocated_height();
+                let max_x = saved_app_list_view.allocated_width();
+                dbg!(max_x);
+                dbg!(max_y);
+                let n_buckets = saved_app_model.n_items() * 2;
+
+                let drop_bucket = (x * n_buckets as f64 / (max_x as f64 + 0.1)) as u32;
+                let index = if drop_bucket == 0 {
+                    0
+                } else if drop_bucket == n_buckets - 1 {
+                    saved_app_model.n_items()
+                } else {
+                    (drop_bucket + 1) / 2
+                };
+                dbg!(index);
                 dbg!("dropped it!");
                 if let Ok(Some(path)) = drop_value.get::<Option<String>>() {
                     dbg!(&path);
                     if let Some(path) = &Path::new(&path).file_name() {
                         if let Some(app_info) = gio::DesktopAppInfo::new(&path.to_string_lossy()) {
                             dbg!(app_info.name());
-                            saved_app_model.append(&app_info);
+                            saved_app_model.insert(index, &app_info);
                         }
                     }
                 }
