@@ -2,20 +2,15 @@ mod imp;
 // use crate::ApplicationObject;
 use crate::dock_item::DockItem;
 use crate::X11_CONN;
-use gdk4::ContentProvider;
 use gdk4::Rectangle;
 use gdk4::Surface;
 use gdk4_x11::X11Surface;
-use gio::Cancellable;
 use gio::DesktopAppInfo;
 use glib::Type;
 use gtk4 as gtk;
 use gtk4::prelude::ListModelExt;
 use gtk4::DropTarget;
-use gtk4::DropTargetAsync;
 use gtk4::EventControllerMotion;
-use gtk4::ListStore;
-use gtk4::TreeIter;
 use std::path::Path;
 use x11rb::connection::Connection;
 use x11rb::protocol::xproto::ConnectionExt;
@@ -142,13 +137,13 @@ impl Window {
         let enter_event_controller = &imp.enter_event_controller.get().unwrap();
         let leave_event_controller = &imp.leave_event_controller.get().unwrap();
         let drop_controller = &imp.drop_controller.get().unwrap();
+        let window_drop_controller = &imp.window_drop_controller.get().unwrap();
         let revealer = &imp.revealer.get();
         window.connect_show(
             glib::clone!(@weak revealer, @weak leave_event_controller => move |_| {
                 dbg!(!leave_event_controller.contains_pointer());
                 if !leave_event_controller.contains_pointer() {
-                    // TODO uncomment
-                    // revealer.set_reveal_child(false);
+                    revealer.set_reveal_child(false);
                 }
             }),
         );
@@ -212,21 +207,25 @@ impl Window {
             dbg!("hello, mouse entered me :)");
             revealer.set_reveal_child(true);
         }));
-        // TODO uncomment..
-        // Temporarily disable hiding for dnd testing while the other options are being figured out..
-        leave_event_controller.connect_leave(glib::clone!(@weak revealer => move |_evc| {
-            dbg!("hello, mouse left me :)");
-            // revealer.set_reveal_child(false);
-        }));
+        leave_event_controller.connect_leave(
+            glib::clone!(@weak revealer, @weak drop_controller => move |_evc| {
+                // only hide if DnD is not happening
+                if drop_controller.current_drop().is_none() {
+                    dbg!("hello, mouse left me :)");
+                    revealer.set_reveal_child(false);
+                }
+            }),
+        );
 
-        // drop_controller.connect_enter(move |_self, drag, x, y| {
-        //     dbg!(x);
-        //     dbg!(y);
-        //     match drag.drag() {
-        //         Some(d) => d.selected_action(),
-        //         None => drag.actions(),
-        //     }
-        // });
+        drop_controller.connect_enter(glib::clone!(@weak revealer => @default-return gdk4::DragAction::COPY, move |_self, _x, _y| {
+            revealer.set_reveal_child(true);
+            gdk4::DragAction::COPY
+        }));
+        // hack for showing hidden dock when drag enters window
+        window_drop_controller.connect_enter(glib::clone!(@weak revealer => @default-return gdk4::DragAction::COPY, move |_self, _x, _y| {
+            revealer.set_reveal_child(true);
+            gdk4::DragAction::empty()
+        }));
 
         let saved_app_list_view = saved_app_list_view.get();
 
@@ -317,12 +316,8 @@ impl Window {
         let drop_actions = gdk4::DragAction::COPY;
         // drop_actions.toggle(gdk4::DragAction::MOVE);
         let drop_format = gdk4::ContentFormats::for_type(Type::STRING);
-        let provider =
-            ContentProvider::for_value(&DesktopAppInfo::new("firefox.desktop").to_value());
-        let desktop_type = provider.formats().types()[0];
         // causes error for some reason...
         // let desktop_type = Type::from_name("GDesktopAppInfo").expect("Invalid GType");
-        drop_format.union(&gdk4::ContentFormats::for_type(desktop_type));
         let drop_target_controller = DropTarget::builder()
             .preload(true)
             .actions(drop_actions)
@@ -331,6 +326,18 @@ impl Window {
         drop_target_widget.add_controller(&drop_target_controller);
         imp.drop_controller
             .set(drop_target_controller)
+            .expect("Could not set dock dnd drop controller");
+
+        // hack for revealing hidden dock when drag enters dock window
+        let window_drop_target_controller = DropTarget::builder()
+            .actions(gdk4::DragAction::COPY)
+            .formats(&gdk4::ContentFormats::for_type(Type::STRING))
+            .build();
+
+        let window = self.clone().upcast::<gtk::Window>();
+        window.add_controller(&window_drop_target_controller);
+        imp.window_drop_controller
+            .set(window_drop_target_controller)
             .expect("Could not set dock dnd drop controller");
     }
 

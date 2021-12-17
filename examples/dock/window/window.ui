@@ -18,8 +18,8 @@
         <child>
           <object class="GtkRevealer" id="revealer">
             <property name="reveal-child">true</property>
-            <property name="transition-duration">200</property>
-            <property name="transition-type">swing-up</property>
+            <property name="transition-duration">300</property>
+            <property name="transition-type">slide-up</property>
             <child>
               <object class="GtkBox">
                 <property name="orientation">horizontal</property>

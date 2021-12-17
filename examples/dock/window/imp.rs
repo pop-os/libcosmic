@@ -30,6 +30,7 @@ pub struct Window {
     pub enter_event_controller: OnceCell<EventControllerMotion>,
     pub leave_event_controller: OnceCell<EventControllerMotion>,
     pub drop_controller: OnceCell<DropTarget>,
+    pub window_drop_controller: OnceCell<DropTarget>,
 }
 
 // The central trait for subclassing a GObject

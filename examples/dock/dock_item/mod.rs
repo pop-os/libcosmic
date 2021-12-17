@@ -1,12 +1,10 @@
 use gdk4::ContentProvider;
 use gdk4::Display;
-use gio::File;
 use gio::Icon;
 use gio::ListStore;
 use gtk4 as gtk;
 use gtk4::DragSource;
 use gtk4::IconTheme;
-use gtk4::TreeIter;
 mod imp;
 
 use gtk::glib;
@@ -89,9 +87,7 @@ impl DockItem {
             let icon = app_info
                 .icon()
                 .unwrap_or(Icon::for_string("image-missing").expect("Failed to set default icon"));
-            drag_controller.connect_drag_begin(glib::clone!(@weak icon, => move |_self, drag| {
-                // drag.set_selected_action(gdk4::DragAction::MOVE);
-                // override formats
+            drag_controller.connect_drag_begin(glib::clone!(@weak icon, => move |_self, _drag| {
                 // set drag source icon if possible...
                 // gio Icon is not easily converted to a Paintable, but this seems to be the correct method
                 if let Some(default_display) = &Display::default() {
