@@ -34,6 +34,7 @@ static X11_CONN: OnceCell<RustConnection> = OnceCell::new();
 
 pub enum Event {
     Response(pop_launcher::Response),
+    RefreshFromCache,
     Search(String),
     Activate(u32),
 }
@@ -126,6 +127,9 @@ fn main() {
                     Event::Activate(index) => {
                         let _ = launcher.send(pop_launcher::Request::Activate(index)).await;
                     }
+                    Event::RefreshFromCache => {
+                        //TODO refresh the model from cached_results (required after DnD for example)
+                    }
                     Event::Response(event) => {
                         if let pop_launcher::Response::Update(mut results) = event {
                             // sort to make comparison with cache easier
@@ -151,6 +155,7 @@ fn main() {
                                 acc
                             });
                             let mut stack_active: Vec<BoxedSearchResults> = stack_active.into_values().collect();
+
                             // update active app stacks for saved apps into the saved app model
                             // then put the rest in the active app model (which doesn't include saved apps)
                             let saved_app_model = window.saved_app_model();
