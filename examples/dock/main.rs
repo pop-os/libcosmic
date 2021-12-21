@@ -4,23 +4,23 @@ mod dock_object;
 mod utils;
 mod window;
 
+use async_io::Timer;
 use gdk4::Display;
 use gio::DesktopAppInfo;
+use gtk::gio;
+use gtk::glib;
+use gtk::prelude::*;
 use gtk::Application;
 use gtk4 as gtk;
 use gtk4::CssProvider;
 use gtk4::StyleContext;
 use once_cell::sync::OnceCell;
-
-use gtk::gio;
-use gtk::glib;
-use gtk::prelude::*;
 use pop_launcher_service::IpcClient;
 use postage::mpsc::Sender;
 use postage::prelude::*;
+use std::time::Duration;
 use x11rb::rust_connection::RustConnection;
 
-use self::application_object::ApplicationObject;
 use self::window::Window;
 
 const NUM_LAUNCHER_ITEMS: u8 = 10;
@@ -33,15 +33,24 @@ pub enum Event {
     Activate(u32),
 }
 
-fn spawn_launcher(mut tx: Sender<Event>) -> IpcClient {
+fn spawn_launcher(tx: Sender<Event>) -> IpcClient {
     let (launcher, responses) =
         pop_launcher_service::IpcClient::new().expect("failed to connect to launcher service");
 
+    let mut sender = tx.clone();
     glib::MainContext::default().spawn_local(async move {
         use futures::StreamExt;
         futures::pin_mut!(responses);
         while let Some(event) = responses.next().await {
-            let _ = tx.send(Event::Response(event)).await;
+            let _ = sender.send(Event::Response(event)).await;
+        }
+    });
+
+    let mut sender = tx.clone();
+    glib::MainContext::default().spawn_local(async move {
+        loop {
+            Timer::after(Duration::from_secs(1)).await;
+            let _ = sender.send(Event::Search(String::new())).await;
         }
     });
 
@@ -110,19 +119,11 @@ fn main() {
                     Event::Activate(index) => {
                         let _ = launcher.send(pop_launcher::Request::Activate(index)).await;
                     }
-
                     Event::Response(event) => {
-                        if let pop_launcher::Response::Update(results) = event {
-                            let model = window.saved_app_model();
-                            let model_len = model.n_items();
-                            dbg!(&results);
-                            let new_results: Vec<glib::Object> = results
-                                [0..std::cmp::min(results.len(), NUM_LAUNCHER_ITEMS.into())]
-                                .iter()
-                                .map(|result| ApplicationObject::new(result).upcast())
-                                .collect();
-                            model.splice(0, model_len, &new_results[..]);
-                        } else if let pop_launcher::Response::DesktopEntry {
+                        if let pop_launcher::Response::Update(_results) = event {
+                            println!("updating active apps")
+                        }
+                        else if let pop_launcher::Response::DesktopEntry {
                             path,
                             gpu_preference: _gpu_preference, // TODO use GPU preference when launching app
                         } = event

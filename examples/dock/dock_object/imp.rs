@@ -1,6 +1,6 @@
 use crate::utils::BoxedSearchResults;
 use gio::DesktopAppInfo;
-use glib::{FromVariant, ParamFlags, ParamSpec, ToVariant, Value, Variant, VariantTy};
+use glib::{ParamFlags, ParamSpec, Value};
 use gtk4::glib;
 use gtk4::prelude::*;
 use gtk4::subclass::prelude::*;
