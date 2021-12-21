@@ -12,7 +12,8 @@ glib::wrapper! {
 
 impl DockObject {
     pub fn new(appinfo: DesktopAppInfo) -> Self {
-        Object::new(&[("appinfo", &Some(appinfo))]).expect("Failed to create `DockObject`.")
+        Object::new(&[("appinfo", &Some(appinfo)), ("saved", &true)])
+            .expect("Failed to create `DockObject`.")
     }
 
     pub fn from_search_results(results: BoxedSearchResults) -> Self {
@@ -23,7 +24,6 @@ impl DockObject {
                 .iter_mut()
                 .filter_map(|xdg_data_path| {
                     xdg_data_path.push("applications");
-                    dbg!(&xdg_data_path);
                     std::fs::read_dir(xdg_data_path).ok()
                 })
                 .flatten()
@@ -35,7 +35,7 @@ impl DockObject {
                                     if app_info.should_show()
                                         && first.description.as_str() == app_info.name().as_str()
                                     {
-                                        return Some(DockObject::new(app_info));
+                                        return Some(app_info);
                                     }
                                 }
                             }
@@ -47,6 +47,7 @@ impl DockObject {
         } else {
             None
         };
+        dbg!(&appinfo);
         Object::new(&[("appinfo", &appinfo), ("active", &results)])
             .expect("Failed to create `DockObject`.")
     }

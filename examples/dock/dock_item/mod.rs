@@ -53,10 +53,15 @@ impl DockItem {
     pub fn set_app_info(&self, app_info: &DockObject, i: u32, saved_app_model: &ListStore) {
         if let Ok(app_info_value) = app_info.property("appinfo") {
             if let Ok(Some(app_info)) = app_info_value.get::<Option<DesktopAppInfo>>() {
-                dbg!("setting app info");
+                println!("setting app info {}", &app_info.name());
                 let self_ = imp::DockItem::from_instance(self);
                 self_.image.set_tooltip_text(Some(&app_info.name()));
 
+                let icon = app_info.icon().unwrap_or(
+                    Icon::for_string("image-missing").expect("Failed to set default icon"),
+                );
+
+                self_.image.set_from_gicon(&icon);
                 if let Some(drag_controller) = self_.drag_controller.get() {
                     if let Some(file) = app_info.filename() {
                         let provider =
@@ -108,39 +113,9 @@ impl DockItem {
                         }),
                     );
                 }
-
-                let icon = app_info.icon().unwrap_or(
-                    Icon::for_string("image-missing").expect("Failed to set default icon"),
-                );
-
-                self_.image.set_from_gicon(&icon);
             }
+        } else {
+            println!("initializing dock item failed...");
         }
     }
-
-    // pub fn set_app_info(&self, app_obj: ApplicationObject) {
-    //     let self_ = imp::DockItem::from_instance(self);
-
-    //     if let Ok(name) = app_obj.property("name") {
-    //         self_.image.set_tooltip_text(Some(
-    //             &name
-    //                 .get::<String>()
-    //                 .expect("Property name needs to be a String."),
-    //         ));
-    //     }
-    //     if let Ok(icon) = app_obj.property("icon") {
-    //         if let Ok(icon) = icon.get::<Variant>() {
-    //             let icon = match <(i32, String)>::from_variant(&icon) {
-    //                 Some((i_type, name)) if i_type == pop_launcher::IconSource::Name as i32 => {
-    //                     Some(pop_launcher::IconSource::Name(name.into()))
-    //                 }
-    //                 Some((i_type, name)) if i_type == pop_launcher::IconSource::Mime as i32 => {
-    //                     Some(pop_launcher::IconSource::Mime(name.into()))
-    //                 }
-    //                 _ => None,
-    //             };
-    //             icon_source(&self_.image, &icon);
-    //         }
-    //     }
-    // }
 }

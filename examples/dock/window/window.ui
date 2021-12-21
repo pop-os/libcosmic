@@ -31,7 +31,6 @@
                 <child>
                   <object class="GtkListView" id="saved_app_list_view">
                     <property name="orientation">horizontal</property>
-                    <property name="hexpand">true</property>
                   </object>
                 </child>
                 <child>
@@ -44,9 +43,8 @@
                   </object>
                 </child>
                 <child>
-                  <object class="GtkListView" id="unsaved_open_app_list_view">
+                  <object class="GtkListView" id="active_app_list_view">
                     <property name="orientation">horizontal</property>
-                    <property name="hexpand">true</property>
                   </object>
                 </child>
               </object>

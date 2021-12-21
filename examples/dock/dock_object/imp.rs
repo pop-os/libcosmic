@@ -5,6 +5,7 @@ use gtk4::glib;
 use gtk4::prelude::*;
 use gtk4::subclass::prelude::*;
 use once_cell::sync::Lazy;
+use std::cell::Cell;
 use std::cell::RefCell;
 
 // Object holding the state
@@ -12,6 +13,7 @@ use std::cell::RefCell;
 pub struct DockObject {
     appinfo: RefCell<Option<DesktopAppInfo>>,
     active: RefCell<BoxedSearchResults>,
+    saved: Cell<bool>,
 }
 
 // The central trait for subclassing a GObject
@@ -49,6 +51,13 @@ impl ObjectImpl for DockObject {
                     // The property can be read and written to
                     ParamFlags::READWRITE,
                 ),
+                ParamSpec::new_boolean(
+                    "saved",
+                    "saved",
+                    "Indicates whether app is saved to the dock",
+                    false,
+                    ParamFlags::READWRITE,
+                ),
             ]
         });
         PROPERTIES.as_ref()
@@ -66,6 +75,10 @@ impl ObjectImpl for DockObject {
                 let active = value.get().expect("Value needs to be BoxedSearchResults");
                 self.active.replace(active);
             }
+            "saved" => {
+                self.saved
+                    .replace(value.get().expect("Value needs to be a boolean"));
+            }
             _ => unimplemented!(),
         }
     }
@@ -73,6 +86,8 @@ impl ObjectImpl for DockObject {
     fn property(&self, _obj: &Self::Type, _id: usize, pspec: &ParamSpec) -> Value {
         match pspec.name() {
             "appinfo" => self.appinfo.borrow().to_value(),
+            "active" => self.active.borrow().to_value(),
+            "saved" => self.saved.get().to_value(),
             _ => unimplemented!(),
         }
     }

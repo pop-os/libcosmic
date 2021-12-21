@@ -1,9 +1,9 @@
-mod application_object;
 mod dock_item;
 mod dock_object;
 mod utils;
 mod window;
 
+use crate::utils::BoxedSearchResults;
 use async_io::Timer;
 use gdk4::Display;
 use gio::DesktopAppInfo;
@@ -18,9 +18,11 @@ use once_cell::sync::OnceCell;
 use pop_launcher_service::IpcClient;
 use postage::mpsc::Sender;
 use postage::prelude::*;
+use std::collections::HashMap;
 use std::time::Duration;
 use x11rb::rust_connection::RustConnection;
 
+use self::dock_object::DockObject;
 use self::window::Window;
 
 const NUM_LAUNCHER_ITEMS: u8 = 10;
@@ -48,10 +50,10 @@ fn spawn_launcher(tx: Sender<Event>) -> IpcClient {
 
     let mut sender = tx.clone();
     glib::MainContext::default().spawn_local(async move {
-        loop {
-            Timer::after(Duration::from_secs(1)).await;
-            let _ = sender.send(Event::Search(String::new())).await;
-        }
+        // loop {
+        let _ = sender.send(Event::Search(String::new())).await;
+        Timer::after(Duration::from_secs(1)).await;
+        // }
     });
 
     launcher
@@ -120,8 +122,23 @@ fn main() {
                         let _ = launcher.send(pop_launcher::Request::Activate(index)).await;
                     }
                     Event::Response(event) => {
-                        if let pop_launcher::Response::Update(_results) = event {
-                            println!("updating active apps")
+                        if let pop_launcher::Response::Update(results) = event {
+                            println!("updating active apps");
+                            let model = window.active_app_model();
+                            let model_len = model.n_items();
+                            let stack_active = results.iter().fold(HashMap::new(), |mut acc: HashMap<String, BoxedSearchResults>, elem| {
+                                if let Some(v) = acc.get_mut(&elem.description) {
+                                    v.0.push(elem.clone());
+                                } else {
+                                    acc.insert(elem.description.clone(), BoxedSearchResults(vec![elem.clone()]));
+                                }
+                                acc
+                            });
+                            let new_results: Vec<glib::Object> = stack_active
+                                .into_values()
+                                .map(|v| DockObject::from_search_results(v).upcast())
+                                .collect();
+                            model.splice(0, model_len, &new_results[..]);
                         }
                         else if let pop_launcher::Response::DesktopEntry {
                             path,

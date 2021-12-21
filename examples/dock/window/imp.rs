@@ -18,7 +18,7 @@ pub struct Window {
     #[template_child]
     pub saved_app_list_view: TemplateChild<ListView>,
     #[template_child]
-    pub unsaved_open_app_list_view: TemplateChild<ListView>,
+    pub active_app_list_view: TemplateChild<ListView>,
     #[template_child]
     pub revealer: TemplateChild<Revealer>,
     #[template_child]
@@ -26,7 +26,7 @@ pub struct Window {
     #[template_child]
     pub cursor_leave_handle: TemplateChild<Box>,
     pub saved_app_model: OnceCell<gio::ListStore>,
-    pub unsaved_open_app_model: OnceCell<gio::ListStore>,
+    pub active_app_model: OnceCell<gio::ListStore>,
     pub enter_event_controller: OnceCell<EventControllerMotion>,
     pub leave_event_controller: OnceCell<EventControllerMotion>,
     pub drop_controller: OnceCell<DropTarget>,

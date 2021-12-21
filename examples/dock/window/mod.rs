@@ -46,13 +46,21 @@ impl Window {
             .expect("Could not get saved_app_model")
     }
 
+    pub fn active_app_model(&self) -> &gio::ListStore {
+        // Get state
+        let imp = imp::Window::from_instance(self);
+        imp.active_app_model
+            .get()
+            .expect("Could not get active_app_model")
+    }
+
     fn setup_model(&self) {
         // Get state and set model
 
         let imp = imp::Window::from_instance(self);
         let saved_app_model = gio::ListStore::new(DockObject::static_type());
 
-        let selection_model = gtk::SingleSelection::builder()
+        let saved_selection_model = gtk::SingleSelection::builder()
             .autoselect(false)
             .can_unselect(true)
             .selected(gtk4::INVALID_LIST_POSITION)
@@ -93,7 +101,23 @@ impl Window {
             .set(saved_app_model)
             .expect("Could not set model");
         // Wrap model with selection and pass it to the list view
-        imp.saved_app_list_view.set_model(Some(&selection_model));
+        imp.saved_app_list_view
+            .set_model(Some(&saved_selection_model));
+
+        let active_app_model = gio::ListStore::new(DockObject::static_type());
+        let active_selection_model = gtk::SingleSelection::builder()
+            .autoselect(false)
+            .can_unselect(true)
+            .selected(gtk4::INVALID_LIST_POSITION)
+            .model(&active_app_model)
+            .build();
+
+        imp.active_app_model
+            .set(active_app_model)
+            .expect("Could not set model");
+        // Wrap model with selection and pass it to the list view
+        imp.active_app_list_view
+            .set_model(Some(&active_selection_model));
     }
 
     fn setup_callbacks(&self) {
@@ -346,8 +370,8 @@ impl Window {
     }
 
     fn setup_factory(&self) {
-        let factory = SignalListItemFactory::new();
-        factory.connect_setup(move |_, list_item| {
+        let saved_app_factory = SignalListItemFactory::new();
+        saved_app_factory.connect_setup(move |_, list_item| {
             let dock_item = DockItem::new();
             list_item.set_child(Some(&dock_item));
         });
@@ -356,7 +380,7 @@ impl Window {
             .saved_app_model
             .get()
             .expect("Failed to get saved app model.");
-        factory.connect_bind(glib::clone!(@weak saved_app_model => move |_, list_item| {
+        saved_app_factory.connect_bind(glib::clone!(@weak saved_app_model => move |_, list_item| {
             let application_object = list_item
                 .item()
                 .expect("The item has to exist.")
@@ -372,6 +396,35 @@ impl Window {
             dock_item.set_app_info(&application_object, i, &saved_app_model);
         }));
         // Set the factory of the list view
-        imp.saved_app_list_view.set_factory(Some(&factory));
+        imp.saved_app_list_view
+            .set_factory(Some(&saved_app_factory));
+
+        let active_app_model = imp
+            .active_app_model
+            .get()
+            .expect("Failed to get saved app model.");
+        let active_factory = SignalListItemFactory::new();
+        active_factory.connect_setup(move |_, list_item| {
+            let dock_item = DockItem::new();
+            list_item.set_child(Some(&dock_item));
+        });
+        active_factory.connect_bind(glib::clone!(@weak active_app_model => move |_, list_item| {
+            let application_object = list_item
+                .item()
+                .expect("The item has to exist.")
+                .downcast::<DockObject>()
+                .expect("The item has to be a `DockObject`");
+            let dock_item = list_item
+                .child()
+                .expect("The list item child needs to exist.")
+                .downcast::<DockItem>()
+                .expect("The list item type needs to be `DockItem`");
+
+            let i = list_item.position();
+            println!("setting position {} of active app list.", i);
+            dock_item.set_app_info(&application_object, i, &active_app_model);
+        }));
+        // Set the factory of the list view
+        imp.active_app_list_view.set_factory(Some(&active_factory));
     }
 }
