@@ -141,8 +141,7 @@ fn main() {
                             }
 
                             println!("updating active apps");
-                            let model = window.active_app_model();
-                            let model_len = model.n_items();
+                            // build active app stacks for each app
                             let stack_active = results.iter().fold(BTreeMap::new(), |mut acc: BTreeMap<String, BoxedSearchResults>, elem| {
                                 if let Some(v) = acc.get_mut(&elem.description) {
                                     v.0.push(elem.clone());
@@ -151,11 +150,33 @@ fn main() {
                                 }
                                 acc
                             });
+                            let mut stack_active: Vec<BoxedSearchResults> = stack_active.into_values().collect();
+                            // update active app stacks for saved apps into the saved app model
+                            // then put the rest in the active app model (which doesn't include saved apps)
+                            let saved_app_model = window.saved_app_model();
+
+                            let mut i: u32 = 0;
+                            while let Some(item) = saved_app_model.item(i) {
+                                if let Ok(dock_obj) = item.downcast::<DockObject>() {
+                                    if let Ok(Some(cur_app_info)) = dock_obj.property("appinfo").expect("property appinfo missing from DockObject").get::<Option<DesktopAppInfo>>() {
+                                        if let Some((i, s)) = stack_active.iter().enumerate().find(|(_i, s)| s.0[0].description == cur_app_info.name()) {
+                                            println!("found active saved app {} at {}", s.0[0].name, i);
+                                            let active = stack_active.remove(i);
+                                            dock_obj.set_property("active", active.to_value()).expect("failed to update dock active apps")
+                                        }
+                                    }
+
+                                }
+                                i += 1;
+                            }
+
+                            let active_app_model = window.active_app_model();
+                            let model_len = active_app_model.n_items();
                             let new_results: Vec<glib::Object> = stack_active
-                                .into_values()
+                                .into_iter()
                                 .map(|v| DockObject::from_search_results(v).upcast())
                                 .collect();
-                            model.splice(0, model_len, &new_results[..]);
+                            active_app_model.splice(0, model_len, &new_results[..]);
                             cached_results.splice(.., results);
                         }
                         else if let pop_launcher::Response::DesktopEntry {
