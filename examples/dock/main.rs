@@ -1,3 +1,44 @@
+use futures_util::stream::StreamExt;
+
+use zbus::{dbus_proxy, Connection, Result};
+use zvariant::ObjectPath;
+
+#[dbus_proxy(
+    default_service = "org.freedesktop.GeoClue2",
+    interface = "org.freedesktop.GeoClue2.Manager",
+    default_path = "/org/freedesktop/GeoClue2/Manager"
+)]
+trait Manager {
+    #[dbus_proxy(object = "Client")]
+    fn get_client(&self);
+}
+
+#[dbus_proxy(
+    default_service = "org.freedesktop.GeoClue2",
+    interface = "org.freedesktop.GeoClue2.Client"
+)]
+trait Client {
+    fn start(&self) -> Result<()>;
+    fn stop(&self) -> Result<()>;
+
+    #[dbus_proxy(property)]
+    fn set_desktop_id(&mut self, id: &str) -> Result<()>;
+
+    #[dbus_proxy(signal)]
+    fn location_updated(&self, old: ObjectPath<'_>, new: ObjectPath<'_>) -> Result<()>;
+}
+
+#[dbus_proxy(
+    default_service = "org.freedesktop.GeoClue2",
+    interface = "org.freedesktop.GeoClue2.Location"
+)]
+trait Location {
+    #[dbus_proxy(property)]
+    fn latitude(&self) -> Result<f64>;
+    #[dbus_proxy(property)]
+    fn longitude(&self) -> Result<f64>;
+}
+
 mod dock_item;
 mod dock_object;
 mod utils;
@@ -18,7 +59,7 @@ use once_cell::sync::OnceCell;
 use pop_launcher_service::IpcClient;
 use postage::mpsc::Sender;
 use postage::prelude::*;
-use std::collections::HashMap;
+use std::collections::BTreeMap;
 use std::time::Duration;
 use x11rb::rust_connection::RustConnection;
 
@@ -33,6 +74,7 @@ pub enum Event {
     Response(pop_launcher::Response),
     Search(String),
     Activate(u32),
+    Loc(f64, f64),
 }
 
 fn spawn_launcher(tx: Sender<Event>) -> IpcClient {
@@ -41,13 +83,13 @@ fn spawn_launcher(tx: Sender<Event>) -> IpcClient {
 
     let mut sender = tx.clone();
     glib::MainContext::default().spawn_local(async move {
-        use futures::StreamExt;
         futures::pin_mut!(responses);
         while let Some(event) = responses.next().await {
             let _ = sender.send(Event::Response(event)).await;
         }
     });
 
+    // TODO listen for signal indicating change from dock service...
     let mut sender = tx.clone();
     glib::MainContext::default().spawn_local(async move {
         // loop {
@@ -56,6 +98,31 @@ fn spawn_launcher(tx: Sender<Event>) -> IpcClient {
         // }
     });
 
+    let mut sender = tx.clone();
+    glib::MainContext::default().spawn_local(async move {
+        let conn = Connection::system().await.unwrap();
+        let manager = ManagerProxy::new(&conn).await.unwrap();
+        let mut client = manager.get_client().await.unwrap();
+
+        client.set_desktop_id("org.freedesktop.zbus").await.unwrap();
+        let mut location_updated_stream = client.receive_location_updated().await.unwrap();
+
+        client.start().await.unwrap();
+        while let Some(signal) = location_updated_stream.next().await {
+            let args = signal.args().unwrap();
+
+            let location = LocationProxy::builder(&conn)
+                .path(args.new())
+                .unwrap()
+                .build()
+                .await
+                .unwrap();
+            let lat = location.latitude().await.unwrap();
+            let long = location.longitude().await.unwrap();
+            println!("Latitude: {}\nLongitude: {}", lat, long,);
+            let _ = sender.send(Event::Loc(lat, long)).await;
+        }
+    });
     launcher
 }
 
@@ -115,6 +182,10 @@ fn main() {
         glib::MainContext::default().spawn_local(async move {
             while let Some(event) = rx.recv().await {
                 match event {
+                    Event::Loc(lat, long) => {
+                        dbg!(lat);
+                        dbg!(long);
+                    }
                     Event::Search(search) => {
                         let _ = launcher.send(pop_launcher::Request::Search(search)).await;
                     }
@@ -126,7 +197,7 @@ fn main() {
                             println!("updating active apps");
                             let model = window.active_app_model();
                             let model_len = model.n_items();
-                            let stack_active = results.iter().fold(HashMap::new(), |mut acc: HashMap<String, BoxedSearchResults>, elem| {
+                            let stack_active = results.iter().fold(BTreeMap::new(), |mut acc: BTreeMap<String, BoxedSearchResults>, elem| {
                                 if let Some(v) = acc.get_mut(&elem.description) {
                                     v.0.push(elem.clone());
                                 } else {

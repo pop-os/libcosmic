@@ -421,7 +421,6 @@ impl Window {
                 .expect("The list item type needs to be `DockItem`");
 
             let i = list_item.position();
-            println!("setting position {} of active app list.", i);
             dock_item.set_app_info(&application_object, i, &active_app_model);
         }));
         // Set the factory of the list view

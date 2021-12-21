@@ -24,8 +24,14 @@ xdg = "2.4.0"
 serde = "1.0.130"
 x11rb = "0.9.0"
 async-io = "1.6.0"
+# zbus
+zbus = "2.0.0-beta.7"
+zvariant = "2.10.0"
+futures-util = "0.3.19"
 
 [dependencies.gtk4]
 package = "gtk4"
 version = "0.3.1"
 features = ["v4_4"]
+
+
