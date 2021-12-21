@@ -1,5 +1,6 @@
 mod application_object;
 mod dock_item;
+mod dock_object;
 mod utils;
 mod window;
 
@@ -70,6 +71,7 @@ fn load_css() {
 }
 
 fn main() {
+    assert!(utils::BoxedSearchResults::static_type().is_valid());
     let app = gtk::Application::builder()
         .application_id("com.cosmic.Launcher")
         .build();
@@ -78,7 +80,12 @@ fn main() {
         setup_shortcuts(app);
         load_css()
     });
+
+    // TODO investigate multiple signals to connect_activate
+    // crashes when called twice bc of singleton
     app.connect_activate(move |app| {
+        // Seems that over a long period of time, this might be called multiple times
+        // The global variables should be initialized outside this closure
         let (tx, mut rx) = postage::mpsc::channel(1);
         let mut launcher = spawn_launcher(tx.clone());
         if TX.set(tx).is_err() {

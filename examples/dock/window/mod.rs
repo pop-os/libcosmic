@@ -1,6 +1,7 @@
 mod imp;
 // use crate::ApplicationObject;
 use crate::dock_item::DockItem;
+use crate::dock_object::DockObject;
 use crate::X11_CONN;
 use gdk4::Rectangle;
 use gdk4::Surface;
@@ -49,7 +50,7 @@ impl Window {
         // Get state and set model
 
         let imp = imp::Window::from_instance(self);
-        let saved_app_model = gio::ListStore::new(DesktopAppInfo::static_type());
+        let saved_app_model = gio::ListStore::new(DockObject::static_type());
 
         let selection_model = gtk::SingleSelection::builder()
             .autoselect(false)
@@ -74,8 +75,7 @@ impl Window {
                                         if app_info.should_show()
                                             && defaults.contains(&app_info.name().as_str())
                                         {
-                                            dbg!(app_info.name());
-                                            saved_app_model.append(&app_info)
+                                            saved_app_model.append(&DockObject::new(app_info));
                                         } else {
                                             // println!("Ignoring {}", path);
                                         }
@@ -118,17 +118,19 @@ impl Window {
                 println!("selected app {}", position);
                 // Launch the application when an item of the list is activated
                 if let Some(item) = model.item(position) {
-                    let app_info = item.downcast::<gio::DesktopAppInfo>().unwrap();
-                    let context = window.display().app_launch_context();
-                    if let Err(err) = app_info.launch(&[], Some(&context)) {
-                        gtk::MessageDialog::builder()
-                            .text(&format!("Failed to start {}", app_info.name()))
-                            .secondary_text(&err.to_string())
-                            .message_type(gtk::MessageType::Error)
-                            .modal(true)
-                            .transient_for(&window)
-                            .build()
-                            .show();
+                    let app_info = item.downcast::<DockObject>().expect("App model must only contain DockObject");
+                    if let Ok(Some(app_info)) = app_info.property("appinfo").expect("DockObject must have appinfo property").get::<Option<DesktopAppInfo>>() {
+                        let context = window.display().app_launch_context();
+                        if let Err(err) = app_info.launch(&[], Some(&context)) {
+                            gtk::MessageDialog::builder()
+                                .text(&format!("Failed to start {}", app_info.name()))
+                                .secondary_text(&err.to_string())
+                                .message_type(gtk::MessageType::Error)
+                                .modal(true)
+                                .transient_for(&window)
+                                .build()
+                                .show();
+                        }
                     }
                 }
             }),
@@ -239,10 +241,12 @@ impl Window {
                             let mut i: u32 = 0;
                             let mut index_of_existing_app: Option<u32> = None;
                             while let Some(item) = saved_app_model.item(i) {
-                                if let Ok(cur_app_info) = item.downcast::<gio::DesktopAppInfo>() {
-                                    dbg!(cur_app_info.filename());
-                                    if cur_app_info.filename() == Some(Path::new(&path_str).to_path_buf()) {
-                                        index_of_existing_app = Some(i);
+                                if let Ok(cur_app_info) = item.downcast::<DockObject>() {
+                                    if let Ok(Some(cur_app_info)) = cur_app_info.property("appinfo").expect("property appinfo missing from DockObject").get::<Option<DesktopAppInfo>>() {
+                                        dbg!(cur_app_info.filename());
+                                        if cur_app_info.filename() == Some(Path::new(&path_str).to_path_buf()) {
+                                            index_of_existing_app = Some(i);
+                                        }
                                     }
                                 }
                                 i += 1;
@@ -274,7 +278,7 @@ impl Window {
                             dbg!(index);
                             dbg!("dropped it!");
                             dbg!(drop_value.type_());
-                            saved_app_model.insert(index, &app_info);
+                            saved_app_model.insert(index, &DockObject::new(app_info));
                         }
                     }
                 }
@@ -356,8 +360,8 @@ impl Window {
             let application_object = list_item
                 .item()
                 .expect("The item has to exist.")
-                .downcast::<DesktopAppInfo>()
-                .expect("The item has to be a `DesktopAppInfo`");
+                .downcast::<DockObject>()
+                .expect("The item has to be a `DockObject`");
             let dock_item = list_item
                 .child()
                 .expect("The list item child needs to exist.")
