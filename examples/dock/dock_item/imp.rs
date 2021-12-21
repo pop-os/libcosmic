@@ -12,6 +12,8 @@ use gtk::CompositeTemplate;
 pub struct DockItem {
     #[template_child]
     pub image: TemplateChild<gtk::Image>,
+    #[template_child]
+    pub dots: TemplateChild<gtk::Box>,
     pub drag_controller: OnceCell<DragSource>,
 }
 

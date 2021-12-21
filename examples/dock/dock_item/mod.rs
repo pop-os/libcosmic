@@ -1,3 +1,4 @@
+use crate::BoxedSearchResults;
 use gdk4::ContentProvider;
 use gdk4::Display;
 use gio::DesktopAppInfo;
@@ -6,6 +7,7 @@ use gio::ListStore;
 use gtk4 as gtk;
 use gtk4::DragSource;
 use gtk4::IconTheme;
+use gtk4::Label;
 mod imp;
 
 use gtk::glib;
@@ -51,10 +53,10 @@ impl DockItem {
     // TODO current method seems very messy...
     // refactor to emit event for removing the item?
     pub fn set_app_info(&self, app_info: &DockObject, i: u32, saved_app_model: &ListStore) {
+        let self_ = imp::DockItem::from_instance(self);
         if let Ok(app_info_value) = app_info.property("appinfo") {
             if let Ok(Some(app_info)) = app_info_value.get::<Option<DesktopAppInfo>>() {
                 println!("setting app info {}", &app_info.name());
-                let self_ = imp::DockItem::from_instance(self);
                 self_.image.set_tooltip_text(Some(&app_info.name()));
 
                 let icon = app_info.icon().unwrap_or(
@@ -116,6 +118,13 @@ impl DockItem {
             }
         } else {
             println!("initializing dock item failed...");
+        }
+        if let Ok(active_value) = app_info.property("active") {
+            if let Ok(active) = active_value.get::<BoxedSearchResults>() {
+                for _ in active.0 {
+                    self_.dots.append(&Label::new(Some("·")));
+                }
+            }
         }
     }
 }

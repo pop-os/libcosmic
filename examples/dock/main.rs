@@ -167,7 +167,8 @@ fn main() {
                                         if let Some((i, s)) = stack_active.iter().enumerate().find(|(_i, s)| s.0[0].description == cur_app_info.name()) {
                                             println!("found active saved app {} at {}", s.0[0].name, i);
                                             let active = stack_active.remove(i);
-                                            dock_obj.set_property("active", active.to_value()).expect("failed to update dock active apps")
+                                            dock_obj.set_property("active", active.to_value()).expect("failed to update dock active apps");
+                                            saved_app_model.items_changed(i.try_into().unwrap(), 0, 0);
                                         }
                                     }
 
