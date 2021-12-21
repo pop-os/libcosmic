@@ -13,7 +13,7 @@ pub struct DockItem {
     #[template_child]
     pub image: TemplateChild<gtk::Image>,
     #[template_child]
-    pub dots: TemplateChild<gtk::Box>,
+    pub dots: TemplateChild<gtk::Label>,
     pub drag_controller: OnceCell<DragSource>,
 }
 

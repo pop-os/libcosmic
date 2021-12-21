@@ -5,9 +5,12 @@ use gio::DesktopAppInfo;
 use gio::Icon;
 use gio::ListStore;
 use gtk4 as gtk;
+use gtk4::Align;
+use gtk4::Box;
 use gtk4::DragSource;
 use gtk4::IconTheme;
 use gtk4::Label;
+use gtk4::Orientation;
 mod imp;
 
 use gtk::glib;
@@ -121,8 +124,11 @@ impl DockItem {
         }
         if let Ok(active_value) = app_info.property("active") {
             if let Ok(active) = active_value.get::<BoxedSearchResults>() {
+                self_.dots.set_text("");
                 for _ in active.0 {
-                    self_.dots.append(&Label::new(Some("·")));
+                    self_
+                        .dots
+                        .set_text(format!("{}{}", self_.dots.text(), " · ").as_str());
                 }
             }
         }

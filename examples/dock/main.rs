@@ -131,10 +131,14 @@ fn main() {
                         //TODO refresh the model from cached_results (required after DnD for example)
                     }
                     Event::Response(event) => {
+                        // TODO investigate why polled results are out of date after launching a new window
                         if let pop_launcher::Response::Update(mut results) = event {
                             // sort to make comparison with cache easier
                             let mut cached_results = cached_results.as_mut();
                             results.sort_by(|a, b| a.name.cmp(&b.name));
+
+                            dbg!(&results);
+                            dbg!(&cached_results);
                             // check if cache equals the new polled results
                             // skip if equal
                             if cached_results.len() == results.len() && results.iter().zip(cached_results.iter()).fold(0, |acc, z: (&SearchResult, &SearchResult)| {

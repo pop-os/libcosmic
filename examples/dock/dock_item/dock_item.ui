@@ -11,9 +11,7 @@
        </object>
     </child>
     <child>
-      <object class="GtkBox" id="dots">
-        <property name="orientation">horizontal</property>
-        <property name="spacing">4</property>
+      <object class="GtkLabel" id="dots">
         <property name="hexpand">true</property>
         <property name="halign">center</property>
       </object>
