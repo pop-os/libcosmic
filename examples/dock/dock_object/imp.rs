@@ -1,4 +1,4 @@
-use crate::utils::BoxedSearchResults;
+use crate::utils::BoxedWindowList;
 use gio::DesktopAppInfo;
 use glib::{ParamFlags, ParamSpec, Value};
 use gtk4::glib;
@@ -12,7 +12,7 @@ use std::cell::RefCell;
 #[derive(Default)]
 pub struct DockObject {
     appinfo: RefCell<Option<DesktopAppInfo>>,
-    active: RefCell<BoxedSearchResults>,
+    active: RefCell<BoxedWindowList>,
     saved: Cell<bool>,
 }
 
@@ -47,7 +47,7 @@ impl ObjectImpl for DockObject {
                     "active",
                     // Short description
                     "active",
-                    BoxedSearchResults::static_type(),
+                    BoxedWindowList::static_type(),
                     // The property can be read and written to
                     ParamFlags::READWRITE,
                 ),
@@ -72,7 +72,7 @@ impl ObjectImpl for DockObject {
                 self.appinfo.replace(appinfo);
             }
             "active" => {
-                let active = value.get().expect("Value needs to be BoxedSearchResults");
+                let active = value.get().expect("Value needs to be BoxedWindowList");
                 self.active.replace(active);
             }
             "saved" => {

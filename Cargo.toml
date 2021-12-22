@@ -27,6 +27,7 @@ async-io = "1.6.0"
 # zbus
 zbus = "2.0.0-beta.7"
 zvariant = "2.10.0"
+zvariant_derive = "2.10.0"
 futures-util = "0.3.19"
 
 [dependencies.gtk4]

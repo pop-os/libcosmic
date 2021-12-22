@@ -1,6 +1,6 @@
 mod imp;
 
-use crate::utils::BoxedSearchResults;
+use crate::utils::BoxedWindowList;
 use gdk4::glib::Object;
 use gio::DesktopAppInfo;
 use gtk4::glib;
@@ -16,7 +16,7 @@ impl DockObject {
             .expect("Failed to create `DockObject`.")
     }
 
-    pub fn from_search_results(results: BoxedSearchResults) -> Self {
+    pub fn from_search_results(results: BoxedWindowList) -> Self {
         let appinfo = if let Some(first) = results.0.iter().next() {
             xdg::BaseDirectories::new()
                 .expect("could not access XDG Base directory")

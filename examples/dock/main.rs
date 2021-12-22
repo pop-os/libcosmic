@@ -4,7 +4,7 @@ mod dock_object;
 mod utils;
 mod window;
 
-use crate::utils::BoxedSearchResults;
+use crate::utils::BoxedWindowList;
 use async_io::Timer;
 use futures::StreamExt;
 use gdk4::Display;
@@ -17,13 +17,15 @@ use gtk4 as gtk;
 use gtk4::CssProvider;
 use gtk4::StyleContext;
 use once_cell::sync::OnceCell;
-use pop_launcher::SearchResult;
 use pop_launcher_service::IpcClient;
 use postage::mpsc::Sender;
 use postage::prelude::*;
+use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 use std::time::Duration;
 use x11rb::rust_connection::RustConnection;
+use zbus::Connection;
+use zvariant_derive::Type;
 
 use self::dock_object::DockObject;
 use self::window::Window;
@@ -34,9 +36,18 @@ static X11_CONN: OnceCell<RustConnection> = OnceCell::new();
 
 pub enum Event {
     Response(pop_launcher::Response),
+    WindowList(Vec<Item>),
     RefreshFromCache,
     Search(String),
     Activate(u32),
+}
+
+#[derive(Debug, Deserialize, Serialize, Type, Clone, PartialEq, Eq)]
+pub struct Item {
+    entity: (u32, u32),
+    name: String,
+    description: String,
+    desktop_entry: String,
 }
 
 fn spawn_launcher(tx: Sender<Event>) -> IpcClient {
@@ -51,12 +62,25 @@ fn spawn_launcher(tx: Sender<Event>) -> IpcClient {
         }
     });
 
-    // TODO listen for signal indicating change from dock service...
     let mut sender = tx.clone();
     glib::MainContext::default().spawn_local(async move {
         loop {
-            let _ = sender.send(Event::Search(String::new())).await;
-            Timer::after(Duration::from_secs(1)).await;
+            let connection = Connection::session().await.unwrap();
+            let m = connection
+                .call_method(
+                    Some("com.System76.PopShell"),
+                    "/com/System76/PopShell",
+                    Some("com.System76.PopShell"),
+                    "WindowList",
+                    &(),
+                )
+                .await;
+            if let Ok(m) = m {
+                if let Ok(reply) = m.body::<Vec<Item>>() {
+                    let _ = sender.send(Event::WindowList(reply)).await;
+                }
+                Timer::after(Duration::from_secs(1)).await;
+            }
         }
     });
 
@@ -86,7 +110,7 @@ fn load_css() {
 }
 
 fn main() {
-    assert!(utils::BoxedSearchResults::static_type().is_valid());
+    assert!(utils::BoxedWindowList::static_type().is_valid());
     let app = gtk::Application::builder()
         .application_id("com.cosmic.Launcher")
         .build();
@@ -116,7 +140,7 @@ fn main() {
         let window = Window::new(app);
         window.show();
 
-        let cached_results: Vec<SearchResult> = vec![];
+        let cached_results: Vec<Item> = vec![];
         glib::MainContext::default().spawn_local(async move {
             futures::pin_mut!(cached_results);
             while let Some(event) = rx.recv().await {
@@ -130,18 +154,17 @@ fn main() {
                     Event::RefreshFromCache => {
                         //TODO refresh the model from cached_results (required after DnD for example)
                     }
-                    Event::Response(event) => {
-                        // TODO investigate why polled results are out of date after launching a new window
-                        if let pop_launcher::Response::Update(mut results) = event {
-                            // sort to make comparison with cache easier
+                    Event::WindowList(mut results) => {
+// sort to make comparison with cache easier
                             let mut cached_results = cached_results.as_mut();
                             results.sort_by(|a, b| a.name.cmp(&b.name));
 
-                            dbg!(&results);
-                            dbg!(&cached_results);
-                            // check if cache equals the new polled results
+
+                            // dbg!(&results);
+                            // dbg!(&cached_results);
+                            // // check if cache equals the new polled results
                             // skip if equal
-                            if cached_results.len() == results.len() && results.iter().zip(cached_results.iter()).fold(0, |acc, z: (&SearchResult, &SearchResult)| {
+                            if cached_results.len() == results.len() && results.iter().zip(cached_results.iter()).fold(0, |acc, z: (&Item, &Item)| {
                                 let (a, b) = z;
                                 if a.name == b.name {acc + 1} else {acc}
                             }) == cached_results.len() {
@@ -150,15 +173,15 @@ fn main() {
 
                             println!("updating active apps");
                             // build active app stacks for each app
-                            let stack_active = results.iter().fold(BTreeMap::new(), |mut acc: BTreeMap<String, BoxedSearchResults>, elem| {
+                            let stack_active = results.iter().fold(BTreeMap::new(), |mut acc: BTreeMap<String, BoxedWindowList>, elem| {
                                 if let Some(v) = acc.get_mut(&elem.description) {
                                     v.0.push(elem.clone());
                                 } else {
-                                    acc.insert(elem.description.clone(), BoxedSearchResults(vec![elem.clone()]));
+                                    acc.insert(elem.description.clone(), BoxedWindowList(vec![elem.clone()]));
                                 }
                                 acc
                             });
-                            let mut stack_active: Vec<BoxedSearchResults> = stack_active.into_values().collect();
+                            let mut stack_active: Vec<BoxedWindowList> = stack_active.into_values().collect();
 
                             // update active app stacks for saved apps into the saved app model
                             // then put the rest in the active app model (which doesn't include saved apps)
@@ -188,8 +211,10 @@ fn main() {
                                 .collect();
                             active_app_model.splice(0, model_len, &new_results[..]);
                             cached_results.splice(.., results);
-                        }
-                        else if let pop_launcher::Response::DesktopEntry {
+                    }
+                    Event::Response(event) => {
+                        // TODO investigate why polled results are out of date after launching a new window
+                        if let pop_launcher::Response::DesktopEntry {
                             path,
                             gpu_preference: _gpu_preference, // TODO use GPU preference when launching app
                         } = event
