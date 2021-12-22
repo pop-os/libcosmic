@@ -23,29 +23,40 @@
             <property name="transition-type">cross-fade</property>
             <child>
               <object class="GtkBox">
-                <property name="orientation">horizontal</property>
-                <property name="height-request">64</property>
-                <property name="margin-start">4</property>
-                <property name="margin-end">4</property>
-                <property name="spacing">4</property>
-                <property name="name">dock-container</property>
+                <property name="height-request">0</property>
+                <property name="orientation">vertical</property>
                 <child>
-                  <object class="GtkListView" id="saved_app_list_view">
+                  <object class="GtkBox">
                     <property name="orientation">horizontal</property>
+                    <property name="height-request">64</property>
+                    <property name="margin-start">4</property>
+                    <property name="margin-end">4</property>
+                    <property name="spacing">4</property>
+                    <property name="name">dock-container</property>
+                    <child>
+                      <object class="GtkListView" id="saved_app_list_view">
+                        <property name="orientation">horizontal</property>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="GtkSeparator">
+                        <property name="margin-start">12</property>
+                        <property name="margin-end">12</property>
+                        <property name="margin-top">4</property>
+                        <property name="margin-bottom">4</property>
+                        <property name="orientation">vertical</property>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="GtkListView" id="active_app_list_view">
+                        <property name="orientation">horizontal</property>
+                      </object>
+                    </child>
                   </object>
                 </child>
                 <child>
-                  <object class="GtkSeparator">
-                    <property name="margin-start">12</property>
-                    <property name="margin-end">12</property>
-                    <property name="margin-top">4</property>
-                    <property name="margin-bottom">4</property>
-                    <property name="orientation">vertical</property>
-                  </object>
-                </child>
-                <child>
-                  <object class="GtkListView" id="active_app_list_view">
-                    <property name="orientation">horizontal</property>
+                  <object class="GtkBox">
+                    <property name="height-request">4</property>
                   </object>
                 </child>
               </object>
