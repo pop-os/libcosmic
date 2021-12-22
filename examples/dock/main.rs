@@ -79,7 +79,7 @@ fn spawn_launcher(tx: Sender<Event>) -> IpcClient {
                 if let Ok(reply) = m.body::<Vec<Item>>() {
                     let _ = sender.send(Event::WindowList(reply)).await;
                 }
-                Timer::after(Duration::from_secs(1)).await;
+                Timer::after(Duration::from_millis(200)).await;
             }
         }
     });

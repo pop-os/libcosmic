@@ -157,23 +157,54 @@ impl Window {
                         }
                     }
                 }
+                model.set_selected(gtk4::INVALID_LIST_POSITION);
             }),
         );
 
-        let enter_event_controller = &imp.enter_event_controller.get().unwrap();
-        let leave_event_controller = &imp.leave_event_controller.get().unwrap();
+        let active_app_selection_model = saved_app_list_view
+            .model()
+            .expect("List view missing selection model")
+            .downcast::<gtk::SingleSelection>()
+            .expect("could not downcast listview model to single selection model");
+
+        active_app_selection_model.connect_selected_notify(
+            glib::clone!(@weak window => move |model| {
+                let position = model.selected();
+                println!("selected app {}", position);
+                // Launch the application when an item of the list is activated
+                if let Some(item) = model.item(position) {
+                    let app_info = item.downcast::<DockObject>().expect("App model must only contain DockObject");
+                    if let Ok(Some(app_info)) = app_info.property("appinfo").expect("DockObject must have appinfo property").get::<Option<DesktopAppInfo>>() {
+                        let context = window.display().app_launch_context();
+                        if let Err(err) = app_info.launch(&[], Some(&context)) {
+                            gtk::MessageDialog::builder()
+                                .text(&format!("Failed to start {}", app_info.name()))
+                                .secondary_text(&err.to_string())
+                                .message_type(gtk::MessageType::Error)
+                                .modal(true)
+                                .transient_for(&window)
+                                .build()
+                                .show();
+                        }
+                    }
+                }
+                model.set_selected(gtk4::INVALID_LIST_POSITION);
+            }),
+        );
+
+        let cursor_event_controller = &imp.cursor_event_controller.get().unwrap();
         let drop_controller = &imp.drop_controller.get().unwrap();
         let window_drop_controller = &imp.window_drop_controller.get().unwrap();
         let revealer = &imp.revealer.get();
         window.connect_show(
-            glib::clone!(@weak revealer, @weak leave_event_controller => move |_| {
-                dbg!(!leave_event_controller.contains_pointer());
-                if !leave_event_controller.contains_pointer() {
+            glib::clone!(@weak revealer, @weak cursor_event_controller => move |_| {
+                dbg!(!cursor_event_controller.contains_pointer());
+                if !cursor_event_controller.contains_pointer() {
                     revealer.set_reveal_child(false);
                 }
             }),
         );
-        window.connect_realize(move |window| {
+        window.connect_realize(glib::clone!(@weak revealer, @weak cursor_event_controller => move |window| {
             if let Some((display, surface)) = x::get_window_x11(window) {
                 unsafe {
                     x::change_property(
@@ -184,6 +215,91 @@ impl Window {
                         &[x::Atom::new(&display, "_NET_WM_WINDOW_TYPE_DOCK").unwrap()],
                     );
                 }
+
+                //TODO clean up duplicated code
+                cursor_event_controller.connect_enter(glib::clone!(@weak revealer, @weak window => move |_evc, _x, _y| {
+                    dbg!("hello, mouse entered me :)");
+                    revealer.set_reveal_child(true);
+                    let s = window.surface().expect("Failed to get Surface for Window");
+                    let height = s.height() * s.scale_factor();
+
+                    if let Some((display, _surface)) = x::get_window_x11(&window) {
+                        let monitor = display
+                            .primary_monitor()
+                            .expect("Failed to get Monitor");
+                        let Rectangle {
+                            x: _monitor_x,
+                            y: monitor_y,
+                            width: _monitor_width,
+                            height: monitor_height,
+                        } = monitor.geometry();
+                        // dbg!(monitor_width);
+                        // dbg!(monitor_height);
+                        // dbg!(width);
+                        // dbg!(height);
+                        let new_y = (monitor_y + monitor_height - height).clamp(0, monitor_y + monitor_height - 1);
+                        let w_conf = xproto::ConfigureWindowAux::default()
+                            .y(new_y);
+                        let conn = X11_CONN.get().expect("Failed to get X11_CONN");
+
+                        let x11surface = gdk4_x11::X11Surface::xid(
+                            &s.clone().downcast::<X11Surface>()
+                                .expect("Failed to downcast Surface to X11Surface"),
+                        );
+                        conn.configure_window(
+                            x11surface.try_into().expect("Failed to convert XID"),
+                            &w_conf,
+                        )
+                        .expect("failed to configure window...");
+                        conn.flush().expect("failed to flush");
+
+                    } else {
+                        println!("failed to get X11 window");
+                    }
+
+                }));
+
+                revealer.connect_child_revealed_notify(glib::clone!(@weak window => move |r| {
+                    if !r.is_child_revealed() {
+                        let s = window.surface().expect("Failed to get Surface for Window");
+                        dbg!(r.is_child_revealed());
+                        let height = 4;
+                        if let Some((display, _surface)) = x::get_window_x11(&window) {
+                            let monitor = display
+                                .primary_monitor()
+                                .expect("Failed to get Monitor");
+                            let Rectangle {
+                                x: _monitor_x,
+                                y: monitor_y,
+                                width: _monitor_width,
+                                height: monitor_height,
+                            } = monitor.geometry();
+                            // dbg!(monitor_width);
+                            // dbg!(monitor_height);
+                            // dbg!(width);
+                            // dbg!(height);
+                            let new_y = (monitor_y + monitor_height - height).clamp(0, monitor_y + monitor_height - 1);
+                            let w_conf = xproto::ConfigureWindowAux::default()
+                                .y(new_y);
+                            let conn = X11_CONN.get().expect("Failed to get X11_CONN");
+
+                            let x11surface = gdk4_x11::X11Surface::xid(
+                                &s.clone().downcast::<X11Surface>()
+                                    .expect("Failed to downcast Surface to X11Surface"),
+                            );
+                            conn.configure_window(
+                                x11surface.try_into().expect("Failed to convert XID"),
+                                &w_conf,
+                            )
+                            .expect("failed to configure window...");
+                            conn.flush().expect("failed to flush");
+
+                        } else {
+                            println!("failed to get X11 window");
+                        }
+                    }
+                }));
+
                 let s = window.surface().expect("Failed to get Surface for Window");
                 let surface_resize_handler = glib::clone!(@weak window => move |s: &Surface| {
                     if let Some((display, _surface)) = x::get_window_x11(&window) {
@@ -198,13 +314,17 @@ impl Window {
                             width: monitor_width,
                             height: monitor_height,
                         } = monitor.geometry();
-                        dbg!(monitor_width);
-                        dbg!(monitor_height);
-                        dbg!(width);
-                        dbg!(height);
+                        // dbg!(monitor_width);
+                        // dbg!(monitor_height);
+                        // dbg!(width);
+                        // dbg!(height);
+                        let new_x = (monitor_x + monitor_width / 2 - width / 2).clamp(0, monitor_x + monitor_width - 1);
+                        let new_y = (monitor_y + monitor_height - height).clamp(0, monitor_y + monitor_height - 1);
+                        // dbg!(new_x);
+                        // dbg!(new_y);
                         let w_conf = xproto::ConfigureWindowAux::default()
-                            .x(monitor_x + monitor_width / 2 - width / 2)
-                            .y(monitor_y + monitor_height - height);
+                            .x(new_x)
+                            .y(new_y);
                         let conn = X11_CONN.get().expect("Failed to get X11_CONN");
 
                         let x11surface = gdk4_x11::X11Surface::xid(
@@ -228,12 +348,9 @@ impl Window {
             } else {
                 println!("failed to get X11 window");
             }
-        });
-        enter_event_controller.connect_enter(glib::clone!(@weak revealer => move |_evc, _x, _y| {
-            dbg!("hello, mouse entered me :)");
-            revealer.set_reveal_child(true);
         }));
-        leave_event_controller.connect_leave(
+
+        cursor_event_controller.connect_leave(
             glib::clone!(@weak revealer, @weak drop_controller => move |_evc| {
                 // only hide if DnD is not happening
                 if drop_controller.current_drop().is_none() {
@@ -244,6 +361,7 @@ impl Window {
         );
 
         drop_controller.connect_enter(glib::clone!(@weak revealer => @default-return gdk4::DragAction::COPY, move |_self, _x, _y| {
+
             revealer.set_reveal_child(true);
             gdk4::DragAction::COPY
         }));
@@ -317,24 +435,15 @@ impl Window {
 
     fn setup_event_controller(&self) {
         let imp = imp::Window::from_instance(self);
-        let enter_handle = &imp.cursor_enter_handle.get();
-        let enter_ev = EventControllerMotion::builder()
+        let handle = &imp.cursor_handle.get();
+        let ev = EventControllerMotion::builder()
             .propagation_limit(gtk4::PropagationLimit::None)
             .propagation_phase(gtk4::PropagationPhase::Capture)
             .build();
-        enter_handle.add_controller(&enter_ev);
-        let leave_handle = &imp.cursor_leave_handle.get();
-        let leave_ev = EventControllerMotion::builder()
-            .propagation_limit(gtk4::PropagationLimit::None)
-            .propagation_phase(gtk4::PropagationPhase::Capture)
-            .build();
-        enter_handle.add_controller(&enter_ev);
-        leave_handle.add_controller(&leave_ev);
-        imp.enter_event_controller
-            .set(enter_ev)
-            .expect("Could not set event controller");
-        imp.leave_event_controller
-            .set(leave_ev)
+        handle.add_controller(&ev);
+
+        imp.cursor_event_controller
+            .set(ev)
             .expect("Could not set event controller");
     }
 
@@ -361,9 +470,9 @@ impl Window {
             .actions(gdk4::DragAction::COPY)
             .formats(&gdk4::ContentFormats::for_type(Type::STRING))
             .build();
+        let enter_handle = &imp.cursor_handle.get();
 
-        let window = self.clone().upcast::<gtk::Window>();
-        window.add_controller(&window_drop_target_controller);
+        enter_handle.add_controller(&window_drop_target_controller);
         imp.window_drop_controller
             .set(window_drop_target_controller)
             .expect("Could not set dock dnd drop controller");
