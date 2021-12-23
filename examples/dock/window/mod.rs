@@ -153,10 +153,8 @@ impl Window {
             if let Some(item) = model.item(position) {
                 let dockobject = item.downcast::<DockObject>().expect("App model must only contain DockObject");
                 if let Ok(active) = dockobject.property("active").expect("DockObject must have active property").get::<BoxedWindowList>() {
-                    dbg!(&active);
                     if let Some(focused_item) = active.0.iter().next() {
                         let entity = focused_item.entity.clone();
-                        dbg!(&entity);
                         glib::MainContext::default().spawn_local(async move {
                             if let Some(tx) = TX.get() {
                                 let mut tx = tx.clone();
@@ -230,9 +228,8 @@ impl Window {
                         // dbg!(monitor_height);
                         // dbg!(width);
                         // dbg!(height);
-                        let new_y = (monitor_y + monitor_height - height).clamp(0, monitor_y + monitor_height - 1);
                         let w_conf = xproto::ConfigureWindowAux::default()
-                            .y(new_y);
+                            .y((monitor_y + monitor_height - height).clamp(0, monitor_y + monitor_height - 1));
                         let conn = X11_CONN.get().expect("Failed to get X11_CONN");
 
                         let x11surface = gdk4_x11::X11Surface::xid(
@@ -271,9 +268,8 @@ impl Window {
                             // dbg!(monitor_height);
                             // dbg!(width);
                             // dbg!(height);
-                            let new_y = (monitor_y + monitor_height - height).clamp(0, monitor_y + monitor_height - 1);
                             let w_conf = xproto::ConfigureWindowAux::default()
-                                .y(new_y);
+                                .y((monitor_y + monitor_height - height).clamp(0, monitor_y + monitor_height - 1));
                             let conn = X11_CONN.get().expect("Failed to get X11_CONN");
 
                             let x11surface = gdk4_x11::X11Surface::xid(
@@ -297,7 +293,9 @@ impl Window {
                 let surface_resize_handler = glib::clone!(@weak window => move |s: &Surface| {
                     if let Some((display, _surface)) = x::get_window_x11(&window) {
                         let width = s.width() * s.scale_factor();
-                        let height = s.height() * s.scale_factor();
+                        // let height = s.height() * s.scale_factor();
+                        // hide by default
+                        let height = 4;
                         let monitor = display
                             .primary_monitor()
                             .expect("Failed to get Monitor");
@@ -310,14 +308,10 @@ impl Window {
                         // dbg!(monitor_width);
                         // dbg!(monitor_height);
                         // dbg!(width);
-                        // dbg!(height);
-                        let new_x = (monitor_x + monitor_width / 2 - width / 2).clamp(0, monitor_x + monitor_width - 1);
-                        let new_y = (monitor_y + monitor_height - height).clamp(0, monitor_y + monitor_height - 1);
-                        // dbg!(new_x);
-                        // dbg!(new_y);
+                        // dbg!(heightt - 1);
                         let w_conf = xproto::ConfigureWindowAux::default()
-                            .x(new_x)
-                            .y(new_y);
+                            .x((monitor_x + monitor_width / 2 - width / 2).clamp(0, monitor_x + monitor_width - 1))
+                            .y((monitor_y + monitor_height - height).clamp(0, monitor_y + monitor_height - 1));
                         let conn = X11_CONN.get().expect("Failed to get X11_CONN");
 
                         let x11surface = gdk4_x11::X11Surface::xid(
@@ -367,9 +361,8 @@ impl Window {
         let saved_app_list_view = saved_app_list_view.get();
 
         drop_controller.connect_drop(
-            glib::clone!(@weak saved_app_model, @weak saved_app_list_view => @default-return true, move |_self, drop_value, x, y| {
+            glib::clone!(@weak saved_app_model, @weak saved_app_list_view => @default-return true, move |_self, drop_value, x, _y| {
                 if let Ok(Some(path_str)) = drop_value.get::<Option<String>>() {
-                    // dbg!(&path_str);
                     let desktop_path = &Path::new(&path_str);
                     if let Some(pathbase) = desktop_path.file_name() {
                         if let Some(app_info) = gio::DesktopAppInfo::new(&pathbase.to_string_lossy()) {
@@ -396,7 +389,6 @@ impl Window {
                             //calculate insertion location
                             // dbg!(x);
                             // dbg!(y);
-                            let max_y = saved_app_list_view.allocated_height();
                             let max_x = saved_app_list_view.allocated_width();
                             // dbg!(max_x);
                             // dbg!(max_y);
