@@ -145,11 +145,10 @@ fn main() {
                         let mut cached_results = cached_results.as_mut();
                         results.sort_by(|a, b| a.name.cmp(&b.name));
 
-                        dbg!(&results);
-                        dbg!(&cached_results);
+                        // dbg!(&results);
+                        // dbg!(&cached_results);
                         // // check if cache equals the new polled results
                         // skip if equal
-                        // TODO removed closed apps from the models
                         if cached_results.len() == results.len()
                             && results.iter().zip(cached_results.iter()).fold(
                                 0,
@@ -188,8 +187,8 @@ fn main() {
                         // then put the rest in the active app model (which doesn't include saved apps)
                         let saved_app_model = window.saved_app_model();
 
-                        let mut i: u32 = 0;
-                        while let Some(item) = saved_app_model.item(i) {
+                        let mut saved_i: u32 = 0;
+                        while let Some(item) = saved_app_model.item(saved_i) {
                             if let Ok(dock_obj) = item.downcast::<DockObject>() {
                                 if let Ok(Some(cur_app_info)) = dock_obj
                                     .property("appinfo")
@@ -206,11 +205,30 @@ fn main() {
                                         dock_obj
                                             .set_property("active", active.to_value())
                                             .expect("failed to update dock active apps");
-                                        saved_app_model.items_changed(i.try_into().unwrap(), 0, 0);
+                                        saved_app_model.items_changed(
+                                            saved_i.try_into().unwrap(),
+                                            0,
+                                            0,
+                                        );
+                                    } else if let Some(_) = cached_results
+                                        .iter()
+                                        .find(|s| s.description == cur_app_info.name())
+                                    {
+                                        dock_obj
+                                            .set_property(
+                                                "active",
+                                                BoxedWindowList(Vec::new()).to_value(),
+                                            )
+                                            .expect("failed to update dock active apps");
+                                        saved_app_model.items_changed(
+                                            saved_i.try_into().unwrap(),
+                                            0,
+                                            0,
+                                        );
                                     }
                                 }
                             }
-                            i += 1;
+                            saved_i += 1;
                         }
 
                         let active_app_model = window.active_app_model();
