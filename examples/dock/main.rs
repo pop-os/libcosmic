@@ -64,7 +64,7 @@ fn spawn_launcher(tx: Sender<Event>) -> Connection {
                 if let Ok(reply) = m.body::<Vec<Item>>() {
                     let _ = sender.send(Event::WindowList(reply)).await;
                 }
-                Timer::after(Duration::from_millis(200)).await;
+                Timer::after(Duration::from_millis(10000)).await;
             }
         }
     });
@@ -145,10 +145,11 @@ fn main() {
                         let mut cached_results = cached_results.as_mut();
                         results.sort_by(|a, b| a.name.cmp(&b.name));
 
-                        // dbg!(&results);
-                        // dbg!(&cached_results);
+                        dbg!(&results);
+                        dbg!(&cached_results);
                         // // check if cache equals the new polled results
                         // skip if equal
+                        // TODO removed closed apps from the models
                         if cached_results.len() == results.len()
                             && results.iter().zip(cached_results.iter()).fold(
                                 0,
