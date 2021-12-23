@@ -2,6 +2,9 @@ mod imp;
 // use crate::ApplicationObject;
 use crate::dock_item::DockItem;
 use crate::dock_object::DockObject;
+use crate::BoxedWindowList;
+use crate::Event;
+use crate::TX;
 use crate::X11_CONN;
 use gdk4::Rectangle;
 use gdk4::Surface;
@@ -12,6 +15,7 @@ use gtk4 as gtk;
 use gtk4::prelude::ListModelExt;
 use gtk4::DropTarget;
 use gtk4::EventControllerMotion;
+use postage::prelude::Sink;
 use std::path::Path;
 use x11rb::connection::Connection;
 use x11rb::protocol::xproto::ConnectionExt;
@@ -73,7 +77,7 @@ impl Window {
             .for_each(|xdg_data_path| {
                 let defaults = ["Firefox Web Browser", "Files", "Terminal", "Pop!_Shop"];
                 xdg_data_path.push("applications");
-                dbg!(&xdg_data_path);
+                // dbg!(&xdg_data_path);
                 if let Ok(dir_iter) = std::fs::read_dir(xdg_data_path) {
                     dir_iter.for_each(|dir_entry| {
                         if let Ok(dir_entry) = dir_entry {
@@ -135,46 +139,32 @@ impl Window {
             .expect("List view missing selection model")
             .downcast::<gtk::SingleSelection>()
             .expect("could not downcast listview model to single selection model");
-
-        saved_app_selection_model.connect_selected_notify(
-            glib::clone!(@weak window => move |model| {
-                let position = model.selected();
-                println!("selected app {}", position);
-                // Launch the application when an item of the list is activated
-                if let Some(item) = model.item(position) {
-                    let app_info = item.downcast::<DockObject>().expect("App model must only contain DockObject");
-                    if let Ok(Some(app_info)) = app_info.property("appinfo").expect("DockObject must have appinfo property").get::<Option<DesktopAppInfo>>() {
-                        let context = window.display().app_launch_context();
-                        if let Err(err) = app_info.launch(&[], Some(&context)) {
-                            gtk::MessageDialog::builder()
-                                .text(&format!("Failed to start {}", app_info.name()))
-                                .secondary_text(&err.to_string())
-                                .message_type(gtk::MessageType::Error)
-                                .modal(true)
-                                .transient_for(&window)
-                                .build()
-                                .show();
-                        }
-                    }
-                }
-                model.set_selected(gtk4::INVALID_LIST_POSITION);
-            }),
-        );
-
-        let active_app_selection_model = saved_app_list_view
+        let active_app_selection_model = imp
+            .active_app_list_view
             .model()
             .expect("List view missing selection model")
             .downcast::<gtk::SingleSelection>()
             .expect("could not downcast listview model to single selection model");
 
-        active_app_selection_model.connect_selected_notify(
-            glib::clone!(@weak window => move |model| {
-                let position = model.selected();
-                println!("selected app {}", position);
-                // Launch the application when an item of the list is activated
-                if let Some(item) = model.item(position) {
-                    let app_info = item.downcast::<DockObject>().expect("App model must only contain DockObject");
-                    if let Ok(Some(app_info)) = app_info.property("appinfo").expect("DockObject must have appinfo property").get::<Option<DesktopAppInfo>>() {
+        let selected_handler = glib::clone!(@weak window => move |model: &gtk::SingleSelection| {
+            let position = model.selected();
+            println!("selected app {}", position);
+            // Launch the application when an item of the list is activated
+            if let Some(item) = model.item(position) {
+                let dockobject = item.downcast::<DockObject>().expect("App model must only contain DockObject");
+                if let Ok(active) = dockobject.property("active").expect("DockObject must have active property").get::<BoxedWindowList>() {
+                    dbg!(&active);
+                    if let Some(focused_item) = active.0.iter().next() {
+                        let entity = focused_item.entity.clone();
+                        dbg!(&entity);
+                        glib::MainContext::default().spawn_local(async move {
+                            if let Some(tx) = TX.get() {
+                                let mut tx = tx.clone();
+                                let _ = tx.send(Event::Activate(entity)).await;
+                            }
+                        });
+                    }
+                    else if let Ok(Some(app_info)) = dockobject.property("appinfo").expect("DockObject must have appinfo property").get::<Option<DesktopAppInfo>>() {
                         let context = window.display().app_launch_context();
                         if let Err(err) = app_info.launch(&[], Some(&context)) {
                             gtk::MessageDialog::builder()
@@ -188,9 +178,12 @@ impl Window {
                         }
                     }
                 }
-                model.set_selected(gtk4::INVALID_LIST_POSITION);
-            }),
-        );
+            }
+            model.set_selected(gtk4::INVALID_LIST_POSITION);
+        });
+        saved_app_selection_model.connect_selected_notify(selected_handler.clone());
+
+        active_app_selection_model.connect_selected_notify(selected_handler);
 
         let cursor_event_controller = &imp.cursor_event_controller.get().unwrap();
         let drop_controller = &imp.drop_controller.get().unwrap();
@@ -198,7 +191,7 @@ impl Window {
         let revealer = &imp.revealer.get();
         window.connect_show(
             glib::clone!(@weak revealer, @weak cursor_event_controller => move |_| {
-                dbg!(!cursor_event_controller.contains_pointer());
+                // dbg!(!cursor_event_controller.contains_pointer());
                 if !cursor_event_controller.contains_pointer() {
                     revealer.set_reveal_child(false);
                 }
@@ -218,7 +211,7 @@ impl Window {
 
                 //TODO clean up duplicated code
                 cursor_event_controller.connect_enter(glib::clone!(@weak revealer, @weak window => move |_evc, _x, _y| {
-                    dbg!("hello, mouse entered me :)");
+                    // dbg!("hello, mouse entered me :)");
                     revealer.set_reveal_child(true);
                     let s = window.surface().expect("Failed to get Surface for Window");
                     let height = s.height() * s.scale_factor();
@@ -262,7 +255,7 @@ impl Window {
                 revealer.connect_child_revealed_notify(glib::clone!(@weak window => move |r| {
                     if !r.is_child_revealed() {
                         let s = window.surface().expect("Failed to get Surface for Window");
-                        dbg!(r.is_child_revealed());
+                        // dbg!(r.is_child_revealed());
                         let height = 4;
                         if let Some((display, _surface)) = x::get_window_x11(&window) {
                             let monitor = display
@@ -354,7 +347,7 @@ impl Window {
             glib::clone!(@weak revealer, @weak drop_controller => move |_evc| {
                 // only hide if DnD is not happening
                 if drop_controller.current_drop().is_none() {
-                    dbg!("hello, mouse left me :)");
+                    // dbg!("hello, mouse left me :)");
                     revealer.set_reveal_child(false);
                 }
             }),
@@ -376,7 +369,7 @@ impl Window {
         drop_controller.connect_drop(
             glib::clone!(@weak saved_app_model, @weak saved_app_list_view => @default-return true, move |_self, drop_value, x, y| {
                 if let Ok(Some(path_str)) = drop_value.get::<Option<String>>() {
-                    dbg!(&path_str);
+                    // dbg!(&path_str);
                     let desktop_path = &Path::new(&path_str);
                     if let Some(pathbase) = desktop_path.file_name() {
                         if let Some(app_info) = gio::DesktopAppInfo::new(&pathbase.to_string_lossy()) {
@@ -385,7 +378,7 @@ impl Window {
                             while let Some(item) = saved_app_model.item(i) {
                                 if let Ok(cur_app_info) = item.downcast::<DockObject>() {
                                     if let Ok(Some(cur_app_info)) = cur_app_info.property("appinfo").expect("property appinfo missing from DockObject").get::<Option<DesktopAppInfo>>() {
-                                        dbg!(cur_app_info.filename());
+                                        // dbg!(cur_app_info.filename());
                                         if cur_app_info.filename() == Some(Path::new(&path_str).to_path_buf()) {
                                             index_of_existing_app = Some(i);
                                         }
@@ -393,20 +386,20 @@ impl Window {
                                 }
                                 i += 1;
                             }
-                            dbg!(app_info.name());
-                            dbg!(index_of_existing_app);
+                            // dbg!(app_info.name());
+                            // dbg!(index_of_existing_app);
                             if let Some(index_of_existing_app) = index_of_existing_app {
                                 // remove existing entry
                                 saved_app_model.remove(index_of_existing_app);
                             }
 
                             //calculate insertion location
-                            dbg!(x);
-                            dbg!(y);
+                            // dbg!(x);
+                            // dbg!(y);
                             let max_y = saved_app_list_view.allocated_height();
                             let max_x = saved_app_list_view.allocated_width();
-                            dbg!(max_x);
-                            dbg!(max_y);
+                            // dbg!(max_x);
+                            // dbg!(max_y);
                             let n_buckets = saved_app_model.n_items() * 2;
 
                             let drop_bucket = (x * n_buckets as f64 / (max_x as f64 + 0.1)) as u32;
@@ -417,15 +410,15 @@ impl Window {
                             } else {
                                 (drop_bucket + 1) / 2
                             };
-                            dbg!(index);
-                            dbg!("dropped it!");
-                            dbg!(drop_value.type_());
+                            // dbg!(index);
+                            // dbg!("dropped it!");
+                            // dbg!(drop_value.type_());
                             saved_app_model.insert(index, &DockObject::new(app_info));
                         }
                     }
                 }
                 else {
-                    dbg!("rejecting drop");
+                    // dbg!("rejecting drop");
                     _self.reject();
                 }
                 true

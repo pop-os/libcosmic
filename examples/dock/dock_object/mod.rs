@@ -47,7 +47,7 @@ impl DockObject {
         } else {
             None
         };
-        dbg!(&appinfo);
+        // dbg!(&appinfo);
         Object::new(&[("appinfo", &appinfo), ("active", &results)])
             .expect("Failed to create `DockObject`.")
     }

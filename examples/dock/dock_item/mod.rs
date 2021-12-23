@@ -55,7 +55,6 @@ impl DockItem {
         let self_ = imp::DockItem::from_instance(self);
         if let Ok(app_info_value) = app_info.property("appinfo") {
             if let Ok(Some(app_info)) = app_info_value.get::<Option<DesktopAppInfo>>() {
-                println!("setting app info {}", &app_info.name());
                 self_.image.set_tooltip_text(Some(&app_info.name()));
 
                 let icon = app_info.icon().unwrap_or(

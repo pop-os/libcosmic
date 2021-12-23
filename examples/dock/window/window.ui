@@ -20,7 +20,7 @@
           <object class="GtkRevealer" id="revealer">
             <property name="reveal-child">true</property>
             <property name="transition-duration">300</property>
-            <property name="transition-type">cross-fade</property>
+            <property name="transition-type">slide-up</property>
             <child>
               <object class="GtkBox">
                 <property name="height-request">0</property>
