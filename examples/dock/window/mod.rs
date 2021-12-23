@@ -210,50 +210,11 @@ impl Window {
                 //TODO clean up duplicated code
                 cursor_event_controller.connect_enter(glib::clone!(@weak revealer, @weak window => move |_evc, _x, _y| {
                     // dbg!("hello, mouse entered me :)");
-                    revealer.set_reveal_child(true);
-                    let s = window.surface().expect("Failed to get Surface for Window");
-                    let height = s.height() * s.scale_factor();
-
-                    if let Some((display, _surface)) = x::get_window_x11(&window) {
-                        let monitor = display
-                            .primary_monitor()
-                            .expect("Failed to get Monitor");
-                        let Rectangle {
-                            x: _monitor_x,
-                            y: monitor_y,
-                            width: _monitor_width,
-                            height: monitor_height,
-                        } = monitor.geometry();
-                        // dbg!(monitor_width);
-                        // dbg!(monitor_height);
-                        // dbg!(width);
-                        // dbg!(height);
-                        let w_conf = xproto::ConfigureWindowAux::default()
-                            .y((monitor_y + monitor_height - height).clamp(0, monitor_y + monitor_height - 1));
-                        let conn = X11_CONN.get().expect("Failed to get X11_CONN");
-
-                        let x11surface = gdk4_x11::X11Surface::xid(
-                            &s.clone().downcast::<X11Surface>()
-                                .expect("Failed to downcast Surface to X11Surface"),
-                        );
-                        conn.configure_window(
-                            x11surface.try_into().expect("Failed to convert XID"),
-                            &w_conf,
-                        )
-                        .expect("failed to configure window...");
-                        conn.flush().expect("failed to flush");
-
-                    } else {
-                        println!("failed to get X11 window");
-                    }
-
-                }));
-
-                revealer.connect_child_revealed_notify(glib::clone!(@weak window => move |r| {
-                    if !r.is_child_revealed() {
+                    let resize = glib::clone!(@weak window => move || {
+                        revealer.set_reveal_child(true);
                         let s = window.surface().expect("Failed to get Surface for Window");
-                        // dbg!(r.is_child_revealed());
-                        let height = 4;
+                        let height = s.height() * s.scale_factor();
+
                         if let Some((display, _surface)) = x::get_window_x11(&window) {
                             let monitor = display
                                 .primary_monitor()
@@ -280,54 +241,101 @@ impl Window {
                                 x11surface.try_into().expect("Failed to convert XID"),
                                 &w_conf,
                             )
-                            .expect("failed to configure window...");
+                                .expect("failed to configure window...");
                             conn.flush().expect("failed to flush");
 
                         } else {
                             println!("failed to get X11 window");
                         }
-                    }
+                    });
+                    glib::source::idle_add_local_once(resize);
                 }));
+
+                revealer.connect_child_revealed_notify(glib::clone!(@weak window => move |r| {
+                    if !r.is_child_revealed() {
+                        let s = window.surface().expect("Failed to get Surface for Window");
+                            let resize = glib::clone!(@weak s => move || {
+                                // dbg!(r.is_child_revealed());
+                                let height = 4;
+                                if let Some((display, _surface)) = x::get_window_x11(&window) {
+                                    let monitor = display
+                                        .primary_monitor()
+                                        .expect("Failed to get Monitor");
+                                    let Rectangle {
+                                        x: _monitor_x,
+                                        y: monitor_y,
+                                        width: _monitor_width,
+                                        height: monitor_height,
+                                    } = monitor.geometry();
+                                    // dbg!(monitor_width);
+                                    // dbg!(monitor_height);
+                                    // dbg!(width);
+                                    // dbg!(height);
+                                    let w_conf = xproto::ConfigureWindowAux::default()
+                                        .y((monitor_y + monitor_height - height).clamp(0, monitor_y + monitor_height - 1));
+                                    let conn = X11_CONN.get().expect("Failed to get X11_CONN");
+
+                                    let x11surface = gdk4_x11::X11Surface::xid(
+                                        &s.clone().downcast::<X11Surface>()
+                                            .expect("Failed to downcast Surface to X11Surface"),
+                                    );
+                                    conn.configure_window(
+                                        x11surface.try_into().expect("Failed to convert XID"),
+                                        &w_conf,
+                                    )
+                                        .expect("failed to configure window...");
+                                    conn.flush().expect("failed to flush");
+
+                                } else {
+                                    println!("failed to get X11 window");
+                                }
+                            });
+                            glib::source::idle_add_local_once(resize);
+                        }
+                    }));
 
                 let s = window.surface().expect("Failed to get Surface for Window");
                 let surface_resize_handler = glib::clone!(@weak window => move |s: &Surface| {
-                    if let Some((display, _surface)) = x::get_window_x11(&window) {
-                        let width = s.width() * s.scale_factor();
-                        // let height = s.height() * s.scale_factor();
-                        // hide by default
-                        let height = 4;
-                        let monitor = display
-                            .primary_monitor()
-                            .expect("Failed to get Monitor");
-                        let Rectangle {
-                            x: monitor_x,
-                            y: monitor_y,
-                            width: monitor_width,
-                            height: monitor_height,
-                        } = monitor.geometry();
-                        // dbg!(monitor_width);
-                        // dbg!(monitor_height);
-                        // dbg!(width);
-                        // dbg!(heightt - 1);
-                        let w_conf = xproto::ConfigureWindowAux::default()
-                            .x((monitor_x + monitor_width / 2 - width / 2).clamp(0, monitor_x + monitor_width - 1))
-                            .y((monitor_y + monitor_height - height).clamp(0, monitor_y + monitor_height - 1));
-                        let conn = X11_CONN.get().expect("Failed to get X11_CONN");
+                    let resize = glib::clone!(@weak s => move || {
+                        if let Some((display, _surface)) = x::get_window_x11(&window) {
+                           let width = s.width() * s.scale_factor();
+                           // let height = s.height() * s.scale_factor();
+                           // hide by default
+                           let height = 4;
+                           let monitor = display
+                               .primary_monitor()
+                               .expect("Failed to get Monitor");
+                           let Rectangle {
+                               x: monitor_x,
+                               y: monitor_y,
+                               width: monitor_width,
+                               height: monitor_height,
+                           } = monitor.geometry();
+                           // dbg!(monitor_width);
+                           // dbg!(monitor_height);
+                           // dbg!(width);
+                           // dbg!(heightt - 1);
+                           let w_conf = xproto::ConfigureWindowAux::default()
+                               .x((monitor_x + monitor_width / 2 - width / 2).clamp(0, monitor_x + monitor_width - 1))
+                               .y((monitor_y + monitor_height - height).clamp(0, monitor_y + monitor_height - 1));
+                           let conn = X11_CONN.get().expect("Failed to get X11_CONN");
 
-                        let x11surface = gdk4_x11::X11Surface::xid(
-                            &s.clone().downcast::<X11Surface>()
-                                .expect("Failed to downcast Surface to X11Surface"),
-                        );
-                        conn.configure_window(
-                            x11surface.try_into().expect("Failed to convert XID"),
-                            &w_conf,
-                        )
-                        .expect("failed to configure window...");
-                        conn.flush().expect("failed to flush");
+                           let x11surface = gdk4_x11::X11Surface::xid(
+                               &s.clone().downcast::<X11Surface>()
+                                   .expect("Failed to downcast Surface to X11Surface"),
+                           );
+                           conn.configure_window(
+                               x11surface.try_into().expect("Failed to convert XID"),
+                               &w_conf,
+                           )
+                           .expect("failed to configure window...");
+                           conn.flush().expect("failed to flush");
 
-                   } else {
-                        println!("failed to get X11 window");
-                    }
+                        } else {
+                            println!("failed to get X11 window");
+                        }
+                    });
+                    glib::source::idle_add_local_once(resize);
                 });
                 s.connect_height_notify(surface_resize_handler.clone());
                 s.connect_width_notify(surface_resize_handler.clone());

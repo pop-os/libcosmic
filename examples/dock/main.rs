@@ -135,10 +135,10 @@ fn main() {
                             .call_method(Some(DEST), PATH, Some(DEST), "WindowFocus", &((e,)))
                             .await
                             .expect("Failed to focus selected window");
-                        dbg!(_activate_window);
                     }
                     Event::RefreshFromCache => {
                         //TODO refresh the model from cached_results (required after DnD for example)
+                        // alternatively dnd source could be changed depending on the context?
                     }
                     Event::WindowList(mut results) => {
                         // sort to make comparison with cache easier
