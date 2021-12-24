@@ -64,7 +64,7 @@ fn spawn_launcher(tx: Sender<Event>) -> Connection {
                 if let Ok(reply) = m.body::<Vec<Item>>() {
                     let _ = sender.send(Event::WindowList(reply)).await;
                 }
-                Timer::after(Duration::from_millis(10000)).await;
+                Timer::after(Duration::from_millis(200)).await;
             }
         }
     });

@@ -211,8 +211,8 @@ impl Window {
                 cursor_event_controller.connect_enter(glib::clone!(@weak revealer, @weak window => move |_evc, _x, _y| {
                     // dbg!("hello, mouse entered me :)");
                     let resize = glib::clone!(@weak window => move || {
-                        revealer.set_reveal_child(true);
                         let s = window.surface().expect("Failed to get Surface for Window");
+                        revealer.set_reveal_child(true);
                         let height = s.height() * s.scale_factor();
 
                         if let Some((display, _surface)) = x::get_window_x11(&window) {
@@ -242,9 +242,8 @@ impl Window {
                                 &w_conf,
                             )
                                 .expect("failed to configure window...");
-                            conn.flush().expect("failed to flush");
-
-                        } else {
+                            conn.flush().expect("failed to flush");let frame_clock = s.frame_clock().unwrap();
+                            frame_clock.request_phase(gdk4::FrameClockPhase::FLUSH_EVENTS);                                                    } else {
                             println!("failed to get X11 window");
                         }
                     });
@@ -256,6 +255,7 @@ impl Window {
                         let s = window.surface().expect("Failed to get Surface for Window");
                             let resize = glib::clone!(@weak s => move || {
                                 // dbg!(r.is_child_revealed());
+                                let s = window.surface().expect("Failed to get Surface for Window");
                                 let height = 4;
                                 if let Some((display, _surface)) = x::get_window_x11(&window) {
                                     let monitor = display
@@ -285,7 +285,9 @@ impl Window {
                                     )
                                         .expect("failed to configure window...");
                                     conn.flush().expect("failed to flush");
-
+                                    s.queue_render();
+                                    let frame_clock = s.frame_clock().unwrap();
+                                    frame_clock.request_phase(gdk4::FrameClockPhase::FLUSH_EVENTS);
                                 } else {
                                     println!("failed to get X11 window");
                                 }
@@ -329,8 +331,9 @@ impl Window {
                                &w_conf,
                            )
                            .expect("failed to configure window...");
-                           conn.flush().expect("failed to flush");
-
+                            conn.flush().expect("failed to flush");
+                           let frame_clock = s.frame_clock().unwrap();
+                           frame_clock.request_phase(gdk4::FrameClockPhase::FLUSH_EVENTS);
                         } else {
                             println!("failed to get X11 window");
                         }
