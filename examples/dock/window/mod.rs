@@ -10,8 +10,6 @@ use gdk4::Rectangle;
 use gdk4::Surface;
 use gdk4_x11::X11Display;
 use gdk4_x11::X11Surface;
-use gdk4_x11_sys::gdk_x11_display_error_trap_push;
-use gdk4_x11_sys::GdkX11Display;
 use gio::DesktopAppInfo;
 use glib::Type;
 use gtk4 as gtk;
