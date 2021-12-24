@@ -8,7 +8,10 @@ use crate::TX;
 use crate::X11_CONN;
 use gdk4::Rectangle;
 use gdk4::Surface;
+use gdk4_x11::X11Display;
 use gdk4_x11::X11Surface;
+use gdk4_x11_sys::gdk_x11_display_error_trap_push;
+use gdk4_x11_sys::GdkX11Display;
 use gio::DesktopAppInfo;
 use glib::Type;
 use gtk4 as gtk;
@@ -19,7 +22,6 @@ use postage::prelude::Sink;
 use std::path::Path;
 use x11rb::connection::Connection;
 use x11rb::protocol::xproto::ConnectionExt;
-
 // use crate::application_row::ApplicationRow;
 use glib::Object;
 use gtk::prelude::*;
@@ -197,6 +199,9 @@ impl Window {
         );
         window.connect_realize(glib::clone!(@weak revealer, @weak cursor_event_controller => move |window| {
             if let Some((display, surface)) = x::get_window_x11(window) {
+                // ignore all x11 errors...
+                let xdisplay = display.clone().downcast::<X11Display>().expect("Failed to downgrade X11 Display.");
+                xdisplay.error_trap_push();
                 unsafe {
                     x::change_property(
                         &display,
@@ -243,7 +248,6 @@ impl Window {
                             )
                                 .expect("failed to configure window...");
                             conn.flush().expect("failed to flush");
-                            s.request_layout();
                         }
                     });
                     glib::source::idle_add_local_once(resize);
@@ -284,7 +288,6 @@ impl Window {
                                     )
                                         .expect("failed to configure window...");
                                     conn.flush().expect("failed to flush");
-                                    s.request_layout();
                                 } else {
                                     println!("failed to get X11 window");
                                 }
@@ -329,7 +332,6 @@ impl Window {
                             )
                             .expect("failed to configure window...");
                             conn.flush().expect("failed to flush");
-                            s.request_layout();
                         } else {
                             println!("failed to get X11 window");
                         }
