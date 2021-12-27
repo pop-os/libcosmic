@@ -16,6 +16,18 @@ impl DockObject {
             .expect("Failed to create `DockObject`.")
     }
 
+    pub fn from_app_info_path(path: &str) -> Option<Self> {
+        if let Some(appinfo) = gio::DesktopAppInfo::new(path) {
+            if appinfo.should_show() {
+                return Some(
+                    Object::new(&[("appinfo", &Some(appinfo)), ("saved", &true)])
+                        .expect("Failed to create `DockObject`."),
+                );
+            }
+        }
+        None
+    }
+
     pub fn from_search_results(results: BoxedWindowList) -> Self {
         let appinfo = if let Some(first) = results.0.iter().next() {
             xdg::BaseDirectories::new()

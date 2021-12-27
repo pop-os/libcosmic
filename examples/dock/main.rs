@@ -5,7 +5,6 @@ mod utils;
 mod window;
 
 use crate::utils::BoxedWindowList;
-use async_io::Timer;
 use futures::executor::block_on;
 use gdk4::Display;
 use gio::DesktopAppInfo;
@@ -64,7 +63,7 @@ fn spawn_launcher(tx: Sender<Event>) -> Connection {
                 if let Ok(reply) = m.body::<Vec<Item>>() {
                     let _ = sender.send(Event::WindowList(reply)).await;
                 }
-                Timer::after(Duration::from_millis(200)).await;
+                glib::timeout_future(Duration::from_millis(100)).await;
             }
         }
     });
@@ -137,8 +136,83 @@ fn main() {
                             .expect("Failed to focus selected window");
                     }
                     Event::RefreshFromCache => {
-                        //TODO refresh the model from cached_results (required after DnD for example)
-                        // alternatively dnd source could be changed depending on the context?
+                        println!("refreshing model from cache");
+                        let cached_results = cached_results.as_ref();
+                        let stack_active = cached_results.iter().fold(
+                            BTreeMap::new(),
+                            |mut acc: BTreeMap<String, BoxedWindowList>, elem| {
+                                if let Some(v) = acc.get_mut(&elem.description) {
+                                    v.0.push(elem.clone());
+                                } else {
+                                    acc.insert(
+                                        elem.description.clone(),
+                                        BoxedWindowList(vec![elem.clone()]),
+                                    );
+                                }
+                                acc
+                            },
+                        );
+                        let mut stack_active: Vec<BoxedWindowList> =
+                            stack_active.into_values().collect();
+
+                        // update active app stacks for saved apps into the saved app model
+                        // then put the rest in the active app model (which doesn't include saved apps)
+                        let saved_app_model = window.saved_app_model();
+
+                        let mut saved_i: u32 = 0;
+                        while let Some(item) = saved_app_model.item(saved_i) {
+                            if let Ok(dock_obj) = item.downcast::<DockObject>() {
+                                if let Ok(Some(cur_app_info)) = dock_obj
+                                    .property("appinfo")
+                                    .expect("property appinfo missing from DockObject")
+                                    .get::<Option<DesktopAppInfo>>()
+                                {
+                                    if let Some((i, _s)) = stack_active
+                                        .iter()
+                                        .enumerate()
+                                        .find(|(_i, s)| s.0[0].description == cur_app_info.name())
+                                    {
+                                        println!(
+                                            "found active saved app {} at {}",
+                                            _s.0[0].name, i
+                                        );
+                                        let active = stack_active.remove(i);
+                                        dock_obj
+                                            .set_property("active", active.to_value())
+                                            .expect("failed to update dock active apps");
+                                        saved_app_model.items_changed(
+                                            saved_i.try_into().unwrap(),
+                                            0,
+                                            0,
+                                        );
+                                    } else if let Some(_) = cached_results
+                                        .iter()
+                                        .find(|s| s.description == cur_app_info.name())
+                                    {
+                                        dock_obj
+                                            .set_property(
+                                                "active",
+                                                BoxedWindowList(Vec::new()).to_value(),
+                                            )
+                                            .expect("failed to update dock active apps");
+                                        saved_app_model.items_changed(
+                                            saved_i.try_into().unwrap(),
+                                            0,
+                                            0,
+                                        );
+                                    }
+                                }
+                            }
+                            saved_i += 1;
+                        }
+
+                        let active_app_model = window.active_app_model();
+                        let model_len = active_app_model.n_items();
+                        let new_results: Vec<glib::Object> = stack_active
+                            .into_iter()
+                            .map(|v| DockObject::from_search_results(v).upcast())
+                            .collect();
+                        active_app_model.splice(0, model_len, &new_results[..]);
                     }
                     Event::WindowList(mut results) => {
                         // sort to make comparison with cache easier

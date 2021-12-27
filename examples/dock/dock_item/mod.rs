@@ -28,17 +28,10 @@ impl Default for DockItem {
 
 impl DockItem {
     pub fn new() -> Self {
-        let dc = DragSource::builder()
-            .name("dock drag source")
-            .actions(gdk4::DragAction::COPY)
-            .build();
+        let mut actions = gdk4::DragAction::MOVE;
+        actions.insert(gdk4::DragAction::MOVE);
 
         let self_: DockItem = glib::Object::new(&[]).expect("Failed to create DockItem");
-        self_.add_controller(&dc);
-        imp::DockItem::from_instance(&self_)
-            .drag_controller
-            .set(dc)
-            .expect("Failed to set dock item");
         self_
     }
 
@@ -49,11 +42,10 @@ impl DockItem {
             .expect("Could not get drag_controller")
     }
 
-    // TODO current method seems very messy...
     // refactor to emit event for removing the item?
-    pub fn set_app_info(&self, app_info: &DockObject, i: u32, saved_app_model: &ListStore) {
+    pub fn set_app_info(&self, dock_object: &DockObject, i: u32, saved_app_model: &ListStore) {
         let self_ = imp::DockItem::from_instance(self);
-        if let Ok(app_info_value) = app_info.property("appinfo") {
+        if let Ok(app_info_value) = dock_object.property("appinfo") {
             if let Ok(Some(app_info)) = app_info_value.get::<Option<DesktopAppInfo>>() {
                 self_.image.set_tooltip_text(Some(&app_info.name()));
 
@@ -68,24 +60,34 @@ impl DockItem {
                             ContentProvider::for_value(&file.to_string_lossy().to_value());
                         drag_controller.set_content(Some(&provider));
                     }
-                    drag_controller.connect_drag_end(move |_self, _drag, delete_data| {
-                        dbg!("removing", delete_data);
-                    });
-                    //TODO investigate rare X11 errors when reordering dock items
                     drag_controller.connect_drag_cancel(
-                            glib::clone!(@weak saved_app_model => @default-return true, move |_self, _drag, _delete_data| {
-                                dbg!("removing {}", i);
-                                if saved_app_model.n_items() > i {
-                                    saved_app_model.remove(i);
-                                }
-                                true
-                            }),
-                        );
+                       glib::clone!(@weak saved_app_model, @weak app_info => @default-return true, move |_self, _drag, _delete_data| {
+                           if let Some(item) = saved_app_model.item(i) {
+                               if let Ok(cur_app_info) = item.downcast::<DockObject>() {
+                                   if let Ok(Some(cur_app_info)) = cur_app_info.property("appinfo").expect("property appinfo missing from DockObject").get::<Option<DesktopAppInfo>>() {
+                                       // dbg!(cur_app_info.filename());
+                                       if cur_app_info.filename() == app_info.filename() {
+                                           saved_app_model.remove(i);
+                                       }
+                                   }
+                               }
+                           }
+                           true
+                       }),
+                    );
                     drag_controller.connect_drag_end(
-                        glib::clone!(@weak saved_app_model => move |_self, _drag, delete_data| {
-                            dbg!("removing {}", i);
-                            if delete_data && saved_app_model.n_items() > i {
-                                saved_app_model.remove(i);
+                        glib::clone!(@weak saved_app_model, @weak app_info => move |_self, _drag, _delete_data| {
+                            dbg!(i);
+                            dbg!(_delete_data);
+                            if let Some(item) = saved_app_model.item(i) {
+                                if let Ok(cur_app_info) = item.downcast::<DockObject>() {
+                                    if let Ok(Some(cur_app_info)) = cur_app_info.property("appinfo").expect("property appinfo missing from DockObject").get::<Option<DesktopAppInfo>>() {
+                                        // dbg!(cur_app_info.filename());
+                                        if cur_app_info.filename() == app_info.filename() {
+                                            saved_app_model.remove(i);
+                                        }
+                                    }
+                                }
                             }
                         }),
                     );
@@ -97,6 +99,7 @@ impl DockItem {
                         glib::clone!(@weak icon, => move |_self, _drag| {
                             // set drag source icon if possible...
                             // gio Icon is not easily converted to a Paintable, but this seems to be the correct method
+                            _drag.set_selected_action(gdk4::DragAction::MOVE);
                             if let Some(default_display) = &Display::default() {
                                 if let Some(icon_theme) = IconTheme::for_display(default_display) {
                                     if let Some(paintable_icon) = icon_theme.lookup_by_gicon(
@@ -117,7 +120,7 @@ impl DockItem {
         } else {
             println!("initializing dock item failed...");
         }
-        if let Ok(active_value) = app_info.property("active") {
+        if let Ok(active_value) = dock_object.property("active") {
             if let Ok(active) = active_value.get::<BoxedWindowList>() {
                 self_.dots.set_text("");
                 for _ in active.0 {

@@ -1,8 +1,12 @@
+use glib::SignalHandlerId;
 use gtk4 as gtk;
 use gtk4::Box;
+use gtk4::DragSource;
 use gtk4::DropTarget;
 use gtk4::EventControllerMotion;
 use gtk4::Revealer;
+use std::cell::RefCell;
+use std::rc::Rc;
 
 use glib::subclass::InitializingObject;
 use gtk::prelude::*;
@@ -27,6 +31,9 @@ pub struct Window {
     pub active_app_model: OnceCell<gio::ListStore>,
     pub cursor_event_controller: OnceCell<EventControllerMotion>,
     pub drop_controller: OnceCell<DropTarget>,
+    pub saved_drag_source: Rc<OnceCell<DragSource>>,
+    pub active_drag_source: OnceCell<DragSource>,
+    pub drag_end_signal: Rc<RefCell<Option<SignalHandlerId>>>,
     pub window_drop_controller: OnceCell<DropTarget>,
 }
 
@@ -53,9 +60,11 @@ impl ObjectImpl for Window {
         self.parent_constructed(obj);
 
         // Setup
+        obj.setup_model();
         obj.setup_event_controller();
         obj.setup_drop_target();
-        obj.setup_model();
+        obj.setup_drag_source();
+        obj.restore_saved_apps();
         obj.setup_callbacks();
         obj.setup_factory();
     }
