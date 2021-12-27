@@ -2,8 +2,6 @@ use gtk::glib;
 use gtk::prelude::*;
 use gtk::subclass::prelude::*;
 use gtk4 as gtk;
-use gtk4::DragSource;
-use once_cell::sync::OnceCell;
 
 use gtk::CompositeTemplate;
 
@@ -14,7 +12,6 @@ pub struct DockItem {
     pub image: TemplateChild<gtk::Image>,
     #[template_child]
     pub dots: TemplateChild<gtk::Label>,
-    pub drag_controller: OnceCell<DragSource>,
 }
 
 #[glib::object_subclass]

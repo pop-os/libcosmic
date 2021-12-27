@@ -78,36 +78,6 @@ impl Window {
             .selected(gtk4::INVALID_LIST_POSITION)
             .model(&saved_app_model)
             .build();
-        xdg::BaseDirectories::new()
-            .expect("could not access XDG Base directory")
-            .get_data_dirs()
-            .iter_mut()
-            .for_each(|xdg_data_path| {
-                let defaults = ["Firefox Web Browser", "Files", "Terminal", "Pop!_Shop"];
-                xdg_data_path.push("applications");
-                // dbg!(&xdg_data_path);
-                if let Ok(dir_iter) = std::fs::read_dir(xdg_data_path) {
-                    dir_iter.for_each(|dir_entry| {
-                        if let Ok(dir_entry) = dir_entry {
-                            if let Some(path) = dir_entry.path().file_name() {
-                                if let Some(path) = path.to_str() {
-                                    if let Some(app_info) = gio::DesktopAppInfo::new(path) {
-                                        if app_info.should_show()
-                                            && defaults.contains(&app_info.name().as_str())
-                                        {
-                                            saved_app_model.append(&DockObject::new(app_info));
-                                        } else {
-                                            // println!("Ignoring {}", path);
-                                        }
-                                    } else {
-                                        // println!("error loading {}", path);
-                                    }
-                                }
-                            }
-                        }
-                    })
-                }
-            });
 
         imp.saved_app_model
             .set(saved_app_model)
@@ -236,7 +206,7 @@ impl Window {
                         // dbg!(monitor_width);
                         // dbg!(monitor_height);
                         // dbg!(width);
-                        dbg!(height);
+                        // dbg!(height);
                         let w_conf = xproto::ConfigureWindowAux::default()
                             .x((monitor_x + monitor_width / 2 - width / 2).clamp(0, monitor_x + monitor_width - 1))
                             .y((monitor_y + monitor_height - height).clamp(0, monitor_y + monitor_height - 1));
@@ -375,7 +345,6 @@ impl Window {
                     // dbg!("rejecting drop");
                     _self.reject();
                 }
-                Self::store_saved_apps(&saved_app_model);
                 true
             }),
         );
@@ -445,8 +414,9 @@ impl Window {
             .build();
 
         let drag_end = &imp.drag_end_signal;
+        let drag_cancel = &imp.drag_end_signal;
         saved_app_list_view.add_controller(&saved_drag_source);
-        saved_drag_source.connect_prepare(glib::clone!(@weak saved_app_model, @weak saved_app_list_view, @weak drag_end => @default-return None, move |self_, x, _y| {
+        saved_drag_source.connect_prepare(glib::clone!(@weak saved_app_model, @weak saved_app_list_view, @weak drag_end, @weak drag_cancel => @default-return None, move |self_, x, _y| {
             // set drag source icon if possible...
             // gio Icon is not easily converted to a Paintable, but this seems to be the correct method
             let max_x = saved_app_list_view.allocated_width();
@@ -464,7 +434,18 @@ impl Window {
                 ))) {
                     glib::signal_handler_disconnect(self_, old_handle);
                 }
-
+                if let Some(old_handle) = drag_cancel.replace(Some(self_.connect_drag_cancel(
+                    glib::clone!(@weak saved_app_model => @default-return false, move |_self, _drag, cancel_reason| {
+                        if cancel_reason != gdk4::DragCancelReason::UserCancelled {
+                            saved_app_model.remove(index);
+                            true
+                        } else  {
+                            false
+                        }
+                    }),
+                ))) {
+                    glib::signal_handler_disconnect(self_, old_handle);
+                }
                 if let Ok(dock_object) = item.downcast::<DockObject>() {
                     if let Ok(Some(app_info)) = dock_object.property("appinfo").expect("property appinfo missing from DockObject").get::<Option<DesktopAppInfo>>() {
                         let icon = app_info
@@ -513,7 +494,7 @@ impl Window {
         });
 
         active_app_list_view.add_controller(&active_drag_source);
-        active_drag_source.connect_prepare(glib::clone!(@weak active_app_model, @weak active_app_list_view, @weak drag_end => @default-return None, move |self_, x, _y| {
+        active_drag_source.connect_prepare(glib::clone!(@weak active_app_model, @weak active_app_list_view, @weak drag_end, @weak drag_cancel => @default-return None, move |self_, x, _y| {
             let max_x = active_app_list_view.allocated_width();
             // dbg!(max_x);
             // dbg!(max_y);
@@ -528,6 +509,19 @@ impl Window {
                 ))) {
                     glib::signal_handler_disconnect(self_, old_handle);
                 }
+                if let Some(old_handle) = drag_cancel.replace(Some(self_.connect_drag_cancel(
+                    glib::clone!(@weak active_app_model => @default-return false, move |_self, _drag, cancel_reason| {
+                        if cancel_reason != gdk4::DragCancelReason::UserCancelled {
+                            active_app_model.remove(index);
+                            true
+                        } else  {
+                            false
+                        }
+                    }),
+                ))) {
+                    glib::signal_handler_disconnect(self_, old_handle);
+                }
+
 
                 if let Ok(dock_object) = item.downcast::<DockObject>() {
                     if let Ok(Some(app_info)) = dock_object.property("appinfo").expect("property appinfo missing from DockObject").get::<Option<DesktopAppInfo>>() {
@@ -584,8 +578,7 @@ impl Window {
                 .downcast::<DockItem>()
                 .expect("The list item type needs to be `DockItem`");
 
-            let i = list_item.position();
-            dock_item.set_app_info(&application_object, i, &saved_app_model);
+            dock_item.set_app_info(&application_object);
         }));
         // Set the factory of the list view
         imp.saved_app_list_view
@@ -612,8 +605,7 @@ impl Window {
                 .downcast::<DockItem>()
                 .expect("The list item type needs to be `DockItem`");
 
-            let i = list_item.position();
-            dock_item.set_app_info(&application_object, i, &active_app_model);
+            dock_item.set_app_info(&application_object);
         }));
         // Set the factory of the list view
         imp.active_app_list_view.set_factory(Some(&active_factory));
@@ -621,31 +613,60 @@ impl Window {
 
     fn restore_saved_apps(&self) {
         if let Ok(file) = File::open(data_path()) {
-            if let Ok(data) = serde_json::from_reader::<_, Vec<String>>(file) {
-                dbg!(&data);
-                let dock_objects: Vec<Object> = data
+            if let Ok(saved_data) = serde_json::from_reader::<_, Vec<String>>(file) {
+                // dbg!(&saved_data);
+                let dock_objects: Vec<Object> = saved_data
                     .into_iter()
                     .filter_map(|d| {
                         DockObject::from_app_info_path(&d)
                             .map(|dockobject| dockobject.upcast::<Object>())
                     })
                     .collect();
+                // dbg!(&dock_objects);
                 let saved_app_model = self.saved_app_model();
                 saved_app_model.splice(saved_app_model.n_items(), 0, &dock_objects);
-            } else {
-                println!("Error loading saved apps!");
-                // let file = File::create(data_path()).expect("Could not create json file.");
-                // serde_json::to_writer_pretty(file, &Vec::<&str>::new())
-                //     .expect("Could not write data to json file");
+                return;
             }
         }
+        println!("Error loading saved apps!");
+        let saved_app_model = &self.saved_app_model();
+        xdg::BaseDirectories::new()
+            .expect("could not access XDG Base directory")
+            .get_data_dirs()
+            .iter_mut()
+            .for_each(|xdg_data_path| {
+                let defaults = ["Firefox Web Browser", "Files", "Terminal", "Pop!_Shop"];
+                xdg_data_path.push("applications");
+                // dbg!(&xdg_data_path);
+                if let Ok(dir_iter) = std::fs::read_dir(xdg_data_path) {
+                    dir_iter.for_each(|dir_entry| {
+                        if let Ok(dir_entry) = dir_entry {
+                            if let Some(path) = dir_entry.path().file_name() {
+                                if let Some(path) = path.to_str() {
+                                    if let Some(app_info) = gio::DesktopAppInfo::new(path) {
+                                        if app_info.should_show()
+                                            && defaults.contains(&app_info.name().as_str())
+                                        {
+                                            saved_app_model.append(&DockObject::new(app_info));
+                                        } else {
+                                            // println!("Ignoring {}", path);
+                                        }
+                                    } else {
+                                        // println!("error loading {}", path);
+                                    }
+                                }
+                            }
+                        }
+                    })
+                }
+            });
     }
 
     fn store_saved_apps(saved_app_model: &gio::ListStore) {
         // Store todo data in vector
         let mut backup_data = Vec::new();
-        let mut position = 3;
-        while let Some(item) = saved_app_model.item(position) {
+        let mut i = 0;
+        while let Some(item) = saved_app_model.item(i) {
             // Get `AppGroup` from `glib::Object`
             let dock_object = item
                 .downcast_ref::<DockObject>()
@@ -660,9 +681,9 @@ impl Window {
                     backup_data.push(f);
                 }
             }
-            position += 1;
+            i += 1;
         }
-        dbg!(&backup_data);
+        // dbg!(&backup_data);
         // Save state in file
         let file = File::create(data_path()).expect("Could not create json file.");
         serde_json::to_writer_pretty(file, &backup_data)

@@ -5,6 +5,7 @@ use gdk4::glib::Object;
 use gio::DesktopAppInfo;
 use gtk4::glib;
 use gtk4::prelude::AppInfoExt;
+use std::path::Path;
 
 glib::wrapper! {
     pub struct DockObject(ObjectSubclass<imp::DockObject>);
@@ -17,12 +18,16 @@ impl DockObject {
     }
 
     pub fn from_app_info_path(path: &str) -> Option<Self> {
-        if let Some(appinfo) = gio::DesktopAppInfo::new(path) {
-            if appinfo.should_show() {
-                return Some(
-                    Object::new(&[("appinfo", &Some(appinfo)), ("saved", &true)])
-                        .expect("Failed to create `DockObject`."),
-                );
+        if let Some(path) = Path::new(path).file_name() {
+            if let Some(path) = path.to_str() {
+                if let Some(appinfo) = gio::DesktopAppInfo::new(path) {
+                    if appinfo.should_show() {
+                        return Some(
+                            Object::new(&[("appinfo", &Some(appinfo)), ("saved", &true)])
+                                .expect("Failed to create `DockObject`."),
+                        );
+                    }
+                }
             }
         }
         None
