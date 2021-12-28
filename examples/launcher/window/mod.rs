@@ -145,7 +145,7 @@ impl Window {
                 xdisplay.error_trap_push();
                 let conn = X11_CONN.get().expect("Failed to get X11 connection");
                 let window_type_atom = conn.intern_atom(false, b"_NET_WM_WINDOW_TYPE").unwrap().reply().unwrap().atom;
-                let dock_type_atom = conn.intern_atom(false, b"_NET_WM_WINDOW_TYPE_DOCK").unwrap().reply().unwrap().atom;
+                let dock_type_atom = conn.intern_atom(false, b"_NET_WM_WINDOW_TYPE_DIALOG").unwrap().reply().unwrap().atom;
                 conn.change_property32(
                     PropMode::REPLACE,
                     surface.xid().try_into().unwrap(),
