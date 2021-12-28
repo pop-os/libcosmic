@@ -1,17 +1,24 @@
 mod imp;
+use crate::application_row::ApplicationRow;
 use crate::ApplicationObject;
 use crate::TX;
-use gtk4 as gtk;
-use postage::prelude::Sink;
-
-use crate::application_row::ApplicationRow;
+use crate::X11_CONN;
+use gdk4::Rectangle;
+use gdk4_x11::X11Display;
+use gdk4_x11::X11Surface;
 use glib::Object;
 use gtk::prelude::*;
 use gtk::subclass::prelude::*;
 use gtk::{gio, glib};
 use gtk::{Application, SignalListItemFactory};
-
+use gtk4 as gtk;
 use libcosmic::x;
+use postage::prelude::Sink;
+use x11rb::connection::Connection;
+use x11rb::protocol::xproto;
+use x11rb::protocol::xproto::ConnectionExt as OtherConnectionExt;
+use x11rb::protocol::xproto::*;
+use x11rb::wrapper::ConnectionExt;
 
 glib::wrapper! {
     pub struct Window(ObjectSubclass<imp::Window>)
@@ -133,15 +140,67 @@ impl Window {
 
         window.connect_realize(move |window| {
             if let Some((display, surface)) = x::get_window_x11(window) {
-                unsafe {
-                    x::change_property(
-                        &display,
-                        &surface,
-                        "_NET_WM_WINDOW_TYPE",
-                        x::PropMode::Replace,
-                        &[x::Atom::new(&display, "_NET_WM_WINDOW_TYPE_DIALOG").unwrap()],
-                    );
-                }
+                // ignore all x11 errors...
+                let xdisplay = display.clone().downcast::<X11Display>().expect("Failed to downgrade X11 Display.");
+                xdisplay.error_trap_push();
+                let conn = X11_CONN.get().expect("Failed to get X11 connection");
+                let window_type_atom = conn.intern_atom(false, b"_NET_WM_WINDOW_TYPE").unwrap().reply().unwrap().atom;
+                let dock_type_atom = conn.intern_atom(false, b"_NET_WM_WINDOW_TYPE_DOCK").unwrap().reply().unwrap().atom;
+                conn.change_property32(
+                    PropMode::REPLACE,
+                    surface.xid().try_into().unwrap(),
+                    window_type_atom,
+                    AtomEnum::ATOM,
+                    &[dock_type_atom]
+                ).unwrap();
+                let resize = glib::clone!(@weak window => move || {
+                    let s = window.surface().expect("Failed to get Surface for Window");
+                    let height = window.height();
+                    let width = window.width();
+
+                    if let Some((display, _surface)) = x::get_window_x11(&window) {
+                        let monitor = display
+                            .primary_monitor()
+                            .expect("Failed to get Monitor");
+                        let Rectangle {
+                            x: monitor_x,
+                            y: monitor_y,
+                            width: monitor_width,
+                            height: monitor_height,
+                        } = monitor.geometry();
+                        // dbg!(monitor_width);
+                        // dbg!(monitor_height);
+                        // dbg!(width);
+                        // dbg!(height);
+                        let w_conf = xproto::ConfigureWindowAux::default()
+                            .x((monitor_x + monitor_width / 2 - width / 2).clamp(0, monitor_x + monitor_width - 1))
+                            .y((monitor_y + monitor_height / 2 - height / 2).clamp(0, monitor_y + monitor_height - 1));
+                        let conn = X11_CONN.get().expect("Failed to get X11_CONN");
+
+                        let x11surface = gdk4_x11::X11Surface::xid(
+                            &s.clone().downcast::<X11Surface>()
+                                .expect("Failed to downcast Surface to X11Surface"),
+                        );
+                        conn.configure_window(
+                            x11surface.try_into().expect("Failed to convert XID"),
+                            &w_conf,
+                        )
+                            .expect("failed to configure window...");
+                        conn.flush().expect("failed to flush");
+                    }
+                });
+                let s = window.surface().expect("Failed to get Surface for Window");
+                let resize_height = resize.clone();
+                s.connect_height_notify(move |_s| {
+                    glib::source::idle_add_local_once(resize_height.clone());
+                });
+                let resize_width = resize.clone();
+                s.connect_width_notify(move |_s| {
+                    glib::source::idle_add_local_once(resize_width.clone());
+                });
+                s.connect_scale_factor_notify(move |_s| {
+                    glib::source::idle_add_local_once(resize.clone());
+                });
             } else {
                 println!("failed to get X11 window");
             }

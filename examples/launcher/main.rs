@@ -1,27 +1,26 @@
 mod application_object;
 mod application_row;
 mod window;
-
+use self::application_object::ApplicationObject;
+use self::window::Window;
 use gdk4::Display;
 use gio::DesktopAppInfo;
+use gtk::gio;
+use gtk::glib;
+use gtk::prelude::*;
 use gtk::Application;
 use gtk4 as gtk;
 use gtk4::CssProvider;
 use gtk4::StyleContext;
 use once_cell::sync::OnceCell;
-
-use gtk::gio;
-use gtk::glib;
-use gtk::prelude::*;
 use pop_launcher_service::IpcClient;
 use postage::mpsc::Sender;
 use postage::prelude::*;
-
-use self::application_object::ApplicationObject;
-use self::window::Window;
+use x11rb::rust_connection::RustConnection;
 
 const NUM_LAUNCHER_ITEMS: u8 = 10;
 static TX: OnceCell<Sender<Event>> = OnceCell::new();
+static X11_CONN: OnceCell<RustConnection> = OnceCell::new();
 
 fn icon_source(icon: &gtk::Image, source: &Option<pop_launcher::IconSource>) {
     match source {
@@ -96,6 +95,12 @@ fn main() {
             println!("failed to set global Sender. Exiting");
             std::process::exit(1);
         };
+        let (conn, _screen_num) = x11rb::connect(None).expect("Failed to connect to X");
+        if X11_CONN.set(conn).is_err() {
+            println!("failed to set X11_CONN. Exiting");
+            std::process::exit(1);
+        };
+
 
         let window = Window::new(app);
         window.show();
