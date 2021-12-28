@@ -33,8 +33,10 @@ pub struct Window {
     pub drop_controller: OnceCell<DropTarget>,
     pub saved_drag_source: Rc<OnceCell<DragSource>>,
     pub active_drag_source: OnceCell<DragSource>,
-    pub drag_end_signal: Rc<RefCell<Option<SignalHandlerId>>>,
-    pub drag_cancel_signal: Rc<RefCell<Option<SignalHandlerId>>>,
+    pub saved_drag_end_signal: Rc<RefCell<Option<SignalHandlerId>>>,
+    pub active_drag_end_signal: Rc<RefCell<Option<SignalHandlerId>>>,
+    pub saved_drag_cancel_signal: Rc<RefCell<Option<SignalHandlerId>>>,
+    pub active_drag_cancel_signal: Rc<RefCell<Option<SignalHandlerId>>>,
     pub window_drop_controller: OnceCell<DropTarget>,
 }
 

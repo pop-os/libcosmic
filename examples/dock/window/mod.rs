@@ -286,10 +286,27 @@ impl Window {
 
         // drag end handler
         // must be modified in case of reorder...
-        let drag_end = &imp.drag_end_signal;
+        let drag_end = &imp.saved_drag_end_signal;
         let saved_drag_source = &imp.saved_drag_source;
         drop_controller.connect_drop(
             glib::clone!(@weak saved_app_model, @weak saved_app_list_view, @weak drag_end, @weak saved_drag_source => @default-return true, move |_self, drop_value, x, _y| {
+                //calculate insertion location
+                // dbg!(x);
+                // dbg!(y);
+                let max_x = saved_app_list_view.allocated_width();
+                // dbg!(max_x);
+                // dbg!(max_y);
+                let n_buckets = saved_app_model.n_items() * 2;
+
+                let drop_bucket = (x * n_buckets as f64 / (max_x as f64 + 0.1)) as u32;
+                let index = if drop_bucket == 0 {
+                    0
+                } else if drop_bucket == n_buckets - 1 {
+                    saved_app_model.n_items()
+                } else {
+                    (drop_bucket + 1) / 2
+                };
+
                 if let Ok(Some(path_str)) = drop_value.get::<Option<String>>() {
                     let desktop_path = &Path::new(&path_str);
                     if let Some(pathbase) = desktop_path.file_name() {
@@ -318,22 +335,6 @@ impl Window {
                                 }
                             }
 
-                            //calculate insertion location
-                            // dbg!(x);
-                            // dbg!(y);
-                            let max_x = saved_app_list_view.allocated_width();
-                            // dbg!(max_x);
-                            // dbg!(max_y);
-                            let n_buckets = saved_app_model.n_items() * 2;
-
-                            let drop_bucket = (x * n_buckets as f64 / (max_x as f64 + 0.1)) as u32;
-                            let index = if drop_bucket == 0 {
-                                0
-                            } else if drop_bucket == n_buckets - 1 {
-                                saved_app_model.n_items()
-                            } else {
-                                (drop_bucket + 1) / 2
-                            };
                             // dbg!(index);
                             // dbg!("dropped it!");
                             // dbg!(drop_value.type_());
@@ -341,10 +342,27 @@ impl Window {
                         }
                     }
                 }
+                else if let Ok(old_index) = drop_value.get::<u32>() {
+                    if let Some(item) = saved_app_model.item(old_index) {
+                        if let Ok(dock_object) = item.downcast::<DockObject>() {
+                            saved_app_model.remove(old_index);
+                            saved_app_model.insert(index, &dock_object);
+                            if let Some(old_handle) = drag_end.replace(None) {
+                                glib::signal_handler_disconnect(saved_drag_source.get().expect("Failed to get drag handler"), old_handle);
+                            }
+                        }
+                    }
+                }
                 else {
                     // dbg!("rejecting drop");
                     _self.reject();
                 }
+                glib::MainContext::default().spawn_local(async move {
+                    if let Some(tx) = TX.get() {
+                        let mut tx = tx.clone();
+                        let _ = tx.send(Event::RefreshFromCache).await;
+                    }
+                });
                 true
             }),
         );
@@ -374,8 +392,9 @@ impl Window {
         let mut drop_actions = gdk4::DragAction::COPY;
         drop_actions.insert(gdk4::DragAction::MOVE);
         let drop_format = gdk4::ContentFormats::for_type(Type::STRING);
-        // causes error for some reason...
-        drop_format.union(&gdk4::ContentFormats::for_type(DockObject::static_type()));
+        let drop_format = drop_format
+            .union(&gdk4::ContentFormats::for_type(Type::U32))
+            .expect("couldn't make union");
         let drop_target_controller = DropTarget::builder()
             .preload(true)
             .actions(drop_actions)
@@ -389,7 +408,7 @@ impl Window {
         // hack for revealing hidden dock when drag enters dock window
         let window_drop_target_controller = DropTarget::builder()
             .actions(drop_actions)
-            .formats(&gdk4::ContentFormats::for_type(Type::STRING))
+            .formats(&drop_format)
             .build();
         let enter_handle = &imp.cursor_handle.get();
 
@@ -413,8 +432,8 @@ impl Window {
             .actions(actions)
             .build();
 
-        let drag_end = &imp.drag_end_signal;
-        let drag_cancel = &imp.drag_end_signal;
+        let drag_end = &imp.saved_drag_end_signal;
+        let drag_cancel = &imp.saved_drag_cancel_signal;
         saved_app_list_view.add_controller(&saved_drag_source);
         saved_drag_source.connect_prepare(glib::clone!(@weak saved_app_model, @weak saved_app_list_view, @weak drag_end, @weak drag_cancel => @default-return None, move |self_, x, _y| {
             // set drag source icon if possible...
@@ -429,7 +448,15 @@ impl Window {
                 if let Some(old_handle) = drag_end.replace(Some(self_.connect_drag_end(
                     glib::clone!(@weak saved_app_model => move |_self, _drag, _delete_data| {
                         dbg!(_delete_data);
-                        if _delete_data {saved_app_model.remove(index)};
+                        if _delete_data {
+                            saved_app_model.remove(index);
+                            glib::MainContext::default().spawn_local(async move {
+                                if let Some(tx) = TX.get() {
+                                    let mut tx = tx.clone();
+                                    let _ = tx.send(Event::RefreshFromCache).await;
+                                }
+                            });
+                        };
                     }),
                 ))) {
                     glib::signal_handler_disconnect(self_, old_handle);
@@ -438,6 +465,12 @@ impl Window {
                     glib::clone!(@weak saved_app_model => @default-return false, move |_self, _drag, cancel_reason| {
                         if cancel_reason != gdk4::DragCancelReason::UserCancelled {
                             saved_app_model.remove(index);
+                            glib::MainContext::default().spawn_local(async move {
+                                if let Some(tx) = TX.get() {
+                                    let mut tx = tx.clone();
+                                    let _ = tx.send(Event::RefreshFromCache).await;
+                                }
+                            });
                             true
                         } else  {
                             false
@@ -465,9 +498,14 @@ impl Window {
                                 }
                             }
                         }
-                        if let Some(file) = app_info.filename() {
-                            return Some(ContentProvider::for_value(&file.to_string_lossy().to_value()));
-                        }
+
+                        // saved app list provides index
+                        let p = ContentProvider::for_value(&index.to_value());
+                        dbg!(p.formats().types());
+                        return Some(p);
+                        // if let Some(file) = app_info.filename() {
+                        //     return Some(ContentProvider::for_value(&file.to_string_lossy().to_value()));
+                        // }
                     }
                 }
             }
@@ -488,6 +526,8 @@ impl Window {
             .name("dock drag source")
             .actions(actions)
             .build();
+        let drag_end = &imp.active_drag_end_signal;
+        let drag_cancel = &imp.active_drag_cancel_signal;
 
         active_drag_source.connect_drag_begin(|_self, drag| {
             drag.set_selected_action(gdk4::DragAction::MOVE);
@@ -504,7 +544,15 @@ impl Window {
                 if let Some(old_handle) = drag_end.replace(Some(self_.connect_drag_end(
                     glib::clone!(@weak active_app_model => move |_self, _drag, _delete_data| {
                         dbg!(_delete_data);
-                        if _delete_data {active_app_model.remove(index)};
+                        if _delete_data {
+                            active_app_model.remove(index);
+                            glib::MainContext::default().spawn_local(async move {
+                                if let Some(tx) = TX.get() {
+                                    let mut tx = tx.clone();
+                                    let _ = tx.send(Event::RefreshFromCache).await;
+                                }
+                            });
+                        };
                     }),
                 ))) {
                     glib::signal_handler_disconnect(self_, old_handle);
@@ -513,6 +561,12 @@ impl Window {
                     glib::clone!(@weak active_app_model => @default-return false, move |_self, _drag, cancel_reason| {
                         if cancel_reason != gdk4::DragCancelReason::UserCancelled {
                             active_app_model.remove(index);
+                            glib::MainContext::default().spawn_local(async move {
+                                if let Some(tx) = TX.get() {
+                                    let mut tx = tx.clone();
+                                    let _ = tx.send(Event::RefreshFromCache).await;
+                                }
+                            });
                             true
                         } else  {
                             false

@@ -136,7 +136,7 @@ fn main() {
                             .expect("Failed to focus selected window");
                     }
                     Event::RefreshFromCache => {
-                        println!("refreshing model from cache");
+                        // println!("refreshing model from cache");
                         let cached_results = cached_results.as_ref();
                         let stack_active = cached_results.iter().fold(
                             BTreeMap::new(),
@@ -172,10 +172,10 @@ fn main() {
                                         .enumerate()
                                         .find(|(_i, s)| s.0[0].description == cur_app_info.name())
                                     {
-                                        println!(
-                                            "found active saved app {} at {}",
-                                            _s.0[0].name, i
-                                        );
+                                        // println!(
+                                        //     "found active saved app {} at {}",
+                                        //     _s.0[0].name, i
+                                        // );
                                         let active = stack_active.remove(i);
                                         dock_obj
                                             .set_property("active", active.to_value())
