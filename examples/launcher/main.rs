@@ -1,8 +1,11 @@
 mod application_object;
 mod application_row;
+mod utils;
 mod window;
+
 use self::application_object::ApplicationObject;
 use self::window::Window;
+use crate::utils::BoxedSearchResult;
 use gdk4::Display;
 use gio::DesktopAppInfo;
 use gtk::gio;
@@ -121,9 +124,9 @@ fn main() {
                             let model_len = model.n_items();
                             dbg!(&results);
                             let new_results: Vec<glib::Object> = results
-                                [0..std::cmp::min(results.len(), NUM_LAUNCHER_ITEMS.into())]
-                                .iter()
-                                .map(|result| ApplicationObject::new(result).upcast())
+                                // [0..std::cmp::min(results.len(), NUM_LAUNCHER_ITEMS.into())]
+                                .into_iter()
+                                .map(|result| ApplicationObject::new(&BoxedSearchResult(Some(result))).upcast())
                                 .collect();
                             model.splice(0, model_len, &new_results[..]);
                         } else if let pop_launcher::Response::DesktopEntry {

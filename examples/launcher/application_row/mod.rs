@@ -1,6 +1,5 @@
 use crate::icon_source;
-use glib::FromVariant;
-use glib::Variant;
+use crate::BoxedSearchResult;
 use gtk4 as gtk;
 mod imp;
 
@@ -25,49 +24,16 @@ impl ApplicationRow {
         glib::Object::new(&[]).expect("Failed to create ApplicationRow")
     }
 
-    pub fn set_app_info(&self, app_obj: ApplicationObject) {
+    pub fn set_search_result(&self, search_obj: ApplicationObject) {
         let self_ = imp::ApplicationRow::from_instance(self);
-
-        if let Ok(name) = app_obj.property("name") {
-            self_.name.set_text(
-                &name
-                    .get::<String>()
-                    .expect("Property name needs to be a String."),
-            );
-        }
-        if let Ok(desc) = app_obj.property("description") {
-            self_.description.set_text(
-                &desc
-                    .get::<String>()
-                    .expect("Property description needs to be a String."),
-            );
-        }
-        if let Ok(icon) = app_obj.property("icon") {
-            if let Ok(icon) = icon.get::<Variant>() {
-                let icon = match <(i32, String)>::from_variant(&icon) {
-                    Some((i_type, name)) if i_type == pop_launcher::IconSource::Name as i32 => {
-                        Some(pop_launcher::IconSource::Name(name.into()))
-                    }
-                    Some((i_type, name)) if i_type == pop_launcher::IconSource::Mime as i32 => {
-                        Some(pop_launcher::IconSource::Mime(name.into()))
-                    }
-                    _ => None,
-                };
-                icon_source(&self_.image, &icon);
-            }
-        }
-        if let Ok(icon) = app_obj.property("categoryicon") {
-            if let Ok(icon) = icon.get::<Variant>() {
-                let icon = match <(i32, String)>::from_variant(&icon) {
-                    Some((i_type, name)) if i_type == pop_launcher::IconSource::Name as i32 => {
-                        Some(pop_launcher::IconSource::Name(name.into()))
-                    }
-                    Some((i_type, name)) if i_type == pop_launcher::IconSource::Mime as i32 => {
-                        Some(pop_launcher::IconSource::Mime(name.into()))
-                    }
-                    _ => None,
-                };
-                icon_source(&self_.categoryimage, &icon);
+        if let Ok(search_result) = search_obj.property("data") {
+            if let Ok(search_result) = search_result.get::<BoxedSearchResult>() {
+                if let Some(search_result) = search_result.0 {
+                    self_.name.set_text(&search_result.name);
+                    self_.description.set_text(&search_result.description);
+                    icon_source(&self_.image, &search_result.icon);
+                    icon_source(&self_.categoryimage, &search_result.category_icon);
+                }
             }
         }
     }

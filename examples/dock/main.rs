@@ -1,9 +1,10 @@
-#![feature(iter_zip)]
 mod dock_item;
 mod dock_object;
 mod utils;
 mod window;
 
+use self::dock_object::DockObject;
+use self::window::Window;
 use crate::utils::BoxedWindowList;
 use futures::executor::block_on;
 use gdk4::Display;
@@ -24,9 +25,6 @@ use std::time::Duration;
 use x11rb::rust_connection::RustConnection;
 use zbus::Connection;
 use zvariant_derive::Type;
-
-use self::dock_object::DockObject;
-use self::window::Window;
 
 const DEST: &str = "com.System76.PopShell";
 const PATH: &str = "/com/System76/PopShell";

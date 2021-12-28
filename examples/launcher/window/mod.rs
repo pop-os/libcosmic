@@ -240,7 +240,7 @@ impl Window {
                 row.set_shortcut(list_item.position() + 1);
             }
 
-            row.set_app_info(application_object);
+            row.set_search_result(application_object);
         });
         // Set the factory of the list view
         let imp = imp::Window::from_instance(self);

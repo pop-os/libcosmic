@@ -12,9 +12,9 @@ x11 = { version = "2", features = ["xlib"] }
 
 # examples/launcher
 #pop-launcher = "1.0.3"
-pop-launcher = { git = "https://github.com/pop-os/launcher" }
+pop-launcher = { git = "https://github.com/wash2/launcher.git" }
 serde_json = "1.0.72"
-pop-launcher-service = { git = "https://github.com/pop-os/launcher" }
+pop-launcher-service = { git = "https://github.com/wash2/launcher.git" }
 postage = "0.4.1"
 futures = "0.3.17"
 glib = "0.14.8"
