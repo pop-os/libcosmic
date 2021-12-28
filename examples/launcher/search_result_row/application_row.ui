@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <interface>
-  <template class="ApplicationRow" parent="GtkBox">
+  <template class="SearchResultRow" parent="GtkBox">
     <property name="orientation">horizontal</property>
     <property name="spacing">12</property>
     <property name="margin-start">4</property>

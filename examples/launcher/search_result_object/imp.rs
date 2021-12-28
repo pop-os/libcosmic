@@ -10,20 +10,20 @@ use std::rc::Rc;
 
 // Object holding the state
 #[derive(Default)]
-pub struct ApplicationObject {
+pub struct SearchResultObject {
     data: Rc<RefCell<BoxedSearchResult>>,
 }
 
 // The central trait for subclassing a GObject
 #[glib::object_subclass]
-impl ObjectSubclass for ApplicationObject {
-    const NAME: &'static str = "ApplicationObject";
-    type Type = super::ApplicationObject;
+impl ObjectSubclass for SearchResultObject {
+    const NAME: &'static str = "SearchResultObject";
+    type Type = super::SearchResultObject;
     type ParentType = glib::Object;
 }
 
 // Trait shared by all GObjects
-impl ObjectImpl for ApplicationObject {
+impl ObjectImpl for SearchResultObject {
     fn properties() -> &'static [ParamSpec] {
         static PROPERTIES: Lazy<Vec<ParamSpec>> = Lazy::new(|| {
             vec![ParamSpec::new_boxed(

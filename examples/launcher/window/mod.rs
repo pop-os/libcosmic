@@ -1,6 +1,6 @@
 mod imp;
-use crate::application_row::ApplicationRow;
-use crate::ApplicationObject;
+use crate::search_result_row::SearchResultRow;
+use crate::SearchResultObject;
 use crate::TX;
 use crate::X11_CONN;
 use gdk4::Rectangle;
@@ -44,7 +44,7 @@ impl Window {
     fn setup_model(&self) {
         // Get state and set model
         let imp = imp::Window::from_instance(self);
-        let model = gio::ListStore::new(ApplicationObject::static_type());
+        let model = gio::ListStore::new(SearchResultObject::static_type());
 
         let slice_model = gtk::SliceListModel::new(Some(&model), 0, NUM_LAUNCHER_ITEMS.into());
         let selection_model = gtk::SingleSelection::builder()
@@ -222,20 +222,20 @@ impl Window {
     fn setup_factory(&self) {
         let factory = SignalListItemFactory::new();
         factory.connect_setup(move |_, list_item| {
-            let row = ApplicationRow::new();
+            let row = SearchResultRow::new();
             list_item.set_child(Some(&row))
         });
         factory.connect_bind(move |_, list_item| {
             let application_object = list_item
                 .item()
                 .expect("The item has to exist.")
-                .downcast::<ApplicationObject>()
-                .expect("The item has to be an `ApplicationObject`");
+                .downcast::<SearchResultObject>()
+                .expect("The item has to be an `SearchResultObject`");
             let row = list_item
                 .child()
                 .expect("The list item child needs to exist.")
-                .downcast::<ApplicationRow>()
-                .expect("The list item type needs to be `ApplicationRow`");
+                .downcast::<SearchResultRow>()
+                .expect("The list item type needs to be `SearchResultRow`");
             if list_item.position() < 9 {
                 row.set_shortcut(list_item.position() + 1);
             }

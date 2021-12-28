@@ -1,9 +1,9 @@
-mod application_object;
-mod application_row;
+mod search_result_object;
+mod search_result_row;
 mod utils;
 mod window;
 
-use self::application_object::ApplicationObject;
+use self::search_result_object::SearchResultObject;
 use self::window::Window;
 use crate::utils::BoxedSearchResult;
 use gdk4::Display;
@@ -126,7 +126,7 @@ fn main() {
                             let new_results: Vec<glib::Object> = results
                                 // [0..std::cmp::min(results.len(), NUM_LAUNCHER_ITEMS.into())]
                                 .into_iter()
-                                .map(|result| ApplicationObject::new(&BoxedSearchResult(Some(result))).upcast())
+                                .map(|result| SearchResultObject::new(&BoxedSearchResult(Some(result))).upcast())
                                 .collect();
                             model.splice(0, model_len, &new_results[..]);
                         } else if let pop_launcher::Response::DesktopEntry {

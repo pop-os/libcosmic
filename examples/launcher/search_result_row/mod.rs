@@ -3,29 +3,29 @@ use crate::BoxedSearchResult;
 use gtk4 as gtk;
 mod imp;
 
-use crate::ApplicationObject;
+use crate::SearchResultObject;
 use gtk::glib;
 use gtk::prelude::*;
 use gtk::subclass::prelude::*;
 
 glib::wrapper! {
-    pub struct ApplicationRow(ObjectSubclass<imp::ApplicationRow>)
+    pub struct SearchResultRow(ObjectSubclass<imp::SearchResultRow>)
         @extends gtk::Widget, gtk::Box;
 }
 
-impl Default for ApplicationRow {
+impl Default for SearchResultRow {
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl ApplicationRow {
+impl SearchResultRow {
     pub fn new() -> Self {
-        glib::Object::new(&[]).expect("Failed to create ApplicationRow")
+        glib::Object::new(&[]).expect("Failed to create SearchResultRow")
     }
 
-    pub fn set_search_result(&self, search_obj: ApplicationObject) {
-        let self_ = imp::ApplicationRow::from_instance(self);
+    pub fn set_search_result(&self, search_obj: SearchResultObject) {
+        let self_ = imp::SearchResultRow::from_instance(self);
         if let Ok(search_result) = search_obj.property("data") {
             if let Ok(search_result) = search_result.get::<BoxedSearchResult>() {
                 if let Some(search_result) = search_result.0 {
@@ -39,7 +39,7 @@ impl ApplicationRow {
     }
 
     pub fn set_shortcut(&self, indx: u32) {
-        let self_ = imp::ApplicationRow::from_instance(self);
+        let self_ = imp::SearchResultRow::from_instance(self);
         self_.shortcut.set_text(&format!("Ctrl + {}", indx));
     }
 }
