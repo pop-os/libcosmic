@@ -1,11 +1,11 @@
-mod imp;
-
 use glib::Object;
 use glib::ObjectExt;
 use glib::ToVariant;
 use gtk4::glib;
 use gtk4::subclass::prelude::*;
 use serde::{Deserialize, Serialize};
+
+mod imp;
 
 glib::wrapper! {
     pub struct AppGroup(ObjectSubclass<imp::AppGroup>);
@@ -20,7 +20,7 @@ impl AppGroup {
             ("icon", &data.icon),
             ("category", &data.category),
         ])
-        .expect("Failed to create `ApplicationObject`.");
+            .expect("Failed to create `ApplicationObject`.");
         if let Err(e) = self_.set_property("appnames", data.app_names.to_variant()) {
             println!("failed to set category icon property");
             dbg!(e);

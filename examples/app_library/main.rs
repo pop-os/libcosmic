@@ -1,17 +1,17 @@
-mod app_group;
-mod grid_item;
-mod utils;
-mod window;
-
-use gtk::gdk::Display;
-use gtk::prelude::*;
 use gtk4 as gtk;
 use gtk4::CssProvider;
 use gtk4::StyleContext;
+use gtk::gdk::Display;
+use gtk::prelude::*;
 use once_cell::sync::OnceCell;
 use x11rb::rust_connection::RustConnection;
 
 use window::Window;
+
+mod app_group;
+mod grid_item;
+mod utils;
+mod window;
 
 static X11_CONN: OnceCell<RustConnection> = OnceCell::new();
 

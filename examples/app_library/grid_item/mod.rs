@@ -1,17 +1,18 @@
-use crate::app_group::AppGroup;
 use gdk4::ContentProvider;
 use gdk4::Display;
 use gio::File;
 use gio::Icon;
+use gtk::{gio, glib};
 use gtk4 as gtk;
-use gtk4::traits::WidgetExt;
 use gtk4::DragSource;
 use gtk4::IconTheme;
-mod imp;
-
+use gtk4::traits::WidgetExt;
 use gtk::prelude::*;
 use gtk::subclass::prelude::*;
-use gtk::{gio, glib};
+
+use crate::app_group::AppGroup;
+
+mod imp;
 
 glib::wrapper! {
 pub struct GridItem(ObjectSubclass<imp::GridItem>)

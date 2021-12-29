@@ -1,26 +1,26 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <interface>
-  <template class="LauncherWindow" parent="GtkApplicationWindow">
-    <property name="width-request">600</property>
-    <property name="title">Gtk Pop Launcher</property>
-    <property name="decorated">false</property>
-    <property name="resizable">false</property>
-    <child>
-      <object class="GtkBox">
-        <property name="orientation">vertical</property>
-        <property name="margin-top">12</property>
-        <property name="margin-bottom">12</property>
-        <property name="margin-start">12</property>
-        <property name="margin-end">12</property>
+    <template class="LauncherWindow" parent="GtkApplicationWindow">
+        <property name="width-request">600</property>
+        <property name="title">Gtk Pop Launcher</property>
+        <property name="decorated">false</property>
+        <property name="resizable">false</property>
         <child>
-          <object class="GtkEntry" id="entry">
-            <property name="margin-bottom">12</property>
-          </object>
+            <object class="GtkBox">
+                <property name="orientation">vertical</property>
+                <property name="margin-top">12</property>
+                <property name="margin-bottom">12</property>
+                <property name="margin-start">12</property>
+                <property name="margin-end">12</property>
+                <child>
+                    <object class="GtkEntry" id="entry">
+                        <property name="margin-bottom">12</property>
+                    </object>
+                </child>
+                <child>
+                    <object class="GtkListView" id="list_view"/>
+                </child>
+            </object>
         </child>
-        <child>
-          <object class="GtkListView" id="list_view"/>
-        </child>
-      </object>
-    </child>
-  </template>
+    </template>
 </interface>

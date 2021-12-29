@@ -1,13 +1,13 @@
-use gtk4 as gtk;
-use gtk4::ScrolledWindow;
 use std::fs::File;
 
 use glib::signal::Inhibit;
 use glib::subclass::InitializingObject;
-use gtk::prelude::*;
-use gtk::subclass::prelude::*;
 use gtk::{gio, glib};
 use gtk::{CompositeTemplate, GridView, SearchEntry};
+use gtk4 as gtk;
+use gtk4::ScrolledWindow;
+use gtk::prelude::*;
+use gtk::subclass::prelude::*;
 use once_cell::sync::OnceCell;
 
 use crate::app_group::AppGroup;
@@ -45,6 +45,7 @@ impl ObjectSubclass for Window {
         obj.init_template();
     }
 }
+
 // Trait shared by all GObjects
 impl ObjectImpl for Window {
     fn constructed(&self, obj: &Self::Type) {
@@ -58,6 +59,7 @@ impl ObjectImpl for Window {
         obj.setup_factory();
     }
 }
+
 // Trait shared by all widgets
 impl WidgetImpl for Window {}
 

@@ -1,69 +1,69 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <interface>
-  <template class="LauncherWindow" parent="GtkApplicationWindow">
-    <!-- drop controller seems to be buggy if window changes size  -->
-    <property name="height-request">80</property>
-    <property name="width-request">128</property>
-    <property name="title">Gtk Pop Dock</property>
-    <property name="decorated">false</property>
-    <property name="resizable">false</property>
-    <child>
-      <object class="GtkBox" id="cursor_handle">
-        <property name="orientation">vertical</property>
+    <template class="LauncherWindow" parent="GtkApplicationWindow">
+        <!-- drop controller seems to be buggy if window changes size  -->
+        <property name="height-request">80</property>
+        <property name="width-request">128</property>
+        <property name="title">Gtk Pop Dock</property>
+        <property name="decorated">false</property>
+        <property name="resizable">false</property>
         <child>
-          <object class="GtkBox">
-            <property name="height-request">0</property>
-            <property name="vexpand">true</property>
-          </object>
-        </child>
-        <child>
-          <object class="GtkRevealer" id="revealer">
-            <property name="reveal-child">true</property>
-            <property name="transition-duration">300</property>
-            <property name="transition-type">slide-up</property>
-            <child>
-              <object class="GtkBox">
-                <property name="height-request">0</property>
+            <object class="GtkBox" id="cursor_handle">
                 <property name="orientation">vertical</property>
                 <child>
-                  <object class="GtkBox">
-                    <property name="orientation">horizontal</property>
-                    <property name="height-request">64</property>
-                    <property name="margin-start">4</property>
-                    <property name="margin-end">4</property>
-                    <property name="spacing">4</property>
-                    <property name="name">dock-container</property>
-                    <child>
-                      <object class="GtkListView" id="saved_app_list_view">
-                        <property name="orientation">horizontal</property>
-                      </object>
-                    </child>
-                    <child>
-                      <object class="GtkSeparator">
-                        <property name="margin-start">12</property>
-                        <property name="margin-end">12</property>
-                        <property name="margin-top">4</property>
-                        <property name="margin-bottom">4</property>
-                        <property name="orientation">vertical</property>
-                      </object>
-                    </child>
-                    <child>
-                      <object class="GtkListView" id="active_app_list_view">
-                        <property name="orientation">horizontal</property>
-                      </object>
-                    </child>
-                  </object>
+                    <object class="GtkBox">
+                        <property name="height-request">0</property>
+                        <property name="vexpand">true</property>
+                    </object>
                 </child>
                 <child>
-                  <object class="GtkBox">
-                    <property name="height-request">4</property>
-                  </object>
+                    <object class="GtkRevealer" id="revealer">
+                        <property name="reveal-child">true</property>
+                        <property name="transition-duration">300</property>
+                        <property name="transition-type">slide-up</property>
+                        <child>
+                            <object class="GtkBox">
+                                <property name="height-request">0</property>
+                                <property name="orientation">vertical</property>
+                                <child>
+                                    <object class="GtkBox">
+                                        <property name="orientation">horizontal</property>
+                                        <property name="height-request">64</property>
+                                        <property name="margin-start">4</property>
+                                        <property name="margin-end">4</property>
+                                        <property name="spacing">4</property>
+                                        <property name="name">dock-container</property>
+                                        <child>
+                                            <object class="GtkListView" id="saved_app_list_view">
+                                                <property name="orientation">horizontal</property>
+                                            </object>
+                                        </child>
+                                        <child>
+                                            <object class="GtkSeparator">
+                                                <property name="margin-start">12</property>
+                                                <property name="margin-end">12</property>
+                                                <property name="margin-top">4</property>
+                                                <property name="margin-bottom">4</property>
+                                                <property name="orientation">vertical</property>
+                                            </object>
+                                        </child>
+                                        <child>
+                                            <object class="GtkListView" id="active_app_list_view">
+                                                <property name="orientation">horizontal</property>
+                                            </object>
+                                        </child>
+                                    </object>
+                                </child>
+                                <child>
+                                    <object class="GtkBox">
+                                        <property name="height-request">4</property>
+                                    </object>
+                                </child>
+                            </object>
+                        </child>
+                    </object>
                 </child>
-              </object>
-            </child>
-          </object>
+            </object>
         </child>
-      </object>
-    </child>
-  </template>
+    </template>
 </interface>

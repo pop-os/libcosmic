@@ -1,28 +1,28 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <interface>
-  <template class="GridItem" parent="GtkBox">
-    <property name="orientation">vertical</property>
-    <property name="halign">center</property>
-    <property name="hexpand">true</property>
-    <property name="margin-top">4</property>
-    <property name="margin-start">4</property>
-    <property name="margin-end">4</property>
-    <property name="margin-bottom">4</property>
-    <child>
-       <object class="GtkImage" id="image">
-         <property name="margin-top">4</property>
-         <property name="margin-bottom">4</property>
-         <property name="pixel-size">64</property>
-       </object>
-     </child>
-    <child>
-      <object class="GtkLabel" id="name">
+    <template class="GridItem" parent="GtkBox">
+        <property name="orientation">vertical</property>
         <property name="halign">center</property>
-        <property name="ellipsize">end</property>
-        <style>
-          <class name="title-5" />
-        </style>
-      </object>
-    </child>
-  </template>
+        <property name="hexpand">true</property>
+        <property name="margin-top">4</property>
+        <property name="margin-start">4</property>
+        <property name="margin-end">4</property>
+        <property name="margin-bottom">4</property>
+        <child>
+            <object class="GtkImage" id="image">
+                <property name="margin-top">4</property>
+                <property name="margin-bottom">4</property>
+                <property name="pixel-size">64</property>
+            </object>
+        </child>
+        <child>
+            <object class="GtkLabel" id="name">
+                <property name="halign">center</property>
+                <property name="ellipsize">end</property>
+                <style>
+                    <class name="title-5"/>
+                </style>
+            </object>
+        </child>
+    </template>
 </interface>

@@ -1,6 +1,8 @@
-mod imp;
-use crate::utils::BoxedSearchResult;
 use gdk4::glib::Object;
+
+use crate::utils::BoxedSearchResult;
+
+mod imp;
 
 glib::wrapper! {
     pub struct SearchResultObject(ObjectSubclass<imp::SearchResultObject>);

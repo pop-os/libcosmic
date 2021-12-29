@@ -1,9 +1,8 @@
+use gtk4 as gtk;
+use gtk::CompositeTemplate;
 use gtk::glib;
 use gtk::prelude::*;
 use gtk::subclass::prelude::*;
-use gtk4 as gtk;
-
-use gtk::CompositeTemplate;
 
 #[derive(Debug, Default, CompositeTemplate)]
 #[template(file = "dock_item.ui")]
@@ -30,5 +29,7 @@ impl ObjectSubclass for DockItem {
 }
 
 impl ObjectImpl for DockItem {}
+
 impl WidgetImpl for DockItem {}
+
 impl BoxImpl for DockItem {}

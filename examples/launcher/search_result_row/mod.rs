@@ -1,12 +1,13 @@
-use crate::icon_source;
-use crate::BoxedSearchResult;
 use gtk4 as gtk;
-mod imp;
-
-use crate::SearchResultObject;
 use gtk::glib;
 use gtk::prelude::*;
 use gtk::subclass::prelude::*;
+
+use crate::BoxedSearchResult;
+use crate::icon_source;
+use crate::SearchResultObject;
+
+mod imp;
 
 glib::wrapper! {
     pub struct SearchResultRow(ObjectSubclass<imp::SearchResultRow>)

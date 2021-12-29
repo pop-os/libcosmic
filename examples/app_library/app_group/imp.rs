@@ -1,11 +1,11 @@
+use std::cell::RefCell;
+use std::rc::Rc;
+
 use glib::{FromVariant, ParamFlags, ParamSpec, ToVariant, Value, Variant, VariantTy};
 use gtk4::glib;
 use gtk4::prelude::*;
 use gtk4::subclass::prelude::*;
 use once_cell::sync::Lazy;
-
-use std::cell::RefCell;
-use std::rc::Rc;
 
 use super::AppGroupData;
 
@@ -142,7 +142,7 @@ impl ObjectImpl for AppGroup {
                         .get::<Variant>()
                         .expect("The icon needs to be a Variant"),
                 )
-                .expect("The icon variant needs to be a Vec<String>");
+                    .expect("The icon variant needs to be a Vec<String>");
                 self.data.borrow_mut().app_names = appnames;
             }
             _ => unimplemented!(),

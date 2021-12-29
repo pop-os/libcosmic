@@ -1,9 +1,8 @@
+use gtk4 as gtk;
+use gtk::CompositeTemplate;
 use gtk::glib;
 use gtk::prelude::*;
 use gtk::subclass::prelude::*;
-use gtk4 as gtk;
-
-use gtk::CompositeTemplate;
 
 #[derive(Debug, Default, CompositeTemplate)]
 #[template(file = "application_row.ui")]
@@ -36,5 +35,7 @@ impl ObjectSubclass for SearchResultRow {
 }
 
 impl ObjectImpl for SearchResultRow {}
+
 impl WidgetImpl for SearchResultRow {}
+
 impl BoxImpl for SearchResultRow {}

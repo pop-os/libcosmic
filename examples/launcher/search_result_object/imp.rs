@@ -1,12 +1,13 @@
-use crate::utils::BoxedSearchResult;
+use std::cell::RefCell;
+use std::rc::Rc;
+
 use glib::{ParamFlags, ParamSpec, Value};
 use gtk4::glib;
 use gtk4::prelude::*;
 use gtk4::subclass::prelude::*;
 use once_cell::sync::Lazy;
 
-use std::cell::RefCell;
-use std::rc::Rc;
+use crate::utils::BoxedSearchResult;
 
 // Object holding the state
 #[derive(Default)]

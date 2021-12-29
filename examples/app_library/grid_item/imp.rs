@@ -1,10 +1,10 @@
+use std::cell::Cell;
+
+use gtk4 as gtk;
+use gtk::CompositeTemplate;
 use gtk::glib;
 use gtk::prelude::*;
 use gtk::subclass::prelude::*;
-use gtk4 as gtk;
-use std::cell::Cell;
-
-use gtk::CompositeTemplate;
 
 #[derive(Debug, Default, CompositeTemplate)]
 #[template(file = "grid_item.ui")]
@@ -32,5 +32,7 @@ impl ObjectSubclass for GridItem {
 }
 
 impl ObjectImpl for GridItem {}
+
 impl WidgetImpl for GridItem {}
+
 impl BoxImpl for GridItem {}

@@ -1,11 +1,13 @@
-mod imp;
+use std::path::Path;
 
-use crate::utils::BoxedWindowList;
 use gdk4::glib::Object;
 use gio::DesktopAppInfo;
 use gtk4::glib;
 use gtk4::prelude::AppInfoExt;
-use std::path::Path;
+
+use crate::utils::BoxedWindowList;
+
+mod imp;
 
 glib::wrapper! {
     pub struct DockObject(ObjectSubclass<imp::DockObject>);

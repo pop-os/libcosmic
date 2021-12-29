@@ -1,18 +1,18 @@
+use std::cell::RefCell;
+use std::rc::Rc;
+
 use glib::SignalHandlerId;
+use glib::subclass::InitializingObject;
+use gtk::{gio, glib};
+use gtk::{CompositeTemplate, ListView};
 use gtk4 as gtk;
 use gtk4::Box;
 use gtk4::DragSource;
 use gtk4::DropTarget;
 use gtk4::EventControllerMotion;
 use gtk4::Revealer;
-use std::cell::RefCell;
-use std::rc::Rc;
-
-use glib::subclass::InitializingObject;
 use gtk::prelude::*;
 use gtk::subclass::prelude::*;
-use gtk::{gio, glib};
-use gtk::{CompositeTemplate, ListView};
 use once_cell::sync::OnceCell;
 
 // Object holding the state
@@ -56,6 +56,7 @@ impl ObjectSubclass for Window {
         obj.init_template();
     }
 }
+
 // Trait shared by all GObjects
 impl ObjectImpl for Window {
     fn constructed(&self, obj: &Self::Type) {
@@ -72,6 +73,7 @@ impl ObjectImpl for Window {
         obj.setup_factory();
     }
 }
+
 // Trait shared by all widgets
 impl WidgetImpl for Window {}
 

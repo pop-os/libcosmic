@@ -1,12 +1,6 @@
-mod imp;
-// use crate::ApplicationObject;
-use crate::dock_item::DockItem;
-use crate::dock_object::DockObject;
-use crate::utils::data_path;
-use crate::BoxedWindowList;
-use crate::Event;
-use crate::TX;
-use crate::X11_CONN;
+use std::fs::File;
+use std::path::Path;
+
 use gdk4::ContentProvider;
 use gdk4::Display;
 use gdk4::Rectangle;
@@ -14,28 +8,36 @@ use gdk4_x11::X11Display;
 use gdk4_x11::X11Surface;
 use gio::DesktopAppInfo;
 use gio::Icon;
+// use crate::application_row::ApplicationRow;
+use glib::Object;
 use glib::Type;
+use gtk::{gio, glib};
+use gtk::{Application, SignalListItemFactory};
 use gtk4 as gtk;
-use gtk4::prelude::ListModelExt;
 use gtk4::DragSource;
 use gtk4::DropTarget;
 use gtk4::EventControllerMotion;
 use gtk4::IconTheme;
-use postage::prelude::Sink;
-use std::fs::File;
-use std::path::Path;
-use x11rb::connection::Connection;
-use x11rb::protocol::xproto::ConnectionExt as OtherConnectionExt;
-use x11rb::protocol::xproto::*;
-use x11rb::wrapper::ConnectionExt;
-// use crate::application_row::ApplicationRow;
-use glib::Object;
+use gtk4::prelude::ListModelExt;
 use gtk::prelude::*;
 use gtk::subclass::prelude::*;
-use gtk::{gio, glib};
-use gtk::{Application, SignalListItemFactory};
-use libcosmic::x;
+use postage::prelude::Sink;
+use x11rb::connection::Connection;
 use x11rb::protocol::xproto;
+use x11rb::protocol::xproto::ConnectionExt;
+
+use libcosmic::x;
+
+use crate::BoxedWindowList;
+// use crate::ApplicationObject;
+use crate::dock_item::DockItem;
+use crate::dock_object::DockObject;
+use crate::Event;
+use crate::TX;
+use crate::utils::data_path;
+use crate::X11_CONN;
+
+mod imp;
 
 glib::wrapper! {
     pub struct Window(ObjectSubclass<imp::Window>)
@@ -178,16 +180,15 @@ impl Window {
                 // ignore all x11 errors...
                 let xdisplay = display.clone().downcast::<X11Display>().expect("Failed to downgrade X11 Display.");
                 xdisplay.error_trap_push();
-                let conn = X11_CONN.get().expect("Failed to get X11 connection");
-                let window_type_atom = conn.intern_atom(false, b"_NET_WM_WINDOW_TYPE").unwrap().reply().unwrap().atom;
-                let dock_type_atom = conn.intern_atom(false, b"_NET_WM_WINDOW_TYPE_DOCK").unwrap().reply().unwrap().atom;
-                conn.change_property32(
-                    PropMode::REPLACE,
-                    surface.xid().try_into().unwrap(),
-                    window_type_atom,
-                    AtomEnum::ATOM,
-                    &[dock_type_atom]
-                ).unwrap();
+                unsafe {
+                    x::change_property(
+                        &display,
+                        &surface,
+                        "_NET_WM_WINDOW_TYPE",
+                        x::PropMode::Replace,
+                        &[x::Atom::new(&display, "_NET_WM_WINDOW_TYPE_DOCK").unwrap()],
+                    );
+                }
                 let resize = glib::clone!(@weak window, @weak revealer => move || {
                     let s = window.surface().expect("Failed to get Surface for Window");
                     let height = if revealer.reveals_child() { window.height() } else { 4 };
@@ -203,6 +204,8 @@ impl Window {
                             width: monitor_width,
                             height: monitor_height,
                         } = monitor.geometry();
+                        // dbg!(monitor_x);
+                        // dbg!(monitor_y);
                         // dbg!(monitor_width);
                         // dbg!(monitor_height);
                         // dbg!(width);

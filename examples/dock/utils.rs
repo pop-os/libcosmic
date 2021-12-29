@@ -1,11 +1,14 @@
+use std::path::PathBuf;
+
+use gtk4::glib;
+
 use crate::DockObject;
 use crate::Item;
-use gtk4::glib;
-use std::path::PathBuf;
 
 #[derive(Clone, Debug, Default, glib::GBoxed)]
 #[gboxed(type_name = "BoxedWindowList")]
 pub struct BoxedWindowList(pub Vec<Item>);
+
 #[derive(Clone, Debug, Default, glib::GBoxed)]
 #[gboxed(type_name = "BoxedDockObject")]
 pub struct BoxedDockObject(pub Option<DockObject>);

@@ -3,17 +3,21 @@ row:hover {
     background: #888888;
     border-radius: 12px;
 }
+
 row {
     background: #333333;
     border-radius: 12px;
 }
+
 listview {
     border-radius: 12px;
     background: #333333;
 }
+
 window {
-    background: rgba(50,50,50,0.0);
+    background: rgba(50, 50, 50, 0.0);
 }
+
 box#dock-container {
     border-radius: 12px;
     background: #333333;

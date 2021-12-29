@@ -1,7 +1,7 @@
-use gtk4::ScrolledWindow;
 use std::path::PathBuf;
 
 use gtk4::glib;
+use gtk4::ScrolledWindow;
 
 pub fn data_path() -> PathBuf {
     let mut path = glib::user_data_dir();

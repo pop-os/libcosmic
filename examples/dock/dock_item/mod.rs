@@ -1,14 +1,14 @@
-use crate::utils::BoxedWindowList;
 use gio::DesktopAppInfo;
 use gio::Icon;
 use gtk4 as gtk;
-mod imp;
-
 use gtk::glib;
 use gtk::prelude::*;
 use gtk::subclass::prelude::*;
 
 use crate::dock_object::DockObject;
+use crate::utils::BoxedWindowList;
+
+mod imp;
 
 glib::wrapper! {
     pub struct DockItem(ObjectSubclass<imp::DockItem>)

@@ -1,25 +1,27 @@
-mod search_result_object;
-mod search_result_row;
-mod utils;
-mod window;
-
-use self::search_result_object::SearchResultObject;
-use self::window::Window;
-use crate::utils::BoxedSearchResult;
 use gdk4::Display;
 use gio::DesktopAppInfo;
-use gtk::gio;
-use gtk::glib;
-use gtk::prelude::*;
-use gtk::Application;
 use gtk4 as gtk;
 use gtk4::CssProvider;
 use gtk4::StyleContext;
+use gtk::Application;
+use gtk::gio;
+use gtk::glib;
+use gtk::prelude::*;
 use once_cell::sync::OnceCell;
 use pop_launcher_service::IpcClient;
 use postage::mpsc::Sender;
 use postage::prelude::*;
 use x11rb::rust_connection::RustConnection;
+
+use crate::utils::BoxedSearchResult;
+
+use self::search_result_object::SearchResultObject;
+use self::window::Window;
+
+mod search_result_object;
+mod search_result_row;
+mod utils;
+mod window;
 
 const NUM_LAUNCHER_ITEMS: u8 = 10;
 static TX: OnceCell<Sender<Event>> = OnceCell::new();

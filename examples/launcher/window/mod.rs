@@ -1,24 +1,25 @@
-mod imp;
-use crate::search_result_row::SearchResultRow;
-use crate::SearchResultObject;
-use crate::TX;
-use crate::X11_CONN;
 use gdk4::Rectangle;
 use gdk4_x11::X11Display;
 use gdk4_x11::X11Surface;
 use glib::Object;
-use gtk::prelude::*;
-use gtk::subclass::prelude::*;
 use gtk::{gio, glib};
 use gtk::{Application, SignalListItemFactory};
 use gtk4 as gtk;
-use libcosmic::x;
+use gtk::prelude::*;
+use gtk::subclass::prelude::*;
 use postage::prelude::Sink;
 use x11rb::connection::Connection;
 use x11rb::protocol::xproto;
-use x11rb::protocol::xproto::ConnectionExt as OtherConnectionExt;
-use x11rb::protocol::xproto::*;
-use x11rb::wrapper::ConnectionExt;
+use x11rb::protocol::xproto::ConnectionExt;
+
+use libcosmic::x;
+
+use crate::search_result_row::SearchResultRow;
+use crate::SearchResultObject;
+use crate::TX;
+use crate::X11_CONN;
+
+mod imp;
 
 glib::wrapper! {
     pub struct Window(ObjectSubclass<imp::Window>)
@@ -143,16 +144,15 @@ impl Window {
                 // ignore all x11 errors...
                 let xdisplay = display.clone().downcast::<X11Display>().expect("Failed to downgrade X11 Display.");
                 xdisplay.error_trap_push();
-                let conn = X11_CONN.get().expect("Failed to get X11 connection");
-                let window_type_atom = conn.intern_atom(false, b"_NET_WM_WINDOW_TYPE").unwrap().reply().unwrap().atom;
-                let dock_type_atom = conn.intern_atom(false, b"_NET_WM_WINDOW_TYPE_DIALOG").unwrap().reply().unwrap().atom;
-                conn.change_property32(
-                    PropMode::REPLACE,
-                    surface.xid().try_into().unwrap(),
-                    window_type_atom,
-                    AtomEnum::ATOM,
-                    &[dock_type_atom]
-                ).unwrap();
+                unsafe {
+                    x::change_property(
+                        &display,
+                        &surface,
+                        "_NET_WM_WINDOW_TYPE",
+                        x::PropMode::Replace,
+                        &[x::Atom::new(&display, "_NET_WM_WINDOW_TYPE_DIALOG").unwrap()],
+                    );
+                }
                 let resize = glib::clone!(@weak window => move || {
                     let s = window.surface().expect("Failed to get Surface for Window");
                     let height = window.height();
