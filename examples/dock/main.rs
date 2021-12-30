@@ -97,7 +97,7 @@ fn load_css() {
 fn main() {
     assert!(utils::BoxedWindowList::static_type().is_valid());
     let app = gtk::Application::builder()
-        .application_id("com.cosmic.Launcher")
+        .application_id("com.system76.dock")
         .build();
 
     app.connect_startup(|app| {
