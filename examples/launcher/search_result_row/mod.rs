@@ -1,10 +1,10 @@
-use gtk4 as gtk;
 use gtk::glib;
 use gtk::prelude::*;
 use gtk::subclass::prelude::*;
+use gtk4 as gtk;
 
-use crate::BoxedSearchResult;
 use crate::icon_source;
+use crate::BoxedSearchResult;
 use crate::SearchResultObject;
 
 mod imp;

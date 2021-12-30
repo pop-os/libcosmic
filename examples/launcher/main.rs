@@ -1,12 +1,12 @@
 use gdk4::Display;
 use gio::DesktopAppInfo;
-use gtk4 as gtk;
-use gtk4::CssProvider;
-use gtk4::StyleContext;
-use gtk::Application;
 use gtk::gio;
 use gtk::glib;
 use gtk::prelude::*;
+use gtk::Application;
+use gtk4 as gtk;
+use gtk4::CssProvider;
+use gtk4::StyleContext;
 use once_cell::sync::OnceCell;
 use pop_launcher_service::IpcClient;
 use postage::mpsc::Sender;

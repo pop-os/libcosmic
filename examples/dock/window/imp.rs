@@ -1,8 +1,10 @@
 use std::cell::RefCell;
 use std::rc::Rc;
 
-use glib::SignalHandlerId;
 use glib::subclass::InitializingObject;
+use glib::SignalHandlerId;
+use gtk::prelude::*;
+use gtk::subclass::prelude::*;
 use gtk::{gio, glib};
 use gtk::{CompositeTemplate, ListView};
 use gtk4 as gtk;
@@ -11,8 +13,6 @@ use gtk4::DragSource;
 use gtk4::DropTarget;
 use gtk4::EventControllerMotion;
 use gtk4::Revealer;
-use gtk::prelude::*;
-use gtk::subclass::prelude::*;
 use once_cell::sync::OnceCell;
 
 // Object holding the state

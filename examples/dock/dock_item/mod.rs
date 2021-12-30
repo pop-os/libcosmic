@@ -1,9 +1,9 @@
 use gio::DesktopAppInfo;
 use gio::Icon;
-use gtk4 as gtk;
 use gtk::glib;
 use gtk::prelude::*;
 use gtk::subclass::prelude::*;
+use gtk4 as gtk;
 
 use crate::dock_object::DockObject;
 use crate::utils::BoxedWindowList;

@@ -2,12 +2,12 @@ use std::fs::File;
 
 use glib::signal::Inhibit;
 use glib::subclass::InitializingObject;
+use gtk::prelude::*;
+use gtk::subclass::prelude::*;
 use gtk::{gio, glib};
 use gtk::{CompositeTemplate, GridView, SearchEntry};
 use gtk4 as gtk;
 use gtk4::ScrolledWindow;
-use gtk::prelude::*;
-use gtk::subclass::prelude::*;
 use once_cell::sync::OnceCell;
 
 use crate::app_group::AppGroup;

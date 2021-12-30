@@ -6,14 +6,14 @@ use gdk4_x11::X11Surface;
 use glib::FromVariant;
 use glib::Object;
 use glib::Variant;
+use gtk::prelude::*;
+use gtk::subclass::prelude::*;
 use gtk::{gio, glib};
 use gtk::{Application, SignalListItemFactory};
 use gtk4 as gtk;
 use gtk4::Dialog;
 use gtk4::Entry;
 use gtk4::Label;
-use gtk::prelude::*;
-use gtk::subclass::prelude::*;
 use x11rb::connection::Connection;
 use x11rb::protocol::xproto;
 use x11rb::protocol::xproto::ConnectionExt;
@@ -172,10 +172,10 @@ impl Window {
                 category: "".to_string(),
             }),
         ]
-            .iter()
-            .for_each(|group| {
-                group_model.append(group);
-            });
+        .iter()
+        .for_each(|group| {
+            group_model.append(group);
+        });
         let group_selection = gtk4::SingleSelection::new(Some(&group_model));
         imp.group_grid_view.set_model(Some(&group_selection));
     }
