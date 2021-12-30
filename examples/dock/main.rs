@@ -4,12 +4,11 @@ use std::time::Duration;
 use futures::executor::block_on;
 use gdk4::Display;
 use gio::DesktopAppInfo;
-use gtk::gio;
-use gtk::glib;
-use gtk::prelude::*;
-use gtk::Application;
-use gtk4 as gtk;
+use gtk4::Application;
 use gtk4::CssProvider;
+use gtk4::gio;
+use gtk4::glib;
+use gtk4::prelude::*;
 use gtk4::StyleContext;
 use once_cell::sync::OnceCell;
 use postage::mpsc::Sender;
@@ -90,13 +89,13 @@ fn load_css() {
     StyleContext::add_provider_for_display(
         &Display::default().expect("Error initializing GTK CSS provider."),
         &provider,
-        gtk::STYLE_PROVIDER_PRIORITY_APPLICATION,
+        gtk4::STYLE_PROVIDER_PRIORITY_APPLICATION,
     );
 }
 
 fn main() {
     assert!(utils::BoxedWindowList::static_type().is_valid());
-    let app = gtk::Application::builder()
+    let app = gtk4::Application::builder()
         .application_id("com.system76.dock")
         .build();
 
@@ -132,7 +131,7 @@ fn main() {
                 match event {
                     Event::Activate(e) => {
                         let _activate_window = zbus_conn
-                            .call_method(Some(DEST), PATH, Some(DEST), "WindowFocus", &((e,)))
+                            .call_method(Some(DEST), PATH, Some(DEST), "WindowFocus", &((e, )))
                             .await
                             .expect("Failed to focus selected window");
                     }
@@ -226,16 +225,16 @@ fn main() {
                         // skip if equal
                         if cached_results.len() == results.len()
                             && results.iter().zip(cached_results.iter()).fold(
-                                0,
-                                |acc, z: (&Item, &Item)| {
-                                    let (a, b) = z;
-                                    if a.name == b.name {
-                                        acc + 1
-                                    } else {
-                                        acc
-                                    }
-                                },
-                            ) == cached_results.len()
+                            0,
+                            |acc, z: (&Item, &Item)| {
+                                let (a, b) = z;
+                                if a.name == b.name {
+                                    acc + 1
+                                } else {
+                                    acc
+                                }
+                            },
+                        ) == cached_results.len()
                         {
                             continue; // skip this update
                         }

@@ -1,4 +1,3 @@
-use crate::Item;
 use std::fs::File;
 use std::path::Path;
 
@@ -13,16 +12,15 @@ use gio::Icon;
 // use crate::application_row::ApplicationRow;
 use glib::Object;
 use glib::Type;
-use gtk::prelude::*;
-use gtk::subclass::prelude::*;
-use gtk::{gio, glib};
-use gtk::{Application, SignalListItemFactory};
-use gtk4 as gtk;
-use gtk4::prelude::ListModelExt;
+use gtk4::{gio, glib};
+use gtk4::{Application, SignalListItemFactory};
+use gtk4::{DragSource, GestureClick};
 use gtk4::DropTarget;
 use gtk4::EventControllerMotion;
 use gtk4::IconTheme;
-use gtk4::{DragSource, GestureClick};
+use gtk4::prelude::*;
+use gtk4::prelude::ListModelExt;
+use gtk4::subclass::prelude::*;
 use postage::prelude::Sink;
 use x11rb::connection::Connection;
 use x11rb::protocol::xproto;
@@ -34,18 +32,19 @@ use crate::BoxedWindowList;
 // use crate::ApplicationObject;
 use crate::dock_item::DockItem;
 use crate::dock_object::DockObject;
-use crate::utils::data_path;
 use crate::Event;
+use crate::Item;
 use crate::TX;
+use crate::utils::data_path;
 use crate::X11_CONN;
 
 mod imp;
 
 glib::wrapper! {
     pub struct Window(ObjectSubclass<imp::Window>)
-        @extends gtk::ApplicationWindow, gtk::Window, gtk::Widget,
-        @implements gio::ActionGroup, gio::ActionMap, gtk::Accessible, gtk::Buildable,
-                    gtk::ConstraintTarget, gtk::Native, gtk::Root, gtk::ShortcutManager;
+        @extends gtk4::ApplicationWindow, gtk4::Window, gtk4::Widget,
+        @implements gio::ActionGroup, gio::ActionMap, gtk4::Accessible, gtk4::Buildable,
+                    gtk4::ConstraintTarget, gtk4::Native, gtk4::Root, gtk4::ShortcutManager;
 }
 
 impl Window {
@@ -76,7 +75,7 @@ impl Window {
         let imp = imp::Window::from_instance(self);
         let saved_app_model = gio::ListStore::new(DockObject::static_type());
 
-        let saved_selection_model = gtk::NoSelection::new(Some(&saved_app_model));
+        let saved_selection_model = gtk4::NoSelection::new(Some(&saved_app_model));
 
         imp.saved_app_model
             .set(saved_app_model)
@@ -86,7 +85,7 @@ impl Window {
             .set_model(Some(&saved_selection_model));
 
         let active_app_model = gio::ListStore::new(DockObject::static_type());
-        let active_selection_model = gtk::NoSelection::new(Some(&active_app_model));
+        let active_selection_model = gtk4::NoSelection::new(Some(&active_app_model));
 
         imp.active_app_model
             .set(active_app_model)
@@ -99,7 +98,7 @@ impl Window {
     fn setup_callbacks(&self) {
         // Get state
         let imp = imp::Window::from_instance(self);
-        let window = self.clone().upcast::<gtk::Window>();
+        let window = self.clone().upcast::<gtk4::Window>();
         let saved_app_list_view = &imp.saved_app_list_view;
         let saved_app_model = &imp
             .saved_app_model
@@ -109,16 +108,16 @@ impl Window {
         let saved_app_selection_model = saved_app_list_view
             .model()
             .expect("List view missing selection model")
-            .downcast::<gtk::NoSelection>()
+            .downcast::<gtk4::NoSelection>()
             .expect("could not downcast listview model to single selection model");
         let active_app_selection_model = imp
             .active_app_list_view
             .model()
             .expect("List view missing selection model")
-            .downcast::<gtk::NoSelection>()
+            .downcast::<gtk4::NoSelection>()
             .expect("could not downcast listview model to single selection model");
 
-        // let selected_handler = glib::clone!(@weak window => move |model: &gtk::NoSelection| {
+        // let selected_handler = glib::clone!(@weak window => move |model: &gtk4::NoSelection| {
         //     let position = model.selected();
         //     println!("selected app {}", position);
         //     // Launch the application when an item of the list is activated
@@ -137,10 +136,10 @@ impl Window {
         //             else if let Ok(Some(app_info)) = dockobject.property("appinfo").expect("DockObject must have appinfo property").get::<Option<DesktopAppInfo>>() {
         //                 let context = window.display().app_launch_context();
         //                 if let Err(err) = app_info.launch(&[], Some(&context)) {
-        //                     gtk::MessageDialog::builder()
+        //                     gtk4::MessageDialog::builder()
         //                         .text(&format!("Failed to start {}", app_info.name()))
         //                         .secondary_text(&err.to_string())
-        //                         .message_type(gtk::MessageType::Error)
+        //                         .message_type(gtk4::MessageType::Error)
         //                         .modal(true)
         //                         .transient_for(&window)
         //                         .build()
@@ -411,7 +410,7 @@ impl Window {
 
     fn setup_click_callbacks(&self) {
         let imp = imp::Window::from_instance(self);
-        let window = self.clone().upcast::<gtk::Window>();
+        let window = self.clone().upcast::<gtk4::Window>();
         let saved_click_controller = imp
             .saved_click_controller
             .get()
@@ -455,10 +454,10 @@ impl Window {
                         (click, _, _, Some(app_info)) | (click, _, None, Some(app_info)) if click != 3  => {
                             let context = window.display().app_launch_context();
                             if let Err(err) = app_info.launch(&[], Some(&context)) {
-                                gtk::MessageDialog::builder()
+                                gtk4::MessageDialog::builder()
                                     .text(&format!("Failed to start {}", app_info.name()))
                                     .secondary_text(&err.to_string())
-                                    .message_type(gtk::MessageType::Error)
+                                    .message_type(gtk4::MessageType::Error)
                                     .modal(true)
                                     .transient_for(&window)
                                     .build()

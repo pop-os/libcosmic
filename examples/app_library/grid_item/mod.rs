@@ -2,13 +2,12 @@ use gdk4::ContentProvider;
 use gdk4::Display;
 use gio::File;
 use gio::Icon;
-use gtk::prelude::*;
-use gtk::subclass::prelude::*;
-use gtk::{gio, glib};
-use gtk4 as gtk;
-use gtk4::traits::WidgetExt;
+use gtk4::{gio, glib};
 use gtk4::DragSource;
 use gtk4::IconTheme;
+use gtk4::prelude::*;
+use gtk4::subclass::prelude::*;
+use gtk4::traits::WidgetExt;
 
 use crate::app_group::AppGroup;
 
@@ -16,8 +15,8 @@ mod imp;
 
 glib::wrapper! {
 pub struct GridItem(ObjectSubclass<imp::GridItem>)
-    @extends gtk::Widget, gtk::Box,
-    @implements gtk::Accessible, gtk::Actionable, gtk::Buildable, gtk::ConstraintTarget;
+    @extends gtk4::Widget, gtk4::Box,
+    @implements gtk4::Accessible, gtk4::Actionable, gtk4::Buildable, gtk4::ConstraintTarget;
 }
 
 impl Default for GridItem {

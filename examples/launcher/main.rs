@@ -1,11 +1,10 @@
 use gdk4::Display;
 use gio::DesktopAppInfo;
-use gtk::gio;
-use gtk::glib;
-use gtk::prelude::*;
-use gtk::Application;
-use gtk4 as gtk;
+use gtk4::Application;
 use gtk4::CssProvider;
+use gtk4::gio;
+use gtk4::glib;
+use gtk4::prelude::*;
 use gtk4::StyleContext;
 use once_cell::sync::OnceCell;
 use pop_launcher_service::IpcClient;
@@ -27,7 +26,7 @@ const NUM_LAUNCHER_ITEMS: u8 = 10;
 static TX: OnceCell<Sender<Event>> = OnceCell::new();
 static X11_CONN: OnceCell<RustConnection> = OnceCell::new();
 
-fn icon_source(icon: &gtk::Image, source: &Option<pop_launcher::IconSource>) {
+fn icon_source(icon: &gtk4::Image, source: &Option<pop_launcher::IconSource>) {
     match source {
         Some(pop_launcher::IconSource::Name(name)) => {
             icon.set_from_icon_name(Some(name));
@@ -80,12 +79,12 @@ fn load_css() {
     StyleContext::add_provider_for_display(
         &Display::default().expect("Error initializing GTK CSS provider."),
         &provider,
-        gtk::STYLE_PROVIDER_PRIORITY_APPLICATION,
+        gtk4::STYLE_PROVIDER_PRIORITY_APPLICATION,
     );
 }
 
 fn main() {
-    let app = gtk::Application::builder()
+    let app = gtk4::Application::builder()
         .application_id("com.cosmic.Launcher")
         .build();
 

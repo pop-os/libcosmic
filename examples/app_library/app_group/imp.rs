@@ -142,7 +142,7 @@ impl ObjectImpl for AppGroup {
                         .get::<Variant>()
                         .expect("The icon needs to be a Variant"),
                 )
-                .expect("The icon variant needs to be a Vec<String>");
+                    .expect("The icon variant needs to be a Vec<String>");
                 self.data.borrow_mut().app_names = appnames;
             }
             _ => unimplemented!(),

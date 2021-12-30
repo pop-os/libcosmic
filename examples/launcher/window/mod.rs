@@ -2,11 +2,10 @@ use gdk4::Rectangle;
 use gdk4_x11::X11Display;
 use gdk4_x11::X11Surface;
 use glib::Object;
-use gtk::prelude::*;
-use gtk::subclass::prelude::*;
-use gtk::{gio, glib};
-use gtk::{Application, SignalListItemFactory};
-use gtk4 as gtk;
+use gtk4::{gio, glib};
+use gtk4::{Application, SignalListItemFactory};
+use gtk4::prelude::*;
+use gtk4::subclass::prelude::*;
 use postage::prelude::Sink;
 use x11rb::connection::Connection;
 use x11rb::protocol::xproto;
@@ -23,9 +22,9 @@ mod imp;
 
 glib::wrapper! {
     pub struct Window(ObjectSubclass<imp::Window>)
-        @extends gtk::ApplicationWindow, gtk::Window, gtk::Widget,
-        @implements gio::ActionGroup, gio::ActionMap, gtk::Accessible, gtk::Buildable,
-                    gtk::ConstraintTarget, gtk::Native, gtk::Root, gtk::ShortcutManager;
+        @extends gtk4::ApplicationWindow, gtk4::Window, gtk4::Widget,
+        @implements gio::ActionGroup, gio::ActionMap, gtk4::Accessible, gtk4::Buildable,
+                    gtk4::ConstraintTarget, gtk4::Native, gtk4::Root, gtk4::ShortcutManager;
 }
 
 const NUM_LAUNCHER_ITEMS: u8 = 9;
@@ -47,8 +46,8 @@ impl Window {
         let imp = imp::Window::from_instance(self);
         let model = gio::ListStore::new(SearchResultObject::static_type());
 
-        let slice_model = gtk::SliceListModel::new(Some(&model), 0, NUM_LAUNCHER_ITEMS.into());
-        let selection_model = gtk::SingleSelection::builder()
+        let slice_model = gtk4::SliceListModel::new(Some(&model), 0, NUM_LAUNCHER_ITEMS.into());
+        let selection_model = gtk4::SingleSelection::builder()
             .model(&slice_model)
             .autoselect(false)
             .can_unselect(true)
@@ -63,7 +62,7 @@ impl Window {
     fn setup_callbacks(&self) {
         // Get state
         let imp = imp::Window::from_instance(self);
-        let window = self.clone().upcast::<gtk::Window>();
+        let window = self.clone().upcast::<gtk4::Window>();
         let list_view = &imp.list_view;
         let entry = &imp.entry;
         let lv = list_view.get();
@@ -94,7 +93,7 @@ impl Window {
         let app_selection_model = list_view
             .model()
             .expect("List view missing selection model")
-            .downcast::<gtk::SingleSelection>()
+            .downcast::<gtk4::SingleSelection>()
             .expect("could not downcast listview model to single selection model");
 
         app_selection_model.connect_selected_notify(glib::clone!(@weak window => move |model| {
@@ -117,7 +116,7 @@ impl Window {
             }
         }));
 
-        entry.connect_changed(glib::clone!(@weak lv => move |search: &gtk::Entry| {
+        entry.connect_changed(glib::clone!(@weak lv => move |search: &gtk4::Entry| {
             let search = search.text().to_string();
 
             glib::MainContext::default().spawn_local(async move {
@@ -128,7 +127,7 @@ impl Window {
             });
         }));
 
-        entry.connect_realize(glib::clone!(@weak lv => move |search: &gtk::Entry| {
+        entry.connect_realize(glib::clone!(@weak lv => move |search: &gtk4::Entry| {
             let search = search.text().to_string();
 
             glib::MainContext::default().spawn_local(async move {

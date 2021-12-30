@@ -1,29 +1,28 @@
-use gtk::glib;
-use gtk::prelude::*;
-use gtk::subclass::prelude::*;
-use gtk::CompositeTemplate;
-use gtk4 as gtk;
+use gtk4::CompositeTemplate;
+use gtk4::glib;
+use gtk4::prelude::*;
+use gtk4::subclass::prelude::*;
 
 #[derive(Debug, Default, CompositeTemplate)]
 #[template(file = "application_row.ui")]
 pub struct SearchResultRow {
     #[template_child]
-    pub name: TemplateChild<gtk::Label>,
+    pub name: TemplateChild<gtk4::Label>,
     #[template_child]
-    pub description: TemplateChild<gtk::Label>,
+    pub description: TemplateChild<gtk4::Label>,
     #[template_child]
-    pub shortcut: TemplateChild<gtk::Label>,
+    pub shortcut: TemplateChild<gtk4::Label>,
     #[template_child]
-    pub image: TemplateChild<gtk::Image>,
+    pub image: TemplateChild<gtk4::Image>,
     #[template_child]
-    pub categoryimage: TemplateChild<gtk::Image>,
+    pub categoryimage: TemplateChild<gtk4::Image>,
 }
 
 #[glib::object_subclass]
 impl ObjectSubclass for SearchResultRow {
     const NAME: &'static str = "SearchResultRow";
     type Type = super::SearchResultRow;
-    type ParentType = gtk::Box;
+    type ParentType = gtk4::Box;
 
     fn class_init(klass: &mut Self::Class) {
         Self::bind_template(klass);

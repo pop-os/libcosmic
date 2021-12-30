@@ -1,9 +1,8 @@
 use gio::DesktopAppInfo;
 use gio::Icon;
-use gtk::glib;
-use gtk::prelude::*;
-use gtk::subclass::prelude::*;
-use gtk4 as gtk;
+use gtk4::glib;
+use gtk4::prelude::*;
+use gtk4::subclass::prelude::*;
 
 use crate::dock_object::DockObject;
 use crate::utils::BoxedWindowList;
@@ -12,7 +11,7 @@ mod imp;
 
 glib::wrapper! {
     pub struct DockItem(ObjectSubclass<imp::DockItem>)
-        @extends gtk::Widget, gtk::Box;
+        @extends gtk4::Widget, gtk4::Box;
 }
 
 impl Default for DockItem {

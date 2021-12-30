@@ -2,12 +2,11 @@ use std::fs::File;
 
 use glib::signal::Inhibit;
 use glib::subclass::InitializingObject;
-use gtk::prelude::*;
-use gtk::subclass::prelude::*;
-use gtk::{gio, glib};
-use gtk::{CompositeTemplate, GridView, SearchEntry};
-use gtk4 as gtk;
+use gtk4::prelude::*;
+use gtk4::subclass::prelude::*;
 use gtk4::ScrolledWindow;
+use gtk4::{gio, glib};
+use gtk4::{CompositeTemplate, GridView, SearchEntry};
 use once_cell::sync::OnceCell;
 
 use crate::app_group::AppGroup;
@@ -35,7 +34,7 @@ impl ObjectSubclass for Window {
     // `NAME` needs to match `class` attribute of template
     const NAME: &'static str = "LauncherWindow";
     type Type = super::Window;
-    type ParentType = gtk::ApplicationWindow;
+    type ParentType = gtk4::ApplicationWindow;
 
     fn class_init(klass: &mut Self::Class) {
         Self::bind_template(klass);

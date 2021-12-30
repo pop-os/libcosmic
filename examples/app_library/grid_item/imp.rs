@@ -1,18 +1,17 @@
 use std::cell::Cell;
 
-use gtk::glib;
-use gtk::prelude::*;
-use gtk::subclass::prelude::*;
-use gtk::CompositeTemplate;
-use gtk4 as gtk;
+use gtk4::CompositeTemplate;
+use gtk4::glib;
+use gtk4::prelude::*;
+use gtk4::subclass::prelude::*;
 
 #[derive(Debug, Default, CompositeTemplate)]
 #[template(file = "grid_item.ui")]
 pub struct GridItem {
     #[template_child]
-    pub name: TemplateChild<gtk::Label>,
+    pub name: TemplateChild<gtk4::Label>,
     #[template_child]
-    pub image: TemplateChild<gtk::Image>,
+    pub image: TemplateChild<gtk4::Image>,
     pub index: Cell<u32>,
 }
 
@@ -20,7 +19,7 @@ pub struct GridItem {
 impl ObjectSubclass for GridItem {
     const NAME: &'static str = "GridItem";
     type Type = super::GridItem;
-    type ParentType = gtk::Box;
+    type ParentType = gtk4::Box;
 
     fn class_init(klass: &mut Self::Class) {
         Self::bind_template(klass);

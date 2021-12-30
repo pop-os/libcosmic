@@ -6,14 +6,13 @@ use gdk4_x11::X11Surface;
 use glib::FromVariant;
 use glib::Object;
 use glib::Variant;
-use gtk::prelude::*;
-use gtk::subclass::prelude::*;
-use gtk::{gio, glib};
-use gtk::{Application, SignalListItemFactory};
-use gtk4 as gtk;
+use gtk4::{gio, glib};
+use gtk4::{Application, SignalListItemFactory};
 use gtk4::Dialog;
 use gtk4::Entry;
 use gtk4::Label;
+use gtk4::prelude::*;
+use gtk4::subclass::prelude::*;
 use x11rb::connection::Connection;
 use x11rb::protocol::xproto;
 use x11rb::protocol::xproto::ConnectionExt;
@@ -31,9 +30,9 @@ mod imp;
 
 glib::wrapper! {
     pub struct Window(ObjectSubclass<imp::Window>)
-        @extends gtk::ApplicationWindow, gtk::Window, gtk::Widget,
-        @implements gio::ActionGroup, gio::ActionMap, gtk::Accessible, gtk::Buildable,
-                    gtk::ConstraintTarget, gtk::Native, gtk::Root, gtk::ShortcutManager;
+        @extends gtk4::ApplicationWindow, gtk4::Window, gtk4::Widget,
+        @implements gio::ActionGroup, gio::ActionMap, gtk4::Accessible, gtk4::Buildable,
+                    gtk4::ConstraintTarget, gtk4::Native, gtk4::Root, gtk4::ShortcutManager;
 }
 
 impl Window {
@@ -97,7 +96,7 @@ impl Window {
             .set(app_model.clone())
             .expect("Could not set model");
 
-        let sorter = gtk::CustomSorter::new(move |obj1, obj2| {
+        let sorter = gtk4::CustomSorter::new(move |obj1, obj2| {
             let app_info1 = obj1.downcast_ref::<gio::DesktopAppInfo>().unwrap();
             let app_info2 = obj2.downcast_ref::<gio::DesktopAppInfo>().unwrap();
 
@@ -107,14 +106,14 @@ impl Window {
                 .cmp(&app_info2.name().to_lowercase())
                 .into()
         });
-        let filter = gtk::CustomFilter::new(|_obj| true);
+        let filter = gtk4::CustomFilter::new(|_obj| true);
         let search_filter_model =
-            gtk::FilterListModel::new(Some(&app_model), Some(filter).as_ref());
-        let filter = gtk::CustomFilter::new(|_obj| true);
+            gtk4::FilterListModel::new(Some(&app_model), Some(filter).as_ref());
+        let filter = gtk4::CustomFilter::new(|_obj| true);
         let group_filter_model =
-            gtk::FilterListModel::new(Some(&search_filter_model), Some(filter).as_ref());
-        let sorted_model = gtk::SortListModel::new(Some(&group_filter_model), Some(&sorter));
-        let selection_model = gtk::SingleSelection::builder()
+            gtk4::FilterListModel::new(Some(&search_filter_model), Some(filter).as_ref());
+        let sorted_model = gtk4::SortListModel::new(Some(&group_filter_model), Some(&sorter));
+        let selection_model = gtk4::SingleSelection::builder()
             .model(&sorted_model)
             .autoselect(false)
             .can_unselect(true)
@@ -172,10 +171,10 @@ impl Window {
                 category: "".to_string(),
             }),
         ]
-        .iter()
-        .for_each(|group| {
-            group_model.append(group);
-        });
+            .iter()
+            .for_each(|group| {
+                group_model.append(group);
+            });
         let group_selection = gtk4::SingleSelection::new(Some(&group_model));
         imp.group_grid_view.set_model(Some(&group_selection));
     }
@@ -183,32 +182,32 @@ impl Window {
     fn setup_callbacks(&self) {
         // Get state
         let imp = imp::Window::from_instance(self);
-        let window = self.clone().upcast::<gtk::Window>();
+        let window = self.clone().upcast::<gtk4::Window>();
         let app_grid_view = &imp.app_grid_view;
         let group_grid_view = &imp.group_grid_view;
         let app_selection_model = app_grid_view
             .model()
             .expect("List view missing selection model")
-            .downcast::<gtk::SingleSelection>()
+            .downcast::<gtk4::SingleSelection>()
             .expect("could not downcast listview model to single selection model");
         let app_sorted_model = app_selection_model
             .model()
-            .downcast::<gtk::SortListModel>()
+            .downcast::<gtk4::SortListModel>()
             .expect("sorted list model could not be downcast");
         let app_group_filter_model = app_sorted_model
             .model()
             .expect("missing model for sort list model.")
-            .downcast::<gtk::FilterListModel>()
+            .downcast::<gtk4::FilterListModel>()
             .expect("could not downcast sort list model to filter list model");
         let app_filter_model = app_group_filter_model
             .model()
             .expect("missing model for sort list model.")
-            .downcast::<gtk::FilterListModel>()
+            .downcast::<gtk4::FilterListModel>()
             .expect("could not downcast sort list model to filter list model");
         let group_selection_model = group_grid_view
             .model()
             .expect("List view missing selection model")
-            .downcast::<gtk::SingleSelection>()
+            .downcast::<gtk4::SingleSelection>()
             .expect("could not downcast listview model to single selection model");
 
         let entry = &imp.entry;
@@ -229,10 +228,10 @@ impl Window {
                 let app_info = item.downcast::<gio::DesktopAppInfo>().unwrap();
                 let context = window.display().app_launch_context();
                 if let Err(err) = app_info.launch(&[], Some(&context)) {
-                    gtk::MessageDialog::builder()
+                    gtk4::MessageDialog::builder()
                         .text(&format!("Failed to start {}", app_info.name()))
                         .secondary_text(&err.to_string())
-                        .message_type(gtk::MessageType::Error)
+                        .message_type(gtk4::MessageType::Error)
                         .modal(true)
                         .transient_for(&window)
                         .build()
@@ -347,7 +346,7 @@ impl Window {
                 vec![]
             };
             dbg!(&app_names);
-            let new_filter: gtk::CustomFilter = gtk::CustomFilter::new(move |obj| {
+            let new_filter: gtk4::CustomFilter = gtk4::CustomFilter::new(move |obj| {
                 let app = obj
                     .downcast_ref::<gio::DesktopAppInfo>()
                     .expect("The Object needs to be of type AppInfo");
@@ -363,15 +362,15 @@ impl Window {
         }));
 
         entry.connect_changed(
-            glib::clone!(@weak app_filter_model, @weak app_sorted_model => move |search: &gtk::SearchEntry| {
+            glib::clone!(@weak app_filter_model, @weak app_sorted_model => move |search: &gtk4::SearchEntry| {
                 let search_text = search.text().to_string().to_lowercase();
-                let new_filter: gtk::CustomFilter = gtk::CustomFilter::new(move |obj| {
+                let new_filter: gtk4::CustomFilter = gtk4::CustomFilter::new(move |obj| {
                     let search_res = obj.downcast_ref::<gio::DesktopAppInfo>()
                         .expect("The Object needs to be of type AppInfo");
                     search_res.name().to_string().to_lowercase().contains(&search_text)
                 });
                 let search_text = search.text().to_string().to_lowercase();
-                let new_sorter: gtk::CustomSorter = gtk::CustomSorter::new(move |obj1, obj2| {
+                let new_sorter: gtk4::CustomSorter = gtk4::CustomSorter::new(move |obj1, obj2| {
                     let app_info1 = obj1.downcast_ref::<gio::DesktopAppInfo>().unwrap();
                     let app_info2 = obj2.downcast_ref::<gio::DesktopAppInfo>().unwrap();
                     if search_text == "" { 

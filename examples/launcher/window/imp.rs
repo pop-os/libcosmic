@@ -1,9 +1,8 @@
 use glib::subclass::InitializingObject;
-use gtk::prelude::*;
-use gtk::subclass::prelude::*;
-use gtk::{gio, glib};
-use gtk::{CompositeTemplate, Entry, ListView};
-use gtk4 as gtk;
+use gtk4::{gio, glib};
+use gtk4::{CompositeTemplate, Entry, ListView};
+use gtk4::prelude::*;
+use gtk4::subclass::prelude::*;
 use once_cell::sync::OnceCell;
 
 // Object holding the state
@@ -23,7 +22,7 @@ impl ObjectSubclass for Window {
     // `NAME` needs to match `class` attribute of template
     const NAME: &'static str = "LauncherWindow";
     type Type = super::Window;
-    type ParentType = gtk::ApplicationWindow;
+    type ParentType = gtk4::ApplicationWindow;
 
     fn class_init(klass: &mut Self::Class) {
         Self::bind_template(klass);

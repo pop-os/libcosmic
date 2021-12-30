@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 
-use gtk4::glib;
+use glib;
 
 use crate::DockObject;
 use crate::Item;
