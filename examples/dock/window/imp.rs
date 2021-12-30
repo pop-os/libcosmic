@@ -8,11 +8,11 @@ use gtk::subclass::prelude::*;
 use gtk::{gio, glib};
 use gtk::{CompositeTemplate, ListView};
 use gtk4 as gtk;
-use gtk4::Box;
 use gtk4::DragSource;
 use gtk4::DropTarget;
 use gtk4::EventControllerMotion;
 use gtk4::Revealer;
+use gtk4::{Box, GestureClick};
 use once_cell::sync::OnceCell;
 
 // Object holding the state
@@ -29,15 +29,17 @@ pub struct Window {
     pub cursor_handle: TemplateChild<Box>,
     pub saved_app_model: OnceCell<gio::ListStore>,
     pub active_app_model: OnceCell<gio::ListStore>,
-    pub cursor_event_controller: OnceCell<EventControllerMotion>,
+    pub cursor_motion_controller: OnceCell<EventControllerMotion>,
+    pub saved_click_controller: Rc<OnceCell<GestureClick>>,
+    pub active_click_controller: Rc<OnceCell<GestureClick>>,
     pub drop_controller: OnceCell<DropTarget>,
     pub saved_drag_source: Rc<OnceCell<DragSource>>,
-    pub active_drag_source: OnceCell<DragSource>,
+    pub active_drag_source: Rc<OnceCell<DragSource>>,
     pub saved_drag_end_signal: Rc<RefCell<Option<SignalHandlerId>>>,
     pub active_drag_end_signal: Rc<RefCell<Option<SignalHandlerId>>>,
     pub saved_drag_cancel_signal: Rc<RefCell<Option<SignalHandlerId>>>,
     pub active_drag_cancel_signal: Rc<RefCell<Option<SignalHandlerId>>>,
-    pub window_drop_controller: OnceCell<DropTarget>,
+    pub window_drop_controller: Rc<OnceCell<DropTarget>>,
 }
 
 // The central trait for subclassing a GObject
@@ -65,11 +67,17 @@ impl ObjectImpl for Window {
 
         // Setup
         obj.setup_model();
-        obj.setup_event_controller();
+        obj.setup_motion_controller();
+        obj.setup_click_controller();
         obj.setup_drop_target();
         obj.setup_drag_source();
         obj.restore_saved_apps();
         obj.setup_callbacks();
+        // obj.setup_window_callbacks();
+        // obj.setup_saved_list_callbacks();
+        // obj.setup_active_list_callbacks();
+        // obj.setup_drag_callbacks();
+        obj.setup_click_callbacks();
         obj.setup_factory();
     }
 }

@@ -25,9 +25,9 @@ serde = "1.0.130"
 x11rb = "0.9.0"
 async-io = "1.6.0"
 # zbus
-zbus = "2.0.0-beta.7"
-zvariant = "2.10.0"
-zvariant_derive = "2.10.0"
+zbus = "2.0.0-beta.8"
+zvariant = "3.0.0"
+zvariant_derive = "3.0.0"
 futures-util = "0.3.19"
 gdk4-x11-sys = "0.3.1"
 

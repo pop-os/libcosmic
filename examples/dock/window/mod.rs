@@ -1,8 +1,10 @@
+use crate::Item;
 use std::fs::File;
 use std::path::Path;
 
 use gdk4::ContentProvider;
 use gdk4::Display;
+use gdk4::ModifierType;
 use gdk4::Rectangle;
 use gdk4_x11::X11Display;
 use gdk4_x11::X11Surface;
@@ -17,10 +19,10 @@ use gtk::{gio, glib};
 use gtk::{Application, SignalListItemFactory};
 use gtk4 as gtk;
 use gtk4::prelude::ListModelExt;
-use gtk4::DragSource;
 use gtk4::DropTarget;
 use gtk4::EventControllerMotion;
 use gtk4::IconTheme;
+use gtk4::{DragSource, GestureClick};
 use postage::prelude::Sink;
 use x11rb::connection::Connection;
 use x11rb::protocol::xproto;
@@ -74,12 +76,7 @@ impl Window {
         let imp = imp::Window::from_instance(self);
         let saved_app_model = gio::ListStore::new(DockObject::static_type());
 
-        let saved_selection_model = gtk::SingleSelection::builder()
-            .autoselect(false)
-            .can_unselect(true)
-            .selected(gtk4::INVALID_LIST_POSITION)
-            .model(&saved_app_model)
-            .build();
+        let saved_selection_model = gtk::NoSelection::new(Some(&saved_app_model));
 
         imp.saved_app_model
             .set(saved_app_model)
@@ -89,12 +86,7 @@ impl Window {
             .set_model(Some(&saved_selection_model));
 
         let active_app_model = gio::ListStore::new(DockObject::static_type());
-        let active_selection_model = gtk::SingleSelection::builder()
-            .autoselect(false)
-            .can_unselect(true)
-            .selected(gtk4::INVALID_LIST_POSITION)
-            .model(&active_app_model)
-            .build();
+        let active_selection_model = gtk::NoSelection::new(Some(&active_app_model));
 
         imp.active_app_model
             .set(active_app_model)
@@ -117,53 +109,53 @@ impl Window {
         let saved_app_selection_model = saved_app_list_view
             .model()
             .expect("List view missing selection model")
-            .downcast::<gtk::SingleSelection>()
+            .downcast::<gtk::NoSelection>()
             .expect("could not downcast listview model to single selection model");
         let active_app_selection_model = imp
             .active_app_list_view
             .model()
             .expect("List view missing selection model")
-            .downcast::<gtk::SingleSelection>()
+            .downcast::<gtk::NoSelection>()
             .expect("could not downcast listview model to single selection model");
 
-        let selected_handler = glib::clone!(@weak window => move |model: &gtk::SingleSelection| {
-            let position = model.selected();
-            println!("selected app {}", position);
-            // Launch the application when an item of the list is activated
-            if let Some(item) = model.item(position) {
-                let dockobject = item.downcast::<DockObject>().expect("App model must only contain DockObject");
-                if let Ok(active) = dockobject.property("active").expect("DockObject must have active property").get::<BoxedWindowList>() {
-                    if let Some(focused_item) = active.0.iter().next() {
-                        let entity = focused_item.entity.clone();
-                        glib::MainContext::default().spawn_local(async move {
-                            if let Some(tx) = TX.get() {
-                                let mut tx = tx.clone();
-                                let _ = tx.send(Event::Activate(entity)).await;
-                            }
-                        });
-                    }
-                    else if let Ok(Some(app_info)) = dockobject.property("appinfo").expect("DockObject must have appinfo property").get::<Option<DesktopAppInfo>>() {
-                        let context = window.display().app_launch_context();
-                        if let Err(err) = app_info.launch(&[], Some(&context)) {
-                            gtk::MessageDialog::builder()
-                                .text(&format!("Failed to start {}", app_info.name()))
-                                .secondary_text(&err.to_string())
-                                .message_type(gtk::MessageType::Error)
-                                .modal(true)
-                                .transient_for(&window)
-                                .build()
-                                .show();
-                        }
-                    }
-                }
-            }
-            model.set_selected(gtk4::INVALID_LIST_POSITION);
-        });
-        saved_app_selection_model.connect_selected_notify(selected_handler.clone());
+        // let selected_handler = glib::clone!(@weak window => move |model: &gtk::NoSelection| {
+        //     let position = model.selected();
+        //     println!("selected app {}", position);
+        //     // Launch the application when an item of the list is activated
+        //     if let Some(item) = model.item(position) {
+        //         let dockobject = item.downcast::<DockObject>().expect("App model must only contain DockObject");
+        //         if let Ok(active) = dockobject.property("active").expect("DockObject must have active property").get::<BoxedWindowList>() {
+        //             if let Some(focused_item) = active.0.iter().next() {
+        //                 let entity = focused_item.entity.clone();
+        //                 glib::MainContext::default().spawn_local(async move {
+        //                     if let Some(tx) = TX.get() {
+        //                         let mut tx = tx.clone();
+        //                         let _ = tx.send(Event::Activate(entity)).await;
+        //                     }
+        //                 });
+        //             }
+        //             else if let Ok(Some(app_info)) = dockobject.property("appinfo").expect("DockObject must have appinfo property").get::<Option<DesktopAppInfo>>() {
+        //                 let context = window.display().app_launch_context();
+        //                 if let Err(err) = app_info.launch(&[], Some(&context)) {
+        //                     gtk::MessageDialog::builder()
+        //                         .text(&format!("Failed to start {}", app_info.name()))
+        //                         .secondary_text(&err.to_string())
+        //                         .message_type(gtk::MessageType::Error)
+        //                         .modal(true)
+        //                         .transient_for(&window)
+        //                         .build()
+        //                         .show();
+        //                 }
+        //             }
+        //         }
+        //     }
+        //     model.set_selected(gtk4::INVALID_LIST_POSITION);
+        // });
+        // saved_app_selection_model.connect_selected_notify(selected_handler.clone());
+        //
+        // active_app_selection_model.connect_selected_notify(selected_handler);
 
-        active_app_selection_model.connect_selected_notify(selected_handler);
-
-        let cursor_event_controller = &imp.cursor_event_controller.get().unwrap();
+        let cursor_event_controller = &imp.cursor_motion_controller.get().unwrap();
         let drop_controller = &imp.drop_controller.get().unwrap();
         let window_drop_controller = &imp.window_drop_controller.get().unwrap();
         let revealer = &imp.revealer.get();
@@ -375,7 +367,7 @@ impl Window {
         });
     }
 
-    fn setup_event_controller(&self) {
+    fn setup_motion_controller(&self) {
         let imp = imp::Window::from_instance(self);
         let handle = &imp.cursor_handle.get();
         let ev = EventControllerMotion::builder()
@@ -384,9 +376,104 @@ impl Window {
             .build();
         handle.add_controller(&ev);
 
-        imp.cursor_event_controller
+        imp.cursor_motion_controller
             .set(ev)
             .expect("Could not set event controller");
+    }
+
+    fn setup_click_controller(&self) {
+        let imp = imp::Window::from_instance(self);
+        let saved_app_list_view = &imp.saved_app_list_view.get();
+        let controller = GestureClick::builder()
+            .button(0)
+            .propagation_limit(gtk4::PropagationLimit::None)
+            .propagation_phase(gtk4::PropagationPhase::Capture)
+            .build();
+        saved_app_list_view.add_controller(&controller);
+
+        imp.saved_click_controller
+            .set(controller)
+            .expect("Could not set event controller");
+
+        let imp = imp::Window::from_instance(self);
+        let active_app_list_view = &imp.active_app_list_view.get();
+        let controller = GestureClick::builder()
+            .button(0)
+            .propagation_limit(gtk4::PropagationLimit::None)
+            .propagation_phase(gtk4::PropagationPhase::Capture)
+            .build();
+        active_app_list_view.add_controller(&controller);
+
+        imp.active_click_controller
+            .set(controller)
+            .expect("Could not set event controller");
+    }
+
+    fn setup_click_callbacks(&self) {
+        let imp = imp::Window::from_instance(self);
+        let window = self.clone().upcast::<gtk::Window>();
+        let saved_click_controller = imp
+            .saved_click_controller
+            .get()
+            .expect("Failed to get saved click controller");
+        let saved_app_model = imp
+            .saved_app_model
+            .get()
+            .expect("Failed to get saved_app_model");
+        let saved_app_list_view = imp.saved_app_list_view.get();
+        saved_click_controller.connect_released(glib::clone!(@weak saved_app_model, @weak saved_app_list_view, @weak window => move |self_, _, x, _y| {
+            let max_x = saved_app_list_view.allocated_width();
+            let n_buckets = saved_app_model.n_items();
+            let index = (x * n_buckets as f64 / (max_x as f64 + 0.1)) as u32;
+            dbg!(self_.current_button());
+            dbg!(self_.last_event(self_.current_sequence().as_ref()));
+            let click_modifier = if let Some(event) =  self_.last_event(self_.current_sequence().as_ref()) {
+                    dbg!(&event);
+                    Some(event.modifier_state())
+                }
+                else {
+                    None
+                };
+            dbg!(click_modifier);
+            // Launch the application when an item of the list is activated
+            let focus_window = move |first_focused_item: &Item| {
+                let entity = first_focused_item.entity.clone();
+                glib::MainContext::default().spawn_local(async move {
+                    if let Some(tx) = TX.get() {
+                        let mut tx = tx.clone();
+                        let _ = tx.send(Event::Activate(entity)).await;
+                    }
+                });
+            };
+            if let Some(item) = saved_app_model.item(index) {
+                if let Ok(dock_object) = item.downcast::<DockObject>() {
+                    let active = dock_object.property("active").expect("DockObject must have active property").get::<BoxedWindowList>().expect("Failed to convert value to WindowList");
+                    let app_info = dock_object.property("appinfo").expect("DockObject must have appinfo property").get::<Option<DesktopAppInfo>>().expect("Failed to convert value to DesktopAppInfo");
+                    match (self_.current_button(), click_modifier, active.0.iter().next(), app_info) {
+                        (click, Some(click_modifier), Some(first_focused_item), _) if click == 1 && !click_modifier.contains(ModifierType::CONTROL_MASK) => focus_window(first_focused_item),
+                        (click, None, Some(first_focused_item), _) if click == 1 => focus_window(first_focused_item),
+                        (click, _, _, Some(app_info)) | (click, _, None, Some(app_info)) if click != 3  => {
+                            let context = window.display().app_launch_context();
+                            if let Err(err) = app_info.launch(&[], Some(&context)) {
+                                gtk::MessageDialog::builder()
+                                    .text(&format!("Failed to start {}", app_info.name()))
+                                    .secondary_text(&err.to_string())
+                                    .message_type(gtk::MessageType::Error)
+                                    .modal(true)
+                                    .transient_for(&window)
+                                    .build()
+                                    .show();
+                            }
+
+                        }
+                        (click, _, _, _) if click == 3 => {
+                            println!("handling right click");
+                        }
+                        _ => println!("Failed to process click.")
+                    }
+                }
+            }
+        }));
     }
 
     fn setup_drop_target(&self) {
@@ -439,8 +526,6 @@ impl Window {
         let drag_cancel = &imp.saved_drag_cancel_signal;
         saved_app_list_view.add_controller(&saved_drag_source);
         saved_drag_source.connect_prepare(glib::clone!(@weak saved_app_model, @weak saved_app_list_view, @weak drag_end, @weak drag_cancel => @default-return None, move |self_, x, _y| {
-            // set drag source icon if possible...
-            // gio Icon is not easily converted to a Paintable, but this seems to be the correct method
             let max_x = saved_app_list_view.allocated_width();
             // dbg!(max_x);
             // dbg!(max_y);
