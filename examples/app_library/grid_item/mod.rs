@@ -2,12 +2,12 @@ use gdk4::ContentProvider;
 use gdk4::Display;
 use gio::File;
 use gio::Icon;
-use gtk4::{gio, glib};
-use gtk4::DragSource;
-use gtk4::IconTheme;
 use gtk4::prelude::*;
 use gtk4::subclass::prelude::*;
 use gtk4::traits::WidgetExt;
+use gtk4::DragSource;
+use gtk4::IconTheme;
+use gtk4::{gio, glib};
 
 use crate::app_group::AppGroup;
 

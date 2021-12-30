@@ -1,6 +1,6 @@
-use gtk4::CssProvider;
 use gtk4::gdk::Display;
 use gtk4::prelude::*;
+use gtk4::CssProvider;
 use gtk4::StyleContext;
 use once_cell::sync::OnceCell;
 use x11rb::rust_connection::RustConnection;

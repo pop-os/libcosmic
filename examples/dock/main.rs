@@ -4,11 +4,11 @@ use std::time::Duration;
 use futures::executor::block_on;
 use gdk4::Display;
 use gio::DesktopAppInfo;
-use gtk4::Application;
-use gtk4::CssProvider;
 use gtk4::gio;
 use gtk4::glib;
 use gtk4::prelude::*;
+use gtk4::Application;
+use gtk4::CssProvider;
 use gtk4::StyleContext;
 use once_cell::sync::OnceCell;
 use postage::mpsc::Sender;
@@ -131,7 +131,7 @@ fn main() {
                 match event {
                     Event::Activate(e) => {
                         let _activate_window = zbus_conn
-                            .call_method(Some(DEST), PATH, Some(DEST), "WindowFocus", &((e, )))
+                            .call_method(Some(DEST), PATH, Some(DEST), "WindowFocus", &((e,)))
                             .await
                             .expect("Failed to focus selected window");
                     }
@@ -225,16 +225,16 @@ fn main() {
                         // skip if equal
                         if cached_results.len() == results.len()
                             && results.iter().zip(cached_results.iter()).fold(
-                            0,
-                            |acc, z: (&Item, &Item)| {
-                                let (a, b) = z;
-                                if a.name == b.name {
-                                    acc + 1
-                                } else {
-                                    acc
-                                }
-                            },
-                        ) == cached_results.len()
+                                0,
+                                |acc, z: (&Item, &Item)| {
+                                    let (a, b) = z;
+                                    if a.name == b.name {
+                                        acc + 1
+                                    } else {
+                                        acc
+                                    }
+                                },
+                            ) == cached_results.len()
                         {
                             continue; // skip this update
                         }

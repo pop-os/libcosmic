@@ -2,8 +2,8 @@ use gtk4::glib;
 use gtk4::prelude::*;
 use gtk4::subclass::prelude::*;
 
-use crate::BoxedSearchResult;
 use crate::icon_source;
+use crate::BoxedSearchResult;
 use crate::SearchResultObject;
 
 mod imp;

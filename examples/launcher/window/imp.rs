@@ -1,8 +1,8 @@
 use glib::subclass::InitializingObject;
-use gtk4::{gio, glib};
-use gtk4::{CompositeTemplate, Entry, ListView};
 use gtk4::prelude::*;
 use gtk4::subclass::prelude::*;
+use gtk4::{gio, glib};
+use gtk4::{CompositeTemplate, Entry, ListView};
 use once_cell::sync::OnceCell;
 
 // Object holding the state

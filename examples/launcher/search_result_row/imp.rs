@@ -1,7 +1,7 @@
-use gtk4::CompositeTemplate;
 use gtk4::glib;
 use gtk4::prelude::*;
 use gtk4::subclass::prelude::*;
+use gtk4::CompositeTemplate;
 
 #[derive(Debug, Default, CompositeTemplate)]
 #[template(file = "application_row.ui")]
