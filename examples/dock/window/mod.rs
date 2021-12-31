@@ -19,6 +19,7 @@ use glib::Type;
 use gtk4::prelude::ListModelExt;
 use gtk4::prelude::*;
 use gtk4::subclass::prelude::*;
+use gtk4::Align;
 use gtk4::Box;
 use gtk4::DropTarget;
 use gtk4::EventControllerMotion;
@@ -58,7 +59,7 @@ impl Window {
         let imp = imp::Window::from_instance(&self_);
         cascade! {
             &self_;
-            ..set_height_request(80);
+            ..set_height_request(100);
             ..set_width_request(128);
             ..set_title(Some("Cosmic Dock"));
             ..set_decorated(false);
@@ -77,43 +78,32 @@ impl Window {
         let revealer = cascade! {
             Revealer::new();
             ..set_reveal_child(true);
+            ..set_valign(Align::Baseline);
             ..set_transition_duration(300);
             ..set_transition_type(RevealerTransitionType::SlideUp);
         };
         cursor_handle.append(&revealer);
 
-        let dock_container = cascade! {
-            Box::new(Orientation::Vertical, 0);
-            ..set_height_request(0);
-        };
-        revealer.set_child(Some(&dock_container));
-
         let dock = cascade! {
             Box::new(Orientation::Horizontal, 4);
-            ..set_height_request(64);
             ..set_margin_start(4);
             ..set_margin_end(4);
+            ..set_margin_bottom(4);
         };
-        dock_container.append(&dock);
-
-        let dock_bottom_gap = cascade! {
-            Box::new(Orientation::Horizontal, 0);
-            ..set_height_request(4);
-        };
-        dock_container.append(&dock_bottom_gap);
+        dock.add_css_class("dock");
+        revealer.set_child(Some(&dock));
 
         let saved_app_list_view = cascade! {
             ListView::builder().build();
             ..set_orientation(Orientation::Horizontal);
+            ..set_width_request(64);
         };
         dock.append(&saved_app_list_view);
 
         let separator = cascade! {
             Separator::new(Orientation::Vertical);
-            ..set_margin_top(4);
-            ..set_margin_start(4);
-            ..set_margin_bottom(4);
-            ..set_margin_end(4);
+            ..set_margin_start(8);
+            ..set_margin_end(8);
         };
         dock.append(&separator);
 
