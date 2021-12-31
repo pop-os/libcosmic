@@ -1,17 +1,24 @@
-row:hover {
+listview row:hover {
     transition: 100ms;
     background: #888888;
+    border-radius: 8px;
 }
 
-row {
+listview row {
     background: #333333;
+    border-radius: 8px;
 }
 
 listview {
     background: #333333;
 }
 
-window {
+box.container {
     background: #333333;
-    border-radius: 15px;
+    padding: 12px;
+    border-radius: 12px;
+}
+
+window {
+    background: rgba(50, 50, 50, 0.0);
 }

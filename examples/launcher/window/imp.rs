@@ -1,18 +1,13 @@
-use glib::subclass::InitializingObject;
-use gtk4::prelude::*;
 use gtk4::subclass::prelude::*;
 use gtk4::{gio, glib};
-use gtk4::{CompositeTemplate, Entry, ListView};
+use gtk4::{Entry, ListView};
 use once_cell::sync::OnceCell;
 
 // Object holding the state
-#[derive(CompositeTemplate, Default)]
-#[template(file = "window.ui")]
+#[derive(Default)]
 pub struct Window {
-    #[template_child]
-    pub entry: TemplateChild<Entry>,
-    #[template_child]
-    pub list_view: TemplateChild<ListView>,
+    pub entry: OnceCell<Entry>,
+    pub list_view: OnceCell<ListView>,
     pub model: OnceCell<gio::ListStore>,
 }
 
@@ -23,28 +18,10 @@ impl ObjectSubclass for Window {
     const NAME: &'static str = "LauncherWindow";
     type Type = super::Window;
     type ParentType = gtk4::ApplicationWindow;
-
-    fn class_init(klass: &mut Self::Class) {
-        Self::bind_template(klass);
-    }
-
-    fn instance_init(obj: &InitializingObject<Self>) {
-        obj.init_template();
-    }
 }
 
 // Trait shared by all GObjects
-impl ObjectImpl for Window {
-    fn constructed(&self, obj: &Self::Type) {
-        // Call "constructed" on parent
-        self.parent_constructed(obj);
-
-        // Setup
-        obj.setup_model();
-        obj.setup_callbacks();
-        obj.setup_factory();
-    }
-}
+impl ObjectImpl for Window {}
 
 // Trait shared by all widgets
 impl WidgetImpl for Window {}

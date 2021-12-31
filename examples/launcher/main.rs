@@ -26,20 +26,6 @@ const NUM_LAUNCHER_ITEMS: u8 = 10;
 static TX: OnceCell<Sender<Event>> = OnceCell::new();
 static X11_CONN: OnceCell<RustConnection> = OnceCell::new();
 
-fn icon_source(icon: &gtk4::Image, source: &Option<pop_launcher::IconSource>) {
-    match source {
-        Some(pop_launcher::IconSource::Name(name)) => {
-            icon.set_from_icon_name(Some(name));
-        }
-        Some(pop_launcher::IconSource::Mime(content_type)) => {
-            icon.set_from_gicon(&gio::content_type_get_icon(content_type));
-        }
-        _ => {
-            icon.set_from_icon_name(None);
-        }
-    }
-}
-
 pub enum Event {
     Response(pop_launcher::Response),
     Search(String),

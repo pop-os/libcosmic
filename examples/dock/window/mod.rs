@@ -78,8 +78,8 @@ impl Window {
             Revealer::new();
             ..set_reveal_child(true);
             ..set_valign(Align::Baseline);
-            ..set_transition_duration(300);
-            ..set_transition_type(RevealerTransitionType::SlideUp);
+            ..set_transition_duration(150);
+            ..set_transition_type(RevealerTransitionType::SwingUp);
         };
         cursor_handle.append(&revealer);
 
@@ -107,7 +107,7 @@ impl Window {
         dock.append(&separator);
 
         let active_app_list_view = cascade! {
-            ListView::builder().build();
+            ListView::default();
             ..set_orientation(Orientation::Horizontal);
         };
         dock.append(&active_app_list_view);

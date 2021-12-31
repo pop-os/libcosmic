@@ -1,9 +1,14 @@
+use cascade::cascade;
 use gdk4::Rectangle;
 use gdk4_x11::X11Display;
 use gdk4_x11::X11Surface;
 use glib::Object;
 use gtk4::prelude::*;
 use gtk4::subclass::prelude::*;
+use gtk4::Box;
+use gtk4::Entry;
+use gtk4::ListView;
+use gtk4::Orientation;
 use gtk4::{gio, glib};
 use gtk4::{Application, SignalListItemFactory};
 use postage::prelude::Sink;
@@ -32,6 +37,41 @@ const NUM_LAUNCHER_ITEMS: u8 = 9;
 impl Window {
     pub fn new(app: &Application) -> Self {
         let self_: Self = Object::new(&[("application", app)]).expect("Failed to create `Window`.");
+        let imp = imp::Window::from_instance(&self_);
+
+        cascade! {
+            &self_;
+            ..set_width_request(600);
+            ..set_title(Some("Cosmic Launcher"));
+            ..set_decorated(false);
+            ..set_resizable(false);
+        };
+
+        let container = cascade! {
+            Box::new(Orientation::Vertical, 0);
+            ..add_css_class("container");
+        };
+        self_.set_child(Some(&container));
+
+        let entry = cascade! {
+            Entry::new();
+            ..set_margin_bottom(12);
+        };
+        container.append(&entry);
+
+        let list_view = cascade! {
+            ListView::default();
+            ..set_orientation(Orientation::Vertical);
+        };
+        container.append(&list_view);
+
+        imp.entry.set(entry).unwrap();
+        imp.list_view.set(list_view).unwrap();
+
+        // Setup
+        self_.setup_model();
+        self_.setup_callbacks();
+        self_.setup_factory();
         self_
     }
 
@@ -56,7 +96,10 @@ impl Window {
 
         imp.model.set(model).expect("Could not set model");
         // Wrap model with selection and pass it to the list view
-        imp.list_view.set_model(Some(&selection_model));
+        imp.list_view
+            .get()
+            .unwrap()
+            .set_model(Some(&selection_model));
     }
 
     fn setup_callbacks(&self) {
@@ -64,8 +107,8 @@ impl Window {
         let imp = imp::Window::from_instance(self);
         let window = self.clone().upcast::<gtk4::Window>();
         let list_view = &imp.list_view;
-        let entry = &imp.entry;
-        let lv = list_view.get();
+        let entry = &imp.entry.get().unwrap();
+        let lv = list_view.get().unwrap();
         for i in 1..10 {
             let action_launchi = gio::SimpleAction::new(&format!("launch{}", i), None);
             self.add_action(&action_launchi);
@@ -90,7 +133,7 @@ impl Window {
             }));
         }
 
-        let app_selection_model = list_view
+        let app_selection_model = lv
             .model()
             .expect("List view missing selection model")
             .downcast::<gtk4::SingleSelection>()
@@ -243,6 +286,6 @@ impl Window {
         });
         // Set the factory of the list view
         let imp = imp::Window::from_instance(self);
-        imp.list_view.set_factory(Some(&factory));
+        imp.list_view.get().unwrap().set_factory(Some(&factory));
     }
 }

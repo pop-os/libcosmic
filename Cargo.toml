@@ -36,4 +36,7 @@ package = "gtk4"
 version = "0.3.1"
 features = ["v4_4"]
 
+[profile.release]
+incremental = true
+debug = 1
 
