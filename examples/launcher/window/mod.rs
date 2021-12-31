@@ -45,6 +45,7 @@ impl Window {
             ..set_title(Some("Cosmic Launcher"));
             ..set_decorated(false);
             ..set_resizable(false);
+            ..add_css_class("root_window");
         };
 
         let container = cascade! {

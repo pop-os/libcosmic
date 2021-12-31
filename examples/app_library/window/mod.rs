@@ -1,5 +1,6 @@
 use std::fs::File;
 
+use cascade::cascade;
 use gdk4::Rectangle;
 use gdk4_x11::X11Display;
 use gdk4_x11::X11Surface;
@@ -8,9 +9,17 @@ use glib::Object;
 use glib::Variant;
 use gtk4::prelude::*;
 use gtk4::subclass::prelude::*;
+use gtk4::Align;
+use gtk4::Box;
 use gtk4::Dialog;
 use gtk4::Entry;
+use gtk4::GridView;
 use gtk4::Label;
+use gtk4::Orientation;
+use gtk4::PolicyType;
+use gtk4::ScrolledWindow;
+use gtk4::SearchEntry;
+use gtk4::Separator;
 use gtk4::{gio, glib};
 use gtk4::{Application, SignalListItemFactory};
 use x11rb::connection::Connection;
@@ -43,7 +52,86 @@ impl Window {
         for i in 1..10 {
             app.set_accels_for_action(&format!("win.launch{}", i), &[&format!("<primary>{}", i)]);
         }
-        Object::new(&[("application", app)]).expect("Failed to create `Window`.")
+        let self_: Self = Object::new(&[("application", app)]).expect("Failed to create `Window`.");
+        let imp = imp::Window::from_instance(&self_);
+
+        cascade! {
+            &self_;
+            ..set_width_request(1200);
+            ..set_title(Some("Cosmic App Library"));
+            ..set_decorated(false);
+            ..add_css_class("root_window");
+        };
+
+        let app_library = cascade! {
+            Box::new(Orientation::Vertical, 0);
+            ..add_css_class("app_library_container");
+        };
+        self_.set_child(Some(&app_library));
+
+        let entry = cascade! {
+            SearchEntry::new();
+            ..set_width_request(300);
+            ..set_halign(Align::Center);
+            ..set_margin_top(12);
+            ..set_margin_bottom(12);
+            ..set_placeholder_text(Some(" Type to search"));
+        };
+        app_library.append(&entry);
+
+        let library_window = cascade! {
+            ScrolledWindow::new();
+            ..set_hscrollbar_policy(PolicyType::Never);
+            ..set_min_content_height(500);
+            ..set_vexpand(true);
+            ..set_margin_top(12);
+        };
+        app_library.append(&library_window);
+
+        let library_grid = cascade! {
+            GridView::default();
+            ..set_min_columns(7);
+            ..set_max_columns(7);
+        };
+        library_window.set_child(Some(&library_grid));
+
+        let separator = cascade! {
+            Separator::new(Orientation::Horizontal);
+            ..set_hexpand(true);
+            ..set_margin_bottom(12);
+            ..set_margin_top(12);
+        };
+        app_library.append(&separator);
+
+        let group_window = cascade! {
+            ScrolledWindow::new();
+            ..set_hscrollbar_policy(PolicyType::Never);
+            ..set_vscrollbar_policy(PolicyType::Never);
+            ..set_propagate_natural_height(true);
+            ..set_min_content_height(150);
+            ..set_max_content_height(300);
+        };
+        app_library.append(&group_window);
+
+        let group_grid_view = cascade! {
+            GridView::default();
+            ..set_min_columns(8);
+            ..set_max_columns(8);
+        };
+        group_window.set_child(Some(&group_grid_view));
+
+        imp.entry.set(entry).unwrap();
+        imp.app_grid_view.set(library_grid).unwrap();
+        imp.group_scroll_window.set(group_window).unwrap();
+        imp.group_grid_view.set(group_grid_view).unwrap();
+
+        // Setup
+        self_.setup_model();
+        self_.restore_data();
+        self_.setup_callbacks();
+        self_.setup_factory();
+
+        self_
     }
 
     fn _app_model(&self) -> &gio::ListStore {
@@ -121,7 +209,10 @@ impl Window {
             .build();
 
         // Wrap model with selection and pass it to the list view
-        imp.app_grid_view.set_model(Some(&selection_model));
+        imp.app_grid_view
+            .get()
+            .unwrap()
+            .set_model(Some(&selection_model));
         selection_model.unselect_all();
 
         let group_model = gio::ListStore::new(AppGroup::static_type());
@@ -176,15 +267,18 @@ impl Window {
             group_model.append(group);
         });
         let group_selection = gtk4::SingleSelection::new(Some(&group_model));
-        imp.group_grid_view.set_model(Some(&group_selection));
+        imp.group_grid_view
+            .get()
+            .unwrap()
+            .set_model(Some(&group_selection));
     }
 
     fn setup_callbacks(&self) {
         // Get state
         let imp = imp::Window::from_instance(self);
         let window = self.clone().upcast::<gtk4::Window>();
-        let app_grid_view = &imp.app_grid_view;
-        let group_grid_view = &imp.group_grid_view;
+        let app_grid_view = &imp.app_grid_view.get().unwrap();
+        let group_grid_view = &imp.group_grid_view.get().unwrap();
         let app_selection_model = app_grid_view
             .model()
             .expect("List view missing selection model")
@@ -210,8 +304,8 @@ impl Window {
             .downcast::<gtk4::SingleSelection>()
             .expect("could not downcast listview model to single selection model");
 
-        let entry = &imp.entry;
-        let scroll_window = &imp.group_scroll_window.get();
+        let entry = &imp.entry.get().unwrap();
+        let scroll_window = &imp.group_scroll_window.get().unwrap();
 
         // dynamically set scroll method bc of buggy gtk scroll behavior
         self.group_model().connect_items_changed(
@@ -498,7 +592,7 @@ impl Window {
 
         let imp = imp::Window::from_instance(self);
         // the bind stage is used for "binding" the data to the created widgets on the "setup" stage
-        let app_grid_view = &imp.app_grid_view.get();
+        let app_grid_view = &imp.app_grid_view.get().unwrap();
         app_factory.connect_bind(
             glib::clone!(@weak app_grid_view => move |_factory, grid_item| {
                 let app_info = grid_item
@@ -528,7 +622,10 @@ impl Window {
             child.set_group_info(group_info);
         });
         // Set the factory of the list view
-        imp.group_grid_view.set_factory(Some(&group_factory));
+        imp.group_grid_view
+            .get()
+            .unwrap()
+            .set_factory(Some(&group_factory));
     }
 
     fn restore_data(&self) {
@@ -541,7 +638,10 @@ impl Window {
                 .into_iter()
                 .map(|data| AppGroup::new(data).upcast::<Object>())
                 .collect();
-            let scroll_window = &imp::Window::from_instance(self).group_scroll_window;
+            let scroll_window = &imp::Window::from_instance(self)
+                .group_scroll_window
+                .get()
+                .unwrap();
 
             // Insert restored objects into model
             self.group_model().splice(3, 0, &app_group_objects);

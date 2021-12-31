@@ -19,6 +19,6 @@ box.container {
     border-radius: 12px;
 }
 
-window {
+window.root_window {
     background: rgba(50, 50, 50, 0.0);
 }

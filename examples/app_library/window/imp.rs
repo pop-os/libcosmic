@@ -1,30 +1,24 @@
 use std::fs::File;
 
 use glib::signal::Inhibit;
-use glib::subclass::InitializingObject;
 use gtk4::prelude::*;
 use gtk4::subclass::prelude::*;
 use gtk4::ScrolledWindow;
 use gtk4::{gio, glib};
-use gtk4::{CompositeTemplate, GridView, SearchEntry};
+use gtk4::{GridView, SearchEntry};
 use once_cell::sync::OnceCell;
 
 use crate::app_group::AppGroup;
 use crate::utils::data_path;
 
 // Object holding the state
-#[derive(CompositeTemplate, Default)]
-#[template(file = "window.ui")]
+#[derive(Default)]
 pub struct Window {
-    #[template_child]
-    pub entry: TemplateChild<SearchEntry>,
-    #[template_child]
-    pub app_grid_view: TemplateChild<GridView>,
+    pub entry: OnceCell<SearchEntry>,
+    pub app_grid_view: OnceCell<GridView>,
     pub app_model: OnceCell<gio::ListStore>,
-    #[template_child]
-    pub group_grid_view: TemplateChild<GridView>,
-    #[template_child]
-    pub group_scroll_window: TemplateChild<ScrolledWindow>,
+    pub group_grid_view: OnceCell<GridView>,
+    pub group_scroll_window: OnceCell<ScrolledWindow>,
     pub group_model: OnceCell<gio::ListStore>,
 }
 
@@ -35,29 +29,10 @@ impl ObjectSubclass for Window {
     const NAME: &'static str = "LauncherWindow";
     type Type = super::Window;
     type ParentType = gtk4::ApplicationWindow;
-
-    fn class_init(klass: &mut Self::Class) {
-        Self::bind_template(klass);
-    }
-
-    fn instance_init(obj: &InitializingObject<Self>) {
-        obj.init_template();
-    }
 }
 
 // Trait shared by all GObjects
-impl ObjectImpl for Window {
-    fn constructed(&self, obj: &Self::Type) {
-        // Call "constructed" on parent
-        self.parent_constructed(obj);
-
-        // Setup
-        obj.setup_model();
-        obj.restore_data();
-        obj.setup_callbacks();
-        obj.setup_factory();
-    }
-}
+impl ObjectImpl for Window {}
 
 // Trait shared by all widgets
 impl WidgetImpl for Window {}

@@ -5,7 +5,6 @@ use gtk4::glib;
 use gtk4::prelude::*;
 use gtk4::subclass::prelude::*;
 use gtk4::Align;
-use gtk4::AspectFrame;
 use gtk4::Box;
 use gtk4::Image;
 use gtk4::Label;

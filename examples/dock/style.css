@@ -28,11 +28,11 @@ listview {
     background: #333333;
 }
 
-window {
-    background: rgba(50, 50, 50, 0.0);
-}
-
 box.dock {
     border-radius: 12px;
     background: #333333;
+}
+
+window.root_window {
+    background: rgba(50, 50, 50, 0.0);
 }

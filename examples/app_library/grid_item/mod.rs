@@ -1,12 +1,18 @@
+use cascade::cascade;
 use gdk4::ContentProvider;
 use gdk4::Display;
 use gio::File;
 use gio::Icon;
+use gtk4::pango::EllipsizeMode;
 use gtk4::prelude::*;
 use gtk4::subclass::prelude::*;
 use gtk4::traits::WidgetExt;
+use gtk4::Align;
 use gtk4::DragSource;
 use gtk4::IconTheme;
+use gtk4::Image;
+use gtk4::Label;
+use gtk4::Orientation;
 use gtk4::{gio, glib};
 
 use crate::app_group::AppGroup;
@@ -15,8 +21,8 @@ mod imp;
 
 glib::wrapper! {
 pub struct GridItem(ObjectSubclass<imp::GridItem>)
-    @extends gtk4::Widget, gtk4::Box,
-    @implements gtk4::Accessible, gtk4::Actionable, gtk4::Buildable, gtk4::ConstraintTarget;
+        @extends gtk4::Widget, gtk4::Box,
+        @implements gtk4::Accessible, gtk4::Buildable, gtk4::ConstraintTarget, gtk4::Orientable;
 }
 
 impl Default for GridItem {
@@ -27,12 +33,46 @@ impl Default for GridItem {
 
 impl GridItem {
     pub fn new() -> Self {
-        glib::Object::new(&[]).expect("Failed to create GridItem")
+        let self_ = glib::Object::new(&[]).expect("Failed to create GridItem");
+        let imp = imp::GridItem::from_instance(&self_);
+
+        cascade! {
+            &self_;
+            ..set_orientation(Orientation::Vertical);
+            ..set_halign(Align::Center);
+            ..set_hexpand(true);
+            ..set_margin_top(4);
+            ..set_margin_bottom(4);
+            ..set_margin_end(4);
+            ..set_margin_start(4);
+        };
+
+        let image = cascade! {
+            Image::new();
+            ..set_margin_top(4);
+            ..set_margin_bottom(4);
+            ..set_pixel_size(64);
+        };
+        self_.append(&image);
+
+        let name = cascade! {
+            Label::new(None);
+            ..set_halign(Align::Center);
+            ..set_hexpand(true);
+            ..set_ellipsize(EllipsizeMode::End);
+            ..add_css_class("title-5");
+        };
+        self_.append(&name);
+
+        imp.name.replace(name);
+        imp.image.replace(image);
+
+        self_
     }
 
     pub fn set_app_info(&self, app_info: &gio::DesktopAppInfo) {
         let self_ = imp::GridItem::from_instance(self);
-        self_.name.set_text(&app_info.name());
+        self_.name.borrow().set_text(&app_info.name());
 
         let drag_controller = DragSource::builder()
             .name("application library drag source")
@@ -48,7 +88,7 @@ impl GridItem {
         let icon = app_info
             .icon()
             .unwrap_or(Icon::for_string("image-missing").expect("Failed to set default icon"));
-        self_.image.set_from_gicon(&icon);
+        self_.image.borrow().set_from_gicon(&icon);
         drag_controller.connect_drag_begin(glib::clone!(@weak icon, => move |_self, drag| {
             drag.set_selected_action(gdk4::DragAction::MOVE);
             // set drag source icon if possible...
@@ -72,14 +112,14 @@ impl GridItem {
     pub fn set_group_info(&self, app_group: AppGroup) {
         let self_ = imp::GridItem::from_instance(self);
         if let Ok(name) = app_group.property("name") {
-            self_.name.set_text(
+            self_.name.borrow().set_text(
                 &name
                     .get::<String>()
                     .expect("property name needs to be a string."),
             );
         }
         if let Ok(icon) = app_group.property("icon") {
-            self_.image.set_from_icon_name(Some(
+            self_.image.borrow().set_from_icon_name(Some(
                 &icon
                     .get::<String>()
                     .expect("Property name needs to be a String."),

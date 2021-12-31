@@ -11,7 +11,12 @@ gridview {
     background: #333333;
 }
 
-window {
+box.app_library_container {
     background: #333333;
-    border-radius: 15px;
+    padding: 12px;
+    border-radius: 12px;
+}
+
+window.root_window {
+    background: rgba(50, 50, 50, 0.0);
 }

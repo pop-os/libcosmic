@@ -63,6 +63,7 @@ impl Window {
             ..set_title(Some("Cosmic Dock"));
             ..set_decorated(false);
             ..set_resizable(false);
+            ..add_css_class("root_window");
         };
         let cursor_handle = Box::new(Orientation::Vertical, 0);
         self_.set_child(Some(&cursor_handle));
