@@ -1,6 +1,4 @@
-use std::fs::File;
-use std::path::Path;
-
+use cascade::cascade;
 use gdk4::ContentProvider;
 use gdk4::Display;
 use gdk4::ModifierType;
@@ -9,15 +7,23 @@ use gdk4_x11::X11Display;
 use gdk4_x11::X11Surface;
 use gio::DesktopAppInfo;
 use gio::Icon;
+use gtk4::ListView;
+use gtk4::Revealer;
+use gtk4::RevealerTransitionType;
+use gtk4::Separator;
+use std::fs::File;
+use std::path::Path;
 // use crate::application_row::ApplicationRow;
 use glib::Object;
 use glib::Type;
 use gtk4::prelude::ListModelExt;
 use gtk4::prelude::*;
 use gtk4::subclass::prelude::*;
+use gtk4::Box;
 use gtk4::DropTarget;
 use gtk4::EventControllerMotion;
 use gtk4::IconTheme;
+use gtk4::Orientation;
 use gtk4::{gio, glib};
 use gtk4::{Application, SignalListItemFactory};
 use gtk4::{DragSource, GestureClick};
@@ -43,13 +49,99 @@ mod imp;
 glib::wrapper! {
     pub struct Window(ObjectSubclass<imp::Window>)
         @extends gtk4::ApplicationWindow, gtk4::Window, gtk4::Widget,
-        @implements gio::ActionGroup, gio::ActionMap, gtk4::Accessible, gtk4::Buildable,
-                    gtk4::ConstraintTarget, gtk4::Native, gtk4::Root, gtk4::ShortcutManager;
+        @implements gio::ActionGroup, gio::ActionMap, gtk4::Accessible, gtk4::Buildable, gtk4::ConstraintTarget, gtk4::Native, gtk4::Root, gtk4::ShortcutManager;
 }
 
 impl Window {
     pub fn new(app: &Application) -> Self {
         let self_: Self = Object::new(&[("application", app)]).expect("Failed to create `Window`.");
+        let imp = imp::Window::from_instance(&self_);
+        cascade! {
+            &self_;
+            ..set_height_request(80);
+            ..set_width_request(128);
+            ..set_title(Some("Cosmic Dock"));
+            ..set_decorated(false);
+            ..set_resizable(false);
+        };
+        let cursor_handle = Box::new(Orientation::Vertical, 0);
+        self_.set_child(Some(&cursor_handle));
+
+        let window_filler = cascade! {
+            Box::new(Orientation::Vertical, 0);
+            ..set_height_request(0); // shrinks to nothing when revealer is shown
+            ..set_vexpand(true); // expands to fill window when revealer is hidden, preventingb window from changing size so much...
+        };
+        cursor_handle.append(&window_filler);
+
+        let revealer = cascade! {
+            Revealer::new();
+            ..set_reveal_child(true);
+            ..set_transition_duration(300);
+            ..set_transition_type(RevealerTransitionType::SlideUp);
+        };
+        cursor_handle.append(&revealer);
+
+        let dock_container = cascade! {
+            Box::new(Orientation::Vertical, 0);
+            ..set_height_request(0);
+        };
+        revealer.set_child(Some(&dock_container));
+
+        let dock = cascade! {
+            Box::new(Orientation::Horizontal, 4);
+            ..set_height_request(64);
+            ..set_margin_start(4);
+            ..set_margin_end(4);
+        };
+        dock_container.append(&dock);
+
+        let dock_bottom_gap = cascade! {
+            Box::new(Orientation::Horizontal, 0);
+            ..set_height_request(4);
+        };
+        dock_container.append(&dock_bottom_gap);
+
+        let saved_app_list_view = cascade! {
+            ListView::builder().build();
+            ..set_orientation(Orientation::Horizontal);
+        };
+        dock.append(&saved_app_list_view);
+
+        let separator = cascade! {
+            Separator::new(Orientation::Vertical);
+            ..set_margin_top(4);
+            ..set_margin_start(4);
+            ..set_margin_bottom(4);
+            ..set_margin_end(4);
+        };
+        dock.append(&separator);
+
+        let active_app_list_view = cascade! {
+            ListView::builder().build();
+            ..set_orientation(Orientation::Horizontal);
+        };
+        dock.append(&active_app_list_view);
+
+        imp.cursor_handle.set(cursor_handle).unwrap();
+        imp.revealer.set(revealer).unwrap();
+        imp.saved_app_list_view.set(saved_app_list_view).unwrap();
+        imp.active_app_list_view.set(active_app_list_view).unwrap();
+        // Setup
+        self_.setup_model();
+        self_.setup_motion_controller();
+        self_.setup_click_controller();
+        self_.setup_drop_target();
+        self_.setup_drag_source();
+        self_.restore_saved_apps();
+        self_.setup_callbacks();
+        self_.setup_click_callbacks();
+        self_.setup_factory();
+        // obj.setup_window_callbacks();
+        // obj.setup_saved_list_callbacks();
+        // obj.setup_active_list_callbacks();
+        // obj.setup_drag_callbacks();
+
         self_
     }
 
@@ -81,8 +173,8 @@ impl Window {
             .set(saved_app_model)
             .expect("Could not set model");
         // Wrap model with selection and pass it to the list view
-        imp.saved_app_list_view
-            .set_model(Some(&saved_selection_model));
+        let saved_app_list_view = imp.saved_app_list_view.get().unwrap();
+        saved_app_list_view.set_model(Some(&saved_selection_model));
 
         let active_app_model = gio::ListStore::new(DockObject::static_type());
         let active_selection_model = gtk4::NoSelection::new(Some(&active_app_model));
@@ -91,73 +183,24 @@ impl Window {
             .set(active_app_model)
             .expect("Could not set model");
         // Wrap model with selection and pass it to the list view
-        imp.active_app_list_view
-            .set_model(Some(&active_selection_model));
+        let active_app_list_view = imp.active_app_list_view.get().unwrap();
+        active_app_list_view.set_model(Some(&active_selection_model));
     }
 
     fn setup_callbacks(&self) {
         // Get state
         let imp = imp::Window::from_instance(self);
         let window = self.clone().upcast::<gtk4::Window>();
-        let saved_app_list_view = &imp.saved_app_list_view;
+        let saved_app_list_view = &imp.saved_app_list_view.get().unwrap();
         let saved_app_model = &imp
             .saved_app_model
             .get()
             .expect("Failed to get saved app model");
 
-        let saved_app_selection_model = saved_app_list_view
-            .model()
-            .expect("List view missing selection model")
-            .downcast::<gtk4::NoSelection>()
-            .expect("could not downcast listview model to single selection model");
-        let active_app_selection_model = imp
-            .active_app_list_view
-            .model()
-            .expect("List view missing selection model")
-            .downcast::<gtk4::NoSelection>()
-            .expect("could not downcast listview model to single selection model");
-
-        // let selected_handler = glib::clone!(@weak window => move |model: &gtk4::NoSelection| {
-        //     let position = model.selected();
-        //     println!("selected app {}", position);
-        //     // Launch the application when an item of the list is activated
-        //     if let Some(item) = model.item(position) {
-        //         let dockobject = item.downcast::<DockObject>().expect("App model must only contain DockObject");
-        //         if let Ok(active) = dockobject.property("active").expect("DockObject must have active property").get::<BoxedWindowList>() {
-        //             if let Some(focused_item) = active.0.iter().next() {
-        //                 let entity = focused_item.entity.clone();
-        //                 glib::MainContext::default().spawn_local(async move {
-        //                     if let Some(tx) = TX.get() {
-        //                         let mut tx = tx.clone();
-        //                         let _ = tx.send(Event::Activate(entity)).await;
-        //                     }
-        //                 });
-        //             }
-        //             else if let Ok(Some(app_info)) = dockobject.property("appinfo").expect("DockObject must have appinfo property").get::<Option<DesktopAppInfo>>() {
-        //                 let context = window.display().app_launch_context();
-        //                 if let Err(err) = app_info.launch(&[], Some(&context)) {
-        //                     gtk4::MessageDialog::builder()
-        //                         .text(&format!("Failed to start {}", app_info.name()))
-        //                         .secondary_text(&err.to_string())
-        //                         .message_type(gtk4::MessageType::Error)
-        //                         .modal(true)
-        //                         .transient_for(&window)
-        //                         .build()
-        //                         .show();
-        //                 }
-        //             }
-        //         }
-        //     }
-        //     model.set_selected(gtk4::INVALID_LIST_POSITION);
-        // });
-        // saved_app_selection_model.connect_selected_notify(selected_handler.clone());
-        //
-        // active_app_selection_model.connect_selected_notify(selected_handler);
-
         let cursor_event_controller = &imp.cursor_motion_controller.get().unwrap();
         let drop_controller = &imp.drop_controller.get().unwrap();
         let window_drop_controller = &imp.window_drop_controller.get().unwrap();
-        let revealer = &imp.revealer.get();
+        let revealer = &imp.revealer.get().unwrap();
         window.connect_show(
             glib::clone!(@weak revealer, @weak cursor_event_controller => move |_| {
                 // dbg!(!cursor_event_controller.contains_pointer());
@@ -276,7 +319,6 @@ impl Window {
             println!("dropping into window");
             false
         });
-        let saved_app_list_view = saved_app_list_view.get();
 
         // drag end handler
         // must be modified in case of reorder...
@@ -368,7 +410,7 @@ impl Window {
 
     fn setup_motion_controller(&self) {
         let imp = imp::Window::from_instance(self);
-        let handle = &imp.cursor_handle.get();
+        let handle = &imp.cursor_handle.get().unwrap();
         let ev = EventControllerMotion::builder()
             .propagation_limit(gtk4::PropagationLimit::None)
             .propagation_phase(gtk4::PropagationPhase::Capture)
@@ -382,7 +424,7 @@ impl Window {
 
     fn setup_click_controller(&self) {
         let imp = imp::Window::from_instance(self);
-        let saved_app_list_view = &imp.saved_app_list_view.get();
+        let saved_app_list_view = &imp.saved_app_list_view.get().unwrap();
         let controller = GestureClick::builder()
             .button(0)
             .propagation_limit(gtk4::PropagationLimit::None)
@@ -395,7 +437,7 @@ impl Window {
             .expect("Could not set event controller");
 
         let imp = imp::Window::from_instance(self);
-        let active_app_list_view = &imp.active_app_list_view.get();
+        let active_app_list_view = &imp.active_app_list_view.get().unwrap();
         let controller = GestureClick::builder()
             .button(0)
             .propagation_limit(gtk4::PropagationLimit::None)
@@ -419,7 +461,7 @@ impl Window {
             .saved_app_model
             .get()
             .expect("Failed to get saved_app_model");
-        let saved_app_list_view = imp.saved_app_list_view.get();
+        let saved_app_list_view = &imp.saved_app_list_view.get().unwrap();
         saved_click_controller.connect_released(glib::clone!(@weak saved_app_model, @weak saved_app_list_view, @weak window => move |self_, _, x, _y| {
             let max_x = saved_app_list_view.allocated_width();
             let n_buckets = saved_app_model.n_items();
@@ -477,7 +519,7 @@ impl Window {
 
     fn setup_drop_target(&self) {
         let imp = imp::Window::from_instance(self);
-        let drop_target_widget = &imp.saved_app_list_view;
+        let drop_target_widget = &imp.saved_app_list_view.get().unwrap();
         let mut drop_actions = gdk4::DragAction::COPY;
         drop_actions.insert(gdk4::DragAction::MOVE);
         let drop_format = gdk4::ContentFormats::for_type(Type::STRING);
@@ -499,8 +541,8 @@ impl Window {
             .actions(drop_actions)
             .formats(&drop_format)
             .build();
-        let enter_handle = &imp.cursor_handle.get();
 
+        let enter_handle = &imp.cursor_handle.get().unwrap();
         enter_handle.add_controller(&window_drop_target_controller);
         imp.window_drop_controller
             .set(window_drop_target_controller)
@@ -509,7 +551,7 @@ impl Window {
 
     fn setup_drag_source(&self) {
         let imp = imp::Window::from_instance(self);
-        let saved_app_list_view = &imp.saved_app_list_view.get();
+        let saved_app_list_view = &imp.saved_app_list_view.get().unwrap();
         let saved_app_model = imp
             .saved_app_model
             .get()
@@ -602,7 +644,7 @@ impl Window {
             .set(saved_drag_source)
             .expect("Could not set saved drag source");
 
-        let active_app_list_view = &imp.active_app_list_view.get();
+        let active_app_list_view = &imp.active_app_list_view.get().unwrap();
         let active_app_model = imp
             .active_app_model
             .get()
@@ -723,6 +765,8 @@ impl Window {
         }));
         // Set the factory of the list view
         imp.saved_app_list_view
+            .get()
+            .unwrap()
             .set_factory(Some(&saved_app_factory));
 
         let active_app_model = imp
@@ -749,7 +793,10 @@ impl Window {
             dock_item.set_app_info(&application_object);
         }));
         // Set the factory of the list view
-        imp.active_app_list_view.set_factory(Some(&active_factory));
+        imp.active_app_list_view
+            .get()
+            .unwrap()
+            .set_factory(Some(&active_factory));
     }
 
     fn restore_saved_apps(&self) {
