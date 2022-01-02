@@ -1,4 +1,4 @@
-use gdk4::glib::Object;
+use gtk4::glib;
 
 use crate::utils::BoxedSearchResult;
 
@@ -10,6 +10,6 @@ glib::wrapper! {
 
 impl SearchResultObject {
     pub fn new(search_result: &BoxedSearchResult) -> Self {
-        Object::new(&[("data", search_result)]).expect("Failed to create Application Object")
+        glib::Object::new(&[("data", search_result)]).expect("Failed to create Application Object")
     }
 }

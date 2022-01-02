@@ -8,8 +8,7 @@ use gtk4::CssProvider;
 use gtk4::StyleContext;
 use once_cell::sync::OnceCell;
 use pop_launcher_service::IpcClient;
-use postage::mpsc::Sender;
-use postage::prelude::*;
+use tokio::sync::mpsc;
 use x11rb::rust_connection::RustConnection;
 
 use crate::utils::BoxedSearchResult;
@@ -23,7 +22,7 @@ mod utils;
 mod window;
 
 const NUM_LAUNCHER_ITEMS: u8 = 10;
-static TX: OnceCell<Sender<Event>> = OnceCell::new();
+static TX: OnceCell<mpsc::Sender<Event>> = OnceCell::new();
 static X11_CONN: OnceCell<RustConnection> = OnceCell::new();
 
 pub enum Event {
@@ -32,7 +31,7 @@ pub enum Event {
     Activate(u32),
 }
 
-fn spawn_launcher(mut tx: Sender<Event>) -> IpcClient {
+fn spawn_launcher(tx: mpsc::Sender<Event>) -> IpcClient {
     let (launcher, responses) =
         pop_launcher_service::IpcClient::new().expect("failed to connect to launcher service");
 
@@ -79,12 +78,13 @@ fn main() {
         load_css()
     });
     app.connect_activate(move |app| {
-        let (tx, mut rx) = postage::mpsc::channel(1);
+        let (tx, mut rx) = mpsc::channel(100);
         let mut launcher = spawn_launcher(tx.clone());
         if TX.set(tx).is_err() {
             println!("failed to set global Sender. Exiting");
             std::process::exit(1);
         };
+
         let (conn, _screen_num) = x11rb::connect(None).expect("Failed to connect to X");
         if X11_CONN.set(conn).is_err() {
             println!("failed to set X11_CONN. Exiting");

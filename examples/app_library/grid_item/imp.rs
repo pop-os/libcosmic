@@ -2,7 +2,7 @@ use std::cell::Cell;
 use std::cell::RefCell;
 use std::rc::Rc;
 
-use glib;
+use gtk4::glib;
 use gtk4::subclass::prelude::*;
 
 #[derive(Debug, Default)]

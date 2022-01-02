@@ -1,6 +1,8 @@
 use std::collections::BTreeMap;
 use std::time::Duration;
 
+use tokio::sync::mpsc;
+// use async_std::channel::{bounded, Receiver, Sender};
 use futures::executor::block_on;
 use gdk4::Display;
 use gio::DesktopAppInfo;
@@ -11,19 +13,19 @@ use gtk4::Application;
 use gtk4::CssProvider;
 use gtk4::StyleContext;
 use once_cell::sync::OnceCell;
-use postage::mpsc::Sender;
-use postage::prelude::*;
 use serde::{Deserialize, Serialize};
 use x11rb::rust_connection::RustConnection;
 use zbus::Connection;
 use zvariant_derive::Type;
 
+use crate::dock_list::DockListType;
 use crate::utils::BoxedWindowList;
 
 use self::dock_object::DockObject;
 use self::window::Window;
 
 mod dock_item;
+mod dock_list;
 mod dock_object;
 mod utils;
 mod window;
@@ -32,7 +34,7 @@ const DEST: &str = "com.System76.PopShell";
 const PATH: &str = "/com/System76/PopShell";
 const NUM_LAUNCHER_ITEMS: u8 = 10;
 
-static TX: OnceCell<Sender<Event>> = OnceCell::new();
+static TX: OnceCell<mpsc::Sender<Event>> = OnceCell::new();
 static X11_CONN: OnceCell<RustConnection> = OnceCell::new();
 
 pub enum Event {
@@ -49,10 +51,10 @@ pub struct Item {
     desktop_entry: String,
 }
 
-fn spawn_launcher(tx: Sender<Event>) -> Connection {
+fn spawn_launcher(tx: mpsc::Sender<Event>) -> Connection {
     let connection = block_on(Connection::session()).unwrap();
 
-    let mut sender = tx.clone();
+    let sender = tx.clone();
     let conn = connection.clone();
     glib::MainContext::default().spawn_local(async move {
         loop {
@@ -104,12 +106,9 @@ fn main() {
         load_css()
     });
 
-    // TODO investigate multiple signals to connect_activate
-    // crashes when called twice bc of singleton
     app.connect_activate(move |app| {
-        // Seems that over a long period of time, this might be called multiple times
-        // The global variables should be initialized outside this closure
-        let (tx, mut rx) = postage::mpsc::channel(1);
+        let (tx, mut rx) = mpsc::channel(100);
+
         let zbus_conn = spawn_launcher(tx.clone());
         if TX.set(tx).is_err() {
             println!("failed to set global Sender. Exiting");
@@ -127,6 +126,7 @@ fn main() {
         let cached_results: Vec<Item> = vec![];
         glib::MainContext::default().spawn_local(async move {
             futures::pin_mut!(cached_results);
+            // let rx = RX.get().unwrap().clone();
             while let Some(event) = rx.recv().await {
                 match event {
                     Event::Activate(e) => {
@@ -157,7 +157,7 @@ fn main() {
 
                         // update active app stacks for saved apps into the saved app model
                         // then put the rest in the active app model (which doesn't include saved apps)
-                        let saved_app_model = window.saved_app_model();
+                        let saved_app_model = window.model(DockListType::Saved);
 
                         let mut saved_i: u32 = 0;
                         while let Some(item) = saved_app_model.item(saved_i) {
@@ -206,7 +206,7 @@ fn main() {
                             saved_i += 1;
                         }
 
-                        let active_app_model = window.active_app_model();
+                        let active_app_model = window.model(DockListType::Active);
                         let model_len = active_app_model.n_items();
                         let new_results: Vec<glib::Object> = stack_active
                             .into_iter()
@@ -259,7 +259,7 @@ fn main() {
 
                         // update active app stacks for saved apps into the saved app model
                         // then put the rest in the active app model (which doesn't include saved apps)
-                        let saved_app_model = window.saved_app_model();
+                        let saved_app_model = window.model(DockListType::Saved);
 
                         let mut saved_i: u32 = 0;
                         while let Some(item) = saved_app_model.item(saved_i) {
@@ -305,7 +305,7 @@ fn main() {
                             saved_i += 1;
                         }
 
-                        let active_app_model = window.active_app_model();
+                        let active_app_model = window.model(DockListType::Active);
                         let model_len = active_app_model.n_items();
                         let new_results: Vec<glib::Object> = stack_active
                             .into_iter()

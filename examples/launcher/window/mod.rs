@@ -11,7 +11,6 @@ use gtk4::ListView;
 use gtk4::Orientation;
 use gtk4::{gio, glib};
 use gtk4::{Application, SignalListItemFactory};
-use postage::prelude::Sink;
 use x11rb::connection::Connection;
 use x11rb::protocol::xproto;
 use x11rb::protocol::xproto::ConnectionExt;
@@ -126,7 +125,6 @@ impl Window {
 
                     glib::MainContext::default().spawn_local(async move {
                         if let Some(tx) = TX.get() {
-                            let mut tx = tx.clone();
                             let _ = tx.send(crate::Event::Activate(id)).await;
                         }
                     });
@@ -153,7 +151,6 @@ impl Window {
 
                 glib::MainContext::default().spawn_local(async move {
                     if let Some(tx) = TX.get() {
-                        let mut tx = tx.clone();
                         let _ = tx.send(crate::Event::Activate(id)).await;
                     }
                 });
@@ -165,7 +162,6 @@ impl Window {
 
             glib::MainContext::default().spawn_local(async move {
                 if let Some(tx) = TX.get() {
-                    let mut tx = tx.clone();
                     let _ = tx.send(crate::Event::Search(search)).await;
                 }
             });
@@ -176,7 +172,6 @@ impl Window {
 
             glib::MainContext::default().spawn_local(async move {
                 if let Some(tx) = TX.get() {
-                    let mut tx = tx.clone();
                     let _ = tx.send(crate::Event::Search(search)).await;
                 }
             });
