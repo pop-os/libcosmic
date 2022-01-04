@@ -194,6 +194,10 @@ impl DockPopover {
         imp.menu_handle.replace(menu_handle);
     }
 
+    fn emit_hide(&self) {
+        self.emit_by_name::<&str>("menu-hide", &[]).unwrap();
+    }
+
     fn setup_handlers(&self) {
         let imp = imp::DockPopover::from_instance(&self);
         let dock_object = imp.dock_object.borrow();
@@ -206,7 +210,8 @@ impl DockPopover {
 
         if let Some(dock_object) = dock_object.as_ref() {
             println!("setting up popover menu handlers");
-            launch_new_item.connect_clicked(glib::clone!(@weak dock_object => move |self_| {
+            let self_ = self.clone();
+            launch_new_item.connect_clicked(glib::clone!(@weak dock_object, => move |_| {
                 let app_info = dock_object.property("appinfo").expect("DockObject must have appinfo property").get::<Option<DesktopAppInfo>>().expect("Failed to convert value to DesktopAppInfo").unwrap();
 
                 let window = self_.root().unwrap().downcast::<Window>().unwrap();
@@ -221,9 +226,11 @@ impl DockPopover {
                         .build()
                         .show();
                 }
+                self_.emit_hide();
             }));
 
-            quit_all_item.connect_clicked(glib::clone!(@weak dock_object => move |self_| {
+            let self_ = self.clone();
+            quit_all_item.connect_clicked(glib::clone!(@weak dock_object => move |_| {
                 let active = dock_object.property("active").expect("DockObject must have active property").get::<BoxedWindowList>().expect("Failed to convert value to WindowList").0;
                 for w in active {
                     let entity = w.entity.clone();
@@ -233,10 +240,13 @@ impl DockPopover {
                         }
                     });
                 }
+                self_.emit_hide();
             }));
 
-            favorite_item.connect_clicked(glib::clone!(@weak dock_object => move |self_| {
+            let self_ = self.clone();
+            favorite_item.connect_clicked(glib::clone!(@weak dock_object => move |_| {
                 println!("TODO handling favorite");
+                self_.emit_hide();
             }));
 
             all_windows_header.connect_clicked(
@@ -247,6 +257,7 @@ impl DockPopover {
                 }),
             );
 
+            let self_ = self.clone();
             window_listbox.connect_row_activated(glib::clone!(@weak dock_object => move |_, item| {
                 let active = dock_object.property("active").expect("DockObject must have active property").get::<BoxedWindowList>().expect("Failed to convert value to WindowList").0;
                 let entity = active[usize::try_from(item.index()).unwrap()].entity.clone();
@@ -255,7 +266,7 @@ impl DockPopover {
                         let _ = tx.send(Event::Activate(entity)).await;
                     }
                 });
-
+                self_.emit_hide();
             }));
         }
     }

@@ -66,6 +66,16 @@ impl DockItem {
             DockPopover::new();
         };
         popover.set_child(Some(&popover_menu));
+        popover_menu
+            .connect_local(
+                "menu-hide",
+                false,
+                glib::clone!(@weak popover => @default-return None, move |_| {
+                    popover.popdown();
+                    None
+                }),
+            )
+            .unwrap();
 
         let imp = imp::DockItem::from_instance(&self_);
         imp.image.replace(image);

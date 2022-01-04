@@ -1,9 +1,12 @@
 use std::cell::RefCell;
 use std::rc::Rc;
 
+use glib::subclass::Signal;
 use gtk4::glib;
+use gtk4::prelude::*;
 use gtk4::subclass::prelude::*;
 use gtk4::{Box, Button, ListBox, Revealer};
+use once_cell::sync::Lazy;
 
 use crate::dock_object::DockObject;
 
@@ -27,7 +30,22 @@ impl ObjectSubclass for DockPopover {
     type ParentType = Box;
 }
 
-impl ObjectImpl for DockPopover {}
+impl ObjectImpl for DockPopover {
+    fn signals() -> &'static [Signal] {
+        static SIGNALS: Lazy<Vec<Signal>> = Lazy::new(|| {
+            vec![Signal::builder(
+                // Signal name
+                "menu-hide",
+                // Types of the values which will be sent to the signal handler
+                &[],
+                // Type of the value the signal handler sends back
+                <()>::static_type().into(),
+            )
+            .build()]
+        });
+        SIGNALS.as_ref()
+    }
+}
 
 impl WidgetImpl for DockPopover {}
 
