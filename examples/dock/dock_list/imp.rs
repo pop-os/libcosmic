@@ -1,4 +1,4 @@
-use std::cell::RefCell;
+use std::cell::{Cell, RefCell};
 use std::rc::Rc;
 
 use glib::SignalHandlerId;
@@ -17,6 +17,7 @@ pub struct DockList {
     pub drag_source: OnceCell<DragSource>,
     pub drag_end_signal: Rc<RefCell<Option<SignalHandlerId>>>,
     pub drag_cancel_signal: Rc<RefCell<Option<SignalHandlerId>>>,
+    pub popover_menu_index: Rc<Cell<Option<u32>>>,
 }
 
 #[glib::object_subclass]

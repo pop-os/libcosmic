@@ -16,6 +16,7 @@ pub struct DockObject {
     appinfo: RefCell<Option<DesktopAppInfo>>,
     active: RefCell<BoxedWindowList>,
     saved: Cell<bool>,
+    pub(super) popover: Cell<bool>,
 }
 
 // The central trait for subclassing a GObject
@@ -60,6 +61,13 @@ impl ObjectImpl for DockObject {
                     false,
                     ParamFlags::READWRITE,
                 ),
+                ParamSpec::new_boolean(
+                    "popover",
+                    "popover",
+                    "Indicates whether there is a popover menu displayed for this object",
+                    false,
+                    ParamFlags::READWRITE,
+                ),
             ]
         });
         PROPERTIES.as_ref()
@@ -81,6 +89,11 @@ impl ObjectImpl for DockObject {
                 self.saved
                     .replace(value.get().expect("Value needs to be a boolean"));
             }
+            "popover" => {
+                self.popover
+                    .replace(value.get().expect("Value needs to be a boolean"));
+            }
+
             _ => unimplemented!(),
         }
     }
@@ -90,6 +103,7 @@ impl ObjectImpl for DockObject {
             "appinfo" => self.appinfo.borrow().to_value(),
             "active" => self.active.borrow().to_value(),
             "saved" => self.saved.get().to_value(),
+            "popover" => self.popover.get().to_value(),
             _ => unimplemented!(),
         }
     }

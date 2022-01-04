@@ -76,6 +76,12 @@ impl DockList {
         imp.drop_controller.get().expect("Could not get model")
     }
 
+    pub fn popover_index(&self) -> Option<u32> {
+        // Get state
+        let imp = imp::DockList::from_instance(self);
+        imp.popover_menu_index.get()
+    }
+
     fn restore_data(&self) {
         if let Ok(file) = File::open(data_path()) {
             if let Ok(data) = serde_json::from_reader::<_, Vec<String>>(file) {
@@ -198,10 +204,14 @@ impl DockList {
         self.add_controller(&controller);
 
         let model = self.model();
-        let list_view = imp.list_view.get().unwrap();
-        controller.connect_released(glib::clone!(@weak model, @weak list_view => move |self_, _, x, _y| {
+        let list_view = &imp.list_view.get().unwrap();
+        let popover_menu_index = &imp.popover_menu_index;
+        controller.connect_released(glib::clone!(@weak model, @weak list_view, @weak popover_menu_index => move |self_, _, x, y| {
             let window = list_view.root().unwrap().downcast::<Window>().unwrap();
             let max_x = list_view.allocated_width();
+            let max_y = list_view.allocated_height();
+            dbg!(max_y);
+            dbg!(y);
             let n_buckets = model.n_items();
             let index = (x * n_buckets as f64 / (max_x as f64 + 0.1)) as u32;
             dbg!(self_.current_button());
@@ -223,6 +233,23 @@ impl DockList {
                     }
                 });
             };
+            let old_index = popover_menu_index.get();
+            if let Some(old_index) = old_index  {
+                if let Some(old_item) = model.item(old_index) {
+                    if let Ok(old_dock_object) = old_item.downcast::<DockObject>() {
+                        println!("removing popup...");
+                        old_dock_object.set_popover(false);
+                        popover_menu_index.replace(None);
+                        model.items_changed(old_index, 0, 0);
+                    }
+                }
+                return;
+            }
+            if y > f64::from(max_y) || y < 0.0 || x > f64::from(max_x) || x < 0.0 {
+                println!("out of bounds click...");
+                return;
+            }
+
             if let Some(item) = model.item(index) {
                 if let Ok(dock_object) = item.downcast::<DockObject>() {
                     let active = dock_object.property("active").expect("DockObject must have active property").get::<BoxedWindowList>().expect("Failed to convert value to WindowList");
@@ -246,6 +273,18 @@ impl DockList {
                         }
                         (click, _, _, _) if click == 3 => {
                             println!("handling right click");
+                            if let Some(old_index) = popover_menu_index.get().clone() {
+                                if let Some(item) = model.item(old_index) {
+                                    if let Ok(dock_object) = item.downcast::<DockObject>() {
+                                        dock_object.set_popover(false);
+                                        popover_menu_index.replace(Some(index));
+                                        model.items_changed(old_index, 0, 0);
+                                    }
+                                }
+                            }
+                            dock_object.set_popover(true);
+                            popover_menu_index.replace(Some(index));
+                            model.items_changed(index, 0, 0);
                         }
                         _ => println!("Failed to process click.")
                     }
@@ -446,14 +485,31 @@ impl DockList {
     }
 
     fn setup_factory(&self) {
-        let factory = SignalListItemFactory::new();
-        factory.connect_setup(move |_, list_item| {
-            let dock_item = DockItem::new();
-            list_item.set_child(Some(&dock_item));
-        });
         let imp = imp::DockList::from_instance(self);
+        let popover_menu_index = &imp.popover_menu_index;
+        let factory = SignalListItemFactory::new();
         let model = imp.model.get().expect("Failed to get saved app model.");
-        factory.connect_bind(glib::clone!(@weak model => move |_, list_item| {
+        factory.connect_setup(
+            glib::clone!(@weak popover_menu_index, @weak model => move |_, list_item| {
+                let dock_item = DockItem::new();
+                dock_item
+                    .connect_local("popover-closed", false, move |_| {
+                        if let Some(old_index) = popover_menu_index.replace(None) {
+                            if let Some(item) = model.item(old_index) {
+                                if let Ok(dock_object) = item.downcast::<DockObject>() {
+                                    dock_object.set_popover(false);
+                                    model.items_changed(old_index, 0, 0);
+                                }
+                            }
+                        }
+
+                        None
+                    })
+                    .unwrap();
+                list_item.set_child(Some(&dock_item));
+            }),
+        );
+        factory.connect_bind(move |_, list_item| {
             let application_object = list_item
                 .item()
                 .expect("The item has to exist.")
@@ -464,9 +520,8 @@ impl DockList {
                 .expect("The list item child needs to exist.")
                 .downcast::<DockItem>()
                 .expect("The list item type needs to be `DockItem`");
-
             dock_item.set_app_info(&application_object);
-        }));
+        });
         // Set the factory of the list view
         imp.list_view.get().unwrap().set_factory(Some(&factory));
     }

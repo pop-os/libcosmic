@@ -1,6 +1,7 @@
 use std::path::Path;
 
 use gdk4::glib::Object;
+use gdk4::subclass::prelude::ObjectSubclassExt;
 use gio::DesktopAppInfo;
 use gtk4::glib;
 use gtk4::prelude::AppInfoExt;
@@ -69,5 +70,10 @@ impl DockObject {
         // dbg!(&appinfo);
         Object::new(&[("appinfo", &appinfo), ("active", &results)])
             .expect("Failed to create `DockObject`.")
+    }
+
+    pub fn set_popover(&self, b: bool) {
+        let imp = imp::DockObject::from_instance(self);
+        imp.popover.replace(b);
     }
 }
