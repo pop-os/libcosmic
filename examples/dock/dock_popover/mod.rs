@@ -8,6 +8,7 @@ use gtk4::{Box, Button, Image, ListBox, Orientation, Revealer, Window};
 use crate::dock_object::{self, DockObject};
 use crate::utils::BoxedWindowList;
 use crate::Event;
+use crate::Item;
 use crate::TX;
 
 mod imp;
@@ -108,6 +109,7 @@ impl DockPopover {
                     all_windows_item_container.append(&window_list_revealer);
                     let window_listbox = cascade! {
                         ListBox::new();
+                        ..set_activate_on_single_click(true);
                     };
                     window_list_revealer.set_child(Some(&window_listbox));
                     for w in window_list.0 {
@@ -234,7 +236,7 @@ impl DockPopover {
             }));
 
             favorite_item.connect_clicked(glib::clone!(@weak dock_object => move |self_| {
-                println!("handling favorite");
+                println!("TODO handling favorite");
             }));
 
             all_windows_header.connect_clicked(
@@ -244,6 +246,17 @@ impl DockPopover {
                     revealer.set_reveal_child(!revealer.reveals_child())
                 }),
             );
+
+            window_listbox.connect_row_activated(glib::clone!(@weak dock_object => move |_, item| {
+                let active = dock_object.property("active").expect("DockObject must have active property").get::<BoxedWindowList>().expect("Failed to convert value to WindowList").0;
+                let entity = active[usize::try_from(item.index()).unwrap()].entity.clone();
+                glib::MainContext::default().spawn_local(async move {
+                    if let Some(tx) = TX.get() {
+                        let _ = tx.send(Event::Activate(entity)).await;
+                    }
+                });
+
+            }));
         }
     }
 }
