@@ -1,3 +1,8 @@
+listview {
+    border-radius: 12px;
+    background: #333333;
+}
+
 listview row:hover {
     transition: 100ms;
     background: #888888;
@@ -6,6 +11,24 @@ listview row:hover {
 }
 
 listview row {
+    background: #333333;
+    border-radius: 12px;
+    padding: 0px;
+}
+
+list {
+    border-radius: 12px;
+    background: #333333;
+}
+
+list row:hover {
+    transition: 100ms;
+    background: #888888;
+    border-radius: 12px;
+    padding: 0px;
+}
+
+list row {
     background: #333333;
     border-radius: 12px;
     padding: 0px;
@@ -21,11 +44,6 @@ button {
     background: #333333;
     border-radius: 12px;
     border-width: 0px;
-}
-
-listview {
-    border-radius: 12px;
-    background: #333333;
 }
 
 box.dock {

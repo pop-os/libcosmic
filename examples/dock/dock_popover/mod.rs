@@ -84,6 +84,7 @@ impl DockPopover {
             let all_windows_item_header_icon = cascade! {
                 Image::from_icon_name(Some("go-down"));
                 ..set_halign(gtk4::Align::End);
+                ..set_hexpand(true);
                 ..set_pixel_size(16);
             };
             all_windows_item_header_box.append(&all_windows_item_header_icon);
@@ -114,6 +115,10 @@ impl DockPopover {
 
                         let window_title = cascade! {
                             Label::new(Some(w.name.as_str()));
+                            ..set_margin_start(4);
+                            ..set_margin_end(4);
+                            ..set_margin_top(4);
+                            ..set_margin_bottom(4);
                         };
 
                         // TODO investigate Xembed
