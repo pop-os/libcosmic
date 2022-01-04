@@ -245,7 +245,15 @@ impl DockPopover {
 
             let self_ = self.clone();
             favorite_item.connect_clicked(glib::clone!(@weak dock_object => move |_| {
-                println!("TODO handling favorite");
+                let saved = dock_object.property("saved").expect("DockObject must have saved property").get::<bool>().expect("Failed to convert value to bool");
+
+                glib::MainContext::default().spawn_local(async move {
+                    if let Some(tx) = TX.get() {
+                        if let Some(name) = dock_object.get_name() {
+                            let _ = tx.send(Event::Favorite((name.into(), !saved))).await;
+                        }
+                    }
+                });
                 self_.emit_hide();
             }));
 

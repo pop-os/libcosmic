@@ -42,6 +42,7 @@ pub enum Event {
     WindowList(Vec<Item>),
     Activate((u32, u32)),
     Close((u32, u32)),
+    Favorite((String, bool)),
     RefreshFromCache,
 }
 
@@ -142,6 +143,47 @@ fn main() {
                             .call_method(Some(DEST), PATH, Some(DEST), "WindowQuit", &((e,)))
                             .await
                             .expect("Failed to close selected window");
+                    }
+                    Event::Favorite((name, should_favorite)) => {
+                        dbg!(&name);
+                        dbg!(should_favorite);
+                        let saved_app_model = window.model(DockListType::Saved);
+                        let active_app_model = window.model(DockListType::Active);
+                        if should_favorite {
+                            let mut cur: u32 = 0;
+                            let mut index: Option<u32> = None;
+                            while let Some(item) = active_app_model.item(cur) {
+                                if let Ok(cur_dock_object) = item.downcast::<DockObject>() {
+                                    if cur_dock_object.get_name() == Some(name.clone()) {
+                                        cur_dock_object.set_saved(true);
+                                        index = Some(cur);
+                                    }
+                                }
+                                cur += 1;
+                            }
+                            if let Some(index) = index {
+                                let object = active_app_model.item(index).unwrap();
+                                active_app_model.remove(index);
+                                saved_app_model.append(&object);
+                            }
+                        } else {
+                            let mut cur: u32 = 0;
+                            let mut index: Option<u32> = None;
+                            while let Some(item) = saved_app_model.item(cur) {
+                                if let Ok(cur_dock_object) = item.downcast::<DockObject>() {
+                                    if cur_dock_object.get_name() == Some(name.clone()) {
+                                        cur_dock_object.set_saved(false);
+                                        index = Some(cur);
+                                    }
+                                }
+                                cur += 1;
+                            }
+                            if let Some(index) = index {
+                                let object = saved_app_model.item(index).unwrap();
+                                saved_app_model.remove(index);
+                                active_app_model.append(&object);
+                            }
+                        }
                     }
                     Event::RefreshFromCache => {
                         // println!("refreshing model from cache");

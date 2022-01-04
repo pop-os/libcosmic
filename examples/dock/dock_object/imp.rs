@@ -13,9 +13,9 @@ use crate::utils::BoxedWindowList;
 // Object holding the state
 #[derive(Default)]
 pub struct DockObject {
-    appinfo: RefCell<Option<DesktopAppInfo>>,
-    active: RefCell<BoxedWindowList>,
-    saved: Cell<bool>,
+    pub(super) appinfo: RefCell<Option<DesktopAppInfo>>,
+    pub(super) active: RefCell<BoxedWindowList>,
+    pub(super) saved: Cell<bool>,
     pub(super) popover: Cell<bool>,
 }
 

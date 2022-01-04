@@ -1,6 +1,7 @@
 use std::path::Path;
 
 use gdk4::glib::Object;
+use gdk4::prelude::FileExt;
 use gdk4::subclass::prelude::ObjectSubclassExt;
 use gio::DesktopAppInfo;
 use gtk4::glib;
@@ -34,6 +35,22 @@ impl DockObject {
             }
         }
         None
+    }
+
+    pub fn get_name(&self) -> Option<String> {
+        let imp = imp::DockObject::from_instance(&self);
+        if let Some(app_info) = imp.appinfo.borrow().as_ref() {
+            app_info
+                .filename()
+                .map(|name| name.to_string_lossy().into())
+        } else {
+            None
+        }
+    }
+
+    pub fn set_saved(&self, is_saved: bool) {
+        let imp = imp::DockObject::from_instance(&self);
+        imp.saved.replace(is_saved);
     }
 
     pub fn from_search_results(results: BoxedWindowList) -> Self {
