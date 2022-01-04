@@ -35,6 +35,7 @@ impl DockItem {
 
         let item_box = Box::new(Orientation::Vertical, 0);
         self_.set_child(Some(&item_box));
+        self_.add_css_class("dock_item");
 
         let image = cascade! {
             Image::new();

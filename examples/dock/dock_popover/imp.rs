@@ -11,6 +11,7 @@ use crate::dock_object::DockObject;
 pub struct DockPopover {
     pub menu_handle: Rc<RefCell<Box>>,
     pub all_windows_item_revealer: Rc<RefCell<Revealer>>,
+    pub all_windows_item_header: Rc<RefCell<Button>>,
     pub window_list: Rc<RefCell<ListBox>>,
     pub launch_new_item: Rc<RefCell<Button>>,
     pub favorite_item: Rc<RefCell<Button>>,

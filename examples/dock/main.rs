@@ -41,6 +41,7 @@ static X11_CONN: OnceCell<RustConnection> = OnceCell::new();
 pub enum Event {
     WindowList(Vec<Item>),
     Activate((u32, u32)),
+    Close((u32, u32)),
     RefreshFromCache,
 }
 
@@ -52,7 +53,7 @@ pub struct Item {
     desktop_entry: String,
 }
 
-fn spawn_launcher(tx: mpsc::Sender<Event>) -> Connection {
+fn spawn_zbus(tx: mpsc::Sender<Event>) -> Connection {
     let connection = block_on(Connection::session()).unwrap();
 
     let sender = tx.clone();
@@ -110,7 +111,7 @@ fn main() {
     app.connect_activate(move |app| {
         let (tx, mut rx) = mpsc::channel(100);
 
-        let zbus_conn = spawn_launcher(tx.clone());
+        let zbus_conn = spawn_zbus(tx.clone());
         if TX.set(tx).is_err() {
             println!("failed to set global Sender. Exiting");
             std::process::exit(1);
@@ -135,6 +136,12 @@ fn main() {
                             .call_method(Some(DEST), PATH, Some(DEST), "WindowFocus", &((e,)))
                             .await
                             .expect("Failed to focus selected window");
+                    }
+                    Event::Close(e) => {
+                        let _activate_window = zbus_conn
+                            .call_method(Some(DEST), PATH, Some(DEST), "WindowQuit", &((e,)))
+                            .await
+                            .expect("Failed to close selected window");
                     }
                     Event::RefreshFromCache => {
                         // println!("refreshing model from cache");

@@ -16,6 +16,18 @@ listview row {
     padding: 0px;
 }
 
+button.dock_item:hover {
+    background: #888888;
+    border-radius: 12px;
+    border-width: 0px;
+}
+
+button.dock_item {
+    background: #333333;
+    border-radius: 12px;
+    border-width: 0px;
+}
+
 list {
     border-radius: 12px;
     background: #333333;
@@ -32,18 +44,6 @@ list row {
     background: #333333;
     border-radius: 12px;
     padding: 0px;
-}
-
-button:hover {
-    background: #888888;
-    border-radius: 12px;
-    border-width: 0px;
-}
-
-button {
-    background: #333333;
-    border-radius: 12px;
-    border-width: 0px;
 }
 
 box.dock {
