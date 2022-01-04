@@ -2,17 +2,19 @@ use glib::subclass::Signal;
 use gtk4::glib;
 use gtk4::prelude::*;
 use gtk4::subclass::prelude::*;
-use gtk4::PopoverMenu;
 use once_cell::sync::Lazy;
 use std::cell::RefCell;
 use std::rc::Rc;
+
+use crate::dock_popover::DockPopover;
 
 #[derive(Debug, Default)]
 pub struct DockItem {
     pub image: Rc<RefCell<gtk4::Image>>,
     pub dots: Rc<RefCell<gtk4::Label>>,
     pub item_box: Rc<RefCell<gtk4::Box>>,
-    pub popover_menu: Rc<RefCell<Option<PopoverMenu>>>,
+    pub popover: Rc<RefCell<gtk4::Popover>>,
+    pub popover_menu: Rc<RefCell<DockPopover>>,
 }
 
 #[glib::object_subclass]

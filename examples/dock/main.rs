@@ -27,6 +27,7 @@ use self::window::Window;
 mod dock_item;
 mod dock_list;
 mod dock_object;
+mod dock_popover;
 mod utils;
 mod window;
 

@@ -1,8 +1,6 @@
 use cascade::cascade;
 use gio::DesktopAppInfo;
 use gio::Icon;
-use gio::Menu;
-use gio::MenuItem;
 use gtk4::glib;
 use gtk4::prelude::*;
 use gtk4::subclass::prelude::*;
@@ -11,9 +9,10 @@ use gtk4::Box;
 use gtk4::Image;
 use gtk4::Label;
 use gtk4::Orientation;
-use gtk4::PopoverMenu;
+use gtk4::Popover;
 
 use crate::dock_object::DockObject;
+use crate::dock_popover::DockPopover;
 use crate::utils::BoxedWindowList;
 
 mod imp;
@@ -50,23 +49,29 @@ impl DockItem {
         };
         item_box.append(&image);
         item_box.append(&dots);
-        let popover_menu = cascade! {
-            PopoverMenu::from_model_full(&Menu::new(), gtk4::PopoverMenuFlags::NESTED);
+        let popover = cascade! {
+            Popover::new();
             ..set_autohide(true);
         };
-        item_box.append(&popover_menu);
+        item_box.append(&popover);
         let self_clone = self_.clone();
-        popover_menu.connect_closed(move |_| {
+        popover.connect_closed(move |_| {
             self_clone
                 .emit_by_name::<&str>("popover-closed", &[])
                 .unwrap();
         });
 
+        let popover_menu = cascade! {
+            DockPopover::new();
+        };
+        popover.set_child(Some(&popover_menu));
+
         let imp = imp::DockItem::from_instance(&self_);
         imp.image.replace(image);
         imp.dots.replace(dots);
         imp.item_box.replace(item_box);
-        imp.popover_menu.replace(Some(popover_menu));
+        imp.popover.replace(popover);
+        imp.popover_menu.replace(popover_menu);
 
         self_
     }
@@ -114,70 +119,17 @@ impl DockItem {
 
     pub fn add_popover(&self, item: &DockObject) {
         let imp = imp::DockItem::from_instance(self);
-        if let Some(popover_menu) = imp.popover_menu.borrow().as_ref() {
-            let menu = if let Some(m) = popover_menu.menu_model() {
-                m.downcast::<Menu>().unwrap()
-            } else {
-                Menu::new()
-            };
-            menu.remove_all();
+        let popover = imp.popover.borrow();
+        let popover_menu = imp.popover_menu.borrow();
 
-            let appinfo = item
-                .property("appinfo")
-                .expect("property appinfo missing from DockObject")
-                .get::<Option<DesktopAppInfo>>();
-            let window_list = item
-                .property("active")
-                .expect("property appinfo missing from DockObject")
-                .get::<BoxedWindowList>();
-
-            if let Ok(Some(_appinfo)) = appinfo {
-                let launch_menu = Menu::new();
-                let launch_subsection = MenuItem::new_section(None, &launch_menu);
-                launch_menu.append(Some("New Window"), None);
-                menu.append_item(&launch_subsection);
-            }
-
-            let favorites_menu = Menu::new();
-            let favorites_subsection = MenuItem::new_section(None, &favorites_menu);
-            match item.property("saved").unwrap().get::<bool>().unwrap() {
-                true => favorites_menu.append(Some("Remove from Favorites"), None),
-                false => favorites_menu.append(Some("Add to Favorites"), None),
-            };
-            menu.append_item(&favorites_subsection);
-
-            if let Ok(window_list) = window_list {
-                let window_list = window_list.0;
-                if window_list.len() > 0 {
-                    let all_windows_submenu_menu = Menu::new();
-                    for w in window_list {
-                        all_windows_submenu_menu.append(Some(w.name.as_str()), None);
-                    }
-
-                    let all_windows_menu = Menu::new();
-                    let all_windows_submenu =
-                        MenuItem::new_submenu(Some("All Windows"), &all_windows_submenu_menu);
-                    all_windows_menu.append_item(&all_windows_submenu);
-                    let all_windows_subsection = MenuItem::new_section(None, &all_windows_menu);
-
-                    let quit_windows_menu = Menu::new();
-                    quit_windows_menu.append(Some("Quit All"), None);
-                    let quit_windows_subsection = MenuItem::new_section(None, &quit_windows_menu);
-
-                    menu.prepend_item(&all_windows_subsection);
-                    menu.append_item(&quit_windows_subsection);
-                }
-            }
-            popover_menu.popup();
-        }
+        popover_menu.set_dock_object(item, true);
+        popover.popup();
     }
 
     pub fn clear_popover(&self) {
         let imp = imp::DockItem::from_instance(self);
-        let popover_menu = imp.popover_menu.borrow();
+        let popover = imp.popover.borrow();
 
-        if let Some(popover) = popover_menu.as_ref() {
-            popover.popdown();
-        }
+        popover.popdown();
     }
 }
