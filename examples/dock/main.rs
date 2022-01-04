@@ -184,6 +184,7 @@ fn main() {
                                 active_app_model.append(&object);
                             }
                         }
+                        let _ = TX.get().unwrap().send(Event::RefreshFromCache).await;
                     }
                     Event::RefreshFromCache => {
                         // println!("refreshing model from cache");
