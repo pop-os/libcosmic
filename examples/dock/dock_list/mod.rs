@@ -166,6 +166,7 @@ impl DockList {
         let list_view = cascade! {
             ListView::default();
             ..set_orientation(Orientation::Horizontal);
+            ..add_css_class("docklist");
         };
         if imp.type_.get().unwrap() == &DockListType::Saved {
             list_view.set_width_request(64);
@@ -210,20 +211,20 @@ impl DockList {
             let window = list_view.root().unwrap().downcast::<Window>().unwrap();
             let max_x = list_view.allocated_width();
             let max_y = list_view.allocated_height();
-            dbg!(max_y);
-            dbg!(y);
+            // dbg!(max_y);
+            // dbg!(y);
             let n_buckets = model.n_items();
             let index = (x * n_buckets as f64 / (max_x as f64 + 0.1)) as u32;
-            dbg!(self_.current_button());
-            dbg!(self_.last_event(self_.current_sequence().as_ref()));
+            // dbg!(self_.current_button());
+            // dbg!(self_.last_event(self_.current_sequence().as_ref()));
             let click_modifier = if let Some(event) =  self_.last_event(self_.current_sequence().as_ref()) {
-                    dbg!(&event);
+                    // dbg!(&event);
                     Some(event.modifier_state())
                 }
                 else {
                     None
                 };
-            dbg!(click_modifier);
+            // dbg!(click_modifier);
             // Launch the application when an item of the list is activated
             let focus_window = move |first_focused_item: &Item| {
                 let entity = first_focused_item.entity.clone();

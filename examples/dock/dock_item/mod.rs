@@ -117,8 +117,8 @@ impl DockItem {
         }
         if let Ok(popover_value) = dock_object.property("popover") {
             if let Ok(popover) = popover_value.get::<bool>() {
-                dbg!(popover);
-                dbg!(dock_object);
+                // dbg!(popover);
+                // dbg!(dock_object);
                 if popover {
                     self.add_popover(dock_object);
                 } else {

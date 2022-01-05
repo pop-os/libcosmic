@@ -1,16 +1,16 @@
-listview {
+listview.docklist {
     border-radius: 12px;
     background: #333333;
 }
 
-listview row:hover {
+listview.docklist row:hover {
     transition: 100ms;
     background: #888888;
     border-radius: 12px;
     padding: 0px;
 }
 
-listview row {
+listview.docklist row {
     background: #333333;
     border-radius: 12px;
     padding: 0px;
@@ -33,17 +33,19 @@ list {
     background: #333333;
 }
 
-list row:hover {
-    transition: 100ms;
-    background: #888888;
+label.window_title {
+    color: white;
+    margin: 4px;
+}
+
+popover contents {
     border-radius: 12px;
     padding: 0px;
 }
 
-list row {
-    background: #333333;
+popover contents {
     border-radius: 12px;
-    padding: 0px;
+    padding: 12px;
 }
 
 box.dock {

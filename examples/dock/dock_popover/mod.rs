@@ -65,33 +65,33 @@ impl DockPopover {
             };
             menu_handle.append(&all_windows_item_container);
 
-            let all_windows_item_header = cascade! {
-                Button::new();
-                ..set_hexpand(true);
-            };
-            all_windows_item_container.append(&all_windows_item_header);
+            // let all_windows_item_header = cascade! {
+            //     Button::new();
+            //     ..set_hexpand(true);
+            // };
+            // all_windows_item_container.append(&all_windows_item_header);
 
-            let all_windows_item_header_box = cascade! {
-                Box::new(Orientation::Horizontal, 4);
-                ..set_hexpand(true);
-            };
-            all_windows_item_header.set_child(Some(&all_windows_item_header_box));
+            // let all_windows_item_header_box = cascade! {
+            //     Box::new(Orientation::Horizontal, 4);
+            //     ..set_hexpand(true);
+            // };
+            // all_windows_item_header.set_child(Some(&all_windows_item_header_box));
 
-            let all_windows_item_header_title = cascade! {
-                Label::new(Some("All Windows"));
-                ..add_css_class("header-5");
-                ..set_halign(gtk4::Align::Start);
-            };
-            all_windows_item_header_box.append(&all_windows_item_header_title);
+            // let all_windows_item_header_title = cascade! {
+            //     Label::new(Some("All Windows"));
+            //     ..add_css_class("header-5");
+            //     ..set_halign(gtk4::Align::Start);
+            // };
+            // all_windows_item_header_box.append(&all_windows_item_header_title);
 
-            let all_windows_item_header_icon = cascade! {
-                Image::from_icon_name(Some("go-down"));
-                ..set_halign(gtk4::Align::End);
-                ..set_hexpand(true);
-                ..set_pixel_size(16);
-            };
-            all_windows_item_header_box.append(&all_windows_item_header_icon);
-            imp.all_windows_item_header.replace(all_windows_item_header);
+            // let all_windows_item_header_icon = cascade! {
+            //     Image::from_icon_name(Some("go-down"));
+            //     ..set_halign(gtk4::Align::End);
+            //     ..set_hexpand(true);
+            //     ..set_pixel_size(16);
+            // };
+            // all_windows_item_header_box.append(&all_windows_item_header_icon);
+            // imp.all_windows_item_header.replace(all_windows_item_header);
 
             if let Ok(window_list) = dock_object
                 .property("active")
@@ -101,17 +101,17 @@ impl DockPopover {
                 if window_list.0.len() == 0 {
                     all_windows_item_container.hide();
                 } else {
-                    let window_list_revealer = cascade! {
-                        Revealer::new();
-                        ..set_reveal_child(false);
-                        ..set_transition_type(gtk4::RevealerTransitionType::SlideDown);
-                    };
-                    all_windows_item_container.append(&window_list_revealer);
+                    // let window_list_revealer = cascade! {
+                    //     Revealer::new();
+                    //     ..set_reveal_child(false);
+                    //     ..set_transition_type(gtk4::RevealerTransitionType::SlideDown);
+                    // };
+                    // all_windows_item_container.append(&window_list_revealer);
                     let window_listbox = cascade! {
                         ListBox::new();
                         ..set_activate_on_single_click(true);
                     };
-                    window_list_revealer.set_child(Some(&window_listbox));
+                    all_windows_item_container.append(&window_listbox);
                     for w in window_list.0 {
                         let window_box = cascade! {
                             Box::new(Orientation::Vertical, 4);
@@ -124,6 +124,8 @@ impl DockPopover {
                             ..set_margin_end(4);
                             ..set_margin_top(4);
                             ..set_margin_bottom(4);
+                            ..add_css_class("title-4");
+                            ..add_css_class("window_title");
                         };
 
                         // TODO investigate Xembed
@@ -134,7 +136,7 @@ impl DockPopover {
                         window_box.append(&window_image);
                         window_box.append(&window_title);
                     }
-                    imp.all_windows_item_revealer.replace(window_list_revealer);
+                    // imp.all_windows_item_revealer.replace(window_list_revealer);
                     imp.window_list.replace(window_listbox);
                 }
             }
@@ -257,13 +259,13 @@ impl DockPopover {
                 self_.emit_hide();
             }));
 
-            all_windows_header.connect_clicked(
-                glib::clone!(@weak dock_object, @weak revealer => move |self_| {
-                    dbg!(dock_object);
-                    let revealer = revealer.borrow();
-                    revealer.set_reveal_child(!revealer.reveals_child())
-                }),
-            );
+            // all_windows_header.connect_clicked(
+            //     glib::clone!(@weak dock_object, @weak revealer => move |self_| {
+            //         // dbg!(dock_object);
+            //         let revealer = revealer.borrow();
+            //         revealer.set_reveal_child(!revealer.reveals_child())
+            //     }),
+            // );
 
             let self_ = self.clone();
             window_listbox.connect_row_activated(glib::clone!(@weak dock_object => move |_, item| {
