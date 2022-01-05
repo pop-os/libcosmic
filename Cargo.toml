@@ -5,9 +5,14 @@ edition = "2021"
 
 [dependencies]
 cascade = "1"
+derivative = "2"
 gdk4 = "0.3.1"
+gdk4-wayland = { version = "0.3", optional = true }
 gdk4-x11 = "0.3.0"
 gio = "0.14.8"
+gobject-sys = "0.14.0"
+wayland-client = { version = "0.28", optional = true }
+wayland-protocols = { version = "0.28", features = [ "client", "unstable_protocols" ], optional = true }
 x11 = { version = "2", features = ["xlib"] }
 
 # examples
@@ -27,10 +32,12 @@ zvariant = "3.0.0"
 zvariant_derive = "3.0.0"
 
 [dependencies.gtk4]
-package = "gtk4"
+version = "0.3"
 features = ["v4_4"]
 
 [profile.release]
 incremental = true
 debug = 1
 
+[features]
+layer-shell = ["gdk4-wayland", "wayland-client", "wayland-protocols"]
