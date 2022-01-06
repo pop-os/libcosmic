@@ -45,7 +45,14 @@ popover contents {
     border-width: 0px;
     border-radius: 12px;
     padding: 12px;
-    background: #333333CC;
+    background: #333333DD;
+}
+
+popover arrow {
+    border-width: 0px;
+    border-radius: 12px;
+    padding: 12px;
+    background: #333333DD;
 }
 
 box.dock {
