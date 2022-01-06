@@ -17,12 +17,14 @@ listview.docklist row {
 }
 
 button.dock_item:hover {
+    transition: 300ms;
+    border-width: 0px;
     background: #888888;
     border-radius: 12px;
-    border-width: 0px;
 }
 
 button.dock_item {
+    transition: 300ms;
     background: #333333;
     border-radius: 12px;
     border-width: 0px;
