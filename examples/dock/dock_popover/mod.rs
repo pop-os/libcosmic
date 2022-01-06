@@ -44,13 +44,7 @@ impl DockPopover {
     pub fn update_layout(&self) {
         let imp = imp::DockPopover::from_instance(&self);
         let dock_object = imp.dock_object.borrow();
-
-        // reset menu
-        let menu_handle = cascade! {
-            Box::new(Orientation::Vertical, 4);
-        };
-        self.append(&menu_handle);
-
+        let menu_handle = imp.menu_handle.borrow();
         // build menu
         if let Some(dock_object) = dock_object.as_ref() {
             cascade! {
@@ -183,14 +177,12 @@ impl DockPopover {
             }
             self.setup_handlers();
         }
-        let old_menu_handle = imp.menu_handle.replace(menu_handle);
-        self.remove(&old_menu_handle);
     }
 
     fn layout(&self) {
         let imp = imp::DockPopover::from_instance(&self);
         let menu_handle = cascade! {
-            Box::default();
+            Box::new(Orientation::Vertical, 4);
         };
         self.append(&menu_handle);
         imp.menu_handle.replace(menu_handle);
@@ -198,6 +190,18 @@ impl DockPopover {
 
     fn emit_hide(&self) {
         self.emit_by_name::<&str>("menu-hide", &[]).unwrap();
+    }
+
+    pub fn reset_menu(&self) {
+        // reset menu
+        let menu_handle = cascade! {
+            Box::new(Orientation::Vertical, 4);
+        };
+        self.append(&menu_handle);
+
+        let imp = imp::DockPopover::from_instance(&self);
+        let old_menu_handle = imp.menu_handle.replace(menu_handle);
+        self.remove(&old_menu_handle);
     }
 
     fn setup_handlers(&self) {

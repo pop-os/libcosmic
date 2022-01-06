@@ -70,8 +70,9 @@ impl DockItem {
             .connect_local(
                 "menu-hide",
                 false,
-                glib::clone!(@weak popover => @default-return None, move |_| {
+                glib::clone!(@weak popover, @weak popover_menu => @default-return None, move |_| {
                     popover.popdown();
+                    popover_menu.reset_menu();
                     None
                 }),
             )
@@ -140,7 +141,8 @@ impl DockItem {
     pub fn clear_popover(&self) {
         let imp = imp::DockItem::from_instance(self);
         let popover = imp.popover.borrow();
-
+        let popover_menu = imp.popover_menu.borrow();
         popover.popdown();
+        popover_menu.reset_menu();
     }
 }

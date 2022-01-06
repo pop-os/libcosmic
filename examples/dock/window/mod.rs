@@ -221,7 +221,7 @@ impl Window {
             glib::clone!(@weak revealer, @weak drop_controller => move |_evc| {
                 // only hide if DnD is not happening
                 if drop_controller.current_drop().is_none() {
-                    dbg!("hello, mouse left me :)");
+                    // dbg!("hello, mouse left me :)");
                     revealer.set_reveal_child(false);
                 }
             }),
