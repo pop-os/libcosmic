@@ -42,10 +42,12 @@ impl DockPopover {
     }
 
     pub fn update_layout(&self) {
+        self.reset_menu();
+
+        // build menu
         let imp = imp::DockPopover::from_instance(&self);
         let dock_object = imp.dock_object.borrow();
         let menu_handle = imp.menu_handle.borrow();
-        // build menu
         if let Some(dock_object) = dock_object.as_ref() {
             cascade! {
                 &self;

@@ -34,8 +34,11 @@ impl DockItem {
         let self_: DockItem = glib::Object::new(&[]).expect("Failed to create DockItem");
 
         let item_box = Box::new(Orientation::Vertical, 0);
-        self_.set_child(Some(&item_box));
-        self_.add_css_class("dock_item");
+        cascade! {
+            &self_;
+            ..set_child(Some(&item_box));
+            ..add_css_class("dock_item");
+        };
 
         let image = cascade! {
             Image::new();

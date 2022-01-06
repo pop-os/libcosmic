@@ -1,38 +1,39 @@
 listview.docklist {
     border-radius: 12px;
-    background: #333333;
+    background: transparent;
+    transition: 100ms;
 }
 
 listview.docklist row:hover {
-    transition: 100ms;
-    background: #888888;
+    background: #888888CC;
     border-radius: 12px;
     padding: 0px;
 }
 
 listview.docklist row {
-    background: #333333;
+    transition: 100ms;
+    background: transparent;
     border-radius: 12px;
     padding: 0px;
 }
 
-button.dock_item:hover {
+button:hover {
     transition: 300ms;
     border-width: 0px;
-    background: #888888;
+    background: #888888CC;
     border-radius: 12px;
 }
 
-button.dock_item {
+button {
     transition: 300ms;
-    background: #333333;
+    background: transparent;
     border-radius: 12px;
     border-width: 0px;
 }
 
 list {
     border-radius: 12px;
-    background: #333333;
+    background: #333333CC;
 }
 
 label.window_title {
@@ -41,20 +42,17 @@ label.window_title {
 }
 
 popover contents {
-    border-radius: 12px;
-    padding: 0px;
-}
-
-popover contents {
+    border-width: 0px;
     border-radius: 12px;
     padding: 12px;
+    background: #333333CC;
 }
 
 box.dock {
     border-radius: 12px;
-    background: #333333;
+    background: #333333CC;
 }
 
 window.root_window {
-    background: rgba(50, 50, 50, 0.0);
+    background: transparent;
 }
