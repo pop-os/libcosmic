@@ -1,9 +1,6 @@
 use std::collections::BTreeMap;
 use std::time::Duration;
 
-use tokio::sync::mpsc;
-// use async_std::channel::{bounded, Receiver, Sender};
-use futures::executor::block_on;
 use gdk4::Display;
 use gio::DesktopAppInfo;
 use gtk4::gio;
@@ -14,6 +11,8 @@ use gtk4::CssProvider;
 use gtk4::StyleContext;
 use once_cell::sync::OnceCell;
 use serde::{Deserialize, Serialize};
+use std::future::Future;
+use tokio::sync::mpsc;
 use x11rb::rust_connection::RustConnection;
 use zbus::Connection;
 use zvariant_derive::Type;
@@ -37,6 +36,7 @@ const NUM_LAUNCHER_ITEMS: u8 = 10;
 
 static TX: OnceCell<mpsc::Sender<Event>> = OnceCell::new();
 static X11_CONN: OnceCell<RustConnection> = OnceCell::new();
+static PLUGIN_POOL: OnceCell<glib::ThreadPool> = OnceCell::new();
 
 pub enum Event {
     WindowList(Vec<Item>),
@@ -54,23 +54,60 @@ pub struct Item {
     desktop_entry: String,
 }
 
+fn thread_context() -> glib::MainContext {
+    glib::MainContext::thread_default().unwrap_or_else(|| {
+        let ctx = glib::MainContext::new();
+        ctx.push_thread_default();
+        ctx
+    })
+}
+
+fn block_on<F>(future: F) -> F::Output
+where
+    F: Future,
+{
+    thread_context().block_on(future)
+}
+
 fn spawn_zbus(tx: mpsc::Sender<Event>) -> Connection {
     let connection = block_on(Connection::session()).unwrap();
 
     let sender = tx.clone();
     let conn = connection.clone();
-    glib::MainContext::default().spawn_local(async move {
-        loop {
-            let m = conn
-                .call_method(Some(DEST), PATH, Some(DEST), "WindowList", &())
-                .await;
-            if let Ok(m) = m {
-                if let Ok(reply) = m.body::<Vec<Item>>() {
-                    let _ = sender.send(Event::WindowList(reply)).await;
+    let _ = std::thread::spawn(|| {
+        let cached_results: Vec<Item> = vec![];
+        block_on(async move {
+            futures::pin_mut!(cached_results);
+            loop {
+                let m = conn
+                    .call_method(Some(DEST), PATH, Some(DEST), "WindowList", &())
+                    .await;
+                if let Ok(m) = m {
+                    if let Ok(mut reply) = m.body::<Vec<Item>>() {
+                        let mut cached_results = cached_results.as_mut();
+                        reply.sort_by(|a, b| a.name.cmp(&b.name));
+
+                        if cached_results.len() != reply.len()
+                            || !reply.iter().zip(cached_results.iter()).fold(
+                                0,
+                                |acc, z: (&Item, &Item)| {
+                                    let (a, b) = z;
+                                    if a.name == b.name {
+                                        acc + 1
+                                    } else {
+                                        acc
+                                    }
+                                },
+                            ) == cached_results.len()
+                        {
+                            cached_results.splice(.., reply.clone());
+                            let _ = sender.send(Event::WindowList(reply)).await;
+                        }
+                    }
+                    glib::timeout_future(Duration::from_millis(100)).await;
                 }
-                glib::timeout_future(Duration::from_millis(100)).await;
             }
-        }
+        })
     });
 
     connection
@@ -110,17 +147,23 @@ fn main() {
     });
 
     app.connect_activate(move |app| {
+        let pool = glib::ThreadPool::new_shared(None).expect("Failed to spawn thread pool");
+        if PLUGIN_POOL.set(pool).is_err() {
+            eprintln!("failed to set global thread pool. Exiting");
+            std::process::exit(1);
+        };
+
         let (tx, mut rx) = mpsc::channel(100);
 
         let zbus_conn = spawn_zbus(tx.clone());
         if TX.set(tx).is_err() {
-            println!("failed to set global Sender. Exiting");
+            eprintln!("failed to set global Sender. Exiting");
             std::process::exit(1);
         };
 
         let (conn, _screen_num) = x11rb::connect(None).expect("Failed to connect to X");
         if X11_CONN.set(conn).is_err() {
-            println!("failed to set X11_CONN. Exiting");
+            eprintln!("failed to set X11_CONN. Exiting");
             std::process::exit(1);
         };
         let window = Window::new(app);
@@ -265,30 +308,9 @@ fn main() {
                             .collect();
                         active_app_model.splice(0, model_len, &new_results[..]);
                     }
-                    Event::WindowList(mut results) => {
+                    Event::WindowList(results) => {
                         // sort to make comparison with cache easier
                         let mut cached_results = cached_results.as_mut();
-                        results.sort_by(|a, b| a.name.cmp(&b.name));
-
-                        // dbg!(&results);
-                        // dbg!(&cached_results);
-                        // // check if cache equals the new polled results
-                        // skip if equal
-                        if cached_results.len() == results.len()
-                            && results.iter().zip(cached_results.iter()).fold(
-                                0,
-                                |acc, z: (&Item, &Item)| {
-                                    let (a, b) = z;
-                                    if a.name == b.name {
-                                        acc + 1
-                                    } else {
-                                        acc
-                                    }
-                                },
-                            ) == cached_results.len()
-                        {
-                            continue; // skip this update
-                        }
 
                         // build active app stacks for each app
                         let stack_active = results.iter().fold(
