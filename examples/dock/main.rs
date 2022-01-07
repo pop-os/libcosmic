@@ -11,14 +11,13 @@ use gtk4::CssProvider;
 use gtk4::StyleContext;
 use once_cell::sync::OnceCell;
 use serde::{Deserialize, Serialize};
-use std::future::Future;
 use tokio::sync::mpsc;
 use x11rb::rust_connection::RustConnection;
 use zbus::Connection;
 use zvariant_derive::Type;
 
 use crate::dock_list::DockListType;
-use crate::utils::BoxedWindowList;
+use crate::utils::{block_on, thread_context, BoxedWindowList};
 
 use self::dock_object::DockObject;
 use self::window::Window;
@@ -52,21 +51,6 @@ pub struct Item {
     name: String,
     description: String,
     desktop_entry: String,
-}
-
-fn thread_context() -> glib::MainContext {
-    glib::MainContext::thread_default().unwrap_or_else(|| {
-        let ctx = glib::MainContext::new();
-        ctx.push_thread_default();
-        ctx
-    })
-}
-
-fn block_on<F>(future: F) -> F::Output
-where
-    F: Future,
-{
-    thread_context().block_on(future)
 }
 
 fn spawn_zbus(tx: mpsc::Sender<Event>) -> Connection {

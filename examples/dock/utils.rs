@@ -22,7 +22,7 @@ pub fn data_path() -> PathBuf {
     path
 }
 
-pub fn _thread_context() -> glib::MainContext {
+pub fn thread_context() -> glib::MainContext {
     glib::MainContext::thread_default().unwrap_or_else(|| {
         let ctx = glib::MainContext::new();
         ctx.push_thread_default();
@@ -30,9 +30,9 @@ pub fn _thread_context() -> glib::MainContext {
     })
 }
 
-pub fn _block_on<F>(future: F) -> F::Output
+pub fn block_on<F>(future: F) -> F::Output
 where
     F: Future,
 {
-    _thread_context().block_on(future)
+    thread_context().block_on(future)
 }
