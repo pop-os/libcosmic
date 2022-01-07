@@ -97,14 +97,7 @@ fn spawn_zbus(tx: mpsc::Sender<Event>) -> Connection {
     connection
 }
 
-fn setup_shortcuts(app: &Application) {
-    //quit shortcut
-    app.set_accels_for_action("win.quit", &["<primary>W", "Escape"]);
-    //launch shortcuts
-    for i in 1..NUM_LAUNCHER_ITEMS {
-        app.set_accels_for_action(&format!("win.launch{}", i), &[&format!("<primary>{}", i)]);
-    }
-}
+fn _setup_shortcuts(app: &Application) {}
 
 fn load_css() {
     // Load the css file and add it to the provider
@@ -126,7 +119,7 @@ fn main() {
         .build();
 
     app.connect_startup(|app| {
-        setup_shortcuts(app);
+        // setup_shortcuts(app);
         load_css()
     });
 
