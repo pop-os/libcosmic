@@ -137,17 +137,6 @@ fn main() {
                             .call_method(Some(DEST), PATH, Some(DEST), "WindowFocus", &((e,)))
                             .await
                             .expect("Failed to focus selected window");
-                        // let m = zbus_conn
-                        //     .call_method(Some(DEST), PATH, Some(DEST), "WindowId", &((e,)))
-                        //     .await;
-                        // if let Ok(m) = m {
-                        //     if let Ok(reply) = m.body::<(u32, u32)>() {
-                        //         dbg!(reply);
-                        //     } else {
-                        //         dbg!(m);
-                        //     }
-                        //     // glib::timeout_future(Duration::from_millis(100)).await;
-                        // }
                     }
                     Event::Close(e) => {
                         let _activate_window = zbus_conn

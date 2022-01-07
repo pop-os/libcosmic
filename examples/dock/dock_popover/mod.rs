@@ -1,4 +1,5 @@
 use cascade::cascade;
+use gdk4::pango::EllipsizeMode;
 use gio::DesktopAppInfo;
 use gtk4::subclass::prelude::*;
 use gtk4::{gio, glib};
@@ -120,11 +121,13 @@ impl DockPopover {
                             ..set_margin_end(4);
                             ..set_margin_top(4);
                             ..set_margin_bottom(4);
+                            ..set_wrap(true);
+                            ..set_max_width_chars(20);
+                            ..set_ellipsize(EllipsizeMode::End);
                             ..add_css_class("title-4");
                             ..add_css_class("window_title");
                         };
 
-                        // TODO investigate Xembed
                         let window_image = cascade! {
                             //TODO fill with image of window
                             Image::from_pixbuf(None);
@@ -213,11 +216,11 @@ impl DockPopover {
         let favorite_item = imp.favorite_item.borrow();
         let quit_all_item = imp.quit_all_item.borrow();
         let window_listbox = imp.window_list.borrow();
-        let all_windows_header = imp.all_windows_item_header.borrow();
-        let revealer = &imp.all_windows_item_revealer;
+        // let all_windows_header = imp.all_windows_item_header.borrow();
+        // let revealer = &imp.all_windows_item_revealer;
 
         if let Some(dock_object) = dock_object.as_ref() {
-            println!("setting up popover menu handlers");
+            // println!("setting up popover menu handlers");
             let self_ = self.clone();
             launch_new_item.connect_clicked(glib::clone!(@weak dock_object, => move |_| {
                 let app_info = dock_object.property("appinfo").expect("DockObject must have appinfo property").get::<Option<DesktopAppInfo>>().expect("Failed to convert value to DesktopAppInfo").unwrap();

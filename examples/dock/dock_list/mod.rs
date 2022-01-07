@@ -99,7 +99,7 @@ impl DockList {
                 return;
             }
         }
-        println!("Error loading saved apps!");
+        eprintln!("Error loading saved apps!");
         let model = &self.model();
         xdg::BaseDirectories::new()
             .expect("could not access XDG Base directory")
@@ -238,16 +238,16 @@ impl DockList {
             if let Some(old_index) = old_index  {
                 if let Some(old_item) = model.item(old_index) {
                     if let Ok(old_dock_object) = old_item.downcast::<DockObject>() {
-                        println!("removing popup...");
                         old_dock_object.set_popover(false);
                         popover_menu_index.replace(None);
                         model.items_changed(old_index, 0, 0);
+                        //TODO signal dock to check if it should hide
                     }
                 }
                 return;
             }
             if y > f64::from(max_y) || y < 0.0 || x > f64::from(max_x) || x < 0.0 {
-                println!("out of bounds click...");
+                // println!("out of bounds click...");
                 return;
             }
 
@@ -273,7 +273,7 @@ impl DockList {
 
                         }
                         (click, _, _, _) if click == 3 => {
-                            println!("handling right click");
+                            // println!("handling right click");
                             if let Some(old_index) = popover_menu_index.get().clone() {
                                 if let Some(item) = model.item(old_index) {
                                     if let Ok(dock_object) = item.downcast::<DockObject>() {
@@ -287,7 +287,7 @@ impl DockList {
                             popover_menu_index.replace(Some(index));
                             model.items_changed(index, 0, 0);
                         }
-                        _ => println!("Failed to process click.")
+                        _ => eprintln!("Failed to process click.")
                     }
                 }
             }
