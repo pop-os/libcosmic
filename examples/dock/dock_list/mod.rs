@@ -94,6 +94,7 @@ impl DockList {
                     })
                     .collect();
                 // dbg!(&dock_objects);
+
                 let model = self.model();
                 model.splice(model.n_items(), 0, &dock_objects);
                 return;
@@ -480,6 +481,20 @@ impl DockList {
             }
             None
         }));
+
+        // TODO investigate why drop does not finish when dropping on some surfaces
+        // for now this is a fix that will cancel the drop after 100 ms and not completing.
+        drag_source.connect_drag_begin(|_self, drag| {
+            drag.connect_drop_performed(|_self| {
+                glib::timeout_add_local_once(
+                    std::time::Duration::from_millis(100),
+                    glib::clone!(@weak _self => move || {
+                        _self.drop_done(false);
+                    }),
+                );
+            });
+        });
+
         imp.drag_source
             .set(drag_source)
             .expect("Could not set saved drag source");
