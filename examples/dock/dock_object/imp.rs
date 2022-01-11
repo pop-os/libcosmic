@@ -8,6 +8,7 @@ use gtk4::prelude::*;
 use gtk4::subclass::prelude::*;
 use once_cell::sync::Lazy;
 
+use crate::plugin::BoxedDockPlugin;
 use crate::utils::BoxedWindowList;
 
 // Object holding the state
@@ -15,6 +16,7 @@ use crate::utils::BoxedWindowList;
 pub struct DockObject {
     pub(super) appinfo: RefCell<Option<DesktopAppInfo>>,
     pub(super) active: RefCell<BoxedWindowList>,
+    pub(super) plugin: RefCell<Option<BoxedDockPlugin>>,
     pub(super) saved: Cell<bool>,
     pub(super) popover: Cell<bool>,
 }
@@ -93,7 +95,6 @@ impl ObjectImpl for DockObject {
                 self.popover
                     .replace(value.get().expect("Value needs to be a boolean"));
             }
-
             _ => unimplemented!(),
         }
     }

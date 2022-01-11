@@ -10,7 +10,7 @@ use crate::dock_popover::DockPopover;
 
 #[derive(Debug, Default)]
 pub struct DockItem {
-    pub image: Rc<RefCell<gtk4::Image>>,
+    pub image: Rc<RefCell<Option<gtk4::Image>>>,
     pub dots: Rc<RefCell<gtk4::Label>>,
     pub item_box: Rc<RefCell<gtk4::Box>>,
     pub popover: Rc<RefCell<gtk4::Popover>>,

@@ -1,13 +1,13 @@
 use std::path::Path;
 
-use gdk4::glib::Object;
-use gdk4::prelude::FileExt;
-use gdk4::subclass::prelude::ObjectSubclassExt;
-use gio::DesktopAppInfo;
-use gtk4::glib;
-use gtk4::prelude::AppInfoExt;
-
+use crate::plugin::{self, BoxedDockPlugin};
 use crate::utils::BoxedWindowList;
+use gdk4::glib::Object;
+use gdk4::subclass::prelude::ObjectSubclassExt;
+use gio::{DesktopAppInfo, Icon};
+use gtk4::prelude::*;
+use gtk4::{glib, Image};
+use std::cell::Ref;
 
 mod imp;
 
@@ -37,14 +37,60 @@ impl DockObject {
         None
     }
 
-    pub fn get_name(&self) -> Option<String> {
+    pub fn from_plugin(plugin: plugin::BoxedDockPlugin) -> Self {
+        let self_ = Object::new(&[("saved", &true)]).expect("Failed to create `DockObject`.");
+        let imp = imp::DockObject::from_instance(&self_);
+        imp.plugin.replace(Some(plugin));
+        self_
+    }
+
+    pub fn get_path(&self) -> Option<String> {
         let imp = imp::DockObject::from_instance(&self);
         if let Some(app_info) = imp.appinfo.borrow().as_ref() {
             app_info
                 .filename()
                 .map(|name| name.to_string_lossy().into())
+        } else if let Some(plugin) = imp.plugin.borrow().as_ref() {
+            Some(plugin.path.clone())
         } else {
             None
+        }
+    }
+
+    pub fn get_name(&self) -> Option<String> {
+        let imp = imp::DockObject::from_instance(&self);
+        if let Some(app_info) = imp.appinfo.borrow().as_ref() {
+            Some(app_info.name().to_string())
+        } else if let Some(plugin) = imp.plugin.borrow().as_ref() {
+            Some(plugin.name.clone())
+        } else {
+            None
+        }
+    }
+
+    pub fn get_popover_menu(&self) -> Option<gtk4::Box> {
+        let imp = imp::DockObject::from_instance(&self);
+        if let Some(plugin) = imp.plugin.borrow().as_ref() {
+            Some(plugin.popover_menu.clone())
+        } else {
+            None
+        }
+    }
+
+    pub fn get_image(&self) -> gtk4::Image {
+        let imp = imp::DockObject::from_instance(&self);
+        if let Some(app_info) = imp.appinfo.borrow().as_ref() {
+            let image = Image::new();
+            let icon = app_info
+                .icon()
+                .unwrap_or(Icon::for_string("image-missing").expect("Failed to set default icon"));
+            image.set_from_gicon(&icon);
+            image
+        } else if let Some(plugin) = imp.plugin.borrow().as_ref() {
+            plugin.image.clone()
+        } else {
+            println!("failed to load image");
+            Image::new()
         }
     }
 

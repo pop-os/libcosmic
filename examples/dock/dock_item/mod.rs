@@ -1,6 +1,5 @@
 use cascade::cascade;
 use gio::DesktopAppInfo;
-use gio::Icon;
 use gtk4::glib;
 use gtk4::prelude::*;
 use gtk4::subclass::prelude::*;
@@ -13,6 +12,7 @@ use gtk4::Popover;
 
 use crate::dock_object::DockObject;
 use crate::dock_popover::DockPopover;
+use crate::plugin;
 use crate::utils::BoxedWindowList;
 
 mod imp;
@@ -82,7 +82,7 @@ impl DockItem {
             .unwrap();
 
         let imp = imp::DockItem::from_instance(&self_);
-        imp.image.replace(image);
+        imp.image.replace(Some(image));
         imp.dots.replace(dots);
         imp.item_box.replace(item_box);
         imp.popover.replace(popover);
@@ -92,24 +92,21 @@ impl DockItem {
     }
 
     // refactor to emit event for removing the item?
-    pub fn set_app_info(&self, dock_object: &DockObject) {
+    pub fn set_dock_object(&self, dock_object: &DockObject) {
         let self_ = imp::DockItem::from_instance(self);
-        if let Ok(app_info_value) = dock_object.property("appinfo") {
-            if let Ok(Some(app_info)) = app_info_value.get::<Option<DesktopAppInfo>>() {
-                self_
-                    .image
-                    .borrow()
-                    .set_tooltip_text(Some(&app_info.name()));
-
-                let icon = app_info.icon().unwrap_or(
-                    Icon::for_string("image-missing").expect("Failed to set default icon"),
-                );
-
-                self_.image.borrow().set_from_gicon(&icon);
-            }
-        } else {
-            println!("initializing dock item failed...");
+        let image = cascade! {
+            dock_object.get_image();
+            ..set_hexpand(true);
+            ..set_halign(Align::Center);
+            ..set_pixel_size(64);
+            ..set_tooltip_text(dock_object.get_name().as_deref());
+        };
+        let old_image = self_.image.replace(None);
+        if let Some(old_image) = old_image {
+            self_.item_box.borrow().remove(&old_image);
         }
+        self_.item_box.borrow().prepend(&image);
+        let old_image = self_.image.replace(Some(image));
         if let Ok(active_value) = dock_object.property("active") {
             if let Ok(active) = active_value.get::<BoxedWindowList>() {
                 let dots = self_.dots.borrow();

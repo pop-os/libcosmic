@@ -60,6 +60,10 @@ box.dock {
     background: #333333CC;
 }
 
+image.dock {
+    border-radius: 12px;
+}
+
 window.root_window {
     background: transparent;
 }

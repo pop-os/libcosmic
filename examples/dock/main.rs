@@ -1,6 +1,9 @@
 use std::collections::BTreeMap;
+use std::sync::Mutex;
 use std::time::Duration;
 
+use crate::dock_list::DockListType;
+use crate::utils::{block_on, BoxedWindowList};
 use gdk4::Display;
 use gio::DesktopAppInfo;
 use gtk4::gio;
@@ -9,15 +12,13 @@ use gtk4::prelude::*;
 use gtk4::Application;
 use gtk4::CssProvider;
 use gtk4::StyleContext;
-use once_cell::sync::OnceCell;
+use once_cell::sync::{Lazy, OnceCell};
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 use tokio::sync::mpsc;
 use x11rb::rust_connection::RustConnection;
 use zbus::Connection;
 use zvariant_derive::Type;
-
-use crate::dock_list::DockListType;
-use crate::utils::{block_on, thread_context, BoxedWindowList};
 
 use self::dock_object::DockObject;
 use self::window::Window;
@@ -26,16 +27,18 @@ mod dock_item;
 mod dock_list;
 mod dock_object;
 mod dock_popover;
+mod plugin;
 mod utils;
 mod window;
 
+const ID: &str = "com.cosmic.dock";
 const DEST: &str = "com.System76.PopShell";
 const PATH: &str = "/com/System76/PopShell";
-const NUM_LAUNCHER_ITEMS: u8 = 10;
 
 static TX: OnceCell<mpsc::Sender<Event>> = OnceCell::new();
 static X11_CONN: OnceCell<RustConnection> = OnceCell::new();
-static PLUGIN_POOL: OnceCell<glib::ThreadPool> = OnceCell::new();
+static PLUGINS: Lazy<Mutex<HashMap<String, libloading::Library>>> =
+    Lazy::new(|| Mutex::new(HashMap::new()));
 
 pub enum Event {
     WindowList(Vec<Item>),
@@ -97,7 +100,7 @@ fn spawn_zbus(tx: mpsc::Sender<Event>) -> Connection {
     connection
 }
 
-fn _setup_shortcuts(app: &Application) {}
+fn _setup_shortcuts(_app: &Application) {}
 
 fn load_css() {
     // Load the css file and add it to the provider
@@ -114,22 +117,15 @@ fn load_css() {
 
 fn main() {
     assert!(utils::BoxedWindowList::static_type().is_valid());
-    let app = gtk4::Application::builder()
-        .application_id("com.system76.dock")
-        .build();
+    assert!(plugin::BoxedDockPlugin::static_type().is_valid());
+    let app = gtk4::Application::builder().application_id(ID).build();
 
-    app.connect_startup(|app| {
+    app.connect_startup(|_app| {
         // setup_shortcuts(app);
         load_css()
     });
 
     app.connect_activate(move |app| {
-        let pool = glib::ThreadPool::new_shared(None).expect("Failed to spawn thread pool");
-        if PLUGIN_POOL.set(pool).is_err() {
-            eprintln!("failed to set global thread pool. Exiting");
-            std::process::exit(1);
-        };
-
         let (tx, mut rx) = mpsc::channel(100);
 
         let zbus_conn = spawn_zbus(tx.clone());
@@ -174,7 +170,7 @@ fn main() {
                             let mut index: Option<u32> = None;
                             while let Some(item) = active_app_model.item(cur) {
                                 if let Ok(cur_dock_object) = item.downcast::<DockObject>() {
-                                    if cur_dock_object.get_name() == Some(name.clone()) {
+                                    if cur_dock_object.get_path() == Some(name.clone()) {
                                         cur_dock_object.set_saved(true);
                                         index = Some(cur);
                                     }
@@ -191,7 +187,7 @@ fn main() {
                             let mut index: Option<u32> = None;
                             while let Some(item) = saved_app_model.item(cur) {
                                 if let Ok(cur_dock_object) = item.downcast::<DockObject>() {
-                                    if cur_dock_object.get_name() == Some(name.clone()) {
+                                    if cur_dock_object.get_path() == Some(name.clone()) {
                                         cur_dock_object.set_saved(false);
                                         index = Some(cur);
                                     }

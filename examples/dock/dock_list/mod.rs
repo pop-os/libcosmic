@@ -1,3 +1,12 @@
+use crate::dock_item::DockItem;
+use crate::dock_object::DockObject;
+use crate::plugin;
+use crate::utils::data_path;
+use crate::BoxedWindowList;
+use crate::Event;
+use crate::Item;
+use crate::PLUGINS;
+use crate::TX;
 use cascade::cascade;
 use gdk4::ContentProvider;
 use gdk4::Display;
@@ -17,16 +26,11 @@ use gtk4::SignalListItemFactory;
 use gtk4::Window;
 use gtk4::{gio, glib};
 use gtk4::{DragSource, GestureClick};
+use std::ffi::CStr;
 use std::fs::File;
+use std::io::BufReader;
+use std::io::Read;
 use std::path::Path;
-
-use crate::dock_item::DockItem;
-use crate::dock_object::DockObject;
-use crate::utils::data_path;
-use crate::BoxedWindowList;
-use crate::Event;
-use crate::Item;
-use crate::TX;
 
 mod imp;
 
@@ -97,41 +101,122 @@ impl DockList {
 
                 let model = self.model();
                 model.splice(model.n_items(), 0, &dock_objects);
-                return;
             }
-        }
-        eprintln!("Error loading saved apps!");
-        let model = &self.model();
-        xdg::BaseDirectories::new()
-            .expect("could not access XDG Base directory")
-            .get_data_dirs()
-            .iter_mut()
-            .for_each(|xdg_data_path| {
-                let defaults = ["Firefox Web Browser", "Files", "Terminal", "Pop!_Shop"];
-                xdg_data_path.push("applications");
-                // dbg!(&xdg_data_path);
-                if let Ok(dir_iter) = std::fs::read_dir(xdg_data_path) {
-                    dir_iter.for_each(|dir_entry| {
-                        if let Ok(dir_entry) = dir_entry {
-                            if let Some(path) = dir_entry.path().file_name() {
-                                if let Some(path) = path.to_str() {
-                                    if let Some(app_info) = gio::DesktopAppInfo::new(path) {
-                                        if app_info.should_show()
-                                            && defaults.contains(&app_info.name().as_str())
-                                        {
-                                            model.append(&DockObject::new(app_info));
+        } else {
+            eprintln!("Error loading saved apps!");
+            let model = &self.model();
+            xdg::BaseDirectories::new()
+                .expect("could not access XDG Base directory")
+                .get_data_dirs()
+                .iter_mut()
+                .for_each(|xdg_data_path| {
+                    let defaults = ["Firefox Web Browser", "Files", "Terminal", "Pop!_Shop"];
+                    xdg_data_path.push("applications");
+                    // dbg!(&xdg_data_path);
+                    if let Ok(dir_iter) = std::fs::read_dir(xdg_data_path) {
+                        dir_iter.for_each(|dir_entry| {
+                            if let Ok(dir_entry) = dir_entry {
+                                if let Some(path) = dir_entry.path().file_name() {
+                                    if let Some(path) = path.to_str() {
+                                        if let Some(app_info) = gio::DesktopAppInfo::new(path) {
+                                            if app_info.should_show()
+                                                && defaults.contains(&app_info.name().as_str())
+                                            {
+                                                model.append(&DockObject::new(app_info));
+                                            } else {
+                                                // println!("Ignoring {}", path);
+                                            }
                                         } else {
-                                            // println!("Ignoring {}", path);
+                                            // println!("error loading {}", path);
                                         }
-                                    } else {
-                                        // println!("error loading {}", path);
                                     }
                                 }
                             }
-                        }
-                    })
-                }
-            });
+                        })
+                    }
+                });
+        }
+        // TODO load saved plugins here... for now, load the hardcoded example.
+        // TODO unload plugin library before the dynamic library is changed, otherwise, it will crash after segfault
+        // TODO unload plugin on removal from model
+        // TODO dnd for plugin? I think they should either be at the start or end of the dock and not draggable
+        // TODO call plugin click handler on click or if it is not provided by the library, open the popover menu instead
+        let mut path_dir = glib::user_data_dir();
+        path_dir.push(crate::ID);
+        std::fs::create_dir_all(&path_dir).expect("Could not create directory.");
+        path_dir.push("plugins");
+        std::fs::create_dir_all(&path_dir).expect("Could not create directory.");
+        let mut path = path_dir.clone();
+        path.push("dock_plugin_uwu.so");
+        let mut path_css = path_dir.clone();
+        path_css.push("dock_plugin_uwu.css");
+        let path = path
+            .as_os_str()
+            .to_str()
+            .expect("plugin path needs to be a valid string");
+        let provider = gtk4::CssProvider::new();
+        if let Ok(f) = File::open(path_css) {
+            let mut reader = BufReader::new(f);
+            let mut buffer = Vec::new();
+
+            if reader.read_to_end(&mut buffer).is_ok() {
+                provider.load_from_data(&buffer);
+                // Add the provider to the default screen
+                gtk4::StyleContext::add_provider_for_display(
+                    &gdk4::Display::default().expect("Error initializing GTK CSS provider."),
+                    &provider,
+                    gtk4::STYLE_PROVIDER_PRIORITY_APPLICATION,
+                );
+            } else {
+                eprintln!("loading plugin css failed");
+            }
+        } else {
+            eprintln!("loading plugin css failed");
+        }
+
+        let (popover_menu, image, name, lib) = unsafe {
+            let lib = libloading::Library::new(path).unwrap();
+            // store library until unloading the plugin
+            let image_func: libloading::Symbol<unsafe extern "C" fn() -> *mut gtk4_sys::GtkWidget> =
+                lib.get(b"dock_plugin_image").unwrap();
+            let popover_func: libloading::Symbol<
+                unsafe extern "C" fn() -> *mut gtk4_sys::GtkWidget,
+            > = lib.get(b"dock_plugin_popover_menu").unwrap();
+            let name_func: libloading::Symbol<
+                unsafe extern "C" fn() -> *const std::os::raw::c_char,
+            > = lib.get(b"dock_plugin_name").unwrap();
+            // click handler is optional
+
+            (popover_func(), image_func(), name_func(), lib)
+        };
+        if let Ok(ref mut mutex) = PLUGINS.try_lock() {
+            mutex.insert(String::from(path), lib);
+        }
+        let name = if !name.is_null() {
+            unsafe { String::from(CStr::from_ptr(name).to_str().unwrap_or_default()) }
+        } else {
+            String::new()
+        };
+        let image = if !image.is_null() {
+            unsafe { gtk4::glib::translate::from_glib_none::<_, gtk4::Widget>(image).unsafe_cast() }
+        } else {
+            gtk4::Image::new()
+        };
+        let popover_menu = if !popover_menu.is_null() {
+            unsafe {
+                gtk4::glib::translate::from_glib_none::<_, gtk4::Widget>(popover_menu).unsafe_cast()
+            }
+        } else {
+            gtk4::Box::new(Orientation::Vertical, 4)
+        };
+        let boxed_plugin = plugin::BoxedDockPlugin {
+            path: String::from(path),
+            name,
+            image,
+            popover_menu,
+        };
+        let model = self.model();
+        model.append(&DockObject::from_plugin(boxed_plugin).upcast::<Object>());
     }
 
     fn store_data(model: &gio::ListStore) {
@@ -160,6 +245,7 @@ impl DockList {
         let file = File::create(data_path()).expect("Could not create json file.");
         serde_json::to_writer_pretty(file, &backup_data)
             .expect("Could not write data to json file");
+        // TODO save plugins here for now examples are hardcoded and don't need to be saved
     }
 
     fn layout(&self) {
@@ -420,7 +506,6 @@ impl DockList {
                 if type_ == DockListType::Saved {
                     if let Some(old_handle) = drag_end.replace(Some(self_.connect_drag_end(
                         glib::clone!(@weak model => move |_self, _drag, _delete_data| {
-                            dbg!(_delete_data);
                             if _delete_data {
                                 model.remove(index);
                                 glib::MainContext::default().spawn_local(async move {
@@ -526,7 +611,7 @@ impl DockList {
             }),
         );
         factory.connect_bind(move |_, list_item| {
-            let application_object = list_item
+            let dock_object = list_item
                 .item()
                 .expect("The item has to exist.")
                 .downcast::<DockObject>()
@@ -536,7 +621,7 @@ impl DockList {
                 .expect("The list item child needs to exist.")
                 .downcast::<DockItem>()
                 .expect("The list item type needs to be `DockItem`");
-            dock_item.set_app_info(&application_object);
+            dock_item.set_dock_object(&dock_object);
         });
         // Set the factory of the list view
         imp.list_view.get().unwrap().set_factory(Some(&factory));

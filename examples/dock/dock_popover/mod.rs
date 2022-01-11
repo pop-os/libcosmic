@@ -4,12 +4,11 @@ use gio::DesktopAppInfo;
 use gtk4::subclass::prelude::*;
 use gtk4::{gio, glib};
 use gtk4::{prelude::*, Label};
-use gtk4::{Box, Button, Image, ListBox, Orientation, Revealer, Window};
+use gtk4::{Box, Button, Image, ListBox, Orientation, Window};
 
-use crate::dock_object::{self, DockObject};
+use crate::dock_object::DockObject;
 use crate::utils::BoxedWindowList;
 use crate::Event;
-use crate::Item;
 use crate::TX;
 
 mod imp;
@@ -50,137 +49,108 @@ impl DockPopover {
         let dock_object = imp.dock_object.borrow();
         let menu_handle = imp.menu_handle.borrow();
         if let Some(dock_object) = dock_object.as_ref() {
-            cascade! {
-                &self;
-                ..set_spacing(4);
-                ..set_orientation(Orientation::Vertical);
-                ..set_hexpand(true);
-            };
+            if let Some(menu) = dock_object.get_popover_menu() {
+                // TODO investigate (dock:255244): Gtk-CRITICAL **: 19:12:38.668: gtk_at_context_set_accessible_role: assertion '!self->realized' failed
+                // appears after setting the menu handle a second time
+                menu_handle.append(&menu);
+            } else {
+                cascade! {
+                    &self;
+                    ..set_spacing(4);
+                    ..set_orientation(Orientation::Vertical);
+                    ..set_hexpand(true);
+                };
 
-            let all_windows_item_container = cascade! {
-                Box::new(Orientation::Vertical, 4);
-            };
-            menu_handle.append(&all_windows_item_container);
-
-            // let all_windows_item_header = cascade! {
-            //     Button::new();
-            //     ..set_hexpand(true);
-            // };
-            // all_windows_item_container.append(&all_windows_item_header);
-
-            // let all_windows_item_header_box = cascade! {
-            //     Box::new(Orientation::Horizontal, 4);
-            //     ..set_hexpand(true);
-            // };
-            // all_windows_item_header.set_child(Some(&all_windows_item_header_box));
-
-            // let all_windows_item_header_title = cascade! {
-            //     Label::new(Some("All Windows"));
-            //     ..add_css_class("header-5");
-            //     ..set_halign(gtk4::Align::Start);
-            // };
-            // all_windows_item_header_box.append(&all_windows_item_header_title);
-
-            // let all_windows_item_header_icon = cascade! {
-            //     Image::from_icon_name(Some("go-down"));
-            //     ..set_halign(gtk4::Align::End);
-            //     ..set_hexpand(true);
-            //     ..set_pixel_size(16);
-            // };
-            // all_windows_item_header_box.append(&all_windows_item_header_icon);
-            // imp.all_windows_item_header.replace(all_windows_item_header);
-
-            if let Ok(window_list) = dock_object
-                .property("active")
-                .unwrap()
-                .get::<BoxedWindowList>()
-            {
-                if window_list.0.len() == 0 {
-                    all_windows_item_container.hide();
-                } else {
-                    // let window_list_revealer = cascade! {
-                    //     Revealer::new();
-                    //     ..set_reveal_child(false);
-                    //     ..set_transition_type(gtk4::RevealerTransitionType::SlideDown);
-                    // };
-                    // all_windows_item_container.append(&window_list_revealer);
-                    let window_listbox = cascade! {
-                        ListBox::new();
-                        ..set_activate_on_single_click(true);
-                    };
-                    all_windows_item_container.append(&window_listbox);
-                    for w in window_list.0 {
-                        let window_box = cascade! {
-                            Box::new(Orientation::Vertical, 4);
-                        };
-                        window_listbox.append(&window_box);
-
-                        let window_title = cascade! {
-                            Label::new(Some(w.name.as_str()));
-                            ..set_margin_start(4);
-                            ..set_margin_end(4);
-                            ..set_margin_top(4);
-                            ..set_margin_bottom(4);
-                            ..set_wrap(true);
-                            ..set_max_width_chars(20);
-                            ..set_ellipsize(EllipsizeMode::End);
-                            ..add_css_class("title-4");
-                            ..add_css_class("window_title");
-                        };
-
-                        let window_image = cascade! {
-                            //TODO fill with image of window
-                            Image::from_pixbuf(None);
-                        };
-                        window_box.append(&window_image);
-                        window_box.append(&window_title);
-                    }
-                    // imp.all_windows_item_revealer.replace(window_list_revealer);
-                    imp.window_list.replace(window_listbox);
-                }
-            }
-
-            let launch_item_container = cascade! {
-                Box::new(Orientation::Vertical, 4);
-                ..set_hexpand(true);
-            };
-            menu_handle.append(&launch_item_container);
-
-            let launch_new_item = cascade! {
-                Button::with_label("New Window");
-            };
-            launch_item_container.append(&launch_new_item);
-            imp.launch_new_item.replace(launch_new_item);
-
-            let favorite_item = cascade! {
-                Button::with_label(if dock_object.property("saved").unwrap().get::<bool>().unwrap() {"Remove from Favorites"} else {"Add to Favorites"});
-            };
-            menu_handle.append(&favorite_item);
-            imp.favorite_item.replace(favorite_item);
-
-            if let Ok(window_list) = dock_object
-                .property("active")
-                .unwrap()
-                .get::<BoxedWindowList>()
-            {
-                if window_list.0.len() > 1 {
-                    let quit_all_item = cascade! {
-                        Button::with_label(format!("Quit {} Windows", window_list.0.len()).as_str());
-                    };
-                    menu_handle.append(&quit_all_item);
-                    imp.quit_all_item.replace(quit_all_item);
-                } else {
-                    let quit_all_item = cascade! {
-                        Button::with_label("Quit");
-                    };
-                    menu_handle.append(&quit_all_item);
+                let all_windows_item_container = cascade! {
+                    Box::new(Orientation::Vertical, 4);
+                };
+                menu_handle.append(&all_windows_item_container);
+                if let Ok(window_list) = dock_object
+                    .property("active")
+                    .unwrap()
+                    .get::<BoxedWindowList>()
+                {
                     if window_list.0.len() == 0 {
-                        quit_all_item.hide();
+                        all_windows_item_container.hide();
+                    } else {
+                        let window_listbox = cascade! {
+                            ListBox::new();
+                            ..set_activate_on_single_click(true);
+                        };
+                        all_windows_item_container.append(&window_listbox);
+                        for w in window_list.0 {
+                            let window_box = cascade! {
+                                Box::new(Orientation::Vertical, 4);
+                            };
+                            window_listbox.append(&window_box);
+
+                            let window_title = cascade! {
+                                Label::new(Some(w.name.as_str()));
+                                ..set_margin_start(4);
+                                ..set_margin_end(4);
+                                ..set_margin_top(4);
+                                ..set_margin_bottom(4);
+                                ..set_wrap(true);
+                                ..set_max_width_chars(20);
+                                ..set_ellipsize(EllipsizeMode::End);
+                                ..add_css_class("title-4");
+                                ..add_css_class("window_title");
+                            };
+
+                            let window_image = cascade! {
+                                //TODO fill with image of window
+                                Image::from_pixbuf(None);
+                            };
+                            window_box.append(&window_image);
+                            window_box.append(&window_title);
+                        }
+                        // imp.all_windows_item_revealer.replace(window_list_revealer);
+                        imp.window_list.replace(window_listbox);
                     }
-                    imp.quit_all_item.replace(quit_all_item);
                 }
+
+                let launch_item_container = cascade! {
+                    Box::new(Orientation::Vertical, 4);
+                    ..set_hexpand(true);
+                };
+                menu_handle.append(&launch_item_container);
+
+                let launch_new_item = cascade! {
+                    Button::with_label("New Window");
+                };
+                launch_item_container.append(&launch_new_item);
+                imp.launch_new_item.replace(launch_new_item);
+
+                let favorite_item = cascade! {
+                    Button::with_label(if dock_object.property("saved").unwrap().get::<bool>().unwrap() {"Remove from Favorites"} else {"Add to Favorites"});
+                };
+                menu_handle.append(&favorite_item);
+                imp.favorite_item.replace(favorite_item);
+
+                if let Ok(window_list) = dock_object
+                    .property("active")
+                    .unwrap()
+                    .get::<BoxedWindowList>()
+                {
+                    if window_list.0.len() > 1 {
+                        let quit_all_item = cascade! {
+                            Button::with_label(format!("Quit {} Windows", window_list.0.len()).as_str());
+                        };
+                        menu_handle.append(&quit_all_item);
+                        imp.quit_all_item.replace(quit_all_item);
+                    } else {
+                        let quit_all_item = cascade! {
+                            Button::with_label("Quit");
+                        };
+                        menu_handle.append(&quit_all_item);
+                        if window_list.0.len() == 0 {
+                            quit_all_item.hide();
+                        }
+                        imp.quit_all_item.replace(quit_all_item);
+                    }
+                }
+                self.setup_handlers();
             }
-            self.setup_handlers();
         }
     }
 
