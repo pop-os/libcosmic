@@ -1,5 +1,4 @@
 use cascade::cascade;
-use gio::DesktopAppInfo;
 use gtk4::glib;
 use gtk4::prelude::*;
 use gtk4::subclass::prelude::*;
@@ -12,7 +11,6 @@ use gtk4::Popover;
 
 use crate::dock_object::DockObject;
 use crate::dock_popover::DockPopover;
-use crate::plugin;
 use crate::utils::BoxedWindowList;
 
 mod imp;
@@ -107,6 +105,9 @@ impl DockItem {
         }
         self_.item_box.borrow().prepend(&image);
         let old_image = self_.image.replace(Some(image));
+        if let Some(old_image) = old_image {
+            self_.item_box.borrow().remove(&old_image);
+        }
         if let Ok(active_value) = dock_object.property("active") {
             if let Ok(active) = active_value.get::<BoxedWindowList>() {
                 let dots = self_.dots.borrow();

@@ -150,73 +150,80 @@ impl DockList {
         path.push("dock_plugin_uwu.so");
         let mut path_css = path_dir.clone();
         path_css.push("dock_plugin_uwu.css");
-        let path = path
-            .as_os_str()
-            .to_str()
-            .expect("plugin path needs to be a valid string");
         let provider = gtk4::CssProvider::new();
-        if let Ok(f) = File::open(path_css) {
-            let mut reader = BufReader::new(f);
-            let mut buffer = Vec::new();
+        if path.exists() {
+            let path = path
+                .as_os_str()
+                .to_str()
+                .expect("plugin path needs to be a valid string");
 
-            if reader.read_to_end(&mut buffer).is_ok() {
-                provider.load_from_data(&buffer);
-                // Add the provider to the default screen
-                gtk4::StyleContext::add_provider_for_display(
-                    &gdk4::Display::default().expect("Error initializing GTK CSS provider."),
-                    &provider,
-                    gtk4::STYLE_PROVIDER_PRIORITY_APPLICATION,
-                );
+            if let Ok(f) = File::open(path_css) {
+                let mut reader = BufReader::new(f);
+                let mut buffer = Vec::new();
+
+                if reader.read_to_end(&mut buffer).is_ok() {
+                    provider.load_from_data(&buffer);
+                    // Add the provider to the default screen
+                    gtk4::StyleContext::add_provider_for_display(
+                        &gdk4::Display::default().expect("Error initializing GTK CSS provider."),
+                        &provider,
+                        gtk4::STYLE_PROVIDER_PRIORITY_APPLICATION,
+                    );
+                } else {
+                    eprintln!("loading plugin css failed");
+                }
             } else {
                 eprintln!("loading plugin css failed");
             }
-        } else {
-            eprintln!("loading plugin css failed");
-        }
 
-        let (popover_menu, image, name, lib) = unsafe {
-            let lib = libloading::Library::new(path).unwrap();
-            // store library until unloading the plugin
-            let image_func: libloading::Symbol<unsafe extern "C" fn() -> *mut gtk4_sys::GtkWidget> =
-                lib.get(b"dock_plugin_image").unwrap();
-            let popover_func: libloading::Symbol<
-                unsafe extern "C" fn() -> *mut gtk4_sys::GtkWidget,
-            > = lib.get(b"dock_plugin_popover_menu").unwrap();
-            let name_func: libloading::Symbol<
-                unsafe extern "C" fn() -> *const std::os::raw::c_char,
-            > = lib.get(b"dock_plugin_name").unwrap();
-            // click handler is optional
+            let (popover_menu, image, name, lib) = unsafe {
+                let lib = libloading::Library::new(path).unwrap();
+                // store library until unloading the plugin
+                let image_func: libloading::Symbol<
+                    unsafe extern "C" fn() -> *mut gtk4_sys::GtkWidget,
+                > = lib.get(b"dock_plugin_image").unwrap();
+                let popover_func: libloading::Symbol<
+                    unsafe extern "C" fn() -> *mut gtk4_sys::GtkWidget,
+                > = lib.get(b"dock_plugin_popover_menu").unwrap();
+                let name_func: libloading::Symbol<
+                    unsafe extern "C" fn() -> *const std::os::raw::c_char,
+                > = lib.get(b"dock_plugin_name").unwrap();
+                // click handler is optional
 
-            (popover_func(), image_func(), name_func(), lib)
-        };
-        if let Ok(ref mut mutex) = PLUGINS.try_lock() {
-            mutex.insert(String::from(path), lib);
-        }
-        let name = if !name.is_null() {
-            unsafe { String::from(CStr::from_ptr(name).to_str().unwrap_or_default()) }
-        } else {
-            String::new()
-        };
-        let image = if !image.is_null() {
-            unsafe { gtk4::glib::translate::from_glib_none::<_, gtk4::Widget>(image).unsafe_cast() }
-        } else {
-            gtk4::Image::new()
-        };
-        let popover_menu = if !popover_menu.is_null() {
-            unsafe {
-                gtk4::glib::translate::from_glib_none::<_, gtk4::Widget>(popover_menu).unsafe_cast()
+                (popover_func(), image_func(), name_func(), lib)
+            };
+            if let Ok(ref mut mutex) = PLUGINS.try_lock() {
+                mutex.insert(String::from(path), lib);
             }
-        } else {
-            gtk4::Box::new(Orientation::Vertical, 4)
-        };
-        let boxed_plugin = plugin::BoxedDockPlugin {
-            path: String::from(path),
-            name,
-            image,
-            popover_menu,
-        };
-        let model = self.model();
-        model.append(&DockObject::from_plugin(boxed_plugin).upcast::<Object>());
+            let name = if !name.is_null() {
+                unsafe { String::from(CStr::from_ptr(name).to_str().unwrap_or_default()) }
+            } else {
+                String::new()
+            };
+            let image = if !image.is_null() {
+                unsafe {
+                    gtk4::glib::translate::from_glib_none::<_, gtk4::Widget>(image).unsafe_cast()
+                }
+            } else {
+                gtk4::Image::new()
+            };
+            let popover_menu = if !popover_menu.is_null() {
+                unsafe {
+                    gtk4::glib::translate::from_glib_none::<_, gtk4::Widget>(popover_menu)
+                        .unsafe_cast()
+                }
+            } else {
+                gtk4::Box::new(Orientation::Vertical, 4)
+            };
+            let boxed_plugin = plugin::BoxedDockPlugin {
+                path: String::from(path),
+                name,
+                image,
+                popover_menu,
+            };
+            let model = self.model();
+            model.append(&DockObject::from_plugin(boxed_plugin).upcast::<Object>());
+        }
     }
 
     fn store_data(model: &gio::ListStore) {

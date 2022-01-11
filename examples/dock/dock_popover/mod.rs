@@ -52,6 +52,7 @@ impl DockPopover {
             if let Some(menu) = dock_object.get_popover_menu() {
                 // TODO investigate (dock:255244): Gtk-CRITICAL **: 19:12:38.668: gtk_at_context_set_accessible_role: assertion '!self->realized' failed
                 // appears after setting the menu handle a second time
+                // possibly solved by https://gitlab.gnome.org/GNOME/gtk/-/issues/4421
                 menu_handle.append(&menu);
             } else {
                 cascade! {

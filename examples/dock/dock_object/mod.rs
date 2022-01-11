@@ -1,13 +1,12 @@
 use std::path::Path;
 
-use crate::plugin::{self, BoxedDockPlugin};
+use crate::plugin;
 use crate::utils::BoxedWindowList;
 use gdk4::glib::Object;
 use gdk4::subclass::prelude::ObjectSubclassExt;
 use gio::{DesktopAppInfo, Icon};
 use gtk4::prelude::*;
 use gtk4::{glib, Image};
-use std::cell::Ref;
 
 mod imp;
 
