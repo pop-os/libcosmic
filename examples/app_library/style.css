@@ -1,9 +1,10 @@
-child:hover {
+child:selected {
     transition: 100ms;
-    background: #888888;
+    background: #AAAAAA;
 }
 
-child {
+gridview child {
+    transition: 100ms;
     border-radius: 5px;
 }
 

@@ -92,6 +92,7 @@ impl Window {
             GridView::default();
             ..set_min_columns(7);
             ..set_max_columns(7);
+            ..set_single_click_activate(true);
         };
         library_window.set_child(Some(&library_grid));
 
@@ -313,12 +314,12 @@ impl Window {
                 set_group_scroll_policy(&scroll_window, scroll_list_model.n_items());
             }),
         );
-        app_selection_model.connect_selected_notify(glib::clone!(@weak window => move |model| {
+        app_grid_view.connect_activate(glib::clone!(@weak window => move |list_view, i| {
              // on activation change the group filter model to use the app names, and category
-            let position = model.selected();
-            println!("selected app {}", position);
+            println!("selected app {}", i);
             // Launch the application when an item of the list is activated
-            if let Some(item) = model.item(position) {
+            let model = list_view.model().unwrap();
+            if let Some(item) = model.item(i) {
                 let app_info = item.downcast::<gio::DesktopAppInfo>().unwrap();
                 let context = window.display().app_launch_context();
                 if let Err(err) = app_info.launch(&[], Some(&context)) {
@@ -335,18 +336,16 @@ impl Window {
             }
         }));
 
-        group_selection_model.connect_selected_notify(glib::clone!(@weak app_filter_model, @weak window => move |group_selection_model| {
+        group_grid_view.connect_activate(glib::clone!(@weak app_filter_model, @weak window => move |group_grid_view, i| {
             // on activation change the group filter model to use the app names, and category
-            let position = group_selection_model.selected();
-            println!("grid view activated. {}", position);
-        // group_grid_view.connect_activate(glib::clone!(@weak app_filter_model, @weak window => move |grid_view, position| {
-            let group_model = group_selection_model
+            println!("grid view activated. {}", i);
+            let group_model = group_grid_view.model().unwrap().downcast::<gtk4::SingleSelection>().unwrap()
                 .model()
                 .downcast::<gio::ListStore>()
                 .expect("could not downcast app group view selection model to list store model");
 
            // if last item in the model, don't change filter, instead show dialog for adding new group!
-            if position == group_model.n_items() - 1 {
+            if i == group_model.n_items() - 1 {
                 let dialog_entry = Entry::new();
                 let label = Label::new(Some("Name"));
                 label.set_justify(gtk4::Justification::Left);
@@ -396,7 +395,7 @@ impl Window {
                                 category: "".to_string(),
                             });
                             group_model.insert(group_model.n_items() - 1, &new_app_group);
-                            group_selection_model.set_selected(position - 1);
+                            group_selection_model.set_selected(i - 1);
                         } else {
                             group_selection_model.set_selected(0);
                         }
@@ -422,7 +421,7 @@ impl Window {
             };
             // update the application filter
             let app_info = group_model
-                .item(position)
+                .item(i)
                 .unwrap()
                 .downcast::<AppGroup>()
                 .unwrap();
