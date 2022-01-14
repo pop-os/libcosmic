@@ -18,6 +18,7 @@ use x11rb::protocol::xproto::ConnectionExt;
 use libcosmic::x;
 
 use crate::search_result_row::SearchResultRow;
+use crate::utils::BoxedSearchResult;
 use crate::SearchResultObject;
 use crate::TX;
 use crate::X11_CONN;
@@ -62,6 +63,7 @@ impl Window {
         let list_view = cascade! {
             ListView::default();
             ..set_orientation(Orientation::Vertical);
+            ..set_single_click_activate(true);
         };
         container.append(&list_view);
 
@@ -87,12 +89,7 @@ impl Window {
         let model = gio::ListStore::new(SearchResultObject::static_type());
 
         let slice_model = gtk4::SliceListModel::new(Some(&model), 0, NUM_LAUNCHER_ITEMS.into());
-        let selection_model = gtk4::SingleSelection::builder()
-            .model(&slice_model)
-            .autoselect(false)
-            .can_unselect(true)
-            .selected(gtk4::INVALID_LIST_POSITION)
-            .build();
+        let selection_model = gtk4::NoSelection::new(Some(&slice_model));
 
         imp.model.set(model).expect("Could not set model");
         // Wrap model with selection and pass it to the list view
@@ -113,48 +110,50 @@ impl Window {
             let action_launchi = gio::SimpleAction::new(&format!("launch{}", i), None);
             self.add_action(&action_launchi);
             action_launchi.connect_activate(glib::clone!(@weak lv =>  move |_action, _parameter| {
-                println!("acitvating... {}", i);
+                let i = i - 1;
+                println!("activating... {}", i);
                 let model = lv.model().unwrap();
-                let app_info = model.item(i - 1);
-                if app_info.is_none() {
-                    println!("oops no app for this row...");
-                    return;
-                }
-                if let Ok(id)= app_info.unwrap().property("id") {
-                    let id = id.get::<u32>().expect("App ID must be u32");
-
+                let obj = match model.item(i) {
+                    Some(obj) => obj.downcast::<SearchResultObject>().unwrap(),
+                    None => {
+                        dbg!(model.item(i));
+                        return;
+                    },
+                };
+                if let Some(search_result) = obj.data() {
+                    println!("activating... {}", i + 1);
                     glib::MainContext::default().spawn_local(async move {
                         if let Some(tx) = TX.get() {
-                            let _ = tx.send(crate::Event::Activate(id)).await;
+                            let _ = tx.send(crate::Event::Activate(search_result.id)).await;
                         }
                     });
                 }
             }));
         }
 
-        let app_selection_model = lv
-            .model()
-            .expect("List view missing selection model")
-            .downcast::<gtk4::SingleSelection>()
-            .expect("could not downcast listview model to single selection model");
+        lv.connect_activate(glib::clone!(@weak window => move |list_view, i| {
+            dbg!(i);
+            let model = list_view.model()
+                .expect("List view missing selection model")
+                .downcast::<gtk4::NoSelection>()
+                .expect("could not downcast listview model to no selection model");
 
-        app_selection_model.connect_selected_notify(glib::clone!(@weak window => move |model| {
-            let i = model.selected();
             if i >= model.n_items() {
+                dbg!("index out of range");
                 return;
             }
-            println!("acitvating... {}", i + 1);
-            let app_info = model.item(i);
-            if app_info.is_none() {
-                println!("oops no app for this row...");
-                return;
-            }
-            if let Ok(id) = app_info.unwrap().property("id") {
-                let id = id.get::<u32>().expect("App ID must be u32");
-
+            let obj = match model.item(i) {
+                Some(obj) => obj.downcast::<SearchResultObject>().unwrap(),
+                None => {
+                    dbg!(model.item(i));
+                    return;
+                },
+            };
+            if let Some(search_result) = obj.data() {
+                println!("activating... {}", i + 1);
                 glib::MainContext::default().spawn_local(async move {
                     if let Some(tx) = TX.get() {
-                        let _ = tx.send(crate::Event::Activate(id)).await;
+                        let _ = tx.send(crate::Event::Activate(search_result.id)).await;
                     }
                 });
             }
