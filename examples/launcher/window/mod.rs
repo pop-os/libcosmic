@@ -140,6 +140,9 @@ impl Window {
 
         app_selection_model.connect_selected_notify(glib::clone!(@weak window => move |model| {
             let i = model.selected();
+            if i >= model.n_items() {
+                return;
+            }
             println!("acitvating... {}", i + 1);
             let app_info = model.item(i);
             if app_info.is_none() {
