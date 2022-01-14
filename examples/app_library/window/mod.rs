@@ -1,3 +1,7 @@
+use std::rc::Rc;
+
+use crate::app_grid::AppGrid;
+use crate::group_grid::GroupGrid;
 use cascade::cascade;
 use gdk4::Rectangle;
 use gdk4_x11::X11Display;
@@ -13,15 +17,10 @@ use gtk4::Orientation;
 use gtk4::SearchEntry;
 use gtk4::Separator;
 use gtk4::{gio, glib};
-use x11rb::connection::Connection;
-use x11rb::protocol::xproto;
-use x11rb::protocol::xproto::ConnectionExt;
-
 use libcosmic::x;
-
-use crate::app_grid::AppGrid;
-use crate::group_grid::GroupGrid;
-use crate::X11_CONN;
+use once_cell::sync::OnceCell;
+use x11rb::connection::Connection;
+use x11rb::protocol::xproto::*;
 
 mod imp;
 
@@ -151,6 +150,10 @@ impl AppLibraryWindow {
 
         window.connect_realize(move |window| {
             if let Some((display, surface)) = x::get_window_x11(window) {
+                let (conn, _screen_num) = x11rb::connect(None).expect("Failed to connect to X");
+                let x11rb_conn = Rc::new(OnceCell::new());
+                x11rb_conn.set(conn).unwrap();
+
                 // ignore all x11 errors...
                 let xdisplay = display
                     .clone()
@@ -166,7 +169,7 @@ impl AppLibraryWindow {
                         &[x::Atom::new(&display, "_NET_WM_WINDOW_TYPE_DIALOG").unwrap()],
                     );
                 }
-                let resize = glib::clone!(@weak window => move || {
+                let resize = glib::clone!(@weak window, @strong x11rb_conn => move || {
                     let s = window.surface().expect("Failed to get Surface for AppLibraryWindow");
                     let height = window.height();
                     let width = window.width();
@@ -185,15 +188,15 @@ impl AppLibraryWindow {
                         // dbg!(monitor_height);
                         // dbg!(width);
                         // dbg!(height);
-                        let w_conf = xproto::ConfigureWindowAux::default()
+                        let w_conf = ConfigureWindowAux::default()
                             .x(monitor_x + monitor_width / 2 - width / 2)
                             .y(monitor_y + monitor_height / 2 - height / 2);
-                        let conn = X11_CONN.get().expect("Failed to get X11_CONN");
 
                         let x11surface = gdk4_x11::X11Surface::xid(
                             &s.clone().downcast::<X11Surface>()
                                 .expect("Failed to downcast Surface to X11Surface"),
                         );
+                        let conn = x11rb_conn.get().unwrap();
                         conn.configure_window(
                             x11surface.try_into().expect("Failed to convert XID"),
                             &w_conf,
