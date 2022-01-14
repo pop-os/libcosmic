@@ -5,10 +5,12 @@ use gtk4::StyleContext;
 use once_cell::sync::OnceCell;
 use x11rb::rust_connection::RustConnection;
 
-use window::Window;
+use window::AppLibraryWindow;
 
+mod app_grid;
 mod app_group;
 mod grid_item;
+mod group_grid;
 mod utils;
 mod window;
 
@@ -16,14 +18,13 @@ static X11_CONN: OnceCell<RustConnection> = OnceCell::new();
 
 fn main() {
     let app = gtk4::Application::new(Some("com.cosmic.app_library"), Default::default());
-    app.connect_startup(|app| {
+    app.connect_startup(|_app| {
         load_css();
-        build_ui(&app);
     });
 
-    // app.connect_activate(|app| {
-    //     build_ui(app);
-    // });
+    app.connect_activate(|app| {
+        build_ui(app);
+    });
 
     app.run();
 }
@@ -43,7 +44,7 @@ fn load_css() {
 
 fn build_ui(app: &gtk4::Application) {
     // Create a new custom window and show it
-    let window = Window::new(app);
+    let window = AppLibraryWindow::new(app);
     let (conn, _screen_num) = x11rb::connect(None).expect("Failed to connect to X");
     if X11_CONN.set(conn).is_err() {
         println!("failed to set X11_CONN. Exiting");
