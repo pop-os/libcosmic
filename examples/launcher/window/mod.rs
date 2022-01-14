@@ -18,7 +18,6 @@ use x11rb::protocol::xproto::ConnectionExt;
 use libcosmic::x;
 
 use crate::search_result_row::SearchResultRow;
-use crate::utils::BoxedSearchResult;
 use crate::SearchResultObject;
 use crate::TX;
 use crate::X11_CONN;

@@ -175,6 +175,8 @@ impl Window {
                         )
                             .expect("failed to configure window...");
                         conn.flush().expect("failed to flush");
+                        // fix (dock:294469): Gdk-CRITICAL **: 19:19:25.652: gdk_surface_request_layout: assertion 'frame_clock' failed
+                        s.request_layout();
                     }
                 });
 

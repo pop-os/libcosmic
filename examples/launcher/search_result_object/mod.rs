@@ -1,7 +1,6 @@
 use crate::utils::BoxedSearchResult;
 use gtk4::glib;
 use gtk4::prelude::*;
-use gtk4::subclass::prelude::*;
 
 mod imp;
 

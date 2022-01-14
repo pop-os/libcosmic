@@ -43,6 +43,12 @@ impl DockPopover {
 
     pub fn update_layout(&self) {
         self.reset_menu();
+        cascade! {
+            &self;
+            ..set_spacing(4);
+            ..set_orientation(Orientation::Vertical);
+            ..set_hexpand(true);
+        };
 
         // build menu
         let imp = imp::DockPopover::from_instance(&self);
@@ -50,18 +56,8 @@ impl DockPopover {
         let menu_handle = imp.menu_handle.borrow();
         if let Some(dock_object) = dock_object.as_ref() {
             if let Some(menu) = dock_object.get_popover_menu() {
-                // TODO investigate (dock:255244): Gtk-CRITICAL **: 19:12:38.668: gtk_at_context_set_accessible_role: assertion '!self->realized' failed
-                // appears after setting the menu handle a second time
-                // possibly solved by https://gitlab.gnome.org/GNOME/gtk/-/issues/4421
                 menu_handle.append(&menu);
             } else {
-                cascade! {
-                    &self;
-                    ..set_spacing(4);
-                    ..set_orientation(Orientation::Vertical);
-                    ..set_hexpand(true);
-                };
-
                 let all_windows_item_container = cascade! {
                     Box::new(Orientation::Vertical, 4);
                 };

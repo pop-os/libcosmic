@@ -18,6 +18,7 @@ x11 = { version = "2", features = ["xlib"] }
 # examples
 gtk4 = { version ="0.3.1", features = ["v4_4"] }
 glib-sys = "0.14.0"
+relm4-macros = { git = "https://github.com/AaronErhardt/Relm4" }
 pop-launcher-service = { git = "https://github.com/wash2/launcher.git" }
 pop-launcher = { git = "https://github.com/wash2/launcher.git" }
 serde = "1.0.130"

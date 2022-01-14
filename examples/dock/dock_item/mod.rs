@@ -102,11 +102,8 @@ impl DockItem {
         let old_image = self_.image.replace(None);
         if let Some(old_image) = old_image {
             self_.item_box.borrow().remove(&old_image);
-        }
-        self_.item_box.borrow().prepend(&image);
-        let old_image = self_.image.replace(Some(image));
-        if let Some(old_image) = old_image {
-            self_.item_box.borrow().remove(&old_image);
+            self_.item_box.borrow().prepend(&image);
+            self_.image.replace(Some(image));
         }
         if let Ok(active_value) = dock_object.property("active") {
             if let Ok(active) = active_value.get::<BoxedWindowList>() {
