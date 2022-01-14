@@ -89,7 +89,12 @@ impl Window {
         let model = gio::ListStore::new(SearchResultObject::static_type());
 
         let slice_model = gtk4::SliceListModel::new(Some(&model), 0, NUM_LAUNCHER_ITEMS.into());
-        let selection_model = gtk4::NoSelection::new(Some(&slice_model));
+        let selection_model = gtk4::SingleSelection::builder()
+            .model(&slice_model)
+            .autoselect(false)
+            .can_unselect(true)
+            .selected(gtk4::INVALID_LIST_POSITION)
+            .build();
 
         imp.model.set(model).expect("Could not set model");
         // Wrap model with selection and pass it to the list view
@@ -135,7 +140,7 @@ impl Window {
             dbg!(i);
             let model = list_view.model()
                 .expect("List view missing selection model")
-                .downcast::<gtk4::NoSelection>()
+                .downcast::<gtk4::SingleSelection>()
                 .expect("could not downcast listview model to no selection model");
 
             if i >= model.n_items() {

@@ -1,10 +1,11 @@
-listview row:hover {
+listview row:selected {
     transition: 100ms;
     background: #888888;
     border-radius: 8px;
 }
 
 listview row {
+    transition: 100ms;
     background: #333333;
     border-radius: 8px;
 }
