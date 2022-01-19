@@ -1,7 +1,5 @@
 use cascade::cascade;
-use gdk4::Rectangle;
 use gdk4_x11::X11Display;
-use gdk4_x11::X11Surface;
 use glib::Object;
 use gtk4::prelude::*;
 use gtk4::subclass::prelude::*;
@@ -11,16 +9,12 @@ use gtk4::ListView;
 use gtk4::Orientation;
 use gtk4::{gio, glib};
 use gtk4::{Application, SignalListItemFactory};
-use x11rb::connection::Connection;
-use x11rb::protocol::xproto;
-use x11rb::protocol::xproto::ConnectionExt;
 
 use libcosmic::x;
 
 use crate::search_result_row::SearchResultRow;
 use crate::SearchResultObject;
 use crate::TX;
-use crate::X11_CONN;
 
 mod imp;
 
@@ -198,7 +192,6 @@ impl Window {
                     );
                 }
                 let resize = glib::clone!(@weak window => move || {
-                    let s = window.surface();
                     let height = window.height();
                     let width = window.width();
 
@@ -213,21 +206,9 @@ impl Window {
                         // dbg!(monitor_height);
                         // dbg!(width);
                         // dbg!(height);
-                        let w_conf = xproto::ConfigureWindowAux::default()
-                            .x((monitor_x + monitor_width / 2 - width / 2).clamp(0, monitor_x + monitor_width - 1))
-                            .y((monitor_y + monitor_height / 2 - height / 2).clamp(0, monitor_y + monitor_height - 1));
-                        let conn = X11_CONN.get().expect("Failed to get X11_CONN");
-
-                        let x11surface = gdk4_x11::X11Surface::xid(
-                            &s.clone().downcast::<X11Surface>()
-                                .expect("Failed to downcast Surface to X11Surface"),
-                        );
-                        conn.configure_window(
-                            x11surface.try_into().expect("Failed to convert XID"),
-                            &w_conf,
-                        )
-                            .expect("failed to configure window...");
-                        conn.flush().expect("failed to flush");
+                        unsafe { x::set_position(&display, &surface,
+                            (monitor_x + monitor_width / 2 - width / 2).clamp(0, monitor_x + monitor_width - 1),
+                            (monitor_y + monitor_height / 2 - height / 2).clamp(0, monitor_y + monitor_height - 1))};
                     }
                 });
                 let s = window.surface();

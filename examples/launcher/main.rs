@@ -9,7 +9,6 @@ use gtk4::StyleContext;
 use once_cell::sync::OnceCell;
 use pop_launcher_service::IpcClient;
 use tokio::sync::mpsc;
-use x11rb::rust_connection::RustConnection;
 
 use crate::utils::BoxedSearchResult;
 
@@ -23,7 +22,6 @@ mod window;
 
 const NUM_LAUNCHER_ITEMS: u8 = 10;
 static TX: OnceCell<mpsc::Sender<Event>> = OnceCell::new();
-static X11_CONN: OnceCell<RustConnection> = OnceCell::new();
 
 pub enum Event {
     Response(pop_launcher::Response),
@@ -84,13 +82,6 @@ fn main() {
             println!("failed to set global Sender. Exiting");
             std::process::exit(1);
         };
-
-        let (conn, _screen_num) = x11rb::connect(None).expect("Failed to connect to X");
-        if X11_CONN.set(conn).is_err() {
-            println!("failed to set X11_CONN. Exiting");
-            std::process::exit(1);
-        };
-
 
         let window = Window::new(app);
         window.show();

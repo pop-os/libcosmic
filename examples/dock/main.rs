@@ -15,7 +15,6 @@ use once_cell::sync::{Lazy, OnceCell};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use tokio::sync::mpsc;
-use x11rb::rust_connection::RustConnection;
 use zbus::Connection;
 use zvariant_derive::Type;
 
@@ -35,7 +34,6 @@ const DEST: &str = "com.System76.PopShell";
 const PATH: &str = "/com/System76/PopShell";
 
 static TX: OnceCell<mpsc::Sender<Event>> = OnceCell::new();
-static X11_CONN: OnceCell<RustConnection> = OnceCell::new();
 static PLUGINS: Lazy<Mutex<HashMap<String, libloading::Library>>> =
     Lazy::new(|| Mutex::new(HashMap::new()));
 
@@ -133,11 +131,6 @@ fn main() {
             std::process::exit(1);
         };
 
-        let (conn, _screen_num) = x11rb::connect(None).expect("Failed to connect to X");
-        if X11_CONN.set(conn).is_err() {
-            eprintln!("failed to set X11_CONN. Exiting");
-            std::process::exit(1);
-        };
         let window = Window::new(app);
         window.show();
 

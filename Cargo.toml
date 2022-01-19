@@ -6,7 +6,7 @@ edition = "2021"
 [dependencies]
 cascade = "1.0.0"
 derivative = "2.2.0"
-gdk4 = "0.4.3"
+gdk4 = "0.4.4"
 gdk4-wayland = { version = "0.4.2", optional = true }
 gdk4-x11 = { version = "0.4.2", features = [ "xlib" ] }
 gio = "0.15.2"
@@ -16,7 +16,7 @@ wayland-protocols = { version = "0.29.4", features = [ "client", "unstable_proto
 x11 = { version = "2.19.1", features = ["xlib"] }
 
 # examples
-gtk4 = { version = "0.4.3", features = ["v4_4"] }
+gtk4 = { version = "0.4.4", features = ["v4_4"] }
 gtk4-sys = "0.4.2"
 glib-sys = "0.15.1"
 relm4-macros = { git = "https://github.com/AaronErhardt/Relm4" }
@@ -29,7 +29,6 @@ futures = "0.3.19"
 futures-util = "0.3.19"
 once_cell = "1.9.0"
 xdg = "2.4.0"
-x11rb = "0.9.0"
 # zbus
 zbus = "2.0.1"
 zvariant = "3.1.0"
