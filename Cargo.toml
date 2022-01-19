@@ -7,7 +7,7 @@ edition = "2021"
 cascade = "1.0.0"
 derivative = "2.2.0"
 gdk4 = "0.4.4"
-gdk4-wayland = { version = "0.4.2", optional = true }
+gdk4-wayland = { version = "0.4.2", features = [ "wayland_crate" ], optional = true }
 gdk4-x11 = { version = "0.4.2", features = [ "xlib" ] }
 gio = "0.15.2"
 gobject-sys = "0.15.1"

@@ -150,7 +150,7 @@ impl GroupGrid {
         let self_clone = self.clone();
         group_grid_view.connect_activate(move |group_grid_view, i| {
             // on activation change the group filter model to use the app names, and category
-            let window = group_grid_view.root().unwrap().downcast::<Window>().unwrap();
+            // let window = group_grid_view.root().unwrap().downcast::<Window>().unwrap();
             println!("grid view activated. {}", i);
             let group_model = group_grid_view.model().unwrap().downcast::<gtk4::SingleSelection>().unwrap()
                 .model()
@@ -180,15 +180,15 @@ impl GroupGrid {
                     .resizable(false)
                     .use_header_bar(true.into())
                     .destroy_with_parent(true)
-                    .transient_for(&window)
+                    // .transient_for(&window)
                     .title("New App Group")
                     .child(&vbox)
                     .build();
-                let app = window
-                    .application()
-                    .expect("could not get application from window");
+                // let app = window
+                //     .application()
+                //     .expect("could not get application from window");
 
-                dialog.set_application(Some(&app));
+                // dialog.set_application(Some(&app));
                 dialog.add_buttons(&[
                     ("Apply", gtk4::ResponseType::Apply),
                     ("Cancel", gtk4::ResponseType::Cancel),
@@ -215,20 +215,20 @@ impl GroupGrid {
                         dialog.emit_close();
                     }),
                 );
-                dialog.connect_is_active_notify(move |win| {
-                    let app = win
-                        .application()
-                        .expect("could not get application from window");
-                    let active_window = app
-                        .active_window()
-                        .expect("no active window available, closing app library.");
-                    dbg!(&active_window);
-                    if win == &active_window && !win.is_active() {
-                        println!("no focus");
-                        // close top level window
-                        window.close();
-                    }
-                });
+                // dialog.connect_is_active_notify(move |win| {
+                //     let app = win
+                //         .application()
+                //         .expect("could not get application from window");
+                //     let active_window = app
+                //         .active_window()
+                //         .expect("no active window available, closing app library.");
+                //     dbg!(&active_window);
+                //     if win == &active_window && !win.is_active() {
+                //         println!("no focus");
+                //         // close top level window
+                //         window.close();
+                //     }
+                // });
                 dialog.show();
                 return;
             };
@@ -257,7 +257,7 @@ impl GroupGrid {
                 }
             });
             self_clone
-                .emit_by_name::<CustomFilter>("group-changed", &[&new_filter]);
+                .emit_by_name::<()>("group-changed", &[&new_filter]);
         });
     }
 

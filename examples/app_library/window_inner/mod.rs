@@ -77,17 +77,15 @@ impl AppLibraryWindowInner {
 
         let entry = &imp.entry.get().unwrap();
 
-        group_grid
-            .connect_local(
-                "group-changed",
-                false,
-                glib::clone!(@weak app_grid => @default-return None, move |args| {
-                    let new_filter = args[1].get::<CustomFilter>().unwrap();
-                    app_grid.set_group_filter(&new_filter);
-                    None
-                }),
-            )
-            .unwrap();
+        group_grid.connect_local(
+            "group-changed",
+            false,
+            glib::clone!(@weak app_grid => @default-return None, move |args| {
+                let new_filter = args[1].get::<CustomFilter>().unwrap();
+                app_grid.set_group_filter(&new_filter);
+                None
+            }),
+        );
 
         entry.connect_changed(
             glib::clone!(@weak app_grid => move |search: &gtk4::SearchEntry| {

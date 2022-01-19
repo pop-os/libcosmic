@@ -1,19 +1,91 @@
+use std::rc::Rc;
+
 use crate::app_grid::AppGrid;
 use crate::group_grid::GroupGrid;
+use crate::window_inner::AppLibraryWindowInner;
 use cascade::cascade;
+use gdk4::subclass::prelude::ObjectSubclassExt;
 use gdk4_x11::X11Display;
 use glib::Object;
 use gtk4::prelude::*;
-use gtk4::subclass::prelude::*;
 use gtk4::Align;
 use gtk4::Application;
+use gtk4::ApplicationWindow;
 use gtk4::Box;
 use gtk4::CustomFilter;
+use gtk4::Inhibit;
 use gtk4::Orientation;
 use gtk4::SearchEntry;
 use gtk4::Separator;
-use gtk4::{gio, glib};
+use gtk4::{gdk, gio, glib};
 use libcosmic::x;
+use once_cell::sync::OnceCell;
+
+pub fn create(app: &Application, monitor: gdk::Monitor) {
+    //quit shortcut
+    app.set_accels_for_action("win.quit", &["<primary>W", "Escape"]);
+
+    #[cfg(feature = "layer-shell")]
+    if let Some(wayland_monitor) = monitor.downcast_ref() {
+        wayland_create(&app, wayland_monitor);
+        return;
+    }
+
+    cascade! {
+        AppLibraryWindow::new(&app);
+        ..show();
+    };
+}
+
+fn setup_shortcuts(window: &ApplicationWindow) {
+    let action_quit = gio::SimpleAction::new("quit", None);
+    action_quit.connect_activate(glib::clone!(@weak window => move |_, _| {
+        window.close();
+    }));
+    window.add_action(&action_quit);
+    window.connect_is_active_notify(move |win| {
+        let app = win
+            .application()
+            .expect("could not get application from window");
+        let active_window = app
+            .active_window()
+            .expect("no active window available, closing app library.");
+        dbg!(&active_window);
+        if win == &active_window && !win.is_active() {
+            win.close();
+        }
+    });
+}
+
+#[cfg(feature = "layer-shell")]
+fn wayland_create(app: &Application, monitor: &gdk4_wayland::WaylandMonitor) {
+    use libcosmic::wayland::{Anchor, Layer, LayerShellWindow};
+
+    let window = cascade! {
+        LayerShellWindow::new(Some(monitor), Layer::Top, "");
+        ..set_width_request(1200);
+        ..set_height_request(800);
+        // ..set_title(Some("Cosmic App Library"));
+        // ..set_decorated(false);
+        ..add_css_class("root_window");
+        ..set_anchor(Anchor::empty());
+        ..show();
+    };
+
+    let app_library = AppLibraryWindowInner::new();
+    window.set_child(Some(&app_library));
+    dbg!(&window);
+    window.show();
+    // window.connect_close_request(
+    //     glib::clone!(@strong app_library => @default-return Inhibit(false), move |_| {
+    //         app_library.group_grid().unwrap().store_data();
+    //         Inhibit(false)
+    //     }),
+    // );
+    // setup_shortcuts(window.clone().upcast::<gtk4::ApplicationWindow>());
+    // XXX
+    unsafe { window.set_data("cosmic-app-hold", app.hold()) };
+}
 
 mod imp;
 
@@ -26,12 +98,6 @@ glib::wrapper! {
 
 impl AppLibraryWindow {
     pub fn new(app: &Application) -> Self {
-        //quit shortcut
-        app.set_accels_for_action("win.quit", &["<primary>W", "Escape"]);
-        //launch shortcuts
-        for i in 1..10 {
-            app.set_accels_for_action(&format!("win.launch{}", i), &[&format!("<primary>{}", i)]);
-        }
         let self_: Self =
             Object::new(&[("application", app)]).expect("Failed to create `AppLibraryWindow`.");
         let imp = imp::AppLibraryWindow::from_instance(&self_);
@@ -43,42 +109,46 @@ impl AppLibraryWindow {
             ..set_decorated(false);
             ..add_css_class("root_window");
         };
-
-        let app_library = cascade! {
-            Box::new(Orientation::Vertical, 0);
-            ..add_css_class("app_library_container");
-        };
+        let app_library = AppLibraryWindowInner::new();
         self_.set_child(Some(&app_library));
+        imp.inner.set(app_library).unwrap();
+        // let app_library = cascade! {
+        //     Box::new(Orientation::Vertical, 0);
+        //     ..add_css_class("app_library_container");
+        // };
+        // self_.set_child(Some(&app_library));
 
-        let entry = cascade! {
-            SearchEntry::new();
-            ..set_width_request(300);
-            ..set_halign(Align::Center);
-            ..set_margin_top(12);
-            ..set_margin_bottom(12);
-            ..set_placeholder_text(Some(" Type to search"));
-        };
-        app_library.append(&entry);
+        // let entry = cascade! {
+        //     SearchEntry::new();
+        //     ..set_width_request(300);
+        //     ..set_halign(Align::Center);
+        //     ..set_margin_top(12);
+        //     ..set_margin_bottom(12);
+        //     ..set_placeholder_text(Some(" Type to search"));
+        // };
+        // app_library.append(&entry);
 
-        let app_grid = AppGrid::new();
-        app_library.append(&app_grid);
+        // let app_grid = AppGrid::new();
+        // app_library.append(&app_grid);
 
-        let separator = cascade! {
-            Separator::new(Orientation::Horizontal);
-            ..set_hexpand(true);
-            ..set_margin_bottom(12);
-            ..set_margin_top(12);
-        };
-        app_library.append(&separator);
+        // let separator = cascade! {
+        //     Separator::new(Orientation::Horizontal);
+        //     ..set_hexpand(true);
+        //     ..set_margin_bottom(12);
+        //     ..set_margin_top(12);
+        // };
+        // app_library.append(&separator);
 
-        let group_grid = GroupGrid::new();
-        app_library.append(&group_grid);
+        // let group_grid = GroupGrid::new();
+        // app_library.append(&group_grid);
 
-        imp.entry.set(entry).unwrap();
-        imp.app_grid.set(app_grid).unwrap();
-        imp.group_grid.set(group_grid).unwrap();
+        // imp.entry.set(entry).unwrap();
+        // imp.app_grid.set(app_grid).unwrap();
+        // imp.group_grid.set(group_grid).unwrap();
 
         Self::setup_callbacks(&self_);
+        setup_shortcuts(&self_.clone().upcast::<gtk4::ApplicationWindow>());
+
         self_
     }
 
@@ -86,58 +156,6 @@ impl AppLibraryWindow {
         // Get state
         let imp = imp::AppLibraryWindow::from_instance(self);
         let window = self.clone().upcast::<gtk4::Window>();
-        let app_grid = &imp.app_grid.get().unwrap();
-        let group_grid = &imp.group_grid.get().unwrap();
-
-        let entry = &imp.entry.get().unwrap();
-
-        group_grid.connect_local(
-            "group-changed",
-            false,
-            glib::clone!(@weak app_grid => @default-return None, move |args| {
-                let new_filter = args[1].get::<CustomFilter>().unwrap();
-                app_grid.set_group_filter(&new_filter);
-                None
-            }),
-        );
-
-        entry.connect_changed(
-            glib::clone!(@weak app_grid => move |search: &gtk4::SearchEntry| {
-                let search_text = search.text().to_string().to_lowercase();
-                let new_filter: gtk4::CustomFilter = gtk4::CustomFilter::new(move |obj| {
-                    let search_res = obj.downcast_ref::<gio::DesktopAppInfo>()
-                        .expect("The Object needs to be of type AppInfo");
-                    search_res.name().to_string().to_lowercase().contains(&search_text)
-                });
-                let search_text = search.text().to_string().to_lowercase();
-                let new_sorter: gtk4::CustomSorter = gtk4::CustomSorter::new(move |obj1, obj2| {
-                    let app_info1 = obj1.downcast_ref::<gio::DesktopAppInfo>().unwrap();
-                    let app_info2 = obj2.downcast_ref::<gio::DesktopAppInfo>().unwrap();
-                    if search_text == "" {
-                        return app_info1
-                            .name()
-                            .to_lowercase()
-                            .cmp(&app_info2.name().to_lowercase())
-                            .into();
-                    }
-
-                    let i_1 = app_info1.name().to_lowercase().find(&search_text);
-                    let i_2 = app_info2.name().to_lowercase().find(&search_text);
-                    match (i_1, i_2) {
-                        (Some(i_1), Some(i_2)) => i_1.cmp(&i_2).into(),
-                        (Some(_), None) => std::cmp::Ordering::Less.into(),
-                        (None, Some(_)) => std::cmp::Ordering::Greater.into(),
-                        _ => app_info1
-                            .name()
-                            .to_lowercase()
-                            .cmp(&app_info2.name().to_lowercase())
-                            .into()
-                    }
-                });
-                app_grid.set_search_filter(&new_filter);
-                app_grid.set_app_sorter(&new_sorter);
-            }),
-        );
 
         window.connect_realize(move |window| {
             if let Some((display, surface)) = x::get_window_x11(window) {
@@ -190,24 +208,6 @@ impl AppLibraryWindow {
                 });
             } else {
                 println!("failed to get X11 window");
-            }
-        });
-
-        let action_quit = gio::SimpleAction::new("quit", None);
-        action_quit.connect_activate(glib::clone!(@weak window => move |_, _| {
-            window.close();
-        }));
-        self.add_action(&action_quit);
-        window.connect_is_active_notify(move |win| {
-            let app = win
-                .application()
-                .expect("could not get application from window");
-            let active_window = app
-                .active_window()
-                .expect("no active window available, closing app library.");
-            dbg!(&active_window);
-            if win == &active_window && !win.is_active() {
-                win.close();
             }
         });
     }

@@ -5,7 +5,7 @@ use gdk4_wayland::prelude::*;
 use gtk4::{
     cairo, gdk,
     glib::{self, clone, subclass::prelude::*, translate::*},
-    gsk::{self, traits::RendererExt},
+    gsk::{self, traits::GskRendererExt},
     prelude::*,
     subclass::prelude::*,
 };
@@ -497,7 +497,7 @@ pub struct GtkRootInterface {
 
 unsafe extern "C" fn get_surface(native: *mut gtk4::ffi::GtkNative) -> *mut gdk::ffi::GdkSurface {
     let instance = &*(native as *mut <LayerShellWindowInner as ObjectSubclass>::Instance);
-    let imp = instance.impl_();
+    let imp = instance.imp();
     imp.surface.borrow().as_ref().map_or(ptr::null_mut(), |x| {
         x.upcast_ref::<gdk::Surface>().to_glib_none().0
     })
@@ -505,7 +505,7 @@ unsafe extern "C" fn get_surface(native: *mut gtk4::ffi::GtkNative) -> *mut gdk:
 
 unsafe extern "C" fn get_renderer(native: *mut gtk4::ffi::GtkNative) -> *mut gsk::ffi::GskRenderer {
     let instance = &*(native as *mut <LayerShellWindowInner as ObjectSubclass>::Instance);
-    let imp = instance.impl_();
+    let imp = instance.imp();
     imp.renderer
         .borrow()
         .as_ref()
@@ -530,7 +530,7 @@ unsafe extern "C" fn layout(native: *mut gtk4::ffi::GtkNative, width: c_int, hei
 
 unsafe extern "C" fn get_display(root: *mut gtk4::ffi::GtkRoot) -> *mut gdk::ffi::GdkDisplay {
     let instance = &*(root as *mut <LayerShellWindowInner as ObjectSubclass>::Instance);
-    let imp = instance.impl_();
+    let imp = instance.imp();
     imp.display.upcast_ref::<gdk::Display>().to_glib_none().0
 }
 
@@ -538,13 +538,13 @@ unsafe extern "C" fn get_constraint_solver(
     root: *mut gtk4::ffi::GtkRoot,
 ) -> *mut GtkConstraintSolver {
     let instance = &*(root as *mut <LayerShellWindowInner as ObjectSubclass>::Instance);
-    let imp = instance.impl_();
+    let imp = instance.imp();
     imp.constraint_solver.to_glib_none().0
 }
 
 unsafe extern "C" fn get_focus(root: *mut gtk4::ffi::GtkRoot) -> *mut gtk4::ffi::GtkWidget {
     let instance = &*(root as *mut <LayerShellWindowInner as ObjectSubclass>::Instance);
-    let imp = instance.impl_();
+    let imp = instance.imp();
     imp.focus_widget
         .borrow()
         .as_ref()
@@ -554,7 +554,7 @@ unsafe extern "C" fn get_focus(root: *mut gtk4::ffi::GtkRoot) -> *mut gtk4::ffi:
 unsafe extern "C" fn set_focus(root: *mut gtk4::ffi::GtkRoot, focus: *mut gtk4::ffi::GtkWidget) {
     // TODO: `GtkWindow` does more here
     let instance = &*(root as *mut <LayerShellWindowInner as ObjectSubclass>::Instance);
-    let imp = instance.impl_();
+    let imp = instance.imp();
     *imp.focus_widget.borrow_mut() = if focus.is_null() {
         None
     } else {

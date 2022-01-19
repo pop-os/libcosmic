@@ -131,25 +131,19 @@ impl AppGrid {
         let app_grid_view = &imp.app_grid_view.get().unwrap();
 
         app_grid_view.connect_activate(move |list_view, i| {
-            let window = list_view
-                .root()
-                .unwrap()
-                .downcast::<gtk4::Window>()
-                .unwrap();
             // on activation change the group filter model to use the app names, and category
             println!("selected app {}", i);
             // Launch the application when an item of the list is activated
             let model = list_view.model().unwrap();
             if let Some(item) = model.item(i) {
                 let app_info = item.downcast::<gio::DesktopAppInfo>().unwrap();
-                let context = window.display().app_launch_context();
+                let context = list_view.display().app_launch_context();
                 if let Err(err) = app_info.launch(&[], Some(&context)) {
                     gtk4::MessageDialog::builder()
                         .text(&format!("Failed to start {}", app_info.name()))
                         .secondary_text(&err.to_string())
                         .message_type(gtk4::MessageType::Error)
                         .modal(true)
-                        .transient_for(&window)
                         .build()
                         .show();
                 }

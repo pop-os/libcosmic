@@ -11,6 +11,7 @@ mod grid_item;
 mod group_grid;
 mod utils;
 mod window;
+mod window_inner;
 
 fn main() {
     let app = gtk4::Application::new(Some("com.cosmic.app_library"), Default::default());
@@ -40,7 +41,9 @@ fn load_css() {
 
 fn build_ui(app: &gtk4::Application) {
     // Create a new custom window and show it
-    let window = AppLibraryWindow::new(app);
+    let display = Display::default().unwrap();
+    window::create(app, display.monitors().item(0).unwrap().downcast().unwrap());
+    // let window = AppLibraryWindow::new(app);
 
-    window.show();
+    // window.show();
 }
