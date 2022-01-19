@@ -1,7 +1,7 @@
 use std::cell::RefCell;
 use std::rc::Rc;
 
-use glib::{ParamFlags, ParamSpec, Value};
+use glib::{ParamFlags, ParamSpec, ParamSpecBoxed, Value};
 use gtk4::glib;
 use gtk4::prelude::*;
 use gtk4::subclass::prelude::*;
@@ -27,7 +27,7 @@ impl ObjectSubclass for SearchResultObject {
 impl ObjectImpl for SearchResultObject {
     fn properties() -> &'static [ParamSpec] {
         static PROPERTIES: Lazy<Vec<ParamSpec>> = Lazy::new(|| {
-            vec![ParamSpec::new_boxed(
+            vec![ParamSpecBoxed::new(
                 // Name
                 "data",
                 // Nickname

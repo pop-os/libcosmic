@@ -4,37 +4,37 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-cascade = "1"
-derivative = "2"
-gdk4 = "0.3.1"
-gdk4-wayland = { version = "0.3", optional = true }
-gdk4-x11 = "0.3.0"
-gio = "0.14.8"
-gobject-sys = "0.14.0"
-wayland-client = { version = "0.28", optional = true }
-wayland-protocols = { version = "0.28", features = [ "client", "unstable_protocols" ], optional = true }
-x11 = { version = "2", features = ["xlib"] }
+cascade = "1.0.0"
+derivative = "2.2.0"
+gdk4 = "0.4.3"
+gdk4-wayland = { version = "0.4.2", optional = true }
+gdk4-x11 = { version = "0.4.2", features = [ "xlib" ] }
+gio = "0.15.2"
+gobject-sys = "0.15.1"
+wayland-client = { version = "0.29.4", optional = true }
+wayland-protocols = { version = "0.29.4", features = [ "client", "unstable_protocols" ], optional = true }
+x11 = { version = "2.19.1", features = ["xlib"] }
 
 # examples
-gtk4 = { version ="0.3.1", features = ["v4_4"] }
-glib-sys = "0.14.0"
+gtk4 = { version = "0.4.3", features = ["v4_4"] }
+gtk4-sys = "0.4.2"
+glib-sys = "0.15.1"
 relm4-macros = { git = "https://github.com/AaronErhardt/Relm4" }
 pop-launcher-service = { git = "https://github.com/wash2/launcher.git" }
 pop-launcher = { git = "https://github.com/wash2/launcher.git" }
-serde = "1.0.130"
-serde_json = "1.0.72"
+serde = "1.0.133"
+serde_json = "1.0.75"
 tokio = { version = "1.15.0", features = ["sync"] }
-futures = "0.3.17"
+futures = "0.3.19"
 futures-util = "0.3.19"
-once_cell = "1.8.0"
+once_cell = "1.9.0"
 xdg = "2.4.0"
 x11rb = "0.9.0"
 # zbus
-zbus = "2.0.0"
-zvariant = "3.0.0"
-zvariant_derive = "3.0.0"
-libloading = "0.7.2"
-gtk4-sys = "0.3.1"
+zbus = "2.0.1"
+zvariant = "3.1.0"
+zvariant_derive = "3.1.0"
+libloading = "0.7.3"
 
 [profile.release]
 incremental = true

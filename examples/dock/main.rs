@@ -6,7 +6,6 @@ use crate::dock_list::DockListType;
 use crate::utils::{block_on, BoxedWindowList};
 use gdk4::Display;
 use gio::DesktopAppInfo;
-use gtk4::gio;
 use gtk4::glib;
 use gtk4::prelude::*;
 use gtk4::Application;
@@ -61,7 +60,7 @@ fn spawn_zbus(tx: mpsc::Sender<Event>) -> Connection {
 
     let sender = tx.clone();
     let conn = connection.clone();
-    let _ = std::thread::spawn(|| {
+    let _ = std::thread::spawn(move || {
         let cached_results: Vec<Item> = vec![];
         block_on(async move {
             futures::pin_mut!(cached_results);
@@ -229,10 +228,8 @@ fn main() {
                         let mut saved_i: u32 = 0;
                         while let Some(item) = saved_app_model.item(saved_i) {
                             if let Ok(dock_obj) = item.downcast::<DockObject>() {
-                                if let Ok(Some(cur_app_info)) = dock_obj
-                                    .property("appinfo")
-                                    .expect("property appinfo missing from DockObject")
-                                    .get::<Option<DesktopAppInfo>>()
+                                if let Some(cur_app_info) =
+                                    dock_obj.property::<Option<DesktopAppInfo>>("appinfo")
                                 {
                                     if let Some((i, _s)) = stack_active
                                         .iter()
@@ -244,9 +241,7 @@ fn main() {
                                         //     _s.0[0].name, i
                                         // );
                                         let active = stack_active.remove(i);
-                                        dock_obj
-                                            .set_property("active", active.to_value())
-                                            .expect("failed to update dock active apps");
+                                        dock_obj.set_property("active", active.to_value());
                                         saved_app_model.items_changed(
                                             saved_i.try_into().unwrap(),
                                             0,
@@ -256,12 +251,10 @@ fn main() {
                                         .iter()
                                         .find(|s| s.description == cur_app_info.name())
                                     {
-                                        dock_obj
-                                            .set_property(
-                                                "active",
-                                                BoxedWindowList(Vec::new()).to_value(),
-                                            )
-                                            .expect("failed to update dock active apps");
+                                        dock_obj.set_property(
+                                            "active",
+                                            BoxedWindowList(Vec::new()).to_value(),
+                                        );
                                         saved_app_model.items_changed(
                                             saved_i.try_into().unwrap(),
                                             0,
@@ -310,10 +303,8 @@ fn main() {
                         let mut saved_i: u32 = 0;
                         while let Some(item) = saved_app_model.item(saved_i) {
                             if let Ok(dock_obj) = item.downcast::<DockObject>() {
-                                if let Ok(Some(cur_app_info)) = dock_obj
-                                    .property("appinfo")
-                                    .expect("property appinfo missing from DockObject")
-                                    .get::<Option<DesktopAppInfo>>()
+                                if let Some(cur_app_info) =
+                                    dock_obj.property::<Option<DesktopAppInfo>>("appinfo")
                                 {
                                     if let Some((i, _s)) = stack_active
                                         .iter()
@@ -322,9 +313,7 @@ fn main() {
                                     {
                                         // println!("found active saved app {} at {}", s.0[0].name, i);
                                         let active = stack_active.remove(i);
-                                        dock_obj
-                                            .set_property("active", active.to_value())
-                                            .expect("failed to update dock active apps");
+                                        dock_obj.set_property("active", active.to_value());
                                         saved_app_model.items_changed(
                                             saved_i.try_into().unwrap(),
                                             0,
@@ -334,12 +323,10 @@ fn main() {
                                         .iter()
                                         .find(|s| s.description == cur_app_info.name())
                                     {
-                                        dock_obj
-                                            .set_property(
-                                                "active",
-                                                BoxedWindowList(Vec::new()).to_value(),
-                                            )
-                                            .expect("failed to update dock active apps");
+                                        dock_obj.set_property(
+                                            "active",
+                                            BoxedWindowList(Vec::new()).to_value(),
+                                        );
                                         saved_app_model.items_changed(
                                             saved_i.try_into().unwrap(),
                                             0,
@@ -362,7 +349,7 @@ fn main() {
                     }
                 }
             }
-        })
+        });
     });
 
     app.run();

@@ -198,20 +198,17 @@ impl Window {
                     );
                 }
                 let resize = glib::clone!(@weak window => move || {
-                    let s = window.surface().expect("Failed to get Surface for Window");
+                    let s = window.surface();
                     let height = window.height();
                     let width = window.width();
 
                     if let Some((display, _surface)) = x::get_window_x11(&window) {
-                        let monitor = display
-                            .primary_monitor()
-                            .expect("Failed to get Monitor");
-                        let Rectangle {
-                            x: monitor_x,
-                            y: monitor_y,
-                            width: monitor_width,
-                            height: monitor_height,
-                        } = monitor.geometry();
+                        let geom = display
+                            .primary_monitor().geometry();
+                        let monitor_x = geom.x();
+                        let monitor_y = geom.y();
+                        let monitor_width = geom.width();
+                        let monitor_height = geom.height();
                         // dbg!(monitor_width);
                         // dbg!(monitor_height);
                         // dbg!(width);
@@ -233,7 +230,7 @@ impl Window {
                         conn.flush().expect("failed to flush");
                     }
                 });
-                let s = window.surface().expect("Failed to get Surface for Window");
+                let s = window.surface();
                 let resize_height = resize.clone();
                 s.connect_height_notify(move |_s| {
                     glib::source::idle_add_local_once(resize_height.clone());

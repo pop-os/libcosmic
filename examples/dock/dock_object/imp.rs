@@ -1,6 +1,9 @@
 use std::cell::Cell;
 use std::cell::RefCell;
 
+use gdk4::glib::ParamSpecBoolean;
+use gdk4::glib::ParamSpecBoxed;
+use gdk4::glib::ParamSpecObject;
 use gio::DesktopAppInfo;
 use glib::{ParamFlags, ParamSpec, Value};
 use gtk4::glib;
@@ -34,7 +37,7 @@ impl ObjectImpl for DockObject {
     fn properties() -> &'static [ParamSpec] {
         static PROPERTIES: Lazy<Vec<ParamSpec>> = Lazy::new(|| {
             vec![
-                ParamSpec::new_object(
+                ParamSpecObject::new(
                     // Name
                     "appinfo",
                     // Nickname
@@ -45,7 +48,7 @@ impl ObjectImpl for DockObject {
                     // The property can be read and written to
                     ParamFlags::READWRITE,
                 ),
-                ParamSpec::new_boxed(
+                ParamSpecBoxed::new(
                     // Name
                     "active",
                     // Nickname
@@ -56,14 +59,14 @@ impl ObjectImpl for DockObject {
                     // The property can be read and written to
                     ParamFlags::READWRITE,
                 ),
-                ParamSpec::new_boolean(
+                ParamSpecBoolean::new(
                     "saved",
                     "saved",
                     "Indicates whether app is saved to the dock",
                     false,
                     ParamFlags::READWRITE,
                 ),
-                ParamSpec::new_boolean(
+                ParamSpecBoolean::new(
                     "popover",
                     "popover",
                     "Indicates whether there is a popover menu displayed for this object",

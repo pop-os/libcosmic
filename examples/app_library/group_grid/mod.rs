@@ -1,12 +1,12 @@
 use cascade::cascade;
 use glib::Object;
 use glib::{FromVariant, Variant};
-use gtk4::prelude::*;
 use gtk4::subclass::prelude::*;
 use gtk4::{
     gio, glib, Dialog, Entry, GridView, Label, PolicyType, ScrolledWindow, SignalListItemFactory,
     Window,
 };
+use gtk4::{prelude::*, CustomFilter};
 use std::fs::File;
 
 use crate::app_group::AppGroup;
@@ -239,18 +239,10 @@ impl GroupGrid {
                 .downcast::<AppGroup>()
                 .unwrap();
             let category =
-            if let Ok(category_prop) = app_info.property("category") {
-                category_prop.get::<String>().unwrap_or("".to_string()).to_lowercase()
-            } else {
-                "".to_string()
-            };
+                app_info.property::<String>("category").to_lowercase();
 
             let app_names =
-                if let Ok(app_names_prop) = app_info.property("appnames") {
-                    <Vec<String>>::from_variant(&app_names_prop.get::<Variant>().expect("appnames nneds to be a variant.")).unwrap_or_default()
-            } else {
-                vec![]
-            };
+                    <Vec<String>>::from_variant(&app_info.property::<Variant>("appnames")).unwrap_or_default();
             dbg!(&app_names);
             let new_filter: gtk4::CustomFilter = gtk4::CustomFilter::new(move |obj| {
                 let app = obj
@@ -265,8 +257,7 @@ impl GroupGrid {
                 }
             });
             self_clone
-                .emit_by_name::<&str>("group-changed", &[&new_filter])
-                .unwrap();
+                .emit_by_name::<CustomFilter>("group-changed", &[&new_filter]);
         });
     }
 

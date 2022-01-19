@@ -6,12 +6,12 @@ use std::future::Future;
 use crate::DockObject;
 use crate::Item;
 
-#[derive(Clone, Debug, Default, glib::GBoxed)]
-#[gboxed(type_name = "BoxedWindowList")]
+#[derive(Clone, Debug, Default, glib::Boxed)]
+#[boxed_type(name = "BoxedWindowList")]
 pub struct BoxedWindowList(pub Vec<Item>);
 
-#[derive(Clone, Debug, Default, glib::GBoxed)]
-#[gboxed(type_name = "BoxedDockObject")]
+#[derive(Clone, Debug, Default, glib::Boxed)]
+#[boxed_type(name = "BoxedDockObject")]
 pub struct BoxedDockObject(pub Option<DockObject>);
 
 pub fn data_path() -> PathBuf {
@@ -25,7 +25,6 @@ pub fn data_path() -> PathBuf {
 pub fn thread_context() -> glib::MainContext {
     glib::MainContext::thread_default().unwrap_or_else(|| {
         let ctx = glib::MainContext::new();
-        ctx.push_thread_default();
         ctx
     })
 }
@@ -34,5 +33,6 @@ pub fn block_on<F>(future: F) -> F::Output
 where
     F: Future,
 {
-    thread_context().block_on(future)
+    let ctx = thread_context();
+    ctx.with_thread_default(|| ctx.block_on(future)).unwrap()
 }

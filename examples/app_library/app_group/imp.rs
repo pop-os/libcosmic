@@ -1,6 +1,10 @@
 use std::cell::RefCell;
 use std::rc::Rc;
 
+use gdk4::glib::ParamSpecBoolean;
+use gdk4::glib::ParamSpecString;
+use gdk4::glib::ParamSpecUInt;
+use gdk4::glib::ParamSpecVariant;
 use glib::{FromVariant, ParamFlags, ParamSpec, ToVariant, Value, Variant, VariantTy};
 use gtk4::glib;
 use gtk4::prelude::*;
@@ -28,7 +32,7 @@ impl ObjectImpl for AppGroup {
     fn properties() -> &'static [ParamSpec] {
         static PROPERTIES: Lazy<Vec<ParamSpec>> = Lazy::new(|| {
             vec![
-                ParamSpec::new_uint(
+                ParamSpecUInt::new(
                     // Name
                     "id",
                     // Nickname
@@ -42,7 +46,7 @@ impl ObjectImpl for AppGroup {
                     // The property can be read and written to
                     ParamFlags::READWRITE,
                 ),
-                ParamSpec::new_string(
+                ParamSpecString::new(
                     // Name
                     "name",
                     // Nickname
@@ -54,7 +58,7 @@ impl ObjectImpl for AppGroup {
                     // The property can be read and written to
                     ParamFlags::READWRITE,
                 ),
-                ParamSpec::new_boolean(
+                ParamSpecBoolean::new(
                     // Name
                     "mutable",
                     // Nickname
@@ -66,7 +70,7 @@ impl ObjectImpl for AppGroup {
                     // The property can be read and written to
                     ParamFlags::READWRITE,
                 ),
-                ParamSpec::new_string(
+                ParamSpecString::new(
                     // Name
                     "icon",
                     // Nickname
@@ -78,7 +82,7 @@ impl ObjectImpl for AppGroup {
                     // The property can be read and written to
                     ParamFlags::READWRITE,
                 ),
-                ParamSpec::new_string(
+                ParamSpecString::new(
                     // Name
                     "category",
                     // Nickname
@@ -90,7 +94,7 @@ impl ObjectImpl for AppGroup {
                     // The property can be read and written to
                     ParamFlags::READWRITE,
                 ),
-                ParamSpec::new_variant(
+                ParamSpecVariant::new(
                     // Name
                     "appnames",
                     // Nickname

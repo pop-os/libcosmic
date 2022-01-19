@@ -21,10 +21,7 @@ impl AppGroup {
             ("category", &data.category),
         ])
         .expect("Failed to create `ApplicationObject`.");
-        if let Err(e) = self_.set_property("appnames", data.app_names.to_variant()) {
-            println!("failed to set category icon property");
-            dbg!(e);
-        };
+        self_.set_property("appnames", data.app_names.to_variant());
         self_
     }
 

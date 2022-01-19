@@ -15,6 +15,7 @@ use gio::DesktopAppInfo;
 use gio::Icon;
 use glib::Object;
 use glib::Type;
+use gtk4::glib;
 use gtk4::prelude::ListModelExt;
 use gtk4::prelude::*;
 use gtk4::subclass::prelude::*;
@@ -24,7 +25,6 @@ use gtk4::ListView;
 use gtk4::Orientation;
 use gtk4::SignalListItemFactory;
 use gtk4::Window;
-use gtk4::{gio, glib};
 use gtk4::{DragSource, GestureClick};
 use std::ffi::CStr;
 use std::fs::File;
@@ -236,11 +236,7 @@ impl DockList {
                 .downcast_ref::<DockObject>()
                 .expect("The object needs to be of type `AppGroupData`.");
             // Add todo data to vector and increase position
-            if let Ok(Some(app_info)) = dock_object
-                .property("appinfo")
-                .expect("DockObject must have appinfo property")
-                .get::<Option<DesktopAppInfo>>()
-            {
+            if let Some(app_info) = dock_object.property::<Option<DesktopAppInfo>>("appinfo") {
                 if let Some(f) = app_info.filename() {
                     backup_data.push(f);
                 }
@@ -347,8 +343,8 @@ impl DockList {
 
             if let Some(item) = model.item(index) {
                 if let Ok(dock_object) = item.downcast::<DockObject>() {
-                    let active = dock_object.property("active").expect("DockObject must have active property").get::<BoxedWindowList>().expect("Failed to convert value to WindowList");
-                    let app_info = dock_object.property("appinfo").expect("DockObject must have appinfo property").get::<Option<DesktopAppInfo>>().expect("Failed to convert value to DesktopAppInfo");
+                    let active = dock_object.property::<BoxedWindowList>("active");
+                    let app_info = dock_object.property::<Option<DesktopAppInfo>>("appinfo");
                     match (self_.current_button(), click_modifier, active.0.iter().next(), app_info) {
                         (click, Some(click_modifier), Some(first_focused_item), _) if click == 1 && !click_modifier.contains(ModifierType::CONTROL_MASK) => focus_window(first_focused_item),
                         (click, None, Some(first_focused_item), _) if click == 1 => focus_window(first_focused_item),
@@ -399,9 +395,7 @@ impl DockList {
         let mut drop_actions = gdk4::DragAction::COPY;
         drop_actions.insert(gdk4::DragAction::MOVE);
         let drop_format = gdk4::ContentFormats::for_type(Type::STRING);
-        let drop_format = drop_format
-            .union(&gdk4::ContentFormats::for_type(Type::U32))
-            .expect("couldn't make union");
+        let drop_format = drop_format.union(&gdk4::ContentFormats::for_type(Type::U32));
         let drop_controller = DropTarget::builder()
             .preload(true)
             .actions(drop_actions)
@@ -437,7 +431,7 @@ impl DockList {
                             let mut index_of_existing_app: Option<u32> = None;
                             while let Some(item) = model.item(i) {
                                 if let Ok(cur_app_info) = item.downcast::<DockObject>() {
-                                    if let Ok(Some(cur_app_info)) = cur_app_info.property("appinfo").expect("property appinfo missing from DockObject").get::<Option<DesktopAppInfo>>() {
+                                    if let Some(cur_app_info) = cur_app_info.property::<Option<DesktopAppInfo>>("appinfo") {
                                         if cur_app_info.filename() == Some(Path::new(&path_str).to_path_buf()) {
                                             index_of_existing_app = Some(i);
                                         }
@@ -544,23 +538,21 @@ impl DockList {
                     }
                 }
                 if let Ok(dock_object) = item.downcast::<DockObject>() {
-                    if let Ok(Some(app_info)) = dock_object.property("appinfo").expect("property appinfo missing from DockObject").get::<Option<DesktopAppInfo>>() {
+                    if let Some(app_info) = dock_object.property::<Option<DesktopAppInfo>>("appinfo") {
                         let icon = app_info
                             .icon()
                             .unwrap_or(Icon::for_string("image-missing").expect("Failed to set default icon"));
 
                         if let Some(default_display) = &Display::default() {
-                            if let Some(icon_theme) = IconTheme::for_display(default_display) {
-                                if let Some(paintable_icon) = icon_theme.lookup_by_gicon(
-                                    &icon,
-                                    64,
-                                    1,
-                                    gtk4::TextDirection::None,
-                                    gtk4::IconLookupFlags::empty(),
-                                ) {
-                                    self_.set_icon(Some(&paintable_icon), 32, 32);
-                                }
-                            }
+                            let icon_theme = IconTheme::for_display(default_display);
+                            let paintable_icon = icon_theme.lookup_by_gicon(
+                                &icon,
+                                64,
+                                1,
+                                gtk4::TextDirection::None,
+                                gtk4::IconLookupFlags::empty(),
+                            );
+                            self_.set_icon(Some(&paintable_icon), 32, 32);
                         }
 
                         // saved app list provides index
@@ -612,8 +604,7 @@ impl DockList {
                         }
 
                         None
-                    })
-                    .unwrap();
+                    });
                 list_item.set_child(Some(&dock_item));
             }),
         );

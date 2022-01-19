@@ -16,10 +16,10 @@ pub fn get_window_x11<T: IsA<gtk4::Window>>(
 ) -> Option<(gdk4_x11::X11Display, gdk4_x11::X11Surface)> {
     let surface = window
         .upcast_ref()
-        .surface()?
+        .surface()
         .downcast::<gdk4_x11::X11Surface>()
         .ok()?;
-    let display = surface.display()?.downcast::<gdk4_x11::X11Display>().ok()?;
+    let display = surface.display().downcast::<gdk4_x11::X11Display>().ok()?;
     Some((display, surface))
 }
 

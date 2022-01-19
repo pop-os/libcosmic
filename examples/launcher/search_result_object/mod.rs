@@ -14,11 +14,7 @@ impl SearchResultObject {
     }
 
     pub fn data(&self) -> Option<pop_launcher::SearchResult> {
-        if let Ok(data) = self.property("data") {
-            if let Ok(search_result) = data.get::<BoxedSearchResult>() {
-                return search_result.0;
-            }
-        }
-        None
+        let search_result = self.property::<BoxedSearchResult>("data");
+        return search_result.0;
     }
 }

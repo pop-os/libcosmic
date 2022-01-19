@@ -94,37 +94,29 @@ impl GridItem {
             // set drag source icon if possible...
             // gio Icon is not easily converted to a Paintable, but this seems to be the correct method
             if let Some(default_display) = &Display::default() {
-                if let Some(icon_theme) = IconTheme::for_display(default_display) {
-                    if let Some(paintable_icon) = icon_theme.lookup_by_gicon(
-                        &icon,
-                        64,
-                        1,
-                        gtk4::TextDirection::None,
-                        gtk4::IconLookupFlags::empty(),
-                    ) {
-                        _self.set_icon(Some(&paintable_icon), 32, 32);
-                    }
-                }
+                let icon_theme = IconTheme::for_display(default_display);
+                let paintable_icon = icon_theme.lookup_by_gicon(
+                    &icon,
+                    64,
+                    1,
+                    gtk4::TextDirection::None,
+                    gtk4::IconLookupFlags::empty(),
+                );
+                _self.set_icon(Some(&paintable_icon), 32, 32);
             }
         }));
     }
 
     pub fn set_group_info(&self, app_group: AppGroup) {
         let self_ = imp::GridItem::from_instance(self);
-        if let Ok(name) = app_group.property("name") {
-            self_.name.borrow().set_text(
-                &name
-                    .get::<String>()
-                    .expect("property name needs to be a string."),
-            );
-        }
-        if let Ok(icon) = app_group.property("icon") {
-            self_.image.borrow().set_from_icon_name(Some(
-                &icon
-                    .get::<String>()
-                    .expect("Property name needs to be a String."),
-            ));
-        }
+        self_
+            .name
+            .borrow()
+            .set_text(&app_group.property::<String>("name"));
+        self_
+            .image
+            .borrow()
+            .set_from_icon_name(Some(&app_group.property::<String>("icon")));
     }
 
     pub fn set_index(&self, index: u32) {

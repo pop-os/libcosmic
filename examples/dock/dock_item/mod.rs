@@ -58,26 +58,22 @@ impl DockItem {
         item_box.append(&popover);
         let self_clone = self_.clone();
         popover.connect_closed(move |_| {
-            self_clone
-                .emit_by_name::<&str>("popover-closed", &[])
-                .unwrap();
+            let _ = self_clone.emit_by_name::<()>("popover-closed", &[]);
         });
 
         let popover_menu = cascade! {
             DockPopover::new();
         };
         popover.set_child(Some(&popover_menu));
-        popover_menu
-            .connect_local(
-                "menu-hide",
-                false,
-                glib::clone!(@weak popover, @weak popover_menu => @default-return None, move |_| {
-                    popover.popdown();
-                    popover_menu.reset_menu();
-                    None
-                }),
-            )
-            .unwrap();
+        popover_menu.connect_local(
+            "menu-hide",
+            false,
+            glib::clone!(@weak popover, @weak popover_menu => @default-return None, move |_| {
+                popover.popdown();
+                popover_menu.reset_menu();
+                None
+            }),
+        );
 
         let imp = imp::DockItem::from_instance(&self_);
         imp.image.replace(Some(image));
@@ -105,25 +101,20 @@ impl DockItem {
             self_.item_box.borrow().prepend(&image);
             self_.image.replace(Some(image));
         }
-        if let Ok(active_value) = dock_object.property("active") {
-            if let Ok(active) = active_value.get::<BoxedWindowList>() {
-                let dots = self_.dots.borrow();
-                dots.set_text("");
-                for _ in active.0 {
-                    dots.set_text(format!("{}{}", dots.text(), " · ").as_str());
-                }
-            }
+        let active = dock_object.property::<BoxedWindowList>("active");
+        let dots = self_.dots.borrow();
+        dots.set_text("");
+        for _ in active.0 {
+            dots.set_text(format!("{}{}", dots.text(), " · ").as_str());
         }
-        if let Ok(popover_value) = dock_object.property("popover") {
-            if let Ok(popover) = popover_value.get::<bool>() {
-                // dbg!(popover);
-                // dbg!(dock_object);
-                if popover {
-                    self.add_popover(dock_object);
-                } else {
-                    self.clear_popover();
-                }
-            }
+
+        let popover = dock_object.property::<bool>("popover");
+        // dbg!(popover);
+        // dbg!(dock_object);
+        if popover {
+            self.add_popover(dock_object);
+        } else {
+            self.clear_popover();
         }
     }
 

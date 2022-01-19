@@ -2,8 +2,8 @@ use gtk4::glib;
 use std::cell::RefCell;
 use std::rc::Rc;
 
-#[derive(Clone, Debug, Default, glib::GBoxed)]
-#[gboxed(type_name = "BoxedSearchResult")]
+#[derive(Clone, Debug, Default, glib::Boxed)]
+#[boxed_type(name = "BoxedSearchResult")]
 pub struct BoxedSearchResult(pub Option<pop_launcher::SearchResult>);
 
 pub fn icon_source(icon: &Rc<RefCell<gtk4::Image>>, source: &Option<pop_launcher::IconSource>) {

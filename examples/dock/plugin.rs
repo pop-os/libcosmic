@@ -1,7 +1,7 @@
 use gtk4::glib;
 
-#[derive(Clone, Debug, Default, gtk4::glib::GBoxed)]
-#[gboxed(type_name = "BoxedDockPlugin")]
+#[derive(Clone, Debug, Default, gtk4::glib::Boxed)]
+#[boxed_type(name = "BoxedDockPlugin")]
 pub struct BoxedDockPlugin {
     pub path: String,
     pub name: String,
