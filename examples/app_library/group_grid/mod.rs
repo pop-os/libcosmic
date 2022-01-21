@@ -1,12 +1,11 @@
 use cascade::cascade;
 use glib::Object;
 use glib::{FromVariant, Variant};
+use gtk4::prelude::*;
 use gtk4::subclass::prelude::*;
 use gtk4::{
     gio, glib, Dialog, Entry, GridView, Label, PolicyType, ScrolledWindow, SignalListItemFactory,
-    Window,
 };
-use gtk4::{prelude::*, CustomFilter};
 use std::fs::File;
 
 use crate::app_group::AppGroup;

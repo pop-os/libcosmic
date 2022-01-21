@@ -64,7 +64,7 @@ impl AppGrid {
             .iter_mut()
             .for_each(|xdg_data_path| {
                 xdg_data_path.push("applications");
-                dbg!(&xdg_data_path);
+                // dbg!(&xdg_data_path);
                 if let Ok(dir_iter) = std::fs::read_dir(xdg_data_path) {
                     dir_iter.for_each(|dir_entry| {
                         if let Ok(dir_entry) = dir_entry {
@@ -74,10 +74,10 @@ impl AppGrid {
                                         if app_info.should_show() {
                                             app_model.append(&app_info)
                                         } else {
-                                            println!("Ignoring {}", path);
+                                            // println!("Ignoring {}", path);
                                         }
                                     } else {
-                                        println!("error loading {}", path);
+                                        // println!("error loading {}", path);
                                     }
                                 }
                             }
@@ -132,7 +132,7 @@ impl AppGrid {
 
         app_grid_view.connect_activate(move |list_view, i| {
             // on activation change the group filter model to use the app names, and category
-            println!("selected app {}", i);
+            // println!("selected app {}", i);
             // Launch the application when an item of the list is activated
             let model = list_view.model().unwrap();
             if let Some(item) = model.item(i) {

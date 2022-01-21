@@ -4,11 +4,17 @@ use derivative::Derivative;
 use gdk4_wayland::prelude::*;
 use gtk4::{
     cairo, gdk,
-    glib::{self, clone, subclass::prelude::*, translate::*},
+    glib::{
+        self, clone,
+        subclass::{prelude::*, Signal},
+        translate::*,
+        ParamFlags, ParamSpec, ParamSpecBoolean, SignalHandlerId, Value,
+    },
     gsk::{self, traits::GskRendererExt},
     prelude::*,
     subclass::prelude::*,
 };
+use once_cell::sync::Lazy;
 use std::{
     cell::{Cell, RefCell},
     os::raw::c_int,
@@ -110,6 +116,7 @@ pub struct LayerShellWindowInner {
     keyboard_interactivity: Cell<KeyboardInteractivity>,
     namespace: DerefCell<String>,
     focus_widget: RefCell<Option<gtk4::Widget>>,
+    is_active: Rc<Cell<bool>>,
 }
 
 #[glib::object_subclass]
@@ -127,6 +134,58 @@ impl ObjectImpl for LayerShellWindowInner {
         self.constraint_solver.set(glib::Object::new(&[]).unwrap());
 
         obj.add_css_class("background");
+    }
+
+    fn properties() -> &'static [ParamSpec] {
+        static PROPERTIES: Lazy<Vec<ParamSpec>> = Lazy::new(|| {
+            vec![ParamSpecBoolean::new(
+                // Name
+                "is-active",
+                // Nickname
+                "is-active",
+                // Short description
+                "Whether the window has keyboard focus",
+                // Default value
+                false,
+                // The property can be read and written to
+                ParamFlags::READWRITE,
+            )]
+        });
+        PROPERTIES.as_ref()
+    }
+
+    fn set_property(&self, _obj: &Self::Type, _id: usize, value: &Value, pspec: &ParamSpec) {
+        match pspec.name() {
+            "is-active" => {
+                let is_active = value
+                    .get()
+                    .expect("The is_active property needs to be of type `bool`");
+                self.is_active.replace(is_active);
+            }
+            _ => unimplemented!(),
+        }
+    }
+
+    fn property(&self, _obj: &Self::Type, _id: usize, pspec: &ParamSpec) -> Value {
+        match pspec.name() {
+            "is-active" => self.is_active.get().to_value(),
+            _ => unimplemented!(),
+        }
+    }
+
+    fn signals() -> &'static [Signal] {
+        static SIGNALS: Lazy<Vec<Signal>> = Lazy::new(|| {
+            vec![Signal::builder(
+                // Signal name
+                "is-active-notify",
+                // Types of the values which will be sent to the signal handler
+                &[bool::static_type().into()],
+                // Type of the value the signal handler sends back
+                <()>::static_type().into(),
+            )
+            .build()]
+        });
+        SIGNALS.as_ref()
     }
 }
 
@@ -157,10 +216,17 @@ impl WidgetImpl for LayerShellWindowInner {
             };
             true
         });
-        surface.connect_event(|_, event| {
-            unsafe { gtk_main_do_event(event.to_glib_none().0) };
-            true
-        });
+        surface.connect_event(
+            glib::clone!(@weak widget => @default-return true, move |_, event| {
+                if event.event_type() == gdk4::EventType::FocusChange {
+                    let is_active = event.downcast_ref::<gdk4::FocusEvent>().unwrap().is_in();
+                    widget.set_property("is-active", is_active);
+                    widget.emit_by_name::<()>("is-active-notify", &[&is_active]);
+                }
+                unsafe { gtk_main_do_event(event.to_glib_none().0) };
+                true
+            }),
+        );
 
         self.parent_realize(widget);
 
@@ -304,6 +370,17 @@ impl LayerShellWindow {
             w.set_parent(self);
         }
         *child = w.map(|x| x.clone().upcast());
+    }
+
+    pub fn is_active(&self) -> bool {
+        self.property::<bool>("is-active")
+    }
+
+    pub fn connect_is_active_notify<F: Fn(&Self) + 'static>(&self, f: F) -> SignalHandlerId {
+        self.connect_local("is-active-notify", false, move |args| {
+            f(&args[0].get::<Self>().unwrap());
+            None
+        })
     }
 
     fn layer_shell_init(&self, surface: &WaylandCustomSurface) {
