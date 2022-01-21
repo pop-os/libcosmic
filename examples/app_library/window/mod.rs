@@ -153,25 +153,22 @@ impl AppLibraryWindow {
                 println!("failed to get X11 window");
             }
         });
-        window.connect_is_active_notify(move |win| {
-            if !win.is_active() {
+
+        let imp = imp::AppLibraryWindow::from_instance(&self);
+        let inner = imp.inner.get().unwrap();
+        window.connect_is_active_notify(glib::clone!(@weak inner => move |win| {
+            let app = win
+                .application()
+                .expect("could not get application from window");
+            let active_window = app
+                .active_window()
+                .expect("no active window available, closing app library.");
+            dbg!(&active_window);
+            dbg!(!inner.is_popup_active());
+            if win == &active_window && !win.is_active() && !inner.is_popup_active() {
+                dbg!(win);
                 win.close();
             }
-        });
-        // let focus_ctrl = gtk4::EventControllerFocus::builder()
-        //     .propagation_phase(gtk4::PropagationPhase::Capture)
-        //     .propagation_limit(gtk4::PropagationLimit::None)
-        //     .build();
-        // focus_ctrl.connect_leave(move |_| {
-        //     println!("Exiting");
-        // });
-        // focus_ctrl.connect_enter(move |_| {
-        //     println!("hewwo");
-        // });
-        // focus_ctrl.connect_contains_focus_notify(move |_| {
-        //     println!("hewwo");
-        // });
-
-        // window.add_controller(&focus_ctrl);
+        }));
     }
 }

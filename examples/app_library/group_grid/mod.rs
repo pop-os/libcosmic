@@ -1,15 +1,11 @@
 use cascade::cascade;
 use glib::Object;
-use glib::{FromVariant, Variant};
 use gtk4::prelude::*;
 use gtk4::subclass::prelude::*;
-use gtk4::{
-    gio, glib, Dialog, Entry, GridView, Label, PolicyType, ScrolledWindow, SignalListItemFactory,
-};
+use gtk4::{gio, glib, GridView, PolicyType, ScrolledWindow, SignalListItemFactory};
 use std::fs::File;
 
-use crate::app_group::AppGroup;
-use crate::app_group::AppGroupData;
+use crate::app_group::{AppGroup, AppGroupData, BoxedAppGroupType};
 use crate::grid_item::GridItem;
 use crate::utils::data_path;
 use crate::utils::set_group_scroll_policy;
@@ -71,30 +67,30 @@ impl GroupGrid {
             .set(group_model.clone())
             .expect("Could not set group model");
         vec![
-            AppGroup::new(AppGroupData {
+            AppGroup::new(BoxedAppGroupType::Group(AppGroupData {
                 id: 0,
                 name: "Library Home".to_string(),
                 icon: "user-home".to_string(),
                 mutable: false,
                 app_names: Vec::new(),
                 category: "".to_string(),
-            }),
-            AppGroup::new(AppGroupData {
+            })),
+            AppGroup::new(BoxedAppGroupType::Group(AppGroupData {
                 id: 0,
                 name: "System".to_string(),
                 icon: "folder".to_string(),
                 mutable: false,
                 app_names: Vec::new(),
                 category: "System".to_string(),
-            }),
-            AppGroup::new(AppGroupData {
+            })),
+            AppGroup::new(BoxedAppGroupType::Group(AppGroupData {
                 id: 0,
                 name: "Utilities".to_string(),
                 icon: "folder".to_string(),
                 mutable: false,
                 app_names: Vec::new(),
                 category: "Utility".to_string(),
-            }),
+            })),
             // Example of group with app name
             // AppGroup::new(AppGroupData {
             //     id: 0,
@@ -104,14 +100,7 @@ impl GroupGrid {
             //     app_names: vec!["Firefox Web Browser".to_string()],
             //     category: "".to_string(),
             // }),
-            AppGroup::new(AppGroupData {
-                id: 0,
-                name: "New Group".to_string(),
-                icon: "folder-new".to_string(),
-                mutable: true,
-                app_names: vec![],
-                category: "".to_string(),
-            }),
+            AppGroup::new(BoxedAppGroupType::NewGroup(false)),
         ]
         .iter()
         .for_each(|group| {
@@ -133,11 +122,7 @@ impl GroupGrid {
     fn setup_callbacks(&self) {
         let imp = imp::GroupGrid::from_instance(self);
         let group_grid_view = &imp.group_grid_view.get().unwrap();
-        let group_selection_model = group_grid_view
-            .model()
-            .expect("List view missing selection model")
-            .downcast::<gtk4::SingleSelection>()
-            .expect("could not downcast listview model to single selection model");
+
         let scroll_window = &imp.group_scroll_window.get().unwrap();
         // dynamically set scroll method
         self.group_model().connect_items_changed(
@@ -149,124 +134,88 @@ impl GroupGrid {
         let self_clone = self.clone();
         group_grid_view.connect_activate(move |group_grid_view, i| {
             // on activation change the group filter model to use the app names, and category
-            // let window = group_grid_view.root().unwrap().downcast::<Window>().unwrap();
             println!("grid view activated. {}", i);
-            let group_model = group_grid_view.model().unwrap().downcast::<gtk4::SingleSelection>().unwrap()
+            let group_model = group_grid_view
+                .model()
+                .unwrap()
+                .downcast::<gtk4::SingleSelection>()
+                .unwrap()
                 .model()
                 .downcast::<gio::ListStore>()
                 .expect("could not downcast app group view selection model to list store model");
-
-           // if last item in the model, don't change filter, instead show dialog for adding new group!
-            if i == group_model.n_items() - 1 {
-                let dialog_entry = Entry::new();
-                let label = Label::new(Some("Name"));
-                label.set_justify(gtk4::Justification::Left);
-                label.set_xalign(0.0);
-                let vbox = gtk4::Box::builder()
-                    .spacing(12)
-                    .hexpand(true)
-                    .orientation(gtk4::Orientation::Vertical)
-                    .margin_top(12)
-                    .margin_bottom(12)
-                    .margin_end(12)
-                    .margin_start(12)
-                    .build();
-                vbox.append(&label);
-                vbox.append(&dialog_entry);
-
-                let dialog = Dialog::builder()
-                    .modal(true)
-                    .resizable(false)
-                    .use_header_bar(true.into())
-                    .destroy_with_parent(true)
-                    // .transient_for(&window)
-                    .title("New App Group")
-                    .child(&vbox)
-                    .build();
-                // let app = window
-                //     .application()
-                //     .expect("could not get application from window");
-
-                // dialog.set_application(Some(&app));
-                dialog.add_buttons(&[
-                    ("Apply", gtk4::ResponseType::Apply),
-                    ("Cancel", gtk4::ResponseType::Cancel),
-                ]);
-
-               dialog.connect_response(
-                    glib::clone!(@weak dialog_entry, @weak group_selection_model, @weak group_model => move |dialog, response_type| {
-                        println!("dialog should be closing...");
-                        let name = dialog_entry.text().to_string();
-                        if response_type == gtk4::ResponseType::Apply && name != "" {
-                            let new_app_group = AppGroup::new(AppGroupData {
-                                id: 0,
-                                name: name,
-                                icon: "folder".to_string(),
-                                mutable: true,
-                                app_names: vec![],
-                                category: "".to_string(),
-                            });
-                            group_model.insert(group_model.n_items() - 1, &new_app_group);
-                            group_selection_model.set_selected(i - 1);
-                        } else {
-                            group_selection_model.set_selected(0);
-                        }
-                        dialog.emit_close();
-                    }),
-                );
-                // dialog.connect_is_active_notify(move |win| {
-                //     let app = win
-                //         .application()
-                //         .expect("could not get application from window");
-                //     let active_window = app
-                //         .active_window()
-                //         .expect("no active window available, closing app library.");
-                //     dbg!(&active_window);
-                //     if win == &active_window && !win.is_active() {
-                //         println!("no focus");
-                //         // close top level window
-                //         window.close();
-                //     }
-                // });
-                dialog.show();
-                return;
-            };
             // update the application filter
-            let app_info = group_model
+            if let Some(data) = group_model
                 .item(i)
                 .unwrap()
                 .downcast::<AppGroup>()
-                .unwrap();
-            let category =
-                app_info.property::<String>("category").to_lowercase();
+                .unwrap()
+                .group_data()
+            {
+                let category = data.category.to_lowercase();
 
-            let app_names =
-                    <Vec<String>>::from_variant(&app_info.property::<Variant>("appnames")).unwrap_or_default();
-            dbg!(&app_names);
-            let new_filter: gtk4::CustomFilter = gtk4::CustomFilter::new(move |obj| {
-                let app = obj
-                    .downcast_ref::<gio::DesktopAppInfo>()
-                    .expect("The Object needs to be of type AppInfo");
-                if app_names.len() > 0 {
-                    return app_names.contains(&String::from(app.name().as_str()));
-                }
-                match app.categories() {
-                    Some(categories) => categories.to_string().to_lowercase().contains(&category),
-                    None => false,
-                }
-            });
-            self_clone
-                .emit_by_name::<()>("group-changed", &[&new_filter]);
+                let new_filter: gtk4::CustomFilter = gtk4::CustomFilter::new(move |obj| {
+                    let app = obj
+                        .downcast_ref::<gio::DesktopAppInfo>()
+                        .expect("The Object needs to be of type AppInfo");
+                    if data.app_names.len() > 0 {
+                        return data.app_names.contains(&String::from(app.name().as_str()));
+                    }
+                    match app.categories() {
+                        Some(categories) => {
+                            categories.to_string().to_lowercase().contains(&category)
+                        }
+                        None => false,
+                    }
+                });
+                self_clone.emit_by_name::<()>("group-changed", &[&new_filter]);
+            } else {
+                // don't change filter, instead show dialog for adding new group!
+                let item = group_model.item(i).unwrap().downcast::<AppGroup>().unwrap();
+                item.popup();
+                group_model.items_changed(i, 0, 0);
+            }
         });
+    }
+
+    pub fn is_popup_active(&self) -> bool {
+        let model = self.group_model();
+        for i in 0..model.n_items() {
+            let item = model.item(i).unwrap().downcast::<AppGroup>().unwrap();
+            if item.is_popup_active() {
+                return true;
+            }
+        }
+        return false;
     }
 
     fn setup_factory(&self) {
         let imp = imp::GroupGrid::from_instance(&self);
         let group_factory = SignalListItemFactory::new();
-        group_factory.connect_setup(move |_factory, item| {
-            let row = GridItem::new();
-            item.set_child(Some(&row));
-        });
+        group_factory.connect_setup(glib::clone!(@weak self as self_ => move |_factory, item| {
+            let obj = GridItem::new();
+            item.set_child(Some(&obj));
+            obj
+                .connect_local("new-group", false, glib::clone!(@weak self_ => @default-return None, move |args| {
+                    let m = self_.group_model();
+                    match args[1].get::<String>() {
+                        Ok(_name) => {
+                            // m.items_changed(m.n_items() - 2, 0, 1);
+                            todo!();
+                        }
+                        _ => unimplemented!(),
+                    };
+                    None
+                }));
+            obj
+                .connect_local("popover-closed", false, glib::clone!(@weak self_ => @default-return None, move |_| {
+                    let m = self_.group_model();
+                    let group = m.item(m.n_items() - 1).unwrap().downcast::<AppGroup>().unwrap();
+                    glib::idle_add_local_once(move || {
+                        group.popdown();
+                    });
+                    None
+                }));
+        }));
 
         // the bind stage is used for "binding" the data to the created widgets on the "setup" stage
         group_factory.connect_bind(move |_factory, grid_item| {
@@ -290,7 +239,7 @@ impl GroupGrid {
 
             let app_group_objects: Vec<Object> = backup_data
                 .into_iter()
-                .map(|data| AppGroup::new(data).upcast::<Object>())
+                .map(|data| AppGroup::new(BoxedAppGroupType::Group(data)).upcast::<Object>())
                 .collect();
             let scroll_window = &imp::GroupGrid::from_instance(self)
                 .group_scroll_window

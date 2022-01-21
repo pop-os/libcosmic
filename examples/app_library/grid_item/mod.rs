@@ -8,6 +8,7 @@ use gtk4::prelude::*;
 use gtk4::subclass::prelude::*;
 use gtk4::traits::WidgetExt;
 use gtk4::Align;
+use gtk4::Button;
 use gtk4::DragSource;
 use gtk4::IconTheme;
 use gtk4::Image;
@@ -16,6 +17,7 @@ use gtk4::Orientation;
 use gtk4::{gio, glib};
 
 use crate::app_group::AppGroup;
+use crate::app_group::BoxedAppGroupType;
 
 mod imp;
 
@@ -66,7 +68,6 @@ impl GridItem {
 
         imp.name.replace(name);
         imp.image.replace(image);
-
         self_
     }
 
@@ -108,18 +109,74 @@ impl GridItem {
     }
 
     pub fn set_group_info(&self, app_group: AppGroup) {
-        let self_ = imp::GridItem::from_instance(self);
-        self_
-            .name
-            .borrow()
-            .set_text(&app_group.property::<String>("name"));
-        self_
-            .image
-            .borrow()
-            .set_from_icon_name(Some(&app_group.property::<String>("icon")));
+        // if data type set name and icon to values in data
+        let imp = imp::GridItem::from_instance(self);
+        match app_group.property::<BoxedAppGroupType>("inner") {
+            BoxedAppGroupType::Group(data) => {
+                imp.name.borrow().set_text(&data.name);
+                imp.image.borrow().set_from_icon_name(Some(&data.icon));
+            }
+            BoxedAppGroupType::NewGroup(popover_active) => {
+                // else must be add group
+                imp.name.borrow().set_text("New Group");
+                imp.image.borrow().set_from_icon_name(Some("folder-new"));
+
+                let popover_menu = gtk4::Box::builder()
+                    .spacing(12)
+                    .hexpand(true)
+                    .orientation(gtk4::Orientation::Vertical)
+                    .margin_top(12)
+                    .margin_bottom(12)
+                    .margin_end(12)
+                    .margin_start(12)
+                    .build();
+
+                // build menu
+                let dialog_entry = gtk4::Entry::new();
+                let label = cascade! {
+                    Label::new(Some("Name"));
+                    ..set_justify(gtk4::Justification::Left);
+                    ..set_xalign(0.0);
+                };
+                popover_menu.append(&label);
+                popover_menu.append(&dialog_entry);
+                let btn_container = cascade! {
+                    gtk4::Box::new(Orientation::Horizontal, 8);
+                };
+                let ok_btn = cascade! {
+                    Button::with_label("Ok");
+                };
+                let cancel_btn = cascade! {
+                    Button::with_label("Cancel");
+                };
+                btn_container.append(&ok_btn);
+                btn_container.append(&cancel_btn);
+                popover_menu.append(&btn_container);
+                let popover = cascade! {
+                    gtk4::Popover::new();
+                    ..set_autohide(true);
+                    ..set_child(Some(&popover_menu));
+                };
+                self.append(&popover);
+                popover.connect_closed(glib::clone!(@weak self as self_ => move |_| {
+                    self_.emit_by_name::<()>("popover-closed", &[]);
+                }));
+                imp.popover.replace(Some(popover));
+                if popover_active {
+                    self.popup();
+                }
+            }
+        }
     }
 
     pub fn set_index(&self, index: u32) {
         imp::GridItem::from_instance(self).index.set(index);
+    }
+
+    pub fn popup(&self) {
+        let imp = imp::GridItem::from_instance(self);
+        if let Some(popover) = imp.popover.borrow().as_ref() {
+            popover.popup();
+        }
     }
 }

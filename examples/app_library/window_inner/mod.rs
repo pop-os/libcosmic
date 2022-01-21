@@ -69,6 +69,14 @@ impl AppLibraryWindowInner {
         imp.group_grid.get()
     }
 
+    pub fn is_popup_active(&self) -> bool {
+        if let Some(group_grid) = self.group_grid() {
+            group_grid.is_popup_active()
+        } else {
+            false
+        }
+    }
+
     fn setup_callbacks(&self) {
         // Get state
         let imp = imp::AppLibraryWindowInner::from_instance(self);

@@ -1,6 +1,4 @@
 use glib::Object;
-use glib::ObjectExt;
-use glib::ToVariant;
 use gtk4::glib;
 use gtk4::subclass::prelude::*;
 use serde::{Deserialize, Serialize};
@@ -12,22 +10,68 @@ glib::wrapper! {
 }
 
 impl AppGroup {
-    pub fn new(data: AppGroupData) -> Self {
-        let self_: Self = Object::new(&[
-            ("id", &data.id),
-            ("name", &data.name),
-            ("mutable", &data.mutable),
-            ("icon", &data.icon),
-            ("category", &data.category),
-        ])
-        .expect("Failed to create `ApplicationObject`.");
-        self_.set_property("appnames", data.app_names.to_variant());
+    pub fn new(data: BoxedAppGroupType) -> Self {
+        let self_: Self =
+            Object::new(&[("inner", &data)]).expect("Failed to create `ApplicationObject`.");
         self_
     }
 
-    pub fn group_data(&self) -> AppGroupData {
+    pub fn popup(&self) {
         let imp = imp::AppGroup::from_instance(self);
-        imp.data.borrow().clone()
+        let inner = imp.inner.borrow().clone();
+        match inner {
+            BoxedAppGroupType::Group(d) => {
+                // d.popup = true;
+                imp.inner.replace(BoxedAppGroupType::Group(d));
+            }
+            BoxedAppGroupType::NewGroup(_) => {
+                imp.inner.replace(BoxedAppGroupType::NewGroup(true));
+            }
+        };
+    }
+
+    pub fn popdown(&self) {
+        let imp = imp::AppGroup::from_instance(self);
+        let inner = imp.inner.borrow().clone();
+        match inner {
+            BoxedAppGroupType::Group(d) => {
+                // d.popup = false;
+                imp.inner.replace(BoxedAppGroupType::Group(d));
+            }
+            BoxedAppGroupType::NewGroup(_) => {
+                imp.inner.replace(BoxedAppGroupType::NewGroup(false));
+            }
+        };
+    }
+
+    pub fn is_popup_active(&self) -> bool {
+        let imp = imp::AppGroup::from_instance(self);
+        match imp.inner.borrow().clone() {
+            BoxedAppGroupType::Group(_d) => false,
+            BoxedAppGroupType::NewGroup(is_active) => is_active,
+        }
+    }
+
+    pub fn group_data(&self) -> Option<AppGroupData> {
+        let imp = imp::AppGroup::from_instance(self);
+        let inner = imp.inner.borrow().clone();
+        match inner {
+            BoxedAppGroupType::Group(d) => Some(d),
+            _ => None,
+        }
+    }
+}
+
+#[derive(Serialize, Deserialize, Clone, glib::Boxed)]
+#[boxed_type(name = "BoxedAppGroupType")]
+pub enum BoxedAppGroupType {
+    Group(AppGroupData),
+    NewGroup(bool),
+}
+
+impl Default for BoxedAppGroupType {
+    fn default() -> Self {
+        Self::NewGroup(false)
     }
 }
 
@@ -40,4 +84,5 @@ pub struct AppGroupData {
     pub mutable: bool,
     pub app_names: Vec<String>,
     pub category: String,
+    // pub popup: bool,
 }
