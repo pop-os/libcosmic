@@ -163,10 +163,7 @@ impl AppLibraryWindow {
             let active_window = app
                 .active_window()
                 .expect("no active window available, closing app library.");
-            dbg!(&active_window);
-            dbg!(!inner.is_popup_active());
             if win == &active_window && !win.is_active() && !inner.is_popup_active() {
-                dbg!(win);
                 win.close();
             }
         }));

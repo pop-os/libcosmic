@@ -198,9 +198,18 @@ impl GroupGrid {
                 .connect_local("new-group", false, glib::clone!(@weak self_ => @default-return None, move |args| {
                     let m = self_.group_model();
                     match args[1].get::<String>() {
-                        Ok(_name) => {
-                            // m.items_changed(m.n_items() - 2, 0, 1);
-                            todo!();
+                        Ok(name) => {
+                            let new_group = AppGroup::new(BoxedAppGroupType::Group(AppGroupData {
+                                id: 0,
+                                name: name,
+                                icon: "folder".to_string(),
+                                mutable: false,
+                                app_names: Vec::new(),
+                                category: "".to_string(),
+                            })).upcast::<Object>();
+
+                            m.insert(m.n_items() - 1, &new_group);
+                            self_.store_data();
                         }
                         _ => unimplemented!(),
                     };

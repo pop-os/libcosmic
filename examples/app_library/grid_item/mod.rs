@@ -158,13 +158,30 @@ impl GridItem {
                     ..set_child(Some(&popover_menu));
                 };
                 self.append(&popover);
-                popover.connect_closed(glib::clone!(@weak self as self_ => move |_| {
-                    self_.emit_by_name::<()>("popover-closed", &[]);
+
+                popover.connect_closed(
+                    glib::clone!(@weak self as self_, @weak dialog_entry => move |_| {
+                        dialog_entry.set_text("");
+                        self_.emit_by_name::<()>("popover-closed", &[]);
+                    }),
+                );
+                ok_btn.connect_clicked(
+                    glib::clone!(@weak self as self_, @weak dialog_entry, @weak popover => move |_| {
+                        let new_name = dialog_entry.text().to_string();
+                        popover.popdown();
+                        glib::idle_add_local_once(glib::clone!(@weak self_ => move || {
+                            self_.emit_by_name::<()>("new-group", &[&new_name]);
+                        }));
+                    }),
+                );
+                cancel_btn.connect_clicked(glib::clone!(@weak popover => move |_| {
+                    popover.popdown();
                 }));
-                imp.popover.replace(Some(popover));
                 if popover_active {
-                    self.popup();
+                    popover.popup();
                 }
+
+                imp.popover.replace(Some(popover));
             }
         }
     }
