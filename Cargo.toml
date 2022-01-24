@@ -3,6 +3,9 @@ name = "libcosmic"
 version = "0.1.0"
 edition = "2021"
 
+[workspace]
+members = ["crates/*"]
+
 [dependencies]
 cascade = "1.0.0"
 gtk4 = { version = "0.4.4", features = ["v4_4"] }

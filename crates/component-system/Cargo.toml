@@ -1,0 +1,10 @@
+[package]
+name = "cosmic-component-system"
+version = "0.1.0"
+edition = "2021"
+license = "MPL-2.0"
+
+[dependencies]
+gtk4 = "0.4.4"
+relm4-macros = "0.4.1"
+tokio = { version = "1.15.0", features = ["sync"]}
