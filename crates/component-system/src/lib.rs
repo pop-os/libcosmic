@@ -1,11 +1,13 @@
 // Copyright 2022 System76 <info@system76.com>
 // SPDX-License-Identifier: MPL-2.0
 
+mod app_runner;
 mod macros;
 
 use gtk4::prelude::*;
 use tokio::sync::mpsc;
 
+pub use self::app_runner::AppRunner;
 pub use gtk4 as gtk;
 pub use relm4_macros::view;
 
@@ -196,16 +198,6 @@ pub fn forward<I: 'static, O: 'static, F: (Fn(I) -> O) + 'static>(
             }
         }
     })
-}
-
-/// Convenience function for launching an application.
-pub fn run<F: Fn(gtk4::Application) + 'static>(func: F) {
-    use gtk4::prelude::*;
-    let app = gtk4::Application::new(None, Default::default());
-
-    app.connect_activate(move |app| func(app.clone()));
-
-    app.run();
 }
 
 /// Convenience function for spawning tasks on the local executor

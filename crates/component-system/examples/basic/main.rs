@@ -6,10 +6,12 @@ extern crate cosmic_component_system as ccs;
 mod components;
 
 use self::components::App;
-use ccs::Component;
+use ccs::{AppRunner, Component};
 
 fn main() {
-    ccs::run(|app| {
-        App::default().register(app);
-    });
+    gtk4::builders::ApplicationBuilder::new()
+        .application_id("org.pop.CosmicComponentExample")
+        .cosmic_run(|app| {
+            App::default().register(app);
+        });
 }
