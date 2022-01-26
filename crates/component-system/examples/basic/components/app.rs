@@ -14,12 +14,12 @@ pub enum AppEvent {
 component! {
     /// The model where component state is stored.
     #[derive(Default)]
-    pub struct App(gtk::Application) {
+    pub struct App {
         pub counter: usize,
     }
 
     /// Widgets that are initialized in the view.
-    pub struct AppWidgets(gtk::ApplicationWindow) {
+    pub struct AppWidgets {
         list: gtk::ListBox,
         destroyable: Option<Handle<gtk::Box, InfoButtonInput>>,
         counter: Handle<gtk::Box, InfoButtonInput>,
@@ -27,13 +27,14 @@ component! {
 
     type Input = AppEvent;
     type Output = ();
+    type Root = gtk::ApplicationWindow {
+        Default::default()
+    };
 
-    fn init_view(self, app, input, _output) {
+    fn init(app: gtk::Application, root, input, output) {
         let button_group = gtk::SizeGroup::new(gtk::SizeGroupMode::Both);
 
-        // Create an `InfoButton` component.
-        let destroyable = InfoButton::default()
-            .register((String::new(), "Destroy".into(), button_group.clone()))
+        let destroyable = InfoButton::init((String::new(), "Destroy".into(), button_group.clone()))
             .forward(input.clone(), |event| match event {
                 InfoButtonOutput::Clicked => AppEvent::Destroy,
             });
@@ -44,55 +45,53 @@ component! {
         ));
 
         // Create a counter component, too.
-        let counter = InfoButton::default()
-            .register(("Click me too".into(), "Click".into(), button_group))
+        let counter = InfoButton::init(("Click me too".into(), "Click".into(), button_group))
             .forward(input.clone(), |event| match event {
                 InfoButtonOutput::Clicked => AppEvent::Increment,
             });
 
-        // Construct the view for this component, attaching the component's widget.
         ccs::view! {
-            window = gtk::ApplicationWindow {
-                set_application: Some(&app),
-                set_child = Some(&gtk::Box) {
-                    set_halign: gtk::Align::Center,
-                    set_size_request: args!(400, -1),
-                    set_orientation: gtk::Orientation::Vertical,
+            container = gtk::Box {
+                set_halign: gtk::Align::Center,
+                set_size_request: args!(400, -1),
+                set_orientation: gtk::Orientation::Vertical,
 
-                    append: list = &gtk::ListBox {
-                        set_selection_mode: gtk::SelectionMode::None,
-                        set_hexpand: true,
+                append: list = &gtk::ListBox {
+                    set_selection_mode: gtk::SelectionMode::None,
+                    set_hexpand: true,
 
-                        append: destroyable.widget(),
-                        append: counter.widget(),
-                    },
+                    append: destroyable.widget(),
+                    append: counter.widget(),
                 }
             }
         }
 
-        window.show();
+        root.set_application(Some(&app));
+        root.set_child(Some(&container));
 
-        (
-            AppWidgets {
-                list,
-                counter,
-                destroyable: Some(destroyable),
-            },
-            window,
-        )
+        root.show();
+
+        ComponentInner {
+            model: Self::default(),
+            widgets: AppWidgets { list, destroyable: Some(destroyable), counter },
+            input,
+            output
+        }
     }
 
     /// Updates the view
-    fn update(self, widgets, event, _input, _output) {
+    fn update(component, event) {
+        let &mut ComponentInner { ref mut model, ref mut widgets, .. } = component;
+
         match event {
             AppEvent::Increment => {
-                self.counter += 1;
+                model.counter += 1;
 
                 widgets
                     .counter
                     .emit(InfoButtonInput::SetDescription(format!(
                         "Clicked {} times",
-                        self.counter
+                        model.counter
                     )));
             }
 

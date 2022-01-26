@@ -14,19 +14,17 @@ pub enum InfoButtonOutput {
 
 component! {
     #[derive(Default)]
-    pub struct InfoButton((String, String, gtk::SizeGroup)) {
+    pub struct InfoButton {
 
     }
 
-    pub struct InfoButtonWidgets(gtk::Box) {
+    pub struct InfoButtonWidgets {
         description: gtk::Label,
     }
-
     type Input = InfoButtonInput;
     type Output = InfoButtonOutput;
 
-    fn init_view(self, args, _input, output) {
-        let (desc, button_label, sg) = args;
+    type Root = gtk::Box {
         ccs::view! {
             root = gtk::Box {
                 set_orientation: gtk::Orientation::Horizontal,
@@ -35,34 +33,52 @@ component! {
                 set_margin_top: 8,
                 set_margin_bottom: 8,
                 set_spacing: 24,
+            }
+        }
 
-                append: description = &gtk::Label {
-                    set_label: &desc,
-                    set_halign: gtk::Align::Start,
-                    set_hexpand: true,
-                    set_valign: gtk::Align::Center,
-                    set_ellipsize: gtk::pango::EllipsizeMode::End,
-                },
+        root
+    };
 
-                append: button = &gtk::Button {
-                    set_label: &button_label,
+    fn init(args: (String, String, gtk::SizeGroup), root, input, output) {
+        let (desc, button_label, sg) = args;
 
-                    connect_clicked(output) => move |_| {
-                        let _ = output.send(InfoButtonOutput::Clicked);
-                    }
+        ccs::view! {
+            description = gtk::Label {
+                set_label: &desc,
+                set_halign: gtk::Align::Start,
+                set_hexpand: true,
+                set_valign: gtk::Align::Center,
+                set_ellipsize: gtk::pango::EllipsizeMode::End,
+            }
+        }
+
+        ccs::view! {
+            button = gtk::Button {
+                set_label: &button_label,
+
+                connect_clicked(output) => move |_| {
+                    let _ = output.send(InfoButtonOutput::Clicked);
                 }
             }
         }
 
+        root.append(&description);
+        root.append(&button);
+
         sg.add_widget(&button);
 
-        (InfoButtonWidgets { description }, root)
+        ComponentInner {
+            model: InfoButton {},
+            widgets: InfoButtonWidgets { description },
+            input,
+            output,
+        }
     }
 
-    fn update(self, widgets, message, _input, _output) {
+    fn update(component, message) {
         match message {
             InfoButtonInput::SetDescription(value) => {
-                widgets.description.set_text(&value);
+                component.widgets.description.set_text(&value);
             }
         }
     }

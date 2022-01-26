@@ -5,14 +5,14 @@
 macro_rules! component {
     (
         $(#[$attr:meta])*
-        $mvis:vis struct $model:ident ($args:ty) {
+        $mvis:vis struct $model:ident {
             $(
                 $mpvis:vis $property:ident : $type:ty,
             )*
         }
 
         $(#[$attr2:meta])*
-        $wvis:vis struct $widgets_:ident($root:ty) {
+        $wvis:vis struct $widgets_:ident {
             $(
                 $wpvis:vis $widgets_property:ident : $widgets_type:ty,
             )*
@@ -20,22 +20,20 @@ macro_rules! component {
 
         type Input = $input:ty;
         type Output = $output:ty;
+        type Root = $root:ty $init_root:block;
 
-        $(#[$attr3:meta])*
-        fn init_view(
-            $selfv:ident,
-            $argsv:ident,
+        $(#[$attr4:meta])*
+        fn init(
+            $argsv:ident: $args:ty,
+            $rootv:ident,
             $inputv:ident,
             $outputv:ident
         ) $init_view:block
 
-        $(#[$attr4:meta])*
+        $(#[$attr5:meta])*
         fn update(
-            $selfv2:ident,
-            $widgetsv:ident,
-            $messagev:ident,
-            $inputv2:ident,
-            $outputv2:ident
+            $componentv:ident,
+            $messagev:ident
         ) $update:block
     ) => {
         $(#[$attr])*
@@ -49,27 +47,26 @@ macro_rules! component {
         }
 
         impl Component for $model {
-            type InitialArgs = $args;
+            type InitParams = $args;
             type Input = $input;
             type Output = $output;
-            type RootWidget = $root;
+            type Root = $root;
             type Widgets = $widgets_;
 
-            $(#[$attr3])*
-            fn init_view(
-                &mut $selfv2,
-                $argsv: Self::InitialArgs,
-                $inputv: &mut Sender<Self::Input>,
-                $outputv: &mut Sender<Self::Output>
-            ) -> (Self::Widgets, Self::RootWidget) $init_view
+            fn init_root() -> Self::Root $init_root
 
             $(#[$attr4])*
+            fn init_inner(
+                $argsv: Self::InitParams,
+                $rootv: &Self::Root,
+                $inputv: Sender<Self::Input>,
+                $outputv: Sender<Self::Output>
+            ) -> ComponentInner<Self, Self::Widgets, Self::Input, Self::Output> $init_view
+
+            $(#[$attr5])*
             fn update(
-                &mut $selfv2,
-                $widgetsv: &mut Self::Widgets,
+                $componentv: &mut ComponentInner<Self, Self::Widgets, Self::Input, Self::Output>,
                 $messagev: Self::Input,
-                $inputv2: &mut Sender<Self::Input>,
-                $outputv2: &mut Sender<Self::Output>
             ) $update
         }
     }

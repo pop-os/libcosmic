@@ -12,6 +12,6 @@ fn main() {
     gtk4::builders::ApplicationBuilder::new()
         .application_id("org.pop.CosmicComponentExample")
         .cosmic_run(|app| {
-            App::default().register(app);
+            App::init(app);
         });
 }

@@ -10,7 +10,7 @@ use gtk4::prelude::*;
 use tokio::sync::mpsc;
 
 pub use self::app_runner::AppRunner;
-pub use self::component::Component;
+pub use self::component::{Component, ComponentInner};
 pub use self::handle::{Handle, Registered};
 pub use gtk4 as gtk;
 pub use relm4_macros::view;
@@ -23,12 +23,14 @@ pub trait Widget<W> {
     fn widget(&self) -> &W;
 }
 
-/// Convenience function for `Component::register()`.
-pub fn register<C: Component>(
-    model: C,
-    args: C::InitialArgs,
-) -> Registered<C::RootWidget, C::Input, C::Output> {
-    model.register(args)
+pub trait CosmicWidgetExt<W>: Widget<W>
+where
+    W: AsRef<gtk::Widget>,
+{
+    fn attach_size_group(&self, sg: &gtk::SizeGroup) -> &Self {
+        sg.add_widget(self.widget().as_ref());
+        self
+    }
 }
 
 /// Convenience function for forwarding events from a receiver to different sender.
