@@ -5,6 +5,7 @@ edition = "2021"
 license = "MPL-2.0"
 
 [dependencies]
+async-trait = "0.1.52"
 gtk4 = "0.4.4"
 relm4-macros = "0.4.1"
-tokio = { version = "1.15.0", features = ["sync"]}
+tokio = { version = "1.15.0", features = ["full"]}

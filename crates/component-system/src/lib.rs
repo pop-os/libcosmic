@@ -10,8 +10,9 @@ use gtk4::prelude::*;
 use tokio::sync::mpsc;
 
 pub use self::app_runner::AppRunner;
-pub use self::component::{Component, ComponentInner};
+pub use self::component::{Component, ComponentInner, ElmComponent};
 pub use self::handle::{Handle, Registered};
+pub use async_trait::async_trait;
 pub use gtk4 as gtk;
 pub use relm4_macros::view;
 

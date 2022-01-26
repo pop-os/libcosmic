@@ -1,21 +1,14 @@
 // Copyright 2022 System76 <info@system76.com>
 // SPDX-License-Identifier: MPL-2.0
 
-use crate::*;
-
-/// The pieces that make up the state of the component.
-pub struct ComponentInner<Model, Widgets, Input, Output> {
-    pub model: Model,
-    pub widgets: Widgets,
-    pub input: Sender<Input>,
-    pub output: Sender<Output>,
-}
+use super::*;
 
 /// The basis of a COSMIC widget.
 ///
 /// A component takes care of constructing the UI of a widget, managing an event-loop
 /// which handles signals from within the widget, and supports forwarding messages to
 /// the consumer of the component.
+#[async_trait::async_trait]
 pub trait Component: Sized + 'static {
     /// The arguments that are passed to the init_view method.
     type InitParams;
@@ -93,12 +86,5 @@ pub trait Component: Sized + 'static {
     fn update(
         component: &mut ComponentInner<Self, Self::Widgets, Self::Input, Self::Output>,
         message: Self::Input,
-    ) {
-    }
-}
-
-/// Used to drop the component's event loop when the managed widget is destroyed.
-enum InnerMessage<T> {
-    Drop,
-    Message(T),
+    );
 }
