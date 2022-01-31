@@ -11,7 +11,9 @@ features = ["rt", "rt-multi-thread", "sync"]
 [dependencies.relm4]
 git = "https://github.com/AaronErhardt/relm4"
 branch = "new-approach"
+commit = "c945e3a68fc96f95bedb286c77ec67a529e72fb6"
 
 [dependencies.relm4-macros]
 git = "https://github.com/AaronErhardt/relm4"
 branch = "new-approach"
+commit = "c945e3a68fc96f95bedb286c77ec67a529e72fb6"
