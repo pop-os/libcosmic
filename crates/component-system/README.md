@@ -1,6 +1,6 @@
 # COSMIC Component System
 
-This library is a GTK4 GUI framework inspired by [Relm](https://github.com/antoyo/relm), which is inspired by [Elm](https://guide.elm-lang.org/architecture/). The philosophy for this framework is to isolate custom widgets into reusable components. You start with a custom `Model` type that implements `Component`, which is used to register a component with an optional argument. On registration, the model is used to construct the view and its widgets in the `init_view()` function. An event-handler is also spawned to handle events from both the component and any component emitting events to it. Those events are received and handled in the `update()` function. Both the `init_view()` and `update()` methods also have access to an outbound sender, which the caller can forward and consume however desired. See the examples directory for a demonstration of how to create a component.
+This library is a prototyping area for a rewrite of Relm4's component system.
 
 ## Using a Macro to Define a Component
 
@@ -10,6 +10,10 @@ The simplest way to define a component is to use the `component!()` macro.
 pub enum MyCustomInputMessage {
     Variant1,
     Variant2,
+}
+
+pub enum MyCustomCommand {
+    Action
 }
 
 component! {
@@ -47,17 +51,14 @@ component! {
 
         root.append(&description);
 
-        ComponentInner {
+        Fuselage {
             model: MyCustomModel { state: String::new() },
             widgets: MyCustomWidgets { description },
-            input,
-            output
         }
     }
 
-    // Where events are received, with `component` is the `ComponentInner`,
-    // and `event` is a `MyCustomInputMessage` which was just received.
-    fn update(component, event) {
+    // Updates the model and view. `self` is the model.
+    fn update(&mut self, widgets, event, input, output) {
         match event {
             MyCustomInputMessage::Variant1 => {
 
@@ -67,6 +68,12 @@ component! {
 
             }
         }
+
+        Some(MyCustomCommand::Action)
+    }
+
+    async fn command(command: MyCustomCommand, input) {
+
     }
 }
 ```
@@ -74,7 +81,8 @@ component! {
 Components can be created and have their output events forwarded:
 
 ```rs
-let counter = InfoButton::init("Clicked 0 times".into(), "Click".into())
+let counter = InfoButton::init()
+    .launch("Clicked 0 times".into(), "Click".into())
     .forward(input.clone(), |event| match event {
         InfoButtonOutput::Clicked => AppEvent::Increment
     });
@@ -85,18 +93,5 @@ The handle returned can be used to emit inputs to it, and to get the root widget
 ```rs
 counter.emit(InfoButtonInput::SetDescription(format!("Clicked {} times", count)));
 
-box.append(counter.widget());
+box.append(&counter.widget);
 ```
-
-
-## See Also
-
-[Relm4](https://github.com/AaronErhardt/relm4) uses a similar approach, but closely follows the Elm model. This library was created as an alternative approach that makes developing reusable components with forwardable events simpler.
-
-## License
-
-Licensed under the [Mozilla Public License 2.0](https://choosealicense.com/licenses/mpl-2.0/).
-
-### Contribution
-
-Any contribution intentionally submitted for inclusion in the work by you shall be licensed under the Mozilla Public License 2.0 (MPL-2.0).

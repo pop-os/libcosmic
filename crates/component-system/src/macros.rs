@@ -32,9 +32,15 @@ macro_rules! component {
 
         $(#[$attr5:meta])*
         fn update(
-            $componentv:ident,
-            $messagev:ident
+            &mut $modelv:ident,
+            $widgetsv:ident,
+            $messagev:ident,
+            $inputv2:ident,
+            $outputv2:ident
         ) $update:block
+
+        $(#[$attr6:meta])*
+        async fn command($cmdv:ident: $cmd:ty, $inputv3:ident) { $($cmd_expr:expr)* }
     ) => {
         $(#[$attr])*
         $mvis struct $model {
@@ -46,29 +52,37 @@ macro_rules! component {
             $($wpvis $widgets_property: $widgets_type,)*
         }
 
-        #[cosmic_component_system::async_trait]
-        impl Component for $model {
-            type InitParams = $args;
+        impl StatefulComponent for $model {
+            type Payload = $args;
             type Input = $input;
             type Output = $output;
             type Root = $root;
             type Widgets = $widgets_;
+            type Command = $cmd;
 
             fn init_root() -> Self::Root $init_root
 
             $(#[$attr4])*
-            fn init_inner(
-                $argsv: Self::InitParams,
+            fn dock(
+                $argsv: Self::Payload,
                 $rootv: &Self::Root,
-                $inputv: Sender<Self::Input>,
-                $outputv: Sender<Self::Output>
-            ) -> ComponentInner<Self, Self::Widgets, Self::Input, Self::Output> $init_view
+                $inputv: &mut Sender<Self::Input>,
+                $outputv: &mut Sender<Self::Output>
+            ) -> Fuselage<Self, Self::Widgets> $init_view
 
             $(#[$attr5])*
             fn update(
-                $componentv: &mut ComponentInner<Self, Self::Widgets, Self::Input, Self::Output>,
+                &mut $modelv,
+                $widgetsv: &mut Self::Widgets,
                 $messagev: Self::Input,
-            ) $update
+                $inputv2: &mut Sender<Self::Input>,
+                $outputv2: &mut Sender<Self::Output>
+            ) -> Option<Self::Command> $update
+
+            $(#[$attr6])*
+            fn command($cmdv: $cmd, $inputv3: Sender<Self::Input>) -> CommandFuture {
+                Box::pin(async move { $($cmd_expr)* } )
+            }
         }
     }
 }
@@ -92,7 +106,6 @@ macro_rules! elm_component {
 
         type Input = $input:ty;
         type Output = $output:ty;
-        type Command = $cmd:ty;
         type Root = $root:ty $init_root:block;
 
         $(#[$attr4:meta])*
@@ -105,7 +118,7 @@ macro_rules! elm_component {
 
         $(#[$attr5:meta])*
         fn update(
-            $modelv:ident,
+            &mut $modelv:ident,
             $messagev:ident,
             $inputv2:ident,
             $outputv2:ident
@@ -113,14 +126,14 @@ macro_rules! elm_component {
 
         $(#[$attr6:meta])*
         fn update_view(
-            $modelv2:ident,
+            &$modelv2:ident,
             $widgetsv:ident,
             $inputv3:ident,
             $outputv3:ident
         ) $update_view:block
 
         $(#[$attr7:meta])*
-        async fn command($cmdv:ident) $command_block:block
+        async fn command($cmdv:ident: $cmd:ty, $inputv4:ident) { $($cmd_expr:expr)* }
     ) => {
         $(#[$attr])*
         $mvis struct $model {
@@ -132,43 +145,44 @@ macro_rules! elm_component {
             $($wpvis $widgets_property: $widgets_type,)*
         }
 
-        #[cosmic_component_system::async_trait]
-        impl ElmComponent for $model {
-            type InitParams = $args;
+        impl StatefulComponent for $model {
+            type Payload = $args;
             type Input = $input;
             type Output = $output;
-            type Command = $cmd;
             type Root = $root;
             type Widgets = $widgets_;
+            type Command = $cmd;
 
             fn init_root() -> Self::Root $init_root
 
             $(#[$attr4])*
-            fn init_inner(
-                $argsv: Self::InitParams,
+            fn dock(
+                $argsv: Self::Payload,
                 $rootv: &Self::Root,
-                $inputv: Sender<Self::Input>,
-                $outputv: Sender<Self::Output>
-            ) -> ComponentInner<Self, Self::Widgets, Self::Input, Self::Output> $init_view
+                $inputv: &mut Sender<Self::Input>,
+                $outputv: &mut Sender<Self::Output>
+            ) -> Fuselage<Self, Self::Widgets> $init_view
 
             $(#[$attr5])*
             fn update(
                 &mut $modelv,
                 $messagev: Self::Input,
                 $inputv2: &mut Sender<Self::Input>,
-                $outputv2: &mut Sender<Self::Output>,
+                $outputv2: &mut Sender<Self::Output>
             ) -> Option<Self::Command> $update
 
             $(#[$attr6])*
             fn update_view(
-                &mut $modelv2,
+                &$modelv2,
                 $widgetsv: &mut Self::Widgets,
                 $inputv3: &mut Sender<Self::Input>,
-                $outputv3: &mut Sender<Self::Output>,
+                $outputsv3: &mut Sender<Self::Output>
             ) $update_view
 
             $(#[$attr7])*
-            async fn command($cmdv: Self::Command) -> Option<Self::Input> $command_block
+            fn command($cmdv: $cmd, $inputv4: Sender<Self::Input>) -> CommandFuture {
+                Box::pin(async move { $($cmd_expr)* } )
+            }
         }
     }
 }

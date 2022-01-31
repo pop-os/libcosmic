@@ -21,20 +21,29 @@ component! {
     /// Widgets that are initialized in the view.
     pub struct AppWidgets {
         list: gtk::ListBox,
-        destroyable: Option<Handle<gtk::Box, InfoButtonInput>>,
-        counter: Handle<gtk::Box, InfoButtonInput>,
+        destroyable: Option<Controller<gtk::Box, InfoButtonInput>>,
+        counter: Controller<gtk::Box, InfoButtonInput>,
     }
 
     type Input = AppEvent;
     type Output = ();
-    type Root = gtk::ApplicationWindow {
-        Default::default()
+    type Root = gtk::Box {
+        ccs::view! {
+            root = gtk::Box {
+                set_halign: gtk::Align::Center,
+                set_size_request: args!(400, -1),
+                set_orientation: gtk::Orientation::Vertical,
+            }
+        }
+
+        root
     };
 
-    fn init(app: gtk::Application, root, input, output) {
+    fn init(window: gtk::ApplicationWindow, root, input, _output) {
         let button_group = gtk::SizeGroup::new(gtk::SizeGroupMode::Both);
 
-        let destroyable = InfoButton::init((String::new(), "Destroy".into(), button_group.clone()))
+        let destroyable = InfoButton::init()
+            .launch_stateful((String::new(), "Destroy".into(), button_group.clone()))
             .forward(input.clone(), |event| match event {
                 InfoButtonOutput::Clicked => AppEvent::Destroy,
             });
@@ -45,64 +54,59 @@ component! {
         ));
 
         // Create a counter component, too.
-        let counter = InfoButton::init(("Click me too".into(), "Click".into(), button_group))
+        let counter = InfoButton::init()
+            .launch_stateful(("Click me too".into(), "Click".into(), button_group))
             .forward(input.clone(), |event| match event {
                 InfoButtonOutput::Clicked => AppEvent::Increment,
             });
 
         ccs::view! {
-            container = gtk::Box {
-                set_halign: gtk::Align::Center,
-                set_size_request: args!(400, -1),
-                set_orientation: gtk::Orientation::Vertical,
+            list = gtk::ListBox {
+                set_selection_mode: gtk::SelectionMode::None,
+                set_hexpand: true,
 
-                append: list = &gtk::ListBox {
-                    set_selection_mode: gtk::SelectionMode::None,
-                    set_hexpand: true,
-
-                    append: destroyable.widget(),
-                    append: counter.widget(),
-                }
+                append: &destroyable.widget,
+                append: &counter.widget,
             }
         }
 
-        root.set_application(Some(&app));
-        root.set_child(Some(&container));
+        root.append(&list);
+        window.set_child(Some(root));
 
-        root.show();
-
-        ComponentInner {
+        Fuselage {
             model: Self::default(),
             widgets: AppWidgets { list, destroyable: Some(destroyable), counter },
-            input,
-            output
         }
     }
 
     /// Updates the view
-    fn update(component, event) {
-        let &mut ComponentInner { ref mut model, ref mut widgets, .. } = component;
-
+    fn update(&mut self, widgets, event, _input, _output) {
         match event {
             AppEvent::Increment => {
-                model.counter += 1;
+                self.counter += 1;
 
                 widgets
                     .counter
                     .emit(InfoButtonInput::SetDescription(format!(
                         "Clicked {} times",
-                        model.counter
+                        self.counter
                     )));
             }
 
             AppEvent::Destroy => {
                 // Components are kept alive by their root GTK widget.
                 if let Some(handle) = widgets.destroyable.take() {
-                    if let Some(parent) = handle.widget().parent() {
+                    if let Some(parent) = handle.widget.parent() {
                         widgets.list.remove(&parent);
                     }
                 }
             }
         }
+
+        None
+    }
+
+    async fn command(_message: (), _input) {
+
     }
 }

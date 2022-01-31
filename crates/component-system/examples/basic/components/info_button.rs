@@ -21,6 +21,7 @@ component! {
     pub struct InfoButtonWidgets {
         description: gtk::Label,
     }
+
     type Input = InfoButtonInput;
     type Output = InfoButtonOutput;
 
@@ -39,7 +40,7 @@ component! {
         root
     };
 
-    fn init(args: (String, String, gtk::SizeGroup), root, input, output) {
+    fn init(args: (String, String, gtk::SizeGroup), root, _input, output) {
         let (desc, button_label, sg) = args;
 
         ccs::view! {
@@ -67,19 +68,23 @@ component! {
 
         sg.add_widget(&button);
 
-        ComponentInner {
+        Fuselage {
             model: InfoButton {},
             widgets: InfoButtonWidgets { description },
-            input,
-            output,
         }
     }
 
-    fn update(component, message) {
+    fn update(&mut self, widgets, message, _input, _output) {
         match message {
             InfoButtonInput::SetDescription(value) => {
-                component.widgets.description.set_text(&value);
+                widgets.description.set_text(&value);
             }
         }
+
+        None
+    }
+
+    async fn command(_message: (), _input) {
+
     }
 }
