@@ -4,3 +4,5 @@ extern crate relm4_macros;
 extern crate tracker;
 
 pub mod labeled_item;
+
+pub use labeled_item::LabeledItem;

@@ -1,5 +1,6 @@
 use gtk4::{prelude::*, Align, Label, Orientation, Widget};
-use relm4::{ComponentParts, Sender, SimpleComponent};
+use relm4::{ComponentBuilder, ComponentParts, Sender, SimpleComponent};
+use std::cell::RefCell;
 
 #[derive(Debug)]
 pub enum LabeledItemMessage {
@@ -10,14 +11,64 @@ pub enum LabeledItemMessage {
 }
 
 #[track]
-struct LabeledItem {
-    title: String,
-    desc: Option<String>,
-    align: Align,
-    child: Option<Widget>,
+pub struct LabeledItem {
+    _title: String,
+    _desc: Option<String>,
+    _align: Align,
+    _child: Option<Widget>,
+    #[do_not_track]
+    _remove_child: RefCell<Option<Widget>>,
+    #[do_not_track]
+    _sender: Sender<LabeledItemMessage>,
 }
 
-#[component]
+impl LabeledItem {
+    pub fn new() -> ComponentBuilder<Self, gtk4::Box> {
+        Self::init()
+    }
+
+    pub fn title(&self) -> &str {
+        &self._title
+    }
+
+    pub fn description(&self) -> &str {
+        &self._title
+    }
+
+    pub fn alignment(&self) -> Align {
+        self._align
+    }
+
+    pub fn child(&self) -> Option<&Widget> {
+        self._child.as_ref()
+    }
+
+    pub fn set_title<S>(&self, title: S)
+    where
+        S: ToString,
+    {
+        self._sender
+            .send(LabeledItemMessage::Title(title.to_string()));
+    }
+
+    pub fn set_description<S>(&self, title: Option<S>)
+    where
+        S: ToString,
+    {
+        self._sender
+            .send(LabeledItemMessage::Desc(title.map(|s| s.to_string())));
+    }
+
+    pub fn set_alignment(&self, align: Align) {
+        self._sender.send(LabeledItemMessage::Align(align));
+    }
+
+    pub fn set_child(&self, child: Widget) {
+        self._sender.send(LabeledItemMessage::Child(child));
+    }
+}
+
+#[component(pub)]
 impl SimpleComponent for LabeledItem {
     type Widgets = AppWidgets;
     type InitParams = ();
@@ -43,13 +94,13 @@ impl SimpleComponent for LabeledItem {
                 &Label {
                     add_css_class: "labeled-item-title",
                     set_halign: Align::Start,
-                    set_label: watch! { &model.title }
+                    set_label: watch! { &model._title }
                 },
                 &Label {
                     add_css_class: "labeled-item-desc",
                     set_halign: Align::Start,
-                    set_visible: watch! { model.desc.is_some() },
-                    set_label: watch! { &model.desc.clone().unwrap_or_default() }
+                    set_visible: watch! { model._desc.is_some() },
+                    set_label: watch! { &model._desc.clone().unwrap_or_default() }
                 },
             }
         }
@@ -58,14 +109,16 @@ impl SimpleComponent for LabeledItem {
     fn init_parts(
         _init_params: Self::InitParams,
         root: &Self::Root,
-        _input: &Sender<Self::Input>,
+        input: &Sender<Self::Input>,
         _output: &Sender<Self::Output>,
     ) -> ComponentParts<Self, Self::Widgets> {
         let model = LabeledItem {
-            title: String::default(),
-            desc: None,
-            align: Align::Start,
-            child: None,
+            _title: String::default(),
+            _desc: None,
+            _align: Align::Start,
+            _child: None,
+            _remove_child: RefCell::new(None),
+            _sender: input.clone(),
             tracker: 0,
         };
         let widgets = view_output!();
@@ -81,21 +134,27 @@ impl SimpleComponent for LabeledItem {
     ) {
         self.reset();
         match msg {
-            LabeledItemMessage::Title(title) => self.set_title(title),
-            LabeledItemMessage::Desc(desc) => self.set_desc(desc),
-            LabeledItemMessage::Align(align) => self.set_align(align),
-            LabeledItemMessage::Child(child) => self.set_child(Some(child)),
+            LabeledItemMessage::Title(title) => self.set__title(title),
+            LabeledItemMessage::Desc(desc) => self.set__desc(desc),
+            LabeledItemMessage::Align(align) => self.set__align(align),
+            LabeledItemMessage::Child(child) => {
+                *self._remove_child.borrow_mut() = self._child.take();
+                self.set__child(Some(child))
+            }
         }
     }
 
     fn post_view() {
-        if self.changed(LabeledItem::child()) {
-            let child = self.child.as_ref().expect("there's no child??");
+        if let Some(child) = self._remove_child.borrow_mut().take() {
+            widgets.base_box.remove(&child);
+        }
+        if self.changed(LabeledItem::_child()) {
+            let child = self._child.as_ref().expect("there's no child??");
             widgets.base_box.append(child);
         }
-        if self.changed(LabeledItem::align()) {
-            let child = self.child.as_ref().expect("set alignment without child");
-            match self.align {
+        if self.changed(LabeledItem::_align()) {
+            let child = self._child.as_ref().expect("set alignment without child");
+            match self._align {
                 Align::Start => {
                     widgets
                         .base_box
