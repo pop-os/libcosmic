@@ -8,14 +8,18 @@ cascade = "1.0.0"
 derivative = { version = "2", optional = true }
 gtk4 = { version = "0.4.4", features = ["v4_4"] }
 gdk4 = "0.4.4"
-gdk4-wayland = { version = "0.4.2", features = [ "wayland_crate" ], optional = true }
-gdk4-x11 = { version = "0.4.2", features = [ "xlib" ] }
+gdk4-wayland = { version = "0.4.2", features = ["wayland_crate"], optional = true }
+gdk4-x11 = { version = "0.4.2", features = ["xlib"] }
 gio = "0.15.2"
 gobject-sys = "0.15.1"
 wayland-client = { version = "0.29.4", optional = true }
-wayland-protocols = { version = "0.29.4", features = [ "client", "unstable_protocols" ], optional = true }
+wayland-protocols = { version = "0.29.4", features = ["client", "unstable_protocols"], optional = true }
 x11 = { version = "2.19.1", features = ["xlib"] }
 once_cell = "1.9.0"
+libcosmic-widgets = { path = "widgets" }
 
 [features]
 layer-shell = ["derivative", "gdk4-wayland", "wayland-client", "wayland-protocols"]
+
+[workspace]
+members = ["widgets"]
