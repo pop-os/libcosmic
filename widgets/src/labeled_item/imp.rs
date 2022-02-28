@@ -3,7 +3,7 @@ use relm4::{ComponentBuilder, ComponentParts, Sender, SimpleComponent};
 use std::cell::RefCell;
 
 #[derive(Debug)]
-pub enum LabeledItemMessage {
+pub(crate) enum LabeledItemMessage {
     Title(String),
     Desc(Option<String>),
     Align(Align),
@@ -11,7 +11,7 @@ pub enum LabeledItemMessage {
 }
 
 #[track]
-pub struct LabeledItem {
+pub(crate) struct LabeledItem {
     _title: String,
     _desc: Option<String>,
     _align: Align,
@@ -23,16 +23,12 @@ pub struct LabeledItem {
 }
 
 impl LabeledItem {
-    pub fn new() -> ComponentBuilder<Self, gtk4::Box> {
-        Self::init()
-    }
-
     pub fn title(&self) -> &str {
         &self._title
     }
 
-    pub fn description(&self) -> &str {
-        &self._title
+    pub fn description(&self) -> Option<&String> {
+        self._desc.as_ref()
     }
 
     pub fn alignment(&self) -> Align {
@@ -68,7 +64,7 @@ impl LabeledItem {
     }
 }
 
-#[component(pub)]
+#[component(pub(crate))]
 impl SimpleComponent for LabeledItem {
     type Widgets = AppWidgets;
     type InitParams = ();
