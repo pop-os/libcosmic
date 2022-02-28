@@ -1,5 +1,5 @@
 use gtk4::{prelude::*, Align, Label, Orientation, Widget};
-use relm4::{ComponentBuilder, ComponentParts, Sender, SimpleComponent};
+use relm4::{ComponentParts, Sender, SimpleComponent};
 use std::cell::RefCell;
 
 #[derive(Debug)]
@@ -107,7 +107,7 @@ impl SimpleComponent for LabeledItem {
         root: &Self::Root,
         input: &Sender<Self::Input>,
         _output: &Sender<Self::Output>,
-    ) -> ComponentParts<Self, Self::Widgets> {
+    ) -> ComponentParts<Self> {
         let model = LabeledItem {
             _title: String::default(),
             _desc: None,

@@ -2,15 +2,15 @@ mod imp;
 
 use gtk4::{glib::IsA, prelude::*, Align, Orientation, Widget};
 use relm4::{Component, ComponentController, ComponentParts, Controller};
-use std::cell::Ref;
+use std::{cell::Ref, ops::Deref};
 
 pub struct LabeledItem {
     root: gtk4::Box,
-    controller: Controller<imp::LabeledItem, gtk4::Box, imp::AppWidgets, imp::LabeledItemMessage>,
+    controller: Controller<imp::LabeledItem>,
 }
 
 impl LabeledItem {
-    fn inner(&self) -> Ref<'_, ComponentParts<imp::LabeledItem, imp::AppWidgets>> {
+    fn inner(&self) -> Ref<'_, ComponentParts<imp::LabeledItem>> {
         self.controller.state().get()
     }
 
@@ -70,5 +70,19 @@ impl Default for LabeledItem {
             .launch(())
             .detach();
         Self { root, controller }
+    }
+}
+
+impl AsRef<Widget> for LabeledItem {
+    fn as_ref(&self) -> &Widget {
+        self.root.upcast_ref()
+    }
+}
+
+impl Deref for LabeledItem {
+    type Target = gtk4::Box;
+
+    fn deref(&self) -> &Self::Target {
+        &self.root
     }
 }
