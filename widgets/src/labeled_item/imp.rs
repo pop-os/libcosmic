@@ -47,12 +47,14 @@ impl LabeledItem {
             .send(LabeledItemMessage::Title(title.to_string()));
     }
 
-    pub fn set_description<S>(&self, title: Option<S>)
+    pub fn set_description<S, O>(&self, description: O)
     where
         S: ToString,
+        O: Into<Option<S>>,
     {
+        let description = description.into();
         self._sender
-            .send(LabeledItemMessage::Desc(title.map(|s| s.to_string())));
+            .send(LabeledItemMessage::Desc(description.map(|s| s.to_string())));
     }
 
     pub fn set_alignment(&self, align: Align) {
