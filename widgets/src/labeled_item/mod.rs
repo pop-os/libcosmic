@@ -45,10 +45,9 @@ impl LabeledItem {
         self.inner().model.set_title(title)
     }
 
-    pub fn set_description<S, O>(&self, description: O)
+    pub fn set_description<'a, O>(&self, description: O)
     where
-        S: ToString,
-        O: Into<Option<S>>,
+        O: Into<Option<&'a str>>,
     {
         self.inner().model.set_description(description)
     }

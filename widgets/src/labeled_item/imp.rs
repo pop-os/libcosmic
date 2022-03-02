@@ -47,10 +47,9 @@ impl LabeledItem {
             .send(LabeledItemMessage::Title(title.to_string()));
     }
 
-    pub fn set_description<S, O>(&self, description: O)
+    pub fn set_description<'a, O>(&self, description: O)
     where
-        S: ToString,
-        O: Into<Option<S>>,
+        O: Into<Option<&'a str>>,
     {
         let description = description.into();
         self._sender
