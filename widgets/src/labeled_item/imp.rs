@@ -1,5 +1,7 @@
-use gtk4::{prelude::*, Align, Label, Orientation, Widget};
-use relm4::{ComponentParts, Sender, SimpleComponent};
+use relm4::{
+    gtk::{prelude::*, Align, Box as GtkBox, Label, Orientation, Widget},
+    ComponentParts, Sender, SimpleComponent,
+};
 use std::cell::RefCell;
 
 #[derive(Debug)]
@@ -73,7 +75,7 @@ impl SimpleComponent for LabeledItem {
     type Output = ();
 
     view! {
-        base_box = gtk4::Box {
+        base_box = GtkBox {
             add_css_class: "labeled-item",
             set_orientation: Orientation::Horizontal,
             set_hexpand: true,
@@ -82,7 +84,7 @@ impl SimpleComponent for LabeledItem {
             set_margin_top: 8,
             set_margin_bottom: 8,
             set_spacing: 16,
-            append: labeled_item_info = &gtk4::Box {
+            append: labeled_item_info = &GtkBox {
                 add_css_class: "labeled-item-info",
                 set_orientation: Orientation::Vertical,
                 set_hexpand: true,

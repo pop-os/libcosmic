@@ -1,11 +1,13 @@
 mod imp;
 
-use gtk4::{glib::IsA, prelude::*, Align, Orientation, Widget};
-use relm4::{Component, ComponentController, ComponentParts, Controller};
+use relm4::{
+    gtk::{glib::IsA, prelude::*, Align, Box as GtkBox, Orientation, Widget},
+    Component, ComponentController, ComponentParts, Controller,
+};
 use std::{cell::Ref, ops::Deref};
 
 pub struct LabeledItem {
-    root: gtk4::Box,
+    root: GtkBox,
     controller: Controller<imp::LabeledItem>,
 }
 
@@ -18,7 +20,7 @@ impl LabeledItem {
         Self::default()
     }
 
-    pub fn widget(&self) -> gtk4::Box {
+    pub fn widget(&self) -> GtkBox {
         self.root.clone()
     }
 
@@ -64,7 +66,7 @@ impl LabeledItem {
 
 impl Default for LabeledItem {
     fn default() -> Self {
-        let root = gtk4::Box::new(Orientation::Horizontal, 0);
+        let root = GtkBox::new(Orientation::Horizontal, 0);
         let controller = imp::LabeledItem::init()
             .attach_to(&root)
             .launch(())
@@ -80,7 +82,7 @@ impl AsRef<Widget> for LabeledItem {
 }
 
 impl Deref for LabeledItem {
-    type Target = gtk4::Box;
+    type Target = GtkBox;
 
     fn deref(&self) -> &Self::Target {
         &self.root
