@@ -67,7 +67,7 @@ impl LabeledItem {
 impl Default for LabeledItem {
     fn default() -> Self {
         let root = GtkBox::new(Orientation::Horizontal, 0);
-        let controller = imp::LabeledItem::init()
+        let controller = imp::LabeledItem::builder()
             .attach_to(&root)
             .launch(())
             .detach();

@@ -1,6 +1,6 @@
 use relm4::{
     gtk::{prelude::*, Align, Box as GtkBox, Label, Orientation, Widget},
-    ComponentParts, Sender, SimpleComponent,
+    ComponentParts, ComponentSender, SimpleComponent,
 };
 use std::cell::RefCell;
 
@@ -21,7 +21,7 @@ pub(crate) struct LabeledItem {
     #[do_not_track]
     _remove_child: RefCell<Option<Widget>>,
     #[do_not_track]
-    _sender: Sender<LabeledItemMessage>,
+    _sender: ComponentSender<Self>,
 }
 
 impl LabeledItem {
@@ -46,7 +46,7 @@ impl LabeledItem {
         S: ToString,
     {
         self._sender
-            .send(LabeledItemMessage::Title(title.to_string()));
+            .input(LabeledItemMessage::Title(title.to_string()));
     }
 
     pub fn set_description<'a, O>(&self, description: O)
@@ -55,15 +55,15 @@ impl LabeledItem {
     {
         let description = description.into();
         self._sender
-            .send(LabeledItemMessage::Desc(description.map(|s| s.to_string())));
+            .input(LabeledItemMessage::Desc(description.map(|s| s.to_string())));
     }
 
     pub fn set_alignment(&self, align: Align) {
-        self._sender.send(LabeledItemMessage::Align(align));
+        self._sender.input(LabeledItemMessage::Align(align));
     }
 
     pub fn set_child(&self, child: Widget) {
-        self._sender.send(LabeledItemMessage::Child(child));
+        self._sender.input(LabeledItemMessage::Child(child));
     }
 }
 
@@ -90,26 +90,28 @@ impl SimpleComponent for LabeledItem {
                 set_hexpand: true,
                 set_spacing: 8,
                 set_valign: Align::Center,
-                &Label {
+                Label {
                     add_css_class: "labeled-item-title",
                     set_halign: Align::Start,
-                    set_label: watch! { &model._title }
+                    #[watch]
+                    set_label: &model._title
                 },
-                &Label {
+                Label {
                     add_css_class: "labeled-item-desc",
                     set_halign: Align::Start,
-                    set_visible: watch! { model._desc.is_some() },
-                    set_label: watch! { &model._desc.clone().unwrap_or_default() }
+                    #[watch]
+                    set_visible: model._desc.is_some(),
+                    #[watch]
+                    set_label: &model._desc.clone().unwrap_or_default()
                 },
             }
         }
     }
 
-    fn init_parts(
+    fn init(
         _init_params: Self::InitParams,
         root: &Self::Root,
-        input: &Sender<Self::Input>,
-        _output: &Sender<Self::Output>,
+        _sender: &ComponentSender<Self>,
     ) -> ComponentParts<Self> {
         let model = LabeledItem {
             _title: String::default(),
@@ -117,7 +119,7 @@ impl SimpleComponent for LabeledItem {
             _align: Align::Start,
             _child: None,
             _remove_child: RefCell::new(None),
-            _sender: input.clone(),
+            _sender: _sender.clone(),
             tracker: 0,
         };
         let widgets = view_output!();
@@ -128,8 +130,7 @@ impl SimpleComponent for LabeledItem {
     fn update(
         &mut self,
         msg: Self::Input,
-        _input: &Sender<Self::Input>,
-        _ouput: &Sender<Self::Output>,
+        _sender: &ComponentSender<Self>,
     ) {
         self.reset();
         match msg {
