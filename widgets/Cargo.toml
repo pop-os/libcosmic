@@ -4,6 +4,6 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-relm4 = { git = "https://github.com/AaronErhardt/relm4", branch = "next" }
-relm4-macros = { git = "https://github.com/AaronErhardt/relm4", branch = "next" }
+relm4 = { git = "https://github.com/Relm4/Relm4", branch = "next" }
+relm4-macros = { git = "https://github.com/Relm4/Relm4", branch = "next" }
 tracker = "0.1.1"
