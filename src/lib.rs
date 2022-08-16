@@ -6,10 +6,10 @@ mod wayland_custom_surface;
 #[cfg(feature = "x")]
 pub mod x;
 
-use adw::StyleManager;
 #[cfg(feature = "widgets")]
 pub use libcosmic_widgets as widgets;
 
+use adw::StyleManager;
 use gtk4::{gdk, gio::{self, FileMonitorFlags, FileMonitorEvent, FileMonitor}, glib, prelude::*};
 
 pub fn init() -> Option<FileMonitor> {
