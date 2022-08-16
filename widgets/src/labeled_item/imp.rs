@@ -1,8 +1,8 @@
 use relm4::{
     gtk::{prelude::*, Align, Box as GtkBox, Label, Orientation, Widget},
-    ComponentParts, ComponentSender, SimpleComponent,
+    ComponentParts, ComponentSender, SimpleComponent, component::ComponentSenderInner,
 };
-use std::cell::RefCell;
+use std::{cell::RefCell, sync::Arc};
 
 #[derive(Debug)]
 pub(crate) enum LabeledItemMessage {
@@ -111,7 +111,7 @@ impl SimpleComponent for LabeledItem {
     fn init(
         _init_params: Self::InitParams,
         root: &Self::Root,
-        _sender: &ComponentSender<Self>,
+        _sender: Arc<ComponentSenderInner<LabeledItemMessage, (), ()>>,
     ) -> ComponentParts<Self> {
         let model = LabeledItem {
             _title: String::default(),
@@ -130,7 +130,7 @@ impl SimpleComponent for LabeledItem {
     fn update(
         &mut self,
         msg: Self::Input,
-        _sender: &ComponentSender<Self>,
+        _sender: Arc<ComponentSenderInner<LabeledItemMessage, (), ()>>,
     ) {
         self.reset();
         match msg {

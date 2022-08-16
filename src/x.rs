@@ -1,5 +1,4 @@
 use cascade::cascade;
-use gdk4::prelude::*;
 use gdk4_x11::x11::xlib;
 use glib::translate::ToGlibPtr;
 use gtk4::{glib, prelude::*};

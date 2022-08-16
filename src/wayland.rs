@@ -56,7 +56,7 @@ impl CosmicWaylandDisplay {
 
         let wayland_display = unsafe {
             wayland_client::Display::from_external_display(
-                display.wl_display().as_ref().c_ptr() as *mut _
+                display.wl_display().c_ptr() as *mut _
             )
         }; // XXX is this sound?
 
@@ -175,14 +175,8 @@ impl ObjectImpl for LayerShellWindowInner {
 
     fn signals() -> &'static [Signal] {
         static SIGNALS: Lazy<Vec<Signal>> = Lazy::new(|| {
-            vec![Signal::builder(
-                // Signal name
-                "is-active-notify",
-                // Types of the values which will be sent to the signal handler
-                &[bool::static_type().into()],
-                // Type of the value the signal handler sends back
-                <()>::static_type().into(),
-            )
+            vec![Signal::builder("is-active-notify")
+            .param_types(&[bool::static_type().into()])
             .build()]
         });
         SIGNALS.as_ref()
@@ -218,8 +212,8 @@ impl WidgetImpl for LayerShellWindowInner {
         });
         surface.connect_event(
             glib::clone!(@weak widget => @default-return true, move |_, event| {
-                if event.event_type() == gdk4::EventType::FocusChange {
-                    let is_active = event.downcast_ref::<gdk4::FocusEvent>().unwrap().is_in();
+                if event.event_type() == gdk::EventType::FocusChange {
+                    let is_active = event.downcast_ref::<gdk::FocusEvent>().unwrap().is_in();
                     widget.set_property("is-active", is_active);
                     widget.emit_by_name::<()>("is-active-notify", &[&is_active]);
                 }
@@ -300,7 +294,7 @@ impl WidgetImpl for LayerShellWindowInner {
     }
 
     fn show(&self, widget: &Self::Type) {
-        widget.realize();
+        WidgetExt::realize(widget);
         self.parent_show(widget);
         widget.map();
     }
