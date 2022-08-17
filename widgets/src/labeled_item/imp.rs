@@ -1,6 +1,7 @@
 use relm4::{
+    component::ComponentSenderInner,
     gtk::{prelude::*, Align, Box as GtkBox, Label, Orientation, Widget},
-    ComponentParts, ComponentSender, SimpleComponent, component::ComponentSenderInner,
+    ComponentParts, ComponentSender, SimpleComponent,
 };
 use std::{cell::RefCell, sync::Arc};
 

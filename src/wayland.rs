@@ -55,9 +55,7 @@ impl CosmicWaylandDisplay {
         }
 
         let wayland_display = unsafe {
-            wayland_client::Display::from_external_display(
-                display.wl_display().c_ptr() as *mut _
-            )
+            wayland_client::Display::from_external_display(display.wl_display().c_ptr() as *mut _)
         }; // XXX is this sound?
 
         let mut event_queue = wayland_display.create_event_queue();
@@ -176,8 +174,8 @@ impl ObjectImpl for LayerShellWindowInner {
     fn signals() -> &'static [Signal] {
         static SIGNALS: Lazy<Vec<Signal>> = Lazy::new(|| {
             vec![Signal::builder("is-active-notify")
-            .param_types(&[bool::static_type().into()])
-            .build()]
+                .param_types(&[bool::static_type().into()])
+                .build()]
         });
         SIGNALS.as_ref()
     }
