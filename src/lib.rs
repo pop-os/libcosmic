@@ -43,8 +43,8 @@ pub fn init() -> (Option<FileMonitor>, Option<FileMonitor>) {
         .ok()
         .and_then(|xdg_dirs| xdg_dirs.find_config_file("gtk.css"))
         .unwrap_or_else(|| "~/.config/gtk-4.0/gtk.css".into());
-    let file = gio::File::for_path(path);
-    let gtk_css_monitor = file.monitor(FileMonitorFlags::all(), None::<&gio::Cancellable>).ok().map(|monitor| {
+    let gtk_file = gio::File::for_path(path);
+    let gtk_css_monitor = gtk_file.monitor(FileMonitorFlags::all(), None::<&gio::Cancellable>).ok().map(|monitor| {
         monitor.connect_changed(glib::clone!(@strong gtk_user_provider => move |_monitor, file, _other_file, event| {
             match event {
                 FileMonitorEvent::Deleted | FileMonitorEvent::MovedOut | FileMonitorEvent::Renamed => {
@@ -71,9 +71,10 @@ pub fn init() -> (Option<FileMonitor>, Option<FileMonitor>) {
     .ok()
     .and_then(|xdg_dirs| xdg_dirs.find_config_file("cosmic.css"))
     .unwrap_or_else(|| "~/.config/gtk-4.0/cosmic.css".into());
-    let file = gio::File::for_path(path);
-    cosmic_user_provider.load_from_file(&file);
-    let cosmic_css_monitor = file.monitor(FileMonitorFlags::all(), None::<&gio::Cancellable>).ok().map(|monitor| {
+
+    let cosmic_file = gio::File::for_path(path);
+    cosmic_user_provider.load_from_file(&cosmic_file);
+    let cosmic_css_monitor = cosmic_file.monitor(FileMonitorFlags::all(), None::<&gio::Cancellable>).ok().map(|monitor| {
             monitor.connect_changed(glib::clone!(@strong cosmic_user_provider => move |_monitor, file, _other_file, event| {
                 match event {
                     FileMonitorEvent::Deleted | FileMonitorEvent::MovedOut | FileMonitorEvent::Renamed => {
