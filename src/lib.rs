@@ -51,9 +51,9 @@ pub fn init() -> (Option<FileMonitor>, Option<FileMonitor>) {
                     if adw::is_initialized() {
                         let manager = StyleManager::default();
                         let css = if manager.is_dark() {
-                            adw_user_colors_lib::colors::ColorOverrides::dark_default().as_css()
+                            adw_user_colors_lib::colors::ColorOverrides::dark_default().as_gtk_css()
                         } else {
-                            adw_user_colors_lib::colors::ColorOverrides::light_default().as_css()
+                            adw_user_colors_lib::colors::ColorOverrides::light_default().as_gtk_css()
                         };
                         gtk_user_provider
                             .load_from_data(css.as_bytes());
@@ -81,9 +81,9 @@ pub fn init() -> (Option<FileMonitor>, Option<FileMonitor>) {
                         if adw::is_initialized() {
                             let manager = StyleManager::default();
                             let css = if manager.is_dark() {
-                                adw_user_colors_lib::colors::ColorOverrides::dark_default().as_css()
+                                adw_user_colors_lib::colors::ColorOverrides::dark_default().as_gtk_css()
                             } else {
-                                adw_user_colors_lib::colors::ColorOverrides::light_default().as_css()
+                                adw_user_colors_lib::colors::ColorOverrides::light_default().as_gtk_css()
                             };
                             cosmic_user_provider
                                 .load_from_data(css.as_bytes());

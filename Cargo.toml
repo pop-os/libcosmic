@@ -20,7 +20,7 @@ libcosmic-widgets = { path = "widgets", optional = true }
 xdg = "2.4.1"
 
 [features]
-default = ["layer-shell", "x", "widgets"]
+default = ["widgets"]
 layer-shell = ["derivative", "gdk4-wayland", "wayland-client", "wayland-protocols", "gobject-sys"]
 x = ["x11", "gdk4-x11"]
 widgets = ["libcosmic-widgets"]
