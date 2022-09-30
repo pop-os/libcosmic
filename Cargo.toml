@@ -6,6 +6,10 @@ edition = "2021"
 [lib]
 name = "cosmic"
 
+[features]
+default = []
+debug = ["iced/debug"]
+
 [dependencies]
 freedesktop-icons = "0.2.1"
 
