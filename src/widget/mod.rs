@@ -19,4 +19,4 @@ mod list_view;
 pub use list_view::list_view_style;
 
 mod nav_bar;
-pub use nav_bar::nav_bar_style;
+pub use nav_bar::{nav_bar, nav_bar_style};

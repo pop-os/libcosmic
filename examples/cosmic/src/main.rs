@@ -3,8 +3,8 @@ use cosmic::{
     widget::{
         button,
         icon,
+        nav_bar,
         list_view_style,
-        nav_bar_style,
     },
     settings,
     iced::{theme, Alignment, Color, Element, Length, Sandbox, Theme},
@@ -67,40 +67,34 @@ impl Sandbox for Window {
     }
 
     fn view(&self) -> Element<Message> {
-        let sidebar: Element<_> = container(
-            column![
-                //TODO: Support symbolic icons
-                button!(
-                    icon("network-wireless", 16).width(Length::Units(16)),
-                    text("Wi-Fi"),
-                    horizontal_space(Length::Fill),
-                )
-                .on_press(Message::Page(0))
-                .style(if self.page == 0 { theme::Button::Primary } else { theme::Button::Text })
-                ,
-                button!(
-                    icon("preferences-desktop", 16).width(Length::Units(16)),
-                    text("Desktop"),
-                    horizontal_space(Length::Fill),
-                )
-                .on_press(Message::Page(1))
-                .style(if self.page == 1 { theme::Button::Primary } else { theme::Button::Text })
-                ,
-                button!(
-                    icon("system-software-update", 16).width(Length::Units(16)),
-                    text("OS Upgrade & Recovery"),
-                    horizontal_space(Length::Fill),
-                )
-                .on_press(Message::Page(2))
-                .style(if self.page == 2 { theme::Button::Primary } else { theme::Button::Text })
-                ,
-                vertical_space(Length::Fill),
-            ]
-            .spacing(12)
-            .padding(12)
-            .max_width(300)
+        let sidebar: Element<_> = nav_bar!(
+            //TODO: Support symbolic icons
+            button!(
+                icon("network-wireless", 16),
+                text("Wi-Fi"),
+                horizontal_space(Length::Fill),
+            )
+            .on_press(Message::Page(0))
+            .style(if self.page == 0 { theme::Button::Primary } else { theme::Button::Text })
+            ,
+            button!(
+                icon("preferences-desktop", 16),
+                text("Desktop"),
+                horizontal_space(Length::Fill),
+            )
+            .on_press(Message::Page(1))
+            .style(if self.page == 1 { theme::Button::Primary } else { theme::Button::Text })
+            ,
+            button!(
+                icon("system-software-update", 16),
+                text("OS Upgrade & Recovery"),
+                horizontal_space(Length::Fill),
+            )
+            .on_press(Message::Page(2))
+            .style(if self.page == 2 { theme::Button::Primary } else { theme::Button::Text })
+            ,
+            vertical_space(Length::Fill),
         )
-        .style(theme::Container::Custom(nav_bar_style))
         .into();
 
         let choose_theme = [Theme::Light, Theme::Dark].iter().fold(
