@@ -144,23 +144,18 @@ impl Sandbox for Window {
                 list_row!(
                     button!("Primary")
                         .style(theme::Button::Primary)
-                        .padding([8, 16])
                     ,
                     button!("Secondary")
                         .style(theme::Button::Secondary)
-                        .padding([8, 16])
                     ,
                     button!("Positive")
                         .style(theme::Button::Positive)
-                        .padding([8, 16])
                     ,
                     button!("Destructive")
                         .style(theme::Button::Destructive)
-                        .padding([8, 16])
                     ,
                     button!("Text")
                         .style(theme::Button::Text)
-                        .padding([8, 16])
                     ,
                 ),
             ),
