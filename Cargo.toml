@@ -19,6 +19,10 @@ git = "https://github.com/pop-os/iced.git"
 branch = "cosmic-design-system"
 features = ["cosmic_theme"]
 
+[dependencies.iced_lazy]
+git = "https://github.com/pop-os/iced.git"
+branch = "cosmic-design-system"
+
 [workspace]
 members = [
   "examples/cosmic",

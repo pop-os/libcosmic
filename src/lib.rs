@@ -1,4 +1,5 @@
 pub use iced;
+pub use iced_lazy;
 
 pub mod font;
 pub mod widget;

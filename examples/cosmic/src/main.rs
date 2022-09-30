@@ -22,6 +22,7 @@ use cosmic::{
         slider,
         text,
     },
+    iced_lazy::responsive,
 };
 
 pub fn main() -> cosmic::iced::Result {
@@ -40,7 +41,7 @@ struct Window {
     pick_list_selected: Option<&'static str>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Clone, Copy, Debug)]
 enum Message {
     Page(u8),
     Debug(bool),
@@ -79,127 +80,138 @@ impl Sandbox for Window {
     }
 
     fn view(&self) -> Element<Message> {
-        let sidebar: Element<_> = nav_bar!(
-            //TODO: Support symbolic icons
-            nav_button!("network-wireless", "Wi-Fi")
-                .on_press(Message::Page(0))
-                .style(if self.page == 0 { theme::Button::Primary } else { theme::Button::Text })
-            ,
-            nav_button!("preferences-desktop", "Desktop")
-                .on_press(Message::Page(1))
-                .style(if self.page == 1 { theme::Button::Primary } else { theme::Button::Text })
-            ,
-            nav_button!("system-software-update", "OS Upgrade & Recovery")
-                .on_press(Message::Page(2))
-                .style(if self.page == 2 { theme::Button::Primary } else { theme::Button::Text })
-        )
-        .into();
-
-        let choose_theme = [Theme::Light, Theme::Dark].iter().fold(
-            row![text("Debug theme:")].spacing(10).align_items(Alignment::Center),
-            |row, theme| {
-                row.push(radio(
-                    format!("{:?}", theme),
-                    *theme,
-                    Some(self.theme),
-                    Message::ThemeChanged,
-                ))
-            },
-        );
-
-        let content: Element<_> = list_view!(
-            list_section!(
-                "Debug",
-                choose_theme,
-                toggler(
-                    String::from("Debug layout"),
-                    self.debug,
-                    Message::Debug,
-                )
-            ),
-            list_section!(
-                "Buttons",
-                list_row!(
-                    button!("Primary")
-                        .style(theme::Button::Primary)
-                        .on_press(Message::ButtonPressed)
-                    ,
-                    button!("Secondary")
-                        .style(theme::Button::Secondary)
-                        .on_press(Message::ButtonPressed)
-                    ,
-                    button!("Positive")
-                        .style(theme::Button::Positive)
-                        .on_press(Message::ButtonPressed)
-                    ,
-                    button!("Destructive")
-                        .style(theme::Button::Destructive)
-                        .on_press(Message::ButtonPressed)
-                    ,
-                    button!("Text")
-                        .style(theme::Button::Text)
-                        .on_press(Message::ButtonPressed)
-                    ,
-                ),
-                list_row!(
-                    button!("Primary")
-                        .style(theme::Button::Primary)
-                    ,
-                    button!("Secondary")
-                        .style(theme::Button::Secondary)
-                    ,
-                    button!("Positive")
-                        .style(theme::Button::Positive)
-                    ,
-                    button!("Destructive")
-                        .style(theme::Button::Destructive)
-                    ,
-                    button!("Text")
-                        .style(theme::Button::Text)
-                    ,
-                ),
-            ),
-            list_section!(
-                "Controls",
-                list_item!(
-                    "Toggler",
-                    toggler(None, self.toggler_value, Message::TogglerToggled)
-                ),
-                list_item!(
-                    "Pick List (TODO)",
-                    pick_list(vec![
-                        "Option 1",
-                        "Option 2",
-                        "Option 3",
-                        "Option 4",
-                    ], self.pick_list_selected, Message::PickListSelected)
-                ),
-                list_item!(
-                    "Slider",
-                    slider(0.0..=100.0, self.slider_value, Message::SliderChanged)
-                        .width(Length::Units(250))
-                ),
-                list_item!(
-                    "Progress",
-                    progress_bar(0.0..=100.0, self.slider_value)
-                        .width(Length::Units(250))
-                        .height(Length::Units(4))
-                ),
-                checkbox("Checkbox", self.checkbox_value, Message::CheckboxToggled),
+        // TODO: Adding responsive makes this regenerate on every size change, and regeneration
+        // involves allocations for many different items. Ideally, we could only make the nav bar
+        // responsive and leave the content to be sized normally.
+        responsive(|size| {
+            let condensed = size.width < 800.0;
+            let sidebar: Element<_> = nav_bar!(
+                //TODO: Support symbolic icons
+                nav_button!("network-wireless", "Wi-Fi", condensed)
+                    .on_press(Message::Page(0))
+                    .style(if self.page == 0 { theme::Button::Primary } else { theme::Button::Text })
+                ,
+                nav_button!("preferences-desktop", "Desktop", condensed)
+                    .on_press(Message::Page(1))
+                    .style(if self.page == 1 { theme::Button::Primary } else { theme::Button::Text })
+                ,
+                nav_button!("system-software-update", "OS Upgrade & Recovery", condensed)
+                    .on_press(Message::Page(2))
+                    .style(if self.page == 2 { theme::Button::Primary } else { theme::Button::Text })
             )
-        )
-        .into();
+            .max_width(if condensed {
+                56
+            } else {
+                300
+            })
+            .into();
 
-        container(row![
-            if self.debug { sidebar.explain(Color::WHITE) } else { sidebar },
-            horizontal_space(Length::Fill),
-            if self.debug { content.explain(Color::WHITE) } else { content },
-            horizontal_space(Length::Fill),
-        ])
-        .padding([16, 8])
-        .width(Length::Fill)
-        .height(Length::Fill)
-        .into()
+            let choose_theme = [Theme::Light, Theme::Dark].iter().fold(
+                row![text("Debug theme:")].spacing(10).align_items(Alignment::Center),
+                |row, theme| {
+                    row.push(radio(
+                        format!("{:?}", theme),
+                        *theme,
+                        Some(self.theme),
+                        Message::ThemeChanged,
+                    ))
+                },
+            );
+
+            let content: Element<_> = list_view!(
+                list_section!(
+                    "Debug",
+                    choose_theme,
+                    toggler(
+                        String::from("Debug layout"),
+                        self.debug,
+                        Message::Debug,
+                    )
+                ),
+                list_section!(
+                    "Buttons",
+                    list_row!(
+                        button!("Primary")
+                            .style(theme::Button::Primary)
+                            .on_press(Message::ButtonPressed)
+                        ,
+                        button!("Secondary")
+                            .style(theme::Button::Secondary)
+                            .on_press(Message::ButtonPressed)
+                        ,
+                        button!("Positive")
+                            .style(theme::Button::Positive)
+                            .on_press(Message::ButtonPressed)
+                        ,
+                        button!("Destructive")
+                            .style(theme::Button::Destructive)
+                            .on_press(Message::ButtonPressed)
+                        ,
+                        button!("Text")
+                            .style(theme::Button::Text)
+                            .on_press(Message::ButtonPressed)
+                        ,
+                    ),
+                    list_row!(
+                        button!("Primary")
+                            .style(theme::Button::Primary)
+                        ,
+                        button!("Secondary")
+                            .style(theme::Button::Secondary)
+                        ,
+                        button!("Positive")
+                            .style(theme::Button::Positive)
+                        ,
+                        button!("Destructive")
+                            .style(theme::Button::Destructive)
+                        ,
+                        button!("Text")
+                            .style(theme::Button::Text)
+                        ,
+                    ),
+                ),
+                list_section!(
+                    "Controls",
+                    list_item!(
+                        "Toggler",
+                        toggler(None, self.toggler_value, Message::TogglerToggled)
+                    ),
+                    list_item!(
+                        "Pick List (TODO)",
+                        pick_list(vec![
+                            "Option 1",
+                            "Option 2",
+                            "Option 3",
+                            "Option 4",
+                        ], self.pick_list_selected, Message::PickListSelected)
+                    ),
+                    list_item!(
+                        "Slider",
+                        slider(0.0..=100.0, self.slider_value, Message::SliderChanged)
+                            .width(Length::Units(250))
+                    ),
+                    list_item!(
+                        "Progress",
+                        progress_bar(0.0..=100.0, self.slider_value)
+                            .width(Length::Units(250))
+                            .height(Length::Units(4))
+                    ),
+                    checkbox("Checkbox", self.checkbox_value, Message::CheckboxToggled),
+                )
+            )
+            .into();
+
+            container(row![
+                if self.debug { sidebar.explain(Color::WHITE) } else { sidebar },
+                horizontal_space(Length::Fill),
+                if self.debug { content.explain(Color::WHITE) } else { content },
+                horizontal_space(Length::Fill),
+            ])
+            .padding([16, 8])
+            .width(Length::Fill)
+            .height(Length::Fill)
+            .into()
+        }).into()
     }
 
     fn theme(&self) -> Theme {

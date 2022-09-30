@@ -43,14 +43,21 @@ pub fn nav_bar_style(theme: &Theme) -> widget::container::Appearance {
 
 #[macro_export]
 macro_rules! nav_button {
-    ($icon: expr, $title:expr) => (
-        $crate::widget::button!(
-            $crate::widget::icon($icon, 16),
-            $crate::iced::widget::Text::new($title),
-            $crate::iced::widget::horizontal_space(
-                $crate::iced::Length::Fill
-            ),
-        )
-    );
+    ($icon: expr, $title:expr, $condensed:expr) => ({
+        if $condensed {
+            $crate::iced::widget::Button::new(
+                $crate::widget::icon($icon, 16)
+            )
+            .padding(8)
+        } else {
+            $crate::widget::button!(
+                $crate::widget::icon($icon, 16),
+                $crate::iced::widget::Text::new($title),
+                $crate::iced::widget::horizontal_space(
+                    $crate::iced::Length::Fill
+                ),
+            )
+        }
+    });
 }
 pub use nav_button;
