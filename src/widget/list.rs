@@ -8,11 +8,21 @@ use iced::{
 #[macro_export]
 macro_rules! list_item {
     ($title:expr, $($x:expr),+ $(,)?) => (
-        $crate::iced::widget::Row::with_children(vec![
-            $crate::iced::widget::Text::new($title).into(),
+        $crate::widget::list_row!(
+            $crate::iced::widget::Text::new($title),
             $crate::iced::widget::horizontal_space(
                 $crate::iced::Length::Fill
-            ).into(),
+            ),
+            $($x),+
+        )
+    );
+}
+pub use list_item;
+
+#[macro_export]
+macro_rules! list_row {
+    ($($x:expr),+ $(,)?) => (
+        $crate::iced::widget::Row::with_children(vec![
             $($crate::iced::Element::from($x)),+
         ])
         .align_items(Alignment::Center)
@@ -20,7 +30,7 @@ macro_rules! list_item {
         .spacing(12)
     );
 }
-pub use list_item;
+pub use list_row;
 
 #[macro_export]
 macro_rules! list_section {

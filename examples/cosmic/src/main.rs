@@ -3,6 +3,7 @@ use cosmic::{
         button,
         icon,
         list_item,
+        list_row,
         list_section,
         list_view,
         nav_bar,
@@ -123,7 +124,7 @@ impl Sandbox for Window {
             ),
             list_section!(
                 "Buttons",
-                row!(
+                list_row!(
                     button!("Primary")
                         .style(theme::Button::Primary)
                         .on_press(Message::ButtonPressed)
@@ -144,8 +145,8 @@ impl Sandbox for Window {
                         .style(theme::Button::Text)
                         .on_press(Message::ButtonPressed)
                     ,
-                ).spacing(12),
-                row!(
+                ),
+                list_row!(
                     button!("Primary")
                         .style(theme::Button::Primary)
                         .padding([8, 16])
@@ -166,7 +167,7 @@ impl Sandbox for Window {
                         .style(theme::Button::Text)
                         .padding([8, 16])
                     ,
-                ).spacing(12),
+                ),
             ),
             list_section!(
                 "Controls",
