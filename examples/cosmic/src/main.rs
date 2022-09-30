@@ -20,7 +20,8 @@ use cosmic::{
         radio,
         row,
         slider,
-        text,
+        text, 
+        scrollable,
     },
     iced_lazy::responsive,
 };
@@ -119,90 +120,92 @@ impl Sandbox for Window {
                 },
             );
 
-            let content: Element<_> = list_view!(
-                list_section!(
-                    "Debug",
-                    choose_theme,
-                    toggler(
-                        String::from("Debug layout"),
-                        self.debug,
-                        Message::Debug,
-                    )
-                ),
-                list_section!(
-                    "Buttons",
-                    list_row!(
-                        button!("Primary")
-                            .style(theme::Button::Primary)
-                            .on_press(Message::ButtonPressed)
-                        ,
-                        button!("Secondary")
-                            .style(theme::Button::Secondary)
-                            .on_press(Message::ButtonPressed)
-                        ,
-                        button!("Positive")
-                            .style(theme::Button::Positive)
-                            .on_press(Message::ButtonPressed)
-                        ,
-                        button!("Destructive")
-                            .style(theme::Button::Destructive)
-                            .on_press(Message::ButtonPressed)
-                        ,
-                        button!("Text")
-                            .style(theme::Button::Text)
-                            .on_press(Message::ButtonPressed)
-                        ,
-                    ),
-                    list_row!(
-                        button!("Primary")
-                            .style(theme::Button::Primary)
-                        ,
-                        button!("Secondary")
-                            .style(theme::Button::Secondary)
-                        ,
-                        button!("Positive")
-                            .style(theme::Button::Positive)
-                        ,
-                        button!("Destructive")
-                            .style(theme::Button::Destructive)
-                        ,
-                        button!("Text")
-                            .style(theme::Button::Text)
-                        ,
-                    ),
-                ),
-                list_section!(
-                    "Controls",
-                    list_item!(
-                        "Toggler",
-                        toggler(None, self.toggler_value, Message::TogglerToggled)
-                    ),
-                    list_item!(
-                        "Pick List (TODO)",
-                        pick_list(
-                            vec![
-                                "Option 1",
-                                "Option 2",
-                                "Option 3",
-                                "Option 4",
-                            ],
-                            self.pick_list_selected,
-                            Message::PickListSelected
+            let content: Element<_> = scrollable(
+                list_view!(
+                    list_section!(
+                        "Debug",
+                        choose_theme,
+                        toggler(
+                            String::from("Debug layout"),
+                            self.debug,
+                            Message::Debug,
                         )
-                            .padding([8, 0, 8, 16])
                     ),
-                    list_item!(
-                        "Slider",
-                        slider(0.0..=100.0, self.slider_value, Message::SliderChanged)
-                            .width(Length::Units(250))
+                    list_section!(
+                        "Buttons",
+                        list_row!(
+                            button!("Primary")
+                                .style(theme::Button::Primary)
+                                .on_press(Message::ButtonPressed)
+                            ,
+                            button!("Secondary")
+                                .style(theme::Button::Secondary)
+                                .on_press(Message::ButtonPressed)
+                            ,
+                            button!("Positive")
+                                .style(theme::Button::Positive)
+                                .on_press(Message::ButtonPressed)
+                            ,
+                            button!("Destructive")
+                                .style(theme::Button::Destructive)
+                                .on_press(Message::ButtonPressed)
+                            ,
+                            button!("Text")
+                                .style(theme::Button::Text)
+                                .on_press(Message::ButtonPressed)
+                            ,
+                        ),
+                        list_row!(
+                            button!("Primary")
+                                .style(theme::Button::Primary)
+                            ,
+                            button!("Secondary")
+                                .style(theme::Button::Secondary)
+                            ,
+                            button!("Positive")
+                                .style(theme::Button::Positive)
+                            ,
+                            button!("Destructive")
+                                .style(theme::Button::Destructive)
+                            ,
+                            button!("Text")
+                                .style(theme::Button::Text)
+                            ,
+                        ),
                     ),
-                    list_item!(
-                        "Progress",
-                        progress_bar(0.0..=100.0, self.slider_value)
-                            .width(Length::Units(250))
-                            .height(Length::Units(4))
-                    ),
-                    checkbox("Checkbox", self.checkbox_value, Message::CheckboxToggled),
+                    list_section!(
+                        "Controls",
+                        list_item!(
+                            "Toggler",
+                            toggler(None, self.toggler_value, Message::TogglerToggled)
+                        ),
+                        list_item!(
+                            "Pick List (TODO)",
+                            pick_list(
+                                vec![
+                                    "Option 1",
+                                    "Option 2",
+                                    "Option 3",
+                                    "Option 4",
+                                ],
+                                self.pick_list_selected,
+                                Message::PickListSelected
+                            )
+                                .padding([8, 0, 8, 16])
+                        ),
+                        list_item!(
+                            "Slider",
+                            slider(0.0..=100.0, self.slider_value, Message::SliderChanged)
+                                .width(Length::Units(250))
+                        ),
+                        list_item!(
+                            "Progress",
+                            progress_bar(0.0..=100.0, self.slider_value)
+                                .width(Length::Units(250))
+                                .height(Length::Units(4))
+                        ),
+                        checkbox("Checkbox", self.checkbox_value, Message::CheckboxToggled),
+                    )
                 )
             )
             .into();
