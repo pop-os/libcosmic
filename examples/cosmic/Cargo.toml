@@ -6,9 +6,4 @@ edition = "2021"
 publish = false
 
 [dependencies]
-freedesktop-icons = "0.2.1"
-
-[dependencies.iced]
-git = "https://github.com/pop-os/iced.git"
-branch = "cosmic-design-system"
-features = ["cosmic_theme", "svg"]
+libcosmic = { path = "../.." }

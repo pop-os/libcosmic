@@ -1,81 +1,24 @@
-use iced::widget::{
-    button, checkbox, column, container, horizontal_rule, horizontal_space, progress_bar, radio,
-    row, slider, svg, text, toggler,
-    vertical_space,
-};
-use iced::{theme, Alignment, Background, Color, Element, Font, Length, Sandbox, Settings, Theme};
-
-const FONT: Font = Font::External {
-    name: "Fira Sans Regular",
-    bytes: include_bytes!("../res/Fira/Sans/Regular.otf"),
-};
-
-const FONT_LIGHT: Font = Font::External {
-    name: "Fira Sans Light",
-    bytes: include_bytes!("../res/Fira/Sans/Light.otf"),
-};
-
-const FONT_SEMIBOLD: Font = Font::External {
-    name: "Fira Sans SemiBold",
-    bytes: include_bytes!("../res/Fira/Sans/SemiBold.otf"),
+use cosmic::{
+    font::FONT_SEMIBOLD,
+    widget::{
+        button,
+        icon,
+        list_view_style,
+        nav_bar_style,
+    },
+    settings,
+    iced::{theme, Alignment, Color, Element, Length, Sandbox, Theme},
+    iced::widget::{
+        checkbox, column, container, horizontal_rule, horizontal_space, progress_bar, radio,
+        row, slider, text, toggler,
+        vertical_space,
+    },
 };
 
-pub fn main() -> iced::Result {
-    let mut settings = Settings::default();
-    settings.default_font = match FONT {
-        Font::Default => None,
-        Font::External { bytes, .. } => Some(bytes),
-    };
-    settings.default_text_size = 18;
-    Window::run(settings)
+pub fn main() -> cosmic::iced::Result {
+    Window::run(settings())
 }
 
-fn icon(name: &str, size: u16) -> svg::Svg {
-    let handle = match freedesktop_icons::lookup(name)
-        .with_size(size)
-        .with_theme("Pop")
-        .with_cache()
-        .force_svg()
-        .find()
-    {
-        Some(path) => svg::Handle::from_path(path),
-        None => {
-            eprintln!("icon '{}' size {} not found", name, size);
-            svg::Handle::from_memory(Vec::new())
-        },
-    };
-    svg::Svg::new(handle)
-}
-
-fn sidebar_style(theme: &Theme) -> container::Appearance {
-    container::Appearance {
-        text_color: None,
-        background: Some(Background::Color(
-            match theme {
-                Theme::Dark => Color::from_rgb8(0x29, 0x29, 0x29),
-                Theme::Light => Color::from_rgb8(0xfd, 0xfd, 0xfd),
-            }
-        )),
-        border_radius: 8.0,
-        border_width: 0.0,
-        border_color: Color::TRANSPARENT,
-    }
-}
-
-fn listview_style(theme: &Theme) -> container::Appearance {
-    container::Appearance {
-        text_color: None,
-        background: Some(Background::Color(
-            match theme {
-                Theme::Dark => Color::from_rgb8(0x27, 0x27, 0x27),
-                Theme::Light => Color::from_rgb8(0xf7, 0xf7, 0xf7),
-            }
-        )),
-        border_radius: 8.0,
-        border_width: 0.0,
-        border_color: Color::TRANSPARENT,
-    }
-}
 
 #[derive(Default)]
 struct Window {
@@ -127,38 +70,26 @@ impl Sandbox for Window {
         let sidebar: Element<_> = container(
             column![
                 //TODO: Support symbolic icons
-                button(
-                    row![
-                        icon("network-wireless", 16).width(Length::Units(16)),
-                        text("Wi-Fi"),
-                        horizontal_space(Length::Fill),
-                    ]
-                    .padding([4, 12])
-                    .spacing(8)
+                button!(
+                    icon("network-wireless", 16).width(Length::Units(16)),
+                    text("Wi-Fi"),
+                    horizontal_space(Length::Fill),
                 )
                 .on_press(Message::Page(0))
                 .style(if self.page == 0 { theme::Button::Primary } else { theme::Button::Text })
                 ,
-                button(
-                    row![
-                        icon("preferences-desktop", 16).width(Length::Units(16)),
-                        text("Desktop"),
-                        horizontal_space(Length::Fill),
-                    ]
-                    .padding([4, 12])
-                    .spacing(8)
+                button!(
+                    icon("preferences-desktop", 16).width(Length::Units(16)),
+                    text("Desktop"),
+                    horizontal_space(Length::Fill),
                 )
                 .on_press(Message::Page(1))
                 .style(if self.page == 1 { theme::Button::Primary } else { theme::Button::Text })
                 ,
-                button(
-                    row![
-                        icon("system-software-update", 16).width(Length::Units(16)),
-                        text("OS Upgrade & Recovery"),
-                        horizontal_space(Length::Fill),
-                    ]
-                    .padding([4, 12])
-                    .spacing(8)
+                button!(
+                    icon("system-software-update", 16).width(Length::Units(16)),
+                    text("OS Upgrade & Recovery"),
+                    horizontal_space(Length::Fill),
                 )
                 .on_press(Message::Page(2))
                 .style(if self.page == 2 { theme::Button::Primary } else { theme::Button::Text })
@@ -169,7 +100,7 @@ impl Sandbox for Window {
             .padding(12)
             .max_width(300)
         )
-        .style(theme::Container::Custom(sidebar_style))
+        .style(theme::Container::Custom(nav_bar_style))
         .into();
 
         let choose_theme = [Theme::Light, Theme::Dark].iter().fold(
@@ -201,51 +132,46 @@ impl Sandbox for Window {
             container(
                 column![
                     row![
-                        button("Primary")
+                        button!("Primary")
                         .style(theme::Button::Primary)
-                        .padding([8, 16])
                         .on_press(Message::ButtonPressed)
                         ,
-                        button("Secondary")
+                        button!("Secondary")
                         .style(theme::Button::Secondary)
-                        .padding([8, 16])
                         .on_press(Message::ButtonPressed)
                         ,
-                        button("Positive")
+                        button!("Positive")
                         .style(theme::Button::Positive)
-                        .padding([8, 16])
                         .on_press(Message::ButtonPressed)
                         ,
-                        button("Destructive")
+                        button!("Destructive")
                         .style(theme::Button::Destructive)
-                        .padding([8, 16])
                         .on_press(Message::ButtonPressed)
                         ,
-                        button("Text")
+                        button!("Text")
                         .style(theme::Button::Text)
-                        .padding([8, 16])
                         .on_press(Message::ButtonPressed)
                         ,
                     ].spacing(12),
                     horizontal_rule(12),
                     row![
-                        button("Primary")
+                        button!("Primary")
                         .style(theme::Button::Primary)
                         .padding([8, 16])
                         ,
-                        button("Secondary")
+                        button!("Secondary")
                         .style(theme::Button::Secondary)
                         .padding([8, 16])
                         ,
-                        button("Positive")
+                        button!("Positive")
                         .style(theme::Button::Positive)
                         .padding([8, 16])
                         ,
-                        button("Destructive")
+                        button!("Destructive")
                         .style(theme::Button::Destructive)
                         .padding([8, 16])
                         ,
-                        button("Text")
+                        button!("Text")
                         .style(theme::Button::Text)
                         .padding([8, 16])
                         ,
@@ -254,7 +180,7 @@ impl Sandbox for Window {
                 .padding([12, 16])
                 .spacing(12)
             )
-            .style(theme::Container::Custom(listview_style))
+            .style(theme::Container::Custom(list_view_style))
             ,
             vertical_space(Length::Units(16)),
             text("Controls").font(FONT_SEMIBOLD),
@@ -293,7 +219,7 @@ impl Sandbox for Window {
                 .padding([12, 16])
                 .spacing(12)
             )
-            .style(theme::Container::Custom(listview_style))
+            .style(theme::Container::Custom(list_view_style))
         ]
         .spacing(8)
         .padding(24)
