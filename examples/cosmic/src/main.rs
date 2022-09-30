@@ -1,9 +1,9 @@
 use cosmic::{
-    font::FONT_SEMIBOLD,
     widget::{
         button,
         icon,
         list_item,
+        list_section,
         list_view,
         nav_bar,
         toggler,
@@ -11,7 +11,7 @@ use cosmic::{
     settings,
     iced::{theme, Alignment, Color, Element, Length, Sandbox, Theme},
     iced::widget::{
-        checkbox, column, container, horizontal_space, progress_bar, radio,
+        checkbox, container, horizontal_space, progress_bar, radio,
         row, slider, text,
         vertical_space,
     },
@@ -100,7 +100,7 @@ impl Sandbox for Window {
         .into();
 
         let choose_theme = [Theme::Light, Theme::Dark].iter().fold(
-            row![text("Theme:")].spacing(10).align_items(Alignment::Center),
+            row![text("Debug theme:")].spacing(10).align_items(Alignment::Center),
             |row, theme| {
                 row.push(radio(
                     format!("{:?}", theme),
@@ -111,18 +111,18 @@ impl Sandbox for Window {
             },
         );
 
-        let content: Element<_> = column![
-            choose_theme,
-            vertical_space(Length::Units(16)),
-            toggler(
-                String::from("Debug layout"),
-                self.debug,
-                Message::Debug,
-            )
-            ,
-            vertical_space(Length::Units(16)),
-            text("Buttons").font(FONT_SEMIBOLD),
-            list_view!(
+        let content: Element<_> = list_view!(
+            list_section!(
+                "Debug",
+                choose_theme,
+                toggler(
+                    String::from("Debug layout"),
+                    self.debug,
+                    Message::Debug,
+                )
+            ),
+            list_section!(
+                "Buttons",
                 list_item!(
                     button!("Primary")
                     .style(theme::Button::Primary)
@@ -167,11 +167,9 @@ impl Sandbox for Window {
                     .padding([8, 16])
                     ,
                 ),
-            )
-            ,
-            vertical_space(Length::Units(16)),
-            text("Controls").font(FONT_SEMIBOLD),
-            list_view!(
+            ),
+            list_section!(
+                "Controls",
                 list_item!(
                     text("Toggler"),
                     horizontal_space(Length::Fill),
@@ -191,10 +189,7 @@ impl Sandbox for Window {
                 ),
                 checkbox("Checkbox", self.checkbox_value, Message::CheckboxToggled),
             )
-        ]
-        .spacing(8)
-        .padding(24)
-        .max_width(600)
+        )
         .into();
 
         container(row![
