@@ -123,69 +123,67 @@ impl Sandbox for Window {
             ),
             list_section!(
                 "Buttons",
-                list_item!(
+                row!(
                     button!("Primary")
-                    .style(theme::Button::Primary)
-                    .on_press(Message::ButtonPressed)
+                        .style(theme::Button::Primary)
+                        .on_press(Message::ButtonPressed)
                     ,
                     button!("Secondary")
-                    .style(theme::Button::Secondary)
-                    .on_press(Message::ButtonPressed)
+                        .style(theme::Button::Secondary)
+                        .on_press(Message::ButtonPressed)
                     ,
                     button!("Positive")
-                    .style(theme::Button::Positive)
-                    .on_press(Message::ButtonPressed)
+                        .style(theme::Button::Positive)
+                        .on_press(Message::ButtonPressed)
                     ,
                     button!("Destructive")
-                    .style(theme::Button::Destructive)
-                    .on_press(Message::ButtonPressed)
+                        .style(theme::Button::Destructive)
+                        .on_press(Message::ButtonPressed)
                     ,
                     button!("Text")
-                    .style(theme::Button::Text)
-                    .on_press(Message::ButtonPressed)
+                        .style(theme::Button::Text)
+                        .on_press(Message::ButtonPressed)
                     ,
-                ),
-                list_item!(
+                ).spacing(12),
+                row!(
                     button!("Primary")
-                    .style(theme::Button::Primary)
-                    .padding([8, 16])
+                        .style(theme::Button::Primary)
+                        .padding([8, 16])
                     ,
                     button!("Secondary")
-                    .style(theme::Button::Secondary)
-                    .padding([8, 16])
+                        .style(theme::Button::Secondary)
+                        .padding([8, 16])
                     ,
                     button!("Positive")
-                    .style(theme::Button::Positive)
-                    .padding([8, 16])
+                        .style(theme::Button::Positive)
+                        .padding([8, 16])
                     ,
                     button!("Destructive")
-                    .style(theme::Button::Destructive)
-                    .padding([8, 16])
+                        .style(theme::Button::Destructive)
+                        .padding([8, 16])
                     ,
                     button!("Text")
-                    .style(theme::Button::Text)
-                    .padding([8, 16])
+                        .style(theme::Button::Text)
+                        .padding([8, 16])
                     ,
-                ),
+                ).spacing(12),
             ),
             list_section!(
                 "Controls",
                 list_item!(
-                    text("Toggler"),
-                    horizontal_space(Length::Fill),
+                    "Toggler",
                     toggler(None, self.toggler_value, Message::TogglerToggled)
                 ),
                 list_item!(
-                    text("Slider"),
-                    horizontal_space(Length::Fill),
+                    "Slider",
                     slider(0.0..=100.0, self.slider_value, Message::SliderChanged)
-                    .width(Length::Units(250)),
+                        .width(Length::Units(250))
                 ),
                 list_item!(
-                    text("Progress"),
-                    horizontal_space(Length::Fill),
-                    progress_bar(0.0..=100.0, self.slider_value).height(Length::Units(4))
-                    .width(Length::Units(250)),
+                    "Progress",
+                    progress_bar(0.0..=100.0, self.slider_value)
+                        .width(Length::Units(250))
+                        .height(Length::Units(4))
                 ),
                 checkbox("Checkbox", self.checkbox_value, Message::CheckboxToggled),
             )

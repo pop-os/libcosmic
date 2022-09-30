@@ -7,8 +7,14 @@ use iced::{
 
 #[macro_export]
 macro_rules! list_item {
-    ($($x:expr),+ $(,)?) => (
-        $crate::iced::widget::Row::with_children(vec![$($crate::iced::Element::from($x)),+])
+    ($title:expr, $($x:expr),+ $(,)?) => (
+        $crate::iced::widget::Row::with_children(vec![
+            $crate::iced::widget::Text::new($title).into(),
+            $crate::iced::widget::horizontal_space(
+                $crate::iced::Length::Fill
+            ).into(),
+            $($crate::iced::Element::from($x)),+
+        ])
         .align_items(Alignment::Center)
         .padding([0, 8])
         .spacing(12)
@@ -18,9 +24,9 @@ pub use list_item;
 
 #[macro_export]
 macro_rules! list_section {
-    ($heading:expr, $($x:expr),+ $(,)?) => (
+    ($title:expr, $($x:expr),+ $(,)?) => (
         $crate::iced::widget::Column::with_children(vec![
-            $crate::iced::widget::Text::new($heading)
+            $crate::iced::widget::Text::new($title)
             .font($crate::font::FONT_SEMIBOLD)
             .into()
             ,
