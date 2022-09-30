@@ -215,6 +215,8 @@ impl Sandbox for Window {
                     if self.debug { content.explain(Color::WHITE) } else { content },
                     horizontal_space(Length::Fill),
                 ])
+                .scrollbar_width(12)
+                .scroller_width(6)
             ])
             .padding([16, 8])
             .width(Length::Fill)
