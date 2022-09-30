@@ -59,6 +59,7 @@ impl Sandbox for Window {
     fn new() -> Self {
         let mut window = Window::default();
         window.slider_value = 50.0;
+        window.pick_list_selected = Some("Option 1");
         window
     }
 
@@ -178,12 +179,17 @@ impl Sandbox for Window {
                     ),
                     list_item!(
                         "Pick List (TODO)",
-                        pick_list(vec![
-                            "Option 1",
-                            "Option 2",
-                            "Option 3",
-                            "Option 4",
-                        ], self.pick_list_selected, Message::PickListSelected)
+                        pick_list(
+                            vec![
+                                "Option 1",
+                                "Option 2",
+                                "Option 3",
+                                "Option 4",
+                            ],
+                            self.pick_list_selected,
+                            Message::PickListSelected
+                        )
+                            .padding([8, 0, 8, 16])
                     ),
                     list_item!(
                         "Slider",
