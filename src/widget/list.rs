@@ -6,14 +6,31 @@ use iced::{
 };
 
 #[macro_export]
+macro_rules! list_item {
+    ($($x:expr),+ $(,)?) => (
+        $crate::iced::widget::Row::with_children(vec![$($crate::iced::Element::from($x)),+])
+        .padding([0, 8])
+        .spacing(12)
+    );
+}
+pub use list_item;
+
+#[macro_export]
 macro_rules! list_view {
     ($($x:expr),+ $(,)?) => (
-        $crate::iced::widget::Container::new(
-            $crate::iced::widget::Column::with_children(
-                vec![$($crate::iced::Element::from($x)),+]
-            )
+        $crate::iced::widget::Container::new({
+            let mut children = vec![$($crate::iced::Element::from($x)),+];
+
+            //TODO: more efficient method for adding separators
+            let mut i = 1;
+            while i < children.len() {
+                children.insert(i, $crate::iced::widget::horizontal_rule(12).into());
+                i += 2;
+            }
+
+            $crate::iced::widget::Column::with_children(children)
             .spacing(12)
-        )
+        })
         .padding([12, 16])
         .style(theme::Container::Custom(
             $crate::widget::list_view_style

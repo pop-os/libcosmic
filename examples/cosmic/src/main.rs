@@ -3,14 +3,16 @@ use cosmic::{
     widget::{
         button,
         icon,
+        list_item,
         list_view,
         nav_bar,
+        toggler,
     },
     settings,
     iced::{theme, Alignment, Color, Element, Length, Sandbox, Theme},
     iced::widget::{
-        checkbox, column, container, horizontal_rule, horizontal_space, progress_bar, radio,
-        row, slider, text, toggler,
+        checkbox, column, container, horizontal_space, progress_bar, radio,
+        row, slider, text,
         vertical_space,
     },
 };
@@ -117,14 +119,11 @@ impl Sandbox for Window {
                 self.debug,
                 Message::Debug,
             )
-            .width(Length::Shrink)
-            .size(24)
-            .spacing(12)
             ,
             vertical_space(Length::Units(16)),
             text("Buttons").font(FONT_SEMIBOLD),
             list_view!(
-                row![
+                list_item!(
                     button!("Primary")
                     .style(theme::Button::Primary)
                     .on_press(Message::ButtonPressed)
@@ -145,9 +144,8 @@ impl Sandbox for Window {
                     .style(theme::Button::Text)
                     .on_press(Message::ButtonPressed)
                     ,
-                ].spacing(12),
-                horizontal_rule(12),
-                row![
+                ),
+                list_item!(
                     button!("Primary")
                     .style(theme::Button::Primary)
                     .padding([8, 16])
@@ -168,40 +166,29 @@ impl Sandbox for Window {
                     .style(theme::Button::Text)
                     .padding([8, 16])
                     ,
-                ].spacing(12),
+                ),
             )
             ,
             vertical_space(Length::Units(16)),
             text("Controls").font(FONT_SEMIBOLD),
             list_view!(
-                row![
+                list_item!(
                     text("Toggler"),
                     horizontal_space(Length::Fill),
                     toggler(None, self.toggler_value, Message::TogglerToggled)
-                    .size(24)
-                    .width(Length::Shrink),
-                ]
-                .padding([0, 8])
-                ,
-                horizontal_rule(12),
-                row![
+                ),
+                list_item!(
                     text("Slider"),
                     horizontal_space(Length::Fill),
                     slider(0.0..=100.0, self.slider_value, Message::SliderChanged)
                     .width(Length::Units(250)),
-                ]
-                .padding([0, 8])
-                ,
-                horizontal_rule(12),
-                row![
+                ),
+                list_item!(
                     text("Progress"),
                     horizontal_space(Length::Fill),
                     progress_bar(0.0..=100.0, self.slider_value).height(Length::Units(4))
                     .width(Length::Units(250)),
-                ]
-                .padding([0, 8])
-                ,
-                horizontal_rule(12),
+                ),
                 checkbox("Checkbox", self.checkbox_value, Message::CheckboxToggled),
             )
         ]
