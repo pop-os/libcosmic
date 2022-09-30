@@ -9,16 +9,17 @@ use iced::{
 macro_rules! nav_bar {
     ($($x:expr),+ $(,)?) => (
         $crate::iced::widget::Container::new(
-            $crate::iced::widget::Column::with_children(vec![
-                $($crate::iced::Element::from($x)),+,
-                $crate::iced::widget::vertical_space(
-                    $crate::iced::Length::Fill
-                ).into()
-            ])
-            .spacing(12)
+            $crate::iced::widget::scrollable(
+                $crate::iced::widget::Column::with_children(
+                    vec![$($crate::iced::Element::from($x)),+]
+                )
+                .spacing(12)
+                .padding([0,20,0,0])
+            )
         )
         .max_width(300)
         .padding(12)
+        .height(Length::Fill)
         .style(theme::Container::Custom(
             $crate::widget::nav_bar_style
         ))
