@@ -1,0 +1,26 @@
+[package]
+name = "libcosmic-gtk4"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+cascade = "1.0.0"
+derivative = { version = "2", optional = true }
+gtk4 = { git = "https://github.com/gtk-rs/gtk4-rs", features = ["v4_6"] }
+adw = { git = "https://gitlab.gnome.org/World/Rust/libadwaita-rs", package = "libadwaita"}
+adw-user-colors-lib = { git = "https://github.com/pop-os/user-color-editor" }
+gdk4-wayland = { git = "https://github.com/gtk-rs/gtk4-rs", features = ["wayland_crate"], optional = true }
+gdk4-x11 = { git = "https://github.com/gtk-rs/gtk4-rs", features = ["xlib"], optional = true }
+x11 = { version = "2.19.1", features = ["xlib"], optional = true }
+gobject-sys = { git = "https://github.com/gtk-rs/gtk-rs-core", optional = true }
+wayland-client = { version = "0.29.4", optional = true }
+wayland-protocols = { version = "0.29.4", features = ["client", "unstable_protocols"], optional = true }
+once_cell = "1.13.0"
+libcosmic-widgets = { path = "widgets", optional = true }
+xdg = "2.4.1"
+
+[features]
+default = ["widgets"]
+layer-shell = ["derivative", "gdk4-wayland", "wayland-client", "wayland-protocols", "gobject-sys"]
+x = ["x11", "gdk4-x11"]
+widgets = ["libcosmic-widgets"]
