@@ -88,7 +88,7 @@ impl Sandbox for Window {
         // involves allocations for many different items. Ideally, we could only make the nav bar
         // responsive and leave the content to be sized normally.
         responsive(|size| {
-            let condensed = size.width < 800.0;
+            let condensed = size.width < 900.0;
             let sidebar: Element<_> = nav_bar!(
                 //TODO: Support symbolic icons
                 nav_button!("network-wireless", "Wi-Fi", condensed)
