@@ -17,13 +17,13 @@ freedesktop-icons = "0.2.1"
 git = "https://github.com/pop-os/iced.git"
 branch = "cosmic-design-system"
 #path = "../iced"
-features = ["cosmic_theme", "svg"]
+features = ["cosmic-theme", "svg"]
 
 [dependencies.iced_native]
 git = "https://github.com/pop-os/iced.git"
 branch = "cosmic-design-system"
 #path = "../iced/native"
-features = ["cosmic_theme"]
+features = ["cosmic-theme"]
 
 [dependencies.iced_lazy]
 git = "https://github.com/pop-os/iced.git"
