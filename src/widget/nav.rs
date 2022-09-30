@@ -9,9 +9,12 @@ use iced::{
 macro_rules! nav_bar {
     ($($x:expr),+ $(,)?) => (
         $crate::iced::widget::Container::new(
-            $crate::iced::widget::Column::with_children(
-                vec![$($crate::iced::Element::from($x)),+]
-            )
+            $crate::iced::widget::Column::with_children(vec![
+                $($crate::iced::Element::from($x)),+,
+                $crate::iced::widget::vertical_space(
+                    $crate::iced::Length::Fill
+                ).into()
+            ])
             .spacing(12)
         )
         .max_width(300)
@@ -37,3 +40,17 @@ pub fn nav_bar_style(theme: &Theme) -> widget::container::Appearance {
         border_color: Color::TRANSPARENT,
     }
 }
+
+#[macro_export]
+macro_rules! nav_button {
+    ($icon: expr, $title:expr) => (
+        $crate::widget::button!(
+            $crate::widget::icon($icon, 16),
+            $crate::iced::widget::Text::new($title),
+            $crate::iced::widget::horizontal_space(
+                $crate::iced::Length::Fill
+            ),
+        )
+    );
+}
+pub use nav_button;

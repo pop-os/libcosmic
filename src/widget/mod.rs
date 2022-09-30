@@ -7,8 +7,8 @@ pub use self::icon::*;
 mod list;
 pub use list::*;
 
-mod nav_bar;
-pub use nav_bar::*;
+mod nav;
+pub use nav::*;
 
 mod toggler;
 pub use toggler::*;

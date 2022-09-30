@@ -1,20 +1,26 @@
 use cosmic::{
     widget::{
         button,
-        icon,
         list_item,
         list_row,
         list_section,
         list_view,
         nav_bar,
+        nav_button,
         toggler,
     },
     settings,
     iced::{theme, Alignment, Color, Element, Length, Sandbox, Theme},
     iced::widget::{
-        checkbox, container, horizontal_space, progress_bar, radio,
-        row, slider, text,
-        vertical_space,
+        checkbox,
+        container,
+        horizontal_space,
+        pick_list,
+        progress_bar,
+        radio,
+        row,
+        slider,
+        text,
     },
 };
 
@@ -31,6 +37,7 @@ struct Window {
     slider_value: f32,
     checkbox_value: bool,
     toggler_value: bool,
+    pick_list_selected: Option<&'static str>,
 }
 
 #[derive(Debug, Clone)]
@@ -42,6 +49,7 @@ enum Message {
     SliderChanged(f32),
     CheckboxToggled(bool),
     TogglerToggled(bool),
+    PickListSelected(&'static str),
 }
 
 impl Sandbox for Window {
@@ -66,37 +74,24 @@ impl Sandbox for Window {
             Message::SliderChanged(value) => self.slider_value = value,
             Message::CheckboxToggled(value) => self.checkbox_value = value,
             Message::TogglerToggled(value) => self.toggler_value = value,
+            Message::PickListSelected(value) => self.pick_list_selected = Some(value),
         }
     }
 
     fn view(&self) -> Element<Message> {
         let sidebar: Element<_> = nav_bar!(
             //TODO: Support symbolic icons
-            button!(
-                icon("network-wireless", 16),
-                text("Wi-Fi"),
-                horizontal_space(Length::Fill),
-            )
-            .on_press(Message::Page(0))
-            .style(if self.page == 0 { theme::Button::Primary } else { theme::Button::Text })
+            nav_button!("network-wireless", "Wi-Fi")
+                .on_press(Message::Page(0))
+                .style(if self.page == 0 { theme::Button::Primary } else { theme::Button::Text })
             ,
-            button!(
-                icon("preferences-desktop", 16),
-                text("Desktop"),
-                horizontal_space(Length::Fill),
-            )
-            .on_press(Message::Page(1))
-            .style(if self.page == 1 { theme::Button::Primary } else { theme::Button::Text })
+            nav_button!("preferences-desktop", "Desktop")
+                .on_press(Message::Page(1))
+                .style(if self.page == 1 { theme::Button::Primary } else { theme::Button::Text })
             ,
-            button!(
-                icon("system-software-update", 16),
-                text("OS Upgrade & Recovery"),
-                horizontal_space(Length::Fill),
-            )
-            .on_press(Message::Page(2))
-            .style(if self.page == 2 { theme::Button::Primary } else { theme::Button::Text })
-            ,
-            vertical_space(Length::Fill),
+            nav_button!("system-software-update", "OS Upgrade & Recovery")
+                .on_press(Message::Page(2))
+                .style(if self.page == 2 { theme::Button::Primary } else { theme::Button::Text })
         )
         .into();
 
@@ -174,6 +169,15 @@ impl Sandbox for Window {
                 list_item!(
                     "Toggler",
                     toggler(None, self.toggler_value, Message::TogglerToggled)
+                ),
+                list_item!(
+                    "Pick List (TODO)",
+                    pick_list(vec![
+                        "Option 1",
+                        "Option 2",
+                        "Option 3",
+                        "Option 4",
+                    ], self.pick_list_selected, Message::PickListSelected)
                 ),
                 list_item!(
                     "Slider",
