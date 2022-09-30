@@ -27,7 +27,9 @@ use cosmic::{
 };
 
 pub fn main() -> cosmic::iced::Result {
-    Window::run(settings())
+    let mut settings = settings();
+    settings.window.min_size = Some((600, 300));
+    Window::run(settings)
 }
 
 
