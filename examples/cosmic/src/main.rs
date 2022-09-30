@@ -3,8 +3,8 @@ use cosmic::{
     widget::{
         button,
         icon,
+        list_view,
         nav_bar,
-        list_view_style,
     },
     settings,
     iced::{theme, Alignment, Color, Element, Length, Sandbox, Theme},
@@ -123,97 +123,87 @@ impl Sandbox for Window {
             ,
             vertical_space(Length::Units(16)),
             text("Buttons").font(FONT_SEMIBOLD),
-            container(
-                column![
-                    row![
-                        button!("Primary")
-                        .style(theme::Button::Primary)
-                        .on_press(Message::ButtonPressed)
-                        ,
-                        button!("Secondary")
-                        .style(theme::Button::Secondary)
-                        .on_press(Message::ButtonPressed)
-                        ,
-                        button!("Positive")
-                        .style(theme::Button::Positive)
-                        .on_press(Message::ButtonPressed)
-                        ,
-                        button!("Destructive")
-                        .style(theme::Button::Destructive)
-                        .on_press(Message::ButtonPressed)
-                        ,
-                        button!("Text")
-                        .style(theme::Button::Text)
-                        .on_press(Message::ButtonPressed)
-                        ,
-                    ].spacing(12),
-                    horizontal_rule(12),
-                    row![
-                        button!("Primary")
-                        .style(theme::Button::Primary)
-                        .padding([8, 16])
-                        ,
-                        button!("Secondary")
-                        .style(theme::Button::Secondary)
-                        .padding([8, 16])
-                        ,
-                        button!("Positive")
-                        .style(theme::Button::Positive)
-                        .padding([8, 16])
-                        ,
-                        button!("Destructive")
-                        .style(theme::Button::Destructive)
-                        .padding([8, 16])
-                        ,
-                        button!("Text")
-                        .style(theme::Button::Text)
-                        .padding([8, 16])
-                        ,
-                    ].spacing(12),
-                ]
-                .padding([12, 16])
-                .spacing(12)
+            list_view!(
+                row![
+                    button!("Primary")
+                    .style(theme::Button::Primary)
+                    .on_press(Message::ButtonPressed)
+                    ,
+                    button!("Secondary")
+                    .style(theme::Button::Secondary)
+                    .on_press(Message::ButtonPressed)
+                    ,
+                    button!("Positive")
+                    .style(theme::Button::Positive)
+                    .on_press(Message::ButtonPressed)
+                    ,
+                    button!("Destructive")
+                    .style(theme::Button::Destructive)
+                    .on_press(Message::ButtonPressed)
+                    ,
+                    button!("Text")
+                    .style(theme::Button::Text)
+                    .on_press(Message::ButtonPressed)
+                    ,
+                ].spacing(12),
+                horizontal_rule(12),
+                row![
+                    button!("Primary")
+                    .style(theme::Button::Primary)
+                    .padding([8, 16])
+                    ,
+                    button!("Secondary")
+                    .style(theme::Button::Secondary)
+                    .padding([8, 16])
+                    ,
+                    button!("Positive")
+                    .style(theme::Button::Positive)
+                    .padding([8, 16])
+                    ,
+                    button!("Destructive")
+                    .style(theme::Button::Destructive)
+                    .padding([8, 16])
+                    ,
+                    button!("Text")
+                    .style(theme::Button::Text)
+                    .padding([8, 16])
+                    ,
+                ].spacing(12),
             )
-            .style(theme::Container::Custom(list_view_style))
             ,
             vertical_space(Length::Units(16)),
             text("Controls").font(FONT_SEMIBOLD),
-            container(
-                column![
-                    row![
-                        text("Toggler"),
-                        horizontal_space(Length::Fill),
-                        toggler(None, self.toggler_value, Message::TogglerToggled)
-                        .size(24)
-                        .width(Length::Shrink),
-                    ]
-                    .padding([0, 8])
-                    ,
-                    horizontal_rule(12),
-                    row![
-                        text("Slider"),
-                        horizontal_space(Length::Fill),
-                        slider(0.0..=100.0, self.slider_value, Message::SliderChanged)
-                        .width(Length::Units(250)),
-                    ]
-                    .padding([0, 8])
-                    ,
-                    horizontal_rule(12),
-                    row![
-                        text("Progress"),
-                        horizontal_space(Length::Fill),
-                        progress_bar(0.0..=100.0, self.slider_value).height(Length::Units(4))
-                        .width(Length::Units(250)),
-                    ]
-                    .padding([0, 8])
-                    ,
-                    horizontal_rule(12),
-                    checkbox("Checkbox", self.checkbox_value, Message::CheckboxToggled),
+            list_view!(
+                row![
+                    text("Toggler"),
+                    horizontal_space(Length::Fill),
+                    toggler(None, self.toggler_value, Message::TogglerToggled)
+                    .size(24)
+                    .width(Length::Shrink),
                 ]
-                .padding([12, 16])
-                .spacing(12)
+                .padding([0, 8])
+                ,
+                horizontal_rule(12),
+                row![
+                    text("Slider"),
+                    horizontal_space(Length::Fill),
+                    slider(0.0..=100.0, self.slider_value, Message::SliderChanged)
+                    .width(Length::Units(250)),
+                ]
+                .padding([0, 8])
+                ,
+                horizontal_rule(12),
+                row![
+                    text("Progress"),
+                    horizontal_space(Length::Fill),
+                    progress_bar(0.0..=100.0, self.slider_value).height(Length::Units(4))
+                    .width(Length::Units(250)),
+                ]
+                .padding([0, 8])
+                ,
+                horizontal_rule(12),
+                checkbox("Checkbox", self.checkbox_value, Message::CheckboxToggled),
             )
-            .style(theme::Container::Custom(list_view_style))
         ]
         .spacing(8)
         .padding(24)

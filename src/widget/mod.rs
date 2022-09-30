@@ -16,7 +16,7 @@ mod icon;
 pub use self::icon::icon;
 
 mod list_view;
-pub use list_view::list_view_style;
+pub use list_view::{list_view, list_view_style};
 
 mod nav_bar;
 pub use nav_bar::{nav_bar, nav_bar_style};
