@@ -23,7 +23,7 @@ use cosmic::{
         row,
         slider,
         text,
-        scrollable,
+        scrollable
     },
     iced_lazy::responsive,
     iced_winit::window::drag,
@@ -141,9 +141,19 @@ impl Application for Window {
                     nav_button!("system-software-update", "OS Upgrade & Recovery", condensed)
                         .on_press(Message::Page(2))
                         .style(if self.page == 2 { theme::Button::Primary } else { theme::Button::Text })
+                        ,
+                        nav_button!("system-software-update", "OS Upgrade & Recovery", condensed)
+                        .on_press(Message::Page(2))
+                        .style(if self.page == 2 { theme::Button::Primary } else { theme::Button::Text }),
+                        nav_button!("system-software-update", "OS Upgrade & Recovery", condensed)
+                        .on_press(Message::Page(2))
+                        .style(if self.page == 2 { theme::Button::Primary } else { theme::Button::Text }),
+                        nav_button!("system-software-update", "OS Upgrade & Recovery", condensed)
+                        .on_press(Message::Page(2))
+                        .style(if self.page == 2 { theme::Button::Primary } else { theme::Button::Text })
                 )
                 .max_width(if condensed {
-                    56
+                    100
                 } else {
                     300
                 })
@@ -264,13 +274,13 @@ impl Application for Window {
                     if self.debug { content.explain(Color::WHITE) } else { content },
                     horizontal_space(Length::Fill),
                 ])
-                .scrollbar_width(12)
-                .scroller_width(6)
+                .scrollbar_width(8)
+                .scroller_width(8)
                 .into()
             );
 
             container(row(widgets))
-            .padding([16, 8])
+            .padding([16, 16])
             .width(Length::Fill)
             .height(Length::Fill)
             .into()
