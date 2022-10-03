@@ -83,13 +83,21 @@ fn main() {
                     let glyph = font.rusttype.glyph(rusttype::GlyphId(info.glyph_id as u16));
                     let scaled = glyph.scaled(rusttype::Scale::uniform(font_size));
                     let positioned = scaled.positioned(rusttype::point(
-                        glyph_x as f32 + font_size * pos.x_offset as f32 / font_scale,
-                        glyph_y as f32 + font_size * pos.y_offset as f32 / font_scale,
+                        font_size * pos.x_offset as f32 / font_scale,
+                        font_size * pos.y_offset as f32 / font_scale,
                     ));
                     if let Some(bb) = positioned.pixel_bounding_box() {
-                        positioned.draw(|x, y, v| {
-                            let x = x as i32 + bb.min.x;
-                            let y = y as i32 + bb.min.y;
+                        //TODO: make wrapping optional
+                        if glyph_x + bb.max.x >= window.width() as i32 {
+                            line_y += line_height;
+
+                            glyph_x = 0;
+                            glyph_y = line_y;
+                        }
+
+                        positioned.draw(|off_x, off_y, v| {
+                            let x = glyph_x + off_x as i32 + bb.min.x;
+                            let y = glyph_y + off_y as i32 + bb.min.y;
                             let c = (v * 255.0) as u32;
                             window.pixel(x, y, Color{
                                 data: c << 24 | (font_color.data & 0x00FF_FFFF)
