@@ -1,5 +1,8 @@
 use orbclient::{Color, EventOption, Renderer, Window, WindowFlag};
-use std::cmp;
+use std::{
+    cmp,
+    time::Instant,
+};
 
 struct Font<'a> {
     data: &'a [u8],
@@ -50,6 +53,26 @@ fn main() {
     let font = Font::new(include_bytes!("../../../res/FreeFont/FreeSerif.ttf"), 0).unwrap();
     let font_scale = font.rustybuzz.units_per_em();
 
+    let mut shaped_lines = Vec::new();
+    for line in text.lines() {
+        let mut buffer = rustybuzz::UnicodeBuffer::new();
+        buffer.push_str(line);
+        buffer.guess_segment_properties();
+        println!("{:?}: {}", buffer.script(), line);
+
+        let glyph_buffer = rustybuzz::shape(&font.rustybuzz, &[], buffer);
+        let glyph_infos = glyph_buffer.glyph_infos();
+        let glyph_positions = glyph_buffer.glyph_positions();
+
+        let mut shaped = Vec::new();
+        for (info, pos) in glyph_infos.iter().zip(glyph_positions.iter()) {
+            println!("  {:?} {:?}", info, pos);
+
+            shaped.push((*info, *pos));
+        }
+        shaped_lines.push(shaped);
+    }
+
     let mut glyph_lines = Vec::new();
     let mut mouse_x = -1;
     let mut mouse_y = -1;
@@ -60,23 +83,12 @@ fn main() {
         let (font_size, line_height) = font_sizes[font_size_i];
 
         if reglyph {
-            redraw = true;
+            let instant = Instant::now();
 
             glyph_lines.clear();
-            for line in text.lines() {
-                let mut buffer = rustybuzz::UnicodeBuffer::new();
-                buffer.push_str(line);
-                buffer.guess_segment_properties();
-                println!("{:?}: {}", buffer.script(), line);
-
-                let glyph_buffer = rustybuzz::shape(&font.rustybuzz, &[], buffer);
-                let glyph_infos = glyph_buffer.glyph_infos();
-                let glyph_positions = glyph_buffer.glyph_positions();
-
+            for shaped in shaped_lines.iter() {
                 let mut glyphs = Vec::new();
-                for (info, pos) in glyph_infos.iter().zip(glyph_positions.iter()) {
-                    println!("  {:?} {:?}", info, pos);
-
+                for (info, pos) in shaped.iter() {
                     let glyph = font.rusttype.glyph(rusttype::GlyphId(info.glyph_id as u16))
                         .scaled(rusttype::Scale::uniform(font_size as f32))
                         .positioned(rusttype::point(
@@ -88,10 +100,16 @@ fn main() {
                 glyph_lines.push(glyphs);
             }
 
+            redraw = true;
             reglyph = false;
+
+            let duration = instant.elapsed();
+            println!("reglyph: {:?}", duration);
         }
 
         if redraw {
+            let instant = Instant::now();
+
             window.set(bg_color);
 
             let window_lines = (window.height() as i32 + line_height - 1) / line_height;
@@ -144,6 +162,9 @@ fn main() {
             window.sync();
 
             redraw = false;
+
+            let duration = instant.elapsed();
+            println!("redraw: {:?}", duration);
         }
 
         for event in window.events() {
