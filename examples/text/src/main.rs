@@ -4,17 +4,6 @@ use std::{
     time::Instant,
 };
 
-struct FontShape {
-    info: rustybuzz::GlyphInfo,
-    pos: rustybuzz::GlyphPosition,
-}
-
-struct FontGlyph<'a> {
-    x_advance: i32,
-    y_advance: i32,
-    inner: rusttype::PositionedGlyph<'a>,
-}
-
 struct Font<'a> {
     data: &'a [u8],
     pub rustybuzz: rustybuzz::Face<'a>,
@@ -29,51 +18,150 @@ impl<'a> Font<'a> {
             rusttype: rusttype::Font::try_from_bytes_and_index(data, index)?,
         })
     }
+}
 
-    pub fn shape(&self, line: &str) -> Vec<FontShape> {
-        let mut buffer = rustybuzz::UnicodeBuffer::new();
-        buffer.push_str(line);
-        buffer.guess_segment_properties();
-        println!("{:?}: {}", buffer.script(), line);
+struct FontGlyph<'a> {
+    x_advance: i32,
+    y_advance: i32,
+    inner: rusttype::PositionedGlyph<'a>,
+}
 
-        let glyph_buffer = rustybuzz::shape(&self.rustybuzz, &[], buffer);
-        let glyph_infos = glyph_buffer.glyph_infos();
-        let glyph_positions = glyph_buffer.glyph_positions();
+struct FontShape<'a> {
+    info: rustybuzz::GlyphInfo,
+    pos: rustybuzz::GlyphPosition,
+    font: &'a Font<'a>
+}
 
-        let mut shaped = Vec::with_capacity(glyph_infos.len());
-        for (info, pos) in glyph_infos.iter().zip(glyph_positions.iter()) {
-            println!("  {:?} {:?}", info, pos);
-            shaped.push(FontShape {
-                info: *info,
-                pos: *pos
-            });
+impl<'a> FontShape<'a> {
+    pub fn glyph(&self, font_size: i32) -> FontGlyph<'a> {
+        let font_scale = self.font.rustybuzz.units_per_em();
+
+        let glyph = self.font.rusttype.glyph(rusttype::GlyphId(self.info.glyph_id as u16))
+            .scaled(rusttype::Scale::uniform(font_size as f32))
+            .positioned(rusttype::point(
+                (font_size * self.pos.x_offset) as f32 / font_scale as f32,
+                (font_size * self.pos.y_offset) as f32 / font_scale as f32
+            ));
+
+        FontGlyph {
+            x_advance: (font_size * self.pos.x_advance) / font_scale,
+            y_advance: (font_size * self.pos.y_advance) / font_scale,
+            inner: glyph
         }
-        shaped
+    }
+}
+
+struct FontMatches<'a> {
+    fonts: Vec<&'a Font<'a>>,
+}
+
+impl<'a> FontMatches<'a> {
+    pub fn shape(&self, line: &str) -> Vec<FontShape> {
+        let mut font_shaped = Vec::with_capacity(self.fonts.len());
+        for font in self.fonts.iter() {
+            let mut buffer = rustybuzz::UnicodeBuffer::new();
+            buffer.push_str(line);
+            buffer.guess_segment_properties();
+            println!("{:?}: {}", buffer.script(), line);
+
+            let glyph_buffer = rustybuzz::shape(&font.rustybuzz, &[], buffer);
+            let glyph_infos = glyph_buffer.glyph_infos();
+            let glyph_positions = glyph_buffer.glyph_positions();
+
+            let mut misses = 0;
+            let mut shaped = Vec::with_capacity(glyph_infos.len());
+            for (info, pos) in glyph_infos.iter().zip(glyph_positions.iter()) {
+                //println!("  {:?} {:?}", info, pos);
+                if info.glyph_id == 0 {
+                    misses += 1;
+                }
+                shaped.push(FontShape {
+                    info: *info,
+                    pos: *pos,
+                    font,
+                });
+            }
+            if misses == 0 {
+                return shaped;
+            } else {
+                font_shaped.push((misses, shaped));
+            }
+        }
+
+        let mut least_i = 0;
+        let mut least_misses = usize::MAX;
+        for (i, (misses, _)) in font_shaped.iter().enumerate() {
+            if *misses < least_misses {
+                least_i = i;
+                least_misses = *misses;
+            }
+        }
+
+        if least_i > 0 {
+            println!("MISSES {}, {}", least_i, least_misses);
+        }
+
+        font_shaped.remove(least_i).1
+    }
+}
+
+struct FontSystem<'a> {
+    fonts: Vec<Font<'a>>,
+}
+
+impl<'a> FontSystem<'a> {
+    pub fn new() -> Self {
+        Self {
+            fonts: Vec::new(),
+        }
     }
 
-    pub fn glyph(&self, shaped: &[FontShape], font_size: i32) -> Vec<FontGlyph<'a>> {
-        let font_scale = self.rustybuzz.units_per_em();
+    pub fn add(&mut self, font: Font<'a>) {
+        self.fonts.push(font);
+    }
 
-        let mut glyphs = Vec::with_capacity(shaped.len());
-        for FontShape { info, pos } in shaped.iter() {
-            if info.glyph_id == 0 {
-                println!("Missing glyph for cluster {}", info.cluster);
+    pub fn matches(&'a self, patterns: &[&str]) -> Option<FontMatches<'a>> {
+        let mut fonts = Vec::new();
+        for font in self.fonts.iter() {
+            for rec in font.rustybuzz.names() {
+                if rec.name_id == 4 && rec.is_unicode() {
+                    let mut words: Vec<u16> = Vec::new();
+
+                    let mut i = 0;
+                    while i + 1 < rec.name.len() {
+                        words.push(
+                            (rec.name[i + 1] as u16) |
+                            ((rec.name[i] as u16) << 8)
+                        );
+                        i += 2;
+                    }
+
+                    match String::from_utf16(&words) {
+                        Ok(name) => {
+                            let mut matched = false;
+                            for pattern in patterns.iter() {
+                                println!("Matching font name '{}' with pattern '{}'", name, pattern);
+                                if name.contains(pattern) {
+                                    matched = true;
+                                }
+                            }
+                            if matched {
+                                println!("Matched font name '{}'", name);
+                                fonts.push(font);
+                            } else {
+                                println!("Did not match font name '{}'", name);
+                            }
+                        },
+                        Err(_) => ()
+                    }
+                }
             }
-
-            let glyph = self.rusttype.glyph(rusttype::GlyphId(info.glyph_id as u16))
-                .scaled(rusttype::Scale::uniform(font_size as f32))
-                .positioned(rusttype::point(
-                    (font_size * pos.x_offset) as f32 / font_scale as f32,
-                    (font_size * pos.y_offset) as f32 / font_scale as f32
-                ));
-
-            glyphs.push(FontGlyph {
-                x_advance: (font_size * pos.x_advance) / font_scale,
-                y_advance: (font_size * pos.y_advance) / font_scale,
-                inner: glyph
-            });
         }
-        glyphs
+        if ! fonts.is_empty() {
+            Some(FontMatches { fonts })
+        } else {
+            None
+        }
     }
 }
 
@@ -104,14 +192,33 @@ fn main() {
     let font_size_default = 2; // Title 4
     let mut font_size_i = font_size_default;
 
+    let mut font_system = FontSystem::new();
+    font_system.add(
+        Font::new(include_bytes!("../../../res/Fira/FiraSans-Regular.otf"), 0).unwrap()
+    );
+    font_system.add(
+        Font::new(include_bytes!("../../../res/Fira/FiraMono-Regular.otf"), 0).unwrap()
+    );
+    font_system.add(
+        Font::new(include_bytes!("../../../res/FreeFont/FreeSans.ttf"), 0).unwrap()
+    );
+    font_system.add(
+        Font::new(include_bytes!("../../../res/FreeFont/FreeSerif.ttf"), 0).unwrap()
+    );
+    font_system.add(
+        Font::new(include_bytes!("../../../res/FreeFont/FreeMono.ttf"), 0).unwrap()
+    );
+
     #[cfg(feature = "mono")]
-    let font = Font::new(include_bytes!("../../../res/FreeFont/FreeMono.ttf"), 0).unwrap();
+    let font_pattern = &["Mono"];
     #[cfg(not(feature = "mono"))]
-    let font = Font::new(include_bytes!("../../../res/FreeFont/FreeSerif.ttf"), 0).unwrap();
+    let font_pattern = &["Sans", "Serif"];
+
+    let font_matches = font_system.matches(font_pattern).unwrap();
 
     let mut shaped_lines = Vec::new();
     for line in text.lines() {
-        shaped_lines.push(font.shape(line));
+        shaped_lines.push(font_matches.shape(line));
     }
 
     let mut glyph_lines = Vec::new();
@@ -128,7 +235,11 @@ fn main() {
 
             glyph_lines.clear();
             for shaped in shaped_lines.iter() {
-                glyph_lines.push(font.glyph(&shaped, font_size))
+                let mut glyphs = Vec::with_capacity(shaped.len());
+                for shape in shaped.iter() {
+                    glyphs.push(shape.glyph(font_size));
+                }
+                glyph_lines.push(glyphs);
             }
 
             redraw = true;
