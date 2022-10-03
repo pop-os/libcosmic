@@ -9,3 +9,7 @@ publish = false
 orbclient = "0.3"
 rusttype = "0.9"
 rustybuzz = "0.5"
+
+[features]
+default = []
+mono = []

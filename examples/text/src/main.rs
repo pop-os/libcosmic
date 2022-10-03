@@ -25,7 +25,10 @@ fn main() {
         &[WindowFlag::Resizable]
     ).unwrap();
 
-    let text = include_str!("../res/UTF-8-demo.txt");
+    #[cfg(feature = "mono")]
+    let text = include_str!("../res/mono.txt");
+    #[cfg(not(feature = "mono"))]
+    let text = include_str!("../res/proportional.txt");
     let lines: Vec<&'static str> = text.lines().collect();
 
     let bg_color = Color::rgb(0x34, 0x34, 0x34);
@@ -41,7 +44,10 @@ fn main() {
     let font_size_default = 2; // Title 4
     let mut font_size_i = font_size_default;
 
+    #[cfg(feature = "mono")]
     let font = Font::new(include_bytes!("../../../res/FreeFont/FreeMono.ttf"), 0).unwrap();
+    #[cfg(not(feature = "mono"))]
+    let font = Font::new(include_bytes!("../../../res/FreeFont/FreeSerif.ttf"), 0).unwrap();
     let font_scale = font.rustybuzz.units_per_em() as f32;
 
     let mut redraw = true;
@@ -54,11 +60,11 @@ fn main() {
 
             let window_lines = (window.height() as i32 + line_height - 1) / line_height;
             scroll = cmp::max(0, cmp::min(
-                lines.len() as i32 - window_lines,
+                lines.len() as i32 - (window_lines - 1),
                 scroll
             ));
 
-            let mut line_y = 0;
+            let mut line_y = line_height;
             for line in lines.iter().skip(scroll as usize).take((window_lines + 1) as usize) {
                 let mut buffer = rustybuzz::UnicodeBuffer::new();
                 buffer.push_str(line);
