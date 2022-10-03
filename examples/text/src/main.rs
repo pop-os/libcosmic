@@ -29,17 +29,17 @@ fn main() {
     let text = include_str!("../res/mono.txt");
     #[cfg(not(feature = "mono"))]
     let text = include_str!("../res/proportional.txt");
-    let lines: Vec<&'static str> = text.lines().collect();
 
     let bg_color = Color::rgb(0x34, 0x34, 0x34);
+    let hover_color = Color::rgb(0x80, 0x80, 0x80);
     let font_color = Color::rgb(0xFF, 0xFF, 0xFF);
     let font_sizes = [
-        (10.0, 14), // Caption
-        (14.0, 20), // Body
-        (20.0, 28), // Title 4
-        (24.0, 32), // Title 3
-        (28.0, 36), // Title 2
-        (32.0, 44), // Title 1
+        (10, 14), // Caption
+        (14, 20), // Body
+        (20, 28), // Title 4
+        (24, 32), // Title 3
+        (28, 36), // Title 2
+        (32, 44), // Title 1
     ];
     let font_size_default = 2; // Title 4
     let mut font_size_i = font_size_default;
@@ -48,45 +48,68 @@ fn main() {
     let font = Font::new(include_bytes!("../../../res/FreeFont/FreeMono.ttf"), 0).unwrap();
     #[cfg(not(feature = "mono"))]
     let font = Font::new(include_bytes!("../../../res/FreeFont/FreeSerif.ttf"), 0).unwrap();
-    let font_scale = font.rustybuzz.units_per_em() as f32;
+    let font_scale = font.rustybuzz.units_per_em();
 
+    let mut glyph_lines = Vec::new();
+    let mut mouse_x = -1;
+    let mut mouse_y = -1;
     let mut redraw = true;
+    let mut reglyph = true;
     let mut scroll = 0;
     loop {
-        if redraw {
-            window.set(bg_color);
+        let (font_size, line_height) = font_sizes[font_size_i];
 
-            let (font_size, line_height) = font_sizes[font_size_i];
+        if reglyph {
+            redraw = true;
 
-            let window_lines = (window.height() as i32 + line_height - 1) / line_height;
-            scroll = cmp::max(0, cmp::min(
-                lines.len() as i32 - (window_lines - 1),
-                scroll
-            ));
-
-            let mut line_y = line_height;
-            for line in lines.iter().skip(scroll as usize).take((window_lines + 1) as usize) {
+            glyph_lines.clear();
+            for line in text.lines() {
                 let mut buffer = rustybuzz::UnicodeBuffer::new();
                 buffer.push_str(line);
                 buffer.guess_segment_properties();
-                //println!("{:?}: {}", buffer.script(), line);
+                println!("{:?}: {}", buffer.script(), line);
 
                 let glyph_buffer = rustybuzz::shape(&font.rustybuzz, &[], buffer);
                 let glyph_infos = glyph_buffer.glyph_infos();
                 let glyph_positions = glyph_buffer.glyph_positions();
 
+                let mut glyphs = Vec::new();
+                for (info, pos) in glyph_infos.iter().zip(glyph_positions.iter()) {
+                    println!("  {:?} {:?}", info, pos);
+
+                    let glyph = font.rusttype.glyph(rusttype::GlyphId(info.glyph_id as u16))
+                        .scaled(rusttype::Scale::uniform(font_size as f32))
+                        .positioned(rusttype::point(
+                            (font_size * pos.x_offset) as f32 / font_scale as f32,
+                            (font_size * pos.y_offset) as f32 / font_scale as f32
+                        ));
+                    glyphs.push((pos.x_advance, pos.y_advance, glyph));
+                }
+                glyph_lines.push(glyphs);
+            }
+
+            reglyph = false;
+        }
+
+        if redraw {
+            window.set(bg_color);
+
+            let window_lines = (window.height() as i32 + line_height - 1) / line_height;
+            scroll = cmp::max(0, cmp::min(
+                glyph_lines.len() as i32 - (window_lines - 1),
+                scroll
+            ));
+
+            let mut line_y = line_height;
+            for glyph_line in glyph_lines.iter().skip(scroll as usize) {
+                if line_y >= window.height() as i32 {
+                    break;
+                }
+
                 let mut glyph_x = 0i32;
                 let mut glyph_y = line_y;
-                for (info, pos) in glyph_infos.iter().zip(glyph_positions.iter()) {
-                    //println!("  {:?} {:?}", info, pos);
-
-                    let glyph = font.rusttype.glyph(rusttype::GlyphId(info.glyph_id as u16));
-                    let scaled = glyph.scaled(rusttype::Scale::uniform(font_size));
-                    let positioned = scaled.positioned(rusttype::point(
-                        font_size * pos.x_offset as f32 / font_scale,
-                        font_size * pos.y_offset as f32 / font_scale,
-                    ));
-                    if let Some(bb) = positioned.pixel_bounding_box() {
+                for (x_advance, y_advance, glyph) in glyph_line.iter() {
+                    if let Some(bb) = glyph.pixel_bounding_box() {
                         //TODO: make wrapping optional
                         if glyph_x + bb.max.x >= window.width() as i32 {
                             line_y += line_height;
@@ -95,18 +118,24 @@ fn main() {
                             glyph_y = line_y;
                         }
 
-                        positioned.draw(|off_x, off_y, v| {
-                            let x = glyph_x + off_x as i32 + bb.min.x;
-                            let y = glyph_y + off_y as i32 + bb.min.y;
+                        let x = glyph_x + bb.min.x;
+                        let y = glyph_y + bb.min.y;
+                        if mouse_x >= x
+                        && mouse_x < x + bb.width()
+                        && mouse_y >= y
+                        && mouse_y < y + bb.height() {
+                            window.rect(x, y, bb.width() as u32, bb.height() as u32, hover_color);
+                        }
+                        glyph.draw(|off_x, off_y, v| {
                             let c = (v * 255.0) as u32;
-                            window.pixel(x, y, Color{
+                            window.pixel(x + off_x as i32, y + off_y as i32, Color{
                                 data: c << 24 | (font_color.data & 0x00FF_FFFF)
                             });
                         });
                     }
 
-                    glyph_x += (font_size * pos.x_advance as f32 / font_scale) as i32;
-                    glyph_y += (font_size * pos.y_advance as f32 / font_scale) as i32;
+                    glyph_x += (font_size * x_advance) / font_scale;
+                    glyph_y += (font_size * y_advance) / font_scale;
                 }
 
                 line_y += line_height;
@@ -123,18 +152,23 @@ fn main() {
                     match event.scancode {
                         orbclient::K_0 => {
                             font_size_i = font_size_default;
-                            redraw = true;
+                            reglyph = true;
                         },
                         orbclient::K_MINUS => if font_size_i > 0 {
                             font_size_i -= 1;
-                            redraw = true;
+                            reglyph = true;
                         },
                         orbclient::K_EQUALS => if font_size_i + 1 < font_sizes.len() {
                             font_size_i += 1;
-                            redraw = true;
+                            reglyph = true;
                         },
                         _ => (),
                     }
+                },
+                EventOption::Mouse(event) => {
+                    mouse_x = event.x;
+                    mouse_y = event.y;
+                    redraw = true;
                 },
                 EventOption::Resize(_) => {
                     redraw = true;
