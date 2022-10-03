@@ -143,8 +143,9 @@ fn main() {
                         if mouse_x >= glyph_x
                         && mouse_x < glyph_x + advance_x
                         && mouse_y >= line_y - font_size
-                        && mouse_y < line_y
+                        && mouse_y < line_y - font_size + line_height
                         {
+                            //TODO: this highlights only one character of combinations
                             window.rect(glyph_x, line_y - font_size, *advance_x as u32, line_height as u32, hover_color);
                         }
 
