@@ -1,9 +1,11 @@
 [package]
-name = "cosmic"
+name = "text"
 version = "0.1.0"
 authors = []
 edition = "2021"
 publish = false
 
 [dependencies]
-libcosmic = { path = "../..", features = ["debug"] }
+orbclient = "0.3"
+rusttype = "0.9"
+rustybuzz = "0.5"

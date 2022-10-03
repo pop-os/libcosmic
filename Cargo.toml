@@ -14,25 +14,26 @@ debug = ["iced/debug"]
 freedesktop-icons = "0.2.1"
 
 [dependencies.iced]
-git = "https://github.com/pop-os/iced.git"
-branch = "cosmic-design-system"
-#path = "../iced"
+#git = "https://github.com/pop-os/iced.git"
+#branch = "cosmic-design-system"
+path = "../iced"
 features = ["cosmic-theme", "svg"]
 
 [dependencies.iced_native]
-git = "https://github.com/pop-os/iced.git"
-branch = "cosmic-design-system"
-#path = "../iced/native"
+#git = "https://github.com/pop-os/iced.git"
+#branch = "cosmic-design-system"
+path = "../iced/native"
 features = ["cosmic-theme"]
 
 [dependencies.iced_lazy]
-git = "https://github.com/pop-os/iced.git"
-branch = "cosmic-design-system"
-#path = "../iced/lazy"
+#git = "https://github.com/pop-os/iced.git"
+#branch = "cosmic-design-system"
+path = "../iced/lazy"
 
 [workspace]
 members = [
   "examples/cosmic",
+  "examples/text",
   "gtk4",
   "gtk4/widgets"
 ]
