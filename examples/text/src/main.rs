@@ -4,6 +4,17 @@ use std::{
     time::Instant,
 };
 
+struct FontShape {
+    info: rustybuzz::GlyphInfo,
+    pos: rustybuzz::GlyphPosition,
+}
+
+struct FontGlyph<'a> {
+    x_advance: i32,
+    y_advance: i32,
+    inner: rusttype::PositionedGlyph<'a>,
+}
+
 struct Font<'a> {
     data: &'a [u8],
     pub rustybuzz: rustybuzz::Face<'a>,
@@ -17,6 +28,52 @@ impl<'a> Font<'a> {
             rustybuzz: rustybuzz::Face::from_slice(data, index)?,
             rusttype: rusttype::Font::try_from_bytes_and_index(data, index)?,
         })
+    }
+
+    pub fn shape(&self, line: &str) -> Vec<FontShape> {
+        let mut buffer = rustybuzz::UnicodeBuffer::new();
+        buffer.push_str(line);
+        buffer.guess_segment_properties();
+        println!("{:?}: {}", buffer.script(), line);
+
+        let glyph_buffer = rustybuzz::shape(&self.rustybuzz, &[], buffer);
+        let glyph_infos = glyph_buffer.glyph_infos();
+        let glyph_positions = glyph_buffer.glyph_positions();
+
+        let mut shaped = Vec::with_capacity(glyph_infos.len());
+        for (info, pos) in glyph_infos.iter().zip(glyph_positions.iter()) {
+            println!("  {:?} {:?}", info, pos);
+            shaped.push(FontShape {
+                info: *info,
+                pos: *pos
+            });
+        }
+        shaped
+    }
+
+    pub fn glyph(&self, shaped: &[FontShape], font_size: i32) -> Vec<FontGlyph<'a>> {
+        let font_scale = self.rustybuzz.units_per_em();
+
+        let mut glyphs = Vec::with_capacity(shaped.len());
+        for FontShape { info, pos } in shaped.iter() {
+            if info.glyph_id == 0 {
+                println!("Missing glyph for cluster {}", info.cluster);
+            }
+
+            let glyph = self.rusttype.glyph(rusttype::GlyphId(info.glyph_id as u16))
+                .scaled(rusttype::Scale::uniform(font_size as f32))
+                .positioned(rusttype::point(
+                    (font_size * pos.x_offset) as f32 / font_scale as f32,
+                    (font_size * pos.y_offset) as f32 / font_scale as f32
+                ));
+
+            glyphs.push(FontGlyph {
+                x_advance: (font_size * pos.x_advance) / font_scale,
+                y_advance: (font_size * pos.y_advance) / font_scale,
+                inner: glyph
+            });
+        }
+        glyphs
     }
 }
 
@@ -51,26 +108,10 @@ fn main() {
     let font = Font::new(include_bytes!("../../../res/FreeFont/FreeMono.ttf"), 0).unwrap();
     #[cfg(not(feature = "mono"))]
     let font = Font::new(include_bytes!("../../../res/FreeFont/FreeSerif.ttf"), 0).unwrap();
-    let font_scale = font.rustybuzz.units_per_em();
 
     let mut shaped_lines = Vec::new();
     for line in text.lines() {
-        let mut buffer = rustybuzz::UnicodeBuffer::new();
-        buffer.push_str(line);
-        buffer.guess_segment_properties();
-        println!("{:?}: {}", buffer.script(), line);
-
-        let glyph_buffer = rustybuzz::shape(&font.rustybuzz, &[], buffer);
-        let glyph_infos = glyph_buffer.glyph_infos();
-        let glyph_positions = glyph_buffer.glyph_positions();
-
-        let mut shaped = Vec::new();
-        for (info, pos) in glyph_infos.iter().zip(glyph_positions.iter()) {
-            println!("  {:?} {:?}", info, pos);
-
-            shaped.push((*info, *pos));
-        }
-        shaped_lines.push(shaped);
+        shaped_lines.push(font.shape(line));
     }
 
     let mut glyph_lines = Vec::new();
@@ -87,21 +128,7 @@ fn main() {
 
             glyph_lines.clear();
             for shaped in shaped_lines.iter() {
-                let mut glyphs = Vec::new();
-                for (info, pos) in shaped.iter() {
-                    let glyph = font.rusttype.glyph(rusttype::GlyphId(info.glyph_id as u16))
-                        .scaled(rusttype::Scale::uniform(font_size as f32))
-                        .positioned(rusttype::point(
-                            (font_size * pos.x_offset) as f32 / font_scale as f32,
-                            (font_size * pos.y_offset) as f32 / font_scale as f32
-                        ));
-                    glyphs.push((
-                        (font_size * pos.x_advance) / font_scale,
-                        (font_size * pos.y_advance) / font_scale,
-                        glyph
-                    ));
-                }
-                glyph_lines.push(glyphs);
+                glyph_lines.push(font.glyph(&shaped, font_size))
             }
 
             redraw = true;
@@ -130,8 +157,8 @@ fn main() {
 
                 let mut glyph_x = 0i32;
                 let mut glyph_y = line_y;
-                for (advance_x, advance_y, glyph) in glyph_line.iter() {
-                    if let Some(bb) = glyph.pixel_bounding_box() {
+                for glyph in glyph_line.iter() {
+                    if let Some(bb) = glyph.inner.pixel_bounding_box() {
                         //TODO: make wrapping optional
                         if glyph_x + bb.max.x >= window.width() as i32 {
                             line_y += line_height;
@@ -141,17 +168,17 @@ fn main() {
                         }
 
                         if mouse_x >= glyph_x
-                        && mouse_x < glyph_x + advance_x
+                        && mouse_x < glyph_x + glyph.x_advance
                         && mouse_y >= line_y - font_size
                         && mouse_y < line_y - font_size + line_height
                         {
                             //TODO: this highlights only one character of combinations
-                            window.rect(glyph_x, line_y - font_size, *advance_x as u32, line_height as u32, hover_color);
+                            window.rect(glyph_x, line_y - font_size, glyph.x_advance as u32, line_height as u32, hover_color);
                         }
 
                         let x = glyph_x + bb.min.x;
                         let y = glyph_y + bb.min.y;
-                        glyph.draw(|off_x, off_y, v| {
+                        glyph.inner.draw(|off_x, off_y, v| {
                             let c = (v * 255.0) as u32;
                             window.pixel(x + off_x as i32, y + off_y as i32, Color{
                                 data: c << 24 | (font_color.data & 0x00FF_FFFF)
@@ -159,8 +186,8 @@ fn main() {
                         });
                     }
 
-                    glyph_x += advance_x;
-                    glyph_y += advance_y;
+                    glyph_x += glyph.x_advance;
+                    glyph_y += glyph.y_advance;
                 }
 
                 line_y += line_height;
