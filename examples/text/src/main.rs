@@ -95,7 +95,11 @@ fn main() {
                             (font_size * pos.x_offset) as f32 / font_scale as f32,
                             (font_size * pos.y_offset) as f32 / font_scale as f32
                         ));
-                    glyphs.push((pos.x_advance, pos.y_advance, glyph));
+                    glyphs.push((
+                        (font_size * pos.x_advance) / font_scale,
+                        (font_size * pos.y_advance) / font_scale,
+                        glyph
+                    ));
                 }
                 glyph_lines.push(glyphs);
             }
@@ -126,7 +130,7 @@ fn main() {
 
                 let mut glyph_x = 0i32;
                 let mut glyph_y = line_y;
-                for (x_advance, y_advance, glyph) in glyph_line.iter() {
+                for (advance_x, advance_y, glyph) in glyph_line.iter() {
                     if let Some(bb) = glyph.pixel_bounding_box() {
                         //TODO: make wrapping optional
                         if glyph_x + bb.max.x >= window.width() as i32 {
@@ -136,14 +140,16 @@ fn main() {
                             glyph_y = line_y;
                         }
 
+                        if mouse_x >= glyph_x
+                        && mouse_x < glyph_x + advance_x
+                        && mouse_y >= line_y - font_size
+                        && mouse_y < line_y
+                        {
+                            window.rect(glyph_x, line_y - font_size, *advance_x as u32, line_height as u32, hover_color);
+                        }
+
                         let x = glyph_x + bb.min.x;
                         let y = glyph_y + bb.min.y;
-                        if mouse_x >= x
-                        && mouse_x < x + bb.width()
-                        && mouse_y >= y
-                        && mouse_y < y + bb.height() {
-                            window.rect(x, y, bb.width() as u32, bb.height() as u32, hover_color);
-                        }
                         glyph.draw(|off_x, off_y, v| {
                             let c = (v * 255.0) as u32;
                             window.pixel(x + off_x as i32, y + off_y as i32, Color{
@@ -152,8 +158,8 @@ fn main() {
                         });
                     }
 
-                    glyph_x += (font_size * x_advance) / font_scale;
-                    glyph_y += (font_size * y_advance) / font_scale;
+                    glyph_x += advance_x;
+                    glyph_y += advance_y;
                 }
 
                 line_y += line_height;
