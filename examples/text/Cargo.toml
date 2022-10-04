@@ -9,6 +9,8 @@ publish = false
 orbclient = "0.3"
 rusttype = "0.9"
 rustybuzz = "0.5"
+unicode-bidi = "0.3"
+unicode-script = "0.5"
 
 [features]
 default = []

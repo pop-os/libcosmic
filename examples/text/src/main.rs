@@ -20,33 +20,126 @@ impl<'a> Font<'a> {
     }
 }
 
-struct FontGlyph<'a> {
-    x_advance: i32,
-    y_advance: i32,
+struct FontLayoutGlyph<'a> {
+    info: rustybuzz::GlyphInfo,
     inner: rusttype::PositionedGlyph<'a>,
 }
 
-struct FontShape<'a> {
+struct FontLayoutLine<'a> {
+    glyphs: Vec<FontLayoutGlyph<'a>>,
+}
+
+impl<'a> FontLayoutLine<'a> {
+    pub fn draw<R: Renderer>(
+        &self,
+        r: &mut R,
+        line_x: i32,
+        line_y: i32,
+        color: Color,
+    ) {
+        for glyph in self.glyphs.iter() {
+            if let Some(bb) = glyph.inner.pixel_bounding_box() {
+                let x = line_x + bb.min.x;
+                let y = line_y + bb.min.y;
+                glyph.inner.draw(|off_x, off_y, v| {
+                    let c = (v * 255.0) as u32;
+                    r.pixel(x + off_x as i32, y + off_y as i32, Color{
+                        data: c << 24 | (color.data & 0x00FF_FFFF)
+                    });
+                });
+            }
+        }
+    }
+}
+
+struct FontShapeGlyph<'a> {
     info: rustybuzz::GlyphInfo,
     pos: rustybuzz::GlyphPosition,
     font: &'a Font<'a>
 }
 
-impl<'a> FontShape<'a> {
-    pub fn glyph(&self, font_size: i32) -> FontGlyph<'a> {
-        let font_scale = self.font.rustybuzz.units_per_em();
+struct FontShapeSpan<'a> {
+    direction: rustybuzz::Direction,
+    glyphs: Vec<FontShapeGlyph<'a>>,
+}
 
-        let glyph = self.font.rusttype.glyph(rusttype::GlyphId(self.info.glyph_id as u16))
-            .scaled(rusttype::Scale::uniform(font_size as f32))
-            .positioned(rusttype::point(
-                (font_size * self.pos.x_offset) as f32 / font_scale as f32,
-                (font_size * self.pos.y_offset) as f32 / font_scale as f32
-            ));
+struct FontShapeLine<'a> {
+    rtl: bool,
+    spans: Vec<FontShapeSpan<'a>>,
+}
 
-        FontGlyph {
-            x_advance: (font_size * self.pos.x_advance) / font_scale,
-            y_advance: (font_size * self.pos.y_advance) / font_scale,
-            inner: glyph
+impl<'a> FontShapeLine<'a> {
+    pub fn layout(&self, font_size: i32, line_width: i32, lines: &mut Vec<FontLayoutLine<'a>>) {
+        let mut glyphs = Vec::new();
+
+        let mut x = 0.0;
+        let mut y = 0.0;
+        for span in self.spans.iter() {
+            let mut span_width = 0.0;
+            for glyph in span.glyphs.iter() {
+                let font_scale = glyph.font.rustybuzz.units_per_em() as f32;
+                let x_advance = (font_size * glyph.pos.x_advance) as f32 / font_scale;
+                span_width += x_advance;
+            }
+
+            if self.rtl {
+                if glyphs.is_empty() {
+                    x = line_width as f32;
+                }
+                x -= span_width;
+            }
+
+            for glyph in span.glyphs.iter() {
+                let font_scale = glyph.font.rustybuzz.units_per_em() as f32;
+                let x_advance = (font_size * glyph.pos.x_advance) as f32 / font_scale;
+                let y_advance = (font_size * glyph.pos.y_advance) as f32 / font_scale;
+                let x_offset = (font_size * glyph.pos.x_offset) as f32 / font_scale;
+                let y_offset = (font_size * glyph.pos.y_offset) as f32 / font_scale;
+
+                //TODO: make wrapping optional
+                if self.rtl {
+                    if x < 0.0 {
+                        let mut glyphs_swap = Vec::new();
+                        std::mem::swap(&mut glyphs, &mut glyphs_swap);
+                        lines.push(FontLayoutLine { glyphs: glyphs_swap });
+
+                        x = line_width as f32 - x_advance;
+                        y = 0.0;
+                    }
+                } else {
+                    if x + x_advance > line_width as f32 {
+                        let mut glyphs_swap = Vec::new();
+                        std::mem::swap(&mut glyphs, &mut glyphs_swap);
+                        lines.push(FontLayoutLine { glyphs: glyphs_swap });
+
+                        x = 0.0;
+                        y = 0.0;
+                    }
+                }
+
+                let inner = glyph.font.rusttype.glyph(rusttype::GlyphId(glyph.info.glyph_id as u16))
+                    .scaled(rusttype::Scale::uniform(font_size as f32))
+                    .positioned(rusttype::point(
+                        x + x_offset,
+                        y + y_offset,
+                    ));
+
+                glyphs.push(FontLayoutGlyph {
+                    info: glyph.info,
+                    inner,
+                });
+
+                x += x_advance;
+                y += y_advance;
+            }
+
+            if self.rtl {
+                x -= span_width;
+            }
+        }
+
+        if ! glyphs.is_empty() {
+            lines.push(FontLayoutLine { glyphs });
         }
     }
 }
@@ -56,52 +149,104 @@ struct FontMatches<'a> {
 }
 
 impl<'a> FontMatches<'a> {
-    pub fn shape(&self, line: &str) -> Vec<FontShape> {
-        let mut font_shaped = Vec::with_capacity(self.fonts.len());
-        for font in self.fonts.iter() {
+    pub fn shape_span(&self, string: &str) -> FontShapeSpan {
+        let mut spans_by_font = Vec::with_capacity(self.fonts.len());
+        for (font_i, font) in self.fonts.iter().enumerate() {
             let mut buffer = rustybuzz::UnicodeBuffer::new();
-            buffer.push_str(line);
+            buffer.push_str(string);
             buffer.guess_segment_properties();
-            println!("{:?}: {}", buffer.script(), line);
+            let script = buffer.script();
+            let direction = buffer.direction();
+            if font_i == 0 {
+                println!("  {:?}, {:?}: '{}'", script, direction, string);
+            }
 
             let glyph_buffer = rustybuzz::shape(&font.rustybuzz, &[], buffer);
             let glyph_infos = glyph_buffer.glyph_infos();
             let glyph_positions = glyph_buffer.glyph_positions();
 
             let mut misses = 0;
-            let mut shaped = Vec::with_capacity(glyph_infos.len());
+            let mut glyphs = Vec::with_capacity(glyph_infos.len());
             for (info, pos) in glyph_infos.iter().zip(glyph_positions.iter()) {
                 //println!("  {:?} {:?}", info, pos);
                 if info.glyph_id == 0 {
                     misses += 1;
                 }
-                shaped.push(FontShape {
+                glyphs.push(FontShapeGlyph {
                     info: *info,
                     pos: *pos,
                     font,
                 });
             }
+
+            let span = FontShapeSpan {
+                direction,
+                glyphs
+            };
             if misses == 0 {
-                return shaped;
+                return span;
             } else {
-                font_shaped.push((misses, shaped));
+                spans_by_font.push((misses, span));
             }
         }
 
-        let mut least_i = 0;
+        let mut least_misses_i = 0;
         let mut least_misses = usize::MAX;
-        for (i, (misses, _)) in font_shaped.iter().enumerate() {
+        for (i, (misses, _)) in spans_by_font.iter().enumerate() {
             if *misses < least_misses {
-                least_i = i;
+                least_misses_i = i;
                 least_misses = *misses;
             }
         }
 
-        if least_i > 0 {
-            println!("MISSES {}, {}", least_i, least_misses);
+        if least_misses_i > 0 {
+            println!("MISSES {}, {}", least_misses_i, least_misses);
         }
 
-        font_shaped.remove(least_i).1
+        spans_by_font.remove(least_misses_i).1
+    }
+
+    pub fn shape_line(&self, string: &str) -> FontShapeLine {
+        use unicode_script::{Script, UnicodeScript};
+
+        //TODO: more special handling of characters
+        let mut spans = Vec::new();
+
+        println!("'{}'", string);
+
+        let mut start = 0;
+        let mut prev = Script::Unknown;
+        for (i, c) in string.char_indices() {
+            if ! string.is_char_boundary(i) {
+                continue;
+            }
+
+            let cur = c.script();
+            if prev != cur && prev != Script::Unknown {
+                println!("*{:?} != {:?}", prev, cur);
+                // No combination, start new span
+                spans.push(self.shape_span(&string[start..i]));
+                start = i;
+                prev = Script::Unknown;
+            } else {
+                prev = cur;
+            }
+        }
+
+        spans.push(self.shape_span(&string[start..string.len()]));
+
+        let bidi = unicode_bidi::BidiInfo::new(string, None);
+        let rtl = if bidi.paragraphs.is_empty() {
+            false
+        } else {
+            assert_eq!(bidi.paragraphs.len(), 1);
+            bidi.paragraphs[0].level.is_rtl()
+        };
+
+        FontShapeLine {
+            rtl,
+            spans,
+        }
     }
 }
 
@@ -179,7 +324,6 @@ fn main() {
     let text = include_str!("../res/proportional.txt");
 
     let bg_color = Color::rgb(0x34, 0x34, 0x34);
-    let hover_color = Color::rgb(0x80, 0x80, 0x80);
     let font_color = Color::rgb(0xFF, 0xFF, 0xFF);
     let font_sizes = [
         (10, 14), // Caption
@@ -216,37 +360,33 @@ fn main() {
 
     let font_matches = font_system.matches(font_pattern).unwrap();
 
-    let mut shaped_lines = Vec::new();
+    let mut shape_lines = Vec::new();
     for line in text.lines() {
-        shaped_lines.push(font_matches.shape(line));
+        shape_lines.push(font_matches.shape_line(line));
     }
 
-    let mut glyph_lines = Vec::new();
+    let mut layout_lines = Vec::new();
     let mut mouse_x = -1;
     let mut mouse_y = -1;
     let mut redraw = true;
-    let mut reglyph = true;
+    let mut relayout = true;
     let mut scroll = 0;
     loop {
         let (font_size, line_height) = font_sizes[font_size_i];
 
-        if reglyph {
+        if relayout {
             let instant = Instant::now();
 
-            glyph_lines.clear();
-            for shaped in shaped_lines.iter() {
-                let mut glyphs = Vec::with_capacity(shaped.len());
-                for shape in shaped.iter() {
-                    glyphs.push(shape.glyph(font_size));
-                }
-                glyph_lines.push(glyphs);
+            layout_lines.clear();
+            for line in shape_lines.iter() {
+                line.layout(font_size, window.width() as i32, &mut layout_lines);
             }
 
             redraw = true;
-            reglyph = false;
+            relayout = false;
 
             let duration = instant.elapsed();
-            println!("reglyph: {:?}", duration);
+            println!("relayout: {:?}", duration);
         }
 
         if redraw {
@@ -256,50 +396,24 @@ fn main() {
 
             let window_lines = (window.height() as i32 + line_height - 1) / line_height;
             scroll = cmp::max(0, cmp::min(
-                glyph_lines.len() as i32 - (window_lines - 1),
+                layout_lines.len() as i32 - (window_lines - 1),
                 scroll
             ));
 
             let mut line_y = line_height;
-            for glyph_line in glyph_lines.iter().skip(scroll as usize) {
+            for line in layout_lines.iter().skip(scroll as usize) {
                 if line_y >= window.height() as i32 {
                     break;
                 }
 
-                let mut glyph_x = 0i32;
-                let mut glyph_y = line_y;
-                for glyph in glyph_line.iter() {
-                    if let Some(bb) = glyph.inner.pixel_bounding_box() {
-                        //TODO: make wrapping optional
-                        if glyph_x + bb.max.x >= window.width() as i32 {
-                            line_y += line_height;
-
-                            glyph_x = 0;
-                            glyph_y = line_y;
-                        }
-
-                        if mouse_x >= glyph_x
-                        && mouse_x < glyph_x + glyph.x_advance
-                        && mouse_y >= line_y - font_size
-                        && mouse_y < line_y - font_size + line_height
-                        {
-                            //TODO: this highlights only one character of combinations
-                            window.rect(glyph_x, line_y - font_size, glyph.x_advance as u32, line_height as u32, hover_color);
-                        }
-
-                        let x = glyph_x + bb.min.x;
-                        let y = glyph_y + bb.min.y;
-                        glyph.inner.draw(|off_x, off_y, v| {
-                            let c = (v * 255.0) as u32;
-                            window.pixel(x + off_x as i32, y + off_y as i32, Color{
-                                data: c << 24 | (font_color.data & 0x00FF_FFFF)
-                            });
-                        });
-                    }
-
-                    glyph_x += glyph.x_advance;
-                    glyph_y += glyph.y_advance;
-                }
+                let mut line_x = 0;
+                let line_width = window.width() as i32;
+                line.draw(
+                    &mut window,
+                    0,
+                    line_y,
+                    font_color
+                );
 
                 line_y += line_height;
             }
@@ -318,15 +432,15 @@ fn main() {
                     match event.scancode {
                         orbclient::K_0 => {
                             font_size_i = font_size_default;
-                            reglyph = true;
+                            relayout = true;
                         },
                         orbclient::K_MINUS => if font_size_i > 0 {
                             font_size_i -= 1;
-                            reglyph = true;
+                            relayout = true;
                         },
                         orbclient::K_EQUALS => if font_size_i + 1 < font_sizes.len() {
                             font_size_i += 1;
-                            reglyph = true;
+                            relayout = true;
                         },
                         _ => (),
                     }
@@ -337,7 +451,7 @@ fn main() {
                     redraw = true;
                 },
                 EventOption::Resize(_) => {
-                    redraw = true;
+                    relayout = true;
                 },
                 EventOption::Scroll(event) => {
                     scroll -= event.y * 3;
