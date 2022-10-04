@@ -1,6 +1,8 @@
 use orbclient::{Color, EventOption, Renderer, Window, WindowFlag};
 use std::{
     cmp,
+    env,
+    fs,
     time::Instant,
 };
 
@@ -21,7 +23,8 @@ impl<'a> Font<'a> {
 }
 
 struct FontLayoutGlyph<'a> {
-    info: rustybuzz::GlyphInfo,
+    start: usize,
+    end: usize,
     inner: rusttype::PositionedGlyph<'a>,
 }
 
@@ -53,6 +56,8 @@ impl<'a> FontLayoutLine<'a> {
 }
 
 struct FontShapeGlyph<'a> {
+    start: usize,
+    end: usize,
     info: rustybuzz::GlyphInfo,
     pos: rustybuzz::GlyphPosition,
     font: &'a Font<'a>
@@ -125,7 +130,8 @@ impl<'a> FontShapeLine<'a> {
                     ));
 
                 glyphs.push(FontLayoutGlyph {
-                    info: glyph.info,
+                    start: glyph.start,
+                    end: glyph.end,
                     inner,
                 });
 
@@ -149,16 +155,18 @@ struct FontMatches<'a> {
 }
 
 impl<'a> FontMatches<'a> {
-    pub fn shape_span(&self, string: &str) -> FontShapeSpan {
+    fn shape_span(&self, string: &'a str, start_span: usize, end_span: usize) -> FontShapeSpan {
+        let span = &string[start_span..end_span];
+
         let mut spans_by_font = Vec::with_capacity(self.fonts.len());
         for (font_i, font) in self.fonts.iter().enumerate() {
             let mut buffer = rustybuzz::UnicodeBuffer::new();
-            buffer.push_str(string);
+            buffer.push_str(span);
             buffer.guess_segment_properties();
             let script = buffer.script();
             let direction = buffer.direction();
             if font_i == 0 {
-                println!("  {:?}, {:?}: '{}'", script, direction, string);
+                println!("{:?}, {:?}: '{}'", script, direction, span);
             }
 
             let glyph_buffer = rustybuzz::shape(&font.rustybuzz, &[], buffer);
@@ -173,10 +181,19 @@ impl<'a> FontMatches<'a> {
                     misses += 1;
                 }
                 glyphs.push(FontShapeGlyph {
+                    start: start_span + info.cluster as usize,
+                    end: end_span, // Set later
                     info: *info,
                     pos: *pos,
                     font,
                 });
+            }
+
+            // Adjust end of glyphs
+            for i in (1..glyphs.len()).rev() {
+                if glyphs[i - 1].start == glyphs[i].start {
+                    glyphs[i - 1].end = glyphs[i].end;
+                }
             }
 
             let span = FontShapeSpan {
@@ -206,26 +223,25 @@ impl<'a> FontMatches<'a> {
         spans_by_font.remove(least_misses_i).1
     }
 
-    pub fn shape_line(&self, string: &str) -> FontShapeLine {
+    fn shape_line(&self, string: &'a str, start_line: usize, end_line: usize) -> FontShapeLine {
         use unicode_script::{Script, UnicodeScript};
+
+        let line = &string[start_line..end_line];
 
         //TODO: more special handling of characters
         let mut spans = Vec::new();
 
-        println!("'{}'", string);
-
         let mut start = 0;
         let mut prev = Script::Unknown;
-        for (i, c) in string.char_indices() {
-            if ! string.is_char_boundary(i) {
+        for (i, c) in line.char_indices() {
+            if ! line.is_char_boundary(i) {
                 continue;
             }
 
             let cur = c.script();
             if prev != cur && prev != Script::Unknown {
-                println!("*{:?} != {:?}", prev, cur);
                 // No combination, start new span
-                spans.push(self.shape_span(&string[start..i]));
+                spans.push(self.shape_span(string, start_line + start, start_line + i));
                 start = i;
                 prev = Script::Unknown;
             } else {
@@ -233,9 +249,9 @@ impl<'a> FontMatches<'a> {
             }
         }
 
-        spans.push(self.shape_span(&string[start..string.len()]));
+        spans.push(self.shape_span(string, start_line + start, start_line + line.len()));
 
-        let bidi = unicode_bidi::BidiInfo::new(string, None);
+        let bidi = unicode_bidi::BidiInfo::new(line, None);
         let rtl = if bidi.paragraphs.is_empty() {
             false
         } else {
@@ -247,6 +263,26 @@ impl<'a> FontMatches<'a> {
             rtl,
             spans,
         }
+    }
+
+    pub fn shape(&self, string: &'a str) -> Vec<FontShapeLine> {
+        let mut lines = Vec::new();
+
+        let mut start = 0;
+        for (i, c) in string.char_indices() {
+            if ! string.is_char_boundary(i) {
+                continue;
+            }
+
+            if c == '\n' {
+                lines.push(self.shape_line(string, start, i));
+                start = i + 1;
+            }
+        }
+
+        lines.push(self.shape_line(string, start, string.len()));
+
+        lines
     }
 }
 
@@ -319,9 +355,15 @@ fn main() {
     ).unwrap();
 
     #[cfg(feature = "mono")]
-    let text = include_str!("../res/mono.txt");
+    let default_text = include_str!("../res/mono.txt");
     #[cfg(not(feature = "mono"))]
-    let text = include_str!("../res/proportional.txt");
+    let default_text = include_str!("../res/proportional.txt");
+
+    let text = if let Some(arg) = env::args().nth(1) {
+        fs::read_to_string(&arg).expect("failed to open file")
+    } else {
+        default_text.to_string()
+    };
 
     let bg_color = Color::rgb(0x34, 0x34, 0x34);
     let font_color = Color::rgb(0xFF, 0xFF, 0xFF);
@@ -360,14 +402,12 @@ fn main() {
 
     let font_matches = font_system.matches(font_pattern).unwrap();
 
-    let mut shape_lines = Vec::new();
-    for line in text.lines() {
-        shape_lines.push(font_matches.shape_line(line));
-    }
+    let shape_lines = font_matches.shape(&text);
 
     let mut layout_lines = Vec::new();
     let mut mouse_x = -1;
     let mut mouse_y = -1;
+    let mut mouse_left = false;
     let mut redraw = true;
     let mut relayout = true;
     let mut scroll = 0;
@@ -379,7 +419,8 @@ fn main() {
 
             layout_lines.clear();
             for line in shape_lines.iter() {
-                line.layout(font_size, window.width() as i32, &mut layout_lines);
+                let line_width = window.width() as i32 - 16;
+                line.layout(font_size, line_width, &mut layout_lines);
             }
 
             redraw = true;
@@ -400,17 +441,40 @@ fn main() {
                 scroll
             ));
 
+            let line_x = 8;
             let mut line_y = line_height;
             for line in layout_lines.iter().skip(scroll as usize) {
                 if line_y >= window.height() as i32 {
                     break;
                 }
 
-                let mut line_x = 0;
-                let line_width = window.width() as i32;
+                if mouse_y >= line_y - font_size
+                && mouse_y < line_y - font_size + line_height
+                {
+                    let mut i = 0;
+                    while i < line.glyphs.len() {
+                        let glyph = &line.glyphs[i];
+                        i += 1;
+
+                        if let Some(bb) = glyph.inner.pixel_bounding_box() {
+                            if mouse_x >= line_x + bb.min.x && mouse_x <= line_x + bb.max.x {
+                                window.rect(
+                                    line_x + bb.min.x,
+                                    line_y - font_size,
+                                    bb.width() as u32,
+                                    line_height as u32,
+                                    Color::rgba(0xFF, 0xFF, 0xFF, 0x20)
+                                );
+
+                                println!("{}, {}: '{}'", glyph.start, glyph.end, &text[glyph.start..glyph.end]);
+                            }
+                        }
+                    }
+                }
+
                 line.draw(
                     &mut window,
-                    0,
+                    line_x,
                     line_y,
                     font_color
                 );
@@ -448,8 +512,18 @@ fn main() {
                 EventOption::Mouse(event) => {
                     mouse_x = event.x;
                     mouse_y = event.y;
-                    redraw = true;
+                    if mouse_left {
+                        redraw = true;
+                    }
                 },
+                EventOption::Button(event) => {
+                    if event.left != mouse_left {
+                        mouse_left = event.left;
+                        if mouse_left {
+                            redraw = true;
+                        }
+                    }
+                }
                 EventOption::Resize(_) => {
                     relayout = true;
                 },
