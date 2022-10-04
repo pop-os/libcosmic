@@ -192,13 +192,27 @@ impl<'a> FontMatches<'a> {
             // Adjust end of glyphs
             match direction {
                 rustybuzz::Direction::LeftToRight => {
-                    for i in 1..glyphs.len() {
-                        glyphs[i - 1].end = glyphs[i].start;
+                    for i in (1..glyphs.len()).rev() {
+                        let next_start = glyphs[i].start;
+                        let next_end = glyphs[i].end;
+                        let prev = &mut glyphs[i - 1];
+                        if prev.start == next_start {
+                            prev.end = next_end;
+                        } else {
+                            prev.end = next_start;
+                        }
                     }
                 },
                 rustybuzz::Direction::RightToLeft => {
                     for i in 1..glyphs.len() {
-                        glyphs[i].end = glyphs[i - 1].start;
+                        let next_start = glyphs[i - 1].start;
+                        let next_end = glyphs[i - 1].end;
+                        let prev = &mut glyphs[i];
+                        if prev.start == next_start {
+                            prev.end = next_end;
+                        } else {
+                            prev.end = next_start;
+                        }
                     }
                 },
                 //TODO: other directions
