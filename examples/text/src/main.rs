@@ -190,10 +190,19 @@ impl<'a> FontMatches<'a> {
             }
 
             // Adjust end of glyphs
-            for i in (1..glyphs.len()).rev() {
-                if glyphs[i - 1].start == glyphs[i].start {
-                    glyphs[i - 1].end = glyphs[i].end;
-                }
+            match direction {
+                rustybuzz::Direction::LeftToRight => {
+                    for i in 1..glyphs.len() {
+                        glyphs[i - 1].end = glyphs[i].start;
+                    }
+                },
+                rustybuzz::Direction::RightToLeft => {
+                    for i in 1..glyphs.len() {
+                        glyphs[i].end = glyphs[i - 1].start;
+                    }
+                },
+                //TODO: other directions
+                _ => (),
             }
 
             let span = FontShapeSpan {
