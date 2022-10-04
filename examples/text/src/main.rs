@@ -370,9 +370,22 @@ impl<'a> FontSystem<'a> {
 }
 
 fn main() {
+    let display_scale = match orbclient::get_display_size() {
+        Ok((w, h)) => {
+            println!("Display size: {}, {}", w, h);
+            (h as i32 / 1600) + 1
+        },
+        Err(err) => {
+            println!("Failed to get display size: {}", err);
+            1
+        }
+    };
+
     let mut window = Window::new_flags(
-        -1, -1,
-        1024, 768,
+        -1,
+        -1,
+        1024 * display_scale as u32,
+        768 * display_scale as u32,
         "COSMIC TEXT",
         &[WindowFlag::Resizable]
     ).unwrap();
@@ -435,7 +448,9 @@ fn main() {
     let mut relayout = true;
     let mut scroll = 0;
     loop {
-        let (font_size, line_height) = font_sizes[font_size_i];
+        let (mut font_size, mut line_height) = font_sizes[font_size_i];
+        font_size *= display_scale;
+        line_height *= display_scale;
 
         if relayout {
             let instant = Instant::now();
