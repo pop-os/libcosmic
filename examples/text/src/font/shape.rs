@@ -2,10 +2,9 @@
 use ab_glyph::Font;
 use core::marker::PhantomData;
 
-use super::{FontLayoutGlyph, FontLayoutLine};
+use super::{FontLayoutGlyph, FontLayoutLine, FontLineIndex};
 
 pub struct FontShapeGlyph<'a> {
-    pub line_i: usize,
     pub start: usize,
     pub end: usize,
     pub x_advance: f32,
@@ -26,12 +25,13 @@ pub struct FontShapeSpan<'a> {
 }
 
 pub struct FontShapeLine<'a> {
+    pub line_i: FontLineIndex,
     pub rtl: bool,
     pub spans: Vec<FontShapeSpan<'a>>,
 }
 
 impl<'a> FontShapeLine<'a> {
-    pub fn layout(&self, font_size: i32, line_width: i32, lines: &mut Vec<FontLayoutLine<'a>>) {
+    pub fn layout(&self, font_size: i32, line_width: i32, layout_lines: &mut Vec<FontLayoutLine<'a>>, mut layout_i: usize) {
         let mut push_line = true;
         let mut glyphs = Vec::new();
 
@@ -62,7 +62,10 @@ impl<'a> FontShapeLine<'a> {
                     if x < 0.0 {
                         let mut glyphs_swap = Vec::new();
                         std::mem::swap(&mut glyphs, &mut glyphs_swap);
-                        lines.push(FontLayoutLine { glyphs: glyphs_swap });
+                        layout_lines.push(FontLayoutLine {
+                            line_i: self.line_i,
+                            glyphs: glyphs_swap
+                        });
 
                         x = line_width as f32 - x_advance;
                         y = 0.0;
@@ -71,8 +74,11 @@ impl<'a> FontShapeLine<'a> {
                     if x + x_advance > line_width as f32 {
                         let mut glyphs_swap = Vec::new();
                         std::mem::swap(&mut glyphs, &mut glyphs_swap);
-                        lines.push(FontLayoutLine { glyphs: glyphs_swap });
-                        push_line = false;
+                        layout_lines.insert(layout_i, FontLayoutLine {
+                            line_i: self.line_i,
+                            glyphs: glyphs_swap
+                        });
+                        layout_i += 1;
 
                         x = 0.0;
                         y = 0.0;
@@ -99,7 +105,6 @@ impl<'a> FontShapeLine<'a> {
                     ));
 
                 glyphs.push(FontLayoutGlyph {
-                    line_i: glyph.line_i,
                     start: glyph.start,
                     end: glyph.end,
                     x,
@@ -119,7 +124,11 @@ impl<'a> FontShapeLine<'a> {
         }
 
         if push_line {
-            lines.push(FontLayoutLine { glyphs });
+            layout_lines.insert(layout_i, FontLayoutLine {
+                line_i: self.line_i,
+                glyphs
+            });
+            layout_i += 1;
         }
     }
 }

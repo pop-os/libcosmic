@@ -1,11 +1,11 @@
-use super::{Font, FontShapeGlyph, FontShapeLine, FontShapeSpan};
+use super::{Font, FontLineIndex, FontShapeGlyph, FontShapeLine, FontShapeSpan};
 
 pub struct FontMatches<'a> {
     pub fonts: Vec<&'a Font<'a>>,
 }
 
 impl<'a> FontMatches<'a> {
-    fn shape_span(&self, line_i: usize, line: &str, start_span: usize, end_span: usize) -> FontShapeSpan {
+    fn shape_span(&self, line: &str, start_span: usize, end_span: usize) -> FontShapeSpan {
         let span = &line[start_span..end_span];
 
         let mut spans_by_font = Vec::with_capacity(self.fonts.len());
@@ -44,7 +44,6 @@ impl<'a> FontMatches<'a> {
                 let inner = font.rusttype.glyph(rusttype::GlyphId(info.glyph_id as u16));
 
                 glyphs.push(FontShapeGlyph {
-                    line_i,
                     start: start_span + info.cluster as usize,
                     end: end_span, // Set later
                     x_advance,
@@ -114,7 +113,7 @@ impl<'a> FontMatches<'a> {
         spans_by_font.remove(least_misses_i).1
     }
 
-    pub fn shape_line(&self, line_i: usize, line: &str) -> FontShapeLine {
+    pub fn shape_line(&self, line_i: FontLineIndex, line: &str) -> FontShapeLine {
         use unicode_script::{Script, UnicodeScript};
 
         //TODO: more special handling of characters
@@ -130,7 +129,7 @@ impl<'a> FontMatches<'a> {
             let cur = c.script();
             if prev != cur && prev != Script::Unknown {
                 // No combination, start new span
-                spans.push(self.shape_span(line_i, line, start, i));
+                spans.push(self.shape_span(line, start, i));
                 start = i;
                 prev = Script::Unknown;
             } else {
@@ -138,7 +137,7 @@ impl<'a> FontMatches<'a> {
             }
         }
 
-        spans.push(self.shape_span(line_i, line, start, line.len()));
+        spans.push(self.shape_span(line, start, line.len()));
 
         let bidi = unicode_bidi::BidiInfo::new(line, None);
         let rtl = if bidi.paragraphs.is_empty() {
@@ -149,6 +148,7 @@ impl<'a> FontMatches<'a> {
         };
 
         FontShapeLine {
+            line_i,
             rtl,
             spans,
         }

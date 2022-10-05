@@ -8,6 +8,7 @@ use std::{
 };
 use text::{
     Font,
+    FontLineIndex,
     FontSystem,
 };
 
@@ -91,8 +92,9 @@ fn main() {
     let mut redraw = true;
     let mut rehit = false;
     let mut relayout = true;
+    let mut relayout_lines = Vec::new();
     let mut reshape = true;
-    let mut reshape_lines = Vec::new();
+    let mut reshape_lines = Vec::<FontLineIndex>::new();
     let mut scroll = 0;
     loop {
         let (mut font_size, mut line_height) = font_sizes[font_size_i];
@@ -106,13 +108,14 @@ fn main() {
         ));
 
         let line_x = 8 * display_scale;
+        let line_width = window.width() as i32 - line_x * 2;
 
         if reshape {
             let instant = Instant::now();
 
             shape_lines.clear();
             for (line_i, text_line) in text_lines.iter().enumerate() {
-                shape_lines.push(font_matches.shape_line(line_i, text_line));
+                shape_lines.push(font_matches.shape_line(FontLineIndex::new(line_i), text_line));
             }
 
             reshape = false;
@@ -126,12 +129,11 @@ fn main() {
         for line_i in reshape_lines.drain(..) {
             let instant = Instant::now();
 
-            shape_lines[line_i] = font_matches.shape_line(line_i, &text_lines[line_i]);
-
-            relayout = true;
+            shape_lines[line_i.get()] = font_matches.shape_line(line_i, &text_lines[line_i.get()]);
+            relayout_lines.push(line_i);
 
             let duration = instant.elapsed();
-            eprintln!("reshape line {}: {:?}", line_i, duration);
+            eprintln!("reshape line {}: {:?}", line_i.get(), duration);
         }
 
         if relayout {
@@ -139,15 +141,42 @@ fn main() {
 
             layout_lines.clear();
             for line in shape_lines.iter() {
-                let line_width = window.width() as i32 - line_x * 2;
-                line.layout(font_size, line_width, &mut layout_lines);
+                let layout_i = layout_lines.len();
+                line.layout(font_size, line_width, &mut layout_lines, layout_i);
             }
 
             relayout = false;
+            relayout_lines.clear();
             redraw = true;
 
             let duration = instant.elapsed();
             eprintln!("relayout: {:?}", duration);
+        }
+
+        for line_i in relayout_lines.drain(..) {
+            let instant = Instant::now();
+
+            let mut insert_opt = None;
+            let mut layout_i = 0;
+            while layout_i < layout_lines.len() {
+                let layout_line = &layout_lines[layout_i];
+                if layout_line.line_i == line_i {
+                    if insert_opt.is_none() {
+                        insert_opt = Some(layout_i);
+                    }
+                    layout_lines.remove(layout_i);
+                } else {
+                    layout_i += 1;
+                }
+            }
+
+            let shape_line = &shape_lines[line_i.get()];
+            shape_line.layout(font_size, line_width, &mut layout_lines, insert_opt.unwrap());
+
+            redraw = true;
+
+            let duration = instant.elapsed();
+            eprintln!("relayout line {}: {:?}", line_i.get(), duration);
         }
 
         if rehit {
@@ -222,7 +251,7 @@ fn main() {
                             Color::rgba(0xFF, 0xFF, 0xFF, 0x20)
                         );
 
-                        let text_line = &text_lines[glyph.line_i];
+                        let text_line = &text_lines[line.line_i.get()];
                         eprintln!("{}, {}: '{}'", glyph.start, glyph.end, &text_line[glyph.start..glyph.end]);
                     }
                 }
@@ -288,18 +317,18 @@ fn main() {
                             if cursor_glyph > 0 {
                                 cursor_glyph -= 1;
                                 let glyph = &line.glyphs[cursor_glyph];
-                                let text_line = &mut text_lines[glyph.line_i];
+                                let text_line = &mut text_lines[line.line_i.get()];
                                 text_line.remove(glyph.start);
-                                reshape_lines.push(glyph.line_i);
+                                reshape_lines.push(line.line_i);
                             }
                         },
                         orbclient::K_DEL => {
                             let line = &layout_lines[cursor_line];
                             if cursor_glyph < line.glyphs.len() {
                                 let glyph = &line.glyphs[cursor_glyph];
-                                let text_line = &mut text_lines[glyph.line_i];
+                                let text_line = &mut text_lines[line.line_i.get()];
                                 text_line.remove(glyph.start);
-                                reshape_lines.push(glyph.line_i);
+                                reshape_lines.push(line.line_i);
                             }
                         },
                         orbclient::K_0 => {
@@ -322,19 +351,19 @@ fn main() {
                     if cursor_glyph >= line.glyphs.len() {
                         match line.glyphs.last() {
                             Some(glyph) => {
-                                let text_line = &mut text_lines[glyph.line_i];
+                                let text_line = &mut text_lines[line.line_i.get()];
                                 text_line.insert(glyph.end, event.character);
                                 cursor_glyph += 1;
-                                reshape_lines.push(glyph.line_i);
+                                reshape_lines.push(line.line_i);
                             },
                             None => () // TODO
                         }
                     } else {
                         let glyph = &line.glyphs[cursor_glyph];
-                        let text_line = &mut text_lines[glyph.line_i];
+                        let text_line = &mut text_lines[line.line_i.get()];
                         text_line.insert(glyph.start, event.character);
                         cursor_glyph += 1;
-                        reshape_lines.push(glyph.line_i);
+                        reshape_lines.push(line.line_i);
                     }
                 },
                 EventOption::Mouse(event) => {

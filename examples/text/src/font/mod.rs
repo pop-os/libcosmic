@@ -10,6 +10,19 @@ mod shape;
 pub use self::system::*;
 mod system;
 
+#[derive(Clone, Copy, Eq, PartialEq, Ord, PartialOrd)]
+pub struct FontLineIndex(usize);
+
+impl FontLineIndex {
+    pub fn new(index: usize) -> Self {
+        Self(index)
+    }
+
+    pub fn get(&self) -> usize {
+        self.0
+    }
+}
+
 pub struct Font<'a> {
     data: &'a [u8],
     pub rustybuzz: rustybuzz::Face<'a>,

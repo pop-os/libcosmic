@@ -1,7 +1,8 @@
 use core::marker::PhantomData;
 
+use super::FontLineIndex;
+
 pub struct FontLayoutGlyph<'a, T: 'a> {
-    pub line_i: usize,
     pub start: usize,
     pub end: usize,
     pub x: f32,
@@ -14,6 +15,7 @@ pub struct FontLayoutGlyph<'a, T: 'a> {
 }
 
 pub struct FontLayoutLine<'a> {
+    pub line_i: FontLineIndex,
     pub glyphs: Vec<FontLayoutGlyph<'a, ()>>,
 }
 
