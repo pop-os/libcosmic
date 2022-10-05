@@ -88,6 +88,7 @@ fn main() {
     let mut mouse_y = -1;
     let mut mouse_left = false;
     let mut redraw = true;
+    let mut rehit = false;
     let mut relayout = true;
     let mut reshape = true;
     let mut scroll = 0;
@@ -124,6 +125,51 @@ fn main() {
             println!("relayout: {:?}", duration);
         }
 
+        if rehit {
+            let instant = Instant::now();
+
+            let window_lines = (window.height() as i32 + line_height - 1) / line_height;
+            scroll = cmp::max(0, cmp::min(
+                layout_lines.len() as i32 - (window_lines - 1),
+                scroll
+            ));
+
+            let line_x = 8 * display_scale;
+            let mut line_y = line_height;
+            for (line_i, line) in layout_lines.iter().skip(scroll as usize).enumerate() {
+                if line_y >= window.height() as i32 {
+                    break;
+                }
+
+                if mouse_left
+                && mouse_y >= line_y - font_size
+                && mouse_y < line_y - font_size + line_height
+                {
+                    let new_cursor_line = line_i + scroll as usize;
+                    let mut new_cursor_glyph = line.glyphs.len();
+                    for (glyph_i, glyph) in line.glyphs.iter().enumerate() {
+                        if mouse_x >= line_x + glyph.x as i32
+                        && mouse_x <= line_x + (glyph.x + glyph.w) as i32
+                        {
+                           new_cursor_glyph = glyph_i;
+                        }
+                    }
+                    if new_cursor_line != cursor_line || new_cursor_glyph != cursor_glyph {
+                        cursor_line = new_cursor_line;
+                        cursor_glyph = new_cursor_glyph;
+                        redraw = true;
+                    }
+                }
+
+                line_y += line_height;
+            }
+
+            rehit = false;
+
+            let duration = instant.elapsed();
+            println!("rehit: {:?}", duration);
+        }
+
         if redraw {
             let instant = Instant::now();
 
@@ -135,66 +181,47 @@ fn main() {
                 scroll
             ));
 
-            for &hitbox in &[true, false] {
-                let line_x = 8 * display_scale;
-                let mut line_y = line_height;
-                for (line_i, line) in layout_lines.iter().skip(scroll as usize).enumerate() {
-                    if line_y >= window.height() as i32 {
-                        break;
-                    }
-
-                    if hitbox {
-                        if mouse_left
-                        && mouse_y >= line_y - font_size
-                        && mouse_y < line_y - font_size + line_height
-                        {
-                            cursor_line = line_i + scroll as usize;
-                            cursor_glyph = line.glyphs.len();
-                            for (glyph_i, glyph) in line.glyphs.iter().enumerate() {
-                                if mouse_x >= line_x + glyph.x as i32
-                                && mouse_x <= line_x + (glyph.x + glyph.w) as i32
-                                {
-                                    cursor_glyph = glyph_i;
-                                }
-                            }
-                        }
-                    } else {
-                        if cursor_line == line_i + scroll as usize {
-                            if cursor_glyph >= line.glyphs.len() {
-                                let x = match line.glyphs.last() {
-                                    Some(glyph) => glyph.x + glyph.w,
-                                    None => 0.0
-                                };
-                                window.rect(
-                                    line_x + x as i32,
-                                    line_y - font_size,
-                                    (font_size / 2) as u32,
-                                    line_height as u32,
-                                    Color::rgba(0xFF, 0xFF, 0xFF, 0x20)
-                                );
-                            } else {
-                                let glyph = &line.glyphs[cursor_glyph];
-                                window.rect(
-                                    line_x + glyph.x as i32,
-                                    line_y - font_size,
-                                    glyph.w as u32,
-                                    line_height as u32,
-                                    Color::rgba(0xFF, 0xFF, 0xFF, 0x20)
-                                );
-                                println!("{}, {}: '{}'", glyph.start, glyph.end, &text[glyph.start..glyph.end]);
-                            }
-                        }
-
-                        line.draw(|x, y, v| {
-                            let c = (v * 255.0) as u32;
-                            window.pixel(line_x + x, line_y + y, Color{
-                                data: c << 24 | (font_color.data & 0x00FF_FFFF)
-                            });
-                        });
-                    }
-
-                    line_y += line_height;
+            let line_x = 8 * display_scale;
+            let mut line_y = line_height;
+            for (line_i, line) in layout_lines.iter().skip(scroll as usize).enumerate() {
+                if line_y >= window.height() as i32 {
+                    break;
                 }
+
+                if cursor_line == line_i + scroll as usize {
+                    if cursor_glyph >= line.glyphs.len() {
+                        let x = match line.glyphs.last() {
+                            Some(glyph) => glyph.x + glyph.w,
+                            None => 0.0
+                        };
+                        window.rect(
+                            line_x + x as i32,
+                            line_y - font_size,
+                            (font_size / 2) as u32,
+                            line_height as u32,
+                            Color::rgba(0xFF, 0xFF, 0xFF, 0x20)
+                        );
+                    } else {
+                        let glyph = &line.glyphs[cursor_glyph];
+                        window.rect(
+                            line_x + glyph.x as i32,
+                            line_y - font_size,
+                            glyph.w as u32,
+                            line_height as u32,
+                            Color::rgba(0xFF, 0xFF, 0xFF, 0x20)
+                        );
+                        println!("{}, {}: '{}'", glyph.start, glyph.end, &text[glyph.start..glyph.end]);
+                    }
+                }
+
+                line.draw(|x, y, v| {
+                    let c = (v * 255.0) as u32;
+                    window.pixel(line_x + x, line_y + y, Color{
+                        data: c << 24 | (font_color.data & 0x00FF_FFFF)
+                    });
+                });
+
+                line_y += line_height;
             }
 
             window.sync();
@@ -295,14 +322,14 @@ fn main() {
                     mouse_x = event.x;
                     mouse_y = event.y;
                     if mouse_left {
-                        redraw = true;
+                        rehit = true;
                     }
                 },
                 EventOption::Button(event) => {
                     if event.left != mouse_left {
                         mouse_left = event.left;
                         if mouse_left {
-                            redraw = true;
+                            rehit = true;
                         }
                     }
                 }
