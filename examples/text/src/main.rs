@@ -1,37 +1,29 @@
+#[cfg(feature = "ab_glyph")]
+use ab_glyph::Font as AbGlyphFont;
+
 use orbclient::{Color, EventOption, Renderer, Window, WindowFlag};
 use std::{
     cmp,
     env,
     fs,
+    marker::PhantomData,
     time::Instant,
 };
 
-struct Font<'a> {
-    data: &'a [u8],
-    pub rustybuzz: rustybuzz::Face<'a>,
-    pub rusttype: rusttype::Font<'a>,
-}
-
-impl<'a> Font<'a> {
-    pub fn new(data: &'a [u8], index: u32) -> Option<Self> {
-        Some(Self {
-            data,
-            rustybuzz: rustybuzz::Face::from_slice(data, index)?,
-            rusttype: rusttype::Font::try_from_bytes_and_index(data, index)?,
-        })
-    }
-}
-
-struct FontLayoutGlyph<'a> {
+struct FontLayoutGlyph<'a, T: 'a> {
     start: usize,
     end: usize,
     x: f32,
     w: f32,
+    #[cfg(feature = "ab_glyph")]
+    inner: Option<ab_glyph::OutlinedGlyph>,
+    #[cfg(feature = "rusttype")]
     inner: rusttype::PositionedGlyph<'a>,
+    phantom: PhantomData<&'a T>,
 }
 
 struct FontLayoutLine<'a> {
-    glyphs: Vec<FontLayoutGlyph<'a>>,
+    glyphs: Vec<FontLayoutGlyph<'a, ()>>,
 }
 
 impl<'a> FontLayoutLine<'a> {
@@ -43,6 +35,20 @@ impl<'a> FontLayoutLine<'a> {
         color: Color,
     ) {
         for glyph in self.glyphs.iter() {
+            #[cfg(feature = "ab_glyph")]
+            if let Some(ref outline) = glyph.inner {
+                let bb = outline.px_bounds();
+                let x = line_x + bb.min.x as i32;
+                let y = line_y + bb.min.y as i32;
+                outline.draw(|off_x, off_y, v| {
+                    let c = (v * 255.0) as u32;
+                    r.pixel(x + off_x as i32, y + off_y as i32, Color{
+                        data: c << 24 | (color.data & 0x00FF_FFFF)
+                    });
+                });
+            }
+
+            #[cfg(feature = "rusttype")]
             if let Some(bb) = glyph.inner.pixel_bounding_box() {
                 let x = line_x + bb.min.x;
                 let y = line_y + bb.min.y;
@@ -64,6 +70,11 @@ struct FontShapeGlyph<'a> {
     y_advance: f32,
     x_offset: f32,
     y_offset: f32,
+    #[cfg(feature = "ab_glyph")]
+    font: &'a ab_glyph::FontRef<'a>,
+    #[cfg(feature = "ab_glyph")]
+    inner: ab_glyph::GlyphId,
+    #[cfg(feature = "rusttype")]
     inner: rusttype::Glyph<'a>,
 }
 
@@ -126,6 +137,18 @@ impl<'a> FontShapeLine<'a> {
                     }
                 }
 
+                #[cfg(feature = "ab_glyph")]
+                let inner = glyph.font.outline_glyph(
+                    glyph.inner.with_scale_and_position(
+                        font_size as f32,
+                        ab_glyph::point(
+                            x + x_offset,
+                            y + y_offset,
+                        )
+                    )
+                );
+
+                #[cfg(feature = "rusttype")]
                 let inner = glyph.inner.clone()
                     .scaled(rusttype::Scale::uniform(font_size as f32))
                     .positioned(rusttype::point(
@@ -139,6 +162,7 @@ impl<'a> FontShapeLine<'a> {
                     x,
                     w: x_advance,
                     inner,
+                    phantom: PhantomData,
                 });
                 push_line = true;
 
@@ -195,7 +219,12 @@ impl<'a> FontMatches<'a> {
                     misses += 1;
                 }
 
+                #[cfg(feature = "ab_glyph")]
+                let inner = ab_glyph::GlyphId(info.glyph_id as u16);
+
+                #[cfg(feature = "rusttype")]
                 let inner = font.rusttype.glyph(rusttype::GlyphId(info.glyph_id as u16));
+
                 glyphs.push(FontShapeGlyph {
                     start: start_span + info.cluster as usize,
                     end: end_span, // Set later
@@ -203,6 +232,8 @@ impl<'a> FontMatches<'a> {
                     y_advance,
                     x_offset,
                     y_offset,
+                    #[cfg(feature = "ab_glyph")]
+                    font: &font.ab_glyph,
                     inner,
                 });
             }
@@ -324,6 +355,28 @@ impl<'a> FontMatches<'a> {
         lines.push(self.shape_line(string, start, string.len()));
 
         lines
+    }
+}
+
+struct Font<'a> {
+    data: &'a [u8],
+    pub rustybuzz: rustybuzz::Face<'a>,
+    #[cfg(feature = "ab_glyph")]
+    pub ab_glyph: ab_glyph::FontRef<'a>,
+    #[cfg(feature = "rusttype")]
+    pub rusttype: rusttype::Font<'a>,
+}
+
+impl<'a> Font<'a> {
+    pub fn new(data: &'a [u8], index: u32) -> Option<Self> {
+        Some(Self {
+            data,
+            rustybuzz: rustybuzz::Face::from_slice(data, index)?,
+            #[cfg(feature = "ab_glyph")]
+            ab_glyph: ab_glyph::FontRef::try_from_slice_and_index(data, index).ok()?,
+            #[cfg(feature = "rusttype")]
+            rusttype: rusttype::Font::try_from_bytes_and_index(data, index)?,
+        })
     }
 }
 
