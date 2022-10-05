@@ -453,7 +453,16 @@ fn main() {
 
     let font_matches = font_system.matches(font_pattern).unwrap();
 
-    let shape_lines = font_matches.shape(&text);
+    let shape_lines = {
+        let instant = Instant::now();
+
+        let shape_lines = font_matches.shape(&text);
+
+        let duration = instant.elapsed();
+        println!("reshape: {:?}", duration);
+
+        shape_lines
+    };
 
     let mut cursor_line = 0;
     let mut cursor_glyph = 0;
