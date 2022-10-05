@@ -5,6 +5,7 @@ use core::marker::PhantomData;
 use super::{FontLayoutGlyph, FontLayoutLine};
 
 pub struct FontShapeGlyph<'a> {
+    pub line_i: usize,
     pub start: usize,
     pub end: usize,
     pub x_advance: f32,
@@ -98,6 +99,7 @@ impl<'a> FontShapeLine<'a> {
                     ));
 
                 glyphs.push(FontLayoutGlyph {
+                    line_i: glyph.line_i,
                     start: glyph.start,
                     end: glyph.end,
                     x,

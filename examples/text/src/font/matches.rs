@@ -5,8 +5,8 @@ pub struct FontMatches<'a> {
 }
 
 impl<'a> FontMatches<'a> {
-    fn shape_span(&self, string: &str, start_span: usize, end_span: usize) -> FontShapeSpan {
-        let span = &string[start_span..end_span];
+    fn shape_span(&self, line_i: usize, line: &str, start_span: usize, end_span: usize) -> FontShapeSpan {
+        let span = &line[start_span..end_span];
 
         let mut spans_by_font = Vec::with_capacity(self.fonts.len());
         for (font_i, font) in self.fonts.iter().enumerate() {
@@ -44,6 +44,7 @@ impl<'a> FontMatches<'a> {
                 let inner = font.rusttype.glyph(rusttype::GlyphId(info.glyph_id as u16));
 
                 glyphs.push(FontShapeGlyph {
+                    line_i,
                     start: start_span + info.cluster as usize,
                     end: end_span, // Set later
                     x_advance,
@@ -113,10 +114,8 @@ impl<'a> FontMatches<'a> {
         spans_by_font.remove(least_misses_i).1
     }
 
-    fn shape_line(&self, string: &str, start_line: usize, end_line: usize) -> FontShapeLine {
+    pub fn shape_line(&self, line_i: usize, line: &str) -> FontShapeLine {
         use unicode_script::{Script, UnicodeScript};
-
-        let line = &string[start_line..end_line];
 
         //TODO: more special handling of characters
         let mut spans = Vec::new();
@@ -131,7 +130,7 @@ impl<'a> FontMatches<'a> {
             let cur = c.script();
             if prev != cur && prev != Script::Unknown {
                 // No combination, start new span
-                spans.push(self.shape_span(string, start_line + start, start_line + i));
+                spans.push(self.shape_span(line_i, line, start, i));
                 start = i;
                 prev = Script::Unknown;
             } else {
@@ -139,7 +138,7 @@ impl<'a> FontMatches<'a> {
             }
         }
 
-        spans.push(self.shape_span(string, start_line + start, start_line + line.len()));
+        spans.push(self.shape_span(line_i, line, start, line.len()));
 
         let bidi = unicode_bidi::BidiInfo::new(line, None);
         let rtl = if bidi.paragraphs.is_empty() {
@@ -153,25 +152,5 @@ impl<'a> FontMatches<'a> {
             rtl,
             spans,
         }
-    }
-
-    pub fn shape(&self, string: &str) -> Vec<FontShapeLine> {
-        let mut lines = Vec::new();
-
-        let mut start = 0;
-        for (i, c) in string.char_indices() {
-            if ! string.is_char_boundary(i) {
-                continue;
-            }
-
-            if c == '\n' {
-                lines.push(self.shape_line(string, start, i));
-                start = i + 1;
-            }
-        }
-
-        lines.push(self.shape_line(string, start, string.len()));
-
-        lines
     }
 }

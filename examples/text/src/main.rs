@@ -37,10 +37,11 @@ fn main() {
     #[cfg(not(feature = "mono"))]
     let default_text = include_str!("../res/proportional.txt");
 
-    let mut text = if let Some(arg) = env::args().nth(1) {
-        fs::read_to_string(&arg).expect("failed to open file")
+    let mut text_lines: Vec<String> = if let Some(arg) = env::args().nth(1) {
+        let text = fs::read_to_string(&arg).expect("failed to open file");
+        text.lines().map(String::from).collect()
     } else {
-        default_text.to_string()
+        default_text.lines().map(String::from).collect()
     };
 
     let bg_color = Color::rgb(0x34, 0x34, 0x34);
@@ -91,6 +92,7 @@ fn main() {
     let mut rehit = false;
     let mut relayout = true;
     let mut reshape = true;
+    let mut reshape_lines = Vec::new();
     let mut scroll = 0;
     loop {
         let (mut font_size, mut line_height) = font_sizes[font_size_i];
@@ -100,13 +102,27 @@ fn main() {
         if reshape {
             let instant = Instant::now();
 
-            shape_lines = font_matches.shape(&text);
+            shape_lines.clear();
+            for (line_i, text_line) in text_lines.iter().enumerate() {
+                shape_lines.push(font_matches.shape_line(line_i, text_line));
+            }
 
             reshape = false;
             relayout = true;
 
             let duration = instant.elapsed();
             println!("reshape: {:?}", duration);
+        }
+
+        for line_i in reshape_lines.drain(..) {
+            let instant = Instant::now();
+
+            shape_lines[line_i] = font_matches.shape_line(line_i, &text_lines[line_i]);
+
+            relayout = true;
+
+            let duration = instant.elapsed();
+            println!("reshape line {}: {:?}", line_i, duration);
         }
 
         if relayout {
@@ -210,7 +226,9 @@ fn main() {
                             line_height as u32,
                             Color::rgba(0xFF, 0xFF, 0xFF, 0x20)
                         );
-                        println!("{}, {}: '{}'", glyph.start, glyph.end, &text[glyph.start..glyph.end]);
+
+                        let text_line = &text_lines[glyph.line_i];
+                        println!("{}, {}: '{}'", glyph.start, glyph.end, &text_line[glyph.start..glyph.end]);
                     }
                 }
 
@@ -274,15 +292,19 @@ fn main() {
                             }
                             if cursor_glyph > 0 {
                                 cursor_glyph -= 1;
-                                text.remove(line.glyphs[cursor_glyph].start);
-                                reshape = true;
+                                let glyph = &line.glyphs[cursor_glyph];
+                                let text_line = &mut text_lines[glyph.line_i];
+                                text_line.remove(glyph.start);
+                                reshape_lines.push(cursor_line);
                             }
                         },
                         orbclient::K_DEL => {
                             let line = &layout_lines[cursor_line];
                             if cursor_glyph < line.glyphs.len() {
-                                text.remove(line.glyphs[cursor_glyph].start);
-                                reshape = true;
+                                let glyph = &line.glyphs[cursor_glyph];
+                                let text_line = &mut text_lines[glyph.line_i];
+                                text_line.remove(glyph.start);
+                                reshape_lines.push(cursor_line);
                             }
                         },
                         orbclient::K_0 => {
@@ -305,17 +327,19 @@ fn main() {
                     if cursor_glyph >= line.glyphs.len() {
                         match line.glyphs.last() {
                             Some(glyph) => {
-                                text.insert(glyph.end, event.character);
+                                let text_line = &mut text_lines[glyph.line_i];
+                                text_line.insert(glyph.end, event.character);
                                 cursor_glyph += 1;
-                                reshape = true;
+                                reshape_lines.push(cursor_line);
                             },
                             None => () // TODO
                         }
                     } else {
                         let glyph = &line.glyphs[cursor_glyph];
-                        text.insert(glyph.start, event.character);
+                        let text_line = &mut text_lines[glyph.line_i];
+                        text_line.insert(glyph.start, event.character);
                         cursor_glyph += 1;
-                        reshape = true;
+                        reshape_lines.push(cursor_line);
                     }
                 },
                 EventOption::Mouse(event) => {

@@ -1,6 +1,7 @@
 use core::marker::PhantomData;
 
 pub struct FontLayoutGlyph<'a, T: 'a> {
+    pub line_i: usize,
     pub start: usize,
     pub end: usize,
     pub x: f32,
