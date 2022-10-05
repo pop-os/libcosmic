@@ -79,6 +79,7 @@ struct FontShapeLine<'a> {
 
 impl<'a> FontShapeLine<'a> {
     pub fn layout(&self, font_size: i32, line_width: i32, lines: &mut Vec<FontLayoutLine<'a>>) {
+        let mut push_line = true;
         let mut glyphs = Vec::new();
 
         let mut x = 0.0;
@@ -118,6 +119,7 @@ impl<'a> FontShapeLine<'a> {
                         let mut glyphs_swap = Vec::new();
                         std::mem::swap(&mut glyphs, &mut glyphs_swap);
                         lines.push(FontLayoutLine { glyphs: glyphs_swap });
+                        push_line = false;
 
                         x = 0.0;
                         y = 0.0;
@@ -138,6 +140,7 @@ impl<'a> FontShapeLine<'a> {
                     w: x_advance,
                     inner,
                 });
+                push_line = true;
 
                 x += x_advance;
                 y += y_advance;
@@ -148,7 +151,7 @@ impl<'a> FontShapeLine<'a> {
             }
         }
 
-        if ! glyphs.is_empty() {
+        if push_line {
             lines.push(FontLayoutLine { glyphs });
         }
     }
