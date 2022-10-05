@@ -25,6 +25,8 @@ impl<'a> Font<'a> {
 struct FontLayoutGlyph<'a> {
     start: usize,
     end: usize,
+    x: f32,
+    w: f32,
     inner: rusttype::PositionedGlyph<'a>,
 }
 
@@ -58,9 +60,11 @@ impl<'a> FontLayoutLine<'a> {
 struct FontShapeGlyph<'a> {
     start: usize,
     end: usize,
-    info: rustybuzz::GlyphInfo,
-    pos: rustybuzz::GlyphPosition,
-    font: &'a Font<'a>
+    x_advance: f32,
+    y_advance: f32,
+    x_offset: f32,
+    y_offset: f32,
+    inner: rusttype::Glyph<'a>,
 }
 
 struct FontShapeSpan<'a> {
@@ -82,8 +86,7 @@ impl<'a> FontShapeLine<'a> {
         for span in self.spans.iter() {
             let mut span_width = 0.0;
             for glyph in span.glyphs.iter() {
-                let font_scale = glyph.font.rustybuzz.units_per_em() as f32;
-                let x_advance = (font_size * glyph.pos.x_advance) as f32 / font_scale;
+                let x_advance = font_size as f32 * glyph.x_advance;
                 span_width += x_advance;
             }
 
@@ -95,11 +98,10 @@ impl<'a> FontShapeLine<'a> {
             }
 
             for glyph in span.glyphs.iter() {
-                let font_scale = glyph.font.rustybuzz.units_per_em() as f32;
-                let x_advance = (font_size * glyph.pos.x_advance) as f32 / font_scale;
-                let y_advance = (font_size * glyph.pos.y_advance) as f32 / font_scale;
-                let x_offset = (font_size * glyph.pos.x_offset) as f32 / font_scale;
-                let y_offset = (font_size * glyph.pos.y_offset) as f32 / font_scale;
+                let x_advance = font_size as f32 * glyph.x_advance;
+                let y_advance = font_size as f32 * glyph.y_advance;
+                let x_offset = font_size as f32 * glyph.x_offset;
+                let y_offset = font_size as f32 * glyph.y_offset;
 
                 //TODO: make wrapping optional
                 if self.rtl {
@@ -122,7 +124,7 @@ impl<'a> FontShapeLine<'a> {
                     }
                 }
 
-                let inner = glyph.font.rusttype.glyph(rusttype::GlyphId(glyph.info.glyph_id as u16))
+                let inner = glyph.inner.clone()
                     .scaled(rusttype::Scale::uniform(font_size as f32))
                     .positioned(rusttype::point(
                         x + x_offset,
@@ -132,6 +134,8 @@ impl<'a> FontShapeLine<'a> {
                 glyphs.push(FontLayoutGlyph {
                     start: glyph.start,
                     end: glyph.end,
+                    x,
+                    w: x_advance,
                     inner,
                 });
 
@@ -160,6 +164,8 @@ impl<'a> FontMatches<'a> {
 
         let mut spans_by_font = Vec::with_capacity(self.fonts.len());
         for (font_i, font) in self.fonts.iter().enumerate() {
+            let font_scale = font.rustybuzz.units_per_em() as f32;
+
             let mut buffer = rustybuzz::UnicodeBuffer::new();
             buffer.push_str(span);
             buffer.guess_segment_properties();
@@ -176,16 +182,25 @@ impl<'a> FontMatches<'a> {
             let mut misses = 0;
             let mut glyphs = Vec::with_capacity(glyph_infos.len());
             for (info, pos) in glyph_infos.iter().zip(glyph_positions.iter()) {
+                let x_advance = pos.x_advance as f32 / font_scale;
+                let y_advance = pos.y_advance as f32 / font_scale;
+                let x_offset = pos.x_offset as f32 / font_scale;
+                let y_offset = pos.y_offset as f32 / font_scale;
+
                 //println!("  {:?} {:?}", info, pos);
                 if info.glyph_id == 0 {
                     misses += 1;
                 }
+
+                let inner = font.rusttype.glyph(rusttype::GlyphId(info.glyph_id as u16));
                 glyphs.push(FontShapeGlyph {
                     start: start_span + info.cluster as usize,
                     end: end_span, // Set later
-                    info: *info,
-                    pos: *pos,
-                    font,
+                    x_advance,
+                    y_advance,
+                    x_offset,
+                    y_offset,
+                    inner,
                 });
             }
 
@@ -440,6 +455,8 @@ fn main() {
 
     let shape_lines = font_matches.shape(&text);
 
+    let mut cursor_line = 0;
+    let mut cursor_glyph = 0;
     let mut layout_lines = Vec::new();
     let mut mouse_x = -1;
     let mut mouse_y = -1;
@@ -457,7 +474,7 @@ fn main() {
 
             layout_lines.clear();
             for line in shape_lines.iter() {
-                let line_width = window.width() as i32 - 16;
+                let line_width = window.width() as i32 - 16 * display_scale;
                 line.layout(font_size, line_width, &mut layout_lines);
             }
 
@@ -479,45 +496,54 @@ fn main() {
                 scroll
             ));
 
-            let line_x = 8;
-            let mut line_y = line_height;
-            for line in layout_lines.iter().skip(scroll as usize) {
-                if line_y >= window.height() as i32 {
-                    break;
-                }
+            for &hitbox in &[true, false] {
+                let line_x = 8 * display_scale;
+                let mut line_y = line_height;
+                for (line_i, line) in layout_lines.iter().skip(scroll as usize).enumerate() {
+                    if line_y >= window.height() as i32 {
+                        break;
+                    }
 
-                if mouse_y >= line_y - font_size
-                && mouse_y < line_y - font_size + line_height
-                {
-                    let mut i = 0;
-                    while i < line.glyphs.len() {
-                        let glyph = &line.glyphs[i];
-                        i += 1;
-
-                        if let Some(bb) = glyph.inner.pixel_bounding_box() {
-                            if mouse_x >= line_x + bb.min.x && mouse_x <= line_x + bb.max.x {
+                    if hitbox {
+                        if mouse_left
+                        && mouse_y >= line_y - font_size
+                        && mouse_y < line_y - font_size + line_height
+                        {
+                            for (glyph_i, glyph) in line.glyphs.iter().enumerate() {
+                                if mouse_x >= line_x + glyph.x as i32
+                                && mouse_x <= line_x + (glyph.x + glyph.w) as i32
+                                {
+                                    cursor_line = line_i + scroll as usize;
+                                    cursor_glyph = glyph_i;
+                                }
+                            }
+                        }
+                    } else {
+                        if cursor_line == line_i + scroll as usize {
+                            if ! line.glyphs.is_empty() {
+                                let glyph_i = cmp::min(cursor_glyph, line.glyphs.len() - 1);
+                                let glyph = &line.glyphs[glyph_i];
                                 window.rect(
-                                    line_x + bb.min.x,
+                                    line_x + glyph.x as i32,
                                     line_y - font_size,
-                                    bb.width() as u32,
+                                    glyph.w as u32,
                                     line_height as u32,
                                     Color::rgba(0xFF, 0xFF, 0xFF, 0x20)
                                 );
-
                                 println!("{}, {}: '{}'", glyph.start, glyph.end, &text[glyph.start..glyph.end]);
                             }
                         }
+
+                        line.draw(
+                            &mut window,
+                            line_x,
+                            line_y,
+                            font_color
+                        );
                     }
+
+                    line_y += line_height;
                 }
-
-                line.draw(
-                    &mut window,
-                    line_x,
-                    line_y,
-                    font_color
-                );
-
-                line_y += line_height;
             }
 
             window.sync();
@@ -532,6 +558,34 @@ fn main() {
             match event.to_option() {
                 EventOption::Key(event) => if event.pressed {
                     match event.scancode {
+                        orbclient::K_UP => if cursor_line > 0 {
+                            cursor_line -= 1;
+                            redraw = true;
+                        },
+                        orbclient::K_DOWN => if cursor_line + 1 < layout_lines.len() {
+                            cursor_line += 1;
+                            redraw = true;
+                        },
+                        orbclient::K_LEFT => {
+                            if cursor_glyph > layout_lines[cursor_line].glyphs.len() {
+                                cursor_glyph = layout_lines[cursor_line].glyphs.len();
+                                redraw = true;
+                            }
+                            if cursor_glyph > 0 {
+                                cursor_glyph -= 1;
+                                redraw = true;
+                            }
+                        },
+                        orbclient::K_RIGHT => {
+                            if cursor_glyph > layout_lines[cursor_line].glyphs.len() {
+                                cursor_glyph = layout_lines[cursor_line].glyphs.len();
+                                redraw = true;
+                            }
+                            if cursor_glyph < layout_lines[cursor_line].glyphs.len() {
+                                cursor_glyph += 1;
+                                redraw = true;
+                            }
+                        },
                         orbclient::K_0 => {
                             font_size_i = font_size_default;
                             relayout = true;
