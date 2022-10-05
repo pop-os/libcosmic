@@ -521,20 +521,32 @@ fn main() {
                         && mouse_y >= line_y - font_size
                         && mouse_y < line_y - font_size + line_height
                         {
+                            cursor_line = line_i + scroll as usize;
+                            cursor_glyph = line.glyphs.len();
                             for (glyph_i, glyph) in line.glyphs.iter().enumerate() {
                                 if mouse_x >= line_x + glyph.x as i32
                                 && mouse_x <= line_x + (glyph.x + glyph.w) as i32
                                 {
-                                    cursor_line = line_i + scroll as usize;
                                     cursor_glyph = glyph_i;
                                 }
                             }
                         }
                     } else {
                         if cursor_line == line_i + scroll as usize {
-                            if ! line.glyphs.is_empty() {
-                                let glyph_i = cmp::min(cursor_glyph, line.glyphs.len() - 1);
-                                let glyph = &line.glyphs[glyph_i];
+                            if cursor_glyph >= line.glyphs.len() {
+                                let x = match line.glyphs.last() {
+                                    Some(glyph) => glyph.x + glyph.w,
+                                    None => 0.0
+                                };
+                                window.rect(
+                                    line_x + x as i32,
+                                    line_y - font_size,
+                                    (font_size / 2) as u32,
+                                    line_height as u32,
+                                    Color::rgba(0xFF, 0xFF, 0xFF, 0x20)
+                                );
+                            } else {
+                                let glyph = &line.glyphs[cursor_glyph];
                                 window.rect(
                                     line_x + glyph.x as i32,
                                     line_y - font_size,
