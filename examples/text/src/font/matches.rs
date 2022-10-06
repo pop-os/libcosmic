@@ -9,16 +9,13 @@ impl<'a> FontMatches<'a> {
         let word = &line[start_word..end_word];
 
         let mut words_by_font = Vec::with_capacity(self.fonts.len());
-        for (font_i, font) in self.fonts.iter().enumerate() {
+        for font in self.fonts.iter() {
             let font_scale = font.rustybuzz.units_per_em() as f32;
 
             let mut buffer = rustybuzz::UnicodeBuffer::new();
             buffer.push_str(word);
             buffer.guess_segment_properties();
             let direction = buffer.direction();
-            if font_i == 0 {
-                println!("{:?}, {:?}: '{}'", buffer.script(), direction, word);
-            }
 
             let glyph_buffer = rustybuzz::shape(&font.rustybuzz, &[], buffer);
             let glyph_infos = glyph_buffer.glyph_infos();
@@ -86,6 +83,12 @@ impl<'a> FontMatches<'a> {
                 _ => (),
             }
 
+            /*
+            for glyph in glyphs.iter() {
+                println!("'{}': {}, {}, {}, {}", &line[glyph.start..glyph.end], glyph.x_advance, glyph.y_advance, glyph.x_offset, glyph.y_offset);
+            }
+            */
+
             let word = FontShapeWord { glyphs };
             if misses == 0 {
                 return word;
@@ -110,14 +113,56 @@ impl<'a> FontMatches<'a> {
         words_by_font.remove(least_misses_i).1
     }
 
-    fn shape_span(&self, line: &str, start_span: usize, end_span: usize, rtl: bool) -> FontShapeSpan {
+    fn shape_span(&self, line: &str, start_span: usize, end_span: usize, para_rtl: bool, span_rtl: bool) -> FontShapeSpan {
         use unicode_script::{Script, UnicodeScript};
 
         let span = &line[start_span..end_span];
 
-        let mut words = Vec::new();
+        println!("Span {}: '{}'", if span_rtl { "RTL" } else { "LTR" }, span);
 
-        let mut start = 0;
+        let mut words = vec![
+            self.shape_word(line, start_span, end_span),
+        ];
+
+        if span_rtl {
+            for word in words.iter_mut() {
+                word.glyphs.reverse();
+            }
+        }
+
+        //TODO: improve performance
+        for (linebreak, _) in unicode_linebreak::linebreaks(span) {
+            println!("linebreak {}", linebreak);
+            let mut glyphs_opt = None;
+            'words: for word_i in 0..words.len() {
+                for glyph_i in 0..words[word_i].glyphs.len() {
+                    if words[word_i].glyphs[glyph_i].start == start_span + linebreak {
+                        println!("glyph {}", words[word_i].glyphs[glyph_i].start);
+                        println!("word '{}'", &line[
+                            words[word_i].glyphs[0].start
+                            ..
+                            words[word_i].glyphs[glyph_i].start
+                        ]);
+                        glyphs_opt = Some(words[word_i].glyphs.split_off(glyph_i));
+                        break 'words;
+                    }
+                }
+            }
+            if let Some(glyphs) = glyphs_opt {
+                words.push(FontShapeWord { glyphs });
+            }
+        }
+
+        if span_rtl {
+            for word in words.iter_mut() {
+                word.glyphs.reverse();
+            }
+        }
+
+        if para_rtl != span_rtl {
+            words.reverse();
+        }
+
         /*
         let mut word_script = Script::Unknown;
         for (i, c) in span.char_indices() {
@@ -131,11 +176,11 @@ impl<'a> FontMatches<'a> {
                 word_script = next_script;
             }
         }
-        */
         words.push(self.shape_word(line, start_span + start, end_span));
+        */
 
         FontShapeSpan {
-            rtl,
+            rtl: span_rtl,
             words,
         }
     }
@@ -158,12 +203,12 @@ impl<'a> FontMatches<'a> {
             for i in paragraph.para.range.clone() {
                 let next_rtl = paragraph.info.levels[i].is_rtl();
                 if span_rtl != next_rtl {
+                    spans.push(self.shape_span(line, start, i, para_rtl, span_rtl));
                     span_rtl = next_rtl;
-                    spans.push(self.shape_span(line, start, i, span_rtl));
                     start = i;
                 }
             }
-            spans.push(self.shape_span(line, start, line.len(), span_rtl));
+            spans.push(self.shape_span(line, start, line.len(), para_rtl, span_rtl));
 
             para_rtl
         };

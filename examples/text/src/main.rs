@@ -181,7 +181,7 @@ fn main() {
         (28, 36), // Title 2
         (32, 44), // Title 1
     ];
-    let font_size_default = 2; // Title 4
+    let font_size_default = 5; // Title 1
     let mut font_size_i = font_size_default;
 
     let text = if let Some(arg) = env::args().nth(1) {

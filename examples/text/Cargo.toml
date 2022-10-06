@@ -11,6 +11,7 @@ orbclient = "0.3"
 rusttype = { version = "0.9", optional = true }
 rustybuzz = "0.5"
 unicode-bidi = "0.3"
+unicode-linebreak = "0.1"
 unicode-script = "0.5"
 
 [features]

@@ -44,25 +44,30 @@ impl<'a> FontShapeLine<'a> {
         let mut y = 0.0;
         for span in self.spans.iter() {
             for word in span.words.iter() {
+                let mut word_size = 0.0;
+                for glyph in word.glyphs.iter() {
+                    word_size += font_size as f32 * glyph.x_advance;
+                }
+
+                //TODO: make wrapping optional
+                if x + word_size > line_width as f32 && ! glyphs.is_empty() {
+                    let mut glyphs_swap = Vec::new();
+                    std::mem::swap(&mut glyphs, &mut glyphs_swap);
+                    layout_lines.insert(layout_i, FontLayoutLine {
+                        line_i: self.line_i,
+                        glyphs: glyphs_swap
+                    });
+                    layout_i += 1;
+
+                    x = 0.0;
+                    y = 0.0;
+                }
+
                 for glyph in word.glyphs.iter() {
                     let x_advance = font_size as f32 * glyph.x_advance;
                     let y_advance = font_size as f32 * glyph.y_advance;
                     let x_offset = font_size as f32 * glyph.x_offset;
                     let y_offset = font_size as f32 * glyph.y_offset;
-
-                    //TODO: make wrapping optional
-                    if x + x_advance > line_width as f32 {
-                        let mut glyphs_swap = Vec::new();
-                        std::mem::swap(&mut glyphs, &mut glyphs_swap);
-                        layout_lines.insert(layout_i, FontLayoutLine {
-                            line_i: self.line_i,
-                            glyphs: glyphs_swap
-                        });
-                        layout_i += 1;
-
-                        x = 0.0;
-                        y = 0.0;
-                    }
 
                     #[cfg(feature = "ab_glyph")]
                     let inner = glyph.font.outline_glyph(
@@ -115,25 +120,30 @@ impl<'a> FontShapeLine<'a> {
         let mut y = 0.0;
         for span in self.spans.iter() {
             for word in span.words.iter() {
+                let mut word_size = 0.0;
+                for glyph in word.glyphs.iter() {
+                    word_size += font_size as f32 * glyph.x_advance;
+                }
+
+                //TODO: make wrapping optional
+                if x - word_size < 0.0 && ! glyphs.is_empty() {
+                    let mut glyphs_swap = Vec::new();
+                    std::mem::swap(&mut glyphs, &mut glyphs_swap);
+                    layout_lines.insert(layout_i, FontLayoutLine {
+                        line_i: self.line_i,
+                        glyphs: glyphs_swap
+                    });
+                    layout_i += 1;
+
+                    x = line_width as f32;
+                    y = 0.0;
+                }
+
                 for glyph in word.glyphs.iter().rev() {
                     let x_advance = font_size as f32 * glyph.x_advance;
                     let y_advance = font_size as f32 * glyph.y_advance;
                     let x_offset = font_size as f32 * glyph.x_offset;
                     let y_offset = font_size as f32 * glyph.y_offset;
-
-                    //TODO: make wrapping optional
-                    if x - x_advance < 0.0 {
-                        let mut glyphs_swap = Vec::new();
-                        std::mem::swap(&mut glyphs, &mut glyphs_swap);
-                        layout_lines.insert(layout_i, FontLayoutLine {
-                            line_i: self.line_i,
-                            glyphs: glyphs_swap
-                        });
-                        layout_i += 1;
-
-                        x = line_width as f32;
-                        y = 0.0;
-                    }
 
                     x -= x_advance;
 
