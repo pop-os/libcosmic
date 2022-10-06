@@ -66,6 +66,7 @@ impl<'a> FontShapeLine<'a> {
                             line_i: self.line_i,
                             glyphs: glyphs_swap
                         });
+                        layout_i += 1;
 
                         x = line_width as f32 - x_advance;
                         y = 0.0;
