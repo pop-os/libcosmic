@@ -132,21 +132,37 @@ fn main() {
     ).unwrap();
 
     let mut font_system = FontSystem::new();
+
     font_system.add(
         Font::new(include_bytes!("../../../res/Fira/FiraSans-Regular.otf"), 0).unwrap()
     );
     font_system.add(
         Font::new(include_bytes!("../../../res/Fira/FiraMono-Regular.otf"), 0).unwrap()
     );
-    font_system.add(
-        Font::new(include_bytes!("../../../res/FreeFont/FreeSans.ttf"), 0).unwrap()
-    );
-    font_system.add(
-        Font::new(include_bytes!("../../../res/FreeFont/FreeSerif.ttf"), 0).unwrap()
-    );
-    font_system.add(
-        Font::new(include_bytes!("../../../res/FreeFont/FreeMono.ttf"), 0).unwrap()
-    );
+
+    let mut font_datas = Vec::new();
+    for (font_path, font_index) in &[
+        ("/usr/share/fonts/truetype/freefont/FreeSans.ttf", 0),
+        ("/usr/share/fonts/truetype/freefont/FreeSerif.ttf", 0),
+        ("/usr/share/fonts/truetype/freefont/FreeMono.ttf", 0),
+        ("/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc", 2 /* simplified chinese */),
+    ] {
+        match fs::read(font_path) {
+            Ok(font_data) => font_datas.push((font_path, font_data, *font_index)),
+            Err(err) => {
+                eprintln!("failed to read font '{}': {}", font_path, err)
+            }
+        }
+    }
+
+    for (font_path, font_data, font_index) in &font_datas {
+        match Font::new(font_data, *font_index) {
+            Some(font) => font_system.add(font),
+            None => {
+                eprintln!("failed to parse font '{}'", font_path)
+            }
+        }
+    }
 
     #[cfg(feature = "mono")]
     let font_pattern = &["Mono"];
