@@ -128,7 +128,6 @@ impl<'a> FontShapeLine<'a> {
                 line_i: self.line_i,
                 glyphs
             });
-            layout_i += 1;
         }
     }
 }

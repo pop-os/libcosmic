@@ -3,14 +3,112 @@ use std::{
     cmp,
     env,
     fs,
-    marker::PhantomData,
     time::Instant,
 };
 use text::{
     Font,
+    FontLayoutLine,
     FontLineIndex,
+    FontMatches,
+    FontShapeLine,
     FontSystem,
 };
+
+pub struct TextBuffer<'a> {
+    font_matches: &'a FontMatches<'a>,
+    text_lines: Vec<String>,
+    shape_lines: Vec<FontShapeLine<'a>>,
+    layout_lines: Vec<FontLayoutLine<'a>>,
+    redraw: bool,
+    font_size: i32,
+    line_width: i32,
+    line_height: i32,
+}
+
+impl<'a> TextBuffer<'a> {
+    pub fn new(font_matches: &'a FontMatches, text: &str, font_size: i32, line_width: i32, line_height: i32) -> Self {
+        let mut buffer = Self {
+            font_matches,
+            text_lines: text.lines().map(String::from).collect(),
+            shape_lines: Vec::new(),
+            layout_lines: Vec::new(),
+            redraw: true,
+            font_size,
+            line_width,
+            line_height,
+        };
+        buffer.reshape();
+        buffer
+    }
+
+    pub fn reshape(&mut self) {
+        let instant = Instant::now();
+
+        self.shape_lines.clear();
+        for (line_i, text_line) in self.text_lines.iter().enumerate() {
+            self.shape_lines.push(
+                self.font_matches.shape_line(FontLineIndex::new(line_i), text_line)
+            );
+        }
+
+        let duration = instant.elapsed();
+        eprintln!("reshape: {:?}", duration);
+
+        self.relayout();
+    }
+
+    pub fn reshape_line(&mut self, line_i: FontLineIndex) {
+        let instant = Instant::now();
+
+        self.shape_lines[line_i.get()] = self.font_matches.shape_line(line_i, &self.text_lines[line_i.get()]);
+
+        let duration = instant.elapsed();
+        eprintln!("reshape line {}: {:?}", line_i.get(), duration);
+
+        self.relayout_line(line_i);
+    }
+
+    pub fn relayout(&mut self) {
+        let instant = Instant::now();
+
+        self.layout_lines.clear();
+        for line in self.shape_lines.iter() {
+            let layout_i = self.layout_lines.len();
+            line.layout(self.font_size, self.line_width, &mut self.layout_lines, layout_i);
+        }
+
+        self.redraw = true;
+
+        let duration = instant.elapsed();
+        eprintln!("relayout: {:?}", duration);
+    }
+
+    pub fn relayout_line(&mut self, line_i: FontLineIndex) {
+        let instant = Instant::now();
+
+        let mut insert_opt = None;
+        let mut layout_i = 0;
+        while layout_i < self.layout_lines.len() {
+            let layout_line = &self.layout_lines[layout_i];
+            if layout_line.line_i == line_i {
+                if insert_opt.is_none() {
+                    insert_opt = Some(layout_i);
+                }
+                self.layout_lines.remove(layout_i);
+            } else {
+                layout_i += 1;
+            }
+        }
+
+        let shape_line = &self.shape_lines[line_i.get()];
+        shape_line.layout(self.font_size, self.line_width, &mut self.layout_lines, insert_opt.unwrap());
+
+        self.redraw = true;
+
+        let duration = instant.elapsed();
+        eprintln!("relayout line {}: {:?}", line_i.get(), duration);
+    }
+}
 
 fn main() {
     let display_scale = match orbclient::get_display_size() {
@@ -32,31 +130,6 @@ fn main() {
         "COSMIC TEXT",
         &[WindowFlag::Resizable]
     ).unwrap();
-
-    #[cfg(feature = "mono")]
-    let default_text = include_str!("../res/mono.txt");
-    #[cfg(not(feature = "mono"))]
-    let default_text = include_str!("../res/proportional.txt");
-
-    let mut text_lines: Vec<String> = if let Some(arg) = env::args().nth(1) {
-        let text = fs::read_to_string(&arg).expect("failed to open file");
-        text.lines().map(String::from).collect()
-    } else {
-        default_text.lines().map(String::from).collect()
-    };
-
-    let bg_color = Color::rgb(0x34, 0x34, 0x34);
-    let font_color = Color::rgb(0xFF, 0xFF, 0xFF);
-    let font_sizes = [
-        (10, 14), // Caption
-        (14, 20), // Body
-        (20, 28), // Title 4
-        (24, 32), // Title 3
-        (28, 36), // Title 2
-        (32, 44), // Title 1
-    ];
-    let font_size_default = 2; // Title 4
-    let mut font_size_i = font_size_default;
 
     let mut font_system = FontSystem::new();
     font_system.add(
@@ -82,108 +155,60 @@ fn main() {
 
     let font_matches = font_system.matches(font_pattern).unwrap();
 
-    let mut shape_lines = Vec::new();
-    let mut layout_lines = Vec::new();
+    let bg_color = Color::rgb(0x34, 0x34, 0x34);
+    let font_color = Color::rgb(0xFF, 0xFF, 0xFF);
+    let font_sizes = [
+        (10, 14), // Caption
+        (14, 20), // Body
+        (20, 28), // Title 4
+        (24, 32), // Title 3
+        (28, 36), // Title 2
+        (32, 44), // Title 1
+    ];
+    let font_size_default = 2; // Title 4
+    let mut font_size_i = font_size_default;
+
+    let text = if let Some(arg) = env::args().nth(1) {
+        fs::read_to_string(&arg).expect("failed to open file")
+    } else {
+        #[cfg(feature = "mono")]
+        let default_text = include_str!("../res/mono.txt");
+        #[cfg(not(feature = "mono"))]
+        let default_text = include_str!("../res/proportional.txt");
+        default_text.to_string()
+    };
+
+    let line_x = 8 * display_scale;
+    let mut buffer = TextBuffer::new(
+        &font_matches,
+        &text,
+        font_sizes[font_size_i].0 * display_scale,
+        window.width() as i32 - line_x * 2,
+        font_sizes[font_size_i].1 * display_scale,
+    );
+
     let mut cursor_line = 0;
     let mut cursor_glyph = 0;
     let mut mouse_x = -1;
     let mut mouse_y = -1;
     let mut mouse_left = false;
-    let mut redraw = true;
     let mut rehit = false;
-    let mut relayout = true;
-    let mut relayout_lines = Vec::new();
-    let mut reshape = true;
-    let mut reshape_lines = Vec::<FontLineIndex>::new();
     let mut scroll = 0;
     loop {
-        let (mut font_size, mut line_height) = font_sizes[font_size_i];
-        font_size *= display_scale;
-        line_height *= display_scale;
+        let font_size = buffer.font_size;
+        let line_height = buffer.line_height;
 
         let window_lines = (window.height() as i32 + line_height - 1) / line_height;
         scroll = cmp::max(0, cmp::min(
-            layout_lines.len() as i32 - (window_lines - 1),
+            buffer.layout_lines.len() as i32 - (window_lines - 1),
             scroll
         ));
-
-        let line_x = 8 * display_scale;
-        let line_width = window.width() as i32 - line_x * 2;
-
-        if reshape {
-            let instant = Instant::now();
-
-            shape_lines.clear();
-            for (line_i, text_line) in text_lines.iter().enumerate() {
-                shape_lines.push(font_matches.shape_line(FontLineIndex::new(line_i), text_line));
-            }
-
-            reshape = false;
-            reshape_lines.clear();
-            relayout = true;
-
-            let duration = instant.elapsed();
-            eprintln!("reshape: {:?}", duration);
-        }
-
-        for line_i in reshape_lines.drain(..) {
-            let instant = Instant::now();
-
-            shape_lines[line_i.get()] = font_matches.shape_line(line_i, &text_lines[line_i.get()]);
-            relayout_lines.push(line_i);
-
-            let duration = instant.elapsed();
-            eprintln!("reshape line {}: {:?}", line_i.get(), duration);
-        }
-
-        if relayout {
-            let instant = Instant::now();
-
-            layout_lines.clear();
-            for line in shape_lines.iter() {
-                let layout_i = layout_lines.len();
-                line.layout(font_size, line_width, &mut layout_lines, layout_i);
-            }
-
-            relayout = false;
-            relayout_lines.clear();
-            redraw = true;
-
-            let duration = instant.elapsed();
-            eprintln!("relayout: {:?}", duration);
-        }
-
-        for line_i in relayout_lines.drain(..) {
-            let instant = Instant::now();
-
-            let mut insert_opt = None;
-            let mut layout_i = 0;
-            while layout_i < layout_lines.len() {
-                let layout_line = &layout_lines[layout_i];
-                if layout_line.line_i == line_i {
-                    if insert_opt.is_none() {
-                        insert_opt = Some(layout_i);
-                    }
-                    layout_lines.remove(layout_i);
-                } else {
-                    layout_i += 1;
-                }
-            }
-
-            let shape_line = &shape_lines[line_i.get()];
-            shape_line.layout(font_size, line_width, &mut layout_lines, insert_opt.unwrap());
-
-            redraw = true;
-
-            let duration = instant.elapsed();
-            eprintln!("relayout line {}: {:?}", line_i.get(), duration);
-        }
 
         if rehit {
             let instant = Instant::now();
 
             let mut line_y = line_height;
-            for (line_i, line) in layout_lines.iter().skip(scroll as usize).enumerate() {
+            for (line_i, line) in buffer.layout_lines.iter().skip(scroll as usize).enumerate() {
                 if line_y >= window.height() as i32 {
                     break;
                 }
@@ -204,7 +229,7 @@ fn main() {
                     if new_cursor_line != cursor_line || new_cursor_glyph != cursor_glyph {
                         cursor_line = new_cursor_line;
                         cursor_glyph = new_cursor_glyph;
-                        redraw = true;
+                        buffer.redraw = true;
                     }
                 }
 
@@ -217,13 +242,13 @@ fn main() {
             eprintln!("rehit: {:?}", duration);
         }
 
-        if redraw {
+        if buffer.redraw {
             let instant = Instant::now();
 
             window.set(bg_color);
 
             let mut line_y = line_height;
-            for (line_i, line) in layout_lines.iter().skip(scroll as usize).enumerate() {
+            for (line_i, line) in buffer.layout_lines.iter().skip(scroll as usize).enumerate() {
                 if line_y >= window.height() as i32 {
                     break;
                 }
@@ -251,7 +276,7 @@ fn main() {
                             Color::rgba(0xFF, 0xFF, 0xFF, 0x20)
                         );
 
-                        let text_line = &text_lines[line.line_i.get()];
+                        let text_line = &buffer.text_lines[line.line_i.get()];
                         eprintln!("{}, {}: '{}'", glyph.start, glyph.end, &text_line[glyph.start..glyph.end]);
                     }
                 }
@@ -268,7 +293,7 @@ fn main() {
 
             window.sync();
 
-            redraw = false;
+            buffer.redraw = false;
 
             let duration = instant.elapsed();
             eprintln!("redraw: {:?}", duration);
@@ -280,90 +305,101 @@ fn main() {
                     match event.scancode {
                         orbclient::K_UP => if cursor_line > 0 {
                             cursor_line -= 1;
-                            redraw = true;
+                            buffer.redraw = true;
                         },
-                        orbclient::K_DOWN => if cursor_line + 1 < layout_lines.len() {
+                        orbclient::K_DOWN => if cursor_line + 1 < buffer.layout_lines.len() {
                             cursor_line += 1;
-                            redraw = true;
+                            buffer.redraw = true;
                         },
                         orbclient::K_LEFT => {
-                            let line = &layout_lines[cursor_line];
+                            let line = &buffer.layout_lines[cursor_line];
                             if cursor_glyph > line.glyphs.len() {
                                 cursor_glyph = line.glyphs.len();
-                                redraw = true;
+                                buffer.redraw = true;
                             }
                             if cursor_glyph > 0 {
                                 cursor_glyph -= 1;
-                                redraw = true;
+                                buffer.redraw = true;
                             }
                         },
                         orbclient::K_RIGHT => {
-                            let line = &layout_lines[cursor_line];
+                            let line = &buffer.layout_lines[cursor_line];
                             if cursor_glyph > line.glyphs.len() {
                                 cursor_glyph = line.glyphs.len();
-                                redraw = true;
+                                buffer.redraw = true;
                             }
                             if cursor_glyph < line.glyphs.len() {
                                 cursor_glyph += 1;
-                                redraw = true;
+                                buffer.redraw = true;
                             }
                         },
                         orbclient::K_BKSP => {
-                            let line = &layout_lines[cursor_line];
+                            let line = &buffer.layout_lines[cursor_line];
                             if cursor_glyph > line.glyphs.len() {
                                 cursor_glyph = line.glyphs.len();
-                                redraw = true;
+                                buffer.redraw = true;
                             }
                             if cursor_glyph > 0 {
                                 cursor_glyph -= 1;
                                 let glyph = &line.glyphs[cursor_glyph];
-                                let text_line = &mut text_lines[line.line_i.get()];
+                                let text_line = &mut buffer.text_lines[line.line_i.get()];
                                 text_line.remove(glyph.start);
-                                reshape_lines.push(line.line_i);
+                                buffer.reshape_line(line.line_i);
                             }
                         },
                         orbclient::K_DEL => {
-                            let line = &layout_lines[cursor_line];
+                            let line = &buffer.layout_lines[cursor_line];
                             if cursor_glyph < line.glyphs.len() {
                                 let glyph = &line.glyphs[cursor_glyph];
-                                let text_line = &mut text_lines[line.line_i.get()];
+                                let text_line = &mut buffer.text_lines[line.line_i.get()];
                                 text_line.remove(glyph.start);
-                                reshape_lines.push(line.line_i);
+                                buffer.reshape_line(line.line_i);
                             }
                         },
                         orbclient::K_0 => {
                             font_size_i = font_size_default;
-                            relayout = true;
+                            buffer.font_size = font_sizes[font_size_i].0 * display_scale;
+                            buffer.line_height = font_sizes[font_size_i].1 * display_scale;
+                            buffer.relayout();
                         },
                         orbclient::K_MINUS => if font_size_i > 0 {
                             font_size_i -= 1;
-                            relayout = true;
+                            buffer.font_size = font_sizes[font_size_i].0 * display_scale;
+                            buffer.line_height = font_sizes[font_size_i].1 * display_scale;
+                            buffer.relayout();
                         },
                         orbclient::K_EQUALS => if font_size_i + 1 < font_sizes.len() {
                             font_size_i += 1;
-                            relayout = true;
+                            buffer.font_size = font_sizes[font_size_i].0 * display_scale;
+                            buffer.line_height = font_sizes[font_size_i].1 * display_scale;
+                            buffer.relayout();
                         },
                         _ => (),
                     }
                 },
                 EventOption::TextInput(event) => {
-                    let line = &layout_lines[cursor_line];
+                    let line = &buffer.layout_lines[cursor_line];
                     if cursor_glyph >= line.glyphs.len() {
                         match line.glyphs.last() {
                             Some(glyph) => {
-                                let text_line = &mut text_lines[line.line_i.get()];
+                                let text_line = &mut buffer.text_lines[line.line_i.get()];
                                 text_line.insert(glyph.end, event.character);
                                 cursor_glyph += 1;
-                                reshape_lines.push(line.line_i);
+                                buffer.reshape_line(line.line_i);
                             },
-                            None => () // TODO
+                            None => {
+                                let text_line = &mut buffer.text_lines[line.line_i.get()];
+                                text_line.push(event.character);
+                                cursor_glyph += 1;
+                                buffer.reshape_line(line.line_i);
+                            }
                         }
                     } else {
                         let glyph = &line.glyphs[cursor_glyph];
-                        let text_line = &mut text_lines[line.line_i.get()];
+                        let text_line = &mut buffer.text_lines[line.line_i.get()];
                         text_line.insert(glyph.start, event.character);
                         cursor_glyph += 1;
-                        reshape_lines.push(line.line_i);
+                        buffer.reshape_line(line.line_i);
                     }
                 },
                 EventOption::Mouse(event) => {
@@ -381,12 +417,13 @@ fn main() {
                         }
                     }
                 }
-                EventOption::Resize(_) => {
-                    relayout = true;
+                EventOption::Resize(event) => {
+                    buffer.line_width = event.width as i32 - line_x * 2;
+                    buffer.relayout();
                 },
                 EventOption::Scroll(event) => {
                     scroll -= event.y * 3;
-                    redraw = true;
+                    buffer.redraw = true;
                 },
                 EventOption::Quit(_) => return,
                 _ => (),
