@@ -1,23 +1,23 @@
-use super::{Font, FontLineIndex, FontShapeGlyph, FontShapeLine, FontShapeSpan};
+use super::{Font, FontLineIndex, FontShapeGlyph, FontShapeWord, FontShapeLine, FontShapeSpan};
 
 pub struct FontMatches<'a> {
     pub fonts: Vec<&'a Font<'a>>,
 }
 
 impl<'a> FontMatches<'a> {
-    fn shape_span(&self, line: &str, start_span: usize, end_span: usize) -> FontShapeSpan {
-        let span = &line[start_span..end_span];
+    fn shape_word(&self, line: &str, start_word: usize, end_word: usize) -> FontShapeWord {
+        let word = &line[start_word..end_word];
 
-        let mut spans_by_font = Vec::with_capacity(self.fonts.len());
+        let mut words_by_font = Vec::with_capacity(self.fonts.len());
         for (font_i, font) in self.fonts.iter().enumerate() {
             let font_scale = font.rustybuzz.units_per_em() as f32;
 
             let mut buffer = rustybuzz::UnicodeBuffer::new();
-            buffer.push_str(span);
+            buffer.push_str(word);
             buffer.guess_segment_properties();
             let direction = buffer.direction();
             if font_i == 0 {
-                //println!("{:?}, {:?}: '{}'", script, direction, span);
+                println!("{:?}, {:?}: '{}'", buffer.script(), direction, word);
             }
 
             let glyph_buffer = rustybuzz::shape(&font.rustybuzz, &[], buffer);
@@ -44,8 +44,8 @@ impl<'a> FontMatches<'a> {
                 let inner = font.rusttype.glyph(rusttype::GlyphId(info.glyph_id as u16));
 
                 glyphs.push(FontShapeGlyph {
-                    start: start_span + info.cluster as usize,
-                    end: end_span, // Set later
+                    start: start_word + info.cluster as usize,
+                    end: end_word, // Set later
                     x_advance,
                     y_advance,
                     x_offset,
@@ -86,20 +86,17 @@ impl<'a> FontMatches<'a> {
                 _ => (),
             }
 
-            let span = FontShapeSpan {
-                direction,
-                glyphs
-            };
+            let word = FontShapeWord { glyphs };
             if misses == 0 {
-                return span;
+                return word;
             } else {
-                spans_by_font.push((misses, span));
+                words_by_font.push((misses, word));
             }
         }
 
         let mut least_misses_i = 0;
         let mut least_misses = usize::MAX;
-        for (i, (misses, _)) in spans_by_font.iter().enumerate() {
+        for (i, (misses, _)) in words_by_font.iter().enumerate() {
             if *misses < least_misses {
                 least_misses_i = i;
                 least_misses = *misses;
@@ -110,41 +107,65 @@ impl<'a> FontMatches<'a> {
             //println!("MISSES {}, {}", least_misses_i, least_misses);
         }
 
-        spans_by_font.remove(least_misses_i).1
+        words_by_font.remove(least_misses_i).1
+    }
+
+    fn shape_span(&self, line: &str, start_span: usize, end_span: usize, rtl: bool) -> FontShapeSpan {
+        use unicode_script::{Script, UnicodeScript};
+
+        let span = &line[start_span..end_span];
+
+        let mut words = Vec::new();
+
+        let mut start = 0;
+        /*
+        let mut word_script = Script::Unknown;
+        for (i, c) in span.char_indices() {
+            let next_script = c.script();
+            if word_script != next_script && word_script != Script::Unknown {
+                // No combination, start new span
+                words.push(self.shape_word(line, start_span + start, start_span + i));
+                start = i;
+                word_script = Script::Unknown;
+            } else {
+                word_script = next_script;
+            }
+        }
+        */
+        words.push(self.shape_word(line, start_span + start, end_span));
+
+        FontShapeSpan {
+            rtl,
+            words,
+        }
     }
 
     pub fn shape_line(&self, line_i: FontLineIndex, line: &str) -> FontShapeLine {
-        use unicode_script::{Script, UnicodeScript};
-
-        //TODO: more special handling of characters
         let mut spans = Vec::new();
-
-        let mut start = 0;
-        let mut prev = Script::Unknown;
-        for (i, c) in line.char_indices() {
-            if ! line.is_char_boundary(i) {
-                continue;
-            }
-
-            let cur = c.script();
-            if prev != cur && prev != Script::Unknown {
-                // No combination, start new span
-                spans.push(self.shape_span(line, start, i));
-                start = i;
-                prev = Script::Unknown;
-            } else {
-                prev = cur;
-            }
-        }
-
-        spans.push(self.shape_span(line, start, line.len()));
 
         let bidi = unicode_bidi::BidiInfo::new(line, None);
         let rtl = if bidi.paragraphs.is_empty() {
             false
         } else {
             assert_eq!(bidi.paragraphs.len(), 1);
-            bidi.paragraphs[0].level.is_rtl()
+            let para_info = &bidi.paragraphs[0];
+            let para_rtl = para_info.level.is_rtl();
+
+            let paragraph = unicode_bidi::Paragraph::new(&bidi, &para_info);
+
+            let mut start = 0;
+            let mut span_rtl = para_rtl;
+            for i in paragraph.para.range.clone() {
+                let next_rtl = paragraph.info.levels[i].is_rtl();
+                if span_rtl != next_rtl {
+                    span_rtl = next_rtl;
+                    spans.push(self.shape_span(line, start, i, span_rtl));
+                    start = i;
+                }
+            }
+            spans.push(self.shape_span(line, start, line.len(), span_rtl));
+
+            para_rtl
         };
 
         FontShapeLine {
