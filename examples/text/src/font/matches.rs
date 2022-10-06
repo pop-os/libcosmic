@@ -132,17 +132,10 @@ impl<'a> FontMatches<'a> {
 
         //TODO: improve performance
         for (linebreak, _) in unicode_linebreak::linebreaks(span) {
-            println!("linebreak {}", linebreak);
             let mut glyphs_opt = None;
             'words: for word_i in 0..words.len() {
                 for glyph_i in 0..words[word_i].glyphs.len() {
                     if words[word_i].glyphs[glyph_i].start == start_span + linebreak {
-                        println!("glyph {}", words[word_i].glyphs[glyph_i].start);
-                        println!("word '{}'", &line[
-                            words[word_i].glyphs[0].start
-                            ..
-                            words[word_i].glyphs[glyph_i].start
-                        ]);
                         glyphs_opt = Some(words[word_i].glyphs.split_off(glyph_i));
                         break 'words;
                     }
