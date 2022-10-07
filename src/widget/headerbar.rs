@@ -90,8 +90,8 @@ impl HeaderBar {
         };
 
         widget::row(vec![navbutton, content, window_controls])
-            .height(Length::Units(48))
-            .padding(4)
+            .height(Length::Units(50))
+            .padding(8)
             .apply(widget::event_container)
             .center_y()
             .on_press(T::from(WindowMsg::Drag))
