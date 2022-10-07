@@ -141,16 +141,6 @@ impl Application for Window {
                     nav_button!("system-software-update", "OS Upgrade & Recovery", condensed)
                         .on_press(Message::Page(2))
                         .style(if self.page == 2 { theme::Button::Primary } else { theme::Button::Text })
-                        ,
-                        nav_button!("system-software-update", "OS Upgrade & Recovery", condensed)
-                        .on_press(Message::Page(2))
-                        .style(if self.page == 2 { theme::Button::Primary } else { theme::Button::Text }),
-                        nav_button!("system-software-update", "OS Upgrade & Recovery", condensed)
-                        .on_press(Message::Page(2))
-                        .style(if self.page == 2 { theme::Button::Primary } else { theme::Button::Text }),
-                        nav_button!("system-software-update", "OS Upgrade & Recovery", condensed)
-                        .on_press(Message::Page(2))
-                        .style(if self.page == 2 { theme::Button::Primary } else { theme::Button::Text })
                 )
                 .max_width(if condensed {
                     100
