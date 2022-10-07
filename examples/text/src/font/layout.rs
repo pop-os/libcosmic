@@ -12,7 +12,7 @@ pub struct FontLayoutGlyph<'a, T: 'a> {
     #[cfg(feature = "rusttype")]
     pub inner: rusttype::PositionedGlyph<'a>,
     #[cfg(feature = "swash")]
-    pub inner: Option<swash::scale::image::Image>,
+    pub inner: (i32, i32, Option<swash::scale::image::Image>),
     pub phantom: PhantomData<&'a T>,
 }
 
@@ -44,11 +44,11 @@ impl<'a> FontLayoutLine<'a> {
             }
 
             #[cfg(feature = "swash")]
-            if let Some(ref image) = glyph.inner {
+            if let Some(ref image) = glyph.inner.2 {
                 assert_eq!(image.content, swash::scale::image::Content::Mask);
 
-                let x = glyph.x as i32 + image.placement.left;
-                let y = -image.placement.top;
+                let x = glyph.inner.0 + image.placement.left;
+                let y = glyph.inner.1 - image.placement.top;
 
                 let mut i = 0;
                 for off_y in 0..image.placement.height as i32 {

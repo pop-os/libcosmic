@@ -71,18 +71,17 @@ impl<'a> FontShapeGlyph<'a> {
 
             // Compute the fractional offset-- you'll likely want to quantize this
             // in a real renderer
-            let offset = Vector::new(x_offset, y_offset);
+            let offset = Vector::new((x + x_offset).fract(), (y - y_offset).fract());
 
             // Select our source order
-            Render::new(&[
-                Source::Outline,
-            ])
-            // Select a subpixel format
-            .format(Format::Alpha)
-            // Apply the fractional offset
-            .offset(offset)
-            // Render the image
-            .render(&mut scaler, self.inner)
+            let image_opt = Render::new(&[Source::Outline])
+                // Select a subpixel format
+                .format(Format::Alpha)
+                // Apply the fractional offset
+                .offset(offset)
+                // Render the image
+                .render(&mut scaler, self.inner);
+            ((x + x_offset).trunc() as i32, (y - y_offset).trunc() as i32, image_opt)
         };
 
         FontLayoutGlyph {
