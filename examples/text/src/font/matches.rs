@@ -13,7 +13,16 @@ impl<'a> FontMatches<'a> {
         let mut buffer = rustybuzz::UnicodeBuffer::new();
         buffer.push_str(word);
         buffer.guess_segment_properties();
-        let direction = buffer.direction();
+
+        let rtl = match buffer.direction() {
+            rustybuzz::Direction::RightToLeft => true,
+            //TODO: other directions?
+            _  => false,
+        };
+
+        if font_i == 0 {
+            println!("    Word {}: '{}'", if rtl { "RTL" } else { "LTR" }, word);
+        }
 
         let glyph_buffer = rustybuzz::shape(&self.fonts[font_i].rustybuzz, &[], buffer);
         let glyph_infos = glyph_buffer.glyph_infos();
@@ -57,12 +66,6 @@ impl<'a> FontMatches<'a> {
         }
 
         // Adjust end of glyphs
-        let rtl = match direction {
-            rustybuzz::Direction::RightToLeft => true,
-            //TODO: other directions?
-            _  => false,
-        };
-
         if rtl {
             for i in 1..glyphs.len() {
                 let next_start = glyphs[i - 1].start;
@@ -89,9 +92,13 @@ impl<'a> FontMatches<'a> {
 
         //TODO: improve performance!
         if !missing.is_empty() && font_i + 1 < self.fonts.len() {
-            let mut fb_word = self.shape_word(font_i + 1, line, start_word, end_word);
+            let mut missing_i = 0;
+            while missing_i < missing.len() {
+                let mut missing_glyph = missing[missing_i];
+                missing_i += 1;
 
-            for start_glyph in missing {
+                let mut start_glyph = missing_glyph;
+
                 // Find beginning of glyphs to replace
                 let mut i = 0;
                 while i < glyphs.len() {
@@ -104,15 +111,28 @@ impl<'a> FontMatches<'a> {
                 // Remove all matching glyphs and find end
                 let mut end_glyph = start_glyph;
                 while i < glyphs.len() {
-                    if glyphs[i].start == start_glyph {
+                    if glyphs[i].start == missing_glyph {
                         let glyph = glyphs.remove(i);
+                        if glyph.start < start_glyph {
+                            start_glyph = glyph.start;
+                        }
                         if glyph.end > end_glyph {
                             end_glyph = glyph.end;
+                        }
+                    } else if missing_i < missing.len() {
+                        // Combine repeated missing items
+                        if glyphs[i].start == missing[missing_i] {
+                            missing_glyph = missing[missing_i];
+                            missing_i += 1;
+                        } else {
+                            break;
                         }
                     } else {
                         break;
                     }
                 }
+
+                let mut fb_word = self.shape_word(font_i + 1, line, start_glyph, end_glyph);
 
                 // Insert all matching glyphs
                 // println!("Locate fallback for {},{} '{}' from font {} to font {}", start_glyph, end_glyph, &line[start_glyph..end_glyph], font_i + 1, font_i);
@@ -146,11 +166,29 @@ impl<'a> FontMatches<'a> {
 
         let span = &line[start_span..end_span];
 
-        // println!("Span {}: '{}'", if span_rtl { "RTL" } else { "LTR" }, span);
+        println!("  Span {}: '{}'", if span_rtl { "RTL" } else { "LTR" }, span);
 
-        let mut words = vec![
-            self.shape_word(0, line, start_span, end_span),
-        ];
+        let mut words = Vec::new();
+
+        let script_splitting = false;
+        if script_splitting {
+            let mut start = 0;
+            let mut word_script = Script::Unknown;
+            for (i, c) in span.char_indices() {
+                let next_script = c.script();
+                if word_script != next_script && word_script != Script::Unknown {
+                    // No combination, start new span
+                    words.push(self.shape_word(0, line, start_span + start, start_span + i));
+                    start = i;
+                    word_script = Script::Unknown;
+                } else {
+                    word_script = next_script;
+                }
+            }
+            words.push(self.shape_word(0, line, start_span + start, end_span));
+        } else {
+            words.push(self.shape_word(0, line, start_span, end_span));
+        }
 
         if span_rtl {
             for word in words.iter_mut() {
@@ -164,16 +202,19 @@ impl<'a> FontMatches<'a> {
             'words: for word_i in 0..words.len() {
                 for glyph_i in 0..words[word_i].glyphs.len() {
                     if words[word_i].glyphs[glyph_i].start == start_span + linebreak {
-                        word_opt = Some(FontShapeWord {
-                            rtl: words[word_i].rtl,
-                            glyphs: words[word_i].glyphs.split_off(glyph_i)
-                        });
+                        word_opt = Some((
+                            word_i + 1,
+                            FontShapeWord {
+                                rtl: words[word_i].rtl,
+                                glyphs: words[word_i].glyphs.split_off(glyph_i)
+                            }
+                        ));
                         break 'words;
                     }
                 }
             }
-            if let Some(word) = word_opt {
-                words.push(word);
+            if let Some((word_i, word)) = word_opt {
+                words.insert(word_i, word);
             }
         }
 
@@ -193,22 +234,6 @@ impl<'a> FontMatches<'a> {
             words.reverse();
         }
 
-        /*
-        let mut word_script = Script::Unknown;
-        for (i, c) in span.char_indices() {
-            let next_script = c.script();
-            if word_script != next_script && word_script != Script::Unknown {
-                // No combination, start new span
-                words.push(self.shape_word(line, start_span + start, start_span + i));
-                start = i;
-                word_script = Script::Unknown;
-            } else {
-                word_script = next_script;
-            }
-        }
-        words.push(self.shape_word(line, start_span + start, end_span));
-        */
-
         FontShapeSpan {
             rtl: span_rtl,
             words,
@@ -225,6 +250,8 @@ impl<'a> FontMatches<'a> {
             assert_eq!(bidi.paragraphs.len(), 1);
             let para_info = &bidi.paragraphs[0];
             let para_rtl = para_info.level.is_rtl();
+
+            println!("Line {}: '{}'", if para_rtl { "RTL" } else { "LTR" }, line);
 
             let paragraph = unicode_bidi::Paragraph::new(&bidi, &para_info);
 
