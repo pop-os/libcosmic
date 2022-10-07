@@ -16,5 +16,5 @@ pub use nav::*;
 mod toggler;
 pub use toggler::*;
 
-mod scrollbar;
-pub use scrollbar::*;
+mod scrollable;
+pub use scrollable::*;

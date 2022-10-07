@@ -22,12 +22,12 @@ use cosmic::{
         radio,
         row,
         slider,
-        text,
-        scrollable
+        text
     },
     iced_lazy::responsive,
     iced_winit::window::drag,
-    WindowMsg
+    WindowMsg,
+    scrollable
 };
 
 pub fn main() -> cosmic::iced::Result {
@@ -259,13 +259,11 @@ impl Application for Window {
             }
 
             widgets.push(
-                scrollable(row![
+                scrollable!(row![
                     horizontal_space(Length::Fill),
                     if self.debug { content.explain(Color::WHITE) } else { content },
                     horizontal_space(Length::Fill),
                 ])
-                .scrollbar_width(8)
-                .scroller_width(8)
                 .into()
             );
 

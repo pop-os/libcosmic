@@ -1,5 +1,5 @@
 #[macro_export]
-macro_rules! scrollbar {
+macro_rules! scrollable {
     ($x:expr) => (
         $crate::iced::widget::scrollable($x)
             .scrollbar_width(8)
