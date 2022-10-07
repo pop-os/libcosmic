@@ -36,6 +36,8 @@ fn main() {
 
     let mut font_datas = Vec::new();
     for (font_path, font_index) in &[
+        ("/usr/share/fonts/truetype/freefont/FreeSans.ttf", 0),
+        ("/usr/share/fonts/truetype/freefont/FreeMono.ttf", 0),
         ("/usr/share/fonts/truetype/noto/NotoSansArabic-Regular.ttf", 0),
         ("/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc", 2 /* simplified chinese */),
         ("/usr/share/fonts/truetype/noto/NotoColorEmoji.ttf", 0),
