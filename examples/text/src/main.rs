@@ -34,21 +34,11 @@ fn main() {
         &[WindowFlag::Resizable]
     ).unwrap();
 
-    let mut font_system = FontSystem::new();
-
-    font_system.add(
-        Font::new(include_bytes!("../../../res/Fira/FiraSans-Regular.otf"), 0).unwrap()
-    );
-    font_system.add(
-        Font::new(include_bytes!("../../../res/Fira/FiraMono-Regular.otf"), 0).unwrap()
-    );
-
     let mut font_datas = Vec::new();
     for (font_path, font_index) in &[
-        ("/usr/share/fonts/truetype/freefont/FreeSans.ttf", 0),
-        ("/usr/share/fonts/truetype/freefont/FreeSerif.ttf", 0),
-        ("/usr/share/fonts/truetype/freefont/FreeMono.ttf", 0),
+        ("/usr/share/fonts/truetype/noto/NotoSansArabic-Regular.ttf", 0),
         ("/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc", 2 /* simplified chinese */),
+        ("/usr/share/fonts/truetype/noto/NotoColorEmoji.ttf", 0),
     ] {
         match fs::read(font_path) {
             Ok(font_data) => font_datas.push((font_path, font_data, *font_index)),
@@ -57,6 +47,15 @@ fn main() {
             }
         }
     }
+
+    let mut font_system = FontSystem::new();
+
+    font_system.add(
+        Font::new(include_bytes!("../../../res/Fira/FiraSans-Regular.otf"), 0).unwrap()
+    );
+    font_system.add(
+        Font::new(include_bytes!("../../../res/Fira/FiraMono-Regular.otf"), 0).unwrap()
+    );
 
     for (font_path, font_data, font_index) in &font_datas {
         match Font::new(font_data, *font_index) {
@@ -68,9 +67,9 @@ fn main() {
     }
 
     #[cfg(feature = "mono")]
-    let font_pattern = &["Mono"];
+    let font_pattern = &["Mono", "Emoji"];
     #[cfg(not(feature = "mono"))]
-    let font_pattern = &["Sans", "Serif"];
+    let font_pattern = &["Sans", "Serif", "Emoji"];
 
     let font_matches = font_system.matches(font_pattern).unwrap();
 
