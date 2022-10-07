@@ -37,15 +37,19 @@ pub struct TextBuffer<'a> {
 
 impl<'a> TextBuffer<'a> {
     pub fn new(font_matches: &'a FontMatches, text: &str, font_size: i32, line_width: i32) -> Self {
+        let mut text_lines: Vec<String> = text.lines().map(String::from).collect();
+        if text_lines.is_empty() {
+            text_lines.push(String::new());
+        }
         let mut buffer = Self {
             font_matches,
-            text_lines: text.lines().map(String::from).collect(),
+            text_lines,
             shape_lines: Vec::new(),
             layout_lines: Vec::new(),
             font_size,
             line_width,
             cursor: TextCursor::default(),
-            redraw: true,
+            redraw: false,
         };
         buffer.reshape();
         buffer
