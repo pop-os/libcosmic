@@ -9,7 +9,7 @@ use iced::{
 macro_rules! nav_bar {
     ($($x:expr),+ $(,)?) => (
         $crate::iced::widget::Container::new(
-            $crate::scrollbar!(
+            $crate::scrollable!(
                 $crate::iced::widget::row![
                     $crate::iced::widget::Column::with_children(
                         vec![$($crate::iced::Element::from($x)),+]
