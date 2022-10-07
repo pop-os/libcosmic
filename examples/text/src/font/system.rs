@@ -53,7 +53,9 @@ impl<'a> FontSystem<'a> {
             }
         }
         if ! fonts.is_empty() {
-            Some(FontMatches { fonts })
+            Some(FontMatches {
+                fonts
+            })
         } else {
             None
         }

@@ -40,6 +40,9 @@ impl<'a> FontMatches<'a> {
                 #[cfg(feature = "rusttype")]
                 let inner = font.rusttype.glyph(rusttype::GlyphId(info.glyph_id as u16));
 
+                #[cfg(feature = "swash")]
+                let inner = info.glyph_id as swash::GlyphId;
+
                 glyphs.push(FontShapeGlyph {
                     start: start_word + info.cluster as usize,
                     end: end_word, // Set later
@@ -49,6 +52,8 @@ impl<'a> FontMatches<'a> {
                     y_offset,
                     #[cfg(feature = "ab_glyph")]
                     font: &font.ab_glyph,
+                    #[cfg(feature = "swash")]
+                    font: &font.swash,
                     inner,
                 });
             }

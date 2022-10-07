@@ -17,6 +17,83 @@ pub struct FontShapeGlyph<'a> {
     pub inner: ab_glyph::GlyphId,
     #[cfg(feature = "rusttype")]
     pub inner: rusttype::Glyph<'a>,
+    #[cfg(feature = "swash")]
+    pub font: &'a swash::FontRef<'a>,
+    #[cfg(feature = "swash")]
+    pub inner: swash::GlyphId,
+}
+
+impl<'a> FontShapeGlyph<'a> {
+    fn layout(&self, font_size: i32, x: f32, y: f32) -> FontLayoutGlyph<'a, ()> {
+        let x_offset = font_size as f32 * self.x_offset;
+        let y_offset = font_size as f32 * self.y_offset;
+        let x_advance = font_size as f32 * self.x_advance;
+
+        #[cfg(feature = "ab_glyph")]
+        let inner = self.font.outline_glyph(
+            self.inner.with_scale_and_position(
+                font_size as f32,
+                ab_glyph::point(
+                    x + x_offset,
+                    y + y_offset,
+                )
+            )
+        );
+
+        #[cfg(feature = "rusttype")]
+        let inner = self.inner.clone()
+            .scaled(rusttype::Scale::uniform(font_size as f32))
+            .positioned(rusttype::point(
+                x + x_offset,
+                y + y_offset,
+            ));
+
+        #[cfg(feature = "swash")]
+        let inner = {
+            use swash::scale::{Render, ScaleContext, Source, StrikeWith};
+            use swash::zeno::{Format, Vector};
+
+            //TODO: store somewhere else
+            static mut CONTEXT: Option<ScaleContext> = None;
+
+            unsafe {
+                if CONTEXT.is_none() {
+                    CONTEXT = Some(ScaleContext::new());
+                }
+            }
+
+            // Build the scaler
+            let mut scaler = unsafe { CONTEXT.as_mut().unwrap() }
+                .builder(*self.font)
+                .size(font_size as f32)
+                .hint(true)
+                .build();
+
+            // Compute the fractional offset-- you'll likely want to quantize this
+            // in a real renderer
+            let offset = Vector::new(x_offset, y_offset);
+
+            // Select our source order
+            Render::new(&[
+                Source::Outline,
+            ])
+            // Select a subpixel format
+            .format(Format::Alpha)
+            // Apply the fractional offset
+            .offset(offset)
+            // Render the image
+            .render(&mut scaler, self.inner)
+        };
+
+        FontLayoutGlyph {
+            start: self.start,
+            end: self.end,
+            x: x,
+            w: x_advance,
+            inner,
+            phantom: PhantomData,
+        }
+    }
 }
 
 pub struct FontShapeWord<'a> {
@@ -66,36 +143,8 @@ impl<'a> FontShapeLine<'a> {
                 for glyph in word.glyphs.iter() {
                     let x_advance = font_size as f32 * glyph.x_advance;
                     let y_advance = font_size as f32 * glyph.y_advance;
-                    let x_offset = font_size as f32 * glyph.x_offset;
-                    let y_offset = font_size as f32 * glyph.y_offset;
 
-                    #[cfg(feature = "ab_glyph")]
-                    let inner = glyph.font.outline_glyph(
-                        glyph.inner.with_scale_and_position(
-                            font_size as f32,
-                            ab_glyph::point(
-                                x + x_offset,
-                                y + y_offset,
-                            )
-                        )
-                    );
-
-                    #[cfg(feature = "rusttype")]
-                    let inner = glyph.inner.clone()
-                        .scaled(rusttype::Scale::uniform(font_size as f32))
-                        .positioned(rusttype::point(
-                            x + x_offset,
-                            y + y_offset,
-                        ));
-
-                    glyphs.push(FontLayoutGlyph {
-                        start: glyph.start,
-                        end: glyph.end,
-                        x,
-                        w: x_advance,
-                        inner,
-                        phantom: PhantomData,
-                    });
+                    glyphs.push(glyph.layout(font_size, x, y));
                     push_line = true;
 
                     x += x_advance;
@@ -142,38 +191,10 @@ impl<'a> FontShapeLine<'a> {
                 for glyph in word.glyphs.iter().rev() {
                     let x_advance = font_size as f32 * glyph.x_advance;
                     let y_advance = font_size as f32 * glyph.y_advance;
-                    let x_offset = font_size as f32 * glyph.x_offset;
-                    let y_offset = font_size as f32 * glyph.y_offset;
 
                     x -= x_advance;
 
-                    #[cfg(feature = "ab_glyph")]
-                    let inner = glyph.font.outline_glyph(
-                        glyph.inner.with_scale_and_position(
-                            font_size as f32,
-                            ab_glyph::point(
-                                x + x_offset,
-                                y + y_offset,
-                            )
-                        )
-                    );
-
-                    #[cfg(feature = "rusttype")]
-                    let inner = glyph.inner.clone()
-                        .scaled(rusttype::Scale::uniform(font_size as f32))
-                        .positioned(rusttype::point(
-                            x + x_offset,
-                            y + y_offset,
-                        ));
-
-                    glyphs.push(FontLayoutGlyph {
-                        start: glyph.start,
-                        end: glyph.end,
-                        x,
-                        w: x_advance,
-                        inner,
-                        phantom: PhantomData,
-                    });
+                    glyphs.push(glyph.layout(font_size, x, y));
                     push_line = true;
 
                     y += y_advance;

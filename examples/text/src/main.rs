@@ -202,10 +202,9 @@ fn main() {
                     }
                 }
 
-                line.draw(|x, y, v| {
-                    let c = (v * 255.0) as u32;
-                    window.pixel(line_x + x, line_y + y, Color{
-                        data: c << 24 | (font_color.data & 0x00FF_FFFF)
+                line.draw(|x, y, alpha| {
+                    window.pixel(line_x + x, line_y + y, Color {
+                        data: (alpha as u32) << 24 | (font_color.data & 0x00FF_FFFF)
                     });
                 });
 

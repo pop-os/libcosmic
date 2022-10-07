@@ -30,6 +30,8 @@ pub struct Font<'a> {
     pub ab_glyph: ab_glyph::FontRef<'a>,
     #[cfg(feature = "rusttype")]
     pub rusttype: rusttype::Font<'a>,
+    #[cfg(feature = "swash")]
+    pub swash: swash::FontRef<'a>,
 }
 
 impl<'a> Font<'a> {
@@ -41,6 +43,8 @@ impl<'a> Font<'a> {
             ab_glyph: ab_glyph::FontRef::try_from_slice_and_index(data, index).ok()?,
             #[cfg(feature = "rusttype")]
             rusttype: rusttype::Font::try_from_bytes_and_index(data, index)?,
+            #[cfg(feature = "swash")]
+            swash: swash::FontRef::from_index(data, index as usize)?,
         })
     }
 }
