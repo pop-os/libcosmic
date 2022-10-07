@@ -75,7 +75,6 @@ impl<'a> FontLayoutLine<'a> {
                         let mut i = 0;
                         for off_y in 0..image.placement.height as i32 {
                             for off_x in 0..image.placement.width as i32 {
-                                println!("{}, {}, {:x?}", off_x, off_y, &image.data[i..i + 4]);
                                 let color =
                                     (image.data[i + 3] as u32) << 24 |
                                     (image.data[i] as u32) << 16 |
