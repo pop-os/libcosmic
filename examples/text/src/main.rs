@@ -105,6 +105,7 @@ fn main() {
         window.width() as i32 - line_x * 2,
     );
 
+    let mut ctrl_pressed = false;
     let mut mouse_x = -1;
     let mut mouse_y = -1;
     let mut mouse_left = false;
@@ -221,30 +222,33 @@ fn main() {
 
         for event in window.events() {
             match event.to_option() {
-                EventOption::Key(event) => if event.pressed {
+                EventOption::Key(event) => {
                     match event.scancode {
-                        orbclient::K_LEFT => buffer.action(TextAction::Left),
-                        orbclient::K_RIGHT => buffer.action(TextAction::Right),
-                        orbclient::K_UP => buffer.action(TextAction::Up),
-                        orbclient::K_DOWN => buffer.action(TextAction::Down),
-                        orbclient::K_BKSP => buffer.action(TextAction::Backspace),
-                        orbclient::K_DEL => buffer.action(TextAction::Delete),
-                        orbclient::K_0 => {
+                        orbclient::K_CTRL => ctrl_pressed = event.pressed,
+                        orbclient::K_LEFT if event.pressed => buffer.action(TextAction::Left),
+                        orbclient::K_RIGHT if event.pressed => buffer.action(TextAction::Right),
+                        orbclient::K_UP if event.pressed => buffer.action(TextAction::Up),
+                        orbclient::K_DOWN if event.pressed => buffer.action(TextAction::Down),
+                        orbclient::K_BKSP if event.pressed => buffer.action(TextAction::Backspace),
+                        orbclient::K_DEL if event.pressed => buffer.action(TextAction::Delete),
+                        orbclient::K_0 if event.pressed && ctrl_pressed => {
                             font_size_i = font_size_default;
                             buffer.set_font_size(font_sizes[font_size_i].0 * display_scale);
                         },
-                        orbclient::K_MINUS => if font_size_i > 0 {
+                        orbclient::K_MINUS if event.pressed && ctrl_pressed => if font_size_i > 0 {
                             font_size_i -= 1;
                             buffer.set_font_size(font_sizes[font_size_i].0 * display_scale);
                         },
-                        orbclient::K_EQUALS => if font_size_i + 1 < font_sizes.len() {
+                        orbclient::K_EQUALS if event.pressed && ctrl_pressed => if font_size_i + 1 < font_sizes.len() {
                             font_size_i += 1;
                             buffer.set_font_size(font_sizes[font_size_i].0 * display_scale);
                         },
                         _ => (),
                     }
                 },
-                EventOption::TextInput(event) => buffer.action(TextAction::Insert(event.character)),
+                EventOption::TextInput(event) if ! ctrl_pressed => {
+                    buffer.action(TextAction::Insert(event.character));
+                },
                 EventOption::Mouse(event) => {
                     mouse_x = event.x;
                     mouse_y = event.y;
