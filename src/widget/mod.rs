@@ -1,6 +1,9 @@
 mod button;
 pub use button::*;
 
+mod headerbar;
+pub use headerbar::*;
+
 mod icon;
 pub use self::icon::*;
 
