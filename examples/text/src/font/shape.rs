@@ -103,6 +103,7 @@ impl<'a> FontShapeGlyph<'a> {
 }
 
 pub struct FontShapeWord<'a> {
+    pub rtl: bool,
     pub glyphs: Vec<FontShapeGlyph<'a>>,
 }
 

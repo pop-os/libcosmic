@@ -57,33 +57,34 @@ impl<'a> FontMatches<'a> {
         }
 
         // Adjust end of glyphs
-        match direction {
-            rustybuzz::Direction::LeftToRight => {
-                for i in (1..glyphs.len()).rev() {
-                    let next_start = glyphs[i].start;
-                    let next_end = glyphs[i].end;
-                    let prev = &mut glyphs[i - 1];
-                    if prev.start == next_start {
-                        prev.end = next_end;
-                    } else {
-                        prev.end = next_start;
-                    }
+        let rtl = match direction {
+            rustybuzz::Direction::RightToLeft => true,
+            //TODO: other directions?
+            _  => false,
+        };
+
+        if rtl {
+            for i in 1..glyphs.len() {
+                let next_start = glyphs[i - 1].start;
+                let next_end = glyphs[i - 1].end;
+                let prev = &mut glyphs[i];
+                if prev.start == next_start {
+                    prev.end = next_end;
+                } else {
+                    prev.end = next_start;
                 }
-            },
-            rustybuzz::Direction::RightToLeft => {
-                for i in 1..glyphs.len() {
-                    let next_start = glyphs[i - 1].start;
-                    let next_end = glyphs[i - 1].end;
-                    let prev = &mut glyphs[i];
-                    if prev.start == next_start {
-                        prev.end = next_end;
-                    } else {
-                        prev.end = next_start;
-                    }
+            }
+        } else {
+            for i in (1..glyphs.len()).rev() {
+                let next_start = glyphs[i].start;
+                let next_end = glyphs[i].end;
+                let prev = &mut glyphs[i - 1];
+                if prev.start == next_start {
+                    prev.end = next_end;
+                } else {
+                    prev.end = next_start;
                 }
-            },
-            //TODO: other directions
-            _ => (),
+            }
         }
 
         //TODO: improve performance!
@@ -114,9 +115,11 @@ impl<'a> FontMatches<'a> {
                 }
 
                 // Insert all matching glyphs
+                // println!("Locate fallback for {},{} '{}' from font {} to font {}", start_glyph, end_glyph, &line[start_glyph..end_glyph], font_i + 1, font_i);
                 let mut j = 0;
                 while j < fb_word.glyphs.len() {
                     if fb_word.glyphs[j].start >= start_glyph && fb_word.glyphs[j].end <= end_glyph {
+                        // println!("Copy fallback for {},{} '{}' from font {} cluster {} to font {}", start_glyph, end_glyph, &line[start_glyph..end_glyph], font_i + 1, fb_word.glyphs[j].start, font_i);
                         glyphs.insert(i, fb_word.glyphs.remove(j));
                         i += 1;
                     } else {
@@ -132,7 +135,10 @@ impl<'a> FontMatches<'a> {
         }
         */
 
-        FontShapeWord { glyphs }
+        FontShapeWord {
+            rtl,
+            glyphs
+        }
     }
 
     fn shape_span(&self, line: &str, start_span: usize, end_span: usize, para_rtl: bool, span_rtl: bool) -> FontShapeSpan {
@@ -140,7 +146,7 @@ impl<'a> FontMatches<'a> {
 
         let span = &line[start_span..end_span];
 
-        //println!("Span {}: '{}'", if span_rtl { "RTL" } else { "LTR" }, span);
+        // println!("Span {}: '{}'", if span_rtl { "RTL" } else { "LTR" }, span);
 
         let mut words = vec![
             self.shape_word(0, line, start_span, end_span),
@@ -154,23 +160,32 @@ impl<'a> FontMatches<'a> {
 
         //TODO: improve performance
         for (linebreak, _) in unicode_linebreak::linebreaks(span) {
-            let mut glyphs_opt = None;
+            let mut word_opt = None;
             'words: for word_i in 0..words.len() {
                 for glyph_i in 0..words[word_i].glyphs.len() {
                     if words[word_i].glyphs[glyph_i].start == start_span + linebreak {
-                        glyphs_opt = Some(words[word_i].glyphs.split_off(glyph_i));
+                        word_opt = Some(FontShapeWord {
+                            rtl: words[word_i].rtl,
+                            glyphs: words[word_i].glyphs.split_off(glyph_i)
+                        });
                         break 'words;
                     }
                 }
             }
-            if let Some(glyphs) = glyphs_opt {
-                words.push(FontShapeWord { glyphs });
+            if let Some(word) = word_opt {
+                words.push(word);
             }
         }
 
         if span_rtl {
             for word in words.iter_mut() {
                 word.glyphs.reverse();
+            }
+        } else {
+            for word in words.iter_mut() {
+                if word.rtl {
+                    word.glyphs.reverse();
+                }
             }
         }
 
