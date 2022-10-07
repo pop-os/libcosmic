@@ -35,7 +35,7 @@ impl<'a> FontShapeGlyph<'a> {
                 font_size as f32,
                 ab_glyph::point(
                     x + x_offset,
-                    y + y_offset,
+                    y - y_offset,
                 )
             )
         );
@@ -45,7 +45,7 @@ impl<'a> FontShapeGlyph<'a> {
             .scaled(rusttype::Scale::uniform(font_size as f32))
             .positioned(rusttype::point(
                 x + x_offset,
-                y + y_offset,
+                y - y_offset,
             ));
 
         #[cfg(feature = "swash")]
