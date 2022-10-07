@@ -140,7 +140,7 @@ impl<'a> FontMatches<'a> {
 
         let span = &line[start_span..end_span];
 
-        println!("Span {}: '{}'", if span_rtl { "RTL" } else { "LTR" }, span);
+        //println!("Span {}: '{}'", if span_rtl { "RTL" } else { "LTR" }, span);
 
         let mut words = vec![
             self.shape_word(0, line, start_span, end_span),
