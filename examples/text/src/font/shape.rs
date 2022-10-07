@@ -74,7 +74,14 @@ impl<'a> FontShapeGlyph<'a> {
             let offset = Vector::new((x + x_offset).fract(), (y - y_offset).fract());
 
             // Select our source order
-            let image_opt = Render::new(&[Source::Outline])
+            let image_opt = Render::new(&[
+                // Color outline with the first palette
+                Source::ColorOutline(0),
+                // Color bitmap with best fit selection mode
+                Source::ColorBitmap(StrikeWith::BestFit),
+                // Standard scalable outline
+                Source::Outline,
+            ])
                 // Select a subpixel format
                 .format(Format::Alpha)
                 // Apply the fractional offset

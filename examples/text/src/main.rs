@@ -203,10 +203,8 @@ fn main() {
                     }
                 }
 
-                line.draw(|x, y, alpha| {
-                    window.pixel(line_x + x, line_y + y, Color {
-                        data: (alpha as u32) << 24 | (font_color.data & 0x00FF_FFFF)
-                    });
+                line.draw(font_color.data, |x, y, color| {
+                    window.pixel(line_x + x, line_y + y, Color { data: color });
                 });
 
                 line_y += line_height;
