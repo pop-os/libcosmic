@@ -1,8 +1,18 @@
 pub use iced;
 pub use iced_lazy;
+pub use iced_winit;
 
 pub mod font;
 pub mod widget;
+
+#[derive(Clone, Copy, Debug)]
+pub enum WindowMsg {
+    Close,
+    Drag,
+    Minimize,
+    Maximize,
+    ToggleSidebar,
+}
 
 pub fn settings<Flags: Default>() -> iced::Settings<Flags> {
     let mut settings = iced::Settings::default();
