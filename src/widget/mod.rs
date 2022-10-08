@@ -13,6 +13,9 @@ pub use list::*;
 mod nav;
 pub use nav::*;
 
+mod navbar;
+pub use navbar::*;
+
 mod toggler;
 pub use toggler::*;
 

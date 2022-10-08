@@ -5,10 +5,9 @@ use cosmic::{
         list_row,
         list_section,
         list_view,
-        nav_bar,
         nav_button,
         toggler,
-        HeaderBar,
+        HeaderBar, nav_bar_style,
     },
     settings,
     iced::{self, theme, Alignment, Application, Color, Command, Element, Length, Theme},
@@ -127,30 +126,23 @@ impl Application for Window {
         let content = responsive(|size| {
             let condensed = size.width < 900.0;
 
-            let sidebar: Option<Element<_>> = if self.headerbar.sidebar_active {
-                Some(nav_bar!(
-                    //TODO: Support symbolic icons
-                    nav_button!("network-wireless", "Wi-Fi", condensed)
-                        .on_press(Message::Page(0))
-                        .style(if self.page == 0 { theme::Button::Primary } else { theme::Button::Text })
-                    ,
-                    nav_button!("preferences-desktop", "Desktop", condensed)
-                        .on_press(Message::Page(1))
-                        .style(if self.page == 1 { theme::Button::Primary } else { theme::Button::Text })
-                    ,
-                    nav_button!("system-software-update", "OS Upgrade & Recovery", condensed)
-                        .on_press(Message::Page(2))
-                        .style(if self.page == 2 { theme::Button::Primary } else { theme::Button::Text })
-                )
-                .max_width(if condensed {
-                    100
-                } else {
-                    300
-                })
-                .into())
-            } else {
-                None
-            };
+            let sidebar: Element<_> = cosmic::navbar![
+                nav_button!("network-wireless", "Wi-Fi", condensed)
+                .on_press(Message::Page(0))
+                .style(if self.page == 0 { theme::Button::Primary } else { theme::Button::Text })
+                ,
+                nav_button!("preferences-desktop", "Desktop", condensed)
+                    .on_press(Message::Page(1))
+                    .style(if self.page == 1 { theme::Button::Primary } else { theme::Button::Text })
+                ,
+                nav_button!("system-software-update", "OS Upgrade & Recovery", condensed)
+                    .on_press(Message::Page(2))
+                    .style(if self.page == 2 { theme::Button::Primary } else { theme::Button::Text })
+            ]
+            .active(self.headerbar.sidebar_active)
+            .condensed(condensed)
+            .style(theme::Container::Custom(nav_bar_style))
+            .into();
 
             let choose_theme = [Theme::Light, Theme::Dark].iter().fold(
                 row![text("Debug theme:")].spacing(10).align_items(Alignment::Center),
@@ -254,9 +246,7 @@ impl Application for Window {
 
             let mut widgets = Vec::with_capacity(2);
 
-            if let Some(sidebar) = sidebar {
-                widgets.push(if self.debug { sidebar.explain(Color::WHITE) } else { sidebar });
-            }
+            widgets.push(if self.debug { sidebar.explain(Color::WHITE) } else { sidebar });
 
             widgets.push(
                 scrollable!(row![
