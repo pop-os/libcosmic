@@ -45,12 +45,12 @@ macro_rules! nav_button {
     ($icon: expr, $title:expr, $condensed:expr) => ({
         if $condensed {
             $crate::iced::widget::Button::new(
-                $crate::widget::icon($icon, 20)
+                $crate::widget::icon($icon, 22)
             )
             .padding(8)
         } else {
             $crate::widget::button!(
-                $crate::widget::icon($icon, 20),
+                $crate::widget::icon($icon, 22),
                 $crate::iced::widget::Text::new($title),
                 $crate::iced::widget::horizontal_space(
                     $crate::iced::Length::Fill

@@ -20,6 +20,12 @@ branch = "cosmic-design-system"
 # path = "../iced"
 features = ["cosmic-theme", "svg"]
 
+[dependencies.iced_style]
+git = "https://github.com/pop-os/iced.git"
+branch = "cosmic-design-system"
+# path = "../iced/native"
+features = ["cosmic-theme"]
+
 [dependencies.iced_native]
 git = "https://github.com/pop-os/iced.git"
 branch = "cosmic-design-system"
