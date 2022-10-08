@@ -69,8 +69,7 @@ where
                 )
                 .scrollbar_width(6)
                 .scroller_width(6)
-            )
-            .into(),
+            ).into(),
             ..Default::default()
         }
     }
@@ -149,7 +148,7 @@ where
         Self { 
             spacing: 12,
             padding: Padding::new(12),
-            width: Length::Fill,
+            width: Length::Shrink,
             height: Length::Fill,
             max_width: 300,
             max_height: u32::MAX,
@@ -159,9 +158,7 @@ where
             style: Default::default(),
             condensed: false, 
             active: true, 
-            content: Container::new(row![
-                Column::new()
-            ]).into(),
+            content: Container::new(row![Column::new()]).into(),
         }
     }
 }
@@ -215,7 +212,7 @@ where
                 if self.active {
                     self.content.as_widget().layout(renderer, limits)
                 } else {
-                    let content: Element<Message, Renderer> = Container::new(row![]).into();
+                    let content: Element<Message, Renderer> = Container::new(row![Column::new()]).into();
                     content.as_widget().layout(renderer, limits)
                 }
             },
