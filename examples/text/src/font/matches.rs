@@ -5,12 +5,17 @@ pub struct FontMatches<'a> {
 }
 
 impl<'a> FontMatches<'a> {
-    fn shape_word(&self, font_i: usize, line: &str, start_word: usize, end_word: usize) -> FontShapeWord {
+    fn shape_word(&self, font_i: usize, line: &str, start_word: usize, end_word: usize, span_rtl: bool) -> FontShapeWord {
         let word = &line[start_word..end_word];
 
         let font_scale = self.fonts[font_i].rustybuzz.units_per_em() as f32;
 
         let mut buffer = rustybuzz::UnicodeBuffer::new();
+        buffer.set_direction(if span_rtl {
+            rustybuzz::Direction::RightToLeft
+        } else {
+            rustybuzz::Direction::LeftToRight
+        });
         buffer.push_str(word);
         buffer.guess_segment_properties();
 
@@ -19,6 +24,7 @@ impl<'a> FontMatches<'a> {
             //TODO: other directions?
             _  => false,
         };
+        assert_eq!(rtl, span_rtl);
 
         if font_i == 0 {
             println!("    Word {}: '{}'", if rtl { "RTL" } else { "LTR" }, word);
@@ -132,7 +138,7 @@ impl<'a> FontMatches<'a> {
                     }
                 }
 
-                let mut fb_word = self.shape_word(font_i + 1, line, start_glyph, end_glyph);
+                let mut fb_word = self.shape_word(font_i + 1, line, start_glyph, end_glyph, span_rtl);
 
                 // Insert all matching glyphs
                 // println!("Locate fallback for {},{} '{}' from font {} to font {}", start_glyph, end_glyph, &line[start_glyph..end_glyph], font_i + 1, font_i);
@@ -155,88 +161,32 @@ impl<'a> FontMatches<'a> {
         }
         */
 
-        FontShapeWord {
-            rtl,
-            glyphs
-        }
+        FontShapeWord { glyphs }
     }
 
-    fn shape_span(&self, line: &str, start_span: usize, end_span: usize, para_rtl: bool, span_rtl: bool) -> FontShapeSpan {
-        use unicode_script::{Script, UnicodeScript};
-
+    fn shape_span(&self, line: &str, start_span: usize, end_span: usize, line_rtl: bool, span_rtl: bool) -> FontShapeSpan {
         let span = &line[start_span..end_span];
 
         println!("  Span {}: '{}'", if span_rtl { "RTL" } else { "LTR" }, span);
 
         let mut words = Vec::new();
 
-        let script_splitting = false;
-        if script_splitting {
-            let mut start = 0;
-            let mut word_script = Script::Unknown;
-            for (i, c) in span.char_indices() {
-                let next_script = c.script();
-                if word_script != next_script && word_script != Script::Unknown {
-                    // No combination, start new span
-                    words.push(self.shape_word(0, line, start_span + start, start_span + i));
-                    start = i;
-                    word_script = Script::Unknown;
-                } else {
-                    word_script = next_script;
-                }
-            }
-            words.push(self.shape_word(0, line, start_span + start, end_span));
-        } else {
-            words.push(self.shape_word(0, line, start_span, end_span));
-        }
-
-        if span_rtl {
-            for word in words.iter_mut() {
-                word.glyphs.reverse();
-            }
-        }
-
-        //TODO: improve performance
+        let mut start = 0;
         for (linebreak, _) in unicode_linebreak::linebreaks(span) {
-            let mut word_opt = None;
-            'words: for word_i in 0..words.len() {
-                for glyph_i in 0..words[word_i].glyphs.len() {
-                    if words[word_i].glyphs[glyph_i].start == start_span + linebreak {
-                        word_opt = Some((
-                            word_i + 1,
-                            FontShapeWord {
-                                rtl: words[word_i].rtl,
-                                glyphs: words[word_i].glyphs.split_off(glyph_i)
-                            }
-                        ));
-                        break 'words;
-                    }
-                }
-            }
-            if let Some((word_i, word)) = word_opt {
-                words.insert(word_i, word);
-            }
+            words.push(self.shape_word(0, line, start_span + start, start_span + linebreak, span_rtl));
+            start = linebreak;
         }
+        words.push(self.shape_word(0, line, start_span + start, end_span, span_rtl));
 
-        if span_rtl {
-            for word in words.iter_mut() {
-                word.glyphs.reverse();
-            }
-        } else {
-            for word in words.iter_mut() {
-                if word.rtl {
-                    word.glyphs.reverse();
-                }
-            }
-        }
-
-        if para_rtl {
+        // Reverse glyphs in RTL lines
+        if line_rtl {
             for word in words.iter_mut() {
                 word.glyphs.reverse();
             }
         }
 
-        if para_rtl != span_rtl {
+        // Reverse words in spans that do not match line direction
+        if line_rtl != span_rtl {
             words.reverse();
         }
 
@@ -255,25 +205,25 @@ impl<'a> FontMatches<'a> {
         } else {
             assert_eq!(bidi.paragraphs.len(), 1);
             let para_info = &bidi.paragraphs[0];
-            let para_rtl = para_info.level.is_rtl();
+            let line_rtl = para_info.level.is_rtl();
 
-            println!("Line {}: '{}'", if para_rtl { "RTL" } else { "LTR" }, line);
+            println!("Line {}: '{}'", if line_rtl { "RTL" } else { "LTR" }, line);
 
             let paragraph = unicode_bidi::Paragraph::new(&bidi, &para_info);
 
             let mut start = 0;
-            let mut span_rtl = para_rtl;
+            let mut span_rtl = line_rtl;
             for i in paragraph.para.range.clone() {
                 let next_rtl = paragraph.info.levels[i].is_rtl();
                 if span_rtl != next_rtl {
-                    spans.push(self.shape_span(line, start, i, para_rtl, span_rtl));
+                    spans.push(self.shape_span(line, start, i, line_rtl, span_rtl));
                     span_rtl = next_rtl;
                     start = i;
                 }
             }
-            spans.push(self.shape_span(line, start, line.len(), para_rtl, span_rtl));
+            spans.push(self.shape_span(line, start, line.len(), line_rtl, span_rtl));
 
-            para_rtl
+            line_rtl
         };
 
         FontShapeLine {
