@@ -49,10 +49,6 @@ where
     Renderer: iced_native::Renderer + 'a,
     Renderer::Theme: StyleSheet,
 {
-    pub fn new() -> Self {
-        Self::default()
-    }
-
     /// Creates a [`NavBar`] with the given elements.
     pub fn with_children(
         children: Vec<Element<'a, Message, Renderer>>,
@@ -335,9 +331,6 @@ where
 /// [`Row`]: widget::Row
 #[macro_export]
 macro_rules! navbar {
-    () => (
-        $crate::widget::NavBar::new()
-    );
     ($($x:expr),+ $(,)?) => (
         $crate::widget::NavBar::with_children(vec![$($crate::iced::Element::from($x)),+])
     );
