@@ -5,7 +5,7 @@ pub struct FontMatches<'a> {
 }
 
 impl<'a> FontMatches<'a> {
-    fn shape_word(&self, font_i: usize, line: &str, start_word: usize, end_word: usize, span_rtl: bool) -> FontShapeWord {
+    fn shape_word(&self, font_i: usize, line: &str, start_word: usize, end_word: usize, span_rtl: bool, blank: bool) -> FontShapeWord {
         let word = &line[start_word..end_word];
 
         let font_scale = self.fonts[font_i].rustybuzz.units_per_em() as f32;
@@ -27,7 +27,12 @@ impl<'a> FontMatches<'a> {
         assert_eq!(rtl, span_rtl);
 
         if font_i == 0 {
-            println!("    Word {}: '{}'", if rtl { "RTL" } else { "LTR" }, word);
+            println!(
+                "    Word {}{}: '{}'",
+                if rtl { "RTL" } else { "LTR" },
+                if blank { " BLANK" } else { "" },
+                word
+            );
         }
 
         let glyph_buffer = rustybuzz::shape(&self.fonts[font_i].rustybuzz, &[], buffer);
@@ -138,7 +143,7 @@ impl<'a> FontMatches<'a> {
                     }
                 }
 
-                let mut fb_word = self.shape_word(font_i + 1, line, start_glyph, end_glyph, span_rtl);
+                let mut fb_word = self.shape_word(font_i + 1, line, start_glyph, end_glyph, span_rtl, blank);
 
                 // Insert all matching glyphs
                 // println!("Locate fallback for {},{} '{}' from font {} to font {}", start_glyph, end_glyph, &line[start_glyph..end_glyph], font_i + 1, font_i);
@@ -161,7 +166,7 @@ impl<'a> FontMatches<'a> {
         }
         */
 
-        FontShapeWord { glyphs }
+        FontShapeWord { blank, glyphs }
     }
 
     fn shape_span(&self, line: &str, start_span: usize, end_span: usize, line_rtl: bool, span_rtl: bool) -> FontShapeSpan {
@@ -171,12 +176,23 @@ impl<'a> FontMatches<'a> {
 
         let mut words = Vec::new();
 
-        let mut start = 0;
-        for (linebreak, _) in unicode_linebreak::linebreaks(span) {
-            words.push(self.shape_word(0, line, start_span + start, start_span + linebreak, span_rtl));
-            start = linebreak;
+        let mut start_word = 0;
+        for (end_lb, _) in unicode_linebreak::linebreaks(span) {
+            let mut start_lb = end_lb;
+            if end_lb != span.len() {
+                while start_lb > 1 {
+                    start_lb -= 1;
+                    if span.is_char_boundary(start_lb) {
+                        break;
+                    }
+                }
+            }
+            words.push(self.shape_word(0, line, start_span + start_word, start_span + start_lb, span_rtl, false));
+            if start_lb < end_lb {
+                words.push(self.shape_word(0, line, start_span + start_lb, start_span + end_lb, span_rtl, true));
+            }
+            start_word = end_lb;
         }
-        words.push(self.shape_word(0, line, start_span + start, end_span, span_rtl));
 
         // Reverse glyphs in RTL lines
         if line_rtl {

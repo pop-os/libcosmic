@@ -103,6 +103,7 @@ impl<'a> FontShapeGlyph<'a> {
 }
 
 pub struct FontShapeWord<'a> {
+    pub blank: bool,
     pub glyphs: Vec<FontShapeGlyph<'a>>,
 }
 
@@ -122,49 +123,127 @@ impl<'a> FontShapeLine<'a> {
         let mut push_line = true;
         let mut glyphs = Vec::new();
 
-        let mut x = if self.rtl { line_width as f32 } else { 0.0 };
+        let start_x = if self.rtl { line_width as f32 } else { 0.0 };
+        let end_x = if self.rtl { 0.0 } else { line_width as f32 };
+        let mut x = start_x;
         let mut y = 0.0;
         for span in self.spans.iter() {
-            for word in span.words.iter() {
-                let mut word_size = 0.0;
-                for glyph in word.glyphs.iter() {
-                    word_size += font_size as f32 * glyph.x_advance;
-                }
+            //TODO: improve performance!
+            let mut word_ranges = Vec::new();
+            if self.rtl != span.rtl {
+                let mut fit_x = x;
+                let mut fitting_end = span.words.len();
+                for i in (0..span.words.len()).rev() {
+                    let word = &span.words[i];
 
-                //TODO: make wrapping optional
-                let wrap = if self.rtl {
-                    x - word_size < 0.0
-                } else {
-                    x + word_size > line_width as f32
-                };
-                if wrap && ! glyphs.is_empty() {
-                    let mut glyphs_swap = Vec::new();
-                    std::mem::swap(&mut glyphs, &mut glyphs_swap);
-                    layout_lines.insert(layout_i, FontLayoutLine {
-                        line_i: self.line_i,
-                        glyphs: glyphs_swap
-                    });
-                    layout_i += 1;
+                    let mut word_size = 0.0;
+                    for glyph in word.glyphs.iter() {
+                        word_size += font_size as f32 * glyph.x_advance;
+                    }
 
-                    x = if self.rtl { line_width as f32 } else { 0.0 };
-                    y = 0.0;
-                }
+                    let wrap = if self.rtl {
+                        fit_x - word_size < end_x
+                    } else {
+                        fit_x + word_size > end_x
+                    };
 
-                for glyph in word.glyphs.iter() {
-                    let x_advance = font_size as f32 * glyph.x_advance;
-                    let y_advance = font_size as f32 * glyph.y_advance;
+                    if wrap {
+                        word_ranges.push((i + 1..fitting_end));
+                        if word.blank {
+                            fitting_end = i;
+                        } else {
+                            fitting_end = i + 1;
+                        }
+
+                        fit_x = start_x;
+                    }
 
                     if self.rtl {
-                        x -= x_advance
+                        fit_x -= word_size;
+                    } else {
+                        fit_x += word_size;
+                    }
+                }
+                word_ranges.push((0..fitting_end));
+            } else {
+                let mut fit_x = x;
+                let mut fitting_start = 0;
+                for i in 0..span.words.len() {
+                    let word = &span.words[i];
+
+                    let mut word_size = 0.0;
+                    for glyph in word.glyphs.iter() {
+                        word_size += font_size as f32 * glyph.x_advance;
                     }
 
-                    glyphs.push(glyph.layout(font_size, x, y));
-                    push_line = true;
+                    let wrap = if self.rtl {
+                        fit_x - word_size < end_x
+                    } else {
+                        fit_x + word_size > end_x
+                    };
 
-                    if ! self.rtl {
-                        x += x_advance;
+                    if wrap {
+                        word_ranges.push((fitting_start..i));
+                        if word.blank {
+                            fitting_start = i + 1;
+                        } else {
+                            fitting_start = i;
+                        }
+
+                        fit_x = start_x;
                     }
-                    y += y_advance;
+
+                    if self.rtl {
+                        fit_x -= word_size;
+                    } else {
+                        fit_x += word_size;
+                    }
+                }
+                word_ranges.push((fitting_start..span.words.len()));
+            }
+
+            for range in word_ranges {
+                for word in span.words[range].iter() {
+                    let mut word_size = 0.0;
+                    for glyph in word.glyphs.iter() {
+                        word_size += font_size as f32 * glyph.x_advance;
+                    }
+
+                    //TODO: make wrapping optional
+                    let wrap = if self.rtl {
+                        x - word_size < end_x
+                    } else {
+                        x + word_size > end_x
+                    };
+                    if wrap && ! glyphs.is_empty() {
+                        let mut glyphs_swap = Vec::new();
+                        std::mem::swap(&mut glyphs, &mut glyphs_swap);
+                        layout_lines.insert(layout_i, FontLayoutLine {
+                            line_i: self.line_i,
+                            glyphs: glyphs_swap
+                        });
+                        layout_i += 1;
+
+                        x = start_x;
+                        y = 0.0;
+                    }
+
+                    for glyph in word.glyphs.iter() {
+                        let x_advance = font_size as f32 * glyph.x_advance;
+                        let y_advance = font_size as f32 * glyph.y_advance;
+
+                        if self.rtl {
+                            x -= x_advance
+                        }
+
+                        glyphs.push(glyph.layout(font_size, x, y));
+                        push_line = true;
+
+                        if ! self.rtl {
+                            x += x_advance;
+                        }
+                        y += y_advance;
+                    }
                 }
             }
         }
