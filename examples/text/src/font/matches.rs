@@ -230,6 +230,12 @@ impl<'a> FontMatches<'a> {
             }
         }
 
+        if para_rtl {
+            for word in words.iter_mut() {
+                word.glyphs.reverse();
+            }
+        }
+
         if para_rtl != span_rtl {
             words.reverse();
         }

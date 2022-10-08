@@ -119,12 +119,11 @@ pub struct FontShapeLine<'a> {
 }
 
 impl<'a> FontShapeLine<'a> {
-
-    fn layout_ltr(&self, font_size: i32, line_width: i32, layout_lines: &mut Vec<FontLayoutLine<'a>>, mut layout_i: usize) {
+    pub fn layout(&self, font_size: i32, line_width: i32, layout_lines: &mut Vec<FontLayoutLine<'a>>, mut layout_i: usize) {
         let mut push_line = true;
         let mut glyphs = Vec::new();
 
-        let mut x = 0.0;
+        let mut x = if self.rtl { line_width as f32 } else { 0.0 };
         let mut y = 0.0;
         for span in self.spans.iter() {
             for word in span.words.iter() {
@@ -134,7 +133,12 @@ impl<'a> FontShapeLine<'a> {
                 }
 
                 //TODO: make wrapping optional
-                if x + word_size > line_width as f32 && ! glyphs.is_empty() {
+                let wrap = if self.rtl {
+                    x - word_size < 0.0
+                } else {
+                    x + word_size > line_width as f32
+                };
+                if wrap && ! glyphs.is_empty() {
                     let mut glyphs_swap = Vec::new();
                     std::mem::swap(&mut glyphs, &mut glyphs_swap);
                     layout_lines.insert(layout_i, FontLayoutLine {
@@ -143,7 +147,7 @@ impl<'a> FontShapeLine<'a> {
                     });
                     layout_i += 1;
 
-                    x = 0.0;
+                    x = if self.rtl { line_width as f32 } else { 0.0 };
                     y = 0.0;
                 }
 
@@ -151,10 +155,16 @@ impl<'a> FontShapeLine<'a> {
                     let x_advance = font_size as f32 * glyph.x_advance;
                     let y_advance = font_size as f32 * glyph.y_advance;
 
+                    if self.rtl {
+                        x -= x_advance
+                    }
+
                     glyphs.push(glyph.layout(font_size, x, y));
                     push_line = true;
 
-                    x += x_advance;
+                    if ! self.rtl {
+                        x += x_advance;
+                    }
                     y += y_advance;
                 }
             }
@@ -165,64 +175,6 @@ impl<'a> FontShapeLine<'a> {
                 line_i: self.line_i,
                 glyphs
             });
-        }
-    }
-
-    fn layout_rtl(&self, font_size: i32, line_width: i32, layout_lines: &mut Vec<FontLayoutLine<'a>>, mut layout_i: usize) {
-        let mut push_line = true;
-        let mut glyphs = Vec::new();
-
-        let mut x = line_width as f32;
-        let mut y = 0.0;
-        for span in self.spans.iter() {
-            for word in span.words.iter() {
-                let mut word_size = 0.0;
-                for glyph in word.glyphs.iter() {
-                    word_size += font_size as f32 * glyph.x_advance;
-                }
-
-                //TODO: make wrapping optional
-                if x - word_size < 0.0 && ! glyphs.is_empty() {
-                    let mut glyphs_swap = Vec::new();
-                    std::mem::swap(&mut glyphs, &mut glyphs_swap);
-                    layout_lines.insert(layout_i, FontLayoutLine {
-                        line_i: self.line_i,
-                        glyphs: glyphs_swap
-                    });
-                    layout_i += 1;
-
-                    x = line_width as f32;
-                    y = 0.0;
-                }
-
-                for glyph in word.glyphs.iter().rev() {
-                    let x_advance = font_size as f32 * glyph.x_advance;
-                    let y_advance = font_size as f32 * glyph.y_advance;
-
-                    x -= x_advance;
-
-                    glyphs.push(glyph.layout(font_size, x, y));
-                    push_line = true;
-
-                    y += y_advance;
-                }
-            }
-        }
-
-        if push_line {
-            layout_lines.insert(layout_i, FontLayoutLine {
-                line_i: self.line_i,
-                glyphs
-            });
-        }
-
-    }
-
-    pub fn layout(&self, font_size: i32, line_width: i32, layout_lines: &mut Vec<FontLayoutLine<'a>>, layout_i: usize) {
-        if self.rtl {
-            self.layout_rtl(font_size, line_width, layout_lines, layout_i);
-        } else {
-            self.layout_ltr(font_size, line_width, layout_lines, layout_i);
         }
     }
 }
