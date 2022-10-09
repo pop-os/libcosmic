@@ -42,10 +42,15 @@ fn main() {
         ("/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc", 2 /* simplified chinese */),
         ("/usr/share/fonts/truetype/noto/NotoColorEmoji.ttf", 0),
     ] {
-        match fs::read(font_path) {
-            Ok(font_data) => font_datas.push((font_path, font_data, *font_index)),
+        match fs::File::open(&font_path) {
+            Ok(font_file) => match unsafe { memmap2::Mmap::map(&font_file) } {
+                Ok(font_data) => font_datas.push((font_path, font_data, *font_index)),
+                Err(err) => {
+                    eprintln!("failed to memory map font '{}': {}", font_path, err)
+                }
+            },
             Err(err) => {
-                eprintln!("failed to read font '{}': {}", font_path, err)
+                eprintln!("failed to open font '{}': {}", font_path, err)
             }
         }
     }

@@ -8,6 +8,7 @@ publish = false
 [dependencies]
 ab_glyph = { version = "0.2", optional = true }
 orbclient = "0.3"
+memmap2 = "0.5"
 rusttype = { version = "0.9", optional = true }
 rustybuzz = "0.5"
 swash = { version = "0.1", optional = true }
