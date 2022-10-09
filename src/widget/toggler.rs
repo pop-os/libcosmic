@@ -1,7 +1,4 @@
-use iced::{
-    Length,
-    widget,
-};
+use iced::{widget, Length};
 
 pub fn toggler<'a, Message, Renderer>(
     label: impl Into<Option<String>>,

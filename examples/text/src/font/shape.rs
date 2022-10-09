@@ -39,10 +39,7 @@ impl<'a> FontShapeGlyph<'a> {
         #[cfg(feature = "rusttype")]
         let inner = self.font.rusttype.glyph(self.inner)
             .scaled(rusttype::Scale::uniform(font_size as f32))
-            .positioned(rusttype::point(
-                x + x_offset,
-                y - y_offset,
-            ));
+            .positioned(rusttype::point(x + x_offset, y - y_offset));
 
         #[cfg(feature = "swash")]
         let inner = CacheKey::new(
@@ -79,7 +76,13 @@ pub struct FontShapeLine<'a> {
 }
 
 impl<'a> FontShapeLine<'a> {
-    pub fn layout(&self, font_size: i32, line_width: i32, layout_lines: &mut Vec<FontLayoutLine<'a>>, mut layout_i: usize) {
+    pub fn layout(
+        &self,
+        font_size: i32,
+        line_width: i32,
+        layout_lines: &mut Vec<FontLayoutLine<'a>>,
+        mut layout_i: usize,
+    ) {
         let mut push_line = true;
         let mut glyphs = Vec::new();
 
@@ -128,7 +131,7 @@ impl<'a> FontShapeLine<'a> {
                         fit_x += word_size;
                     }
                 }
-                if ! word_ranges.is_empty() {
+                if !word_ranges.is_empty() {
                     while fitting_end > 0 {
                         if span.words[fitting_end - 1].blank {
                             fitting_end -= 1;
@@ -174,6 +177,33 @@ impl<'a> FontShapeLine<'a> {
 
             for (range, wrap) in word_ranges {
                 for word in span.words[range].iter() {
+                    let mut word_size = 0.0;
+                    for glyph in word.glyphs.iter() {
+                        word_size += font_size as f32 * glyph.x_advance;
+                    }
+
+                    //TODO: make wrapping optional
+                    let wrap = if self.rtl {
+                        x - word_size < end_x
+                    } else {
+                        x + word_size > end_x
+                    };
+                    if wrap && !glyphs.is_empty() {
+                        let mut glyphs_swap = Vec::new();
+                        std::mem::swap(&mut glyphs, &mut glyphs_swap);
+                        layout_lines.insert(
+                            layout_i,
+                            FontLayoutLine {
+                                line_i: self.line_i,
+                                glyphs: glyphs_swap,
+                            },
+                        );
+                        layout_i += 1;
+
+                        x = start_x;
+                        y = 0.0;
+                    }
+
                     for glyph in word.glyphs.iter() {
                         let x_advance = font_size as f32 * glyph.x_advance;
                         let y_advance = font_size as f32 * glyph.y_advance;
@@ -185,7 +215,7 @@ impl<'a> FontShapeLine<'a> {
                         glyphs.push(glyph.layout(font_size, x, y));
                         push_line = true;
 
-                        if ! self.rtl {
+                        if !self.rtl {
                             x += x_advance;
                         }
                         y += y_advance;
@@ -195,10 +225,13 @@ impl<'a> FontShapeLine<'a> {
                 if wrap {
                     let mut glyphs_swap = Vec::new();
                     std::mem::swap(&mut glyphs, &mut glyphs_swap);
-                    layout_lines.insert(layout_i, FontLayoutLine {
-                        line_i: self.line_i,
-                        glyphs: glyphs_swap
-                    });
+                    layout_lines.insert(
+                        layout_i,
+                        FontLayoutLine {
+                            line_i: self.line_i,
+                            glyphs: glyphs_swap,
+                        },
+                    );
                     layout_i += 1;
 
                     x = start_x;
@@ -208,10 +241,13 @@ impl<'a> FontShapeLine<'a> {
         }
 
         if push_line {
-            layout_lines.insert(layout_i, FontLayoutLine {
-                line_i: self.line_i,
-                glyphs
-            });
+            layout_lines.insert(
+                layout_i,
+                FontLayoutLine {
+                    line_i: self.line_i,
+                    glyphs,
+                },
+            );
         }
     }
 }

@@ -29,9 +29,7 @@ impl<'a> FontLayoutLine<'a> {
                 let y = bb.min.y as i32;
                 outline.draw(|off_x, off_y, v| {
                     //TODO: ensure v * 255.0 does not overflow!
-                    let color =
-                        ((v * 255.0) as u32) << 24 |
-                        base & 0xFFFFFF;
+                    let color = ((v * 255.0) as u32) << 24 | base & 0xFFFFFF;
                     f(x + off_x as i32, y + off_y as i32, color);
                 });
             }
@@ -42,9 +40,7 @@ impl<'a> FontLayoutLine<'a> {
                 let y = bb.min.y;
                 glyph.inner.draw(|off_x, off_y, v| {
                     //TODO: ensure v * 255.0 does not overflow!
-                    let color =
-                        ((v * 255.0) as u32) << 24 |
-                        base & 0xFFFFFF;
+                    let color = ((v * 255.0) as u32) << 24 | base & 0xFFFFFF;
                     f(x + off_x as i32, y + off_y as i32, color);
                 });
             }

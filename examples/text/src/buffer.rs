@@ -93,7 +93,12 @@ impl<'a> TextBuffer<'a> {
         self.layout_lines.clear();
         for line in self.shape_lines.iter() {
             let layout_i = self.layout_lines.len();
-            line.layout(self.font_size, self.line_width, &mut self.layout_lines, layout_i);
+            line.layout(
+                self.font_size,
+                self.line_width,
+                &mut self.layout_lines,
+                layout_i,
+            );
         }
 
         self.redraw = true;
@@ -173,7 +178,7 @@ impl<'a> TextBuffer<'a> {
                     self.cursor.glyph -= 1;
                     self.redraw = true;
                 }
-            },
+            }
             TextAction::Right => {
                 let line = &self.layout_lines[self.cursor.line];
                 if self.cursor.glyph > line.glyphs.len() {
@@ -184,19 +189,19 @@ impl<'a> TextBuffer<'a> {
                     self.cursor.glyph += 1;
                     self.redraw = true;
                 }
-            },
+            }
             TextAction::Up => {
                 if self.cursor.line > 0 {
                     self.cursor.line -= 1;
                     self.redraw = true;
                 }
-            },
+            }
             TextAction::Down => {
                 if self.cursor.line + 1 < self.layout_lines.len() {
                     self.cursor.line += 1;
                     self.redraw = true;
                 }
-            },
+            }
             TextAction::Backspace => {
                 let line = &self.layout_lines[self.cursor.line];
                 if self.cursor.glyph > line.glyphs.len() {
@@ -210,7 +215,7 @@ impl<'a> TextBuffer<'a> {
                     text_line.remove(glyph.start);
                     self.reshape_line(line.line_i);
                 }
-            },
+            }
             TextAction::Delete => {
                 let line = &self.layout_lines[self.cursor.line];
                 if self.cursor.glyph < line.glyphs.len() {
@@ -219,7 +224,7 @@ impl<'a> TextBuffer<'a> {
                     text_line.remove(glyph.start);
                     self.reshape_line(line.line_i);
                 }
-            },
+            }
             TextAction::Insert(character) => {
                 let line = &self.layout_lines[self.cursor.line];
                 if self.cursor.glyph >= line.glyphs.len() {
@@ -229,7 +234,7 @@ impl<'a> TextBuffer<'a> {
                             text_line.insert(glyph.end, character);
                             self.cursor.glyph += 1;
                             self.reshape_line(line.line_i);
-                        },
+                        }
                         None => {
                             let text_line = &mut self.text_lines[line.line_i.get()];
                             text_line.push(character);
@@ -244,7 +249,7 @@ impl<'a> TextBuffer<'a> {
                     self.cursor.glyph += 1;
                     self.reshape_line(line.line_i);
                 }
-            },
+            }
         }
     }
 }

@@ -1,26 +1,15 @@
 use iced::{
-    Element, 
-    Padding, 
-    Length, 
-    Alignment, 
-    widget::{
-        Container,
-        Column, 
-        scrollable
-    },
-     alignment
+    alignment,
+    widget::{scrollable, Column, Container},
+    Alignment, Element, Length, Padding,
 };
 use iced_native::{
-    Widget, 
+    renderer, row,
     widget::{
-        Tree, 
-        container::{
-            layout, 
-            draw_background
-        }
-    }, 
-    row,
-    renderer
+        container::{draw_background, layout},
+        Tree,
+    },
+    Widget,
 };
 use iced_style::container::StyleSheet;
 
@@ -45,27 +34,25 @@ where
 }
 
 impl<'a, Message: 'a, Renderer> NavBar<'a, Message, Renderer>
-where 
+where
     Renderer: iced_native::Renderer + 'a,
     Renderer::Theme: StyleSheet,
 {
     /// Creates a [`NavBar`] with the given elements.
-    pub fn with_children(
-        children: Vec<Element<'a, Message, Renderer>>,
-    ) -> Self where <Renderer as iced_native::Renderer>::Theme: iced_style::scrollable::StyleSheet {
+    pub fn with_children(children: Vec<Element<'a, Message, Renderer>>) -> Self
+    where
+        <Renderer as iced_native::Renderer>::Theme: iced_style::scrollable::StyleSheet,
+    {
         let nav = Self::default();
         NavBar {
             content: Container::new(
-                scrollable(
-                    row![
-                        Column::with_children(children)
-                            .spacing(nav.spacing)
-                            .padding(nav.padding)
-                    ]
-                )
+                scrollable(row![Column::with_children(children)
+                    .spacing(nav.spacing)
+                    .padding(nav.padding)])
                 .scrollbar_width(6)
-                .scroller_width(6)
-            ).into(),
+                .scroller_width(6),
+            )
+            .into(),
             ..Default::default()
         }
     }
@@ -74,7 +61,7 @@ where
         self.condensed = condensed;
         self
     }
-    
+
     pub fn active(mut self, active: bool) -> Self {
         self.active = active;
         self
@@ -126,22 +113,19 @@ where
     }
 
     /// Sets the style of the [`NavBar`].
-    pub fn style(
-        mut self,
-        style: impl Into<<Renderer::Theme as StyleSheet>::Style>,
-    ) -> Self {
+    pub fn style(mut self, style: impl Into<<Renderer::Theme as StyleSheet>::Style>) -> Self {
         self.style = style.into();
         self
     }
 }
 
 impl<'a, Message: 'a, Renderer> Default for NavBar<'a, Message, Renderer>
-where 
+where
     Renderer: iced_native::Renderer + 'a,
     Renderer::Theme: StyleSheet,
 {
     fn default() -> Self {
-        Self { 
+        Self {
             spacing: 12,
             padding: Padding::new(12),
             width: Length::Shrink,
@@ -152,27 +136,18 @@ where
             horizontal_alignment: alignment::Horizontal::Left,
             vertical_alignment: alignment::Vertical::Top,
             style: Default::default(),
-            condensed: false, 
-            active: true, 
+            condensed: false,
+            active: true,
             content: Container::new(row![Column::new()]).into(),
         }
     }
 }
 
-impl<'a, Message, Renderer> Widget<Message, Renderer>
-    for NavBar<'a, Message, Renderer>
+impl<'a, Message, Renderer> Widget<Message, Renderer> for NavBar<'a, Message, Renderer>
 where
     Renderer: iced_native::Renderer,
     Renderer::Theme: StyleSheet,
 {
-    fn children(&self) -> Vec<iced_native::widget::Tree> {
-        vec![Tree::new(&self.content)]
-    }
-
-    fn diff(&self, tree: &mut Tree) {
-        tree.diff_children(std::slice::from_ref(&self.content))
-    }
-
     fn width(&self) -> Length {
         self.width
     }
@@ -191,11 +166,7 @@ where
             limits,
             self.width,
             self.height,
-            if self.condensed {
-                100
-            } else {
-                self.max_width
-            },
+            if self.condensed { 100 } else { self.max_width },
             self.max_height,
             if self.active {
                 self.padding
@@ -208,13 +179,51 @@ where
                 if self.active {
                     self.content.as_widget().layout(renderer, limits)
                 } else {
-                    let content: Element<Message, Renderer> = Container::new(row![Column::new()]).into();
+                    let content: Element<Message, Renderer> =
+                        Container::new(row![Column::new()]).into();
                     content.as_widget().layout(renderer, limits)
                 }
             },
         )
     }
-    
+
+    fn draw(
+        &self,
+        tree: &Tree,
+        renderer: &mut Renderer,
+        theme: &Renderer::Theme,
+        renderer_style: &iced_native::renderer::Style,
+        layout: iced_native::Layout<'_>,
+        cursor_position: iced::Point,
+        viewport: &iced::Rectangle,
+    ) {
+        if self.active {
+            let style = theme.appearance(self.style);
+
+            draw_background(renderer, &style, layout.bounds());
+
+            self.content.as_widget().draw(
+                &tree.children[0],
+                renderer,
+                theme,
+                &renderer::Style {
+                    text_color: style.text_color.unwrap_or(renderer_style.text_color),
+                },
+                layout.children().next().unwrap(),
+                cursor_position,
+                viewport,
+            );
+        }
+    }
+
+    fn children(&self) -> Vec<iced_native::widget::Tree> {
+        vec![Tree::new(&self.content)]
+    }
+
+    fn diff(&self, tree: &mut Tree) {
+        tree.diff_children(std::slice::from_ref(&self.content))
+    }
+
     fn operate(
         &self,
         tree: &mut Tree,
@@ -268,37 +277,6 @@ where
         )
     }
 
-    fn draw(
-        &self,
-        tree: &Tree,
-        renderer: &mut Renderer,
-        theme: &Renderer::Theme,
-        renderer_style: &iced_native::renderer::Style,
-        layout: iced_native::Layout<'_>,
-        cursor_position: iced::Point,
-        viewport: &iced::Rectangle,
-    ) {
-        if self.active {
-            let style = theme.appearance(self.style);
-
-            draw_background(renderer, &style, layout.bounds());
-
-            self.content.as_widget().draw(
-                &tree.children[0],
-                renderer,
-                theme,
-                &renderer::Style {
-                    text_color: style
-                        .text_color
-                        .unwrap_or(renderer_style.text_color),
-                },
-                layout.children().next().unwrap(),
-                cursor_position,
-                viewport,
-            );
-        }
-    }
-
     fn overlay<'b>(
         &'b self,
         tree: &'b mut iced_native::widget::Tree,
@@ -311,11 +289,9 @@ where
             renderer,
         )
     }
-    
 }
 
-impl<'a, Message, Renderer> From<NavBar<'a, Message, Renderer>>
-    for Element<'a, Message, Renderer>
+impl<'a, Message, Renderer> From<NavBar<'a, Message, Renderer>> for Element<'a, Message, Renderer>
 where
     Message: 'a,
     Renderer: iced_native::Renderer + 'a,

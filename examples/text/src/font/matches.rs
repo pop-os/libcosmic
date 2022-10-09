@@ -1,4 +1,4 @@
-use super::{Font, FontLineIndex, FontShapeGlyph, FontShapeWord, FontShapeLine, FontShapeSpan};
+use super::{Font, FontLineIndex, FontShapeGlyph, FontShapeLine, FontShapeSpan, FontShapeWord};
 
 pub struct FontMatches<'a> {
     pub fonts: Vec<Font<'a>>,
@@ -22,7 +22,7 @@ impl<'a> FontMatches<'a> {
         let rtl = match buffer.direction() {
             rustybuzz::Direction::RightToLeft => true,
             //TODO: other directions?
-            _  => false,
+            _ => false,
         };
         assert_eq!(rtl, span_rtl);
 
@@ -177,7 +177,14 @@ impl<'a> FontMatches<'a> {
         FontShapeWord { blank, glyphs }
     }
 
-    fn shape_span(&self, line: &str, start_span: usize, end_span: usize, line_rtl: bool, span_rtl: bool) -> FontShapeSpan {
+    fn shape_span(
+        &self,
+        line: &str,
+        start_span: usize,
+        end_span: usize,
+        line_rtl: bool,
+        span_rtl: bool,
+    ) -> FontShapeSpan {
         let span = &line[start_span..end_span];
 
         log::debug!("  Span {}: '{}'", if span_rtl { "RTL" } else { "LTR" }, span);
@@ -251,10 +258,6 @@ impl<'a> FontMatches<'a> {
             line_rtl
         };
 
-        FontShapeLine {
-            line_i,
-            rtl,
-            spans,
-        }
+        FontShapeLine { line_i, rtl, spans }
     }
 }

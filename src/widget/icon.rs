@@ -1,7 +1,4 @@
-use iced::{
-    Length,
-    widget::svg,
-};
+use iced::{widget::svg, Length};
 
 pub fn icon(name: &str, size: u16) -> svg::Svg {
     let handle = match freedesktop_icons::lookup(name)
@@ -15,7 +12,7 @@ pub fn icon(name: &str, size: u16) -> svg::Svg {
         None => {
             eprintln!("icon '{}' size {} not found", name, size);
             svg::Handle::from_memory(Vec::new())
-        },
+        }
     };
     svg::Svg::new(handle)
         .width(Length::Units(size))
