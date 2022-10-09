@@ -68,9 +68,9 @@ pub fn init() -> (Option<FileMonitor>, Option<FileMonitor>) {
         monitor
     });
     let path = xdg::BaseDirectories::with_prefix("gtk-4.0")
-    .ok()
-    .and_then(|xdg_dirs| xdg_dirs.find_config_file("cosmic.css"))
-    .unwrap_or_else(|| "~/.config/gtk-4.0/cosmic.css".into());
+        .ok()
+        .and_then(|xdg_dirs| xdg_dirs.find_config_file("cosmic.css"))
+        .unwrap_or_else(|| "~/.config/gtk-4.0/cosmic.css".into());
 
     let cosmic_file = gio::File::for_path(path);
     cosmic_user_provider.load_from_file(&cosmic_file);

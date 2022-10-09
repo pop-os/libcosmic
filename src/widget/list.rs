@@ -1,9 +1,4 @@
-use iced::{
-    Background,
-    Color,
-    Theme,
-    widget,
-};
+use iced::{widget, Background, Color, Theme};
 
 #[macro_export]
 macro_rules! list_item {

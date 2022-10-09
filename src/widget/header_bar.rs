@@ -33,7 +33,7 @@ pub fn header_bar<Message>() -> HeaderBar<Message> {
         on_close: None,
         on_drag: None,
         on_maximize: None,
-        on_minimize: None
+        on_minimize: None,
     }
 }
 
@@ -53,25 +53,15 @@ impl<Message: Clone> Component<Message, Renderer> for HeaderBar<Message> {
 
     fn update(&mut self, _state: &mut Self::State, event: Self::Event) -> Option<Message> {
         match event {
-            HeaderEvent::Close => {
-                self.on_close.clone()
-            }
-            
-            HeaderEvent::ToggleSidebar => {
-                self.on_sidebar_toggle.clone()
-            }
-            
-            HeaderEvent::Drag => {
-                self.on_drag.clone()
-            }
-            
-            HeaderEvent::Maximize => {
-                self.on_maximize.clone()
-            }
-            
-            HeaderEvent::Minimize => {
-                self.on_minimize.clone()
-            }
+            HeaderEvent::Close => self.on_close.clone(),
+
+            HeaderEvent::ToggleSidebar => self.on_sidebar_toggle.clone(),
+
+            HeaderEvent::Drag => self.on_drag.clone(),
+
+            HeaderEvent::Maximize => self.on_maximize.clone(),
+
+            HeaderEvent::Minimize => self.on_minimize.clone(),
         }
     }
 

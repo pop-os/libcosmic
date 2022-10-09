@@ -18,7 +18,7 @@ fn main() {
         Ok((w, h)) => {
             eprintln!("Display size: {}, {}", w, h);
             (h as i32 / 1600) + 1
-        },
+        }
         Err(err) => {
             eprintln!("Failed to get display size: {}", err);
             1
@@ -31,8 +31,9 @@ fn main() {
         1024 * display_scale as u32,
         768 * display_scale as u32,
         "COSMIC TEXT",
-        &[WindowFlag::Resizable]
-    ).unwrap();
+        &[WindowFlag::Resizable],
+    )
+    .unwrap();
 
     let font_system = FontSystem::new();
 
@@ -122,22 +123,27 @@ fn main() {
             let mut new_cursor_opt = None;
 
             let mut line_y = line_height;
-            for (line_i, line) in buffer.layout_lines().iter().skip(scroll as usize).enumerate() {
+            for (line_i, line) in buffer
+                .layout_lines()
+                .iter()
+                .skip(scroll as usize)
+                .enumerate()
+            {
                 if line_y >= window.height() as i32 {
                     break;
                 }
 
                 if mouse_left
-                && mouse_y >= line_y - font_size
-                && mouse_y < line_y - font_size + line_height
+                    && mouse_y >= line_y - font_size
+                    && mouse_y < line_y - font_size + line_height
                 {
                     let new_cursor_line = line_i + scroll as usize;
                     let mut new_cursor_glyph = line.glyphs.len();
                     for (glyph_i, glyph) in line.glyphs.iter().enumerate() {
                         if mouse_x >= line_x + glyph.x as i32
-                        && mouse_x <= line_x + (glyph.x + glyph.w) as i32
+                            && mouse_x <= line_x + (glyph.x + glyph.w) as i32
                         {
-                           new_cursor_glyph = glyph_i;
+                            new_cursor_glyph = glyph_i;
                         }
                     }
                     new_cursor_opt = Some(TextCursor::new(new_cursor_line, new_cursor_glyph));
@@ -181,14 +187,14 @@ fn main() {
                     if buffer.cursor.glyph >= line.glyphs.len() {
                         let x = match line.glyphs.last() {
                             Some(glyph) => glyph.x + glyph.w,
-                            None => 0.0
+                            None => 0.0,
                         };
                         window.rect(
                             line_x + x as i32,
                             line_y - font_size,
                             (font_size / 2) as u32,
                             line_height as u32,
-                            Color::rgba(0xFF, 0xFF, 0xFF, 0x20)
+                            Color::rgba(0xFF, 0xFF, 0xFF, 0x20),
                         );
                     } else {
                         let glyph = &line.glyphs[buffer.cursor.glyph];
@@ -197,7 +203,7 @@ fn main() {
                             line_y - font_size,
                             glyph.w as u32,
                             line_height as u32,
-                            Color::rgba(0xFF, 0xFF, 0xFF, 0x20)
+                            Color::rgba(0xFF, 0xFF, 0xFF, 0x20),
                         );
 
                         let text_line = &buffer.text_lines()[line.line_i.get()];
@@ -269,24 +275,26 @@ fn main() {
                         orbclient::K_MINUS if event.pressed && ctrl_pressed => if font_size_i > 0 {
                             font_size_i -= 1;
                             buffer.set_font_size(font_sizes[font_size_i].0 * display_scale);
-                        },
-                        orbclient::K_EQUALS if event.pressed && ctrl_pressed => if font_size_i + 1 < font_sizes.len() {
-                            font_size_i += 1;
-                            buffer.set_font_size(font_sizes[font_size_i].0 * display_scale);
-                        },
-                        _ => (),
+                        }
+                        orbclient::K_EQUALS if event.pressed && ctrl_pressed => {
+                            if font_size_i + 1 < font_sizes.len() {
+                                font_size_i += 1;
+                                buffer.set_font_size(font_sizes[font_size_i].0 * display_scale);
+                            }
+                        }
+                    _ => (),
                     }
                 },
-                EventOption::TextInput(event) if ! ctrl_pressed => {
+                EventOption::TextInput(event) if !ctrl_pressed => {
                     buffer.action(TextAction::Insert(event.character));
-                },
+                }
                 EventOption::Mouse(event) => {
                     mouse_x = event.x;
                     mouse_y = event.y;
                     if mouse_left {
                         rehit = true;
                     }
-                },
+                }
                 EventOption::Button(event) => {
                     if event.left != mouse_left {
                         mouse_left = event.left;
@@ -297,11 +305,11 @@ fn main() {
                 }
                 EventOption::Resize(event) => {
                     buffer.set_line_width(event.width as i32 - line_x * 2);
-                },
+                }
                 EventOption::Scroll(event) => {
                     scroll -= event.y * 3;
                     buffer.redraw = true;
-                },
+                }
                 EventOption::Quit(_) => return,
                 _ => (),
             }
