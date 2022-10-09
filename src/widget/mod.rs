@@ -1,8 +1,8 @@
 mod button;
 pub use button::*;
 
-mod headerbar;
-pub use headerbar::*;
+mod header_bar;
+pub use header_bar::*;
 
 mod icon;
 pub use self::icon::*;

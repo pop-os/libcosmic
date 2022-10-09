@@ -7,7 +7,8 @@ use cosmic::{
         list_view,
         nav_button,
         toggler,
-        HeaderBar, nav_bar_style, Expander, ExpanderMsg,
+        nav_bar_style,
+        header_bar,
     },
     settings,
     iced::{self, theme, Alignment, Application, Color, Command, Element, Length, Theme},
@@ -25,7 +26,6 @@ use cosmic::{
     },
     iced_lazy::responsive,
     iced_winit::window::drag,
-    WindowMsg,
     scrollable
 };
 
@@ -40,8 +40,6 @@ pub fn main() -> cosmic::iced::Result {
 
 #[derive(Default)]
 struct Window {
-    headerbar: HeaderBar,
-    expander: Expander,
     page: u8,
     debug: bool,
     theme: Theme,
@@ -49,9 +47,30 @@ struct Window {
     checkbox_value: bool,
     toggler_value: bool,
     pick_list_selected: Option<&'static str>,
+    sidebar_toggled: bool,
+    show_minimize: bool,
+    show_maximize: bool,
     exit: bool,
 }
 
+impl Window {
+    pub fn sidebar_toggled(mut self, toggled: bool) -> Self {
+        self.sidebar_toggled = toggled;
+        self
+    }
+    
+    pub fn show_maximize(mut self, show: bool) -> Self {
+        self.show_maximize = show;
+        self
+    }
+
+    pub fn show_minimize(mut self, show: bool) -> Self {
+        self.show_minimize = show;
+        self
+    }
+}
+
+#[allow(dead_code)]
 #[derive(Clone, Copy, Debug)]
 enum Message {
     Page(u8),
@@ -62,20 +81,11 @@ enum Message {
     CheckboxToggled(bool),
     TogglerToggled(bool),
     PickListSelected(&'static str),
-    Window(WindowMsg),
-    Expander(ExpanderMsg)
-}
-
-impl From<WindowMsg> for Message {
-    fn from(message: WindowMsg) -> Self {
-        Self::Window(message)
-    }
-}
-
-impl From<ExpanderMsg> for Message {
-    fn from(message: ExpanderMsg) -> Self {
-        Self::Expander(message)
-    }
+    Close,
+    ToggleSidebar(bool),
+    Drag,
+    Minimize, 
+    Maximize,
 }
 
 impl Application for Window {
@@ -85,19 +95,17 @@ impl Application for Window {
     type Theme = Theme;
 
     fn new(_flags: ()) -> (Self, Command<Self::Message>) {
-        let mut window = Window::default();
-        window.headerbar.title = String::from("COSMIC Design System - Iced");
-        window.headerbar.nav_title = String::from("WiFi Settings");
-        window.headerbar.sidebar_active = true;
-        window.headerbar.show_minimize = true;
-        window.headerbar.show_maximize = true;
+        let mut window = Window::default()
+            .sidebar_toggled(true)
+            .show_maximize(true)
+            .show_minimize(true);
         window.slider_value = 50.0;
         window.pick_list_selected = Some("Option 1");
         (window, Command::none())
     }
 
     fn title(&self) -> String {
-        self.headerbar.title.clone()
+        String::from("COSMIC Design System - Iced")
     }
 
     fn update(&mut self, message: Message) -> iced::Command<Self::Message> {
@@ -110,24 +118,27 @@ impl Application for Window {
             Message::CheckboxToggled(value) => self.checkbox_value = value,
             Message::TogglerToggled(value) => self.toggler_value = value,
             Message::PickListSelected(value) => self.pick_list_selected = Some(value),
-            Message::Window(msg) => match msg {
-                WindowMsg::Close => self.exit = true,
-                WindowMsg::ToggleSidebar => self.headerbar.sidebar_active = !self.headerbar.sidebar_active,
-                WindowMsg::Drag => return drag(),
-                WindowMsg::Minimize => {}
-                WindowMsg::Maximize => {}
-            }
-            Message::Expander(msg) => match msg {
-                ExpanderMsg::Expand => self.expander.expanded = !self.expander.expanded,
-            }
+            Message::Close => self.exit = true,
+            Message::ToggleSidebar(toggled) => self.sidebar_toggled = toggled,
+            Message::Drag => return drag(),
+            Message::Minimize => {},
+            Message::Maximize => {},
         }
 
         iced::Command::none()
     }
 
     fn view(&self) -> Element<Message> {
-        let mut header = self.headerbar.render();
-        // let expander = self.expander.render();
+        let mut header: Element<Message, _> = header_bar(
+            self.title().as_str(),
+            self.sidebar_toggled,
+            self.show_minimize,
+            self.show_maximize,
+            |toggled| Message::ToggleSidebar(toggled),
+            || Message::Close, 
+            || Message::Drag 
+        ).into();
+
         if self.debug {
             header = header.explain(Color::WHITE);
         }
@@ -150,15 +161,8 @@ impl Application for Window {
                 nav_button!("system-software-update", "OS Upgrade & Recovery", condensed)
                     .on_press(Message::Page(2))
                     .style(if self.page == 2 { theme::Button::Primary } else { theme::Button::Text }),
-                self.expander.render(
-                    vec![
-                        text("Content").into(),
-                        text("Content 2").into(),
-                        text("Content 3").into()
-                    ]
-                ),
             ]
-            .active(self.headerbar.sidebar_active)
+            .active(self.sidebar_toggled)
             .condensed(condensed)
             .style(theme::Container::Custom(nav_bar_style))
             .into();
