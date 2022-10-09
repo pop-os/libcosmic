@@ -7,7 +7,7 @@ use cosmic::{
         list_view,
         nav_button,
         toggler,
-        HeaderBar, nav_bar_style,
+        HeaderBar, nav_bar_style, Expander, ExpanderMsg,
     },
     settings,
     iced::{self, theme, Alignment, Application, Color, Command, Element, Length, Theme},
@@ -41,6 +41,7 @@ pub fn main() -> cosmic::iced::Result {
 #[derive(Default)]
 struct Window {
     headerbar: HeaderBar,
+    expander: Expander,
     page: u8,
     debug: bool,
     theme: Theme,
@@ -61,12 +62,19 @@ enum Message {
     CheckboxToggled(bool),
     TogglerToggled(bool),
     PickListSelected(&'static str),
-    Window(WindowMsg)
+    Window(WindowMsg),
+    Expander(ExpanderMsg)
 }
 
 impl From<WindowMsg> for Message {
     fn from(message: WindowMsg) -> Self {
         Self::Window(message)
+    }
+}
+
+impl From<ExpanderMsg> for Message {
+    fn from(message: ExpanderMsg) -> Self {
+        Self::Expander(message)
     }
 }
 
@@ -109,6 +117,9 @@ impl Application for Window {
                 WindowMsg::Minimize => {}
                 WindowMsg::Maximize => {}
             }
+            Message::Expander(msg) => match msg {
+                ExpanderMsg::Expand => self.expander.expanded = !self.expander.expanded,
+            }
         }
 
         iced::Command::none()
@@ -116,6 +127,7 @@ impl Application for Window {
 
     fn view(&self) -> Element<Message> {
         let mut header = self.headerbar.render();
+        // let expander = self.expander.render();
         if self.debug {
             header = header.explain(Color::WHITE);
         }
@@ -137,7 +149,14 @@ impl Application for Window {
                 ,
                 nav_button!("system-software-update", "OS Upgrade & Recovery", condensed)
                     .on_press(Message::Page(2))
-                    .style(if self.page == 2 { theme::Button::Primary } else { theme::Button::Text })
+                    .style(if self.page == 2 { theme::Button::Primary } else { theme::Button::Text }),
+                self.expander.render(
+                    vec![
+                        text("Content").into(),
+                        text("Content 2").into(),
+                        text("Content 3").into()
+                    ]
+                ),
             ]
             .active(self.headerbar.sidebar_active)
             .condensed(condensed)
