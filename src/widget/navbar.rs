@@ -321,14 +321,14 @@ where
     Renderer: iced_native::Renderer + 'a,
     Renderer::Theme: StyleSheet,
 {
-    fn from(row: NavBar<'a, Message, Renderer>) -> Self {
-        Self::new(row)
+    fn from(navbar: NavBar<'a, Message, Renderer>) -> Self {
+        Self::new(navbar)
     }
 }
 
-/// Creates a [Row`] with the given children.
+/// Creates a [NavBar`] with the given children.
 ///
-/// [`Row`]: widget::Row
+/// [`NavBar`]: widget::NavBar
 #[macro_export]
 macro_rules! navbar {
     ($($x:expr),+ $(,)?) => (
