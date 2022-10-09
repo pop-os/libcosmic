@@ -1,9 +1,8 @@
 use apply::Apply;
-use iced::{self, Element, Length, widget, alignment::Vertical, theme, Renderer};
+use iced::{self, alignment::Vertical, theme, widget, Element, Length, Renderer};
 use iced_lazy::Component;
 
-pub struct HeaderBar<Message>
-{
+pub struct HeaderBar<Message> {
     title: String,
     nav_title: String,
     sidebar_active: bool,
@@ -12,6 +11,7 @@ pub struct HeaderBar<Message>
     on_sidebar_active: Box<dyn Fn(bool) -> Message>,
     on_close: Box<dyn Fn() -> Message>,
     on_drag: Box<dyn Fn() -> Message>,
+    on_maximize: Box<dyn Fn() -> Message>,
 }
 
 pub fn header_bar<Message>(
@@ -22,15 +22,17 @@ pub fn header_bar<Message>(
     on_sidebar_active: impl Fn(bool) -> Message + 'static,
     on_close: impl Fn() -> Message + 'static,
     on_drag: impl Fn() -> Message + 'static,
+    on_maximize: impl Fn() -> Message + 'static,
 ) -> HeaderBar<Message> {
     HeaderBar::new(
-        title, 
-        toggled, 
+        title,
+        toggled,
         show_minimize,
         show_maximize,
-        on_sidebar_active, 
-        on_close, 
-        on_drag
+        on_sidebar_active,
+        on_close,
+        on_drag,
+        on_maximize,
     )
 }
 
@@ -39,8 +41,8 @@ pub enum HeaderEvent {
     Close,
     ToggleSidebar,
     Drag,
-    Minimize, 
-    Maximize
+    Minimize,
+    Maximize,
 }
 
 impl<Message> HeaderBar<Message> {
@@ -52,6 +54,7 @@ impl<Message> HeaderBar<Message> {
         on_sidebar_active: impl Fn(bool) -> Message + 'static,
         on_close: impl Fn() -> Message + 'static,
         on_drag: impl Fn() -> Message + 'static,
+        on_maximize: impl Fn() -> Message + 'static,
     ) -> Self {
         Self {
             title: String::from(title),
@@ -62,6 +65,7 @@ impl<Message> HeaderBar<Message> {
             on_sidebar_active: Box::new(on_sidebar_active),
             on_close: Box::new(on_close),
             on_drag: Box::new(on_drag),
+            on_maximize: Box::new(on_maximize),
         }
     }
 
@@ -91,31 +95,28 @@ impl<Message> HeaderBar<Message> {
     }
 }
 
-impl<Message: Clone> Component<Message, Renderer> for HeaderBar<Message>  
-{
+impl<Message: Clone> Component<Message, Renderer> for HeaderBar<Message> {
     type State = ();
 
     type Event = HeaderEvent;
 
-    fn update(
-        &mut self,
-        _state: &mut Self::State,
-        event: Self::Event,
-    ) -> Option<Message> {
+    fn update(&mut self, _state: &mut Self::State, event: Self::Event) -> Option<Message> {
         match event {
             HeaderEvent::Close => Some((self.on_close)()),
             HeaderEvent::ToggleSidebar => {
                 self.sidebar_active = !self.sidebar_active;
                 Some((self.on_sidebar_active)(self.sidebar_active))
-            },
+            }
             HeaderEvent::Drag => Some((self.on_drag)()),
-            HeaderEvent::Minimize => None,
-            HeaderEvent::Maximize => None,
+            // HeaderEvent::Minimize => {
+            //     Some((self.on_minimize()))
+            // },
+            HeaderEvent::Maximize => Some((self.on_maximize)()),
+            _ => None,
         }
     }
 
-    fn view(&self, _state: &Self::State) -> Element<Self::Event> 
-    {
+    fn view(&self, _state: &Self::State) -> Element<Self::Event> {
         let nav_button = {
             let text = widget::text(&self.nav_title)
                 .vertical_alignment(Vertical::Center)
@@ -151,7 +152,7 @@ impl<Message: Clone> Component<Message, Renderer> for HeaderBar<Message>
             .width(Length::Fill)
             .height(Length::Fill)
             .into();
-        
+
         let window_controls = {
             let mut widgets: Vec<Element<HeaderEvent, _>> = Vec::with_capacity(3);
 
@@ -163,20 +164,14 @@ impl<Message: Clone> Component<Message, Renderer> for HeaderBar<Message>
             };
 
             if self.show_minimize {
-                widgets.push(
-                    icon("window-minimize-symbolic", 16, HeaderEvent::Minimize).into()
-                );
+                widgets.push(icon("window-minimize-symbolic", 16, HeaderEvent::Minimize).into());
             }
 
             if self.show_maximize {
-                widgets.push(
-                    icon("window-maximize-symbolic", 16, HeaderEvent::Maximize).into()
-                );
+                widgets.push(icon("window-maximize-symbolic", 16, HeaderEvent::Maximize).into());
             }
 
-            widgets.push(
-                icon("window-close-symbolic", 16, HeaderEvent::Close).into()
-            );
+            widgets.push(icon("window-close-symbolic", 16, HeaderEvent::Close).into());
 
             widget::row(widgets)
                 .spacing(8)
@@ -192,12 +187,12 @@ impl<Message: Clone> Component<Message, Renderer> for HeaderBar<Message>
             .apply(widget::event_container)
             .center_y()
             .on_press(HeaderEvent::Drag)
+            .on_release(HeaderEvent::Maximize)
             .into()
     }
 }
 
-impl<'a, Message: Clone + 'a> From<HeaderBar<Message>> for Element<'a, Message>
-{
+impl<'a, Message: Clone + 'a> From<HeaderBar<Message>> for Element<'a, Message> {
     fn from(header_bar: HeaderBar<Message>) -> Self {
         iced_lazy::component(header_bar)
     }

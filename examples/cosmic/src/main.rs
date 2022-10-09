@@ -25,7 +25,7 @@ use cosmic::{
         text
     },
     iced_lazy::responsive,
-    iced_winit::window::drag,
+    iced_winit::window::{drag, maximize},
     scrollable
 };
 
@@ -58,7 +58,7 @@ impl Window {
         self.sidebar_toggled = toggled;
         self
     }
-    
+
     pub fn show_maximize(mut self, show: bool) -> Self {
         self.show_maximize = show;
         self
@@ -84,7 +84,7 @@ enum Message {
     Close,
     ToggleSidebar(bool),
     Drag,
-    Minimize, 
+    Minimize,
     Maximize,
 }
 
@@ -122,7 +122,7 @@ impl Application for Window {
             Message::ToggleSidebar(toggled) => self.sidebar_toggled = toggled,
             Message::Drag => return drag(),
             Message::Minimize => {},
-            Message::Maximize => {},
+            Message::Maximize => return maximize(),
         }
 
         iced::Command::none()
@@ -135,8 +135,9 @@ impl Application for Window {
             self.show_minimize,
             self.show_maximize,
             |toggled| Message::ToggleSidebar(toggled),
-            || Message::Close, 
-            || Message::Drag 
+            || Message::Close,
+            || Message::Drag,
+            || Message::Maximize,
         ).into();
 
         if self.debug {
