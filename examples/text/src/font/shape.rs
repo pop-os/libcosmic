@@ -148,7 +148,6 @@ impl<'a> FontShapeLine<'a> {
                     };
 
                     if wrap {
-                        //TODO: ensure blanks are not processed later
                         let mut fitting_start = i + 1;
                         while fitting_start < fitting_end {
                             if span.words[fitting_start].blank {
