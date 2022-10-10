@@ -148,7 +148,7 @@ impl<'a> FontShapeLine<'a> {
                     };
 
                     if wrap {
-                        word_ranges.push((i + 1..fitting_end));
+                        word_ranges.push((i + 1..fitting_end, true));
                         if word.blank {
                             fitting_end = i;
                         } else {
@@ -164,7 +164,9 @@ impl<'a> FontShapeLine<'a> {
                         fit_x += word_size;
                     }
                 }
-                word_ranges.push((0..fitting_end));
+                word_ranges.push((0..fitting_end, false));
+
+                println!("{:?}", word_ranges);
             } else {
                 let mut fit_x = x;
                 let mut fitting_start = 0;
@@ -183,7 +185,7 @@ impl<'a> FontShapeLine<'a> {
                     };
 
                     if wrap {
-                        word_ranges.push((fitting_start..i));
+                        word_ranges.push((fitting_start..i, true));
                         if word.blank {
                             fitting_start = i + 1;
                         } else {
@@ -199,35 +201,11 @@ impl<'a> FontShapeLine<'a> {
                         fit_x += word_size;
                     }
                 }
-                word_ranges.push((fitting_start..span.words.len()));
+                word_ranges.push((fitting_start..span.words.len(), false));
             }
 
-            for range in word_ranges {
+            for (range, wrap) in word_ranges {
                 for word in span.words[range].iter() {
-                    let mut word_size = 0.0;
-                    for glyph in word.glyphs.iter() {
-                        word_size += font_size as f32 * glyph.x_advance;
-                    }
-
-                    //TODO: make wrapping optional
-                    let wrap = if self.rtl {
-                        x - word_size < end_x
-                    } else {
-                        x + word_size > end_x
-                    };
-                    if wrap && ! glyphs.is_empty() {
-                        let mut glyphs_swap = Vec::new();
-                        std::mem::swap(&mut glyphs, &mut glyphs_swap);
-                        layout_lines.insert(layout_i, FontLayoutLine {
-                            line_i: self.line_i,
-                            glyphs: glyphs_swap
-                        });
-                        layout_i += 1;
-
-                        x = start_x;
-                        y = 0.0;
-                    }
-
                     for glyph in word.glyphs.iter() {
                         let x_advance = font_size as f32 * glyph.x_advance;
                         let y_advance = font_size as f32 * glyph.y_advance;
@@ -244,6 +222,19 @@ impl<'a> FontShapeLine<'a> {
                         }
                         y += y_advance;
                     }
+                }
+
+                if wrap {
+                    let mut glyphs_swap = Vec::new();
+                    std::mem::swap(&mut glyphs, &mut glyphs_swap);
+                    layout_lines.insert(layout_i, FontLayoutLine {
+                        line_i: self.line_i,
+                        glyphs: glyphs_swap
+                    });
+                    layout_i += 1;
+
+                    x = start_x;
+                    y = 0.0;
                 }
             }
         }
