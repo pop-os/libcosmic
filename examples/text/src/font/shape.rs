@@ -148,12 +148,17 @@ impl<'a> FontShapeLine<'a> {
                     };
 
                     if wrap {
-                        word_ranges.push((i + 1..fitting_end, true));
-                        if word.blank {
-                            fitting_end = i;
-                        } else {
-                            fitting_end = i + 1;
+                        //TODO: ensure blanks are not processed later
+                        let mut fitting_start = i + 1;
+                        while fitting_start < fitting_end {
+                            if span.words[fitting_start].blank {
+                                fitting_start += 1;
+                            } else {
+                                break;
+                            }
                         }
+                        word_ranges.push((fitting_start..fitting_end, true));
+                        fitting_end = i + 1;
 
                         fit_x = start_x;
                     }
@@ -162,6 +167,15 @@ impl<'a> FontShapeLine<'a> {
                         fit_x -= word_size;
                     } else {
                         fit_x += word_size;
+                    }
+                }
+                if ! word_ranges.is_empty() {
+                    while fitting_end > 0 {
+                        if span.words[fitting_end - 1].blank {
+                            fitting_end -= 1;
+                        } else {
+                            break;
+                        }
                     }
                 }
                 word_ranges.push((0..fitting_end, false));
@@ -185,12 +199,9 @@ impl<'a> FontShapeLine<'a> {
                     };
 
                     if wrap {
+                        //TODO: skip blanks
                         word_ranges.push((fitting_start..i, true));
-                        if word.blank {
-                            fitting_start = i + 1;
-                        } else {
-                            fitting_start = i;
-                        }
+                        fitting_start = i;
 
                         fit_x = start_x;
                     }
