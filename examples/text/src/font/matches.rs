@@ -179,15 +179,16 @@ impl<'a> FontMatches<'a> {
         let mut start_word = 0;
         for (end_lb, _) in unicode_linebreak::linebreaks(span) {
             let mut start_lb = end_lb;
-            if end_lb != span.len() {
-                while start_lb > 1 {
-                    start_lb -= 1;
-                    if span.is_char_boundary(start_lb) {
-                        break;
-                    }
+            for (i, c) in span[start_word..end_lb].char_indices() {
+                if start_word + i == end_lb {
+                    break;
+                } else if c.is_whitespace() {
+                    start_lb = start_word + i;
                 }
             }
-            words.push(self.shape_word(0, line, start_span + start_word, start_span + start_lb, span_rtl, false));
+            if start_word < start_lb {
+                words.push(self.shape_word(0, line, start_span + start_word, start_span + start_lb, span_rtl, false));
+            }
             if start_lb < end_lb {
                 words.push(self.shape_word(0, line, start_span + start_lb, start_span + end_lb, span_rtl, true));
             }
