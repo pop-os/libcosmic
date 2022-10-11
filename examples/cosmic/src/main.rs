@@ -25,7 +25,7 @@ use cosmic::{
         text
     },
     iced_lazy::responsive,
-    iced_winit::window::{drag, maximize},
+    iced_winit::window::{drag, maximize, minimize},
     scrollable
 };
 
@@ -82,7 +82,7 @@ enum Message {
     TogglerToggled(bool),
     PickListSelected(&'static str),
     Close,
-    ToggleSidebar(bool),
+    ToggleSidebar,
     Drag,
     Minimize,
     Maximize,
@@ -119,9 +119,9 @@ impl Application for Window {
             Message::TogglerToggled(value) => self.toggler_value = value,
             Message::PickListSelected(value) => self.pick_list_selected = Some(value),
             Message::Close => self.exit = true,
-            Message::ToggleSidebar(toggled) => self.sidebar_toggled = toggled,
+            Message::ToggleSidebar => self.sidebar_toggled = !self.sidebar_toggled,
             Message::Drag => return drag(),
-            Message::Minimize => {},
+            Message::Minimize => return minimize(),
             Message::Maximize => return maximize(),
         }
 
@@ -129,16 +129,17 @@ impl Application for Window {
     }
 
     fn view(&self) -> Element<Message> {
-        let mut header: Element<Message, _> = header_bar(
-            self.title().as_str(),
-            self.sidebar_toggled,
-            self.show_minimize,
-            self.show_maximize,
-            |toggled| Message::ToggleSidebar(toggled),
-            || Message::Close,
-            || Message::Drag,
-            || Message::Maximize,
-        ).into();
+        let mut header: Element<Message, _> = header_bar()
+            .title(self.title())
+            .sidebar_active(self.sidebar_toggled)
+            .show_minimize(self.show_minimize)
+            .show_maximize(self.show_maximize)
+            .on_close(Message::Close)
+            .on_drag(Message::Drag)
+            .on_maximize(Message::Maximize)
+            .on_minimize(Message::Minimize)
+            .on_sidebar_toggle(Message::ToggleSidebar)
+            .into();
 
         if self.debug {
             header = header.explain(Color::WHITE);

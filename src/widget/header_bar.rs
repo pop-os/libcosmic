@@ -1,39 +1,40 @@
 use apply::Apply;
+use derive_setters::*;
 use iced::{self, alignment::Vertical, theme, widget, Element, Length, Renderer};
 use iced_lazy::Component;
 
+#[derive(Setters)]
 pub struct HeaderBar<Message> {
     title: String,
     nav_title: String,
     sidebar_active: bool,
     show_minimize: bool,
     show_maximize: bool,
-    on_sidebar_active: Box<dyn Fn(bool) -> Message>,
-    on_close: Box<dyn Fn() -> Message>,
-    on_drag: Box<dyn Fn() -> Message>,
-    on_maximize: Box<dyn Fn() -> Message>,
+    #[setters(strip_option)]
+    on_close: Option<Message>,
+    #[setters(strip_option)]
+    on_drag: Option<Message>,
+    #[setters(strip_option)]
+    on_maximize: Option<Message>,
+    #[setters(strip_option)]
+    on_minimize: Option<Message>,
+    #[setters(strip_option)]
+    on_sidebar_toggle: Option<Message>,
 }
 
-pub fn header_bar<Message>(
-    title: &str,
-    toggled: bool,
-    show_minimize: bool,
-    show_maximize: bool,
-    on_sidebar_active: impl Fn(bool) -> Message + 'static,
-    on_close: impl Fn() -> Message + 'static,
-    on_drag: impl Fn() -> Message + 'static,
-    on_maximize: impl Fn() -> Message + 'static,
-) -> HeaderBar<Message> {
-    HeaderBar::new(
-        title,
-        toggled,
-        show_minimize,
-        show_maximize,
-        on_sidebar_active,
-        on_close,
-        on_drag,
-        on_maximize,
-    )
+pub fn header_bar<Message>() -> HeaderBar<Message> {
+    HeaderBar {
+        title: String::default(),
+        nav_title: String::default(),
+        sidebar_active: false,
+        show_minimize: false,
+        show_maximize: false,
+        on_sidebar_toggle: None,
+        on_close: None,
+        on_drag: None,
+        on_maximize: None,
+        on_minimize: None
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -45,56 +46,6 @@ pub enum HeaderEvent {
     Maximize,
 }
 
-impl<Message> HeaderBar<Message> {
-    pub fn new(
-        title: &str,
-        toggled: bool,
-        show_minimize: bool,
-        show_maximize: bool,
-        on_sidebar_active: impl Fn(bool) -> Message + 'static,
-        on_close: impl Fn() -> Message + 'static,
-        on_drag: impl Fn() -> Message + 'static,
-        on_maximize: impl Fn() -> Message + 'static,
-    ) -> Self {
-        Self {
-            title: String::from(title),
-            nav_title: String::new(),
-            sidebar_active: toggled,
-            show_minimize,
-            show_maximize,
-            on_sidebar_active: Box::new(on_sidebar_active),
-            on_close: Box::new(on_close),
-            on_drag: Box::new(on_drag),
-            on_maximize: Box::new(on_maximize),
-        }
-    }
-
-    pub fn title(mut self, title: &str) -> Self {
-        self.title = title.to_string();
-        self
-    }
-
-    pub fn nav_title(mut self, nav_title: &str) -> Self {
-        self.nav_title = nav_title.to_string();
-        self
-    }
-
-    pub fn sidebar_active(mut self, sidebar_active: bool) -> Self {
-        self.sidebar_active = sidebar_active;
-        self
-    }
-
-    pub fn show_minimize(mut self, show_minimize: bool) -> Self {
-        self.show_minimize = show_minimize;
-        self
-    }
-
-    pub fn show_maximize(mut self, show_maximize: bool) -> Self {
-        self.show_maximize = show_maximize;
-        self
-    }
-}
-
 impl<Message: Clone> Component<Message, Renderer> for HeaderBar<Message> {
     type State = ();
 
@@ -102,17 +53,25 @@ impl<Message: Clone> Component<Message, Renderer> for HeaderBar<Message> {
 
     fn update(&mut self, _state: &mut Self::State, event: Self::Event) -> Option<Message> {
         match event {
-            HeaderEvent::Close => Some((self.on_close)()),
-            HeaderEvent::ToggleSidebar => {
-                self.sidebar_active = !self.sidebar_active;
-                Some((self.on_sidebar_active)(self.sidebar_active))
+            HeaderEvent::Close => {
+                self.on_close.clone()
             }
-            HeaderEvent::Drag => Some((self.on_drag)()),
-            // HeaderEvent::Minimize => {
-            //     Some((self.on_minimize()))
-            // },
-            HeaderEvent::Maximize => Some((self.on_maximize)()),
-            _ => None,
+            
+            HeaderEvent::ToggleSidebar => {
+                self.on_sidebar_toggle.clone()
+            }
+            
+            HeaderEvent::Drag => {
+                self.on_drag.clone()
+            }
+            
+            HeaderEvent::Maximize => {
+                self.on_maximize.clone()
+            }
+            
+            HeaderEvent::Minimize => {
+                self.on_minimize.clone()
+            }
         }
     }
 
