@@ -71,7 +71,7 @@ fn main() {
         };
 
         if matched {
-            println!(
+            log::debug!(
                 "{:?}: family '{}' postscript name '{}' style {:?} weight {:?} stretch {:?} monospaced {:?}",
                 info.id,
                 info.family,

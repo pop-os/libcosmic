@@ -27,7 +27,7 @@ impl<'a> FontMatches<'a> {
         assert_eq!(rtl, span_rtl);
 
         if font_i == 0 {
-            println!(
+            log::debug!(
                 "    Word {}{}: '{}'",
                 if rtl { "RTL" } else { "LTR" },
                 if blank { " BLANK" } else { "" },
@@ -180,7 +180,7 @@ impl<'a> FontMatches<'a> {
     fn shape_span(&self, line: &str, start_span: usize, end_span: usize, line_rtl: bool, span_rtl: bool) -> FontShapeSpan {
         let span = &line[start_span..end_span];
 
-        println!("  Span {}: '{}'", if span_rtl { "RTL" } else { "LTR" }, span);
+        log::debug!("  Span {}: '{}'", if span_rtl { "RTL" } else { "LTR" }, span);
 
         let mut words = Vec::new();
 
@@ -232,7 +232,7 @@ impl<'a> FontMatches<'a> {
             let para_info = &bidi.paragraphs[0];
             let line_rtl = para_info.level.is_rtl();
 
-            println!("Line {}: '{}'", if line_rtl { "RTL" } else { "LTR" }, line);
+            log::debug!("Line {}: '{}'", if line_rtl { "RTL" } else { "LTR" }, line);
 
             let paragraph = unicode_bidi::Paragraph::new(&bidi, &para_info);
 
