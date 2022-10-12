@@ -246,9 +246,11 @@ fn main() {
                         orbclient::K_DEL if event.pressed => buffer.action(TextAction::Delete),
                         orbclient::K_PGUP if event.pressed => {
                             scroll -= window_lines;
+                            buffer.redraw = true;
                         },
                         orbclient::K_PGDN if event.pressed => {
                             scroll += window_lines;
+                            buffer.redraw = true;
                         },
                         orbclient::K_0 if event.pressed && ctrl_pressed => {
                             font_size_i = font_size_default;
