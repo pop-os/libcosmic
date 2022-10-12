@@ -41,7 +41,7 @@ impl<'a> TextBuffer<'a> {
         if text_lines.is_empty() {
             text_lines.push(String::new());
         }
-        let mut buffer = Self {
+        Self {
             font_matches,
             text_lines,
             shape_lines: Vec::new(),
@@ -50,31 +50,36 @@ impl<'a> TextBuffer<'a> {
             line_width,
             cursor: TextCursor::default(),
             redraw: false,
-        };
-        buffer.reshape();
-        buffer
+        }
     }
 
-    pub fn reshape(&mut self) {
+    pub fn shape_until(&mut self, lines: i32) {
         let instant = Instant::now();
 
-        self.shape_lines.clear();
-        for (line_i, text_line) in self.text_lines.iter().enumerate() {
-            self.shape_lines.push(
-                self.font_matches.shape_line(FontLineIndex::new(line_i), text_line)
-            );
+        let mut reshaped = 0;
+        while self.shape_lines.len() < self.text_lines.len()
+        && (self.layout_lines.len() as i32) < lines
+        {
+            let line_i = FontLineIndex::new(self.shape_lines.len());
+            self.reshape_line(line_i);
+            reshaped += 1;
         }
 
         let duration = instant.elapsed();
-        eprintln!("reshape: {:?}", duration);
-
-        self.relayout();
+        if reshaped > 0 {
+            eprintln!("shape_until {}: {:?}", reshaped, duration);
+        }
     }
 
     pub fn reshape_line(&mut self, line_i: FontLineIndex) {
         let instant = Instant::now();
 
-        self.shape_lines[line_i.get()] = self.font_matches.shape_line(line_i, &self.text_lines[line_i.get()]);
+        let shape_line = self.font_matches.shape_line(line_i, &self.text_lines[line_i.get()]);
+        if line_i.get() < self.shape_lines.len() {
+            self.shape_lines[line_i.get()] = shape_line;
+        } else {
+            self.shape_lines.insert(line_i.get(), shape_line);
+        }
 
         let duration = instant.elapsed();
         eprintln!("reshape line {}: {:?}", line_i.get(), duration);
@@ -114,8 +119,15 @@ impl<'a> TextBuffer<'a> {
             }
         }
 
+        let insert_i = insert_opt.unwrap_or(self.layout_lines.len());
+
         let shape_line = &self.shape_lines[line_i.get()];
-        shape_line.layout(self.font_size, self.line_width, &mut self.layout_lines, insert_opt.unwrap());
+        shape_line.layout(
+            self.font_size,
+            self.line_width,
+            &mut self.layout_lines,
+            insert_i
+        );
 
         self.redraw = true;
 

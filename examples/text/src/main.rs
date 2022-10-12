@@ -128,6 +128,9 @@ fn main() {
         let line_height = font_sizes[font_size_i].1 * display_scale;
 
         let window_lines = (window.height() as i32 + line_height - 1) / line_height;
+
+        buffer.shape_until(scroll + window_lines);
+
         scroll = cmp::max(0, cmp::min(
             buffer.layout_lines().len() as i32 - (window_lines - 1),
             scroll
