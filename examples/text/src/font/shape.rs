@@ -14,7 +14,7 @@ pub struct FontShapeGlyph<'a> {
     #[cfg(feature = "ab_glyph")]
     pub inner: ab_glyph::GlyphId,
     #[cfg(feature = "rusttype")]
-    pub inner: rusttype::Glyph<'a>,
+    pub inner: rusttype::GlyphId,
     #[cfg(feature = "swash")]
     pub inner: swash::GlyphId,
 }
@@ -37,7 +37,7 @@ impl<'a> FontShapeGlyph<'a> {
         );
 
         #[cfg(feature = "rusttype")]
-        let inner = self.inner.clone()
+        let inner = self.font.rusttype.glyph(self.inner)
             .scaled(rusttype::Scale::uniform(font_size as f32))
             .positioned(rusttype::point(
                 x + x_offset,

@@ -56,7 +56,7 @@ impl<'a> FontMatches<'a> {
             let inner = ab_glyph::GlyphId(info.glyph_id as u16);
 
             #[cfg(feature = "rusttype")]
-            let inner = font.rusttype.glyph(rusttype::GlyphId(info.glyph_id as u16));
+            let inner = rusttype::GlyphId(info.glyph_id as u16);
 
             #[cfg(feature = "swash")]
             let inner = info.glyph_id as swash::GlyphId;
