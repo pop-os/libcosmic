@@ -34,27 +34,6 @@ fn main() {
         &[WindowFlag::Resizable]
     ).unwrap();
 
-    let mut font_datas = Vec::new();
-    for (font_path, font_index) in &[
-        ("/usr/share/fonts/truetype/freefont/FreeSans.ttf", 0),
-        ("/usr/share/fonts/truetype/freefont/FreeMono.ttf", 0),
-        ("/usr/share/fonts/truetype/noto/NotoSansArabic-Regular.ttf", 0),
-        ("/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc", 2 /* simplified chinese */),
-        ("/usr/share/fonts/truetype/noto/NotoColorEmoji.ttf", 0),
-    ] {
-        match fs::File::open(&font_path) {
-            Ok(font_file) => match unsafe { memmap2::Mmap::map(&font_file) } {
-                Ok(font_data) => font_datas.push((font_path, font_data, *font_index)),
-                Err(err) => {
-                    eprintln!("failed to memory map font '{}': {}", font_path, err)
-                }
-            },
-            Err(err) => {
-                eprintln!("failed to open font '{}': {}", font_path, err)
-            }
-        }
-    }
-
     let font_system = FontSystem::new();
 
     let font_matches = font_system.matches(|info| -> bool {
