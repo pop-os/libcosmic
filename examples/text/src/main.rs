@@ -6,7 +6,6 @@ use std::{
     time::Instant,
 };
 use text::{
-    Font,
     FontSystem,
     TextAction,
     TextCursor,
@@ -55,30 +54,37 @@ fn main() {
         }
     }
 
-    let mut font_system = FontSystem::new();
+    let font_system = FontSystem::new();
 
-    font_system.add(
-        Font::new(include_bytes!("../../../res/Fira/FiraSans-Regular.otf"), 0).unwrap()
-    );
-    font_system.add(
-        Font::new(include_bytes!("../../../res/Fira/FiraMono-Regular.otf"), 0).unwrap()
-    );
+    let font_matches = font_system.matches(|info| -> bool {
+        #[cfg(feature = "mono")]
+        let monospaced = true;
 
-    for (font_path, font_data, font_index) in &font_datas {
-        match Font::new(font_data, *font_index) {
-            Some(font) => font_system.add(font),
-            None => {
-                eprintln!("failed to parse font '{}'", font_path)
-            }
+        #[cfg(not(feature = "mono"))]
+        let monospaced = false;
+
+        let matched = {
+            info.style == fontdb::Style::Normal &&
+            info.weight == fontdb::Weight::NORMAL &&
+            info.stretch == fontdb::Stretch::Normal &&
+            (info.monospaced == monospaced || info.post_script_name.contains("Emoji"))
+        };
+
+        if matched {
+            println!(
+                "{:?}: family '{}' postscript name '{}' style {:?} weight {:?} stretch {:?} monospaced {:?}",
+                info.id,
+                info.family,
+                info.post_script_name,
+                info.style,
+                info.weight,
+                info.stretch,
+                info.monospaced
+            );
         }
-    }
 
-    #[cfg(feature = "mono")]
-    let font_pattern = &["Mono", "Emoji"];
-    #[cfg(not(feature = "mono"))]
-    let font_pattern = &["Sans", "Serif", "Emoji"];
-
-    let font_matches = font_system.matches(font_pattern).unwrap();
+        matched
+    }).unwrap();
 
     let bg_color = Color::rgb(0x34, 0x34, 0x34);
     let font_color = Color::rgb(0xFF, 0xFF, 0xFF);

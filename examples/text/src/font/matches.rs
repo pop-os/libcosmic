@@ -1,11 +1,11 @@
 use super::{Font, FontLineIndex, FontShapeGlyph, FontShapeWord, FontShapeLine, FontShapeSpan};
 
 pub struct FontMatches<'a> {
-    pub fonts: Vec<&'a Font<'a>>,
+    pub fonts: Vec<Font<'a>>,
 }
 
 impl<'a> FontMatches<'a> {
-    fn shape_word(&self, font_i: usize, line: &str, start_word: usize, end_word: usize, span_rtl: bool, blank: bool) -> FontShapeWord {
+    fn shape_fallback(&self, font_i: usize, line: &str, start_word: usize, end_word: usize, span_rtl: bool, blank: bool) -> (Vec<FontShapeGlyph>, Vec<usize>) {
         let word = &line[start_word..end_word];
 
         let font_scale = self.fonts[font_i].rustybuzz.units_per_em() as f32;
@@ -101,63 +101,74 @@ impl<'a> FontMatches<'a> {
             }
         }
 
+        (glyphs, missing)
+    }
+
+    fn shape_word(&self, line: &str, start_word: usize, end_word: usize, span_rtl: bool, blank: bool) -> FontShapeWord {
+        let mut font_i = 0;
+        let (mut glyphs, mut missing) = self.shape_fallback(font_i, line, start_word, end_word, span_rtl, blank);
+
         //TODO: improve performance!
-        if !missing.is_empty() && font_i + 1 < self.fonts.len() {
-            let mut missing_i = 0;
-            while missing_i < missing.len() {
-                let mut missing_glyph = missing[missing_i];
-                missing_i += 1;
+        font_i += 1;
+        while !missing.is_empty() && font_i < self.fonts.len() {
+            // println!("Evaluating fallback with font {}", font_i);
+            let (mut fb_glyphs, fb_missing) = self.shape_fallback(font_i, line, start_word, end_word, span_rtl, blank);
 
-                let mut start_glyph = missing_glyph;
+            // Insert all matching glyphs
+            let mut fb_i = 0;
+            while fb_i < fb_glyphs.len() {
+                let start = fb_glyphs[fb_i].start;
+                let end = fb_glyphs[fb_i].end;
 
-                // Find beginning of glyphs to replace
+                // Skip clusters that are not missing, or where the fallback font is missing
+                if !missing.contains(&start) || fb_missing.contains(&start) {
+                    fb_i += 1;
+                    continue;
+                }
+
+                let mut missing_i = 0;
+                while missing_i < missing.len() {
+                    if missing[missing_i] >= start && missing[missing_i] < end {
+                        // println!("No longer missing {}", missing[missing_i]);
+                        missing.remove(missing_i);
+                    } else {
+                        missing_i += 1;
+                    }
+                }
+
+                // Find prior glyphs
                 let mut i = 0;
                 while i < glyphs.len() {
-                    if glyphs[i].start == start_glyph {
+                    if glyphs[i].start >= start && glyphs[i].end <= end {
                         break;
+                    } else {
+                        i += 1;
                     }
-                    i += 1;
                 }
 
-                // Remove all matching glyphs and find end
-                let mut end_glyph = start_glyph;
+                // Remove prior glyphs
                 while i < glyphs.len() {
-                    if glyphs[i].start == missing_glyph {
-                        let glyph = glyphs.remove(i);
-                        if glyph.start < start_glyph {
-                            start_glyph = glyph.start;
-                        }
-                        if glyph.end > end_glyph {
-                            end_glyph = glyph.end;
-                        }
-                    } else if missing_i < missing.len() {
-                        // Combine repeated missing items
-                        if glyphs[i].start == missing[missing_i] {
-                            missing_glyph = missing[missing_i];
-                            missing_i += 1;
-                        } else {
-                            break;
-                        }
+                    if glyphs[i].start >= start && glyphs[i].end <= end {
+                        let _glyph = glyphs.remove(i);
+                        // println!("Removed {},{} from {}", _glyph.start, _glyph.end, i);
                     } else {
                         break;
                     }
                 }
 
-                let mut fb_word = self.shape_word(font_i + 1, line, start_glyph, end_glyph, span_rtl, blank);
-
-                // Insert all matching glyphs
-                // println!("Locate fallback for {},{} '{}' from font {} to font {}", start_glyph, end_glyph, &line[start_glyph..end_glyph], font_i + 1, font_i);
-                let mut j = 0;
-                while j < fb_word.glyphs.len() {
-                    if fb_word.glyphs[j].start >= start_glyph && fb_word.glyphs[j].end <= end_glyph {
-                        // println!("Copy fallback for {},{} '{}' from font {} cluster {} to font {}", start_glyph, end_glyph, &line[start_glyph..end_glyph], font_i + 1, fb_word.glyphs[j].start, font_i);
-                        glyphs.insert(i, fb_word.glyphs.remove(j));
+                while fb_i < fb_glyphs.len() {
+                    if fb_glyphs[fb_i].start >= start && fb_glyphs[fb_i].end <= end {
+                        let fb_glyph = fb_glyphs.remove(fb_i);
+                        // println!("Insert {},{} from font {} at {}", fb_glyph.start, fb_glyph.end, font_i, i);
+                        glyphs.insert(i, fb_glyph);
                         i += 1;
                     } else {
-                        j += 1;
+                        break;
                     }
                 }
             }
+
+            font_i += 1;
         }
 
         /*
@@ -187,10 +198,10 @@ impl<'a> FontMatches<'a> {
                 }
             }
             if start_word < start_lb {
-                words.push(self.shape_word(0, line, start_span + start_word, start_span + start_lb, span_rtl, false));
+                words.push(self.shape_word(line, start_span + start_word, start_span + start_lb, span_rtl, false));
             }
             if start_lb < end_lb {
-                words.push(self.shape_word(0, line, start_span + start_lb, start_span + end_lb, span_rtl, true));
+                words.push(self.shape_word(line, start_span + start_lb, start_span + end_lb, span_rtl, true));
             }
             start_word = end_lb;
         }
