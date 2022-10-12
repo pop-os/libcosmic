@@ -6,6 +6,7 @@ use std::{
     time::Instant,
 };
 use text::{
+    FontLineIndex,
     FontSystem,
     TextAction,
     TextCursor,
@@ -185,9 +186,16 @@ fn main() {
             window.set(bg_color);
 
             let mut line_y = line_height;
+            let mut start_line_opt = None;
+            let mut end_line = FontLineIndex::new(0);
             for (line_i, line) in buffer.layout_lines().iter().skip(scroll as usize).enumerate() {
                 if line_y >= window.height() as i32 {
                     break;
+                }
+
+                end_line = line.line_i;
+                if start_line_opt == None {
+                    start_line_opt = Some(end_line);
                 }
 
                 if buffer.cursor.line == line_i + scroll as usize {
@@ -223,6 +231,24 @@ fn main() {
                 });
 
                 line_y += line_height;
+            }
+
+            // Draw scrollbar
+            {
+                let start_line = start_line_opt.unwrap_or(end_line);
+                let lines = buffer.text_lines().len();
+                println!("{},{}/{}", start_line.get(), end_line.get(), lines);
+                let start_y = (start_line.get() * window.height() as usize) / lines;
+                let end_y = (end_line.get() * window.height() as usize) / lines;
+                if end_y > start_y {
+                    window.rect(
+                        window.width() as i32 - line_x as i32,
+                        start_y as i32,
+                        line_x as u32,
+                        (end_y - start_y) as u32,
+                        Color::rgba(0xFF, 0xFF, 0xFF, 0x40)
+                    );
+                }
             }
 
             window.sync();
