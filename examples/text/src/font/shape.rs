@@ -46,9 +46,9 @@ impl<'a> FontShapeGlyph<'a> {
 
         #[cfg(feature = "swash")]
         let inner = CacheKey::new(
-            (x + x_offset, y - y_offset),
+            self.inner,
             font_size,
-            self.inner
+            (x + x_offset, y - y_offset),
         );
 
         FontLayoutGlyph {

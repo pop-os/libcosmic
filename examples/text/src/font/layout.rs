@@ -11,7 +11,7 @@ pub struct FontLayoutGlyph<'a> {
     #[cfg(feature = "rusttype")]
     pub inner: rusttype::PositionedGlyph<'a>,
     #[cfg(feature = "swash")]
-    pub inner: (i32, i32, CacheKey),
+    pub inner: (CacheKey, i32, i32),
 }
 
 pub struct FontLayoutLine<'a> {
@@ -56,7 +56,7 @@ impl<'a> FontLayoutLine<'a> {
 
                 let mut cache = glyph.font.cache.lock().unwrap();
 
-                let (x_int, y_int, cache_key) = glyph.inner;
+                let (cache_key, x_int, y_int) = glyph.inner;
 
                 let image_opt = cache.entry(cache_key).or_insert_with(|| {
                     let mut scale_context = glyph.font.scale_context.lock().unwrap();

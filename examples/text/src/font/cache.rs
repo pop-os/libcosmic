@@ -1,24 +1,24 @@
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub struct CacheKey {
+    pub glyph_id: u16,
+    pub font_size: i32,
     pub x_bin: SubpixelBin,
     pub y_bin: SubpixelBin,
-    pub font_size: i32,
-    pub glyph_id: u16,
 }
 
 impl CacheKey {
-    pub fn new(pos: (f32, f32), font_size: i32, glyph_id: u16) -> (i32, i32, Self) {
+    pub fn new(glyph_id: u16, font_size: i32, pos: (f32, f32)) -> (Self, i32, i32) {
         let (x, x_bin) = SubpixelBin::new(pos.0);
         let (y, y_bin) = SubpixelBin::new(pos.1);
         (
-            x,
-            y,
             Self {
+                glyph_id,
+                font_size,
                 x_bin,
                 y_bin,
-                font_size,
-                glyph_id,
-            }
+            },
+            x,
+            y,
         )
     }
 }
