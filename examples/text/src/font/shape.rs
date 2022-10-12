@@ -178,8 +178,6 @@ impl<'a> FontShapeLine<'a> {
                     }
                 }
                 word_ranges.push((0..fitting_end, false));
-
-                println!("{:?}", word_ranges);
             } else {
                 let mut fit_x = x;
                 let mut fitting_start = 0;
