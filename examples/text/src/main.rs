@@ -237,7 +237,6 @@ fn main() {
             {
                 let start_line = start_line_opt.unwrap_or(end_line);
                 let lines = buffer.text_lines().len();
-                println!("{},{}/{}", start_line.get(), end_line.get(), lines);
                 let start_y = (start_line.get() * window.height() as usize) / lines;
                 let end_y = (end_line.get() * window.height() as usize) / lines;
                 if end_y > start_y {
