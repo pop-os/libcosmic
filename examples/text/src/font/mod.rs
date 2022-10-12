@@ -38,7 +38,9 @@ impl FontLineIndex {
 }
 
 pub struct Font<'a> {
-    data: &'a [u8],
+    pub name: &'a str,
+    pub data: &'a [u8],
+    pub index: u32,
     pub rustybuzz: rustybuzz::Face<'a>,
     #[cfg(feature = "ab_glyph")]
     pub ab_glyph: ab_glyph::FontRef<'a>,
@@ -52,9 +54,11 @@ pub struct Font<'a> {
 }
 
 impl<'a> Font<'a> {
-    pub fn new(data: &'a [u8], index: u32) -> Option<Self> {
+    pub fn new(name: &'a str, data: &'a [u8], index: u32) -> Option<Self> {
         Some(Self {
+            name,
             data,
+            index,
             rustybuzz: rustybuzz::Face::from_slice(data, index)?,
             #[cfg(feature = "ab_glyph")]
             ab_glyph: ab_glyph::FontRef::try_from_slice_and_index(data, index).ok()?,

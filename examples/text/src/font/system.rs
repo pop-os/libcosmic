@@ -43,6 +43,7 @@ impl FontSystem {
             }
 
             let font_opt = Font::new(
+                &face.post_script_name,
                 match &face.source {
                     fontdb::Source::Binary(data) => {
                         data.deref().as_ref()

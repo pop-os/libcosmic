@@ -201,7 +201,13 @@ fn main() {
                         );
 
                         let text_line = &buffer.text_lines()[line.line_i.get()];
-                        eprintln!("{}, {}: '{}'", glyph.start, glyph.end, &text_line[glyph.start..glyph.end]);
+                        eprintln!(
+                            "{}, {}: '{}': '{}'",
+                            glyph.start,
+                            glyph.end,
+                            glyph.font.name,
+                            &text_line[glyph.start..glyph.end],
+                        );
                     }
                 }
 
