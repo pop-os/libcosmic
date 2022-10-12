@@ -1,8 +1,7 @@
 #[cfg(feature = "ab_glyph")]
-use ab_glyph::Font;
-use core::marker::PhantomData;
+use ab_glyph::Font as _;
 
-use super::{FontLayoutGlyph, FontLayoutLine, FontLineIndex};
+use super::{CacheKey, Font, FontLayoutGlyph, FontLayoutLine, FontLineIndex};
 
 pub struct FontShapeGlyph<'a> {
     pub start: usize,
@@ -11,26 +10,23 @@ pub struct FontShapeGlyph<'a> {
     pub y_advance: f32,
     pub x_offset: f32,
     pub y_offset: f32,
-    #[cfg(feature = "ab_glyph")]
-    pub font: &'a ab_glyph::FontRef<'a>,
+    pub font: &'a Font<'a>,
     #[cfg(feature = "ab_glyph")]
     pub inner: ab_glyph::GlyphId,
     #[cfg(feature = "rusttype")]
     pub inner: rusttype::Glyph<'a>,
     #[cfg(feature = "swash")]
-    pub font: &'a swash::FontRef<'a>,
-    #[cfg(feature = "swash")]
     pub inner: swash::GlyphId,
 }
 
 impl<'a> FontShapeGlyph<'a> {
-    fn layout(&self, font_size: i32, x: f32, y: f32) -> FontLayoutGlyph<'a, ()> {
+    fn layout(&self, font_size: i32, x: f32, y: f32) -> FontLayoutGlyph<'a> {
         let x_offset = font_size as f32 * self.x_offset;
         let y_offset = font_size as f32 * self.y_offset;
         let x_advance = font_size as f32 * self.x_advance;
 
         #[cfg(feature = "ab_glyph")]
-        let inner = self.font.outline_glyph(
+        let inner = self.font.ab_glyph.outline_glyph(
             self.inner.with_scale_and_position(
                 font_size as f32,
                 ab_glyph::point(
@@ -49,55 +45,19 @@ impl<'a> FontShapeGlyph<'a> {
             ));
 
         #[cfg(feature = "swash")]
-        let inner = {
-            use swash::scale::{Render, ScaleContext, Source, StrikeWith};
-            use swash::zeno::{Format, Vector};
-
-            //TODO: store somewhere else
-            static mut CONTEXT: Option<ScaleContext> = None;
-
-            unsafe {
-                if CONTEXT.is_none() {
-                    CONTEXT = Some(ScaleContext::new());
-                }
-            }
-
-            // Build the scaler
-            let mut scaler = unsafe { CONTEXT.as_mut().unwrap() }
-                .builder(*self.font)
-                .size(font_size as f32)
-                .hint(true)
-                .build();
-
-            // Compute the fractional offset-- you'll likely want to quantize this
-            // in a real renderer
-            let offset = Vector::new((x + x_offset).fract(), (y - y_offset).fract());
-
-            // Select our source order
-            let image_opt = Render::new(&[
-                // Color outline with the first palette
-                Source::ColorOutline(0),
-                // Color bitmap with best fit selection mode
-                Source::ColorBitmap(StrikeWith::BestFit),
-                // Standard scalable outline
-                Source::Outline,
-            ])
-                // Select a subpixel format
-                .format(Format::Alpha)
-                // Apply the fractional offset
-                .offset(offset)
-                // Render the image
-                .render(&mut scaler, self.inner);
-            ((x + x_offset).trunc() as i32, (y - y_offset).trunc() as i32, image_opt)
-        };
+        let inner = CacheKey::new(
+            (x + x_offset, y - y_offset),
+            font_size,
+            self.inner
+        );
 
         FontLayoutGlyph {
             start: self.start,
             end: self.end,
             x: x,
             w: x_advance,
+            font: self.font,
             inner,
-            phantom: PhantomData,
         }
     }
 }

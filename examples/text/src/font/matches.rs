@@ -68,10 +68,7 @@ impl<'a> FontMatches<'a> {
                 y_advance,
                 x_offset,
                 y_offset,
-                #[cfg(feature = "ab_glyph")]
-                font: &self.fonts[font_i].ab_glyph,
-                #[cfg(feature = "swash")]
-                font: &self.fonts[font_i].swash,
+                font: &self.fonts[font_i],
                 inner,
             });
         }
