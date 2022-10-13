@@ -14,14 +14,29 @@ pub fn common_fallback() -> &'static [&'static str] {
 
 // Fallbacks to use per script
 pub fn script_fallback(script: &Script, locale: &str) -> &'static [&'static str] {
+    //TODO: better match https://github.com/chromium/chromium/blob/master/third_party/blink/renderer/platform/fonts/win/font_fallback_win.cc#L99
     match script {
         Script::Bengali => &["Nirmala UI"],
+        Script::Canadian_Aboriginal => &["Gadugi"],
+        Script::Cherokee => &["Gadugi"],
         Script::Devanagari => &["Nirmala UI"],
         Script::Gujarati => &["Nirmala UI"],
         Script::Gurmukhi => &["Nirmala UI"],
+        Script::Hangul => &["Malgun Gothic"],
+        Script::Kannada => &["Nirmala UI"],
+        Script::Khmer => &["Leelawadee UI"],
+        Script::Lao => &["Leelawadee UI"],
+        Script::Malayalam => &["Nirmala UI"],
+        Script::Mongolian => &["Mongolian Baiti"],
+        Script::Myanmar => &["Myanmar Text"],
+        Script::Oriya => &["Nirmala UI"],
+        Script::Sinhala => &["Nirmala UI"],
         Script::Tamil => &["Nirmala UI"],
         Script::Telugu => &["Nirmala UI"],
         Script::Thaana => &["MV Boli"],
+        Script::Thai => &["Leelawadee UI"],
+        Script::Tibetan => &["Microsoft Himalaya"],
+        Script::Yi => &["Microsoft Yi Baiti"],
         _ => &[],
     }
 }
