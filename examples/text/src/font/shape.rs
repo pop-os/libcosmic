@@ -26,27 +26,24 @@ impl<'a> FontShapeGlyph<'a> {
         let x_advance = font_size as f32 * self.x_advance;
 
         #[cfg(feature = "ab_glyph")]
-        let inner = self.font.ab_glyph.outline_glyph(
-            self.inner.with_scale_and_position(
+        let inner = self
+            .font
+            .ab_glyph
+            .outline_glyph(self.inner.with_scale_and_position(
                 font_size as f32,
-                ab_glyph::point(
-                    x + x_offset,
-                    y - y_offset,
-                )
-            )
-        );
+                ab_glyph::point(x + x_offset, y - y_offset),
+            ));
 
         #[cfg(feature = "rusttype")]
-        let inner = self.font.rusttype.glyph(self.inner)
+        let inner = self
+            .font
+            .rusttype
+            .glyph(self.inner)
             .scaled(rusttype::Scale::uniform(font_size as f32))
             .positioned(rusttype::point(x + x_offset, y - y_offset));
 
         #[cfg(feature = "swash")]
-        let inner = CacheKey::new(
-            self.inner,
-            font_size,
-            (x + x_offset, y - y_offset),
-        );
+        let inner = CacheKey::new(self.inner, font_size, (x + x_offset, y - y_offset));
 
         FontLayoutGlyph {
             start: self.start,

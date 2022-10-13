@@ -7,17 +7,19 @@ use iced_native::layout::{Limits, Node};
 use iced_native::overlay::from_children;
 use iced_native::renderer::Style;
 use iced_native::widget::{column, horizontal_rule, Operation, Tree};
-use iced_native::{row, Clipboard, Element, Event, Layout, Shell, Widget, renderer, Background, Color};
+use iced_native::{
+    renderer, row, Background, Clipboard, Color, Element, Event, Layout, Shell, Widget,
+};
 use iced_style::container::{Appearance, StyleSheet};
 use iced_style::theme;
 use iced_style::theme::Container;
 
 #[derive(Setters)]
 pub struct ListBox<'a, Message, Renderer>
-    where
-        Renderer: iced_native::Renderer,
-        Renderer::Theme: StyleSheet + iced_style::rule::StyleSheet,
-        <Renderer as iced_native::Renderer>::Theme: iced_style::rule::StyleSheet
+where
+    Renderer: iced_native::Renderer,
+    Renderer::Theme: StyleSheet + iced_style::rule::StyleSheet,
+    <Renderer as iced_native::Renderer>::Theme: iced_style::rule::StyleSheet,
 {
     spacing: u16,
     padding: Padding,
@@ -32,11 +34,23 @@ pub struct ListBox<'a, Message, Renderer>
     on_item_selected: Option<Box<dyn Fn(usize) -> Message + 'a>>,
 }
 
+pub fn list_box<'a, Message: 'a, Renderer>() -> ListBox<'a, Message, Renderer>
+where
+    Renderer: iced_native::Renderer + 'a,
+    <<Renderer as iced_native::Renderer>::Theme as StyleSheet>::Style: From<Container>,
+    <Renderer as iced_native::Renderer>::Theme: StyleSheet + iced_style::rule::StyleSheet,
+    <<Renderer as iced_native::Renderer>::Theme as iced_style::rule::StyleSheet>::Style:
+        From<theme::Rule>,
+{
+    ListBox::new()
+}
+
 impl<'a, Message: 'a, Renderer: iced_native::Renderer + 'a> ListBox<'a, Message, Renderer>
 where
     Renderer::Theme: StyleSheet + iced_style::rule::StyleSheet,
     <<Renderer as iced_native::Renderer>::Theme as StyleSheet>::Style: From<Container>,
-    <<Renderer as iced_native::Renderer>::Theme as iced_style::rule::StyleSheet>::Style: From<theme::Rule>
+    <<Renderer as iced_native::Renderer>::Theme as iced_style::rule::StyleSheet>::Style:
+        From<theme::Rule>,
 {
     /// The default padding of a [`ListBox`] drawn by this renderer.
     pub const DEFAULT_PADDING: u16 = 0;
@@ -53,24 +67,20 @@ where
         children: Vec<Element<'a, Message, Renderer>>,
         show_separators: bool,
     ) -> Self {
-        let end = children.len() - 1;
+        let children_size = children.len();
         let children: Vec<Element<Message, Renderer>> = children
             .into_iter()
             .enumerate()
             .map(|(index, child)| {
-                let row_items = if show_separators && index != end {
+                let row_items = if show_separators && index != children_size - 1 {
                     vec![
-                        row![child]
-                            .align_items(Alignment::Center)
+                        row![child].align_items(Alignment::Center).into(),
+                        horizontal_rule(1)
+                            .style(theme::Rule::Custom(separator_style))
                             .into(),
-                        horizontal_rule(1).style(theme::Rule::Custom(separator_style)).into(),
                     ]
                 } else {
-                    vec![
-                        row![child]
-                            .align_items(Alignment::Center)
-                            .into()
-                    ]
+                    vec![row![child].align_items(Alignment::Center).into()]
                 };
                 column(row_items).into()
             })
@@ -101,7 +111,8 @@ impl<'a, Message: 'a, Renderer: iced_native::Renderer + 'a> std::default::Defaul
 where
     Renderer::Theme: StyleSheet + iced_style::rule::StyleSheet,
     <<Renderer as iced_native::Renderer>::Theme as StyleSheet>::Style: From<Container>,
-    <<Renderer as iced_native::Renderer>::Theme as iced_style::rule::StyleSheet>::Style: From<theme::Rule>
+    <<Renderer as iced_native::Renderer>::Theme as iced_style::rule::StyleSheet>::Style:
+        From<theme::Rule>,
 {
     fn default() -> Self {
         Self::new()
@@ -111,7 +122,7 @@ where
 impl<'a, Message, Renderer> Widget<Message, Renderer> for ListBox<'a, Message, Renderer>
 where
     Renderer: iced_native::Renderer,
-    <Renderer as iced_native::Renderer>::Theme: StyleSheet + iced_style::rule::StyleSheet
+    <Renderer as iced_native::Renderer>::Theme: StyleSheet + iced_style::rule::StyleSheet,
 {
     fn width(&self) -> Length {
         self.width
@@ -354,7 +365,8 @@ pub fn draw_background<Renderer>(
 
 impl<'a, Message: 'a, Renderer: iced_native::Renderer + 'a> From<ListBox<'a, Message, Renderer>>
     for Element<'a, Message, Renderer>
-    where <Renderer as iced_native::Renderer>::Theme: StyleSheet + iced_style::rule::StyleSheet
+where
+    <Renderer as iced_native::Renderer>::Theme: StyleSheet + iced_style::rule::StyleSheet,
 {
     fn from(list_box: ListBox<'a, Message, Renderer>) -> Self {
         Self::new(list_box)
@@ -375,7 +387,7 @@ pub use list_box_item;
 
 #[macro_export]
 macro_rules! list_box_heading {
-    ($title:expr) => (
+    ($title:expr) => {
         $crate::iced::widget::container(
             $crate::iced::widget::row![
                 text($title).size(18),
@@ -383,106 +395,54 @@ macro_rules! list_box_heading {
                 $crate::iced::widget::horizontal_space(Length::Fill)
             ]
             .height(Length::Fill)
-            .align_items($crate::iced::alignment::Alignment::Center)
+            .align_items($crate::iced::alignment::Alignment::Center),
         )
-        .style($crate::iced::theme::Container::Custom($crate::widget::expander_heading_style))
+        .style($crate::iced::theme::Container::Custom(
+            $crate::widget::expander_heading_style,
+        ))
         .max_height(60)
         .padding(10)
-    );
-    ($title:expr, $subtitle:expr) => (
+    };
+    ($title:expr, $subtitle:expr) => {
         $crate::iced::widget::container(
             $crate::iced::widget::row![
-                column(
-                    vec![
-                        text($title).size(18).into(),
-                        text($subtitle).size(16).into(),
-                    ]
-                ),
+                column(vec![
+                    text($title).size(18).into(),
+                    text($subtitle).size(16).into(),
+                ]),
                 $crate::iced::widget::vertical_space(Length::Fill),
                 $crate::iced::widget::horizontal_space(Length::Fill)
             ]
             .height(Length::Fill)
-            .align_items($crate::iced::alignment::Alignment::Center)
+            .align_items($crate::iced::alignment::Alignment::Center),
         )
-        .style($crate::iced::theme::Container::Custom($crate::widget::expander_heading_style))
+        .style($crate::iced::theme::Container::Custom(
+            $crate::widget::expander_heading_style,
+        ))
         .max_height(60)
         .padding(10)
-    );
-    ($title:expr, $subtitle:expr, $icon:expr) => (
+    };
+    ($title:expr, $subtitle:expr, $icon:expr) => {
         $crate::iced::widget::container(
             $crate::iced::widget::row![
                 container($crate::widget::icon($icon, 20)).padding(10),
-                column(
-                    vec![
-                        text($title).size(18).into(),
-                        text($subtitle).size(16).into(),
-                    ]
-                ),
+                column(vec![
+                    text($title).size(18).into(),
+                    text($subtitle).size(16).into(),
+                ]),
                 $crate::iced::widget::vertical_space(Length::Fill),
                 $crate::iced::widget::horizontal_space(Length::Fill)
             ]
             .height(Length::Fill)
-            .align_items($crate::iced::alignment::Alignment::Center)
+            .align_items($crate::iced::alignment::Alignment::Center),
         )
-        .style($crate::iced::theme::Container::Custom($crate::widget::expander_heading_style))
+        .style($crate::iced::theme::Container::Custom(
+            $crate::widget::expander_heading_style,
+        ))
         .max_height(60)
         .padding(10)
-    );
+    };
 }
 pub use list_box_heading;
 
-#[macro_export]
-macro_rules! list_box_row {
-    ($title:expr) => (
-        $crate::iced::widget::container(
-            $crate::iced::widget::row![
-                text($title).size(18),
-                $crate::iced::widget::vertical_space(Length::Fill),
-                $crate::iced::widget::horizontal_space(Length::Fill)
-            ]
-            .height(Length::Fill)
-            .align_items($crate::iced::alignment::Alignment::Center)
-        )
-        .max_height(60)
-        .padding(10)
-    );
-    ($title:expr, $subtitle:expr) => (
-        $crate::iced::widget::container(
-            $crate::iced::widget::row![
-                column(
-                    vec![
-                        text($title).size(18).into(),
-                        text($subtitle).size(16).into(),
-                    ]
-                ),
-                $crate::iced::widget::vertical_space(Length::Fill),
-                $crate::iced::widget::horizontal_space(Length::Fill)
-            ]
-            .height(Length::Fill)
-            .align_items($crate::iced::alignment::Alignment::Center)
-        )
-        .max_height(60)
-        .padding(10)
-    );
-    ($title:expr, $subtitle:expr, $icon:expr) => (
-        $crate::iced::widget::container(
-            $crate::iced::widget::row![
-                container($crate::widget::icon($icon, 20)).padding(10),
-                column(
-                    vec![
-                        text($title).size(18).into(),
-                        text($subtitle).size(16).into(),
-                    ]
-                ),
-                $crate::iced::widget::vertical_space(Length::Fill),
-                $crate::iced::widget::horizontal_space(Length::Fill)
-            ]
-            .height(Length::Fill)
-            .align_items($crate::iced::alignment::Alignment::Center)
-        )
-        .max_height(60)
-        .padding(10)
-    );
-}
-pub use list_box_row;
 use crate::widget::separator_style;

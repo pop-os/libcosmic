@@ -66,7 +66,8 @@ impl<'a> FontLayoutLine<'a> {
 
                     // Compute the fractional offset-- you'll likely want to quantize this
                     // in a real renderer
-                    let offset = Vector::new(cache_key.x_bin.as_float(), cache_key.y_bin.as_float());
+                    let offset =
+                        Vector::new(cache_key.x_bin.as_float(), cache_key.y_bin.as_float());
 
                     // Select our source order
                     Render::new(&[
@@ -77,12 +78,12 @@ impl<'a> FontLayoutLine<'a> {
                         // Standard scalable outline
                         Source::Outline,
                     ])
-                        // Select a subpixel format
-                        .format(Format::Alpha)
-                        // Apply the fractional offset
-                        .offset(offset)
-                        // Render the image
-                        .render(&mut scaler, cache_key.glyph_id)
+                    // Select a subpixel format
+                    .format(Format::Alpha)
+                    // Apply the fractional offset
+                    .offset(offset)
+                    // Render the image
+                    .render(&mut scaler, cache_key.glyph_id)
                 });
 
                 if let Some(ref image) = image_opt {
@@ -96,28 +97,25 @@ impl<'a> FontLayoutLine<'a> {
                             let mut i = 0;
                             for off_y in 0..image.placement.height as i32 {
                                 for off_x in 0..image.placement.width as i32 {
-                                    let color =
-                                        (image.data[i] as u32) << 24 |
-                                        base & 0xFFFFFF;
+                                    let color = (image.data[i] as u32) << 24 | base & 0xFFFFFF;
                                     f(x + off_x, y + off_y, color);
                                     i += 1;
                                 }
                             }
-                        },
+                        }
                         Content::Color => {
                             let mut i = 0;
                             for off_y in 0..image.placement.height as i32 {
                                 for off_x in 0..image.placement.width as i32 {
-                                    let color =
-                                        (image.data[i + 3] as u32) << 24 |
-                                        (image.data[i] as u32) << 16 |
-                                        (image.data[i + 1] as u32) << 8 |
-                                        (image.data[i + 2] as u32);
+                                    let color = (image.data[i + 3] as u32) << 24
+                                        | (image.data[i] as u32) << 16
+                                        | (image.data[i + 1] as u32) << 8
+                                        | (image.data[i + 2] as u32);
                                     f(x + off_x, y + off_y, color);
                                     i += 4;
                                 }
                             }
-                        },
+                        }
                         Content::SubpixelMask => {
                             println!("TODO: SubpixelMask");
                         }

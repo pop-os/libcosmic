@@ -5,7 +5,15 @@ pub struct FontMatches<'a> {
 }
 
 impl<'a> FontMatches<'a> {
-    fn shape_fallback(&self, font_i: usize, line: &str, start_word: usize, end_word: usize, span_rtl: bool, blank: bool) -> (Vec<FontShapeGlyph>, Vec<usize>) {
+    fn shape_fallback(
+        &self,
+        font_i: usize,
+        line: &str,
+        start_word: usize,
+        end_word: usize,
+        span_rtl: bool,
+        blank: bool,
+    ) -> (Vec<FontShapeGlyph>, Vec<usize>) {
         let word = &line[start_word..end_word];
 
         let font_scale = self.fonts[font_i].rustybuzz.units_per_em() as f32;
@@ -101,15 +109,24 @@ impl<'a> FontMatches<'a> {
         (glyphs, missing)
     }
 
-    fn shape_word(&self, line: &str, start_word: usize, end_word: usize, span_rtl: bool, blank: bool) -> FontShapeWord {
+    fn shape_word(
+        &self,
+        line: &str,
+        start_word: usize,
+        end_word: usize,
+        span_rtl: bool,
+        blank: bool,
+    ) -> FontShapeWord {
         let mut font_i = 0;
-        let (mut glyphs, mut missing) = self.shape_fallback(font_i, line, start_word, end_word, span_rtl, blank);
+        let (mut glyphs, mut missing) =
+            self.shape_fallback(font_i, line, start_word, end_word, span_rtl, blank);
 
         //TODO: improve performance!
         font_i += 1;
         while !missing.is_empty() && font_i < self.fonts.len() {
             // println!("Evaluating fallback with font {}", font_i);
-            let (mut fb_glyphs, fb_missing) = self.shape_fallback(font_i, line, start_word, end_word, span_rtl, blank);
+            let (mut fb_glyphs, fb_missing) =
+                self.shape_fallback(font_i, line, start_word, end_word, span_rtl, blank);
 
             // Insert all matching glyphs
             let mut fb_i = 0;
@@ -187,7 +204,11 @@ impl<'a> FontMatches<'a> {
     ) -> FontShapeSpan {
         let span = &line[start_span..end_span];
 
-        log::debug!("  Span {}: '{}'", if span_rtl { "RTL" } else { "LTR" }, span);
+        log::debug!(
+            "  Span {}: '{}'",
+            if span_rtl { "RTL" } else { "LTR" },
+            span
+        );
 
         let mut words = Vec::new();
 
@@ -202,10 +223,22 @@ impl<'a> FontMatches<'a> {
                 }
             }
             if start_word < start_lb {
-                words.push(self.shape_word(line, start_span + start_word, start_span + start_lb, span_rtl, false));
+                words.push(self.shape_word(
+                    line,
+                    start_span + start_word,
+                    start_span + start_lb,
+                    span_rtl,
+                    false,
+                ));
             }
             if start_lb < end_lb {
-                words.push(self.shape_word(line, start_span + start_lb, start_span + end_lb, span_rtl, true));
+                words.push(self.shape_word(
+                    line,
+                    start_span + start_lb,
+                    start_span + end_lb,
+                    span_rtl,
+                    true,
+                ));
             }
             start_word = end_lb;
         }
