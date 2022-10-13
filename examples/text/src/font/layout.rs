@@ -117,7 +117,7 @@ impl<'a> FontLayoutLine<'a> {
                             }
                         }
                         Content::SubpixelMask => {
-                            println!("TODO: SubpixelMask");
+                            log::warn!("TODO: SubpixelMask");
                         }
                     }
                 }

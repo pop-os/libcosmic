@@ -3,28 +3,30 @@ use std::{cmp, env, fs, time::Instant};
 use text::{FontLineIndex, FontSystem, TextAction, TextBuffer, TextCursor};
 
 fn main() {
+    env_logger::init();
+
     let display_scale = match orbclient::get_display_size() {
         Ok((w, h)) => {
-            eprintln!("Display size: {}, {}", w, h);
+            log::info!("Display size: {}, {}", w, h);
             (h as i32 / 1600) + 1
         }
         Err(err) => {
-            eprintln!("Failed to get display size: {}", err);
+            log::warn!("Failed to get display size: {}", err);
             1
         }
     };
+
+    let font_system = FontSystem::new();
 
     let mut window = Window::new_flags(
         -1,
         -1,
         1024 * display_scale as u32,
         768 * display_scale as u32,
-        "COSMIC TEXT",
+        &format!("COSMIC TEXT - {}", font_system.locale),
         &[WindowFlag::Resizable],
     )
     .unwrap();
-
-    let font_system = FontSystem::new();
 
     let font_matches = font_system.matches(|info| -> bool {
         #[cfg(feature = "mono")]
@@ -66,7 +68,7 @@ fn main() {
         (28, 36), // Title 2
         (32, 44), // Title 1
     ];
-    let font_size_default = 2; // Title 4
+    let font_size_default = 1; // Body
     let mut font_size_i = font_size_default;
 
     let text = if let Some(arg) = env::args().nth(1) {
@@ -154,7 +156,7 @@ fn main() {
             rehit = false;
 
             let duration = instant.elapsed();
-            eprintln!("rehit: {:?}", duration);
+            log::debug!("rehit: {:?}", duration);
         }
 
         if buffer.redraw {
@@ -204,11 +206,12 @@ fn main() {
                         );
 
                         let text_line = &buffer.text_lines()[line.line_i.get()];
-                        eprintln!(
-                            "{}, {}: '{}': '{}'",
+                        log::info!(
+                            "{}, {}: '{}' ('{}'): '{}'",
                             glyph.start,
                             glyph.end,
-                            glyph.font.name,
+                            glyph.font.info.family,
+                            glyph.font.info.post_script_name,
                             &text_line[glyph.start..glyph.end],
                         );
                     }
@@ -243,7 +246,7 @@ fn main() {
             buffer.redraw = false;
 
             let duration = instant.elapsed();
-            eprintln!("redraw: {:?}", duration);
+            log::debug!("redraw: {:?}", duration);
         }
 
         for event in window.events() {

@@ -7,6 +7,7 @@ publish = false
 
 [dependencies]
 ab_glyph = { version = "0.2", optional = true }
+env_logger = "0.9"
 fontdb = "0.9"
 log = "0.4"
 orbclient = "0.3"
@@ -14,8 +15,10 @@ memmap2 = "0.5"
 rusttype = { version = "0.9", optional = true }
 rustybuzz = "0.5"
 swash = { version = "0.1", optional = true }
+sys-locale = "0.2"
 unicode-bidi = "0.3"
 unicode-linebreak = "0.1"
+unicode-script = "0.5"
 
 [features]
 default = ["swash"]

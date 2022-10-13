@@ -67,7 +67,7 @@ impl<'a> TextBuffer<'a> {
 
         let duration = instant.elapsed();
         if reshaped > 0 {
-            eprintln!("shape_until {}: {:?}", reshaped, duration);
+            log::debug!("shape_until {}: {:?}", reshaped, duration);
         }
     }
 
@@ -84,7 +84,7 @@ impl<'a> TextBuffer<'a> {
         }
 
         let duration = instant.elapsed();
-        eprintln!("reshape line {}: {:?}", line_i.get(), duration);
+        log::debug!("reshape line {}: {:?}", line_i.get(), duration);
 
         self.relayout_line(line_i);
     }
@@ -106,7 +106,7 @@ impl<'a> TextBuffer<'a> {
         self.redraw = true;
 
         let duration = instant.elapsed();
-        eprintln!("relayout: {:?}", duration);
+        log::debug!("relayout: {:?}", duration);
     }
 
     pub fn relayout_line(&mut self, line_i: FontLineIndex) {
@@ -139,7 +139,7 @@ impl<'a> TextBuffer<'a> {
         self.redraw = true;
 
         let duration = instant.elapsed();
-        eprintln!("relayout line {}: {:?}", line_i.get(), duration);
+        log::debug!("relayout line {}: {:?}", line_i.get(), duration);
     }
 
     pub fn font_size(&self) -> i32 {

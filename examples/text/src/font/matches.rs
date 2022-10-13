@@ -1,13 +1,17 @@
+use unicode_script::{Script, UnicodeScript};
+
 use super::{Font, FontLineIndex, FontShapeGlyph, FontShapeLine, FontShapeSpan, FontShapeWord};
+use super::fallback::{FontFallbackIter};
 
 pub struct FontMatches<'a> {
+    pub locale: &'a str,
     pub fonts: Vec<Font<'a>>,
 }
 
 impl<'a> FontMatches<'a> {
     fn shape_fallback(
         &self,
-        font_i: usize,
+        font: &'a Font<'a>,
         line: &str,
         start_word: usize,
         end_word: usize,
@@ -16,7 +20,7 @@ impl<'a> FontMatches<'a> {
     ) -> (Vec<FontShapeGlyph>, Vec<usize>) {
         let word = &line[start_word..end_word];
 
-        let font_scale = self.fonts[font_i].rustybuzz.units_per_em() as f32;
+        let font_scale = font.rustybuzz.units_per_em() as f32;
 
         let mut buffer = rustybuzz::UnicodeBuffer::new();
         buffer.set_direction(if span_rtl {
@@ -34,16 +38,7 @@ impl<'a> FontMatches<'a> {
         };
         assert_eq!(rtl, span_rtl);
 
-        if font_i == 0 {
-            log::debug!(
-                "    Word {}{}: '{}'",
-                if rtl { "RTL" } else { "LTR" },
-                if blank { " BLANK" } else { "" },
-                word
-            );
-        }
-
-        let glyph_buffer = rustybuzz::shape(&self.fonts[font_i].rustybuzz, &[], buffer);
+        let glyph_buffer = rustybuzz::shape(&font.rustybuzz, &[], buffer);
         let glyph_infos = glyph_buffer.glyph_infos();
         let glyph_positions = glyph_buffer.glyph_positions();
 
@@ -76,7 +71,7 @@ impl<'a> FontMatches<'a> {
                 y_advance,
                 x_offset,
                 y_offset,
-                font: &self.fonts[font_i],
+                font,
                 inner,
             });
         }
@@ -117,16 +112,62 @@ impl<'a> FontMatches<'a> {
         span_rtl: bool,
         blank: bool,
     ) -> FontShapeWord {
-        let mut font_i = 0;
-        let (mut glyphs, mut missing) =
-            self.shape_fallback(font_i, line, start_word, end_word, span_rtl, blank);
+        //TODO: use smallvec?
+        let mut scripts = Vec::new();
+        for c in line[start_word..end_word].chars() {
+            match c.script() {
+                Script::Common |
+                Script::Inherited |
+                Script::Latin |
+                Script::Unknown => (),
+                script => if ! scripts.contains(&script) {
+                    scripts.push(script);
+                },
+            }
+        }
+
+        if scripts.len() > 1 {
+            log::info!(
+                "    Word {:?}{}: '{}'",
+                scripts,
+                if blank { " BLANK" } else { "" },
+                &line[start_word..end_word],
+            );
+        } else {
+            log::debug!(
+                "    Word {:?}{}: '{}'",
+                scripts,
+                if blank { " BLANK" } else { "" },
+                &line[start_word..end_word],
+            );
+        }
+
+        let mut font_iter = FontFallbackIter::new(&self.fonts, scripts, &self.locale);
+
+        let (mut glyphs, mut missing) = self.shape_fallback(
+            font_iter.next().unwrap(),
+            line,
+            start_word,
+            end_word,
+            span_rtl,
+            blank
+        );
 
         //TODO: improve performance!
-        font_i += 1;
-        while !missing.is_empty() && font_i < self.fonts.len() {
-            // println!("Evaluating fallback with font {}", font_i);
-            let (mut fb_glyphs, fb_missing) =
-                self.shape_fallback(font_i, line, start_word, end_word, span_rtl, blank);
+        while let Some(font) = font_iter.next() {
+            if missing.is_empty() {
+                break;
+            }
+
+            log::trace!("Evaluating fallback with font '{}'", font.info.family);
+            let (mut fb_glyphs, fb_missing) = self.shape_fallback(
+                font,
+                line,
+                start_word,
+                end_word,
+                span_rtl,
+                blank
+            );
 
             // Insert all matching glyphs
             let mut fb_i = 0;
@@ -164,7 +205,7 @@ impl<'a> FontMatches<'a> {
                 while i < glyphs.len() {
                     if glyphs[i].start >= start && glyphs[i].end <= end {
                         let _glyph = glyphs.remove(i);
-                        // println!("Removed {},{} from {}", _glyph.start, _glyph.end, i);
+                        // log::trace!("Removed {},{} from {}", _glyph.start, _glyph.end, i);
                     } else {
                         break;
                     }
@@ -173,7 +214,7 @@ impl<'a> FontMatches<'a> {
                 while fb_i < fb_glyphs.len() {
                     if fb_glyphs[fb_i].start >= start && fb_glyphs[fb_i].end <= end {
                         let fb_glyph = fb_glyphs.remove(fb_i);
-                        // println!("Insert {},{} from font {} at {}", fb_glyph.start, fb_glyph.end, font_i, i);
+                        // log::trace!("Insert {},{} from font {} at {}", fb_glyph.start, fb_glyph.end, font_i, i);
                         glyphs.insert(i, fb_glyph);
                         i += 1;
                     } else {
@@ -181,13 +222,11 @@ impl<'a> FontMatches<'a> {
                     }
                 }
             }
-
-            font_i += 1;
         }
 
         /*
         for glyph in glyphs.iter() {
-            println!("'{}': {}, {}, {}, {}", &line[glyph.start..glyph.end], glyph.x_advance, glyph.y_advance, glyph.x_offset, glyph.y_offset);
+            log::trace!("'{}': {}, {}, {}, {}", &line[glyph.start..glyph.end], glyph.x_advance, glyph.y_advance, glyph.x_offset, glyph.y_offset);
         }
         */
 
