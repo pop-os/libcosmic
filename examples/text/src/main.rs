@@ -262,26 +262,36 @@ fn main() {
                     orbclient::K_PGUP if event.pressed => {
                         scroll -= window_lines;
                         buffer.redraw = true;
-                    }
+                    },
                     orbclient::K_PGDN if event.pressed => {
                         scroll += window_lines;
                         buffer.redraw = true;
-                    }
+                    },
                     orbclient::K_0 if event.pressed && ctrl_pressed => {
                         font_size_i = font_size_default;
                         buffer.set_font_size(font_sizes[font_size_i].0 * display_scale);
-                    }
+                    },
                     orbclient::K_MINUS if event.pressed && ctrl_pressed => {
                         if font_size_i > 0 {
                             font_size_i -= 1;
                             buffer.set_font_size(font_sizes[font_size_i].0 * display_scale);
                         }
-                    }
+                    },
                     orbclient::K_EQUALS if event.pressed && ctrl_pressed => {
                         if font_size_i + 1 < font_sizes.len() {
                             font_size_i += 1;
                             buffer.set_font_size(font_sizes[font_size_i].0 * display_scale);
                         }
+                    },
+                    orbclient::K_D if event.pressed && ctrl_pressed => {
+                        // Debug by shaping whole buffer
+                        log::info!("Shaping rest of buffer");
+                        let instant = Instant::now();
+
+                        buffer.shape_until(i32::max_value());
+
+                        let elapsed = instant.elapsed();
+                        log::info!("Shaped rest of buffer in {:?}", elapsed);
                     }
                     _ => (),
                 },

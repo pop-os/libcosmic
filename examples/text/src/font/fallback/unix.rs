@@ -4,12 +4,12 @@ use unicode_script::Script;
 pub fn common_fallback() -> &'static [&'static str] {
     //TODO: abstract style (sans/serif/monospaced)
     &[
-        "Fira Sans",
         "DejaVu Sans",
-        //"FreeSans",
+        "FreeSans",
         "Noto Sans Symbols",
         "Noto Sans Symbols2",
         "Noto Color Emoji",
+        //TODO: Add CJK script here for doublewides?
     ]
 }
 
@@ -17,14 +17,16 @@ pub fn common_fallback() -> &'static [&'static str] {
 pub fn script_fallback(script: &Script, locale: &str) -> &'static [&'static str] {
     //TODO: abstract style (sans/serif/monospaced)
     match script {
-        Script::Adlam => &["Noto Sans Adlam"],
+        Script::Adlam => &["Noto Sans Adlam", "Noto Sans Adlam Unjoined"],
         Script::Arabic => &["Noto Sans Arabic"],
+        Script::Armenian => &["Noto Sans Armenian"],
         Script::Bengali => &["Noto Sans Bengali"],
         Script::Chakma => &["Noto Sans Chakma"],
         Script::Cherokee => &["Noto Sans Cherokee"],
         Script::Devanagari => &["Noto Sans Devanagari"],
         Script::Ethiopic => &["Noto Sans Ethiopic"],
         Script::Hangul => &["Noto Sans CJK KR"],
+        Script::Georgian => &["Noto Sans Georgian"],
         Script::Grantha => &["Noto Sans Grantha"],
         Script::Gujarati => &["Noto Sans Gujarati"],
         Script::Gurmukhi => &["Noto Sans Gurmukhi"],
@@ -42,11 +44,13 @@ pub fn script_fallback(script: &Script, locale: &str) -> &'static [&'static str]
             // Simplified Chinese is the default
             _ => &["Noto Sans CJK SC"],
         },
+        Script::Hebrew => &["Noto Sans Hebrew"],
         Script::Hiragana => &["Noto Sans CJK JP"],
         Script::Javanese => &["Noto Sans Javanese"],
         Script::Kannada => &["Noto Sans Kannada"],
         Script::Katakana => &["Noto Sans CJK JP"],
         Script::Khmer => &["Noto Sans Khmer"],
+        Script::Lao => &["Noto Sans Lao"],
         Script::Malayalam => &["Noto Sans Malayalam"],
         Script::Mongolian => &["Noto Sans Mongolian"],
         Script::Myanmar => &["Noto Sans Myanmar"],
@@ -62,8 +66,9 @@ pub fn script_fallback(script: &Script, locale: &str) -> &'static [&'static str]
         Script::Thai => &["Noto Sans Thai"],
         //TODO: no sans script?
         Script::Tibetan => &["Noto Serif Tibetan"],
+        Script::Tifinagh => &["Noto Sans Tifinagh"],
         Script::Vai => &["Noto Sans Vai"],
-        Script::Yi => &["Noto Sans Yi", /*TODO: Choose a CJK font*/],
+        Script::Yi => &["Noto Sans Yi", "Noto Sans CJK SC"],
         _ => &[],
     }
 }

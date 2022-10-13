@@ -126,21 +126,12 @@ impl<'a> FontMatches<'a> {
             }
         }
 
-        if scripts.len() > 1 {
-            log::info!(
-                "    Word {:?}{}: '{}'",
-                scripts,
-                if blank { " BLANK" } else { "" },
-                &line[start_word..end_word],
-            );
-        } else {
-            log::trace!(
-                "    Word {:?}{}: '{}'",
-                scripts,
-                if blank { " BLANK" } else { "" },
-                &line[start_word..end_word],
-            );
-        }
+        log::trace!(
+            "    Word {:?}{}: '{}'",
+            scripts,
+            if blank { " BLANK" } else { "" },
+            &line[start_word..end_word],
+        );
 
         //TODO: configure default family
         let mut font_iter = FontFallbackIter::new(&self.fonts, Some("Fira Sans"), scripts, &self.locale);
@@ -225,6 +216,9 @@ impl<'a> FontMatches<'a> {
                 }
             }
         }
+
+        // Debug missing font fallbacks
+        font_iter.check_missing(&line[start_word..end_word]);
 
         /*
         for glyph in glyphs.iter() {

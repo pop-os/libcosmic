@@ -30,6 +30,7 @@ pub struct FontFallbackIter<'a> {
     script_i: (usize, usize),
     common_i: usize,
     other_i: usize,
+    end: bool,
 }
 
 impl<'a> FontFallbackIter<'a> {
@@ -42,6 +43,36 @@ impl<'a> FontFallbackIter<'a> {
             script_i: (0, 0),
             common_i: 0,
             other_i: 0,
+            end: false,
+        }
+    }
+
+    pub fn check_missing(&self, word: &str) {
+        if self.end {
+            log::warn!(
+                "Failed to find any fallback for {:?} locale '{}': '{}'",
+                self.scripts,
+                self.locale,
+                word
+            );
+        } else if self.other_i > 0 {
+            let font = &self.fonts[self.other_i - 1];
+            log::warn!(
+                "Failed to find preset fallback for {:?} locale '{}', used '{}': '{}'",
+                self.scripts,
+                self.locale,
+                font.info.family,
+                word
+            );
+        } else if ! self.scripts.is_empty() && self.common_i > 0 {
+            let family = common_fallback()[self.common_i - 1];
+            log::debug!(
+                "Failed to find script fallback for {:?} locale '{}', used '{}': '{}'",
+                self.scripts,
+                self.locale,
+                family,
+                word
+            );
         }
     }
 }
@@ -69,7 +100,7 @@ impl<'a> Iterator for FontFallbackIter<'a> {
                         return Some(font);
                     }
                 }
-                log::warn!("failed to find family '{}' for script {:?} and locale '{}'", script_family, script, self.locale)
+                log::warn!("failed to find family '{}' for script {:?} and locale '{}'", script_family, script, self.locale);
             }
 
             self.script_i.0 += 1;
@@ -82,7 +113,6 @@ impl<'a> Iterator for FontFallbackIter<'a> {
             self.common_i += 1;
             for font in self.fonts.iter() {
                 if font.info.family == common_family {
-                    log::debug!("Trying '{}' for scripts {:?} and locale '{}'", font.info.family, self.scripts, self.locale);
                     return Some(font);
                 }
             }
@@ -94,10 +124,10 @@ impl<'a> Iterator for FontFallbackIter<'a> {
         while self.other_i < self.fonts.len() {
             let font = &self.fonts[self.other_i];
             self.other_i += 1;
-            log::info!("Trying '{}' for scripts {:?} and locale '{}'", font.info.family, self.scripts, self.locale);
             return Some(font);
         }
 
+        self.end = true;
         None
     }
 }
