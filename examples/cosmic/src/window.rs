@@ -1,4 +1,4 @@
-use cosmic::widget::{expander, nav_bar, nav_bar_page, nav_bar_section};
+use cosmic::widget::{expander, nav_bar, nav_bar_item};
 use cosmic::{
     iced::widget::{
         checkbox, column, container, horizontal_space, pick_list, progress_bar, radio, row, slider,
@@ -14,7 +14,8 @@ use std::collections::BTreeMap;
 
 #[derive(Default)]
 pub struct Window {
-    page: u8,
+    page: usize,
+    section: usize,
     debug: bool,
     theme: Theme,
     slider_value: f32,
@@ -47,7 +48,7 @@ impl Window {
 #[allow(dead_code)]
 #[derive(Clone, Copy, Debug)]
 pub enum Message {
-    Page(u8),
+    Page(usize, usize),
     Debug(bool),
     ThemeChanged(Theme),
     ButtonPressed,
@@ -86,7 +87,10 @@ impl Application for Window {
 
     fn update(&mut self, message: Message) -> iced::Command<Self::Message> {
         match message {
-            Message::Page(page) => self.page = page,
+            Message::Page(section, page) => {
+                self.page = page;
+                self.section = section;
+            }
             Message::Debug(debug) => self.debug = debug,
             Message::ThemeChanged(theme) => self.theme = theme,
             Message::ButtonPressed => {}
@@ -128,79 +132,49 @@ impl Application for Window {
         // responsive and leave the content to be sized normally.
         let content = responsive(|size| {
             let condensed = size.width < 900.0;
-
-            // cosmic::navbar![
-            //     nav_button!("network-wireless", "Network & Wireless", condensed)
-            //         .on_press(Message::Page(0))
-            //         .style(if self.page == 0 {
-            //             theme::Button::Primary
-            //         } else {
-            //             theme::Button::Text
-            //         }),
-            //     nav_button!("preferences-desktop", "Bluetooth", condensed)
-            //         .on_press(Message::Page(1))
-            //         .style(if self.page == 1 {
-            //             theme::Button::Primary
-            //         } else {
-            //             theme::Button::Text
-            //         }),
-            //     nav_button!("system-software-update", "Personalization", condensed)
-            //         .on_press(Message::Page(2))
-            //         .style(if self.page == 2 {
-            //             theme::Button::Primary
-            //         } else {
-            //             theme::Button::Text
-            //         }),
-            // ]
-
             let sidebar: Element<_> = nav_bar()
                 .source(BTreeMap::from([
                     (
-                        nav_bar_section()
+                        nav_bar_item()
                             .title("Network & Wireless")
-                            .icon("network-wireless"),
-                        vec![nav_bar_page("Wi-Fi")],
+                            .icon("nm-device-wired"),
+                        vec![nav_bar_item().title("Wi-Fi").icon("network-wireless")],
                     ),
                     (
-                        nav_bar_section()
-                            .title("Bluetooth")
-                            .icon("cs-bluetooth"),
-                        vec![nav_bar_page("Devices")],
+                        nav_bar_item().title("Bluetooth").icon("cs-bluetooth"),
+                        vec![nav_bar_item().title("Devices").icon("computer")],
                     ),
                     (
-                        nav_bar_section()
+                        nav_bar_item()
                             .title("Personalization")
                             .icon("applications-system"),
                         vec![
-                            nav_bar_page("Desktop Session"),
-                            nav_bar_page("Wallpaper"),
-                            nav_bar_page("Appearance"),
-                            nav_bar_page("Dock & Top Panel"),
-                            nav_bar_page("Workspaces"),
-                            nav_bar_page("Notifications"),
+                            nav_bar_item().title("Desktop Session").icon("desktop-panel"),
+                            nav_bar_item().title("Wallpaper").icon("preferences-desktop-wallpaper"),
+                            nav_bar_item().title("Appearance").icon("cs-color"),
+                            nav_bar_item().title("Dock & Top Panel").icon("desktop-panel"),
+                            nav_bar_item().title("Workspaces").icon("preferences-system-windows"),
+                            nav_bar_item().title("Notifications").icon("cs-notifications"),
                         ],
                     ),
                     (
-                        nav_bar_section()
-                            .title("Input Devices")
-                            .icon("input-keyboard"),
-                        vec![nav_bar_page("Keyboard")],
+                        nav_bar_item().title("Input Devices").icon("input-keyboard"),
+                        vec![nav_bar_item().title("Keyboard").icon("computer")],
                     ),
                     (
-                        nav_bar_section().title("Displays").icon("cs-display"),
-                        vec![nav_bar_page("Keyboard")],
+                        nav_bar_item().title("Displays").icon("cs-display"),
+                        vec![nav_bar_item().title("External Monitors").icon("computer")],
                     ),
                     (
-                        nav_bar_section()
-                            .title("Power & Battery")
-                            .icon("battery"),
-                        vec![nav_bar_page("Status")],
+                        nav_bar_item().title("Power & Battery").icon("battery"),
+                        vec![nav_bar_item().title("Status").icon("computer")],
                     ),
                     (
-                        nav_bar_section().title("Sound").icon("sound"),
-                        vec![nav_bar_page("Volume")],
+                        nav_bar_item().title("Sound").icon("sound"),
+                        vec![nav_bar_item().title("Volume").icon("computer")],
                     ),
                 ]))
+                .on_page_selected(Box::new(Message::Page))
                 .active(self.sidebar_toggled)
                 .condensed(condensed)
                 .into();
