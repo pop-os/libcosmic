@@ -13,6 +13,23 @@ pub fn common_fallback() -> &'static [&'static str] {
     ]
 }
 
+fn han_unification(locale: &str) -> &'static [&'static str] {
+    match locale {
+        // Japan
+        "ja" => &["Noto Sans CJK JA"],
+        // Korea
+        "ko" => &["Noto Sans CJK KR"],
+        // China
+        "zh-CN" => &["Noto Sans CJK SC"],
+        // Hong Kong
+        "zh-HK" => &["Noto Sans CJK HK"],
+        // Taiwan
+        "zh-TW" => &["Noto Sans CJK TC"],
+        // Simplified Chinese is the default
+        _ => &["Noto Sans CJK SC"],
+    }
+}
+
 // Fallbacks to use per script
 pub fn script_fallback(script: &Script, locale: &str) -> &'static [&'static str] {
     //TODO: abstract style (sans/serif/monospaced)
@@ -21,29 +38,21 @@ pub fn script_fallback(script: &Script, locale: &str) -> &'static [&'static str]
         Script::Arabic => &["Noto Sans Arabic"],
         Script::Armenian => &["Noto Sans Armenian"],
         Script::Bengali => &["Noto Sans Bengali"],
+        Script::Bopomofo => han_unification(locale),
+        Script::Buhid => &["Noto Sans Buhid"],
         Script::Chakma => &["Noto Sans Chakma"],
         Script::Cherokee => &["Noto Sans Cherokee"],
+        Script::Deseret => &["Noto Sans Deseret"],
         Script::Devanagari => &["Noto Sans Devanagari"],
         Script::Ethiopic => &["Noto Sans Ethiopic"],
         Script::Hangul => &["Noto Sans CJK KR"],
         Script::Georgian => &["Noto Sans Georgian"],
+        Script::Gothic => &["Noto Sans Gothic"],
         Script::Grantha => &["Noto Sans Grantha"],
         Script::Gujarati => &["Noto Sans Gujarati"],
         Script::Gurmukhi => &["Noto Sans Gurmukhi"],
-        Script::Han => match locale {
-            // Japan
-            "ja" => &["Noto Sans CJK JA"],
-            // Korea
-            "ko" => &["Noto Sans CJK KR"],
-            // China
-            "zh-CN" => &["Noto Sans CJK SC"],
-            // Hong Kong
-            "zh-HK" => &["Noto Sans CJK HK"],
-            // Taiwan
-            "zh-TW" => &["Noto Sans CJK TC"],
-            // Simplified Chinese is the default
-            _ => &["Noto Sans CJK SC"],
-        },
+        Script::Han => han_unification(locale),
+        Script::Hanunoo => &["Noto Sans Hanunoo"],
         Script::Hebrew => &["Noto Sans Hebrew"],
         Script::Hiragana => &["Noto Sans CJK JP"],
         Script::Javanese => &["Noto Sans Javanese"],
@@ -54,12 +63,15 @@ pub fn script_fallback(script: &Script, locale: &str) -> &'static [&'static str]
         Script::Malayalam => &["Noto Sans Malayalam"],
         Script::Mongolian => &["Noto Sans Mongolian"],
         Script::Myanmar => &["Noto Sans Myanmar"],
+        Script::Oriya => &["Noto Sans Oriya"],
+        Script::Runic => &["Noto Sans Runic"],
         Script::Sinhala => &["Noto Sans Sinhala"],
         Script::Syriac => &["Noto Sans Syriac"],
         Script::Tai_Le => &["Noto Sans Tai Le"],
         Script::Tai_Tham => &["Noto Sans Tai Tham"],
         Script::Tai_Viet => &["Noto Sans Tai Viet"],
         Script::Tagalog => &["Noto Sans Tagalog"],
+        Script::Tagbanwa => &["Noto Sans Tagbanwa"],
         Script::Tamil => &["Noto Sans Tamil"],
         Script::Telugu => &["Noto Sans Telugu"],
         Script::Thaana => &["Noto Sans Thaana"],
@@ -68,6 +80,7 @@ pub fn script_fallback(script: &Script, locale: &str) -> &'static [&'static str]
         Script::Tibetan => &["Noto Serif Tibetan"],
         Script::Tifinagh => &["Noto Sans Tifinagh"],
         Script::Vai => &["Noto Sans Vai"],
+        //TODO: Use han_unification?
         Script::Yi => &["Noto Sans Yi", "Noto Sans CJK SC"],
         _ => &[],
     }
