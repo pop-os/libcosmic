@@ -58,7 +58,7 @@ impl<'a> TextBuffer<'a> {
 
         let mut reshaped = 0;
         while self.shape_lines.len() < self.text_lines.len()
-        && (self.layout_lines.len() as i32) < lines
+            && (self.layout_lines.len() as i32) < lines
         {
             let line_i = FontLineIndex::new(self.shape_lines.len());
             self.reshape_line(line_i);
@@ -74,7 +74,9 @@ impl<'a> TextBuffer<'a> {
     pub fn reshape_line(&mut self, line_i: FontLineIndex) {
         let instant = Instant::now();
 
-        let shape_line = self.font_matches.shape_line(line_i, &self.text_lines[line_i.get()]);
+        let shape_line = self
+            .font_matches
+            .shape_line(line_i, &self.text_lines[line_i.get()]);
         if line_i.get() < self.shape_lines.len() {
             self.shape_lines[line_i.get()] = shape_line;
         } else {
@@ -131,7 +133,7 @@ impl<'a> TextBuffer<'a> {
             self.font_size,
             self.line_width,
             &mut self.layout_lines,
-            insert_i
+            insert_i,
         );
 
         self.redraw = true;

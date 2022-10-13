@@ -1,7 +1,4 @@
-use std::{
-    collections::HashMap,
-    sync::Mutex,
-};
+use std::{collections::HashMap, sync::Mutex};
 
 pub use self::cache::*;
 mod cache;
@@ -21,7 +18,6 @@ mod system;
 #[derive(Clone, Copy, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub struct FontCacheKey {
     glyph_id: u16,
-
 }
 
 #[derive(Clone, Copy, Eq, PartialEq, Ord, PartialOrd)]

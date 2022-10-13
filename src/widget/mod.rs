@@ -7,14 +7,8 @@ pub use header_bar::*;
 mod icon;
 pub use self::icon::*;
 
-mod list;
-pub use list::*;
-
-mod nav;
-pub use nav::*;
-
-mod navbar;
-pub use navbar::*;
+pub mod navigation;
+pub use navigation::*;
 
 mod toggler;
 pub use toggler::*;
@@ -25,5 +19,5 @@ pub use scrollable::*;
 mod expander;
 pub use expander::*;
 
-pub mod list_box;
-pub use list_box::*;
+pub mod list;
+pub use list::*;

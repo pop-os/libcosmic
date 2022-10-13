@@ -30,31 +30,28 @@ impl FontSystem {
             }
         }
 
-        Self {
-            db,
-        }
+        Self { db }
     }
 
-    pub fn matches<'a, F: Fn(&fontdb::FaceInfo) -> bool>(&'a self, f: F) -> Option<FontMatches<'a>> {
+    pub fn matches<'a, F: Fn(&fontdb::FaceInfo) -> bool>(
+        &'a self,
+        f: F,
+    ) -> Option<FontMatches<'a>> {
         let mut fonts = Vec::new();
         for face in self.db.faces() {
-            if ! f(face) {
+            if !f(face) {
                 continue;
             }
 
             let font_opt = Font::new(
                 &face.post_script_name,
                 match &face.source {
-                    fontdb::Source::Binary(data) => {
-                        data.deref().as_ref()
-                    },
+                    fontdb::Source::Binary(data) => data.deref().as_ref(),
                     fontdb::Source::File(path) => {
                         println!("Unsupported fontdb Source::File('{}')", path.display());
                         continue;
-                    },
-                    fontdb::Source::SharedFile(_path, data) => {
-                        data.deref().as_ref()
-                    },
+                    }
+                    fontdb::Source::SharedFile(_path, data) => data.deref().as_ref(),
                 },
                 face.index,
             );
@@ -67,10 +64,8 @@ impl FontSystem {
             }
         }
 
-        if ! fonts.is_empty() {
-            Some(FontMatches {
-                fonts
-            })
+        if !fonts.is_empty() {
+            Some(FontMatches { fonts })
         } else {
             None
         }

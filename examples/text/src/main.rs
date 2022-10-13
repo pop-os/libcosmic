@@ -1,17 +1,6 @@
 use orbclient::{Color, EventOption, Renderer, Window, WindowFlag};
-use std::{
-    cmp,
-    env,
-    fs,
-    time::Instant,
-};
-use text::{
-    FontLineIndex,
-    FontSystem,
-    TextAction,
-    TextCursor,
-    TextBuffer,
-};
+use std::{cmp, env, fs, time::Instant};
+use text::{FontLineIndex, FontSystem, TextAction, TextBuffer, TextCursor};
 
 fn main() {
     let display_scale = match orbclient::get_display_size() {
@@ -112,10 +101,13 @@ fn main() {
 
         buffer.shape_until(scroll + window_lines);
 
-        scroll = cmp::max(0, cmp::min(
-            buffer.layout_lines().len() as i32 - (window_lines - 1),
-            scroll
-        ));
+        scroll = cmp::max(
+            0,
+            cmp::min(
+                buffer.layout_lines().len() as i32 - (window_lines - 1),
+                scroll,
+            ),
+        );
 
         if rehit {
             let instant = Instant::now();
@@ -173,7 +165,12 @@ fn main() {
             let mut line_y = line_height;
             let mut start_line_opt = None;
             let mut end_line = FontLineIndex::new(0);
-            for (line_i, line) in buffer.layout_lines().iter().skip(scroll as usize).enumerate() {
+            for (line_i, line) in buffer
+                .layout_lines()
+                .iter()
+                .skip(scroll as usize)
+                .enumerate()
+            {
                 if line_y >= window.height() as i32 {
                     break;
                 }
@@ -236,7 +233,7 @@ fn main() {
                         start_y as i32,
                         line_x as u32,
                         (end_y - start_y) as u32,
-                        Color::rgba(0xFF, 0xFF, 0xFF, 0x40)
+                        Color::rgba(0xFF, 0xFF, 0xFF, 0x40),
                     );
                 }
             }
@@ -251,39 +248,39 @@ fn main() {
 
         for event in window.events() {
             match event.to_option() {
-                EventOption::Key(event) => {
-                    match event.scancode {
-                        orbclient::K_CTRL => ctrl_pressed = event.pressed,
-                        orbclient::K_LEFT if event.pressed => buffer.action(TextAction::Left),
-                        orbclient::K_RIGHT if event.pressed => buffer.action(TextAction::Right),
-                        orbclient::K_UP if event.pressed => buffer.action(TextAction::Up),
-                        orbclient::K_DOWN if event.pressed => buffer.action(TextAction::Down),
-                        orbclient::K_BKSP if event.pressed => buffer.action(TextAction::Backspace),
-                        orbclient::K_DEL if event.pressed => buffer.action(TextAction::Delete),
-                        orbclient::K_PGUP if event.pressed => {
-                            scroll -= window_lines;
-                            buffer.redraw = true;
-                        },
-                        orbclient::K_PGDN if event.pressed => {
-                            scroll += window_lines;
-                            buffer.redraw = true;
-                        },
-                        orbclient::K_0 if event.pressed && ctrl_pressed => {
-                            font_size_i = font_size_default;
-                            buffer.set_font_size(font_sizes[font_size_i].0 * display_scale);
-                        },
-                        orbclient::K_MINUS if event.pressed && ctrl_pressed => if font_size_i > 0 {
+                EventOption::Key(event) => match event.scancode {
+                    orbclient::K_CTRL => ctrl_pressed = event.pressed,
+                    orbclient::K_LEFT if event.pressed => buffer.action(TextAction::Left),
+                    orbclient::K_RIGHT if event.pressed => buffer.action(TextAction::Right),
+                    orbclient::K_UP if event.pressed => buffer.action(TextAction::Up),
+                    orbclient::K_DOWN if event.pressed => buffer.action(TextAction::Down),
+                    orbclient::K_BKSP if event.pressed => buffer.action(TextAction::Backspace),
+                    orbclient::K_DEL if event.pressed => buffer.action(TextAction::Delete),
+                    orbclient::K_PGUP if event.pressed => {
+                        scroll -= window_lines;
+                        buffer.redraw = true;
+                    }
+                    orbclient::K_PGDN if event.pressed => {
+                        scroll += window_lines;
+                        buffer.redraw = true;
+                    }
+                    orbclient::K_0 if event.pressed && ctrl_pressed => {
+                        font_size_i = font_size_default;
+                        buffer.set_font_size(font_sizes[font_size_i].0 * display_scale);
+                    }
+                    orbclient::K_MINUS if event.pressed && ctrl_pressed => {
+                        if font_size_i > 0 {
                             font_size_i -= 1;
                             buffer.set_font_size(font_sizes[font_size_i].0 * display_scale);
                         }
-                        orbclient::K_EQUALS if event.pressed && ctrl_pressed => {
-                            if font_size_i + 1 < font_sizes.len() {
-                                font_size_i += 1;
-                                buffer.set_font_size(font_sizes[font_size_i].0 * display_scale);
-                            }
-                        }
-                    _ => (),
                     }
+                    orbclient::K_EQUALS if event.pressed && ctrl_pressed => {
+                        if font_size_i + 1 < font_sizes.len() {
+                            font_size_i += 1;
+                            buffer.set_font_size(font_sizes[font_size_i].0 * display_scale);
+                        }
+                    }
+                    _ => (),
                 },
                 EventOption::TextInput(event) if !ctrl_pressed => {
                     buffer.action(TextAction::Insert(event.character));

@@ -1,6 +1,6 @@
 use std::vec;
 
-use crate::list_box_row;
+use crate::{list_box_row, widget::ListRow};
 use apply::Apply;
 use derive_setters::Setters;
 use iced::{
@@ -20,7 +20,7 @@ pub struct Expander<'a, Message> {
     icon: Option<String>,
     expansible: bool,
     #[setters(skip)]
-    rows: Option<Vec<ExpanderRow<'a>>>,
+    rows: Option<Vec<ListRow<'a>>>,
     #[setters(strip_option)]
     on_row_selected: Option<Box<dyn Fn(usize) -> Message + 'a>>,
 }
@@ -33,23 +33,6 @@ pub fn expander<'a, Message>() -> Expander<'a, Message> {
         expansible: false,
         rows: None,
         on_row_selected: None,
-    }
-}
-
-#[derive(Setters, Default, Debug, Clone)]
-pub struct ExpanderRow<'a> {
-    pub(crate) title: &'a str,
-    #[setters(strip_option)]
-    pub subtitle: Option<&'a str>,
-    #[setters(strip_option)]
-    pub icon: Option<String>,
-}
-
-pub fn expander_row<'a>() -> ExpanderRow<'a> {
-    ExpanderRow {
-        title: "",
-        subtitle: None,
-        icon: None,
     }
 }
 
@@ -70,13 +53,13 @@ pub enum ExpanderEvent {
 }
 
 impl<'a, Message> Expander<'a, Message> {
-    pub fn rows(mut self, rows: Vec<ExpanderRow<'a>>) -> Self {
+    pub fn rows(mut self, rows: Vec<ListRow<'a>>) -> Self {
         self.rows = Some(rows);
         self.expansible = true;
         self
     }
 
-    pub fn push(&mut self, row: ExpanderRow<'a>) {
+    pub fn push(&mut self, row: ListRow<'a>) {
         if self.rows.is_none() {
             self.rows = Some(vec![])
         }
