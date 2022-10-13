@@ -43,9 +43,9 @@ pub fn script_fallback(script: &Script, locale: &str) -> &'static [&'static str]
         Script::Gurmukhi => &["Nirmala UI"],
         Script::Han => han_unification(locale),
         Script::Hangul => &["Malgun Gothic"],
-        Script::Hiragana => &["Meiryo"]
+        Script::Hiragana => &["Meiryo"],
         Script::Kannada => &["Nirmala UI"],
-        Script::Katakana => &["Meiryo"]
+        Script::Katakana => &["Meiryo"],
         Script::Khmer => &["Leelawadee UI"],
         Script::Lao => &["Leelawadee UI"],
         Script::Malayalam => &["Nirmala UI"],
