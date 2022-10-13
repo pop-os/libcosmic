@@ -1,4 +1,4 @@
-use cosmic::widget::{expander, ListBox};
+use cosmic::widget::{expander, nav_bar, nav_bar_page, nav_bar_section};
 use cosmic::{
     iced::widget::{
         checkbox, column, container, horizontal_space, pick_list, progress_bar, radio, row, slider,
@@ -7,9 +7,10 @@ use cosmic::{
     iced::{self, theme, Alignment, Application, Color, Command, Element, Length, Theme},
     iced_lazy::responsive,
     iced_winit::window::{drag, maximize, minimize},
-    list_item, list_row, list_section, list_view, nav_button, scrollable,
-    widget::{button, header_bar, list_row, list_view::*, nav_bar::nav_bar_style, toggler},
+    list_view, list_view_item, list_view_row, list_view_section, scrollable,
+    widget::{button, header_bar, list_box, list_row, list_view::*, toggler},
 };
+use std::collections::BTreeMap;
 
 #[derive(Default)]
 pub struct Window {
@@ -101,7 +102,7 @@ impl Application for Window {
             Message::RowSelected(row) => println!("Selected row {row}"),
         }
 
-        iced::Command::none()
+        Command::none()
     }
 
     fn view(&self) -> Element<Message> {
@@ -128,38 +129,84 @@ impl Application for Window {
         let content = responsive(|size| {
             let condensed = size.width < 900.0;
 
-            let sidebar: Element<_> = cosmic::navbar![
-                nav_button!("network-wireless", "Wi-Fi", condensed)
-                    .on_press(Message::Page(0))
-                    .style(if self.page == 0 {
-                        theme::Button::Primary
-                    } else {
-                        theme::Button::Text
-                    }),
-                nav_button!("preferences-desktop", "Desktop", condensed)
-                    .on_press(Message::Page(1))
-                    .style(if self.page == 1 {
-                        theme::Button::Primary
-                    } else {
-                        theme::Button::Text
-                    }),
-                nav_button!("system-software-update", "OS Upgrade & Recovery", condensed)
-                    .on_press(Message::Page(2))
-                    .style(if self.page == 2 {
-                        theme::Button::Primary
-                    } else {
-                        theme::Button::Text
-                    }),
-            ]
-            .active(self.sidebar_toggled)
-            .condensed(condensed)
-            .style(theme::Container::Custom(nav_bar_style))
-            .into();
+            // cosmic::navbar![
+            //     nav_button!("network-wireless", "Network & Wireless", condensed)
+            //         .on_press(Message::Page(0))
+            //         .style(if self.page == 0 {
+            //             theme::Button::Primary
+            //         } else {
+            //             theme::Button::Text
+            //         }),
+            //     nav_button!("preferences-desktop", "Bluetooth", condensed)
+            //         .on_press(Message::Page(1))
+            //         .style(if self.page == 1 {
+            //             theme::Button::Primary
+            //         } else {
+            //             theme::Button::Text
+            //         }),
+            //     nav_button!("system-software-update", "Personalization", condensed)
+            //         .on_press(Message::Page(2))
+            //         .style(if self.page == 2 {
+            //             theme::Button::Primary
+            //         } else {
+            //             theme::Button::Text
+            //         }),
+            // ]
+
+            let sidebar: Element<_> = nav_bar()
+                .source(BTreeMap::from([
+                    (
+                        nav_bar_section()
+                            .title("Network & Wireless")
+                            .icon("network-wireless"),
+                        vec![nav_bar_page("Wi-Fi")],
+                    ),
+                    (
+                        nav_bar_section()
+                            .title("Bluetooth")
+                            .icon("cs-bluetooth"),
+                        vec![nav_bar_page("Devices")],
+                    ),
+                    (
+                        nav_bar_section()
+                            .title("Personalization")
+                            .icon("applications-system"),
+                        vec![
+                            nav_bar_page("Desktop Session"),
+                            nav_bar_page("Wallpaper"),
+                            nav_bar_page("Appearance"),
+                            nav_bar_page("Dock & Top Panel"),
+                            nav_bar_page("Workspaces"),
+                            nav_bar_page("Notifications"),
+                        ],
+                    ),
+                    (
+                        nav_bar_section()
+                            .title("Input Devices")
+                            .icon("input-keyboard"),
+                        vec![nav_bar_page("Keyboard")],
+                    ),
+                    (
+                        nav_bar_section().title("Displays").icon("cs-display"),
+                        vec![nav_bar_page("Keyboard")],
+                    ),
+                    (
+                        nav_bar_section()
+                            .title("Power & Battery")
+                            .icon("battery"),
+                        vec![nav_bar_page("Status")],
+                    ),
+                    (
+                        nav_bar_section().title("Sound").icon("sound"),
+                        vec![nav_bar_page("Volume")],
+                    ),
+                ]))
+                .active(self.sidebar_toggled)
+                .condensed(condensed)
+                .into();
 
             let choose_theme = [Theme::Light, Theme::Dark].iter().fold(
-                row![text("Debug theme:")]
-                    .spacing(10)
-                    .align_items(Alignment::Center),
+                row![].spacing(10).align_items(Alignment::Center),
                 |row, theme| {
                     row.push(radio(
                         format!("{:?}", theme),
@@ -171,14 +218,17 @@ impl Application for Window {
             );
 
             let content: Element<_> = list_view!(
-                list_section!(
+                list_view_section!(
                     "Debug",
-                    choose_theme,
-                    toggler(String::from("Debug layout"), self.debug, Message::Debug,)
+                    list_view_item!("Debug theme", choose_theme),
+                    list_view_item!(
+                        "Debug layout",
+                        toggler(String::from("Debug layout"), self.debug, Message::Debug,)
+                    )
                 ),
-                list_section!(
+                list_view_section!(
                     "Buttons",
-                    list_row!(
+                    list_view_row!(
                         button!("Primary")
                             .style(theme::Button::Primary)
                             .on_press(Message::ButtonPressed),
@@ -195,7 +245,7 @@ impl Application for Window {
                             .style(theme::Button::Text)
                             .on_press(Message::ButtonPressed),
                     ),
-                    list_row!(
+                    list_view_row!(
                         button!("Primary").style(theme::Button::Primary),
                         button!("Secondary").style(theme::Button::Secondary),
                         button!("Positive").style(theme::Button::Positive),
@@ -203,13 +253,13 @@ impl Application for Window {
                         button!("Text").style(theme::Button::Text),
                     ),
                 ),
-                list_section!(
+                list_view_section!(
                     "Controls",
-                    list_item!(
+                    list_view_item!(
                         "Toggler",
                         toggler(None, self.toggler_value, Message::TogglerToggled)
                     ),
-                    list_item!(
+                    list_view_item!(
                         "Pick List (TODO)",
                         pick_list(
                             vec!["Option 1", "Option 2", "Option 3", "Option 4",],
@@ -218,12 +268,12 @@ impl Application for Window {
                         )
                         .padding([8, 0, 8, 16])
                     ),
-                    list_item!(
+                    list_view_item!(
                         "Slider",
                         slider(0.0..=100.0, self.slider_value, Message::SliderChanged)
                             .width(Length::Units(250))
                     ),
-                    list_item!(
+                    list_view_item!(
                         "Progress",
                         progress_bar(0.0..=100.0, self.slider_value)
                             .width(Length::Units(250))
@@ -231,7 +281,7 @@ impl Application for Window {
                     ),
                     checkbox("Checkbox", self.checkbox_value, Message::CheckboxToggled),
                 ),
-                list_section!(
+                list_view_section!(
                     "Expander",
                     expander()
                         .title("Label")
@@ -247,19 +297,18 @@ impl Application for Window {
                             list_row().title("Label")
                         ])
                 ),
-                list_section!(
+                list_view_section!(
                     "List Box",
-                    ListBox::with_children(
-                        vec![
+                    list_box()
+                        .style(theme::Container::Custom(list_section_style))
+                        .children(vec![
                             cosmic::list_box_row!("Title").into(),
                             cosmic::list_box_row!("Title", "Subtitle").into(),
                             cosmic::list_box_row!("Title", "", "edit-paste").into(),
                             cosmic::list_box_row!("", "Subtitle", "edit-paste").into(),
                             cosmic::list_box_row!("Title", "Subtitle", "edit-paste").into()
-                        ],
-                        true,
-                    )
-                    .style(theme::Container::Custom(list_section_style))
+                        ])
+                        .render()
                 ),
             )
             .into();

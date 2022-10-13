@@ -1,6 +1,6 @@
 use std::vec;
 
-use crate::{list_box_row, widget::ListRow};
+use crate::{list_box_row, separator, widget::ListRow};
 use apply::Apply;
 use derive_setters::Setters;
 use iced::{
@@ -9,7 +9,7 @@ use iced::{
     Alignment, Background, Element, Length, Renderer, Theme,
 };
 use iced_lazy::Component;
-use iced_native::widget::{column, event_container, horizontal_rule};
+use iced_native::widget::{column, event_container};
 
 #[derive(Setters)]
 pub struct Expander<'a, Message> {
@@ -145,12 +145,7 @@ impl<'a, Message: Clone + 'a> Component<Message, Renderer> for Expander<'a, Mess
                 .enumerate()
                 .flat_map(|(index, child)| {
                     if index != rows.len() - 1 {
-                        vec![
-                            child,
-                            horizontal_rule(1)
-                                .style(theme::Rule::Custom(separator_style))
-                                .into(),
-                        ]
+                        vec![child, separator!(1).into()]
                     } else {
                         vec![child]
                     }

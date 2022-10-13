@@ -1,3 +1,4 @@
+use crate::separator;
 use derive_setters::Setters;
 use iced::mouse::Interaction;
 use iced::{overlay, Alignment, Length, Padding, Point, Rectangle};
@@ -6,7 +7,7 @@ use iced_native::layout::flex::{resolve, Axis};
 use iced_native::layout::{Limits, Node};
 use iced_native::overlay::from_children;
 use iced_native::renderer::Style;
-use iced_native::widget::{column, horizontal_rule, Operation, Tree};
+use iced_native::widget::{column, Operation, Tree};
 use iced_native::{
     renderer, row, Background, Clipboard, Color, Element, Event, Layout, Shell, Widget,
 };
@@ -15,6 +16,7 @@ use iced_style::theme;
 use iced_style::theme::Container;
 
 #[derive(Setters)]
+#[allow(dead_code)]
 pub struct ListBox<'a, Message, Renderer>
 where
     Renderer: iced_native::Renderer,
@@ -22,6 +24,7 @@ where
     <Renderer as iced_native::Renderer>::Theme: iced_style::rule::StyleSheet,
 {
     spacing: u16,
+    #[setters(into)]
     padding: Padding,
     width: Length,
     height: Length,
@@ -31,6 +34,7 @@ where
     children: Vec<Element<'a, Message, Renderer>>,
     #[setters(strip_option)]
     placeholder: Option<Element<'a, Message, Renderer>>,
+    show_separators: bool,
     on_item_selected: Option<Box<dyn Fn(usize) -> Message + 'a>>,
 }
 
@@ -57,51 +61,54 @@ where
 
     /// Creates an empty [`ListBox`].
     pub fn new() -> Self {
-        Self::with_children(Vec::<Element<Message, Renderer>>::new(), true)
+        Self::with_children(Vec::<Element<Message, Renderer>>::new()).render()
     }
 
     /// Creates a new [`ListBox`].
     ///
     /// [`ListBox`]: struct.ListBox.html
-    pub fn with_children(
-        children: Vec<Element<'a, Message, Renderer>>,
-        show_separators: bool,
-    ) -> Self {
-        let children_size = children.len();
-        let children: Vec<Element<Message, Renderer>> = children
-            .into_iter()
-            .enumerate()
-            .map(|(index, child)| {
-                let row_items = if show_separators && index != children_size - 1 {
-                    vec![
-                        row![child].align_items(Alignment::Center).into(),
-                        horizontal_rule(1)
-                            .style(theme::Rule::Custom(separator_style))
-                            .into(),
-                    ]
-                } else {
-                    vec![row![child].align_items(Alignment::Center).into()]
-                };
-                column(row_items).into()
-            })
-            .collect();
-        Self {
+    pub fn with_children(children: Vec<Element<'a, Message, Renderer>>) -> Self {
+        let list_box = Self {
             spacing: 0,
             padding: Padding::from(Self::DEFAULT_PADDING),
             width: Length::Shrink,
             height: Length::Shrink,
             max_width: u32::MAX,
-            align_items: Alignment::Start,
+            align_items: Alignment::Center,
             style: Default::default(),
             children,
             placeholder: None,
+            show_separators: true,
             on_item_selected: None,
-        }
+        };
+        list_box.render()
+    }
+
+    pub fn render(mut self) -> Self {
+        let children_size = self.children.len();
+        self.children = self
+            .children
+            .into_iter()
+            .enumerate()
+            .map(|(index, child)| {
+                let row_items = if self.show_separators && index != children_size - 1 {
+                    vec![
+                        row![child].align_items(self.align_items).into(),
+                        separator!(1).into(),
+                    ]
+                } else {
+                    vec![row![child].align_items(self.align_items).into()]
+                };
+                column(row_items).spacing(self.spacing).into()
+            })
+            .collect();
+        self
     }
 
     /// Adds an element to the [`ListBox`].
     pub fn push(mut self, child: impl Into<Element<'a, Message, Renderer>>) -> Self {
         self.children.push(child.into());
+        self = self.render();
         self
     }
 }
@@ -444,5 +451,3 @@ macro_rules! list_box_heading {
     };
 }
 pub use list_box_heading;
-
-use crate::widget::separator_style;

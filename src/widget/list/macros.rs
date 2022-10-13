@@ -14,7 +14,7 @@ pub mod list_view {
     }
 
     #[macro_export]
-    macro_rules! list_row {
+    macro_rules! list_view_row {
         ($($x:expr),+ $(,)?) => (
             $crate::iced::widget::Row::with_children(vec![
                 $($crate::iced::Element::from($x)),+
@@ -26,7 +26,7 @@ pub mod list_view {
     }
 
     #[macro_export]
-    macro_rules! list_section {
+    macro_rules! list_view_section {
         ($title:expr, $($x:expr),+ $(,)?) => (
             $crate::iced::widget::Column::with_children(vec![
                 $crate::iced::widget::Text::new($title)
@@ -39,7 +39,7 @@ pub mod list_view {
                     //TODO: more efficient method for adding separators
                     let mut i = 1;
                     while i < children.len() {
-                        children.insert(i, $crate::iced::widget::horizontal_rule(12).into());
+                        children.insert(i, $crate::separator!(12).into());
                         i += 2;
                     }
 
@@ -57,9 +57,9 @@ pub mod list_view {
     }
 
     #[macro_export]
-    macro_rules! list_item {
+    macro_rules! list_view_item {
         ($title:expr, $($x:expr),+ $(,)?) => (
-            $crate::list_row!(
+            $crate::list_view_row!(
                 $crate::iced::widget::Text::new($title),
                 $crate::iced::widget::horizontal_space(
                     $crate::iced::Length::Fill
@@ -84,10 +84,10 @@ pub mod list_view {
     use iced::widget;
     use iced_style::Theme;
 
-    pub use list_item;
-    pub use list_row;
-    pub use list_section;
     pub use list_view;
+    pub use list_view_item;
+    pub use list_view_row;
+    pub use list_view_section;
 }
 
 pub mod list_box {
