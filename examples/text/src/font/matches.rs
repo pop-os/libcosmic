@@ -134,7 +134,7 @@ impl<'a> FontMatches<'a> {
                 &line[start_word..end_word],
             );
         } else {
-            log::debug!(
+            log::trace!(
                 "    Word {:?}{}: '{}'",
                 scripts,
                 if blank { " BLANK" } else { "" },
@@ -142,7 +142,8 @@ impl<'a> FontMatches<'a> {
             );
         }
 
-        let mut font_iter = FontFallbackIter::new(&self.fonts, scripts, &self.locale);
+        //TODO: configure default family
+        let mut font_iter = FontFallbackIter::new(&self.fonts, Some("Fira Sans"), scripts, &self.locale);
 
         let (mut glyphs, mut missing) = self.shape_fallback(
             font_iter.next().unwrap(),
@@ -154,10 +155,11 @@ impl<'a> FontMatches<'a> {
         );
 
         //TODO: improve performance!
-        while let Some(font) = font_iter.next() {
-            if missing.is_empty() {
-                break;
-            }
+        while !missing.is_empty() {
+            let font = match font_iter.next() {
+                Some(some) => some,
+                None => break,
+            };
 
             log::trace!("Evaluating fallback with font '{}'", font.info.family);
             let (mut fb_glyphs, fb_missing) = self.shape_fallback(
@@ -243,7 +245,7 @@ impl<'a> FontMatches<'a> {
     ) -> FontShapeSpan {
         let span = &line[start_span..end_span];
 
-        log::debug!(
+        log::trace!(
             "  Span {}: '{}'",
             if span_rtl { "RTL" } else { "LTR" },
             span
@@ -311,7 +313,7 @@ impl<'a> FontMatches<'a> {
             let para_info = &bidi.paragraphs[0];
             let line_rtl = para_info.level.is_rtl();
 
-            log::debug!("Line {}: '{}'", if line_rtl { "RTL" } else { "LTR" }, line);
+            log::trace!("Line {}: '{}'", if line_rtl { "RTL" } else { "LTR" }, line);
 
             let paragraph = unicode_bidi::Paragraph::new(&bidi, &para_info);
 
