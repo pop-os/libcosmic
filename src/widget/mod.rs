@@ -21,3 +21,6 @@ pub use expander::*;
 
 pub mod list;
 pub use list::*;
+
+pub mod separator;
+pub use separator::*;

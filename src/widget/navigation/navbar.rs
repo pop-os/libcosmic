@@ -1,313 +1,249 @@
-use iced::{
-    alignment,
-    widget::{scrollable, Column, Container},
-    Alignment, Element, Length, Padding,
-};
-use iced_native::{
-    renderer, row,
-    widget::{
-        container::{draw_background, layout},
-        Tree,
-    },
-    Widget,
-};
-use iced_style::container::StyleSheet;
+use crate::scrollable;
+use crate::widget::nav_bar::{nav_bar_pages_style, nav_bar_sections_style};
+use crate::widget::{icon, Background};
+use derive_setters::Setters;
+use iced::Length;
+use iced_lazy::Component;
+use iced_native::widget::{button, column, container, text};
+use iced_native::{row, Alignment, Element};
+use iced_style::button::Appearance;
+use iced_style::{scrollable, theme, Theme};
+use std::collections::BTreeMap;
 
-pub struct NavBar<'a, Message, Renderer>
-where
-    Renderer: iced_native::Renderer,
-    Renderer::Theme: StyleSheet,
-{
-    spacing: u16,
-    padding: Padding,
-    width: Length,
-    height: Length,
-    max_width: u32,
-    max_height: u32,
-    align_items: Alignment,
-    horizontal_alignment: alignment::Horizontal,
-    vertical_alignment: alignment::Vertical,
-    style: <Renderer::Theme as StyleSheet>::Style,
-    condensed: bool,
+#[derive(Setters, Default)]
+pub struct NavBar<'a, Message> {
+    source: BTreeMap<NavBarSection, Vec<NavBarPage>>,
     active: bool,
-    content: Element<'a, Message, Renderer>,
+    condensed: bool,
+    on_page_selected: Option<Box<dyn Fn(NavBarSection, NavBarPage) -> Message + 'a>>,
 }
 
-impl<'a, Message: 'a, Renderer> NavBar<'a, Message, Renderer>
-where
-    Renderer: iced_native::Renderer + 'a,
-    Renderer::Theme: StyleSheet,
-{
-    /// Creates a [`NavBar`] with the given elements.
-    pub fn with_children(children: Vec<Element<'a, Message, Renderer>>) -> Self
-    where
-        <Renderer as iced_native::Renderer>::Theme: iced_style::scrollable::StyleSheet,
-    {
-        let nav = Self::default();
-        NavBar {
-            content: Container::new(
-                scrollable(row![Column::with_children(children)
-                    .spacing(nav.spacing)
-                    .padding(nav.padding)])
-                .scrollbar_width(6)
-                .scroller_width(6),
-            )
-            .into(),
-            ..Default::default()
-        }
-    }
-
-    pub fn condensed(mut self, condensed: bool) -> Self {
-        self.condensed = condensed;
-        self
-    }
-
-    pub fn active(mut self, active: bool) -> Self {
-        self.active = active;
-        self
-    }
-    /// Sets the horizontal spacing _between_ elements.
-    ///
-    /// Custom margins per element do not exist in iced. You should use this
-    /// method instead! While less flexible, it helps you keep spacing between
-    /// elements consistent.
-    pub fn spacing(mut self, units: u16) -> Self {
-        self.spacing = units;
-        self
-    }
-
-    /// Sets the [`Padding`] of the [`NavBar`].
-    pub fn padding<P: Into<iced::Padding>>(mut self, padding: P) -> Self {
-        self.padding = padding.into();
-        self
-    }
-
-    /// Sets the width of the [`NavBar`].
-    pub fn width(mut self, width: iced::Length) -> Self {
-        self.width = width;
-        self
-    }
-
-    /// Sets the height of the [`NavBar`].
-    pub fn height(mut self, height: iced::Length) -> Self {
-        self.height = height;
-        self
-    }
-
-    /// Sets the vertical alignment of the contents of the [`NavBar`] .
-    pub fn align_items(mut self, align: iced::Alignment) -> Self {
-        self.align_items = align;
-        self
-    }
-
-    /// Sets the maximum width of the [`NavBar`].
-    pub fn max_width(mut self, max_width: u32) -> Self {
-        self.max_width = max_width;
-        self
-    }
-
-    /// Sets the maximum height of the [`NavBar`].
-    pub fn max_height(mut self, max_height: u32) -> Self {
-        self.max_height = max_height;
-        self
-    }
-
-    /// Sets the style of the [`NavBar`].
-    pub fn style(mut self, style: impl Into<<Renderer::Theme as StyleSheet>::Style>) -> Self {
-        self.style = style.into();
-        self
-    }
-}
-
-impl<'a, Message: 'a, Renderer> Default for NavBar<'a, Message, Renderer>
-where
-    Renderer: iced_native::Renderer + 'a,
-    Renderer::Theme: StyleSheet,
-{
-    fn default() -> Self {
+impl<'a, Message> NavBar<'a, Message> {
+    pub fn new() -> Self {
         Self {
-            spacing: 12,
-            padding: Padding::new(12),
-            width: Length::Shrink,
-            height: Length::Fill,
-            max_width: 300,
-            max_height: u32::MAX,
-            align_items: Alignment::Start,
-            horizontal_alignment: alignment::Horizontal::Left,
-            vertical_alignment: alignment::Vertical::Top,
-            style: Default::default(),
+            source: Default::default(),
+            active: false,
             condensed: false,
-            active: true,
-            content: Container::new(row![Column::new()]).into(),
+            on_page_selected: None,
         }
     }
 }
 
-impl<'a, Message, Renderer> Widget<Message, Renderer> for NavBar<'a, Message, Renderer>
+pub fn nav_bar<'a, Message>() -> NavBar<'a, Message> {
+    NavBar::new()
+}
+
+#[derive(Setters, Clone, Default, PartialOrd, Ord, PartialEq, Eq, Hash)]
+pub struct NavBarSection {
+    #[setters(into)]
+    title: String,
+    #[setters(into)]
+    icon: String,
+}
+
+impl NavBarSection {
+    pub fn new() -> Self {
+        Self {
+            title: String::new(),
+            icon: String::new(),
+        }
+    }
+}
+
+pub fn nav_bar_section() -> NavBarSection {
+    NavBarSection::new()
+}
+
+#[derive(Default, Clone, Setters, PartialOrd, Ord, PartialEq, Eq)]
+pub struct NavBarPage {
+    #[setters(into)]
+    title: String,
+}
+
+impl NavBarPage {
+    pub fn new() -> Self {
+        Self {
+            title: String::new(),
+        }
+    }
+}
+
+pub fn nav_bar_page(title: &str) -> NavBarPage {
+    let mut page = NavBarPage::new();
+    page.title = title.to_string();
+    page
+}
+
+#[derive(Clone)]
+pub enum NavBarEvent {
+    SectionSelected(NavBarSection),
+    PageSelected(NavBarSection, NavBarPage),
+}
+
+#[derive(Default)]
+pub struct NavBarState {
+    selected_section: NavBarSection,
+    section_active: bool,
+    selected_page: Option<NavBarPage>,
+    page_active: bool,
+}
+
+impl<'a, Message, Renderer> Component<Message, Renderer> for NavBar<'a, Message>
 where
-    Renderer: iced_native::Renderer,
-    Renderer::Theme: StyleSheet,
+    Renderer: iced_native::Renderer + iced_native::text::Renderer + iced_native::svg::Renderer + 'a,
+    <Renderer as iced_native::Renderer>::Theme:
+        container::StyleSheet + button::StyleSheet + text::StyleSheet + scrollable::StyleSheet,
+    <<Renderer as iced_native::Renderer>::Theme as button::StyleSheet>::Style: From<theme::Button>,
+    <<Renderer as iced_native::Renderer>::Theme as container::StyleSheet>::Style:
+        From<theme::Container>,
+    <<Renderer as iced_native::Renderer>::Theme as text::StyleSheet>::Style: From<theme::Text>,
 {
-    fn width(&self) -> Length {
-        self.width
-    }
+    type State = NavBarState;
+    type Event = NavBarEvent;
 
-    fn height(&self) -> Length {
-        self.height
-    }
-
-    fn layout(
-        &self,
-        renderer: &Renderer,
-        limits: &iced_native::layout::Limits,
-    ) -> iced_native::layout::Node {
-        layout(
-            renderer,
-            limits,
-            self.width,
-            self.height,
-            if self.condensed { 100 } else { self.max_width },
-            self.max_height,
-            if self.active {
-                self.padding
-            } else {
-                Padding::ZERO
-            },
-            self.horizontal_alignment,
-            self.vertical_alignment,
-            |renderer, limits| {
-                if self.active {
-                    self.content.as_widget().layout(renderer, limits)
+    fn update(&mut self, state: &mut Self::State, event: Self::Event) -> Option<Message> {
+        match event {
+            NavBarEvent::SectionSelected(section) => {
+                if state.selected_section == section {
+                    state.section_active = !state.section_active;
                 } else {
-                    let content: Element<Message, Renderer> =
-                        Container::new(row![Column::new()]).into();
-                    content.as_widget().layout(renderer, limits)
+                    state.selected_section = section;
+                    state.section_active = true;
                 }
-            },
-        )
-    }
-
-    fn draw(
-        &self,
-        tree: &Tree,
-        renderer: &mut Renderer,
-        theme: &Renderer::Theme,
-        renderer_style: &iced_native::renderer::Style,
-        layout: iced_native::Layout<'_>,
-        cursor_position: iced::Point,
-        viewport: &iced::Rectangle,
-    ) {
-        if self.active {
-            let style = theme.appearance(self.style);
-
-            draw_background(renderer, &style, layout.bounds());
-
-            self.content.as_widget().draw(
-                &tree.children[0],
-                renderer,
-                theme,
-                &renderer::Style {
-                    text_color: style.text_color.unwrap_or(renderer_style.text_color),
-                },
-                layout.children().next().unwrap(),
-                cursor_position,
-                viewport,
-            );
+                state.selected_page = None;
+                state.page_active = false;
+                None
+            }
+            NavBarEvent::PageSelected(section, page) => {
+                if state.selected_page.is_some() && &page == state.selected_page.as_ref().unwrap() {
+                    state.page_active = !state.page_active;
+                } else {
+                    state.selected_page = Some(page.clone());
+                    state.page_active = true;
+                }
+                self.on_page_selected
+                    .as_ref()
+                    .map(|on_page_selected| (on_page_selected)(section, page))
+            }
         }
     }
 
-    fn children(&self) -> Vec<iced_native::widget::Tree> {
-        vec![Tree::new(&self.content)]
-    }
+    fn view(&self, state: &Self::State) -> Element<'a, Self::Event, Renderer> {
+        if self.active {
+            let mut sections: Vec<Element<Self::Event, Renderer>> = vec![];
+            let mut pages: Vec<Element<Self::Event, Renderer>> = vec![];
 
-    fn diff(&self, tree: &mut Tree) {
-        tree.diff_children(std::slice::from_ref(&self.content))
-    }
+            for (section, section_pages) in &self.source {
+                sections.push(
+                    button(
+                        column(vec![
+                            icon(&section.icon, 20).into(),
+                            text(&section.title).size(14).into(),
+                        ])
+                        .width(Length::Units(100))
+                        .height(Length::Units(50))
+                        .align_items(Alignment::Center),
+                    )
+                    .style(if *section == state.selected_section && state.section_active {
+                        theme::Button::Primary.into()
+                    } else {
+                        theme::Button::Text.into()
+                    })
+                    .on_press(NavBarEvent::SectionSelected(section.clone()))
+                    .into(),
+                );
+                if *section == state.selected_section {
+                    for page in section_pages {
+                        pages.push(
+                            button(row![text(&page.title).size(16).width(Length::Fill)])
+                                .padding(10)
+                                .style(
+                                    if let Some(selected_page) = &state.selected_page {
+                                        if state.page_active && page == selected_page {
+                                            theme::Button::Primary.into()
+                                        } else {
+                                            theme::Button::Text.into()
+                                        }
+                                    } else {
+                                        theme::Button::Text.into()
+                                    }
+                                )
+                                .on_press(NavBarEvent::PageSelected(section.clone(), page.clone()))
+                                .into(),
+                        );
+                    }
+                }
+            }
 
-    fn operate(
-        &self,
-        tree: &mut Tree,
-        layout: iced_native::Layout<'_>,
-        operation: &mut dyn iced_native::widget::Operation<Message>,
-    ) {
-        operation.container(None, &mut |operation| {
-            self.content.as_widget().operate(
-                &mut tree.children[0],
-                layout.children().next().unwrap(),
-                operation,
-            );
-        });
-    }
-
-    fn on_event(
-        &mut self,
-        tree: &mut iced_native::widget::Tree,
-        event: iced::Event,
-        layout: iced_native::Layout<'_>,
-        cursor_position: iced::Point,
-        renderer: &Renderer,
-        clipboard: &mut dyn iced_native::Clipboard,
-        shell: &mut iced_native::Shell<'_, Message>,
-    ) -> iced::event::Status {
-        self.content.as_widget_mut().on_event(
-            &mut tree.children[0],
-            event,
-            layout.children().next().unwrap(),
-            cursor_position,
-            renderer,
-            clipboard,
-            shell,
-        )
-    }
-
-    fn mouse_interaction(
-        &self,
-        tree: &iced_native::widget::Tree,
-        layout: iced_native::Layout<'_>,
-        cursor_position: iced::Point,
-        viewport: &iced::Rectangle,
-        renderer: &Renderer,
-    ) -> iced_native::mouse::Interaction {
-        self.content.as_widget().mouse_interaction(
-            &tree.children[0],
-            layout.children().next().unwrap(),
-            cursor_position,
-            viewport,
-            renderer,
-        )
-    }
-
-    fn overlay<'b>(
-        &'b self,
-        tree: &'b mut iced_native::widget::Tree,
-        layout: iced_native::Layout<'_>,
-        renderer: &Renderer,
-    ) -> Option<iced_native::overlay::Element<'b, Message, Renderer>> {
-        self.content.as_widget().overlay(
-            &mut tree.children[0],
-            layout.children().next().unwrap(),
-            renderer,
-        )
+            let nav_bar: Element<Self::Event, Renderer> =
+                container(if self.condensed && state.selected_page.is_some() {
+                    row![container(scrollable!(column(pages)
+                            .spacing(10)
+                            .padding(10)
+                            .max_width(200)
+                            .width(Length::Units(200))
+                            .height(Length::Shrink)))
+                        .height(Length::Fill)
+                        .style(theme::Container::Custom(nav_bar_pages_style))]
+                } else if !state.section_active || self.condensed && state.selected_page.is_none() {
+                    row![scrollable!(column(sections)
+                        .spacing(10)
+                        .padding(10)
+                        .max_width(100)
+                        .align_items(Alignment::Center)
+                        .height(Length::Shrink))]
+                } else {
+                    row![
+                        scrollable!(column(sections)
+                            .spacing(10)
+                            .padding(10)
+                            .max_width(100)
+                            .align_items(Alignment::Center)
+                            .height(Length::Shrink)),
+                        container(scrollable!(column(pages)
+                            .spacing(10)
+                            .padding(10)
+                            .max_width(200)
+                            .width(Length::Units(200))
+                            .height(Length::Shrink)))
+                        .height(Length::Fill)
+                        .style(theme::Container::Custom(nav_bar_pages_style)),
+                    ]
+                })
+                .height(Length::Fill)
+                .style(theme::Container::Custom(nav_bar_sections_style))
+                .into();
+            nav_bar
+        } else {
+            row![].into()
+        }
     }
 }
 
-impl<'a, Message, Renderer> From<NavBar<'a, Message, Renderer>> for Element<'a, Message, Renderer>
+impl<'a, Message: 'a, Renderer> From<NavBar<'a, Message>>
+    for Element<'a, Message, Renderer>
 where
-    Message: 'a,
-    Renderer: iced_native::Renderer + 'a,
-    Renderer::Theme: StyleSheet,
+    Renderer: iced_native::text::Renderer + iced_native::svg::Renderer + 'a,
+    <Renderer as iced_native::Renderer>::Theme:
+        container::StyleSheet + button::StyleSheet + text::StyleSheet + scrollable::StyleSheet,
+    <<Renderer as iced_native::Renderer>::Theme as button::StyleSheet>::Style: From<theme::Button>,
+    <<Renderer as iced_native::Renderer>::Theme as container::StyleSheet>::Style:
+        From<theme::Container>,
+    <<Renderer as iced_native::Renderer>::Theme as text::StyleSheet>::Style: From<theme::Text>,
 {
-    fn from(navbar: NavBar<'a, Message, Renderer>) -> Self {
-        Self::new(navbar)
+    fn from(nav_bar: NavBar<'a, Message>) -> Self {
+        iced_lazy::component(nav_bar)
     }
 }
 
-/// Creates a [NavBar`] with the given children.
-///
-/// [`NavBar`]: widget::NavBar
-#[macro_export]
-macro_rules! navbar {
-    ($($x:expr),+ $(,)?) => (
-        $crate::widget::NavBar::with_children(vec![$($crate::iced::Element::from($x)),+])
-    );
+pub fn section_button_style(theme: &Theme) -> Appearance {
+    let primary = &theme.cosmic().primary;
+    Appearance {
+        shadow_offset: Default::default(),
+        background: Some(Background::Color(primary.base.into())),
+        border_radius: 5.0,
+        border_width: 0.0,
+        border_color: Default::default(),
+        text_color: Default::default(),
+    }
 }
