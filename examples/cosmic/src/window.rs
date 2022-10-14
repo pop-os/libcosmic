@@ -159,12 +159,22 @@ impl Application for Window {
                             .title("Personalization")
                             .icon("applications-system"),
                         vec![
-                            nav_bar_item().title("Desktop Session").icon("desktop-panel"),
-                            nav_bar_item().title("Wallpaper").icon("preferences-desktop-wallpaper"),
+                            nav_bar_item()
+                                .title("Desktop Session")
+                                .icon("desktop-panel"),
+                            nav_bar_item()
+                                .title("Wallpaper")
+                                .icon("preferences-desktop-wallpaper"),
                             nav_bar_item().title("Appearance").icon("cs-color"),
-                            nav_bar_item().title("Dock & Top Panel").icon("desktop-panel"),
-                            nav_bar_item().title("Workspaces").icon("preferences-system-windows"),
-                            nav_bar_item().title("Notifications").icon("cs-notifications"),
+                            nav_bar_item()
+                                .title("Dock & Top Panel")
+                                .icon("desktop-panel"),
+                            nav_bar_item()
+                                .title("Workspaces")
+                                .icon("preferences-system-windows"),
+                            nav_bar_item()
+                                .title("Notifications")
+                                .icon("cs-notifications"),
                         ],
                     ),
                     (
@@ -280,7 +290,7 @@ impl Application for Window {
             );
 
             container(row(widgets))
-                .padding([16, 16])
+                .padding(12)
                 .width(Length::Fill)
                 .height(Length::Fill)
                 .into()
