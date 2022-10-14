@@ -2,25 +2,27 @@ use unicode_script::Script;
 
 use super::Font;
 
-#[cfg(not(any(macos, unix, windows)))]
-use self::other::*;
-#[cfg(not(any(macos, unix, windows)))]
-mod other;
+use self::platform::*;
 
-#[cfg(macos)]
-use self::macos::*;
-#[cfg(macos)]
-mod macos;
+#[cfg(not(any(
+    target_os = "linux",
+    target_os = "macos",
+    target_os = "windows",
+)))]
+#[path = "other.rs"]
+mod platform;
 
-#[cfg(unix)]
-use self::unix::*;
-#[cfg(unix)]
-mod unix;
+#[cfg(target_os = "macos")]
+#[path = "macos.rs"]
+mod platform;
 
-#[cfg(windows)]
-use self::windows::*;
-#[cfg(windows)]
-mod windows;
+#[cfg(target_os = "linux")]
+#[path = "unix.rs"]
+mod platform;
+
+#[cfg(target_os = "windows")]
+#[path = "windows.rs"]
+mod platform;
 
 pub struct FontFallbackIter<'a> {
     fonts: &'a [Font<'a>],
