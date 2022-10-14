@@ -112,7 +112,7 @@ impl Application for Window {
     fn view(&self) -> Element<Message> {
         let mut header: Element<Message, _> = header_bar()
             .title(self.title())
-            .nav_title(String::from("Settings"))
+            //            .nav_title(String::from("Settings"))
             .sidebar_active(self.sidebar_toggled)
             .show_minimize(self.show_minimize)
             .show_maximize(self.show_maximize)
@@ -149,12 +149,22 @@ impl Application for Window {
                             .title("Personalization")
                             .icon("applications-system"),
                         vec![
-                            nav_bar_item().title("Desktop Session").icon("desktop-panel"),
-                            nav_bar_item().title("Wallpaper").icon("preferences-desktop-wallpaper"),
+                            nav_bar_item()
+                                .title("Desktop Session")
+                                .icon("desktop-panel"),
+                            nav_bar_item()
+                                .title("Wallpaper")
+                                .icon("preferences-desktop-wallpaper"),
                             nav_bar_item().title("Appearance").icon("cs-color"),
-                            nav_bar_item().title("Dock & Top Panel").icon("desktop-panel"),
-                            nav_bar_item().title("Workspaces").icon("preferences-system-windows"),
-                            nav_bar_item().title("Notifications").icon("cs-notifications"),
+                            nav_bar_item()
+                                .title("Dock & Top Panel")
+                                .icon("desktop-panel"),
+                            nav_bar_item()
+                                .title("Workspaces")
+                                .icon("preferences-system-windows"),
+                            nav_bar_item()
+                                .title("Notifications")
+                                .icon("cs-notifications"),
                         ],
                     ),
                     (
@@ -309,7 +319,7 @@ impl Application for Window {
             );
 
             container(row(widgets))
-                .padding([16, 16])
+                .padding(12)
                 .width(Length::Fill)
                 .height(Length::Fill)
                 .into()

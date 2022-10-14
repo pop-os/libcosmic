@@ -3,17 +3,39 @@ pub mod nav_bar {
 
     #[macro_export]
     macro_rules! nav_button {
-        ($icon: expr, $title:expr, $condensed:expr) => {{
+        ($title:expr, $icon: expr, $condensed:expr, $active: expr) => {
             if $condensed {
-                $crate::iced::widget::Button::new($crate::widget::icon($icon, 22)).padding(8)
-            } else {
-                $crate::widget::button!(
-                    $crate::widget::icon($icon, 22),
-                    $crate::iced::widget::Text::new($title),
-                    $crate::iced::widget::horizontal_space($crate::iced::Length::Fill),
+                $crate::iced::widget::Button::new(
+                    $crate::iced::widget::Column::with_children(vec![
+                        $crate::widget::icon($icon, 26).into(),
+                        $crate::iced::widget::text($title).size(14).into(),
+                    ])
+                    .spacing(5)
+                    .width($crate::iced::Length::Units(110))
+                    .height($crate::iced::Length::Units(60))
+                    .align_items($crate::iced::alignment::Alignment::Center),
                 )
+                .style(if $active {
+                    $crate::iced::theme::Button::Primary.into()
+                } else {
+                    $crate::iced::theme::Button::Text.into()
+                })
+            } else {
+                $crate::iced::widget::Button::new(
+                    $crate::iced::widget::row![
+                        $crate::widget::icon($icon, 20),
+                        $crate::iced::widget::Text::new($title).size(16).width($crate::iced::Length::Fill)
+                    ]
+                    .spacing(10),
+                )
+                .padding(10)
+                .style(if $active {
+                    $crate::iced::theme::Button::Primary.into()
+                } else {
+                    $crate::iced::theme::Button::Text.into()
+                })
             }
-        }};
+        };
     }
 
     pub fn nav_bar_sections_style(theme: &Theme) -> widget::container::Appearance {

@@ -1,6 +1,6 @@
 use crate::scrollable;
 use crate::widget::nav_bar::{nav_bar_pages_style, nav_bar_sections_style};
-use crate::widget::{icon, Background};
+use crate::widget::Background;
 use derive_setters::Setters;
 use iced::Length;
 use iced_lazy::Component;
@@ -101,110 +101,52 @@ where
         }
     }
 
-    fn view(&self, state: &Self::State) -> Element<'a, Self::Event, Renderer> {
+    fn view(&self, state: &Self::State) -> Element<Self::Event, Renderer> {
         if self.active {
             let mut sections: Vec<Element<Self::Event, Renderer>> = vec![];
             let mut pages: Vec<Element<Self::Event, Renderer>> = vec![];
 
             for (section_index, (section, section_pages)) in self.source.iter().enumerate() {
                 sections.push(
-                    button(
-                        column(vec![
-                            icon(&section.icon, 20).into(),
-                            text(&section.title).size(14).into(),
-                        ])
-                        .width(Length::Units(100))
-                        .height(Length::Units(50))
-                        .align_items(Alignment::Center),
+                    crate::nav_button!(
+                        &section.title,
+                        &section.icon,
+                        true,
+                        section_index == state.selected_section
                     )
-                    .style(if section_index == state.selected_section {
-                        theme::Button::Primary.into()
-                    } else {
-                        theme::Button::Text.into()
-                    })
                     .on_press(NavBarEvent::SectionSelected(section_index))
                     .into(),
                 );
                 if section_index == state.selected_section {
                     for (page_index, page) in section_pages.iter().enumerate() {
-                        pages.push(if self.condensed {
-                            button(
-                                    column(vec![
-                                    icon(&page.icon, 20).into(),
-                                    text(&page.title).size(14).into(),
-                                    ])
-                                    .width(Length::Units(100))
-                                    .height(Length::Units(50))
-                                    .align_items(Alignment::Center),
-                            )
-                            .style(if let Some(selected_page) = state.selected_page {
-                                if page_index == selected_page {
-                                    theme::Button::Primary.into()
-                                } else {
-                                    theme::Button::Text.into()
-                                }
-                            } else {
-                                theme::Button::Text.into()
-                            }).on_press(NavBarEvent::PageSelected(section_index, page_index))
-                            .into()
-                        } else {
-                            button(row![
-                                icon(&page.icon, 20),
-                                text(&page.title).size(16).width(Length::Fill)
-                            ].spacing(10))
-                            .padding(10)
-                            .style(if let Some(selected_page) = state.selected_page {
-                                if page_index == selected_page {
-                                    theme::Button::Primary.into()
-                                } else {
-                                    theme::Button::Text.into()
-                                }
-                            } else {
-                                theme::Button::Text.into()
-                            })
-                            .on_press(NavBarEvent::PageSelected(section_index, page_index))
-                            .into()
-                        });
+                        let active = state.selected_page.is_some()
+                            && page_index == state.selected_page.unwrap();
+                        pages.push(
+                            crate::nav_button!(&page.title, &page.icon, self.condensed, active)
+                                .on_press(NavBarEvent::PageSelected(section_index, page_index))
+                                .into(),
+                        );
                     }
                 }
             }
-
-            let nav_bar: Element<Self::Event, Renderer> = container(if self.condensed {
-                row![
-                    scrollable!(column(sections)
-                        .spacing(10)
-                        .padding(10)
-                        .max_width(100)
-                        .align_items(Alignment::Center)
-                        .height(Length::Shrink)),
-                    container(scrollable!(column(pages)
-                        .spacing(10)
-                        .padding(10)
-                        .max_width(100)
-                        .align_items(Alignment::Center)
-                        .width(Length::Units(100))
-                        .height(Length::Shrink)))
-                    .height(Length::Fill)
-                    .style(theme::Container::Custom(nav_bar_pages_style)),
-                ]
-            } else {
-                row![
-                    scrollable!(column(sections)
-                        .spacing(10)
-                        .padding(10)
-                        .max_width(100)
-                        .align_items(Alignment::Center)
-                        .height(Length::Shrink)),
-                    container(scrollable!(column(pages)
-                        .spacing(10)
-                        .padding(10)
-                        .max_width(200)
-                        .width(Length::Units(200))
-                        .height(Length::Shrink)))
-                    .height(Length::Fill)
-                    .style(theme::Container::Custom(nav_bar_pages_style)),
-                ]
-            })
+            let width: u16 = if self.condensed { 100 } else { 200 };
+            let nav_bar: Element<Self::Event, Renderer> = container(row![
+                scrollable!(column(sections)
+                    .spacing(10)
+                    .padding(10)
+                    .max_width(100)
+                    .align_items(Alignment::Center)
+                    .height(Length::Shrink)),
+                container(scrollable!(column(pages)
+                    .spacing(10)
+                    .padding(10)
+                    .max_width(width.into())
+                    .align_items(Alignment::Center)
+                    .width(Length::Units(width))
+                    .height(Length::Shrink)))
+                .height(Length::Fill)
+                .style(theme::Container::Custom(nav_bar_pages_style)),
+            ])
             .height(Length::Fill)
             .style(theme::Container::Custom(nav_bar_sections_style))
             .into();
