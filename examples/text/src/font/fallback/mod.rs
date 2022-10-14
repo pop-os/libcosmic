@@ -123,10 +123,13 @@ impl<'a> Iterator for FontFallbackIter<'a> {
 
         //TODO: do we need to do this?
         //TODO: do not evaluate fonts more than once!
+        let forbidden_families = forbidden_fallback();
         while self.other_i < self.fonts.len() {
             let font = &self.fonts[self.other_i];
             self.other_i += 1;
-            return Some(font);
+            if ! forbidden_families.contains(&font.info.family.as_str()) {
+                return Some(font);
+            }
         }
 
         self.end = true;

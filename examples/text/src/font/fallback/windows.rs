@@ -12,6 +12,11 @@ pub fn common_fallback() -> &'static [&'static str] {
     ]
 }
 
+// Fallbacks to never use
+pub fn forbidden_fallback() -> &'static [&'static str] {
+    &[]
+}
+
 fn han_unification(locale: &str) -> &'static [&'static str] {
     //TODO!
     match locale {
