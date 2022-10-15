@@ -3,7 +3,7 @@ use iced::{
     alignment::{Horizontal, Vertical},
     theme,
     widget::{button, container, text, Row},
-    Background, Element, Length, Renderer, Theme,
+    Background, Element, Length, Renderer, Theme, Color,
 };
 use iced_lazy::Component;
 
@@ -58,9 +58,9 @@ impl<'a, Message> Component<Message, Renderer> for SegmentedButton<'a, Message> 
                 .width(Length::Units(136))
                 .height(Length::Units(32))
                 .style(if *state == index {
-                    theme::Button::Secondary.into()
-                } else {
                     theme::Button::Primary.into()
+                } else {
+                    theme::Button::Secondary.into()
                 })
                 .on_press(SegmentedButtonEvent::Pressed(index))
                 .into()
@@ -68,19 +68,33 @@ impl<'a, Message> Component<Message, Renderer> for SegmentedButton<'a, Message> 
             .collect();
         container(Row::with_children(buttons).spacing(5).width(Length::Shrink))
             .padding(2)
-            .style(theme::Container::Custom(view_switcher_container_style))
+            .style(theme::Container::Custom(segmented_button_container_style))
             .into()
     }
 }
 
-pub fn view_switcher_container_style(theme: &Theme) -> iced_style::container::Appearance {
+// TODO: Allow button to receive a custom style.
+pub fn _segmented_button_style(theme: &Theme) -> iced_style::button::Appearance {
+    let primary = &theme.cosmic().primary;
     let accent = &theme.cosmic().accent;
+    iced_style::button::Appearance {
+        shadow_offset: Default::default(),
+        background: Some(Background::Color(primary.base.into())),
+        border_radius: 0.0,
+        border_width: 0.0,
+        border_color: Color::TRANSPARENT,
+        text_color: accent.on.into(),
+    }
+}
+
+pub fn segmented_button_container_style(theme: &Theme) -> iced_style::container::Appearance {
+    let primary = &theme.cosmic().primary;
     iced_style::container::Appearance {
         text_color: Default::default(),
-        background: Some(Background::Color(accent.base.into())),
+        background: Some(Background::Color(primary.base.into())),
         border_radius: 24.0,
-        border_width: 2.0,
-        border_color: accent.base.into(),
+        border_width: 0.0,
+        border_color: primary.base.into(),
     }
 }
 
