@@ -4,11 +4,12 @@ use crate::widget::Background;
 use derive_setters::Setters;
 use iced::Length;
 use iced_lazy::Component;
-use iced_native::widget::{button, column, container, text};
+use iced_native::widget::{column, container};
 use iced_native::{row, Alignment, Element};
 use iced_style::button::Appearance;
-use iced_style::{scrollable, theme, Theme};
+use iced_style::{theme, Theme};
 use std::collections::BTreeMap;
+use iced::Renderer;
 
 #[derive(Setters, Default)]
 pub struct NavBar<'a, Message> {
@@ -68,15 +69,7 @@ pub struct NavBarState {
     selected_page: Option<usize>,
 }
 
-impl<'a, Message, Renderer> Component<Message, Renderer> for NavBar<'a, Message>
-where
-    Renderer: iced_native::Renderer + iced_native::text::Renderer + iced_native::svg::Renderer + 'a,
-    <Renderer as iced_native::Renderer>::Theme:
-        container::StyleSheet + button::StyleSheet + text::StyleSheet + scrollable::StyleSheet,
-    <<Renderer as iced_native::Renderer>::Theme as button::StyleSheet>::Style: From<theme::Button>,
-    <<Renderer as iced_native::Renderer>::Theme as container::StyleSheet>::Style:
-        From<theme::Container>,
-    <<Renderer as iced_native::Renderer>::Theme as text::StyleSheet>::Style: From<theme::Text>,
+impl<'a, Message> Component<Message, Renderer> for NavBar<'a, Message>
 {
     type State = NavBarState;
     type Event = NavBarEvent;
@@ -157,15 +150,7 @@ where
     }
 }
 
-impl<'a, Message: 'a, Renderer> From<NavBar<'a, Message>> for Element<'a, Message, Renderer>
-where
-    Renderer: iced_native::text::Renderer + iced_native::svg::Renderer + 'a,
-    <Renderer as iced_native::Renderer>::Theme:
-        container::StyleSheet + button::StyleSheet + text::StyleSheet + scrollable::StyleSheet,
-    <<Renderer as iced_native::Renderer>::Theme as button::StyleSheet>::Style: From<theme::Button>,
-    <<Renderer as iced_native::Renderer>::Theme as container::StyleSheet>::Style:
-        From<theme::Container>,
-    <<Renderer as iced_native::Renderer>::Theme as text::StyleSheet>::Style: From<theme::Text>,
+impl<'a, Message: 'a> From<NavBar<'a, Message>> for Element<'a, Message, Renderer>
 {
     fn from(nav_bar: NavBar<'a, Message>) -> Self {
         iced_lazy::component(nav_bar)
