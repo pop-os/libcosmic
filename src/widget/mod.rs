@@ -28,4 +28,7 @@ mod scrollable;
 pub use scrollable::*;
 
 pub mod separator;
-pub use separator::{horizontal_rule, vertical_rule};
+pub use separator::*;
+
+pub mod segmented_button;
+pub use segmented_button::*;

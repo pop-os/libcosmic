@@ -9,7 +9,7 @@ use cosmic::{
     iced_lazy::responsive,
     iced_winit::window::{drag, toggle_maximize, minimize},
     theme::{self, Theme},
-    widget::{button, nav_button, nav_bar, header_bar, settings, scrollable, toggler, nav_bar_item},
+    widget::{button, nav_button, nav_bar, header_bar, settings, scrollable, toggler, nav_bar_item, segmented_button},
     Element,
     ElementExt,
 };
@@ -62,6 +62,7 @@ pub enum Message {
     TogglerToggled(bool),
     PickListSelected(&'static str),
     RowSelected(usize),
+    SegmentatedButtonPressed(usize),
     Close,
     ToggleSidebar,
     Drag,
@@ -110,6 +111,9 @@ impl Application for Window {
             Message::Minimize => return minimize(true),
             Message::Maximize => return toggle_maximize(),
             Message::RowSelected(row) => println!("Selected row {row}"),
+            Message::SegmentatedButtonPressed(index) => {
+                println!("Segmented button at index: {index}")
+            }
         }
 
         Command::none()
@@ -143,6 +147,7 @@ impl Application for Window {
         let content = responsive(|size| {
             let condensed = size.width < 900.0;
             let sidebar: Element<_> = nav_bar()
+                // TODO: Make this take an iterator
                 .source(BTreeMap::from([
                     (
                         nav_bar_item()
@@ -272,10 +277,50 @@ impl Application for Window {
                             .width(Length::Units(250))
                             .height(Length::Units(4))
                     ))
-                    .into()
-            ])
-            .into();
-
+                    .add(settings::item(
+                        "Segmented Button",
+                        segmented_button()
+                            .options(vec!["Vertical", "Horizontal"])
+                            .on_button_pressed(Box::new(Message::SegmentatedButtonPressed))
+                    ))
+                    .add(settings::item(
+                        "Checkbox",
+                        checkbox("Checkbox", self.checkbox_value, Message::CheckboxToggled)
+                    ))
+                    .into(),
+                settings::view_section("Expander")
+                    .add(settings::item(
+                        "Expander",
+                        expander()
+                            .title("Label")
+                            .subtitle("Caption")
+                            .icon(String::from("edit-paste"))
+                            .on_row_selected(Box::new(Message::RowSelected))
+                            .rows(vec![
+                                list_row()
+                                    .title("Label")
+                                    .subtitle("Caption")
+                                    .icon(String::from("help-about")),
+                                list_row().subtitle("Caption").title("Label"),
+                                list_row().title("Label")
+                            ])
+                    )).into(),
+                settings::view_section("List Box")
+                    .add(settings::item(
+                        "List Box",
+                        list_box()
+                            .style(theme::Container::Custom(list_section_style))
+                            .children(vec![
+                                cosmic::list_box_row!("Title").into(),
+                                cosmic::list_box_row!("Title", "Subtitle").into(),
+                                cosmic::list_box_row!("Title", "", "edit-paste").into(),
+                                cosmic::list_box_row!("", "Subtitle", "edit-paste").into(),
+                                cosmic::list_box_row!("Title", "Subtitle", "edit-paste").into()
+                            ])
+                            .render()
+                    )).into(),
+            ]);
+            
             let mut widgets = Vec::with_capacity(2);
 
             widgets.push(sidebar.debug(self.debug));
