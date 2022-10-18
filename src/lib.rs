@@ -1,5 +1,7 @@
 pub use iced;
 pub use iced_lazy;
+pub use iced_native;
+pub use iced_style;
 pub use iced_winit;
 
 pub mod font;

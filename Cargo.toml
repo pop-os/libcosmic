@@ -21,11 +21,10 @@ branch = "cosmic-design-system"
 # path = "../iced"
 features = ["cosmic-theme", "svg"]
 
-[dependencies.iced_style]
+[dependencies.iced_lazy]
 git = "https://github.com/pop-os/iced.git"
 branch = "cosmic-design-system"
-# path = "../iced/style"
-features = ["cosmic-theme"]
+# path = "../iced/lazy"
 
 [dependencies.iced_native]
 git = "https://github.com/pop-os/iced.git"
@@ -33,10 +32,11 @@ branch = "cosmic-design-system"
 # path = "../iced/native"
 features = ["cosmic-theme"]
 
-[dependencies.iced_lazy]
+[dependencies.iced_style]
 git = "https://github.com/pop-os/iced.git"
 branch = "cosmic-design-system"
-# path = "../iced/lazy"
+# path = "../iced/style"
+features = ["cosmic-theme"]
 
 [dependencies.iced_winit]
 git = "https://github.com/pop-os/iced.git"
