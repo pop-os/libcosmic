@@ -19,7 +19,7 @@ derive_setters = "0.1.5"
 git = "https://github.com/pop-os/iced.git"
 branch = "cosmic-design-system"
 # path = "../iced"
-features = ["cosmic-theme", "svg"]
+features = ["cosmic-theme", "image", "svg"]
 
 [dependencies.iced_lazy]
 git = "https://github.com/pop-os/iced.git"
