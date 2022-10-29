@@ -1,13 +1,14 @@
 use crate::scrollable;
 use crate::widget::nav_bar::{nav_bar_pages_style, nav_bar_sections_style};
 use crate::widget::{icon, Background};
+use crate::{theme, Theme};
 use derive_setters::Setters;
 use iced::Length;
 use iced_lazy::Component;
 use iced_native::widget::{button, column, container, text};
 use iced_native::{row, Alignment, Element};
 use iced_style::button::Appearance;
-use iced_style::{scrollable, theme, Theme};
+use iced_style::scrollable;
 use std::collections::BTreeMap;
 
 #[derive(Setters, Default)]

@@ -1,4 +1,5 @@
 use crate::separator;
+use crate::theme::{self, Container};
 use derive_setters::Setters;
 use iced::mouse::Interaction;
 use iced::{overlay, Alignment, Length, Padding, Point, Rectangle};
@@ -12,8 +13,6 @@ use iced_native::{
     renderer, row, Background, Clipboard, Color, Element, Event, Layout, Shell, Widget,
 };
 use iced_style::container::{Appearance, StyleSheet};
-use iced_style::theme;
-use iced_style::theme::Container;
 
 #[derive(Setters)]
 #[allow(dead_code)]

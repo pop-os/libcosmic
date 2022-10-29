@@ -1,5 +1,6 @@
 pub mod nav_bar {
-    use iced::{widget, Background, Color, Theme};
+    use iced::{widget, Background, Color};
+    use crate::Theme;
 
     #[macro_export]
     macro_rules! nav_button {
