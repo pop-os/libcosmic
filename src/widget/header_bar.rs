@@ -1,7 +1,8 @@
 use apply::Apply;
 use derive_setters::*;
-use iced::{self, alignment::Vertical, theme, widget, Element, Length, Renderer};
+use iced::{self, alignment::Vertical, widget, Length};
 use iced_lazy::Component;
+use crate::{theme, Element, Renderer};
 
 #[derive(Setters)]
 pub struct HeaderBar<Message> {
@@ -103,7 +104,7 @@ impl<Message: Clone> Component<Message, Renderer> for HeaderBar<Message> {
             .into();
 
         let window_controls = {
-            let mut widgets: Vec<Element<HeaderEvent, _>> = Vec::with_capacity(3);
+            let mut widgets: Vec<Element<HeaderEvent>> = Vec::with_capacity(3);
 
             let icon = |name, size, on_press| {
                 super::icon(name, size)

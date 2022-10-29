@@ -5,7 +5,12 @@ pub use iced_style;
 pub use iced_winit;
 
 pub mod font;
+pub mod theme;
 pub mod widget;
+
+pub use theme::Theme;
+pub type Renderer = iced::Renderer<Theme>;
+pub type Element<'a, Message> = iced::Element<'a, Message, Renderer>;
 
 #[derive(Clone, Copy, Debug)]
 pub enum WindowMsg {

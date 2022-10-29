@@ -4,11 +4,13 @@ use cosmic::{
         checkbox, column, container, horizontal_space, pick_list, progress_bar, radio, row, slider,
         text,
     },
-    iced::{self, theme, Alignment, Application, Color, Command, Element, Length, Theme},
+    iced::{self, Alignment, Application, Color, Command, Length},
     iced_lazy::responsive,
     iced_winit::window::{drag, maximize, minimize},
     list_view, list_view_item, list_view_row, list_view_section, scrollable,
+    theme::{self, Theme},
     widget::{button, header_bar, list_box, list_row, list_view::*, toggler},
+    Element,
 };
 use std::collections::BTreeMap;
 
@@ -106,7 +108,7 @@ impl Application for Window {
     }
 
     fn view(&self) -> Element<Message> {
-        let mut header: Element<Message, _> = header_bar()
+        let mut header: Element<Message> = header_bar()
             .title(self.title())
             .nav_title(String::from("Settings"))
             .sidebar_active(self.sidebar_toggled)

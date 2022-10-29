@@ -1,4 +1,5 @@
-pub use iced::{widget, Background, Color, Theme};
+pub use iced::{widget, Background, Color};
+pub use crate::Theme;
 
 pub mod list_view {
     #[macro_export]
@@ -82,7 +83,7 @@ pub mod list_view {
 
     use crate::widget::{Background, Color};
     use iced::widget;
-    use iced_style::Theme;
+    use crate::Theme;
 
     pub use list_view;
     pub use list_view_item;

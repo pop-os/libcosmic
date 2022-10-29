@@ -1,12 +1,11 @@
 use std::vec;
 
-use crate::{list_box_row, separator, widget::ListRow};
+use crate::{list_box_row, separator, theme, widget::ListRow, Element, Renderer, Theme};
 use apply::Apply;
 use derive_setters::Setters;
 use iced::{
-    theme,
     widget::{self, button, container, horizontal_space, row, text, Column},
-    Alignment, Background, Element, Length, Renderer, Theme,
+    Alignment, Background, Length,
 };
 use iced_lazy::Component;
 use iced_native::widget::{column, event_container};
@@ -86,14 +85,14 @@ impl<'a, Message: Clone + 'a> Component<Message, Renderer> for Expander<'a, Mess
     }
 
     fn view(&self, state: &Self::State) -> Element<Self::Event> {
-        let heading: Element<ExpanderEvent, Renderer> = {
+        let heading: Element<ExpanderEvent> = {
             let mut captions = vec![text(&self.title).size(18).into()];
             if let Some(subtitle) = &self.subtitle {
                 captions.push(text(subtitle).size(16).into());
             }
             let text = column(captions);
-            let space: Element<ExpanderEvent, Renderer> = horizontal_space(Length::Fill).into();
-            let toggler: Element<ExpanderEvent, Renderer> = {
+            let space: Element<ExpanderEvent> = horizontal_space(Length::Fill).into();
+            let toggler: Element<ExpanderEvent> = {
                 let mut icon = super::icon(
                     if state.expanded {
                         "go-down-symbolic"
