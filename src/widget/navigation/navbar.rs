@@ -98,6 +98,7 @@ where
     <<Renderer as iced_native::Renderer>::Theme as container::StyleSheet>::Style:
         From<theme::Container>,
     <<Renderer as iced_native::Renderer>::Theme as text::StyleSheet>::Style: From<theme::Text>,
+    Renderer::Theme: iced_native::svg::StyleSheet
 {
     type State = NavBarState;
     type Event = NavBarEvent;
@@ -231,6 +232,7 @@ where
     <<Renderer as iced_native::Renderer>::Theme as container::StyleSheet>::Style:
         From<theme::Container>,
     <<Renderer as iced_native::Renderer>::Theme as text::StyleSheet>::Style: From<theme::Text>,
+    Renderer::Theme: iced_native::svg::StyleSheet
 {
     fn from(nav_bar: NavBar<'a, Message>) -> Self {
         iced_lazy::component(nav_bar)

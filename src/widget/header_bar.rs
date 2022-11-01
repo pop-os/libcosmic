@@ -108,8 +108,9 @@ impl<Message: Clone> Component<Message, Renderer> for HeaderBar<Message> {
 
             let icon = |name, size, on_press| {
                 super::icon(name, size)
+                    .style(crate::theme::Svg::Accent)
                     .apply(widget::button)
-                    .style(theme::Button::Primary)
+                    .style(theme::Button::Text)
                     .on_press(on_press)
             };
 

@@ -1,6 +1,10 @@
 use iced::{widget::svg, Length};
 
-pub fn icon(name: &str, size: u16) -> svg::Svg {
+pub fn icon<Renderer>(name: &str, size: u16) -> svg::Svg<Renderer>
+where
+    Renderer: iced_native::svg::Renderer,
+    Renderer::Theme: iced_native::svg::StyleSheet,
+{
     let handle = match freedesktop_icons::lookup(name)
         .with_size(size)
         .with_theme("Pop")

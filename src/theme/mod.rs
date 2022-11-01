@@ -15,6 +15,7 @@ use iced_style::radio;
 use iced_style::rule;
 use iced_style::scrollable;
 use iced_style::slider;
+use iced_style::svg;
 use iced_style::text;
 use iced_style::text_input;
 use iced_style::toggler;
@@ -660,6 +661,31 @@ impl scrollable::StyleSheet for Theme {
                 border_radius: 4.0,
                 border_width: 0.0,
                 border_color: Color::TRANSPARENT,
+            },
+        }
+    }
+}
+
+
+#[derive(Default, Clone, Copy)]
+pub enum Svg {
+    Custom(fn(&Theme) -> svg::Appearance),
+    #[default]
+    Default,
+    Accent,
+}
+
+impl svg::StyleSheet for Theme {
+    type Style = Svg;
+
+    fn appearance(&self, style: Self::Style) -> svg::Appearance {
+        let cosmic = self.cosmic();
+
+        match style {
+            Svg::Default => Default::default(),
+            Svg::Custom(appearance) => appearance(self),
+            Svg::Accent => svg::Appearance {
+                fill: Some(cosmic.accent.base.into()),
             },
         }
     }
