@@ -69,6 +69,7 @@ impl<Message: Clone> Component<Message, Renderer> for HeaderBar<Message> {
     fn view(&self, _state: &Self::State) -> Element<Self::Event> {
         let nav_button = {
             let text = widget::text(&self.nav_title)
+                .style(theme::Text::Accent)
                 .vertical_alignment(Vertical::Center)
                 .width(Length::Shrink)
                 .height(Length::Fill);
@@ -81,6 +82,7 @@ impl<Message: Clone> Component<Message, Renderer> for HeaderBar<Message> {
                 },
                 24,
             )
+            .style(theme::Svg::Accent)
             .width(Length::Units(24))
             .height(Length::Fill);
 
@@ -88,7 +90,7 @@ impl<Message: Clone> Component<Message, Renderer> for HeaderBar<Message> {
                 .padding(4)
                 .spacing(4)
                 .apply(widget::button)
-                .style(theme::Button::Primary)
+                .style(theme::Button::Secondary)
                 .on_press(HeaderEvent::ToggleSidebar)
                 .apply(widget::container)
                 .center_y()

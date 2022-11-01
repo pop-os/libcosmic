@@ -694,17 +694,13 @@ impl svg::StyleSheet for Theme {
 /*
  * TODO: Text
  */
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Default)]
 pub enum Text {
+    Accent,
+    #[default]
     Default,
     Color(Color),
     Custom(fn(&Theme) -> text::Appearance),
-}
-
-impl Default for Text {
-    fn default() -> Self {
-        Self::Default
-    }
 }
 
 impl From<Color> for Text {
@@ -718,6 +714,9 @@ impl text::StyleSheet for Theme {
 
     fn appearance(&self, style: Self::Style) -> text::Appearance {
         match style {
+            Text::Accent => text::Appearance {
+                color: Some(self.cosmic().accent.base.into())
+            },
             Text::Default => Default::default(),
             Text::Color(c) => text::Appearance { color: Some(c) },
             Text::Custom(f) => f(self),
