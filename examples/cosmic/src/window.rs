@@ -7,6 +7,7 @@ use cosmic::{
     iced::{self, Alignment, Application, Color, Command, Length},
     iced_lazy::responsive,
     iced_winit::window::{drag, maximize, minimize},
+    iced_native::window,
     list_view, list_view_item, list_view_row, list_view_section, scrollable,
     theme::{self, Theme},
     widget::{button, header_bar, list_box, list_row, list_view::*, toggler},
@@ -98,9 +99,9 @@ impl Application for Window {
             Message::PickListSelected(value) => self.pick_list_selected = Some(value),
             Message::Close => self.exit = true,
             Message::ToggleSidebar => self.sidebar_toggled = !self.sidebar_toggled,
-            Message::Drag => return drag(),
-            Message::Minimize => return minimize(),
-            Message::Maximize => return maximize(),
+            Message::Drag => return drag(window::Id::new(0)),
+            Message::Minimize => return minimize(window::Id::new(0)),
+            Message::Maximize => return maximize(window::Id::new(0)),
             Message::RowSelected(row) => println!("Selected row {row}"),
         }
 
