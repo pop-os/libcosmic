@@ -1,0 +1,9 @@
+[package]
+name = "cosmic_sctk"
+version = "0.1.0"
+authors = []
+edition = "2021"
+publish = false
+
+[dependencies]
+libcosmic = { path = "../..", default-features = false, features = ["debug", "wayland"] }

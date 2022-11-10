@@ -175,7 +175,7 @@ where
         cursor_position: Point,
         viewport: &Rectangle,
     ) {
-        let color_scheme = theme.appearance(self.style);
+        let color_scheme = theme.appearance(&self.style);
 
         draw_background(renderer, &color_scheme, layout.bounds());
 

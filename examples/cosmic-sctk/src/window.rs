@@ -15,6 +15,7 @@ use cosmic::{
 };
 use std::collections::BTreeMap;
 
+
 #[derive(Default)]
 pub struct Window {
     page: u8,
@@ -107,8 +108,26 @@ impl Application for Window {
 
         Command::none()
     }
+    fn view_popup(&self, id: window::Id) -> Element<Message> {
+        unimplemented!()
+    }
+    fn view_layer_surface(
+            &self,
+            window: cosmic::iced_native::window::Id,
+    ) -> iced::Element<'_, Self::Message, iced::Renderer<Self::Theme>> {
+        unimplemented!()
+    }
+    fn close_window_requested(&self, window: cosmic::iced_native::window::Id) -> Self::Message {
+        unimplemented!()
+    }
+    fn popup_done(&self, window: cosmic::iced_native::window::Id) -> Self::Message {
+        unimplemented!()
+    }
+    fn layer_surface_done(&self, window: cosmic::iced_native::window::Id) -> Self::Message {
+        unimplemented!()
+    }
 
-    fn view(&self) -> Element<Message> {
+    fn view_window(&self, id: window::Id) -> Element<Message> {
         let mut header: Element<Message> = header_bar()
             .title(self.title())
             .nav_title(String::from("Settings"))

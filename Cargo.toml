@@ -7,8 +7,10 @@ edition = "2021"
 name = "cosmic"
 
 [features]
-default = []
+default = ["wgpu"]
 debug = ["iced/debug"]
+wayland = ["iced/wayland"]
+wgpu = ["iced/wgpu"]
 
 [dependencies]
 freedesktop-icons = "0.2.1"
@@ -24,6 +26,7 @@ git = "https://github.com/pop-os/cosmic-theme.git"
 git = "https://github.com/pop-os/iced.git"
 branch = "sctk-cosmic"
 # path = "../iced"
+default-features = false
 features = ["image", "svg"]
 
 [dependencies.iced_core]
