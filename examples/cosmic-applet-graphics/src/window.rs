@@ -1,5 +1,5 @@
 use crate::dbus::{self, PowerDaemonProxy};
-use crate::graphics::{get_current_graphics, Graphics};
+use crate::graphics::{get_current_graphics, Graphics, set_graphics};
 use cosmic::widget::{expander, icon, nav_bar, nav_bar_page, nav_bar_section};
 use cosmic::{
     iced::widget::{
@@ -16,7 +16,7 @@ use cosmic::{
     Element,
 };
 use cosmic::{iced_native, separator};
-use cosmic_panel_config::PanelSize;
+use cosmic_panel_config::{PanelSize, PanelAnchor};
 use iced_sctk::alignment::Horizontal;
 use iced_sctk::command::platform_specific::wayland::popup::{SctkPopupSettings, SctkPositioner};
 use iced_sctk::commands::popup::{destroy_popup, get_popup};
@@ -24,20 +24,30 @@ use iced_sctk::{Point, Rectangle, Size};
 use sctk::reexports::protocols::xdg::shell::client::xdg_positioner::{Anchor, Gravity};
 use zbus::Connection;
 
+#[derive(Default, Clone, Copy)]
+enum State {
+    #[default]
+    SelectGraphicsMode,
+    SettingGraphicsMode(Graphics),
+}
+
 #[derive(Default)]
 pub struct Window {
     popup: Option<window::Id>,
     graphics_mode: Option<Graphics>,
     id_ctr: u32,
     icon_size: u16,
+    anchor: PanelAnchor,
     theme: Theme,
     dbus: Option<(Connection, PowerDaemonProxy<'static>)>,
+    state: State,
 }
 
 #[allow(dead_code)]
 #[derive(Clone, Debug)]
 pub enum Message {
     CurrentGraphics(Option<Graphics>),
+    AppliedGraphicsMode(Option<Graphics>),
     DBusInit(Option<(Connection, PowerDaemonProxy<'static>)>),
     SelectGraphicsMode(Graphics),
     TogglePopup,
@@ -63,6 +73,13 @@ impl Application for Window {
             })
             .unwrap_or(16);
         window.icon_size = pixels;
+        window.anchor = std::env::var("COSMIC_PANEL_ANCHOR")
+        .ok()
+        .map(|size| match size.parse::<PanelAnchor>() {
+            Ok(p) => p,
+            Err(_) => PanelAnchor::Top,
+        })
+        .unwrap_or(PanelAnchor::Top);
         (
             window,
             Command::perform(dbus::init(), |dbus_init| Message::DBusInit(dbus_init)),
@@ -75,7 +92,22 @@ impl Application for Window {
 
     fn update(&mut self, message: Message) -> iced::Command<Self::Message> {
         match message {
-            Message::SelectGraphicsMode(_) => {}
+            Message::SelectGraphicsMode(new_graphics_mode) => {
+                dbg!(new_graphics_mode);
+                if let Some((_, proxy)) = self.dbus.as_ref() {
+                    self.state = State::SettingGraphicsMode(new_graphics_mode);
+                    return Command::perform(set_graphics(proxy.clone(), new_graphics_mode), move |success| {
+                        Message::AppliedGraphicsMode(success.ok().map(|_| new_graphics_mode))
+                    },);
+                }
+            }
+            Message::AppliedGraphicsMode(g) => {
+                if let Some(g) = g {
+                    dbg!(g);
+                    self.graphics_mode.replace(g);
+                    self.state = State::SelectGraphicsMode;
+                }
+            },
             Message::TogglePopup => {
                 if let Some(p) = self.popup.take() {
                     return destroy_popup(p);
@@ -90,10 +122,18 @@ impl Application for Window {
                             |cur_graphics| Message::CurrentGraphics(cur_graphics.ok()),
                         ));
                     }
+                    let (anchor, gravity) = match self.anchor {
+                        PanelAnchor::Left => (Anchor::Right, Gravity::Right),
+                        PanelAnchor::Right => (Anchor::Left, Gravity::Left),
+                        PanelAnchor::Top => (Anchor::Bottom, Gravity::Bottom),
+                        PanelAnchor::Bottom => (Anchor::Top, Gravity::Top),
+                    };
                     commands.push(Command::batch(vec![get_popup(SctkPopupSettings {
                         parent: window::Id::new(0),
                         id: new_id,
                         positioner: SctkPositioner {
+                            anchor,
+                            gravity,
                             size: (200, 200),
                             anchor_rect: Rectangle {
                                 x: 0,
@@ -101,8 +141,6 @@ impl Application for Window {
                                 width: 32 + self.icon_size as i32,
                                 height: 16 + self.icon_size as i32,
                             },
-                            anchor: Anchor::Bottom,
-                            gravity: Gravity::Bottom,
                             reactive: true,
                             ..Default::default()
                         },
@@ -137,14 +175,8 @@ impl Application for Window {
     }
 
     fn view_popup(&self, _: window::Id) -> Element<Message> {
-        let content = column(vec![
-            text("Graphics Mode")
-                .width(Length::Fill)
-                .horizontal_alignment(Horizontal::Center)
-                .size(24)
-                .into(),
-            separator!(1).into(),
-            column(vec![
+        let content = match self.state {
+            State::SelectGraphicsMode => column(vec![
                 radio(
                     "Integrated Graphics",
                     Graphics::Integrated,
@@ -177,11 +209,30 @@ impl Application for Window {
             .padding([8, 0])
             .spacing(8)
             .into(),
+            State::SettingGraphicsMode(graphics) => {
+                let graphics_str = match graphics {
+                    Graphics::Integrated => "integrated",
+                    Graphics::Hybrid => "hybrid",
+                    Graphics::Nvidia => "nvidia",
+                    Graphics::Compute => "compute",
+                };
+                column(vec![
+                    text(format!("Setting graphics mode to {graphics_str}...")).width(Length::Fill).horizontal_alignment(Horizontal::Center).into()
+                ]).into()
+            },
+        };
+        column(vec![
+            text("Graphics Mode")
+                .width(Length::Fill)
+                .horizontal_alignment(Horizontal::Center)
+                .size(24)
+                .into(),
+            separator!(1).into(),
+            content,
         ])
         .padding(4)
         .spacing(4)
-        .into();
-        content
+        .into()
     }
 
     fn view_layer_surface(

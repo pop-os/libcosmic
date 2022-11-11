@@ -7,7 +7,7 @@ edition = "2021"
 name = "cosmic"
 
 [features]
-default = ["wgpu"]
+default = ["wayland"]
 debug = ["iced/debug"]
 wayland = ["iced/wayland"]
 wgpu = ["iced/wgpu"]
