@@ -174,11 +174,7 @@ impl Default for Checkbox {
 impl checkbox::StyleSheet for Theme {
     type Style = Checkbox;
 
-    fn active(
-        &self,
-        style: &Self::Style,
-        is_checked: bool,
-    ) -> checkbox::Appearance {
+    fn active(&self, style: &Self::Style, is_checked: bool) -> checkbox::Appearance {
         let palette = self.extended_palette();
 
         match style {
@@ -209,11 +205,7 @@ impl checkbox::StyleSheet for Theme {
         }
     }
 
-    fn hovered(
-        &self,
-        style: &Self::Style,
-        is_checked: bool,
-    ) -> checkbox::Appearance {
+    fn hovered(&self, style: &Self::Style, is_checked: bool) -> checkbox::Appearance {
         let palette = self.extended_palette();
 
         match style {
@@ -252,11 +244,7 @@ fn checkbox_appearance(
     is_checked: bool,
 ) -> checkbox::Appearance {
     checkbox::Appearance {
-        background: Background::Color(if is_checked {
-            accent.color
-        } else {
-            base.color
-        }),
+        background: Background::Color(if is_checked { accent.color } else { base.color }),
         checkmark_color,
         border_radius: 4.0,
         border_width: if is_checked { 0.0 } else { 1.0 },
@@ -355,21 +343,17 @@ impl slider::StyleSheet for Theme {
                 Color::TRANSPARENT,
             ),
             handle: slider::Handle {
-                shape: slider::HandleShape::Circle {
-                    radius: 10.0,
-                },
+                shape: slider::HandleShape::Circle { radius: 10.0 },
                 color: cosmic.accent.base.into(),
                 border_color: Color::TRANSPARENT,
                 border_width: 0.0,
-            }
+            },
         }
     }
 
     fn hovered(&self, style: &Self::Style) -> slider::Appearance {
         let mut style = self.active(&style);
-        style.handle.shape = slider::HandleShape::Circle {
-            radius: 16.0
-        };
+        style.handle.shape = slider::HandleShape::Circle { radius: 16.0 };
         style.handle.border_width = 6.0;
         style.handle.border_color = match self {
             Theme::Dark => Color::from_rgba8(0xFF, 0xFF, 0xFF, 0.1),
@@ -475,11 +459,7 @@ impl radio::StyleSheet for Theme {
 impl toggler::StyleSheet for Theme {
     type Style = ();
 
-    fn active(
-        &self,
-        _style: &Self::Style,
-        is_active: bool,
-    ) -> toggler::Appearance {
+    fn active(&self, _style: &Self::Style, is_active: bool) -> toggler::Appearance {
         let palette = self.palette();
 
         toggler::Appearance {
@@ -502,14 +482,10 @@ impl toggler::StyleSheet for Theme {
         }
     }
 
-    fn hovered(
-        &self,
-        style: &Self::Style,
-        is_active: bool,
-    ) -> toggler::Appearance {
+    fn hovered(&self, style: &Self::Style, is_active: bool) -> toggler::Appearance {
         //TODO: grab colors from palette
         match self {
-            Theme::Dark  => toggler::Appearance {
+            Theme::Dark => toggler::Appearance {
                 background: if is_active {
                     Color::from_rgb8(0x9f, 0xed, 0xed)
                 } else {
@@ -517,14 +493,14 @@ impl toggler::StyleSheet for Theme {
                 },
                 ..self.active(&style, is_active)
             },
-            Theme::Light  => toggler::Appearance {
+            Theme::Light => toggler::Appearance {
                 background: if is_active {
                     Color::from_rgb8(0x00, 0x42, 0x62)
                 } else {
                     Color::from_rgb8(0x54, 0x54, 0x54)
                 },
                 ..self.active(&style, is_active)
-            }
+            },
         }
     }
 }
@@ -666,7 +642,6 @@ impl scrollable::StyleSheet for Theme {
     }
 }
 
-
 #[derive(Default, Clone, Copy)]
 pub enum Svg {
     Custom(fn(&Theme) -> svg::Appearance),
@@ -715,7 +690,7 @@ impl text::StyleSheet for Theme {
     fn appearance(&self, style: Self::Style) -> text::Appearance {
         match style {
             Text::Accent => text::Appearance {
-                color: Some(self.cosmic().accent.base.into())
+                color: Some(self.cosmic().accent.base.into()),
             },
             Text::Default => Default::default(),
             Text::Color(c) => text::Appearance { color: Some(c) },

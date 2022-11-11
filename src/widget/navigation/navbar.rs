@@ -98,7 +98,7 @@ where
     <<Renderer as iced_native::Renderer>::Theme as container::StyleSheet>::Style:
         From<theme::Container>,
     <<Renderer as iced_native::Renderer>::Theme as text::StyleSheet>::Style: From<theme::Text>,
-    Renderer::Theme: iced_native::svg::StyleSheet
+    Renderer::Theme: iced_native::svg::StyleSheet,
 {
     type State = NavBarState;
     type Event = NavBarEvent;
@@ -146,11 +146,13 @@ where
                         .height(Length::Units(50))
                         .align_items(Alignment::Center),
                     )
-                    .style(if *section == state.selected_section && state.section_active {
-                        theme::Button::Primary.into()
-                    } else {
-                        theme::Button::Text.into()
-                    })
+                    .style(
+                        if *section == state.selected_section && state.section_active {
+                            theme::Button::Primary.into()
+                        } else {
+                            theme::Button::Text.into()
+                        },
+                    )
                     .on_press(NavBarEvent::SectionSelected(section.clone()))
                     .into(),
                 );
@@ -159,17 +161,15 @@ where
                         pages.push(
                             button(row![text(&page.title).size(16).width(Length::Fill)])
                                 .padding(10)
-                                .style(
-                                    if let Some(selected_page) = &state.selected_page {
-                                        if state.page_active && page == selected_page {
-                                            theme::Button::Primary.into()
-                                        } else {
-                                            theme::Button::Text.into()
-                                        }
+                                .style(if let Some(selected_page) = &state.selected_page {
+                                    if state.page_active && page == selected_page {
+                                        theme::Button::Primary.into()
                                     } else {
                                         theme::Button::Text.into()
                                     }
-                                )
+                                } else {
+                                    theme::Button::Text.into()
+                                })
                                 .on_press(NavBarEvent::PageSelected(section.clone(), page.clone()))
                                 .into(),
                         );
@@ -180,13 +180,13 @@ where
             let nav_bar: Element<Self::Event, Renderer> =
                 container(if self.condensed && state.selected_page.is_some() {
                     row![container(scrollable!(column(pages)
-                            .spacing(10)
-                            .padding(10)
-                            .max_width(200)
-                            .width(Length::Units(200))
-                            .height(Length::Shrink)))
-                        .height(Length::Fill)
-                        .style(theme::Container::Custom(nav_bar_pages_style))]
+                        .spacing(10)
+                        .padding(10)
+                        .max_width(200)
+                        .width(Length::Units(200))
+                        .height(Length::Shrink)))
+                    .height(Length::Fill)
+                    .style(theme::Container::Custom(nav_bar_pages_style))]
                 } else if !state.section_active || self.condensed && state.selected_page.is_none() {
                     row![scrollable!(column(sections)
                         .spacing(10)
@@ -222,8 +222,7 @@ where
     }
 }
 
-impl<'a, Message: 'a, Renderer> From<NavBar<'a, Message>>
-    for Element<'a, Message, Renderer>
+impl<'a, Message: 'a, Renderer> From<NavBar<'a, Message>> for Element<'a, Message, Renderer>
 where
     Renderer: iced_native::text::Renderer + iced_native::svg::Renderer + 'a,
     <Renderer as iced_native::Renderer>::Theme:
@@ -232,7 +231,7 @@ where
     <<Renderer as iced_native::Renderer>::Theme as container::StyleSheet>::Style:
         From<theme::Container>,
     <<Renderer as iced_native::Renderer>::Theme as text::StyleSheet>::Style: From<theme::Text>,
-    Renderer::Theme: iced_native::svg::StyleSheet
+    Renderer::Theme: iced_native::svg::StyleSheet,
 {
     fn from(nav_bar: NavBar<'a, Message>) -> Self {
         iced_lazy::component(nav_bar)

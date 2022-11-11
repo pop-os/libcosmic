@@ -46,7 +46,7 @@ impl Palette {
         background: Color::from_rgb(
             0x1e as f32 / 255.0,
             0x1e as f32 / 255.0,
-            0x1e as f32 / 255.0
+            0x1e as f32 / 255.0,
         ),
         text: Color::from_rgb(
             0xe4 as f32 / 255.0,
@@ -80,8 +80,7 @@ pub struct Extended {
 }
 
 lazy_static! {
-    pub static ref EXTENDED_LIGHT: Extended =
-        Extended::generate(Palette::LIGHT);
+    pub static ref EXTENDED_LIGHT: Extended = Extended::generate(Palette::LIGHT);
     pub static ref EXTENDED_DARK: Extended = Extended::generate(Palette::DARK);
 }
 
@@ -89,22 +88,10 @@ impl Extended {
     pub fn generate(palette: Palette) -> Self {
         Self {
             background: Background::new(palette.background, palette.text),
-            primary: Primary::generate(
-                palette.primary,
-                palette.background,
-                palette.text,
-            ),
+            primary: Primary::generate(palette.primary, palette.background, palette.text),
             secondary: Secondary::generate(palette.background, palette.text),
-            success: Success::generate(
-                palette.success,
-                palette.background,
-                palette.text,
-            ),
-            danger: Danger::generate(
-                palette.danger,
-                palette.background,
-                palette.text,
-            ),
+            success: Success::generate(palette.success, palette.background, palette.text),
+            danger: Danger::generate(palette.danger, palette.background, palette.text),
         }
     }
 }

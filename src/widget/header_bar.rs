@@ -1,8 +1,8 @@
+use crate::{theme, Element, Renderer};
 use apply::Apply;
 use derive_setters::*;
 use iced::{self, alignment::Vertical, widget, Length};
 use iced_lazy::Component;
-use crate::{theme, Element, Renderer};
 
 #[derive(Setters)]
 pub struct HeaderBar<Message> {

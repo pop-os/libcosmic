@@ -62,6 +62,4 @@ branch = "sctk-cosmic"
 [workspace]
 members = [
   "examples/*",
-  "gtk4",
-  "gtk4/widgets"
 ]

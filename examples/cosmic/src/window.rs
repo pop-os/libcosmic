@@ -6,8 +6,8 @@ use cosmic::{
     },
     iced::{self, Alignment, Application, Color, Command, Length},
     iced_lazy::responsive,
-    iced_winit::window::{drag, maximize, minimize},
     iced_native::window,
+    iced_winit::window::{drag, maximize, minimize},
     list_view, list_view_item, list_view_row, list_view_section, scrollable,
     theme::{self, Theme},
     widget::{button, header_bar, list_box, list_row, list_view::*, toggler},
@@ -165,9 +165,7 @@ impl Application for Window {
                         vec![nav_bar_page("Wi-Fi")],
                     ),
                     (
-                        nav_bar_section()
-                            .title("Bluetooth")
-                            .icon("cs-bluetooth"),
+                        nav_bar_section().title("Bluetooth").icon("cs-bluetooth"),
                         vec![nav_bar_page("Devices")],
                     ),
                     (
@@ -194,9 +192,7 @@ impl Application for Window {
                         vec![nav_bar_page("Keyboard")],
                     ),
                     (
-                        nav_bar_section()
-                            .title("Power & Battery")
-                            .icon("battery"),
+                        nav_bar_section().title("Power & Battery").icon("battery"),
                         vec![nav_bar_page("Status")],
                     ),
                     (

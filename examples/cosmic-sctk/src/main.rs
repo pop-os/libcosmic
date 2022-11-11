@@ -1,4 +1,7 @@
-use cosmic::{iced::{Application, sctk_settings::InitialSurface}, settings};
+use cosmic::{
+    iced::{sctk_settings::InitialSurface, Application},
+    settings,
+};
 
 mod window;
 pub use window::*;
