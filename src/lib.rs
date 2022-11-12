@@ -4,6 +4,8 @@ pub use iced_native;
 pub use iced_style;
 pub use iced_winit;
 
+#[cfg(feature = "applet")]
+pub mod applet;
 pub mod font;
 pub mod theme;
 pub mod widget;

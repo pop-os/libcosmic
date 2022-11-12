@@ -429,7 +429,7 @@ impl pick_list::StyleSheet for Theme {
 impl radio::StyleSheet for Theme {
     type Style = ();
 
-    fn active(&self, _style: &Self::Style, is_checked: bool) -> radio::Appearance {
+    fn active(&self, _style: &Self::Style, _is_checked: bool) -> radio::Appearance {
         let palette = self.extended_palette();
 
         radio::Appearance {

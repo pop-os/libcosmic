@@ -1,27 +1,17 @@
 use crate::dbus::{self, PowerDaemonProxy};
-use crate::graphics::{get_current_graphics, Graphics, set_graphics};
-use cosmic::widget::{expander, icon, nav_bar, nav_bar_page, nav_bar_section};
+use crate::graphics::{get_current_graphics, set_graphics, Graphics};
+use cosmic::applet::{get_popup_settings, icon_button};
+use cosmic::separator;
 use cosmic::{
-    iced::widget::{
-        checkbox, column, container, horizontal_space, pick_list, progress_bar, radio, row, slider,
-        text,
-    },
-    iced::{self, Alignment, Application, Color, Command, Length},
-    iced_lazy::responsive,
+    iced::widget::{column, radio, text},
+    iced::{self, Application, Command, Length},
     iced_native::window,
-    iced_winit::window::{drag, maximize, minimize},
-    list_view, list_view_item, list_view_row, list_view_section, scrollable,
     theme::{self, Theme},
-    widget::{button, header_bar, list_box, list_row, list_view::*, toggler},
     Element,
 };
-use cosmic::{iced_native, separator};
-use cosmic_panel_config::{PanelSize, PanelAnchor};
+use cosmic_panel_config::{PanelAnchor, PanelSize};
 use iced_sctk::alignment::Horizontal;
-use iced_sctk::command::platform_specific::wayland::popup::{SctkPopupSettings, SctkPositioner};
 use iced_sctk::commands::popup::{destroy_popup, get_popup};
-use iced_sctk::{Point, Rectangle, Size};
-use sctk::reexports::protocols::xdg::shell::client::xdg_positioner::{Anchor, Gravity};
 use zbus::Connection;
 
 #[derive(Default, Clone, Copy)]
@@ -74,12 +64,12 @@ impl Application for Window {
             .unwrap_or(16);
         window.icon_size = pixels;
         window.anchor = std::env::var("COSMIC_PANEL_ANCHOR")
-        .ok()
-        .map(|size| match size.parse::<PanelAnchor>() {
-            Ok(p) => p,
-            Err(_) => PanelAnchor::Top,
-        })
-        .unwrap_or(PanelAnchor::Top);
+            .ok()
+            .map(|size| match size.parse::<PanelAnchor>() {
+                Ok(p) => p,
+                Err(_) => PanelAnchor::Top,
+            })
+            .unwrap_or(PanelAnchor::Top);
         (
             window,
             Command::perform(dbus::init(), |dbus_init| Message::DBusInit(dbus_init)),
@@ -96,9 +86,12 @@ impl Application for Window {
                 dbg!(new_graphics_mode);
                 if let Some((_, proxy)) = self.dbus.as_ref() {
                     self.state = State::SettingGraphicsMode(new_graphics_mode);
-                    return Command::perform(set_graphics(proxy.clone(), new_graphics_mode), move |success| {
-                        Message::AppliedGraphicsMode(success.ok().map(|_| new_graphics_mode))
-                    },);
+                    return Command::perform(
+                        set_graphics(proxy.clone(), new_graphics_mode),
+                        move |success| {
+                            Message::AppliedGraphicsMode(success.ok().map(|_| new_graphics_mode))
+                        },
+                    );
                 }
             }
             Message::AppliedGraphicsMode(g) => {
@@ -107,7 +100,7 @@ impl Application for Window {
                     self.graphics_mode.replace(g);
                     self.state = State::SelectGraphicsMode;
                 }
-            },
+            }
             Message::TogglePopup => {
                 if let Some(p) = self.popup.take() {
                     return destroy_popup(p);
@@ -122,31 +115,8 @@ impl Application for Window {
                             |cur_graphics| Message::CurrentGraphics(cur_graphics.ok()),
                         ));
                     }
-                    let (anchor, gravity) = match self.anchor {
-                        PanelAnchor::Left => (Anchor::Right, Gravity::Right),
-                        PanelAnchor::Right => (Anchor::Left, Gravity::Left),
-                        PanelAnchor::Top => (Anchor::Bottom, Gravity::Bottom),
-                        PanelAnchor::Bottom => (Anchor::Top, Gravity::Top),
-                    };
-                    commands.push(Command::batch(vec![get_popup(SctkPopupSettings {
-                        parent: window::Id::new(0),
-                        id: new_id,
-                        positioner: SctkPositioner {
-                            anchor,
-                            gravity,
-                            size: (200, 200),
-                            anchor_rect: Rectangle {
-                                x: 0,
-                                y: 0,
-                                width: 32 + self.icon_size as i32,
-                                height: 16 + self.icon_size as i32,
-                            },
-                            reactive: true,
-                            ..Default::default()
-                        },
-                        parent_size: None,
-                        grab: true,
-                    })]));
+                    let popup_settings = get_popup_settings(window::Id::new(0), new_id, None, None);
+                    commands.push(get_popup(popup_settings));
                     return Command::batch(commands);
                 }
             }
@@ -160,12 +130,13 @@ impl Application for Window {
                             Err(err) => {
                                 dbg!(err);
                                 None
-                            },
+                            }
                         })
                     },
                 );
             }
             Message::CurrentGraphics(g) => {
+                dbg!(g);
                 if let Some(g) = g {
                     self.graphics_mode.replace(g);
                 }
@@ -216,10 +187,14 @@ impl Application for Window {
                     Graphics::Nvidia => "nvidia",
                     Graphics::Compute => "compute",
                 };
-                column(vec![
-                    text(format!("Setting graphics mode to {graphics_str}...")).width(Length::Fill).horizontal_alignment(Horizontal::Center).into()
-                ]).into()
-            },
+                column(vec![text(format!(
+                    "Setting graphics mode to {graphics_str}..."
+                ))
+                .width(Length::Fill)
+                .horizontal_alignment(Horizontal::Center)
+                .into()])
+                .into()
+            }
         };
         column(vec![
             text("Graphics Mode")
@@ -251,12 +226,11 @@ impl Application for Window {
         unimplemented!()
     }
 
-    fn view_window(&self, id: window::Id) -> Element<Message> {
+    fn view_window(&self, _: window::Id) -> Element<Message> {
         // TODO use panel config crate after resolving version mismatch
 
-        button!(icon("input-gaming-symbolic", self.icon_size).style(theme::Svg::Accent))
-            .on_press(Message::TogglePopup)
-            .into()
+        let btn = icon_button().on_press(Message::TogglePopup);
+        btn.into()
     }
 
     fn should_exit(&self) -> bool {

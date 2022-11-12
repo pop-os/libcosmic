@@ -7,10 +7,11 @@ edition = "2021"
 name = "cosmic"
 
 [features]
-default = ["wayland"]
+default = ["wgpu"]
 debug = ["iced/debug"]
 wayland = ["iced/wayland"]
 wgpu = ["iced/wgpu"]
+applet = ["cosmic-panel-config", "sctk"]
 
 [dependencies]
 freedesktop-icons = "0.2.1"
@@ -18,6 +19,8 @@ apply = "0.3.0"
 derive_setters = "0.1.5"
 lazy_static = "1.4.0"
 palette = "0.6.1"
+cosmic-panel-config = {git = "https://github.com/pop-os/cosmic-panel", default-features = false, optional = true }
+sctk = { package = "smithay-client-toolkit", git = "https://github.com/Smithay/client-toolkit", optional = true }
 
 [dependencies.cosmic-theme]
 git = "https://github.com/pop-os/cosmic-theme.git"
