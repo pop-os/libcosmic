@@ -7,7 +7,7 @@ edition = "2021"
 name = "cosmic"
 
 [features]
-default = ["wgpu"]
+default = ["iced_winit", "wgpu"]
 debug = ["iced/debug"]
 wayland = ["iced/wayland"]
 wgpu = ["iced/wgpu"]
@@ -55,6 +55,7 @@ branch = "sctk-cosmic"
 [dependencies.iced_winit]
 git = "https://github.com/pop-os/iced.git"
 branch = "sctk-cosmic"
+optional = true
 # path = "../iced/winit"
 
 [dependencies.iced_wgpu]

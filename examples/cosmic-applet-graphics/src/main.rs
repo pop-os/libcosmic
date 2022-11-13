@@ -5,7 +5,7 @@ mod window;
 use cosmic::{
     iced::{sctk_settings::InitialSurface, Application},
     iced_native::window::Settings,
-    iced_winit::command::platform_specific::wayland::window::SctkWindowSettings,
+    iced_native::command::platform_specific::wayland::window::SctkWindowSettings,
     settings,
 };
 use cosmic_panel_config::PanelSize;
