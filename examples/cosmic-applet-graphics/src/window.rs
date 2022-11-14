@@ -1,6 +1,6 @@
 use crate::dbus::{self, PowerDaemonProxy};
 use crate::graphics::{get_current_graphics, set_graphics, Graphics};
-use cosmic::applet::{get_popup_settings, icon_button};
+use cosmic::applet::{get_popup_settings, icon_button, popup_container};
 use cosmic::iced_style::application::{self, Appearance};
 use cosmic::separator;
 use cosmic::theme::Container;
@@ -13,9 +13,9 @@ use cosmic::{
     Element,
 };
 use cosmic_panel_config::{PanelAnchor, PanelSize};
-use iced_sctk::Color;
 use iced_sctk::alignment::{Horizontal, Vertical};
 use iced_sctk::commands::popup::{destroy_popup, get_popup};
+use iced_sctk::Color;
 use zbus::Connection;
 
 #[derive(Clone, Copy)]
@@ -214,25 +214,19 @@ impl Application for Window {
                 .into()
             }
         };
-        container(column(vec![
-            text("Graphics Mode")
-                .width(Length::Fill)
-                .horizontal_alignment(Horizontal::Center)
-                .size(24)
-                .into(),
-            separator!(1).into(),
-            content,
+        popup_container(
+            column(vec![
+                text("Graphics Mode")
+                    .width(Length::Fill)
+                    .horizontal_alignment(Horizontal::Center)
+                    .size(24)
+                    .into(),
+                separator!(1).into(),
+                content,
             ])
             .padding(4)
-            .spacing(4))
-        .style(Container::Custom(|theme| container::Appearance {
-            text_color: Some(theme.cosmic().on_bg_color().into()),
-            background: Some(theme.extended_palette().background.base.color.into()),
-            border_radius: 12.0,
-            border_width: 0.0,
-            border_color: Color::TRANSPARENT,
-        }))
-        .align_y(Vertical::Center)
+            .spacing(4),
+        )
         .into()
     }
 
@@ -253,7 +247,10 @@ impl Application for Window {
     }
 
     fn style(&self) -> <Self::Theme as application::StyleSheet>::Style {
-        <Self::Theme as application::StyleSheet>::Style::Custom(|theme| Appearance { background_color: Color::from_rgba(0.0, 0.0, 0.0, 0.0), text_color: theme.cosmic().on_bg_color().into() }) 
+        <Self::Theme as application::StyleSheet>::Style::Custom(|theme| Appearance {
+            background_color: Color::from_rgba(0.0, 0.0, 0.0, 0.0),
+            text_color: theme.cosmic().on_bg_color().into(),
+        })
     }
 
     fn view_window(&self, _: window::Id) -> Element<Message> {
