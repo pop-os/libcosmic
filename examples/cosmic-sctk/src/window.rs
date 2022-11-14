@@ -7,12 +7,12 @@ use cosmic::{
     iced::{self, Alignment, Application, Color, Command, Length},
     iced_lazy::responsive,
     iced_native::window,
-    iced_winit::window::{drag, maximize, minimize},
     list_view, list_view_item, list_view_row, list_view_section, scrollable,
     theme::{self, Theme},
     widget::{button, header_bar, list_box, list_row, list_view::*, toggler},
     Element,
 };
+use iced_sctk::application::SurfaceIdWrapper;
 use std::collections::BTreeMap;
 
 #[derive(Default)]
@@ -99,34 +99,21 @@ impl Application for Window {
             Message::PickListSelected(value) => self.pick_list_selected = Some(value),
             Message::Close => self.exit = true,
             Message::ToggleSidebar => self.sidebar_toggled = !self.sidebar_toggled,
-            Message::Drag => return drag(window::Id::new(0)),
-            Message::Minimize => return minimize(window::Id::new(0), true),
-            Message::Maximize => return maximize(window::Id::new(0), true),
+            // Message::Drag => return drag(window::Id::new(0)),
+            // Message::Minimize => return minimize(window::Id::new(0), true),
+            // Message::Maximize => return maximize(window::Id::new(0), true),
             Message::RowSelected(row) => println!("Selected row {row}"),
+            _ => {}
         }
 
         Command::none()
     }
-    fn view_popup(&self, id: window::Id) -> Element<Message> {
-        unimplemented!()
-    }
-    fn view_layer_surface(
-        &self,
-        window: cosmic::iced_native::window::Id,
-    ) -> iced::Element<'_, Self::Message, iced::Renderer<Self::Theme>> {
-        unimplemented!()
-    }
-    fn close_window_requested(&self, window: cosmic::iced_native::window::Id) -> Self::Message {
-        unimplemented!()
-    }
-    fn popup_done(&self, window: cosmic::iced_native::window::Id) -> Self::Message {
-        unimplemented!()
-    }
-    fn layer_surface_done(&self, window: cosmic::iced_native::window::Id) -> Self::Message {
+
+    fn close_requested(&self, _: SurfaceIdWrapper) -> Self::Message {
         unimplemented!()
     }
 
-    fn view_window(&self, id: window::Id) -> Element<Message> {
+    fn view(&self, _: SurfaceIdWrapper) -> Element<Message> {
         let mut header: Element<Message> = header_bar()
             .title(self.title())
             .nav_title(String::from("Settings"))
