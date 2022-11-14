@@ -1,9 +1,10 @@
 use cosmic_panel_config::{PanelSize, PanelAnchor};
-use iced::{widget::Button, Rectangle};
+use iced::{widget::{Button, self}, Rectangle, alignment::{Vertical, Horizontal}, Color, Element};
 use iced_native::{command::platform_specific::wayland::popup::{SctkPopupSettings, SctkPositioner}};
+use iced_style::container::Appearance;
 use sctk::reexports::protocols::xdg::shell::client::xdg_positioner::{Anchor, Gravity};
 
-use crate::{button, widget::icon};
+use crate::{button, widget::icon, theme::{Container, self}};
 
 pub fn icon_button<'a, M: 'a, Renderer>() -> Button<'a, M, Renderer>
 where
@@ -62,4 +63,34 @@ pub fn get_popup_settings(parent: iced_native::window::Id, id: iced_native::wind
         reactive: true,
         ..Default::default()
     }, parent_size: None, grab: true }
+}
+
+pub fn popup_container<'a, Message, Renderer>(content: impl Into<Element<'a, Message, Renderer>>,) -> crate::widget::widget::Container<'a, Message, Renderer>
+where
+    Renderer: iced_native::Renderer,
+    <<Renderer as iced_native::Renderer>::Theme as iced_style::container::StyleSheet>::Style: From<theme::Container>,    Renderer::Theme: widget::container::StyleSheet, 
+{
+    let anchor = std::env::var("COSMIC_PANEL_ANCHOR")
+            .ok()
+            .map(|size| match size.parse::<PanelAnchor>() {
+                Ok(p) => p,
+                Err(_) => PanelAnchor::Top,
+            })
+        .unwrap_or(PanelAnchor::Top);
+    let (valign, halign) = match anchor {
+        PanelAnchor::Left => (Vertical::Center, Horizontal::Left),
+        PanelAnchor::Right => (Vertical::Center, Horizontal::Right),
+        PanelAnchor::Top => (Vertical::Top, Horizontal::Center),
+        PanelAnchor::Bottom => (Vertical::Bottom, Horizontal::Center),
+    };
+    crate::widget::widget::container(content)
+    .style(Container::Custom(|theme| Appearance {
+        text_color: Some(theme.cosmic().on_bg_color().into()),
+        background: Some(theme.extended_palette().background.base.color.into()),
+        border_radius: 12.0,
+        border_width: 0.0,
+        border_color: Color::TRANSPARENT,
+    }))
+    .align_x(halign)
+    .align_y(valign)
 }

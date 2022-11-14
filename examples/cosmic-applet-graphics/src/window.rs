@@ -1,7 +1,10 @@
 use crate::dbus::{self, PowerDaemonProxy};
 use crate::graphics::{get_current_graphics, set_graphics, Graphics};
 use cosmic::applet::{get_popup_settings, icon_button};
+use cosmic::iced_style::application::{self, Appearance};
 use cosmic::separator;
+use cosmic::theme::Container;
+use cosmic::widget::widget::container;
 use cosmic::{
     iced::widget::{column, radio, text},
     iced::{self, Application, Command, Length},
@@ -10,15 +13,21 @@ use cosmic::{
     Element,
 };
 use cosmic_panel_config::{PanelAnchor, PanelSize};
-use iced_sctk::alignment::Horizontal;
+use iced_sctk::Color;
+use iced_sctk::alignment::{Horizontal, Vertical};
 use iced_sctk::commands::popup::{destroy_popup, get_popup};
 use zbus::Connection;
 
-#[derive(Default, Clone, Copy)]
+#[derive(Clone, Copy)]
 enum State {
-    #[default]
-    SelectGraphicsMode,
+    SelectGraphicsMode(bool),
     SettingGraphicsMode(Graphics),
+}
+
+impl Default for State {
+    fn default() -> Self {
+        Self::SelectGraphicsMode(false)
+    }
 }
 
 #[derive(Default)]
@@ -83,7 +92,6 @@ impl Application for Window {
     fn update(&mut self, message: Message) -> iced::Command<Self::Message> {
         match message {
             Message::SelectGraphicsMode(new_graphics_mode) => {
-                dbg!(new_graphics_mode);
                 if let Some((_, proxy)) = self.dbus.as_ref() {
                     self.state = State::SettingGraphicsMode(new_graphics_mode);
                     return Command::perform(
@@ -96,9 +104,8 @@ impl Application for Window {
             }
             Message::AppliedGraphicsMode(g) => {
                 if let Some(g) = g {
-                    dbg!(g);
                     self.graphics_mode.replace(g);
-                    self.state = State::SelectGraphicsMode;
+                    self.state = State::SelectGraphicsMode(true);
                 }
             }
             Message::TogglePopup => {
@@ -115,7 +122,9 @@ impl Application for Window {
                             |cur_graphics| Message::CurrentGraphics(cur_graphics.ok()),
                         ));
                     }
-                    let popup_settings = get_popup_settings(window::Id::new(0), new_id, None, None);
+                    let mut popup_settings =
+                        get_popup_settings(window::Id::new(0), new_id, None, None);
+                    popup_settings.positioner.size = (200, 240);
                     commands.push(get_popup(popup_settings));
                     return Command::batch(commands);
                 }
@@ -136,7 +145,6 @@ impl Application for Window {
                 );
             }
             Message::CurrentGraphics(g) => {
-                dbg!(g);
                 if let Some(g) = g {
                     self.graphics_mode.replace(g);
                 }
@@ -147,39 +155,49 @@ impl Application for Window {
 
     fn view_popup(&self, _: window::Id) -> Element<Message> {
         let content = match self.state {
-            State::SelectGraphicsMode => column(vec![
-                radio(
-                    "Integrated Graphics",
-                    Graphics::Integrated,
-                    self.graphics_mode,
-                    |g| Message::SelectGraphicsMode(g),
-                )
-                .into(),
-                radio(
-                    "Nvidia Graphics",
-                    Graphics::Nvidia,
-                    self.graphics_mode,
-                    |g| Message::SelectGraphicsMode(g),
-                )
-                .into(),
-                radio(
-                    "Hybrid Graphics",
-                    Graphics::Hybrid,
-                    self.graphics_mode,
-                    |g| Message::SelectGraphicsMode(g),
-                )
-                .into(),
-                radio(
-                    "Compute Graphics",
-                    Graphics::Compute,
-                    self.graphics_mode,
-                    |g| Message::SelectGraphicsMode(g),
-                )
-                .into(),
-            ])
-            .padding([8, 0])
-            .spacing(8)
-            .into(),
+            State::SelectGraphicsMode(pending_restart) => {
+                let mut content_list = vec![
+                    radio(
+                        "Integrated Graphics",
+                        Graphics::Integrated,
+                        self.graphics_mode,
+                        |g| Message::SelectGraphicsMode(g),
+                    )
+                    .into(),
+                    radio(
+                        "Nvidia Graphics",
+                        Graphics::Nvidia,
+                        self.graphics_mode,
+                        |g| Message::SelectGraphicsMode(g),
+                    )
+                    .into(),
+                    radio(
+                        "Hybrid Graphics",
+                        Graphics::Hybrid,
+                        self.graphics_mode,
+                        |g| Message::SelectGraphicsMode(g),
+                    )
+                    .into(),
+                    radio(
+                        "Compute Graphics",
+                        Graphics::Compute,
+                        self.graphics_mode,
+                        |g| Message::SelectGraphicsMode(g),
+                    )
+                    .into(),
+                ];
+                if pending_restart {
+                    content_list.insert(
+                        0,
+                        text("Restart to apply changes")
+                            .width(Length::Fill)
+                            .horizontal_alignment(Horizontal::Center)
+                            .size(16)
+                            .into(),
+                    )
+                }
+                column(content_list).padding([8, 0]).spacing(8).into()
+            }
             State::SettingGraphicsMode(graphics) => {
                 let graphics_str = match graphics {
                     Graphics::Integrated => "integrated",
@@ -196,7 +214,7 @@ impl Application for Window {
                 .into()
             }
         };
-        column(vec![
+        container(column(vec![
             text("Graphics Mode")
                 .width(Length::Fill)
                 .horizontal_alignment(Horizontal::Center)
@@ -204,9 +222,17 @@ impl Application for Window {
                 .into(),
             separator!(1).into(),
             content,
-        ])
-        .padding(4)
-        .spacing(4)
+            ])
+            .padding(4)
+            .spacing(4))
+        .style(Container::Custom(|theme| container::Appearance {
+            text_color: Some(theme.cosmic().on_bg_color().into()),
+            background: Some(theme.extended_palette().background.base.color.into()),
+            border_radius: 12.0,
+            border_width: 0.0,
+            border_color: Color::TRANSPARENT,
+        }))
+        .align_y(Vertical::Center)
         .into()
     }
 
@@ -224,6 +250,10 @@ impl Application for Window {
     }
     fn layer_surface_done(&self, _: cosmic::iced_native::window::Id) -> Self::Message {
         unimplemented!()
+    }
+
+    fn style(&self) -> <Self::Theme as application::StyleSheet>::Style {
+        <Self::Theme as application::StyleSheet>::Style::Custom(|theme| Appearance { background_color: Color::from_rgba(0.0, 0.0, 0.0, 0.0), text_color: theme.cosmic().on_bg_color().into() }) 
     }
 
     fn view_window(&self, _: window::Id) -> Element<Message> {

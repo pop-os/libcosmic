@@ -300,7 +300,7 @@ impl Default for Container {
 
 impl From<fn(&Theme) -> container::Appearance> for Container {
     fn from(f: fn(&Theme) -> container::Appearance) -> Self {
-        Self::Custom(f)
+        Self::default()
     }
 }
 
