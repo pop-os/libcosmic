@@ -36,6 +36,7 @@ where
 pub fn get_popup_settings(
     parent: iced_native::window::Id,
     id: iced_native::window::Id,
+    size: (u32, u32),
     width_padding: Option<i32>,
     height_padding: Option<i32>,
 ) -> SctkPopupSettings {
@@ -57,11 +58,11 @@ pub fn get_popup_settings(
             Err(_) => Some(12),
         })
         .unwrap_or(16);
-    let (anchor, gravity) = match anchor {
-        PanelAnchor::Left => (Anchor::Right, Gravity::Right),
-        PanelAnchor::Right => (Anchor::Left, Gravity::Left),
-        PanelAnchor::Top => (Anchor::Bottom, Gravity::Bottom),
-        PanelAnchor::Bottom => (Anchor::Top, Gravity::Top),
+    let (offset, anchor, gravity) = match anchor {
+        PanelAnchor::Left => ((8, 0), Anchor::Right, Gravity::Right),
+        PanelAnchor::Right => ((-8, 0), Anchor::Left, Gravity::Left),
+        PanelAnchor::Top => ((0, -8), Anchor::Bottom, Gravity::Bottom),
+        PanelAnchor::Bottom => ((0, 8), Anchor::Top, Gravity::Top),
     };
     SctkPopupSettings {
         parent,
@@ -69,7 +70,8 @@ pub fn get_popup_settings(
         positioner: SctkPositioner {
             anchor,
             gravity,
-            size: (200, 200),
+            offset,
+            size,
             anchor_rect: Rectangle {
                 x: 0,
                 y: 0,
