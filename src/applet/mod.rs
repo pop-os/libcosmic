@@ -61,8 +61,8 @@ pub fn get_popup_settings(
     let (offset, anchor, gravity) = match anchor {
         PanelAnchor::Left => ((8, 0), Anchor::Right, Gravity::Right),
         PanelAnchor::Right => ((-8, 0), Anchor::Left, Gravity::Left),
-        PanelAnchor::Top => ((0, -8), Anchor::Bottom, Gravity::Bottom),
-        PanelAnchor::Bottom => ((0, 8), Anchor::Top, Gravity::Top),
+        PanelAnchor::Top => ((0, 8), Anchor::Bottom, Gravity::Bottom),
+        PanelAnchor::Bottom => ((0, -8), Anchor::Top, Gravity::Top),
     };
     SctkPopupSettings {
         parent,
