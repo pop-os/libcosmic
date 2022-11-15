@@ -356,4 +356,8 @@ impl Application for Window {
     fn theme(&self) -> Theme {
         self.theme
     }
+
+    fn subscription(&self) -> iced_sctk::Subscription<Self::Message> {
+        Subscription::none()
+    }
 }

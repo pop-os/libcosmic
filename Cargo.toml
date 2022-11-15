@@ -11,6 +11,7 @@ default = ["wayland"]
 debug = ["iced/debug"]
 wayland = ["iced/wayland"]
 wgpu = ["iced/wgpu"]
+winit = ["iced/winit", "iced_winit"]
 applet = ["cosmic-panel-config", "sctk"]
 
 [dependencies]

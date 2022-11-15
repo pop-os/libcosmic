@@ -2,7 +2,7 @@ pub use iced;
 pub use iced_lazy;
 pub use iced_native;
 pub use iced_style;
-#[cfg(feature = "iced_winit")]
+#[cfg(feature = "winit")]
 pub use iced_winit;
 
 #[cfg(feature = "applet")]
