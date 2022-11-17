@@ -1,4 +1,4 @@
-use cosmic::widget::{expander, nav_bar, nav_bar_page, nav_bar_section};
+use cosmic::widget::{expander, nav_bar, nav_bar_page, nav_bar_section, image_icon};
 use cosmic::{
     iced::widget::{
         checkbox, column, container, horizontal_space, pick_list, progress_bar, radio, row, slider,
@@ -314,6 +314,7 @@ impl Application for Window {
                         ])
                         .render()
                 ),
+                list_view_section!("image", image_icon("firefox", 64).unwrap())
             )
             .into();
 
@@ -355,9 +356,5 @@ impl Application for Window {
 
     fn theme(&self) -> Theme {
         self.theme
-    }
-
-    fn subscription(&self) -> iced_sctk::Subscription<Self::Message> {
-        Subscription::none()
     }
 }
