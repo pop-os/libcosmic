@@ -14,7 +14,7 @@ use crate::{
     widget::icon,
 };
 
-pub fn icon_button<'a, M: 'a, Renderer>() -> Button<'a, M, Renderer>
+pub fn icon_button<'a, M: 'a, Renderer>(name: &str, icon_style: <Renderer::Theme as iced_native::svg::StyleSheet>::Style) -> Button<'a, M, Renderer>
 where
     Renderer::Theme: iced_native::svg::StyleSheet + iced_style::button::StyleSheet,
     Renderer: iced_native::Renderer + iced_native::svg::Renderer + 'a,
@@ -30,7 +30,7 @@ where
             Err(_) => Some(12),
         })
         .unwrap_or(16);
-    button!(icon("input-gaming-symbolic", pixels))
+    button!(icon(name, pixels).style(icon_style))
 }
 
 pub fn get_popup_settings(
