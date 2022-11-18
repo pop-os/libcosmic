@@ -1,4 +1,4 @@
-use cosmic::widget::{expander, nav_bar, nav_bar_page, nav_bar_section, image_icon};
+use cosmic::widget::{expander, image_icon, nav_bar, nav_bar_page, nav_bar_section};
 use cosmic::{
     iced::widget::{
         checkbox, column, container, horizontal_space, pick_list, progress_bar, radio, row, slider,
@@ -8,7 +8,7 @@ use cosmic::{
     iced_lazy::responsive,
     iced_native::window,
     list_view, list_view_item, list_view_row, list_view_section, scrollable,
-    theme::{self, Theme},
+    theme::{self, Button, Theme},
     widget::{button, header_bar, list_box, list_row, list_view::*, toggler},
     Element,
 };
@@ -314,7 +314,10 @@ impl Application for Window {
                         ])
                         .render()
                 ),
-                list_view_section!("image", image_icon("firefox", 64).unwrap())
+                list_view_section!(
+                    "image",
+                    button!(image_icon("firefox", 64).unwrap()).style(Button::Transparent)
+                )
             )
             .into();
 

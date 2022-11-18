@@ -1,4 +1,7 @@
-use iced::{widget::{svg, Image}, Length};
+use iced::{
+    widget::{svg, Image},
+    Length,
+};
 
 pub fn icon<Renderer>(name: &str, size: u16) -> svg::Svg<Renderer>
 where
@@ -23,11 +26,14 @@ where
         .height(Length::Units(size))
 }
 
-pub fn image_icon(name: &str, size: u16) -> Option<Image>
-{
+pub fn image_icon(name: &str, size: u16) -> Option<Image> {
     freedesktop_icons::lookup(name)
         .with_size(size)
         .with_cache()
-        .find().map(|path| Image::new(path).width(Length::Units(size))
-        .height(Length::Units(size)))
+        .find()
+        .map(|path| {
+            Image::new(path)
+                .width(Length::Units(size))
+                .height(Length::Units(size))
+        })
 }

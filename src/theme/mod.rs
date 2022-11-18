@@ -3,6 +3,7 @@ pub mod palette;
 
 pub use self::palette::Palette;
 
+use cosmic_theme::Component;
 use iced_style::application;
 use iced_style::button;
 use iced_style::checkbox;
@@ -30,6 +31,18 @@ type CosmicThemeCss = cosmic_theme::Theme<cosmic_theme::util::CssColor>;
 lazy_static::lazy_static! {
     pub static ref COSMIC_DARK: CosmicTheme = CosmicThemeCss::dark_default().into_srgba();
     pub static ref COSMIC_LIGHT: CosmicTheme = CosmicThemeCss::light_default().into_srgba();
+    pub static ref TRANSPARENT_COMPONENT: Component<CosmicColor> = Component {
+        base: CosmicColor::new(0.0, 0.0, 0.0, 0.0),
+        hover: CosmicColor::new(0.0, 0.0, 0.0, 0.0),
+        pressed: CosmicColor::new(0.0, 0.0, 0.0, 0.0),
+        selected: CosmicColor::new(0.0, 0.0, 0.0, 0.0),
+        selected_text: CosmicColor::new(0.0, 0.0, 0.0, 0.0),
+        focus: CosmicColor::new(0.0, 0.0, 0.0, 0.0),
+        divider: CosmicColor::new(0.0, 0.0, 0.0, 0.0),
+        on: CosmicColor::new(0.0, 0.0, 0.0, 0.0),
+        disabled: CosmicColor::new(0.0, 0.0, 0.0, 0.0),
+        on_disabled: CosmicColor::new(0.0, 0.0, 0.0, 0.0),
+    };
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -105,6 +118,7 @@ pub enum Button {
     Positive,
     Destructive,
     Text,
+    Transparent,
 }
 
 impl Default for Button {
@@ -122,6 +136,7 @@ impl Button {
             Button::Positive => &cosmic.success,
             Button::Destructive => &cosmic.destructive,
             Button::Text => &cosmic.secondary.component,
+            Button::Transparent => &TRANSPARENT_COMPONENT,
         }
     }
 }

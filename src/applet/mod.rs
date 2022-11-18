@@ -14,7 +14,10 @@ use crate::{
     widget::icon,
 };
 
-pub fn icon_button<'a, M: 'a, Renderer>(name: &str, icon_style: <Renderer::Theme as iced_native::svg::StyleSheet>::Style) -> Button<'a, M, Renderer>
+pub fn icon_button<'a, M: 'a, Renderer>(
+    name: &str,
+    icon_style: <Renderer::Theme as iced_native::svg::StyleSheet>::Style,
+) -> Button<'a, M, Renderer>
 where
     Renderer::Theme: iced_native::svg::StyleSheet + iced_style::button::StyleSheet,
     Renderer: iced_native::Renderer + iced_native::svg::Renderer + 'a,
