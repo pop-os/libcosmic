@@ -15,7 +15,7 @@ winit = ["iced/winit", "iced_winit"]
 applet = ["cosmic-panel-config", "sctk"]
 
 [dependencies]
-freedesktop-icons = "0.2.1"
+freedesktop-icons = {git = "https://github.com/wash2/freedestkop-icons"}
 apply = "0.3.0"
 derive_setters = "0.1.5"
 lazy_static = "1.4.0"

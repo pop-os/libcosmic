@@ -14,6 +14,8 @@ use cosmic::{
     Element,
 };
 use std::collections::BTreeMap;
+use cosmic::widget::widget::text_input::Id as TextInputId;
+use cosmic::widget::widget::text_input;
 
 #[derive(Default)]
 pub struct Window {
@@ -64,6 +66,7 @@ pub enum Message {
     Drag,
     Minimize,
     Maximize,
+    InputChanged,
 }
 
 impl Application for Window {
@@ -94,7 +97,10 @@ impl Application for Window {
             Message::ThemeChanged(theme) => self.theme = theme,
             Message::ButtonPressed => {}
             Message::SliderChanged(value) => self.slider_value = value,
-            Message::CheckboxToggled(value) => self.checkbox_value = value,
+            Message::CheckboxToggled(value) => {
+                self.checkbox_value = value;
+                return text_input::focus(TextInputId::new("launcher_entry"));
+            },
             Message::TogglerToggled(value) => self.toggler_value = value,
             Message::PickListSelected(value) => self.pick_list_selected = Some(value),
             Message::Close => self.exit = true,
@@ -103,6 +109,8 @@ impl Application for Window {
             Message::Minimize => return minimize(window::Id::new(0), true),
             Message::Maximize => return maximize(window::Id::new(0), true),
             Message::RowSelected(row) => println!("Selected row {row}"),
+            Message::InputChanged => {},
+
         }
 
         Command::none()
@@ -279,6 +287,14 @@ impl Application for Window {
                             .height(Length::Units(4))
                     ),
                     checkbox("Checkbox", self.checkbox_value, Message::CheckboxToggled),
+                    text_input(
+                        "Type something...",
+                        "",
+                        |_| Message::InputChanged,
+                    )
+                    .padding(8)
+                    .size(20)
+                    .id(TextInputId::new("launcher_entry"))
                 ),
                 list_view_section!(
                     "Expander",
