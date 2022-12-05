@@ -82,6 +82,7 @@ pub fn get_popup_settings(
                 height: height_padding.unwrap_or(8) * 2 + pixels as i32,
             },
             reactive: true,
+            constraint_adjustment: 15, // slide_y, slide_x, flip_x, flip_y
             ..Default::default()
         },
         parent_size: None,
