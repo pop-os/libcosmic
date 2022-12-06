@@ -3,27 +3,68 @@ name = "libcosmic"
 version = "0.1.0"
 edition = "2021"
 
-[dependencies]
-cascade = "1.0.0"
-derivative = { version = "2", optional = true }
-gtk4 = { git = "https://github.com/gtk-rs/gtk4-rs", features = ["v4_6"] }
-adw = { git = "https://gitlab.gnome.org/World/Rust/libadwaita-rs", package = "libadwaita"}
-adw-user-colors-lib = { git = "https://github.com/pop-os/user-color-editor" }
-gdk4-wayland = { git = "https://github.com/gtk-rs/gtk4-rs", features = ["wayland_crate"], optional = true }
-gdk4-x11 = { git = "https://github.com/gtk-rs/gtk4-rs", features = ["xlib"], optional = true }
-x11 = { version = "2.19.1", features = ["xlib"], optional = true }
-gobject-sys = { git = "https://github.com/gtk-rs/gtk-rs-core", optional = true }
-wayland-client = { version = "0.29.4", optional = true }
-wayland-protocols = { version = "0.29.4", features = ["client", "unstable_protocols"], optional = true }
-once_cell = "1.13.0"
-libcosmic-widgets = { path = "widgets", optional = true }
-xdg = "2.4.1"
+[lib]
+name = "cosmic"
 
 [features]
-default = ["widgets"]
-layer-shell = ["derivative", "gdk4-wayland", "wayland-client", "wayland-protocols", "gobject-sys"]
-x = ["x11", "gdk4-x11"]
-widgets = ["libcosmic-widgets"]
+default = ["wayland"]
+debug = ["iced/debug"]
+wayland = ["iced/wayland"]
+wgpu = ["iced/wgpu"]
+winit = ["iced/winit", "iced_winit"]
+applet = ["cosmic-panel-config", "sctk"]
+
+[dependencies]
+freedesktop-icons = {git = "https://github.com/wash2/freedestkop-icons"}
+apply = "0.3.0"
+derive_setters = "0.1.5"
+lazy_static = "1.4.0"
+palette = "0.6.1"
+cosmic-panel-config = {git = "https://github.com/pop-os/cosmic-panel", default-features = false, optional = true }
+sctk = { package = "smithay-client-toolkit", git = "https://github.com/Smithay/client-toolkit", optional = true }
+
+[dependencies.cosmic-theme]
+git = "https://github.com/pop-os/cosmic-theme.git"
+
+[dependencies.iced]
+git = "https://github.com/pop-os/iced.git"
+branch = "sctk-cosmic"
+# path = "../iced"
+default-features = false
+features = ["image", "svg"]
+
+[dependencies.iced_core]
+git = "https://github.com/pop-os/iced.git"
+branch = "sctk-cosmic"
+# path = "../iced/core"
+
+[dependencies.iced_lazy]
+git = "https://github.com/pop-os/iced.git"
+branch = "sctk-cosmic"
+# path = "../iced/lazy"
+
+[dependencies.iced_native]
+git = "https://github.com/pop-os/iced.git"
+branch = "sctk-cosmic"
+# path = "../iced/native"
+
+[dependencies.iced_style]
+git = "https://github.com/pop-os/iced.git"
+branch = "sctk-cosmic"
+# path = "../iced/style"
+
+[dependencies.iced_winit]
+git = "https://github.com/pop-os/iced.git"
+branch = "sctk-cosmic"
+optional = true
+# path = "../iced/winit"
+
+[dependencies.iced_wgpu]
+git = "https://github.com/pop-os/iced.git"
+branch = "sctk-cosmic"
+# path = "../iced/wgpu"
 
 [workspace]
-members = ["widgets"]
+members = [
+  "examples/*",
+]
