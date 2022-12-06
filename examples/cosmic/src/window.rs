@@ -9,7 +9,7 @@ use cosmic::{
     iced_lazy::responsive,
     iced_winit::window::{drag, toggle_maximize, minimize},
     theme::{self, Theme},
-    widget::{button, nav_button, nav_bar, nav_bar_page, nav_bar_section, header_bar, settings, scrollable, toggler, expander, nav_bar, nav_bar_item},
+    widget::{button, nav_button, nav_bar, header_bar, settings, scrollable, toggler, nav_bar_item},
     Element,
     ElementExt,
 };
@@ -116,12 +116,8 @@ impl Application for Window {
     }
 
     fn view(&self) -> Element<Message> {
-        let mut header: Element<Message, _> = header_bar()
-            .title(self.title())
-            //.nav_title(String::from("Settings"))
-            .sidebar_active(self.sidebar_toggled)
-            .show_minimize(self.show_minimize)
-            .show_maximize(self.show_maximize)
+        let mut header = header_bar()
+            .title("COSMIC Design System - Iced")
             .on_close(Message::Close)
             .on_drag(Message::Drag)
             .start(
