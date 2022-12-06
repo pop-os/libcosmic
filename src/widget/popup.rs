@@ -1,3 +1,6 @@
+// Copyright 2022 System76 <info@system76.com>
+// SPDX-License-Identifier: MPL-2.0
+
 use iced::futures::channel::mpsc::{unbounded, UnboundedReceiver, UnboundedSender};
 use iced::futures::SinkExt;
 use iced::{

@@ -51,7 +51,7 @@ lazy_static::lazy_static! {
     };
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum Theme {
     Light,
     Dark,

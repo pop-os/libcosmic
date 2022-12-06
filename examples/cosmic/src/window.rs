@@ -10,7 +10,7 @@ use cosmic::{
     iced_lazy::responsive,
     iced_winit::window::{drag, toggle_maximize, minimize},
     theme::{self, Theme},
-    widget::{button, nav_button, nav_bar, nav_bar_page, nav_bar_section, header_bar, settings, scrollable, toggler},
+    widget::{button, nav_button, nav_bar, nav_bar_page, nav_bar_section, header_bar, settings, scrollable, toggler, spin_button},
     Element,
     ElementExt,
 };
@@ -24,6 +24,7 @@ pub struct Window {
     debug: bool,
     theme: Theme,
     slider_value: f32,
+    spin_value: i32,
     checkbox_value: bool,
     toggler_value: bool,
     pick_list_selected: Option<&'static str>,
@@ -68,6 +69,13 @@ pub enum Message {
     Minimize,
     Maximize,
     InputChanged,
+    SpinButton(SpinMessage)
+}
+
+#[derive(Clone, Copy, Debug, Hash)]
+pub enum SpinMessage {
+    Increment,
+    Decrement,
 }
 
 impl Application for Window {
@@ -111,6 +119,8 @@ impl Application for Window {
             Message::Maximize => return toggle_maximize(window::Id::new(0)),
             Message::RowSelected(row) => println!("Selected row {row}"),
             Message::InputChanged => {},
+            Message::SpinButton(SpinMessage::Decrement) => self.spin_value -= 1,
+            Message::SpinButton(SpinMessage::Increment) => self.spin_value += 1,
 
         }
 
@@ -293,6 +303,12 @@ impl Application for Window {
                     .add(settings::item_row(vec![
                         checkbox("Checkbox", self.checkbox_value, Message::CheckboxToggled).into()
                     ]))
+                    .add(settings::item(
+                        "Spin Button",
+                        spin_button(self.spin_value, SpinMessage::Increment, SpinMessage::Decrement)
+                            .into_element()
+                            .map(Message::SpinButton)
+                    ))
                     .into()
             ])
             .into();
