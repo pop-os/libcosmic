@@ -9,6 +9,7 @@ use iced::{
 };
 use std::borrow::Cow;
 use std::hash::Hash;
+use std::rc::Rc;
 use derive_setters::Setters;
 use crate::{Element, Renderer};
 
@@ -57,7 +58,8 @@ pub fn icon<'a>(name: impl Into<Cow<'a, str>>, size: u16) -> Icon<'a> {
 impl<'a> Icon<'a> {
     #[must_use]
     fn into_svg<Message: 'static>(self) -> Element<'a, Message> {
-        let (svg, svg_clone) = crate::utils::static_rc_halves(self);
+        let svg = Rc::new(self);
+        let svg_clone = Rc::clone(&svg);
 
         iced_lazy::lazy(svg_clone, move || -> Element<Message> {
             let icon = freedesktop_icons::lookup(&svg.name)

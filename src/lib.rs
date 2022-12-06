@@ -17,8 +17,6 @@ pub mod widget;
 mod ext;
 pub use ext::ElementExt;
 
-mod utils;
-
 pub use theme::Theme;
 pub type Renderer = iced::Renderer<Theme>;
 pub type Element<'a, Message> = iced::Element<'a, Message, Renderer>;

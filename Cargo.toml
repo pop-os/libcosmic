@@ -22,7 +22,6 @@ lazy_static = "1.4.0"
 palette = "0.6.1"
 cosmic-panel-config = {git = "https://github.com/pop-os/cosmic-panel", default-features = false, optional = true }
 sctk = { package = "smithay-client-toolkit", git = "https://github.com/Smithay/client-toolkit", optional = true }
-static-rc = "0.6.1"
 
 [dependencies.cosmic-theme]
 git = "https://github.com/pop-os/cosmic-theme.git"
