@@ -19,6 +19,9 @@ pub use self::nav_button::{NavButton, nav_button};
 pub mod navigation;
 pub use navigation::*;
 
+pub mod popup;
+pub use popup::*;
+
 mod toggler;
 pub use toggler::toggler;
 
@@ -28,7 +31,7 @@ mod scrollable;
 pub use scrollable::*;
 
 pub mod separator;
-
-pub mod popup;
-pub use popup::*;
 pub use separator::{horizontal_rule, vertical_rule};
+
+pub mod spin_button;
+pub use spin_button::{SpinButton, spin_button};
