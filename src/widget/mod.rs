@@ -29,3 +29,6 @@ pub use scrollable::*;
 
 pub mod separator;
 pub use separator::{horizontal_rule, vertical_rule};
+
+pub mod view_switcher;
+pub use view_switcher::*;

@@ -1,10 +1,10 @@
 use derive_setters::Setters;
 use iced::{
     alignment::{Horizontal, Vertical},
-    theme,
     widget::{button, container, text, Row},
-    Background, Element, Length, Renderer, Theme, Alignment,
+    Background, Length, Alignment,
 };
+use crate::{Element, Renderer, Theme, theme};
 use iced_lazy::Component;
 
 #[derive(Setters)]
@@ -40,8 +40,8 @@ impl<'a, Message> Component<Message, Renderer> for ViewSwitcher<'a, Message> {
         self.on_view_changed.as_ref().map(|on_view_changed| (on_view_changed)(state.selected_view))
     }
 
-    fn view(&self, state: &Self::State) -> Element<'_, Self::Event, Renderer> {
-        let mut options: Vec<Element<'a, Self::Event, Renderer>> = vec![];
+    fn view(&self, state: &Self::State) -> Element<Self::Event> {
+        let mut options: Vec<Element<Self::Event>> = vec![];
 
         for (index, option) in self.options.iter().enumerate() {
             options.push(

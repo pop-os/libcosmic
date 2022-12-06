@@ -20,9 +20,9 @@ pub mod nav_bar {
                     .align_items($crate::iced::alignment::Alignment::Center),
                 )
                 .style(if $active {
-                    $crate::iced::theme::Button::Primary.into()
+                    $crate::theme::Button::Primary
                 } else {
-                    $crate::iced::theme::Button::Text.into()
+                    $crate::theme::Button::Text
                 })
             } else {
                 $crate::iced::widget::Button::new(
@@ -34,9 +34,9 @@ pub mod nav_bar {
                 )
                 .padding(10)
                 .style(if $active {
-                    $crate::iced::theme::Button::Primary.into()
+                    $crate::theme::Button::Primary
                 } else {
-                    $crate::iced::theme::Button::Text.into()
+                    $crate::theme::Button::Text
                 })
             }
         };

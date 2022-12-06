@@ -9,7 +9,7 @@ use cosmic::{
     iced_lazy::responsive,
     iced_winit::window::{drag, toggle_maximize, minimize},
     theme::{self, Theme},
-    widget::{button, nav_button, nav_bar, header_bar, settings, scrollable, toggler},
+    widget::{button, nav_button, nav_bar, header_bar, settings, scrollable, toggler, nav_bar_item, view_switcher},
     Element,
     ElementExt,
 };
@@ -145,61 +145,61 @@ impl Application for Window {
         let content = responsive(|size| {
             let condensed = size.width < 900.0;
             let sidebar: Element<_> = nav_bar()
-                .source(BTreeMap::from([
-                    (
+            .source(BTreeMap::from([
+                (
+                    nav_bar_item()
+                        .title("Network & Wireless")
+                        .icon("nm-device-wired"),
+                    vec![nav_bar_item().title("Wi-Fi").icon("network-wireless")],
+                ),
+                (
+                    nav_bar_item().title("Bluetooth").icon("cs-bluetooth"),
+                    vec![nav_bar_item().title("Devices").icon("computer")],
+                ),
+                (
+                    nav_bar_item()
+                        .title("Personalization")
+                        .icon("applications-system"),
+                    vec![
                         nav_bar_item()
-                            .title("Network & Wireless")
-                            .icon("nm-device-wired"),
-                        vec![nav_bar_item().title("Wi-Fi").icon("network-wireless")],
-                    ),
-                    (
-                        nav_bar_item().title("Bluetooth").icon("cs-bluetooth"),
-                        vec![nav_bar_item().title("Devices").icon("computer")],
-                    ),
-                    (
+                            .title("Desktop Session")
+                            .icon("desktop-panel"),
                         nav_bar_item()
-                            .title("Personalization")
-                            .icon("applications-system"),
-                        vec![
-                            nav_bar_item()
-                                .title("Desktop Session")
-                                .icon("desktop-panel"),
-                            nav_bar_item()
-                                .title("Wallpaper")
-                                .icon("preferences-desktop-wallpaper"),
-                            nav_bar_item().title("Appearance").icon("cs-color"),
-                            nav_bar_item()
-                                .title("Dock & Top Panel")
-                                .icon("desktop-panel"),
-                            nav_bar_item()
-                                .title("Workspaces")
-                                .icon("preferences-system-windows"),
-                            nav_bar_item()
-                                .title("Notifications")
-                                .icon("cs-notifications"),
-                        ],
-                    ),
-                    (
-                        nav_bar_item().title("Input Devices").icon("input-keyboard"),
-                        vec![nav_bar_item().title("Keyboard").icon("computer")],
-                    ),
-                    (
-                        nav_bar_item().title("Displays").icon("cs-display"),
-                        vec![nav_bar_item().title("External Monitors").icon("computer")],
-                    ),
-                    (
-                        nav_bar_item().title("Power & Battery").icon("battery"),
-                        vec![nav_bar_item().title("Status").icon("computer")],
-                    ),
-                    (
-                        nav_bar_item().title("Sound").icon("sound"),
-                        vec![nav_bar_item().title("Volume").icon("computer")],
-                    ),
-                ]))
-                .on_page_selected(Box::new(Message::Page))
-                .active(self.sidebar_toggled)
-                .condensed(condensed)
-                .into();
+                            .title("Wallpaper")
+                            .icon("preferences-desktop-wallpaper"),
+                        nav_bar_item().title("Appearance").icon("cs-color"),
+                        nav_bar_item()
+                            .title("Dock & Top Panel")
+                            .icon("desktop-panel"),
+                        nav_bar_item()
+                            .title("Workspaces")
+                            .icon("preferences-system-windows"),
+                        nav_bar_item()
+                            .title("Notifications")
+                            .icon("cs-notifications"),
+                    ],
+                ),
+                (
+                    nav_bar_item().title("Input Devices").icon("input-keyboard"),
+                    vec![nav_bar_item().title("Keyboard").icon("computer")],
+                ),
+                (
+                    nav_bar_item().title("Displays").icon("cs-display"),
+                    vec![nav_bar_item().title("External Monitors").icon("computer")],
+                ),
+                (
+                    nav_bar_item().title("Power & Battery").icon("battery"),
+                    vec![nav_bar_item().title("Status").icon("computer")],
+                ),
+                (
+                    nav_bar_item().title("Sound").icon("sound"),
+                    vec![nav_bar_item().title("Volume").icon("computer")],
+                ),
+            ]))
+            .on_page_selected(Box::new(Message::Page))
+            .active(self.sidebar_toggled)
+            .condensed(condensed)
+            .into();
 
             let choose_theme = [Theme::Light, Theme::Dark].iter().fold(
                 row![].spacing(10).align_items(Alignment::Center),
@@ -274,6 +274,11 @@ impl Application for Window {
                             .width(Length::Units(250))
                             .height(Length::Units(4))
                     ))
+                    .into(),
+                settings::view_section("View Switcher")
+                    .add(view_switcher()
+                    .options(vec!["Details", "Identity", "IPv4", "IPv6", "Security"])
+                    .on_view_changed(Box::new(Message::ViewChanged)))
                     .into()
             ])
             .into();
