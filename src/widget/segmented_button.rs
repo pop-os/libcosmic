@@ -1,11 +1,11 @@
 use derive_setters::Setters;
 use iced::{
     alignment::{Horizontal, Vertical},
-    theme,
     widget::{button, container, text, Row},
-    Background, Element, Length, Renderer, Theme, Color,
+    Background, Length, Color,
 };
 use iced_lazy::Component;
+use crate::{theme, Theme, Renderer, Element};
 
 #[derive(Setters)]
 pub struct SegmentedButton<'a, Message> {
@@ -58,9 +58,9 @@ impl<'a, Message> Component<Message, Renderer> for SegmentedButton<'a, Message> 
                 .width(Length::Units(136))
                 .height(Length::Units(32))
                 .style(if *state == index {
-                    theme::Button::Primary.into()
+                    theme::Button::Primary
                 } else {
-                    theme::Button::Secondary.into()
+                    theme::Button::Secondary
                 })
                 .on_press(SegmentedButtonEvent::Pressed(index))
                 .into()

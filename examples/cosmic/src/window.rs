@@ -3,7 +3,7 @@
 
 use cosmic::{
     iced::widget::{
-        column, container, horizontal_space, pick_list, progress_bar, radio, row, slider,
+        column, container, horizontal_space, pick_list, progress_bar, radio, row, slider, checkbox,
     },
     iced::{self, Alignment, Application, Command, Length},
     iced_lazy::responsive,
@@ -288,38 +288,7 @@ impl Application for Window {
                         checkbox("Checkbox", self.checkbox_value, Message::CheckboxToggled)
                     ))
                     .into(),
-                settings::view_section("Expander")
-                    .add(settings::item(
-                        "Expander",
-                        expander()
-                            .title("Label")
-                            .subtitle("Caption")
-                            .icon(String::from("edit-paste"))
-                            .on_row_selected(Box::new(Message::RowSelected))
-                            .rows(vec![
-                                list_row()
-                                    .title("Label")
-                                    .subtitle("Caption")
-                                    .icon(String::from("help-about")),
-                                list_row().subtitle("Caption").title("Label"),
-                                list_row().title("Label")
-                            ])
-                    )).into(),
-                settings::view_section("List Box")
-                    .add(settings::item(
-                        "List Box",
-                        list_box()
-                            .style(theme::Container::Custom(list_section_style))
-                            .children(vec![
-                                cosmic::list_box_row!("Title").into(),
-                                cosmic::list_box_row!("Title", "Subtitle").into(),
-                                cosmic::list_box_row!("Title", "", "edit-paste").into(),
-                                cosmic::list_box_row!("", "Subtitle", "edit-paste").into(),
-                                cosmic::list_box_row!("Title", "Subtitle", "edit-paste").into()
-                            ])
-                            .render()
-                    )).into(),
-            ]);
+            ]).into();
             
             let mut widgets = Vec::with_capacity(2);
 
