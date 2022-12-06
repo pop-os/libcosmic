@@ -1,14 +1,15 @@
-use crate::scrollable;
+// Copyright 2022 System76 <info@system76.com>
+// SPDX-License-Identifier: MPL-2.0
+
 use crate::widget::nav_bar::{nav_bar_pages_style, nav_bar_sections_style};
-use crate::widget::{icon, Background};
-use crate::{theme, Theme};
+use crate::widget::{icon, scrollable};
+use crate::{theme, Renderer, Theme};
 use derive_setters::Setters;
-use iced::Length;
+use iced::{Background, Length};
 use iced_lazy::Component;
 use iced_native::widget::{button, column, container, text};
 use iced_native::{row, Alignment, Element};
 use iced_style::button::Appearance;
-use iced_style::scrollable;
 use std::collections::BTreeMap;
 
 #[derive(Setters, Default)]
@@ -44,10 +45,7 @@ pub struct NavBarSection {
 
 impl NavBarSection {
     pub fn new() -> Self {
-        Self {
-            title: String::new(),
-            icon: String::new(),
-        }
+        Self::default()
     }
 }
 
@@ -89,17 +87,7 @@ pub struct NavBarState {
     page_active: bool,
 }
 
-impl<'a, Message, Renderer> Component<Message, Renderer> for NavBar<'a, Message>
-where
-    Renderer: iced_native::Renderer + iced_native::text::Renderer + iced_native::svg::Renderer + 'a,
-    <Renderer as iced_native::Renderer>::Theme:
-        container::StyleSheet + button::StyleSheet + text::StyleSheet + scrollable::StyleSheet,
-    <<Renderer as iced_native::Renderer>::Theme as button::StyleSheet>::Style: From<theme::Button>,
-    <<Renderer as iced_native::Renderer>::Theme as container::StyleSheet>::Style:
-        From<theme::Container>,
-    <<Renderer as iced_native::Renderer>::Theme as text::StyleSheet>::Style: From<theme::Text>,
-    Renderer::Theme: iced_native::svg::StyleSheet,
-{
+impl<'a, Message> Component<Message, Renderer> for NavBar<'a, Message> {
     type State = NavBarState;
     type Event = NavBarEvent;
 
@@ -132,15 +120,15 @@ where
 
     fn view(&self, state: &Self::State) -> Element<'a, Self::Event, Renderer> {
         if self.active {
-            let mut sections: Vec<Element<Self::Event, Renderer>> = vec![];
-            let mut pages: Vec<Element<Self::Event, Renderer>> = vec![];
+            let mut sections: Vec<Element<'a, Self::Event, Renderer>> = vec![];
+            let mut pages: Vec<Element<'a, Self::Event, Renderer>> = vec![];
 
             for (section, section_pages) in &self.source {
                 sections.push(
                     button(
                         column(vec![
-                            icon(&section.icon, 20).into(),
-                            text(&section.title).size(14).into(),
+                            icon(section.icon.clone(), 20).into(),
+                            text(section.title.clone()).size(14).into(),
                         ])
                         .width(Length::Units(100))
                         .height(Length::Units(50))
@@ -179,16 +167,16 @@ where
 
             let nav_bar: Element<Self::Event, Renderer> =
                 container(if self.condensed && state.selected_page.is_some() {
-                    row![container(scrollable!(column(pages)
-                        .spacing(10)
-                        .padding(10)
-                        .max_width(200)
-                        .width(Length::Units(200))
-                        .height(Length::Shrink)))
-                    .height(Length::Fill)
-                    .style(theme::Container::Custom(nav_bar_pages_style))]
+                    row![container(scrollable(column(pages)
+                            .spacing(10)
+                            .padding(10)
+                            .max_width(200)
+                            .width(Length::Units(200))
+                            .height(Length::Shrink)))
+                        .height(Length::Fill)
+                        .style(theme::Container::Custom(nav_bar_pages_style))]
                 } else if !state.section_active || self.condensed && state.selected_page.is_none() {
-                    row![scrollable!(column(sections)
+                    row![scrollable(column(sections)
                         .spacing(10)
                         .padding(10)
                         .max_width(100)
@@ -196,13 +184,13 @@ where
                         .height(Length::Shrink))]
                 } else {
                     row![
-                        scrollable!(column(sections)
+                        scrollable(column(sections)
                             .spacing(10)
                             .padding(10)
                             .max_width(100)
                             .align_items(Alignment::Center)
                             .height(Length::Shrink)),
-                        container(scrollable!(column(pages)
+                        container(scrollable(column(pages)
                             .spacing(10)
                             .padding(10)
                             .max_width(200)
@@ -222,16 +210,8 @@ where
     }
 }
 
-impl<'a, Message: 'a, Renderer> From<NavBar<'a, Message>> for Element<'a, Message, Renderer>
-where
-    Renderer: iced_native::text::Renderer + iced_native::svg::Renderer + 'a,
-    <Renderer as iced_native::Renderer>::Theme:
-        container::StyleSheet + button::StyleSheet + text::StyleSheet + scrollable::StyleSheet,
-    <<Renderer as iced_native::Renderer>::Theme as button::StyleSheet>::Style: From<theme::Button>,
-    <<Renderer as iced_native::Renderer>::Theme as container::StyleSheet>::Style:
-        From<theme::Container>,
-    <<Renderer as iced_native::Renderer>::Theme as text::StyleSheet>::Style: From<theme::Text>,
-    Renderer::Theme: iced_native::svg::StyleSheet,
+impl<'a, Message: 'static> From<NavBar<'a, Message>>
+    for Element<'a, Message, Renderer>
 {
     fn from(nav_bar: NavBar<'a, Message>) -> Self {
         iced_lazy::component(nav_bar)

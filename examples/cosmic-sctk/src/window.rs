@@ -1,22 +1,25 @@
-use cosmic::widget::{expander, image_icon, nav_bar, nav_bar_page, nav_bar_section};
+// Copyright 2022 System76 <info@system76.com>
+// SPDX-License-Identifier: MPL-2.0
+
 use cosmic::{
-    iced::widget::{
-        checkbox, column, container, horizontal_space, pick_list, progress_bar, radio, row, slider,
-        text,
-    },
-    iced::{self, Alignment, Application, Color, Command, Length},
-    iced_lazy::responsive,
     iced_native::window,
-    list_view, list_view_item, list_view_row, list_view_section, scrollable,
-    theme::{self, Button, Theme},
-    widget::{button, header_bar, list_box, list_row, list_view::*, toggler},
+    iced::widget::{
+        column, container, horizontal_space, pick_list, progress_bar, radio, row, slider,
+    },
+    iced::{self, Alignment, Application, Command, Length},
+    iced_lazy::responsive,
+    theme::{self, Theme},
+    widget::{button, nav_button, nav_bar, nav_bar_page, nav_bar_section, header_bar, settings, scrollable, toggler},
     Element,
+    ElementExt,
 };
 use iced_sctk::application::SurfaceIdWrapper;
-use std::collections::BTreeMap;
+use std::{collections::BTreeMap, vec};
+use theme::Button as ButtonTheme;
 
 #[derive(Default)]
 pub struct Window {
+    title: String,
     page: u8,
     debug: bool,
     theme: Theme,
@@ -64,6 +67,7 @@ pub enum Message {
     Drag,
     Minimize,
     Maximize,
+    InputChanged,
 }
 
 impl Application for Window {
@@ -80,11 +84,12 @@ impl Application for Window {
         window.slider_value = 50.0;
         //        window.theme = Theme::Light;
         window.pick_list_selected = Some("Option 1");
+        window.title = String::from("COSMIC Design System - Iced");
         (window, Command::none())
     }
 
     fn title(&self) -> String {
-        String::from("COSMIC Design System - Iced")
+        self.title.clone()
     }
 
     fn update(&mut self, message: Message) -> iced::Command<Self::Message> {
@@ -94,42 +99,45 @@ impl Application for Window {
             Message::ThemeChanged(theme) => self.theme = theme,
             Message::ButtonPressed => {}
             Message::SliderChanged(value) => self.slider_value = value,
-            Message::CheckboxToggled(value) => self.checkbox_value = value,
+            Message::CheckboxToggled(value) => {
+                self.checkbox_value = value;
+            },
             Message::TogglerToggled(value) => self.toggler_value = value,
             Message::PickListSelected(value) => self.pick_list_selected = Some(value),
             Message::Close => self.exit = true,
             Message::ToggleSidebar => self.sidebar_toggled = !self.sidebar_toggled,
-            // Message::Drag => return drag(window::Id::new(0)),
-            // Message::Minimize => return minimize(window::Id::new(0), true),
-            // Message::Maximize => return maximize(window::Id::new(0), true),
+            Message::Drag => todo!(),
+            Message::Minimize => todo!(),
+            Message::Maximize => todo!(),
             Message::RowSelected(row) => println!("Selected row {row}"),
-            _ => {}
+            Message::InputChanged => {},
+
         }
 
         Command::none()
     }
 
-    fn close_requested(&self, _: SurfaceIdWrapper) -> Self::Message {
-        unimplemented!()
-    }
-
     fn view(&self, _: SurfaceIdWrapper) -> Element<Message> {
-        let mut header: Element<Message> = header_bar()
-            .title(self.title())
-            .nav_title(String::from("Settings"))
-            .sidebar_active(self.sidebar_toggled)
-            .show_minimize(self.show_minimize)
-            .show_maximize(self.show_maximize)
+        let mut header = header_bar()
+            .title("COSMIC Design System - Iced")
             .on_close(Message::Close)
             .on_drag(Message::Drag)
-            .on_maximize(Message::Maximize)
-            .on_minimize(Message::Minimize)
-            .on_sidebar_toggle(Message::ToggleSidebar)
-            .into();
+            .start(
+                nav_button("Settings")
+                    .on_sidebar_toggled(Message::ToggleSidebar)
+                    .sidebar_active(self.sidebar_toggled)
+                    .into()
+            );
 
-        if self.debug {
-            header = header.explain(Color::WHITE);
+        if self.show_maximize {
+            header = header.on_maximize(Message::Maximize);
         }
+
+        if self.show_minimize {
+            header = header.on_minimize(Message::Minimize);
+        }
+
+        let header = Into::<Element<Message>>::into(header).debug(self.debug);
 
         // TODO: Adding responsive makes this regenerate on every size change, and regeneration
         // involves allocations for many different items. Ideally, we could only make the nav bar
@@ -138,26 +146,26 @@ impl Application for Window {
             let condensed = size.width < 900.0;
 
             // cosmic::navbar![
-            //     nav_button!("network-wireless", "Network & Wireless", condensed)
+            //     nav_text_button("network-wireless", "Network & Wireless", condensed)
             //         .on_press(Message::Page(0))
             //         .style(if self.page == 0 {
-            //             theme::Button::Primary
+            //             ButtonTheme::Primary
             //         } else {
-            //             theme::Button::Text
+            //             ButtonTheme::Text
             //         }),
-            //     nav_button!("preferences-desktop", "Bluetooth", condensed)
+            //     nav_text_button("preferences-desktop", "Bluetooth", condensed)
             //         .on_press(Message::Page(1))
             //         .style(if self.page == 1 {
-            //             theme::Button::Primary
+            //             ButtonTheme::Primary
             //         } else {
-            //             theme::Button::Text
+            //             ButtonTheme::Text
             //         }),
-            //     nav_button!("system-software-update", "Personalization", condensed)
+            //     nav_text_button("system-software-update", "Personalization", condensed)
             //         .on_press(Message::Page(2))
             //         .style(if self.page == 2 {
-            //             theme::Button::Primary
+            //             ButtonTheme::Primary
             //         } else {
-            //             theme::Button::Text
+            //             ButtonTheme::Text
             //         }),
             // ]
 
@@ -221,49 +229,48 @@ impl Application for Window {
                 },
             );
 
-            let content: Element<_> = list_view!(
-                list_view_section!(
-                    "Debug",
-                    list_view_item!("Debug theme", choose_theme),
-                    list_view_item!(
+            let content: Element<_> = settings::view_column(vec![
+                settings::view_section("Debug")
+                    .add(settings::item("Debug theme", choose_theme))
+                    .add(settings::item(
                         "Debug layout",
-                        toggler(String::from("Debug layout"), self.debug, Message::Debug,)
-                    )
-                ),
-                list_view_section!(
-                    "Buttons",
-                    list_view_row!(
-                        button!("Primary")
-                            .style(theme::Button::Primary)
-                            .on_press(Message::ButtonPressed),
-                        button!("Secondary")
-                            .style(theme::Button::Secondary)
-                            .on_press(Message::ButtonPressed),
-                        button!("Positive")
-                            .style(theme::Button::Positive)
-                            .on_press(Message::ButtonPressed),
-                        button!("Destructive")
-                            .style(theme::Button::Destructive)
-                            .on_press(Message::ButtonPressed),
-                        button!("Text")
-                            .style(theme::Button::Text)
-                            .on_press(Message::ButtonPressed),
-                    ),
-                    list_view_row!(
-                        button!("Primary").style(theme::Button::Primary),
-                        button!("Secondary").style(theme::Button::Secondary),
-                        button!("Positive").style(theme::Button::Positive),
-                        button!("Destructive").style(theme::Button::Destructive),
-                        button!("Text").style(theme::Button::Text),
-                    ),
-                ),
-                list_view_section!(
-                    "Controls",
-                    list_view_item!(
-                        "Toggler",
-                        toggler(None, self.toggler_value, Message::TogglerToggled)
-                    ),
-                    list_view_item!(
+                        toggler(String::from("Debug layout"), self.debug, Message::Debug)
+                    ))
+                    .into(),
+                settings::view_section("Buttons")
+                    .add(settings::item_row(vec![
+                        button(ButtonTheme::Primary)
+                            .text("Primary")
+                            .on_press(Message::ButtonPressed)
+                            .into(),
+                        button(ButtonTheme::Secondary)
+                            .text("Secondary")
+                            .on_press(Message::ButtonPressed)
+                            .into(),
+                        button(ButtonTheme::Positive)
+                            .text("Positive")
+                            .on_press(Message::ButtonPressed)
+                            .into(),
+                        button(ButtonTheme::Destructive)
+                            .text("Destructive")
+                            .on_press(Message::ButtonPressed)
+                            .into(),
+                        button(ButtonTheme::Text)
+                            .text("Text")
+                            .on_press(Message::ButtonPressed)
+                            .into()
+                    ]))
+                    .add(settings::item_row(vec![
+                        button(ButtonTheme::Primary).text("Primary").into(),
+                        button(ButtonTheme::Secondary).text("Secondary").into(),
+                        button(ButtonTheme::Positive).text("Positive").into(),
+                        button(ButtonTheme::Destructive).text("Destructive").into(),
+                        button(ButtonTheme::Text).text("Text").into(),
+                    ]))
+                    .into(),
+                settings::view_section("Controls")
+                    .add(settings::item("Toggler", toggler(None, self.toggler_value, Message::TogglerToggled)))
+                    .add(settings::item(
                         "Pick List (TODO)",
                         pick_list(
                             vec!["Option 1", "Option 2", "Option 3", "Option 4",],
@@ -271,72 +278,30 @@ impl Application for Window {
                             Message::PickListSelected
                         )
                         .padding([8, 0, 8, 16])
-                    ),
-                    list_view_item!(
+                    ))
+                    .add(settings::item(
                         "Slider",
                         slider(0.0..=100.0, self.slider_value, Message::SliderChanged)
                             .width(Length::Units(250))
-                    ),
-                    list_view_item!(
+                    ))
+                    .add(settings::item(
                         "Progress",
                         progress_bar(0.0..=100.0, self.slider_value)
                             .width(Length::Units(250))
                             .height(Length::Units(4))
-                    ),
-                    checkbox("Checkbox", self.checkbox_value, Message::CheckboxToggled),
-                ),
-                list_view_section!(
-                    "Expander",
-                    expander()
-                        .title("Label")
-                        .subtitle("Caption")
-                        .icon(String::from("edit-paste"))
-                        .on_row_selected(Box::new(Message::RowSelected))
-                        .rows(vec![
-                            list_row()
-                                .title("Label")
-                                .subtitle("Caption")
-                                .icon(String::from("help-about")),
-                            list_row().subtitle("Caption").title("Label"),
-                            list_row().title("Label")
-                        ])
-                ),
-                list_view_section!(
-                    "List Box",
-                    list_box()
-                        .style(theme::Container::Custom(list_section_style))
-                        .children(vec![
-                            cosmic::list_box_row!("Title").into(),
-                            cosmic::list_box_row!("Title", "Subtitle").into(),
-                            cosmic::list_box_row!("Title", "", "edit-paste").into(),
-                            cosmic::list_box_row!("", "Subtitle", "edit-paste").into(),
-                            cosmic::list_box_row!("Title", "Subtitle", "edit-paste").into()
-                        ])
-                        .render()
-                ),
-                list_view_section!(
-                    "image",
-                    button!(image_icon("firefox", 64).unwrap()).style(Button::Transparent)
-                )
-            )
+                    ))
+                    .into()
+            ])
             .into();
 
             let mut widgets = Vec::with_capacity(2);
 
-            widgets.push(if self.debug {
-                sidebar.explain(Color::WHITE)
-            } else {
-                sidebar
-            });
+            widgets.push(sidebar.debug(self.debug));
 
             widgets.push(
-                scrollable!(row![
+                scrollable(row![
                     horizontal_space(Length::Fill),
-                    if self.debug {
-                        content.explain(Color::WHITE)
-                    } else {
-                        content
-                    },
+                    content.debug(self.debug),
                     horizontal_space(Length::Fill),
                 ])
                 .into(),
@@ -359,5 +324,9 @@ impl Application for Window {
 
     fn theme(&self) -> Theme {
         self.theme
+    }
+    
+    fn close_requested(&self, id: iced_sctk::application::SurfaceIdWrapper) -> Self::Message {
+        Message::Close
     }
 }

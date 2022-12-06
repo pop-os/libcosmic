@@ -1,3 +1,6 @@
+// Copyright 2022 System76 <info@system76.com>
+// SPDX-License-Identifier: MPL-2.0
+
 use iced_core::{Background, Color};
 
 /// The appearance of a [`Expander`](crate::native::expander::Expander).

@@ -4,7 +4,7 @@ use cosmic::{
 };
 
 mod window;
-pub use window::*;
+pub use window::Window;
 
 pub fn main() -> cosmic::iced::Result {
     let mut settings = settings();
