@@ -1,5 +1,11 @@
+// Copyright 2022 System76 <info@system76.com>
+// SPDX-License-Identifier: MPL-2.0
+
 pub mod expander;
 pub mod palette;
+
+use std::hash::Hash;
+use std::hash::Hasher;
 
 pub use self::palette::Palette;
 
@@ -39,6 +45,7 @@ pub enum Theme {
 }
 
 impl Theme {
+    #[must_use]
     pub fn cosmic(self) -> &'static CosmicTheme {
         match self {
             Self::Dark => &COSMIC_DARK,
@@ -46,6 +53,7 @@ impl Theme {
         }
     }
 
+    #[must_use]
     pub fn palette(self) -> Palette {
         match self {
             Self::Dark => Palette::DARK,
@@ -53,6 +61,7 @@ impl Theme {
         }
     }
 
+    #[must_use]
     pub fn extended_palette(&self) -> &self::palette::Extended {
         match self {
             Self::Dark => &self::palette::EXTENDED_DARK,
@@ -82,7 +91,7 @@ impl Default for Application {
 impl application::StyleSheet for Theme {
     type Style = Application;
 
-    fn appearance(&self, style: Self::Style) -> application::Appearance {
+    fn appearance(&self, style: &Self::Style) -> application::Appearance {
         let cosmic = self.cosmic();
 
         match style {
@@ -100,10 +109,11 @@ impl application::StyleSheet for Theme {
  */
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Button {
+    Deactivated,
+    Destructive,
+    Positive,
     Primary,
     Secondary,
-    Positive,
-    Destructive,
     Text,
 }
 
@@ -122,6 +132,7 @@ impl Button {
             Button::Positive => &cosmic.success,
             Button::Destructive => &cosmic.destructive,
             Button::Text => &cosmic.secondary.component,
+            Button::Deactivated => &cosmic.secondary.component,
         }
     }
 }
@@ -129,7 +140,7 @@ impl Button {
 impl button::StyleSheet for Theme {
     type Style = Button;
 
-    fn active(&self, style: Self::Style) -> button::Appearance {
+    fn active(&self, style: &Self::Style) -> button::Appearance {
         let cosmic = style.cosmic(self);
 
         button::Appearance {
@@ -143,8 +154,8 @@ impl button::StyleSheet for Theme {
         }
     }
 
-    fn hovered(&self, style: Self::Style) -> button::Appearance {
-        let active = self.active(style);
+    fn hovered(&self, style: &Self::Style) -> button::Appearance {
+        let active = self.active(&style);
         let cosmic = style.cosmic(self);
 
         button::Appearance {
@@ -176,7 +187,7 @@ impl checkbox::StyleSheet for Theme {
 
     fn active(
         &self,
-        style: Self::Style,
+        style: &Self::Style,
         is_checked: bool,
     ) -> checkbox::Appearance {
         let palette = self.extended_palette();
@@ -211,7 +222,7 @@ impl checkbox::StyleSheet for Theme {
 
     fn hovered(
         &self,
-        style: Self::Style,
+        style: &Self::Style,
         is_checked: bool,
     ) -> checkbox::Appearance {
         let palette = self.extended_palette();
@@ -288,7 +299,7 @@ impl expander::StyleSheet for Theme {
 
     fn appearance(&self, style: Self::Style) -> expander::Appearance {
         match style {
-            Expander::Default => Default::default(),
+            Expander::Default => expander::Appearance::default(),
             Expander::Custom(f) => f(self),
         }
     }
@@ -319,9 +330,9 @@ impl From<fn(&Theme) -> container::Appearance> for Container {
 impl container::StyleSheet for Theme {
     type Style = Container;
 
-    fn appearance(&self, style: Self::Style) -> container::Appearance {
+    fn appearance(&self, style: &Self::Style) -> container::Appearance {
         match style {
-            Container::Transparent => Default::default(),
+            Container::Transparent => container::Appearance::default(),
             Container::Box => {
                 let palette = self.extended_palette();
 
@@ -344,7 +355,7 @@ impl container::StyleSheet for Theme {
 impl slider::StyleSheet for Theme {
     type Style = ();
 
-    fn active(&self, _style: Self::Style) -> slider::Appearance {
+    fn active(&self, _style: &Self::Style) -> slider::Appearance {
         let cosmic = self.cosmic();
 
         //TODO: no way to set rail thickness
@@ -365,8 +376,8 @@ impl slider::StyleSheet for Theme {
         }
     }
 
-    fn hovered(&self, style: Self::Style) -> slider::Appearance {
-        let mut style = self.active(style);
+    fn hovered(&self, style: &Self::Style) -> slider::Appearance {
+        let mut style = self.active(&style);
         style.handle.shape = slider::HandleShape::Circle {
             radius: 16.0
         };
@@ -378,8 +389,8 @@ impl slider::StyleSheet for Theme {
         style
     }
 
-    fn dragging(&self, style: Self::Style) -> slider::Appearance {
-        let mut style = self.hovered(style);
+    fn dragging(&self, style: &Self::Style) -> slider::Appearance {
+        let mut style = self.hovered(&style);
         style.handle.border_color = match self {
             Theme::Dark => Color::from_rgba8(0xFF, 0xFF, 0xFF, 0.2),
             Theme::Light => Color::from_rgba8(0, 0, 0, 0.2),
@@ -394,7 +405,7 @@ impl slider::StyleSheet for Theme {
 impl menu::StyleSheet for Theme {
     type Style = ();
 
-    fn appearance(&self, _style: Self::Style) -> menu::Appearance {
+    fn appearance(&self, _style: &Self::Style) -> menu::Appearance {
         let cosmic = self.cosmic();
 
         menu::Appearance {
@@ -415,7 +426,7 @@ impl menu::StyleSheet for Theme {
 impl pick_list::StyleSheet for Theme {
     type Style = ();
 
-    fn active(&self, _style: ()) -> pick_list::Appearance {
+    fn active(&self, _style: &()) -> pick_list::Appearance {
         let cosmic = &self.cosmic().primary.component;
 
         pick_list::Appearance {
@@ -429,12 +440,12 @@ impl pick_list::StyleSheet for Theme {
         }
     }
 
-    fn hovered(&self, style: ()) -> pick_list::Appearance {
+    fn hovered(&self, style: &()) -> pick_list::Appearance {
         let cosmic = &self.cosmic().primary.component;
 
         pick_list::Appearance {
             background: Background::Color(cosmic.hover.into()),
-            ..self.active(style)
+            ..self.active(&style)
         }
     }
 }
@@ -445,7 +456,7 @@ impl pick_list::StyleSheet for Theme {
 impl radio::StyleSheet for Theme {
     type Style = ();
 
-    fn active(&self, _style: Self::Style) -> radio::Appearance {
+    fn active(&self, _style: &Self::Style, is_selected: bool) -> radio::Appearance {
         let palette = self.extended_palette();
 
         radio::Appearance {
@@ -457,8 +468,8 @@ impl radio::StyleSheet for Theme {
         }
     }
 
-    fn hovered(&self, style: Self::Style) -> radio::Appearance {
-        let active = self.active(style);
+    fn hovered(&self, style: &Self::Style, is_selected: bool) -> radio::Appearance {
+        let active = self.active(&style, is_selected);
         let palette = self.extended_palette();
 
         radio::Appearance {
@@ -477,7 +488,7 @@ impl toggler::StyleSheet for Theme {
 
     fn active(
         &self,
-        _style: Self::Style,
+        _style: &Self::Style,
         is_active: bool,
     ) -> toggler::Appearance {
         let palette = self.palette();
@@ -504,7 +515,7 @@ impl toggler::StyleSheet for Theme {
 
     fn hovered(
         &self,
-        style: Self::Style,
+        style: &Self::Style,
         is_active: bool,
     ) -> toggler::Appearance {
         //TODO: grab colors from palette
@@ -515,7 +526,7 @@ impl toggler::StyleSheet for Theme {
                 } else {
                     Color::from_rgb8(0xb6, 0xb6, 0xb6)
                 },
-                ..self.active(style, is_active)
+                ..self.active(&style, is_active)
             },
             Theme::Light  => toggler::Appearance {
                 background: if is_active {
@@ -523,7 +534,7 @@ impl toggler::StyleSheet for Theme {
                 } else {
                     Color::from_rgb8(0x54, 0x54, 0x54)
                 },
-                ..self.active(style, is_active)
+                ..self.active(&style, is_active)
             }
         }
     }
@@ -535,7 +546,7 @@ impl toggler::StyleSheet for Theme {
 impl pane_grid::StyleSheet for Theme {
     type Style = ();
 
-    fn picked_split(&self, _style: Self::Style) -> Option<pane_grid::Line> {
+    fn picked_split(&self, _style: &Self::Style) -> Option<pane_grid::Line> {
         let palette = self.extended_palette();
 
         Some(pane_grid::Line {
@@ -544,7 +555,7 @@ impl pane_grid::StyleSheet for Theme {
         })
     }
 
-    fn hovered_split(&self, _style: Self::Style) -> Option<pane_grid::Line> {
+    fn hovered_split(&self, _style: &Self::Style) -> Option<pane_grid::Line> {
         let palette = self.extended_palette();
 
         Some(pane_grid::Line {
@@ -574,7 +585,7 @@ impl Default for ProgressBar {
 impl progress_bar::StyleSheet for Theme {
     type Style = ProgressBar;
 
-    fn appearance(&self, style: Self::Style) -> progress_bar::Appearance {
+    fn appearance(&self, style: &Self::Style) -> progress_bar::Appearance {
         let palette = self.extended_palette();
 
         let from_palette = |bar: Color| progress_bar::Appearance {
@@ -610,7 +621,7 @@ impl Default for Rule {
 impl rule::StyleSheet for Theme {
     type Style = Rule;
 
-    fn style(&self, style: Self::Style) -> rule::Appearance {
+    fn appearance(&self, style: &Self::Style) -> rule::Appearance {
         let palette = self.extended_palette();
 
         match style {
@@ -631,7 +642,7 @@ impl rule::StyleSheet for Theme {
 impl scrollable::StyleSheet for Theme {
     type Style = ();
 
-    fn active(&self, _style: Self::Style) -> scrollable::Scrollbar {
+    fn active(&self, _style: &Self::Style) -> scrollable::Scrollbar {
         let palette = self.extended_palette();
 
         scrollable::Scrollbar {
@@ -648,7 +659,7 @@ impl scrollable::StyleSheet for Theme {
         }
     }
 
-    fn hovered(&self, _style: Self::Style) -> scrollable::Scrollbar {
+    fn hovered(&self, _style: &Self::Style) -> scrollable::Scrollbar {
         let palette = self.extended_palette();
 
         scrollable::Scrollbar {
@@ -669,23 +680,42 @@ impl scrollable::StyleSheet for Theme {
 
 #[derive(Default, Clone, Copy)]
 pub enum Svg {
+    /// Apply a custom appearance filter
     Custom(fn(&Theme) -> svg::Appearance),
+    /// No filtering is applied
     #[default]
     Default,
-    Accent,
+    /// Icon fill color will match text color
+    Symbolic,
+    /// Icon fill color will match accent color
+    SymbolicActive,
+}
+
+impl Hash for Svg {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        let id = match self {
+            Svg::Custom(_) => 0,
+            Svg::Default => 1,
+            Svg::Symbolic => 2,
+            Svg::SymbolicActive => 3
+        };
+
+        id.hash(state);
+    }
 }
 
 impl svg::StyleSheet for Theme {
     type Style = Svg;
 
     fn appearance(&self, style: Self::Style) -> svg::Appearance {
-        let cosmic = self.cosmic();
-
         match style {
-            Svg::Default => Default::default(),
+            Svg::Default => svg::Appearance::default(),
             Svg::Custom(appearance) => appearance(self),
-            Svg::Accent => svg::Appearance {
-                fill: Some(cosmic.accent.base.into()),
+            Svg::Symbolic => svg::Appearance {
+                fill: Some(self.extended_palette().background.base.text),
+            },
+            Svg::SymbolicActive => svg::Appearance {
+                fill: Some(self.cosmic().accent.base.into()),
             },
         }
     }
@@ -717,7 +747,7 @@ impl text::StyleSheet for Theme {
             Text::Accent => text::Appearance {
                 color: Some(self.cosmic().accent.base.into())
             },
-            Text::Default => Default::default(),
+            Text::Default => text::Appearance::default(),
             Text::Color(c) => text::Appearance { color: Some(c) },
             Text::Custom(f) => f(self),
         }
@@ -730,7 +760,7 @@ impl text::StyleSheet for Theme {
 impl text_input::StyleSheet for Theme {
     type Style = ();
 
-    fn active(&self, _style: Self::Style) -> text_input::Appearance {
+    fn active(&self, _style: &Self::Style) -> text_input::Appearance {
         let palette = self.extended_palette();
 
         text_input::Appearance {
@@ -741,7 +771,7 @@ impl text_input::StyleSheet for Theme {
         }
     }
 
-    fn hovered(&self, _style: Self::Style) -> text_input::Appearance {
+    fn hovered(&self, _style: &Self::Style) -> text_input::Appearance {
         let palette = self.extended_palette();
 
         text_input::Appearance {
@@ -752,7 +782,7 @@ impl text_input::StyleSheet for Theme {
         }
     }
 
-    fn focused(&self, _style: Self::Style) -> text_input::Appearance {
+    fn focused(&self, _style: &Self::Style) -> text_input::Appearance {
         let palette = self.extended_palette();
 
         text_input::Appearance {
@@ -763,19 +793,19 @@ impl text_input::StyleSheet for Theme {
         }
     }
 
-    fn placeholder_color(&self, _style: Self::Style) -> Color {
+    fn placeholder_color(&self, _style: &Self::Style) -> Color {
         let palette = self.extended_palette();
 
         palette.background.strong.color
     }
 
-    fn value_color(&self, _style: Self::Style) -> Color {
+    fn value_color(&self, _style: &Self::Style) -> Color {
         let palette = self.extended_palette();
 
         palette.background.base.text
     }
 
-    fn selection_color(&self, _style: Self::Style) -> Color {
+    fn selection_color(&self, _style: &Self::Style) -> Color {
         let palette = self.extended_palette();
 
         palette.primary.weak.color

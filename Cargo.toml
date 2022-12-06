@@ -16,6 +16,7 @@ apply = "0.3.0"
 derive_setters = "0.1.5"
 lazy_static = "1.4.0"
 palette = "0.6.1"
+static-rc = "0.6.1"
 
 [dependencies.cosmic-theme]
 git = "https://github.com/pop-os/cosmic-theme.git"

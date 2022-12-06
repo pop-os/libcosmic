@@ -1,3 +1,6 @@
+// Copyright 2022 System76 <info@system76.com>
+// SPDX-License-Identifier: MPL-2.0
+
 //TODO: GET CORRECT PALETTE FROM COSMIC-THEME
 use iced_core::Color;
 
@@ -86,6 +89,7 @@ lazy_static! {
 }
 
 impl Extended {
+    #[must_use]
     pub fn generate(palette: Palette) -> Self {
         Self {
             background: Background::new(palette.background, palette.text),
@@ -131,6 +135,7 @@ pub struct Background {
 }
 
 impl Background {
+    #[must_use]
     pub fn new(base: Color, text: Color) -> Self {
         let weak = mix(base, text, 0.15);
         let strong = mix(base, text, 0.40);
@@ -150,6 +155,7 @@ pub struct Primary {
 }
 
 impl Primary {
+    #[must_use]
     pub fn generate(base: Color, background: Color, text: Color) -> Self {
         let weak = mix(base, background, 0.4);
         let strong = deviate(base, 0.1);
@@ -169,6 +175,7 @@ pub struct Secondary {
 }
 
 impl Secondary {
+    #[must_use]
     pub fn generate(base: Color, text: Color) -> Self {
         let base = mix(base, text, 0.2);
         let weak = mix(base, text, 0.1);
@@ -189,6 +196,7 @@ pub struct Success {
 }
 
 impl Success {
+    #[must_use]
     pub fn generate(base: Color, background: Color, text: Color) -> Self {
         let weak = mix(base, background, 0.4);
         let strong = deviate(base, 0.1);
@@ -208,6 +216,7 @@ pub struct Danger {
 }
 
 impl Danger {
+    #[must_use]
     pub fn generate(base: Color, background: Color, text: Color) -> Self {
         let weak = mix(base, background, 0.4);
         let strong = deviate(base, 0.1);

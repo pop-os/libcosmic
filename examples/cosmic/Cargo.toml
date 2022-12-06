@@ -6,4 +6,5 @@ edition = "2021"
 publish = false
 
 [dependencies]
+apply = "0.3.0"
 libcosmic = { path = "../..", features = ["debug"] }
