@@ -1,8 +1,10 @@
-use crate::scrollable;
+// Copyright 2022 System76 <info@system76.com>
+// SPDX-License-Identifier: MPL-2.0
+
 use crate::widget::nav_bar::{nav_bar_pages_style, nav_bar_sections_style};
 use crate::widget::Background;
 use derive_setters::Setters;
-use iced::Length;
+use iced::{Background, Length};
 use iced_lazy::Component;
 use iced_native::widget::{column, container};
 use iced_native::{row, Alignment, Element};
@@ -45,10 +47,7 @@ pub struct NavBarItem {
 
 impl NavBarItem {
     pub fn new() -> Self {
-        Self {
-            title: String::new(),
-            icon: String::new(),
-        }
+        Self::default()
     }
 }
 
@@ -69,8 +68,7 @@ pub struct NavBarState {
     selected_page: Option<usize>,
 }
 
-impl<'a, Message> Component<Message, Renderer> for NavBar<'a, Message>
-{
+impl<'a, Message> Component<Message, Renderer> for NavBar<'a, Message> {
     type State = NavBarState;
     type Event = NavBarEvent;
 
@@ -96,8 +94,8 @@ impl<'a, Message> Component<Message, Renderer> for NavBar<'a, Message>
 
     fn view(&self, state: &Self::State) -> Element<Self::Event, Renderer> {
         if self.active {
-            let mut sections: Vec<Element<Self::Event, Renderer>> = vec![];
-            let mut pages: Vec<Element<Self::Event, Renderer>> = vec![];
+            let mut sections: Vec<Element<'a, Self::Event, Renderer>> = vec![];
+            let mut pages: Vec<Element<'a, Self::Event, Renderer>> = vec![];
 
             for (section_index, (section, section_pages)) in self.source.iter().enumerate() {
                 sections.push(
@@ -122,21 +120,42 @@ impl<'a, Message> Component<Message, Renderer> for NavBar<'a, Message>
                     }
                 }
             }
-            let width: u16 = if self.condensed { 100 } else { 200 };
-            let nav_bar: Element<Self::Event, Renderer> = container(row![
-                scrollable!(column(sections)
-                    .spacing(10)
-                    .padding(10)
-                    .max_width(100)
-                    .align_items(Alignment::Center)
-                    .height(Length::Shrink)),
-                container(scrollable!(column(pages)
-                    .spacing(10)
-                    .padding(10)
-                    .max_width(width.into())
-                    .align_items(Alignment::Center)
-                    .width(Length::Units(width))
-                    .height(Length::Shrink)))
+
+            let nav_bar: Element<Self::Event, Renderer> =
+                container(if self.condensed && state.selected_page.is_some() {
+                    row![container(scrollable(column(pages)
+                            .spacing(10)
+                            .padding(10)
+                            .max_width(200)
+                            .width(Length::Units(200))
+                            .height(Length::Shrink)))
+                        .height(Length::Fill)
+                        .style(theme::Container::Custom(nav_bar_pages_style))]
+                } else if !state.section_active || self.condensed && state.selected_page.is_none() {
+                    row![scrollable(column(sections)
+                        .spacing(10)
+                        .padding(10)
+                        .max_width(100)
+                        .align_items(Alignment::Center)
+                        .height(Length::Shrink))]
+                } else {
+                    row![
+                        scrollable(column(sections)
+                            .spacing(10)
+                            .padding(10)
+                            .max_width(100)
+                            .align_items(Alignment::Center)
+                            .height(Length::Shrink)),
+                        container(scrollable(column(pages)
+                            .spacing(10)
+                            .padding(10)
+                            .max_width(200)
+                            .width(Length::Units(200))
+                            .height(Length::Shrink)))
+                        .height(Length::Fill)
+                        .style(theme::Container::Custom(nav_bar_pages_style)),
+                    ]
+                })
                 .height(Length::Fill)
                 .style(theme::Container::Custom(nav_bar_pages_style)),
             ])
@@ -150,7 +169,8 @@ impl<'a, Message> Component<Message, Renderer> for NavBar<'a, Message>
     }
 }
 
-impl<'a, Message: 'a> From<NavBar<'a, Message>> for Element<'a, Message, Renderer>
+impl<'a, Message: 'static> From<NavBar<'a, Message>>
+    for Element<'a, Message, Renderer>
 {
     fn from(nav_bar: NavBar<'a, Message>) -> Self {
         iced_lazy::component(nav_bar)

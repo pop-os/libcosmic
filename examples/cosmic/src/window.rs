@@ -1,19 +1,24 @@
-use cosmic::widget::{expander, nav_bar, nav_bar_item};
+// Copyright 2022 System76 <info@system76.com>
+// SPDX-License-Identifier: MPL-2.0
+
 use cosmic::{
     iced::widget::{
-        checkbox, column, container, horizontal_space, pick_list, progress_bar, radio, row, slider,
-        text,
+        column, container, horizontal_space, pick_list, progress_bar, radio, row, slider,
     },
-    iced::{self, theme, Alignment, Application, Color, Command, Element, Length, Theme},
+    iced::{self, Alignment, Application, Command, Length},
     iced_lazy::responsive,
-    iced_winit::window::{drag, maximize, minimize},
-    list_view, list_view_item, list_view_row, list_view_section, scrollable,
-    widget::{button, header_bar, list_box, list_row, list_view::*, toggler},
+    iced_winit::window::{drag, toggle_maximize, minimize},
+    theme::{self, Theme},
+    widget::{button, nav_button, nav_bar, nav_bar_page, nav_bar_section, header_bar, settings, scrollable, toggler, expander, nav_bar, nav_bar_item},
+    Element,
+    ElementExt,
 };
-use std::collections::BTreeMap;
+use std::{collections::BTreeMap, vec};
+use theme::Button as ButtonTheme;
 
 #[derive(Default)]
-pub struct Window {
+pub struct Window {    
+    title: String,
     page: usize,
     section: usize,
     debug: bool,
@@ -78,11 +83,12 @@ impl Application for Window {
         window.slider_value = 50.0;
         //        window.theme = Theme::Light;
         window.pick_list_selected = Some("Option 1");
+        window.title = String::from("COSMIC Design System - Iced");
         (window, Command::none())
     }
 
     fn title(&self) -> String {
-        String::from("COSMIC Design System - Iced")
+        self.title.clone()
     }
 
     fn update(&mut self, message: Message) -> iced::Command<Self::Message> {
@@ -101,8 +107,8 @@ impl Application for Window {
             Message::Close => self.exit = true,
             Message::ToggleSidebar => self.sidebar_toggled = !self.sidebar_toggled,
             Message::Drag => return drag(),
-            Message::Minimize => return minimize(),
-            Message::Maximize => return maximize(),
+            Message::Minimize => return minimize(true),
+            Message::Maximize => return toggle_maximize(),
             Message::RowSelected(row) => println!("Selected row {row}"),
         }
 
@@ -112,20 +118,28 @@ impl Application for Window {
     fn view(&self) -> Element<Message> {
         let mut header: Element<Message, _> = header_bar()
             .title(self.title())
-            //            .nav_title(String::from("Settings"))
+            //.nav_title(String::from("Settings"))
             .sidebar_active(self.sidebar_toggled)
             .show_minimize(self.show_minimize)
             .show_maximize(self.show_maximize)
             .on_close(Message::Close)
             .on_drag(Message::Drag)
-            .on_maximize(Message::Maximize)
-            .on_minimize(Message::Minimize)
-            .on_sidebar_toggle(Message::ToggleSidebar)
-            .into();
+            .start(
+                nav_button("Settings")
+                    .on_sidebar_toggled(Message::ToggleSidebar)
+                    .sidebar_active(self.sidebar_toggled)
+                    .into()
+            );
 
-        if self.debug {
-            header = header.explain(Color::WHITE);
+        if self.show_maximize {
+            header = header.on_maximize(Message::Maximize);
         }
+
+        if self.show_minimize {
+            header = header.on_minimize(Message::Minimize);
+        }
+
+        let header = Into::<Element<Message>>::into(header).debug(self.debug);
 
         // TODO: Adding responsive makes this regenerate on every size change, and regeneration
         // involves allocations for many different items. Ideally, we could only make the nav bar
@@ -201,49 +215,48 @@ impl Application for Window {
                 },
             );
 
-            let content: Element<_> = list_view!(
-                list_view_section!(
-                    "Debug",
-                    list_view_item!("Debug theme", choose_theme),
-                    list_view_item!(
+            let content: Element<_> = settings::view_column(vec![
+                settings::view_section("Debug")
+                    .add(settings::item("Debug theme", choose_theme))
+                    .add(settings::item(
                         "Debug layout",
-                        toggler(String::from("Debug layout"), self.debug, Message::Debug,)
-                    )
-                ),
-                list_view_section!(
-                    "Buttons",
-                    list_view_row!(
-                        button!("Primary")
-                            .style(theme::Button::Primary)
-                            .on_press(Message::ButtonPressed),
-                        button!("Secondary")
-                            .style(theme::Button::Secondary)
-                            .on_press(Message::ButtonPressed),
-                        button!("Positive")
-                            .style(theme::Button::Positive)
-                            .on_press(Message::ButtonPressed),
-                        button!("Destructive")
-                            .style(theme::Button::Destructive)
-                            .on_press(Message::ButtonPressed),
-                        button!("Text")
-                            .style(theme::Button::Text)
-                            .on_press(Message::ButtonPressed),
-                    ),
-                    list_view_row!(
-                        button!("Primary").style(theme::Button::Primary),
-                        button!("Secondary").style(theme::Button::Secondary),
-                        button!("Positive").style(theme::Button::Positive),
-                        button!("Destructive").style(theme::Button::Destructive),
-                        button!("Text").style(theme::Button::Text),
-                    ),
-                ),
-                list_view_section!(
-                    "Controls",
-                    list_view_item!(
-                        "Toggler",
-                        toggler(None, self.toggler_value, Message::TogglerToggled)
-                    ),
-                    list_view_item!(
+                        toggler(String::from("Debug layout"), self.debug, Message::Debug)
+                    ))
+                    .into(),
+                settings::view_section("Buttons")
+                    .add(settings::item_row(vec![
+                        button(ButtonTheme::Primary)
+                            .text("Primary")
+                            .on_press(Message::ButtonPressed)
+                            .into(),
+                        button(ButtonTheme::Secondary)
+                            .text("Secondary")
+                            .on_press(Message::ButtonPressed)
+                            .into(),
+                        button(ButtonTheme::Positive)
+                            .text("Positive")
+                            .on_press(Message::ButtonPressed)
+                            .into(),
+                        button(ButtonTheme::Destructive)
+                            .text("Destructive")
+                            .on_press(Message::ButtonPressed)
+                            .into(),
+                        button(ButtonTheme::Text)
+                            .text("Text")
+                            .on_press(Message::ButtonPressed)
+                            .into()
+                    ]))
+                    .add(settings::item_row(vec![
+                        button(ButtonTheme::Primary).text("Primary").into(),
+                        button(ButtonTheme::Secondary).text("Secondary").into(),
+                        button(ButtonTheme::Positive).text("Positive").into(),
+                        button(ButtonTheme::Destructive).text("Destructive").into(),
+                        button(ButtonTheme::Text).text("Text").into(),
+                    ]))
+                    .into(),
+                settings::view_section("Controls")
+                    .add(settings::item("Toggler", toggler(None, self.toggler_value, Message::TogglerToggled)))
+                    .add(settings::item(
                         "Pick List (TODO)",
                         pick_list(
                             vec!["Option 1", "Option 2", "Option 3", "Option 4",],
@@ -251,68 +264,30 @@ impl Application for Window {
                             Message::PickListSelected
                         )
                         .padding([8, 0, 8, 16])
-                    ),
-                    list_view_item!(
+                    ))
+                    .add(settings::item(
                         "Slider",
                         slider(0.0..=100.0, self.slider_value, Message::SliderChanged)
                             .width(Length::Units(250))
-                    ),
-                    list_view_item!(
+                    ))
+                    .add(settings::item(
                         "Progress",
                         progress_bar(0.0..=100.0, self.slider_value)
                             .width(Length::Units(250))
                             .height(Length::Units(4))
-                    ),
-                    checkbox("Checkbox", self.checkbox_value, Message::CheckboxToggled),
-                ),
-                list_view_section!(
-                    "Expander",
-                    expander()
-                        .title("Label")
-                        .subtitle("Caption")
-                        .icon(String::from("edit-paste"))
-                        .on_row_selected(Box::new(Message::RowSelected))
-                        .rows(vec![
-                            list_row()
-                                .title("Label")
-                                .subtitle("Caption")
-                                .icon(String::from("help-about")),
-                            list_row().subtitle("Caption").title("Label"),
-                            list_row().title("Label")
-                        ])
-                ),
-                list_view_section!(
-                    "List Box",
-                    list_box()
-                        .style(theme::Container::Custom(list_section_style))
-                        .children(vec![
-                            cosmic::list_box_row!("Title").into(),
-                            cosmic::list_box_row!("Title", "Subtitle").into(),
-                            cosmic::list_box_row!("Title", "", "edit-paste").into(),
-                            cosmic::list_box_row!("", "Subtitle", "edit-paste").into(),
-                            cosmic::list_box_row!("Title", "Subtitle", "edit-paste").into()
-                        ])
-                        .render()
-                ),
-            )
+                    ))
+                    .into()
+            ])
             .into();
 
             let mut widgets = Vec::with_capacity(2);
 
-            widgets.push(if self.debug {
-                sidebar.explain(Color::WHITE)
-            } else {
-                sidebar
-            });
+            widgets.push(sidebar.debug(self.debug));
 
             widgets.push(
-                scrollable!(row![
+                scrollable(row![
                     horizontal_space(Length::Fill),
-                    if self.debug {
-                        content.explain(Color::WHITE)
-                    } else {
-                        content
-                    },
+                    content.debug(self.debug),
                     horizontal_space(Length::Fill),
                 ])
                 .into(),

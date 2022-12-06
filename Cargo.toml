@@ -14,34 +14,48 @@ debug = ["iced/debug"]
 freedesktop-icons = "0.2.1"
 apply = "0.3.0"
 derive_setters = "0.1.5"
+lazy_static = "1.4.0"
+palette = "0.6.1"
+static-rc = "0.6.1"
+
+[dependencies.cosmic-theme]
+git = "https://github.com/pop-os/cosmic-theme.git"
 
 [dependencies.iced]
 git = "https://github.com/pop-os/iced.git"
 branch = "cosmic-design-system"
 # path = "../iced"
-features = ["cosmic-theme", "svg"]
+features = ["image", "svg"]
 
-[dependencies.iced_style]
+[dependencies.iced_core]
 git = "https://github.com/pop-os/iced.git"
 branch = "cosmic-design-system"
-# path = "../iced/style"
-features = ["cosmic-theme"]
-
-[dependencies.iced_native]
-git = "https://github.com/pop-os/iced.git"
-branch = "cosmic-design-system"
-# path = "../iced/native"
-features = ["cosmic-theme"]
+# path = "../iced/core"
 
 [dependencies.iced_lazy]
 git = "https://github.com/pop-os/iced.git"
 branch = "cosmic-design-system"
 # path = "../iced/lazy"
 
+[dependencies.iced_native]
+git = "https://github.com/pop-os/iced.git"
+branch = "cosmic-design-system"
+# path = "../iced/native"
+
+[dependencies.iced_style]
+git = "https://github.com/pop-os/iced.git"
+branch = "cosmic-design-system"
+# path = "../iced/style"
+
 [dependencies.iced_winit]
 git = "https://github.com/pop-os/iced.git"
 branch = "cosmic-design-system"
 # path = "../iced/winit"
+
+[dependencies.iced_wgpu]
+git = "https://github.com/pop-os/iced.git"
+branch = "cosmic-design-system"
+# path = "../iced/wgpu"
 
 [workspace]
 members = [

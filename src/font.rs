@@ -1,3 +1,6 @@
+// Copyright 2022 System76 <info@system76.com>
+// SPDX-License-Identifier: MPL-2.0
+
 pub use iced::Font;
 
 pub const FONT: Font = Font::External {

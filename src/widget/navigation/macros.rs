@@ -1,5 +1,9 @@
+// Copyright 2022 System76 <info@system76.com>
+// SPDX-License-Identifier: MPL-2.0
+
 pub mod nav_bar {
-    use iced::{widget, Background, Color, Theme};
+    use iced::{widget, Background, Color};
+    use crate::Theme;
 
     #[macro_export]
     macro_rules! nav_button {
