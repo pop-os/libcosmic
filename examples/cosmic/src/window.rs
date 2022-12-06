@@ -4,7 +4,7 @@
 use cosmic::{
     iced_native::window,
     iced::widget::{
-        column, container, horizontal_space, pick_list, progress_bar, radio, row, slider,
+        column, container, horizontal_space, pick_list, progress_bar, radio, row, slider, checkbox,
     },
     iced::{self, Alignment, Application, Command, Length},
     iced_lazy::responsive,
@@ -290,6 +290,9 @@ impl Application for Window {
                             .width(Length::Units(250))
                             .height(Length::Units(4))
                     ))
+                    .add(settings::item_row(vec![
+                        checkbox("Checkbox", self.checkbox_value, Message::CheckboxToggled).into()
+                    ]))
                     .into()
             ])
             .into();
