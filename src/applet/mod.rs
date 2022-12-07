@@ -44,7 +44,7 @@ impl CosmicAppletHelper {
 
 
     pub fn icon_button<'a, Message: 'static>(&self, icon_name: &'a str) -> widget::Button<'a, Message, Renderer> {
-        crate::widget::button(crate::theme::Button::Text).icon(crate::theme::Svg::Symbolic, icon_name, self.suggested_icon_size())
+        crate::widget::button(crate::theme::Button::Text).icon(crate::theme::Svg::Symbolic, icon_name, self.suggested_icon_size()).padding(8)
     }
     
     // TODO popup container which tracks the size of itself and requests the popup to resize to match
@@ -101,7 +101,7 @@ impl CosmicAppletHelper {
                 anchor_rect: Rectangle {
                     x: 0,
                     y: 0,
-                    width: width_padding.unwrap_or(16) * 2 + pixels as i32,
+                    width: width_padding.unwrap_or(8) * 2 + pixels as i32,
                     height: height_padding.unwrap_or(8) * 2 + pixels as i32,
                 },
                 reactive: true,
