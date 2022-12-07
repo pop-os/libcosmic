@@ -14,8 +14,9 @@ use iced::{
 };
 use std::hash::Hash;
 
-pub struct SpinButton<T> {
+pub struct SpinButton<T, Message> {
     value: T,
+    on_change: Box<dyn Fn(SpinMessage) -> Message + 'static>,
 }
 
 /// A message emitted by the [`SpinButton`] widget.
@@ -25,19 +26,26 @@ pub enum SpinMessage {
     Decrement,
 }
 
-pub fn spin_button<T: 'static + Clone + Hash + ToString>(value: T) -> SpinButton<T> {
-    SpinButton::new(value)
+pub fn spin_button<T: 'static + Copy + Hash + ToString, Message: 'static>(
+    model: &SpinButtonModel<T>,
+    on_change: impl Fn(SpinMessage) -> Message + 'static,
+) -> SpinButton<T, Message> {
+    SpinButton::new(model.value, on_change)
 }
 
-impl<T: 'static + Clone + Hash + ToString> SpinButton<T> {
-    pub fn new(value: T) -> Self {
-        Self { value }
+impl<T: 'static + Copy + Hash + ToString, Message: 'static> SpinButton<T, Message> {
+    pub fn new(value: T, on_change: impl Fn(SpinMessage) -> Message + 'static) -> Self {
+        Self {
+            on_change: Box::from(on_change),
+            value,
+        }
     }
 
-    pub fn into_element(self) -> Element<'static, SpinMessage> {
-        let Self { value } = self;
+    pub fn into_element(self) -> Element<'static, Message> {
+        let Self { on_change, value } = self;
+
         Element::from(iced_lazy::lazy(
-            value.clone(),
+            value,
             move || -> Element<'static, SpinMessage> {
                 container(
                     row![
@@ -53,7 +61,7 @@ impl<T: 'static + Clone + Hash + ToString> SpinButton<T> {
                             .height(Length::Fill)
                             .style(theme::Button::Text)
                             .on_press(SpinMessage::Decrement),
-                        text(value.clone())
+                        text(value)
                             .vertical_alignment(Vertical::Center)
                             .apply(container)
                             .width(Length::Fill)
@@ -85,11 +93,14 @@ impl<T: 'static + Clone + Hash + ToString> SpinButton<T> {
                 .into()
             },
         ))
+        .map(on_change)
     }
 }
 
-impl<'a, T: 'static + Clone + Hash + ToString> From<SpinButton<T>> for Element<'a, SpinMessage> {
-    fn from(spin_button: SpinButton<T>) -> Self {
+impl<'a, T: 'static + Copy + Hash + ToString, Message: 'static> From<SpinButton<T, Message>>
+    for Element<'a, Message>
+{
+    fn from(spin_button: SpinButton<T, Message>) -> Self {
         spin_button.into_element()
     }
 }

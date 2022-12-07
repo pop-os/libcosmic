@@ -23,8 +23,11 @@ impl<T: 'static> SpinButtonModel<T>
 where
     T: Copy + Hash + ToString + Sub<Output = T> + Add<Output = T> + Ord,
 {
-    pub fn view(&self) -> Element<'static, SpinMessage> {
-        SpinButton::new(self.value).into_element()
+    pub fn view<Message: 'static>(
+        &self,
+        on_change: impl Fn(SpinMessage) -> Message + 'static,
+    ) -> Element<'static, Message> {
+        SpinButton::new(self.value, on_change).into_element()
     }
 
     pub fn update(&mut self, message: SpinMessage) {

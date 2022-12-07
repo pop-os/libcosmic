@@ -300,7 +300,7 @@ impl Application for Window {
                     ]))
                     .add(settings::item(
                         format!("Spin Button (Range {}:{})", self.spin_button.min, self.spin_button.max),
-                        self.spin_button.view().map(Message::SpinButton)
+                        self.spin_button.view(Message::SpinButton),
                     ))
                     .into()
             ])
