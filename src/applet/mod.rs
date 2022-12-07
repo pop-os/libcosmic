@@ -48,10 +48,10 @@ impl CosmicAppletHelper {
     }
     
     // TODO popup container which tracks the size of itself and requests the popup to resize to match
-    pub fn popup_container<Message: 'static>(
+    pub fn popup_container<'a, Message: 'static>(
         &self,
-        content: impl Into<Element<'static, Message, Renderer>>,
-    ) -> Container<Message, Renderer>
+        content: impl Into<Element<'a, Message, Renderer>>,
+    ) -> Container<'a, Message, Renderer>
     {
         let (valign, halign) = match self.anchor {
             PanelAnchor::Left => (Vertical::Center, Horizontal::Left),
