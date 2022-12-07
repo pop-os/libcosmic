@@ -31,18 +31,6 @@ impl Default for CosmicAppletHelper {
     }
 }
 
-// pub fn icon_button<'a, M: 'a, Renderer>(
-//     name: &str,
-
-//     icon_style: <Renderer::Theme as iced_native::svg::StyleSheet>::Style,
-// ) -> Button<'a, M, Renderer>
-// where
-//     Renderer::Theme: iced_native::svg::StyleSheet + iced_style::button::StyleSheet,
-//     Renderer: iced_native::Renderer + iced_native::svg::Renderer + 'a,
-// {
-//     button(icon_style).icon(name, pixels).style(icon_style))
-// }
-
 impl CosmicAppletHelper {
     pub fn suggested_icon_size(&self) -> u16 {
         match self.size {
@@ -55,7 +43,7 @@ impl CosmicAppletHelper {
     }
 
 
-    pub fn icon_button<Message: 'static>(&self, icon_name: &'static str) -> widget::Button<'static, Message, Renderer> {
+    pub fn icon_button<'a, Message: 'static>(&self, icon_name: &'a str) -> widget::Button<'a, Message, Renderer> {
         crate::widget::button(crate::theme::Button::Text).icon(crate::theme::Svg::Symbolic, icon_name, self.suggested_icon_size())
     }
     
