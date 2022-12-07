@@ -10,7 +10,7 @@ use cosmic::{
     iced_lazy::responsive,
     iced_winit::window::{drag, toggle_maximize, minimize},
     theme::{self, Theme},
-    widget::{button, nav_button, nav_bar, nav_bar_page, nav_bar_section, header_bar, settings, scrollable, toggler, SpinButtonModel, SpinMessage},
+    widget::{button, nav_button, nav_bar, nav_bar_page, nav_bar_section, header_bar, settings, scrollable, toggler, spin_button::{SpinButtonModel, SpinMessage}},
     Element,
     ElementExt,
 };
