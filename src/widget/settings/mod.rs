@@ -5,10 +5,10 @@ mod item;
 mod section;
 
 pub use self::item::{item, item_row};
-pub use self::section::{Section, view_section};
+pub use self::section::{view_section, Section};
 
 use crate::{Element, Renderer};
-use iced::widget::{Column, column};
+use iced::widget::{column, Column};
 
 /// A column with a predefined style for creating a settings panel
 #[must_use]

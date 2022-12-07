@@ -10,7 +10,7 @@ use cosmic::{
     iced_lazy::responsive,
     iced_winit::window::{drag, toggle_maximize, minimize},
     theme::{self, Theme},
-    widget::{button, nav_button, nav_bar, nav_bar_page, nav_bar_section, header_bar, settings, scrollable, toggler, spin_button},
+    widget::{button, nav_button, nav_bar, nav_bar_page, nav_bar_section, header_bar, settings, scrollable, toggler, SpinButtonModel, SpinMessage},
     Element,
     ElementExt,
 };
@@ -24,7 +24,7 @@ pub struct Window {
     debug: bool,
     theme: Theme,
     slider_value: f32,
-    spin_value: i32,
+    spin_button: SpinButtonModel<i32>,
     checkbox_value: bool,
     toggler_value: bool,
     pick_list_selected: Option<&'static str>,
@@ -72,12 +72,6 @@ pub enum Message {
     SpinButton(SpinMessage)
 }
 
-#[derive(Clone, Copy, Debug, Hash)]
-pub enum SpinMessage {
-    Increment,
-    Decrement,
-}
-
 impl Application for Window {
     type Executor = iced::executor::Default;
     type Flags = ();
@@ -93,6 +87,8 @@ impl Application for Window {
         //        window.theme = Theme::Light;
         window.pick_list_selected = Some("Option 1");
         window.title = String::from("COSMIC Design System - Iced");
+        window.spin_button.min = -10;
+        window.spin_button.max = 10;
         (window, Command::none())
     }
 
@@ -119,8 +115,7 @@ impl Application for Window {
             Message::Maximize => return toggle_maximize(window::Id::new(0)),
             Message::RowSelected(row) => println!("Selected row {row}"),
             Message::InputChanged => {},
-            Message::SpinButton(SpinMessage::Decrement) => self.spin_value -= 1,
-            Message::SpinButton(SpinMessage::Increment) => self.spin_value += 1,
+            Message::SpinButton(msg) => self.spin_button.update(msg),
 
         }
 
@@ -304,10 +299,8 @@ impl Application for Window {
                         checkbox("Checkbox", self.checkbox_value, Message::CheckboxToggled).into()
                     ]))
                     .add(settings::item(
-                        "Spin Button",
-                        spin_button(self.spin_value, SpinMessage::Increment, SpinMessage::Decrement)
-                            .into_element()
-                            .map(Message::SpinButton)
+                        format!("Spin Button (Range {}:{})", self.spin_button.min, self.spin_button.max),
+                        self.spin_button.view().map(Message::SpinButton)
                     ))
                     .into()
             ])
