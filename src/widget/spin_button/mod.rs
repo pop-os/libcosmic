@@ -4,7 +4,9 @@
 mod model;
 pub use self::model::SpinButtonModel;
 
+use crate::widget::icon;
 use crate::{theme, Element};
+use apply::Apply;
 use iced::{
     alignment::{Horizontal, Vertical},
     widget::{button, container, row, text},
@@ -39,33 +41,37 @@ impl<T: 'static + Clone + Hash + ToString> SpinButton<T> {
             move || -> Element<'static, SpinMessage> {
                 container(
                     row![
-                        button(
-                            container(text("-").size(26).vertical_alignment(Vertical::Center))
-                                .width(Length::Fill)
-                                .height(Length::Fill)
-                                .align_x(Horizontal::Center)
-                                .align_y(Vertical::Center),
-                        )
-                        .width(Length::Fill)
-                        .height(Length::Fill)
-                        .style(theme::Button::Text)
-                        .on_press(SpinMessage::Decrement),
-                        container(text(value.clone()).vertical_alignment(Vertical::Center))
+                        icon("list-remove-symbolic", 24)
+                            .style(theme::Svg::Symbolic)
+                            .apply(container)
+                            .width(Length::Fill)
+                            .height(Length::Fill)
+                            .align_x(Horizontal::Center)
+                            .align_y(Vertical::Center)
+                            .apply(button)
+                            .width(Length::Fill)
+                            .height(Length::Fill)
+                            .style(theme::Button::Text)
+                            .on_press(SpinMessage::Decrement),
+                        text(value.clone())
+                            .vertical_alignment(Vertical::Center)
+                            .apply(container)
                             .width(Length::Fill)
                             .height(Length::Fill)
                             .align_x(Horizontal::Center)
                             .align_y(Vertical::Center),
-                        button(
-                            container(text("+").size(26).vertical_alignment(Vertical::Center))
-                                .width(Length::Fill)
-                                .height(Length::Fill)
-                                .align_x(Horizontal::Center)
-                                .align_y(Vertical::Center),
-                        )
-                        .width(Length::Fill)
-                        .height(Length::Fill)
-                        .style(theme::Button::Text)
-                        .on_press(SpinMessage::Increment),
+                        icon("list-add-symbolic", 24)
+                            .style(theme::Svg::Symbolic)
+                            .apply(container)
+                            .width(Length::Fill)
+                            .height(Length::Fill)
+                            .align_x(Horizontal::Center)
+                            .align_y(Vertical::Center)
+                            .apply(button)
+                            .width(Length::Fill)
+                            .height(Length::Fill)
+                            .style(theme::Button::Text)
+                            .on_press(SpinMessage::Increment),
                     ]
                     .width(Length::Fill)
                     .height(Length::Units(32))
