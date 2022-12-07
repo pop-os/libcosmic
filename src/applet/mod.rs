@@ -23,7 +23,7 @@ impl Default for CosmicAppletHelper {
                 .ok()
                 .and_then(|size| size.parse::<PanelSize>().ok())
                 .unwrap_or(PanelSize::S),
-            anchor: std::env::var("COSMIC_PANEL_SIZE")
+            anchor: std::env::var("COSMIC_PANEL_ANCHOR")
                 .ok()
                 .and_then(|size| size.parse::<PanelAnchor>().ok())
                 .unwrap_or(PanelAnchor::Top),
