@@ -1,14 +1,16 @@
 use cosmic_panel_config::{PanelAnchor, PanelSize};
 use iced::{
     alignment::{Horizontal, Vertical},
-    widget::{self, container, Container},
-    Color, Element, Length, Rectangle,
+    widget::{self, Container},
+    Color, Element, Length, Rectangle, Settings, sctk_settings::InitialSurface,
 };
-use iced_native::{command::platform_specific::wayland::popup::{SctkPopupSettings, SctkPositioner}, widget::Button};
+use iced_native::{command::platform_specific::wayland::{popup::{SctkPopupSettings, SctkPositioner}, window::SctkWindowSettings}};
 use iced_style::container::{Appearance};
 use sctk::reexports::protocols::xdg::shell::client::xdg_positioner::{Anchor, Gravity};
 
-use crate::{Renderer, Theme};
+use crate::{Renderer};
+
+const APPLET_PADDING: u32 = 8;
 
 #[derive(Debug, Clone)]
 pub struct CosmicAppletHelper {
@@ -42,6 +44,20 @@ impl CosmicAppletHelper {
         }
     }
 
+    pub fn window_settings<F: Default>(&self) -> Settings<F> {
+        let mut settings = crate::settings();
+        let pixels = self.suggested_icon_size() as u32;
+        settings.initial_surface = InitialSurface::XdgWindow(SctkWindowSettings {
+            iced_settings: iced_native::window::Settings {
+                size: (pixels + APPLET_PADDING * 2, pixels + APPLET_PADDING * 2),
+                min_size: Some((pixels + APPLET_PADDING * 2, pixels + APPLET_PADDING * 2)),
+                max_size: Some((pixels + APPLET_PADDING * 2, pixels + APPLET_PADDING * 2)),
+                ..Default::default()
+            },
+            ..Default::default()
+        });
+        settings
+    }
 
     pub fn icon_button<'a, Message: 'static>(&self, icon_name: &'a str) -> widget::Button<'a, Message, Renderer> {
         crate::widget::button(crate::theme::Button::Text).icon(crate::theme::Svg::Symbolic, icon_name, self.suggested_icon_size()).padding(8)
@@ -84,11 +100,12 @@ impl CosmicAppletHelper {
         height_padding: Option<i32>,
     ) -> SctkPopupSettings {
         let pixels = self.suggested_icon_size();
+        let pixel_offset = 8;
         let (offset, anchor, gravity) = match self.anchor {
-            PanelAnchor::Left => ((8, 0), Anchor::Right, Gravity::Right),
-            PanelAnchor::Right => ((-8, 0), Anchor::Left, Gravity::Left),
-            PanelAnchor::Top => ((0, 8), Anchor::Bottom, Gravity::Bottom),
-            PanelAnchor::Bottom => ((0, -8), Anchor::Top, Gravity::Top),
+            PanelAnchor::Left => ((pixel_offset, 0), Anchor::Right, Gravity::Right),
+            PanelAnchor::Right => ((-pixel_offset, 0), Anchor::Left, Gravity::Left),
+            PanelAnchor::Top => ((0, pixel_offset), Anchor::Bottom, Gravity::Bottom),
+            PanelAnchor::Bottom => ((0, -pixel_offset), Anchor::Top, Gravity::Top),
         };
         SctkPopupSettings {
             parent,
@@ -101,8 +118,8 @@ impl CosmicAppletHelper {
                 anchor_rect: Rectangle {
                     x: 0,
                     y: 0,
-                    width: width_padding.unwrap_or(8) * 2 + pixels as i32,
-                    height: height_padding.unwrap_or(8) * 2 + pixels as i32,
+                    width: width_padding.unwrap_or(APPLET_PADDING as i32) * 2 + pixels as i32,
+                    height: height_padding.unwrap_or(APPLET_PADDING as i32) * 2 + pixels as i32,
                 },
                 reactive: true,
                 constraint_adjustment: 15, // slide_y, slide_x, flip_x, flip_y
