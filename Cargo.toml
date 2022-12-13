@@ -9,8 +9,9 @@ name = "cosmic"
 [features]
 default = ["wayland"]
 debug = ["iced/debug"]
-wayland = ["iced/wayland"]
-wgpu = ["iced/wgpu"]
+wayland = ["iced/wayland", "iced_glow"]
+wgpu = ["iced/wgpu", "iced_wgpu"]
+tokio = ["iced/tokio"]
 winit = ["iced/winit", "iced_winit"]
 applet = ["cosmic-panel-config", "sctk"]
 
@@ -49,6 +50,11 @@ optional = true
 
 [dependencies.iced_wgpu]
 path = "iced/wgpu"
+optional = true
+
+[dependencies.iced_glow]
+path = "iced/glow"
+optional = true
 
 [workspace]
 members = [
@@ -57,3 +63,4 @@ members = [
 exclude = [
   "iced",
 ]
+
