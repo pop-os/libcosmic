@@ -27,44 +27,33 @@ sctk = { package = "smithay-client-toolkit", git = "https://github.com/Smithay/c
 git = "https://github.com/pop-os/cosmic-theme.git"
 
 [dependencies.iced]
-git = "https://github.com/pop-os/iced.git"
-branch = "sctk-cosmic"
-# path = "../iced"
+path = "iced"
 default-features = false
 features = ["image", "svg"]
 
 [dependencies.iced_core]
-git = "https://github.com/pop-os/iced.git"
-branch = "sctk-cosmic"
-# path = "../iced/core"
+path = "iced/core"
 
 [dependencies.iced_lazy]
-git = "https://github.com/pop-os/iced.git"
-branch = "sctk-cosmic"
-# path = "../iced/lazy"
+path = "iced/lazy"
 
 [dependencies.iced_native]
-git = "https://github.com/pop-os/iced.git"
-branch = "sctk-cosmic"
-# path = "../iced/native"
+path = "iced/native"
 
 [dependencies.iced_style]
-git = "https://github.com/pop-os/iced.git"
-branch = "sctk-cosmic"
-# path = "../iced/style"
+path = "iced/style"
 
 [dependencies.iced_winit]
-git = "https://github.com/pop-os/iced.git"
-branch = "sctk-cosmic"
+path = "iced/winit"
 optional = true
-# path = "../iced/winit"
 
 [dependencies.iced_wgpu]
-git = "https://github.com/pop-os/iced.git"
-branch = "sctk-cosmic"
-# path = "../iced/wgpu"
+path = "iced/wgpu"
 
 [workspace]
 members = [
   "examples/*",
+]
+exclude = [
+  "iced",
 ]
