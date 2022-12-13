@@ -7,4 +7,4 @@ publish = false
 
 [dependencies]
 libcosmic = { path = "../..", default-features = false, features = ["debug", "wayland"] }
-iced_sctk = { git = "https://github.com/pop-os/iced-sctk" }
+# iced_sctk = { git = "https://github.com/pop-os/iced-sctk" }

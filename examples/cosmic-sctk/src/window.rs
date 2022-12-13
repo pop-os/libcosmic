@@ -2,18 +2,16 @@
 // SPDX-License-Identifier: MPL-2.0
 
 use cosmic::{
-    iced_native::window,
     iced::widget::{
         column, container, horizontal_space, pick_list, progress_bar, radio, row, slider,
     },
-    iced::{self, Alignment, Application, Command, Length},
+    iced::{self, Alignment, Application, Command, Length, wayland::SurfaceIdWrapper},
     iced_lazy::responsive,
     theme::{self, Theme},
     widget::{button, nav_button, nav_bar, nav_bar_page, nav_bar_section, header_bar, settings, scrollable, toggler},
     Element,
     ElementExt,
 };
-use iced_sctk::application::SurfaceIdWrapper;
 use std::{collections::BTreeMap, vec};
 use theme::Button as ButtonTheme;
 
@@ -326,7 +324,7 @@ impl Application for Window {
         self.theme
     }
     
-    fn close_requested(&self, id: iced_sctk::application::SurfaceIdWrapper) -> Self::Message {
+    fn close_requested(&self, id: SurfaceIdWrapper) -> Self::Message {
         Message::Close
     }
 }
