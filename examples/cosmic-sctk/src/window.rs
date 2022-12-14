@@ -5,12 +5,14 @@ use cosmic::{
     iced::widget::{
         column, container, horizontal_space, pick_list, progress_bar, radio, row, slider,
     },
-    iced::{self, Alignment, Application, Command, Length, wayland::SurfaceIdWrapper},
+    iced::{self, wayland::SurfaceIdWrapper, Alignment, Application, Command, Length},
     iced_lazy::responsive,
     theme::{self, Theme},
-    widget::{button, nav_button, nav_bar, nav_bar_page, nav_bar_section, header_bar, settings, scrollable, toggler},
-    Element,
-    ElementExt,
+    widget::{
+        button, header_bar, nav_bar, nav_bar_page, nav_bar_section, nav_button, scrollable,
+        settings, toggler, rectangle_tracker::{RectangleTracker, rectangle_tracker_subscription, RectangleUpdate},
+    },
+    Element, ElementExt
 };
 use std::{collections::BTreeMap, vec};
 use theme::Button as ButtonTheme;
@@ -29,6 +31,7 @@ pub struct Window {
     show_minimize: bool,
     show_maximize: bool,
     exit: bool,
+    rectangle_tracker: Option<RectangleTracker<u32>>,
 }
 
 impl Window {
@@ -49,7 +52,7 @@ impl Window {
 }
 
 #[allow(dead_code)]
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Debug)]
 pub enum Message {
     Page(u8),
     Debug(bool),
@@ -66,6 +69,7 @@ pub enum Message {
     Minimize,
     Maximize,
     InputChanged,
+    Rectangle(RectangleUpdate<u32>)
 }
 
 impl Application for Window {
@@ -99,7 +103,7 @@ impl Application for Window {
             Message::SliderChanged(value) => self.slider_value = value,
             Message::CheckboxToggled(value) => {
                 self.checkbox_value = value;
-            },
+            }
             Message::TogglerToggled(value) => self.toggler_value = value,
             Message::PickListSelected(value) => self.pick_list_selected = Some(value),
             Message::Close => self.exit = true,
@@ -108,8 +112,11 @@ impl Application for Window {
             Message::Minimize => todo!(),
             Message::Maximize => todo!(),
             Message::RowSelected(row) => println!("Selected row {row}"),
-            Message::InputChanged => {},
-
+            Message::InputChanged => {}
+            Message::Rectangle(r) => match r {
+                RectangleUpdate::Rectangle(r) => {dbg!(r);},
+                RectangleUpdate::Init(t) => {self.rectangle_tracker.replace(t);},
+            },
         }
 
         Command::none()
@@ -124,7 +131,7 @@ impl Application for Window {
                 nav_button("Settings")
                     .on_sidebar_toggled(Message::ToggleSidebar)
                     .sidebar_active(self.sidebar_toggled)
-                    .into()
+                    .into(),
             );
 
         if self.show_maximize {
@@ -226,13 +233,21 @@ impl Application for Window {
                     ))
                 },
             );
+            let secondary = button(ButtonTheme::Secondary)
+            .text("Secondary")
+            .on_press(Message::ButtonPressed);
 
+            let secondary = if let Some(tracker) = self.rectangle_tracker.as_ref() {
+                tracker.container(0, secondary).into()
+            } else {
+                secondary.into()
+            };
             let content: Element<_> = settings::view_column(vec![
                 settings::view_section("Debug")
                     .add(settings::item("Debug theme", choose_theme))
                     .add(settings::item(
                         "Debug layout",
-                        toggler(String::from("Debug layout"), self.debug, Message::Debug)
+                        toggler(String::from("Debug layout"), self.debug, Message::Debug),
                     ))
                     .into(),
                 settings::view_section("Buttons")
@@ -241,10 +256,7 @@ impl Application for Window {
                             .text("Primary")
                             .on_press(Message::ButtonPressed)
                             .into(),
-                        button(ButtonTheme::Secondary)
-                            .text("Secondary")
-                            .on_press(Message::ButtonPressed)
-                            .into(),
+                        secondary,
                         button(ButtonTheme::Positive)
                             .text("Positive")
                             .on_press(Message::ButtonPressed)
@@ -256,7 +268,7 @@ impl Application for Window {
                         button(ButtonTheme::Text)
                             .text("Text")
                             .on_press(Message::ButtonPressed)
-                            .into()
+                            .into(),
                     ]))
                     .add(settings::item_row(vec![
                         button(ButtonTheme::Primary).text("Primary").into(),
@@ -267,28 +279,31 @@ impl Application for Window {
                     ]))
                     .into(),
                 settings::view_section("Controls")
-                    .add(settings::item("Toggler", toggler(None, self.toggler_value, Message::TogglerToggled)))
+                    .add(settings::item(
+                        "Toggler",
+                        toggler(None, self.toggler_value, Message::TogglerToggled),
+                    ))
                     .add(settings::item(
                         "Pick List (TODO)",
                         pick_list(
-                            vec!["Option 1", "Option 2", "Option 3", "Option 4",],
+                            vec!["Option 1", "Option 2", "Option 3", "Option 4"],
                             self.pick_list_selected,
-                            Message::PickListSelected
+                            Message::PickListSelected,
                         )
-                        .padding([8, 0, 8, 16])
+                        .padding([8, 0, 8, 16]),
                     ))
                     .add(settings::item(
                         "Slider",
                         slider(0.0..=100.0, self.slider_value, Message::SliderChanged)
-                            .width(Length::Units(250))
+                            .width(Length::Units(250)),
                     ))
                     .add(settings::item(
                         "Progress",
                         progress_bar(0.0..=100.0, self.slider_value)
                             .width(Length::Units(250))
-                            .height(Length::Units(4))
+                            .height(Length::Units(4)),
                     ))
-                    .into()
+                    .into(),
             ])
             .into();
 
@@ -323,8 +338,11 @@ impl Application for Window {
     fn theme(&self) -> Theme {
         self.theme
     }
-    
+
     fn close_requested(&self, id: SurfaceIdWrapper) -> Self::Message {
         Message::Close
+    }
+    fn subscription(&self) -> iced::Subscription<Self::Message> {
+        rectangle_tracker_subscription(0).map(|(i, e)| Message::Rectangle(e))
     }
 }
