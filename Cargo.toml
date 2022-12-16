@@ -30,7 +30,7 @@ git = "https://github.com/pop-os/cosmic-theme.git"
 [dependencies.iced]
 path = "iced"
 default-features = false
-features = ["image", "svg"]
+features = ["image", "svg", "tokio"]
 
 [dependencies.iced_core]
 path = "iced/core"
