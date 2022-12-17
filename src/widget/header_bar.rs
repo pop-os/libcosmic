@@ -95,6 +95,7 @@ impl<'a, Message: Clone + 'static> HeaderBar<'a, Message> {
 
         let icon = |name, size, on_press| {
             super::icon(name, size)
+                .force_svg(true)
                 .style(crate::theme::Svg::SymbolicActive)
                 .apply(iced::widget::button)
                 .style(theme::Button::Text)

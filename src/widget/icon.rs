@@ -7,17 +7,54 @@ use iced::{
     widget::{svg, Image},
     Length, ContentFit,
 };
-use std::borrow::Cow;
+use std::{borrow::{Cow, Borrow}, ffi::OsStr, path::Path};
 use std::hash::Hash;
 use std::rc::Rc;
 use derive_setters::Setters;
 use crate::{Element, Renderer};
 
-/// A lazily-generated SVG icon.
+#[derive(Debug, Hash)]
+pub enum IconSource<'a> {
+    Path(&'a Path),
+    Name(Cow<'a, str>),
+    Embedded(Image),
+}
+
+impl<'a> From<&'a Path> for IconSource<'a> {
+    fn from(value: &'a Path) -> Self {
+        Self::Path(value)
+    }
+}
+
+impl<'a> From<Cow<'a, str>> for IconSource<'a> {
+    fn from(value: Cow<'a, str>) -> Self {
+        Self::Name(value)
+    }
+}
+
+impl<'a> From<String> for IconSource<'a> {
+    fn from(value: String) -> Self {
+        Self::Name(value.into())
+    }
+}
+
+impl<'a> From<&'a str> for IconSource<'a> {
+    fn from(value: &'a str) -> Self {
+        Self::Name(value.into())
+    }
+}
+
+impl<'a> From<Image> for IconSource<'a> {
+    fn from(value: Image) -> Self {
+        Self::Embedded(value)
+    }
+}
+
+/// A lazily-generated icon.
 #[derive(Hash, Setters)]
 pub struct Icon<'a> {
     #[setters(skip)]
-    name: Cow<'a, str>,
+    name: IconSource<'a>,
     #[setters(into)]
     theme: Cow<'a, str>,
     style: crate::theme::Svg,
@@ -28,22 +65,13 @@ pub struct Icon<'a> {
     width: Option<Length>,
     #[setters(strip_option)]
     height: Option<Length>,
+    force_svg: bool,
+
 }
 
-pub fn image_icon(name: &str, size: u16) -> Option<Image> {
-    freedesktop_icons::lookup(name)
-        .with_size(size)
-        .with_cache()
-        .find()
-        .map(|path| {
-            Image::new(path)
-                .width(Length::Units(size))
-                .height(Length::Units(size))
-        })
-}
-/// A lazily-generated SVG icon.
+/// A lazily-generated icon.
 #[must_use]
-pub fn icon<'a>(name: impl Into<Cow<'a, str>>, size: u16) -> Icon<'a> {
+pub fn icon<'a>(name: impl Into<IconSource<'a>>, size: u16) -> Icon<'a> {
     Icon {
         content_fit: None,
         height: None,
@@ -52,46 +80,83 @@ pub fn icon<'a>(name: impl Into<Cow<'a, str>>, size: u16) -> Icon<'a> {
         style: crate::theme::Svg::default(),
         theme: Cow::Borrowed("Pop"),
         width: None,
+        force_svg: false
     }
 }
 
 impl<'a> Icon<'a> {
     #[must_use]
-    fn into_svg<Message: 'static>(self) -> Element<'a, Message> {
-        let svg = Rc::new(self);
-        let svg_clone = Rc::clone(&svg);
+    fn into_element<Message: 'static>(self) -> Element<'a, Message> {
+        if let IconSource::Embedded(mut image) = self.name {
+            image = image
+            .width(self.width.unwrap_or(Length::Units(self.size)))
+            .height(self.height.unwrap_or(Length::Units(self.size)));
+            if let Some(content_fit) = self.content_fit {
+                image = image.content_fit(content_fit);
+            }
+            return image.into();
+        }
 
-        iced_lazy::lazy(svg_clone, move || -> Element<Message> {
-            let icon = freedesktop_icons::lookup(&svg.name)
-                .with_size(svg.size)
-                .with_theme(&svg.theme)
-                .with_cache()
-                .force_svg()
-                .find();
+        let element = Rc::new(self);
+        let element_clone = Rc::clone(&element);
 
-            let handle = if let Some(path) = icon {
-                svg::Handle::from_path(path)
-            } else {
-                eprintln!("icon '{}' size {} not found", svg.name, svg.size);
-                    svg::Handle::from_memory(Vec::new())
+        iced_lazy::lazy(element_clone, move || -> Element<Message> {
+            let icon = match &element.name {
+                IconSource::Path(path) => Some(Cow::from(*path)),
+                IconSource::Name(name) => {
+                    let icon = freedesktop_icons::lookup(&name)
+                        .with_size(element.size)
+                        .with_theme(&element.theme)
+                        .with_cache()
+                        .find();
+                    if icon.is_none() {
+                        freedesktop_icons::lookup(&name)
+                            .with_size(element.size)
+                            .with_cache()
+                            .find()
+                    } else {
+                        icon
+                    }.map(|p| Cow::from(p))
+                },
+                IconSource::Embedded(_) => unimplemented!(),
             };
 
-            let mut widget = svg::Svg::<Renderer>::new(handle)
-                .style(svg.style)
-                .width(svg.width.unwrap_or(Length::Units(svg.size)))
-                .height(svg.height.unwrap_or(Length::Units(svg.size)));
+            let is_svg = element.force_svg || icon.as_ref().map(|path| path.extension() == Some(&OsStr::new("svg"))).unwrap_or(true);
 
-            if let Some(content_fit) = svg.content_fit {
-                widget = widget.content_fit(content_fit);
+            if is_svg {
+                let handle = if let Some(path) = icon {
+                    svg::Handle::from_path(path)
+                } else {
+                    eprintln!("icon '{:?}' size {} not found", &element.name, element.size);
+                        svg::Handle::from_memory(Vec::new())
+                };
+    
+                let mut widget = svg::Svg::<Renderer>::new(handle)
+                    .style(element.style)
+                    .width(element.width.unwrap_or(Length::Units(element.size)))
+                    .height(element.height.unwrap_or(Length::Units(element.size)));
+    
+                if let Some(content_fit) = element.content_fit {
+                    widget = widget.content_fit(content_fit);
+                }
+    
+                widget.into()
+            } else {
+                let icon_path = icon.unwrap();
+                let mut image = Image::new(icon_path)
+                    .width(element.width.unwrap_or(Length::Units(element.size)))
+                    .height(element.height.unwrap_or(Length::Units(element.size)));
+                if let Some(content_fit) = element.content_fit {
+                    image = image.content_fit(content_fit);
+                }
+                image.into()
             }
-
-            widget.into()
         }).into()
     }
 }
 
 impl<'a, Message: 'static> From<Icon<'a>> for Element<'a, Message> {
     fn from(icon: Icon<'a>) -> Self {
-        icon.into_svg::<Message>()
+        icon.into_element::<Message>()
     }
 }

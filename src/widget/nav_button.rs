@@ -39,6 +39,7 @@ impl<'a, Message: 'static + Clone> From<NavButton<'a, Message>> for Element<'a, 
             },
             24,
         )
+        .force_svg(true)
         .style(theme::Svg::SymbolicActive)
         .width(Length::Units(24))
         .height(Length::Fill);
