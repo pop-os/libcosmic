@@ -120,7 +120,7 @@ impl application::StyleSheet for Theme {
 /*
  * TODO: Button
  */
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Clone, Copy)]
 pub enum Button {
     Deactivated,
     Destructive,
@@ -129,6 +129,10 @@ pub enum Button {
     Secondary,
     Text,
     Transparent,
+    Custom {
+        active: fn(&Theme) -> button::Appearance,
+        hover: fn(&Theme) -> button::Appearance
+    },
 }
 
 impl Default for Button {
@@ -148,6 +152,7 @@ impl Button {
             Button::Text => &cosmic.secondary.component,
             Button::Transparent => &TRANSPARENT_COMPONENT,
             Button::Deactivated => &cosmic.secondary.component,
+            Button::Custom { .. } => &TRANSPARENT_COMPONENT
         }
     }
 }
@@ -156,6 +161,10 @@ impl button::StyleSheet for Theme {
     type Style = Button;
 
     fn active(&self, style: &Self::Style) -> button::Appearance {
+        if let Button::Custom {active, ..} = style {
+            return active(self);
+        }
+        
         let cosmic = style.cosmic(self);
 
         button::Appearance {
@@ -170,6 +179,10 @@ impl button::StyleSheet for Theme {
     }
 
     fn hovered(&self, style: &Self::Style) -> button::Appearance {
+        if let Button::Custom {hover, ..} = style {
+            return hover(self);
+        }
+        
         let active = self.active(&style);
         let cosmic = style.cosmic(self);
 
@@ -333,7 +346,7 @@ impl Default for Container {
 }
 
 impl From<fn(&Theme) -> container::Appearance> for Container {
-    fn from(f: fn(&Theme) -> container::Appearance) -> Self {
+    fn from(_: fn(&Theme) -> container::Appearance) -> Self {
         Self::default()
     }
 }
@@ -465,7 +478,7 @@ impl pick_list::StyleSheet for Theme {
 impl radio::StyleSheet for Theme {
     type Style = ();
 
-    fn active(&self, _style: &Self::Style, is_selected: bool) -> radio::Appearance {
+    fn active(&self, _style: &Self::Style, _is_selected: bool) -> radio::Appearance {
         let palette = self.extended_palette();
 
         radio::Appearance {
