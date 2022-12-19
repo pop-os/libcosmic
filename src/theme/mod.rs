@@ -710,6 +710,8 @@ pub enum Svg {
     Symbolic,
     /// Icon fill color will match accent color
     SymbolicActive,
+    /// Icon fill color will match on primary color
+    SymbolicPrimary,
 }
 
 impl Hash for Svg {
@@ -718,7 +720,8 @@ impl Hash for Svg {
             Svg::Custom(_) => 0,
             Svg::Default => 1,
             Svg::Symbolic => 2,
-            Svg::SymbolicActive => 3
+            Svg::SymbolicActive => 3,
+            Svg::SymbolicPrimary => 4,
         };
 
         id.hash(state);
@@ -737,6 +740,9 @@ impl svg::StyleSheet for Theme {
             },
             Svg::SymbolicActive => svg::Appearance {
                 color: Some(self.cosmic().accent.base.into()),
+            },
+            Svg::SymbolicPrimary => svg::Appearance {
+                color: Some(self.cosmic().accent.on.into()),
             },
         }
     }
