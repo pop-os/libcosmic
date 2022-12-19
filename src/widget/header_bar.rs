@@ -66,8 +66,9 @@ impl<'a, Message: Clone + 'static> HeaderBar<'a, Message> {
         let mut widget = widget::row(packed)
             .height(Length::Units(50))
             .padding(10)
-            .apply(widget::event_container)
-            .center_y();
+            .apply(widget::container)
+            .center_y()
+            .apply(widget::mouse_listener);
 
         if let Some(message) = self.on_drag.clone() {
             widget = widget.on_press(message);

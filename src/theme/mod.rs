@@ -164,7 +164,7 @@ impl button::StyleSheet for Theme {
         if let Button::Custom {active, ..} = style {
             return active(self);
         }
-        
+
         let cosmic = style.cosmic(self);
 
         button::Appearance {
@@ -182,7 +182,7 @@ impl button::StyleSheet for Theme {
         if let Button::Custom {hover, ..} = style {
             return hover(self);
         }
-        
+
         let active = self.active(&style);
         let cosmic = style.cosmic(self);
 
@@ -728,15 +728,15 @@ impl Hash for Svg {
 impl svg::StyleSheet for Theme {
     type Style = Svg;
 
-    fn appearance(&self, style: Self::Style) -> svg::Appearance {
+    fn appearance(&self, style: &Self::Style) -> svg::Appearance {
         match style {
             Svg::Default => svg::Appearance::default(),
             Svg::Custom(appearance) => appearance(self),
             Svg::Symbolic => svg::Appearance {
-                fill: Some(self.extended_palette().background.base.text),
+                color: Some(self.extended_palette().background.base.text),
             },
             Svg::SymbolicActive => svg::Appearance {
-                fill: Some(self.cosmic().accent.base.into()),
+                color: Some(self.cosmic().accent.base.into()),
             },
         }
     }

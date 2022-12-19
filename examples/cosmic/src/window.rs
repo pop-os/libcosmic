@@ -8,7 +8,7 @@ use cosmic::{
     },
     iced::{self, Alignment, Application, Command, Length},
     iced_lazy::responsive,
-    iced_winit::window::{drag, toggle_maximize, minimize},
+    iced_winit::window::{close, drag, toggle_maximize, minimize},
     theme::{self, Theme},
     widget::{button, nav_button, nav_bar, nav_bar_page, nav_bar_section, header_bar, settings, scrollable, toggler, spin_button::{SpinButtonModel, SpinMessage}},
     Element,
@@ -31,7 +31,6 @@ pub struct Window {
     sidebar_toggled: bool,
     show_minimize: bool,
     show_maximize: bool,
-    exit: bool,
 }
 
 impl Window {
@@ -108,9 +107,9 @@ impl Application for Window {
             },
             Message::TogglerToggled(value) => self.toggler_value = value,
             Message::PickListSelected(value) => self.pick_list_selected = Some(value),
-            Message::Close => self.exit = true,
             Message::ToggleSidebar => self.sidebar_toggled = !self.sidebar_toggled,
             Message::Drag => return drag(window::Id::new(0)),
+            Message::Close => return close(window::Id::new(0)),
             Message::Minimize => return minimize(window::Id::new(0), true),
             Message::Maximize => return toggle_maximize(window::Id::new(0)),
             Message::RowSelected(row) => println!("Selected row {row}"),
@@ -328,10 +327,6 @@ impl Application for Window {
         .into();
 
         column(vec![header, content]).into()
-    }
-
-    fn should_exit(&self) -> bool {
-        self.exit
     }
 
     fn theme(&self) -> Theme {
