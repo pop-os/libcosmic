@@ -9,6 +9,7 @@ name = "cosmic"
 [features]
 default = ["wayland"]
 debug = ["iced/debug"]
+softbuffer = ["iced/softbuffer", "iced_softbuffer"]
 wayland = ["iced/wayland", "iced_glow"]
 wgpu = ["iced/wgpu", "iced_wgpu"]
 tokio = ["iced/tokio"]
@@ -41,6 +42,10 @@ path = "iced/lazy"
 [dependencies.iced_native]
 path = "iced/native"
 
+[dependencies.iced_softbuffer]
+path = "iced/softbuffer"
+optional = true
+
 [dependencies.iced_style]
 path = "iced/style"
 
@@ -63,4 +68,3 @@ members = [
 exclude = [
   "iced",
 ]
-
