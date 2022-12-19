@@ -7,15 +7,43 @@ pub mod nav_bar {
 
     #[macro_export]
     macro_rules! nav_button {
-        ($icon: expr, $title:expr, $condensed:expr) => {{
+        ($icon: expr, $title:expr, $condensed:expr, $active:expr) => {{
             if $condensed {
-                $crate::iced::widget::Button::new($crate::widget::icon($icon, 22)).padding(8)
-            } else {
-                $crate::widget::button!(
-                    $crate::widget::icon($icon, 22),
-                    $crate::iced::widget::Text::new($title),
-                    $crate::iced::widget::horizontal_space($crate::iced::Length::Fill),
+                $crate::iced::widget::Button::new(
+                    $crate::widget::icon($icon, 22)
+                        .style(if $active {
+                            $crate::theme::Svg::SymbolicPrimary
+                        } else {
+                            $crate::theme::Svg::Symbolic
+                        })
                 )
+                .padding(8)
+                .style(if $active {
+                    $crate::theme::Button::Primary
+                } else {
+                    $crate::theme::Button::Text
+                })
+            } else {
+                $crate::iced::widget::Button::new(
+                    $crate::iced::widget::row!(
+                        $crate::widget::icon($icon, 16)
+                            .style(if $active {
+                                $crate::theme::Svg::SymbolicPrimary
+                            } else {
+                                $crate::theme::Svg::Symbolic
+                            }),
+                        $crate::iced::widget::Text::new($title)
+                            .vertical_alignment($crate::iced::alignment::Vertical::Center),
+                        $crate::iced::widget::horizontal_space($crate::iced::Length::Fill),
+                    )
+                    .padding([0, 16])
+                    .spacing(8)
+                )
+                .style(if $active {
+                    $crate::theme::Button::Primary
+                } else {
+                    $crate::theme::Button::Text
+                })
             }
         }};
     }
