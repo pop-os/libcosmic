@@ -2,10 +2,11 @@
 // SPDX-License-Identifier: MPL-2.0
 
 use cosmic::{
-    iced::widget::{
+    iced_native::window,
+    iced::{widget::{
         column, container, horizontal_space, pick_list, progress_bar, radio, row, slider,
-    },
-    iced::{self, wayland::SurfaceIdWrapper, Alignment, Application, Command, Length},
+    }, wayland::window::{start_drag_window, toggle_maximize}},
+    iced::{self, wayland::{SurfaceIdWrapper, window::set_mode_window}, Alignment, Application, Command, Length},
     iced_lazy::responsive,
     theme::{self, Theme},
     widget::{
@@ -108,9 +109,9 @@ impl Application for Window {
             Message::PickListSelected(value) => self.pick_list_selected = Some(value),
             Message::Close => self.exit = true,
             Message::ToggleSidebar => self.sidebar_toggled = !self.sidebar_toggled,
-            Message::Drag => todo!(),
-            Message::Minimize => todo!(),
-            Message::Maximize => todo!(),
+            Message::Drag => return start_drag_window(window::Id::new(0)),
+            Message::Minimize => return set_mode_window(window::Id::new(0), window::Mode::Hidden),
+            Message::Maximize => return toggle_maximize(window::Id::new(0)),
             Message::RowSelected(row) => println!("Selected row {row}"),
             Message::InputChanged => {}
             Message::Rectangle(r) => match r {
