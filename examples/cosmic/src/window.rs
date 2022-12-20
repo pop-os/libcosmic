@@ -4,23 +4,45 @@
 use cosmic::{
     iced_native::window,
     iced::widget::{
-        column, container, horizontal_space, pick_list, progress_bar, radio, row, slider, checkbox,
+        column, container, horizontal_space, pick_list, progress_bar, radio, row, slider, checkbox, text,
     },
     iced::{self, Alignment, Application, Command, Length},
     iced_lazy::responsive,
     iced_winit::window::{close, drag, toggle_maximize, minimize},
     theme::{self, Theme},
-    widget::{button, nav_button, nav_bar, nav_bar_page, nav_bar_section, header_bar, settings, scrollable, toggler, spin_button::{SpinButtonModel, SpinMessage}},
+    widget::{button, nav_button, header_bar, settings, scrollable, toggler, spin_button::{SpinButtonModel, SpinMessage}},
     Element,
     ElementExt,
 };
-use std::{collections::BTreeMap, vec};
+use std::vec;
 use theme::Button as ButtonTheme;
+
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+pub enum Page {
+    //TODO: what should the default page be?
+    #[default]
+    Demo,
+    WiFi,
+    Networking,
+    Bluetooth,
+    Desktop,
+    InputDevices,
+    Displays,
+    PowerAndBattery,
+    Sound,
+    PrintersAndScanners,
+    PrivacyAndSecurity,
+    SystemAndAccounts,
+    UpdatesAndRecovery,
+    TimeAndLanguage,
+    Accessibility,
+    Applications,
+}
 
 #[derive(Default)]
 pub struct Window {
     title: String,
-    page: u8,
+    page: Page,
     debug: bool,
     theme: Theme,
     slider_value: f32,
@@ -53,7 +75,7 @@ impl Window {
 #[allow(dead_code)]
 #[derive(Clone, Copy, Debug)]
 pub enum Message {
-    Page(u8),
+    Page(Page),
     Debug(bool),
     ThemeChanged(Theme),
     ButtonPressed,
@@ -149,19 +171,40 @@ impl Application for Window {
         let content = responsive(|size| {
             let condensed = size.width < 900.0;
 
-            let sidebar: Element<_> = iced::widget::container(
-                iced::widget::column!(
-                    cosmic::nav_button!("network-wireless-symbolic", "Wi-Fi", condensed, self.page == 0)
-                        .on_press(Message::Page(0)),
-                    cosmic::nav_button!("network-wired-symbolic", "Networking", condensed, self.page == 1)
-                        .on_press(Message::Page(1)),
-                    cosmic::nav_button!("bluetooth-active-symbolic", "Bluetooth", condensed, self.page == 2)
-                        .on_press(Message::Page(2)),
-                    cosmic::nav_button!("preferences-desktop-wallpaper-symbolic", "Desktop", condensed, self.page == 3)
-                        .on_press(Message::Page(3)),
-                )
-                .spacing(14)
-            )
+            let sidebar: Element<_> = iced::widget::container(scrollable(iced::widget::column!(
+                cosmic::nav_button!("document-properties-symbolic", "Demo", condensed, self.page == Page::Demo)
+                    .on_press(Message::Page(Page::Demo)),
+                cosmic::nav_button!("network-wireless-symbolic", "Wi-Fi", condensed, self.page == Page::WiFi)
+                    .on_press(Message::Page(Page::WiFi)),
+                cosmic::nav_button!("network-workgroup-symbolic", "Networking", condensed, self.page == Page::Networking)
+                    .on_press(Message::Page(Page::Networking)),
+                cosmic::nav_button!("bluetooth-active-symbolic", "Bluetooth", condensed, self.page == Page::Bluetooth)
+                    .on_press(Message::Page(Page::Bluetooth)),
+                cosmic::nav_button!("preferences-desktop-wallpaper-symbolic", "Desktop", condensed, self.page == Page::Desktop)
+                    .on_press(Message::Page(Page::Desktop)),
+                cosmic::nav_button!("input-keyboard-symbolic", "Input Devices", condensed, self.page == Page::InputDevices)
+                    .on_press(Message::Page(Page::InputDevices)),
+                cosmic::nav_button!("preferences-desktop-display-symbolic", "Displays", condensed, self.page == Page::Displays)
+                    .on_press(Message::Page(Page::Displays)),
+                cosmic::nav_button!("battery-full-charged-symbolic", "Power & Battery", condensed, self.page == Page::PowerAndBattery)
+                    .on_press(Message::Page(Page::PowerAndBattery)),
+                cosmic::nav_button!("multimedia-volume-control-symbolic", "Sound", condensed, self.page == Page::Sound)
+                    .on_press(Message::Page(Page::Sound)),
+                cosmic::nav_button!("printer-symbolic", "Printers & Scanners", condensed, self.page == Page::PrintersAndScanners)
+                    .on_press(Message::Page(Page::PrintersAndScanners)),
+                cosmic::nav_button!("preferences-system-privacy-symbolic", "Privacy & Security", condensed, self.page == Page::PrivacyAndSecurity)
+                    .on_press(Message::Page(Page::PrivacyAndSecurity)),
+                cosmic::nav_button!("system-users-symbolic", "System & Accounts", condensed, self.page == Page::SystemAndAccounts)
+                    .on_press(Message::Page(Page::SystemAndAccounts)),
+                cosmic::nav_button!("software-update-available-symbolic", "Updates & Recovery", condensed, self.page == Page::UpdatesAndRecovery)
+                    .on_press(Message::Page(Page::UpdatesAndRecovery)),
+                cosmic::nav_button!("preferences-system-time-symbolic", "Time & Language", condensed, self.page == Page::TimeAndLanguage)
+                    .on_press(Message::Page(Page::TimeAndLanguage)),
+                cosmic::nav_button!("preferences-desktop-accessibility-symbolic", "Accessibility", condensed, self.page == Page::Accessibility)
+                    .on_press(Message::Page(Page::Accessibility)),
+                cosmic::nav_button!("preferences-desktop-apps-symbolic", "Applications", condensed, self.page == Page::Applications)
+                    .on_press(Message::Page(Page::Applications)),
+            ).spacing(14)))
             .height(Length::Fill)
             .padding(11)
             .max_width(300)
@@ -181,7 +224,8 @@ impl Application for Window {
             );
 
             let content: Element<_> = match self.page {
-                _ => settings::view_column(vec![
+                Page::Demo => settings::view_column(vec![
+                    text("Demo").size(32).into(),
                     settings::view_section("Debug")
                         .add(settings::item("Debug theme", choose_theme))
                         .add(settings::item(
@@ -252,6 +296,9 @@ impl Application for Window {
                         .into()
                 ])
                 .into(),
+                _ =>  settings::view_column(vec![
+                    text("Unimplemented page").into()
+                ]).into(),
             };
 
             let mut widgets = Vec::with_capacity(2);

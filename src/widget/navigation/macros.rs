@@ -36,7 +36,7 @@ pub mod nav_bar {
                             .vertical_alignment($crate::iced::alignment::Vertical::Center),
                         $crate::iced::widget::horizontal_space($crate::iced::Length::Fill),
                     )
-                    .padding([0, 16])
+                    .padding([4, 16])
                     .spacing(8)
                 )
                 .style(if $active {
