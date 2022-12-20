@@ -53,7 +53,7 @@ impl<'a, Message: 'static> From<ListColumn<'a, Message>> for Element<'a, Message
     }
 }
 
-fn style(theme: &crate::Theme) -> iced::widget::container::Appearance {
+pub fn style(theme: &crate::Theme) -> iced::widget::container::Appearance {
     let cosmic = &theme.cosmic().primary;
     iced::widget::container::Appearance {
         text_color: Some(cosmic.on.into()),

@@ -10,7 +10,7 @@ use cosmic::{
     iced_lazy::responsive,
     iced_winit::window::{close, drag, toggle_maximize, minimize},
     theme::{self, Theme},
-    widget::{button, nav_button, header_bar, settings, scrollable, toggler, spin_button::{SpinButtonModel, SpinMessage}},
+    widget::{button, icon, list, nav_bar, nav_button, header_bar, settings, scrollable, toggler, spin_button::{SpinButtonModel, SpinMessage}},
     Element,
     ElementExt,
 };
@@ -19,12 +19,11 @@ use theme::Button as ButtonTheme;
 
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
 pub enum Page {
-    //TODO: what should the default page be?
-    #[default]
     Demo,
     WiFi,
     Networking,
     Bluetooth,
+    #[default] //TODO: what should the default page be?
     Desktop,
     InputDevices,
     Displays,
@@ -91,6 +90,169 @@ pub enum Message {
     Maximize,
     InputChanged,
     SpinButton(SpinMessage)
+}
+
+impl Window {
+    fn view_demo(&self) -> Element<Message> {
+        let choose_theme = [Theme::Light, Theme::Dark].iter().fold(
+            row![].spacing(10).align_items(Alignment::Center),
+            |row, theme| {
+                row.push(radio(
+                    format!("{:?}", theme),
+                    *theme,
+                    Some(self.theme),
+                    Message::ThemeChanged,
+                ))
+            },
+        );
+
+        settings::view_column(vec![
+            text("Demo").size(32).into(),
+            settings::view_section("Debug")
+                .add(settings::item("Debug theme", choose_theme))
+                .add(settings::item(
+                    "Debug layout",
+                    toggler(String::from("Debug layout"), self.debug, Message::Debug)
+                ))
+                .into(),
+            settings::view_section("Buttons")
+                .add(settings::item_row(vec![
+                    button(ButtonTheme::Primary)
+                        .text("Primary")
+                        .on_press(Message::ButtonPressed)
+                        .into(),
+                    button(ButtonTheme::Secondary)
+                        .text("Secondary")
+                        .on_press(Message::ButtonPressed)
+                        .into(),
+                    button(ButtonTheme::Positive)
+                        .text("Positive")
+                        .on_press(Message::ButtonPressed)
+                        .into(),
+                    button(ButtonTheme::Destructive)
+                        .text("Destructive")
+                        .on_press(Message::ButtonPressed)
+                        .into(),
+                    button(ButtonTheme::Text)
+                        .text("Text")
+                        .on_press(Message::ButtonPressed)
+                        .into()
+                ]))
+                .add(settings::item_row(vec![
+                    button(ButtonTheme::Primary).text("Primary").into(),
+                    button(ButtonTheme::Secondary).text("Secondary").into(),
+                    button(ButtonTheme::Positive).text("Positive").into(),
+                    button(ButtonTheme::Destructive).text("Destructive").into(),
+                    button(ButtonTheme::Text).text("Text").into(),
+                ]))
+                .into(),
+            settings::view_section("Controls")
+                .add(settings::item("Toggler", toggler(None, self.toggler_value, Message::TogglerToggled)))
+                .add(settings::item(
+                    "Pick List (TODO)",
+                    pick_list(
+                        vec!["Option 1", "Option 2", "Option 3", "Option 4",],
+                        self.pick_list_selected,
+                        Message::PickListSelected
+                    )
+                    .padding([8, 0, 8, 16])
+                ))
+                .add(settings::item(
+                    "Slider",
+                    slider(0.0..=100.0, self.slider_value, Message::SliderChanged)
+                        .width(Length::Units(250))
+                ))
+                .add(settings::item(
+                    "Progress",
+                    progress_bar(0.0..=100.0, self.slider_value)
+                        .width(Length::Units(250))
+                        .height(Length::Units(4))
+                ))
+                .add(settings::item_row(vec![
+                    checkbox("Checkbox", self.checkbox_value, Message::CheckboxToggled).into()
+                ]))
+                .add(settings::item(
+                    format!("Spin Button (Range {}:{})", self.spin_button.min, self.spin_button.max),
+                    self.spin_button.view(Message::SpinButton),
+                ))
+                .into()
+        ])
+        .into()
+    }
+
+    fn view_desktop(&self) -> Element<Message> {
+        settings::view_column(vec![
+            text("Desktop").size(32).into(),
+
+            //TODO: simplify these buttons!
+
+            container(settings::item_row(vec![
+                icon("video-display-symbolic", 16).style(theme::Svg::Symbolic).into(),
+                column!(
+                    text("Desktop Options").size(16),
+                    text("Super Key action, hot corners, window control options.").size(12),
+                ).into(),
+                horizontal_space(iced::Length::Fill).into(),
+                icon("go-next-symbolic", 16).style(theme::Svg::Symbolic).into(),
+            ]).spacing(16))
+            .padding([20, 32])
+            .style(theme::Container::Custom(list::column::style))
+            .into(),
+
+            container(settings::item_row(vec![
+                icon("preferences-desktop-wallpaper-symbolic", 16).style(theme::Svg::Symbolic).into(),
+                column!(
+                    text("Wallpaper").size(16),
+                    text("Background images, colors, and slideshow options.").size(12),
+                ).into(),
+                horizontal_space(iced::Length::Fill).into(),
+                icon("go-next-symbolic", 16).style(theme::Svg::Symbolic).into(),
+            ]).spacing(16))
+            .padding([20, 32])
+            .style(theme::Container::Custom(list::column::style))
+            .into(),
+
+            container(settings::item_row(vec![
+                icon("preferences-pop-desktop-appearance-symbolic", 16).style(theme::Svg::Symbolic).into(),
+                column!(
+                    text("Appearance").size(16),
+                    text("Accent colors and COSMIC theming").size(12),
+                ).into(),
+                horizontal_space(iced::Length::Fill).into(),
+                icon("go-next-symbolic", 16).style(theme::Svg::Symbolic).into(),
+            ]).spacing(16))
+            .padding([20, 32])
+            .style(theme::Container::Custom(list::column::style))
+            .into(),
+
+            container(settings::item_row(vec![
+                icon("preferences-pop-desktop-dock-symbolic", 16).style(theme::Svg::Symbolic).into(),
+                column!(
+                    text("Dock & Top Panel").size(16),
+                    text("Customize size, positions, and more for Dock and Top Panel.").size(12),
+                ).into(),
+                horizontal_space(iced::Length::Fill).into(),
+                icon("go-next-symbolic", 16).style(theme::Svg::Symbolic).into(),
+            ]).spacing(16))
+            .padding([20, 32])
+            .style(theme::Container::Custom(list::column::style))
+            .into(),
+
+            container(settings::item_row(vec![
+                icon("preferences-pop-desktop-workspaces-symbolic", 16).style(theme::Svg::Symbolic).into(),
+                column!(
+                    text("Workspaces").size(16),
+                    text("Set workspace number, behavior, and placement.").size(12),
+                ).into(),
+                horizontal_space(iced::Length::Fill).into(),
+                icon("go-next-symbolic", 16).style(theme::Svg::Symbolic).into(),
+            ]).spacing(16))
+            .padding([20, 32])
+            .style(theme::Container::Custom(list::column::style))
+            .into(),
+        ])
+        .into()
+    }
 }
 
 impl Application for Window {
@@ -171,7 +333,7 @@ impl Application for Window {
         let content = responsive(|size| {
             let condensed = size.width < 900.0;
 
-            let sidebar: Element<_> = iced::widget::container(scrollable(iced::widget::column!(
+            let sidebar: Element<_> = container(scrollable(column!(
                 cosmic::nav_button!("document-properties-symbolic", "Demo", condensed, self.page == Page::Demo)
                     .on_press(Message::Page(Page::Demo)),
                 cosmic::nav_button!("network-wireless-symbolic", "Wi-Fi", condensed, self.page == Page::WiFi)
@@ -180,7 +342,7 @@ impl Application for Window {
                     .on_press(Message::Page(Page::Networking)),
                 cosmic::nav_button!("bluetooth-active-symbolic", "Bluetooth", condensed, self.page == Page::Bluetooth)
                     .on_press(Message::Page(Page::Bluetooth)),
-                cosmic::nav_button!("preferences-desktop-wallpaper-symbolic", "Desktop", condensed, self.page == Page::Desktop)
+                cosmic::nav_button!("video-display-symbolic", "Desktop", condensed, self.page == Page::Desktop)
                     .on_press(Message::Page(Page::Desktop)),
                 cosmic::nav_button!("input-keyboard-symbolic", "Input Devices", condensed, self.page == Page::InputDevices)
                     .on_press(Message::Page(Page::InputDevices)),
@@ -208,94 +370,12 @@ impl Application for Window {
             .height(Length::Fill)
             .padding(11)
             .max_width(300)
-            .style(theme::Container::Custom(cosmic::widget::nav_bar::nav_bar_sections_style))
+            .style(theme::Container::Custom(nav_bar::nav_bar_sections_style))
             .into();
 
-            let choose_theme = [Theme::Light, Theme::Dark].iter().fold(
-                row![].spacing(10).align_items(Alignment::Center),
-                |row, theme| {
-                    row.push(radio(
-                        format!("{:?}", theme),
-                        *theme,
-                        Some(self.theme),
-                        Message::ThemeChanged,
-                    ))
-                },
-            );
-
             let content: Element<_> = match self.page {
-                Page::Demo => settings::view_column(vec![
-                    text("Demo").size(32).into(),
-                    settings::view_section("Debug")
-                        .add(settings::item("Debug theme", choose_theme))
-                        .add(settings::item(
-                            "Debug layout",
-                            toggler(String::from("Debug layout"), self.debug, Message::Debug)
-                        ))
-                        .into(),
-                    settings::view_section("Buttons")
-                        .add(settings::item_row(vec![
-                            button(ButtonTheme::Primary)
-                                .text("Primary")
-                                .on_press(Message::ButtonPressed)
-                                .into(),
-                            button(ButtonTheme::Secondary)
-                                .text("Secondary")
-                                .on_press(Message::ButtonPressed)
-                                .into(),
-                            button(ButtonTheme::Positive)
-                                .text("Positive")
-                                .on_press(Message::ButtonPressed)
-                                .into(),
-                            button(ButtonTheme::Destructive)
-                                .text("Destructive")
-                                .on_press(Message::ButtonPressed)
-                                .into(),
-                            button(ButtonTheme::Text)
-                                .text("Text")
-                                .on_press(Message::ButtonPressed)
-                                .into()
-                        ]))
-                        .add(settings::item_row(vec![
-                            button(ButtonTheme::Primary).text("Primary").into(),
-                            button(ButtonTheme::Secondary).text("Secondary").into(),
-                            button(ButtonTheme::Positive).text("Positive").into(),
-                            button(ButtonTheme::Destructive).text("Destructive").into(),
-                            button(ButtonTheme::Text).text("Text").into(),
-                        ]))
-                        .into(),
-                    settings::view_section("Controls")
-                        .add(settings::item("Toggler", toggler(None, self.toggler_value, Message::TogglerToggled)))
-                        .add(settings::item(
-                            "Pick List (TODO)",
-                            pick_list(
-                                vec!["Option 1", "Option 2", "Option 3", "Option 4",],
-                                self.pick_list_selected,
-                                Message::PickListSelected
-                            )
-                            .padding([8, 0, 8, 16])
-                        ))
-                        .add(settings::item(
-                            "Slider",
-                            slider(0.0..=100.0, self.slider_value, Message::SliderChanged)
-                                .width(Length::Units(250))
-                        ))
-                        .add(settings::item(
-                            "Progress",
-                            progress_bar(0.0..=100.0, self.slider_value)
-                                .width(Length::Units(250))
-                                .height(Length::Units(4))
-                        ))
-                        .add(settings::item_row(vec![
-                            checkbox("Checkbox", self.checkbox_value, Message::CheckboxToggled).into()
-                        ]))
-                        .add(settings::item(
-                            format!("Spin Button (Range {}:{})", self.spin_button.min, self.spin_button.max),
-                            self.spin_button.view(Message::SpinButton),
-                        ))
-                        .into()
-                ])
-                .into(),
+                Page::Demo => self.view_demo(),
+                Page::Desktop => self.view_desktop(),
                 _ =>  settings::view_column(vec![
                     text("Unimplemented page").into()
                 ]).into(),
