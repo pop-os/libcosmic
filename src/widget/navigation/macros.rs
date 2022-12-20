@@ -12,14 +12,14 @@ pub mod nav_bar {
                 $crate::iced::widget::Button::new(
                     $crate::widget::icon($icon, 22)
                         .style(if $active {
-                            $crate::theme::Svg::SymbolicPrimary
+                            $crate::theme::Svg::SymbolicLink
                         } else {
                             $crate::theme::Svg::Symbolic
                         })
                 )
                 .padding(8)
                 .style(if $active {
-                    $crate::theme::Button::Primary
+                    $crate::theme::Button::LinkActive
                 } else {
                     $crate::theme::Button::Text
                 })
@@ -28,7 +28,7 @@ pub mod nav_bar {
                     $crate::iced::widget::row!(
                         $crate::widget::icon($icon, 16)
                             .style(if $active {
-                                $crate::theme::Svg::SymbolicPrimary
+                                $crate::theme::Svg::SymbolicLink
                             } else {
                                 $crate::theme::Svg::Symbolic
                             }),
@@ -40,7 +40,7 @@ pub mod nav_bar {
                     .spacing(8)
                 )
                 .style(if $active {
-                    $crate::theme::Button::Primary
+                    $crate::theme::Button::LinkActive
                 } else {
                     $crate::theme::Button::Text
                 })

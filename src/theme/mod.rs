@@ -128,6 +128,8 @@ pub enum Button {
     Primary,
     Secondary,
     Text,
+    Link,
+    LinkActive,
     Transparent,
     Custom {
         active: fn(&Theme) -> button::Appearance,
@@ -150,6 +152,8 @@ impl Button {
             Button::Positive => &cosmic.success,
             Button::Destructive => &cosmic.destructive,
             Button::Text => &cosmic.secondary.component,
+            Button::Link => &cosmic.accent,
+            Button::LinkActive => &cosmic.secondary.component,
             Button::Transparent => &TRANSPARENT_COMPONENT,
             Button::Deactivated => &cosmic.secondary.component,
             Button::Custom { .. } => &TRANSPARENT_COMPONENT
@@ -168,12 +172,21 @@ impl button::StyleSheet for Theme {
         let cosmic = style.cosmic(self);
 
         button::Appearance {
-            border_radius: 24.0,
+            border_radius: match style {
+                Button::Link => 0.0,
+                _ => 24.0,
+            },
             background: match style {
                 Button::Text => None,
+                Button::Link => None,
+                Button::LinkActive => Some(Background::Color(cosmic.divider.into())),
                 _ => Some(Background::Color(cosmic.base.into())),
             },
-            text_color: cosmic.on.into(),
+            text_color: match style {
+                Button::Link => cosmic.base.into(),
+                Button::LinkActive => cosmic.selected_text.into(),
+                _ => cosmic.on.into(),
+            },
             ..button::Appearance::default()
         }
     }
@@ -187,7 +200,11 @@ impl button::StyleSheet for Theme {
         let cosmic = style.cosmic(self);
 
         button::Appearance {
-            background: Some(Background::Color(cosmic.hover.into())),
+            background: match style {
+                Button::Link => None,
+                Button::LinkActive => Some(Background::Color(cosmic.divider.into())),
+                _ => Some(Background::Color(cosmic.hover.into()))
+            },
             ..active
         }
     }
@@ -712,6 +729,8 @@ pub enum Svg {
     SymbolicActive,
     /// Icon fill color will match on primary color
     SymbolicPrimary,
+    /// Icon fill color will use accent color
+    SymbolicLink,
 }
 
 impl Hash for Svg {
@@ -722,6 +741,7 @@ impl Hash for Svg {
             Svg::Symbolic => 2,
             Svg::SymbolicActive => 3,
             Svg::SymbolicPrimary => 4,
+            Svg::SymbolicLink => 5,
         };
 
         id.hash(state);
@@ -743,6 +763,9 @@ impl svg::StyleSheet for Theme {
             },
             Svg::SymbolicPrimary => svg::Appearance {
                 color: Some(self.cosmic().accent.on.into()),
+            },
+            Svg::SymbolicLink => svg::Appearance {
+                color: Some(self.cosmic().accent.base.into()),
             },
         }
     }
