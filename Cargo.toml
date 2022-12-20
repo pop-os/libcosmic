@@ -9,7 +9,7 @@ name = "cosmic"
 [features]
 default = ["wayland"]
 debug = ["iced/debug"]
-softbuffer = ["iced/softbuffer", "iced_softbuffer"]
+swbuf = ["iced/swbuf", "iced_swbuf"]
 wayland = ["iced/wayland", "iced_glow"]
 wgpu = ["iced/wgpu", "iced_wgpu"]
 tokio = ["iced/tokio"]
@@ -23,7 +23,7 @@ derive_setters = "0.1.5"
 lazy_static = "1.4.0"
 palette = "0.6.1"
 cosmic-panel-config = {git = "https://github.com/pop-os/cosmic-panel", default-features = false, optional = true }
-sctk = { package = "smithay-client-toolkit", git = "https://github.com/Smithay/client-toolkit", optional = true, rev = "f1d9c3e" }
+sctk = { package = "smithay-client-toolkit", git = "https://github.com/Smithay/client-toolkit", optional = true, rev = "73346019952f82ec7e4d4d15f5d66841b54e8b61" }
 
 [dependencies.cosmic-theme]
 git = "https://github.com/pop-os/cosmic-theme.git"
@@ -42,8 +42,8 @@ path = "iced/lazy"
 [dependencies.iced_native]
 path = "iced/native"
 
-[dependencies.iced_softbuffer]
-path = "iced/softbuffer"
+[dependencies.iced_swbuf]
+path = "iced/swbuf"
 optional = true
 
 [dependencies.iced_style]
