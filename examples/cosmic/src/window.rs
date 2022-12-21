@@ -1,4 +1,4 @@
-// Copyright 2022 System76 <info@system76.com>
+/// Copyright 2022 System76 <info@system76.com>
 // SPDX-License-Identifier: MPL-2.0
 
 use cosmic::{
@@ -17,9 +17,15 @@ use cosmic::{
 use std::vec;
 use theme::Button as ButtonTheme;
 
+pub trait SubPage {
+    fn title(&self) -> &'static str;
+    fn description(&self) -> &'static str;
+    fn icon_name(&self) -> &'static str;
+    fn into_page(self) -> Page;
+}
+
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum DesktopPage {
-    Root,
     DesktopOptions,
     Wallpaper,
     Appearance,
@@ -28,12 +34,11 @@ pub enum DesktopPage {
     Notifications,
 }
 
-impl DesktopPage {
+impl SubPage for DesktopPage {
     //TODO: translate
-    pub fn title(&self) -> &'static str {
+    fn title(&self) -> &'static str {
         use DesktopPage::*;
         match self {
-            Root => "Desktop",
             DesktopOptions => "Desktop Options",
             Wallpaper => "Wallpaper",
             Appearance => "Appearance",
@@ -41,6 +46,115 @@ impl DesktopPage {
             Workspaces => "Workspaces",
             Notifications => "Notifications",
         }
+    }
+
+    //TODO: translate
+    fn description(&self) -> &'static str {
+        use DesktopPage::*;
+        match self {
+            DesktopOptions => "Super Key action, hot corners, window control options.",
+            Wallpaper => "Background images, colors, and slideshow options.",
+            Appearance => "Accent colors and COSMIC theming",
+            DockAndTopPanel => "Customize size, positions, and more for Dock and Top Panel.",
+            Workspaces => "Set workspace number, behavior, and placement.",
+            Notifications => "Do Not Disturb, lockscreen notifications, and per-application settings.",
+        }
+    }
+
+    fn icon_name(&self) -> &'static str {
+        use DesktopPage::*;
+        match self {
+            DesktopOptions => "video-display-symbolic",
+            Wallpaper => "preferences-desktop-wallpaper-symbolic",
+            Appearance => "preferences-pop-desktop-appearance-symbolic",
+            DockAndTopPanel => "preferences-pop-desktop-dock-symbolic",
+            Workspaces => "preferences-pop-desktop-workspaces-symbolic",
+            Notifications => "preferences-system-notifications-symbolic",
+        }
+    }
+
+    fn into_page(self) -> Page {
+        Page::Desktop(Some(self))
+    }
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum SystemAndAccountsPage {
+    Users,
+    About,
+    Firmware,
+}
+
+impl SubPage for SystemAndAccountsPage {
+    //TODO: translate
+    fn title(&self) -> &'static str {
+        use SystemAndAccountsPage::*;
+        match self {
+            Users => "Users",
+            About => "About",
+            Firmware => "Firmware",
+        }
+    }
+
+    //TODO: translate
+    fn description(&self) -> &'static str {
+        use SystemAndAccountsPage::*;
+        match self {
+            Users => "Authentication and login, lock screen.",
+            About => "Device name, hardware information, operating system defaults.",
+            Firmware => "Firmware details.",
+        }
+    }
+
+    fn icon_name(&self) -> &'static str {
+        use SystemAndAccountsPage::*;
+        match self {
+            Users => "",
+            About => "",
+            Firmware => "",
+        }
+    }
+
+    fn into_page(self) -> Page {
+        Page::SystemAndAccounts(Some(self))
+    }
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum TimeAndLanguagePage {
+    DateAndTime,
+    RegionAndLanguage,
+}
+
+impl SubPage for TimeAndLanguagePage {
+    //TODO: translate
+    fn title(&self) -> &'static str {
+        use TimeAndLanguagePage::*;
+        match self {
+            DateAndTime => "Date & Time",
+            RegionAndLanguage => "Region & Language",
+        }
+    }
+
+    //TODO: translate
+    fn description(&self) -> &'static str {
+        use TimeAndLanguagePage::*;
+        match self {
+            DateAndTime => "Time zone, automatic clock settings, and some time formatting.",
+            RegionAndLanguage => "Format dates, times, and numbers based on your region",
+        }
+    }
+
+    fn icon_name(&self) -> &'static str {
+        use TimeAndLanguagePage::*;
+        match self {
+            DateAndTime => "",
+            RegionAndLanguage => "",
+        }
+    }
+
+    fn into_page(self) -> Page {
+        Page::TimeAndLanguage(Some(self))
     }
 }
 
@@ -50,16 +164,16 @@ pub enum Page {
     WiFi,
     Networking,
     Bluetooth,
-    Desktop(DesktopPage),
+    Desktop(Option<DesktopPage>),
     InputDevices,
     Displays,
     PowerAndBattery,
     Sound,
     PrintersAndScanners,
     PrivacyAndSecurity,
-    SystemAndAccounts,
+    SystemAndAccounts(Option<SystemAndAccountsPage>),
     UpdatesAndRecovery,
-    TimeAndLanguage,
+    TimeAndLanguage(Option<TimeAndLanguagePage>),
     Accessibility,
     Applications,
 }
@@ -80,11 +194,33 @@ impl Page {
             Sound => "Sound",
             PrintersAndScanners => "Printers & Scanners",
             PrivacyAndSecurity => "Privacy & Security",
-            SystemAndAccounts => "System & Accounts",
+            SystemAndAccounts(_) => "System & Accounts",
             UpdatesAndRecovery => "Updates & Recovery",
-            TimeAndLanguage => "Time & Language",
+            TimeAndLanguage(_) => "Time & Language",
             Accessibility => "Accessibility",
             Applications => "Applications",
+        }
+    }
+
+    pub fn icon_name(&self) -> &'static str {
+        use Page::*;
+        match self {
+            Demo => "document-properties-symbolic",
+            WiFi => "network-wireless-symbolic",
+            Networking => "network-workgroup-symbolic",
+            Bluetooth => "bluetooth-active-symbolic",
+            Desktop(_) => "video-display-symbolic",
+            InputDevices => "input-keyboard-symbolic",
+            Displays => "preferences-desktop-display-symbolic",
+            PowerAndBattery => "battery-full-charged-symbolic",
+            Sound => "multimedia-volume-control-symbolic",
+            PrintersAndScanners => "printer-symbolic",
+            PrivacyAndSecurity => "preferences-system-privacy-symbolic",
+            SystemAndAccounts(_) => "system-users-symbolic",
+            UpdatesAndRecovery => "software-update-available-symbolic",
+            TimeAndLanguage(_) => "preferences-system-time-symbolic",
+            Accessibility => "preferences-desktop-accessibility-symbolic",
+            Applications => "preferences-desktop-apps-symbolic",
         }
     }
 }
@@ -92,7 +228,7 @@ impl Page {
 impl Default for Page {
     fn default() -> Page {
         //TODO: what should the default page be?
-        Page::Desktop(DesktopPage::Root)
+        Page::Desktop(None)
     }
 }
 
@@ -240,42 +376,15 @@ impl Window {
         .into()
     }
 
-    fn view_desktop(&self, desktop_page: DesktopPage) -> Element<Message> {
-        match desktop_page {
-            DesktopPage::Root => self.view_desktop_root(),
-            DesktopPage::DesktopOptions => self.view_desktop_options(),
-            _ =>  settings::view_column(vec![
-                column!(
-                    iced::widget::Button::new(row!(
-                        icon("go-previous-symbolic", 16).style(theme::Svg::SymbolicLink),
-                        text("Desktop").size(16),
-                    ))
-                    .padding(0)
-                    .style(theme::Button::Link)
-                    .on_press(Message::Page(Page::Desktop(DesktopPage::Root))),
-
-                    row!(
-                        text(desktop_page.title()).size(30),
-                        horizontal_space(Length::Fill),
-                    ),
-                )
-                .spacing(10)
-                .into(),
-
-                text("Unimplemented desktop page").into(),
-            ]).into(),
-        }
-    }
-
     fn view_desktop_root(&self) -> Element<Message> {
         //TODO: rename and move to libcosmic
-        let desktop_page_button = |desktop_page: DesktopPage, icon_name, description| {
+        let desktop_page_button = |desktop_page: DesktopPage| {
             iced::widget::Button::new(
                 container(settings::item_row(vec![
-                    icon(icon_name, 20).style(theme::Svg::Symbolic).into(),
+                    icon(desktop_page.icon_name(), 20).style(theme::Svg::Symbolic).into(),
                     column!(
                         text(desktop_page.title()).size(18),
-                        text(description).size(12),
+                        text(desktop_page.description()).size(12),
                     ).spacing(2).into(),
                     horizontal_space(iced::Length::Fill).into(),
                     icon("go-next-symbolic", 20).style(theme::Svg::Symbolic).into(),
@@ -285,7 +394,7 @@ impl Window {
             )
             .padding(0)
             .style(theme::Button::Transparent)
-            .on_press(Message::Page(Page::Desktop(desktop_page)))
+            .on_press(Message::Page(desktop_page.into_page()))
         };
 
         settings::view_column(vec![
@@ -293,63 +402,52 @@ impl Window {
 
             //TODO: simplify these buttons!
             column!(
-                desktop_page_button(
-                    DesktopPage::DesktopOptions,
-                    "video-display-symbolic",
-                    "Super Key action, hot corners, window control options.",
-                ),
-
-                desktop_page_button(
-                    DesktopPage::Wallpaper,
-                    "preferences-desktop-wallpaper-symbolic",
-                    "Background images, colors, and slideshow options.",
-                ),
-
-                desktop_page_button(
-                    DesktopPage::Appearance,
-                    "preferences-pop-desktop-appearance-symbolic",
-                    "Accent colors and COSMIC theming",
-                ),
-
-                desktop_page_button(
-                    DesktopPage::DockAndTopPanel,
-                    "preferences-pop-desktop-dock-symbolic",
-                    "Customize size, positions, and more for Dock and Top Panel.",
-                ),
-
-                desktop_page_button(
-                    DesktopPage::Workspaces,
-                    "preferences-pop-desktop-workspaces-symbolic",
-                    "Set workspace number, behavior, and placement.",
-                ),
-
-                desktop_page_button(
-                    DesktopPage::Notifications,
-                    "preferences-system-notifications-symbolic",
-                    "Do Not Disturb, lockscreen notifications, and per-application settings.",
-                ),
+                desktop_page_button(DesktopPage::DesktopOptions),
+                desktop_page_button(DesktopPage::Wallpaper),
+                desktop_page_button(DesktopPage::Appearance),
+                desktop_page_button(DesktopPage::DockAndTopPanel),
+                desktop_page_button(DesktopPage::Workspaces),
+                desktop_page_button(DesktopPage::Notifications),
             ).spacing(16).into()
         ])
         .into()
     }
 
+    fn desktop_parent_button(&self, desktop_page: DesktopPage) -> Element<Message> {
+        column!(
+            iced::widget::Button::new(row!(
+                icon("go-previous-symbolic", 16).style(theme::Svg::SymbolicLink),
+                text("Desktop").size(16),
+            ))
+            .padding(0)
+            .style(theme::Button::Link)
+            .on_press(Message::Page(Page::Desktop(None))),
+
+            row!(
+                text(desktop_page.title()).size(30),
+                horizontal_space(Length::Fill),
+            ),
+        )
+        .spacing(10)
+        .into()
+    }
+
+    fn view_desktop_page(&self, desktop_page: DesktopPage) -> Element<Message> {
+        match desktop_page {
+            DesktopPage::DesktopOptions => self.view_desktop_options(),
+            _ =>  settings::view_column(vec![
+                self.desktop_parent_button(desktop_page),
+                text("Unimplemented desktop page").into(),
+            ]).into(),
+        }
+    }
+
     fn view_desktop_options(&self) -> Element<Message> {
         settings::view_column(vec![
-            column!(
-                iced::widget::Button::new(row!(
-                    icon("go-previous-symbolic", 16).style(theme::Svg::SymbolicLink),
-                    text("Desktop").size(16),
-                ))
-                .padding(0)
-                .style(theme::Button::Link)
-                .on_press(Message::Page(Page::Desktop(DesktopPage::Root))),
-                text("Desktop Options").size(30),
-            )
-            .spacing(10)
-            .into(),
+            self.desktop_parent_button(DesktopPage::DesktopOptions),
 
             settings::view_section("Super Key Action")
-                .add(settings::item("TODO", toggler(None, self.toggler_value, Message::TogglerToggled)))
+                .add(settings::item("TODO", horizontal_space(Length::Fill)))
                 .into(),
 
             settings::view_section("Hot Corner")
@@ -359,6 +457,11 @@ impl Window {
             settings::view_section("Top Panel")
                 .add(settings::item("Show Workspaces Button", toggler(None, self.toggler_value, Message::TogglerToggled)))
                 .add(settings::item("Show Applications Button", toggler(None, self.toggler_value, Message::TogglerToggled)))
+                .into(),
+
+            settings::view_section("Window Controls")
+                .add(settings::item("Show Minimize Button", toggler(None, self.toggler_value, Message::TogglerToggled)))
+                .add(settings::item("Show Maximize Button", toggler(None, self.toggler_value, Message::TogglerToggled)))
                 .into(),
         ]).into()
     }
@@ -456,35 +559,36 @@ impl Application for Window {
             let mut widgets = Vec::with_capacity(2);
 
             if sidebar_toggled {
-                let sidebar_button_complex = |page: Page, icon_name, active| {
+                let sidebar_button_complex = |page: Page, active| {
                     cosmic::nav_button!(
-                        icon_name,
+                        page.icon_name(),
                         page.title(),
                         active
                     )
                     .on_press(Message::Page(page))
                 };
 
-                let sidebar_button = |page: Page, icon_name| {
-                    sidebar_button_complex(page, icon_name, self.page == page)
+                let sidebar_button = |page: Page| {
+                    sidebar_button_complex(page, self.page == page)
                 };
 
                 let mut sidebar = container(scrollable(column!(
-                    sidebar_button(Page::Demo, "document-properties-symbolic"),
-                    sidebar_button(Page::Networking, "network-wireless-symbolic"),
-                    sidebar_button(Page::Bluetooth, "bluetooth-active-symbolic"),
-                    sidebar_button_complex(Page::Desktop(DesktopPage::Root), "video-display-symbolic", matches!(self.page, Page::Desktop(_))),
-                    sidebar_button(Page::InputDevices, "input-keyboard-symbolic"),
-                    sidebar_button(Page::Displays, "preferences-desktop-display-symbolic"),
-                    sidebar_button(Page::PowerAndBattery, "battery-full-charged-symbolic"),
-                    sidebar_button(Page::Sound, "multimedia-volume-control-symbolic"),
-                    sidebar_button(Page::PrintersAndScanners, "printer-symbolic"),
-                    sidebar_button(Page::PrivacyAndSecurity, "preferences-system-privacy-symbolic"),
-                    sidebar_button(Page::SystemAndAccounts, "system-users-symbolic"),
-                    sidebar_button(Page::UpdatesAndRecovery, "software-update-available-symbolic"),
-                    sidebar_button(Page::TimeAndLanguage, "preferences-system-time-symbolic"),
-                    sidebar_button(Page::Accessibility, "preferences-desktop-accessibility-symbolic"),
-                    sidebar_button(Page::Applications, "preferences-desktop-apps-symbolic"),
+                    sidebar_button(Page::Demo),
+                    sidebar_button(Page::WiFi),
+                    sidebar_button(Page::Networking),
+                    sidebar_button(Page::Bluetooth),
+                    sidebar_button_complex(Page::Desktop(None), matches!(self.page, Page::Desktop(_))),
+                    sidebar_button(Page::InputDevices),
+                    sidebar_button(Page::Displays),
+                    sidebar_button(Page::PowerAndBattery),
+                    sidebar_button(Page::Sound),
+                    sidebar_button(Page::PrintersAndScanners),
+                    sidebar_button(Page::PrivacyAndSecurity),
+                    sidebar_button_complex(Page::SystemAndAccounts(None), matches!(self.page, Page::SystemAndAccounts(_))),
+                    sidebar_button(Page::UpdatesAndRecovery),
+                    sidebar_button_complex(Page::TimeAndLanguage(None), matches!(self.page, Page::TimeAndLanguage(_))),
+                    sidebar_button(Page::Accessibility),
+                    sidebar_button(Page::Applications),
                 ).spacing(14)))
                 .height(Length::Fill)
                 .padding(8)
@@ -501,7 +605,8 @@ impl Application for Window {
             if ! (condensed && sidebar_toggled) {
                 let content: Element<_> = match self.page {
                     Page::Demo => self.view_demo(),
-                    Page::Desktop(desktop_page) => self.view_desktop(desktop_page),
+                    Page::Desktop(None) => self.view_desktop_root(),
+                    Page::Desktop(Some(desktop_page)) => self.view_desktop_page(desktop_page),
                     _ =>  settings::view_column(vec![
                         row!(
                             text(self.page.title()).size(30),
