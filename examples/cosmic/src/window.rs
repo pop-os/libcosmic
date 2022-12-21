@@ -381,19 +381,7 @@ impl Application for Window {
                     ]).into(),
                     Page::Networking(Some(sub_page)) => self.view_unimplemented_sub_page(sub_page),
                     Page::Bluetooth => self.view_bluetooth(),
-                    Page::Desktop(None) => settings::view_column(vec![
-                        self.page_title(self.page),
-                        column!(
-                            self.sub_page_button(DesktopPage::DesktopOptions),
-                            self.sub_page_button(DesktopPage::Wallpaper),
-                            self.sub_page_button(DesktopPage::Appearance),
-                            self.sub_page_button(DesktopPage::DockAndTopPanel),
-                            self.sub_page_button(DesktopPage::Workspaces),
-                            self.sub_page_button(DesktopPage::Notifications),
-                        ).spacing(16).into()
-                    ]).into(),
-                    Page::Desktop(Some(DesktopPage::DesktopOptions)) => self.view_desktop_options(),
-                    Page::Desktop(Some(sub_page)) => self.view_unimplemented_sub_page(sub_page),
+                    Page::Desktop(desktop_page_opt) => self.view_desktop(desktop_page_opt),
                     Page::InputDevices(None) => settings::view_column(vec![
                         self.page_title(self.page),
                         column!(
