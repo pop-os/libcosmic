@@ -1,7 +1,7 @@
 use cosmic::{
     Element,
     iced::Length,
-    iced::widget::{column, container, horizontal_space, image, row, text},
+    iced::widget::{column, container, horizontal_space, image, row, svg, text},
     theme,
     widget::{list_column, settings, toggler},
 };
@@ -114,6 +114,41 @@ impl Window {
     }
 
     fn view_desktop_wallpaper(&self) -> Element<Message> {
+        let mut image_paths: Vec<std::path::PathBuf> = Vec::new();
+        /*
+        //TODO: load image paths, do this asynchronously somehow
+        if let Ok(entries) = std::fs::read_dir("/usr/share/backgrounds") {
+            for entry_res in entries {
+                let entry = match entry_res {
+                    Ok(ok) => ok,
+                    Err(_) => continue,
+                };
+
+                let path = entry.path();
+                if path.is_dir() {
+                    //TODO: recursive
+                } else {
+                    image_paths.push(path);
+                }
+            }
+        }
+        */
+
+        let mut image_column = Vec::with_capacity(image_paths.len() / 4);
+        for chunk in image_paths.chunks(4) {
+            let mut image_row = Vec::with_capacity(chunk.len());
+            for image_path in chunk.iter() {
+                image_row.push(
+                    if image_path.ends_with(".svg") {
+                        svg(svg::Handle::from_path(image_path)).width(Length::Units(150)).into()
+                    } else {
+                        image(image_path).width(Length::Units(150)).into()
+                    }
+                );
+            }
+            image_column.push(row(image_row).spacing(16).into());
+        }
+
         settings::view_column(vec![
             self.parent_page_button(DesktopPage::Wallpaper),
 
@@ -134,6 +169,8 @@ impl Window {
                 .add(settings::item("Background fit", text("TODO")))
                 .add(settings::item("Slideshow", toggler(None, self.toggler_value, Message::TogglerToggled)))
                 .into(),
+
+            column(image_column).spacing(16).into(),
         ]).into()
     }
 
