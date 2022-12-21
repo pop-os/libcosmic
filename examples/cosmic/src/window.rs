@@ -463,7 +463,7 @@ impl Application for Window {
             );
 
             container(row(widgets))
-                .padding([16, 16])
+                .padding([0, 8, 8, 8])
                 .width(Length::Fill)
                 .height(Length::Fill)
                 .into()
