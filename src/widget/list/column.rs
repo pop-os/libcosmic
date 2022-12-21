@@ -29,7 +29,7 @@ impl<'a, Message: 'static> ListColumn<'a, Message> {
     #[must_use]
     pub fn add(mut self, item: impl Into<Element<'a, Message>>) -> Self {
         if !self.children.is_empty() {
-            self.children.push(horizontal_rule(12).into());
+            self.children.push(horizontal_rule(10).into());
         }
 
         self.children.push(item.into());
@@ -41,7 +41,7 @@ impl<'a, Message: 'static> ListColumn<'a, Message> {
         iced::widget::column(self.children)
             .spacing(12)
             .apply(iced::widget::container)
-            .padding([12, 16])
+            .padding([16, 6])
             .style(theme::Container::Custom(style))
             .into()
     }

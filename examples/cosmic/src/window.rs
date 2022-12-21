@@ -329,7 +329,7 @@ impl Page {
 impl Default for Page {
     fn default() -> Page {
         //TODO: what should the default page be?
-        Page::Desktop(None)
+        Page::SystemAndAccounts(Some(SystemAndAccountsPage::About))
     }
 }
 
@@ -561,6 +561,37 @@ impl Window {
                 .into(),
         ]).into()
     }
+
+    fn view_system_and_accounts_about(&self) -> Element<Message> {
+        settings::view_column(vec![
+            self.parent_page_button(SystemAndAccountsPage::About),
+
+            row!(
+                horizontal_space(Length::Fill),
+                icon("distributor-logo", 78),
+                horizontal_space(Length::Fill),
+            ).into(),
+
+            settings::view_section("Hardware")
+                .add(settings::item("Hardware model", text("TODO")))
+                .add(settings::item("Memory", text("TODO")))
+                .add(settings::item("Processor", text("TODO")))
+                .add(settings::item("Graphics", text("TODO")))
+                .add(settings::item("Disk Capacity", text("TODO")))
+                .into(),
+
+            settings::view_section("Operating System")
+                .add(settings::item("Operating system", text("TODO")))
+                .add(settings::item("Operating system architecture", text("TODO")))
+                .add(settings::item("Desktop environment", text("TODO")))
+                .add(settings::item("Windowing system", text("TODO")))
+                .into(),
+
+            settings::view_section("Related settings")
+                .add(settings::item("Get support", text("TODO")))
+                .into(),
+        ]).into()
+    }
 }
 
 impl Application for Window {
@@ -739,6 +770,7 @@ impl Application for Window {
                             self.sub_page_button(SystemAndAccountsPage::Firmware),
                         ).spacing(16).into()
                     ]).into(),
+                    Page::SystemAndAccounts(Some(SystemAndAccountsPage::About)) => self.view_system_and_accounts_about(),
                     Page::SystemAndAccounts(Some(sub_page)) => self.view_unimplemented_sub_page(sub_page),
                     Page::TimeAndLanguage(None) => settings::view_column(vec![
                         self.page_title(self.page),

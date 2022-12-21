@@ -23,6 +23,6 @@ pub fn item<'a, Message: 'static>(
 pub fn item_row<Message>(children: Vec<Element<Message>>) -> iced::widget::Row<Message, Renderer> {
     iced::widget::row(children)
         .align_items(iced::Alignment::Center)
-        .padding([0, 8])
+        .padding([0, 18])
         .spacing(12)
 }
