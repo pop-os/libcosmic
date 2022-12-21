@@ -66,6 +66,7 @@ pub struct Window {
     toggler_value: bool,
     pick_list_selected: Option<&'static str>,
     sidebar_toggled: bool,
+    sidebar_toggled_condensed: bool,
     show_minimize: bool,
     show_maximize: bool,
 }
@@ -101,6 +102,7 @@ pub enum Message {
     RowSelected(usize),
     Close,
     ToggleSidebar,
+    ToggleSidebarCondensed,
     Drag,
     Minimize,
     Maximize,
@@ -348,7 +350,10 @@ impl Application for Window {
 
     fn update(&mut self, message: Message) -> iced::Command<Self::Message> {
         match message {
-            Message::Page(page) => self.page = page,
+            Message::Page(page) => {
+                self.sidebar_toggled_condensed = false;
+                self.page = page;
+            },
             Message::Debug(debug) => self.debug = debug,
             Message::ThemeChanged(theme) => self.theme = theme,
             Message::ButtonPressed => {}
@@ -359,6 +364,7 @@ impl Application for Window {
             Message::TogglerToggled(value) => self.toggler_value = value,
             Message::PickListSelected(value) => self.pick_list_selected = Some(value),
             Message::ToggleSidebar => self.sidebar_toggled = !self.sidebar_toggled,
+            Message::ToggleSidebarCondensed => self.sidebar_toggled_condensed = !self.sidebar_toggled_condensed,
             Message::Drag => return drag(window::Id::new(0)),
             Message::Close => return close(window::Id::new(0)),
             Message::Minimize => return minimize(window::Id::new(0), true),
@@ -373,104 +379,118 @@ impl Application for Window {
     }
 
     fn view(&self) -> Element<Message> {
-        let mut header = header_bar()
-            .title("COSMIC Design System - Iced")
-            .on_close(Message::Close)
-            .on_drag(Message::Drag)
-            .start(
-                nav_button("Settings")
-                    .on_sidebar_toggled(Message::ToggleSidebar)
-                    .sidebar_active(self.sidebar_toggled)
-                    .into()
-            );
-
-        if self.show_maximize {
-            header = header.on_maximize(Message::Maximize);
-        }
-
-        if self.show_minimize {
-            header = header.on_minimize(Message::Minimize);
-        }
-
-        let header = Into::<Element<Message>>::into(header).debug(self.debug);
-
         // TODO: Adding responsive makes this regenerate on every size change, and regeneration
         // involves allocations for many different items. Ideally, we could only make the nav bar
         // responsive and leave the content to be sized normally.
-        let content = responsive(|size| {
+        responsive(|size| {
+            //TODO: send a message when this happens instead of having everything be recalculated on resize
             let condensed = size.width < 900.0;
 
-            let sidebar: Element<_> = container(scrollable(column!(
-                cosmic::nav_button!("document-properties-symbolic", "Demo", condensed, self.page == Page::Demo)
-                    .on_press(Message::Page(Page::Demo)),
-                cosmic::nav_button!("network-wireless-symbolic", "Wi-Fi", condensed, self.page == Page::WiFi)
-                    .on_press(Message::Page(Page::WiFi)),
-                cosmic::nav_button!("network-workgroup-symbolic", "Networking", condensed, self.page == Page::Networking)
-                    .on_press(Message::Page(Page::Networking)),
-                cosmic::nav_button!("bluetooth-active-symbolic", "Bluetooth", condensed, self.page == Page::Bluetooth)
-                    .on_press(Message::Page(Page::Bluetooth)),
-                cosmic::nav_button!("video-display-symbolic", "Desktop", condensed, matches!(self.page, Page::Desktop(_)))
-                    .on_press(Message::Page(Page::Desktop(DesktopPage::Root))),
-                cosmic::nav_button!("input-keyboard-symbolic", "Input Devices", condensed, self.page == Page::InputDevices)
-                    .on_press(Message::Page(Page::InputDevices)),
-                cosmic::nav_button!("preferences-desktop-display-symbolic", "Displays", condensed, self.page == Page::Displays)
-                    .on_press(Message::Page(Page::Displays)),
-                cosmic::nav_button!("battery-full-charged-symbolic", "Power & Battery", condensed, self.page == Page::PowerAndBattery)
-                    .on_press(Message::Page(Page::PowerAndBattery)),
-                cosmic::nav_button!("multimedia-volume-control-symbolic", "Sound", condensed, self.page == Page::Sound)
-                    .on_press(Message::Page(Page::Sound)),
-                cosmic::nav_button!("printer-symbolic", "Printers & Scanners", condensed, self.page == Page::PrintersAndScanners)
-                    .on_press(Message::Page(Page::PrintersAndScanners)),
-                cosmic::nav_button!("preferences-system-privacy-symbolic", "Privacy & Security", condensed, self.page == Page::PrivacyAndSecurity)
-                    .on_press(Message::Page(Page::PrivacyAndSecurity)),
-                cosmic::nav_button!("system-users-symbolic", "System & Accounts", condensed, self.page == Page::SystemAndAccounts)
-                    .on_press(Message::Page(Page::SystemAndAccounts)),
-                cosmic::nav_button!("software-update-available-symbolic", "Updates & Recovery", condensed, self.page == Page::UpdatesAndRecovery)
-                    .on_press(Message::Page(Page::UpdatesAndRecovery)),
-                cosmic::nav_button!("preferences-system-time-symbolic", "Time & Language", condensed, self.page == Page::TimeAndLanguage)
-                    .on_press(Message::Page(Page::TimeAndLanguage)),
-                cosmic::nav_button!("preferences-desktop-accessibility-symbolic", "Accessibility", condensed, self.page == Page::Accessibility)
-                    .on_press(Message::Page(Page::Accessibility)),
-                cosmic::nav_button!("preferences-desktop-apps-symbolic", "Applications", condensed, self.page == Page::Applications)
-                    .on_press(Message::Page(Page::Applications)),
-            ).spacing(14)))
-            .height(Length::Fill)
-            .padding(11)
-            .max_width(300)
-            .style(theme::Container::Custom(nav_bar::nav_bar_sections_style))
-            .into();
-
-            let content: Element<_> = match self.page {
-                Page::Demo => self.view_demo(),
-                Page::Desktop(DesktopPage::Root) => self.view_desktop_root(),
-                Page::Desktop(DesktopPage::DesktopOptions) => self.view_desktop_options(),
-                _ =>  settings::view_column(vec![
-                    text("Unimplemented page").into()
-                ]).into(),
+            let (sidebar_message, sidebar_toggled) = if condensed {
+                (Message::ToggleSidebarCondensed, self.sidebar_toggled_condensed)
+            } else {
+                (Message::ToggleSidebar, self.sidebar_toggled)
             };
+
+            let mut header = header_bar()
+                .title("COSMIC Design System - Iced")
+                .on_close(Message::Close)
+                .on_drag(Message::Drag)
+                .start(
+                    nav_button("Settings")
+                        .on_sidebar_toggled(sidebar_message)
+                        .sidebar_active(sidebar_toggled)
+                        .into()
+                );
+
+            if self.show_maximize {
+                header = header.on_maximize(Message::Maximize);
+            }
+
+            if self.show_minimize {
+                header = header.on_minimize(Message::Minimize);
+            }
+
+            let header = Into::<Element<Message>>::into(header).debug(self.debug);
 
             let mut widgets = Vec::with_capacity(2);
 
-            widgets.push(sidebar.debug(self.debug));
+            if sidebar_toggled {
+                let mut sidebar = container(scrollable(column!(
+                    cosmic::nav_button!("document-properties-symbolic", "Demo", self.page == Page::Demo)
+                        .on_press(Message::Page(Page::Demo)),
+                    cosmic::nav_button!("network-wireless-symbolic", "Wi-Fi", self.page == Page::WiFi)
+                        .on_press(Message::Page(Page::WiFi)),
+                    cosmic::nav_button!("network-workgroup-symbolic", "Networking", self.page == Page::Networking)
+                        .on_press(Message::Page(Page::Networking)),
+                    cosmic::nav_button!("bluetooth-active-symbolic", "Bluetooth", self.page == Page::Bluetooth)
+                        .on_press(Message::Page(Page::Bluetooth)),
+                    cosmic::nav_button!("video-display-symbolic", "Desktop", matches!(self.page, Page::Desktop(_)))
+                        .on_press(Message::Page(Page::Desktop(DesktopPage::Root))),
+                    cosmic::nav_button!("input-keyboard-symbolic", "Input Devices", self.page == Page::InputDevices)
+                        .on_press(Message::Page(Page::InputDevices)),
+                    cosmic::nav_button!("preferences-desktop-display-symbolic", "Displays", self.page == Page::Displays)
+                        .on_press(Message::Page(Page::Displays)),
+                    cosmic::nav_button!("battery-full-charged-symbolic", "Power & Battery", self.page == Page::PowerAndBattery)
+                        .on_press(Message::Page(Page::PowerAndBattery)),
+                    cosmic::nav_button!("multimedia-volume-control-symbolic", "Sound", self.page == Page::Sound)
+                        .on_press(Message::Page(Page::Sound)),
+                    cosmic::nav_button!("printer-symbolic", "Printers & Scanners", self.page == Page::PrintersAndScanners)
+                        .on_press(Message::Page(Page::PrintersAndScanners)),
+                    cosmic::nav_button!("preferences-system-privacy-symbolic", "Privacy & Security", self.page == Page::PrivacyAndSecurity)
+                        .on_press(Message::Page(Page::PrivacyAndSecurity)),
+                    cosmic::nav_button!("system-users-symbolic", "System & Accounts", self.page == Page::SystemAndAccounts)
+                        .on_press(Message::Page(Page::SystemAndAccounts)),
+                    cosmic::nav_button!("software-update-available-symbolic", "Updates & Recovery", self.page == Page::UpdatesAndRecovery)
+                        .on_press(Message::Page(Page::UpdatesAndRecovery)),
+                    cosmic::nav_button!("preferences-system-time-symbolic", "Time & Language", self.page == Page::TimeAndLanguage)
+                        .on_press(Message::Page(Page::TimeAndLanguage)),
+                    cosmic::nav_button!("preferences-desktop-accessibility-symbolic", "Accessibility", self.page == Page::Accessibility)
+                        .on_press(Message::Page(Page::Accessibility)),
+                    cosmic::nav_button!("preferences-desktop-apps-symbolic", "Applications", self.page == Page::Applications)
+                        .on_press(Message::Page(Page::Applications)),
+                ).spacing(14)))
+                .height(Length::Fill)
+                .padding(11)
+                .style(theme::Container::Custom(nav_bar::nav_bar_sections_style));
 
-            widgets.push(
-                scrollable(row![
-                    horizontal_space(Length::Fill),
-                    content.debug(self.debug),
-                    horizontal_space(Length::Fill),
-                ])
-                .into(),
-            );
+                if ! condensed {
+                    sidebar = sidebar.max_width(300)
+                }
 
-            container(row(widgets))
+                let sidebar: Element<_> = sidebar.into();
+                widgets.push(sidebar.debug(self.debug));
+            }
+
+            if ! (condensed && sidebar_toggled) {
+                let content: Element<_> = match self.page {
+                    Page::Demo => self.view_demo(),
+                    Page::Desktop(DesktopPage::Root) => self.view_desktop_root(),
+                    Page::Desktop(DesktopPage::DesktopOptions) => self.view_desktop_options(),
+                    _ =>  settings::view_column(vec![
+                        text("Unimplemented page").into()
+                    ]).into(),
+                };
+
+                widgets.push(
+                    scrollable(row![
+                        horizontal_space(Length::Fill),
+                        content.debug(self.debug),
+                        horizontal_space(Length::Fill),
+                    ])
+                    .into(),
+                );
+            }
+
+            let content = container(row(widgets))
                 .padding([0, 8, 8, 8])
                 .width(Length::Fill)
                 .height(Length::Fill)
-                .into()
-        })
-        .into();
+                .into();
 
-        column(vec![header, content]).into()
+            column(vec![header, content]).into()
+        })
+        .into()
     }
 
     fn theme(&self) -> Theme {

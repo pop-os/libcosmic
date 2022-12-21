@@ -7,44 +7,27 @@ pub mod nav_bar {
 
     #[macro_export]
     macro_rules! nav_button {
-        ($icon: expr, $title:expr, $condensed:expr, $active:expr) => {{
-            if $condensed {
-                $crate::iced::widget::Button::new(
-                    $crate::widget::icon($icon, 22)
+        ($icon: expr, $title:expr, $active:expr) => {{
+            $crate::iced::widget::Button::new(
+                $crate::iced::widget::row!(
+                    $crate::widget::icon($icon, 16)
                         .style(if $active {
                             $crate::theme::Svg::SymbolicLink
                         } else {
                             $crate::theme::Svg::Symbolic
-                        })
+                        }),
+                    $crate::iced::widget::Text::new($title)
+                        .vertical_alignment($crate::iced::alignment::Vertical::Center),
+                    $crate::iced::widget::horizontal_space($crate::iced::Length::Fill),
                 )
-                .padding(8)
-                .style(if $active {
-                    $crate::theme::Button::LinkActive
-                } else {
-                    $crate::theme::Button::Text
-                })
+                .padding([4, 16])
+                .spacing(8)
+            )
+            .style(if $active {
+                $crate::theme::Button::LinkActive
             } else {
-                $crate::iced::widget::Button::new(
-                    $crate::iced::widget::row!(
-                        $crate::widget::icon($icon, 16)
-                            .style(if $active {
-                                $crate::theme::Svg::SymbolicLink
-                            } else {
-                                $crate::theme::Svg::Symbolic
-                            }),
-                        $crate::iced::widget::Text::new($title)
-                            .vertical_alignment($crate::iced::alignment::Vertical::Center),
-                        $crate::iced::widget::horizontal_space($crate::iced::Length::Fill),
-                    )
-                    .padding([4, 16])
-                    .spacing(8)
-                )
-                .style(if $active {
-                    $crate::theme::Button::LinkActive
-                } else {
-                    $crate::theme::Button::Text
-                })
-            }
+                $crate::theme::Button::Text
+            })
         }};
     }
 
