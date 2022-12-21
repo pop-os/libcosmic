@@ -1,7 +1,7 @@
 use cosmic::{
     Element,
-    iced::widget::{column, text, toggler},
-    widget::{list_column, settings},
+    iced::widget::{column, text},
+    widget::{list_column, settings, toggler},
 };
 use super::{Message, Page, Window};
 

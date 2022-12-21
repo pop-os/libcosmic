@@ -1,8 +1,8 @@
 use cosmic::{
     Element,
     iced::{Alignment, Length},
-    iced::widget::{checkbox, pick_list, progress_bar, radio, row, slider, toggler},
-    widget::{button, settings},
+    iced::widget::{checkbox, pick_list, progress_bar, radio, row, slider},
+    widget::{button, settings, toggler},
     theme::{Button as ButtonTheme, Theme},
 };
 
@@ -29,7 +29,7 @@ impl Window {
                 .add(settings::item("Debug theme", choose_theme))
                 .add(settings::item(
                     "Debug layout",
-                    toggler(String::from("Debug layout"), self.debug, Message::Debug)
+                    toggler(None, self.debug, Message::Debug)
                 ))
                 .into(),
 
