@@ -14,6 +14,8 @@ use sctk::reexports::protocols::xdg::shell::client::xdg_positioner::{Anchor, Gra
 
 use crate::Renderer;
 
+pub use cosmic_panel_config;
+
 const APPLET_PADDING: u32 = 8;
 
 #[derive(Debug, Clone)]
