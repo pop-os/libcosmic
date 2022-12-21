@@ -198,94 +198,95 @@ impl Window {
 
     fn view_desktop_root(&self) -> Element<Message> {
         settings::view_column(vec![
-            text("Desktop").size(32).into(),
+            text("Desktop").size(30).into(),
 
             //TODO: simplify these buttons!
+            column!(
+                iced::widget::Button::new(
+                    container(settings::item_row(vec![
+                        icon("video-display-symbolic", 20).style(theme::Svg::Symbolic).into(),
+                        column!(
+                            text("Desktop Options").size(18),
+                            text("Super Key action, hot corners, window control options.").size(12),
+                        ).spacing(2).into(),
+                        horizontal_space(iced::Length::Fill).into(),
+                        icon("go-next-symbolic", 20).style(theme::Svg::Symbolic).into(),
+                    ]).spacing(16))
+                    .padding([20, 24])
+                    .style(theme::Container::Custom(list::column::style))
+                )
+                .padding(0)
+                .style(theme::Button::Transparent)
+                .on_press(Message::Page(Page::Desktop(DesktopPage::DesktopOptions))),
 
-            iced::widget::Button::new(
-                container(settings::item_row(vec![
-                    icon("video-display-symbolic", 16).style(theme::Svg::Symbolic).into(),
-                    column!(
-                        text("Desktop Options").size(16),
-                        text("Super Key action, hot corners, window control options.").size(12),
-                    ).into(),
-                    horizontal_space(iced::Length::Fill).into(),
-                    icon("go-next-symbolic", 16).style(theme::Svg::Symbolic).into(),
-                ]).spacing(16))
-                .padding([20, 32])
-                .style(theme::Container::Custom(list::column::style))
-            )
-            .style(theme::Button::Transparent)
-            .on_press(Message::Page(Page::Desktop(DesktopPage::DesktopOptions)))
-            .into(),
+                iced::widget::Button::new(
+                    container(settings::item_row(vec![
+                        icon("preferences-desktop-wallpaper-symbolic", 20).style(theme::Svg::Symbolic).into(),
+                        column!(
+                            text("Wallpaper").size(18),
+                            text("Background images, colors, and slideshow options.").size(12),
+                        ).spacing(2).into(),
+                        horizontal_space(iced::Length::Fill).into(),
+                        icon("go-next-symbolic", 20).style(theme::Svg::Symbolic).into(),
+                    ]).spacing(16))
+                    .padding([20, 24])
+                    .style(theme::Container::Custom(list::column::style))
+                )
+                .padding(0)
+                .style(theme::Button::Transparent)
+                .on_press(Message::Page(Page::Desktop(DesktopPage::Wallpaper))),
 
-            iced::widget::Button::new(
-                container(settings::item_row(vec![
-                    icon("preferences-desktop-wallpaper-symbolic", 16).style(theme::Svg::Symbolic).into(),
-                    column!(
-                        text("Wallpaper").size(16),
-                        text("Background images, colors, and slideshow options.").size(12),
-                    ).into(),
-                    horizontal_space(iced::Length::Fill).into(),
-                    icon("go-next-symbolic", 16).style(theme::Svg::Symbolic).into(),
-                ]).spacing(16))
-                .padding([20, 32])
-                .style(theme::Container::Custom(list::column::style))
-            )
-            .style(theme::Button::Transparent)
-            .on_press(Message::Page(Page::Desktop(DesktopPage::Wallpaper)))
-            .into(),
+                iced::widget::Button::new(
+                    container(settings::item_row(vec![
+                        icon("preferences-pop-desktop-appearance-symbolic", 20).style(theme::Svg::Symbolic).into(),
+                        column!(
+                            text("Appearance").size(18),
+                            text("Accent colors and COSMIC theming").size(12),
+                        ).spacing(2).into(),
+                        horizontal_space(iced::Length::Fill).into(),
+                        icon("go-next-symbolic", 20).style(theme::Svg::Symbolic).into(),
+                    ]).spacing(16))
+                    .padding([20, 24])
+                    .style(theme::Container::Custom(list::column::style))
+                )
+                .padding(0)
+                .style(theme::Button::Transparent)
+                .on_press(Message::Page(Page::Desktop(DesktopPage::Appearance))),
 
-            iced::widget::Button::new(
-                container(settings::item_row(vec![
-                    icon("preferences-pop-desktop-appearance-symbolic", 16).style(theme::Svg::Symbolic).into(),
-                    column!(
-                        text("Appearance").size(16),
-                        text("Accent colors and COSMIC theming").size(12),
-                    ).into(),
-                    horizontal_space(iced::Length::Fill).into(),
-                    icon("go-next-symbolic", 16).style(theme::Svg::Symbolic).into(),
-                ]).spacing(16))
-                .padding([20, 32])
-                .style(theme::Container::Custom(list::column::style))
-            )
-            .style(theme::Button::Transparent)
-            .on_press(Message::Page(Page::Desktop(DesktopPage::Appearance)))
-            .into(),
+                iced::widget::Button::new(
+                    container(settings::item_row(vec![
+                        icon("preferences-pop-desktop-dock-symbolic", 20).style(theme::Svg::Symbolic).into(),
+                        column!(
+                            text("Dock & Top Panel").size(18),
+                            text("Customize size, positions, and more for Dock and Top Panel.").size(12),
+                        ).spacing(2).into(),
+                        horizontal_space(iced::Length::Fill).into(),
+                        icon("go-next-symbolic", 20).style(theme::Svg::Symbolic).into(),
+                    ]).spacing(16))
+                    .padding([20, 24])
+                    .style(theme::Container::Custom(list::column::style))
+                )
+                .padding(0)
+                .style(theme::Button::Transparent)
+                .on_press(Message::Page(Page::Desktop(DesktopPage::DockAndTopPanel))),
 
-            iced::widget::Button::new(
-                container(settings::item_row(vec![
-                    icon("preferences-pop-desktop-dock-symbolic", 16).style(theme::Svg::Symbolic).into(),
-                    column!(
-                        text("Dock & Top Panel").size(16),
-                        text("Customize size, positions, and more for Dock and Top Panel.").size(12),
-                    ).into(),
-                    horizontal_space(iced::Length::Fill).into(),
-                    icon("go-next-symbolic", 16).style(theme::Svg::Symbolic).into(),
-                ]).spacing(16))
-                .padding([20, 32])
-                .style(theme::Container::Custom(list::column::style))
-            )
-            .style(theme::Button::Transparent)
-            .on_press(Message::Page(Page::Desktop(DesktopPage::DockAndTopPanel)))
-            .into(),
-
-            iced::widget::Button::new(
-                container(settings::item_row(vec![
-                    icon("preferences-pop-desktop-workspaces-symbolic", 16).style(theme::Svg::Symbolic).into(),
-                    column!(
-                        text("Workspaces").size(16),
-                        text("Set workspace number, behavior, and placement.").size(12),
-                    ).into(),
-                    horizontal_space(iced::Length::Fill).into(),
-                    icon("go-next-symbolic", 16).style(theme::Svg::Symbolic).into(),
-                ]).spacing(16))
-                .padding([20, 32])
-                .style(theme::Container::Custom(list::column::style))
-            )
-            .style(theme::Button::Transparent)
-            .on_press(Message::Page(Page::Desktop(DesktopPage::Workspaces)))
-            .into(),
+                iced::widget::Button::new(
+                    container(settings::item_row(vec![
+                        icon("preferences-pop-desktop-workspaces-symbolic", 20).style(theme::Svg::Symbolic).into(),
+                        column!(
+                            text("Workspaces").size(18),
+                            text("Set workspace number, behavior, and placement.").size(12),
+                        ).spacing(2).into(),
+                        horizontal_space(iced::Length::Fill).into(),
+                        icon("go-next-symbolic", 20).style(theme::Svg::Symbolic).into(),
+                    ]).spacing(16))
+                    .padding([20, 24])
+                    .style(theme::Container::Custom(list::column::style))
+                )
+                .padding(0)
+                .style(theme::Button::Transparent)
+                .on_press(Message::Page(Page::Desktop(DesktopPage::Workspaces))),
+            ).spacing(16).into()
         ])
         .into()
     }
