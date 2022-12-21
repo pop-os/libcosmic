@@ -240,6 +240,33 @@ impl Window {
         .into()
     }
 
+    fn view_desktop(&self, desktop_page: DesktopPage) -> Element<Message> {
+        match desktop_page {
+            DesktopPage::Root => self.view_desktop_root(),
+            DesktopPage::DesktopOptions => self.view_desktop_options(),
+            _ =>  settings::view_column(vec![
+                column!(
+                    iced::widget::Button::new(row!(
+                        icon("go-previous-symbolic", 16).style(theme::Svg::SymbolicLink),
+                        text("Desktop").size(16),
+                    ))
+                    .padding(0)
+                    .style(theme::Button::Link)
+                    .on_press(Message::Page(Page::Desktop(DesktopPage::Root))),
+
+                    row!(
+                        text(desktop_page.title()).size(30),
+                        horizontal_space(Length::Fill),
+                    ),
+                )
+                .spacing(10)
+                .into(),
+
+                text("Unimplemented desktop page").into(),
+            ]).into(),
+        }
+    }
+
     fn view_desktop_root(&self) -> Element<Message> {
         //TODO: rename and move to libcosmic
         let desktop_page_button = |desktop_page: DesktopPage, icon_name, description| {
@@ -474,8 +501,7 @@ impl Application for Window {
             if ! (condensed && sidebar_toggled) {
                 let content: Element<_> = match self.page {
                     Page::Demo => self.view_demo(),
-                    Page::Desktop(DesktopPage::Root) => self.view_desktop_root(),
-                    Page::Desktop(DesktopPage::DesktopOptions) => self.view_desktop_options(),
+                    Page::Desktop(desktop_page) => self.view_desktop(desktop_page),
                     _ =>  settings::view_column(vec![
                         row!(
                             text(self.page.title()).size(30),
