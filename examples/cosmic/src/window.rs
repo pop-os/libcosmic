@@ -10,7 +10,7 @@ use cosmic::{
     iced_lazy::responsive,
     iced_winit::window::{close, drag, toggle_maximize, minimize},
     theme::{self, Theme},
-    widget::{button, icon, list, nav_bar, nav_button, header_bar, settings, scrollable, toggler, spin_button::{SpinButtonModel, SpinMessage}},
+    widget::{button, icon, list, list_column, nav_bar, nav_button, header_bar, settings, scrollable, toggler, spin_button::{SpinButtonModel, SpinMessage}},
     Element,
     ElementExt,
 };
@@ -465,7 +465,8 @@ impl Window {
         );
 
         settings::view_column(vec![
-            text("Demo").size(30).into(),
+            self.page_title(Page::Demo),
+
             settings::view_section("Debug")
                 .add(settings::item("Debug theme", choose_theme))
                 .add(settings::item(
@@ -473,6 +474,7 @@ impl Window {
                     toggler(String::from("Debug layout"), self.debug, Message::Debug)
                 ))
                 .into(),
+
             settings::view_section("Buttons")
                 .add(settings::item_row(vec![
                     button(ButtonTheme::Primary)
@@ -504,6 +506,7 @@ impl Window {
                     button(ButtonTheme::Text).text("Text").into(),
                 ]))
                 .into(),
+
             settings::view_section("Controls")
                 .add(settings::item("Toggler", toggler(None, self.toggler_value, Message::TogglerToggled)))
                 .add(settings::item(
@@ -536,6 +539,22 @@ impl Window {
                 .into()
         ])
         .into()
+    }
+
+    fn view_bluetooth(&self) -> Element<Message> {
+        settings::view_column(vec![
+            self.page_title(Page::Bluetooth),
+
+            column!(
+                list_column()
+                    .add(settings::item("Bluetooth", toggler(None, self.toggler_value, Message::TogglerToggled))),
+                text("Now visible as \"TODO\", just kidding")
+            ).spacing(8).into(),
+
+            settings::view_section("Devices")
+                .add(settings::item("No devices found", text("")))
+                .into()
+        ]).into()
     }
 
     fn view_desktop_options(&self) -> Element<Message> {
@@ -571,6 +590,10 @@ impl Window {
                 icon("distributor-logo", 78),
                 horizontal_space(Length::Fill),
             ).into(),
+
+            list_column()
+                .add(settings::item("Device name", text("TODO")))
+                .into(),
 
             settings::view_section("Hardware")
                 .add(settings::item("Hardware model", text("TODO")))
@@ -740,6 +763,7 @@ impl Application for Window {
                         ).spacing(16).into()
                     ]).into(),
                     Page::Networking(Some(sub_page)) => self.view_unimplemented_sub_page(sub_page),
+                    Page::Bluetooth => self.view_bluetooth(),
                     Page::Desktop(None) => settings::view_column(vec![
                         self.page_title(self.page),
                         column!(
