@@ -20,7 +20,8 @@ pub mod nav_bar {
                         .vertical_alignment($crate::iced::alignment::Vertical::Center),
                     $crate::iced::widget::horizontal_space($crate::iced::Length::Fill),
                 )
-                .padding([4, 16])
+                // Adjusted down due to border radius?
+                .padding([5, 11])
                 .spacing(8)
             )
             .style(if $active {

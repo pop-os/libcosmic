@@ -167,7 +167,7 @@ impl Window {
         );
 
         settings::view_column(vec![
-            text("Demo").size(32).into(),
+            text("Demo").size(30).into(),
             settings::view_section("Debug")
                 .add(settings::item("Debug theme", choose_theme))
                 .add(settings::item(
@@ -316,7 +316,7 @@ impl Window {
                 .padding(0)
                 .style(theme::Button::Link)
                 .on_press(Message::Page(Page::Desktop(DesktopPage::Root))),
-                text("Desktop Options").size(32),
+                text("Desktop Options").size(30),
             )
             .spacing(10)
             .into(),
@@ -460,7 +460,7 @@ impl Application for Window {
                     sidebar_button(Page::Applications, "preferences-desktop-apps-symbolic"),
                 ).spacing(14)))
                 .height(Length::Fill)
-                .padding(11)
+                .padding(8)
                 .style(theme::Container::Custom(nav_bar::nav_bar_sections_style));
 
                 if ! condensed {
@@ -477,7 +477,11 @@ impl Application for Window {
                     Page::Desktop(DesktopPage::Root) => self.view_desktop_root(),
                     Page::Desktop(DesktopPage::DesktopOptions) => self.view_desktop_options(),
                     _ =>  settings::view_column(vec![
-                        text("Unimplemented page").into()
+                        row!(
+                            text(self.page.title()).size(30),
+                            horizontal_space(Length::Fill),
+                        ).into(),
+                        text("Unimplemented page").into(),
                     ]).into(),
                 };
 
