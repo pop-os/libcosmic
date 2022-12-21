@@ -3,19 +3,35 @@
 
 use cosmic::{
     iced_native::window,
-    iced::widget::{
-        column, container, horizontal_space, pick_list, progress_bar, radio, row, slider, checkbox, text,
-    },
-    iced::{self, Alignment, Application, Command, Length},
+    iced::widget::{column, container, horizontal_space, row, text},
+    iced::{self, Application, Command, Length},
     iced_lazy::responsive,
     iced_winit::window::{close, drag, toggle_maximize, minimize},
     theme::{self, Theme},
-    widget::{button, icon, list, list_column, nav_bar, nav_button, header_bar, settings, scrollable, toggler, spin_button::{SpinButtonModel, SpinMessage}},
+    widget::{icon, list, nav_bar, nav_button, header_bar, settings, scrollable, spin_button::{SpinButtonModel, SpinMessage}},
     Element,
     ElementExt,
 };
 use std::vec;
-use theme::Button as ButtonTheme;
+
+mod bluetooth;
+
+mod demo;
+
+use self::desktop::DesktopPage;
+mod desktop;
+
+use self::input_devices::InputDevicesPage;
+mod input_devices;
+
+use self::networking::NetworkingPage;
+mod networking;
+
+use self::system_and_accounts::SystemAndAccountsPage;
+mod system_and_accounts;
+
+use self::time_and_language::TimeAndLanguagePage;
+mod time_and_language;
 
 pub trait SubPage {
     fn title(&self) -> &'static str;
@@ -23,240 +39,6 @@ pub trait SubPage {
     fn icon_name(&self) -> &'static str;
     fn parent_page(&self) -> Page;
     fn into_page(self) -> Page;
-}
-
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub enum NetworkingPage {
-    Wired,
-    OnlineAccounts,
-}
-
-impl SubPage for NetworkingPage {
-    //TODO: translate
-    fn title(&self) -> &'static str {
-        use NetworkingPage::*;
-        match self {
-            Wired => "Wired",
-            OnlineAccounts => "Online Accounts",
-        }
-    }
-
-    //TODO: translate
-    fn description(&self) -> &'static str {
-        use NetworkingPage::*;
-        match self {
-            Wired => "Wired connection, connection profiles",
-            OnlineAccounts => "Add accounts, IMAP and SMTP, enterprise logins",
-        }
-    }
-
-    fn icon_name(&self) -> &'static str {
-        use NetworkingPage::*;
-        match self {
-            Wired => "network-workgroup-symbolic",
-            OnlineAccounts => "goa-panel-symbolic", //TODO: new icon
-        }
-    }
-
-    fn parent_page(&self) -> Page {
-        Page::Networking(None)
-    }
-
-    fn into_page(self) -> Page {
-        Page::Networking(Some(self))
-    }
-}
-
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub enum DesktopPage {
-    DesktopOptions,
-    Wallpaper,
-    Appearance,
-    DockAndTopPanel,
-    Workspaces,
-    Notifications,
-}
-
-impl SubPage for DesktopPage {
-    //TODO: translate
-    fn title(&self) -> &'static str {
-        use DesktopPage::*;
-        match self {
-            DesktopOptions => "Desktop Options",
-            Wallpaper => "Wallpaper",
-            Appearance => "Appearance",
-            DockAndTopPanel => "Dock & Top Panel",
-            Workspaces => "Workspaces",
-            Notifications => "Notifications",
-        }
-    }
-
-    //TODO: translate
-    fn description(&self) -> &'static str {
-        use DesktopPage::*;
-        match self {
-            DesktopOptions => "Super Key action, hot corners, window control options.",
-            Wallpaper => "Background images, colors, and slideshow options.",
-            Appearance => "Accent colors and COSMIC theming",
-            DockAndTopPanel => "Customize size, positions, and more for Dock and Top Panel.",
-            Workspaces => "Set workspace number, behavior, and placement.",
-            Notifications => "Do Not Disturb, lockscreen notifications, and per-application settings.",
-        }
-    }
-
-    fn icon_name(&self) -> &'static str {
-        use DesktopPage::*;
-        match self {
-            DesktopOptions => "video-display-symbolic",
-            Wallpaper => "preferences-desktop-wallpaper-symbolic",
-            Appearance => "preferences-pop-desktop-appearance-symbolic",
-            DockAndTopPanel => "preferences-pop-desktop-dock-symbolic",
-            Workspaces => "preferences-pop-desktop-workspaces-symbolic",
-            Notifications => "preferences-system-notifications-symbolic",
-        }
-    }
-
-    fn parent_page(&self) -> Page {
-        Page::Desktop(None)
-    }
-
-    fn into_page(self) -> Page {
-        Page::Desktop(Some(self))
-    }
-}
-
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub enum InputDevicesPage {
-    Keyboard,
-    Touchpad,
-    Mouse,
-}
-
-impl SubPage for InputDevicesPage {
-    //TODO: translate
-    fn title(&self) -> &'static str {
-        use InputDevicesPage::*;
-        match self {
-            Keyboard => "Keyboard",
-            Touchpad => "Touchpad",
-            Mouse => "Mouse",
-        }
-    }
-
-    //TODO: translate
-    fn description(&self) -> &'static str {
-        use InputDevicesPage::*;
-        match self {
-            Keyboard => "Input sources, switching, special character entry, shortcuts.",
-            Touchpad => "Touchpad speed, click options, gestures.",
-            Mouse => "Mouse speed, acceleration, natural scrolling.",
-        }
-    }
-
-    fn icon_name(&self) -> &'static str {
-        use InputDevicesPage::*;
-        match self {
-            Keyboard => "input-keyboard-symbolic",
-            Touchpad => "input-touchpad-symbolic",
-            Mouse => "input-mouse-symbolic",
-        }
-    }
-
-    fn parent_page(&self) -> Page {
-        Page::InputDevices(None)
-    }
-
-    fn into_page(self) -> Page {
-        Page::InputDevices(Some(self))
-    }
-}
-
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub enum SystemAndAccountsPage {
-    Users,
-    About,
-    Firmware,
-}
-
-impl SubPage for SystemAndAccountsPage {
-    //TODO: translate
-    fn title(&self) -> &'static str {
-        use SystemAndAccountsPage::*;
-        match self {
-            Users => "Users",
-            About => "About",
-            Firmware => "Firmware",
-        }
-    }
-
-    //TODO: translate
-    fn description(&self) -> &'static str {
-        use SystemAndAccountsPage::*;
-        match self {
-            Users => "Authentication and login, lock screen.",
-            About => "Device name, hardware information, operating system defaults.",
-            Firmware => "Firmware details.",
-        }
-    }
-
-    fn icon_name(&self) -> &'static str {
-        use SystemAndAccountsPage::*;
-        match self {
-            Users => "system-users-symbolic",
-            About => "help-about-symbolic",
-            Firmware => "firmware-manager-symbolic",
-        }
-    }
-
-    fn parent_page(&self) -> Page {
-        Page::SystemAndAccounts(None)
-    }
-
-    fn into_page(self) -> Page {
-        Page::SystemAndAccounts(Some(self))
-    }
-}
-
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub enum TimeAndLanguagePage {
-    DateAndTime,
-    RegionAndLanguage,
-}
-
-impl SubPage for TimeAndLanguagePage {
-    //TODO: translate
-    fn title(&self) -> &'static str {
-        use TimeAndLanguagePage::*;
-        match self {
-            DateAndTime => "Date & Time",
-            RegionAndLanguage => "Region & Language",
-        }
-    }
-
-    //TODO: translate
-    fn description(&self) -> &'static str {
-        use TimeAndLanguagePage::*;
-        match self {
-            DateAndTime => "Time zone, automatic clock settings, and some time formatting.",
-            RegionAndLanguage => "Format dates, times, and numbers based on your region",
-        }
-    }
-
-    fn icon_name(&self) -> &'static str {
-        use TimeAndLanguagePage::*;
-        match self {
-            DateAndTime => "preferences-system-time-symbolic",
-            RegionAndLanguage => "preferences-desktop-locale-symbolic",
-        }
-    }
-
-    fn parent_page(&self) -> Page {
-        Page::TimeAndLanguage(None)
-    }
-
-    fn into_page(self) -> Page {
-        Page::TimeAndLanguage(Some(self))
-    }
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -329,7 +111,7 @@ impl Page {
 impl Default for Page {
     fn default() -> Page {
         //TODO: what should the default page be?
-        Page::SystemAndAccounts(Some(SystemAndAccountsPage::About))
+        Page::Desktop(None)
     }
 }
 
@@ -448,171 +230,6 @@ impl Window {
         settings::view_column(vec![
             self.parent_page_button(sub_page),
             text("We haven't created that panel yet, and/or it is using a similar idea as current Pop! designs.").into(),
-        ]).into()
-    }
-
-    fn view_demo(&self) -> Element<Message> {
-        let choose_theme = [Theme::Light, Theme::Dark].iter().fold(
-            row![].spacing(10).align_items(Alignment::Center),
-            |row, theme| {
-                row.push(radio(
-                    format!("{:?}", theme),
-                    *theme,
-                    Some(self.theme),
-                    Message::ThemeChanged,
-                ))
-            },
-        );
-
-        settings::view_column(vec![
-            self.page_title(Page::Demo),
-
-            settings::view_section("Debug")
-                .add(settings::item("Debug theme", choose_theme))
-                .add(settings::item(
-                    "Debug layout",
-                    toggler(String::from("Debug layout"), self.debug, Message::Debug)
-                ))
-                .into(),
-
-            settings::view_section("Buttons")
-                .add(settings::item_row(vec![
-                    button(ButtonTheme::Primary)
-                        .text("Primary")
-                        .on_press(Message::ButtonPressed)
-                        .into(),
-                    button(ButtonTheme::Secondary)
-                        .text("Secondary")
-                        .on_press(Message::ButtonPressed)
-                        .into(),
-                    button(ButtonTheme::Positive)
-                        .text("Positive")
-                        .on_press(Message::ButtonPressed)
-                        .into(),
-                    button(ButtonTheme::Destructive)
-                        .text("Destructive")
-                        .on_press(Message::ButtonPressed)
-                        .into(),
-                    button(ButtonTheme::Text)
-                        .text("Text")
-                        .on_press(Message::ButtonPressed)
-                        .into()
-                ]))
-                .add(settings::item_row(vec![
-                    button(ButtonTheme::Primary).text("Primary").into(),
-                    button(ButtonTheme::Secondary).text("Secondary").into(),
-                    button(ButtonTheme::Positive).text("Positive").into(),
-                    button(ButtonTheme::Destructive).text("Destructive").into(),
-                    button(ButtonTheme::Text).text("Text").into(),
-                ]))
-                .into(),
-
-            settings::view_section("Controls")
-                .add(settings::item("Toggler", toggler(None, self.toggler_value, Message::TogglerToggled)))
-                .add(settings::item(
-                    "Pick List (TODO)",
-                    pick_list(
-                        vec!["Option 1", "Option 2", "Option 3", "Option 4",],
-                        self.pick_list_selected,
-                        Message::PickListSelected
-                    )
-                    .padding([8, 0, 8, 16])
-                ))
-                .add(settings::item(
-                    "Slider",
-                    slider(0.0..=100.0, self.slider_value, Message::SliderChanged)
-                        .width(Length::Units(250))
-                ))
-                .add(settings::item(
-                    "Progress",
-                    progress_bar(0.0..=100.0, self.slider_value)
-                        .width(Length::Units(250))
-                        .height(Length::Units(4))
-                ))
-                .add(settings::item_row(vec![
-                    checkbox("Checkbox", self.checkbox_value, Message::CheckboxToggled).into()
-                ]))
-                .add(settings::item(
-                    format!("Spin Button (Range {}:{})", self.spin_button.min, self.spin_button.max),
-                    self.spin_button.view(Message::SpinButton),
-                ))
-                .into()
-        ])
-        .into()
-    }
-
-    fn view_bluetooth(&self) -> Element<Message> {
-        settings::view_column(vec![
-            self.page_title(Page::Bluetooth),
-
-            column!(
-                list_column()
-                    .add(settings::item("Bluetooth", toggler(None, self.toggler_value, Message::TogglerToggled))),
-                text("Now visible as \"TODO\", just kidding")
-            ).spacing(8).into(),
-
-            settings::view_section("Devices")
-                .add(settings::item("No devices found", text("")))
-                .into()
-        ]).into()
-    }
-
-    fn view_desktop_options(&self) -> Element<Message> {
-        settings::view_column(vec![
-            self.parent_page_button(DesktopPage::DesktopOptions),
-
-            settings::view_section("Super Key Action")
-                .add(settings::item("TODO", horizontal_space(Length::Fill)))
-                .into(),
-
-            settings::view_section("Hot Corner")
-                .add(settings::item("Enable top-left hot corner for Workspaces", toggler(None, self.toggler_value, Message::TogglerToggled)))
-                .into(),
-
-            settings::view_section("Top Panel")
-                .add(settings::item("Show Workspaces Button", toggler(None, self.toggler_value, Message::TogglerToggled)))
-                .add(settings::item("Show Applications Button", toggler(None, self.toggler_value, Message::TogglerToggled)))
-                .into(),
-
-            settings::view_section("Window Controls")
-                .add(settings::item("Show Minimize Button", toggler(None, self.toggler_value, Message::TogglerToggled)))
-                .add(settings::item("Show Maximize Button", toggler(None, self.toggler_value, Message::TogglerToggled)))
-                .into(),
-        ]).into()
-    }
-
-    fn view_system_and_accounts_about(&self) -> Element<Message> {
-        settings::view_column(vec![
-            self.parent_page_button(SystemAndAccountsPage::About),
-
-            row!(
-                horizontal_space(Length::Fill),
-                icon("distributor-logo", 78),
-                horizontal_space(Length::Fill),
-            ).into(),
-
-            list_column()
-                .add(settings::item("Device name", text("TODO")))
-                .into(),
-
-            settings::view_section("Hardware")
-                .add(settings::item("Hardware model", text("TODO")))
-                .add(settings::item("Memory", text("TODO")))
-                .add(settings::item("Processor", text("TODO")))
-                .add(settings::item("Graphics", text("TODO")))
-                .add(settings::item("Disk Capacity", text("TODO")))
-                .into(),
-
-            settings::view_section("Operating System")
-                .add(settings::item("Operating system", text("TODO")))
-                .add(settings::item("Operating system architecture", text("TODO")))
-                .add(settings::item("Desktop environment", text("TODO")))
-                .add(settings::item("Windowing system", text("TODO")))
-                .into(),
-
-            settings::view_section("Related settings")
-                .add(settings::item("Get support", text("TODO")))
-                .into(),
         ]).into()
     }
 }
