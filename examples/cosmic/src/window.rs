@@ -21,7 +21,50 @@ pub trait SubPage {
     fn title(&self) -> &'static str;
     fn description(&self) -> &'static str;
     fn icon_name(&self) -> &'static str;
+    fn parent_page(&self) -> Page;
     fn into_page(self) -> Page;
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum NetworkingPage {
+    Wired,
+    OnlineAccounts,
+}
+
+impl SubPage for NetworkingPage {
+    //TODO: translate
+    fn title(&self) -> &'static str {
+        use NetworkingPage::*;
+        match self {
+            Wired => "Wired",
+            OnlineAccounts => "Online Accounts",
+        }
+    }
+
+    //TODO: translate
+    fn description(&self) -> &'static str {
+        use NetworkingPage::*;
+        match self {
+            Wired => "Wired connection, connection profiles",
+            OnlineAccounts => "Add accounts, IMAP and SMTP, enterprise logins",
+        }
+    }
+
+    fn icon_name(&self) -> &'static str {
+        use NetworkingPage::*;
+        match self {
+            Wired => "network-workgroup-symbolic",
+            OnlineAccounts => "goa-panel-symbolic", //TODO: new icon
+        }
+    }
+
+    fn parent_page(&self) -> Page {
+        Page::Networking(None)
+    }
+
+    fn into_page(self) -> Page {
+        Page::Networking(Some(self))
+    }
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -73,8 +116,58 @@ impl SubPage for DesktopPage {
         }
     }
 
+    fn parent_page(&self) -> Page {
+        Page::Desktop(None)
+    }
+
     fn into_page(self) -> Page {
         Page::Desktop(Some(self))
+    }
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum InputDevicesPage {
+    Keyboard,
+    Touchpad,
+    Mouse,
+}
+
+impl SubPage for InputDevicesPage {
+    //TODO: translate
+    fn title(&self) -> &'static str {
+        use InputDevicesPage::*;
+        match self {
+            Keyboard => "Keyboard",
+            Touchpad => "Touchpad",
+            Mouse => "Mouse",
+        }
+    }
+
+    //TODO: translate
+    fn description(&self) -> &'static str {
+        use InputDevicesPage::*;
+        match self {
+            Keyboard => "Input sources, switching, special character entry, shortcuts.",
+            Touchpad => "Touchpad speed, click options, gestures.",
+            Mouse => "Mouse speed, acceleration, natural scrolling.",
+        }
+    }
+
+    fn icon_name(&self) -> &'static str {
+        use InputDevicesPage::*;
+        match self {
+            Keyboard => "input-keyboard-symbolic",
+            Touchpad => "input-touchpad-symbolic",
+            Mouse => "input-mouse-symbolic",
+        }
+    }
+
+    fn parent_page(&self) -> Page {
+        Page::InputDevices(None)
+    }
+
+    fn into_page(self) -> Page {
+        Page::InputDevices(Some(self))
     }
 }
 
@@ -109,10 +202,14 @@ impl SubPage for SystemAndAccountsPage {
     fn icon_name(&self) -> &'static str {
         use SystemAndAccountsPage::*;
         match self {
-            Users => "",
-            About => "",
-            Firmware => "",
+            Users => "system-users-symbolic",
+            About => "help-about-symbolic",
+            Firmware => "firmware-manager-symbolic",
         }
+    }
+
+    fn parent_page(&self) -> Page {
+        Page::SystemAndAccounts(None)
     }
 
     fn into_page(self) -> Page {
@@ -148,9 +245,13 @@ impl SubPage for TimeAndLanguagePage {
     fn icon_name(&self) -> &'static str {
         use TimeAndLanguagePage::*;
         match self {
-            DateAndTime => "",
-            RegionAndLanguage => "",
+            DateAndTime => "preferences-system-time-symbolic",
+            RegionAndLanguage => "preferences-desktop-locale-symbolic",
         }
+    }
+
+    fn parent_page(&self) -> Page {
+        Page::TimeAndLanguage(None)
     }
 
     fn into_page(self) -> Page {
@@ -162,10 +263,10 @@ impl SubPage for TimeAndLanguagePage {
 pub enum Page {
     Demo,
     WiFi,
-    Networking,
+    Networking(Option<NetworkingPage>),
     Bluetooth,
     Desktop(Option<DesktopPage>),
-    InputDevices,
+    InputDevices(Option<InputDevicesPage>),
     Displays,
     PowerAndBattery,
     Sound,
@@ -185,10 +286,10 @@ impl Page {
         match self {
             Demo => "Demo",
             WiFi => "Wi-Fi",
-            Networking => "Networking",
+            Networking(_) => "Networking",
             Bluetooth => "Bluetooth",
             Desktop(_) => "Desktop",
-            InputDevices => "Input Devices",
+            InputDevices(_) => "Input Devices",
             Displays => "Displays",
             PowerAndBattery => "Power & Battery",
             Sound => "Sound",
@@ -207,10 +308,10 @@ impl Page {
         match self {
             Demo => "document-properties-symbolic",
             WiFi => "network-wireless-symbolic",
-            Networking => "network-workgroup-symbolic",
+            Networking(_) => "network-workgroup-symbolic",
             Bluetooth => "bluetooth-active-symbolic",
             Desktop(_) => "video-display-symbolic",
-            InputDevices => "input-keyboard-symbolic",
+            InputDevices(_) => "input-keyboard-symbolic",
             Displays => "preferences-desktop-display-symbolic",
             PowerAndBattery => "battery-full-charged-symbolic",
             Sound => "multimedia-volume-control-symbolic",
@@ -289,6 +390,67 @@ pub enum Message {
 }
 
 impl Window {
+    fn page_title(&self, page: Page) -> Element<Message> {
+        row!(
+            text(page.title()).size(30),
+            horizontal_space(Length::Fill),
+        ).into()
+    }
+
+    fn parent_page_button(&self, sub_page: impl SubPage) -> Element<Message> {
+        let page = sub_page.parent_page();
+        column!(
+            iced::widget::Button::new(row!(
+                icon("go-previous-symbolic", 16).style(theme::Svg::SymbolicLink),
+                text(page.title()).size(16),
+            ))
+            .padding(0)
+            .style(theme::Button::Link)
+            .on_press(Message::Page(page)),
+
+            row!(
+                text(sub_page.title()).size(30),
+                horizontal_space(Length::Fill),
+            ),
+        )
+        .spacing(10)
+        .into()
+    }
+
+    fn sub_page_button(&self, sub_page: impl SubPage) -> Element<Message> {
+        iced::widget::Button::new(
+            container(settings::item_row(vec![
+                icon(sub_page.icon_name(), 20).style(theme::Svg::Symbolic).into(),
+                column!(
+                    text(sub_page.title()).size(18),
+                    text(sub_page.description()).size(12),
+                ).spacing(2).into(),
+                horizontal_space(iced::Length::Fill).into(),
+                icon("go-next-symbolic", 20).style(theme::Svg::Symbolic).into(),
+            ]).spacing(16))
+            .padding([20, 24])
+            .style(theme::Container::Custom(list::column::style))
+        )
+        .padding(0)
+        .style(theme::Button::Transparent)
+        .on_press(Message::Page(sub_page.into_page()))
+        .into()
+    }
+
+    fn view_unimplemented_page(&self, page: Page) -> Element<Message> {
+        settings::view_column(vec![
+            self.page_title(page),
+            text("We haven't created that panel yet, and/or it is using a similar idea as current Pop! designs.").into(),
+        ]).into()
+    }
+
+    fn view_unimplemented_sub_page(&self, sub_page: impl SubPage) -> Element<Message> {
+        settings::view_column(vec![
+            self.parent_page_button(sub_page),
+            text("We haven't created that panel yet, and/or it is using a similar idea as current Pop! designs.").into(),
+        ]).into()
+    }
+
     fn view_demo(&self) -> Element<Message> {
         let choose_theme = [Theme::Light, Theme::Dark].iter().fold(
             row![].spacing(10).align_items(Alignment::Center),
@@ -376,75 +538,9 @@ impl Window {
         .into()
     }
 
-    fn view_desktop_root(&self) -> Element<Message> {
-        //TODO: rename and move to libcosmic
-        let desktop_page_button = |desktop_page: DesktopPage| {
-            iced::widget::Button::new(
-                container(settings::item_row(vec![
-                    icon(desktop_page.icon_name(), 20).style(theme::Svg::Symbolic).into(),
-                    column!(
-                        text(desktop_page.title()).size(18),
-                        text(desktop_page.description()).size(12),
-                    ).spacing(2).into(),
-                    horizontal_space(iced::Length::Fill).into(),
-                    icon("go-next-symbolic", 20).style(theme::Svg::Symbolic).into(),
-                ]).spacing(16))
-                .padding([20, 24])
-                .style(theme::Container::Custom(list::column::style))
-            )
-            .padding(0)
-            .style(theme::Button::Transparent)
-            .on_press(Message::Page(desktop_page.into_page()))
-        };
-
-        settings::view_column(vec![
-            text("Desktop").size(30).into(),
-
-            //TODO: simplify these buttons!
-            column!(
-                desktop_page_button(DesktopPage::DesktopOptions),
-                desktop_page_button(DesktopPage::Wallpaper),
-                desktop_page_button(DesktopPage::Appearance),
-                desktop_page_button(DesktopPage::DockAndTopPanel),
-                desktop_page_button(DesktopPage::Workspaces),
-                desktop_page_button(DesktopPage::Notifications),
-            ).spacing(16).into()
-        ])
-        .into()
-    }
-
-    fn desktop_parent_button(&self, desktop_page: DesktopPage) -> Element<Message> {
-        column!(
-            iced::widget::Button::new(row!(
-                icon("go-previous-symbolic", 16).style(theme::Svg::SymbolicLink),
-                text("Desktop").size(16),
-            ))
-            .padding(0)
-            .style(theme::Button::Link)
-            .on_press(Message::Page(Page::Desktop(None))),
-
-            row!(
-                text(desktop_page.title()).size(30),
-                horizontal_space(Length::Fill),
-            ),
-        )
-        .spacing(10)
-        .into()
-    }
-
-    fn view_desktop_page(&self, desktop_page: DesktopPage) -> Element<Message> {
-        match desktop_page {
-            DesktopPage::DesktopOptions => self.view_desktop_options(),
-            _ =>  settings::view_column(vec![
-                self.desktop_parent_button(desktop_page),
-                text("Unimplemented desktop page").into(),
-            ]).into(),
-        }
-    }
-
     fn view_desktop_options(&self) -> Element<Message> {
         settings::view_column(vec![
-            self.desktop_parent_button(DesktopPage::DesktopOptions),
+            self.parent_page_button(DesktopPage::DesktopOptions),
 
             settings::view_section("Super Key Action")
                 .add(settings::item("TODO", horizontal_space(Length::Fill)))
@@ -575,10 +671,10 @@ impl Application for Window {
                 let mut sidebar = container(scrollable(column!(
                     sidebar_button(Page::Demo),
                     sidebar_button(Page::WiFi),
-                    sidebar_button(Page::Networking),
+                    sidebar_button_complex(Page::Networking(None), matches!(self.page, Page::Networking(_))),
                     sidebar_button(Page::Bluetooth),
                     sidebar_button_complex(Page::Desktop(None), matches!(self.page, Page::Desktop(_))),
-                    sidebar_button(Page::InputDevices),
+                    sidebar_button_complex(Page::InputDevices(None), matches!(self.page, Page::InputDevices(_))),
                     sidebar_button(Page::Displays),
                     sidebar_button(Page::PowerAndBattery),
                     sidebar_button(Page::Sound),
@@ -605,15 +701,54 @@ impl Application for Window {
             if ! (condensed && sidebar_toggled) {
                 let content: Element<_> = match self.page {
                     Page::Demo => self.view_demo(),
-                    Page::Desktop(None) => self.view_desktop_root(),
-                    Page::Desktop(Some(desktop_page)) => self.view_desktop_page(desktop_page),
-                    _ =>  settings::view_column(vec![
-                        row!(
-                            text(self.page.title()).size(30),
-                            horizontal_space(Length::Fill),
-                        ).into(),
-                        text("Unimplemented page").into(),
+                    Page::Networking(None) => settings::view_column(vec![
+                        self.page_title(self.page),
+                        column!(
+                            self.sub_page_button(NetworkingPage::Wired),
+                            self.sub_page_button(NetworkingPage::OnlineAccounts),
+                        ).spacing(16).into()
                     ]).into(),
+                    Page::Networking(Some(sub_page)) => self.view_unimplemented_sub_page(sub_page),
+                    Page::Desktop(None) => settings::view_column(vec![
+                        self.page_title(self.page),
+                        column!(
+                            self.sub_page_button(DesktopPage::DesktopOptions),
+                            self.sub_page_button(DesktopPage::Wallpaper),
+                            self.sub_page_button(DesktopPage::Appearance),
+                            self.sub_page_button(DesktopPage::DockAndTopPanel),
+                            self.sub_page_button(DesktopPage::Workspaces),
+                            self.sub_page_button(DesktopPage::Notifications),
+                        ).spacing(16).into()
+                    ]).into(),
+                    Page::Desktop(Some(DesktopPage::DesktopOptions)) => self.view_desktop_options(),
+                    Page::Desktop(Some(sub_page)) => self.view_unimplemented_sub_page(sub_page),
+                    Page::InputDevices(None) => settings::view_column(vec![
+                        self.page_title(self.page),
+                        column!(
+                            self.sub_page_button(InputDevicesPage::Keyboard),
+                            self.sub_page_button(InputDevicesPage::Touchpad),
+                            self.sub_page_button(InputDevicesPage::Mouse),
+                        ).spacing(16).into()
+                    ]).into(),
+                    Page::InputDevices(Some(sub_page)) => self.view_unimplemented_sub_page(sub_page),
+                    Page::SystemAndAccounts(None) => settings::view_column(vec![
+                        self.page_title(self.page),
+                        column!(
+                            self.sub_page_button(SystemAndAccountsPage::Users),
+                            self.sub_page_button(SystemAndAccountsPage::About),
+                            self.sub_page_button(SystemAndAccountsPage::Firmware),
+                        ).spacing(16).into()
+                    ]).into(),
+                    Page::SystemAndAccounts(Some(sub_page)) => self.view_unimplemented_sub_page(sub_page),
+                    Page::TimeAndLanguage(None) => settings::view_column(vec![
+                        self.page_title(self.page),
+                        column!(
+                            self.sub_page_button(TimeAndLanguagePage::DateAndTime),
+                            self.sub_page_button(TimeAndLanguagePage::RegionAndLanguage),
+                        ).spacing(16).into()
+                    ]).into(),
+                    Page::TimeAndLanguage(Some(sub_page)) => self.view_unimplemented_sub_page(sub_page),
+                    _ =>  self.view_unimplemented_page(self.page),
                 };
 
                 widgets.push(
