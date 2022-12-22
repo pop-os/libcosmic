@@ -172,7 +172,7 @@ pub enum Message {
     Maximize,
     InputChanged,
     SpinButton(SpinMessage),
-    WindowWidthChanged(u32),
+    CondensedViewToggle(()),
 }
 
 impl Window {
@@ -268,18 +268,19 @@ impl Application for Window {
 
     fn subscription(&self) -> Subscription<Message> {
       iced_native::subscription::events_with(|event, _| match event {
-        cosmic::iced::Event::Window(_window_id, window::Event::Resized{width, height}) => {
+        cosmic::iced::Event::Window(_window_id, window::Event::Resized{width, height: _}) => {
           let old_width = WINDOW_WIDTH.load(Ordering::Relaxed);
           if old_width == 0
             || old_width < BREAK_POINT && width > BREAK_POINT
               || old_width > BREAK_POINT && width < BREAK_POINT {
-            Some(width)
+            WINDOW_WIDTH.store(width, Ordering::Relaxed);
+            Some(())
           } else {
             None
           }
         }
         _ => None
-      }).map(Message::WindowWidthChanged)
+      }).map(Message::CondensedViewToggle)
     }
 
     fn update(&mut self, message: Message) -> iced::Command<Self::Message> {
@@ -306,8 +307,7 @@ impl Application for Window {
             Message::RowSelected(row) => println!("Selected row {row}"),
             Message::InputChanged => {},
             Message::SpinButton(msg) => self.spin_button.update(msg),
-            Message::WindowWidthChanged(new_width) => WINDOW_WIDTH.store(new_width, Ordering::Relaxed),
-
+            Message::CondensedViewToggle(_) => {},
         }
 
         Command::none()
