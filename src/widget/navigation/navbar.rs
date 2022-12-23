@@ -6,6 +6,7 @@ use crate::widget::{icon, scrollable};
 use crate::{theme, Renderer, Theme};
 use derive_setters::Setters;
 use iced::{Background, Length};
+use iced_core::BorderRadius;
 use iced_lazy::Component;
 use iced_native::widget::{button, column, container, text};
 use iced_native::{row, Alignment, Element};
@@ -230,7 +231,7 @@ pub fn section_button_style(theme: &Theme) -> Appearance {
     Appearance {
         shadow_offset: iced::Vector::default(),
         background: Some(Background::Color(primary.base.into())),
-        border_radius: 5.0,
+        border_radius: BorderRadius::from(5.0),
         border_width: 0.0,
         border_color: iced::Color::default(),
         text_color: iced::Color::default(),

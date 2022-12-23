@@ -10,6 +10,7 @@ use std::hash::Hasher;
 pub use self::palette::Palette;
 
 use cosmic_theme::Component;
+use iced_core::BorderRadius;
 use iced_style::application;
 use iced_style::button;
 use iced_style::checkbox;
@@ -175,8 +176,8 @@ impl button::StyleSheet for Theme {
 
         button::Appearance {
             border_radius: match style {
-                Button::Link => 0.0,
-                _ => 24.0,
+                Button::Link => BorderRadius::from(0.0),
+                _ => BorderRadius::from(24.0),
             },
             background: match style {
                 Button::Link | Button::Text => None,
