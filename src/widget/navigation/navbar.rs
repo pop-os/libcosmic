@@ -21,9 +21,10 @@ pub struct NavBar<'a, Message> {
 }
 
 impl<'a, Message> NavBar<'a, Message> {
+    #[must_use]
     pub fn new() -> Self {
         Self {
-            source: Default::default(),
+            source: BTreeMap::default(),
             active: false,
             condensed: false,
             on_page_selected: None,
@@ -31,6 +32,7 @@ impl<'a, Message> NavBar<'a, Message> {
     }
 }
 
+#[must_use]
 pub fn nav_bar<'a, Message>() -> NavBar<'a, Message> {
     NavBar::new()
 }
@@ -44,11 +46,13 @@ pub struct NavBarSection {
 }
 
 impl NavBarSection {
+    #[must_use]
     pub fn new() -> Self {
         Self::default()
     }
 }
 
+#[must_use]
 pub fn nav_bar_section() -> NavBarSection {
     NavBarSection::new()
 }
@@ -60,6 +64,7 @@ pub struct NavBarPage {
 }
 
 impl NavBarPage {
+    #[must_use]
     pub fn new() -> Self {
         Self {
             title: String::new(),
@@ -67,6 +72,7 @@ impl NavBarPage {
     }
 }
 
+#[must_use]
 pub fn nav_bar_page(title: &str) -> NavBarPage {
     let mut page = NavBarPage::new();
     page.title = title.to_string();
@@ -136,9 +142,9 @@ impl<'a, Message> Component<Message, Renderer> for NavBar<'a, Message> {
                     )
                     .style(
                         if *section == state.selected_section && state.section_active {
-                            theme::Button::Primary.into()
+                            theme::Button::Primary
                         } else {
-                            theme::Button::Text.into()
+                            theme::Button::Text
                         },
                     )
                     .on_press(NavBarEvent::SectionSelected(section.clone()))
@@ -151,12 +157,12 @@ impl<'a, Message> Component<Message, Renderer> for NavBar<'a, Message> {
                                 .padding(10)
                                 .style(if let Some(selected_page) = &state.selected_page {
                                     if state.page_active && page == selected_page {
-                                        theme::Button::Primary.into()
+                                        theme::Button::Primary
                                     } else {
-                                        theme::Button::Text.into()
+                                        theme::Button::Text
                                     }
                                 } else {
-                                    theme::Button::Text.into()
+                                    theme::Button::Text
                                 })
                                 .on_press(NavBarEvent::PageSelected(section.clone(), page.clone()))
                                 .into(),
@@ -218,14 +224,15 @@ impl<'a, Message: 'static> From<NavBar<'a, Message>>
     }
 }
 
+#[must_use]
 pub fn section_button_style(theme: &Theme) -> Appearance {
     let primary = &theme.cosmic().primary;
     Appearance {
-        shadow_offset: Default::default(),
+        shadow_offset: iced::Vector::default(),
         background: Some(Background::Color(primary.base.into())),
         border_radius: 5.0,
         border_width: 0.0,
-        border_color: Default::default(),
-        text_color: Default::default(),
+        border_color: iced::Color::default(),
+        text_color: iced::Color::default(),
     }
 }

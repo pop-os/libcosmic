@@ -7,9 +7,8 @@ use iced::{
     widget::{svg, Image},
     Length, ContentFit,
 };
-use std::{borrow::{Cow, Borrow}, ffi::OsStr, path::Path};
+use std::{borrow::Cow, collections::hash_map::DefaultHasher, ffi::OsStr, hash::Hasher, path::Path};
 use std::hash::Hash;
-use std::rc::Rc;
 use derive_setters::Setters;
 use crate::{Element, Renderer};
 
@@ -97,56 +96,56 @@ impl<'a> Icon<'a> {
             return image.into();
         }
 
-        let element = Rc::new(self);
-        let element_clone = Rc::clone(&element);
+        let mut hasher = DefaultHasher::new();
+        self.hash(&mut hasher);
 
-        iced_lazy::lazy(element_clone, move || -> Element<Message> {
-            let icon = match &element.name {
+        iced_lazy::lazy(hasher.finish(), move || -> Element<Message> {
+            let icon = match &self.name {
                 IconSource::Path(path) => Some(Cow::from(*path)),
                 IconSource::Name(name) => {
-                    let icon = freedesktop_icons::lookup(&name)
-                        .with_size(element.size)
-                        .with_theme(&element.theme)
+                    let icon = freedesktop_icons::lookup(name)
+                        .with_size(self.size)
+                        .with_theme(&self.theme)
                         .with_cache()
                         .find();
                     if icon.is_none() {
-                        freedesktop_icons::lookup(&name)
-                            .with_size(element.size)
+                        freedesktop_icons::lookup(name)
+                            .with_size(self.size)
                             .with_cache()
                             .find()
                     } else {
                         icon
-                    }.map(|p| Cow::from(p))
+                    }.map(Cow::from)
                 },
                 IconSource::Embedded(_) => unimplemented!(),
             };
 
-            let is_svg = element.force_svg || icon.as_ref().map(|path| path.extension() == Some(&OsStr::new("svg"))).unwrap_or(true);
+            let is_svg = self.force_svg || icon.as_ref().map_or(true, |path| path.extension() == Some(OsStr::new("svg")));
 
             if is_svg {
                 let handle = if let Some(path) = icon {
                     svg::Handle::from_path(path)
                 } else {
-                    eprintln!("icon '{:?}' size {} not found", &element.name, element.size);
+                    eprintln!("icon '{:?}' size {} not found", &self.name, self.size);
                         svg::Handle::from_memory(Vec::new())
                 };
-    
+
                 let mut widget = svg::Svg::<Renderer>::new(handle)
-                    .style(element.style)
-                    .width(element.width.unwrap_or(Length::Units(element.size)))
-                    .height(element.height.unwrap_or(Length::Units(element.size)));
-    
-                if let Some(content_fit) = element.content_fit {
+                    .style(self.style)
+                    .width(self.width.unwrap_or(Length::Units(self.size)))
+                    .height(self.height.unwrap_or(Length::Units(self.size)));
+
+                if let Some(content_fit) = self.content_fit {
                     widget = widget.content_fit(content_fit);
                 }
-    
+
                 widget.into()
             } else {
                 let icon_path = icon.unwrap();
                 let mut image = Image::new(icon_path)
-                    .width(element.width.unwrap_or(Length::Units(element.size)))
-                    .height(element.height.unwrap_or(Length::Units(element.size)));
-                if let Some(content_fit) = element.content_fit {
+                    .width(self.width.unwrap_or(Length::Units(self.size)))
+                    .height(self.height.unwrap_or(Length::Units(self.size)));
+                if let Some(content_fit) = self.content_fit {
                     image = image.content_fit(content_fit);
                 }
                 image.into()

@@ -105,6 +105,7 @@ impl<'a, T: 'static + Copy + Hash + ToString, Message: 'static> From<SpinButton<
     }
 }
 
+#[allow(clippy::trivially_copy_pass_by_ref)]
 fn container_style(theme: &crate::Theme) -> iced_style::container::Appearance {
     let secondary = &theme.cosmic().secondary;
     let accent = &theme.cosmic().accent;

@@ -22,6 +22,7 @@ pub struct Section<'a, Message> {
 
 impl<'a, Message: 'static> Section<'a, Message> {
     #[must_use]
+    #[allow(clippy::should_implement_trait)]
     pub fn add(mut self, item: impl Into<Element<'a, Message>>) -> Self {
         self.children = self.children.add(item.into());
         self

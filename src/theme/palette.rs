@@ -17,6 +17,7 @@ pub struct Palette {
 }
 
 impl Palette {
+    #[allow(clippy::cast_precision_loss)]
     pub const LIGHT: Self = Self {
         background: Color::from_rgb(
             0xee as f32 / 255.0,
@@ -45,6 +46,7 @@ impl Palette {
         ),
     };
 
+    #[allow(clippy::cast_precision_loss)]
     pub const DARK: Self = Self {
         background: Color::from_rgb(
             0x1e as f32 / 255.0,
@@ -107,6 +109,7 @@ pub struct Pair {
 }
 
 impl Pair {
+    #[must_use]
     pub fn new(color: Color, text: Color) -> Self {
         Self {
             color,

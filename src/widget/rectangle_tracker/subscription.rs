@@ -32,13 +32,13 @@ async fn start_listening<I: Copy, R: 'static + Hash + Copy + Send + Sync + Debug
         State::Ready => {
             let (tx, rx) = unbounded();
 
-            return (
+            (
                 Some((id, RectangleUpdate::Init(RectangleTracker { tx }))),
                 State::Waiting(rx, HashMap::new()),
-            );
+            )
         }
         State::Waiting(mut rx, mut map) => match rx.next().await {
-            Some(u) => 
+            Some(u) =>
             {
                 if let Some(prev) = map.get(&u.0) {
                     let new = u.1;
@@ -56,8 +56,8 @@ async fn start_listening<I: Copy, R: 'static + Hash + Copy + Send + Sync + Debug
                         State::Waiting(rx, map),
                     );
                 }
-                return (None, State::Waiting(rx, map))
-                
+                (None, State::Waiting(rx, map))
+
         },
             None => (None, State::Finished),
         },

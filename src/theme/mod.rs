@@ -144,6 +144,8 @@ impl Default for Button {
 }
 
 impl Button {
+    #[allow(clippy::trivially_copy_pass_by_ref)]
+    #[allow(clippy::match_same_arms)]
     fn cosmic(&self, theme: &Theme) -> &'static CosmicComponent {
         let cosmic = theme.cosmic();
         match self {
@@ -177,8 +179,7 @@ impl button::StyleSheet for Theme {
                 _ => 24.0,
             },
             background: match style {
-                Button::Text => None,
-                Button::Link => None,
+                Button::Link | Button::Text => None,
                 Button::LinkActive => Some(Background::Color(cosmic.divider.into())),
                 _ => Some(Background::Color(cosmic.base.into())),
             },
@@ -196,7 +197,7 @@ impl button::StyleSheet for Theme {
             return hover(self);
         }
 
-        let active = self.active(&style);
+        let active = self.active(style);
         let cosmic = style.cosmic(self);
 
         button::Appearance {
@@ -416,7 +417,7 @@ impl slider::StyleSheet for Theme {
     }
 
     fn hovered(&self, style: &Self::Style) -> slider::Appearance {
-        let mut style = self.active(&style);
+        let mut style = self.active(style);
         style.handle.shape = slider::HandleShape::Circle {
             radius: 16.0
         };
@@ -429,7 +430,7 @@ impl slider::StyleSheet for Theme {
     }
 
     fn dragging(&self, style: &Self::Style) -> slider::Appearance {
-        let mut style = self.hovered(&style);
+        let mut style = self.hovered(style);
         style.handle.border_color = match self {
             Theme::Dark => Color::from_rgba8(0xFF, 0xFF, 0xFF, 0.2),
             Theme::Light => Color::from_rgba8(0, 0, 0, 0.2),
@@ -484,7 +485,7 @@ impl pick_list::StyleSheet for Theme {
 
         pick_list::Appearance {
             background: Background::Color(cosmic.hover.into()),
-            ..self.active(&style)
+            ..self.active(style)
         }
     }
 }
@@ -508,7 +509,7 @@ impl radio::StyleSheet for Theme {
     }
 
     fn hovered(&self, style: &Self::Style, is_selected: bool) -> radio::Appearance {
-        let active = self.active(&style, is_selected);
+        let active = self.active(style, is_selected);
         let palette = self.extended_palette();
 
         radio::Appearance {
@@ -565,7 +566,7 @@ impl toggler::StyleSheet for Theme {
                 } else {
                     Color::from_rgb8(0xb6, 0xb6, 0xb6)
                 },
-                ..self.active(&style, is_active)
+                ..self.active(style, is_active)
             },
             Theme::Light => toggler::Appearance {
                 background: if is_active {
@@ -573,7 +574,7 @@ impl toggler::StyleSheet for Theme {
                 } else {
                     Color::from_rgb8(0x54, 0x54, 0x54)
                 },
-                ..self.active(&style, is_active)
+                ..self.active(style, is_active)
             }
         }
     }
@@ -752,6 +753,7 @@ impl svg::StyleSheet for Theme {
     type Style = Svg;
 
     fn appearance(&self, style: &Self::Style) -> svg::Appearance {
+        #[allow(clippy::match_same_arms)]
         match style {
             Svg::Default => svg::Appearance::default(),
             Svg::Custom(appearance) => appearance(self),

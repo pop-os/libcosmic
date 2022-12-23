@@ -14,6 +14,7 @@ pub fn vertical_rule(size: u16) -> widget::Rule<Renderer> {
     widget::vertical_rule(size).style(theme::Rule::Custom(separator_style))
 }
 
+#[allow(clippy::trivially_copy_pass_by_ref)]
 fn separator_style(theme: &Theme) -> widget::rule::Appearance {
     let cosmic = &theme.cosmic().primary;
     widget::rule::Appearance {

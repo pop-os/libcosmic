@@ -22,11 +22,13 @@ impl<'a, Message: 'static> Default for ListColumn<'a, Message> {
 }
 
 impl<'a, Message: 'static> ListColumn<'a, Message> {
+    #[must_use]
     pub fn new() -> Self {
         Self::default()
     }
 
     #[must_use]
+    #[allow(clippy::should_implement_trait)]
     pub fn add(mut self, item: impl Into<Element<'a, Message>>) -> Self {
         if !self.children.is_empty() {
             self.children.push(horizontal_rule(10).into());
@@ -53,6 +55,8 @@ impl<'a, Message: 'static> From<ListColumn<'a, Message>> for Element<'a, Message
     }
 }
 
+#[must_use]
+#[allow(clippy::trivially_copy_pass_by_ref)]
 pub fn style(theme: &crate::Theme) -> iced::widget::container::Appearance {
     let cosmic = &theme.cosmic().primary;
     iced::widget::container::Appearance {

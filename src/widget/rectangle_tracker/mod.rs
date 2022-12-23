@@ -71,60 +71,70 @@ where
     }
 
     /// Sets the [`Padding`] of the [`Container`].
+    #[must_use]
     pub fn padding<P: Into<Padding>>(mut self, padding: P) -> Self {
         self.container = self.container.padding(padding);
         self
     }
 
     /// Sets the width of the [`self.`].
+    #[must_use]
     pub fn width(mut self, width: Length) -> Self {
         self.container = self.container.width(width);
         self
     }
 
     /// Sets the height of the [`Container`].
+    #[must_use]
     pub fn height(mut self, height: Length) -> Self {
         self.container = self.container.height(height);
         self
     }
 
     /// Sets the maximum width of the [`Container`].
+    #[must_use]
     pub fn max_width(mut self, max_width: u32) -> Self {
         self.container = self.container.max_width(max_width);
         self
     }
 
     /// Sets the maximum height of the [`Container`] in pixels.
+    #[must_use]
     pub fn max_height(mut self, max_height: u32) -> Self {
         self.container = self.container.max_height(max_height);
         self
     }
 
     /// Sets the content alignment for the horizontal axis of the [`Container`].
+    #[must_use]
     pub fn align_x(mut self, alignment: alignment::Horizontal) -> Self {
         self.container = self.container.align_x(alignment);
         self
     }
 
     /// Sets the content alignment for the vertical axis of the [`Container`].
+    #[must_use]
     pub fn align_y(mut self, alignment: alignment::Vertical) -> Self {
         self.container = self.container.align_y(alignment);
         self
     }
 
     /// Centers the contents in the horizontal axis of the [`Container`].
+    #[must_use]
     pub fn center_x(mut self) -> Self {
         self.container = self.container.center_x();
         self
     }
 
     /// Centers the contents in the vertical axis of the [`Container`].
+    #[must_use]
     pub fn center_y(mut self) -> Self {
         self.container = self.container.center_y();
         self
     }
 
     /// Sets the style of the [`Container`].
+    #[must_use]
     pub fn style(mut self, style: impl Into<<Renderer::Theme as StyleSheet>::Style>) -> Self {
         self.container = self.container.style(style);
         self
@@ -159,7 +169,7 @@ where
     }
 
     fn operate(&self, tree: &mut Tree, layout: Layout<'_>, operation: &mut dyn Operation<Message>) {
-        self.container.operate(tree, layout, operation)
+        self.container.operate(tree, layout, operation);
     }
 
     fn on_event(
@@ -215,7 +225,7 @@ where
             layout,
             cursor_position,
             viewport,
-        )
+        );
     }
 
     fn overlay<'b>(
