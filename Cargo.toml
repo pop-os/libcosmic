@@ -22,7 +22,7 @@ apply = "0.3.0"
 derive_setters = "0.1.5"
 lazy_static = "1.4.0"
 palette = "0.6.1"
-cosmic-panel-config = {git = "https://github.com/pop-os/cosmic-panel", optional = true, branch = "test" }
+cosmic-panel-config = {git = "https://github.com/pop-os/cosmic-panel", optional = true, branch = "master_jammy" }
 sctk = { package = "smithay-client-toolkit", git = "https://github.com/Smithay/client-toolkit", optional = true, rev = "73346019952f82ec7e4d4d15f5d66841b54e8b61" }
 
 [dependencies.cosmic-theme]
