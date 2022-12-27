@@ -120,8 +120,8 @@ impl CosmicAppletHelper {
                 border_color: Color::TRANSPARENT,
             }),
         ))
-        .width(Length::Fill)
-        .height(Length::Fill)
+        .width(Length::Shrink)
+        .height(Length::Shrink)
         .align_x(halign)
         .align_y(valign)
     }
@@ -154,8 +154,8 @@ impl CosmicAppletHelper {
                 anchor_rect: Rectangle {
                     x: 0,
                     y: 0,
-                    width: width_padding.unwrap_or(APPLET_PADDING as i32) * 2 + width as i32,
-                    height: height_padding.unwrap_or(APPLET_PADDING as i32) * 2 + height as i32,
+                    width: width_padding.unwrap_or(APPLET_PADDING as i32) * 2 + i32::from(width),
+                    height: height_padding.unwrap_or(APPLET_PADDING as i32) * 2 + i32::from(height),
                 },
                 reactive: true,
                 constraint_adjustment: 15, // slide_y, slide_x, flip_x, flip_y
