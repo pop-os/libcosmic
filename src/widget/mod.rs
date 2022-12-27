@@ -8,7 +8,7 @@ mod header_bar;
 pub use header_bar::{HeaderBar, header_bar};
 
 mod icon;
-pub use self::icon::{Icon, icon};
+pub use self::icon::{Icon, icon, IconSource};
 
 pub mod list;
 pub use self::list::*;
