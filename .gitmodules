@@ -1,4 +1,4 @@
 [submodule "iced"]
 	path = iced
 	url = https://github.com/pop-os/iced.git
-	branch = sctk-cosmic
+	branch = master
