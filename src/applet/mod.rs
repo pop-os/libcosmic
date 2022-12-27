@@ -67,11 +67,12 @@ impl CosmicAppletHelper {
         self.size = Size::Hardcoded((width, height));
     }
 
+    #[must_use]
     pub fn window_settings<F: Default>(&self) -> Settings<F> {
         let mut settings = crate::settings();
         let (width, height) = self.suggested_size();
-        let width = width as u32;
-        let height = height as u32;
+        let width = u32::from(width);
+        let height = u32::from(height);
         settings.initial_surface = InitialSurface::XdgWindow(SctkWindowSettings {
             iced_settings: iced_native::window::Settings {
                 size: (width + APPLET_PADDING * 2, height + APPLET_PADDING * 2),
@@ -84,6 +85,7 @@ impl CosmicAppletHelper {
         settings
     }
 
+    #[must_use]
     pub fn icon_button<'a, Message: 'static>(
         &self,
         icon_name: &'a str,
@@ -124,11 +126,12 @@ impl CosmicAppletHelper {
         .align_y(valign)
     }
 
+    #[must_use]
     pub fn get_popup_settings(
         &self,
         parent: iced_native::window::Id,
         id: iced_native::window::Id,
-        size: (u32, u32),
+        size: Option<(u32, u32)>,
         width_padding: Option<i32>,
         height_padding: Option<i32>,
     ) -> SctkPopupSettings {
