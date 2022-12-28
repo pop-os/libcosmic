@@ -27,6 +27,7 @@ use iced_style::svg;
 use iced_style::text;
 use iced_style::text_input;
 use iced_style::toggler;
+use crate::widget::segmented_button;
 
 use iced_core::{Background, Color};
 
@@ -862,5 +863,39 @@ impl text_input::StyleSheet for Theme {
         let palette = self.extended_palette();
 
         palette.primary.weak.color
+    }
+}
+
+#[derive(Clone, Copy, Default)]
+pub enum SegmentedButton {
+    #[default]
+    Default,
+    Custom(fn(&Theme) -> segmented_button::Appearance)
+}
+
+impl segmented_button::StyleSheet for Theme {
+    type Style = SegmentedButton;
+
+    fn appearance(&self, style: &Self::Style) -> segmented_button::Appearance {
+        if let SegmentedButton::Custom(func) = style {
+            return func(self);
+        }
+
+        let cosmic = self.cosmic();
+
+        segmented_button::Appearance {
+            button_active: segmented_button::ButtonAppearance {
+                background: Some(Background::Color(cosmic.primary.component.base.into())),
+                border_bottom: Some((4.0, cosmic.accent.base.into())),
+                border_radius: BorderRadius::from([8.0, 8.0, 0.0, 0.0]),
+                text_color: cosmic.accent.base.into(),
+            },
+            button_inactive: segmented_button::ButtonAppearance {
+                background: None,
+                border_bottom: Some((2.0, cosmic.accent.base.into())),
+                text_color: cosmic.primary.on.into(),
+                border_radius: BorderRadius::from(0.0),
+            }
+        }
     }
 }

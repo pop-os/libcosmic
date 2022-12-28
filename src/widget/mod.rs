@@ -22,6 +22,9 @@ pub use navigation::*;
 mod toggler;
 pub use toggler::toggler;
 
+pub mod segmented_button;
+pub use segmented_button::{SegmentedButton, segmented_button};
+
 pub mod settings;
 
 mod scrollable;
