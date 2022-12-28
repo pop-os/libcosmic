@@ -1,24 +1,28 @@
 /// Copyright 2022 System76 <info@system76.com>
 // SPDX-License-Identifier: MPL-2.0
-
 use cosmic::{
-    iced_native,
-    iced_native::window,
     iced::widget::{column, container, horizontal_space, row, text},
     iced::{self, Application, Command, Length, Subscription},
-    iced_winit::window::{close, drag, toggle_maximize, minimize},
+    iced_native,
+    iced_native::window,
+    iced_winit::window::{close, drag, minimize, toggle_maximize},
     theme::{self, Theme},
-    widget::{icon, list, nav_bar, nav_button, header_bar, settings, scrollable, spin_button::{SpinButtonModel, SpinMessage}},
-    Element,
-    ElementExt,
+    widget::{
+        header_bar, icon, list, nav_bar, nav_button, scrollable, segmented_button, settings,
+        spin_button::{SpinButtonModel, SpinMessage},
+    },
+    Element, ElementExt,
 };
-use std::{vec, sync::atomic::{AtomicU32, Ordering}};
+use std::{
+    sync::atomic::{AtomicU32, Ordering},
+    vec,
+};
 
 mod bluetooth;
 
 mod demo;
 
-use self::desktop::DesktopPage;
+use self::{demo::DemoView, desktop::DesktopPage};
 mod desktop;
 
 use self::input_devices::InputDevicesPage;
@@ -125,6 +129,7 @@ pub struct Window {
     debug: bool,
     theme: Theme,
     slider_value: f32,
+    demo_tab_state: segmented_button::State<DemoView>,
     spin_button: SpinButtonModel<i32>,
     checkbox_value: bool,
     toggler_value: bool,
@@ -155,36 +160,34 @@ impl Window {
 #[allow(dead_code)]
 #[derive(Clone, Copy, Debug)]
 pub enum Message {
-    Page(Page),
-    Debug(bool),
-    ThemeChanged(Theme),
     ButtonPressed,
-    SliderChanged(f32),
     CheckboxToggled(bool),
-    TogglerToggled(bool),
+    Close,
+    CondensedViewToggle(()),
+    Debug(bool),
+    DemoTabActivate(segmented_button::Key),
+    Drag,
+    InputChanged,
+    Maximize,
+    Minimize,
+    Page(Page),
     PickListSelected(&'static str),
     RowSelected(usize),
-    Close,
+    SliderChanged(f32),
+    SpinButton(SpinMessage),
+    ThemeChanged(Theme),
+    TogglerToggled(bool),
     ToggleSidebar,
     ToggleSidebarCondensed,
-    Drag,
-    Minimize,
-    Maximize,
-    InputChanged,
-    SpinButton(SpinMessage),
-    CondensedViewToggle(()),
 }
 
 impl Window {
     fn page_title(&self, page: Page) -> Element<Message> {
-        row!(
-            text(page.title()).size(30),
-            horizontal_space(Length::Fill),
-        ).into()
+        row!(text(page.title()).size(30), horizontal_space(Length::Fill),).into()
     }
 
     fn is_condensed(&self) -> bool {
-      WINDOW_WIDTH.load(Ordering::Relaxed) < BREAK_POINT
+        WINDOW_WIDTH.load(Ordering::Relaxed) < BREAK_POINT
     }
 
     fn parent_page_button(&self, sub_page: impl SubPage) -> Element<Message> {
@@ -197,7 +200,6 @@ impl Window {
             .padding(0)
             .style(theme::Button::Link)
             .on_press(Message::Page(page)),
-
             row!(
                 text(sub_page.title()).size(30),
                 horizontal_space(Length::Fill),
@@ -209,17 +211,26 @@ impl Window {
 
     fn sub_page_button(&self, sub_page: impl SubPage) -> Element<Message> {
         iced::widget::Button::new(
-            container(settings::item_row(vec![
-                icon(sub_page.icon_name(), 20).style(theme::Svg::Symbolic).into(),
-                column!(
-                    text(sub_page.title()).size(18),
-                    text(sub_page.description()).size(12),
-                ).spacing(2).into(),
-                horizontal_space(iced::Length::Fill).into(),
-                icon("go-next-symbolic", 20).style(theme::Svg::Symbolic).into(),
-            ]).spacing(16))
+            container(
+                settings::item_row(vec![
+                    icon(sub_page.icon_name(), 20)
+                        .style(theme::Svg::Symbolic)
+                        .into(),
+                    column!(
+                        text(sub_page.title()).size(18),
+                        text(sub_page.description()).size(12),
+                    )
+                    .spacing(2)
+                    .into(),
+                    horizontal_space(iced::Length::Fill).into(),
+                    icon("go-next-symbolic", 20)
+                        .style(theme::Svg::Symbolic)
+                        .into(),
+                ])
+                .spacing(16),
+            )
             .padding([20, 24])
-            .style(theme::Container::Custom(list::column::style))
+            .style(theme::Container::Custom(list::column::style)),
         )
         .padding(0)
         .style(theme::Button::Transparent)
@@ -259,6 +270,21 @@ impl Application for Window {
         window.title = String::from("COSMIC Design System - Iced");
         window.spin_button.min = -10;
         window.spin_button.max = 10;
+
+        let key = window
+            .demo_tab_state
+            .insert(String::from("Tab A"), DemoView::TabA);
+
+        window.demo_tab_state.activate(key);
+
+        window
+            .demo_tab_state
+            .insert(String::from("Tab B"), DemoView::TabB);
+
+        window
+            .demo_tab_state
+            .insert(String::from("Tab C"), DemoView::TabC);
+
         (window, Command::none())
     }
 
@@ -267,20 +293,25 @@ impl Application for Window {
     }
 
     fn subscription(&self) -> Subscription<Message> {
-      iced_native::subscription::events_with(|event, _| match event {
-        cosmic::iced::Event::Window(_window_id, window::Event::Resized{width, height: _}) => {
-          let old_width = WINDOW_WIDTH.load(Ordering::Relaxed);
-          if old_width == 0
-            || old_width < BREAK_POINT && width > BREAK_POINT
-              || old_width > BREAK_POINT && width < BREAK_POINT {
-            WINDOW_WIDTH.store(width, Ordering::Relaxed);
-            Some(())
-          } else {
-            None
-          }
-        }
-        _ => None
-      }).map(Message::CondensedViewToggle)
+        iced_native::subscription::events_with(|event, _| match event {
+            cosmic::iced::Event::Window(
+                _window_id,
+                window::Event::Resized { width, height: _ },
+            ) => {
+                let old_width = WINDOW_WIDTH.load(Ordering::Relaxed);
+                if old_width == 0
+                    || old_width < BREAK_POINT && width > BREAK_POINT
+                    || old_width > BREAK_POINT && width < BREAK_POINT
+                {
+                    WINDOW_WIDTH.store(width, Ordering::Relaxed);
+                    Some(())
+                } else {
+                    None
+                }
+            }
+            _ => None,
+        })
+        .map(Message::CondensedViewToggle)
     }
 
     fn update(&mut self, message: Message) -> iced::Command<Self::Message> {
@@ -288,165 +319,199 @@ impl Application for Window {
             Message::Page(page) => {
                 self.sidebar_toggled_condensed = false;
                 self.page = page;
-            },
+            }
             Message::Debug(debug) => self.debug = debug,
             Message::ThemeChanged(theme) => self.theme = theme,
             Message::ButtonPressed => {}
             Message::SliderChanged(value) => self.slider_value = value,
             Message::CheckboxToggled(value) => {
                 self.checkbox_value = value;
-            },
+            }
             Message::TogglerToggled(value) => self.toggler_value = value,
             Message::PickListSelected(value) => self.pick_list_selected = Some(value),
             Message::ToggleSidebar => self.sidebar_toggled = !self.sidebar_toggled,
-            Message::ToggleSidebarCondensed => self.sidebar_toggled_condensed = !self.sidebar_toggled_condensed,
+            Message::ToggleSidebarCondensed => {
+                self.sidebar_toggled_condensed = !self.sidebar_toggled_condensed
+            }
             Message::Drag => return drag(window::Id::new(0)),
             Message::Close => return close(window::Id::new(0)),
             Message::Minimize => return minimize(window::Id::new(0), true),
             Message::Maximize => return toggle_maximize(window::Id::new(0)),
             Message::RowSelected(row) => println!("Selected row {row}"),
-            Message::InputChanged => {},
+            Message::InputChanged => {}
             Message::SpinButton(msg) => self.spin_button.update(msg),
-            Message::CondensedViewToggle(_) => {},
+            Message::CondensedViewToggle(_) => {}
+            Message::DemoTabActivate(key) => self.demo_tab_state.activate(key),
         }
 
         Command::none()
     }
 
     fn view(&self) -> Element<Message> {
-          let (sidebar_message, sidebar_toggled) = if self.is_condensed() {
-              (Message::ToggleSidebarCondensed, self.sidebar_toggled_condensed)
-          } else {
-              (Message::ToggleSidebar, self.sidebar_toggled)
-          };
+        let (sidebar_message, sidebar_toggled) = if self.is_condensed() {
+            (
+                Message::ToggleSidebarCondensed,
+                self.sidebar_toggled_condensed,
+            )
+        } else {
+            (Message::ToggleSidebar, self.sidebar_toggled)
+        };
 
-          let mut header = header_bar()
-              .title("COSMIC Design System - Iced")
-              .on_close(Message::Close)
-              .on_drag(Message::Drag)
-              .start(
-                  nav_button("Settings")
-                      .on_sidebar_toggled(sidebar_message)
-                      .sidebar_active(sidebar_toggled)
-                      .into()
-              );
+        let mut header = header_bar()
+            .title("COSMIC Design System - Iced")
+            .on_close(Message::Close)
+            .on_drag(Message::Drag)
+            .start(
+                nav_button("Settings")
+                    .on_sidebar_toggled(sidebar_message)
+                    .sidebar_active(sidebar_toggled)
+                    .into(),
+            );
 
-          if self.show_maximize {
-              header = header.on_maximize(Message::Maximize);
-          }
+        if self.show_maximize {
+            header = header.on_maximize(Message::Maximize);
+        }
 
-          if self.show_minimize {
-              header = header.on_minimize(Message::Minimize);
-          }
+        if self.show_minimize {
+            header = header.on_minimize(Message::Minimize);
+        }
 
-          let header = Into::<Element<Message>>::into(header).debug(self.debug);
+        let header = Into::<Element<Message>>::into(header).debug(self.debug);
 
-          let mut widgets = Vec::with_capacity(2);
+        let mut widgets = Vec::with_capacity(2);
 
-          if sidebar_toggled {
-              let sidebar_button_complex = |page: Page, active| {
-                  cosmic::nav_button!(
-                      page.icon_name(),
-                      page.title(),
-                      active
-                  )
-                  .on_press(Message::Page(page))
-              };
+        if sidebar_toggled {
+            let sidebar_button_complex = |page: Page, active| {
+                cosmic::nav_button!(page.icon_name(), page.title(), active)
+                    .on_press(Message::Page(page))
+            };
 
-              let sidebar_button = |page: Page| {
-                  sidebar_button_complex(page, self.page == page)
-              };
+            let sidebar_button = |page: Page| sidebar_button_complex(page, self.page == page);
 
-              let mut sidebar = container(scrollable(column!(
-                  sidebar_button(Page::Demo),
-                  sidebar_button(Page::WiFi),
-                  sidebar_button_complex(Page::Networking(None), matches!(self.page, Page::Networking(_))),
-                  sidebar_button(Page::Bluetooth),
-                  sidebar_button_complex(Page::Desktop(None), matches!(self.page, Page::Desktop(_))),
-                  sidebar_button_complex(Page::InputDevices(None), matches!(self.page, Page::InputDevices(_))),
-                  sidebar_button(Page::Displays),
-                  sidebar_button(Page::PowerAndBattery),
-                  sidebar_button(Page::Sound),
-                  sidebar_button(Page::PrintersAndScanners),
-                  sidebar_button(Page::PrivacyAndSecurity),
-                  sidebar_button_complex(Page::SystemAndAccounts(None), matches!(self.page, Page::SystemAndAccounts(_))),
-                  sidebar_button(Page::UpdatesAndRecovery),
-                  sidebar_button_complex(Page::TimeAndLanguage(None), matches!(self.page, Page::TimeAndLanguage(_))),
-                  sidebar_button(Page::Accessibility),
-                  sidebar_button(Page::Applications),
-              ).spacing(14)))
-              .height(Length::Fill)
-              .padding(8)
-              .style(theme::Container::Custom(nav_bar::nav_bar_sections_style));
+            let mut sidebar = container(scrollable(
+                column!(
+                    sidebar_button(Page::Demo),
+                    sidebar_button(Page::WiFi),
+                    sidebar_button_complex(
+                        Page::Networking(None),
+                        matches!(self.page, Page::Networking(_))
+                    ),
+                    sidebar_button(Page::Bluetooth),
+                    sidebar_button_complex(
+                        Page::Desktop(None),
+                        matches!(self.page, Page::Desktop(_))
+                    ),
+                    sidebar_button_complex(
+                        Page::InputDevices(None),
+                        matches!(self.page, Page::InputDevices(_))
+                    ),
+                    sidebar_button(Page::Displays),
+                    sidebar_button(Page::PowerAndBattery),
+                    sidebar_button(Page::Sound),
+                    sidebar_button(Page::PrintersAndScanners),
+                    sidebar_button(Page::PrivacyAndSecurity),
+                    sidebar_button_complex(
+                        Page::SystemAndAccounts(None),
+                        matches!(self.page, Page::SystemAndAccounts(_))
+                    ),
+                    sidebar_button(Page::UpdatesAndRecovery),
+                    sidebar_button_complex(
+                        Page::TimeAndLanguage(None),
+                        matches!(self.page, Page::TimeAndLanguage(_))
+                    ),
+                    sidebar_button(Page::Accessibility),
+                    sidebar_button(Page::Applications),
+                )
+                .spacing(14),
+            ))
+            .height(Length::Fill)
+            .padding(8)
+            .style(theme::Container::Custom(nav_bar::nav_bar_sections_style));
 
-              if ! self.is_condensed() {
-                  sidebar = sidebar.max_width(300)
-              }
+            if !self.is_condensed() {
+                sidebar = sidebar.max_width(300)
+            }
 
-              let sidebar: Element<_> = sidebar.into();
-              widgets.push(sidebar.debug(self.debug));
-          }
+            let sidebar: Element<_> = sidebar.into();
+            widgets.push(sidebar.debug(self.debug));
+        }
 
-          if ! (self.is_condensed() && sidebar_toggled) {
-              let content: Element<_> = match self.page {
-                  Page::Demo => self.view_demo(),
-                  Page::Networking(None) => settings::view_column(vec![
-                      self.page_title(self.page),
-                      column!(
-                          self.sub_page_button(NetworkingPage::Wired),
-                          self.sub_page_button(NetworkingPage::OnlineAccounts),
-                      ).spacing(16).into()
-                  ]).into(),
-                  Page::Networking(Some(sub_page)) => self.view_unimplemented_sub_page(sub_page),
-                  Page::Bluetooth => self.view_bluetooth(),
-                  Page::Desktop(desktop_page_opt) => self.view_desktop(desktop_page_opt),
-                  Page::InputDevices(None) => settings::view_column(vec![
-                      self.page_title(self.page),
-                      column!(
-                          self.sub_page_button(InputDevicesPage::Keyboard),
-                          self.sub_page_button(InputDevicesPage::Touchpad),
-                          self.sub_page_button(InputDevicesPage::Mouse),
-                      ).spacing(16).into()
-                  ]).into(),
-                  Page::InputDevices(Some(sub_page)) => self.view_unimplemented_sub_page(sub_page),
-                  Page::SystemAndAccounts(None) => settings::view_column(vec![
-                      self.page_title(self.page),
-                      column!(
-                          self.sub_page_button(SystemAndAccountsPage::Users),
-                          self.sub_page_button(SystemAndAccountsPage::About),
-                          self.sub_page_button(SystemAndAccountsPage::Firmware),
-                      ).spacing(16).into()
-                  ]).into(),
-                  Page::SystemAndAccounts(Some(SystemAndAccountsPage::About)) => self.view_system_and_accounts_about(),
-                  Page::SystemAndAccounts(Some(sub_page)) => self.view_unimplemented_sub_page(sub_page),
-                  Page::TimeAndLanguage(None) => settings::view_column(vec![
-                      self.page_title(self.page),
-                      column!(
-                          self.sub_page_button(TimeAndLanguagePage::DateAndTime),
-                          self.sub_page_button(TimeAndLanguagePage::RegionAndLanguage),
-                      ).spacing(16).into()
-                  ]).into(),
-                  Page::TimeAndLanguage(Some(sub_page)) => self.view_unimplemented_sub_page(sub_page),
-                  _ =>  self.view_unimplemented_page(self.page),
-              };
+        if !(self.is_condensed() && sidebar_toggled) {
+            let content: Element<_> = match self.page {
+                Page::Demo => self.view_demo(),
+                Page::Networking(None) => settings::view_column(vec![
+                    self.page_title(self.page),
+                    column!(
+                        self.sub_page_button(NetworkingPage::Wired),
+                        self.sub_page_button(NetworkingPage::OnlineAccounts),
+                    )
+                    .spacing(16)
+                    .into(),
+                ])
+                .into(),
+                Page::Networking(Some(sub_page)) => self.view_unimplemented_sub_page(sub_page),
+                Page::Bluetooth => self.view_bluetooth(),
+                Page::Desktop(desktop_page_opt) => self.view_desktop(desktop_page_opt),
+                Page::InputDevices(None) => settings::view_column(vec![
+                    self.page_title(self.page),
+                    column!(
+                        self.sub_page_button(InputDevicesPage::Keyboard),
+                        self.sub_page_button(InputDevicesPage::Touchpad),
+                        self.sub_page_button(InputDevicesPage::Mouse),
+                    )
+                    .spacing(16)
+                    .into(),
+                ])
+                .into(),
+                Page::InputDevices(Some(sub_page)) => self.view_unimplemented_sub_page(sub_page),
+                Page::SystemAndAccounts(None) => settings::view_column(vec![
+                    self.page_title(self.page),
+                    column!(
+                        self.sub_page_button(SystemAndAccountsPage::Users),
+                        self.sub_page_button(SystemAndAccountsPage::About),
+                        self.sub_page_button(SystemAndAccountsPage::Firmware),
+                    )
+                    .spacing(16)
+                    .into(),
+                ])
+                .into(),
+                Page::SystemAndAccounts(Some(SystemAndAccountsPage::About)) => {
+                    self.view_system_and_accounts_about()
+                }
+                Page::SystemAndAccounts(Some(sub_page)) => {
+                    self.view_unimplemented_sub_page(sub_page)
+                }
+                Page::TimeAndLanguage(None) => settings::view_column(vec![
+                    self.page_title(self.page),
+                    column!(
+                        self.sub_page_button(TimeAndLanguagePage::DateAndTime),
+                        self.sub_page_button(TimeAndLanguagePage::RegionAndLanguage),
+                    )
+                    .spacing(16)
+                    .into(),
+                ])
+                .into(),
+                Page::TimeAndLanguage(Some(sub_page)) => self.view_unimplemented_sub_page(sub_page),
+                _ => self.view_unimplemented_page(self.page),
+            };
 
-              widgets.push(
-                  scrollable(row![
-                      horizontal_space(Length::Fill),
-                      content.debug(self.debug),
-                      horizontal_space(Length::Fill),
-                  ])
-                  .into(),
-              );
-          }
+            widgets.push(
+                scrollable(row![
+                    horizontal_space(Length::Fill),
+                    content.debug(self.debug),
+                    horizontal_space(Length::Fill),
+                ])
+                .into(),
+            );
+        }
 
-          let content = container(row(widgets))
-              .padding([0, 8, 8, 8])
-              .width(Length::Fill)
-              .height(Length::Fill)
-              .into();
+        let content = container(row(widgets))
+            .padding([0, 8, 8, 8])
+            .width(Length::Fill)
+            .height(Length::Fill)
+            .into();
 
-          column(vec![header, content]).into()
+        column(vec![header, content]).into()
     }
 
     fn theme(&self) -> Theme {

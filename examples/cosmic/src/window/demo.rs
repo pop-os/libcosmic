@@ -1,12 +1,18 @@
 use cosmic::{
-    Element,
-    iced::{Alignment, Length},
     iced::widget::{checkbox, pick_list, progress_bar, radio, row, slider},
-    widget::{button, settings, toggler},
+    iced::{Alignment, Length},
     theme::{Button as ButtonTheme, Theme},
+    widget::{button, segmented_button, settings, toggler},
+    Element,
 };
 
 use super::{Message, Page, Window};
+
+pub enum DemoView {
+    TabA,
+    TabB,
+    TabC,
+}
 
 impl Window {
     pub(super) fn view_demo(&self) -> Element<Message> {
@@ -24,77 +30,107 @@ impl Window {
 
         settings::view_column(vec![
             self.page_title(Page::Demo),
-
-            settings::view_section("Debug")
-                .add(settings::item("Debug theme", choose_theme))
-                .add(settings::item(
-                    "Debug layout",
-                    toggler(None, self.debug, Message::Debug)
-                ))
+            segmented_button(&self.demo_tab_state)
+                .on_activate(Message::DemoTabActivate)
                 .into(),
-
-            settings::view_section("Buttons")
-                .add(settings::item_row(vec![
-                    button(ButtonTheme::Primary)
-                        .text("Primary")
-                        .on_press(Message::ButtonPressed)
+            match self.demo_tab_state.active_data() {
+                None => panic!("no tab is active"),
+                Some(DemoView::TabA) => settings::view_column(vec![
+                    settings::view_section("Debug")
+                        .add(settings::item("Debug theme", choose_theme))
+                        .add(settings::item(
+                            "Debug layout",
+                            toggler(None, self.debug, Message::Debug),
+                        ))
                         .into(),
-                    button(ButtonTheme::Secondary)
-                        .text("Secondary")
-                        .on_press(Message::ButtonPressed)
+                    settings::view_section("Buttons")
+                        .add(settings::item_row(vec![
+                            button(ButtonTheme::Primary)
+                                .text("Primary")
+                                .on_press(Message::ButtonPressed)
+                                .into(),
+                            button(ButtonTheme::Secondary)
+                                .text("Secondary")
+                                .on_press(Message::ButtonPressed)
+                                .into(),
+                            button(ButtonTheme::Positive)
+                                .text("Positive")
+                                .on_press(Message::ButtonPressed)
+                                .into(),
+                            button(ButtonTheme::Destructive)
+                                .text("Destructive")
+                                .on_press(Message::ButtonPressed)
+                                .into(),
+                            button(ButtonTheme::Text)
+                                .text("Text")
+                                .on_press(Message::ButtonPressed)
+                                .into(),
+                        ]))
+                        .add(settings::item_row(vec![
+                            button(ButtonTheme::Primary).text("Primary").into(),
+                            button(ButtonTheme::Secondary).text("Secondary").into(),
+                            button(ButtonTheme::Positive).text("Positive").into(),
+                            button(ButtonTheme::Destructive).text("Destructive").into(),
+                            button(ButtonTheme::Text).text("Text").into(),
+                        ]))
                         .into(),
-                    button(ButtonTheme::Positive)
-                        .text("Positive")
-                        .on_press(Message::ButtonPressed)
+                    settings::view_section("Controls")
+                        .add(settings::item(
+                            "Toggler",
+                            toggler(None, self.toggler_value, Message::TogglerToggled),
+                        ))
+                        .add(settings::item(
+                            "Pick List (TODO)",
+                            pick_list(
+                                vec!["Option 1", "Option 2", "Option 3", "Option 4"],
+                                self.pick_list_selected,
+                                Message::PickListSelected,
+                            )
+                            .padding([8, 0, 8, 16]),
+                        ))
+                        .add(settings::item(
+                            "Slider",
+                            slider(0.0..=100.0, self.slider_value, Message::SliderChanged)
+                                .width(Length::Units(250)),
+                        ))
+                        .add(settings::item(
+                            "Progress",
+                            progress_bar(0.0..=100.0, self.slider_value)
+                                .width(Length::Units(250))
+                                .height(Length::Units(4)),
+                        ))
+                        .add(settings::item_row(vec![checkbox(
+                            "Checkbox",
+                            self.checkbox_value,
+                            Message::CheckboxToggled,
+                        )
+                        .into()]))
+                        .add(settings::item(
+                            format!(
+                                "Spin Button (Range {}:{})",
+                                self.spin_button.min, self.spin_button.max
+                            ),
+                            self.spin_button.view(Message::SpinButton),
+                        ))
                         .into(),
-                    button(ButtonTheme::Destructive)
-                        .text("Destructive")
-                        .on_press(Message::ButtonPressed)
-                        .into(),
-                    button(ButtonTheme::Text)
-                        .text("Text")
-                        .on_press(Message::ButtonPressed)
-                        .into()
-                ]))
-                .add(settings::item_row(vec![
-                    button(ButtonTheme::Primary).text("Primary").into(),
-                    button(ButtonTheme::Secondary).text("Secondary").into(),
-                    button(ButtonTheme::Positive).text("Positive").into(),
-                    button(ButtonTheme::Destructive).text("Destructive").into(),
-                    button(ButtonTheme::Text).text("Text").into(),
-                ]))
+                ])
+                .padding(0)
                 .into(),
-
-            settings::view_section("Controls")
-                .add(settings::item("Toggler", toggler(None, self.toggler_value, Message::TogglerToggled)))
-                .add(settings::item(
-                    "Pick List (TODO)",
-                    pick_list(
-                        vec!["Option 1", "Option 2", "Option 3", "Option 4",],
-                        self.pick_list_selected,
-                        Message::PickListSelected
-                    )
-                    .padding([8, 0, 8, 16])
-                ))
-                .add(settings::item(
-                    "Slider",
-                    slider(0.0..=100.0, self.slider_value, Message::SliderChanged)
-                        .width(Length::Units(250))
-                ))
-                .add(settings::item(
-                    "Progress",
-                    progress_bar(0.0..=100.0, self.slider_value)
-                        .width(Length::Units(250))
-                        .height(Length::Units(4))
-                ))
-                .add(settings::item_row(vec![
-                    checkbox("Checkbox", self.checkbox_value, Message::CheckboxToggled).into()
-                ]))
-                .add(settings::item(
-                    format!("Spin Button (Range {}:{})", self.spin_button.min, self.spin_button.max),
-                    self.spin_button.view(Message::SpinButton),
-                ))
-                .into()
+                Some(DemoView::TabB) => {
+                    settings::view_column(vec![settings::view_section("Tab B")
+                        .add(cosmic::iced::widget::text("Nothing here yet").width(Length::Fill))
+                        .into()])
+                    .padding(0)
+                    .into()
+                }
+                Some(DemoView::TabC) => {
+                    settings::view_column(vec![settings::view_section("Tab C")
+                        .add(cosmic::iced::widget::text("Nothing here yet").width(Length::Fill))
+                        .into()])
+                    .padding(0)
+                    .into()
+                }
+            },
         ])
         .into()
     }
