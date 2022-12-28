@@ -1,6 +1,9 @@
 /// Copyright 2022 System76 <info@system76.com>
 // SPDX-License-Identifier: MPL-2.0
 use slotmap::{SecondaryMap, SlotMap};
+use std::borrow::Cow;
+
+use crate::theme::Button;
 
 slotmap::new_key_type! {
     pub struct Key;
@@ -71,11 +74,27 @@ impl<Data> State<Data> {
 
 /// Data to be drawn in a [`SegmentedButton`] button.
 pub struct ButtonContent {
-    pub text: String,
+    pub text: Cow<'static, str>,
 }
 
 impl From<String> for ButtonContent {
     fn from(text: String) -> Self {
+        ButtonContent {
+            text: Cow::Owned(text),
+        }
+    }
+}
+
+impl From<&'static str> for ButtonContent {
+    fn from(text: &'static str) -> Self {
+        ButtonContent {
+            text: Cow::Borrowed(text),
+        }
+    }
+}
+
+impl From<Cow<'static, str>> for ButtonContent {
+    fn from(text: Cow<'static, str>) -> Self {
         ButtonContent { text }
     }
 }
