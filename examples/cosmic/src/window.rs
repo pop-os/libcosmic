@@ -274,28 +274,16 @@ impl Application for Window {
         window.spin_button.max = 10;
 
         // Configures the demo view switcher.
-        let key = window
-            .demo_view_switcher
-            .insert(String::from("Tab A"), DemoView::TabA);
-
+        let key = window.demo_view_switcher.insert("Tab A", DemoView::TabA);
         window.demo_view_switcher.activate(key);
-
-        window
-            .demo_view_switcher
-            .insert(String::from("Tab B"), DemoView::TabB);
-
-        window
-            .demo_view_switcher
-            .insert(String::from("Tab C"), DemoView::TabC);
+        window.demo_view_switcher.insert("Tab B", DemoView::TabB);
+        window.demo_view_switcher.insert("Tab C", DemoView::TabC);
 
         // Configures the demo selection button.
-        let key = window.
-            demo_selection
-            .insert(String::from("Choice A"), ());
-
+        let key = window.demo_selection.insert("Choice A", ());
         window.demo_selection.activate(key);
-        window.demo_selection.insert(String::from("Choice B"), ());
-        window.demo_selection.insert(String::from("Choice C"), ());
+        window.demo_selection.insert("Choice B", ());
+        window.demo_selection.insert("Choice C", ());
 
         (window, Command::none())
     }
