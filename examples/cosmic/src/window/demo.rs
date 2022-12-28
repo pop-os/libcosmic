@@ -2,7 +2,7 @@ use cosmic::{
     iced::widget::{checkbox, pick_list, progress_bar, radio, row, slider},
     iced::{Alignment, Length},
     theme::{self, Button as ButtonTheme, Theme},
-    widget::{button, segmented_button, settings, toggler},
+    widget::{button, segmented_button::cosmic::{view_switcher, segmented_selection}, settings, toggler},
     Element,
 };
 
@@ -30,8 +30,7 @@ impl Window {
 
         settings::view_column(vec![
             self.page_title(Page::Demo),
-            segmented_button(&self.demo_view_switcher)
-                .height(Length::Units(48))
+            view_switcher(&self.demo_view_switcher)
                 .on_activate(Message::DemoTabActivate)
                 .into(),
             match self.demo_view_switcher.active_data() {
@@ -122,8 +121,7 @@ impl Window {
                         cosmic::iced::widget::text("SegmentedButton::Selection")
                             .font(cosmic::font::FONT_SEMIBOLD)
                             .into(),
-                        segmented_button(&self.demo_selection)
-                            .style(theme::SegmentedButton::Selection)
+                        segmented_selection(&self.demo_selection)
                             .on_activate(Message::DemoSelectionActivate)
                             .into()
                     ])

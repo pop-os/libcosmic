@@ -1,17 +1,20 @@
-/// Copyright 2022 System76 <info@system76.com>
+// Copyright 2022 System76 <info@system76.com>
 // SPDX-License-Identifier: MPL-2.0
+
 use slotmap::{SecondaryMap, SlotMap};
 use std::borrow::Cow;
 
-use crate::theme::Button;
-
 slotmap::new_key_type! {
+    /// An ID for a segmented button
     pub struct Key;
 }
 
-/// Contains all state for interacting with a [`SegmentedButton`].
+/// Contains all state for interacting with a segmented button.
 pub struct State<Data> {
+    /// State that is shared with widget drawing.
     pub inner: WidgetState,
+
+    /// State unique to the application.
     pub data: SecondaryState<Data>,
 }
 
@@ -27,7 +30,10 @@ impl<Data> Default for State<Data> {
 /// State which is most useful to the widget.
 #[derive(Default)]
 pub struct WidgetState {
+    /// The content used for drawing segmented buttons.
     pub buttons: SlotMap<Key, ButtonContent>,
+
+    /// The actively-selected segmented button.
     pub active: Key,
 }
 
@@ -72,7 +78,7 @@ impl<Data> State<Data> {
     }
 }
 
-/// Data to be drawn in a [`SegmentedButton`] button.
+/// Data to be drawn in a segmented button.
 pub struct ButtonContent {
     pub text: Cow<'static, str>,
 }
