@@ -1,5 +1,49 @@
-/// Copyright 2022 System76 <info@system76.com>
+// Copyright 2022 System76 <info@system76.com>
 // SPDX-License-Identifier: MPL-2.0
+
+//! A widget providing a conjoined set of linear buttons for choosing between.
+//!
+//! ## Example
+//!
+//! Add the state and a message variant in your application for handling selections.
+//!
+//! ```no_run
+//! use iced_core::Length;
+//! use cosmic::theme;
+//! use cosmic::widget::segmented_button;
+//!
+//! enum AppMessage {
+//!     Selected(segmented_button::Key)
+//! }
+//!
+//! struct App {
+//!     ...
+//!     state: segmented_button::State<u16>(),
+//!     ...
+//! }
+//! ```
+//!
+//! Then add choices to the state, while activating the first.
+//!
+//! ```no_run
+//! let first_key = application.state.insert("Choice A", 0);
+//! application.state.insert("Choice B", 1);
+//! application.state.insert("Choice C", 2);
+//! application.state.activate(first_key);
+//! ```
+//!
+//! Then use it in the view method to create segmented button widgets.
+//!
+//! ```no_run
+//! let widget = segmentend_button(&application.state)
+//!     .style(theme::SegmentedButton::Selection)
+//!     .height(Length::Units(32))
+//!     .on_activate(AppMessage::Selected);
+//! ```
+
+/// COSMIC configurations of [`SegmentedButton`].
+pub mod cosmic;
+
 mod state;
 mod style;
 
@@ -22,19 +66,28 @@ struct PrivateWidgetState {
     hovered: Key,
 }
 
-/// A linear set of options for choosing between.
+/// A widget providing a conjoined set of linear buttons for choosing between.
+///
+/// The data for the widget comes from a [`State`] that is maintained the application.
 #[derive(Setters)]
 pub struct SegmentedButton<'a, Message, Renderer>
 where
     Renderer: iced_native::Renderer,
     Renderer::Theme: StyleSheet,
 {
+    /// Contains application state also used for drawing.
+    #[setters(skip)]
     state: &'a WidgetState,
+    /// The desired width of the widget.
     width: Length,
+    /// The desired height of the widget.
     height: Length,
+    /// The desired spacing between widgets.
     spacing: u16,
+    /// The style to draw the widget in.
     #[setters(into)]
     style: <Renderer::Theme as StyleSheet>::Style,
+    /// Emits the ID of the activated widget on selection.
     #[setters(skip)]
     on_activate: Option<Box<dyn Fn(Key) -> Message>>,
 }
@@ -56,6 +109,7 @@ where
         }
     }
 
+    /// Emits the ID of the activated widget on selection.
     #[must_use]
     pub fn on_activate(mut self, on_activate: impl Fn(Key) -> Message + 'static) -> Self {
         self.on_activate = Some(Box::from(on_activate));
@@ -63,6 +117,7 @@ where
     }
 }
 
+/// Creates a widget that presents multiple conjoined buttons.
 #[must_use]
 pub fn segmented_button<Message, Renderer, Data>(
     state: &State<Data>,
