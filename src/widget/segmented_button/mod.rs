@@ -72,12 +72,18 @@ struct PrivateWidgetState {
 #[derive(Setters)]
 pub struct SegmentedButton<'a, Message, Renderer>
 where
-    Renderer: iced_native::Renderer,
+    Renderer: iced_native::Renderer + iced_native::text::Renderer,
     Renderer::Theme: StyleSheet,
 {
     /// Contains application state also used for drawing.
     #[setters(skip)]
     state: &'a WidgetState,
+    /// The desired font for active tabs.
+    font_active: Renderer::Font,
+    /// The desired font for hovered tabs.
+    font_hovered: Renderer::Font,
+    /// The desired font for inactive tabs.
+    font_inactive: Renderer::Font,
     /// The desired width of the widget.
     width: Length,
     /// The desired height of the widget.
@@ -94,13 +100,16 @@ where
 
 impl<'a, Message, Renderer> SegmentedButton<'a, Message, Renderer>
 where
-    Renderer: iced_native::Renderer,
+    Renderer: iced_native::Renderer + iced_native::text::Renderer,
     Renderer::Theme: StyleSheet,
 {
     #[must_use]
     pub fn new(state: &'a WidgetState) -> Self {
         Self {
             state,
+            font_active: Renderer::Font::default(),
+            font_hovered: Renderer::Font::default(),
+            font_inactive: Renderer::Font::default(),
             height: Length::Units(32),
             width: Length::Fill,
             spacing: 0,
@@ -123,7 +132,7 @@ pub fn segmented_button<Message, Renderer, Data>(
     state: &State<Data>,
 ) -> SegmentedButton<Message, Renderer>
 where
-    Renderer: iced_native::Renderer,
+    Renderer: iced_native::Renderer + iced_native::text::Renderer,
     Renderer::Theme: StyleSheet,
 {
     SegmentedButton::new(&state.inner)
@@ -258,12 +267,12 @@ where
             bounds.width = button_width;
             bounds.x += num as f32 * button_width;
 
-            let button_appearance = if self.state.active == key {
-                appearance.button_active
+            let (button_appearance, font) = if self.state.active == key {
+                (appearance.button_active, &self.font_active)
             } else if state.hovered == key {
-                appearance.button_hover
+                (appearance.button_hover, &self.font_hovered)
             } else {
-                appearance.button_inactive
+                (appearance.button_inactive, &self.font_inactive)
             };
 
             let x = bounds.center_x();
@@ -313,7 +322,7 @@ where
                 size: f32::from(renderer.default_size()),
                 bounds: Rectangle { x, y, ..bounds },
                 color: button_appearance.text_color,
-                font: Default::default(),
+                font: font.clone(),
                 horizontal_alignment: Horizontal::Center,
                 vertical_alignment: Vertical::Center,
             });

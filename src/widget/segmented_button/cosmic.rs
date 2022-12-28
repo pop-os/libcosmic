@@ -14,6 +14,7 @@ pub fn view_switcher<Message, Data>(
     SegmentedButton::new(&state.inner)
         .height(Length::Units(48))
         .style(crate::theme::SegmentedButton::ViewSwitcher)
+        .font_active(crate::font::FONT_SEMIBOLD)
 }
 
 /// Appears as a selection of choices for choosing between.
@@ -26,4 +27,5 @@ pub fn segmented_selection<Message, Data>(
     SegmentedButton::new(&state.inner)
         .height(Length::Units(32))
         .style(crate::theme::SegmentedButton::Selection)
+        .font_active(crate::font::FONT_SEMIBOLD)
 }
