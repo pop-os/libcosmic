@@ -871,6 +871,8 @@ pub enum SegmentedButton {
     /// A tabbed widget for switching between views in an interface.
     #[default]
     ViewSwitcher,
+    /// A widget for multiple choice selection.
+    Selection,
     /// Or implement any custom theme of your liking.
     Custom(fn(&Theme) -> segmented_button::Appearance)
 }
@@ -909,6 +911,39 @@ impl segmented_button::StyleSheet for Theme {
                         border_radius_first: BorderRadius::from([8.0, 8.0, 0.0, 0.0]),
                         border_radius_last: BorderRadius::from([8.0, 8.0, 0.0, 0.0]),
                         border_radius_middle: BorderRadius::from([8.0, 8.0, 0.0, 0.0]),
+                        text_color: cosmic.accent.base.into(),
+                    }
+                }
+            }
+            SegmentedButton::Selection => {
+                let cosmic = self.cosmic();
+                segmented_button::Appearance {
+                    background: None,
+                    border_color: Color::TRANSPARENT,
+                    border_radius: BorderRadius::from(0.0),
+                    border_width: 0.0,
+                    button_active: segmented_button::ButtonAppearance {
+                        background: Some(Background::Color(cosmic.secondary.component.divider.into())),
+                        border_bottom: None,
+                        border_radius_first: BorderRadius::from([24.0, 0.0, 0.0, 24.0]),
+                        border_radius_last: BorderRadius::from([0.0, 24.0, 24.0, 0.0]),
+                        border_radius_middle: BorderRadius::from(0.0),
+                        text_color: cosmic.accent.base.into(),
+                    },
+                    button_inactive: segmented_button::ButtonAppearance {
+                        background: Some(Background::Color(cosmic.secondary.component.base.into())),
+                        border_bottom: None,
+                        border_radius_first: BorderRadius::from([24.0, 0.0, 0.0, 24.0]),
+                        border_radius_last: BorderRadius::from([0.0, 24.0, 24.0, 0.0]),
+                        border_radius_middle: BorderRadius::from(0.0),
+                        text_color: cosmic.primary.on.into(),
+                    },
+                    button_hover: segmented_button::ButtonAppearance {
+                        background: Some(Background::Color(cosmic.primary.component.hover.into())),
+                        border_bottom: None,
+                        border_radius_first: BorderRadius::from([24.0, 0.0, 0.0, 24.0]),
+                        border_radius_last: BorderRadius::from([0.0, 24.0, 24.0, 0.0]),
+                        border_radius_middle: BorderRadius::from(0.0),
                         text_color: cosmic.accent.base.into(),
                     }
                 }

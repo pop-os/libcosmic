@@ -1,7 +1,7 @@
 use cosmic::{
     iced::widget::{checkbox, pick_list, progress_bar, radio, row, slider},
     iced::{Alignment, Length},
-    theme::{Button as ButtonTheme, Theme},
+    theme::{self, Button as ButtonTheme, Theme},
     widget::{button, segmented_button, settings, toggler},
     Element,
 };
@@ -30,10 +30,11 @@ impl Window {
 
         settings::view_column(vec![
             self.page_title(Page::Demo),
-            segmented_button(&self.demo_tab_state)
+            segmented_button(&self.demo_view_switcher)
+                .height(Length::Units(48))
                 .on_activate(Message::DemoTabActivate)
                 .into(),
-            match self.demo_tab_state.active_data() {
+            match self.demo_view_switcher.active_data() {
                 None => panic!("no tab is active"),
                 Some(DemoView::TabA) => settings::view_column(vec![
                     settings::view_section("Debug")
@@ -117,9 +118,15 @@ impl Window {
                 .padding(0)
                 .into(),
                 Some(DemoView::TabB) => {
-                    settings::view_column(vec![settings::view_section("Tab B")
-                        .add(cosmic::iced::widget::text("Nothing here yet").width(Length::Fill))
-                        .into()])
+                    settings::view_column(vec![
+                        cosmic::iced::widget::text("SegmentedButton::Selection")
+                            .font(cosmic::font::FONT_SEMIBOLD)
+                            .into(),
+                        segmented_button(&self.demo_selection)
+                            .style(theme::SegmentedButton::Selection)
+                            .on_activate(Message::DemoSelectionActivate)
+                            .into()
+                    ])
                     .padding(0)
                     .into()
                 }

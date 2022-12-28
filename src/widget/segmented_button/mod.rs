@@ -1,6 +1,5 @@
 /// Copyright 2022 System76 <info@system76.com>
 // SPDX-License-Identifier: MPL-2.0
-
 mod state;
 mod style;
 
@@ -49,7 +48,7 @@ where
     pub fn new(state: &'a WidgetState) -> Self {
         Self {
             state,
-            height: Length::Units(48),
+            height: Length::Units(32),
             width: Length::Fill,
             spacing: 0,
             style: <Renderer::Theme as StyleSheet>::Style::default(),
