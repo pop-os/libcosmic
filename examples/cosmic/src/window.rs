@@ -129,7 +129,8 @@ pub struct Window {
     debug: bool,
     theme: Theme,
     slider_value: f32,
-    demo_tab_state: segmented_button::State<DemoView>,
+    demo_view_switcher: segmented_button::State<DemoView>,
+    demo_selection: segmented_button::State<()>,
     spin_button: SpinButtonModel<i32>,
     checkbox_value: bool,
     toggler_value: bool,
@@ -166,6 +167,7 @@ pub enum Message {
     CondensedViewToggle(()),
     Debug(bool),
     DemoTabActivate(segmented_button::Key),
+    DemoSelectionActivate(segmented_button::Key),
     Drag,
     InputChanged,
     Maximize,
@@ -271,19 +273,29 @@ impl Application for Window {
         window.spin_button.min = -10;
         window.spin_button.max = 10;
 
+        // Configures the demo view switcher.
         let key = window
-            .demo_tab_state
+            .demo_view_switcher
             .insert(String::from("Tab A"), DemoView::TabA);
 
-        window.demo_tab_state.activate(key);
+        window.demo_view_switcher.activate(key);
 
         window
-            .demo_tab_state
+            .demo_view_switcher
             .insert(String::from("Tab B"), DemoView::TabB);
 
         window
-            .demo_tab_state
+            .demo_view_switcher
             .insert(String::from("Tab C"), DemoView::TabC);
+
+        // Configures the demo selection button.
+        let key = window.
+            demo_selection
+            .insert(String::from("Choice A"), ());
+
+        window.demo_selection.activate(key);
+        window.demo_selection.insert(String::from("Choice B"), ());
+        window.demo_selection.insert(String::from("Choice C"), ());
 
         (window, Command::none())
     }
@@ -341,7 +353,8 @@ impl Application for Window {
             Message::InputChanged => {}
             Message::SpinButton(msg) => self.spin_button.update(msg),
             Message::CondensedViewToggle(_) => {}
-            Message::DemoTabActivate(key) => self.demo_tab_state.activate(key),
+            Message::DemoTabActivate(key) => self.demo_view_switcher.activate(key),
+            Message::DemoSelectionActivate(key) => self.demo_selection.activate(key),
         }
 
         Command::none()
