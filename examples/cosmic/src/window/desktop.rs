@@ -6,7 +6,7 @@ use cosmic::{
     widget::{list_column, settings, toggler},
 };
 
-use super::{Message, Page, SubPage, Window};
+use super::{Page, SubPage, Window};
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum DesktopPage {
@@ -16,6 +16,39 @@ pub enum DesktopPage {
     DockAndTopPanel,
     Workspaces,
     Notifications,
+}
+
+#[derive(Debug, Default)]
+pub struct State {
+    pub top_left_hot_corner: bool,
+    pub show_workspaces_button: bool,
+    pub show_applications_button: bool,
+    pub show_minimize_button: bool,
+    pub show_maximize_button: bool,
+    pub slideshow: bool,
+    pub same_background: bool,
+}
+
+#[derive(Clone, Copy, Debug)]
+pub enum Message {
+    Page(Page),
+    Slideshow(bool),
+    SameBackground(bool),
+    ShowWorkspacesButton(bool),
+    ShowApplicationsButton(bool),
+    ShowMinimizeButton(bool),
+    ShowMaximizeButton(bool),
+    TopLeftHotCorner(bool),
+}
+
+impl From<Page> for Message {
+    fn from(page: Page) -> Message {
+        Message::Page(page)
+    }
+}
+
+pub enum Output {
+    Page(Page),
 }
 
 impl SubPage for DesktopPage {
@@ -66,30 +99,45 @@ impl SubPage for DesktopPage {
     }
 }
 
-impl Window {
-    pub(super) fn view_desktop(&self, desktop_page_opt: Option<DesktopPage>) -> Element<Message> {
+impl State {
+    pub(super) fn update(&mut self, message: Message) -> Option<Output> {
+        match message {
+            Message::Page(page) => return Some(Output::Page(page)),
+            Message::SameBackground(value) => self.same_background = value,
+            Message::ShowApplicationsButton(value) => self.show_applications_button = value,
+            Message::ShowMaximizeButton(value) => self.show_maximize_button = value,
+            Message::ShowMinimizeButton(value) => self.show_maximize_button = value,
+            Message::ShowWorkspacesButton(value) => self.show_workspaces_button = value,
+            Message::Slideshow(value) => self.slideshow = value,
+            Message::TopLeftHotCorner(value) => self.top_left_hot_corner = value,
+        }
+        None
+    }
+
+    pub(super) fn view<'a>(&'a self, window: &'a Window, desktop_page_opt: Option<DesktopPage>) -> Element<'a, Message> {
         match desktop_page_opt {
             None => settings::view_column(vec![
-                self.page_title(self.page),
+                window.page_title(window.page),
                 column!(
-                    self.sub_page_button(DesktopPage::DesktopOptions),
-                    self.sub_page_button(DesktopPage::Wallpaper),
-                    self.sub_page_button(DesktopPage::Appearance),
-                    self.sub_page_button(DesktopPage::DockAndTopPanel),
-                    self.sub_page_button(DesktopPage::Workspaces),
-                    self.sub_page_button(DesktopPage::Notifications),
+                    window.sub_page_button(DesktopPage::DesktopOptions),
+                    window.sub_page_button(DesktopPage::Wallpaper),
+                    window.sub_page_button(DesktopPage::Appearance),
+                    window.sub_page_button(DesktopPage::DockAndTopPanel),
+                    window.sub_page_button(DesktopPage::Workspaces),
+                    window.sub_page_button(DesktopPage::Notifications),
                 ).spacing(16).into()
-            ]).into(),
-            Some(DesktopPage::DesktopOptions) => self.view_desktop_options(),
-            Some(DesktopPage::Wallpaper) => self.view_desktop_wallpaper(),
-            Some(DesktopPage::Workspaces) => self.view_desktop_workspaces(),
-            Some(sub_page) => self.view_unimplemented_sub_page(sub_page),
+            ])
+            .into(),
+            Some(DesktopPage::DesktopOptions) => self.view_desktop_options(window),
+            Some(DesktopPage::Wallpaper) => self.view_desktop_wallpaper(window),
+            Some(DesktopPage::Workspaces) => self.view_desktop_workspaces(window),
+            Some(sub_page) => window.view_unimplemented_sub_page(sub_page),
         }
     }
 
-    fn view_desktop_options(&self) -> Element<Message> {
+    fn view_desktop_options<'a>(&'a self, window: &'a Window) -> Element<'a, Message> {
         settings::view_column(vec![
-            self.parent_page_button(DesktopPage::DesktopOptions),
+            window.parent_page_button(DesktopPage::DesktopOptions),
 
             settings::view_section("Super Key Action")
                 .add(settings::item("Launcher", horizontal_space(Length::Fill)))
@@ -98,22 +146,22 @@ impl Window {
                 .into(),
 
             settings::view_section("Hot Corner")
-                .add(settings::item("Enable top-left hot corner for Workspaces", toggler(None, self.toggler_value, Message::TogglerToggled)))
+                .add(settings::item("Enable top-left hot corner for Workspaces", toggler(None, self.top_left_hot_corner, Message::TopLeftHotCorner)))
                 .into(),
 
             settings::view_section("Top Panel")
-                .add(settings::item("Show Workspaces Button", toggler(None, self.toggler_value, Message::TogglerToggled)))
-                .add(settings::item("Show Applications Button", toggler(None, self.toggler_value, Message::TogglerToggled)))
+                .add(settings::item("Show Workspaces Button", toggler(None, self.show_workspaces_button, Message::ShowWorkspacesButton)))
+                .add(settings::item("Show Applications Button", toggler(None, self.show_applications_button, Message::ShowApplicationsButton)))
                 .into(),
 
             settings::view_section("Window Controls")
-                .add(settings::item("Show Minimize Button", toggler(None, self.toggler_value, Message::TogglerToggled)))
-                .add(settings::item("Show Maximize Button", toggler(None, self.toggler_value, Message::TogglerToggled)))
+                .add(settings::item("Show Minimize Button", toggler(None, self.show_minimize_button, Message::ShowMinimizeButton)))
+                .add(settings::item("Show Maximize Button", toggler(None, self.show_maximize_button, Message::ShowMaximizeButton)))
                 .into(),
         ]).into()
     }
 
-    fn view_desktop_wallpaper(&self) -> Element<Message> {
+    fn view_desktop_wallpaper<'a>(&'a self, window: &'a Window) -> Element<'a, Message> {
         let mut image_paths: Vec<std::path::PathBuf> = Vec::new();
         /*
         //TODO: load image paths, do this asynchronously somehow
@@ -150,7 +198,7 @@ impl Window {
         }
 
         settings::view_column(vec![
-            self.parent_page_button(DesktopPage::Wallpaper),
+            window.parent_page_button(DesktopPage::Wallpaper),
 
             row!(
                 horizontal_space(Length::Fill),
@@ -165,18 +213,18 @@ impl Window {
             ).into(),
 
             list_column()
-                .add(settings::item("Same background on all displays", toggler(None, self.toggler_value, Message::TogglerToggled)))
+                .add(settings::item("Same background on all displays", toggler(None, self.same_background, Message::SameBackground)))
                 .add(settings::item("Background fit", text("TODO")))
-                .add(settings::item("Slideshow", toggler(None, self.toggler_value, Message::TogglerToggled)))
+                .add(settings::item("Slideshow", toggler(None, self.slideshow, Message::Slideshow)))
                 .into(),
 
             column(image_column).spacing(16).into(),
         ]).into()
     }
 
-    fn view_desktop_workspaces(&self) -> Element<Message> {
+    fn view_desktop_workspaces<'a>(&'a self, window: &'a Window) -> Element<'a, Message> {
         settings::view_column(vec![
-            self.parent_page_button(DesktopPage::Wallpaper),
+            window.parent_page_button(DesktopPage::Wallpaper),
 
             settings::view_section("Workspace Behavior")
                 .add(settings::item("Dynamic workspaces", horizontal_space(Length::Fill)))

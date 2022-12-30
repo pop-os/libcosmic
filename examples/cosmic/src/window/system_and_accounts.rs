@@ -7,6 +7,9 @@ use cosmic::{
 
 use super::{Message, Page, SubPage, Window};
 
+#[derive(Default)]
+pub struct State {}
+
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum SystemAndAccountsPage {
     Users,
@@ -53,10 +56,10 @@ impl SubPage for SystemAndAccountsPage {
     }
 }
 
-impl Window {
-    pub(super) fn view_system_and_accounts_about(&self) -> Element<Message> {
+impl State {
+    pub(super) fn view<'a>(&'a self, window: &'a Window) -> Element<'a, Message> {
         settings::view_column(vec![
-            self.parent_page_button(SystemAndAccountsPage::About),
+            window.parent_page_button(SystemAndAccountsPage::About),
 
             row!(
                 horizontal_space(Length::Fill),

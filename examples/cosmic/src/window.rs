@@ -128,13 +128,10 @@ pub struct Window {
     page: Page,
     debug: bool,
     theme: Theme,
-    slider_value: f32,
-    demo_view_switcher: segmented_button::State<DemoView>,
-    demo_selection: segmented_button::State<()>,
-    spin_button: SpinButtonModel<i32>,
-    checkbox_value: bool,
-    toggler_value: bool,
-    pick_list_selected: Option<&'static str>,
+    bluetooth: bluetooth::State,
+    demo: demo::State,
+    desktop: desktop::State,
+    system_and_accounts: system_and_accounts::State,
     sidebar_toggled: bool,
     sidebar_toggled_condensed: bool,
     show_minimize: bool,
@@ -161,30 +158,28 @@ impl Window {
 #[allow(dead_code)]
 #[derive(Clone, Copy, Debug)]
 pub enum Message {
-    ButtonPressed,
-    CheckboxToggled(bool),
     Close,
     CondensedViewToggle(()),
-    Debug(bool),
-    DemoTabActivate(segmented_button::Key),
-    DemoSelectionActivate(segmented_button::Key),
+    Bluetooth(bluetooth::Message),
+    Demo(demo::Message),
+    Desktop(desktop::Message),
     Drag,
     InputChanged,
     Maximize,
     Minimize,
     Page(Page),
-    PickListSelected(&'static str),
-    RowSelected(usize),
-    SliderChanged(f32),
-    SpinButton(SpinMessage),
-    ThemeChanged(Theme),
-    TogglerToggled(bool),
     ToggleSidebar,
     ToggleSidebarCondensed,
 }
 
+impl From<Page> for Message {
+    fn from(page: Page) -> Message {
+        Message::Page(page)
+    }
+}
+
 impl Window {
-    fn page_title(&self, page: Page) -> Element<Message> {
+    fn page_title<Message: 'static>(&self, page: Page) -> Element<Message> {
         row!(text(page.title()).size(30), horizontal_space(Length::Fill),).into()
     }
 
@@ -192,7 +187,12 @@ impl Window {
         WINDOW_WIDTH.load(Ordering::Relaxed) < BREAK_POINT
     }
 
-    fn parent_page_button(&self, sub_page: impl SubPage) -> Element<Message> {
+    fn page(&mut self, page: Page) {
+        self.sidebar_toggled_condensed = false;
+        self.page = page;
+    }
+
+    fn parent_page_button<Message: Clone + From<Page> + 'static>(&self, sub_page: impl SubPage) -> Element<Message> {
         let page = sub_page.parent_page();
         column!(
             iced::widget::Button::new(row!(
@@ -201,7 +201,7 @@ impl Window {
             ))
             .padding(0)
             .style(theme::Button::Link)
-            .on_press(Message::Page(page)),
+            .on_press(Message::from(page)),
             row!(
                 text(sub_page.title()).size(30),
                 horizontal_space(Length::Fill),
@@ -211,7 +211,7 @@ impl Window {
         .into()
     }
 
-    fn sub_page_button(&self, sub_page: impl SubPage) -> Element<Message> {
+    fn sub_page_button<Message: Clone + From<Page> + 'static>(&self, sub_page: impl SubPage) -> Element<Message> {
         iced::widget::Button::new(
             container(
                 settings::item_row(vec![
@@ -236,18 +236,18 @@ impl Window {
         )
         .padding(0)
         .style(theme::Button::Transparent)
-        .on_press(Message::Page(sub_page.into_page()))
+        .on_press(Message::from(sub_page.into_page()))
         .into()
     }
 
-    fn view_unimplemented_page(&self, page: Page) -> Element<Message> {
+    fn view_unimplemented_page<Message: 'static>(&self, page: Page) -> Element<Message> {
         settings::view_column(vec![
             self.page_title(page),
             text("We haven't created that panel yet, and/or it is using a similar idea as current Pop! designs.").into(),
         ]).into()
     }
 
-    fn view_unimplemented_sub_page(&self, sub_page: impl SubPage) -> Element<Message> {
+    fn view_unimplemented_sub_page<'a, Message: Clone + From<Page> + 'static>(&'a self, sub_page: impl SubPage) -> Element<'a, Message> {
         settings::view_column(vec![
             self.parent_page_button(sub_page),
             text("We haven't created that panel yet, and/or it is using a similar idea as current Pop! designs.").into(),
@@ -266,24 +266,25 @@ impl Application for Window {
             .sidebar_toggled(true)
             .show_maximize(true)
             .show_minimize(true);
-        window.slider_value = 50.0;
+        window.demo.slider_value = 50.0;
         //        window.theme = Theme::Light;
-        window.pick_list_selected = Some("Option 1");
+        window.demo.pick_list_selected = Some("Option 1");
         window.title = String::from("COSMIC Design System - Iced");
-        window.spin_button.min = -10;
-        window.spin_button.max = 10;
+        window.demo.spin_button.min = -10;
+        window.demo.spin_button.max = 10;
 
         // Configures the demo view switcher.
-        let key = window.demo_view_switcher.insert("Tab A", DemoView::TabA);
-        window.demo_view_switcher.activate(key);
-        window.demo_view_switcher.insert("Tab B", DemoView::TabB);
-        window.demo_view_switcher.insert("Tab C", DemoView::TabC);
+        let key = window.demo.view_switcher.insert("Controls", DemoView::TabA);
+        window.demo.view_switcher.activate(key);
+        window.demo.view_switcher.insert("Segmented Button", DemoView::TabB);
+        window.demo.view_switcher.insert("Tab C", DemoView::TabC);
 
         // Configures the demo selection button.
-        let key = window.demo_selection.insert("Choice A", ());
-        window.demo_selection.activate(key);
-        window.demo_selection.insert("Choice B", ());
-        window.demo_selection.insert("Choice C", ());
+        let key = window.demo.selection.insert("Choice A", ());
+        window.demo.selection.activate(key);
+        window.demo.selection.insert("Choice B", ());
+        window.demo.selection.insert("Choice C", ());
+
 
         (window, Command::none())
     }
@@ -316,19 +317,23 @@ impl Application for Window {
 
     fn update(&mut self, message: Message) -> iced::Command<Self::Message> {
         match message {
-            Message::Page(page) => {
-                self.sidebar_toggled_condensed = false;
-                self.page = page;
+            Message::Page(page) => self.page(page),
+            Message::Bluetooth(message) => {
+                self.bluetooth.update(message);
             }
-            Message::Debug(debug) => self.debug = debug,
-            Message::ThemeChanged(theme) => self.theme = theme,
-            Message::ButtonPressed => {}
-            Message::SliderChanged(value) => self.slider_value = value,
-            Message::CheckboxToggled(value) => {
-                self.checkbox_value = value;
+            Message::Demo(message) => {
+                match self.demo.update(message) {
+                    Some(demo::Output::Debug(debug)) => self.debug = debug,
+                    Some(demo::Output::ThemeChanged(theme)) => self.theme = theme,
+                    None => (),
+                }
             }
-            Message::TogglerToggled(value) => self.toggler_value = value,
-            Message::PickListSelected(value) => self.pick_list_selected = Some(value),
+            Message::Desktop(message) => {
+                match self.desktop.update(message) {
+                    Some(desktop::Output::Page(page)) => self.page(page),
+                    None => (),
+                }
+            }
             Message::ToggleSidebar => self.sidebar_toggled = !self.sidebar_toggled,
             Message::ToggleSidebarCondensed => {
                 self.sidebar_toggled_condensed = !self.sidebar_toggled_condensed
@@ -337,12 +342,11 @@ impl Application for Window {
             Message::Close => return close(window::Id::new(0)),
             Message::Minimize => return minimize(window::Id::new(0), true),
             Message::Maximize => return toggle_maximize(window::Id::new(0)),
-            Message::RowSelected(row) => println!("Selected row {row}"),
+
             Message::InputChanged => {}
-            Message::SpinButton(msg) => self.spin_button.update(msg),
+
             Message::CondensedViewToggle(_) => {}
-            Message::DemoTabActivate(key) => self.demo_view_switcher.activate(key),
-            Message::DemoSelectionActivate(key) => self.demo_selection.activate(key),
+
         }
 
         Command::none()
@@ -439,7 +443,7 @@ impl Application for Window {
 
         if !(self.is_condensed() && sidebar_toggled) {
             let content: Element<_> = match self.page {
-                Page::Demo => self.view_demo(),
+                Page::Demo => self.demo.view(self).map(Message::Demo),
                 Page::Networking(None) => settings::view_column(vec![
                     self.page_title(self.page),
                     column!(
@@ -450,9 +454,11 @@ impl Application for Window {
                     .into(),
                 ])
                 .into(),
-                Page::Networking(Some(sub_page)) => self.view_unimplemented_sub_page(sub_page),
-                Page::Bluetooth => self.view_bluetooth(),
-                Page::Desktop(desktop_page_opt) => self.view_desktop(desktop_page_opt),
+                Page::Networking(Some(sub_page)) => {
+                    self.view_unimplemented_sub_page(sub_page)
+                }
+                Page::Bluetooth => self.bluetooth.view(self).map(Message::Bluetooth),
+                Page::Desktop(desktop_page_opt) => self.desktop.view(self, desktop_page_opt).map(Message::Desktop),
                 Page::InputDevices(None) => settings::view_column(vec![
                     self.page_title(self.page),
                     column!(
@@ -477,7 +483,7 @@ impl Application for Window {
                 ])
                 .into(),
                 Page::SystemAndAccounts(Some(SystemAndAccountsPage::About)) => {
-                    self.view_system_and_accounts_about()
+                    self.system_and_accounts.view(self)
                 }
                 Page::SystemAndAccounts(Some(sub_page)) => {
                     self.view_unimplemented_sub_page(sub_page)

@@ -1,12 +1,12 @@
 use cosmic::{
     iced::widget::{checkbox, pick_list, progress_bar, radio, row, slider},
     iced::{Alignment, Length},
-    theme::{self, Button as ButtonTheme, Theme},
-    widget::{button, segmented_button::cosmic::{view_switcher, segmented_selection}, settings, toggler},
+    theme::{Button as ButtonTheme, Theme},
+    widget::{button, segmented_button::{self, cosmic::{view_switcher, segmented_selection}}, settings, toggler, Orientation, spin_button::{SpinButtonModel, SpinMessage}},
     Element,
 };
 
-use super::{Message, Page, Window};
+use super::{Page, Window};
 
 pub enum DemoView {
     TabA,
@@ -14,33 +14,82 @@ pub enum DemoView {
     TabC,
 }
 
-impl Window {
-    pub(super) fn view_demo(&self) -> Element<Message> {
+#[derive(Clone, Copy, Debug)]
+pub enum Message {
+    ButtonPressed,
+    CheckboxToggled(bool),
+    Debug(bool),
+    PickListSelected(&'static str),
+    RowSelected(usize),
+    Selection(segmented_button::Key),
+    SliderChanged(f32),
+    SpinButton(SpinMessage),
+    ThemeChanged(Theme),
+    TogglerToggled(bool),
+    ViewSwitcher(segmented_button::Key),
+}
+
+pub enum Output {
+    Debug(bool),
+    ThemeChanged(Theme)
+}
+
+#[derive(Default)]
+pub struct State {
+    pub checkbox_value: bool,
+    pub pick_list_selected: Option<&'static str>,
+    pub selection: segmented_button::State<()>,
+    pub slider_value: f32,
+    pub spin_button: SpinButtonModel<i32>,
+    pub toggler_value: bool,
+    pub view_switcher: segmented_button::State<DemoView>,
+}
+
+impl State {
+    pub(super) fn update(&mut self, message: Message) -> Option<Output> {
+        match message {
+            Message::ButtonPressed => (),
+            Message::CheckboxToggled(value) => self.checkbox_value = value,
+            Message::Debug(value) => return Some(Output::Debug(value)),
+            Message::PickListSelected(value) => self.pick_list_selected = Some(value),
+            Message::RowSelected(row) => println!("Selected row {row}"),
+            Message::Selection(key) => self.selection.activate(key),
+            Message::SliderChanged(value) => self.slider_value = value,
+            Message::SpinButton(msg) => self.spin_button.update(msg),
+            Message::ThemeChanged(theme) => return Some(Output::ThemeChanged(theme)),
+            Message::TogglerToggled(value) => self.toggler_value = value,
+            Message::ViewSwitcher(key) => self.view_switcher.activate(key),
+        }
+
+        None
+    }
+
+    pub(super) fn view<'a>(&'a self, window: &'a Window) -> Element<'a, Message> {
         let choose_theme = [Theme::Light, Theme::Dark].iter().fold(
             row![].spacing(10).align_items(Alignment::Center),
             |row, theme| {
                 row.push(radio(
                     format!("{:?}", theme),
                     *theme,
-                    Some(self.theme),
+                    Some(window.theme),
                     Message::ThemeChanged,
                 ))
             },
         );
 
         settings::view_column(vec![
-            self.page_title(Page::Demo),
-            view_switcher(&self.demo_view_switcher)
-                .on_activate(Message::DemoTabActivate)
+            window.page_title(Page::Demo),
+            view_switcher(&self.view_switcher)
+                .on_activate(Message::ViewSwitcher)
                 .into(),
-            match self.demo_view_switcher.active_data() {
+            match self.view_switcher.active_data() {
                 None => panic!("no tab is active"),
                 Some(DemoView::TabA) => settings::view_column(vec![
                     settings::view_section("Debug")
                         .add(settings::item("Debug theme", choose_theme))
                         .add(settings::item(
                             "Debug layout",
-                            toggler(None, self.debug, Message::Debug),
+                            toggler(None, window.debug, Message::Debug),
                         ))
                         .into(),
                     settings::view_section("Buttons")
@@ -118,12 +167,59 @@ impl Window {
                 .into(),
                 Some(DemoView::TabB) => {
                     settings::view_column(vec![
-                        cosmic::iced::widget::text("SegmentedButton::Selection")
+                        cosmic::iced::widget::text("Selection")
                             .font(cosmic::font::FONT_SEMIBOLD)
                             .into(),
-                        segmented_selection(&self.demo_selection)
-                            .on_activate(Message::DemoSelectionActivate)
-                            .into()
+                        segmented_selection(&self.selection)
+                            .on_activate(Message::Selection)
+                            .into(),
+                        segmented_selection(&self.selection)
+                            .on_activate(Message::Selection)
+                            .orientation(Orientation::Vertical)
+                            .into(),
+                        cosmic::iced::widget::row(vec![
+                            segmented_selection(&self.selection)
+                                .on_activate(Message::Selection)
+                                .orientation(Orientation::Vertical)
+                                .width(Length::FillPortion(1))
+                                .into(),
+                            segmented_selection(&self.selection)
+                                .on_activate(Message::Selection)
+                                .orientation(Orientation::Vertical)
+                                .width(Length::FillPortion(1))
+                                .into(),
+                            segmented_selection(&self.selection)
+                                .on_activate(Message::Selection)
+                                .orientation(Orientation::Vertical)
+                                .width(Length::FillPortion(1))
+                                .into(),
+                        ])
+                        .spacing(12)
+                        .width(Length::Fill)
+                        .into(),
+                        cosmic::iced::widget::text("ViewSwitcher")
+                            .font(cosmic::font::FONT_SEMIBOLD)
+                            .into(),
+                        cosmic::iced::widget::row(vec![
+                            view_switcher(&self.selection)
+                                .on_activate(Message::Selection)
+                                .orientation(Orientation::Vertical)
+                                .width(Length::FillPortion(1))
+                                .into(),
+                            view_switcher(&self.selection)
+                                .on_activate(Message::Selection)
+                                .orientation(Orientation::Vertical)
+                                .width(Length::FillPortion(1))
+                                .into(),
+                            view_switcher(&self.selection)
+                                .on_activate(Message::Selection)
+                                .orientation(Orientation::Vertical)
+                                .width(Length::FillPortion(1))
+                                .into(),
+                        ])
+                        .spacing(12)
+                        .width(Length::Fill)
+                        .into()
                     ])
                     .padding(0)
                     .into()
