@@ -1,6 +1,7 @@
 // Copyright 2022 System76 <info@system76.com>
 // SPDX-License-Identifier: MPL-2.0
 
+use crate::widget::Orientation;
 use iced_core::{Background, BorderRadius, Color};
 
 /// The appearance of a segmented button.
@@ -32,5 +33,5 @@ pub trait StyleSheet {
     type Style: Default;
 
     /// The [`Appearance`] of the segmented button.
-    fn appearance(&self, style: &Self::Style) -> Appearance;
+    fn appearance(&self, style: &Self::Style, orientation: Orientation) -> Appearance;
 }
