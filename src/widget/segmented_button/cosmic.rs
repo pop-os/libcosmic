@@ -2,7 +2,6 @@
 // SPDX-License-Identifier: MPL-2.0
 
 use super::{SegmentedButton, State};
-use iced_core::Length;
 
 /// Appears as a collection of tabs for developing a tabbed interface.
 ///
@@ -12,7 +11,8 @@ pub fn view_switcher<Message, Data>(
     state: &State<Data>,
 ) -> SegmentedButton<Message, crate::Renderer> {
     SegmentedButton::new(&state.inner)
-        .height(Length::Units(48))
+        .button_padding([16, 0, 16, 0])
+        .button_height(48)
         .style(crate::theme::SegmentedButton::ViewSwitcher)
         .font_active(crate::font::FONT_SEMIBOLD)
 }
@@ -25,7 +25,8 @@ pub fn segmented_selection<Message, Data>(
     state: &State<Data>,
 ) -> SegmentedButton<Message, crate::Renderer> {
     SegmentedButton::new(&state.inner)
-        .height(Length::Units(32))
+        .button_padding([16, 0, 16, 0])
+        .button_height(32)
         .style(crate::theme::SegmentedButton::Selection)
         .font_active(crate::font::FONT_SEMIBOLD)
 }

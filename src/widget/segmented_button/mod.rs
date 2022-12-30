@@ -50,6 +50,8 @@ mod style;
 pub use self::state::{ButtonContent, Key, SecondaryState, State, WidgetState};
 pub use self::style::{Appearance, ButtonAppearance, StyleSheet};
 
+use crate::widget::Orientation;
+
 use derive_setters::Setters;
 use iced::{
     alignment::{Horizontal, Vertical},
@@ -58,6 +60,18 @@ use iced::{
 use iced_core::BorderRadius;
 use iced_native::widget::tree;
 use iced_native::{layout, renderer, widget::Tree, Clipboard, Layout, Shell, Widget};
+
+/// Creates a widget that presents multiple conjoined buttons.
+#[must_use]
+pub fn segmented_button<Message, Renderer, Data>(
+    state: &State<Data>,
+) -> SegmentedButton<Message, Renderer>
+where
+    Renderer: iced_native::Renderer + iced_native::text::Renderer,
+    Renderer::Theme: StyleSheet,
+{
+    SegmentedButton::new(&state.inner)
+}
 
 /// State that is maintained by the widget internally.
 #[derive(Default)]
@@ -78,19 +92,25 @@ where
     /// Contains application state also used for drawing.
     #[setters(skip)]
     state: &'a WidgetState,
-    /// The desired font for active tabs.
+    /// Desired font for active tabs.
     font_active: Renderer::Font,
-    /// The desired font for hovered tabs.
+    /// Desired font for hovered tabs.
     font_hovered: Renderer::Font,
-    /// The desired font for inactive tabs.
+    /// Desired font for inactive tabs.
     font_inactive: Renderer::Font,
-    /// The desired width of the widget.
+    /// Orientation of the buttons.
+    orientation: Orientation,
+    /// Desired width of the widget.
     width: Length,
-    /// The desired height of the widget.
+    /// Desired height of the widget.
     height: Length,
-    /// The desired spacing between widgets.
+    /// Padding around a button.
+    button_padding: [u16; 4],
+    /// Desired height of a button.
+    button_height: u16,
+    /// Desired spacing between buttons.
     spacing: u16,
-    /// The style to draw the widget in.
+    /// Style to draw the widget in.
     #[setters(into)]
     style: <Renderer::Theme as StyleSheet>::Style,
     /// Emits the ID of the activated widget on selection.
@@ -110,8 +130,11 @@ where
             font_active: Renderer::Font::default(),
             font_hovered: Renderer::Font::default(),
             font_inactive: Renderer::Font::default(),
-            height: Length::Units(32),
+            orientation: Orientation::Horizontal,
+            height: Length::Shrink,
             width: Length::Fill,
+            button_padding: [4, 4, 4, 4],
+            button_height: 32,
             spacing: 0,
             style: <Renderer::Theme as StyleSheet>::Style::default(),
             on_activate: None,
@@ -124,18 +147,61 @@ where
         self.on_activate = Some(Box::from(on_activate));
         self
     }
-}
 
-/// Creates a widget that presents multiple conjoined buttons.
-#[must_use]
-pub fn segmented_button<Message, Renderer, Data>(
-    state: &State<Data>,
-) -> SegmentedButton<Message, Renderer>
-where
-    Renderer: iced_native::Renderer + iced_native::text::Renderer,
-    Renderer::Theme: StyleSheet,
-{
-    SegmentedButton::new(&state.inner)
+    /// Creates a closure for generating the layout bounds of the buttons.
+    fn button_bounds(
+        &self,
+        bounds: Rectangle,
+    ) -> stack_dst::ValueA<dyn FnMut() -> Rectangle, [usize; 4]> {
+        let button_amount = self.state.buttons.len() as f32;
+        match self.orientation {
+            Orientation::Horizontal => {
+                let width = bounds.width / button_amount;
+                let mut bounds = bounds;
+                bounds.width = width;
+
+                let closure = move || {
+                    let clone = bounds;
+                    bounds.x += width;
+                    clone
+                };
+
+                stack_dst::ValueA::new_stable(closure, |p| p as _)
+                    .ok()
+                    .unwrap()
+            }
+
+            Orientation::Vertical => {
+                let height = bounds.height / button_amount;
+                let mut bounds = bounds;
+                bounds.height = height;
+
+                let closure = move || {
+                    let clone = bounds;
+                    bounds.y += height;
+                    clone
+                };
+
+                stack_dst::ValueA::new_stable(closure, |p| p as _)
+                    .ok()
+                    .unwrap()
+            }
+        }
+    }
+
+    fn measure_button(
+        &self,
+        renderer: &Renderer,
+        text: &str,
+        text_size: u16,
+        bounds: Size,
+    ) -> (f32, f32) {
+        let (mut w, mut h) = renderer.measure(text, text_size, Default::default(), bounds);
+        w += self.button_padding[0] as f32 + self.button_padding[2] as f32;
+        h += self.button_padding[1] as f32 + self.button_padding[3] as f32;
+        h = h.max(self.button_height as f32);
+        (w, h)
+    }
 }
 
 impl<'a, Message, Renderer> Widget<Message, Renderer> for SegmentedButton<'a, Message, Renderer>
@@ -161,18 +227,31 @@ where
     }
 
     fn layout(&self, renderer: &Renderer, limits: &layout::Limits) -> layout::Node {
-        let limits = limits.width(self.width).height(self.height);
+        let mut width = 0.0f32;
+        let mut height = 0.0f32;
+        let mut limits = limits.width(self.width);
+        let text_size = renderer.default_size();
 
-        let bounds = limits.max();
+        match self.orientation {
+            Orientation::Horizontal => {
+                for (_, content) in self.state.buttons.iter() {
+                    let (w, h) =
+                        self.measure_button(renderer, &content.text, text_size, limits.max());
+                    width += w + f32::from(self.spacing * 2);
+                    height = height.max(h);
+                }
 
-        let size = renderer.default_size();
-
-        let mut width = 0.0;
-        let height = bounds.height;
-
-        for (_, content) in self.state.buttons.iter() {
-            let (w, _) = renderer.measure(&content.text, size, Default::default(), bounds);
-            width += w + f32::from(self.spacing * 2);
+                limits = limits.height(Length::Units(height as u16));
+            }
+            Orientation::Vertical => {
+                for (_, content) in self.state.buttons.iter() {
+                    let (w, h) =
+                        self.measure_button(renderer, &content.text, text_size, limits.max());
+                    height += h + f32::from(self.spacing * 2);
+                    width = width.max(w);
+                }
+                limits = limits.height(Length::Units(height as u16));
+            }
         }
 
         layout::Node::new(limits.resolve(Size::new(width, height)))
@@ -189,15 +268,12 @@ where
         shell: &mut Shell<'_, Message>,
     ) -> event::Status {
         let bounds = layout.bounds();
+        let mut bounds_generator = self.button_bounds(bounds);
         let state = tree.state.downcast_mut::<PrivateWidgetState>();
 
         if bounds.contains(cursor_position) {
-            let button_width = bounds.width / self.state.buttons.len() as f32;
-            for (num, (key, _)) in self.state.buttons.iter().enumerate() {
-                let mut bounds = bounds;
-                bounds.width = button_width;
-                bounds.x += num as f32 * button_width;
-
+            for (key, _) in self.state.buttons.iter() {
+                let bounds = bounds_generator();
                 if bounds.contains(cursor_position) {
                     // Record that the mouse is hovering over this button.
                     state.hovered = key;
@@ -245,11 +321,13 @@ where
         _viewport: &iced::Rectangle,
     ) {
         let state = tree.state.downcast_ref::<PrivateWidgetState>();
-        let appearance = theme.appearance(&self.style);
+        let appearance = theme.appearance(&self.style, self.orientation);
         let bounds = layout.bounds();
         let button_amount = self.state.buttons.len();
-        let button_width = bounds.width / button_amount as f32;
 
+        let mut bounds_generator = self.button_bounds(bounds);
+
+        // Draw the background, if a background was defined.
         if let Some(background) = appearance.background {
             renderer.fill_quad(
                 renderer::Quad {
@@ -262,10 +340,9 @@ where
             );
         }
 
+        // Draw each of the buttons in the widget.
         for (num, (key, content)) in self.state.buttons.iter().enumerate() {
-            let mut bounds = bounds;
-            bounds.width = button_width;
-            bounds.x += num as f32 * button_width;
+            let bounds = bounds_generator();
 
             let (button_appearance, font) = if self.state.active == key {
                 (appearance.button_active, &self.font_active)
@@ -299,7 +376,7 @@ where
                 );
             }
 
-            // Render the bottom border.
+            // Draw the bottom border defined for this button.
             if let Some((width, background)) = button_appearance.border_bottom {
                 let mut bounds = bounds;
                 bounds.y = bounds.y + bounds.height - width;
@@ -316,7 +393,7 @@ where
                 );
             }
 
-            // Render the text.
+            // Draw the text in this button.
             renderer.fill_text(iced_native::text::Text {
                 content: &content.text,
                 size: f32::from(renderer.default_size()),

@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: MPL-2.0
 
 use slotmap::{SecondaryMap, SlotMap};
-use std::borrow::Cow;
+use std::{borrow::Cow, cell::Cell};
 
 slotmap::new_key_type! {
     /// An ID for a segmented button
@@ -35,6 +35,9 @@ pub struct WidgetState {
 
     /// The actively-selected segmented button.
     pub active: Key,
+
+    /// The button currently hovered.
+    pub hovered: Cell<Key>,
 }
 
 /// State which is most useful to the application.
