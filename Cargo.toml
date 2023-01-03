@@ -7,7 +7,7 @@ edition = "2021"
 name = "cosmic"
 
 [features]
-default = ["swbuf", "winit"]
+default = ["swbuf", "winit", "tokio"]
 debug = ["iced/debug"]
 swbuf = ["iced/swbuf", "iced_swbuf"]
 wayland = ["iced/wayland", "iced_glow"]
@@ -32,7 +32,7 @@ git = "https://github.com/pop-os/cosmic-theme.git"
 [dependencies.iced]
 path = "iced"
 default-features = false
-features = ["image", "svg", "tokio"]
+features = ["image", "svg"]
 
 [dependencies.iced_core]
 path = "iced/core"
