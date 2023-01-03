@@ -3,11 +3,13 @@
 
 pub mod expander;
 pub mod palette;
+mod segmented_button;
 
 use std::hash::Hash;
 use std::hash::Hasher;
 
 pub use self::palette::Palette;
+pub use self::segmented_button::SegmentedButton;
 
 use cosmic_theme::Component;
 use iced_core::BorderRadius;
@@ -27,8 +29,6 @@ use iced_style::svg;
 use iced_style::text;
 use iced_style::text_input;
 use iced_style::toggler;
-use crate::widget::Orientation;
-use crate::widget::segmented_button;
 
 use iced_core::{Background, Color};
 
@@ -864,125 +864,5 @@ impl text_input::StyleSheet for Theme {
         let palette = self.extended_palette();
 
         palette.primary.weak.color
-    }
-}
-
-#[derive(Clone, Copy, Default)]
-pub enum SegmentedButton {
-    /// A tabbed widget for switching between views in an interface.
-    #[default]
-    ViewSwitcher,
-    /// A widget for multiple choice selection.
-    Selection,
-    /// Or implement any custom theme of your liking.
-    Custom(fn(&Theme) -> segmented_button::Appearance)
-}
-
-impl segmented_button::StyleSheet for Theme {
-    type Style = SegmentedButton;
-
-    fn appearance(&self, style: &Self::Style, orientation: Orientation) -> segmented_button::Appearance {
-        match style {
-            SegmentedButton::ViewSwitcher => {
-                let cosmic = self.cosmic();
-                segmented_button::Appearance {
-                    background: None,
-                    border_color: Color::TRANSPARENT,
-                    border_radius: BorderRadius::from(0.0),
-                    border_width: 0.0,
-                    button_active: segmented_button::ButtonAppearance {
-                        background: Some(Background::Color(cosmic.primary.component.base.into())),
-                        border_bottom: Some((4.0, cosmic.accent.base.into())),
-                        border_radius_first: BorderRadius::from([8.0, 8.0, 0.0, 0.0]),
-                        border_radius_last: BorderRadius::from([8.0, 8.0, 0.0, 0.0]),
-                        border_radius_middle: BorderRadius::from([8.0, 8.0, 0.0, 0.0]),
-                        text_color: cosmic.accent.base.into(),
-                    },
-                    button_inactive: segmented_button::ButtonAppearance {
-                        background: None,
-                        border_bottom: Some((1.0, cosmic.accent.base.into())),
-                        border_radius_first: BorderRadius::from(0.0),
-                        border_radius_last: BorderRadius::from(0.0),
-                        border_radius_middle: BorderRadius::from(0.0),
-                        text_color: cosmic.primary.on.into(),
-                    },
-                    button_hover: segmented_button::ButtonAppearance {
-                        background: Some(Background::Color(cosmic.primary.component.hover.into())),
-                        border_bottom: Some((1.0, cosmic.accent.base.into())),
-                        border_radius_first: BorderRadius::from([8.0, 8.0, 0.0, 0.0]),
-                        border_radius_last: BorderRadius::from([8.0, 8.0, 0.0, 0.0]),
-                        border_radius_middle: BorderRadius::from([8.0, 8.0, 0.0, 0.0]),
-                        text_color: cosmic.accent.base.into(),
-                    }
-                }
-            }
-            SegmentedButton::Selection if orientation == Orientation::Horizontal => {
-                let cosmic = self.cosmic();
-                segmented_button::Appearance {
-                    background: None,
-                    border_color: Color::TRANSPARENT,
-                    border_radius: BorderRadius::from(0.0),
-                    border_width: 0.0,
-                    button_active: segmented_button::ButtonAppearance {
-                        background: Some(Background::Color(cosmic.secondary.component.divider.into())),
-                        border_bottom: None,
-                        border_radius_first: BorderRadius::from([24.0, 0.0, 0.0, 24.0]),
-                        border_radius_last: BorderRadius::from([0.0, 24.0, 24.0, 0.0]),
-                        border_radius_middle: BorderRadius::from(0.0),
-                        text_color: cosmic.accent.base.into(),
-                    },
-                    button_inactive: segmented_button::ButtonAppearance {
-                        background: Some(Background::Color(cosmic.secondary.component.base.into())),
-                        border_bottom: None,
-                        border_radius_first: BorderRadius::from([24.0, 0.0, 0.0, 24.0]),
-                        border_radius_last: BorderRadius::from([0.0, 24.0, 24.0, 0.0]),
-                        border_radius_middle: BorderRadius::from(0.0),
-                        text_color: cosmic.primary.on.into(),
-                    },
-                    button_hover: segmented_button::ButtonAppearance {
-                        background: Some(Background::Color(cosmic.primary.component.hover.into())),
-                        border_bottom: None,
-                        border_radius_first: BorderRadius::from([24.0, 0.0, 0.0, 24.0]),
-                        border_radius_last: BorderRadius::from([0.0, 24.0, 24.0, 0.0]),
-                        border_radius_middle: BorderRadius::from(0.0),
-                        text_color: cosmic.accent.base.into(),
-                    }
-                }
-            }
-            SegmentedButton::Selection => {
-                let cosmic = self.cosmic();
-                segmented_button::Appearance {
-                    background: None,
-                    border_color: Color::TRANSPARENT,
-                    border_radius: BorderRadius::from(0.0),
-                    border_width: 0.0,
-                    button_active: segmented_button::ButtonAppearance {
-                        background: Some(Background::Color(cosmic.secondary.component.divider.into())),
-                        border_bottom: None,
-                        border_radius_first: BorderRadius::from([24.0, 24.0, 0.0, 0.0]),
-                        border_radius_last: BorderRadius::from([0.0, 0.0, 24.0, 24.0]),
-                        border_radius_middle: BorderRadius::from(0.0),
-                        text_color: cosmic.accent.base.into(),
-                    },
-                    button_inactive: segmented_button::ButtonAppearance {
-                        background: Some(Background::Color(cosmic.secondary.component.base.into())),
-                        border_bottom: None,
-                        border_radius_first: BorderRadius::from([24.0, 24.0, 0.0, 0.0]),
-                        border_radius_last: BorderRadius::from([0.0, 0.0, 24.0, 24.0]),
-                        border_radius_middle: BorderRadius::from(0.0),
-                        text_color: cosmic.primary.on.into(),
-                    },
-                    button_hover: segmented_button::ButtonAppearance {
-                        background: Some(Background::Color(cosmic.primary.component.hover.into())),
-                        border_bottom: None,
-                        border_radius_first: BorderRadius::from([24.0, 24.0, 0.0, 0.0]),
-                        border_radius_last: BorderRadius::from([0.0, 0.0, 24.0, 24.0]),
-                        border_radius_middle: BorderRadius::from(0.0),
-                        text_color: cosmic.accent.base.into(),
-                    }
-                }
-            }
-            SegmentedButton::Custom(func) => func(self)
-        }
     }
 }

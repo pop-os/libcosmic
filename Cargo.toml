@@ -7,7 +7,7 @@ edition = "2021"
 name = "cosmic"
 
 [features]
-default = ["wayland"]
+default = ["swbuf", "winit"]
 debug = ["iced/debug"]
 swbuf = ["iced/swbuf", "iced_swbuf"]
 wayland = ["iced/wayland", "iced_glow"]
@@ -25,7 +25,6 @@ palette = "0.6.1"
 cosmic-panel-config = {git = "https://github.com/pop-os/cosmic-panel", optional = true }
 sctk = { package = "smithay-client-toolkit", git = "https://github.com/Smithay/client-toolkit", optional = true, rev = "3776d4a" }
 slotmap = "1.0.6"
-stack_dst = "0.7.2"
 
 [dependencies.cosmic-theme]
 git = "https://github.com/pop-os/cosmic-theme.git"

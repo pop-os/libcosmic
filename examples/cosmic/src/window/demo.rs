@@ -2,10 +2,11 @@ use cosmic::{
     iced::widget::{checkbox, pick_list, progress_bar, radio, row, slider},
     iced::{Alignment, Length},
     theme::{Button as ButtonTheme, Theme},
-    widget::{button, segmented_button::{self, cosmic::{view_switcher, segmented_selection}}, settings, toggler, Orientation, spin_button::{SpinButtonModel, SpinMessage}},
+    widget::{button, settings, toggler, spin_button::{SpinButtonModel, SpinMessage}},
     Element,
 };
 
+use cosmic::widget::segmented_button::{self, cosmic::{horizontal_segmented_selection, horizontal_view_switcher, vertical_segmented_selection, vertical_view_switcher}};
 use super::{Page, Window};
 
 pub enum DemoView {
@@ -79,7 +80,7 @@ impl State {
 
         settings::view_column(vec![
             window.page_title(Page::Demo),
-            view_switcher(&self.view_switcher)
+            horizontal_view_switcher(&self.view_switcher)
                 .on_activate(Message::ViewSwitcher)
                 .into(),
             match self.view_switcher.active_data() {
@@ -170,50 +171,71 @@ impl State {
                         cosmic::iced::widget::text("Selection")
                             .font(cosmic::font::FONT_SEMIBOLD)
                             .into(),
-                        segmented_selection(&self.selection)
+                        cosmic::iced::widget::text("Horizontal").into(),
+                        horizontal_segmented_selection(&self.selection)
                             .on_activate(Message::Selection)
                             .into(),
-                        segmented_selection(&self.selection)
+                        cosmic::iced::widget::text("Horizontal With Spacing").into(),
+                        horizontal_segmented_selection(&self.selection)
+                            .spacing(8)
                             .on_activate(Message::Selection)
-                            .orientation(Orientation::Vertical)
                             .into(),
+                        cosmic::iced::widget::text("Vertical").into(),
+                        vertical_segmented_selection(&self.selection)
+                            .on_activate(Message::Selection)
+                            .into(),
+                        cosmic::iced::widget::text("Vertical With Spacing").into(),
                         cosmic::iced::widget::row(vec![
-                            segmented_selection(&self.selection)
+                            vertical_segmented_selection(&self.selection)
+                                .spacing(8)
                                 .on_activate(Message::Selection)
-                                .orientation(Orientation::Vertical)
                                 .width(Length::FillPortion(1))
                                 .into(),
-                            segmented_selection(&self.selection)
+                            vertical_segmented_selection(&self.selection)
+                                .spacing(8)
                                 .on_activate(Message::Selection)
-                                .orientation(Orientation::Vertical)
                                 .width(Length::FillPortion(1))
                                 .into(),
-                            segmented_selection(&self.selection)
+                            vertical_segmented_selection(&self.selection)
+                                .spacing(8)
                                 .on_activate(Message::Selection)
-                                .orientation(Orientation::Vertical)
                                 .width(Length::FillPortion(1))
                                 .into(),
                         ])
                         .spacing(12)
                         .width(Length::Fill)
                         .into(),
-                        cosmic::iced::widget::text("ViewSwitcher")
+                        cosmic::iced::widget::text("View Switcher")
                             .font(cosmic::font::FONT_SEMIBOLD)
                             .into(),
+                        cosmic::iced::widget::text("Horizontal").into(),
+                        horizontal_view_switcher(&self.selection)
+                            .on_activate(Message::Selection)
+                            .into(),
+                        cosmic::iced::widget::text("Horizontal With Spacing").into(),
+                        horizontal_view_switcher(&self.selection)
+                            .spacing(8)
+                            .on_activate(Message::Selection)
+                            .into(),
+                        cosmic::iced::widget::text("Vertical").into(),
+                        vertical_view_switcher(&self.selection)
+                            .on_activate(Message::Selection)
+                            .into(),
+                        cosmic::iced::widget::text("Vertical With Spacing").into(),
                         cosmic::iced::widget::row(vec![
-                            view_switcher(&self.selection)
+                            vertical_view_switcher(&self.selection)
+                                .spacing(8)
                                 .on_activate(Message::Selection)
-                                .orientation(Orientation::Vertical)
                                 .width(Length::FillPortion(1))
                                 .into(),
-                            view_switcher(&self.selection)
+                            vertical_view_switcher(&self.selection)
+                                .spacing(8)
                                 .on_activate(Message::Selection)
-                                .orientation(Orientation::Vertical)
                                 .width(Length::FillPortion(1))
                                 .into(),
-                            view_switcher(&self.selection)
+                            vertical_view_switcher(&self.selection)
+                                .spacing(8)
                                 .on_activate(Message::Selection)
-                                .orientation(Orientation::Vertical)
                                 .width(Length::FillPortion(1))
                                 .into(),
                         ])

@@ -7,10 +7,7 @@ use cosmic::{
     iced_native::window,
     iced_winit::window::{close, drag, minimize, toggle_maximize},
     theme::{self, Theme},
-    widget::{
-        header_bar, icon, list, nav_bar, nav_button, scrollable, segmented_button, settings,
-        spin_button::{SpinButtonModel, SpinMessage},
-    },
+    widget::{header_bar, icon, list, nav_bar, nav_button, scrollable, settings},
     Element, ElementExt,
 };
 use std::{

@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: MPL-2.0
 
 use slotmap::{SecondaryMap, SlotMap};
-use std::{borrow::Cow, cell::Cell};
+use std::borrow::Cow;
 
 slotmap::new_key_type! {
     /// An ID for a segmented button
@@ -11,8 +11,8 @@ slotmap::new_key_type! {
 
 /// Contains all state for interacting with a segmented button.
 pub struct State<Data> {
-    /// State that is shared with widget drawing.
-    pub inner: WidgetState,
+    /// State that is shareable across widget(s).
+    pub inner: SharedWidgetState,
 
     /// State unique to the application.
     pub data: SecondaryState<Data>,
@@ -21,7 +21,7 @@ pub struct State<Data> {
 impl<Data> Default for State<Data> {
     fn default() -> Self {
         Self {
-            inner: WidgetState::default(),
+            inner: SharedWidgetState::default(),
             data: SecondaryState::default(),
         }
     }
@@ -29,15 +29,12 @@ impl<Data> Default for State<Data> {
 
 /// State which is most useful to the widget.
 #[derive(Default)]
-pub struct WidgetState {
+pub struct SharedWidgetState {
     /// The content used for drawing segmented buttons.
     pub buttons: SlotMap<Key, ButtonContent>,
 
     /// The actively-selected segmented button.
     pub active: Key,
-
-    /// The button currently hovered.
-    pub hovered: Cell<Key>,
 }
 
 /// State which is most useful to the application.
