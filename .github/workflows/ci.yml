@@ -1,0 +1,126 @@
+name: Continuous Integration
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+
+
+jobs:
+  format:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v3
+      - name: Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+          profile: minimal
+          components: rustfmt
+          default: true
+      - name: Cargo cache
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: ${{ runner.os }}-cargo-rust_stable-${{ hashFiles('**/Cargo.toml') }}
+      - name: Format
+        uses: actions-rs/cargo@v1
+        with:
+          command: fmt
+          args: -- --check
+
+  tests:
+    needs:
+      - format
+    strategy:
+      fail-fast: false
+      matrix:
+        features:
+        - 'winit_swbuf debug'
+        - 'winit_swbuf tokio'
+        - winit_swbuf
+        - winit_wgpu
+        - wayland
+        - applet
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v3
+        with:
+          submodules: recursive
+      - name: Get date for registry cache
+        id: date
+        run: echo "::set-output name=date::$(date +'%Y-%m-%d')"
+      - name: Cargo registry cache
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/registry/index
+            ~/.cargo/registry/cache
+            ~/.cargo/git
+          key: ${{ runner.os }}-cargo-registry-${{ steps.date.outputs.date }}
+          restore-keys: ${{ runner.os }}-cargo-registry-
+      - name: System dependencies
+        run: sudo apt-get update; sudo apt-get install -y libxkbcommon-dev libwayland-dev
+      - name: Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+          default: true
+      - name: Test features
+        uses: actions-rs/cargo@v1
+        env:
+          RUST_BACKTRACE: full
+        with:
+          command: test
+          args: --no-default-features --features "${{ matrix.features }}"
+
+  examples:
+    needs:
+      - format
+    strategy:
+      fail-fast: false
+      matrix:
+        examples:
+          - "cosmic"
+          - "cosmic_sctk"
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v3
+        with:
+          submodules: recursive
+      - name: Get date for registry cache
+        id: date
+        run: echo "::set-output name=date::$(date +'%Y-%m-%d')"
+      - name: Cargo registry cache
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/registry/index
+            ~/.cargo/registry/cache
+            ~/.cargo/git
+          key: ${{ runner.os }}-cargo-registry-${{ steps.date.outputs.date }}
+          restore-keys: ${{ runner.os }}-cargo-registry-
+      - name: System dependencies
+        run: sudo apt-get update; sudo apt-get install -y libxkbcommon-dev libwayland-dev
+      - name: Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+          default: true
+      - name: Test example
+        uses: actions-rs/cargo@v1
+        env:
+          RUST_BACKTRACE: full
+        with:
+          command: check
+          args: -p "${{ matrix.examples }}"
+

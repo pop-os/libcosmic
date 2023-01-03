@@ -10,11 +10,13 @@ name = "cosmic"
 default = ["swbuf", "winit", "tokio"]
 debug = ["iced/debug"]
 swbuf = ["iced/swbuf", "iced_swbuf"]
-wayland = ["iced/wayland", "iced_glow"]
+wayland = ["iced/wayland", "iced/glow"]
 wgpu = ["iced/wgpu", "iced_wgpu"]
 tokio = ["iced/tokio"]
 winit = ["iced/winit", "iced_winit"]
-applet = ["cosmic-panel-config", "sctk"]
+applet = ["cosmic-panel-config", "sctk", "wayland"]
+winit_swbuf = ["winit", "swbuf"]
+winit_wgpu = ["winit", "wgpu"]
 
 [dependencies]
 freedesktop-icons = "0.2.2"
