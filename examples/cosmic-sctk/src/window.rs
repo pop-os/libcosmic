@@ -2,18 +2,26 @@
 // SPDX-License-Identifier: MPL-2.0
 
 use cosmic::{
-    iced_native::window,
-    iced::{widget::{
-        column, container, horizontal_space, pick_list, progress_bar, radio, row, slider,
-    }, wayland::window::{start_drag_window, toggle_maximize}},
-    iced::{self, wayland::{SurfaceIdWrapper, window::set_mode_window}, Alignment, Application, Command, Length},
+    iced::{
+        self,
+        wayland::{window::set_mode_window, SurfaceIdWrapper},
+        Alignment, Application, Command, Length,
+    },
+    iced::{
+        wayland::window::{start_drag_window, toggle_maximize},
+        widget::{
+            column, container, horizontal_space, pick_list, progress_bar, radio, row, slider,
+        },
+    },
     iced_lazy::responsive,
+    iced_native::window,
     theme::{self, Theme},
     widget::{
-        button, header_bar, nav_bar, nav_bar_page, nav_bar_section, nav_button, scrollable,
-        settings, toggler, rectangle_tracker::{RectangleTracker, rectangle_tracker_subscription, RectangleUpdate},
+        button, header_bar, nav_bar, nav_bar_page, nav_bar_section, nav_button,
+        rectangle_tracker::{rectangle_tracker_subscription, RectangleTracker, RectangleUpdate},
+        scrollable, settings, toggler,
     },
-    Element, ElementExt
+    Element, ElementExt,
 };
 use std::{collections::BTreeMap, vec};
 use theme::Button as ButtonTheme;
@@ -70,7 +78,7 @@ pub enum Message {
     Minimize,
     Maximize,
     InputChanged,
-    Rectangle(RectangleUpdate<u32>)
+    Rectangle(RectangleUpdate<u32>),
 }
 
 impl Application for Window {
@@ -115,8 +123,12 @@ impl Application for Window {
             Message::RowSelected(row) => println!("Selected row {row}"),
             Message::InputChanged => {}
             Message::Rectangle(r) => match r {
-                RectangleUpdate::Rectangle(r) => {dbg!(r);},
-                RectangleUpdate::Init(t) => {self.rectangle_tracker.replace(t);},
+                RectangleUpdate::Rectangle(r) => {
+                    dbg!(r);
+                }
+                RectangleUpdate::Init(t) => {
+                    self.rectangle_tracker.replace(t);
+                }
             },
         }
 
@@ -235,8 +247,8 @@ impl Application for Window {
                 },
             );
             let secondary = button(ButtonTheme::Secondary)
-            .text("Secondary")
-            .on_press(Message::ButtonPressed);
+                .text("Secondary")
+                .on_press(Message::ButtonPressed);
 
             let secondary = if let Some(tracker) = self.rectangle_tracker.as_ref() {
                 tracker.container(0, secondary).into()

@@ -1,10 +1,10 @@
 // Copyright 2022 System76 <info@system76.com>
 // SPDX-License-Identifier: MPL-2.0
 
+use crate::{theme, Element};
 use apply::Apply;
 use derive_setters::Setters;
 use iced::{self, widget, Length};
-use crate::{theme, Element};
 
 #[must_use]
 pub fn header_bar<'a, Message>() -> HeaderBar<'a, Message> {
@@ -36,7 +36,7 @@ pub struct HeaderBar<'a, Message> {
     #[setters(strip_option)]
     center: Option<Element<'a, Message>>,
     #[setters(strip_option)]
-    end: Option<Element<'a, Message>>
+    end: Option<Element<'a, Message>>,
 }
 
 impl<'a, Message: Clone + 'static> HeaderBar<'a, Message> {
@@ -45,11 +45,17 @@ impl<'a, Message: Clone + 'static> HeaderBar<'a, Message> {
         let mut packed: Vec<Element<Message>> = Vec::with_capacity(4);
 
         if let Some(start) = self.start.take() {
-            packed.push(widget::container(start).align_x(iced::alignment::Horizontal::Left).into());
+            packed.push(
+                widget::container(start)
+                    .align_x(iced::alignment::Horizontal::Left)
+                    .into(),
+            );
         }
 
         packed.push(if let Some(center) = self.center.take() {
-            widget::container(center).align_x(iced::alignment::Horizontal::Center).into()
+            widget::container(center)
+                .align_x(iced::alignment::Horizontal::Center)
+                .into()
         } else {
             self.title_widget()
         });

@@ -5,7 +5,7 @@ use iced::{
     },
     subscription, Rectangle,
 };
-use std::{fmt::Debug, hash::Hash, collections::HashMap};
+use std::{collections::HashMap, fmt::Debug, hash::Hash};
 
 use super::RectangleTracker;
 
@@ -38,11 +38,14 @@ async fn start_listening<I: Copy, R: 'static + Hash + Copy + Send + Sync + Debug
             )
         }
         State::Waiting(mut rx, mut map) => match rx.next().await {
-            Some(u) =>
-            {
+            Some(u) => {
                 if let Some(prev) = map.get(&u.0) {
                     let new = u.1;
-                    if prev.width != new.width || prev.height != new.height || prev.x != new.x || prev.y != new.y {
+                    if prev.width != new.width
+                        || prev.height != new.height
+                        || prev.x != new.x
+                        || prev.y != new.y
+                    {
                         map.insert(u.0, new);
                         return (
                             Some((id, RectangleUpdate::Rectangle(u))),
@@ -57,8 +60,7 @@ async fn start_listening<I: Copy, R: 'static + Hash + Copy + Send + Sync + Debug
                     );
                 }
                 (None, State::Waiting(rx, map))
-
-        },
+            }
             None => (None, State::Finished),
         },
         State::Finished => iced::futures::future::pending().await,

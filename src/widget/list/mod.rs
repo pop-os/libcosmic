@@ -4,5 +4,5 @@
 pub mod column;
 // mod item;
 
-pub use self::column::{ListColumn, list_column};
+pub use self::column::{list_column, ListColumn};
 // pub use self::item::{ListItem, list_item};

@@ -189,7 +189,10 @@ impl Window {
         self.page = page;
     }
 
-    fn parent_page_button<Message: Clone + From<Page> + 'static>(&self, sub_page: impl SubPage) -> Element<Message> {
+    fn parent_page_button<Message: Clone + From<Page> + 'static>(
+        &self,
+        sub_page: impl SubPage,
+    ) -> Element<Message> {
         let page = sub_page.parent_page();
         column!(
             iced::widget::Button::new(row!(
@@ -208,7 +211,10 @@ impl Window {
         .into()
     }
 
-    fn sub_page_button<Message: Clone + From<Page> + 'static>(&self, sub_page: impl SubPage) -> Element<Message> {
+    fn sub_page_button<Message: Clone + From<Page> + 'static>(
+        &self,
+        sub_page: impl SubPage,
+    ) -> Element<Message> {
         iced::widget::Button::new(
             container(
                 settings::item_row(vec![
@@ -244,7 +250,10 @@ impl Window {
         ]).into()
     }
 
-    fn view_unimplemented_sub_page<'a, Message: Clone + From<Page> + 'static>(&'a self, sub_page: impl SubPage) -> Element<'a, Message> {
+    fn view_unimplemented_sub_page<'a, Message: Clone + From<Page> + 'static>(
+        &'a self,
+        sub_page: impl SubPage,
+    ) -> Element<'a, Message> {
         settings::view_column(vec![
             self.parent_page_button(sub_page),
             text("We haven't created that panel yet, and/or it is using a similar idea as current Pop! designs.").into(),
@@ -273,7 +282,10 @@ impl Application for Window {
         // Configures the demo view switcher.
         let key = window.demo.view_switcher.insert("Controls", DemoView::TabA);
         window.demo.view_switcher.activate(key);
-        window.demo.view_switcher.insert("Segmented Button", DemoView::TabB);
+        window
+            .demo
+            .view_switcher
+            .insert("Segmented Button", DemoView::TabB);
         window.demo.view_switcher.insert("Tab C", DemoView::TabC);
 
         // Configures the demo selection button.
@@ -281,7 +293,6 @@ impl Application for Window {
         window.demo.selection.activate(key);
         window.demo.selection.insert("Choice B", ());
         window.demo.selection.insert("Choice C", ());
-
 
         (window, Command::none())
     }
@@ -318,19 +329,15 @@ impl Application for Window {
             Message::Bluetooth(message) => {
                 self.bluetooth.update(message);
             }
-            Message::Demo(message) => {
-                match self.demo.update(message) {
-                    Some(demo::Output::Debug(debug)) => self.debug = debug,
-                    Some(demo::Output::ThemeChanged(theme)) => self.theme = theme,
-                    None => (),
-                }
-            }
-            Message::Desktop(message) => {
-                match self.desktop.update(message) {
-                    Some(desktop::Output::Page(page)) => self.page(page),
-                    None => (),
-                }
-            }
+            Message::Demo(message) => match self.demo.update(message) {
+                Some(demo::Output::Debug(debug)) => self.debug = debug,
+                Some(demo::Output::ThemeChanged(theme)) => self.theme = theme,
+                None => (),
+            },
+            Message::Desktop(message) => match self.desktop.update(message) {
+                Some(desktop::Output::Page(page)) => self.page(page),
+                None => (),
+            },
             Message::ToggleSidebar => self.sidebar_toggled = !self.sidebar_toggled,
             Message::ToggleSidebarCondensed => {
                 self.sidebar_toggled_condensed = !self.sidebar_toggled_condensed
@@ -343,7 +350,6 @@ impl Application for Window {
             Message::InputChanged => {}
 
             Message::CondensedViewToggle(_) => {}
-
         }
 
         Command::none()
@@ -451,11 +457,12 @@ impl Application for Window {
                     .into(),
                 ])
                 .into(),
-                Page::Networking(Some(sub_page)) => {
-                    self.view_unimplemented_sub_page(sub_page)
-                }
+                Page::Networking(Some(sub_page)) => self.view_unimplemented_sub_page(sub_page),
                 Page::Bluetooth => self.bluetooth.view(self).map(Message::Bluetooth),
-                Page::Desktop(desktop_page_opt) => self.desktop.view(self, desktop_page_opt).map(Message::Desktop),
+                Page::Desktop(desktop_page_opt) => self
+                    .desktop
+                    .view(self, desktop_page_opt)
+                    .map(Message::Desktop),
                 Page::InputDevices(None) => settings::view_column(vec![
                     self.page_title(self.page),
                     column!(

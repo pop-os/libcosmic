@@ -136,7 +136,7 @@ pub enum Button {
     Transparent,
     Custom {
         active: fn(&Theme) -> button::Appearance,
-        hover: fn(&Theme) -> button::Appearance
+        hover: fn(&Theme) -> button::Appearance,
     },
 }
 
@@ -161,7 +161,7 @@ impl Button {
             Button::LinkActive => &cosmic.secondary.component,
             Button::Transparent => &TRANSPARENT_COMPONENT,
             Button::Deactivated => &cosmic.secondary.component,
-            Button::Custom { .. } => &TRANSPARENT_COMPONENT
+            Button::Custom { .. } => &TRANSPARENT_COMPONENT,
         }
     }
 }
@@ -170,7 +170,7 @@ impl button::StyleSheet for Theme {
     type Style = Button;
 
     fn active(&self, style: &Self::Style) -> button::Appearance {
-        if let Button::Custom {active, ..} = style {
+        if let Button::Custom { active, .. } = style {
             return active(self);
         }
 
@@ -196,7 +196,7 @@ impl button::StyleSheet for Theme {
     }
 
     fn hovered(&self, style: &Self::Style) -> button::Appearance {
-        if let Button::Custom {hover, ..} = style {
+        if let Button::Custom { hover, .. } = style {
             return hover(self);
         }
 
@@ -207,7 +207,7 @@ impl button::StyleSheet for Theme {
             background: match style {
                 Button::Link => None,
                 Button::LinkActive => Some(Background::Color(cosmic.divider.into())),
-                _ => Some(Background::Color(cosmic.hover.into()))
+                _ => Some(Background::Color(cosmic.hover.into())),
             },
             ..active
         }
@@ -234,11 +234,7 @@ impl Default for Checkbox {
 impl checkbox::StyleSheet for Theme {
     type Style = Checkbox;
 
-    fn active(
-        &self,
-        style: &Self::Style,
-        is_checked: bool,
-    ) -> checkbox::Appearance {
+    fn active(&self, style: &Self::Style, is_checked: bool) -> checkbox::Appearance {
         let palette = self.extended_palette();
 
         match style {
@@ -269,11 +265,7 @@ impl checkbox::StyleSheet for Theme {
         }
     }
 
-    fn hovered(
-        &self,
-        style: &Self::Style,
-        is_checked: bool,
-    ) -> checkbox::Appearance {
+    fn hovered(&self, style: &Self::Style, is_checked: bool) -> checkbox::Appearance {
         let palette = self.extended_palette();
 
         match style {
@@ -421,9 +413,7 @@ impl slider::StyleSheet for Theme {
 
     fn hovered(&self, style: &Self::Style) -> slider::Appearance {
         let mut style = self.active(style);
-        style.handle.shape = slider::HandleShape::Circle {
-            radius: 16.0
-        };
+        style.handle.shape = slider::HandleShape::Circle { radius: 16.0 };
         style.handle.border_width = 6.0;
         style.handle.border_color = match self {
             Theme::Dark => Color::from_rgba8(0xFF, 0xFF, 0xFF, 0.1),
@@ -529,11 +519,7 @@ impl radio::StyleSheet for Theme {
 impl toggler::StyleSheet for Theme {
     type Style = ();
 
-    fn active(
-        &self,
-        _style: &Self::Style,
-        is_active: bool,
-    ) -> toggler::Appearance {
+    fn active(&self, _style: &Self::Style, is_active: bool) -> toggler::Appearance {
         let palette = self.palette();
 
         toggler::Appearance {
@@ -556,11 +542,7 @@ impl toggler::StyleSheet for Theme {
         }
     }
 
-    fn hovered(
-        &self,
-        style: &Self::Style,
-        is_active: bool,
-    ) -> toggler::Appearance {
+    fn hovered(&self, style: &Self::Style, is_active: bool) -> toggler::Appearance {
         //TODO: grab colors from palette
         match self {
             Theme::Dark => toggler::Appearance {
@@ -578,7 +560,7 @@ impl toggler::StyleSheet for Theme {
                     Color::from_rgb8(0x54, 0x54, 0x54)
                 },
                 ..self.active(style, is_active)
-            }
+            },
         }
     }
 }
