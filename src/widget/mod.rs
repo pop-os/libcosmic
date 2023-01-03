@@ -23,7 +23,12 @@ mod toggler;
 pub use toggler::toggler;
 
 pub mod segmented_button;
-pub use segmented_button::{SegmentedButton, segmented_button};
+pub use segmented_button::{
+    HorizontalSegmentedButton,
+    VerticalSegmentedButton,
+    horizontal_segmented_button,
+    vertical_segmented_button
+};
 
 pub mod settings;
 
@@ -39,10 +44,3 @@ pub use spin_button::{SpinButton, spin_button};
 pub mod rectangle_tracker;
 
 pub mod aspect_ratio;
-
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
-pub enum Orientation {
-    #[default]
-    Horizontal,
-    Vertical
-}
