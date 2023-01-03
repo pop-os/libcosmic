@@ -1,8 +1,8 @@
 use cosmic::{
-    Element,
-    iced::Length,
     iced::widget::{horizontal_space, row, text},
+    iced::Length,
     widget::{icon, list_column, settings},
+    Element,
 };
 
 use super::{Message, Page, SubPage, Window};
@@ -60,17 +60,15 @@ impl State {
     pub(super) fn view<'a>(&'a self, window: &'a Window) -> Element<'a, Message> {
         settings::view_column(vec![
             window.parent_page_button(SystemAndAccountsPage::About),
-
             row!(
                 horizontal_space(Length::Fill),
                 icon("distributor-logo", 78),
                 horizontal_space(Length::Fill),
-            ).into(),
-
+            )
+            .into(),
             list_column()
                 .add(settings::item("Device name", text("TODO")))
                 .into(),
-
             settings::view_section("Hardware")
                 .add(settings::item("Hardware model", text("TODO")))
                 .add(settings::item("Memory", text("TODO")))
@@ -78,17 +76,19 @@ impl State {
                 .add(settings::item("Graphics", text("TODO")))
                 .add(settings::item("Disk Capacity", text("TODO")))
                 .into(),
-
             settings::view_section("Operating System")
                 .add(settings::item("Operating system", text("TODO")))
-                .add(settings::item("Operating system architecture", text("TODO")))
+                .add(settings::item(
+                    "Operating system architecture",
+                    text("TODO"),
+                ))
                 .add(settings::item("Desktop environment", text("TODO")))
                 .add(settings::item("Windowing system", text("TODO")))
                 .into(),
-
             settings::view_section("Related settings")
                 .add(settings::item("Get support", text("TODO")))
                 .into(),
-        ]).into()
+        ])
+        .into()
     }
 }

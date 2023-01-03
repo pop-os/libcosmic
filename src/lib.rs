@@ -31,6 +31,6 @@ pub fn settings<Flags: Default>() -> iced::Settings<Flags> {
             iced::Font::External { bytes, .. } => Some(bytes),
         },
         default_text_size: 18,
-        .. iced::Settings::default()
+        ..iced::Settings::default()
     }
 }

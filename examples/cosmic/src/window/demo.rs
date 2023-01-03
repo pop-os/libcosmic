@@ -2,12 +2,22 @@ use cosmic::{
     iced::widget::{checkbox, pick_list, progress_bar, radio, row, slider},
     iced::{Alignment, Length},
     theme::{Button as ButtonTheme, Theme},
-    widget::{button, settings, toggler, spin_button::{SpinButtonModel, SpinMessage}},
+    widget::{
+        button, settings,
+        spin_button::{SpinButtonModel, SpinMessage},
+        toggler,
+    },
     Element,
 };
 
-use cosmic::widget::segmented_button::{self, cosmic::{horizontal_segmented_selection, horizontal_view_switcher, vertical_segmented_selection, vertical_view_switcher}};
 use super::{Page, Window};
+use cosmic::widget::segmented_button::{
+    self,
+    cosmic::{
+        horizontal_segmented_selection, horizontal_view_switcher, vertical_segmented_selection,
+        vertical_view_switcher,
+    },
+};
 
 pub enum DemoView {
     TabA,
@@ -32,7 +42,7 @@ pub enum Message {
 
 pub enum Output {
     Debug(bool),
-    ThemeChanged(Theme)
+    ThemeChanged(Theme),
 }
 
 #[derive(Default)]
@@ -166,86 +176,84 @@ impl State {
                 ])
                 .padding(0)
                 .into(),
-                Some(DemoView::TabB) => {
-                    settings::view_column(vec![
-                        cosmic::iced::widget::text("Selection")
-                            .font(cosmic::font::FONT_SEMIBOLD)
-                            .into(),
-                        cosmic::iced::widget::text("Horizontal").into(),
-                        horizontal_segmented_selection(&self.selection)
-                            .on_activate(Message::Selection)
-                            .into(),
-                        cosmic::iced::widget::text("Horizontal With Spacing").into(),
-                        horizontal_segmented_selection(&self.selection)
-                            .spacing(8)
-                            .on_activate(Message::Selection)
-                            .into(),
-                        cosmic::iced::widget::text("Vertical").into(),
-                        vertical_segmented_selection(&self.selection)
-                            .on_activate(Message::Selection)
-                            .into(),
-                        cosmic::iced::widget::text("Vertical With Spacing").into(),
-                        cosmic::iced::widget::row(vec![
-                            vertical_segmented_selection(&self.selection)
-                                .spacing(8)
-                                .on_activate(Message::Selection)
-                                .width(Length::FillPortion(1))
-                                .into(),
-                            vertical_segmented_selection(&self.selection)
-                                .spacing(8)
-                                .on_activate(Message::Selection)
-                                .width(Length::FillPortion(1))
-                                .into(),
-                            vertical_segmented_selection(&self.selection)
-                                .spacing(8)
-                                .on_activate(Message::Selection)
-                                .width(Length::FillPortion(1))
-                                .into(),
-                        ])
-                        .spacing(12)
-                        .width(Length::Fill)
+                Some(DemoView::TabB) => settings::view_column(vec![
+                    cosmic::iced::widget::text("Selection")
+                        .font(cosmic::font::FONT_SEMIBOLD)
                         .into(),
-                        cosmic::iced::widget::text("View Switcher")
-                            .font(cosmic::font::FONT_SEMIBOLD)
-                            .into(),
-                        cosmic::iced::widget::text("Horizontal").into(),
-                        horizontal_view_switcher(&self.selection)
-                            .on_activate(Message::Selection)
-                            .into(),
-                        cosmic::iced::widget::text("Horizontal With Spacing").into(),
-                        horizontal_view_switcher(&self.selection)
+                    cosmic::iced::widget::text("Horizontal").into(),
+                    horizontal_segmented_selection(&self.selection)
+                        .on_activate(Message::Selection)
+                        .into(),
+                    cosmic::iced::widget::text("Horizontal With Spacing").into(),
+                    horizontal_segmented_selection(&self.selection)
+                        .spacing(8)
+                        .on_activate(Message::Selection)
+                        .into(),
+                    cosmic::iced::widget::text("Vertical").into(),
+                    vertical_segmented_selection(&self.selection)
+                        .on_activate(Message::Selection)
+                        .into(),
+                    cosmic::iced::widget::text("Vertical With Spacing").into(),
+                    cosmic::iced::widget::row(vec![
+                        vertical_segmented_selection(&self.selection)
                             .spacing(8)
                             .on_activate(Message::Selection)
+                            .width(Length::FillPortion(1))
                             .into(),
-                        cosmic::iced::widget::text("Vertical").into(),
-                        vertical_view_switcher(&self.selection)
+                        vertical_segmented_selection(&self.selection)
+                            .spacing(8)
                             .on_activate(Message::Selection)
+                            .width(Length::FillPortion(1))
                             .into(),
-                        cosmic::iced::widget::text("Vertical With Spacing").into(),
-                        cosmic::iced::widget::row(vec![
-                            vertical_view_switcher(&self.selection)
-                                .spacing(8)
-                                .on_activate(Message::Selection)
-                                .width(Length::FillPortion(1))
-                                .into(),
-                            vertical_view_switcher(&self.selection)
-                                .spacing(8)
-                                .on_activate(Message::Selection)
-                                .width(Length::FillPortion(1))
-                                .into(),
-                            vertical_view_switcher(&self.selection)
-                                .spacing(8)
-                                .on_activate(Message::Selection)
-                                .width(Length::FillPortion(1))
-                                .into(),
-                        ])
-                        .spacing(12)
-                        .width(Length::Fill)
-                        .into()
+                        vertical_segmented_selection(&self.selection)
+                            .spacing(8)
+                            .on_activate(Message::Selection)
+                            .width(Length::FillPortion(1))
+                            .into(),
                     ])
-                    .padding(0)
-                    .into()
-                }
+                    .spacing(12)
+                    .width(Length::Fill)
+                    .into(),
+                    cosmic::iced::widget::text("View Switcher")
+                        .font(cosmic::font::FONT_SEMIBOLD)
+                        .into(),
+                    cosmic::iced::widget::text("Horizontal").into(),
+                    horizontal_view_switcher(&self.selection)
+                        .on_activate(Message::Selection)
+                        .into(),
+                    cosmic::iced::widget::text("Horizontal With Spacing").into(),
+                    horizontal_view_switcher(&self.selection)
+                        .spacing(8)
+                        .on_activate(Message::Selection)
+                        .into(),
+                    cosmic::iced::widget::text("Vertical").into(),
+                    vertical_view_switcher(&self.selection)
+                        .on_activate(Message::Selection)
+                        .into(),
+                    cosmic::iced::widget::text("Vertical With Spacing").into(),
+                    cosmic::iced::widget::row(vec![
+                        vertical_view_switcher(&self.selection)
+                            .spacing(8)
+                            .on_activate(Message::Selection)
+                            .width(Length::FillPortion(1))
+                            .into(),
+                        vertical_view_switcher(&self.selection)
+                            .spacing(8)
+                            .on_activate(Message::Selection)
+                            .width(Length::FillPortion(1))
+                            .into(),
+                        vertical_view_switcher(&self.selection)
+                            .spacing(8)
+                            .on_activate(Message::Selection)
+                            .width(Length::FillPortion(1))
+                            .into(),
+                    ])
+                    .spacing(12)
+                    .width(Length::Fill)
+                    .into(),
+                ])
+                .padding(0)
+                .into(),
                 Some(DemoView::TabC) => {
                     settings::view_column(vec![settings::view_section("Tab C")
                         .add(cosmic::iced::widget::text("Nothing here yet").width(Length::Fill))

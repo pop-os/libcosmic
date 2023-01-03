@@ -1,10 +1,10 @@
 // Copyright 2022 System76 <info@system76.com>
 // SPDX-License-Identifier: MPL-2.0
 
+use crate::{theme, Element};
 use apply::Apply;
 use derive_setters::Setters;
 use iced::{alignment::Vertical, Length};
-use crate::{Element, theme};
 
 #[derive(Setters)]
 pub struct NavButton<'a, Message> {
@@ -54,7 +54,8 @@ impl<'a, Message: 'static + Clone> From<NavButton<'a, Message>> for Element<'a, 
             widget = widget.on_press(message);
         }
 
-        widget.apply(iced::widget::container)
+        widget
+            .apply(iced::widget::container)
             .center_y()
             .height(Length::Fill)
             .into()

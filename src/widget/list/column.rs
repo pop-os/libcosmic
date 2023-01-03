@@ -1,9 +1,9 @@
 // Copyright 2022 System76 <info@system76.com>
 // SPDX-License-Identifier: MPL-2.0
 
-use apply::Apply;
-use crate::{Element, theme};
 use crate::widget::horizontal_rule;
+use crate::{theme, Element};
+use apply::Apply;
 use iced::{Background, Color};
 
 #[must_use]
@@ -17,7 +17,9 @@ pub struct ListColumn<'a, Message> {
 
 impl<'a, Message: 'static> Default for ListColumn<'a, Message> {
     fn default() -> Self {
-        Self { children: Vec::with_capacity(4) }
+        Self {
+            children: Vec::with_capacity(4),
+        }
     }
 }
 

@@ -1,5 +1,5 @@
-use iced::Size;
 use iced::widget::Container;
+use iced::Size;
 use iced_native::alignment;
 use iced_native::event::{self, Event};
 use iced_native::layout;
@@ -13,7 +13,7 @@ pub use iced_style::container::{Appearance, StyleSheet};
 
 pub fn aspect_ratio_container<'a, Message: 'static, T>(
     content: T,
-    ratio: f32
+    ratio: f32,
 ) -> AspectRatio<'a, Message, crate::Renderer>
 where
     T: Into<Element<'a, Message, crate::Renderer>>,
@@ -40,13 +40,16 @@ where
     Renderer::Theme: StyleSheet,
 {
     fn constrain_limits(&self, size: Size) -> Size {
-        let Size { mut width, mut height } = size;
+        let Size {
+            mut width,
+            mut height,
+        } = size;
         if size.width / size.height > self.ratio {
             width = self.ratio * height;
         } else {
             height = width / self.ratio;
         }
-        Size  { width, height }
+        Size { width, height }
     }
 }
 
@@ -137,8 +140,7 @@ where
     }
 }
 
-impl<'a, Message, Renderer> Widget<Message, Renderer>
-    for AspectRatio<'a, Message, Renderer>
+impl<'a, Message, Renderer> Widget<Message, Renderer> for AspectRatio<'a, Message, Renderer>
 where
     Renderer: iced_native::Renderer,
     Renderer::Theme: StyleSheet,
@@ -160,7 +162,10 @@ where
     }
 
     fn layout(&self, renderer: &Renderer, limits: &layout::Limits) -> layout::Node {
-        let custom_limits = layout::Limits::new(self.constrain_limits(limits.min()), self.constrain_limits(limits.max()));
+        let custom_limits = layout::Limits::new(
+            self.constrain_limits(limits.min()),
+            self.constrain_limits(limits.max()),
+        );
         self.container.layout(renderer, &custom_limits)
     }
 
@@ -239,9 +244,7 @@ where
     Renderer: 'a + iced_native::Renderer,
     Renderer::Theme: StyleSheet,
 {
-    fn from(
-        column: AspectRatio<'a, Message, Renderer>,
-    ) -> Element<'a, Message, Renderer> {
+    fn from(column: AspectRatio<'a, Message, Renderer>) -> Element<'a, Message, Renderer> {
         Element::new(column)
     }
 }

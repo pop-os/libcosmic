@@ -7,7 +7,10 @@ use iced::widget;
 /// A button widget with COSMIC styling
 #[must_use]
 pub const fn button<Message>(style: theme::Button) -> Button<Message> {
-    Button { style, message: None }
+    Button {
+        style,
+        message: None,
+    }
 }
 
 /// A button widget with COSMIC styling
@@ -25,7 +28,12 @@ impl<Message: 'static> Button<Message> {
     }
 
     /// A button with an icon.
-    pub fn icon(self, style: theme::Svg, icon: &str, size: u16) -> widget::Button<Message, Renderer> {
+    pub fn icon(
+        self,
+        style: theme::Svg,
+        icon: &str,
+        size: u16,
+    ) -> widget::Button<Message, Renderer> {
         self.custom(vec![super::icon(icon, size).style(style).into()])
     }
 
@@ -47,4 +55,3 @@ impl<Message: 'static> Button<Message> {
         }
     }
 }
-

@@ -5,16 +5,16 @@ mod button;
 pub use button::*;
 
 mod header_bar;
-pub use header_bar::{HeaderBar, header_bar};
+pub use header_bar::{header_bar, HeaderBar};
 
 mod icon;
-pub use self::icon::{Icon, icon, IconSource};
+pub use self::icon::{icon, Icon, IconSource};
 
 pub mod list;
 pub use self::list::*;
 
 pub mod nav_button;
-pub use self::nav_button::{NavButton, nav_button};
+pub use self::nav_button::{nav_button, NavButton};
 
 pub mod navigation;
 pub use navigation::*;
@@ -24,10 +24,8 @@ pub use toggler::toggler;
 
 pub mod segmented_button;
 pub use segmented_button::{
-    HorizontalSegmentedButton,
+    horizontal_segmented_button, vertical_segmented_button, HorizontalSegmentedButton,
     VerticalSegmentedButton,
-    horizontal_segmented_button,
-    vertical_segmented_button
 };
 
 pub mod settings;
@@ -39,7 +37,7 @@ pub mod separator;
 pub use separator::{horizontal_rule, vertical_rule};
 
 pub mod spin_button;
-pub use spin_button::{SpinButton, spin_button};
+pub use spin_button::{spin_button, SpinButton};
 
 pub mod rectangle_tracker;
 

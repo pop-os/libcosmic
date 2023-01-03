@@ -174,35 +174,43 @@ impl<'a, Message> Component<Message, Renderer> for NavBar<'a, Message> {
 
             let nav_bar: Element<Self::Event, Renderer> =
                 container(if self.condensed && state.selected_page.is_some() {
-                    row![container(scrollable(column(pages)
+                    row![container(scrollable(
+                        column(pages)
                             .spacing(10)
                             .padding(10)
                             .max_width(200)
                             .width(Length::Units(200))
-                            .height(Length::Shrink)))
-                        .height(Length::Fill)
-                        .style(theme::Container::Custom(nav_bar_pages_style))]
+                            .height(Length::Shrink)
+                    ))
+                    .height(Length::Fill)
+                    .style(theme::Container::Custom(nav_bar_pages_style))]
                 } else if !state.section_active || self.condensed && state.selected_page.is_none() {
-                    row![scrollable(column(sections)
-                        .spacing(10)
-                        .padding(10)
-                        .max_width(100)
-                        .align_items(Alignment::Center)
-                        .height(Length::Shrink))]
-                } else {
-                    row![
-                        scrollable(column(sections)
+                    row![scrollable(
+                        column(sections)
                             .spacing(10)
                             .padding(10)
                             .max_width(100)
                             .align_items(Alignment::Center)
-                            .height(Length::Shrink)),
-                        container(scrollable(column(pages)
-                            .spacing(10)
-                            .padding(10)
-                            .max_width(200)
-                            .width(Length::Units(200))
-                            .height(Length::Shrink)))
+                            .height(Length::Shrink)
+                    )]
+                } else {
+                    row![
+                        scrollable(
+                            column(sections)
+                                .spacing(10)
+                                .padding(10)
+                                .max_width(100)
+                                .align_items(Alignment::Center)
+                                .height(Length::Shrink)
+                        ),
+                        container(scrollable(
+                            column(pages)
+                                .spacing(10)
+                                .padding(10)
+                                .max_width(200)
+                                .width(Length::Units(200))
+                                .height(Length::Shrink)
+                        ))
                         .height(Length::Fill)
                         .style(theme::Container::Custom(nav_bar_pages_style)),
                     ]
@@ -217,9 +225,7 @@ impl<'a, Message> Component<Message, Renderer> for NavBar<'a, Message> {
     }
 }
 
-impl<'a, Message: 'static> From<NavBar<'a, Message>>
-    for Element<'a, Message, Renderer>
-{
+impl<'a, Message: 'static> From<NavBar<'a, Message>> for Element<'a, Message, Renderer> {
     fn from(nav_bar: NavBar<'a, Message>) -> Self {
         iced_lazy::component(nav_bar)
     }

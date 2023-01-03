@@ -1,9 +1,9 @@
 use cosmic::{
-    Element,
-    iced::Length,
     iced::widget::{column, container, horizontal_space, image, row, svg, text},
+    iced::Length,
     theme,
     widget::{list_column, settings, toggler},
+    Element,
 };
 
 use super::{Page, SubPage, Window};
@@ -74,7 +74,9 @@ impl SubPage for DesktopPage {
             Appearance => "Accent colors and COSMIC theming",
             DockAndTopPanel => "Customize size, positions, and more for Dock and Top Panel.",
             Workspaces => "Set workspace number, behavior, and placement.",
-            Notifications => "Do Not Disturb, lockscreen notifications, and per-application settings.",
+            Notifications => {
+                "Do Not Disturb, lockscreen notifications, and per-application settings."
+            }
         }
     }
 
@@ -114,7 +116,11 @@ impl State {
         None
     }
 
-    pub(super) fn view<'a>(&'a self, window: &'a Window, desktop_page_opt: Option<DesktopPage>) -> Element<'a, Message> {
+    pub(super) fn view<'a>(
+        &'a self,
+        window: &'a Window,
+        desktop_page_opt: Option<DesktopPage>,
+    ) -> Element<'a, Message> {
         match desktop_page_opt {
             None => settings::view_column(vec![
                 window.page_title(window.page),
@@ -125,7 +131,9 @@ impl State {
                     window.sub_page_button(DesktopPage::DockAndTopPanel),
                     window.sub_page_button(DesktopPage::Workspaces),
                     window.sub_page_button(DesktopPage::Notifications),
-                ).spacing(16).into()
+                )
+                .spacing(16)
+                .into(),
             ])
             .into(),
             Some(DesktopPage::DesktopOptions) => self.view_desktop_options(window),
@@ -138,27 +146,50 @@ impl State {
     fn view_desktop_options<'a>(&'a self, window: &'a Window) -> Element<'a, Message> {
         settings::view_column(vec![
             window.parent_page_button(DesktopPage::DesktopOptions),
-
             settings::view_section("Super Key Action")
                 .add(settings::item("Launcher", horizontal_space(Length::Fill)))
                 .add(settings::item("Workspaces", horizontal_space(Length::Fill)))
-                .add(settings::item("Applications", horizontal_space(Length::Fill)))
+                .add(settings::item(
+                    "Applications",
+                    horizontal_space(Length::Fill),
+                ))
                 .into(),
-
             settings::view_section("Hot Corner")
-                .add(settings::item("Enable top-left hot corner for Workspaces", toggler(None, self.top_left_hot_corner, Message::TopLeftHotCorner)))
+                .add(settings::item(
+                    "Enable top-left hot corner for Workspaces",
+                    toggler(None, self.top_left_hot_corner, Message::TopLeftHotCorner),
+                ))
                 .into(),
-
             settings::view_section("Top Panel")
-                .add(settings::item("Show Workspaces Button", toggler(None, self.show_workspaces_button, Message::ShowWorkspacesButton)))
-                .add(settings::item("Show Applications Button", toggler(None, self.show_applications_button, Message::ShowApplicationsButton)))
+                .add(settings::item(
+                    "Show Workspaces Button",
+                    toggler(
+                        None,
+                        self.show_workspaces_button,
+                        Message::ShowWorkspacesButton,
+                    ),
+                ))
+                .add(settings::item(
+                    "Show Applications Button",
+                    toggler(
+                        None,
+                        self.show_applications_button,
+                        Message::ShowApplicationsButton,
+                    ),
+                ))
                 .into(),
-
             settings::view_section("Window Controls")
-                .add(settings::item("Show Minimize Button", toggler(None, self.show_minimize_button, Message::ShowMinimizeButton)))
-                .add(settings::item("Show Maximize Button", toggler(None, self.show_maximize_button, Message::ShowMaximizeButton)))
+                .add(settings::item(
+                    "Show Minimize Button",
+                    toggler(None, self.show_minimize_button, Message::ShowMinimizeButton),
+                ))
+                .add(settings::item(
+                    "Show Maximize Button",
+                    toggler(None, self.show_maximize_button, Message::ShowMaximizeButton),
+                ))
                 .into(),
-        ]).into()
+        ])
+        .into()
     }
 
     fn view_desktop_wallpaper<'a>(&'a self, window: &'a Window) -> Element<'a, Message> {
@@ -186,55 +217,70 @@ impl State {
         for chunk in image_paths.chunks(4) {
             let mut image_row = Vec::with_capacity(chunk.len());
             for image_path in chunk.iter() {
-                image_row.push(
-                    if image_path.ends_with(".svg") {
-                        svg(svg::Handle::from_path(image_path)).width(Length::Units(150)).into()
-                    } else {
-                        image(image_path).width(Length::Units(150)).into()
-                    }
-                );
+                image_row.push(if image_path.ends_with(".svg") {
+                    svg(svg::Handle::from_path(image_path))
+                        .width(Length::Units(150))
+                        .into()
+                } else {
+                    image(image_path).width(Length::Units(150)).into()
+                });
             }
             image_column.push(row(image_row).spacing(16).into());
         }
 
         settings::view_column(vec![
             window.parent_page_button(DesktopPage::Wallpaper),
-
             row!(
                 horizontal_space(Length::Fill),
                 container(
-                    image(
-                        "/usr/share/backgrounds/pop/kate-hazen-COSMIC-desktop-wallpaper.png"
-                    ).width(Length::Units(300))
+                    image("/usr/share/backgrounds/pop/kate-hazen-COSMIC-desktop-wallpaper.png")
+                        .width(Length::Units(300))
                 )
                 .padding(4)
                 .style(theme::Container::Box),
                 horizontal_space(Length::Fill),
-            ).into(),
-
+            )
+            .into(),
             list_column()
-                .add(settings::item("Same background on all displays", toggler(None, self.same_background, Message::SameBackground)))
+                .add(settings::item(
+                    "Same background on all displays",
+                    toggler(None, self.same_background, Message::SameBackground),
+                ))
                 .add(settings::item("Background fit", text("TODO")))
-                .add(settings::item("Slideshow", toggler(None, self.slideshow, Message::Slideshow)))
+                .add(settings::item(
+                    "Slideshow",
+                    toggler(None, self.slideshow, Message::Slideshow),
+                ))
                 .into(),
-
             column(image_column).spacing(16).into(),
-        ]).into()
+        ])
+        .into()
     }
 
     fn view_desktop_workspaces<'a>(&'a self, window: &'a Window) -> Element<'a, Message> {
         settings::view_column(vec![
             window.parent_page_button(DesktopPage::Wallpaper),
-
             settings::view_section("Workspace Behavior")
-                .add(settings::item("Dynamic workspaces", horizontal_space(Length::Fill)))
-                .add(settings::item("Fixed Number of Workspaces", horizontal_space(Length::Fill)))
+                .add(settings::item(
+                    "Dynamic workspaces",
+                    horizontal_space(Length::Fill),
+                ))
+                .add(settings::item(
+                    "Fixed Number of Workspaces",
+                    horizontal_space(Length::Fill),
+                ))
                 .into(),
-
             settings::view_section("Multi-monitor Behavior")
-                .add(settings::item("Workspaces Span Displays", horizontal_space(Length::Fill)))
-                .add(settings::item("Displays Have Separate Workspaces", horizontal_space(Length::Fill)))
+                .add(settings::item(
+                    "Workspaces Span Displays",
+                    horizontal_space(Length::Fill),
+                ))
+                .add(settings::item(
+                    "Displays Have Separate Workspaces",
+                    horizontal_space(Length::Fill),
+                ))
                 .into(),
-        ]).into()
+        ])
+        .into()
     }
 }
