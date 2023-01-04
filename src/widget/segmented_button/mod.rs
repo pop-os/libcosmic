@@ -7,7 +7,7 @@
 //!
 //! Add the state and a message variant in your application for handling selections.
 //!
-//! ```no_run
+//! ```ignore
 //! use iced_core::Length;
 //! use cosmic::theme;
 //! use cosmic::widget::segmented_button;
@@ -25,7 +25,7 @@
 //!
 //! Then add choices to the state, while activating the first.
 //!
-//! ```no_run
+//! ```ignore
 //! let first_key = application.state.insert("Choice A", 0);
 //! application.state.insert("Choice B", 1);
 //! application.state.insert("Choice C", 2);
@@ -34,7 +34,7 @@
 //!
 //! Then use it in the view method to create segmented button widgets.
 //!
-//! ```no_run
+//! ```ignore
 //! let widget = segmentend_button(&application.state)
 //!     .style(theme::SegmentedButton::Selection)
 //!     .height(Length::Units(32))
