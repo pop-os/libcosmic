@@ -1,4 +1,5 @@
 {
-    "rust-analyzer.checkOnSave.command": "clippy",
-    "rust-analyzer.checkOnSave.extraArgs": ["--", "-W", "clippy::pedantic"],
+    "rust-analyzer.checkOnSave.overrideCommand": [
+        "cargo", "clippy", "--no-deps", "--message-format=json", "--", "-W", "clippy::pedantic"
+    ]
 }
