@@ -48,15 +48,10 @@ mod horizontal;
 mod state;
 mod style;
 mod vertical;
+mod widget;
 
-pub use self::horizontal::{horizontal_segmented_button, HorizontalSegmentedButton};
+pub use self::horizontal::{horizontal_segmented_button, Horizontal, HorizontalSegmentedButton};
 pub use self::state::{ButtonContent, Key, SecondaryState, SharedWidgetState, State};
-pub use self::style::{Appearance, ButtonAppearance, StyleSheet};
-pub use self::vertical::{vertical_segmented_button, VerticalSegmentedButton};
-
-/// State that is maintained by each individual widget.
-#[derive(Default)]
-struct UniqueWidgetState {
-    /// The ID of the button that is being hovered. Defaults to null.
-    hovered: Key,
-}
+pub use self::style::{Appearance, ButtonAppearance, ButtonStatusAppearance, StyleSheet};
+pub use self::vertical::{vertical_segmented_button, Vertical, VerticalSegmentedButton};
+pub use self::widget::{SegmentedButton, SegmentedVariant};

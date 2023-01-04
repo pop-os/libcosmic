@@ -25,7 +25,6 @@ pub use toggler::toggler;
 pub mod segmented_button;
 pub use segmented_button::{
     horizontal_segmented_button, vertical_segmented_button, HorizontalSegmentedButton,
-    VerticalSegmentedButton,
 };
 
 pub mod settings;

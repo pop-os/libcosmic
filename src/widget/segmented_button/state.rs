@@ -11,7 +11,7 @@ slotmap::new_key_type! {
 
 /// Contains all state for interacting with a segmented button.
 pub struct State<Data> {
-    /// State that is shareable across widget(s).
+    /// State that is shared with widget drawing.
     pub inner: SharedWidgetState,
 
     /// State unique to the application.

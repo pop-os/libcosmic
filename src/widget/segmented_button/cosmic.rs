@@ -1,7 +1,7 @@
 // Copyright 2022 System76 <info@system76.com>
 // SPDX-License-Identifier: MPL-2.0
 
-use super::{HorizontalSegmentedButton, State, VerticalSegmentedButton};
+use super::{HorizontalSegmentedButton, SegmentedButton, State, VerticalSegmentedButton};
 
 /// Appears as a collection of tabs for developing a tabbed interface.
 ///
@@ -10,7 +10,7 @@ use super::{HorizontalSegmentedButton, State, VerticalSegmentedButton};
 pub fn horizontal_view_switcher<Message, Data>(
     state: &State<Data>,
 ) -> HorizontalSegmentedButton<Message, crate::Renderer> {
-    HorizontalSegmentedButton::new(&state.inner)
+    SegmentedButton::new(&state.inner)
         .button_padding([16, 0, 16, 0])
         .button_height(48)
         .style(crate::theme::SegmentedButton::ViewSwitcher)
@@ -24,7 +24,7 @@ pub fn horizontal_view_switcher<Message, Data>(
 pub fn horizontal_segmented_selection<Message, Data>(
     state: &State<Data>,
 ) -> HorizontalSegmentedButton<Message, crate::Renderer> {
-    HorizontalSegmentedButton::new(&state.inner)
+    SegmentedButton::new(&state.inner)
         .button_padding([16, 0, 16, 0])
         .button_height(32)
         .style(crate::theme::SegmentedButton::Selection)
@@ -38,7 +38,7 @@ pub fn horizontal_segmented_selection<Message, Data>(
 pub fn vertical_segmented_selection<Message, Data>(
     state: &State<Data>,
 ) -> VerticalSegmentedButton<Message, crate::Renderer> {
-    VerticalSegmentedButton::new(&state.inner)
+    SegmentedButton::new(&state.inner)
         .button_padding([16, 0, 16, 0])
         .button_height(32)
         .style(crate::theme::SegmentedButton::Selection)
@@ -52,7 +52,7 @@ pub fn vertical_segmented_selection<Message, Data>(
 pub fn vertical_view_switcher<Message, Data>(
     state: &State<Data>,
 ) -> VerticalSegmentedButton<Message, crate::Renderer> {
-    VerticalSegmentedButton::new(&state.inner)
+    SegmentedButton::new(&state.inner)
         .button_padding([16, 0, 16, 0])
         .button_height(48)
         .style(crate::theme::SegmentedButton::ViewSwitcher)
