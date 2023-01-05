@@ -45,7 +45,7 @@ impl<T: 'static + Copy + Hash + ToString, Message: 'static> SpinButton<T, Messag
         let Self { on_change, value } = self;
 
         Element::from(iced_lazy::lazy(
-            value,
+            (value, crate::settings::default_icon_theme()),
             move || -> Element<'static, SpinMessage> {
                 container(
                     row![

@@ -19,7 +19,7 @@ mod bluetooth;
 
 mod demo;
 
-use self::{demo::DemoView, desktop::DesktopPage};
+use self::desktop::DesktopPage;
 mod desktop;
 
 use self::input_devices::InputDevicesPage;
@@ -272,28 +272,8 @@ impl Application for Window {
             .sidebar_toggled(true)
             .show_maximize(true)
             .show_minimize(true);
-        window.demo.slider_value = 50.0;
-        //        window.theme = Theme::Light;
-        window.demo.pick_list_selected = Some("Option 1");
+
         window.title = String::from("COSMIC Design System - Iced");
-        window.demo.spin_button.min = -10;
-        window.demo.spin_button.max = 10;
-
-        // Configures the demo view switcher.
-        let key = window.demo.view_switcher.insert("Controls", DemoView::TabA);
-        window.demo.view_switcher.activate(key);
-        window
-            .demo
-            .view_switcher
-            .insert("Segmented Button", DemoView::TabB);
-        window.demo.view_switcher.insert("Tab C", DemoView::TabC);
-
-        // Configures the demo selection button.
-        let key = window.demo.selection.insert("Choice A", ());
-        window.demo.selection.activate(key);
-        window.demo.selection.insert("Choice B", ());
-        window.demo.selection.insert("Choice C", ());
-
         (window, Command::none())
     }
 

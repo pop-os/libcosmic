@@ -16,21 +16,12 @@ pub mod font;
 pub mod theme;
 pub mod widget;
 
+pub mod settings;
+pub use settings::settings;
+
 mod ext;
 pub use ext::ElementExt;
 
 pub use theme::Theme;
 pub type Renderer = iced::Renderer<Theme>;
 pub type Element<'a, Message> = iced::Element<'a, Message, Renderer>;
-
-#[must_use]
-pub fn settings<Flags: Default>() -> iced::Settings<Flags> {
-    iced::Settings {
-        default_font: match font::FONT {
-            iced::Font::Default => None,
-            iced::Font::External { bytes, .. } => Some(bytes),
-        },
-        default_text_size: 18,
-        ..iced::Settings::default()
-    }
-}
