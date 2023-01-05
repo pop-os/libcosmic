@@ -10,9 +10,9 @@ use iced::{
     ContentFit, Length,
 };
 use std::{
-    borrow::Cow, collections::hash_map::DefaultHasher, ffi::OsStr, hash::Hasher, path::Path,
+    borrow::Cow, collections::hash_map::DefaultHasher, ffi::OsStr, hash::Hash, hash::Hasher,
+    path::Path, path::PathBuf,
 };
-use std::{hash::Hash, path::PathBuf};
 
 #[derive(Debug, Hash)]
 pub enum IconSource<'a> {
@@ -112,18 +112,25 @@ impl<'a> Icon<'a> {
         let mut hasher = DefaultHasher::new();
         self.hash(&mut hasher);
 
-        iced_lazy::lazy(hasher.finish(), move || -> Element<Message> {
+        if self.theme.is_none() {
+            crate::settings::DEFAULT_ICON_THEME.with(|f| f.borrow().hash(&mut hasher));
+        }
+
+        let hash = hasher.finish();
+
+        iced_lazy::lazy(hash, move || -> Element<Message> {
             let name_path_buffer: Option<PathBuf>;
             let icon: Option<&Path> = match &self.name {
                 IconSource::Path(path) => Some(path),
                 IconSource::Name(name) => {
-                    let mut builder = freedesktop_icons::lookup(name).with_size(self.size);
-
-                    if let Some(theme) = self.theme.as_deref() {
-                        builder = builder.with_theme(theme);
-                    }
-
-                    let icon = builder.with_cache().find();
+                    let icon = crate::settings::DEFAULT_ICON_THEME.with(|default_theme| {
+                        let default_theme: &str = &default_theme.borrow();
+                        freedesktop_icons::lookup(name)
+                            .with_size(self.size)
+                            .with_theme(self.theme.as_deref().unwrap_or(default_theme))
+                            .with_cache()
+                            .find()
+                    });
 
                     name_path_buffer = if icon.is_none() {
                         freedesktop_icons::lookup(name)

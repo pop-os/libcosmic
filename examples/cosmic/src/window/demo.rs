@@ -30,6 +30,7 @@ pub enum Message {
     ButtonPressed,
     CheckboxToggled(bool),
     Debug(bool),
+    IconTheme(segmented_button::Key),
     PickListSelected(&'static str),
     RowSelected(usize),
     Selection(segmented_button::Key),
@@ -45,15 +46,50 @@ pub enum Output {
     ThemeChanged(Theme),
 }
 
-#[derive(Default)]
 pub struct State {
     pub checkbox_value: bool,
+    pub icon_theme: segmented_button::State<&'static str>,
     pub pick_list_selected: Option<&'static str>,
     pub selection: segmented_button::State<()>,
     pub slider_value: f32,
     pub spin_button: SpinButtonModel<i32>,
     pub toggler_value: bool,
     pub view_switcher: segmented_button::State<DemoView>,
+}
+
+impl Default for State {
+    fn default() -> State {
+        State {
+            checkbox_value: false,
+            pick_list_selected: Some("Option 1"),
+            slider_value: 50.0,
+            spin_button: SpinButtonModel::default().min(-10).max(10),
+            toggler_value: false,
+            icon_theme: {
+                let mut icon_theme = segmented_button::State::default();
+                let key = icon_theme.insert("Pop", "Pop");
+                icon_theme.activate(key);
+                icon_theme.insert("Adwaita", "Adwaita");
+                icon_theme
+            },
+            selection: {
+                let mut selection = segmented_button::State::default();
+                let key = selection.insert("Choice A", ());
+                selection.activate(key);
+                selection.insert("Choice B", ());
+                selection.insert("Choice C", ());
+                selection
+            },
+            view_switcher: {
+                let mut view_switcher = segmented_button::State::default();
+                let key = view_switcher.insert("Controls", DemoView::TabA);
+                view_switcher.activate(key);
+                view_switcher.insert("Segmented Button", DemoView::TabB);
+                view_switcher.insert("Tab C", DemoView::TabC);
+                view_switcher
+            },
+        }
+    }
 }
 
 impl State {
@@ -70,6 +106,12 @@ impl State {
             Message::ThemeChanged(theme) => return Some(Output::ThemeChanged(theme)),
             Message::TogglerToggled(value) => self.toggler_value = value,
             Message::ViewSwitcher(key) => self.view_switcher.activate(key),
+            Message::IconTheme(key) => {
+                self.icon_theme.activate(key);
+                if let Some(theme) = self.icon_theme.data(key) {
+                    cosmic::settings::set_default_icon_theme(*theme);
+                }
+            }
         }
 
         None
@@ -88,6 +130,9 @@ impl State {
             },
         );
 
+        let choose_icon_theme =
+            horizontal_segmented_selection(&self.icon_theme).on_activate(Message::IconTheme);
+
         settings::view_column(vec![
             window.page_title(Page::Demo),
             horizontal_view_switcher(&self.view_switcher)
@@ -98,6 +143,7 @@ impl State {
                 Some(DemoView::TabA) => settings::view_column(vec![
                     settings::view_section("Debug")
                         .add(settings::item("Debug theme", choose_theme))
+                        .add(settings::item("Debug icon theme", choose_icon_theme))
                         .add(settings::item(
                             "Debug layout",
                             toggler(None, window.debug, Message::Debug),
