@@ -9,10 +9,10 @@ use iced::{
     widget::{svg, Image},
     ContentFit, Length,
 };
-use std::{hash::Hash, path::PathBuf};
 use std::{
     borrow::Cow, collections::hash_map::DefaultHasher, ffi::OsStr, hash::Hasher, path::Path,
 };
+use std::{hash::Hash, path::PathBuf};
 
 #[derive(Debug, Hash)]
 pub enum IconSource<'a> {
@@ -68,8 +68,8 @@ impl<'a> From<Image> for IconSource<'a> {
 pub struct Icon<'a> {
     #[setters(skip)]
     name: IconSource<'a>,
-    #[setters(into)]
-    theme: Cow<'a, str>,
+    #[setters(strip_option, into)]
+    theme: Option<Cow<'a, str>>,
     style: crate::theme::Svg,
     size: u16,
     #[setters(strip_option)]
@@ -90,7 +90,7 @@ pub fn icon<'a>(name: impl Into<IconSource<'a>>, size: u16) -> Icon<'a> {
         name: name.into(),
         size,
         style: crate::theme::Svg::default(),
-        theme: Cow::Borrowed("Pop"),
+        theme: None,
         width: None,
         force_svg: false,
     }
@@ -117,11 +117,13 @@ impl<'a> Icon<'a> {
             let icon: Option<&Path> = match &self.name {
                 IconSource::Path(path) => Some(path),
                 IconSource::Name(name) => {
-                    let icon = freedesktop_icons::lookup(name)
-                        .with_size(self.size)
-                        .with_theme(&self.theme)
-                        .with_cache()
-                        .find();
+                    let mut builder = freedesktop_icons::lookup(name).with_size(self.size);
+
+                    if let Some(theme) = self.theme.as_deref() {
+                        builder = builder.with_theme(theme);
+                    }
+
+                    let icon = builder.with_cache().find();
 
                     name_path_buffer = if icon.is_none() {
                         freedesktop_icons::lookup(name)
