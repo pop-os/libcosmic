@@ -1,22 +1,34 @@
 use cosmic_panel_config::{PanelAnchor, PanelSize};
 use iced::{
     alignment::{Horizontal, Vertical},
-    sctk_settings::InitialSurface,
+    wayland::InitialSurface,
     widget::{self, Container},
     Color, Element, Length, Rectangle, Settings,
 };
+use iced_core::BorderRadius;
 use iced_native::command::platform_specific::wayland::{
     popup::{SctkPopupSettings, SctkPositioner},
     window::SctkWindowSettings,
 };
-use iced_style::container::Appearance;
+use iced_style::{button::StyleSheet, container::Appearance};
 use sctk::reexports::protocols::xdg::shell::client::xdg_positioner::{Anchor, Gravity};
 
-use crate::Renderer;
+use crate::{theme::Button, Renderer};
 
 pub use cosmic_panel_config;
 
 const APPLET_PADDING: u32 = 8;
+
+pub const APPLET_BUTTON_THEME: Button = Button::Custom {
+    active: |t| iced_style::button::Appearance {
+        border_radius: BorderRadius::from(0.0),
+        ..t.active(&Button::Text)
+    },
+    hover: |t| iced_style::button::Appearance {
+        border_radius: BorderRadius::from(0.0),
+        ..t.hovered(&Button::Text)
+    },
+};
 
 #[derive(Debug, Clone)]
 pub struct CosmicAppletHelper {

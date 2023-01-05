@@ -1,5 +1,5 @@
 use cosmic::{
-    iced::{sctk_settings::InitialSurface, Application},
+    iced::{wayland::InitialSurface, Application},
     settings,
 };
 
