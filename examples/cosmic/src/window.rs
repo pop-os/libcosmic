@@ -1,19 +1,26 @@
 /// Copyright 2022 System76 <info@system76.com>
 // SPDX-License-Identifier: MPL-2.0
 use cosmic::{
-    iced::widget::{column, container, horizontal_space, row, text},
-    iced::{self, Application, Command, Length, Subscription},
+    iced::widget::{self, button, column, container, horizontal_space, row, text},
+    iced::{
+        self,
+        event::{self, Event},
+        keyboard, Application, Command, Length, Subscription,
+    },
     iced_native,
-    iced_native::window,
+    iced_native::{subscription, window},
     iced_winit::window::{close, drag, minimize, toggle_maximize},
     theme::{self, Theme},
     widget::{header_bar, icon, list, nav_bar, nav_button, scrollable, settings},
     Element, ElementExt,
 };
+use once_cell::sync::Lazy;
 use std::{
     sync::atomic::{AtomicU32, Ordering},
     vec,
 };
+
+static BTN: Lazy<button::Id> = Lazy::new(button::Id::unique);
 
 mod bluetooth;
 
@@ -156,7 +163,8 @@ impl Window {
 #[derive(Clone, Copy, Debug)]
 pub enum Message {
     Close,
-    CondensedViewToggle(()),
+    CondensedViewToggle,
+    TabNav(bool),
     Bluetooth(bluetooth::Message),
     Demo(demo::Message),
     Desktop(desktop::Message),
@@ -201,6 +209,7 @@ impl Window {
             ))
             .padding(0)
             .style(theme::Button::Link)
+            .id(BTN.clone())
             .on_press(Message::from(page)),
             row!(
                 text(sub_page.title()).size(30),
@@ -240,6 +249,7 @@ impl Window {
         .padding(0)
         .style(theme::Button::Transparent)
         .on_press(Message::from(sub_page.into_page()))
+        .id(BTN.clone())
         .into()
     }
 
@@ -282,7 +292,7 @@ impl Application for Window {
     }
 
     fn subscription(&self) -> Subscription<Message> {
-        iced_native::subscription::events_with(|event, _| match event {
+        let window_break = subscription::events_with(|event, _| match event {
             cosmic::iced::Event::Window(
                 _window_id,
                 window::Event::Resized { width, height: _ },
@@ -299,11 +309,28 @@ impl Application for Window {
                 }
             }
             _ => None,
-        })
-        .map(Message::CondensedViewToggle)
+        });
+
+        let tab_navagation = subscription::events_with(|event, status| match (event, status) {
+            (
+                Event::Keyboard(keyboard::Event::KeyPressed {
+                    key_code: keyboard::KeyCode::Tab,
+                    modifiers,
+                    ..
+                }),
+                event::Status::Ignored,
+            ) => Some(modifiers.shift()),
+            _ => None,
+        });
+
+        Subscription::batch(vec![
+            window_break.map(|_| Message::CondensedViewToggle),
+            tab_navagation.map(Message::TabNav),
+        ])
     }
 
     fn update(&mut self, message: Message) -> iced::Command<Self::Message> {
+        let mut ret = Command::none();
         match message {
             Message::Page(page) => self.page(page),
             Message::Bluetooth(message) => {
@@ -329,10 +356,16 @@ impl Application for Window {
 
             Message::InputChanged => {}
 
-            Message::CondensedViewToggle(_) => {}
+            Message::CondensedViewToggle => {}
+            Message::TabNav(shift) => {
+                if shift {
+                    ret = widget::focus_previous();
+                } else {
+                    ret = widget::focus_next();
+                }
+            }
         }
-
-        Command::none()
+        ret
     }
 
     fn view(&self) -> Element<Message> {
@@ -372,6 +405,7 @@ impl Application for Window {
             let sidebar_button_complex = |page: Page, active| {
                 cosmic::nav_button!(page.icon_name(), page.title(), active)
                     .on_press(Message::Page(page))
+                    .id(BTN.clone())
             };
 
             let sidebar_button = |page: Page| sidebar_button_complex(page, self.page == page);
