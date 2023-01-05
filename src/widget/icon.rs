@@ -9,21 +9,33 @@ use iced::{
     widget::{svg, Image},
     ContentFit, Length,
 };
-use std::hash::Hash;
+use std::{hash::Hash, path::PathBuf};
 use std::{
     borrow::Cow, collections::hash_map::DefaultHasher, ffi::OsStr, hash::Hasher, path::Path,
 };
 
 #[derive(Debug, Hash)]
 pub enum IconSource<'a> {
-    Path(&'a Path),
+    Path(Cow<'a, Path>),
     Name(Cow<'a, str>),
     Embedded(Image),
 }
 
+impl<'a> From<Cow<'a, Path>> for IconSource<'a> {
+    fn from(value: Cow<'a, Path>) -> Self {
+        Self::Path(value)
+    }
+}
+
+impl From<PathBuf> for IconSource<'static> {
+    fn from(value: PathBuf) -> Self {
+        Self::Path(Cow::Owned(value))
+    }
+}
+
 impl<'a> From<&'a Path> for IconSource<'a> {
     fn from(value: &'a Path) -> Self {
-        Self::Path(value)
+        Self::Path(Cow::Borrowed(value))
     }
 }
 
@@ -33,7 +45,7 @@ impl<'a> From<Cow<'a, str>> for IconSource<'a> {
     }
 }
 
-impl<'a> From<String> for IconSource<'a> {
+impl From<String> for IconSource<'static> {
     fn from(value: String) -> Self {
         Self::Name(value.into())
     }
@@ -101,23 +113,26 @@ impl<'a> Icon<'a> {
         self.hash(&mut hasher);
 
         iced_lazy::lazy(hasher.finish(), move || -> Element<Message> {
-            let icon = match &self.name {
-                IconSource::Path(path) => Some(Cow::from(*path)),
+            let name_path_buffer: Option<PathBuf>;
+            let icon: Option<&Path> = match &self.name {
+                IconSource::Path(path) => Some(path),
                 IconSource::Name(name) => {
                     let icon = freedesktop_icons::lookup(name)
                         .with_size(self.size)
                         .with_theme(&self.theme)
                         .with_cache()
                         .find();
-                    if icon.is_none() {
+
+                    name_path_buffer = if icon.is_none() {
                         freedesktop_icons::lookup(name)
                             .with_size(self.size)
                             .with_cache()
                             .find()
                     } else {
                         icon
-                    }
-                    .map(Cow::from)
+                    };
+
+                    name_path_buffer.as_deref()
                 }
                 IconSource::Embedded(_) => unimplemented!(),
             };
