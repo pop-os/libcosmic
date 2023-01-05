@@ -8,3 +8,4 @@ publish = false
 [dependencies]
 apply = "0.3.0"
 libcosmic = { path = "../..", default-features = false, features = ["debug", "winit_wgpu"] }
+once_cell = "1.15"

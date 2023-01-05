@@ -212,6 +212,24 @@ impl button::StyleSheet for Theme {
             ..active
         }
     }
+
+    fn focused(&self, style: &Self::Style) -> button::Appearance {
+        if let Button::Custom { hover, .. } = style {
+            return hover(self);
+        }
+
+        let active = self.active(style);
+        let cosmic = style.cosmic(self);
+
+        button::Appearance {
+            background: match style {
+                Button::Link => None,
+                Button::LinkActive => Some(Background::Color(cosmic.divider.into())),
+                _ => Some(Background::Color(cosmic.hover.into())),
+            },
+            ..active
+        }
+    }
 }
 
 /*
