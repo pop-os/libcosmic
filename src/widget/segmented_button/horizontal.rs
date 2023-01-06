@@ -1,3 +1,6 @@
+// Copyright 2022 System76 <info@system76.com>
+// SPDX-License-Identifier: MPL-2.0
+
 use super::state::State;
 use super::style::StyleSheet;
 use super::widget::{SegmentedButton, SegmentedVariant};
@@ -18,7 +21,10 @@ pub fn horizontal_segmented_button<Message, Renderer, Data>(
     state: &State<Data>,
 ) -> SegmentedButton<Horizontal, Message, Renderer>
 where
-    Renderer: iced_native::Renderer + iced_native::text::Renderer,
+    Renderer: iced_native::Renderer
+        + iced_native::text::Renderer
+        + iced_native::image::Renderer
+        + iced_native::svg::Renderer,
     Renderer::Theme: StyleSheet,
 {
     SegmentedButton::new(&state.inner)
@@ -26,7 +32,10 @@ where
 
 impl<'a, Message, Renderer> SegmentedVariant for SegmentedButton<'a, Horizontal, Message, Renderer>
 where
-    Renderer: iced_native::Renderer + iced_native::text::Renderer,
+    Renderer: iced_native::Renderer
+        + iced_native::text::Renderer
+        + iced_native::image::Renderer
+        + iced_native::svg::Renderer,
     Renderer::Theme: StyleSheet,
 {
     type Renderer = Renderer;

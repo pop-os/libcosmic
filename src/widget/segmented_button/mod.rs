@@ -35,7 +35,7 @@
 //! Then use it in the view method to create segmented button widgets.
 //!
 //! ```ignore
-//! let widget = segmentend_button(&application.state)
+//! let widget = horizontal_segmentend_button(&application.state)
 //!     .style(theme::SegmentedButton::Selection)
 //!     .height(Length::Units(32))
 //!     .on_activate(AppMessage::Selected);
@@ -51,7 +51,7 @@ mod vertical;
 mod widget;
 
 pub use self::horizontal::{horizontal_segmented_button, Horizontal, HorizontalSegmentedButton};
-pub use self::state::{ButtonContent, Key, SecondaryState, SharedWidgetState, State};
+pub use self::state::{Content, Key, SecondaryState, SharedWidgetState, State};
 pub use self::style::{Appearance, ButtonAppearance, ButtonStatusAppearance, StyleSheet};
 pub use self::vertical::{vertical_segmented_button, Vertical, VerticalSegmentedButton};
 pub use self::widget::{SegmentedButton, SegmentedVariant};
