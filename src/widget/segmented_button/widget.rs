@@ -3,7 +3,7 @@
 
 use std::marker::PhantomData;
 
-use super::state::{Key, SharedWidgetState};
+use super::state::{Key, Selectable, SharedWidgetState};
 use super::style::StyleSheet;
 
 use derive_setters::Setters;
@@ -35,17 +35,18 @@ pub trait SegmentedVariant {
 }
 
 #[derive(Setters)]
-pub struct SegmentedButton<'a, Variant, Message, Renderer>
+pub struct SegmentedButton<'a, Variant, Selection, Message, Renderer>
 where
     Renderer: iced_native::Renderer
         + iced_native::text::Renderer
         + iced_native::image::Renderer
         + iced_native::svg::Renderer,
     Renderer::Theme: StyleSheet,
+    Selection: Selectable,
 {
     /// Contains application state also used for drawing.
     #[setters(skip)]
-    pub(super) state: &'a SharedWidgetState,
+    pub(super) state: &'a SharedWidgetState<Selection>,
     /// Padding around a button.
     pub(super) button_padding: [u16; 4],
     /// Desired height of a button.
@@ -77,7 +78,8 @@ where
     variant: PhantomData<Variant>,
 }
 
-impl<'a, Variant, Message, Renderer> SegmentedButton<'a, Variant, Message, Renderer>
+impl<'a, Variant, Selection, Message, Renderer>
+    SegmentedButton<'a, Variant, Selection, Message, Renderer>
 where
     Renderer: iced_native::Renderer
         + iced_native::text::Renderer
@@ -85,9 +87,10 @@ where
         + iced_native::svg::Renderer,
     Renderer::Theme: StyleSheet,
     Self: SegmentedVariant<Renderer = Renderer>,
+    Selection: Selectable,
 {
     #[must_use]
-    pub fn new(state: &'a SharedWidgetState) -> Self {
+    pub fn new(state: &'a SharedWidgetState<Selection>) -> Self {
         Self {
             state,
             button_padding: [4, 4, 4, 4],
@@ -153,8 +156,8 @@ where
     }
 }
 
-impl<'a, Variant, Message, Renderer> Widget<Message, Renderer>
-    for SegmentedButton<'a, Variant, Message, Renderer>
+impl<'a, Variant, Selection, Message, Renderer> Widget<Message, Renderer>
+    for SegmentedButton<'a, Variant, Selection, Message, Renderer>
 where
     Renderer: iced_native::Renderer
         + iced_native::text::Renderer
@@ -162,6 +165,7 @@ where
         + iced_native::svg::Renderer,
     Renderer::Theme: StyleSheet,
     Self: SegmentedVariant<Renderer = Renderer>,
+    Selection: Selectable,
     Message: 'static + Clone,
 {
     fn tag(&self) -> tree::Tag {
@@ -273,7 +277,7 @@ where
         for (nth, (key, content)) in self.state.buttons.iter().enumerate() {
             let mut bounds = self.variant_button_bounds(bounds, nth);
 
-            let (status_appearance, font) = if self.state.active == key {
+            let (status_appearance, font) = if self.state.selection.is_active(key) {
                 (appearance.active, &self.font_active)
             } else if state.hovered == key {
                 (appearance.hover, &self.font_hovered)
@@ -392,7 +396,8 @@ where
     }
 }
 
-impl<'a, Variant, Message, Renderer> From<SegmentedButton<'a, Variant, Message, Renderer>>
+impl<'a, Variant, Selection, Message, Renderer>
+    From<SegmentedButton<'a, Variant, Selection, Message, Renderer>>
     for Element<'a, Message, Renderer>
 where
     Renderer: iced_native::Renderer
@@ -401,11 +406,13 @@ where
         + iced_native::svg::Renderer
         + 'a,
     Renderer::Theme: StyleSheet,
-    SegmentedButton<'a, Variant, Message, Renderer>: SegmentedVariant<Renderer = Renderer>,
+    SegmentedButton<'a, Variant, Selection, Message, Renderer>:
+        SegmentedVariant<Renderer = Renderer>,
     Variant: 'static,
+    Selection: Selectable,
     Message: 'static + Clone,
 {
-    fn from(mut widget: SegmentedButton<'a, Variant, Message, Renderer>) -> Self {
+    fn from(mut widget: SegmentedButton<'a, Variant, Selection, Message, Renderer>) -> Self {
         if widget.state.buttons.is_empty() {
             widget.spacing = 0;
         }

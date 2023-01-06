@@ -13,7 +13,7 @@ use cosmic::{
     theme::{self, Theme},
     widget::{
         header_bar, icon, list, nav_bar, nav_button, scrollable,
-        segmented_button::{self, cosmic::vertical_view_switcher},
+        segmented_button::{self, cosmic::vertical_view_switcher, Selectable, SingleSelect},
         settings,
     },
     Element, ElementExt,
@@ -136,7 +136,7 @@ pub struct Window {
     debug: bool,
     demo: demo::State,
     desktop: desktop::State,
-    nav_bar_pages: segmented_button::State<Page>,
+    nav_bar_pages: segmented_button::State<SingleSelect, Page>,
     nav_bar_toggled_condensed: bool,
     nav_bar_toggled: bool,
     page: Page,

@@ -45,13 +45,16 @@
 pub mod cosmic;
 
 mod horizontal;
+
 mod state;
 mod style;
 mod vertical;
 mod widget;
 
 pub use self::horizontal::{horizontal_segmented_button, Horizontal, HorizontalSegmentedButton};
-pub use self::state::{Content, Key, SecondaryState, SharedWidgetState, State};
+pub use self::state::{
+    Content, Key, MultiSelect, SecondaryState, Selectable, SharedWidgetState, SingleSelect, State,
+};
 pub use self::style::{Appearance, ButtonAppearance, ButtonStatusAppearance, StyleSheet};
 pub use self::vertical::{vertical_segmented_button, Vertical, VerticalSegmentedButton};
 pub use self::widget::{SegmentedButton, SegmentedVariant};
