@@ -1,10 +1,11 @@
+use apply::Apply;
 use cosmic::{
     iced::widget::{checkbox, pick_list, progress_bar, radio, row, slider},
-    iced::{Alignment, Length},
+    iced::{widget::container, Alignment, Length},
     theme::{Button as ButtonTheme, Theme},
     widget::{
         button,
-        segmented_button::{MultiSelect, Selectable, SingleSelect},
+        segmented_button::{MultiSelect, SingleSelect},
         settings,
         spin_button::{SpinButtonModel, SpinMessage},
         toggler,
@@ -246,9 +247,22 @@ impl State {
                         .spacing(8)
                         .on_activate(Message::Selection)
                         .into(),
-                    cosmic::iced::widget::text("Vertical (Multi-Select)").into(),
-                    vertical_segmented_selection(&self.multi_selection)
+                    cosmic::iced::widget::text("Horizontal Multi-Select").into(),
+                    horizontal_segmented_selection(&self.multi_selection)
+                        .spacing(8)
                         .on_activate(Message::MultiSelection)
+                        .into(),
+                    cosmic::iced::widget::text("Vertical").into(),
+                    vertical_segmented_selection(&self.selection)
+                        .on_activate(Message::Selection)
+                        .into(),
+                    cosmic::iced::widget::text("Vertical Multi-Select Shrunk").into(),
+                    vertical_segmented_selection(&self.multi_selection)
+                        .width(Length::Shrink)
+                        .on_activate(Message::MultiSelection)
+                        .apply(container)
+                        .center_x()
+                        .width(Length::Fill)
                         .into(),
                     cosmic::iced::widget::text("Vertical With Spacing").into(),
                     cosmic::iced::widget::row(vec![
@@ -278,6 +292,10 @@ impl State {
                     horizontal_view_switcher(&self.selection)
                         .on_activate(Message::Selection)
                         .into(),
+                    cosmic::iced::widget::text("Horizontal Multi-Select").into(),
+                    horizontal_view_switcher(&self.multi_selection)
+                        .on_activate(Message::MultiSelection)
+                        .into(),
                     cosmic::iced::widget::text("Horizontal With Spacing").into(),
                     horizontal_view_switcher(&self.selection)
                         .spacing(8)
@@ -286,6 +304,10 @@ impl State {
                     cosmic::iced::widget::text("Vertical").into(),
                     vertical_view_switcher(&self.selection)
                         .on_activate(Message::Selection)
+                        .into(),
+                    cosmic::iced::widget::text("Vertical Multi-Select").into(),
+                    vertical_view_switcher(&self.multi_selection)
+                        .on_activate(Message::MultiSelection)
                         .into(),
                     cosmic::iced::widget::text("Vertical With Spacing").into(),
                     cosmic::iced::widget::row(vec![
