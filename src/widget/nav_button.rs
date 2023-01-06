@@ -9,17 +9,17 @@ use iced::{alignment::Vertical, Length};
 #[derive(Setters)]
 pub struct NavButton<'a, Message> {
     title: &'a str,
-    sidebar_active: bool,
+    nav_bar_active: bool,
     #[setters(strip_option)]
-    on_sidebar_toggled: Option<Message>,
+    on_nav_bar_toggled: Option<Message>,
 }
 
 #[must_use]
 pub fn nav_button<Message>(title: &str) -> NavButton<Message> {
     NavButton {
         title,
-        sidebar_active: false,
-        on_sidebar_toggled: None,
+        nav_bar_active: false,
+        on_nav_bar_toggled: None,
     }
 }
 
@@ -32,7 +32,7 @@ impl<'a, Message: 'static + Clone> From<NavButton<'a, Message>> for Element<'a, 
             .height(Length::Fill);
 
         let icon = super::icon(
-            if nav_button.sidebar_active {
+            if nav_button.nav_bar_active {
                 "go-previous-symbolic"
             } else {
                 "go-next-symbolic"
@@ -50,7 +50,7 @@ impl<'a, Message: 'static + Clone> From<NavButton<'a, Message>> for Element<'a, 
             .apply(iced::widget::button)
             .style(theme::Button::Secondary);
 
-        if let Some(message) = nav_button.on_sidebar_toggled.clone() {
+        if let Some(message) = nav_button.on_nav_bar_toggled.clone() {
             widget = widget.on_press(message);
         }
 

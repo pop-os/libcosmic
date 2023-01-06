@@ -65,29 +65,20 @@ impl Default for State {
             slider_value: 50.0,
             spin_button: SpinButtonModel::default().min(-10).max(10),
             toggler_value: false,
-            icon_theme: {
-                let mut icon_theme = segmented_button::State::default();
-                let key = icon_theme.insert("Pop", "Pop");
-                icon_theme.activate(key);
-                icon_theme.insert("Adwaita", "Adwaita");
-                icon_theme
-            },
-            selection: {
-                let mut selection = segmented_button::State::default();
-                let key = selection.insert("Choice A", ());
-                selection.activate(key);
-                selection.insert("Choice B", ());
-                selection.insert("Choice C", ());
-                selection
-            },
-            view_switcher: {
-                let mut view_switcher = segmented_button::State::default();
-                let key = view_switcher.insert("Controls", DemoView::TabA);
-                view_switcher.activate(key);
-                view_switcher.insert("Segmented Button", DemoView::TabB);
-                view_switcher.insert("Tab C", DemoView::TabC);
-                view_switcher
-            },
+            icon_theme: segmented_button::State::builder()
+                .insert_active("Pop", "Pop")
+                .insert("Adwaita", "Adwaita")
+                .build(),
+            selection: segmented_button::State::builder()
+                .insert_active("Choice A", ())
+                .insert("Choice B", ())
+                .insert("Choice C", ())
+                .build(),
+            view_switcher: segmented_button::State::builder()
+                .insert_active("Controls", DemoView::TabA)
+                .insert("Segmented Button", DemoView::TabB)
+                .insert("Tab C", DemoView::TabC)
+                .build(),
         }
     }
 }
