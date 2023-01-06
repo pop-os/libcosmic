@@ -13,7 +13,7 @@ use cosmic::{
     theme::{self, Theme},
     widget::{
         header_bar, icon, list, nav_bar, nav_button, scrollable,
-        segmented_button::{self, cosmic::vertical_view_switcher, Selectable, SingleSelect},
+        segmented_button::{self, cosmic::vertical_view_switcher, SingleSelect},
         settings,
     },
     Element, ElementExt,
