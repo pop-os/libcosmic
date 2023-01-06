@@ -1,3 +1,6 @@
+// Copyright 2022 System76 <info@system76.com>
+// SPDX-License-Identifier: MPL-2.0
+
 use std::marker::PhantomData;
 
 use super::state::{Key, SharedWidgetState};
@@ -34,26 +37,33 @@ pub trait SegmentedVariant {
 #[derive(Setters)]
 pub struct SegmentedButton<'a, Variant, Message, Renderer>
 where
-    Renderer: iced_native::Renderer + iced_native::text::Renderer,
+    Renderer: iced_native::Renderer
+        + iced_native::text::Renderer
+        + iced_native::image::Renderer
+        + iced_native::svg::Renderer,
     Renderer::Theme: StyleSheet,
 {
     /// Contains application state also used for drawing.
     #[setters(skip)]
     pub(super) state: &'a SharedWidgetState,
+    /// Padding around a button.
+    pub(super) button_padding: [u16; 4],
+    /// Desired height of a button.
+    pub(super) button_height: u16,
+    /// Spacing between icon and text in button.
+    pub(super) button_spacing: u16,
     /// Desired font for active tabs.
     pub(super) font_active: Renderer::Font,
     /// Desired font for hovered tabs.
     pub(super) font_hovered: Renderer::Font,
     /// Desired font for inactive tabs.
     pub(super) font_inactive: Renderer::Font,
+    /// Size of icon
+    pub(super) icon_size: u16,
     /// Desired width of the widget.
     pub(super) width: Length,
     /// Desired height of the widget.
     pub(super) height: Length,
-    /// Padding around a button.
-    pub(super) button_padding: [u16; 4],
-    /// Desired height of a button.
-    pub(super) button_height: u16,
     /// Desired spacing between buttons.
     pub(super) spacing: u16,
     /// Style to draw the widget in.
@@ -69,7 +79,10 @@ where
 
 impl<'a, Variant, Message, Renderer> SegmentedButton<'a, Variant, Message, Renderer>
 where
-    Renderer: iced_native::Renderer + iced_native::text::Renderer,
+    Renderer: iced_native::Renderer
+        + iced_native::text::Renderer
+        + iced_native::image::Renderer
+        + iced_native::svg::Renderer,
     Renderer::Theme: StyleSheet,
     Self: SegmentedVariant<Renderer = Renderer>,
 {
@@ -77,13 +90,15 @@ where
     pub fn new(state: &'a SharedWidgetState) -> Self {
         Self {
             state,
+            button_padding: [4, 4, 4, 4],
+            button_height: 32,
+            button_spacing: 4,
             font_active: Renderer::Font::default(),
             font_hovered: Renderer::Font::default(),
             font_inactive: Renderer::Font::default(),
+            icon_size: 24,
             height: Length::Shrink,
             width: Length::Fill,
-            button_padding: [4, 4, 4, 4],
-            button_height: 32,
             spacing: 0,
             style: <Renderer::Theme as StyleSheet>::Style::default(),
             on_activate: None,
@@ -98,20 +113,6 @@ where
         self
     }
 
-    pub(super) fn measure_button(
-        &self,
-        renderer: &Renderer,
-        text: &str,
-        text_size: u16,
-        bounds: Size,
-    ) -> (f32, f32) {
-        let (mut w, mut h) = renderer.measure(text, text_size, Default::default(), bounds);
-        w += f32::from(self.button_padding[0]) + f32::from(self.button_padding[2]);
-        h += f32::from(self.button_padding[1]) + f32::from(self.button_padding[3]);
-        h = h.max(f32::from(self.button_height));
-        (w, h)
-    }
-
     pub(super) fn max_button_dimensions(
         &self,
         renderer: &Renderer,
@@ -122,10 +123,31 @@ where
         let mut height = 0.0f32;
 
         for (_, content) in self.state.buttons.iter() {
-            let (w, h) = self.measure_button(renderer, &content.text, text_size, bounds);
-            height = height.max(h);
-            width = width.max(w);
+            let mut button_width = 0.0f32;
+            let mut button_height = 0.0f32;
+
+            // Add text to measurement if text was given.
+            if let Some(text) = content.text.as_deref() {
+                let (w, h) = renderer.measure(text, text_size, Default::default(), bounds);
+
+                button_width = w;
+                button_height = h;
+            }
+
+            // Add icon to measurement if icon was given.
+            if content.icon.is_some() {
+                button_width += f32::from(self.icon_size) + f32::from(self.button_spacing);
+                button_height = f32::from(self.icon_size);
+            }
+
+            height = height.max(button_height);
+            width = width.max(button_width);
         }
+
+        // Add button padding to the max size found
+        width += f32::from(self.button_padding[0]) + f32::from(self.button_padding[2]);
+        height += f32::from(self.button_padding[1]) + f32::from(self.button_padding[3]);
+        height = height.max(f32::from(self.button_height));
 
         (width, height)
     }
@@ -134,7 +156,10 @@ where
 impl<'a, Variant, Message, Renderer> Widget<Message, Renderer>
     for SegmentedButton<'a, Variant, Message, Renderer>
 where
-    Renderer: iced_native::Renderer + iced_native::text::Renderer,
+    Renderer: iced_native::Renderer
+        + iced_native::text::Renderer
+        + iced_native::image::Renderer
+        + iced_native::svg::Renderer,
     Renderer::Theme: StyleSheet,
     Self: SegmentedVariant<Renderer = Renderer>,
     Message: 'static + Clone,
@@ -215,6 +240,7 @@ where
         }
     }
 
+    #[allow(clippy::too_many_lines)]
     fn draw(
         &self,
         tree: &Tree,
@@ -245,7 +271,7 @@ where
 
         // Draw each of the buttons in the widget.
         for (nth, (key, content)) in self.state.buttons.iter().enumerate() {
-            let bounds = self.variant_button_bounds(bounds, nth);
+            let mut bounds = self.variant_button_bounds(bounds, nth);
 
             let (status_appearance, font) = if self.state.active == key {
                 (appearance.active, &self.font_active)
@@ -254,9 +280,6 @@ where
             } else {
                 (appearance.inactive, &self.font_inactive)
             };
-
-            let x = bounds.center_x();
-            let y = bounds.center_y();
 
             let button_appearance = if nth == 0 {
                 status_appearance.first
@@ -298,16 +321,64 @@ where
                 );
             }
 
-            // Draw the text in this button.
-            renderer.fill_text(iced_native::text::Text {
-                content: &content.text,
-                size: f32::from(renderer.default_size()),
-                bounds: Rectangle { x, y, ..bounds },
-                color: status_appearance.text_color,
-                font: font.clone(),
-                horizontal_alignment: alignment::Horizontal::Center,
-                vertical_alignment: alignment::Vertical::Center,
-            });
+            let y = bounds.center_y();
+            let text_size = renderer.default_size();
+
+            // Draw the image beside the text.
+            let horizontal_alignment = if let Some(icon) = &content.icon {
+                bounds.x += f32::from(self.button_padding[0]);
+                bounds.y += f32::from(self.button_padding[1]);
+                bounds.width -=
+                    f32::from(self.button_padding[0]) - f32::from(self.button_padding[2]);
+                bounds.height -=
+                    f32::from(self.button_padding[1]) - f32::from(self.button_padding[3]);
+
+                let width = f32::from(self.icon_size);
+                let offset = width + f32::from(self.button_spacing);
+                bounds.y = y - width / 2.0;
+
+                let icon_bounds = Rectangle {
+                    width,
+                    height: width,
+                    ..bounds
+                };
+
+                bounds.x += offset;
+                bounds.width -= offset;
+                match icon.load(self.icon_size, None, false) {
+                    crate::widget::icon::Handle::Image(_handle) => {
+                        unimplemented!()
+                    }
+                    crate::widget::icon::Handle::Svg(handle) => {
+                        iced_native::svg::Renderer::draw(
+                            renderer,
+                            handle,
+                            Some(status_appearance.text_color),
+                            icon_bounds,
+                        );
+                    }
+                }
+
+                alignment::Horizontal::Left
+            } else {
+                bounds.x = bounds.center_x();
+                alignment::Horizontal::Center
+            };
+
+            if let Some(text) = content.text.as_deref() {
+                bounds.y = y;
+
+                // Draw the text in this button.
+                renderer.fill_text(iced_native::text::Text {
+                    content: text,
+                    size: f32::from(text_size),
+                    bounds,
+                    color: status_appearance.text_color,
+                    font: font.clone(),
+                    horizontal_alignment,
+                    vertical_alignment: alignment::Vertical::Center,
+                });
+            }
         }
     }
 
@@ -324,7 +395,11 @@ where
 impl<'a, Variant, Message, Renderer> From<SegmentedButton<'a, Variant, Message, Renderer>>
     for Element<'a, Message, Renderer>
 where
-    Renderer: iced_native::Renderer + iced_native::text::Renderer + 'a,
+    Renderer: iced_native::Renderer
+        + iced_native::text::Renderer
+        + iced_native::image::Renderer
+        + iced_native::svg::Renderer
+        + 'a,
     Renderer::Theme: StyleSheet,
     SegmentedButton<'a, Variant, Message, Renderer>: SegmentedVariant<Renderer = Renderer>,
     Variant: 'static,
