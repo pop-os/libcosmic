@@ -41,9 +41,9 @@ jobs:
       fail-fast: false
       matrix:
         features:
-        - 'winit_swbuf debug'
-        - 'winit_swbuf tokio'
-        - winit_swbuf
+        - 'winit_softbuffer debug'
+        - 'winit_softbuffer tokio'
+        - winit_softbuffer
         - winit_wgpu
         - wayland
         - applet

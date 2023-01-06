@@ -7,17 +7,16 @@ edition = "2021"
 name = "cosmic"
 
 [features]
-default = ["swbuf", "winit", "tokio"]
+default = ["softbuffer", "winit", "tokio"]
 debug = ["iced/debug"]
-swbuf = ["iced/swbuf", "iced_swbuf"]
+softbuffer = ["iced/softbuffer", "iced_softbuffer"]
 wayland = ["iced/wayland", "iced/glow"]
 wgpu = ["iced/wgpu", "iced_wgpu"]
 tokio = ["iced/tokio"]
 winit = ["iced/winit", "iced_winit"]
 applet = ["cosmic-panel-config", "sctk", "wayland"]
-winit_swbuf = ["winit", "swbuf"]
+winit_softbuffer = ["winit", "softbuffer"]
 winit_wgpu = ["winit", "wgpu"]
-
 [dependencies]
 freedesktop-icons = "0.2.2"
 apply = "0.3.0"
@@ -45,8 +44,8 @@ path = "iced/lazy"
 [dependencies.iced_native]
 path = "iced/native"
 
-[dependencies.iced_swbuf]
-path = "iced/swbuf"
+[dependencies.iced_softbuffer]
+path = "iced/softbuffer"
 optional = true
 
 [dependencies.iced_style]
