@@ -11,7 +11,11 @@ use cosmic::{
     iced_native::{subscription, window},
     iced_winit::window::{close, drag, minimize, toggle_maximize},
     theme::{self, Theme},
-    widget::{header_bar, icon, list, nav_bar, nav_button, scrollable, settings},
+    widget::{
+        header_bar, icon, list, nav_bar, nav_button, scrollable,
+        segmented_button::{self, cosmic::vertical_view_switcher},
+        settings,
+    },
     Element, ElementExt,
 };
 use once_cell::sync::Lazy;
@@ -128,23 +132,24 @@ const BREAK_POINT: u32 = 900;
 
 #[derive(Default)]
 pub struct Window {
-    title: String,
-    page: Page,
-    debug: bool,
-    theme: Theme,
     bluetooth: bluetooth::State,
+    debug: bool,
     demo: demo::State,
     desktop: desktop::State,
-    system_and_accounts: system_and_accounts::State,
-    sidebar_toggled: bool,
-    sidebar_toggled_condensed: bool,
-    show_minimize: bool,
+    nav_bar_pages: segmented_button::State<Page>,
+    nav_bar_toggled_condensed: bool,
+    nav_bar_toggled: bool,
+    page: Page,
     show_maximize: bool,
+    show_minimize: bool,
+    system_and_accounts: system_and_accounts::State,
+    theme: Theme,
+    title: String,
 }
 
 impl Window {
-    pub fn sidebar_toggled(mut self, toggled: bool) -> Self {
-        self.sidebar_toggled = toggled;
+    pub fn nav_bar_toggled(mut self, toggled: bool) -> Self {
+        self.nav_bar_toggled = toggled;
         self
     }
 
@@ -162,19 +167,20 @@ impl Window {
 #[allow(dead_code)]
 #[derive(Clone, Copy, Debug)]
 pub enum Message {
+    Bluetooth(bluetooth::Message),
     Close,
     CondensedViewToggle,
-    TabNav(bool),
-    Bluetooth(bluetooth::Message),
     Demo(demo::Message),
     Desktop(desktop::Message),
     Drag,
     InputChanged,
     Maximize,
     Minimize,
+    NavBar(segmented_button::Key),
     Page(Page),
-    ToggleSidebar,
-    ToggleSidebarCondensed,
+    TabNav(bool),
+    ToggleNavBar,
+    ToggleNavBarCondensed,
 }
 
 impl From<Page> for Message {
@@ -193,7 +199,7 @@ impl Window {
     }
 
     fn page(&mut self, page: Page) {
-        self.sidebar_toggled_condensed = false;
+        self.nav_bar_toggled_condensed = false;
         self.page = page;
     }
 
@@ -279,11 +285,36 @@ impl Application for Window {
 
     fn new(_flags: ()) -> (Self, Command<Self::Message>) {
         let mut window = Window::default()
-            .sidebar_toggled(true)
+            .nav_bar_toggled(true)
             .show_maximize(true)
             .show_minimize(true);
 
         window.title = String::from("COSMIC Design System - Iced");
+
+        let mut add_page = |page: Page| {
+            let content = segmented_button::Content::default()
+                .text(page.title())
+                .icon(page.icon_name());
+            window.nav_bar_pages.insert(content, page)
+        };
+
+        add_page(Page::Demo);
+        add_page(Page::WiFi);
+        add_page(Page::Networking(None));
+        add_page(Page::Bluetooth);
+        let key = add_page(Page::Desktop(None));
+        add_page(Page::InputDevices(None));
+        add_page(Page::Displays);
+        add_page(Page::PowerAndBattery);
+        add_page(Page::Sound);
+        add_page(Page::PrintersAndScanners);
+        add_page(Page::PrivacyAndSecurity);
+        add_page(Page::SystemAndAccounts(None));
+        add_page(Page::TimeAndLanguage(None));
+        add_page(Page::Accessibility);
+        add_page(Page::Applications);
+        window.nav_bar_pages.activate(key);
+
         (window, Command::none())
     }
 
@@ -332,6 +363,12 @@ impl Application for Window {
     fn update(&mut self, message: Message) -> iced::Command<Self::Message> {
         let mut ret = Command::none();
         match message {
+            Message::NavBar(key) => {
+                if let Some(page) = self.nav_bar_pages.data(key).cloned() {
+                    self.nav_bar_pages.activate(key);
+                    self.page(page);
+                }
+            }
             Message::Page(page) => self.page(page),
             Message::Bluetooth(message) => {
                 self.bluetooth.update(message);
@@ -345,9 +382,9 @@ impl Application for Window {
                 Some(desktop::Output::Page(page)) => self.page(page),
                 None => (),
             },
-            Message::ToggleSidebar => self.sidebar_toggled = !self.sidebar_toggled,
-            Message::ToggleSidebarCondensed => {
-                self.sidebar_toggled_condensed = !self.sidebar_toggled_condensed
+            Message::ToggleNavBar => self.nav_bar_toggled = !self.nav_bar_toggled,
+            Message::ToggleNavBarCondensed => {
+                self.nav_bar_toggled_condensed = !self.nav_bar_toggled_condensed
             }
             Message::Drag => return drag(window::Id::new(0)),
             Message::Close => return close(window::Id::new(0)),
@@ -369,13 +406,13 @@ impl Application for Window {
     }
 
     fn view(&self) -> Element<Message> {
-        let (sidebar_message, sidebar_toggled) = if self.is_condensed() {
+        let (nav_bar_message, nav_bar_toggled) = if self.is_condensed() {
             (
-                Message::ToggleSidebarCondensed,
-                self.sidebar_toggled_condensed,
+                Message::ToggleNavBarCondensed,
+                self.nav_bar_toggled_condensed,
             )
         } else {
-            (Message::ToggleSidebar, self.sidebar_toggled)
+            (Message::ToggleNavBar, self.nav_bar_toggled)
         };
 
         let mut header = header_bar()
@@ -384,8 +421,8 @@ impl Application for Window {
             .on_drag(Message::Drag)
             .start(
                 nav_button("Settings")
-                    .on_sidebar_toggled(sidebar_message)
-                    .sidebar_active(sidebar_toggled)
+                    .on_nav_bar_toggled(nav_bar_message)
+                    .nav_bar_active(nav_bar_toggled)
                     .into(),
             );
 
@@ -401,64 +438,18 @@ impl Application for Window {
 
         let mut widgets = Vec::with_capacity(2);
 
-        if sidebar_toggled {
-            let sidebar_button_complex = |page: Page, active| {
-                cosmic::nav_button!(page.icon_name(), page.title(), active)
-                    .on_press(Message::Page(page))
-                    .id(BTN.clone())
-            };
-
-            let sidebar_button = |page: Page| sidebar_button_complex(page, self.page == page);
-
-            let mut sidebar = container(scrollable(
-                column!(
-                    sidebar_button(Page::Demo),
-                    sidebar_button(Page::WiFi),
-                    sidebar_button_complex(
-                        Page::Networking(None),
-                        matches!(self.page, Page::Networking(_))
-                    ),
-                    sidebar_button(Page::Bluetooth),
-                    sidebar_button_complex(
-                        Page::Desktop(None),
-                        matches!(self.page, Page::Desktop(_))
-                    ),
-                    sidebar_button_complex(
-                        Page::InputDevices(None),
-                        matches!(self.page, Page::InputDevices(_))
-                    ),
-                    sidebar_button(Page::Displays),
-                    sidebar_button(Page::PowerAndBattery),
-                    sidebar_button(Page::Sound),
-                    sidebar_button(Page::PrintersAndScanners),
-                    sidebar_button(Page::PrivacyAndSecurity),
-                    sidebar_button_complex(
-                        Page::SystemAndAccounts(None),
-                        matches!(self.page, Page::SystemAndAccounts(_))
-                    ),
-                    sidebar_button(Page::UpdatesAndRecovery),
-                    sidebar_button_complex(
-                        Page::TimeAndLanguage(None),
-                        matches!(self.page, Page::TimeAndLanguage(_))
-                    ),
-                    sidebar_button(Page::Accessibility),
-                    sidebar_button(Page::Applications),
-                )
-                .spacing(14),
-            ))
-            .height(Length::Fill)
-            .padding(8)
-            .style(theme::Container::Custom(nav_bar::nav_bar_sections_style));
+        if nav_bar_toggled {
+            let mut nav_bar = nav_bar(&self.nav_bar_pages, Message::NavBar);
 
             if !self.is_condensed() {
-                sidebar = sidebar.max_width(300)
+                nav_bar = nav_bar.max_width(300);
             }
 
-            let sidebar: Element<_> = sidebar.into();
-            widgets.push(sidebar.debug(self.debug));
+            let nav_bar: Element<_> = nav_bar.into();
+            widgets.push(nav_bar.debug(self.debug));
         }
 
-        if !(self.is_condensed() && sidebar_toggled) {
+        if !(self.is_condensed() && nav_bar_toggled) {
             let content: Element<_> = match self.page {
                 Page::Demo => self.demo.view(self).map(Message::Demo),
                 Page::Networking(None) => settings::view_column(vec![
