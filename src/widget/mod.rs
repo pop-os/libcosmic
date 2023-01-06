@@ -13,11 +13,11 @@ pub use self::icon::{icon, Icon, IconSource};
 pub mod list;
 pub use self::list::*;
 
+pub mod nav_bar;
+pub use nav_bar::nav_bar;
+
 pub mod nav_button;
 pub use self::nav_button::{nav_button, NavButton};
-
-pub mod navigation;
-pub use navigation::*;
 
 mod toggler;
 pub use toggler::toggler;

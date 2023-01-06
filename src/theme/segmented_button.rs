@@ -19,6 +19,7 @@ pub enum SegmentedButton {
 impl segmented_button::StyleSheet for Theme {
     type Style = SegmentedButton;
 
+    #[allow(clippy::too_many_lines)]
     fn horizontal(&self, style: &Self::Style) -> segmented_button::Appearance {
         match style {
             SegmentedButton::ViewSwitcher => {
@@ -146,6 +147,7 @@ impl segmented_button::StyleSheet for Theme {
         }
     }
 
+    #[allow(clippy::too_many_lines)]
     fn vertical(&self, style: &Self::Style) -> segmented_button::Appearance {
         match style {
             SegmentedButton::ViewSwitcher => {
@@ -153,7 +155,9 @@ impl segmented_button::StyleSheet for Theme {
                 segmented_button::Appearance {
                     border_radius: BorderRadius::from(0.0),
                     active: segmented_button::ButtonStatusAppearance {
-                        background: Some(Background::Color(cosmic.primary.component.base.into())),
+                        background: Some(Background::Color(
+                            cosmic.secondary.component.divider.into(),
+                        )),
                         first: segmented_button::ButtonAppearance {
                             border_radius: BorderRadius::from(24.0),
                             ..Default::default()
