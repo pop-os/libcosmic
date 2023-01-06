@@ -1,7 +1,7 @@
 // Copyright 2022 System76 <info@system76.com>
 // SPDX-License-Identifier: MPL-2.0
 
-use super::state::State;
+use super::state::{Selectable, State};
 use super::style::StyleSheet;
 use super::widget::{SegmentedButton, SegmentedVariant};
 
@@ -12,31 +12,34 @@ use iced_native::layout;
 pub struct Horizontal;
 
 /// Horizontal [`SegmentedButton`].
-pub type HorizontalSegmentedButton<'a, Message, Renderer> =
-    SegmentedButton<'a, Horizontal, Message, Renderer>;
+pub type HorizontalSegmentedButton<'a, Selection, Message, Renderer> =
+    SegmentedButton<'a, Horizontal, Selection, Message, Renderer>;
 
 /// Horizontal implementation of the [`SegmentedButton`].
 #[must_use]
-pub fn horizontal_segmented_button<Message, Renderer, Data>(
-    state: &State<Data>,
-) -> SegmentedButton<Horizontal, Message, Renderer>
+pub fn horizontal_segmented_button<Selection, Message, Renderer, Data>(
+    state: &State<Selection, Data>,
+) -> SegmentedButton<Horizontal, Selection, Message, Renderer>
 where
     Renderer: iced_native::Renderer
         + iced_native::text::Renderer
         + iced_native::image::Renderer
         + iced_native::svg::Renderer,
     Renderer::Theme: StyleSheet,
+    Selection: Selectable,
 {
     SegmentedButton::new(&state.inner)
 }
 
-impl<'a, Message, Renderer> SegmentedVariant for SegmentedButton<'a, Horizontal, Message, Renderer>
+impl<'a, Selection, Message, Renderer> SegmentedVariant
+    for SegmentedButton<'a, Horizontal, Selection, Message, Renderer>
 where
     Renderer: iced_native::Renderer
         + iced_native::text::Renderer
         + iced_native::image::Renderer
         + iced_native::svg::Renderer,
     Renderer::Theme: StyleSheet,
+    Selection: Selectable,
 {
     type Renderer = Renderer;
 

@@ -3,7 +3,9 @@ use cosmic::{
     iced::{Alignment, Length},
     theme::{Button as ButtonTheme, Theme},
     widget::{
-        button, settings,
+        button,
+        segmented_button::{MultiSelect, Selectable, SingleSelect},
+        settings,
         spin_button::{SpinButtonModel, SpinMessage},
         toggler,
     },
@@ -25,12 +27,21 @@ pub enum DemoView {
     TabC,
 }
 
+pub enum MultiOption {
+    OptionA,
+    OptionB,
+    OptionC,
+    OptionD,
+    OptionE,
+}
+
 #[derive(Clone, Copy, Debug)]
 pub enum Message {
     ButtonPressed,
     CheckboxToggled(bool),
     Debug(bool),
     IconTheme(segmented_button::Key),
+    MultiSelection(segmented_button::Key),
     PickListSelected(&'static str),
     RowSelected(usize),
     Selection(segmented_button::Key),
@@ -48,13 +59,14 @@ pub enum Output {
 
 pub struct State {
     pub checkbox_value: bool,
-    pub icon_theme: segmented_button::State<&'static str>,
+    pub icon_theme: segmented_button::State<SingleSelect, &'static str>,
+    pub multi_selection: segmented_button::State<MultiSelect, MultiOption>,
     pub pick_list_selected: Option<&'static str>,
-    pub selection: segmented_button::State<()>,
+    pub selection: segmented_button::State<SingleSelect, ()>,
     pub slider_value: f32,
     pub spin_button: SpinButtonModel<i32>,
     pub toggler_value: bool,
-    pub view_switcher: segmented_button::State<DemoView>,
+    pub view_switcher: segmented_button::State<SingleSelect, DemoView>,
 }
 
 impl Default for State {
@@ -74,6 +86,13 @@ impl Default for State {
                 .insert("Choice B", ())
                 .insert("Choice C", ())
                 .build(),
+            multi_selection: segmented_button::State::builder()
+                .insert("Option A", MultiOption::OptionA)
+                .insert("Option B", MultiOption::OptionB)
+                .insert("Option C", MultiOption::OptionC)
+                .insert("Option D", MultiOption::OptionD)
+                .insert("Option E", MultiOption::OptionE)
+                .build(),
             view_switcher: segmented_button::State::builder()
                 .insert_active("Controls", DemoView::TabA)
                 .insert("Segmented Button", DemoView::TabB)
@@ -91,6 +110,7 @@ impl State {
             Message::Debug(value) => return Some(Output::Debug(value)),
             Message::PickListSelected(value) => self.pick_list_selected = Some(value),
             Message::RowSelected(row) => println!("Selected row {row}"),
+            Message::MultiSelection(key) => self.multi_selection.activate(key),
             Message::Selection(key) => self.selection.activate(key),
             Message::SliderChanged(value) => self.slider_value = value,
             Message::SpinButton(msg) => self.spin_button.update(msg),
@@ -226,9 +246,9 @@ impl State {
                         .spacing(8)
                         .on_activate(Message::Selection)
                         .into(),
-                    cosmic::iced::widget::text("Vertical").into(),
-                    vertical_segmented_selection(&self.selection)
-                        .on_activate(Message::Selection)
+                    cosmic::iced::widget::text("Vertical (Multi-Select)").into(),
+                    vertical_segmented_selection(&self.multi_selection)
+                        .on_activate(Message::MultiSelection)
                         .into(),
                     cosmic::iced::widget::text("Vertical With Spacing").into(),
                     cosmic::iced::widget::row(vec![
