@@ -13,30 +13,111 @@ use cosmic::{
             column, container, horizontal_space, pick_list, progress_bar, radio, row, slider,
         },
     },
-    iced_lazy::responsive,
     iced_native::window,
     theme::{self, Theme},
     widget::{
-        button, header_bar, nav_bar, nav_bar_page, nav_bar_section, nav_button,
+        button, header_bar, nav_bar, nav_button,
         rectangle_tracker::{rectangle_tracker_subscription, RectangleTracker, RectangleUpdate},
-        scrollable, settings, toggler,
+        scrollable, segmented_button, settings, toggler, IconSource,
     },
     Element, ElementExt,
 };
-use std::{collections::BTreeMap, vec};
+use std::{
+    sync::atomic::{AtomicU32, Ordering},
+    vec,
+};
 use theme::Button as ButtonTheme;
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum Page {
+    Demo,
+    WiFi,
+    Networking,
+    Bluetooth,
+    Desktop,
+    InputDevices,
+    Displays,
+    PowerAndBattery,
+    Sound,
+    PrintersAndScanners,
+    PrivacyAndSecurity,
+    SystemAndAccounts,
+    UpdatesAndRecovery,
+    TimeAndLanguage,
+    Accessibility,
+    Applications,
+}
+
+impl Page {
+    //TODO: translate
+    pub fn title(&self) -> &'static str {
+        use Page::*;
+        match self {
+            Demo => "Demo",
+            WiFi => "Wi-Fi",
+            Networking => "Networking",
+            Bluetooth => "Bluetooth",
+            Desktop => "Desktop",
+            InputDevices => "Input Devices",
+            Displays => "Displays",
+            PowerAndBattery => "Power & Battery",
+            Sound => "Sound",
+            PrintersAndScanners => "Printers & Scanners",
+            PrivacyAndSecurity => "Privacy & Security",
+            SystemAndAccounts => "System & Accounts",
+            UpdatesAndRecovery => "Updates & Recovery",
+            TimeAndLanguage => "Time & Language",
+            Accessibility => "Accessibility",
+            Applications => "Applications",
+        }
+    }
+
+    pub fn icon_name(&self) -> &'static str {
+        use Page::*;
+        match self {
+            Demo => "document-properties-symbolic",
+            WiFi => "network-wireless-symbolic",
+            Networking => "network-workgroup-symbolic",
+            Bluetooth => "bluetooth-active-symbolic",
+            Desktop => "video-display-symbolic",
+            InputDevices => "input-keyboard-symbolic",
+            Displays => "preferences-desktop-display-symbolic",
+            PowerAndBattery => "battery-full-charged-symbolic",
+            Sound => "multimedia-volume-control-symbolic",
+            PrintersAndScanners => "printer-symbolic",
+            PrivacyAndSecurity => "preferences-system-privacy-symbolic",
+            SystemAndAccounts => "system-users-symbolic",
+            UpdatesAndRecovery => "software-update-available-symbolic",
+            TimeAndLanguage => "preferences-system-time-symbolic",
+            Accessibility => "preferences-desktop-accessibility-symbolic",
+            Applications => "preferences-desktop-apps-symbolic",
+        }
+    }
+}
+
+impl Default for Page {
+    fn default() -> Page {
+        //TODO: what should the default page be?
+        Page::Desktop
+    }
+}
+
+static WINDOW_WIDTH: AtomicU32 = AtomicU32::new(0);
+const BREAK_POINT: u32 = 900;
 
 #[derive(Default)]
 pub struct Window {
     title: String,
-    page: u8,
+    page: Page,
     debug: bool,
     theme: Theme,
     slider_value: f32,
     checkbox_value: bool,
     toggler_value: bool,
     pick_list_selected: Option<&'static str>,
-    sidebar_toggled: bool,
+    nav_bar_pages: segmented_button::SingleSelectModel<Page>,
+    nav_bar_toggled_condensed: bool,
+    nav_bar_toggled: bool,
     show_minimize: bool,
     show_maximize: bool,
     exit: bool,
@@ -44,9 +125,33 @@ pub struct Window {
 }
 
 impl Window {
-    pub fn sidebar_toggled(mut self, toggled: bool) -> Self {
-        self.sidebar_toggled = toggled;
+    /// Adds a page to the model we use for the navigation bar.
+    fn insert_page(&mut self, page: Page) -> segmented_button::Key {
+        self.nav_bar_pages.insert(
+            segmented_button::item()
+                .text(page.title())
+                .icon(IconSource::Name(page.icon_name().into())),
+            page,
+        )
+    }
+
+    /// Activates the page by its key.
+    fn activate_page(&mut self, page: segmented_button::Key) {
+        self.nav_bar_pages.activate(page);
+    }
+
+    fn is_condensed(&self) -> bool {
+        WINDOW_WIDTH.load(Ordering::Relaxed) < BREAK_POINT
+    }
+
+    pub fn nav_bar_toggled(mut self, toggled: bool) -> Self {
+        self.nav_bar_toggled = toggled;
         self
+    }
+
+    fn page(&mut self, page: Page) {
+        self.nav_bar_toggled_condensed = false;
+        self.page = page;
     }
 
     pub fn show_maximize(mut self, show: bool) -> Self {
@@ -63,7 +168,7 @@ impl Window {
 #[allow(dead_code)]
 #[derive(Clone, Debug)]
 pub enum Message {
-    Page(u8),
+    Page(Page),
     Debug(bool),
     ThemeChanged(Theme),
     ButtonPressed,
@@ -73,12 +178,14 @@ pub enum Message {
     PickListSelected(&'static str),
     RowSelected(usize),
     Close,
-    ToggleSidebar,
+    ToggleNavBar,
+    ToggleNavBarCondensed,
     Drag,
     Minimize,
     Maximize,
     InputChanged,
     Rectangle(RectangleUpdate<u32>),
+    NavBar(segmented_button::Key),
 }
 
 impl Application for Window {
@@ -89,13 +196,31 @@ impl Application for Window {
 
     fn new(_flags: ()) -> (Self, Command<Self::Message>) {
         let mut window = Window::default()
-            .sidebar_toggled(true)
+            .nav_bar_toggled(true)
             .show_maximize(true)
             .show_minimize(true);
         window.slider_value = 50.0;
         //        window.theme = Theme::Light;
         window.pick_list_selected = Some("Option 1");
         window.title = String::from("COSMIC Design System - Iced");
+
+        window.insert_page(Page::Demo);
+        window.insert_page(Page::WiFi);
+        window.insert_page(Page::Networking);
+        window.insert_page(Page::Bluetooth);
+        let key = window.insert_page(Page::Desktop);
+        window.insert_page(Page::InputDevices);
+        window.insert_page(Page::Displays);
+        window.insert_page(Page::PowerAndBattery);
+        window.insert_page(Page::Sound);
+        window.insert_page(Page::PrintersAndScanners);
+        window.insert_page(Page::PrivacyAndSecurity);
+        window.insert_page(Page::SystemAndAccounts);
+        window.insert_page(Page::TimeAndLanguage);
+        window.insert_page(Page::Accessibility);
+        window.insert_page(Page::Applications);
+        window.activate_page(key);
+
         (window, Command::none())
     }
 
@@ -105,6 +230,12 @@ impl Application for Window {
 
     fn update(&mut self, message: Message) -> iced::Command<Self::Message> {
         match message {
+            Message::NavBar(key) => {
+                if let Some(page) = self.nav_bar_pages.component(key).cloned() {
+                    self.nav_bar_pages.activate(key);
+                    self.page(page);
+                }
+            }
             Message::Page(page) => self.page = page,
             Message::Debug(debug) => self.debug = debug,
             Message::ThemeChanged(theme) => self.theme = theme,
@@ -116,7 +247,10 @@ impl Application for Window {
             Message::TogglerToggled(value) => self.toggler_value = value,
             Message::PickListSelected(value) => self.pick_list_selected = Some(value),
             Message::Close => self.exit = true,
-            Message::ToggleSidebar => self.sidebar_toggled = !self.sidebar_toggled,
+            Message::ToggleNavBar => self.nav_bar_toggled = !self.nav_bar_toggled,
+            Message::ToggleNavBarCondensed => {
+                self.nav_bar_toggled_condensed = !self.nav_bar_toggled_condensed
+            }
             Message::Drag => return start_drag_window(window::Id::new(0)),
             Message::Minimize => return set_mode_window(window::Id::new(0), window::Mode::Hidden),
             Message::Maximize => return toggle_maximize(window::Id::new(0)),
@@ -136,14 +270,23 @@ impl Application for Window {
     }
 
     fn view(&self, _: SurfaceIdWrapper) -> Element<Message> {
+        let (nav_bar_message, nav_bar_toggled) = if self.is_condensed() {
+            (
+                Message::ToggleNavBarCondensed,
+                self.nav_bar_toggled_condensed,
+            )
+        } else {
+            (Message::ToggleNavBar, self.nav_bar_toggled)
+        };
+
         let mut header = header_bar()
             .title("COSMIC Design System - Iced")
             .on_close(Message::Close)
             .on_drag(Message::Drag)
             .start(
                 nav_button("Settings")
-                    .on_sidebar_toggled(Message::ToggleSidebar)
-                    .sidebar_active(self.sidebar_toggled)
+                    .on_nav_bar_toggled(nav_bar_message)
+                    .nav_bar_active(nav_bar_toggled)
                     .into(),
             );
 
@@ -157,84 +300,20 @@ impl Application for Window {
 
         let header = Into::<Element<Message>>::into(header).debug(self.debug);
 
-        // TODO: Adding responsive makes this regenerate on every size change, and regeneration
-        // involves allocations for many different items. Ideally, we could only make the nav bar
-        // responsive and leave the content to be sized normally.
-        let content = responsive(|size| {
-            let condensed = size.width < 900.0;
+        let mut widgets = Vec::with_capacity(2);
 
-            // cosmic::navbar![
-            //     nav_text_button("network-wireless", "Network & Wireless", condensed)
-            //         .on_press(Message::Page(0))
-            //         .style(if self.page == 0 {
-            //             ButtonTheme::Primary
-            //         } else {
-            //             ButtonTheme::Text
-            //         }),
-            //     nav_text_button("preferences-desktop", "Bluetooth", condensed)
-            //         .on_press(Message::Page(1))
-            //         .style(if self.page == 1 {
-            //             ButtonTheme::Primary
-            //         } else {
-            //             ButtonTheme::Text
-            //         }),
-            //     nav_text_button("system-software-update", "Personalization", condensed)
-            //         .on_press(Message::Page(2))
-            //         .style(if self.page == 2 {
-            //             ButtonTheme::Primary
-            //         } else {
-            //             ButtonTheme::Text
-            //         }),
-            // ]
+        if nav_bar_toggled {
+            let mut nav_bar = nav_bar(&self.nav_bar_pages, Message::NavBar);
 
-            let sidebar: Element<_> = nav_bar()
-                .source(BTreeMap::from([
-                    (
-                        nav_bar_section()
-                            .title("Network & Wireless")
-                            .icon("network-wireless"),
-                        vec![nav_bar_page("Wi-Fi")],
-                    ),
-                    (
-                        nav_bar_section().title("Bluetooth").icon("cs-bluetooth"),
-                        vec![nav_bar_page("Devices")],
-                    ),
-                    (
-                        nav_bar_section()
-                            .title("Personalization")
-                            .icon("applications-system"),
-                        vec![
-                            nav_bar_page("Desktop Session"),
-                            nav_bar_page("Wallpaper"),
-                            nav_bar_page("Appearance"),
-                            nav_bar_page("Dock & Top Panel"),
-                            nav_bar_page("Workspaces"),
-                            nav_bar_page("Notifications"),
-                        ],
-                    ),
-                    (
-                        nav_bar_section()
-                            .title("Input Devices")
-                            .icon("input-keyboard"),
-                        vec![nav_bar_page("Keyboard")],
-                    ),
-                    (
-                        nav_bar_section().title("Displays").icon("cs-display"),
-                        vec![nav_bar_page("Keyboard")],
-                    ),
-                    (
-                        nav_bar_section().title("Power & Battery").icon("battery"),
-                        vec![nav_bar_page("Status")],
-                    ),
-                    (
-                        nav_bar_section().title("Sound").icon("sound"),
-                        vec![nav_bar_page("Volume")],
-                    ),
-                ]))
-                .active(self.sidebar_toggled)
-                .condensed(condensed)
-                .into();
+            if !self.is_condensed() {
+                nav_bar = nav_bar.max_width(300);
+            }
 
+            let nav_bar: Element<_> = nav_bar.into();
+            widgets.push(nav_bar.debug(self.debug));
+        }
+
+        if !(self.is_condensed() && nav_bar_toggled) {
             let choose_theme = [Theme::Light, Theme::Dark].iter().fold(
                 row![].spacing(10).align_items(Alignment::Center),
                 |row, theme| {
@@ -320,9 +399,7 @@ impl Application for Window {
             ])
             .into();
 
-            let mut widgets = Vec::with_capacity(2);
-
-            widgets.push(sidebar.debug(self.debug));
+            let mut widgets: Vec<Element<_>> = Vec::with_capacity(2);
 
             widgets.push(
                 scrollable(row![
@@ -332,14 +409,13 @@ impl Application for Window {
                 ])
                 .into(),
             );
+        }
 
-            container(row(widgets))
-                .padding([16, 16])
-                .width(Length::Fill)
-                .height(Length::Fill)
-                .into()
-        })
-        .into();
+        let content = container(row(widgets))
+            .padding([0, 8, 8, 8])
+            .width(Length::Fill)
+            .height(Length::Fill)
+            .into();
 
         column(vec![header, content]).into()
     }
