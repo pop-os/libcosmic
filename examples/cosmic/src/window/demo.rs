@@ -63,6 +63,7 @@ pub struct State {
     pub icon_theme: segmented_button::SingleSelectModel<&'static str>,
     pub multi_selection: segmented_button::MultiSelectModel<MultiOption>,
     pub pick_list_selected: Option<&'static str>,
+    pub pick_list_options: Vec<&'static str>,
     pub selection: segmented_button::SingleSelectModel<()>,
     pub slider_value: f32,
     pub spin_button: SpinButtonModel<i32>,
@@ -75,6 +76,7 @@ impl Default for State {
         State {
             checkbox_value: false,
             pick_list_selected: Some("Option 1"),
+            pick_list_options: vec!["Option 1", "Option 2", "Option 3", "Option 4"],
             slider_value: 50.0,
             spin_button: SpinButtonModel::default().min(-10).max(10),
             toggler_value: false,
@@ -200,7 +202,7 @@ impl State {
                         .add(settings::item(
                             "Pick List (TODO)",
                             pick_list(
-                                vec!["Option 1", "Option 2", "Option 3", "Option 4"],
+                                &self.pick_list_options,
                                 self.pick_list_selected,
                                 Message::PickListSelected,
                             )
