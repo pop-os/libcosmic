@@ -1,45 +1,48 @@
 // Copyright 2022 System76 <info@system76.com>
 // SPDX-License-Identifier: MPL-2.0
 
-use super::state::{Selectable, State};
+//! Implementation details for the horizontal layout of a segmented button.
+
+use super::model::Model;
+use super::selection_modes::Selectable;
 use super::style::StyleSheet;
 use super::widget::{SegmentedButton, SegmentedVariant};
 
 use iced::{Length, Rectangle, Size};
 use iced_native::layout;
 
+/// Horizontal [`SegmentedButton`].
+pub type HorizontalSegmentedButton<'a, SelectionMode, Message, Renderer> =
+    SegmentedButton<'a, Horizontal, SelectionMode, Message, Renderer>;
+
 /// A type marker defining the horizontal variant of a [`SegmentedButton`].
 pub struct Horizontal;
 
-/// Horizontal [`SegmentedButton`].
-pub type HorizontalSegmentedButton<'a, Selection, Message, Renderer> =
-    SegmentedButton<'a, Horizontal, Selection, Message, Renderer>;
-
-/// Horizontal implementation of the [`SegmentedButton`].
+/// Row implementation of the [`SegmentedButton`].
 #[must_use]
-pub fn horizontal_segmented_button<Selection, Message, Renderer, Data>(
-    state: &State<Selection, Data>,
-) -> SegmentedButton<Horizontal, Selection, Message, Renderer>
+pub fn horizontal_segmented_button<SelectionMode, Component, Message, Renderer>(
+    model: &Model<SelectionMode, Component>,
+) -> SegmentedButton<Horizontal, SelectionMode, Message, Renderer>
 where
     Renderer: iced_native::Renderer
         + iced_native::text::Renderer
         + iced_native::image::Renderer
         + iced_native::svg::Renderer,
     Renderer::Theme: StyleSheet,
-    Selection: Selectable,
+    SelectionMode: Selectable,
 {
-    SegmentedButton::new(&state.inner)
+    SegmentedButton::new(model)
 }
 
-impl<'a, Selection, Message, Renderer> SegmentedVariant
-    for SegmentedButton<'a, Horizontal, Selection, Message, Renderer>
+impl<'a, SelectionMode, Message, Renderer> SegmentedVariant
+    for SegmentedButton<'a, Horizontal, SelectionMode, Message, Renderer>
 where
     Renderer: iced_native::Renderer
         + iced_native::text::Renderer
         + iced_native::image::Renderer
         + iced_native::svg::Renderer,
     Renderer::Theme: StyleSheet,
-    Selection: Selectable,
+    SelectionMode: Selectable,
 {
     type Renderer = Renderer;
 
@@ -52,7 +55,7 @@ where
 
     #[allow(clippy::cast_precision_loss)]
     fn variant_button_bounds(&self, mut bounds: Rectangle, nth: usize) -> Rectangle {
-        let num = self.state.buttons.len();
+        let num = self.model.items.len();
         if num != 0 {
             let spacing = f32::from(self.spacing);
             bounds.width = (bounds.width - (num as f32 * spacing) + spacing) / num as f32;
@@ -74,7 +77,7 @@ where
 
         let (mut width, height) = self.max_button_dimensions(renderer, text_size, limits.max());
 
-        let num = self.state.buttons.len();
+        let num = self.model.items.len();
         let spacing = f32::from(self.spacing);
 
         if num != 0 {

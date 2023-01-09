@@ -10,23 +10,24 @@ use iced_core::Color;
 
 use crate::{theme, Theme};
 
-use super::segmented_button::{self, cosmic::vertical_view_switcher, SingleSelect};
+use super::segmented_button::{self, vertical_segmented_button};
 
 /// A container holding a vertical view switcher with the n style
-pub fn nav_bar<Data, Message>(
-    state: &segmented_button::State<SingleSelect, Data>,
+pub fn nav_bar<Component, Message>(
+    model: &segmented_button::SingleSelectModel<Component>,
     on_activate: impl Fn(segmented_button::Key) -> Message + 'static,
 ) -> iced::widget::Container<Message, crate::Renderer>
 where
     Message: Clone + 'static,
 {
-    vertical_view_switcher(state)
-        .on_activate(on_activate)
+    vertical_segmented_button(model)
         .button_height(32)
         .button_padding([16, 10, 16, 10])
         .button_spacing(8)
         .icon_size(16)
+        .on_activate(on_activate)
         .spacing(8)
+        .style(crate::theme::SegmentedButton::ViewSwitcher)
         .apply(scrollable)
         .apply(container)
         .height(Length::Fill)

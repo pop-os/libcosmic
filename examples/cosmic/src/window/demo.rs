@@ -5,7 +5,13 @@ use cosmic::{
     theme::{Button as ButtonTheme, Theme},
     widget::{
         button,
-        segmented_button::{MultiSelect, SingleSelect},
+        segmented_button::{
+            self,
+            cosmic::{
+                horizontal_segmented_selection, horizontal_view_switcher,
+                vertical_segmented_selection, vertical_view_switcher,
+            },
+        },
         settings,
         spin_button::{SpinButtonModel, SpinMessage},
         toggler,
@@ -14,13 +20,6 @@ use cosmic::{
 };
 
 use super::{Page, Window};
-use cosmic::widget::segmented_button::{
-    self,
-    cosmic::{
-        horizontal_segmented_selection, horizontal_view_switcher, vertical_segmented_selection,
-        vertical_view_switcher,
-    },
-};
 
 pub enum DemoView {
     TabA,
@@ -28,6 +27,7 @@ pub enum DemoView {
     TabC,
 }
 
+#[allow(dead_code)]
 pub enum MultiOption {
     OptionA,
     OptionB,
@@ -60,14 +60,14 @@ pub enum Output {
 
 pub struct State {
     pub checkbox_value: bool,
-    pub icon_theme: segmented_button::State<SingleSelect, &'static str>,
-    pub multi_selection: segmented_button::State<MultiSelect, MultiOption>,
+    pub icon_theme: segmented_button::SingleSelectModel<&'static str>,
+    pub multi_selection: segmented_button::MultiSelectModel<MultiOption>,
     pub pick_list_selected: Option<&'static str>,
-    pub selection: segmented_button::State<SingleSelect, ()>,
+    pub selection: segmented_button::SingleSelectModel<()>,
     pub slider_value: f32,
     pub spin_button: SpinButtonModel<i32>,
     pub toggler_value: bool,
-    pub view_switcher: segmented_button::State<SingleSelect, DemoView>,
+    pub view_switcher: segmented_button::SingleSelectModel<DemoView>,
 }
 
 impl Default for State {
@@ -78,23 +78,23 @@ impl Default for State {
             slider_value: 50.0,
             spin_button: SpinButtonModel::default().min(-10).max(10),
             toggler_value: false,
-            icon_theme: segmented_button::State::builder()
+            icon_theme: segmented_button::Model::builder()
                 .insert_active("Pop", "Pop")
                 .insert("Adwaita", "Adwaita")
                 .build(),
-            selection: segmented_button::State::builder()
+            selection: segmented_button::Model::builder()
                 .insert_active("Choice A", ())
                 .insert("Choice B", ())
                 .insert("Choice C", ())
                 .build(),
-            multi_selection: segmented_button::State::builder()
-                .insert("Option A", MultiOption::OptionA)
+            multi_selection: segmented_button::Model::builder()
+                .insert_active("Option A", MultiOption::OptionA)
                 .insert("Option B", MultiOption::OptionB)
-                .insert("Option C", MultiOption::OptionC)
-                .insert("Option D", MultiOption::OptionD)
+                .insert("Option C", MultiOption::OptionB)
+                .insert("Option D", MultiOption::OptionC)
                 .insert("Option E", MultiOption::OptionE)
                 .build(),
-            view_switcher: segmented_button::State::builder()
+            view_switcher: segmented_button::Model::builder()
                 .insert_active("Controls", DemoView::TabA)
                 .insert("Segmented Button", DemoView::TabB)
                 .insert("Tab C", DemoView::TabC)
@@ -120,7 +120,7 @@ impl State {
             Message::ViewSwitcher(key) => self.view_switcher.activate(key),
             Message::IconTheme(key) => {
                 self.icon_theme.activate(key);
-                if let Some(theme) = self.icon_theme.data(key) {
+                if let Some(theme) = self.icon_theme.component(key) {
                     cosmic::settings::set_default_icon_theme(*theme);
                 }
             }
@@ -150,7 +150,7 @@ impl State {
             horizontal_view_switcher(&self.view_switcher)
                 .on_activate(Message::ViewSwitcher)
                 .into(),
-            match self.view_switcher.active_data() {
+            match self.view_switcher.active_component() {
                 None => panic!("no tab is active"),
                 Some(DemoView::TabA) => settings::view_column(vec![
                     settings::view_section("Debug")

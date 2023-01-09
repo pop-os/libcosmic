@@ -1,7 +1,10 @@
 // Copyright 2022 System76 <info@system76.com>
 // SPDX-License-Identifier: MPL-2.0
 
-use super::state::{Selectable, State};
+//! Implementation details for the vertical layout of a segmented button.
+
+use super::model::Model;
+use super::selection_modes::Selectable;
 use super::style::StyleSheet;
 use super::widget::{SegmentedButton, SegmentedVariant};
 
@@ -12,34 +15,34 @@ use iced_native::layout;
 pub struct Vertical;
 
 /// Vertical [`SegmentedButton`].
-pub type VerticalSegmentedButton<'a, Selection, Message, Renderer> =
-    SegmentedButton<'a, Vertical, Selection, Message, Renderer>;
+pub type VerticalSegmentedButton<'a, SelectionMode, Message, Renderer> =
+    SegmentedButton<'a, Vertical, SelectionMode, Message, Renderer>;
 
 /// Vertical implementation of the [`SegmentedButton`].
 #[must_use]
-pub fn vertical_segmented_button<Selection, Message, Renderer, Data>(
-    state: &State<Selection, Data>,
-) -> SegmentedButton<Vertical, Selection, Message, Renderer>
+pub fn vertical_segmented_button<SelectionMode, Component, Message, Renderer>(
+    model: &Model<SelectionMode, Component>,
+) -> SegmentedButton<Vertical, SelectionMode, Message, Renderer>
 where
     Renderer: iced_native::Renderer
         + iced_native::text::Renderer
         + iced_native::image::Renderer
         + iced_native::svg::Renderer,
     Renderer::Theme: StyleSheet,
-    Selection: Selectable,
+    SelectionMode: Selectable,
 {
-    SegmentedButton::new(&state.inner)
+    SegmentedButton::new(model)
 }
 
-impl<'a, Selection, Message, Renderer> SegmentedVariant
-    for SegmentedButton<'a, Vertical, Selection, Message, Renderer>
+impl<'a, SelectionMode, Message, Renderer> SegmentedVariant
+    for SegmentedButton<'a, Vertical, SelectionMode, Message, Renderer>
 where
     Renderer: iced_native::Renderer
         + iced_native::text::Renderer
         + iced_native::image::Renderer
         + iced_native::svg::Renderer,
     Renderer::Theme: StyleSheet,
-    Selection: Selectable,
+    SelectionMode: Selectable,
 {
     type Renderer = Renderer;
 
@@ -52,7 +55,7 @@ where
 
     #[allow(clippy::cast_precision_loss)]
     fn variant_button_bounds(&self, mut bounds: Rectangle, nth: usize) -> Rectangle {
-        let num = self.state.buttons.len();
+        let num = self.model.items.len();
         if num != 0 {
             let spacing = f32::from(self.spacing);
             bounds.height = (bounds.height - (num as f32 * spacing) + spacing) / num as f32;
@@ -74,7 +77,7 @@ where
 
         let (width, mut height) = self.max_button_dimensions(renderer, text_size, limits.max());
 
-        let num = self.state.buttons.len();
+        let num = self.model.items.len();
         let spacing = f32::from(self.spacing);
 
         if num != 0 {

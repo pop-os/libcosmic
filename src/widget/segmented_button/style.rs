@@ -15,6 +15,7 @@ pub struct Appearance {
     pub active: ButtonStatusAppearance,
     pub inactive: ButtonStatusAppearance,
     pub hover: ButtonStatusAppearance,
+    pub focus: ButtonStatusAppearance,
 }
 
 /// The appearance of a button in the segmented button
