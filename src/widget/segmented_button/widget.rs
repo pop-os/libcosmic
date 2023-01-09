@@ -148,20 +148,21 @@ where
 
     /// Focus the previous item in the widget.
     fn focus_previous(&mut self, state: &mut LocalState) -> event::Status {
-        let mut previous_key = None;
+        let mut keys = self.model.order.iter().copied().rev();
 
-        for key in self.model.items.keys() {
+        while let Some(key) = keys.next() {
             if key == state.focused_key {
-                if let Some(key) = previous_key {
+                for key in keys {
+                    // Skip disabled buttons.
+                    if !self.is_enabled(key) {
+                        continue;
+                    }
+
                     state.focused_key = key;
                     return event::Status::Captured;
                 }
 
                 break;
-            }
-
-            if self.is_enabled(key) {
-                previous_key = Some(key);
             }
         }
 
@@ -171,7 +172,7 @@ where
 
     /// Focus the next item in the widget.
     fn focus_next(&mut self, state: &mut LocalState) -> event::Status {
-        let mut keys = self.model.items.keys();
+        let mut keys = self.model.order.iter().copied();
 
         while let Some(key) = keys.next() {
             if key == state.focused_key {
@@ -258,7 +259,7 @@ where
 
     fn state(&self) -> tree::State {
         tree::State::new(LocalState {
-            first: self.model.items.keys().next().unwrap_or_default(),
+            first: self.model.order.iter().copied().next().unwrap_or_default(),
             ..LocalState::default()
         })
     }
@@ -289,10 +290,10 @@ where
         let state = tree.state.downcast_mut::<LocalState>();
 
         if bounds.contains(cursor_position) {
-            for (nth, (key, content)) in self.model.items.iter().enumerate() {
+            for (nth, key) in self.model.order.iter().copied().enumerate() {
                 let bounds = self.variant_button_bounds(bounds, nth);
                 if bounds.contains(cursor_position) {
-                    if content.enabled {
+                    if self.model.items[key].enabled {
                         if let Some(on_activate) = self.on_activate.as_ref() {
                             if let Event::Mouse(mouse::Event::ButtonReleased(mouse::Button::Left))
                             | Event::Touch(touch::Event::FingerLifted { .. }) = event
@@ -363,12 +364,12 @@ where
         let bounds = layout.bounds();
 
         if bounds.contains(cursor_position) {
-            for (nth, content) in self.model.items.values().enumerate() {
+            for (nth, key) in self.model.order.iter().copied().enumerate() {
                 if self
                     .variant_button_bounds(bounds, nth)
                     .contains(cursor_position)
                 {
-                    return if content.enabled {
+                    return if self.model.items[key].enabled {
                         iced_native::mouse::Interaction::Pointer
                     } else {
                         iced_native::mouse::Interaction::Idle
@@ -410,7 +411,9 @@ where
         }
 
         // Draw each of the items in the widget.
-        for (nth, (key, content)) in self.model.items.iter().enumerate() {
+        for (nth, key) in self.model.order.iter().copied().enumerate() {
+            let content = &self.model.items[key];
+
             let mut bounds = self.variant_button_bounds(bounds, nth);
 
             let (status_appearance, font) = if state.focused_key == key {
