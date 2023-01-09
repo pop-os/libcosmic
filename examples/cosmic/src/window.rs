@@ -7,12 +7,11 @@ use cosmic::{
         event::{self, Event},
         keyboard, Application, Command, Length, Subscription,
     },
-    iced_native,
     iced_native::{subscription, window},
     iced_winit::window::{close, drag, minimize, toggle_maximize},
     theme::{self, Theme},
     widget::{
-        header_bar, icon, list, nav_bar, nav_button, scrollable, segmented_button, settings,
+        header_bar, icon, list, nav_bar, nav_bar_toggle, scrollable, segmented_button, settings,
         IconSource,
     },
     Element, ElementExt,
@@ -427,7 +426,7 @@ impl Application for Window {
             .on_close(Message::Close)
             .on_drag(Message::Drag)
             .start(
-                nav_button("Settings")
+                nav_bar_toggle()
                     .on_nav_bar_toggled(nav_bar_message)
                     .nav_bar_active(nav_bar_toggled)
                     .into(),
