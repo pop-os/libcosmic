@@ -16,8 +16,8 @@ pub use self::list::*;
 pub mod nav_bar;
 pub use nav_bar::nav_bar;
 
-pub mod nav_button;
-pub use self::nav_button::{nav_button, NavButton};
+pub mod nav_bar_toggle;
+pub use self::nav_bar_toggle::{nav_bar_toggle, NavBarToggle};
 
 mod toggler;
 pub use toggler::toggler;

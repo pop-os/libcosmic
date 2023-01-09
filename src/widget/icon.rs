@@ -23,7 +23,8 @@ pub enum Handle {
 pub enum IconSource<'a> {
     Path(Cow<'a, Path>),
     Name(Cow<'a, str>),
-    Embedded(Image),
+    Embedded(image::Handle),
+    EmbeddedSvg(svg::Handle),
 }
 
 impl<'a> IconSource<'a> {
@@ -32,8 +33,8 @@ impl<'a> IconSource<'a> {
     pub fn load(&self, size: u16, theme: Option<&str>, svg: bool) -> Handle {
         let name_path_buffer: Option<PathBuf>;
         let icon: Option<&Path> = match self {
-            IconSource::Path(path) => Some(path),
-            IconSource::Name(name) => {
+            IconSource::Path(ref path) => Some(path),
+            IconSource::Name(ref name) => {
                 let icon = crate::settings::DEFAULT_ICON_THEME.with(|default_theme| {
                     let default_theme: &str = &default_theme.borrow();
                     freedesktop_icons::lookup(name)
@@ -54,7 +55,8 @@ impl<'a> IconSource<'a> {
 
                 name_path_buffer.as_deref()
             }
-            IconSource::Embedded(_) => unimplemented!(),
+            IconSource::Embedded(handle) => return Handle::Image(handle.clone()),
+            IconSource::EmbeddedSvg(handle) => return Handle::Svg(handle.clone()),
         };
 
         let is_svg = svg
@@ -116,9 +118,15 @@ impl<'a> From<&'a str> for IconSource<'a> {
     }
 }
 
-impl<'a> From<Image> for IconSource<'a> {
-    fn from(value: Image) -> Self {
-        Self::Embedded(value)
+impl From<image::Handle> for IconSource<'static> {
+    fn from(handle: image::Handle) -> Self {
+        Self::Embedded(handle)
+    }
+}
+
+impl From<svg::Handle> for IconSource<'static> {
+    fn from(handle: svg::Handle) -> Self {
+        Self::EmbeddedSvg(handle)
     }
 }
 
@@ -158,8 +166,8 @@ pub fn icon<'a>(source: impl Into<IconSource<'a>>, size: u16) -> Icon<'a> {
 impl<'a> Icon<'a> {
     #[must_use]
     fn into_element<Message: 'static>(self) -> Element<'a, Message> {
-        if let IconSource::Embedded(mut image) = self.source {
-            image = image
+        if let IconSource::Embedded(image) = self.source {
+            let mut image = iced::widget::image(image)
                 .width(self.width.unwrap_or(Length::Units(self.size)))
                 .height(self.height.unwrap_or(Length::Units(self.size)));
             if let Some(content_fit) = self.content_fit {

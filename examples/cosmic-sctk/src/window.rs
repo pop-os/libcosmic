@@ -16,7 +16,7 @@ use cosmic::{
     iced_native::window,
     theme::{self, Theme},
     widget::{
-        button, header_bar, nav_bar, nav_button,
+        button, header_bar, nav_bar, nav_bar_toggle,
         rectangle_tracker::{rectangle_tracker_subscription, RectangleTracker, RectangleUpdate},
         scrollable, segmented_button, settings, toggler, IconSource,
     },
@@ -284,7 +284,7 @@ impl Application for Window {
             .on_close(Message::Close)
             .on_drag(Message::Drag)
             .start(
-                nav_button("Settings")
+                nav_bar_toggle()
                     .on_nav_bar_toggled(nav_bar_message)
                     .nav_bar_active(nav_bar_toggled)
                     .into(),
