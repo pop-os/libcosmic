@@ -3,17 +3,47 @@
 
 use std::marker::PhantomData;
 
-use super::state::{Key, Selectable, SharedWidgetState};
+use super::model::{Key, Model, WidgetModel};
+use super::selection_modes::Selectable;
 use super::style::StyleSheet;
 
 use derive_setters::Setters;
 use iced::{
-    alignment, event, mouse, touch, Background, Color, Element, Event, Length, Point, Rectangle,
-    Size,
+    alignment, event, keyboard, mouse, touch, Background, Color, Command, Element, Event, Length,
+    Point, Rectangle, Size,
 };
 use iced_core::BorderRadius;
-use iced_native::widget::tree;
+use iced_native::widget::{self, operation, tree, Operation};
 use iced_native::{layout, renderer, widget::Tree, Clipboard, Layout, Shell, Widget};
+
+/// State that is maintained by each individual widget.
+#[derive(Default)]
+struct LocalState {
+    /// The first focusable key.
+    first: Key,
+    /// If the widget is focused or not.
+    focused: bool,
+    /// The key inside the widget that is currently focused.
+    focused_key: Key,
+    /// The ID of the button that is being hovered. Defaults to null.
+    hovered: Key,
+}
+
+impl operation::Focusable for LocalState {
+    fn is_focused(&self) -> bool {
+        self.focused
+    }
+
+    fn focus(&mut self) {
+        self.focused = true;
+        self.focused_key = self.first;
+    }
+
+    fn unfocus(&mut self) {
+        self.focused = false;
+        self.focused_key = Key::default();
+    }
+}
 
 /// Isolates variant-specific behaviors from [`SegmentedButton`].
 pub trait SegmentedVariant {
@@ -44,9 +74,10 @@ where
     Renderer::Theme: StyleSheet,
     Selection: Selectable,
 {
-    /// Contains application state also used for drawing.
+    /// The model borrowed from the application create this widget.
     #[setters(skip)]
-    pub(super) state: &'a SharedWidgetState<Selection>,
+    pub(super) model: &'a WidgetModel<Selection>,
+    pub(super) id: Option<Id>,
     /// Padding around a button.
     pub(super) button_padding: [u16; 4],
     /// Desired height of a button.
@@ -65,7 +96,7 @@ where
     pub(super) width: Length,
     /// Desired height of the widget.
     pub(super) height: Length,
-    /// Desired spacing between buttons.
+    /// Desired spacing between items.
     pub(super) spacing: u16,
     /// Style to draw the widget in.
     #[setters(into)]
@@ -90,9 +121,10 @@ where
     Selection: Selectable,
 {
     #[must_use]
-    pub fn new(state: &'a SharedWidgetState<Selection>) -> Self {
+    pub fn new<Component>(model: &'a Model<Selection, Component>) -> Self {
         Self {
-            state,
+            model: &model.widget,
+            id: None,
             button_padding: [4, 4, 4, 4],
             button_height: 32,
             button_spacing: 4,
@@ -107,6 +139,46 @@ where
             on_activate: None,
             variant: PhantomData,
         }
+    }
+
+    fn focus_previous(&mut self, state: &mut LocalState) -> event::Status {
+        let mut previous_key: Option<Key> = None;
+
+        for key in self.model.items.keys() {
+            if key == state.focused_key {
+                return match previous_key {
+                    Some(next_focus) => {
+                        state.focused_key = next_focus;
+                        event::Status::Captured
+                    }
+                    None => break,
+                };
+            }
+
+            previous_key = Some(key);
+        }
+
+        state.focused_key = Key::default();
+        event::Status::Ignored
+    }
+
+    fn focus_next(&mut self, state: &mut LocalState) -> event::Status {
+        let mut keys = self.model.items.keys();
+
+        while let Some(key) = keys.next() {
+            if key == state.focused_key {
+                return match keys.next() {
+                    Some(next_focus) => {
+                        state.focused_key = next_focus;
+                        event::Status::Captured
+                    }
+                    None => break,
+                };
+            }
+        }
+
+        state.focused_key = Key::default();
+        event::Status::Ignored
     }
 
     /// Emits the ID of the activated widget on selection.
@@ -125,7 +197,7 @@ where
         let mut width = 0.0f32;
         let mut height = 0.0f32;
 
-        for (_, content) in self.state.buttons.iter() {
+        for content in self.model.items.values() {
             let mut button_width = 0.0f32;
             let mut button_height = 0.0f32;
 
@@ -169,11 +241,14 @@ where
     Message: 'static + Clone,
 {
     fn tag(&self) -> tree::Tag {
-        tree::Tag::of::<UniqueWidgetState>()
+        tree::Tag::of::<LocalState>()
     }
 
     fn state(&self) -> tree::State {
-        tree::State::new(UniqueWidgetState::default())
+        tree::State::new(LocalState {
+            first: self.model.items.keys().next().unwrap_or_default(),
+            ..LocalState::default()
+        })
     }
 
     fn width(&self) -> Length {
@@ -199,30 +274,70 @@ where
         shell: &mut Shell<'_, Message>,
     ) -> event::Status {
         let bounds = layout.bounds();
-        let state = tree.state.downcast_mut::<UniqueWidgetState>();
+        let state = tree.state.downcast_mut::<LocalState>();
 
         if bounds.contains(cursor_position) {
-            for (nth, (key, _)) in self.state.buttons.iter().enumerate() {
+            for (nth, (key, content)) in self.model.items.iter().enumerate() {
                 let bounds = self.variant_button_bounds(bounds, nth);
                 if bounds.contains(cursor_position) {
-                    // Record that the mouse is hovering over this button.
-                    state.hovered = key;
+                    if content.enabled {
+                        if let Some(on_activate) = self.on_activate.as_ref() {
+                            if let Event::Mouse(mouse::Event::ButtonReleased(mouse::Button::Left))
+                            | Event::Touch(touch::Event::FingerLifted { .. }) = event
+                            {
+                                // Record that the mouse is hovering over this button.
+                                state.hovered = key;
 
-                    if let Some(on_activate) = self.on_activate.as_ref() {
-                        if let Event::Mouse(mouse::Event::ButtonReleased(mouse::Button::Left))
-                        | Event::Touch(touch::Event::FingerLifted { .. }) = event
-                        {
-                            shell.publish(on_activate(key));
-                            return event::Status::Captured;
+                                shell.publish(on_activate(key));
+                                return event::Status::Captured;
+                            }
                         }
                     }
+
+                    break;
                 }
             }
         } else {
             state.hovered = Key::default();
         }
 
+        if state.focused {
+            if let Event::Keyboard(keyboard::Event::KeyPressed {
+                key_code: keyboard::KeyCode::Tab,
+                modifiers,
+                ..
+            }) = event
+            {
+                return if modifiers.shift() {
+                    self.focus_previous(state)
+                } else {
+                    self.focus_next(state)
+                };
+            }
+
+            if let Some(on_activate) = self.on_activate.as_ref() {
+                if let Event::Keyboard(keyboard::Event::KeyReleased {
+                    key_code: keyboard::KeyCode::Enter,
+                    ..
+                }) = event
+                {
+                    shell.publish(on_activate(state.focused_key));
+                    return event::Status::Captured;
+                }
+            }
+        }
+
         event::Status::Ignored
+    }
+
+    fn operate(
+        &self,
+        tree: &mut Tree,
+        _layout: Layout<'_>,
+        operation: &mut dyn Operation<Message>,
+    ) {
+        let state = tree.state.downcast_mut::<LocalState>();
+        operation.focusable(state, self.id.as_ref().map(|id| &id.0));
     }
 
     fn mouse_interaction(
@@ -234,14 +349,23 @@ where
         _renderer: &Renderer,
     ) -> iced_native::mouse::Interaction {
         let bounds = layout.bounds();
-        if (0..self.state.buttons.len()).any(|nth| {
-            self.variant_button_bounds(bounds, nth)
-                .contains(cursor_position)
-        }) {
-            iced_native::mouse::Interaction::Pointer
-        } else {
-            iced_native::mouse::Interaction::Idle
+
+        if bounds.contains(cursor_position) {
+            for (nth, content) in self.model.items.values().enumerate() {
+                if self
+                    .variant_button_bounds(bounds, nth)
+                    .contains(cursor_position)
+                {
+                    return if content.enabled {
+                        iced_native::mouse::Interaction::Pointer
+                    } else {
+                        iced_native::mouse::Interaction::Idle
+                    };
+                }
+            }
         }
+
+        iced_native::mouse::Interaction::Idle
     }
 
     #[allow(clippy::too_many_lines)]
@@ -255,10 +379,10 @@ where
         _cursor_position: iced::Point,
         _viewport: &iced::Rectangle,
     ) {
-        let state = tree.state.downcast_ref::<UniqueWidgetState>();
+        let state = tree.state.downcast_ref::<LocalState>();
         let appearance = Self::variant_appearance(theme, &self.style);
         let bounds = layout.bounds();
-        let button_amount = self.state.buttons.len();
+        let button_amount = self.model.items.len();
 
         // Draw the background, if a background was defined.
         if let Some(background) = appearance.background {
@@ -273,11 +397,13 @@ where
             );
         }
 
-        // Draw each of the buttons in the widget.
-        for (nth, (key, content)) in self.state.buttons.iter().enumerate() {
+        // Draw each of the items in the widget.
+        for (nth, (key, content)) in self.model.items.iter().enumerate() {
             let mut bounds = self.variant_button_bounds(bounds, nth);
 
-            let (status_appearance, font) = if self.state.selection.is_active(key) {
+            let (status_appearance, font) = if state.focused_key == key {
+                (appearance.focus, &self.font_active)
+            } else if self.model.selection.is_active(key) {
                 (appearance.active, &self.font_active)
             } else if state.hovered == key {
                 (appearance.hover, &self.font_hovered)
@@ -413,7 +539,7 @@ where
     Message: 'static + Clone,
 {
     fn from(mut widget: SegmentedButton<'a, Variant, Selection, Message, Renderer>) -> Self {
-        if widget.state.buttons.is_empty() {
+        if widget.model.items.is_empty() {
             widget.spacing = 0;
         }
 
@@ -421,9 +547,33 @@ where
     }
 }
 
-/// State that is maintained by each individual widget.
-#[derive(Default)]
-struct UniqueWidgetState {
-    /// The ID of the button that is being hovered. Defaults to null.
-    hovered: Key,
+/// A command that focuses a segmented item stored in a widget.
+#[must_use]
+pub fn focus<Message: 'static>(id: Id) -> Command<Message> {
+    Command::widget(operation::focusable::focus(id.0))
+}
+
+/// The identifier of a segmented item.
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct Id(widget::Id);
+
+impl Id {
+    /// Creates a custom [`Id`].
+    pub fn new(id: impl Into<std::borrow::Cow<'static, str>>) -> Self {
+        Self(widget::Id::new(id))
+    }
+
+    /// Creates a unique [`Id`].
+    ///
+    /// This function produces a different [`Id`] every time it is called.
+    #[must_use]
+    pub fn unique() -> Self {
+        Self(widget::Id::unique())
+    }
+}
+
+impl From<Id> for widget::Id {
+    fn from(id: Id) -> Self {
+        id.0
+    }
 }

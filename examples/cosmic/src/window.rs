@@ -12,9 +12,8 @@ use cosmic::{
     iced_winit::window::{close, drag, minimize, toggle_maximize},
     theme::{self, Theme},
     widget::{
-        header_bar, icon, list, nav_bar, nav_button, scrollable,
-        segmented_button::{self, cosmic::vertical_view_switcher, SingleSelect},
-        settings,
+        header_bar, icon, list, nav_bar, nav_button, scrollable, segmented_button, settings,
+        IconSource,
     },
     Element, ElementExt,
 };
@@ -136,7 +135,7 @@ pub struct Window {
     debug: bool,
     demo: demo::State,
     desktop: desktop::State,
-    nav_bar_pages: segmented_button::State<SingleSelect, Page>,
+    nav_bar_pages: segmented_button::SingleSelectModel<Page>,
     nav_bar_toggled_condensed: bool,
     nav_bar_toggled: bool,
     page: Page,
@@ -190,6 +189,21 @@ impl From<Page> for Message {
 }
 
 impl Window {
+    /// Adds a page to the model we use for the navigation bar.
+    fn insert_page(&mut self, page: Page) -> segmented_button::Key {
+        self.nav_bar_pages.insert(
+            segmented_button::item()
+                .text(page.title())
+                .icon(IconSource::Name(page.icon_name().into())),
+            page,
+        )
+    }
+
+    /// Activates the page by its key.
+    fn activate_page(&mut self, page: segmented_button::Key) {
+        self.nav_bar_pages.activate(page);
+    }
+
     fn page_title<Message: 'static>(&self, page: Page) -> Element<Message> {
         row!(text(page.title()).size(30), horizontal_space(Length::Fill),).into()
     }
@@ -291,29 +305,22 @@ impl Application for Window {
 
         window.title = String::from("COSMIC Design System - Iced");
 
-        let mut add_page = |page: Page| {
-            let content = segmented_button::Content::default()
-                .text(page.title())
-                .icon(page.icon_name());
-            window.nav_bar_pages.insert(content, page)
-        };
-
-        add_page(Page::Demo);
-        add_page(Page::WiFi);
-        add_page(Page::Networking(None));
-        add_page(Page::Bluetooth);
-        let key = add_page(Page::Desktop(None));
-        add_page(Page::InputDevices(None));
-        add_page(Page::Displays);
-        add_page(Page::PowerAndBattery);
-        add_page(Page::Sound);
-        add_page(Page::PrintersAndScanners);
-        add_page(Page::PrivacyAndSecurity);
-        add_page(Page::SystemAndAccounts(None));
-        add_page(Page::TimeAndLanguage(None));
-        add_page(Page::Accessibility);
-        add_page(Page::Applications);
-        window.nav_bar_pages.activate(key);
+        window.insert_page(Page::Demo);
+        window.insert_page(Page::WiFi);
+        window.insert_page(Page::Networking(None));
+        window.insert_page(Page::Bluetooth);
+        let key = window.insert_page(Page::Desktop(None));
+        window.insert_page(Page::InputDevices(None));
+        window.insert_page(Page::Displays);
+        window.insert_page(Page::PowerAndBattery);
+        window.insert_page(Page::Sound);
+        window.insert_page(Page::PrintersAndScanners);
+        window.insert_page(Page::PrivacyAndSecurity);
+        window.insert_page(Page::SystemAndAccounts(None));
+        window.insert_page(Page::TimeAndLanguage(None));
+        window.insert_page(Page::Accessibility);
+        window.insert_page(Page::Applications);
+        window.activate_page(key);
 
         (window, Command::none())
     }
@@ -364,7 +371,7 @@ impl Application for Window {
         let mut ret = Command::none();
         match message {
             Message::NavBar(key) => {
-                if let Some(page) = self.nav_bar_pages.data(key).cloned() {
+                if let Some(page) = self.nav_bar_pages.component(key).cloned() {
                     self.nav_bar_pages.activate(key);
                     self.page(page);
                 }
