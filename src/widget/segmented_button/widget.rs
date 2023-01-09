@@ -141,39 +141,51 @@ where
         }
     }
 
+    /// Check if an item is enabled.
+    fn is_enabled(&self, key: Key) -> bool {
+        self.model.items.get(key).map_or(false, |item| item.enabled)
+    }
+
+    /// Focus the previous item in the widget.
     fn focus_previous(&mut self, state: &mut LocalState) -> event::Status {
-        let mut previous_key: Option<Key> = None;
+        let mut previous_key = None;
 
         for key in self.model.items.keys() {
             if key == state.focused_key {
-                return match previous_key {
-                    Some(next_focus) => {
-                        state.focused_key = next_focus;
-                        event::Status::Captured
-                    }
-                    None => break,
-                };
+                if let Some(key) = previous_key {
+                    state.focused_key = key;
+                    return event::Status::Captured;
+                }
+
+                break;
             }
 
-            previous_key = Some(key);
+            if self.is_enabled(key) {
+                previous_key = Some(key);
+            }
         }
 
         state.focused_key = Key::default();
         event::Status::Ignored
     }
 
+    /// Focus the next item in the widget.
     fn focus_next(&mut self, state: &mut LocalState) -> event::Status {
         let mut keys = self.model.items.keys();
 
         while let Some(key) = keys.next() {
             if key == state.focused_key {
-                return match keys.next() {
-                    Some(next_focus) => {
-                        state.focused_key = next_focus;
-                        event::Status::Captured
+                for key in keys {
+                    // Skip disabled buttons.
+                    if !self.is_enabled(key) {
+                        continue;
                     }
-                    None => break,
-                };
+
+                    state.focused_key = key;
+                    return event::Status::Captured;
+                }
+
+                break;
             }
         }
 
