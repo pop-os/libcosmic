@@ -13,6 +13,7 @@ pub use iced_winit;
 #[cfg(feature = "applet")]
 pub mod applet;
 pub mod font;
+pub mod keyboard_nav;
 pub mod theme;
 pub mod widget;
 
