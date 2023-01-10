@@ -2,13 +2,10 @@
 // SPDX-License-Identifier: MPL-2.0
 use cosmic::{
     iced::widget::{self, button, column, container, horizontal_space, row, text},
-    iced::{
-        self,
-        event::{self, Event},
-        keyboard, Application, Command, Length, Subscription,
-    },
+    iced::{self, Application, Command, Length, Subscription},
     iced_native::{subscription, window},
     iced_winit::window::{close, drag, minimize, toggle_maximize},
+    keyboard_nav,
     theme::{self, Theme},
     widget::{
         header_bar, icon, list, nav_bar, nav_bar_toggle, scrollable, segmented_button, settings,
@@ -172,11 +169,11 @@ pub enum Message {
     Desktop(desktop::Message),
     Drag,
     InputChanged,
+    KeyboardNav(keyboard_nav::Message),
     Maximize,
     Minimize,
     NavBar(segmented_button::Key),
     Page(Page),
-    TabNav(bool),
     ToggleNavBar,
     ToggleNavBarCondensed,
 }
@@ -348,21 +345,9 @@ impl Application for Window {
             _ => None,
         });
 
-        let tab_navagation = subscription::events_with(|event, status| match (event, status) {
-            (
-                Event::Keyboard(keyboard::Event::KeyPressed {
-                    key_code: keyboard::KeyCode::Tab,
-                    modifiers,
-                    ..
-                }),
-                event::Status::Ignored,
-            ) => Some(modifiers.shift()),
-            _ => None,
-        });
-
         Subscription::batch(vec![
             window_break.map(|_| Message::CondensedViewToggle),
-            tab_navagation.map(Message::TabNav),
+            keyboard_nav::subscription().map(Message::KeyboardNav),
         ])
     }
 
@@ -400,13 +385,11 @@ impl Application for Window {
             Message::InputChanged => {}
 
             Message::CondensedViewToggle => {}
-            Message::TabNav(shift) => {
-                if shift {
-                    ret = widget::focus_previous();
-                } else {
-                    ret = widget::focus_next();
-                }
-            }
+            Message::KeyboardNav(message) => match message {
+                keyboard_nav::Message::Unfocus => ret = keyboard_nav::unfocus(),
+                keyboard_nav::Message::FocusNext => ret = widget::focus_next(),
+                keyboard_nav::Message::FocusPrevious => ret = widget::focus_previous(),
+            },
         }
         ret
     }
