@@ -5,11 +5,12 @@ use crate::{theme, Element};
 use apply::Apply;
 use derive_setters::Setters;
 use iced::{self, widget, Length};
+use std::borrow::Cow;
 
 #[must_use]
 pub fn header_bar<'a, Message>() -> HeaderBar<'a, Message> {
     HeaderBar {
-        title: "",
+        title: "".into(),
         on_close: None,
         on_drag: None,
         on_maximize: None,
@@ -22,7 +23,8 @@ pub fn header_bar<'a, Message>() -> HeaderBar<'a, Message> {
 
 #[derive(Setters)]
 pub struct HeaderBar<'a, Message> {
-    title: &'a str,
+    #[setters(into)]
+    title: Cow<'a, str>,
     #[setters(strip_option)]
     on_close: Option<Message>,
     #[setters(strip_option)]
@@ -88,7 +90,7 @@ impl<'a, Message: Clone + 'static> HeaderBar<'a, Message> {
     }
 
     fn title_widget(&self) -> Element<'a, Message> {
-        widget::container(widget::text(self.title))
+        widget::container(widget::text(self.title.clone()))
             .center_x()
             .center_y()
             .width(Length::Fill)
