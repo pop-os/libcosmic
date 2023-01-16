@@ -45,6 +45,7 @@ jobs:
         - 'winit_softbuffer tokio'
         - winit_softbuffer
         - winit_wgpu
+        - softbuffer
         - wayland
         - applet
     runs-on: ubuntu-22.04
