@@ -9,7 +9,7 @@ use cosmic::{
     theme::{self, Theme},
     widget::{
         header_bar, icon, list, nav_bar, nav_bar_toggle, scrollable, segmented_button, settings,
-        IconSource,
+        warning, IconSource,
     },
     Element, ElementExt,
 };
@@ -140,6 +140,7 @@ pub struct Window {
     system_and_accounts: system_and_accounts::State,
     theme: Theme,
     title: String,
+    show_warning: bool,
 }
 
 impl Window {
@@ -155,6 +156,11 @@ impl Window {
 
     pub fn show_minimize(mut self, show: bool) -> Self {
         self.show_minimize = show;
+        self
+    }
+
+    pub fn show_warning(mut self, show: bool) -> Self {
+        self.show_warning = show;
         self
     }
 }
@@ -176,6 +182,7 @@ pub enum Message {
     Page(Page),
     ToggleNavBar,
     ToggleNavBarCondensed,
+    CloseWarning,
 }
 
 impl From<Page> for Message {
@@ -297,7 +304,8 @@ impl Application for Window {
         let mut window = Window::default()
             .nav_bar_toggled(true)
             .show_maximize(true)
-            .show_minimize(true);
+            .show_minimize(true)
+            .show_warning(true);
 
         window.title = String::from("COSMIC Design System - Iced");
 
@@ -390,6 +398,7 @@ impl Application for Window {
                 keyboard_nav::Message::FocusNext => ret = widget::focus_next(),
                 keyboard_nav::Message::FocusPrevious => ret = widget::focus_previous(),
             },
+            Message::CloseWarning => self.show_warning = false,
         }
         ret
     }
@@ -515,8 +524,14 @@ impl Application for Window {
             .width(Length::Fill)
             .height(Length::Fill)
             .into();
-
-        column(vec![header, content]).into()
+        let warning = warning("This is a warning")
+            .on_close(Message::CloseWarning)
+            .into();
+        if self.show_warning {
+            column(vec![header, warning, content]).into()
+        } else {
+            column(vec![header, content]).into()
+        }
     }
 
     fn theme(&self) -> Theme {

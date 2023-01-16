@@ -41,3 +41,6 @@ pub use spin_button::{spin_button, SpinButton};
 pub mod rectangle_tracker;
 
 pub mod aspect_ratio;
+
+pub mod warning;
+pub use warning::*;
