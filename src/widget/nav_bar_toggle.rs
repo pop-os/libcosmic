@@ -1,6 +1,8 @@
 // Copyright 2022 System76 <info@system76.com>
 // SPDX-License-Identifier: MPL-2.0
 
+//! A button for toggling the navigation side panel.
+
 use crate::{theme, Element};
 use apply::Apply;
 use derive_setters::Setters;

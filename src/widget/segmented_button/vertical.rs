@@ -3,8 +3,7 @@
 
 //! Implementation details for the vertical layout of a segmented button.
 
-use super::model::Model;
-use super::selection_modes::Selectable;
+use super::model::{Model, Selectable};
 use super::style::StyleSheet;
 use super::widget::{SegmentedButton, SegmentedVariant};
 
@@ -19,9 +18,11 @@ pub type VerticalSegmentedButton<'a, SelectionMode, Message, Renderer> =
     SegmentedButton<'a, Vertical, SelectionMode, Message, Renderer>;
 
 /// Vertical implementation of the [`SegmentedButton`].
+///
+/// For details on the model, see the [`segmented_button`](super) module for more details.
 #[must_use]
-pub fn vertical_segmented_button<SelectionMode, Component, Message, Renderer>(
-    model: &Model<SelectionMode, Component>,
+pub fn vertical<SelectionMode, Message, Renderer>(
+    model: &Model<SelectionMode>,
 ) -> SegmentedButton<Vertical, SelectionMode, Message, Renderer>
 where
     Renderer: iced_native::Renderer
@@ -29,7 +30,8 @@ where
         + iced_native::image::Renderer
         + iced_native::svg::Renderer,
     Renderer::Theme: StyleSheet,
-    SelectionMode: Selectable,
+    Model<SelectionMode>: Selectable,
+    SelectionMode: Default,
 {
     SegmentedButton::new(model)
 }
@@ -42,7 +44,8 @@ where
         + iced_native::image::Renderer
         + iced_native::svg::Renderer,
     Renderer::Theme: StyleSheet,
-    SelectionMode: Selectable,
+    Model<SelectionMode>: Selectable,
+    SelectionMode: Default,
 {
     type Renderer = Renderer;
 

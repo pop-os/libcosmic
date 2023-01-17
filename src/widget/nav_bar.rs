@@ -1,6 +1,10 @@
 // Copyright 2022 System76 <info@system76.com>
 // SPDX-License-Identifier: MPL-2.0
 
+//! Navigation side panel for switching between views.
+//!
+//! For details on the model, see the [`segmented_button`] module for more details.
+
 use apply::Apply;
 use iced::{
     widget::{container, scrollable},
@@ -8,19 +12,19 @@ use iced::{
 };
 use iced_core::Color;
 
-use crate::{theme, Theme};
+use crate::{theme, widget::segmented_button, Theme};
 
-use super::segmented_button::{self, vertical_segmented_button};
-
-/// A container holding a vertical view switcher with the n style
-pub fn nav_bar<Component, Message>(
-    model: &segmented_button::SingleSelectModel<Component>,
-    on_activate: impl Fn(segmented_button::Key) -> Message + 'static,
+/// Navigation side panel for switching between views.
+///
+/// For details on the model, see the [`segmented_button`] module for more details.
+pub fn nav_bar<Message>(
+    model: &segmented_button::SingleSelectModel,
+    on_activate: impl Fn(segmented_button::Entity) -> Message + 'static,
 ) -> iced::widget::Container<Message, crate::Renderer>
 where
     Message: Clone + 'static,
 {
-    vertical_segmented_button(model)
+    segmented_button::vertical(model)
         .button_height(32)
         .button_padding([16, 10, 16, 10])
         .button_spacing(8)

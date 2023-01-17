@@ -115,7 +115,7 @@ pub struct Window {
     checkbox_value: bool,
     toggler_value: bool,
     pick_list_selected: Option<&'static str>,
-    nav_bar_pages: segmented_button::SingleSelectModel<Page>,
+    nav_bar_pages: segmented_button::SingleSelectModel,
     nav_bar_toggled_condensed: bool,
     nav_bar_toggled: bool,
     show_minimize: bool,
@@ -126,18 +126,12 @@ pub struct Window {
 
 impl Window {
     /// Adds a page to the model we use for the navigation bar.
-    fn insert_page(&mut self, page: Page) -> segmented_button::Key {
-        self.nav_bar_pages.insert(
-            segmented_button::item()
-                .text(page.title())
-                .icon(IconSource::Name(page.icon_name().into())),
-            page,
-        )
-    }
-
-    /// Activates the page by its key.
-    fn activate_page(&mut self, page: segmented_button::Key) {
-        self.nav_bar_pages.activate(page);
+    fn insert_page(&mut self, page: Page) -> segmented_button::SingleSelectEntityMut {
+        self.nav_bar_pages
+            .insert()
+            .text(page.title())
+            .icon(IconSource::Name(page.icon_name().into()))
+            .data(page)
     }
 
     fn is_condensed(&self) -> bool {
@@ -185,7 +179,7 @@ pub enum Message {
     Maximize,
     InputChanged,
     Rectangle(RectangleUpdate<u32>),
-    NavBar(segmented_button::Key),
+    NavBar(segmented_button::Entity),
 }
 
 impl Application for Window {
@@ -208,7 +202,7 @@ impl Application for Window {
         window.insert_page(Page::WiFi);
         window.insert_page(Page::Networking);
         window.insert_page(Page::Bluetooth);
-        let key = window.insert_page(Page::Desktop);
+        window.insert_page(Page::Desktop).activate();
         window.insert_page(Page::InputDevices);
         window.insert_page(Page::Displays);
         window.insert_page(Page::PowerAndBattery);
@@ -219,7 +213,6 @@ impl Application for Window {
         window.insert_page(Page::TimeAndLanguage);
         window.insert_page(Page::Accessibility);
         window.insert_page(Page::Applications);
-        window.activate_page(key);
 
         (window, Command::none())
     }
@@ -231,7 +224,7 @@ impl Application for Window {
     fn update(&mut self, message: Message) -> iced::Command<Self::Message> {
         match message {
             Message::NavBar(key) => {
-                if let Some(page) = self.nav_bar_pages.component(key).cloned() {
+                if let Some(page) = self.nav_bar_pages.data::<Page>(key).cloned() {
                     self.nav_bar_pages.activate(key);
                     self.page(page);
                 }
