@@ -1,8 +1,8 @@
 // Copyright 2023 System76 <info@system76.com>
 // SPDX-License-Identifier: MPL-2.0
 
-use crate::theme::Theme;
-use crate::widget::segmented_button;
+use crate::widget::segmented_button::{Appearance, ItemAppearance, StyleSheet};
+use crate::{theme::Theme, widget::segmented_button::ItemStatusAppearance};
 use iced_core::{Background, BorderRadius};
 use palette::{rgb::Rgb, Alpha};
 
@@ -14,33 +14,33 @@ pub enum SegmentedButton {
     /// A widget for multiple choice selection.
     Selection,
     /// Or implement any custom theme of your liking.
-    Custom(fn(&Theme) -> segmented_button::Appearance),
+    Custom(fn(&Theme) -> Appearance),
 }
 
-impl segmented_button::StyleSheet for Theme {
+impl StyleSheet for Theme {
     type Style = SegmentedButton;
 
     #[allow(clippy::too_many_lines)]
-    fn horizontal(&self, style: &Self::Style) -> segmented_button::Appearance {
+    fn horizontal(&self, style: &Self::Style) -> Appearance {
         match style {
             SegmentedButton::ViewSwitcher => {
                 let cosmic = self.cosmic();
                 let active = horizontal::view_switcher_active(cosmic);
-                segmented_button::Appearance {
+                Appearance {
                     border_radius: BorderRadius::from(0.0),
-                    inactive: segmented_button::ButtonStatusAppearance {
+                    inactive: ItemStatusAppearance {
                         background: None,
-                        first: segmented_button::ButtonAppearance {
+                        first: ItemAppearance {
                             border_radius: BorderRadius::from(0.0),
                             border_bottom: Some((1.0, cosmic.accent.base.into())),
                             ..Default::default()
                         },
-                        middle: segmented_button::ButtonAppearance {
+                        middle: ItemAppearance {
                             border_radius: BorderRadius::from(0.0),
                             border_bottom: Some((1.0, cosmic.accent.base.into())),
                             ..Default::default()
                         },
-                        last: segmented_button::ButtonAppearance {
+                        last: ItemAppearance {
                             border_radius: BorderRadius::from(0.0),
                             border_bottom: Some((1.0, cosmic.accent.base.into())),
                             ..Default::default()
@@ -56,19 +56,19 @@ impl segmented_button::StyleSheet for Theme {
             SegmentedButton::Selection => {
                 let cosmic = self.cosmic();
                 let active = horizontal::selection_active(cosmic);
-                segmented_button::Appearance {
+                Appearance {
                     border_radius: BorderRadius::from(0.0),
-                    inactive: segmented_button::ButtonStatusAppearance {
+                    inactive: ItemStatusAppearance {
                         background: Some(Background::Color(cosmic.secondary.component.base.into())),
-                        first: segmented_button::ButtonAppearance {
+                        first: ItemAppearance {
                             border_radius: BorderRadius::from([24.0, 0.0, 0.0, 24.0]),
                             ..Default::default()
                         },
-                        middle: segmented_button::ButtonAppearance {
+                        middle: ItemAppearance {
                             border_radius: BorderRadius::from(0.0),
                             ..Default::default()
                         },
-                        last: segmented_button::ButtonAppearance {
+                        last: ItemAppearance {
                             border_radius: BorderRadius::from([0.0, 24.0, 24.0, 0.0]),
                             ..Default::default()
                         },
@@ -85,14 +85,14 @@ impl segmented_button::StyleSheet for Theme {
     }
 
     #[allow(clippy::too_many_lines)]
-    fn vertical(&self, style: &Self::Style) -> segmented_button::Appearance {
+    fn vertical(&self, style: &Self::Style) -> Appearance {
         match style {
             SegmentedButton::ViewSwitcher => {
                 let cosmic = self.cosmic();
                 let active = vertical::view_switcher_active(cosmic);
-                segmented_button::Appearance {
+                Appearance {
                     border_radius: BorderRadius::from(0.0),
-                    inactive: segmented_button::ButtonStatusAppearance {
+                    inactive: ItemStatusAppearance {
                         background: None,
                         text_color: cosmic.primary.on.into(),
                         ..active
@@ -106,19 +106,19 @@ impl segmented_button::StyleSheet for Theme {
             SegmentedButton::Selection => {
                 let cosmic = self.cosmic();
                 let active = vertical::selection_active(cosmic);
-                segmented_button::Appearance {
+                Appearance {
                     border_radius: BorderRadius::from(0.0),
-                    inactive: segmented_button::ButtonStatusAppearance {
+                    inactive: ItemStatusAppearance {
                         background: Some(Background::Color(cosmic.secondary.component.base.into())),
-                        first: segmented_button::ButtonAppearance {
+                        first: ItemAppearance {
                             border_radius: BorderRadius::from([24.0, 24.0, 0.0, 0.0]),
                             ..Default::default()
                         },
-                        middle: segmented_button::ButtonAppearance {
+                        middle: ItemAppearance {
                             border_radius: BorderRadius::from(0.0),
                             ..Default::default()
                         },
-                        last: segmented_button::ButtonAppearance {
+                        last: ItemAppearance {
                             border_radius: BorderRadius::from([0.0, 0.0, 24.0, 24.0]),
                             ..Default::default()
                         },
@@ -136,24 +136,22 @@ impl segmented_button::StyleSheet for Theme {
 }
 
 mod horizontal {
-    use crate::widget::segmented_button;
+    use crate::widget::segmented_button::{ItemAppearance, ItemStatusAppearance};
     use iced_core::{Background, BorderRadius};
     use palette::{rgb::Rgb, Alpha};
 
-    pub fn selection_active(
-        cosmic: &cosmic_theme::Theme<Alpha<Rgb, f32>>,
-    ) -> segmented_button::ButtonStatusAppearance {
-        segmented_button::ButtonStatusAppearance {
+    pub fn selection_active(cosmic: &cosmic_theme::Theme<Alpha<Rgb, f32>>) -> ItemStatusAppearance {
+        ItemStatusAppearance {
             background: Some(Background::Color(cosmic.secondary.component.divider.into())),
-            first: segmented_button::ButtonAppearance {
+            first: ItemAppearance {
                 border_radius: BorderRadius::from([24.0, 0.0, 0.0, 24.0]),
                 ..Default::default()
             },
-            middle: segmented_button::ButtonAppearance {
+            middle: ItemAppearance {
                 border_radius: BorderRadius::from(0.0),
                 ..Default::default()
             },
-            last: segmented_button::ButtonAppearance {
+            last: ItemAppearance {
                 border_radius: BorderRadius::from([0.0, 24.0, 24.0, 0.0]),
                 ..Default::default()
             },
@@ -163,20 +161,20 @@ mod horizontal {
 
     pub fn view_switcher_active(
         cosmic: &cosmic_theme::Theme<Alpha<Rgb, f32>>,
-    ) -> segmented_button::ButtonStatusAppearance {
-        segmented_button::ButtonStatusAppearance {
+    ) -> ItemStatusAppearance {
+        ItemStatusAppearance {
             background: Some(Background::Color(cosmic.primary.component.base.into())),
-            first: segmented_button::ButtonAppearance {
+            first: ItemAppearance {
                 border_radius: BorderRadius::from([8.0, 8.0, 0.0, 0.0]),
                 border_bottom: Some((4.0, cosmic.accent.base.into())),
                 ..Default::default()
             },
-            middle: segmented_button::ButtonAppearance {
+            middle: ItemAppearance {
                 border_radius: BorderRadius::from([8.0, 8.0, 0.0, 0.0]),
                 border_bottom: Some((4.0, cosmic.accent.base.into())),
                 ..Default::default()
             },
-            last: segmented_button::ButtonAppearance {
+            last: ItemAppearance {
                 border_radius: BorderRadius::from([8.0, 8.0, 0.0, 0.0]),
                 border_bottom: Some((4.0, cosmic.accent.base.into())),
                 ..Default::default()
@@ -188,9 +186,9 @@ mod horizontal {
 
 pub fn focus(
     cosmic: &cosmic_theme::Theme<Alpha<Rgb, f32>>,
-    default: &segmented_button::ButtonStatusAppearance,
-) -> segmented_button::ButtonStatusAppearance {
-    segmented_button::ButtonStatusAppearance {
+    default: &ItemStatusAppearance,
+) -> ItemStatusAppearance {
+    ItemStatusAppearance {
         background: Some(Background::Color(cosmic.primary.component.focus.into())),
         text_color: cosmic.primary.base.into(),
         ..*default
@@ -199,9 +197,9 @@ pub fn focus(
 
 pub fn hover(
     cosmic: &cosmic_theme::Theme<Alpha<Rgb, f32>>,
-    default: &segmented_button::ButtonStatusAppearance,
-) -> segmented_button::ButtonStatusAppearance {
-    segmented_button::ButtonStatusAppearance {
+    default: &ItemStatusAppearance,
+) -> ItemStatusAppearance {
+    ItemStatusAppearance {
         background: Some(Background::Color(cosmic.primary.component.hover.into())),
         text_color: cosmic.accent.base.into(),
         ..*default
@@ -209,24 +207,22 @@ pub fn hover(
 }
 
 mod vertical {
-    use crate::widget::segmented_button;
+    use crate::widget::segmented_button::{ItemAppearance, ItemStatusAppearance};
     use iced_core::{Background, BorderRadius};
     use palette::{rgb::Rgb, Alpha};
 
-    pub fn selection_active(
-        cosmic: &cosmic_theme::Theme<Alpha<Rgb, f32>>,
-    ) -> segmented_button::ButtonStatusAppearance {
-        segmented_button::ButtonStatusAppearance {
+    pub fn selection_active(cosmic: &cosmic_theme::Theme<Alpha<Rgb, f32>>) -> ItemStatusAppearance {
+        ItemStatusAppearance {
             background: Some(Background::Color(cosmic.secondary.component.divider.into())),
-            first: segmented_button::ButtonAppearance {
+            first: ItemAppearance {
                 border_radius: BorderRadius::from([24.0, 24.0, 0.0, 0.0]),
                 ..Default::default()
             },
-            middle: segmented_button::ButtonAppearance {
+            middle: ItemAppearance {
                 border_radius: BorderRadius::from(0.0),
                 ..Default::default()
             },
-            last: segmented_button::ButtonAppearance {
+            last: ItemAppearance {
                 border_radius: BorderRadius::from([0.0, 0.0, 24.0, 24.0]),
                 ..Default::default()
             },
@@ -236,18 +232,18 @@ mod vertical {
 
     pub fn view_switcher_active(
         cosmic: &cosmic_theme::Theme<Alpha<Rgb, f32>>,
-    ) -> segmented_button::ButtonStatusAppearance {
-        segmented_button::ButtonStatusAppearance {
+    ) -> ItemStatusAppearance {
+        ItemStatusAppearance {
             background: Some(Background::Color(cosmic.secondary.component.divider.into())),
-            first: segmented_button::ButtonAppearance {
+            first: ItemAppearance {
                 border_radius: BorderRadius::from(24.0),
                 ..Default::default()
             },
-            middle: segmented_button::ButtonAppearance {
+            middle: ItemAppearance {
                 border_radius: BorderRadius::from(24.0),
                 ..Default::default()
             },
-            last: segmented_button::ButtonAppearance {
+            last: ItemAppearance {
                 border_radius: BorderRadius::from(24.0),
                 ..Default::default()
             },

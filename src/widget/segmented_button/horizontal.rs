@@ -3,8 +3,7 @@
 
 //! Implementation details for the horizontal layout of a segmented button.
 
-use super::model::Model;
-use super::selection_modes::Selectable;
+use super::model::{Model, Selectable};
 use super::style::StyleSheet;
 use super::widget::{SegmentedButton, SegmentedVariant};
 
@@ -18,10 +17,12 @@ pub type HorizontalSegmentedButton<'a, SelectionMode, Message, Renderer> =
 /// A type marker defining the horizontal variant of a [`SegmentedButton`].
 pub struct Horizontal;
 
-/// Row implementation of the [`SegmentedButton`].
+/// Horizontal implementation of the [`SegmentedButton`].
+///
+/// For details on the model, see the [`segmented_button`](super) module for more details.
 #[must_use]
-pub fn horizontal_segmented_button<SelectionMode, Component, Message, Renderer>(
-    model: &Model<SelectionMode, Component>,
+pub fn horizontal<SelectionMode: Default, Message, Renderer>(
+    model: &Model<SelectionMode>,
 ) -> SegmentedButton<Horizontal, SelectionMode, Message, Renderer>
 where
     Renderer: iced_native::Renderer
@@ -29,7 +30,7 @@ where
         + iced_native::image::Renderer
         + iced_native::svg::Renderer,
     Renderer::Theme: StyleSheet,
-    SelectionMode: Selectable,
+    Model<SelectionMode>: Selectable,
 {
     SegmentedButton::new(model)
 }
@@ -42,7 +43,8 @@ where
         + iced_native::image::Renderer
         + iced_native::svg::Renderer,
     Renderer::Theme: StyleSheet,
-    SelectionMode: Selectable,
+    Model<SelectionMode>: Selectable,
+    SelectionMode: Default,
 {
     type Renderer = Renderer;
 

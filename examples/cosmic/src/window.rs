@@ -131,7 +131,8 @@ pub struct Window {
     debug: bool,
     demo: demo::State,
     desktop: desktop::State,
-    nav_bar_pages: segmented_button::SingleSelectModel<Page>,
+    nav_bar: segmented_button::SingleSelectModel,
+    nav_id_to_page: segmented_button::SecondaryMap<Page>,
     nav_bar_toggled_condensed: bool,
     nav_bar_toggled: bool,
     page: Page,
@@ -178,7 +179,7 @@ pub enum Message {
     KeyboardNav(keyboard_nav::Message),
     Maximize,
     Minimize,
-    NavBar(segmented_button::Key),
+    NavBar(segmented_button::Entity),
     Page(Page),
     ToggleNavBar,
     ToggleNavBarCondensed,
@@ -193,18 +194,12 @@ impl From<Page> for Message {
 
 impl Window {
     /// Adds a page to the model we use for the navigation bar.
-    fn insert_page(&mut self, page: Page) -> segmented_button::Key {
-        self.nav_bar_pages.insert(
-            segmented_button::item()
-                .text(page.title())
-                .icon(IconSource::Name(page.icon_name().into())),
-            page,
-        )
-    }
-
-    /// Activates the page by its key.
-    fn activate_page(&mut self, page: segmented_button::Key) {
-        self.nav_bar_pages.activate(page);
+    fn insert_page(&mut self, page: Page) -> segmented_button::SingleSelectEntityMut {
+        self.nav_bar
+            .insert()
+            .text(page.title())
+            .icon(IconSource::Name(page.icon_name().into()))
+            .secondary(&mut self.nav_id_to_page, page)
     }
 
     fn page_title<Message: 'static>(&self, page: Page) -> Element<Message> {
@@ -313,7 +308,7 @@ impl Application for Window {
         window.insert_page(Page::WiFi);
         window.insert_page(Page::Networking(None));
         window.insert_page(Page::Bluetooth);
-        let key = window.insert_page(Page::Desktop(None));
+        window.insert_page(Page::Desktop(None)).activate();
         window.insert_page(Page::InputDevices(None));
         window.insert_page(Page::Displays);
         window.insert_page(Page::PowerAndBattery);
@@ -324,7 +319,6 @@ impl Application for Window {
         window.insert_page(Page::TimeAndLanguage(None));
         window.insert_page(Page::Accessibility);
         window.insert_page(Page::Applications);
-        window.activate_page(key);
 
         (window, Command::none())
     }
@@ -363,8 +357,8 @@ impl Application for Window {
         let mut ret = Command::none();
         match message {
             Message::NavBar(key) => {
-                if let Some(page) = self.nav_bar_pages.component(key).cloned() {
-                    self.nav_bar_pages.activate(key);
+                if let Some(page) = self.nav_id_to_page.get(key).copied() {
+                    self.nav_bar.activate(key);
                     self.page(page);
                 }
             }
@@ -437,7 +431,7 @@ impl Application for Window {
         let mut widgets = Vec::with_capacity(2);
 
         if nav_bar_toggled {
-            let mut nav_bar = nav_bar(&self.nav_bar_pages, Message::NavBar);
+            let mut nav_bar = nav_bar(&self.nav_bar, Message::NavBar);
 
             if !self.is_condensed() {
                 nav_bar = nav_bar.max_width(300);

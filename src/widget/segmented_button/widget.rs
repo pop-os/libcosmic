@@ -3,8 +3,7 @@
 
 use std::marker::PhantomData;
 
-use super::model::{Key, Model, WidgetModel};
-use super::selection_modes::Selectable;
+use super::model::{Entity, Model, Selectable};
 use super::style::StyleSheet;
 
 use derive_setters::Setters;
@@ -20,13 +19,13 @@ use iced_native::{layout, renderer, widget::Tree, Clipboard, Layout, Shell, Widg
 #[derive(Default)]
 struct LocalState {
     /// The first focusable key.
-    first: Key,
+    first: Entity,
     /// If the widget is focused or not.
     focused: bool,
     /// The key inside the widget that is currently focused.
-    focused_key: Key,
+    focused_key: Entity,
     /// The ID of the button that is being hovered. Defaults to null.
-    hovered: Key,
+    hovered: Entity,
 }
 
 impl operation::Focusable for LocalState {
@@ -41,7 +40,7 @@ impl operation::Focusable for LocalState {
 
     fn unfocus(&mut self) {
         self.focused = false;
-        self.focused_key = Key::default();
+        self.focused_key = Entity::default();
     }
 }
 
@@ -64,19 +63,22 @@ pub trait SegmentedVariant {
     fn variant_layout(&self, renderer: &Self::Renderer, limits: &layout::Limits) -> layout::Node;
 }
 
+/// A conjoined group of items that function together as a button.
 #[derive(Setters)]
-pub struct SegmentedButton<'a, Variant, Selection, Message, Renderer>
+pub struct SegmentedButton<'a, Variant, SelectionMode, Message, Renderer>
 where
     Renderer: iced_native::Renderer
         + iced_native::text::Renderer
         + iced_native::image::Renderer
         + iced_native::svg::Renderer,
     Renderer::Theme: StyleSheet,
-    Selection: Selectable,
+    Model<SelectionMode>: Selectable,
+    SelectionMode: Default,
 {
     /// The model borrowed from the application create this widget.
     #[setters(skip)]
-    pub(super) model: &'a WidgetModel<Selection>,
+    pub(super) model: &'a Model<SelectionMode>,
+    /// iced widget ID
     pub(super) id: Option<Id>,
     /// Padding around a button.
     pub(super) button_padding: [u16; 4],
@@ -103,14 +105,14 @@ where
     pub(super) style: <Renderer::Theme as StyleSheet>::Style,
     #[setters(skip)]
     /// Emits the ID of the activated widget on selection.
-    pub(super) on_activate: Option<Box<dyn Fn(Key) -> Message>>,
+    pub(super) on_activate: Option<Box<dyn Fn(Entity) -> Message>>,
     #[setters(skip)]
     /// Defines the implementation of this struct
     variant: PhantomData<Variant>,
 }
 
-impl<'a, Variant, Selection, Message, Renderer>
-    SegmentedButton<'a, Variant, Selection, Message, Renderer>
+impl<'a, Variant, SelectionMode, Message, Renderer>
+    SegmentedButton<'a, Variant, SelectionMode, Message, Renderer>
 where
     Renderer: iced_native::Renderer
         + iced_native::text::Renderer
@@ -118,12 +120,13 @@ where
         + iced_native::svg::Renderer,
     Renderer::Theme: StyleSheet,
     Self: SegmentedVariant<Renderer = Renderer>,
-    Selection: Selectable,
+    Model<SelectionMode>: Selectable,
+    SelectionMode: Default,
 {
     #[must_use]
-    pub fn new<Component>(model: &'a Model<Selection, Component>) -> Self {
+    pub fn new(model: &'a Model<SelectionMode>) -> Self {
         Self {
-            model: &model.widget,
+            model,
             id: None,
             button_padding: [4, 4, 4, 4],
             button_height: 32,
@@ -142,7 +145,7 @@ where
     }
 
     /// Check if an item is enabled.
-    fn is_enabled(&self, key: Key) -> bool {
+    fn is_enabled(&self, key: Entity) -> bool {
         self.model.items.get(key).map_or(false, |item| item.enabled)
     }
 
@@ -166,7 +169,7 @@ where
             }
         }
 
-        state.focused_key = Key::default();
+        state.focused_key = Entity::default();
         event::Status::Ignored
     }
 
@@ -190,13 +193,13 @@ where
             }
         }
 
-        state.focused_key = Key::default();
+        state.focused_key = Entity::default();
         event::Status::Ignored
     }
 
     /// Emits the ID of the activated widget on selection.
     #[must_use]
-    pub fn on_activate(mut self, on_activate: impl Fn(Key) -> Message + 'static) -> Self {
+    pub fn on_activate(mut self, on_activate: impl Fn(Entity) -> Message + 'static) -> Self {
         self.on_activate = Some(Box::from(on_activate));
         self
     }
@@ -210,12 +213,12 @@ where
         let mut width = 0.0f32;
         let mut height = 0.0f32;
 
-        for content in self.model.items.values() {
+        for key in self.model.order.iter().copied() {
             let mut button_width = 0.0f32;
             let mut button_height = 0.0f32;
 
             // Add text to measurement if text was given.
-            if let Some(text) = content.text.as_deref() {
+            if let Some(text) = self.model.text(key) {
                 let (w, h) = renderer.measure(text, text_size, Default::default(), bounds);
 
                 button_width = w;
@@ -223,7 +226,7 @@ where
             }
 
             // Add icon to measurement if icon was given.
-            if content.icon.is_some() {
+            if self.model.icon(key).is_some() {
                 button_width += f32::from(self.icon_size) + f32::from(self.button_spacing);
                 button_height = f32::from(self.icon_size);
             }
@@ -241,8 +244,8 @@ where
     }
 }
 
-impl<'a, Variant, Selection, Message, Renderer> Widget<Message, Renderer>
-    for SegmentedButton<'a, Variant, Selection, Message, Renderer>
+impl<'a, Variant, SelectionMode, Message, Renderer> Widget<Message, Renderer>
+    for SegmentedButton<'a, Variant, SelectionMode, Message, Renderer>
 where
     Renderer: iced_native::Renderer
         + iced_native::text::Renderer
@@ -250,7 +253,8 @@ where
         + iced_native::svg::Renderer,
     Renderer::Theme: StyleSheet,
     Self: SegmentedVariant<Renderer = Renderer>,
-    Selection: Selectable,
+    Model<SelectionMode>: Selectable,
+    SelectionMode: Default,
     Message: 'static + Clone,
 {
     fn tag(&self) -> tree::Tag {
@@ -311,7 +315,7 @@ where
                 }
             }
         } else {
-            state.hovered = Key::default();
+            state.hovered = Entity::default();
         }
 
         if state.focused {
@@ -412,13 +416,11 @@ where
 
         // Draw each of the items in the widget.
         for (nth, key) in self.model.order.iter().copied().enumerate() {
-            let content = &self.model.items[key];
-
             let mut bounds = self.variant_button_bounds(bounds, nth);
 
             let (status_appearance, font) = if state.focused_key == key {
                 (appearance.focus, &self.font_active)
-            } else if self.model.selection.is_active(key) {
+            } else if self.model.is_active(key) {
                 (appearance.active, &self.font_active)
             } else if state.hovered == key {
                 (appearance.hover, &self.font_hovered)
@@ -470,7 +472,7 @@ where
             let text_size = renderer.default_size();
 
             // Draw the image beside the text.
-            let horizontal_alignment = if let Some(icon) = &content.icon {
+            let horizontal_alignment = if let Some(icon) = self.model.icon(key) {
                 bounds.x += f32::from(self.button_padding[0]);
                 bounds.y += f32::from(self.button_padding[1]);
                 bounds.width -=
@@ -510,7 +512,7 @@ where
                 alignment::Horizontal::Center
             };
 
-            if let Some(text) = content.text.as_deref() {
+            if let Some(text) = self.model.text(key) {
                 bounds.y = y;
 
                 // Draw the text in this button.
@@ -537,8 +539,8 @@ where
     }
 }
 
-impl<'a, Variant, Selection, Message, Renderer>
-    From<SegmentedButton<'a, Variant, Selection, Message, Renderer>>
+impl<'a, Variant, SelectionMode, Message, Renderer>
+    From<SegmentedButton<'a, Variant, SelectionMode, Message, Renderer>>
     for Element<'a, Message, Renderer>
 where
     Renderer: iced_native::Renderer
@@ -547,13 +549,14 @@ where
         + iced_native::svg::Renderer
         + 'a,
     Renderer::Theme: StyleSheet,
-    SegmentedButton<'a, Variant, Selection, Message, Renderer>:
+    SegmentedButton<'a, Variant, SelectionMode, Message, Renderer>:
         SegmentedVariant<Renderer = Renderer>,
     Variant: 'static,
-    Selection: Selectable,
+    Model<SelectionMode>: Selectable,
+    SelectionMode: Default,
     Message: 'static + Clone,
 {
-    fn from(mut widget: SegmentedButton<'a, Variant, Selection, Message, Renderer>) -> Self {
+    fn from(mut widget: SegmentedButton<'a, Variant, SelectionMode, Message, Renderer>) -> Self {
         if widget.model.items.is_empty() {
             widget.spacing = 0;
         }
@@ -568,7 +571,7 @@ pub fn focus<Message: 'static>(id: Id) -> Command<Message> {
     Command::widget(operation::focusable::focus(id.0))
 }
 
-/// The identifier of a segmented item.
+/// The iced identifier of a segmented button.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Id(widget::Id);
 

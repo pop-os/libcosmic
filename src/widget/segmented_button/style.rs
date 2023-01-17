@@ -3,7 +3,7 @@
 
 use iced_core::{Background, BorderRadius, Color};
 
-/// The appearance of a segmented button.
+/// Appearance of the segmented button.
 #[derive(Default, Clone, Copy)]
 pub struct Appearance {
     pub background: Option<Background>,
@@ -12,15 +12,15 @@ pub struct Appearance {
     pub border_end: Option<(f32, Color)>,
     pub border_start: Option<(f32, Color)>,
     pub border_top: Option<(f32, Color)>,
-    pub active: ButtonStatusAppearance,
-    pub inactive: ButtonStatusAppearance,
-    pub hover: ButtonStatusAppearance,
-    pub focus: ButtonStatusAppearance,
+    pub active: ItemStatusAppearance,
+    pub inactive: ItemStatusAppearance,
+    pub hover: ItemStatusAppearance,
+    pub focus: ItemStatusAppearance,
 }
 
-/// The appearance of a button in the segmented button
+/// Appearance of an item in the segmented button.
 #[derive(Default, Clone, Copy)]
-pub struct ButtonAppearance {
+pub struct ItemAppearance {
     pub border_radius: BorderRadius,
     pub border_bottom: Option<(f32, Color)>,
     pub border_end: Option<(f32, Color)>,
@@ -28,12 +28,13 @@ pub struct ButtonAppearance {
     pub border_top: Option<(f32, Color)>,
 }
 
+/// Appearance of an item based on its status.
 #[derive(Default, Clone, Copy)]
-pub struct ButtonStatusAppearance {
+pub struct ItemStatusAppearance {
     pub background: Option<Background>,
-    pub first: ButtonAppearance,
-    pub middle: ButtonAppearance,
-    pub last: ButtonAppearance,
+    pub first: ItemAppearance,
+    pub middle: ItemAppearance,
+    pub last: ItemAppearance,
     pub text_color: Color,
 }
 

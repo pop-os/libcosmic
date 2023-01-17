@@ -1,11 +1,11 @@
 // Copyright 2022 System76 <info@system76.com>
 // SPDX-License-Identifier: MPL-2.0
 
-//! A widget providing a conjoined set of linear buttons that function in conjunction with each other.
+//! A widget providing a conjoined set of linear items that function in conjunction as a single button.
 //!
 //! ## Example
 //!
-//! Add the state and a message variant in your application for handling selections.
+//! Add the model and a message variant in your application for handling selections.
 //!
 //! ```ignore
 //! use iced_core::Length;
@@ -17,24 +17,35 @@
 //! }
 //!
 //! struct App {
-//!     state: segmented_button::SingleSelectModel<u16>(),
+//!     model: segmented_button::SingleSelectModel,
 //! }
 //! ```
 //!
-//! Then add choices to the state, while activating the first.
+//! Then add choices to the model, while activating the first.
 //!
 //! ```ignore
-//! application.model = SingleSelectModel::builder()
-//!     .insert_activate("Choice A", 0)
-//!     .insert("Choice B", 1)
-//!     .insert("Choice C", 2)
+//! application.model = segmented_button::Model::builder()
+//!     .insert(|b| b.text("Choice A").data(0u16))
+//!     .insert(|b| b.text("Choice B").data(1u16))
+//!     .insert(|b| b.text("Choice C").data(2u16))
 //!     .build();
+//! ```
+//!
+//! Or incrementally insert items with
+//!
+//! ```ignore
+//! let id = application.model.insert()
+//!     .text("Choice C")
+//!     .icon("custom-icon")
+//!     .data(3u16)
+//!     .data("custom-meta")
+//!     .id();
 //! ```
 //!
 //! Then use it in the view method to create segmented button widgets.
 //!
 //! ```ignore
-//! let widget = horizontal_segmented_button(&application.model)
+//! let widget = segmented_button::horizontal(&application.model)
 //!     .style(theme::SegmentedButton::ViewSeitcher)
 //!     .button_height(32)
 //!     .button_padding([16, 10, 16, 10])
@@ -43,22 +54,46 @@
 //!     .spacing(8)
 //!     .on_activate(AppMessage::Selected);
 //! ```
-
-/// COSMIC configurations of [`SegmentedButton`].
-pub mod cosmic;
+//!
+//! And respond to events like so:
+//!
+//! ```ignore
+//! match message {
+//!     AppMessage::Selected(id) => {
+//!         application.model.activate(id);
+//!
+//!         if let Some(number) = application.model.data::<u16>(id) {
+//!             println!("activated item with number {number}");
+//!         }
+//!
+//!         if let Some(text) = application.text(id) {
+//!             println!("activated button with text {text}");
+//!         }
+//!     }
+//! }
+//! ```
 
 mod horizontal;
-mod item;
 mod model;
-mod selection_modes;
 mod style;
 mod vertical;
 mod widget;
 
-pub use self::horizontal::{horizontal_segmented_button, HorizontalSegmentedButton};
-pub use self::item::{item, SegmentedItem};
-pub use self::model::{Batch, Key, Model, ModelBuilder, MultiSelectModel, SingleSelectModel};
-pub use self::selection_modes::Selectable;
-pub use self::style::{Appearance, ButtonAppearance, ButtonStatusAppearance, StyleSheet};
-pub use self::vertical::{vertical_segmented_button, VerticalSegmentedButton};
+pub use self::horizontal::{horizontal, HorizontalSegmentedButton};
+pub use self::model::{
+    BuilderEntity, Entity, EntityMut, Model, ModelBuilder, MultiSelect, MultiSelectEntityMut,
+    MultiSelectModel, Selectable, SingleSelect, SingleSelectEntityMut, SingleSelectModel,
+};
+pub use self::style::{Appearance, ItemAppearance, ItemStatusAppearance, StyleSheet};
+pub use self::vertical::{vertical, VerticalSegmentedButton};
 pub use self::widget::{focus, Id, SegmentedButton, SegmentedVariant};
+
+/// Associates extra data with an external secondary map.
+///
+/// The secondary map internally uses a `Vec`, so should only be used for data that
+pub type SecondaryMap<T> = slotmap::SecondaryMap<Entity, T>;
+
+/// Associates extra data with an external sparse secondary map.
+///
+/// Sparse maps internally use a `HashMap`, for data that is sparsely associated.
+pub type SparseSecondaryMap<T> = slotmap::SparseSecondaryMap<Entity, T>;
