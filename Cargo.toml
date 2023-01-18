@@ -10,7 +10,7 @@ name = "cosmic"
 default = ["softbuffer", "winit", "tokio"]
 debug = ["iced/debug"]
 softbuffer = ["iced/softbuffer", "iced_softbuffer"]
-wayland = ["iced/wayland", "iced/glow"]
+wayland = ["iced/wayland", "iced/glow", "iced_sctk"]
 wgpu = ["iced/wgpu", "iced_wgpu"]
 tokio = ["dep:tokio", "iced/tokio"]
 winit = ["iced/winit", "iced_winit"]
@@ -51,6 +51,10 @@ optional = true
 
 [dependencies.iced_style]
 path = "iced/style"
+
+[dependencies.iced_sctk]
+path = "iced/sctk"
+optional = true
 
 [dependencies.iced_winit]
 path = "iced/winit"
