@@ -12,7 +12,7 @@ debug = ["iced/debug"]
 softbuffer = ["iced/softbuffer", "iced_softbuffer"]
 wayland = ["iced/wayland", "iced/glow"]
 wgpu = ["iced/wgpu", "iced_wgpu"]
-tokio = ["iced/tokio"]
+tokio = ["dep:tokio", "iced/tokio"]
 winit = ["iced/winit", "iced_winit"]
 applet = ["cosmic-panel-config", "sctk", "wayland"]
 winit_softbuffer = ["winit", "softbuffer"]
@@ -23,6 +23,7 @@ apply = "0.3.0"
 derive_setters = "0.1.5"
 lazy_static = "1.4.0"
 palette = "0.6.1"
+tokio = { version = "1.24.2", optional = true }
 cosmic-panel-config = {git = "https://github.com/pop-os/cosmic-panel", optional = true }
 sctk = { package = "smithay-client-toolkit", git = "https://github.com/Smithay/client-toolkit", optional = true, rev = "3776d4a" }
 slotmap = "1.0.6"
