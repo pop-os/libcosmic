@@ -17,6 +17,11 @@ pub mod keyboard_nav;
 pub mod theme;
 pub mod widget;
 
+#[cfg(feature = "tokio")]
+mod single_thread_executor;
+#[cfg(feature = "tokio")]
+pub use single_thread_executor::SingleThreadExecutor;
+
 pub mod settings;
 pub use settings::settings;
 
