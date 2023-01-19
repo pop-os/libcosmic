@@ -1,48 +1,51 @@
 // Copyright 2022 System76 <info@system76.com>
 // SPDX-License-Identifier: MPL-2.0
 
-use super::{SpinButton, SpinMessage};
-use crate::Element;
 use derive_setters::Setters;
+use fraction::{Bounded, Decimal};
 use std::hash::Hash;
 use std::ops::{Add, Sub};
 
+/// A message emitted by the [`SpinButton`] widget.
+#[derive(Clone, Copy, Debug, Hash)]
+pub enum Message {
+    Increment,
+    Decrement,
+}
+
 #[derive(Setters)]
-pub struct SpinButtonModel<T> {
+pub struct Model<T> {
     /// The current value of the spin button.
+    #[setters(into)]
     pub value: T,
     /// The amount to increment the value.
+    #[setters(into)]
     pub step: T,
     /// The minimum value permitted.
+    #[setters(into)]
     pub min: T,
     /// The maximum value permitted.
+    #[setters(into)]
     pub max: T,
 }
 
-impl<T: 'static> SpinButtonModel<T>
+impl<T: 'static> Model<T>
 where
-    T: Copy + Hash + ToString + Sub<Output = T> + Add<Output = T> + Ord,
+    T: Copy + Hash + Sub<Output = T> + Add<Output = T> + Ord,
 {
-    pub fn view<Message: 'static>(
-        &self,
-        on_change: impl Fn(SpinMessage) -> Message + 'static,
-    ) -> Element<'static, Message> {
-        SpinButton::new(self.value, on_change).into_element()
-    }
-
-    pub fn update(&mut self, message: SpinMessage) {
+    pub fn update(&mut self, message: Message) {
         self.value = match message {
-            SpinMessage::Increment => {
+            Message::Increment => {
                 std::cmp::min(std::cmp::max(self.value + self.step, self.min), self.max)
             }
-            SpinMessage::Decrement => {
+            Message::Decrement => {
                 std::cmp::max(std::cmp::min(self.value - self.step, self.max), self.min)
             }
         }
     }
 }
 
-impl Default for SpinButtonModel<i8> {
+impl Default for Model<i8> {
     fn default() -> Self {
         Self {
             value: 0,
@@ -53,7 +56,7 @@ impl Default for SpinButtonModel<i8> {
     }
 }
 
-impl Default for SpinButtonModel<i16> {
+impl Default for Model<i16> {
     fn default() -> Self {
         Self {
             value: 0,
@@ -64,7 +67,7 @@ impl Default for SpinButtonModel<i16> {
     }
 }
 
-impl Default for SpinButtonModel<i32> {
+impl Default for Model<i32> {
     fn default() -> Self {
         Self {
             value: 0,
@@ -75,7 +78,7 @@ impl Default for SpinButtonModel<i32> {
     }
 }
 
-impl Default for SpinButtonModel<isize> {
+impl Default for Model<isize> {
     fn default() -> Self {
         Self {
             value: 0,
@@ -86,7 +89,7 @@ impl Default for SpinButtonModel<isize> {
     }
 }
 
-impl Default for SpinButtonModel<u8> {
+impl Default for Model<u8> {
     fn default() -> Self {
         Self {
             value: 0,
@@ -97,7 +100,7 @@ impl Default for SpinButtonModel<u8> {
     }
 }
 
-impl Default for SpinButtonModel<u16> {
+impl Default for Model<u16> {
     fn default() -> Self {
         Self {
             value: 0,
@@ -108,7 +111,7 @@ impl Default for SpinButtonModel<u16> {
     }
 }
 
-impl Default for SpinButtonModel<u32> {
+impl Default for Model<u32> {
     fn default() -> Self {
         Self {
             value: 0,
@@ -119,7 +122,7 @@ impl Default for SpinButtonModel<u32> {
     }
 }
 
-impl Default for SpinButtonModel<usize> {
+impl Default for Model<usize> {
     fn default() -> Self {
         Self {
             value: 0,
@@ -130,24 +133,13 @@ impl Default for SpinButtonModel<usize> {
     }
 }
 
-impl Default for SpinButtonModel<f32> {
+impl Default for Model<Decimal> {
     fn default() -> Self {
         Self {
-            value: 0.0,
-            step: 1.0,
-            min: f32::MIN,
-            max: f32::MAX,
-        }
-    }
-}
-
-impl Default for SpinButtonModel<f64> {
-    fn default() -> Self {
-        Self {
-            value: 0.0,
-            step: 1.0,
-            min: f64::MIN,
-            max: f64::MAX,
+            value: Decimal::from(0.0),
+            step: Decimal::from(0.0),
+            min: Decimal::min_positive_value(),
+            max: Decimal::max_value(),
         }
     }
 }
