@@ -2,7 +2,9 @@
 // SPDX-License-Identifier: MPL-2.0
 
 mod model;
-pub use self::model::SpinButtonModel;
+use std::borrow::Cow;
+
+pub use self::model::{Message, Model};
 
 use crate::widget::icon;
 use crate::{theme, Element};
@@ -12,95 +14,83 @@ use iced::{
     widget::{button, container, row, text},
     Alignment, Background, Length,
 };
-use std::hash::Hash;
 
-pub struct SpinButton<T, Message> {
-    value: T,
-    on_change: Box<dyn Fn(SpinMessage) -> Message + 'static>,
+pub struct SpinButton<'a, Message> {
+    label: Cow<'a, str>,
+    on_change: Box<dyn Fn(model::Message) -> Message + 'static>,
 }
 
-/// A message emitted by the [`SpinButton`] widget.
-#[derive(Clone, Copy, Debug, Hash)]
-pub enum SpinMessage {
-    Increment,
-    Decrement,
+pub fn spin_button<'a, Message: 'static>(
+    label: impl Into<Cow<'a, str>>,
+    on_change: impl Fn(model::Message) -> Message + 'static,
+) -> SpinButton<'a, Message> {
+    SpinButton::new(label, on_change)
 }
 
-pub fn spin_button<T: 'static + Copy + Hash + ToString, Message: 'static>(
-    model: &SpinButtonModel<T>,
-    on_change: impl Fn(SpinMessage) -> Message + 'static,
-) -> SpinButton<T, Message> {
-    SpinButton::new(model.value, on_change)
-}
-
-impl<T: 'static + Copy + Hash + ToString, Message: 'static> SpinButton<T, Message> {
-    pub fn new(value: T, on_change: impl Fn(SpinMessage) -> Message + 'static) -> Self {
+impl<'a, Message: 'static> SpinButton<'a, Message> {
+    pub fn new(
+        label: impl Into<Cow<'a, str>>,
+        on_change: impl Fn(model::Message) -> Message + 'static,
+    ) -> Self {
         Self {
             on_change: Box::from(on_change),
-            value,
+            label: label.into(),
         }
     }
 
-    pub fn into_element(self) -> Element<'static, Message> {
-        let Self { on_change, value } = self;
-
-        Element::from(iced_lazy::lazy(
-            (value, crate::settings::default_icon_theme()),
-            move || -> Element<'static, SpinMessage> {
-                container(
-                    row![
-                        icon("list-remove-symbolic", 24)
-                            .style(theme::Svg::Symbolic)
-                            .apply(container)
-                            .width(Length::Fill)
-                            .height(Length::Fill)
-                            .align_x(Horizontal::Center)
-                            .align_y(Vertical::Center)
-                            .apply(button)
-                            .width(Length::Fill)
-                            .height(Length::Fill)
-                            .style(theme::Button::Text)
-                            .on_press(SpinMessage::Decrement),
-                        text(value)
-                            .vertical_alignment(Vertical::Center)
-                            .apply(container)
-                            .width(Length::Fill)
-                            .height(Length::Fill)
-                            .align_x(Horizontal::Center)
-                            .align_y(Vertical::Center),
-                        icon("list-add-symbolic", 24)
-                            .style(theme::Svg::Symbolic)
-                            .apply(container)
-                            .width(Length::Fill)
-                            .height(Length::Fill)
-                            .align_x(Horizontal::Center)
-                            .align_y(Vertical::Center)
-                            .apply(button)
-                            .width(Length::Fill)
-                            .height(Length::Fill)
-                            .style(theme::Button::Text)
-                            .on_press(SpinMessage::Increment),
-                    ]
+    #[must_use]
+    pub fn into_element(self) -> Element<'a, Message> {
+        let Self { on_change, label } = self;
+        container(
+            row![
+                icon("list-remove-symbolic", 24)
+                    .style(theme::Svg::Symbolic)
+                    .apply(container)
                     .width(Length::Fill)
-                    .height(Length::Units(32))
-                    .align_items(Alignment::Center),
-                )
-                .padding([4, 4])
-                .align_y(Vertical::Center)
-                .width(Length::Units(95))
-                .height(Length::Units(32))
-                .style(theme::Container::Custom(container_style))
-                .into()
-            },
-        ))
+                    .height(Length::Fill)
+                    .align_x(Horizontal::Center)
+                    .align_y(Vertical::Center)
+                    .apply(button)
+                    .width(Length::Fill)
+                    .height(Length::Fill)
+                    .style(theme::Button::Text)
+                    .on_press(model::Message::Decrement),
+                text(label)
+                    .vertical_alignment(Vertical::Center)
+                    .apply(container)
+                    .width(Length::Fill)
+                    .height(Length::Fill)
+                    .align_x(Horizontal::Center)
+                    .align_y(Vertical::Center),
+                icon("list-add-symbolic", 24)
+                    .style(theme::Svg::Symbolic)
+                    .apply(container)
+                    .width(Length::Fill)
+                    .height(Length::Fill)
+                    .align_x(Horizontal::Center)
+                    .align_y(Vertical::Center)
+                    .apply(button)
+                    .width(Length::Fill)
+                    .height(Length::Fill)
+                    .style(theme::Button::Text)
+                    .on_press(model::Message::Increment),
+            ]
+            .width(Length::Fill)
+            .height(Length::Units(32))
+            .align_items(Alignment::Center),
+        )
+        .padding([4, 4])
+        .align_y(Vertical::Center)
+        .width(Length::Units(95))
+        .height(Length::Units(32))
+        .style(theme::Container::Custom(container_style))
+        .apply(Element::from)
         .map(on_change)
     }
 }
 
-impl<'a, T: 'static + Copy + Hash + ToString, Message: 'static> From<SpinButton<T, Message>>
-    for Element<'a, Message>
-{
-    fn from(spin_button: SpinButton<T, Message>) -> Self {
+impl<'a, Message: 'static> From<SpinButton<'a, Message>> for Element<'a, Message> {
+    fn from(spin_button: SpinButton<'a, Message>) -> Self {
         spin_button.into_element()
     }
 }
