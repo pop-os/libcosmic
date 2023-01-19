@@ -79,7 +79,7 @@ where
     /// Define an icon for the item.
     ///
     /// ```ignore
-    /// model.insert().text("Item A").icon(IconSource::Name("icon-a".into()));
+    /// model.insert().text("Item A").icon(IconSource::from("icon-a"));
     /// ```
     #[allow(clippy::must_use_candidate, clippy::return_self_not_must_use)]
     pub fn icon(self, icon: impl Into<IconSource<'static>>) -> Self {

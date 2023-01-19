@@ -198,7 +198,7 @@ impl Window {
         self.nav_bar
             .insert()
             .text(page.title())
-            .icon(IconSource::Name(page.icon_name().into()))
+            .icon(IconSource::from(page.icon_name()))
             .secondary(&mut self.nav_id_to_page, page)
     }
 

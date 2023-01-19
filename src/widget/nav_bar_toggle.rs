@@ -29,11 +29,9 @@ impl<Message: 'static + Clone> From<NavBarToggle<Message>> for Element<'static, 
     fn from(nav_bar_toggle: NavBarToggle<Message>) -> Self {
         let mut widget = super::icon(
             if nav_bar_toggle.nav_bar_active {
-                IconSource::EmbeddedSvg(iced::widget::svg::Handle::from_memory(
-                    &include_bytes!("../../res/sidebar-active.svg")[..],
-                ))
+                IconSource::svg_from_memory(&include_bytes!("../../res/sidebar-active.svg")[..])
             } else {
-                IconSource::Name("open-menu-symbolic".into())
+                IconSource::from("open-menu-symbolic")
             },
             16,
         )
