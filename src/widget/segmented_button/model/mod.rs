@@ -11,6 +11,7 @@ mod selection;
 pub use self::selection::{MultiSelect, Selectable, SingleSelect};
 
 use crate::widget::IconSource;
+use crate::Element;
 use slotmap::{SecondaryMap, SlotMap};
 use std::any::{Any, TypeId};
 use std::borrow::Cow;
@@ -49,7 +50,7 @@ pub type MultiSelectEntityMut<'a> = EntityMut<'a, MultiSelect>;
 pub(super) struct Storage(HashMap<TypeId, SecondaryMap<Entity, Box<dyn Any>>>);
 
 /// The model held by the application, containing the unique IDs and data of each inserted item.
-#[derive(Default, Debug)]
+#[derive(Default)]
 pub struct Model<SelectionMode: Default> {
     /// The content used for drawing segmented items.
     pub(super) items: SlotMap<Entity, Settings>,
@@ -201,7 +202,7 @@ where
     /// Sets a new icon for an item.
     ///
     /// ```ignore
-    /// if let Some(old_icon) = model.icon_set(IconSource::Name("new-icon".into())) {
+    /// if let Some(old_icon) = model.icon_set(IconSource::from("new-icon")) {
     ///     println!("previously had icon: {:?}", old_icon);
     /// }
     /// ```

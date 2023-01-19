@@ -80,6 +80,35 @@ impl<'a> IconSource<'a> {
             Handle::Image(image::Handle::from_memory(Vec::new()))
         }
     }
+
+    /// Get a handle to a raster image from a path.
+    pub fn raster_from_path(path: impl Into<PathBuf>) -> Self {
+        IconSource::Embedded(image::Handle::from_path(path))
+    }
+
+    /// Get a handle to a raster image from memory.
+    pub fn raster_from_memory(bytes: impl Into<Cow<'static, [u8]>>) -> Self {
+        IconSource::Embedded(image::Handle::from_memory(bytes))
+    }
+
+    /// Get a handle to a raster image from RGBA data, where you must define the width and height.
+    pub fn raster_from_pixels(
+        width: u32,
+        height: u32,
+        pixels: impl Into<Cow<'static, [u8]>>,
+    ) -> Self {
+        IconSource::Embedded(image::Handle::from_pixels(width, height, pixels))
+    }
+
+    /// Get a handle to a SVG from a path.
+    pub fn svg_from_path(path: impl Into<PathBuf>) -> Self {
+        IconSource::EmbeddedSvg(svg::Handle::from_path(path))
+    }
+
+    /// Get a handle to a SVG from memory.
+    pub fn svg_from_memory(bytes: impl Into<Cow<'static, [u8]>>) -> Self {
+        IconSource::EmbeddedSvg(svg::Handle::from_memory(bytes))
+    }
 }
 
 impl<'a> From<Cow<'a, Path>> for IconSource<'a> {
