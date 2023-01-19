@@ -6,7 +6,7 @@ use fraction::{Bounded, Decimal};
 use std::hash::Hash;
 use std::ops::{Add, Sub};
 
-/// A message emitted by the [`SpinButton`] widget.
+/// A message emitted by the [`SpinButton`](super) widget.
 #[derive(Clone, Copy, Debug, Hash)]
 pub enum Message {
     Increment,
