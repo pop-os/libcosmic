@@ -143,6 +143,8 @@ pub struct Window {
     title: String,
     show_warning: bool,
     warning_message: String,
+    scale_factor: f64,
+    scale_factor_string: String,
 }
 
 impl Window {
@@ -239,6 +241,11 @@ impl Window {
         .into()
     }
 
+    fn set_scale_factor(&mut self, factor: f32) {
+        self.scale_factor = factor as f64;
+        self.scale_factor_string = format!("{:.2}", factor);
+    }
+
     fn sub_page_button<Message: Clone + From<Page> + 'static>(
         &self,
         sub_page: impl SubPage,
@@ -307,6 +314,7 @@ impl Application for Window {
             .show_minimize(true);
 
         window.title = String::from("COSMIC Design System - Iced");
+        window.set_scale_factor(1.0);
         window.warning_message = String::from("You were not supposed to touch that.");
 
         window.insert_page(Page::Demo);
@@ -373,6 +381,7 @@ impl Application for Window {
             }
             Message::Demo(message) => match self.demo.update(message) {
                 Some(demo::Output::Debug(debug)) => self.debug = debug,
+                Some(demo::Output::ScalingFactor(factor)) => self.set_scale_factor(factor),
                 Some(demo::Output::ThemeChanged(theme)) => self.theme = theme,
                 Some(demo::Output::ToggleWarning) => self.toggle_warning(),
                 None => (),
@@ -538,6 +547,10 @@ impl Application for Window {
         } else {
             column(vec![header, content]).into()
         }
+    }
+
+    fn scale_factor(&self) -> f64 {
+        self.scale_factor
     }
 
     fn theme(&self) -> Theme {
