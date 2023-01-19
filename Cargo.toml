@@ -7,10 +7,11 @@ edition = "2021"
 name = "cosmic"
 
 [features]
-default = ["softbuffer", "winit", "tokio"]
+default = ["dyrend", "winit", "tokio"]
 debug = ["iced/debug"]
 softbuffer = ["iced/softbuffer", "iced_softbuffer"]
-wayland = ["iced/wayland", "iced/glow", "iced_sctk"]
+dyrend = ["iced/dyrend"]
+wayland = ["iced/wayland", "iced/dyrend", "iced_sctk"]
 wgpu = ["iced/wgpu", "iced_wgpu"]
 tokio = ["dep:tokio", "iced/tokio"]
 winit = ["iced/winit", "iced_winit"]
@@ -47,6 +48,10 @@ path = "iced/native"
 
 [dependencies.iced_softbuffer]
 path = "iced/softbuffer"
+optional = true
+
+[dependencies.iced_dyrend]
+path = "iced/dyrend"
 optional = true
 
 [dependencies.iced_style]
