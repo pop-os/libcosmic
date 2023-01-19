@@ -142,6 +142,7 @@ pub struct Window {
     theme: Theme,
     title: String,
     show_warning: bool,
+    warning_message: String,
 }
 
 impl Window {
@@ -183,7 +184,7 @@ pub enum Message {
     Page(Page),
     ToggleNavBar,
     ToggleNavBarCondensed,
-    CloseWarning,
+    ToggleWarning,
 }
 
 impl From<Page> for Message {
@@ -271,6 +272,10 @@ impl Window {
         .into()
     }
 
+    fn toggle_warning(&mut self) {
+        self.show_warning = !self.show_warning
+    }
+
     fn view_unimplemented_page<Message: 'static>(&self, page: Page) -> Element<Message> {
         settings::view_column(vec![
             self.page_title(page),
@@ -299,10 +304,10 @@ impl Application for Window {
         let mut window = Window::default()
             .nav_bar_toggled(true)
             .show_maximize(true)
-            .show_minimize(true)
-            .show_warning(true);
+            .show_minimize(true);
 
         window.title = String::from("COSMIC Design System - Iced");
+        window.warning_message = String::from("You were not supposed to touch that.");
 
         window.insert_page(Page::Demo);
         window.insert_page(Page::WiFi);
@@ -369,6 +374,7 @@ impl Application for Window {
             Message::Demo(message) => match self.demo.update(message) {
                 Some(demo::Output::Debug(debug)) => self.debug = debug,
                 Some(demo::Output::ThemeChanged(theme)) => self.theme = theme,
+                Some(demo::Output::ToggleWarning) => self.toggle_warning(),
                 None => (),
             },
             Message::Desktop(message) => match self.desktop.update(message) {
@@ -392,7 +398,7 @@ impl Application for Window {
                 keyboard_nav::Message::FocusNext => ret = widget::focus_next(),
                 keyboard_nav::Message::FocusPrevious => ret = widget::focus_previous(),
             },
-            Message::CloseWarning => self.show_warning = false,
+            Message::ToggleWarning => self.toggle_warning(),
         }
         ret
     }
@@ -518,11 +524,17 @@ impl Application for Window {
             .width(Length::Fill)
             .height(Length::Fill)
             .into();
-        let warning = warning("This is a warning")
-            .on_close(Message::CloseWarning)
+        let warning = warning(&self.warning_message)
+            .on_close(Message::ToggleWarning)
             .into();
         if self.show_warning {
-            column(vec![header, warning, content]).into()
+            column(vec![
+                header,
+                warning,
+                iced::widget::vertical_space(Length::Units(12)).into(),
+                content,
+            ])
+            .into()
         } else {
             column(vec![header, content]).into()
         }

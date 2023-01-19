@@ -1,10 +1,10 @@
 use apply::Apply;
 use cosmic::{
-    iced::widget::{checkbox, pick_list, progress_bar, radio, row, slider},
+    iced::widget::{checkbox, pick_list, progress_bar, radio, row, slider, text},
     iced::{widget::container, Alignment, Length},
-    theme::{Button as ButtonTheme, Theme},
+    theme::{self, Button as ButtonTheme, Theme},
     widget::{
-        button, segmented_button, segmented_selection, settings,
+        button, icon, segmented_button, segmented_selection, settings,
         spin_button::{SpinButtonModel, SpinMessage},
         toggler, view_switcher,
     },
@@ -41,6 +41,7 @@ pub enum Message {
     SliderChanged(f32),
     SpinButton(SpinMessage),
     ThemeChanged(Theme),
+    ToggleWarning,
     TogglerToggled(bool),
     ViewSwitcher(segmented_button::Entity),
 }
@@ -48,6 +49,7 @@ pub enum Message {
 pub enum Output {
     Debug(bool),
     ThemeChanged(Theme),
+    ToggleWarning,
 }
 
 pub struct State {
@@ -110,6 +112,7 @@ impl State {
             Message::SliderChanged(value) => self.slider_value = value,
             Message::SpinButton(msg) => self.spin_button.update(msg),
             Message::ThemeChanged(theme) => return Some(Output::ThemeChanged(theme)),
+            Message::ToggleWarning => return Some(Output::ToggleWarning),
             Message::TogglerToggled(value) => self.toggler_value = value,
             Message::ViewSwitcher(key) => self.view_switcher.activate(key),
             Message::IconTheme(key) => {
@@ -154,6 +157,15 @@ impl State {
                             "Debug layout",
                             toggler(None, window.debug, Message::Debug),
                         ))
+                        .add(settings::item_row(vec![button(ButtonTheme::Destructive)
+                            .on_press(Message::ToggleWarning)
+                            .custom(vec![
+                                icon("dialog-warning-symbolic", 16)
+                                    .style(theme::Svg::SymbolicPrimary)
+                                    .into(),
+                                text("Do Not Touch").into(),
+                            ])
+                            .into()]))
                         .into(),
                     settings::view_section("Buttons")
                         .add(settings::item_row(vec![
@@ -229,28 +241,26 @@ impl State {
                 .padding(0)
                 .into(),
                 Some(DemoView::TabB) => settings::view_column(vec![
-                    cosmic::iced::widget::text("Selection")
-                        .font(cosmic::font::FONT_SEMIBOLD)
-                        .into(),
-                    cosmic::iced::widget::text("Horizontal").into(),
+                    text("Selection").font(cosmic::font::FONT_SEMIBOLD).into(),
+                    text("Horizontal").into(),
                     segmented_selection::horizontal(&self.selection)
                         .on_activate(Message::Selection)
                         .into(),
-                    cosmic::iced::widget::text("Horizontal With Spacing").into(),
+                    text("Horizontal With Spacing").into(),
                     segmented_selection::horizontal(&self.selection)
                         .spacing(8)
                         .on_activate(Message::Selection)
                         .into(),
-                    cosmic::iced::widget::text("Horizontal Multi-Select").into(),
+                    text("Horizontal Multi-Select").into(),
                     segmented_selection::horizontal(&self.multi_selection)
                         .spacing(8)
                         .on_activate(Message::MultiSelection)
                         .into(),
-                    cosmic::iced::widget::text("Vertical").into(),
+                    text("Vertical").into(),
                     segmented_selection::vertical(&self.selection)
                         .on_activate(Message::Selection)
                         .into(),
-                    cosmic::iced::widget::text("Vertical Multi-Select Shrunk").into(),
+                    text("Vertical Multi-Select Shrunk").into(),
                     segmented_selection::vertical(&self.multi_selection)
                         .width(Length::Shrink)
                         .on_activate(Message::MultiSelection)
@@ -258,7 +268,7 @@ impl State {
                         .center_x()
                         .width(Length::Fill)
                         .into(),
-                    cosmic::iced::widget::text("Vertical With Spacing").into(),
+                    text("Vertical With Spacing").into(),
                     cosmic::iced::widget::row(vec![
                         segmented_selection::vertical(&self.selection)
                             .spacing(8)
@@ -279,31 +289,31 @@ impl State {
                     .spacing(12)
                     .width(Length::Fill)
                     .into(),
-                    cosmic::iced::widget::text("View Switcher")
+                    text("View Switcher")
                         .font(cosmic::font::FONT_SEMIBOLD)
                         .into(),
-                    cosmic::iced::widget::text("Horizontal").into(),
+                    text("Horizontal").into(),
                     view_switcher::horizontal(&self.selection)
                         .on_activate(Message::Selection)
                         .into(),
-                    cosmic::iced::widget::text("Horizontal Multi-Select").into(),
+                    text("Horizontal Multi-Select").into(),
                     view_switcher::horizontal(&self.multi_selection)
                         .on_activate(Message::MultiSelection)
                         .into(),
-                    cosmic::iced::widget::text("Horizontal With Spacing").into(),
+                    text("Horizontal With Spacing").into(),
                     view_switcher::horizontal(&self.selection)
                         .spacing(8)
                         .on_activate(Message::Selection)
                         .into(),
-                    cosmic::iced::widget::text("Vertical").into(),
+                    text("Vertical").into(),
                     view_switcher::vertical(&self.selection)
                         .on_activate(Message::Selection)
                         .into(),
-                    cosmic::iced::widget::text("Vertical Multi-Select").into(),
+                    text("Vertical Multi-Select").into(),
                     view_switcher::vertical(&self.multi_selection)
                         .on_activate(Message::MultiSelection)
                         .into(),
-                    cosmic::iced::widget::text("Vertical With Spacing").into(),
+                    text("Vertical With Spacing").into(),
                     cosmic::iced::widget::row(vec![
                         view_switcher::vertical(&self.selection)
                             .spacing(8)
@@ -329,7 +339,7 @@ impl State {
                 .into(),
                 Some(DemoView::TabC) => {
                     settings::view_column(vec![settings::view_section("Tab C")
-                        .add(cosmic::iced::widget::text("Nothing here yet").width(Length::Fill))
+                        .add(text("Nothing here yet").width(Length::Fill))
                         .into()])
                     .padding(0)
                     .into()
