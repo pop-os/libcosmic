@@ -4,12 +4,12 @@ use cosmic::{
     iced::{widget::container, Alignment, Length},
     theme::{self, Button as ButtonTheme, Theme},
     widget::{
-        button, icon, segmented_button, segmented_selection, settings,
-        spin_button::{SpinButtonModel, SpinMessage},
-        toggler, view_switcher,
+        button, icon, segmented_button, segmented_selection, settings, spin_button, toggler,
+        view_switcher,
     },
     Element,
 };
+use fraction::{Decimal, ToPrimitive};
 
 use super::{Page, Window};
 
@@ -37,9 +37,10 @@ pub enum Message {
     MultiSelection(segmented_button::Entity),
     PickListSelected(&'static str),
     RowSelected(usize),
+    ScalingFactor(spin_button::Message),
     Selection(segmented_button::Entity),
     SliderChanged(f32),
-    SpinButton(SpinMessage),
+    SpinButton(spin_button::Message),
     ThemeChanged(Theme),
     ToggleWarning,
     TogglerToggled(bool),
@@ -48,6 +49,7 @@ pub enum Message {
 
 pub enum Output {
     Debug(bool),
+    ScalingFactor(f32),
     ThemeChanged(Theme),
     ToggleWarning,
 }
@@ -58,9 +60,10 @@ pub struct State {
     pub multi_selection: segmented_button::MultiSelectModel,
     pub pick_list_selected: Option<&'static str>,
     pub pick_list_options: Vec<&'static str>,
+    pub scaling_value: spin_button::Model<Decimal>,
     pub selection: segmented_button::SingleSelectModel,
     pub slider_value: f32,
-    pub spin_button: SpinButtonModel<i32>,
+    pub spin_button: spin_button::Model<i32>,
     pub toggler_value: bool,
     pub view_switcher: segmented_button::SingleSelectModel,
 }
@@ -71,8 +74,13 @@ impl Default for State {
             checkbox_value: false,
             pick_list_selected: Some("Option 1"),
             pick_list_options: vec!["Option 1", "Option 2", "Option 3", "Option 4"],
+            scaling_value: spin_button::Model::default()
+                .value(1.0)
+                .min(0.5)
+                .max(2.0)
+                .step(0.25),
             slider_value: 50.0,
-            spin_button: SpinButtonModel::default().min(-10).max(10),
+            spin_button: spin_button::Model::default().min(-10).max(10),
             toggler_value: false,
             icon_themes: segmented_button::Model::builder()
                 .insert(|b| b.text("Pop").activate())
@@ -108,6 +116,12 @@ impl State {
             Message::PickListSelected(value) => self.pick_list_selected = Some(value),
             Message::RowSelected(row) => println!("Selected row {row}"),
             Message::MultiSelection(key) => self.multi_selection.activate(key),
+            Message::ScalingFactor(message) => {
+                self.scaling_value.update(message);
+                if let Some(factor) = self.scaling_value.value.to_f32() {
+                    return Some(Output::ScalingFactor(factor));
+                }
+            }
             Message::Selection(key) => self.selection.activate(key),
             Message::SliderChanged(value) => self.slider_value = value,
             Message::SpinButton(msg) => self.spin_button.update(msg),
@@ -156,6 +170,10 @@ impl State {
                         .add(settings::item(
                             "Debug layout",
                             toggler(None, window.debug, Message::Debug),
+                        ))
+                        .add(settings::item(
+                            "Scaling Factor",
+                            spin_button(&window.scale_factor_string, Message::ScalingFactor),
                         ))
                         .add(settings::item_row(vec![button(ButtonTheme::Destructive)
                             .on_press(Message::ToggleWarning)
@@ -234,7 +252,7 @@ impl State {
                                 "Spin Button (Range {}:{})",
                                 self.spin_button.min, self.spin_button.max
                             ),
-                            self.spin_button.view(Message::SpinButton),
+                            spin_button(format!("{}", self.spin_button.value), Message::SpinButton),
                         ))
                         .into(),
                 ])
