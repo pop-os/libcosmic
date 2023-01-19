@@ -298,13 +298,13 @@ where
                 let bounds = self.variant_button_bounds(bounds, nth);
                 if bounds.contains(cursor_position) {
                     if self.model.items[key].enabled {
+                        // Record that the mouse is hovering over this button.
+                        state.hovered = key;
+
                         if let Some(on_activate) = self.on_activate.as_ref() {
                             if let Event::Mouse(mouse::Event::ButtonReleased(mouse::Button::Left))
                             | Event::Touch(touch::Event::FingerLifted { .. }) = event
                             {
-                                // Record that the mouse is hovering over this button.
-                                state.hovered = key;
-
                                 shell.publish(on_activate(key));
                                 return event::Status::Captured;
                             }

@@ -11,7 +11,6 @@ mod selection;
 pub use self::selection::{MultiSelect, Selectable, SingleSelect};
 
 use crate::widget::IconSource;
-use crate::Element;
 use slotmap::{SecondaryMap, SlotMap};
 use std::any::{Any, TypeId};
 use std::borrow::Cow;
