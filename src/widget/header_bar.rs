@@ -89,8 +89,11 @@ impl<'a, Message: Clone + 'static> HeaderBar<'a, Message> {
         widget.into()
     }
 
-    fn title_widget(&self) -> Element<'a, Message> {
-        widget::container(widget::text(self.title.clone()))
+    fn title_widget(&mut self) -> Element<'a, Message> {
+        let mut title = Cow::default();
+        std::mem::swap(&mut title, &mut self.title);
+
+        widget::container(super::text(title))
             .center_x()
             .center_y()
             .width(Length::Fill)
@@ -106,7 +109,7 @@ impl<'a, Message: Clone + 'static> HeaderBar<'a, Message> {
             super::icon(name, size)
                 .force_svg(true)
                 .style(crate::theme::Svg::SymbolicActive)
-                .apply(iced::widget::button)
+                .apply(widget::button)
                 .style(theme::Button::Text)
                 .on_press(on_press)
         };

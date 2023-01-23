@@ -31,7 +31,7 @@ impl<'a, Message: 'static + Clone> Warning<'a, Message> {
     }
 
     /// A custom button that has the desired default spacing and padding.
-    pub fn into_widget(self) -> widget::Container<'static, Message, Renderer> {
+    pub fn into_widget(self) -> widget::Container<'a, Message, Renderer> {
         let close_button =
             widget::button(icon("window-close-symbolic", 16).style(theme::Svg::Default))
                 .style(theme::Button::Transparent);
@@ -44,7 +44,7 @@ impl<'a, Message: 'static + Clone> Warning<'a, Message> {
 
         widget::container(
             widget::row(vec![
-                widget::container(widget::text(self.message))
+                widget::container(crate::widget::text(self.message))
                     .width(Length::Fill)
                     .into(),
                 close_button.into(),
