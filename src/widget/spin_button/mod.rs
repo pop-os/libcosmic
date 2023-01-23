@@ -6,12 +6,12 @@ use std::borrow::Cow;
 
 pub use self::model::{Message, Model};
 
-use crate::widget::icon;
+use crate::widget::{icon, text};
 use crate::{theme, Element};
 use apply::Apply;
 use iced::{
     alignment::{Horizontal, Vertical},
-    widget::{button, container, row, text},
+    widget::{button, container, row},
     Alignment, Background, Length,
 };
 

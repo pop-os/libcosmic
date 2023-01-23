@@ -37,6 +37,9 @@ pub mod settings;
 mod scrollable;
 pub use scrollable::*;
 
+mod text;
+pub use text::{text, Text};
+
 pub mod separator;
 pub use separator::{horizontal_rule, vertical_rule};
 
