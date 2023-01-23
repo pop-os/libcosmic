@@ -23,7 +23,9 @@ pub fn subscription() -> Subscription<Message> {
         } else {
             Message::FocusNext
         }),
-        (Event::Mouse(mouse::Event::ButtonReleased { .. }), _) => Some(Message::Unfocus),
+        (Event::Mouse(mouse::Event::ButtonPressed { .. }), event::Status::Ignored) => {
+            Some(Message::Unfocus)
+        }
         _ => None,
     })
 }
