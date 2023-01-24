@@ -1,8 +1,7 @@
 // Copyright 2022 System76 <info@system76.com>
 // SPDX-License-Identifier: MPL-2.0
 
-use crate::widget::horizontal_rule;
-use crate::{theme, Element};
+use crate::{theme, widget::divider, Element};
 use apply::Apply;
 use iced::{Background, Color};
 
@@ -33,7 +32,7 @@ impl<'a, Message: 'static> ListColumn<'a, Message> {
     #[allow(clippy::should_implement_trait)]
     pub fn add(mut self, item: impl Into<Element<'a, Message>>) -> Self {
         if !self.children.is_empty() {
-            self.children.push(horizontal_rule(10).into());
+            self.children.push(divider::horizontal::light().into());
         }
 
         self.children.push(item.into());

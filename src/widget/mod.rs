@@ -40,9 +40,6 @@ pub use scrollable::*;
 mod text;
 pub use text::{text, Text};
 
-pub mod separator;
-pub use separator::{horizontal_rule, vertical_rule};
-
 pub mod spin_button;
 pub use spin_button::{spin_button, SpinButton};
 
@@ -56,3 +53,23 @@ pub use view_switcher::vertical as vertical_view_switcher;
 
 pub mod warning;
 pub use warning::*;
+
+/// An element to distinguish a boundary between two elements.
+pub mod divider {
+    /// Horizontal variant of a divider.
+    pub mod horizontal {
+        use iced::widget::{horizontal_rule, Rule};
+
+        /// Horizontal divider with light thickness
+        #[must_use]
+        pub fn light() -> Rule<crate::Renderer> {
+            horizontal_rule(4).style(crate::theme::Rule::LightDivider)
+        }
+
+        /// Horizontal divider with heavy thickness.
+        #[must_use]
+        pub fn heavy() -> Rule<crate::Renderer> {
+            horizontal_rule(10).style(crate::theme::Rule::HeavyDivider)
+        }
+    }
+}
