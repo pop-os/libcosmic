@@ -652,6 +652,8 @@ impl progress_bar::StyleSheet for Theme {
 #[derive(Clone, Copy)]
 pub enum Rule {
     Default,
+    LightDivider,
+    HeavyDivider,
     Custom(fn(&Theme) -> rule::Appearance),
 }
 
@@ -674,6 +676,24 @@ impl rule::StyleSheet for Theme {
                 radius: 0.0,
                 fill_mode: rule::FillMode::Full,
             },
+            Rule::LightDivider => {
+                let cosmic = &self.cosmic().primary;
+                rule::Appearance {
+                    color: cosmic.divider.into(),
+                    width: 1,
+                    radius: 0.0,
+                    fill_mode: rule::FillMode::Padded(10),
+                }
+            }
+            Rule::HeavyDivider => {
+                let cosmic = &self.cosmic().primary;
+                rule::Appearance {
+                    color: cosmic.divider.into(),
+                    width: 4,
+                    radius: 4.0,
+                    fill_mode: rule::FillMode::Full,
+                }
+            }
             Rule::Custom(f) => f(self),
         }
     }
