@@ -74,6 +74,7 @@ impl<'a, Message: Clone + 'static> HeaderBar<'a, Message> {
         let mut widget = widget::row(packed)
             .height(Length::Units(50))
             .padding(8)
+            .spacing(8)
             .apply(widget::container)
             .center_y()
             .apply(widget::mouse_listener);
