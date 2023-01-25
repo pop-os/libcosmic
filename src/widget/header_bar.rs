@@ -58,6 +58,8 @@ impl<'a, Message: Clone + 'static> HeaderBar<'a, Message> {
             widget::container(center)
                 .align_x(iced::alignment::Horizontal::Center)
                 .into()
+        } else if self.title.is_empty() {
+            widget::horizontal_space(Length::Fill).into()
         } else {
             self.title_widget()
         });
@@ -94,7 +96,10 @@ impl<'a, Message: Clone + 'static> HeaderBar<'a, Message> {
         let mut title = Cow::default();
         std::mem::swap(&mut title, &mut self.title);
 
-        widget::container(super::text(title))
+        super::text(title)
+            .size(18)
+            .font(crate::font::FONT_SEMIBOLD)
+            .apply(widget::container)
             .center_x()
             .center_y()
             .width(Length::Fill)
