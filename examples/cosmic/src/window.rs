@@ -406,6 +406,7 @@ impl Application for Window {
                 keyboard_nav::Message::Unfocus => ret = keyboard_nav::unfocus(),
                 keyboard_nav::Message::FocusNext => ret = widget::focus_next(),
                 keyboard_nav::Message::FocusPrevious => ret = widget::focus_previous(),
+                _ => (),
             },
             Message::ToggleWarning => self.toggle_warning(),
         }
