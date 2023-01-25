@@ -1,19 +1,26 @@
-use iced::{event, keyboard, mouse, subscription, Command, Event, Subscription};
+use iced::{
+    event,
+    keyboard::{self, KeyCode},
+    mouse, subscription, Command, Event, Subscription,
+};
 use iced_native::widget::{operation, Id, Operation};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum Message {
+    Escape,
     FocusNext,
     FocusPrevious,
     Unfocus,
+    Search,
 }
 
 #[must_use]
 pub fn subscription() -> Subscription<Message> {
     subscription::events_with(|event, status| match (event, status) {
+        // Focus
         (
             Event::Keyboard(keyboard::Event::KeyPressed {
-                key_code: keyboard::KeyCode::Tab,
+                key_code: KeyCode::Tab,
                 modifiers,
                 ..
             }),
@@ -23,6 +30,29 @@ pub fn subscription() -> Subscription<Message> {
         } else {
             Message::FocusNext
         }),
+        // Escape
+        (
+            Event::Keyboard(keyboard::Event::KeyPressed {
+                key_code: KeyCode::Escape,
+                ..
+            }),
+            _,
+        ) => Some(Message::Escape),
+        // Search
+        (
+            Event::Keyboard(keyboard::Event::KeyPressed {
+                key_code: KeyCode::F,
+                modifiers,
+            }),
+            event::Status::Ignored,
+        ) => {
+            if modifiers.control() {
+                Some(Message::Search)
+            } else {
+                None
+            }
+        }
+        // Unfocus
         (Event::Mouse(mouse::Event::ButtonPressed { .. }), event::Status::Ignored) => {
             Some(Message::Unfocus)
         }
