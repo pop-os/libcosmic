@@ -829,42 +829,73 @@ impl text::StyleSheet for Theme {
     }
 }
 
+#[derive(Copy, Clone, Default)]
+pub enum TextInput {
+    #[default]
+    Default,
+    Search,
+}
+
 /*
  * TODO: Text Input
  */
 impl text_input::StyleSheet for Theme {
-    type Style = ();
+    type Style = TextInput;
 
-    fn active(&self, _style: &Self::Style) -> text_input::Appearance {
+    fn active(&self, style: &Self::Style) -> text_input::Appearance {
         let palette = self.extended_palette();
 
-        text_input::Appearance {
-            background: palette.background.base.color.into(),
-            border_radius: 2.0,
-            border_width: 1.0,
-            border_color: palette.background.strong.color,
+        match style {
+            TextInput::Default => text_input::Appearance {
+                background: palette.background.base.color.into(),
+                border_radius: 2.0,
+                border_width: 1.0,
+                border_color: palette.background.strong.color,
+            },
+            TextInput::Search => text_input::Appearance {
+                background: Background::Color(Color::TRANSPARENT),
+                border_radius: 0.0,
+                border_width: 0.0,
+                border_color: Color::TRANSPARENT,
+            },
         }
     }
 
-    fn hovered(&self, _style: &Self::Style) -> text_input::Appearance {
+    fn hovered(&self, style: &Self::Style) -> text_input::Appearance {
         let palette = self.extended_palette();
 
-        text_input::Appearance {
-            background: palette.background.base.color.into(),
-            border_radius: 2.0,
-            border_width: 1.0,
-            border_color: palette.background.base.text,
+        match style {
+            TextInput::Default => text_input::Appearance {
+                background: palette.background.base.color.into(),
+                border_radius: 2.0,
+                border_width: 1.0,
+                border_color: palette.background.base.text,
+            },
+            TextInput::Search => text_input::Appearance {
+                background: Background::Color(Color::TRANSPARENT),
+                border_radius: 0.0,
+                border_width: 0.0,
+                border_color: Color::TRANSPARENT,
+            },
         }
     }
 
-    fn focused(&self, _style: &Self::Style) -> text_input::Appearance {
+    fn focused(&self, style: &Self::Style) -> text_input::Appearance {
         let palette = self.extended_palette();
 
-        text_input::Appearance {
-            background: palette.background.base.color.into(),
-            border_radius: 2.0,
-            border_width: 1.0,
-            border_color: palette.primary.strong.color,
+        match style {
+            TextInput::Default => text_input::Appearance {
+                background: palette.background.base.color.into(),
+                border_radius: 2.0,
+                border_width: 1.0,
+                border_color: palette.primary.strong.color,
+            },
+            TextInput::Search => text_input::Appearance {
+                background: Background::Color(Color::TRANSPARENT),
+                border_radius: 0.0,
+                border_width: 0.0,
+                border_color: Color::TRANSPARENT,
+            },
         }
     }
 
