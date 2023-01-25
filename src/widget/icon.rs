@@ -168,8 +168,7 @@ pub struct Icon<'a> {
     theme: Option<Cow<'a, str>>,
     style: crate::theme::Svg,
     size: u16,
-    #[setters(strip_option)]
-    content_fit: Option<ContentFit>,
+    content_fit: ContentFit,
     #[setters(strip_option)]
     width: Option<Length>,
     #[setters(strip_option)]
@@ -181,7 +180,7 @@ pub struct Icon<'a> {
 #[must_use]
 pub fn icon<'a>(source: impl Into<IconSource<'a>>, size: u16) -> Icon<'a> {
     Icon {
-        content_fit: None,
+        content_fit: ContentFit::ScaleDown,
         height: None,
         source: source.into(),
         size,
@@ -196,13 +195,11 @@ impl<'a> Icon<'a> {
     #[must_use]
     fn into_element<Message: 'static>(self) -> Element<'a, Message> {
         if let IconSource::Embedded(image) = self.source {
-            let mut image = iced::widget::image(image)
+            return iced::widget::image(image)
                 .width(self.width.unwrap_or(Length::Units(self.size)))
-                .height(self.height.unwrap_or(Length::Units(self.size)));
-            if let Some(content_fit) = self.content_fit {
-                image = image.content_fit(content_fit);
-            }
-            return image.into();
+                .height(self.height.unwrap_or(Length::Units(self.size)))
+                .content_fit(self.content_fit)
+                .into();
         }
 
         let mut hasher = DefaultHasher::new();
@@ -219,27 +216,17 @@ impl<'a> Icon<'a> {
                 .source
                 .load(self.size, self.theme.as_deref(), self.force_svg)
             {
-                Handle::Svg(handle) => {
-                    let mut widget = svg::Svg::<Renderer>::new(handle)
-                        .style(self.style)
-                        .width(self.width.unwrap_or(Length::Units(self.size)))
-                        .height(self.height.unwrap_or(Length::Units(self.size)));
-
-                    if let Some(content_fit) = self.content_fit {
-                        widget = widget.content_fit(content_fit);
-                    }
-
-                    widget.into()
-                }
-                Handle::Image(handle) => {
-                    let mut image = Image::new(handle)
-                        .width(self.width.unwrap_or(Length::Units(self.size)))
-                        .height(self.height.unwrap_or(Length::Units(self.size)));
-                    if let Some(content_fit) = self.content_fit {
-                        image = image.content_fit(content_fit);
-                    }
-                    image.into()
-                }
+                Handle::Svg(handle) => svg::Svg::<Renderer>::new(handle)
+                    .style(self.style)
+                    .width(self.width.unwrap_or(Length::Units(self.size)))
+                    .height(self.height.unwrap_or(Length::Units(self.size)))
+                    .content_fit(self.content_fit)
+                    .into(),
+                Handle::Image(handle) => Image::new(handle)
+                    .width(self.width.unwrap_or(Length::Units(self.size)))
+                    .height(self.height.unwrap_or(Length::Units(self.size)))
+                    .content_fit(self.content_fit)
+                    .into(),
             }
         })
         .into()
