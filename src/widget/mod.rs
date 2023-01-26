@@ -3,6 +3,8 @@
 
 //! Cosmic-themed widget implementations.
 
+pub mod aspect_ratio;
+
 mod button;
 pub use button::*;
 
@@ -21,8 +23,9 @@ pub use nav_bar::nav_bar;
 pub mod nav_bar_toggle;
 pub use nav_bar_toggle::{nav_bar_toggle, NavBarToggle};
 
-mod toggler;
-pub use toggler::toggler;
+pub mod rectangle_tracker;
+
+pub mod search;
 
 pub mod segmented_button;
 pub use segmented_button::horizontal as horizontal_segmented_button;
@@ -37,15 +40,14 @@ pub mod settings;
 mod scrollable;
 pub use scrollable::*;
 
-mod text;
-pub use text::{text, Text};
-
 pub mod spin_button;
 pub use spin_button::{spin_button, SpinButton};
 
-pub mod rectangle_tracker;
+mod text;
+pub use text::{text, Text};
 
-pub mod aspect_ratio;
+mod toggler;
+pub use toggler::toggler;
 
 pub mod view_switcher;
 pub use view_switcher::horizontal as horiontal_view_switcher;
