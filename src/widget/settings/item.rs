@@ -15,7 +15,7 @@ pub fn item<'a, Message: 'static>(
     widget: impl Into<Element<'a, Message>>,
 ) -> Row<'a, Message, Renderer> {
     item_row(vec![
-        text(title).into(),
+        text(title).size(20).into(),
         horizontal_space(iced::Length::Fill).into(),
         widget.into(),
     ])
@@ -65,8 +65,8 @@ impl<'a, Message: 'static> Item<'a, Message> {
         }
 
         if let Some(description) = self.description {
-            let title = text(self.title).size(18);
-            let desc = text(description).size(12);
+            let title = text(self.title).size(20);
+            let desc = text(description).size(14);
 
             contents.push(column!(title, desc).spacing(2).into());
         } else {
