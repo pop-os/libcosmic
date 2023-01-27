@@ -1,10 +1,10 @@
-use std::{future::Future, thread};
+use std::future::Future;
 
 #[cfg(feature = "tokio")]
-pub struct SingleThreadExecutor(tokio::runtime::Runtime);
+pub struct Executor(tokio::runtime::Runtime);
 
 #[cfg(feature = "tokio")]
-impl iced_native::Executor for SingleThreadExecutor {
+impl iced_native::Executor for Executor {
     fn new() -> Result<Self, iced::futures::io::Error> {
         // Current thread executor requires calling `block_on` to actually run
         // futures. Main thread is busy with things other than running futures,
