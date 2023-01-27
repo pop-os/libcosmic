@@ -92,6 +92,8 @@ where
     pub(super) font_hovered: Renderer::Font,
     /// Desired font for inactive tabs.
     pub(super) font_inactive: Renderer::Font,
+    /// Size of the font.
+    pub(super) font_size: u16,
     /// Size of icon
     pub(super) icon_size: u16,
     /// Desired width of the widget.
@@ -134,7 +136,8 @@ where
             font_active: Renderer::Font::default(),
             font_hovered: Renderer::Font::default(),
             font_inactive: Renderer::Font::default(),
-            icon_size: 24,
+            font_size: 17,
+            icon_size: 16,
             height: Length::Shrink,
             width: Length::Fill,
             spacing: 0,
@@ -204,12 +207,7 @@ where
         self
     }
 
-    pub(super) fn max_button_dimensions(
-        &self,
-        renderer: &Renderer,
-        text_size: u16,
-        bounds: Size,
-    ) -> (f32, f32) {
+    pub(super) fn max_button_dimensions(&self, renderer: &Renderer, bounds: Size) -> (f32, f32) {
         let mut width = 0.0f32;
         let mut height = 0.0f32;
 
@@ -219,7 +217,7 @@ where
 
             // Add text to measurement if text was given.
             if let Some(text) = self.model.text(key) {
-                let (w, h) = renderer.measure(text, text_size, Default::default(), bounds);
+                let (w, h) = renderer.measure(text, self.font_size, Default::default(), bounds);
 
                 button_width = w;
                 button_height = h;
@@ -469,7 +467,6 @@ where
             }
 
             let y = bounds.center_y();
-            let text_size = renderer.default_size();
 
             // Draw the image beside the text.
             let horizontal_alignment = if let Some(icon) = self.model.icon(key) {
@@ -518,7 +515,7 @@ where
                 // Draw the text in this button.
                 renderer.fill_text(iced_native::text::Text {
                     content: text,
-                    size: f32::from(text_size),
+                    size: f32::from(self.font_size),
                     bounds,
                     color: status_appearance.text_color,
                     font: font.clone(),
