@@ -31,7 +31,10 @@ impl<'a, Message: 'static> Section<'a, Message> {
 
 impl<'a, Message: 'static> From<Section<'a, Message>> for Element<'a, Message> {
     fn from(data: Section<'a, Message>) -> Self {
-        let title = text(data.title).font(crate::font::FONT_SEMIBOLD).into();
+        let title = text(data.title)
+            .size(20)
+            .font(crate::font::FONT_SEMIBOLD)
+            .into();
 
         column(vec![title, data.children.into_element()])
             .spacing(8)
