@@ -9,12 +9,8 @@ pub struct Executor(tokio::runtime::Runtime);
 #[cfg(feature = "tokio")]
 impl iced_native::Executor for Executor {
     fn new() -> Result<Self, iced::futures::io::Error> {
-        // Current thread executor requires calling `block_on` to actually run
-        // futures. Main thread is busy with things other than running futures,
-        // so spawn a single worker thread.
         Ok(Self(
             tokio::runtime::Builder::new_multi_thread()
-                .worker_threads(1)
                 .enable_all()
                 .build()?,
         ))
