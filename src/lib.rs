@@ -14,15 +14,14 @@ pub use iced_winit;
 
 #[cfg(feature = "applet")]
 pub mod applet;
+pub mod executor;
 pub mod font;
 pub mod keyboard_nav;
 pub mod theme;
 pub mod widget;
 
 #[cfg(feature = "tokio")]
-mod single_thread_executor;
-#[cfg(feature = "tokio")]
-pub use single_thread_executor::SingleThreadExecutor;
+pub use executor::single::Executor as SingleThreadExecutor;
 
 pub mod settings;
 pub use settings::settings;

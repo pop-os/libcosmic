@@ -302,7 +302,7 @@ impl Window {
 }
 
 impl Application for Window {
-    type Executor = iced::executor::Default;
+    type Executor = cosmic::executor::Default;
     type Flags = ();
     type Message = Message;
     type Theme = Theme;
