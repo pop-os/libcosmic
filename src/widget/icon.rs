@@ -180,7 +180,7 @@ pub struct Icon<'a> {
 #[must_use]
 pub fn icon<'a>(source: impl Into<IconSource<'a>>, size: u16) -> Icon<'a> {
     Icon {
-        content_fit: ContentFit::ScaleDown,
+        content_fit: ContentFit::Fill,
         height: None,
         source: source.into(),
         size,
