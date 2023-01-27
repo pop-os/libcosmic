@@ -76,9 +76,7 @@ where
     #[allow(clippy::cast_sign_loss)]
     fn variant_layout(&self, renderer: &Renderer, limits: &layout::Limits) -> layout::Node {
         let limits = limits.width(self.width);
-        let text_size = renderer.default_size();
-
-        let (width, mut height) = self.max_button_dimensions(renderer, text_size, limits.max());
+        let (width, mut height) = self.max_button_dimensions(renderer, limits.max());
 
         let num = self.model.items.len();
         let spacing = f32::from(self.spacing);
