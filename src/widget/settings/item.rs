@@ -70,7 +70,7 @@ impl<'a, Message: 'static> Item<'a, Message> {
 
             contents.push(column!(title, desc).spacing(2).into());
         } else {
-            contents.push(text(self.title).into());
+            contents.push(text(self.title).size(20).into());
         }
 
         contents.push(horizontal_space(iced::Length::Fill).into());
