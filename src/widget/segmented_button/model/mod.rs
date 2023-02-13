@@ -24,11 +24,15 @@ slotmap::new_key_type! {
 #[derive(Clone, Debug)]
 pub struct Settings {
     pub enabled: bool,
+    pub closable: bool,
 }
 
 impl Default for Settings {
     fn default() -> Self {
-        Self { enabled: true }
+        Self {
+            enabled: true,
+            closable: false,
+        }
     }
 }
 
@@ -83,6 +87,16 @@ where
         Selectable::activate(self, id);
     }
 
+    /// Activates the item at the given position, returning true if it was activated.
+    pub fn activate_position(&mut self, position: u16) -> bool {
+        if let Some(entity) = self.entity_at(position) {
+            self.activate(entity);
+            return true;
+        }
+
+        false
+    }
+
     /// Creates a builder for initializing a model.
     ///
     /// ```ignore
@@ -109,6 +123,13 @@ where
     pub fn clear(&mut self) {
         for entity in self.order.clone() {
             self.remove(entity);
+        }
+    }
+
+    /// Shows or hides the item's close button.
+    pub fn closable_set(&mut self, id: Entity, closable: bool) {
+        if let Some(settings) = self.items.get_mut(id) {
+            settings.closable = closable;
         }
     }
 
@@ -187,6 +208,12 @@ where
         }
     }
 
+    /// Get the item that is located at a given position.
+    #[must_use]
+    pub fn entity_at(&mut self, position: u16) -> Option<Entity> {
+        self.order.get(position as usize).copied()
+    }
+
     /// Immutable reference to the icon associated with the item.
     ///
     /// ```ignore
@@ -239,10 +266,21 @@ where
         EntityMut { model: self, id }
     }
 
+    /// Check if the given ID is the active ID.
+    #[must_use]
+    pub fn is_active(&self, id: Entity) -> bool {
+        <Self as Selectable>::is_active(self, id)
+    }
+
+    /// Whether the item should contain a close button.
+    #[must_use]
+    pub fn is_closable(&self, id: Entity) -> bool {
+        self.items.get(id).map_or(false, |e| e.closable)
+    }
+
     /// Check if the item is enabled.
     ///
     /// ```ignore
-    ///
     /// if model.is_enabled(id) {
     ///     if let Some(text) = model.text(id) {
     ///         println!("{text} is enabled");
@@ -254,14 +292,21 @@ where
         self.items.get(id).map_or(false, |e| e.enabled)
     }
 
+    /// Iterates across items in the model in the order that they are displayed.
+    pub fn iter(&self) -> impl Iterator<Item = Entity> + '_ {
+        self.order.iter().copied()
+    }
+
     /// The position of the item in the model.
     ///
     /// ```ignore
     /// if let Some(position) = model.position(id) {
     ///     println!("found item at {}", position);
     /// }
-    pub fn position(&self, id: Entity) -> Option<usize> {
-        self.order.iter().position(|k| *k == id)
+    #[must_use]
+    pub fn position(&self, id: Entity) -> Option<u16> {
+        #[allow(clippy::cast_possible_truncation)]
+        self.order.iter().position(|k| *k == id).map(|v| v as u16)
     }
 
     /// Change the position of an item in the model.
@@ -278,7 +323,7 @@ where
 
         let position = self.order.len().min(position as usize);
 
-        self.order.remove(index);
+        self.order.remove(index as usize);
         self.order.insert(position, id);
         Some(position)
     }
@@ -301,7 +346,7 @@ where
             return false
         };
 
-        self.order.swap(first_index, second_index);
+        self.order.swap(first_index as usize, second_index as usize);
         true
     }
 
@@ -319,7 +364,7 @@ where
         }
 
         if let Some(index) = self.position(id) {
-            self.order.remove(index);
+            self.order.remove(index as usize);
         }
     }
 

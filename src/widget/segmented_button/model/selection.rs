@@ -33,8 +33,10 @@ impl Selectable for Model<SingleSelect> {
         self.selection.active = id;
     }
 
-    fn deactivate(&mut self, _id: Entity) {
-        self.selection.active = Entity::default();
+    fn deactivate(&mut self, id: Entity) {
+        if id == self.selection.active {
+            self.selection.active = Entity::default();
+        }
     }
 
     fn is_active(&self, id: Entity) -> bool {

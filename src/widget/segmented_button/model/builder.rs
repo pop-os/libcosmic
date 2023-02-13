@@ -48,6 +48,13 @@ where
         self
     }
 
+    /// Defines that the close button should appear
+    #[allow(clippy::must_use_candidate, clippy::return_self_not_must_use)]
+    pub fn closable(mut self) -> Self {
+        self.model.0.closable_set(self.id, true);
+        self
+    }
+
     /// Associates extra data with an external secondary map.
     ///
     /// The secondary map internally uses a `Vec`, so should only be used for data that

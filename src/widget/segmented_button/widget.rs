@@ -1,11 +1,9 @@
 // Copyright 2022 System76 <info@system76.com>
 // SPDX-License-Identifier: MPL-2.0
 
-use std::marker::PhantomData;
-
 use super::model::{Entity, Model, Selectable};
 use super::style::StyleSheet;
-
+use crate::widget::{icon, IconSource};
 use derive_setters::Setters;
 use iced::{
     alignment, event, keyboard, mouse, touch, Background, Color, Command, Element, Event, Length,
@@ -14,6 +12,7 @@ use iced::{
 use iced_core::BorderRadius;
 use iced_native::widget::{self, operation, tree, Operation};
 use iced_native::{layout, renderer, widget::Tree, Clipboard, Layout, Shell, Widget};
+use std::marker::PhantomData;
 
 /// State that is maintained by each individual widget.
 #[derive(Default)]
@@ -80,6 +79,10 @@ where
     pub(super) model: &'a Model<SelectionMode>,
     /// iced widget ID
     pub(super) id: Option<Id>,
+    /// The icon used for the close button.
+    pub(super) close_icon: IconSource<'a>,
+    /// Show the close icon only when item is hovered.
+    pub(super) show_close_icon_on_hover: bool,
     /// Padding around a button.
     pub(super) button_padding: [u16; 4],
     /// Desired height of a button.
@@ -105,9 +108,11 @@ where
     /// Style to draw the widget in.
     #[setters(into)]
     pub(super) style: <Renderer::Theme as StyleSheet>::Style,
-    #[setters(skip)]
-    /// Emits the ID of the activated widget on selection.
-    pub(super) on_activate: Option<Box<dyn Fn(Entity) -> Message>>,
+    /// Emits the ID of the item that was activated.
+    #[setters(strip_option)]
+    pub(super) on_activate: Option<fn(Entity) -> Message>,
+    #[setters(strip_option)]
+    pub(super) on_close: Option<fn(Entity) -> Message>,
     #[setters(skip)]
     /// Defines the implementation of this struct
     variant: PhantomData<Variant>,
@@ -130,6 +135,8 @@ where
         Self {
             model,
             id: None,
+            close_icon: IconSource::from("window-close-symbolic"),
+            show_close_icon_on_hover: false,
             button_padding: [4, 4, 4, 4],
             button_height: 32,
             button_spacing: 4,
@@ -143,6 +150,7 @@ where
             spacing: 0,
             style: <Renderer::Theme as StyleSheet>::Style::default(),
             on_activate: None,
+            on_close: None,
             variant: PhantomData,
         }
     }
@@ -200,13 +208,6 @@ where
         event::Status::Ignored
     }
 
-    /// Emits the ID of the activated widget on selection.
-    #[must_use]
-    pub fn on_activate(mut self, on_activate: impl Fn(Entity) -> Message + 'static) -> Self {
-        self.on_activate = Some(Box::from(on_activate));
-        self
-    }
-
     pub(super) fn max_button_dimensions(&self, renderer: &Renderer, bounds: Size) -> (f32, f32) {
         let mut width = 0.0f32;
         let mut height = 0.0f32;
@@ -225,8 +226,14 @@ where
 
             // Add icon to measurement if icon was given.
             if self.model.icon(key).is_some() {
+                button_height = button_height.max(f32::from(self.icon_size));
                 button_width += f32::from(self.icon_size) + f32::from(self.button_spacing);
-                button_height = f32::from(self.icon_size);
+            }
+
+            // Add close button to measurement if found.
+            if self.model.is_closable(key) {
+                button_height = button_height.max(f32::from(self.icon_size));
+                button_width += f32::from(self.icon_size) + f32::from(self.button_spacing);
             }
 
             height = height.max(button_height);
@@ -298,6 +305,28 @@ where
                     if self.model.items[key].enabled {
                         // Record that the mouse is hovering over this button.
                         state.hovered = key;
+
+                        // If marked as closable, show a close icon.
+                        if self.model.items[key].closable {
+                            if let Some(on_close) = self.on_close.as_ref() {
+                                if close_bounds(
+                                    bounds,
+                                    f32::from(self.icon_size),
+                                    self.button_padding,
+                                )
+                                .contains(cursor_position)
+                                {
+                                    if let Event::Mouse(mouse::Event::ButtonReleased(
+                                        mouse::Button::Left,
+                                    ))
+                                    | Event::Touch(touch::Event::FingerLifted { .. }) = event
+                                    {
+                                        shell.publish(on_close(key));
+                                        return event::Status::Captured;
+                                    }
+                                }
+                            }
+                        }
 
                         if let Some(on_activate) = self.on_activate.as_ref() {
                             if let Event::Mouse(mouse::Event::ButtonReleased(mouse::Button::Left))
@@ -416,11 +445,14 @@ where
         for (nth, key) in self.model.order.iter().copied().enumerate() {
             let mut bounds = self.variant_button_bounds(bounds, nth);
 
+            let key_is_active = self.model.is_active(key);
+            let key_is_hovered = state.hovered == key;
+
             let (status_appearance, font) = if state.focused_key == key {
                 (appearance.focus, &self.font_active)
-            } else if self.model.is_active(key) {
+            } else if key_is_active {
                 (appearance.active, &self.font_active)
-            } else if state.hovered == key {
+            } else if key_is_hovered {
                 (appearance.hover, &self.font_hovered)
             } else {
                 (appearance.inactive, &self.font_inactive)
@@ -466,6 +498,8 @@ where
                 );
             }
 
+            let original_bounds = bounds;
+
             let y = bounds.center_y();
 
             // Draw the image beside the text.
@@ -489,11 +523,12 @@ where
 
                 bounds.x += offset;
                 bounds.width -= offset;
+
                 match icon.load(self.icon_size, None, false) {
-                    crate::widget::icon::Handle::Image(_handle) => {
+                    icon::Handle::Image(_handle) => {
                         unimplemented!()
                     }
-                    crate::widget::icon::Handle::Svg(handle) => {
+                    icon::Handle::Svg(handle) => {
                         iced_native::svg::Renderer::draw(
                             renderer,
                             handle,
@@ -522,6 +557,30 @@ where
                     horizontal_alignment,
                     vertical_alignment: alignment::Vertical::Center,
                 });
+            }
+
+            let show_close_button =
+                (key_is_active || !self.show_close_icon_on_hover || key_is_hovered)
+                    && self.model.is_closable(key);
+
+            // Draw a close button if this is set.
+            if show_close_button {
+                let width = f32::from(self.icon_size);
+                let icon_bounds = close_bounds(original_bounds, width, self.button_padding);
+
+                match self.close_icon.load(self.icon_size, None, false) {
+                    icon::Handle::Image(_handle) => {
+                        unimplemented!()
+                    }
+                    icon::Handle::Svg(handle) => {
+                        iced_native::svg::Renderer::draw(
+                            renderer,
+                            handle,
+                            Some(status_appearance.text_color),
+                            icon_bounds,
+                        );
+                    }
+                }
             }
         }
     }
@@ -590,5 +649,19 @@ impl Id {
 impl From<Id> for widget::Id {
     fn from(id: Id) -> Self {
         id.0
+    }
+}
+
+/// Calculates the bounds of the close button within the area of an item.
+fn close_bounds(area: Rectangle<f32>, icon_size: f32, button_padding: [u16; 4]) -> Rectangle<f32> {
+    let top = f32::from(button_padding[1]);
+    let end = f32::from(button_padding[2]);
+    let unpadded_height = area.height - top - end;
+
+    Rectangle {
+        x: area.x + area.width - icon_size - f32::from(button_padding[2]),
+        y: area.y + f32::from(button_padding[1]) + (unpadded_height / 2.0),
+        width: icon_size,
+        height: icon_size,
     }
 }
