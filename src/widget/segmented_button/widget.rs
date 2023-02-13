@@ -3,6 +3,7 @@
 
 use super::model::{Entity, Model, Selectable};
 use super::style::StyleSheet;
+use super::IconColor;
 use crate::widget::{icon, IconSource};
 use derive_setters::Setters;
 use iced::{
@@ -466,6 +467,12 @@ where
                 status_appearance.middle
             };
 
+            let icon_color = match self.model.data::<IconColor>(key).copied() {
+                Some(IconColor::None) => None,
+                Some(IconColor::Color(color)) => Some(color),
+                None => Some(status_appearance.text_color),
+            };
+
             // Render the background of the button.
             if status_appearance.background.is_some() {
                 renderer.fill_quad(
@@ -529,12 +536,7 @@ where
                         unimplemented!()
                     }
                     icon::Handle::Svg(handle) => {
-                        iced_native::svg::Renderer::draw(
-                            renderer,
-                            handle,
-                            Some(status_appearance.text_color),
-                            icon_bounds,
-                        );
+                        iced_native::svg::Renderer::draw(renderer, handle, icon_color, icon_bounds);
                     }
                 }
 

@@ -1,6 +1,7 @@
 // Copyright 2023 System76 <info@system76.com>
 // SPDX-License-Identifier: MPL-2.0
 
+use iced::Color;
 use slotmap::{SecondaryMap, SparseSecondaryMap};
 
 use super::{Entity, Model, Selectable};
@@ -105,6 +106,13 @@ where
     #[allow(clippy::must_use_candidate, clippy::return_self_not_must_use)]
     pub fn icon(mut self, icon: impl Into<IconSource<'static>>) -> Self {
         self.model.0.icon_set(self.id, icon);
+        self
+    }
+
+    /// Defines the color of an icon.
+    #[allow(clippy::must_use_candidate, clippy::return_self_not_must_use)]
+    pub fn icon_color(mut self, icon: Option<Color>) -> Self {
+        self.model.0.icon_color_set(self.id, icon);
         self
     }
 
