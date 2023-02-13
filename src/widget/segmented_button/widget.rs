@@ -234,7 +234,7 @@ where
             // Add close button to measurement if found.
             if self.model.is_closable(key) {
                 button_height = button_height.max(f32::from(self.icon_size));
-                button_width += f32::from(self.icon_size) + f32::from(self.button_spacing);
+                button_width += f32::from(self.icon_size) + f32::from(self.button_spacing) + 8.0;
             }
 
             height = height.max(button_height);
@@ -656,13 +656,11 @@ impl From<Id> for widget::Id {
 
 /// Calculates the bounds of the close button within the area of an item.
 fn close_bounds(area: Rectangle<f32>, icon_size: f32, button_padding: [u16; 4]) -> Rectangle<f32> {
-    let top = f32::from(button_padding[1]);
-    let end = f32::from(button_padding[2]);
-    let unpadded_height = area.height - top - end;
+    let unpadded_height = area.height - f32::from(button_padding[1]) - f32::from(button_padding[3]);
 
     Rectangle {
-        x: area.x + area.width - icon_size - f32::from(button_padding[2]),
-        y: area.y + f32::from(button_padding[1]) + (unpadded_height / 2.0),
+        x: area.x + area.width - icon_size - 8.0,
+        y: area.y + (unpadded_height / 2.0) - (icon_size / 2.0),
         width: icon_size,
         height: icon_size,
     }
