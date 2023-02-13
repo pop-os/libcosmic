@@ -11,10 +11,13 @@ mod selection;
 pub use self::selection::{MultiSelect, Selectable, SingleSelect};
 
 use crate::widget::IconSource;
+use iced::Color;
 use slotmap::{SecondaryMap, SlotMap};
 use std::any::{Any, TypeId};
 use std::borrow::Cow;
 use std::collections::{HashMap, VecDeque};
+
+use super::IconColor;
 
 slotmap::new_key_type! {
     /// A unique ID for an item in the [`Model`].
@@ -242,6 +245,24 @@ where
         }
 
         self.icons.insert(id, icon.into())
+    }
+
+    /// Sets the color of the icon. By default, the color matches the text.
+    pub fn icon_color_set(&mut self, id: Entity, color: Option<Color>) {
+        if self.contains_item(id) {
+            self.data_set(
+                id,
+                match color {
+                    Some(color) => IconColor::Color(color),
+                    None => IconColor::None,
+                },
+            );
+        }
+    }
+
+    /// Unsets the defined color of an icon.
+    pub fn icon_color_remove(&mut self, id: Entity) {
+        self.data_remove::<IconColor>(id);
     }
 
     /// Removes the icon from an item.

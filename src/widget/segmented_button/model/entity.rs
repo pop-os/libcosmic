@@ -3,6 +3,7 @@
 
 use std::borrow::Cow;
 
+use iced::Color;
 use slotmap::{SecondaryMap, SparseSecondaryMap};
 
 use crate::widget::IconSource;
@@ -91,6 +92,13 @@ where
     #[allow(clippy::must_use_candidate, clippy::return_self_not_must_use)]
     pub fn icon(self, icon: impl Into<IconSource<'static>>) -> Self {
         self.model.icon_set(self.id, icon);
+        self
+    }
+
+    /// Define the color for the icon.
+    #[allow(clippy::must_use_candidate, clippy::return_self_not_must_use)]
+    pub fn icon_color(self, icon: Option<Color>) -> Self {
+        self.model.icon_color_set(self.id, icon);
         self
     }
 
