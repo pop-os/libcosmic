@@ -1,4 +1,5 @@
-use cosmic::iced::widget::row;
+use apply::Apply;
+use cosmic::iced::widget::{horizontal_space, row, scrollable};
 use cosmic::iced::Length;
 use cosmic::iced_winit::Alignment;
 use cosmic::widget::{button, segmented_button, view_switcher};
@@ -65,14 +66,14 @@ impl State {
             .show_close_icon_on_hover(true)
             .on_activate(Message::Activate)
             .on_close(Message::Close)
-            .width(Length::Fill);
+            .width(Length::Shrink);
 
         let new_tab_button = button(theme::Button::Text)
             .icon(theme::Svg::Symbolic, "tab-new-symbolic", 20)
             .on_press(Message::AddNew);
 
-        row!(tabs, new_tab_button)
-            .align_items(Alignment::Center)
-            .into()
+        let tab_header = row!(tabs, new_tab_button).align_items(Alignment::Center);
+
+        row!(tab_header, horizontal_space(Length::Fill)).into()
     }
 }
