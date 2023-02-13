@@ -14,17 +14,17 @@ use std::{
     path::Path, path::PathBuf,
 };
 
+#[derive(Clone, Debug, Hash)]
 pub enum Handle {
     Image(image::Handle),
     Svg(svg::Handle),
 }
 
-#[derive(Debug, Hash)]
+#[derive(Clone, Debug, Hash)]
 pub enum IconSource<'a> {
     Path(Cow<'a, Path>),
     Name(Cow<'a, str>),
-    Embedded(image::Handle),
-    EmbeddedSvg(svg::Handle),
+    Handle(Handle),
 }
 
 impl<'a> IconSource<'a> {
@@ -33,6 +33,7 @@ impl<'a> IconSource<'a> {
     pub fn load(&self, size: u16, theme: Option<&str>, svg: bool) -> Handle {
         let name_path_buffer: Option<PathBuf>;
         let icon: Option<&Path> = match self {
+            IconSource::Handle(handle) => return handle.clone(),
             IconSource::Path(ref path) => Some(path),
             IconSource::Name(ref name) => {
                 let icon = crate::settings::DEFAULT_ICON_THEME.with(|default_theme| {
@@ -55,8 +56,6 @@ impl<'a> IconSource<'a> {
 
                 name_path_buffer.as_deref()
             }
-            IconSource::Embedded(handle) => return Handle::Image(handle.clone()),
-            IconSource::EmbeddedSvg(handle) => return Handle::Svg(handle.clone()),
         };
 
         let is_svg = svg
@@ -83,12 +82,12 @@ impl<'a> IconSource<'a> {
 
     /// Get a handle to a raster image from a path.
     pub fn raster_from_path(path: impl Into<PathBuf>) -> Self {
-        IconSource::Embedded(image::Handle::from_path(path))
+        IconSource::Handle(Handle::Image(image::Handle::from_path(path)))
     }
 
     /// Get a handle to a raster image from memory.
     pub fn raster_from_memory(bytes: impl Into<Cow<'static, [u8]>>) -> Self {
-        IconSource::Embedded(image::Handle::from_memory(bytes))
+        IconSource::Handle(Handle::Image(image::Handle::from_memory(bytes)))
     }
 
     /// Get a handle to a raster image from RGBA data, where you must define the width and height.
@@ -97,17 +96,19 @@ impl<'a> IconSource<'a> {
         height: u32,
         pixels: impl Into<Cow<'static, [u8]>>,
     ) -> Self {
-        IconSource::Embedded(image::Handle::from_pixels(width, height, pixels))
+        IconSource::Handle(Handle::Image(image::Handle::from_pixels(
+            width, height, pixels,
+        )))
     }
 
     /// Get a handle to a SVG from a path.
     pub fn svg_from_path(path: impl Into<PathBuf>) -> Self {
-        IconSource::EmbeddedSvg(svg::Handle::from_path(path))
+        IconSource::Handle(Handle::Svg(svg::Handle::from_path(path)))
     }
 
     /// Get a handle to a SVG from memory.
     pub fn svg_from_memory(bytes: impl Into<Cow<'static, [u8]>>) -> Self {
-        IconSource::EmbeddedSvg(svg::Handle::from_memory(bytes))
+        IconSource::Handle(Handle::Svg(svg::Handle::from_memory(bytes)))
     }
 }
 
@@ -149,13 +150,13 @@ impl<'a> From<&'a str> for IconSource<'a> {
 
 impl From<image::Handle> for IconSource<'static> {
     fn from(handle: image::Handle) -> Self {
-        Self::Embedded(handle)
+        Self::Handle(Handle::Image(handle))
     }
 }
 
 impl From<svg::Handle> for IconSource<'static> {
     fn from(handle: svg::Handle) -> Self {
-        Self::EmbeddedSvg(handle)
+        Self::Handle(Handle::Svg(handle))
     }
 }
 
@@ -192,16 +193,25 @@ pub fn icon<'a>(source: impl Into<IconSource<'a>>, size: u16) -> Icon<'a> {
 }
 
 impl<'a> Icon<'a> {
-    #[must_use]
-    fn into_element<Message: 'static>(self) -> Element<'a, Message> {
-        if let IconSource::Embedded(image) = self.source {
-            return iced::widget::image(image)
-                .width(self.width.unwrap_or(Length::Units(self.size)))
-                .height(self.height.unwrap_or(Length::Units(self.size)))
-                .content_fit(self.content_fit)
-                .into();
-        }
+    fn raster_element<Message: 'static>(&self, handle: image::Handle) -> Element<'static, Message> {
+        Image::new(handle)
+            .width(self.width.unwrap_or(Length::Units(self.size)))
+            .height(self.height.unwrap_or(Length::Units(self.size)))
+            .content_fit(self.content_fit)
+            .into()
+    }
 
+    fn svg_element<Message: 'static>(&self, handle: svg::Handle) -> Element<'static, Message> {
+        svg::Svg::<Renderer>::new(handle)
+            .style(self.style)
+            .width(self.width.unwrap_or(Length::Units(self.size)))
+            .height(self.height.unwrap_or(Length::Units(self.size)))
+            .content_fit(self.content_fit)
+            .into()
+    }
+
+    #[must_use]
+    fn into_element<Message: 'static>(mut self) -> Element<'a, Message> {
         let mut hasher = DefaultHasher::new();
         self.hash(&mut hasher);
 
@@ -211,22 +221,13 @@ impl<'a> Icon<'a> {
 
         let hash = hasher.finish();
 
+        let mut source = IconSource::Name(Cow::Borrowed(""));
+        std::mem::swap(&mut source, &mut self.source);
+
         iced_lazy::lazy(hash, move || -> Element<Message> {
-            match self
-                .source
-                .load(self.size, self.theme.as_deref(), self.force_svg)
-            {
-                Handle::Svg(handle) => svg::Svg::<Renderer>::new(handle)
-                    .style(self.style)
-                    .width(self.width.unwrap_or(Length::Units(self.size)))
-                    .height(self.height.unwrap_or(Length::Units(self.size)))
-                    .content_fit(self.content_fit)
-                    .into(),
-                Handle::Image(handle) => Image::new(handle)
-                    .width(self.width.unwrap_or(Length::Units(self.size)))
-                    .height(self.height.unwrap_or(Length::Units(self.size)))
-                    .content_fit(self.content_fit)
-                    .into(),
+            match source.load(self.size, self.theme.as_deref(), self.force_svg) {
+                Handle::Svg(handle) => self.svg_element(handle),
+                Handle::Image(handle) => self.raster_element(handle),
             }
         })
         .into()

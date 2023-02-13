@@ -19,7 +19,7 @@ use crate::{theme, widget::segmented_button, Theme};
 /// For details on the model, see the [`segmented_button`] module for more details.
 pub fn nav_bar<Message>(
     model: &segmented_button::SingleSelectModel,
-    on_activate: impl Fn(segmented_button::Entity) -> Message + 'static,
+    on_activate: fn(segmented_button::Entity) -> Message,
 ) -> iced::widget::Container<Message, crate::Renderer>
 where
     Message: Clone + 'static,

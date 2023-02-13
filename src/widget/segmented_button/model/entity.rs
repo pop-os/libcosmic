@@ -63,6 +63,13 @@ where
         self
     }
 
+    /// Shows a close button for this item.
+    #[allow(clippy::must_use_candidate, clippy::return_self_not_must_use)]
+    pub fn closable(self) -> Self {
+        self.model.closable_set(self.id, true);
+        self
+    }
+
     /// Associates data with the item.
     ///
     /// There may only be one data component per Rust type.

@@ -28,6 +28,8 @@ mod demo;
 use self::desktop::DesktopPage;
 mod desktop;
 
+mod editor;
+
 use self::input_devices::InputDevicesPage;
 mod input_devices;
 
@@ -51,6 +53,7 @@ pub trait SubPage {
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum Page {
     Demo,
+    Editor,
     WiFi,
     Networking(Option<NetworkingPage>),
     Bluetooth,
@@ -74,6 +77,7 @@ impl Page {
         use Page::*;
         match self {
             Demo => "Demo",
+            Editor => "Editor",
             WiFi => "Wi-Fi",
             Networking(_) => "Networking",
             Bluetooth => "Bluetooth",
@@ -96,6 +100,7 @@ impl Page {
         use Page::*;
         match self {
             Demo => "document-properties-symbolic",
+            Editor => "text-editor-symbolic",
             WiFi => "network-wireless-symbolic",
             Networking(_) => "network-workgroup-symbolic",
             Bluetooth => "bluetooth-active-symbolic",
@@ -130,6 +135,7 @@ pub struct Window {
     bluetooth: bluetooth::State,
     debug: bool,
     demo: demo::State,
+    editor: editor::State,
     desktop: desktop::State,
     nav_bar: segmented_button::SingleSelectModel,
     nav_id_to_page: segmented_button::SecondaryMap<Page>,
@@ -178,6 +184,7 @@ pub enum Message {
     Demo(demo::Message),
     Desktop(desktop::Message),
     Drag,
+    Editor(editor::Message),
     InputChanged,
     KeyboardNav(keyboard_nav::Message),
     Maximize,
@@ -318,6 +325,7 @@ impl Application for Window {
         window.warning_message = String::from("You were not supposed to touch that.");
 
         window.insert_page(Page::Demo);
+        window.insert_page(Page::Editor);
         window.insert_page(Page::WiFi);
         window.insert_page(Page::Networking(None));
         window.insert_page(Page::Bluetooth);
@@ -386,6 +394,7 @@ impl Application for Window {
                 Some(demo::Output::ToggleWarning) => self.toggle_warning(),
                 None => (),
             },
+            Message::Editor(message) => self.editor.update(message),
             Message::Desktop(message) => match self.desktop.update(message) {
                 Some(desktop::Output::Page(page)) => self.page(page),
                 None => (),
@@ -460,6 +469,7 @@ impl Application for Window {
         if !(self.is_condensed() && nav_bar_toggled) {
             let content: Element<_> = match self.page {
                 Page::Demo => self.demo.view(self).map(Message::Demo),
+                Page::Editor => self.editor.view(self).map(Message::Editor),
                 Page::Networking(None) => settings::view_column(vec![
                     self.page_title(self.page),
                     column!(
