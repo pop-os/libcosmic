@@ -81,20 +81,26 @@ impl CosmicAppletHelper {
 
     #[must_use]
     pub fn window_settings<F: Default>(&self) -> Settings<F> {
-        let mut settings = crate::settings();
+        self.window_settings_with_flags(F::default())
+    }
+
+    #[must_use]
+    pub fn window_settings_with_flags<F>(&self, flags: F) -> Settings<F> {
         let (width, height) = self.suggested_size();
         let width = u32::from(width);
         let height = u32::from(height);
-        settings.initial_surface = InitialSurface::XdgWindow(SctkWindowSettings {
-            iced_settings: iced_native::window::Settings {
-                size: (width + APPLET_PADDING * 2, height + APPLET_PADDING * 2),
-                min_size: Some((width + APPLET_PADDING * 2, height + APPLET_PADDING * 2)),
-                max_size: Some((width + APPLET_PADDING * 2, height + APPLET_PADDING * 2)),
+        Settings {
+            initial_surface: InitialSurface::XdgWindow(SctkWindowSettings {
+                iced_settings: iced_native::window::Settings {
+                    size: (width + APPLET_PADDING * 2, height + APPLET_PADDING * 2),
+                    min_size: Some((width + APPLET_PADDING * 2, height + APPLET_PADDING * 2)),
+                    max_size: Some((width + APPLET_PADDING * 2, height + APPLET_PADDING * 2)),
+                    ..Default::default()
+                },
                 ..Default::default()
-            },
-            ..Default::default()
-        });
-        settings
+            }),
+            ..crate::settings_with_flags(flags)
+        }
     }
 
     #[must_use]
