@@ -20,12 +20,18 @@ pub fn set_default_icon_theme(name: impl Into<String>) {
 /// Default iced settings for COSMIC applications.
 #[must_use]
 pub fn settings<Flags: Default>() -> iced::Settings<Flags> {
+    settings_with_flags(Flags::default())
+}
+
+/// Default iced settings for COSMIC applications.
+#[must_use]
+pub fn settings_with_flags<Flags>(flags: Flags) -> iced::Settings<Flags> {
     iced::Settings {
         default_font: match font::FONT {
             iced::Font::Default => None,
             iced::Font::External { bytes, .. } => Some(bytes),
         },
         default_text_size: 18,
-        ..iced::Settings::default()
+        ..iced::Settings::with_flags(flags)
     }
 }

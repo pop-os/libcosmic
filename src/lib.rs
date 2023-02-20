@@ -24,7 +24,7 @@ pub mod widget;
 pub use executor::single::Executor as SingleThreadExecutor;
 
 pub mod settings;
-pub use settings::settings;
+pub use settings::{settings, settings_with_flags};
 
 mod ext;
 pub use ext::ElementExt;
