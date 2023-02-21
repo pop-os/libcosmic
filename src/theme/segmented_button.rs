@@ -45,7 +45,7 @@ impl StyleSheet for Theme {
                             border_bottom: Some((1.0, cosmic.accent.base.into())),
                             ..Default::default()
                         },
-                        text_color: cosmic.primary.on.into(),
+                        text_color: cosmic.on.into(),
                     },
                     hover: hover(cosmic, &active),
                     focus: focus(cosmic, &active),
@@ -59,7 +59,7 @@ impl StyleSheet for Theme {
                 Appearance {
                     border_radius: BorderRadius::from(0.0),
                     inactive: ItemStatusAppearance {
-                        background: Some(Background::Color(cosmic.secondary.component.base.into())),
+                        background: Some(Background::Color(cosmic.basic.base.into())),
                         first: ItemAppearance {
                             border_radius: BorderRadius::from([24.0, 0.0, 0.0, 24.0]),
                             ..Default::default()
@@ -72,7 +72,7 @@ impl StyleSheet for Theme {
                             border_radius: BorderRadius::from([0.0, 24.0, 24.0, 0.0]),
                             ..Default::default()
                         },
-                        text_color: cosmic.primary.on.into(),
+                        text_color: cosmic.on.into(),
                     },
                     hover: hover(cosmic, &active),
                     focus: focus(cosmic, &active),
@@ -94,7 +94,7 @@ impl StyleSheet for Theme {
                     border_radius: BorderRadius::from(0.0),
                     inactive: ItemStatusAppearance {
                         background: None,
-                        text_color: cosmic.primary.on.into(),
+                        text_color: cosmic.on.into(),
                         ..active
                     },
                     hover: hover(cosmic, &active),
@@ -109,7 +109,7 @@ impl StyleSheet for Theme {
                 Appearance {
                     border_radius: BorderRadius::from(0.0),
                     inactive: ItemStatusAppearance {
-                        background: Some(Background::Color(cosmic.secondary.component.base.into())),
+                        background: Some(Background::Color(cosmic.basic.base.into())),
                         first: ItemAppearance {
                             border_radius: BorderRadius::from([24.0, 24.0, 0.0, 0.0]),
                             ..Default::default()
@@ -122,7 +122,7 @@ impl StyleSheet for Theme {
                             border_radius: BorderRadius::from([0.0, 0.0, 24.0, 24.0]),
                             ..Default::default()
                         },
-                        text_color: cosmic.primary.on.into(),
+                        text_color: cosmic.on.into(),
                     },
                     hover: hover(cosmic, &active),
                     focus: focus(cosmic, &active),
@@ -142,7 +142,7 @@ mod horizontal {
 
     pub fn selection_active(cosmic: &cosmic_theme::Theme<Alpha<Rgb, f32>>) -> ItemStatusAppearance {
         ItemStatusAppearance {
-            background: Some(Background::Color(cosmic.secondary.component.divider.into())),
+            background: Some(Background::Color(cosmic.divider.into())),
             first: ItemAppearance {
                 border_radius: BorderRadius::from([24.0, 0.0, 0.0, 24.0]),
                 ..Default::default()
@@ -163,7 +163,7 @@ mod horizontal {
         cosmic: &cosmic_theme::Theme<Alpha<Rgb, f32>>,
     ) -> ItemStatusAppearance {
         ItemStatusAppearance {
-            background: Some(Background::Color(cosmic.primary.component.base.into())),
+            background: Some(Background::Color(cosmic.basic.base.into())),
             first: ItemAppearance {
                 border_radius: BorderRadius::from([8.0, 8.0, 0.0, 0.0]),
                 border_bottom: Some((4.0, cosmic.accent.base.into())),
@@ -189,7 +189,7 @@ pub fn focus(
     default: &ItemStatusAppearance,
 ) -> ItemStatusAppearance {
     ItemStatusAppearance {
-        background: Some(Background::Color(cosmic.primary.component.focus.into())),
+        background: Some(Background::Color(cosmic.basic.focus.into())),
         text_color: cosmic.primary.base.into(),
         ..*default
     }
@@ -200,7 +200,7 @@ pub fn hover(
     default: &ItemStatusAppearance,
 ) -> ItemStatusAppearance {
     ItemStatusAppearance {
-        background: Some(Background::Color(cosmic.primary.component.hover.into())),
+        background: Some(Background::Color(cosmic.basic.hover.into())),
         text_color: cosmic.accent.base.into(),
         ..*default
     }
@@ -213,7 +213,7 @@ mod vertical {
 
     pub fn selection_active(cosmic: &cosmic_theme::Theme<Alpha<Rgb, f32>>) -> ItemStatusAppearance {
         ItemStatusAppearance {
-            background: Some(Background::Color(cosmic.secondary.component.divider.into())),
+            background: Some(Background::Color(cosmic.divider.into())),
             first: ItemAppearance {
                 border_radius: BorderRadius::from([24.0, 24.0, 0.0, 0.0]),
                 ..Default::default()
@@ -234,7 +234,7 @@ mod vertical {
         cosmic: &cosmic_theme::Theme<Alpha<Rgb, f32>>,
     ) -> ItemStatusAppearance {
         ItemStatusAppearance {
-            background: Some(Background::Color(cosmic.secondary.component.divider.into())),
+            background: Some(Background::Color(cosmic.divider.into())),
             first: ItemAppearance {
                 border_radius: BorderRadius::from(24.0),
                 ..Default::default()

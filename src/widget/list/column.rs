@@ -59,10 +59,10 @@ impl<'a, Message: 'static> From<ListColumn<'a, Message>> for Element<'a, Message
 #[must_use]
 #[allow(clippy::trivially_copy_pass_by_ref)]
 pub fn style(theme: &crate::Theme) -> iced::widget::container::Appearance {
-    let cosmic = &theme.cosmic().primary;
+    let cosmic = &theme.cosmic();
     iced::widget::container::Appearance {
         text_color: Some(cosmic.on.into()),
-        background: Some(Background::Color(cosmic.base.into())),
+        background: Some(Background::Color(cosmic.basic.base.into())),
         border_radius: 8.0,
         border_width: 0.0,
         border_color: Color::TRANSPARENT,

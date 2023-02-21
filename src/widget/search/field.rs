@@ -80,8 +80,8 @@ fn clear_button<Message: 'static>() -> Button<'static, Message, Renderer> {
 fn active_style(theme: &crate::Theme) -> container::Appearance {
     let cosmic = &theme.cosmic();
     iced::widget::container::Appearance {
-        text_color: Some(cosmic.primary.on.into()),
-        background: Some(Background::Color(cosmic.secondary.component.divider.into())),
+        text_color: Some(cosmic.on.into()),
+        background: Some(Background::Color(cosmic.divider.into())),
         border_radius: 24.0,
         border_width: 2.0,
         border_color: cosmic.accent.focus.into(),
