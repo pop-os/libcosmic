@@ -13,6 +13,7 @@ pub use self::segmented_button::SegmentedButton;
 
 use cosmic_theme::Component;
 use iced_core::BorderRadius;
+use iced_lazy::component;
 use iced_style::application;
 use iced_style::button;
 use iced_style::checkbox;
@@ -47,10 +48,9 @@ lazy_static::lazy_static! {
         selected: CosmicColor::new(0.0, 0.0, 0.0, 0.0),
         selected_text: CosmicColor::new(0.0, 0.0, 0.0, 0.0),
         focus: CosmicColor::new(0.0, 0.0, 0.0, 0.0),
-        divider: CosmicColor::new(0.0, 0.0, 0.0, 0.0),
-        on: CosmicColor::new(0.0, 0.0, 0.0, 0.0),
         disabled: CosmicColor::new(0.0, 0.0, 0.0, 0.0),
-        on_disabled: CosmicColor::new(0.0, 0.0, 0.0, 0.0),
+        on: CosmicColor::new(0.0, 0.0, 0.0, 0.0),
+        on_disabled: CosmicColor::new(0.0, 0.0, 0.0, 0.0)
     };
 }
 
@@ -113,7 +113,7 @@ impl application::StyleSheet for Theme {
         match style {
             Application::Default => application::Appearance {
                 background_color: cosmic.bg_color().into(),
-                text_color: cosmic.on_bg_color().into(),
+                text_color: cosmic.on.into(),
             },
             Application::Custom(f) => f(*self),
         }
@@ -153,14 +153,14 @@ impl Button {
         let cosmic = theme.cosmic();
         match self {
             Button::Primary => &cosmic.accent,
-            Button::Secondary => &cosmic.primary.component,
+            Button::Secondary => &cosmic.basic,
             Button::Positive => &cosmic.success,
             Button::Destructive => &cosmic.destructive,
-            Button::Text => &cosmic.secondary.component,
+            Button::Text => &cosmic.basic,
             Button::Link => &cosmic.accent,
-            Button::LinkActive => &cosmic.secondary.component,
+            Button::LinkActive => &cosmic.basic,
             Button::Transparent => &TRANSPARENT_COMPONENT,
-            Button::Deactivated => &cosmic.secondary.component,
+            Button::Deactivated => &cosmic.basic,
             Button::Custom { .. } => &TRANSPARENT_COMPONENT,
         }
     }
@@ -174,8 +174,8 @@ impl button::StyleSheet for Theme {
             return active(self);
         }
 
-        let cosmic = style.cosmic(self);
-
+        let component = style.cosmic(self);
+        let cosmic = self.cosmic();
         button::Appearance {
             border_radius: match style {
                 Button::Link => BorderRadius::from(0.0),
@@ -184,12 +184,12 @@ impl button::StyleSheet for Theme {
             background: match style {
                 Button::Link | Button::Text => None,
                 Button::LinkActive => Some(Background::Color(cosmic.divider.into())),
-                _ => Some(Background::Color(cosmic.base.into())),
+                _ => Some(Background::Color(component.base.into())),
             },
             text_color: match style {
-                Button::Link => cosmic.base.into(),
-                Button::LinkActive => cosmic.selected_text.into(),
-                _ => cosmic.on.into(),
+                Button::Link => component.base.into(),
+                Button::LinkActive => component.selected_text.into(),
+                _ => component.on.into(),
             },
             ..button::Appearance::default()
         }
@@ -201,13 +201,14 @@ impl button::StyleSheet for Theme {
         }
 
         let active = self.active(style);
-        let cosmic = style.cosmic(self);
+        let component = style.cosmic(self);
+        let cosmic = self.cosmic();
 
         button::Appearance {
             background: match style {
                 Button::Link => None,
                 Button::LinkActive => Some(Background::Color(cosmic.divider.into())),
-                _ => Some(Background::Color(cosmic.hover.into())),
+                _ => Some(Background::Color(component.hover.into())),
             },
             ..active
         }
@@ -219,13 +220,13 @@ impl button::StyleSheet for Theme {
         }
 
         let active = self.active(style);
-        let cosmic = style.cosmic(self);
-
+        let component = style.cosmic(self);
+        let cosmic = self.cosmic();
         button::Appearance {
             background: match style {
                 Button::Link => None,
                 Button::LinkActive => Some(Background::Color(cosmic.divider.into())),
-                _ => Some(Background::Color(cosmic.hover.into())),
+                _ => Some(Background::Color(component.hover.into())),
             },
             ..active
         }
@@ -460,13 +461,13 @@ impl menu::StyleSheet for Theme {
         let cosmic = self.cosmic();
 
         menu::Appearance {
-            text_color: cosmic.primary.component.on.into(),
+            text_color: cosmic.on.into(),
             background: Background::Color(cosmic.background.base.into()),
             border_width: 0.0,
             border_radius: 16.0,
             border_color: Color::TRANSPARENT,
-            selected_text_color: cosmic.primary.component.on.into(),
-            selected_background: Background::Color(cosmic.primary.component.hover.into()),
+            selected_text_color: cosmic.on.into(),
+            selected_background: Background::Color(cosmic.basic.hover.into()),
         }
     }
 }
@@ -478,7 +479,7 @@ impl pick_list::StyleSheet for Theme {
     type Style = ();
 
     fn active(&self, _style: &()) -> pick_list::Appearance {
-        let cosmic = &self.cosmic().primary.component;
+        let cosmic = &self.cosmic();
 
         pick_list::Appearance {
             text_color: cosmic.on.into(),
@@ -492,7 +493,7 @@ impl pick_list::StyleSheet for Theme {
     }
 
     fn hovered(&self, style: &()) -> pick_list::Appearance {
-        let cosmic = &self.cosmic().primary.component;
+        let cosmic = &self.cosmic().basic;
 
         pick_list::Appearance {
             background: Background::Color(cosmic.hover.into()),
@@ -677,7 +678,7 @@ impl rule::StyleSheet for Theme {
                 fill_mode: rule::FillMode::Full,
             },
             Rule::LightDivider => {
-                let cosmic = &self.cosmic().primary;
+                let cosmic = &self.cosmic();
                 rule::Appearance {
                     color: cosmic.divider.into(),
                     width: 1,
@@ -686,7 +687,7 @@ impl rule::StyleSheet for Theme {
                 }
             }
             Rule::HeavyDivider => {
-                let cosmic = &self.cosmic().primary;
+                let cosmic = &self.cosmic();
                 rule::Appearance {
                     color: cosmic.divider.into(),
                     width: 4,

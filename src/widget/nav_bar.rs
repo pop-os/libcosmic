@@ -41,10 +41,10 @@ where
 
 #[must_use]
 pub fn nav_bar_style(theme: &Theme) -> iced_style::container::Appearance {
-    let cosmic = &theme.cosmic().primary;
+    let cosmic = &theme.cosmic();
     iced_style::container::Appearance {
         text_color: Some(cosmic.on.into()),
-        background: Some(Background::Color(cosmic.base.into())),
+        background: Some(Background::Color(cosmic.primary.base.into())),
         border_radius: 8.0,
         border_width: 0.0,
         border_color: Color::TRANSPARENT,
