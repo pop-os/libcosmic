@@ -237,7 +237,7 @@ impl State {
                         .width(Length::Units(300))
                 )
                 .padding(4)
-                .style(theme::Container::Box),
+                .style(theme::Container::Background),
                 horizontal_space(Length::Fill),
             )
             .into(),

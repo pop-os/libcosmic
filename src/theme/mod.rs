@@ -2,16 +2,15 @@
 // SPDX-License-Identifier: MPL-2.0
 
 pub mod expander;
-pub mod palette;
 mod segmented_button;
 
 use std::hash::Hash;
 use std::hash::Hasher;
 
-pub use self::palette::Palette;
 pub use self::segmented_button::SegmentedButton;
 
 use cosmic_theme::Component;
+use cosmic_theme::CosmicPalette;
 use iced_core::BorderRadius;
 use iced_lazy::component;
 use iced_style::application;
@@ -37,6 +36,7 @@ type CosmicColor = ::palette::rgb::Srgba;
 type CosmicComponent = cosmic_theme::Component<CosmicColor>;
 type CosmicTheme = cosmic_theme::Theme<CosmicColor>;
 type CosmicThemeCss = cosmic_theme::Theme<cosmic_theme::util::CssColor>;
+type CosmicPaletteCss = cosmic_theme::Theme<cosmic_theme::util::CssColor>;
 
 lazy_static::lazy_static! {
     pub static ref COSMIC_DARK: CosmicTheme = CosmicThemeCss::dark_default().into_srgba();
@@ -66,22 +66,6 @@ impl Theme {
         match self {
             Self::Dark => &COSMIC_DARK,
             Self::Light => &COSMIC_LIGHT,
-        }
-    }
-
-    #[must_use]
-    pub fn palette(self) -> Palette {
-        match self {
-            Self::Dark => Palette::DARK,
-            Self::Light => Palette::LIGHT,
-        }
-    }
-
-    #[must_use]
-    pub fn extended_palette(&self) -> &self::palette::Extended {
-        match self {
-            Self::Dark => &self::palette::EXTENDED_DARK,
-            Self::Light => &self::palette::EXTENDED_LIGHT,
         }
     }
 }
@@ -254,80 +238,84 @@ impl checkbox::StyleSheet for Theme {
     type Style = Checkbox;
 
     fn active(&self, style: &Self::Style, is_checked: bool) -> checkbox::Appearance {
-        let palette = self.extended_palette();
+        let palette = self.cosmic();
 
         match style {
             Checkbox::Primary => checkbox_appearance(
-                palette.primary.strong.text,
-                palette.background.base,
-                palette.primary.strong,
+                palette.accent.on,
+                palette.basic.base,
+                palette.accent.base,
                 is_checked,
             ),
             Checkbox::Secondary => checkbox_appearance(
-                palette.background.base.text,
-                palette.background.base,
-                palette.background.base,
+                palette.basic.on,
+                palette.basic.base,
+                palette.basic.base,
                 is_checked,
             ),
             Checkbox::Success => checkbox_appearance(
-                palette.success.base.text,
-                palette.background.base,
+                palette.success.on,
+                palette.basic.base,
                 palette.success.base,
                 is_checked,
             ),
             Checkbox::Danger => checkbox_appearance(
-                palette.danger.base.text,
-                palette.background.base,
-                palette.danger.base,
+                palette.destructive.on,
+                palette.basic.base,
+                palette.destructive.base,
                 is_checked,
             ),
         }
     }
 
     fn hovered(&self, style: &Self::Style, is_checked: bool) -> checkbox::Appearance {
-        let palette = self.extended_palette();
+        let palette = self.cosmic();
 
         match style {
             Checkbox::Primary => checkbox_appearance(
-                palette.primary.strong.text,
-                palette.background.weak,
-                palette.primary.base,
+                palette.accent.on,
+                palette.basic.hover,
+                palette.accent.hover,
                 is_checked,
             ),
             Checkbox::Secondary => checkbox_appearance(
-                palette.background.base.text,
-                palette.background.weak,
-                palette.background.base,
+                palette.basic.on,
+                palette.basic.hover,
+                palette.basic.hover,
                 is_checked,
             ),
             Checkbox::Success => checkbox_appearance(
-                palette.success.base.text,
-                palette.background.weak,
-                palette.success.base,
+                palette.success.on,
+                palette.basic.hover,
+                palette.success.hover,
                 is_checked,
             ),
             Checkbox::Danger => checkbox_appearance(
-                palette.danger.base.text,
-                palette.background.weak,
-                palette.danger.base,
+                palette.destructive.on,
+                palette.basic.hover,
+                palette.destructive.hover,
                 is_checked,
             ),
         }
     }
 }
 
-fn checkbox_appearance(
-    checkmark_color: Color,
-    base: palette::Pair,
-    accent: palette::Pair,
+fn checkbox_appearance<T: Into<Color> + Clone>(
+    checkmark_color: T,
+    base: T,
+    accent: T,
     is_checked: bool,
 ) -> checkbox::Appearance {
     checkbox::Appearance {
-        background: Background::Color(if is_checked { accent.color } else { base.color }),
-        checkmark_color,
+        background: Background::Color(if is_checked {
+            accent.clone().into()
+        } else {
+            base.into()
+        }),
+        checkmark_color: checkmark_color.into(),
         border_radius: 4.0,
         border_width: if is_checked { 0.0 } else { 1.0 },
-        border_color: accent.color,
+        border_color: accent.into(),
         text_color: None,
     }
 }
@@ -366,8 +354,10 @@ impl expander::StyleSheet for Theme {
  */
 #[derive(Clone, Copy)]
 pub enum Container {
+    Background,
+    Primary,
+    Secondary,
     Transparent,
-    Box,
     Custom(fn(&Theme) -> container::Appearance),
 }
 
@@ -389,18 +379,40 @@ impl container::StyleSheet for Theme {
     fn appearance(&self, style: &Self::Style) -> container::Appearance {
         match style {
             Container::Transparent => container::Appearance::default(),
-            Container::Box => {
-                let palette = self.extended_palette();
+            Container::Custom(f) => f(self),
+            Container::Background => {
+                let palette = self.cosmic();
 
                 container::Appearance {
                     text_color: None,
-                    background: palette.background.weak.color.into(),
+                    background: Some(iced::Background::Color(palette.background.base.into())),
                     border_radius: 2.0,
                     border_width: 0.0,
                     border_color: Color::TRANSPARENT,
                 }
             }
-            Container::Custom(f) => f(self),
+            Container::Primary => {
+                let palette = self.cosmic();
+
+                container::Appearance {
+                    text_color: None,
+                    background: Some(iced::Background::Color(palette.primary.base.into())),
+                    border_radius: 2.0,
+                    border_width: 0.0,
+                    border_color: Color::TRANSPARENT,
+                }
+            }
+            Container::Secondary => {
+                let palette = self.cosmic();
+
+                container::Appearance {
+                    text_color: None,
+                    background: Some(iced::Background::Color(palette.secondary.base.into())),
+                    border_radius: 2.0,
+                    border_width: 0.0,
+                    border_color: Color::TRANSPARENT,
+                }
+            }
         }
     }
 }
@@ -508,25 +520,35 @@ impl pick_list::StyleSheet for Theme {
 impl radio::StyleSheet for Theme {
     type Style = ();
 
-    fn active(&self, _style: &Self::Style, _is_selected: bool) -> radio::Appearance {
-        let palette = self.extended_palette();
+    fn active(&self, _style: &Self::Style, is_selected: bool) -> radio::Appearance {
+        let theme = self.cosmic();
 
         radio::Appearance {
-            background: Color::TRANSPARENT.into(),
-            dot_color: palette.primary.strong.color,
+            background: if is_selected {
+                Color::from(theme.accent.base).into()
+            } else {
+                // TODO: this seems to be defined weirdly in FIGMA
+                Color::from(theme.basic.base).into()
+            },
+            dot_color: theme.accent.on.into(),
             border_width: 1.0,
-            border_color: palette.primary.strong.color,
+            border_color: theme.on.into(),
             text_color: None,
         }
     }
 
     fn hovered(&self, style: &Self::Style, is_selected: bool) -> radio::Appearance {
         let active = self.active(style, is_selected);
-        let palette = self.extended_palette();
+        let theme = self.cosmic();
 
         radio::Appearance {
-            dot_color: palette.primary.strong.color,
-            background: palette.primary.weak.color.into(),
+            dot_color: theme.accent.on.into(),
+            background: if is_selected {
+                Color::from(theme.accent.hover).into()
+            } else {
+                // TODO: this seems to be defined weirdly in FIGMA
+                Color::from(theme.basic.hover).into()
+            },
             ..active
         }
     }
@@ -539,24 +561,18 @@ impl toggler::StyleSheet for Theme {
     type Style = ();
 
     fn active(&self, _style: &Self::Style, is_active: bool) -> toggler::Appearance {
-        let palette = self.palette();
+        let theme = self.cosmic();
 
         toggler::Appearance {
             background: if is_active {
-                palette.primary
+                theme.accent.base.into()
             } else {
                 //TODO: Grab neutral from palette
-                match self {
-                    Theme::Dark => Color::from_rgb8(0x78, 0x78, 0x78),
-                    Theme::Light => Color::from_rgb8(0x93, 0x93, 0x93),
-                }
+                theme.palette.neutral_5.into()
             },
             background_border: None,
             //TODO: Grab neutral from palette
-            foreground: match self {
-                Theme::Dark => Color::from_rgb8(0x27, 0x27, 0x27),
-                Theme::Light => Color::from_rgb8(0xe4, 0xe4, 0xe4),
-            },
+            foreground: theme.palette.neutral_2.into(),
             foreground_border: None,
         }
     }
@@ -591,19 +607,19 @@ impl pane_grid::StyleSheet for Theme {
     type Style = ();
 
     fn picked_split(&self, _style: &Self::Style) -> Option<pane_grid::Line> {
-        let palette = self.extended_palette();
+        let theme = self.cosmic();
 
         Some(pane_grid::Line {
-            color: palette.primary.strong.color,
+            color: theme.accent.base.into(),
             width: 2.0,
         })
     }
 
     fn hovered_split(&self, _style: &Self::Style) -> Option<pane_grid::Line> {
-        let palette = self.extended_palette();
+        let theme = self.cosmic();
 
         Some(pane_grid::Line {
-            color: palette.primary.base.color,
+            color: theme.accent.hover.into(),
             width: 2.0,
         })
     }
@@ -630,18 +646,18 @@ impl progress_bar::StyleSheet for Theme {
     type Style = ProgressBar;
 
     fn appearance(&self, style: &Self::Style) -> progress_bar::Appearance {
-        let palette = self.extended_palette();
+        let theme = self.cosmic();
 
-        let from_palette = |bar: Color| progress_bar::Appearance {
-            background: palette.background.strong.color.into(),
-            bar: bar.into(),
+        let from_palette = |bar: cosmic_theme::Component<_>| progress_bar::Appearance {
+            background: Color::from(bar.base).into(),
+            bar: Color::from(bar.on).into(),
             border_radius: 2.0,
         };
 
         match style {
-            ProgressBar::Primary => from_palette(palette.primary.base.color),
-            ProgressBar::Success => from_palette(palette.success.base.color),
-            ProgressBar::Danger => from_palette(palette.danger.base.color),
+            ProgressBar::Primary => from_palette(theme.basic.clone()),
+            ProgressBar::Success => from_palette(theme.success.clone()),
+            ProgressBar::Danger => from_palette(theme.destructive.clone()),
             ProgressBar::Custom(f) => f(self),
         }
     }
@@ -668,11 +684,11 @@ impl rule::StyleSheet for Theme {
     type Style = Rule;
 
     fn appearance(&self, style: &Self::Style) -> rule::Appearance {
-        let palette = self.extended_palette();
+        let palette = self.cosmic();
 
         match style {
             Rule::Default => rule::Appearance {
-                color: palette.background.strong.color,
+                color: palette.on.into(),
                 width: 1,
                 radius: 0.0,
                 fill_mode: rule::FillMode::Full,
@@ -707,15 +723,15 @@ impl scrollable::StyleSheet for Theme {
     type Style = ();
 
     fn active(&self, _style: &Self::Style) -> scrollable::Scrollbar {
-        let palette = self.extended_palette();
+        let theme = self.cosmic();
 
         scrollable::Scrollbar {
-            background: palette.background.weak.color.into(),
+            background: Some(Background::Color(theme.basic.base.into())),
             border_radius: 4.0,
             border_width: 0.0,
             border_color: Color::TRANSPARENT,
             scroller: scrollable::Scroller {
-                color: palette.background.strong.color,
+                color: theme.divider.into(),
                 border_radius: 4.0,
                 border_width: 0.0,
                 border_color: Color::TRANSPARENT,
@@ -724,15 +740,15 @@ impl scrollable::StyleSheet for Theme {
     }
 
     fn hovered(&self, _style: &Self::Style) -> scrollable::Scrollbar {
-        let palette = self.extended_palette();
+        let theme = self.cosmic();
 
         scrollable::Scrollbar {
-            background: palette.background.weak.color.into(),
+            background: Some(Background::Color(theme.basic.base.into())),
             border_radius: 4.0,
             border_width: 0.0,
             border_color: Color::TRANSPARENT,
             scroller: scrollable::Scroller {
-                color: palette.primary.strong.color,
+                color: theme.accent.base.into(),
                 border_radius: 4.0,
                 border_width: 0.0,
                 border_color: Color::TRANSPARENT,
@@ -782,7 +798,7 @@ impl svg::StyleSheet for Theme {
             Svg::Default => svg::Appearance::default(),
             Svg::Custom(appearance) => appearance(self),
             Svg::Symbolic => svg::Appearance {
-                color: Some(self.extended_palette().background.base.text),
+                color: Some(self.cosmic().on.into()),
             },
             Svg::SymbolicActive => svg::Appearance {
                 color: Some(self.cosmic().accent.base.into()),
@@ -844,14 +860,14 @@ impl text_input::StyleSheet for Theme {
     type Style = TextInput;
 
     fn active(&self, style: &Self::Style) -> text_input::Appearance {
-        let palette = self.extended_palette();
+        let palette = self.cosmic();
 
         match style {
             TextInput::Default => text_input::Appearance {
-                background: palette.background.base.color.into(),
+                background: Background::Color(palette.basic.base.into()),
                 border_radius: 2.0,
                 border_width: 1.0,
-                border_color: palette.background.strong.color,
+                border_color: palette.divider.into(),
             },
             TextInput::Search => text_input::Appearance {
                 background: Background::Color(Color::TRANSPARENT),
@@ -863,14 +879,14 @@ impl text_input::StyleSheet for Theme {
     }
 
     fn hovered(&self, style: &Self::Style) -> text_input::Appearance {
-        let palette = self.extended_palette();
+        let palette = self.cosmic();
 
         match style {
             TextInput::Default => text_input::Appearance {
-                background: palette.background.base.color.into(),
+                background: Background::Color(palette.basic.base.into()),
                 border_radius: 2.0,
                 border_width: 1.0,
-                border_color: palette.background.base.text,
+                border_color: palette.on.into(),
             },
             TextInput::Search => text_input::Appearance {
                 background: Background::Color(Color::TRANSPARENT),
@@ -882,14 +898,14 @@ impl text_input::StyleSheet for Theme {
     }
 
     fn focused(&self, style: &Self::Style) -> text_input::Appearance {
-        let palette = self.extended_palette();
+        let palette = self.cosmic();
 
         match style {
             TextInput::Default => text_input::Appearance {
-                background: palette.background.base.color.into(),
+                background: Background::Color(palette.basic.base.into()),
                 border_radius: 2.0,
                 border_width: 1.0,
-                border_color: palette.primary.strong.color,
+                border_color: palette.accent.base.into(),
             },
             TextInput::Search => text_input::Appearance {
                 background: Background::Color(Color::TRANSPARENT),
@@ -901,20 +917,20 @@ impl text_input::StyleSheet for Theme {
     }
 
     fn placeholder_color(&self, _style: &Self::Style) -> Color {
-        let palette = self.extended_palette();
+        let palette = self.cosmic();
 
-        palette.background.strong.color
+        palette.divider.into()
     }
 
     fn value_color(&self, _style: &Self::Style) -> Color {
-        let palette = self.extended_palette();
+        let palette = self.cosmic();
 
-        palette.background.base.text
+        palette.on.into()
     }
 
     fn selection_color(&self, _style: &Self::Style) -> Color {
-        let palette = self.extended_palette();
+        let palette = self.cosmic();
 
-        palette.primary.weak.color
+        palette.basic.selected_text.into()
     }
 }
