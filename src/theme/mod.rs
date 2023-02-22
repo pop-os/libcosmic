@@ -10,9 +10,7 @@ use std::hash::Hasher;
 pub use self::segmented_button::SegmentedButton;
 
 use cosmic_theme::Component;
-use cosmic_theme::CosmicPalette;
 use iced_core::BorderRadius;
-use iced_lazy::component;
 use iced_style::application;
 use iced_style::button;
 use iced_style::checkbox;
@@ -36,7 +34,6 @@ type CosmicColor = ::palette::rgb::Srgba;
 type CosmicComponent = cosmic_theme::Component<CosmicColor>;
 type CosmicTheme = cosmic_theme::Theme<CosmicColor>;
 type CosmicThemeCss = cosmic_theme::Theme<cosmic_theme::util::CssColor>;
-type CosmicPaletteCss = cosmic_theme::Theme<cosmic_theme::util::CssColor>;
 
 lazy_static::lazy_static! {
     pub static ref COSMIC_DARK: CosmicTheme = CosmicThemeCss::dark_default().into_srgba();
@@ -648,16 +645,22 @@ impl progress_bar::StyleSheet for Theme {
     fn appearance(&self, style: &Self::Style) -> progress_bar::Appearance {
         let theme = self.cosmic();
 
-        let from_palette = |bar: cosmic_theme::Component<_>| progress_bar::Appearance {
-            background: Color::from(bar.base).into(),
-            bar: Color::from(bar.on).into(),
-            border_radius: 2.0,
-        };
-
         match style {
-            ProgressBar::Primary => from_palette(theme.basic.clone()),
-            ProgressBar::Success => from_palette(theme.success.clone()),
-            ProgressBar::Danger => from_palette(theme.destructive.clone()),
+            ProgressBar::Primary => progress_bar::Appearance {
+                background: Color::from(theme.divider).into(),
+                bar: Color::from(theme.accent.base).into(),
+                border_radius: 2.0,
+            },
+            ProgressBar::Success => progress_bar::Appearance {
+                background: Color::from(theme.divider).into(),
+                bar: Color::from(theme.success.base).into(),
+                border_radius: 2.0,
+            },
+            ProgressBar::Danger => progress_bar::Appearance {
+                background: Color::from(theme.divider).into(),
+                bar: Color::from(theme.destructive.base).into(),
+                border_radius: 2.0,
+            },
             ProgressBar::Custom(f) => f(self),
         }
     }
