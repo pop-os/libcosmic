@@ -97,11 +97,13 @@ impl<'a, Message: 'static> From<SpinButton<'a, Message>> for Element<'a, Message
 
 #[allow(clippy::trivially_copy_pass_by_ref)]
 fn container_style(theme: &crate::Theme) -> iced_style::container::Appearance {
-    let basic = &theme.cosmic().basic;
+    let basic = &theme.cosmic();
+    let mut neutral_10 = basic.palette.neutral_10;
+    neutral_10.alpha = 0.1;
     let accent = &theme.cosmic().accent;
     iced_style::container::Appearance {
-        text_color: None,
-        background: Some(Background::Color(basic.base.into())),
+        text_color: Some(basic.palette.neutral_10.into()),
+        background: Some(Background::Color(neutral_10.into())),
         border_radius: 24.0,
         border_width: 0.0,
         border_color: accent.base.into(),
