@@ -17,7 +17,11 @@ pub fn cosmic_container<'a, Message: 'static, T>(
 where
     T: Into<Element<'a, Message, crate::Renderer>>,
 {
-    CosmicContainer::new(content, layer)
+    CosmicContainer::new(content, layer).style(match layer {
+        cosmic_theme::Layer::Background => crate::theme::Container::Background,
+        cosmic_theme::Layer::Primary => crate::theme::Container::Primary,
+        cosmic_theme::Layer::Secondary => crate::theme::Container::Secondary,
+    })
 }
 
 /// An element decorating some content.
@@ -142,7 +146,7 @@ where
     }
 
     fn layout(&self, renderer: &Renderer, limits: &layout::Limits) -> layout::Node {
-        self.container.layout(renderer, &limits)
+        self.container.layout(renderer, limits)
     }
 
     fn operate(&self, tree: &mut Tree, layout: Layout<'_>, operation: &mut dyn Operation<Message>) {

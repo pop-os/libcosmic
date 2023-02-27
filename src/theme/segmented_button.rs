@@ -57,7 +57,7 @@ impl StyleSheet for Theme {
                 let cosmic = self.cosmic();
                 let active = horizontal::selection_active(cosmic);
                 let mut neutral_5 = cosmic.palette.neutral_5;
-                neutral_5.alpha = 0.25;
+                neutral_5.alpha = 0.2;
                 Appearance {
                     border_radius: BorderRadius::from(0.0),
                     inactive: ItemStatusAppearance {
@@ -109,7 +109,7 @@ impl StyleSheet for Theme {
                 let cosmic = self.cosmic();
                 let active = vertical::selection_active(cosmic);
                 let mut neutral_5 = cosmic.palette.neutral_5;
-                neutral_5.alpha = 0.25;
+                neutral_5.alpha = 0.2;
                 Appearance {
                     border_radius: BorderRadius::from(0.0),
                     inactive: ItemStatusAppearance {
@@ -146,7 +146,7 @@ mod horizontal {
 
     pub fn selection_active(cosmic: &cosmic_theme::Theme<Alpha<Rgb, f32>>) -> ItemStatusAppearance {
         let mut neutral_5 = cosmic.palette.neutral_5;
-        neutral_5.alpha = 0.25;
+        neutral_5.alpha = 0.2;
         ItemStatusAppearance {
             background: Some(Background::Color(neutral_5.into())),
             first: ItemAppearance {
@@ -169,7 +169,7 @@ mod horizontal {
         cosmic: &cosmic_theme::Theme<Alpha<Rgb, f32>>,
     ) -> ItemStatusAppearance {
         let mut neutral_5 = cosmic.palette.neutral_5;
-        neutral_5.alpha = 0.25;
+        neutral_5.alpha = 0.2;
         ItemStatusAppearance {
             background: Some(Background::Color(neutral_5.into())),
             first: ItemAppearance {
@@ -196,8 +196,10 @@ pub fn focus(
     cosmic: &cosmic_theme::Theme<Alpha<Rgb, f32>>,
     default: &ItemStatusAppearance,
 ) -> ItemStatusAppearance {
+    // TODO: This is a hack to make the hover color lighter than the selected color
+    // I'm not sure why the alpha is being applied differently here than in figma
     let mut neutral_5 = cosmic.palette.neutral_5;
-    neutral_5.alpha = 0.25;
+    neutral_5.alpha = 0.2;
     ItemStatusAppearance {
         background: Some(Background::Color(neutral_5.into())),
         text_color: cosmic.accent.base.into(),
@@ -225,7 +227,7 @@ mod vertical {
 
     pub fn selection_active(cosmic: &cosmic_theme::Theme<Alpha<Rgb, f32>>) -> ItemStatusAppearance {
         let mut neutral_5 = cosmic.palette.neutral_5;
-        neutral_5.alpha = 0.25;
+        neutral_5.alpha = 0.2;
         ItemStatusAppearance {
             background: Some(Background::Color(neutral_5.into())),
             first: ItemAppearance {
@@ -248,7 +250,7 @@ mod vertical {
         cosmic: &cosmic_theme::Theme<Alpha<Rgb, f32>>,
     ) -> ItemStatusAppearance {
         let mut neutral_5 = cosmic.palette.neutral_5;
-        neutral_5.alpha = 0.25;
+        neutral_5.alpha = 0.2;
         ItemStatusAppearance {
             background: Some(Background::Color(neutral_5.into())),
             first: ItemAppearance {

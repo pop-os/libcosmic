@@ -232,7 +232,6 @@ impl button::StyleSheet for Theme {
 
         let active = self.active(style);
         let component = style.cosmic(self);
-        let cosmic = self.cosmic();
         button::Appearance {
             background: match style {
                 Button::Link => None,
@@ -266,12 +265,12 @@ impl checkbox::StyleSheet for Theme {
 
     fn active(&self, style: &Self::Style, is_checked: bool) -> checkbox::Appearance {
         let palette = self.cosmic();
-        let mut neutral_7 = palette.palette.neutral_10.clone();
+        let neutral_7 = palette.palette.neutral_10;
 
         match style {
             Checkbox::Primary => checkbox::Appearance {
                 background: Background::Color(if is_checked {
-                    palette.accent.base.clone().into()
+                    palette.accent.base.into()
                 } else {
                     palette.background.base.into()
                 }),
@@ -288,7 +287,7 @@ impl checkbox::StyleSheet for Theme {
             },
             Checkbox::Secondary => checkbox::Appearance {
                 background: Background::Color(if is_checked {
-                    palette.background.component.base.clone().into()
+                    palette.background.component.base.into()
                 } else {
                     palette.background.base.into()
                 }),
@@ -300,7 +299,7 @@ impl checkbox::StyleSheet for Theme {
             },
             Checkbox::Success => checkbox::Appearance {
                 background: Background::Color(if is_checked {
-                    palette.success.base.clone().into()
+                    palette.success.base.into()
                 } else {
                     palette.background.base.into()
                 }),
@@ -317,7 +316,7 @@ impl checkbox::StyleSheet for Theme {
             },
             Checkbox::Danger => checkbox::Appearance {
                 background: Background::Color(if is_checked {
-                    palette.destructive.base.clone().into()
+                    palette.destructive.base.into()
                 } else {
                     palette.background.base.into()
                 }),
@@ -337,22 +336,22 @@ impl checkbox::StyleSheet for Theme {
 
     fn hovered(&self, style: &Self::Style, is_checked: bool) -> checkbox::Appearance {
         let palette = self.cosmic();
-        let mut neutral_10 = palette.palette.neutral_10.clone();
-        let mut neutral_7 = palette.palette.neutral_10.clone();
+        let mut neutral_10 = palette.palette.neutral_10;
+        let neutral_7 = palette.palette.neutral_10;
 
         neutral_10.alpha = 0.1;
         match style {
             Checkbox::Primary => checkbox::Appearance {
                 background: Background::Color(if is_checked {
-                    palette.destructive.base.clone().into()
+                    palette.accent.base.into()
                 } else {
                     neutral_10.into()
                 }),
-                checkmark_color: palette.destructive.on.into(),
+                checkmark_color: palette.accent.on.into(),
                 border_radius: 4.0,
                 border_width: if is_checked { 0.0 } else { 1.0 },
                 border_color: if is_checked {
-                    palette.destructive.base
+                    palette.accent.base
                 } else {
                     neutral_7
                 }
@@ -361,15 +360,15 @@ impl checkbox::StyleSheet for Theme {
             },
             Checkbox::Secondary => checkbox::Appearance {
                 background: Background::Color(if is_checked {
-                    palette.destructive.base.clone().into()
+                    palette.current_container().base.into()
                 } else {
                     neutral_10.into()
                 }),
-                checkmark_color: palette.destructive.on.into(),
+                checkmark_color: palette.current_container().on.into(),
                 border_radius: 4.0,
                 border_width: if is_checked { 0.0 } else { 1.0 },
                 border_color: if is_checked {
-                    palette.destructive.base
+                    palette.current_container().base
                 } else {
                     neutral_7
                 }
@@ -378,15 +377,15 @@ impl checkbox::StyleSheet for Theme {
             },
             Checkbox::Success => checkbox::Appearance {
                 background: Background::Color(if is_checked {
-                    palette.destructive.base.clone().into()
+                    palette.success.base.into()
                 } else {
                     neutral_10.into()
                 }),
-                checkmark_color: palette.destructive.on.into(),
+                checkmark_color: palette.success.on.into(),
                 border_radius: 4.0,
                 border_width: if is_checked { 0.0 } else { 1.0 },
                 border_color: if is_checked {
-                    palette.destructive.base
+                    palette.success.base
                 } else {
                     neutral_7
                 }
@@ -395,7 +394,7 @@ impl checkbox::StyleSheet for Theme {
             },
             Checkbox::Danger => checkbox::Appearance {
                 background: Background::Color(if is_checked {
-                    palette.destructive.base.clone().into()
+                    palette.destructive.base.into()
                 } else {
                     neutral_10.into()
                 }),
@@ -411,26 +410,6 @@ impl checkbox::StyleSheet for Theme {
                 text_color: None,
             },
         }
-    }
-}
-
-fn checkbox_appearance<T: Into<Color> + Clone>(
-    checkmark_color: T,
-    base: T,
-    accent: T,
-    is_checked: bool,
-) -> checkbox::Appearance {
-    checkbox::Appearance {
-        background: Background::Color(if is_checked {
-            accent.clone().into()
-        } else {
-            base.into()
-        }),
-        checkmark_color: checkmark_color.into(),
-        border_radius: 4.0,
-        border_width: if is_checked { 0.0 } else { 1.0 },
-        border_color: accent.into(),
-        text_color: None,
     }
 }
 
@@ -560,7 +539,7 @@ impl slider::StyleSheet for Theme {
         let mut style = self.active(style);
         style.handle.shape = slider::HandleShape::Circle { radius: 16.0 };
         style.handle.border_width = 6.0;
-        let mut border_color = self.cosmic.palette.neutral_10.clone();
+        let mut border_color = self.cosmic.palette.neutral_10;
         border_color.alpha = 0.1;
         style.handle.border_color = border_color.into();
         style
@@ -568,7 +547,7 @@ impl slider::StyleSheet for Theme {
 
     fn dragging(&self, style: &Self::Style) -> slider::Appearance {
         let mut style = self.hovered(style);
-        let mut border_color = self.cosmic.palette.neutral_10.clone();
+        let mut border_color = self.cosmic.palette.neutral_10;
         border_color.alpha = 0.2;
         style.handle.border_color = border_color.into();
 
@@ -647,19 +626,18 @@ impl radio::StyleSheet for Theme {
             dot_color: theme.accent.on.into(),
             border_width: 1.0,
             border_color: if is_selected {
-                Color::from(theme.accent.base).into()
+                Color::from(theme.accent.base)
             } else {
                 // TODO: this seems to be defined weirdly in FIGMA
-                Color::from(theme.palette.neutral_7).into()
+                Color::from(theme.palette.neutral_7)
             },
             text_color: None,
         }
     }
 
-    fn hovered(&self, style: &Self::Style, is_selected: bool) -> radio::Appearance {
-        let active = self.active(style, is_selected);
+    fn hovered(&self, _style: &Self::Style, is_selected: bool) -> radio::Appearance {
         let theme = self.cosmic();
-        let mut neutral_10 = theme.palette.neutral_10.clone();
+        let mut neutral_10 = theme.palette.neutral_10;
         neutral_10.alpha = 0.1;
 
         radio::Appearance {
@@ -672,10 +650,10 @@ impl radio::StyleSheet for Theme {
             dot_color: theme.accent.on.into(),
             border_width: 1.0,
             border_color: if is_selected {
-                Color::from(theme.accent.base).into()
+                Color::from(theme.accent.base)
             } else {
                 // TODO: this seems to be defined weirdly in FIGMA
-                Color::from(theme.palette.neutral_7).into()
+                Color::from(theme.palette.neutral_7)
             },
             text_color: None,
         }
@@ -708,7 +686,7 @@ impl toggler::StyleSheet for Theme {
     fn hovered(&self, style: &Self::Style, is_active: bool) -> toggler::Appearance {
         let cosmic = self.cosmic();
         //TODO: grab colors from palette
-        let mut neutral_10 = cosmic.palette.neutral_10.clone();
+        let mut neutral_10 = cosmic.palette.neutral_10;
         neutral_10.alpha = 0.1;
         toggler::Appearance {
             background: if is_active {
