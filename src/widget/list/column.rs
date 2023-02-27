@@ -60,7 +60,7 @@ impl<'a, Message: 'static> From<ListColumn<'a, Message>> for Element<'a, Message
 #[allow(clippy::trivially_copy_pass_by_ref)]
 pub fn style(theme: &crate::Theme) -> iced::widget::container::Appearance {
     let cosmic = &theme.cosmic();
-    let container = cosmic.current_container();
+    let container = &cosmic.current_container().component;
     iced::widget::container::Appearance {
         text_color: Some(container.on.into()),
         background: Some(Background::Color(container.base.into())),
