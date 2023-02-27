@@ -45,7 +45,7 @@ impl StyleSheet for Theme {
                             border_bottom: Some((1.0, cosmic.accent.base.into())),
                             ..Default::default()
                         },
-                        text_color: cosmic.on.into(),
+                        text_color: cosmic.on_bg_color().into(),
                     },
                     hover: hover(cosmic, &active),
                     focus: focus(cosmic, &active),
@@ -56,10 +56,12 @@ impl StyleSheet for Theme {
             SegmentedButton::Selection => {
                 let cosmic = self.cosmic();
                 let active = horizontal::selection_active(cosmic);
+                let mut neutral_5 = cosmic.palette.neutral_5;
+                neutral_5.alpha = 0.25;
                 Appearance {
                     border_radius: BorderRadius::from(0.0),
                     inactive: ItemStatusAppearance {
-                        background: Some(Background::Color(cosmic.basic.base.into())),
+                        background: Some(Background::Color(neutral_5.into())),
                         first: ItemAppearance {
                             border_radius: BorderRadius::from([24.0, 0.0, 0.0, 24.0]),
                             ..Default::default()
@@ -72,7 +74,7 @@ impl StyleSheet for Theme {
                             border_radius: BorderRadius::from([0.0, 24.0, 24.0, 0.0]),
                             ..Default::default()
                         },
-                        text_color: cosmic.on.into(),
+                        text_color: cosmic.on_bg_color().into(),
                     },
                     hover: hover(cosmic, &active),
                     focus: focus(cosmic, &active),
@@ -94,7 +96,7 @@ impl StyleSheet for Theme {
                     border_radius: BorderRadius::from(0.0),
                     inactive: ItemStatusAppearance {
                         background: None,
-                        text_color: cosmic.on.into(),
+                        text_color: cosmic.on_bg_color().into(),
                         ..active
                     },
                     hover: hover(cosmic, &active),
@@ -106,10 +108,12 @@ impl StyleSheet for Theme {
             SegmentedButton::Selection => {
                 let cosmic = self.cosmic();
                 let active = vertical::selection_active(cosmic);
+                let mut neutral_5 = cosmic.palette.neutral_5;
+                neutral_5.alpha = 0.25;
                 Appearance {
                     border_radius: BorderRadius::from(0.0),
                     inactive: ItemStatusAppearance {
-                        background: Some(Background::Color(cosmic.basic.base.into())),
+                        background: Some(Background::Color(neutral_5.into())),
                         first: ItemAppearance {
                             border_radius: BorderRadius::from([24.0, 24.0, 0.0, 0.0]),
                             ..Default::default()
@@ -122,7 +126,7 @@ impl StyleSheet for Theme {
                             border_radius: BorderRadius::from([0.0, 0.0, 24.0, 24.0]),
                             ..Default::default()
                         },
-                        text_color: cosmic.on.into(),
+                        text_color: cosmic.on_bg_color().into(),
                     },
                     hover: hover(cosmic, &active),
                     focus: focus(cosmic, &active),
@@ -141,8 +145,10 @@ mod horizontal {
     use palette::{rgb::Rgb, Alpha};
 
     pub fn selection_active(cosmic: &cosmic_theme::Theme<Alpha<Rgb, f32>>) -> ItemStatusAppearance {
+        let mut neutral_5 = cosmic.palette.neutral_5;
+        neutral_5.alpha = 0.25;
         ItemStatusAppearance {
-            background: Some(Background::Color(cosmic.divider.into())),
+            background: Some(Background::Color(neutral_5.into())),
             first: ItemAppearance {
                 border_radius: BorderRadius::from([24.0, 0.0, 0.0, 24.0]),
                 ..Default::default()
@@ -162,8 +168,10 @@ mod horizontal {
     pub fn view_switcher_active(
         cosmic: &cosmic_theme::Theme<Alpha<Rgb, f32>>,
     ) -> ItemStatusAppearance {
+        let mut neutral_5 = cosmic.palette.neutral_5;
+        neutral_5.alpha = 0.25;
         ItemStatusAppearance {
-            background: Some(Background::Color(cosmic.basic.base.into())),
+            background: Some(Background::Color(neutral_5.into())),
             first: ItemAppearance {
                 border_radius: BorderRadius::from([8.0, 8.0, 0.0, 0.0]),
                 border_bottom: Some((4.0, cosmic.accent.base.into())),
@@ -188,9 +196,11 @@ pub fn focus(
     cosmic: &cosmic_theme::Theme<Alpha<Rgb, f32>>,
     default: &ItemStatusAppearance,
 ) -> ItemStatusAppearance {
+    let mut neutral_5 = cosmic.palette.neutral_5;
+    neutral_5.alpha = 0.25;
     ItemStatusAppearance {
-        background: Some(Background::Color(cosmic.basic.focus.into())),
-        text_color: cosmic.primary.base.into(),
+        background: Some(Background::Color(neutral_5.into())),
+        text_color: cosmic.accent.base.into(),
         ..*default
     }
 }
@@ -199,8 +209,10 @@ pub fn hover(
     cosmic: &cosmic_theme::Theme<Alpha<Rgb, f32>>,
     default: &ItemStatusAppearance,
 ) -> ItemStatusAppearance {
+    let mut neutral_10 = cosmic.palette.neutral_10;
+    neutral_10.alpha = 0.1;
     ItemStatusAppearance {
-        background: Some(Background::Color(cosmic.basic.hover.into())),
+        background: Some(Background::Color(neutral_10.into())),
         text_color: cosmic.accent.base.into(),
         ..*default
     }
@@ -212,8 +224,10 @@ mod vertical {
     use palette::{rgb::Rgb, Alpha};
 
     pub fn selection_active(cosmic: &cosmic_theme::Theme<Alpha<Rgb, f32>>) -> ItemStatusAppearance {
+        let mut neutral_5 = cosmic.palette.neutral_5;
+        neutral_5.alpha = 0.25;
         ItemStatusAppearance {
-            background: Some(Background::Color(cosmic.divider.into())),
+            background: Some(Background::Color(neutral_5.into())),
             first: ItemAppearance {
                 border_radius: BorderRadius::from([24.0, 24.0, 0.0, 0.0]),
                 ..Default::default()
@@ -233,8 +247,10 @@ mod vertical {
     pub fn view_switcher_active(
         cosmic: &cosmic_theme::Theme<Alpha<Rgb, f32>>,
     ) -> ItemStatusAppearance {
+        let mut neutral_5 = cosmic.palette.neutral_5;
+        neutral_5.alpha = 0.25;
         ItemStatusAppearance {
-            background: Some(Background::Color(cosmic.divider.into())),
+            background: Some(Background::Color(neutral_5.into())),
             first: ItemAppearance {
                 border_radius: BorderRadius::from(24.0),
                 ..Default::default()

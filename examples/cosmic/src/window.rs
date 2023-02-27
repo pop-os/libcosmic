@@ -6,7 +6,7 @@ use cosmic::{
     iced_native::{subscription, window},
     iced_winit::window::{close, drag, minimize, toggle_maximize},
     keyboard_nav,
-    theme::{self, Theme},
+    theme::{self, Theme, COSMIC_DARK, COSMIC_LIGHT},
     widget::{
         header_bar, icon, list, nav_bar, nav_bar_toggle, scrollable, segmented_button, settings,
         warning, IconSource,
@@ -25,7 +25,7 @@ mod bluetooth;
 
 mod demo;
 
-use self::desktop::DesktopPage;
+use self::{demo::ThemeMode, desktop::DesktopPage};
 mod desktop;
 
 mod editor;
@@ -176,7 +176,7 @@ impl Window {
 }
 
 #[allow(dead_code)]
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Debug)]
 pub enum Message {
     Bluetooth(bluetooth::Message),
     Close,
@@ -390,7 +390,10 @@ impl Application for Window {
             Message::Demo(message) => match self.demo.update(message) {
                 Some(demo::Output::Debug(debug)) => self.debug = debug,
                 Some(demo::Output::ScalingFactor(factor)) => self.set_scale_factor(factor),
-                Some(demo::Output::ThemeChanged(theme)) => self.theme = theme,
+                Some(demo::Output::ThemeChanged(theme)) => match theme {
+                    ThemeMode::Light => self.theme = Theme::light(),
+                    ThemeMode::Dark => self.theme = Theme::dark(),
+                },
                 Some(demo::Output::ToggleWarning) => self.toggle_warning(),
                 None => (),
             },
@@ -565,6 +568,6 @@ impl Application for Window {
     }
 
     fn theme(&self) -> Theme {
-        self.theme
+        self.theme.clone()
     }
 }

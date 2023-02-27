@@ -79,9 +79,11 @@ fn clear_button<Message: 'static>() -> Button<'static, Message, Renderer> {
 #[allow(clippy::trivially_copy_pass_by_ref)]
 fn active_style(theme: &crate::Theme) -> container::Appearance {
     let cosmic = &theme.cosmic();
+    let mut neutral_7 = cosmic.palette.neutral_7;
+    neutral_7.alpha = 0.25;
     iced::widget::container::Appearance {
-        text_color: Some(cosmic.on.into()),
-        background: Some(Background::Color(cosmic.divider.into())),
+        text_color: Some(cosmic.palette.neutral_9.into()),
+        background: Some(Background::Color(neutral_7.into())),
         border_radius: 24.0,
         border_width: 2.0,
         border_color: cosmic.accent.focus.into(),

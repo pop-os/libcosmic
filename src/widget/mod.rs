@@ -56,6 +56,9 @@ pub use view_switcher::vertical as vertical_view_switcher;
 pub mod warning;
 pub use warning::*;
 
+pub mod cosmic_container;
+pub use cosmic_container::*;
+
 /// An element to distinguish a boundary between two elements.
 pub mod divider {
     /// Horizontal variant of a divider.

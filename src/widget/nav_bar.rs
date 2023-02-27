@@ -43,7 +43,7 @@ where
 pub fn nav_bar_style(theme: &Theme) -> iced_style::container::Appearance {
     let cosmic = &theme.cosmic();
     iced_style::container::Appearance {
-        text_color: Some(cosmic.on.into()),
+        text_color: Some(cosmic.on_bg_color().into()),
         background: Some(Background::Color(cosmic.primary.base.into())),
         border_radius: 8.0,
         border_width: 0.0,
