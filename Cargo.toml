@@ -32,7 +32,6 @@ fraction = "0.13.0"
 
 [dependencies.cosmic-theme]
 git = "https://github.com/pop-os/cosmic-theme.git"
-branch = "layer"
 
 [dependencies.iced]
 path = "iced"
