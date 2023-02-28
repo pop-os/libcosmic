@@ -29,13 +29,7 @@ pub enum MultiOption {
     OptionE,
 }
 
-#[derive(Copy, Clone, Debug, PartialEq, Eq)]
-pub enum ThemeMode {
-    Light,
-    Dark,
-}
-
-#[derive(Clone, Debug)]
+#[derive(Clone, Copy, Debug)]
 pub enum Message {
     ButtonPressed,
     CheckboxToggled(bool),
@@ -48,7 +42,7 @@ pub enum Message {
     Selection(segmented_button::Entity),
     SliderChanged(f32),
     SpinButton(spin_button::Message),
-    ThemeChanged(ThemeMode),
+    ThemeChanged(Theme),
     ToggleWarning,
     TogglerToggled(bool),
     ViewSwitcher(segmented_button::Entity),
@@ -57,7 +51,7 @@ pub enum Message {
 pub enum Output {
     Debug(bool),
     ScalingFactor(f32),
-    ThemeChanged(ThemeMode),
+    ThemeChanged(Theme),
     ToggleWarning,
 }
 
@@ -148,15 +142,20 @@ impl State {
     }
 
     pub(super) fn view<'a>(&'a self, window: &'a Window) -> Element<'a, Message> {
-        let choose_theme = [ThemeMode::Light, ThemeMode::Dark].iter().fold(
+        let choose_theme = [
+            Theme::light(),
+            Theme::dark(),
+            Theme::light_hc(),
+            Theme::dark_hc(),
+        ]
+        .iter()
+        .fold(
             row![].spacing(10).align_items(Alignment::Center),
             |row, theme| {
                 row.push(radio(
-                    format!("{:?}", theme),
+                    format!("{:?}", theme.theme_type),
                     *theme,
-                    if window.theme.cosmic().is_dark && matches!(theme, ThemeMode::Dark)
-                        || !window.theme.cosmic().is_dark && matches!(theme, ThemeMode::Light)
-                    {
+                    if window.theme == *theme {
                         Some(*theme)
                     } else {
                         None

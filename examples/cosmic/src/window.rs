@@ -25,7 +25,7 @@ mod bluetooth;
 
 mod demo;
 
-use self::{demo::ThemeMode, desktop::DesktopPage};
+use self::desktop::DesktopPage;
 mod desktop;
 
 mod editor;
@@ -176,7 +176,7 @@ impl Window {
 }
 
 #[allow(dead_code)]
-#[derive(Clone, Debug)]
+#[derive(Clone, Copy, Debug)]
 pub enum Message {
     Bluetooth(bluetooth::Message),
     Close,
@@ -390,10 +390,9 @@ impl Application for Window {
             Message::Demo(message) => match self.demo.update(message) {
                 Some(demo::Output::Debug(debug)) => self.debug = debug,
                 Some(demo::Output::ScalingFactor(factor)) => self.set_scale_factor(factor),
-                Some(demo::Output::ThemeChanged(theme)) => match theme {
-                    ThemeMode::Light => self.theme = Theme::light(),
-                    ThemeMode::Dark => self.theme = Theme::dark(),
-                },
+                Some(demo::Output::ThemeChanged(theme)) => {
+                    self.theme = theme;
+                }
                 Some(demo::Output::ToggleWarning) => self.toggle_warning(),
                 None => (),
             },
@@ -568,6 +567,6 @@ impl Application for Window {
     }
 
     fn theme(&self) -> Theme {
-        self.theme.clone()
+        self.theme
     }
 }
