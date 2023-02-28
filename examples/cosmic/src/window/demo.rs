@@ -1,11 +1,12 @@
 use apply::Apply;
 use cosmic::{
+    cosmic_theme,
     iced::widget::{checkbox, pick_list, progress_bar, radio, row, slider, text},
     iced::{widget::container, Alignment, Length},
     theme::{self, Button as ButtonTheme, Theme},
     widget::{
-        button, icon, segmented_button, segmented_selection, settings, spin_button, toggler,
-        view_switcher,
+        button, cosmic_container, icon, segmented_button, segmented_selection, settings,
+        spin_button, toggler, view_switcher,
     },
     Element,
 };
@@ -375,6 +376,27 @@ impl State {
                     .into()
                 }
             },
+            cosmic_container(
+                text("Background container with some text").size(24),
+                cosmic_theme::Layer::Background,
+            )
+            .padding(8)
+            .width(Length::Fill)
+            .into(),
+            cosmic_container(
+                text("Primary container with some text").size(24),
+                cosmic_theme::Layer::Primary,
+            )
+            .padding(8)
+            .width(Length::Fill)
+            .into(),
+            cosmic_container(
+                text("Secondary container with some text").size(24),
+                cosmic_theme::Layer::Secondary,
+            )
+            .padding(8)
+            .width(Length::Fill)
+            .into(),
         ])
         .into()
     }
