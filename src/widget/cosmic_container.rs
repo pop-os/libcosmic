@@ -10,50 +10,57 @@ use iced_native::widget::{Operation, Tree};
 use iced_native::{Clipboard, Element, Layout, Length, Padding, Point, Rectangle, Shell, Widget};
 pub use iced_style::container::{Appearance, StyleSheet};
 
-pub fn cosmic_container<'a, Message: 'static, T>(
+pub fn container<'a, Message: 'static, T>(
     content: T,
-    layer: cosmic_theme::Layer,
-) -> CosmicContainer<'a, Message, crate::Renderer>
+) -> LayerContainer<'a, Message, crate::Renderer>
 where
     T: Into<Element<'a, Message, crate::Renderer>>,
 {
-    CosmicContainer::new(content, layer).style(match layer {
-        cosmic_theme::Layer::Background => crate::theme::Container::Background,
-        cosmic_theme::Layer::Primary => crate::theme::Container::Primary,
-        cosmic_theme::Layer::Secondary => crate::theme::Container::Secondary,
-    })
+    LayerContainer::new(content)
 }
 
 /// An element decorating some content.
 ///
 /// It is normally used for alignment purposes.
 #[allow(missing_debug_implementations)]
-pub struct CosmicContainer<'a, Message, Renderer>
+pub struct LayerContainer<'a, Message, Renderer>
 where
     Renderer: iced_native::Renderer,
     Renderer::Theme: StyleSheet + Clone + cosmic_theme::LayeredTheme,
 {
-    layer: cosmic_theme::Layer,
+    layer: Option<cosmic_theme::Layer>,
     container: Container<'a, Message, Renderer>,
 }
 
-impl<'a, Message, Renderer> CosmicContainer<'a, Message, Renderer>
+impl<'a, Message, Renderer> LayerContainer<'a, Message, Renderer>
 where
     Renderer: iced_native::Renderer,
     Renderer::Theme: StyleSheet + Clone + cosmic_theme::LayeredTheme,
+    <Renderer::Theme as StyleSheet>::Style: std::convert::From<crate::theme::Container>,
 {
     /// Creates an empty [`Container`].
-    pub(crate) fn new<T>(content: T, layer: cosmic_theme::Layer) -> Self
+    pub(crate) fn new<T>(content: T) -> Self
     where
         T: Into<Element<'a, Message, Renderer>>,
     {
-        CosmicContainer {
-            layer,
+        LayerContainer {
+            layer: None,
             container: Container::new(content),
         }
     }
 
-    /// Sets the [`Padding`] of the [`Container`].
+    /// Sets the [`Layer`] of the [`LayerContainer`].
+    #[must_use]
+    pub fn layer(mut self, layer: cosmic_theme::Layer) -> Self {
+        self.layer = Some(layer);
+        self.style(match layer {
+            cosmic_theme::Layer::Background => crate::theme::Container::Background,
+            cosmic_theme::Layer::Primary => crate::theme::Container::Primary,
+            cosmic_theme::Layer::Secondary => crate::theme::Container::Secondary,
+        })
+    }
+
+    /// Sets the [`Padding`] of the [`LayerContainer`].
     #[must_use]
     pub fn padding<P: Into<Padding>>(mut self, padding: P) -> Self {
         self.container = self.container.padding(padding);
@@ -67,56 +74,56 @@ where
         self
     }
 
-    /// Sets the height of the [`Container`].
+    /// Sets the height of the [`LayerContainer`].
     #[must_use]
     pub fn height(mut self, height: Length) -> Self {
         self.container = self.container.height(height);
         self
     }
 
-    /// Sets the maximum width of the [`Container`].
+    /// Sets the maximum width of the [`LayerContainer`].
     #[must_use]
     pub fn max_width(mut self, max_width: u32) -> Self {
         self.container = self.container.max_width(max_width);
         self
     }
 
-    /// Sets the maximum height of the [`Container`] in pixels.
+    /// Sets the maximum height of the [`LayerContainer`] in pixels.
     #[must_use]
     pub fn max_height(mut self, max_height: u32) -> Self {
         self.container = self.container.max_height(max_height);
         self
     }
 
-    /// Sets the content alignment for the horizontal axis of the [`Container`].
+    /// Sets the content alignment for the horizontal axis of the [`LayerContainer`].
     #[must_use]
     pub fn align_x(mut self, alignment: alignment::Horizontal) -> Self {
         self.container = self.container.align_x(alignment);
         self
     }
 
-    /// Sets the content alignment for the vertical axis of the [`Container`].
+    /// Sets the content alignment for the vertical axis of the [`LayerContainer`].
     #[must_use]
     pub fn align_y(mut self, alignment: alignment::Vertical) -> Self {
         self.container = self.container.align_y(alignment);
         self
     }
 
-    /// Centers the contents in the horizontal axis of the [`Container`].
+    /// Centers the contents in the horizontal axis of the [`LayerContainer`].
     #[must_use]
     pub fn center_x(mut self) -> Self {
         self.container = self.container.center_x();
         self
     }
 
-    /// Centers the contents in the vertical axis of the [`Container`].
+    /// Centers the contents in the vertical axis of the [`LayerContainer`].
     #[must_use]
     pub fn center_y(mut self) -> Self {
         self.container = self.container.center_y();
         self
     }
 
-    /// Sets the style of the [`Container`].
+    /// Sets the style of the [`LayerContainer`].
     #[must_use]
     pub fn style(mut self, style: impl Into<<Renderer::Theme as StyleSheet>::Style>) -> Self {
         self.container = self.container.style(style);
@@ -124,7 +131,7 @@ where
     }
 }
 
-impl<'a, Message, Renderer> Widget<Message, Renderer> for CosmicContainer<'a, Message, Renderer>
+impl<'a, Message, Renderer> Widget<Message, Renderer> for LayerContainer<'a, Message, Renderer>
 where
     Renderer: iced_native::Renderer,
     Renderer::Theme: StyleSheet + Clone + cosmic_theme::LayeredTheme,
@@ -196,8 +203,13 @@ where
         cursor_position: Point,
         viewport: &Rectangle,
     ) {
-        let mut theme = theme.clone();
-        theme.set_layer(self.layer);
+        let theme = if let Some(layer) = self.layer {
+            let mut theme = theme.clone();
+            theme.set_layer(layer);
+            theme
+        } else {
+            theme.clone()
+        };
         self.container.draw(
             tree,
             renderer,
@@ -219,14 +231,14 @@ where
     }
 }
 
-impl<'a, Message, Renderer> From<CosmicContainer<'a, Message, Renderer>>
+impl<'a, Message, Renderer> From<LayerContainer<'a, Message, Renderer>>
     for Element<'a, Message, Renderer>
 where
     Message: 'a,
     Renderer: 'a + iced_native::Renderer,
     Renderer::Theme: StyleSheet + Clone + cosmic_theme::LayeredTheme,
 {
-    fn from(column: CosmicContainer<'a, Message, Renderer>) -> Element<'a, Message, Renderer> {
+    fn from(column: LayerContainer<'a, Message, Renderer>) -> Element<'a, Message, Renderer> {
         Element::new(column)
     }
 }
