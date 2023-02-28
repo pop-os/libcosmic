@@ -171,7 +171,7 @@ impl Button {
             Button::Destructive => &cosmic.destructive,
             Button::Text => &cosmic.current_container().component,
             Button::Link => &cosmic.accent,
-            Button::LinkActive => &cosmic.current_container().component,
+            Button::LinkActive => &cosmic.accent,
             Button::Transparent => &TRANSPARENT_COMPONENT,
             Button::Deactivated => &cosmic.current_container().component,
             Button::Custom { .. } => &TRANSPARENT_COMPONENT,
@@ -199,7 +199,7 @@ impl button::StyleSheet for Theme {
                 _ => Some(Background::Color(component.base.into())),
             },
             text_color: match style {
-                Button::LinkActive => component.selected_text.into(),
+                Button::Link | Button::LinkActive => component.base.into(),
                 _ => component.on.into(),
             },
             ..button::Appearance::default()
