@@ -39,7 +39,9 @@ type CosmicThemeCss = cosmic_theme::Theme<cosmic_theme::util::CssColor>;
 
 lazy_static::lazy_static! {
     pub static ref COSMIC_DARK: CosmicTheme = CosmicThemeCss::dark_default().into_srgba();
+    pub static ref COSMIC_HC_DARK: CosmicTheme = CosmicThemeCss::high_contrast_dark_default().into_srgba();
     pub static ref COSMIC_LIGHT: CosmicTheme = CosmicThemeCss::light_default().into_srgba();
+    pub static ref COSMIC_HC_LIGHT: CosmicTheme = CosmicThemeCss::high_contrast_light_default().into_srgba();
     pub static ref TRANSPARENT_COMPONENT: Component<CosmicColor> = Component {
         base: CosmicColor::new(0.0, 0.0, 0.0, 0.0),
         hover: CosmicColor::new(0.0, 0.0, 0.0, 0.0),
@@ -54,54 +56,79 @@ lazy_static::lazy_static! {
     };
 }
 
-#[derive(Debug, Clone, Eq, PartialEq)]
-pub struct Theme {
-    pub cosmic: cosmic_theme::Theme<Srgba>,
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Default)]
+pub enum ThemeType {
+    #[default]
+    Dark,
+    Light,
+    HighContrastDark,
+    HighContrastLight,
 }
 
-impl Default for Theme {
-    fn default() -> Self {
-        Self::dark()
-    }
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Default)]
+pub struct Theme {
+    pub theme_type: ThemeType,
+    pub layer: cosmic_theme::Layer,
 }
 
 impl Theme {
     #[must_use]
-    pub fn new(cosmic: cosmic_theme::Theme<Srgba>) -> Self {
-        Self { cosmic }
-    }
-
-    #[must_use]
     pub fn cosmic(&self) -> &cosmic_theme::Theme<Srgba> {
-        &self.cosmic
-    }
-
-    pub fn cosmic_mut(&mut self) -> &mut cosmic_theme::Theme<Srgba> {
-        &mut self.cosmic
-    }
-
-    pub fn set_cosmic(&mut self, cosmic: cosmic_theme::Theme<Srgba>) {
-        self.cosmic = cosmic;
+        match self.theme_type {
+            ThemeType::Dark => &COSMIC_DARK,
+            ThemeType::Light => &COSMIC_LIGHT,
+            ThemeType::HighContrastDark => &COSMIC_HC_DARK,
+            ThemeType::HighContrastLight => &COSMIC_HC_LIGHT,
+        }
     }
 
     #[must_use]
     pub fn dark() -> Self {
         Self {
-            cosmic: COSMIC_DARK.clone(),
+            theme_type: ThemeType::Dark,
+            ..Default::default()
         }
     }
 
     #[must_use]
     pub fn light() -> Self {
         Self {
-            cosmic: COSMIC_LIGHT.clone(),
+            theme_type: ThemeType::Light,
+            ..Default::default()
+        }
+    }
+
+    #[must_use]
+    pub fn dark_hc() -> Self {
+        Self {
+            theme_type: ThemeType::HighContrastDark,
+            ..Default::default()
+        }
+    }
+
+    #[must_use]
+    pub fn light_hc() -> Self {
+        Self {
+            theme_type: ThemeType::HighContrastLight,
+            ..Default::default()
+        }
+    }
+
+    /// get current container
+    /// can be used in a component that is intended to be a child of a `CosmicContainer`
+    #[must_use]
+    pub fn current_container(&self) -> &cosmic_theme::Container<Srgba> {
+        match self.layer {
+            cosmic_theme::Layer::Background => &self.cosmic().background,
+            cosmic_theme::Layer::Primary => &self.cosmic().primary,
+            cosmic_theme::Layer::Secondary => &self.cosmic().secondary,
         }
     }
 }
 
 impl LayeredTheme for Theme {
     fn set_layer(&mut self, layer: cosmic_theme::Layer) {
-        self.cosmic.layer = layer;
+        self.layer = layer;
     }
 }
 
@@ -166,14 +193,14 @@ impl Button {
         let cosmic = theme.cosmic();
         match self {
             Button::Primary => &cosmic.accent,
-            Button::Secondary => &cosmic.current_container().component,
+            Button::Secondary => &theme.current_container().component,
             Button::Positive => &cosmic.success,
             Button::Destructive => &cosmic.destructive,
-            Button::Text => &cosmic.current_container().component,
+            Button::Text => &theme.current_container().component,
             Button::Link => &cosmic.accent,
             Button::LinkActive => &cosmic.accent,
             Button::Transparent => &TRANSPARENT_COMPONENT,
-            Button::Deactivated => &cosmic.current_container().component,
+            Button::Deactivated => &theme.current_container().component,
             Button::Custom { .. } => &TRANSPARENT_COMPONENT,
         }
     }
@@ -359,15 +386,15 @@ impl checkbox::StyleSheet for Theme {
             },
             Checkbox::Secondary => checkbox::Appearance {
                 background: Background::Color(if is_checked {
-                    palette.current_container().base.into()
+                    self.current_container().base.into()
                 } else {
                     neutral_10.into()
                 }),
-                checkmark_color: palette.current_container().on.into(),
+                checkmark_color: self.current_container().on.into(),
                 border_radius: 4.0,
                 border_width: if is_checked { 0.0 } else { 1.0 },
                 border_color: if is_checked {
-                    palette.current_container().base
+                    self.current_container().base
                 } else {
                     neutral_7
                 }
@@ -538,7 +565,7 @@ impl slider::StyleSheet for Theme {
         let mut style = self.active(style);
         style.handle.shape = slider::HandleShape::Circle { radius: 16.0 };
         style.handle.border_width = 6.0;
-        let mut border_color = self.cosmic.palette.neutral_10;
+        let mut border_color = self.cosmic().palette.neutral_10;
         border_color.alpha = 0.1;
         style.handle.border_color = border_color.into();
         style
@@ -546,7 +573,7 @@ impl slider::StyleSheet for Theme {
 
     fn dragging(&self, style: &Self::Style) -> slider::Appearance {
         let mut style = self.hovered(style);
-        let mut border_color = self.cosmic.palette.neutral_10;
+        let mut border_color = self.cosmic().palette.neutral_10;
         border_color.alpha = 0.2;
         style.handle.border_color = border_color.into();
 
@@ -789,33 +816,25 @@ impl rule::StyleSheet for Theme {
     type Style = Rule;
 
     fn appearance(&self, style: &Self::Style) -> rule::Appearance {
-        let palette = self.cosmic();
-
         match style {
             Rule::Default => rule::Appearance {
-                color: palette.current_container().divider.into(),
+                color: self.current_container().divider.into(),
                 width: 1,
                 radius: 0.0,
                 fill_mode: rule::FillMode::Full,
             },
-            Rule::LightDivider => {
-                let cosmic = &self.cosmic();
-                rule::Appearance {
-                    color: cosmic.current_container().divider.into(),
-                    width: 1,
-                    radius: 0.0,
-                    fill_mode: rule::FillMode::Padded(10),
-                }
-            }
-            Rule::HeavyDivider => {
-                let cosmic = &self.cosmic();
-                rule::Appearance {
-                    color: cosmic.current_container().divider.into(),
-                    width: 4,
-                    radius: 4.0,
-                    fill_mode: rule::FillMode::Full,
-                }
-            }
+            Rule::LightDivider => rule::Appearance {
+                color: self.current_container().divider.into(),
+                width: 1,
+                radius: 0.0,
+                fill_mode: rule::FillMode::Padded(10),
+            },
+            Rule::HeavyDivider => rule::Appearance {
+                color: self.current_container().divider.into(),
+                width: 4,
+                radius: 4.0,
+                fill_mode: rule::FillMode::Full,
+            },
             Rule::Custom(f) => f(self),
         }
     }
@@ -828,17 +847,15 @@ impl scrollable::StyleSheet for Theme {
     type Style = ();
 
     fn active(&self, _style: &Self::Style) -> scrollable::Scrollbar {
-        let theme = self.cosmic();
-
         scrollable::Scrollbar {
             background: Some(Background::Color(
-                theme.current_container().component.base.into(),
+                self.current_container().component.base.into(),
             )),
             border_radius: 4.0,
             border_width: 0.0,
             border_color: Color::TRANSPARENT,
             scroller: scrollable::Scroller {
-                color: theme.current_container().component.divider.into(),
+                color: self.current_container().component.divider.into(),
                 border_radius: 4.0,
                 border_width: 0.0,
                 border_color: Color::TRANSPARENT,
@@ -851,7 +868,7 @@ impl scrollable::StyleSheet for Theme {
 
         scrollable::Scrollbar {
             background: Some(Background::Color(
-                theme.current_container().component.hover.into(),
+                self.current_container().component.hover.into(),
             )),
             border_radius: 4.0,
             border_width: 0.0,
@@ -907,7 +924,7 @@ impl svg::StyleSheet for Theme {
             Svg::Default => svg::Appearance::default(),
             Svg::Custom(appearance) => appearance(self),
             Svg::Symbolic => svg::Appearance {
-                color: Some(self.cosmic().current_container().on.into()),
+                color: Some(self.current_container().on.into()),
             },
             Svg::SymbolicActive => svg::Appearance {
                 color: Some(self.cosmic().accent.base.into()),
@@ -977,7 +994,7 @@ impl text_input::StyleSheet for Theme {
                 background: Color::from(bg).into(),
                 border_radius: 2.0,
                 border_width: 1.0,
-                border_color: palette.current_container().component.divider.into(),
+                border_color: self.current_container().component.divider.into(),
             },
             TextInput::Search => text_input::Appearance {
                 background: Color::from(bg).into(),
