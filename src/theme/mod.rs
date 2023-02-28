@@ -199,7 +199,6 @@ impl button::StyleSheet for Theme {
                 _ => Some(Background::Color(component.base.into())),
             },
             text_color: match style {
-                Button::Link => component.base.into(),
                 Button::LinkActive => component.selected_text.into(),
                 _ => component.on.into(),
             },
@@ -477,7 +476,7 @@ impl container::StyleSheet for Theme {
                 let palette = self.cosmic();
 
                 container::Appearance {
-                    text_color: None,
+                    text_color: Some(Color::from(palette.background.on)),
                     background: Some(iced::Background::Color(palette.background.base.into())),
                     border_radius: 2.0,
                     border_width: 0.0,
@@ -488,7 +487,7 @@ impl container::StyleSheet for Theme {
                 let palette = self.cosmic();
 
                 container::Appearance {
-                    text_color: None,
+                    text_color: Some(Color::from(palette.primary.on)),
                     background: Some(iced::Background::Color(palette.primary.base.into())),
                     border_radius: 2.0,
                     border_width: 0.0,
@@ -499,7 +498,7 @@ impl container::StyleSheet for Theme {
                 let palette = self.cosmic();
 
                 container::Appearance {
-                    text_color: None,
+                    text_color: Some(Color::from(palette.secondary.on)),
                     background: Some(iced::Background::Color(palette.secondary.base.into())),
                     border_radius: 2.0,
                     border_width: 0.0,
@@ -949,7 +948,7 @@ impl text::StyleSheet for Theme {
             Text::Accent => text::Appearance {
                 color: Some(self.cosmic().accent.base.into()),
             },
-            Text::Default => text::Appearance::default(),
+            Text::Default => text::Appearance { color: None },
             Text::Color(c) => text::Appearance { color: Some(c) },
             Text::Custom(f) => f(self),
         }
