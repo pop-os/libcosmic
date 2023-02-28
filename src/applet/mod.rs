@@ -125,7 +125,7 @@ impl CosmicAppletHelper {
 
         Container::<Message, Renderer>::new(Container::<Message, Renderer>::new(content).style(
             crate::theme::Container::Custom(|theme| Appearance {
-                text_color: Some(theme.cosmic().on.into()),
+                text_color: Some(theme.cosmic().background.on.into()),
                 background: Some(Color::from(theme.cosmic().background.base).into()),
                 border_radius: 12.0,
                 border_width: 0.0,

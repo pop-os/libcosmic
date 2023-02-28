@@ -307,17 +307,6 @@ impl Application for Window {
         }
 
         if !(self.is_condensed() && nav_bar_toggled) {
-            let choose_theme = [Theme::Light, Theme::Dark].iter().fold(
-                row![].spacing(10).align_items(Alignment::Center),
-                |row, theme| {
-                    row.push(radio(
-                        format!("{:?}", theme),
-                        *theme,
-                        Some(self.theme),
-                        Message::ThemeChanged,
-                    ))
-                },
-            );
             let secondary = button(ButtonTheme::Secondary)
                 .text("Secondary")
                 .on_press(Message::ButtonPressed);
@@ -329,7 +318,6 @@ impl Application for Window {
             };
             let content: Element<_> = settings::view_column(vec![
                 settings::view_section("Debug")
-                    .add(settings::item("Debug theme", choose_theme))
                     .add(settings::item(
                         "Debug layout",
                         toggler(String::from("Debug layout"), self.debug, Message::Debug),
@@ -418,7 +406,7 @@ impl Application for Window {
     }
 
     fn theme(&self) -> Theme {
-        self.theme
+        self.theme.clone()
     }
 
     fn close_requested(&self, id: SurfaceIdWrapper) -> Self::Message {
