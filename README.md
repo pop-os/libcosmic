@@ -17,6 +17,15 @@ There's examples in the `examples` directory.
 cargo run --release --example cosmic
 ```
 
+On Pop!_OS
+```shell
+sudo apt install cargo libexpat1-dev libfontconfig-dev libfreetype-dev pkg-config cmake
+git clone https://github.com/pop-os/libcosmic
+cd libcosmic
+git submodule update --init
+cargo run --release -p cosmic
+```
+
 ### Text rendering
 ```shell
 cargo run --release --example text
