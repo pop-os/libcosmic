@@ -1,7 +1,7 @@
 use apply::Apply;
 use cosmic::{
     cosmic_theme,
-    iced::widget::{checkbox, pick_list, progress_bar, radio, row, slider, text},
+    iced::widget::{checkbox, pick_list, progress_bar, radio, row, slider, text, text_input},
     iced::{Alignment, Length},
     theme::{self, Button as ButtonTheme, Theme},
     widget::{
@@ -11,6 +11,7 @@ use cosmic::{
     Element,
 };
 use fraction::{Decimal, ToPrimitive};
+use once_cell::sync::Lazy;
 
 use super::{Page, Window};
 
@@ -28,8 +29,9 @@ pub enum MultiOption {
     OptionD,
     OptionE,
 }
+static INPUT_ID: Lazy<text_input::Id> = Lazy::new(text_input::Id::unique);
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Debug)]
 pub enum Message {
     ButtonPressed,
     CheckboxToggled(bool),
@@ -46,6 +48,7 @@ pub enum Message {
     ToggleWarning,
     TogglerToggled(bool),
     ViewSwitcher(segmented_button::Entity),
+    InputChanged(String),
 }
 
 pub enum Output {
@@ -67,6 +70,7 @@ pub struct State {
     pub spin_button: spin_button::Model<i32>,
     pub toggler_value: bool,
     pub view_switcher: segmented_button::SingleSelectModel,
+    pub entry_value: String,
 }
 
 impl Default for State {
@@ -104,6 +108,7 @@ impl Default for State {
                 .insert(|b| b.text("Segmented Button").data(DemoView::TabB))
                 .insert(|b| b.text("Tab C").data(DemoView::TabC))
                 .build(),
+            entry_value: String::new(),
         }
     }
 }
@@ -135,6 +140,9 @@ impl State {
                 if let Some(theme) = self.icon_themes.text(key) {
                     cosmic::settings::set_default_icon_theme(theme);
                 }
+            }
+            Message::InputChanged(s) => {
+                self.entry_value = s;
             }
         }
 
@@ -390,6 +398,16 @@ impl State {
                 .padding(8)
                 .width(Length::Fill)
                 .into(),
+            text_input(
+                "Type to search apps or type “?” for more options...",
+                &self.entry_value,
+                Message::InputChanged,
+            )
+            // .on_submit(Message::Activate(None))
+            .padding(8)
+            .size(20)
+            .id(INPUT_ID.clone())
+            .into(),
         ])
         .into()
     }

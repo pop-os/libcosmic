@@ -988,17 +988,17 @@ impl text_input::StyleSheet for Theme {
     fn active(&self, style: &Self::Style) -> text_input::Appearance {
         let palette = self.cosmic();
         let mut bg = palette.palette.neutral_7;
-        bg.alpha = 0.75;
+        bg.alpha = 0.25;
         match style {
             TextInput::Default => text_input::Appearance {
                 background: Color::from(bg).into(),
-                border_radius: 2.0,
+                border_radius: 8.0,
                 border_width: 1.0,
                 border_color: self.current_container().component.divider.into(),
             },
             TextInput::Search => text_input::Appearance {
                 background: Color::from(bg).into(),
-                border_radius: 0.0,
+                border_radius: 24.0,
                 border_width: 0.0,
                 border_color: Color::TRANSPARENT,
             },
@@ -1008,18 +1008,18 @@ impl text_input::StyleSheet for Theme {
     fn hovered(&self, style: &Self::Style) -> text_input::Appearance {
         let palette = self.cosmic();
         let mut bg = palette.palette.neutral_7;
-        bg.alpha = 0.75;
+        bg.alpha = 0.25;
 
         match style {
             TextInput::Default => text_input::Appearance {
                 background: Color::from(bg).into(),
-                border_radius: 2.0,
+                border_radius: 8.0,
                 border_width: 1.0,
                 border_color: palette.accent.base.into(),
             },
             TextInput::Search => text_input::Appearance {
                 background: Color::from(bg).into(),
-                border_radius: 0.0,
+                border_radius: 24.0,
                 border_width: 0.0,
                 border_color: Color::TRANSPARENT,
             },
@@ -1029,18 +1029,18 @@ impl text_input::StyleSheet for Theme {
     fn focused(&self, style: &Self::Style) -> text_input::Appearance {
         let palette = self.cosmic();
         let mut bg = palette.palette.neutral_7;
-        bg.alpha = 0.75;
+        bg.alpha = 0.25;
 
         match style {
             TextInput::Default => text_input::Appearance {
                 background: Color::from(bg).into(),
-                border_radius: 2.0,
+                border_radius: 8.0,
                 border_width: 1.0,
                 border_color: palette.accent.base.into(),
             },
             TextInput::Search => text_input::Appearance {
                 background: Color::from(bg).into(),
-                border_radius: 0.0,
+                border_radius: 24.0,
                 border_width: 0.0,
                 border_color: Color::TRANSPARENT,
             },
