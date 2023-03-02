@@ -176,7 +176,7 @@ impl Window {
 }
 
 #[allow(dead_code)]
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Debug)]
 pub enum Message {
     Bluetooth(bluetooth::Message),
     Close,
