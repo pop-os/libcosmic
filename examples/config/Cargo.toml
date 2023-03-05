@@ -1,0 +1,10 @@
+[package]
+name = "config"
+version = "0.1.0"
+authors = []
+edition = "2021"
+publish = false
+
+[dependencies]
+cosmic-config = { path = "../../cosmic-config" }
+ron = "0.8.0"

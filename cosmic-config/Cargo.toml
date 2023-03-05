@@ -1,0 +1,11 @@
+[package]
+name = "cosmic-config"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+atomicwrites = "0.4.0"
+dirs = "4.0.0"
+notify = "5.1.0"
+ron = "0.8.0"
+serde = "1.0.152"
