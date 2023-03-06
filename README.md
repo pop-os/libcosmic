@@ -26,6 +26,13 @@ git submodule update --init
 cargo run --release -p cosmic
 ```
 
+If already cloned
+```shell
+cd libcosmic
+git pull origin master
+cargo run --release -p cosmic
+```
+
 ### Text rendering
 ```shell
 cargo run --release --example text
