@@ -74,10 +74,12 @@ optional = true
 path = "iced/glow"
 optional = true
 
+[dev-dependencies]
+once_cell = "1.15"
+
 [workspace]
 members = [
   "cosmic-config",
-  "examples/*",
 ]
 exclude = [
   "iced",
