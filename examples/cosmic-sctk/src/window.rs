@@ -2,11 +2,7 @@
 // SPDX-License-Identifier: MPL-2.0
 
 use cosmic::{
-    iced::{
-        self,
-        wayland::{window::set_mode_window, SurfaceIdWrapper},
-        Alignment, Application, Command, Length,
-    },
+    iced::{self, wayland::window::set_mode_window, Alignment, Application, Command, Length},
     iced::{
         wayland::window::{start_drag_window, toggle_maximize},
         widget::{
@@ -262,7 +258,7 @@ impl Application for Window {
         Command::none()
     }
 
-    fn view(&self, _: SurfaceIdWrapper) -> Element<Message> {
+    fn view(&self, _: window::Id) -> Element<Message> {
         let (nav_bar_message, nav_bar_toggled) = if self.is_condensed() {
             (
                 Message::ToggleNavBarCondensed,
@@ -362,8 +358,7 @@ impl Application for Window {
                             vec!["Option 1", "Option 2", "Option 3", "Option 4"],
                             self.pick_list_selected,
                             Message::PickListSelected,
-                        )
-                        .padding([8, 0, 8, 16]),
+                        ),
                     ))
                     .add(settings::item(
                         "Slider",
@@ -409,7 +404,7 @@ impl Application for Window {
         self.theme.clone()
     }
 
-    fn close_requested(&self, id: SurfaceIdWrapper) -> Self::Message {
+    fn close_requested(&self, id: window::Id) -> Self::Message {
         Message::Close
     }
     fn subscription(&self) -> iced::Subscription<Self::Message> {
