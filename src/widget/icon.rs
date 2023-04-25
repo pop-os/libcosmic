@@ -35,6 +35,7 @@ impl<'a> IconSource<'a> {
         let icon: Option<&Path> = match self {
             IconSource::Handle(handle) => return handle.clone(),
             IconSource::Path(ref path) => Some(path),
+            #[cfg(unix)]
             IconSource::Name(ref name) => {
                 let icon = crate::settings::DEFAULT_ICON_THEME.with(|default_theme| {
                     let default_theme: &str = &default_theme.borrow();
@@ -56,6 +57,9 @@ impl<'a> IconSource<'a> {
 
                 name_path_buffer.as_deref()
             }
+            // TODO: Icon loading mechanism for non-Unix systems
+            #[cfg(not(unix))]
+            IconSource::Name(_) => None,
         };
 
         let is_svg = svg
