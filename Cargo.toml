@@ -18,8 +18,8 @@ winit = ["iced/winit", "iced_winit"]
 applet = ["cosmic-panel-config", "sctk", "wayland"]
 winit_softbuffer = ["winit", "softbuffer"]
 winit_wgpu = ["winit", "wgpu"]
+
 [dependencies]
-freedesktop-icons = "0.2.2"
 apply = "0.3.0"
 derive_setters = "0.1.5"
 lazy_static = "1.4.0"
@@ -29,6 +29,9 @@ cosmic-panel-config = {git = "https://github.com/pop-os/cosmic-panel", optional 
 sctk = { package = "smithay-client-toolkit", git = "https://github.com/Smithay/client-toolkit", optional = true, rev = "389a4f2" }
 slotmap = "1.0.6"
 fraction = "0.13.0"
+
+[target.'cfg(unix)'.dependencies]
+freedesktop-icons = "0.2.2"
 
 [dependencies.cosmic-theme]
 git = "https://github.com/pop-os/cosmic-theme.git"
