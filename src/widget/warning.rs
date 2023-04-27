@@ -51,7 +51,7 @@ impl<'a, Message: 'static + Clone> Warning<'a, Message> {
             ])
             .align_items(Alignment::Center),
         )
-        .style(theme::Container::Custom(warning_container))
+        .style(theme::Container::custom(warning_container))
         .padding(10)
         .align_y(alignment::Vertical::Center)
         .width(Length::Fill)

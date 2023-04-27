@@ -207,7 +207,7 @@ impl<'a> Icon<'a> {
 
     fn svg_element<Message: 'static>(&self, handle: svg::Handle) -> Element<'static, Message> {
         svg::Svg::<Renderer>::new(handle)
-            .style(self.style)
+            .style(self.style.clone())
             .width(self.width.unwrap_or(Length::Units(self.size)))
             .height(self.height.unwrap_or(Length::Units(self.size)))
             .content_fit(self.content_fit)

@@ -83,7 +83,7 @@ impl<'a, Message: 'static> SpinButton<'a, Message> {
         .align_y(Vertical::Center)
         .width(Length::Units(95))
         .height(Length::Units(32))
-        .style(theme::Container::Custom(container_style))
+        .style(theme::Container::custom(container_style))
         .apply(Element::from)
         .map(on_change)
     }

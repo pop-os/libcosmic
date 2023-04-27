@@ -19,16 +19,18 @@ pub use cosmic_panel_config;
 
 const APPLET_PADDING: u32 = 8;
 
-pub const APPLET_BUTTON_THEME: Button = Button::Custom {
-    active: |t| iced_style::button::Appearance {
-        border_radius: BorderRadius::from(0.0),
-        ..t.active(&Button::Text)
-    },
-    hover: |t| iced_style::button::Appearance {
-        border_radius: BorderRadius::from(0.0),
-        ..t.hovered(&Button::Text)
-    },
-};
+pub fn applet_button_theme() -> Button {
+    Button::Custom {
+        active: Box::new(|t| iced_style::button::Appearance {
+            border_radius: BorderRadius::from(0.0),
+            ..t.active(&Button::Text)
+        }),
+        hover: Box::new(|t| iced_style::button::Appearance {
+            border_radius: BorderRadius::from(0.0),
+            ..t.hovered(&Button::Text)
+        }),
+    }
+}
 
 #[derive(Debug, Clone)]
 pub struct CosmicAppletHelper {
@@ -130,7 +132,7 @@ impl CosmicAppletHelper {
         };
 
         Container::<Message, Renderer>::new(Container::<Message, Renderer>::new(content).style(
-            crate::theme::Container::Custom(|theme| Appearance {
+            crate::theme::Container::custom(|theme| Appearance {
                 text_color: Some(theme.cosmic().background.on.into()),
                 background: Some(Color::from(theme.cosmic().background.base).into()),
                 border_radius: 12.0,

@@ -6,7 +6,7 @@ use crate::{theme::Theme, widget::segmented_button::ItemStatusAppearance};
 use iced_core::{Background, BorderRadius};
 use palette::{rgb::Rgb, Alpha};
 
-#[derive(Clone, Copy, Default)]
+#[derive(Default)]
 pub enum SegmentedButton {
     /// A tabbed widget for switching between views in an interface.
     #[default]
@@ -14,7 +14,7 @@ pub enum SegmentedButton {
     /// A widget for multiple choice selection.
     Selection,
     /// Or implement any custom theme of your liking.
-    Custom(fn(&Theme) -> Appearance),
+    Custom(Box<dyn Fn(&Theme) -> Appearance>),
 }
 
 impl StyleSheet for Theme {

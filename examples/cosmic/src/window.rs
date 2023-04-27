@@ -277,7 +277,7 @@ impl Window {
                 .spacing(16),
             )
             .padding([20, 24])
-            .style(theme::Container::Custom(list::column::style)),
+            .style(theme::Container::custom(list::column::style)),
         )
         .padding(0)
         .style(theme::Button::Transparent)
