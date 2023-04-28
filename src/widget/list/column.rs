@@ -45,7 +45,7 @@ impl<'a, Message: 'static> ListColumn<'a, Message> {
             .spacing(12)
             .apply(iced::widget::container)
             .padding([16, 6])
-            .style(theme::Container::Custom(style))
+            .style(theme::Container::custom(style))
             .into()
     }
 }

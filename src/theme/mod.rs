@@ -6,6 +6,7 @@ mod segmented_button;
 
 use std::hash::Hash;
 use std::hash::Hasher;
+use std::rc::Rc;
 
 pub use self::segmented_button::SegmentedButton;
 
@@ -132,15 +133,16 @@ impl LayeredTheme for Theme {
     }
 }
 
-#[derive(Clone, Copy)]
+#[derive(Default)]
 pub enum Application {
+    #[default]
     Default,
-    Custom(fn(&Theme) -> application::Appearance),
+    Custom(Box<dyn Fn(&Theme) -> application::Appearance>),
 }
 
-impl Default for Application {
-    fn default() -> Self {
-        Self::Default
+impl Application {
+    pub fn custom<F: Fn(&Theme) -> application::Appearance + 'static>(f: F) -> Self {
+        Self::Custom(Box::new(f))
     }
 }
 
@@ -163,7 +165,6 @@ impl application::StyleSheet for Theme {
 /*
  * TODO: Button
  */
-#[derive(Clone, Copy)]
 pub enum Button {
     Deactivated,
     Destructive,
@@ -175,8 +176,8 @@ pub enum Button {
     LinkActive,
     Transparent,
     Custom {
-        active: fn(&Theme) -> button::Appearance,
-        hover: fn(&Theme) -> button::Appearance,
+        active: Box<dyn Fn(&Theme) -> button::Appearance>,
+        hover: Box<dyn Fn(&Theme) -> button::Appearance>,
     },
 }
 
@@ -439,21 +440,16 @@ impl checkbox::StyleSheet for Theme {
     }
 }
 
-#[derive(Clone, Copy)]
+#[derive(Default)]
 pub enum Expander {
+    #[default]
     Default,
-    Custom(fn(&Theme) -> expander::Appearance),
+    Custom(Box<dyn Fn(&Theme) -> expander::Appearance>),
 }
 
-impl Default for Expander {
-    fn default() -> Self {
-        Self::Default
-    }
-}
-
-impl From<fn(&Theme) -> expander::Appearance> for Expander {
-    fn from(f: fn(&Theme) -> expander::Appearance) -> Self {
-        Self::Custom(f)
+impl Expander {
+    pub fn custom<F: Fn(&Theme) -> expander::Appearance + 'static>(f: F) -> Self {
+        Self::Custom(Box::new(f))
     }
 }
 
@@ -471,24 +467,19 @@ impl expander::StyleSheet for Theme {
 /*
  * TODO: Container
  */
-#[derive(Clone, Copy)]
+#[derive(Default)]
 pub enum Container {
     Background,
     Primary,
     Secondary,
+    #[default]
     Transparent,
-    Custom(fn(&Theme) -> container::Appearance),
+    Custom(Box<dyn Fn(&Theme) -> container::Appearance>),
 }
 
-impl Default for Container {
-    fn default() -> Self {
-        Self::Transparent
-    }
-}
-
-impl From<fn(&Theme) -> container::Appearance> for Container {
-    fn from(_: fn(&Theme) -> container::Appearance) -> Self {
-        Self::default()
+impl Container {
+    pub fn custom<F: Fn(&Theme) -> container::Appearance + 'static>(f: F) -> Self {
+        Self::Custom(Box::new(f))
     }
 }
 
@@ -754,17 +745,18 @@ impl pane_grid::StyleSheet for Theme {
 /*
  * TODO: Progress Bar
  */
-#[derive(Clone, Copy)]
+#[derive(Default)]
 pub enum ProgressBar {
+    #[default]
     Primary,
     Success,
     Danger,
-    Custom(fn(&Theme) -> progress_bar::Appearance),
+    Custom(Box<dyn Fn(&Theme) -> progress_bar::Appearance>),
 }
 
-impl Default for ProgressBar {
-    fn default() -> Self {
-        Self::Primary
+impl ProgressBar {
+    pub fn custom<F: Fn(&Theme) -> progress_bar::Appearance + 'static>(f: F) -> Self {
+        Self::Custom(Box::new(f))
     }
 }
 
@@ -798,17 +790,18 @@ impl progress_bar::StyleSheet for Theme {
 /*
  * TODO: Rule
  */
-#[derive(Clone, Copy)]
+#[derive(Default)]
 pub enum Rule {
+    #[default]
     Default,
     LightDivider,
     HeavyDivider,
-    Custom(fn(&Theme) -> rule::Appearance),
+    Custom(Box<dyn Fn(&Theme) -> rule::Appearance>),
 }
 
-impl Default for Rule {
-    fn default() -> Self {
-        Self::Default
+impl Rule {
+    pub fn custom<F: Fn(&Theme) -> rule::Appearance + 'static>(f: F) -> Self {
+        Self::Custom(Box::new(f))
     }
 }
 
@@ -883,10 +876,10 @@ impl scrollable::StyleSheet for Theme {
     }
 }
 
-#[derive(Default, Clone, Copy)]
+#[derive(Clone, Default)]
 pub enum Svg {
     /// Apply a custom appearance filter
-    Custom(fn(&Theme) -> svg::Appearance),
+    Custom(Rc<dyn Fn(&Theme) -> svg::Appearance>),
     /// No filtering is applied
     #[default]
     Default,
@@ -912,6 +905,12 @@ impl Hash for Svg {
         };
 
         id.hash(state);
+    }
+}
+
+impl Svg {
+    pub fn custom<F: Fn(&Theme) -> svg::Appearance + 'static>(f: F) -> Self {
+        Self::Custom(Rc::new(f))
     }
 }
 
@@ -948,6 +947,7 @@ pub enum Text {
     #[default]
     Default,
     Color(Color),
+    // TODO: Can't use dyn Fn since this must be copy
     Custom(fn(&Theme) -> text::Appearance),
 }
 

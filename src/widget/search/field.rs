@@ -58,7 +58,7 @@ impl<'a, Message: 'static + Clone> Field<'a, Message> {
         .spacing(8)
         .align_items(iced::Alignment::Center)
         .apply(container)
-        .style(crate::theme::Container::Custom(active_style))
+        .style(crate::theme::Container::custom(active_style))
         .into()
     }
 }

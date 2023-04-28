@@ -36,7 +36,7 @@ where
         .apply(container)
         .height(Length::Fill)
         .padding(11)
-        .style(theme::Container::Custom(nav_bar_style))
+        .style(theme::Container::custom(nav_bar_style))
 }
 
 #[must_use]
