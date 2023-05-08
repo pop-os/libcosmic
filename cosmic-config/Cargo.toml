@@ -5,6 +5,7 @@ edition = "2021"
 
 [dependencies]
 atomicwrites = "0.4.0"
+calloop = { version = "0.10.5", optional = true }
 dirs = "4.0.0"
 notify = "5.1.0"
 ron = "0.8.0"

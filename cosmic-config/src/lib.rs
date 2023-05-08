@@ -7,6 +7,9 @@ use std::{
     sync::Mutex,
 };
 
+#[cfg(feature = "calloop")]
+pub mod calloop;
+
 #[derive(Debug)]
 pub enum Error {
     AtomicWrites(atomicwrites::Error<std::io::Error>),
