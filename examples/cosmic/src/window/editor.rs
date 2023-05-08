@@ -1,7 +1,6 @@
 use apply::Apply;
 use cosmic::iced::widget::{horizontal_space, row, scrollable};
-use cosmic::iced::Length;
-use cosmic::iced_winit::Alignment;
+use cosmic::iced::{Alignment, Length};
 use cosmic::widget::{button, segmented_button, view_switcher};
 use cosmic::{theme, Element};
 use slotmap::Key;

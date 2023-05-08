@@ -7,16 +7,17 @@ edition = "2021"
 name = "cosmic"
 
 [features]
-default = ["dyrend", "winit", "tokio"]
+default = ["tiny_skia", "winit", "tokio", "a11y", "lazy"]
 debug = ["iced/debug"]
-softbuffer = ["iced/softbuffer", "iced_softbuffer"]
-dyrend = ["iced/dyrend"]
-wayland = ["iced/wayland", "iced/dyrend", "iced_sctk"]
+lazy = ["iced/lazy"]
+a11y = ["iced/a11y", "iced_accessibility"]
+tiny_skia = ["iced/tiny-skia", "iced_tiny_skia"]
+wayland = ["iced/wayland", "iced_sctk"]
 wgpu = ["iced/wgpu", "iced_wgpu"]
 tokio = ["dep:tokio", "iced/tokio"]
 winit = ["iced/winit", "iced_winit"]
 applet = ["cosmic-panel-config", "sctk", "wayland"]
-winit_softbuffer = ["winit", "softbuffer"]
+winit_tiny_skia = ["winit", "tiny_skia"]
 winit_wgpu = ["winit", "wgpu"]
 
 [dependencies]
@@ -37,44 +38,37 @@ freedesktop-icons = "0.2.2"
 git = "https://github.com/pop-os/cosmic-theme.git"
 
 [dependencies.iced]
-path = "iced"
+path = "../fork/iced"
 default-features = false
 features = ["image", "svg"]
 
 [dependencies.iced_core]
-path = "iced/core"
+path = "../fork/iced/core"
 
-[dependencies.iced_lazy]
-path = "iced/lazy"
+[dependencies.iced_widget]
+path = "../fork/iced/widget"
 
-[dependencies.iced_native]
-path = "iced/native"
+[dependencies.iced_accessibility]
+path = "../fork/iced/accessibility"
 
-[dependencies.iced_softbuffer]
-path = "iced/softbuffer"
 optional = true
-
-[dependencies.iced_dyrend]
-path = "iced/dyrend"
+[dependencies.iced_tiny_skia]
+path = "../fork/iced/tiny_skia"
 optional = true
 
 [dependencies.iced_style]
-path = "iced/style"
+path = "../fork/iced/style"
 
 [dependencies.iced_sctk]
-path = "iced/sctk"
+path = "../fork/iced/sctk"
 optional = true
 
 [dependencies.iced_winit]
-path = "iced/winit"
+path = "../fork/iced/winit"
 optional = true
 
 [dependencies.iced_wgpu]
-path = "iced/wgpu"
-optional = true
-
-[dependencies.iced_glow]
-path = "iced/glow"
+path = "../fork/iced/wgpu"
 optional = true
 
 [workspace]

@@ -9,7 +9,7 @@ pub fn toggler<'a, Message>(
     is_checked: bool,
     f: impl Fn(bool) -> Message + 'a,
 ) -> widget::Toggler<'a, Message, Renderer> {
-    widget::Toggler::new(is_checked, label, f)
+    widget::Toggler::new(label, is_checked, f)
         .size(24)
         .spacing(12)
         .width(Length::Shrink)

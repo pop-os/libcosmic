@@ -14,7 +14,7 @@ pub fn rectangle_tracker_subscription<
     R: 'static + Hash + Copy + Send + Sync + Debug + Eq,
 >(
     id: I,
-) -> iced::Subscription<(I, RectangleUpdate<R>)> {
+) -> iced::Subscription<Option<(I, RectangleUpdate<R>)>> {
     subscription::unfold(id, State::Ready, move |state| start_listening(id, state))
 }
 

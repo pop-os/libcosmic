@@ -5,8 +5,6 @@
 
 pub use cosmic_theme;
 pub use iced;
-pub use iced_lazy;
-pub use iced_native;
 #[cfg(feature = "wayland")]
 pub use iced_sctk;
 pub use iced_style;

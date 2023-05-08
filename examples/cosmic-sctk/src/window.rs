@@ -2,14 +2,12 @@
 // SPDX-License-Identifier: MPL-2.0
 
 use cosmic::{
-    iced::{self, wayland::window::set_mode_window, Alignment, Application, Command, Length},
+    iced::{self, wayland::window::set_mode_window, Application, Command, Length},
     iced::{
         wayland::window::{start_drag_window, toggle_maximize},
-        widget::{
-            column, container, horizontal_space, pick_list, progress_bar, radio, row, slider,
-        },
+        widget::{column, container, horizontal_space, pick_list, progress_bar, row, slider},
+        window,
     },
-    iced_native::window,
     theme::{self, Theme},
     widget::{
         button, header_bar, nav_bar, nav_bar_toggle,
@@ -176,6 +174,7 @@ pub enum Message {
     InputChanged,
     Rectangle(RectangleUpdate<u32>),
     NavBar(segmented_button::Entity),
+    Ignore,
 }
 
 impl Application for Window {
@@ -240,9 +239,9 @@ impl Application for Window {
             Message::ToggleNavBarCondensed => {
                 self.nav_bar_toggled_condensed = !self.nav_bar_toggled_condensed
             }
-            Message::Drag => return start_drag_window(window::Id::new(0)),
-            Message::Minimize => return set_mode_window(window::Id::new(0), window::Mode::Hidden),
-            Message::Maximize => return toggle_maximize(window::Id::new(0)),
+            Message::Drag => return start_drag_window(window::Id(0)),
+            Message::Minimize => return set_mode_window(window::Id(0), window::Mode::Hidden),
+            Message::Maximize => return toggle_maximize(window::Id(0)),
             Message::RowSelected(row) => println!("Selected row {row}"),
             Message::InputChanged => {}
             Message::Rectangle(r) => match r {
@@ -253,6 +252,7 @@ impl Application for Window {
                     self.rectangle_tracker.replace(t);
                 }
             },
+            Message::Ignore => {}
         }
 
         Command::none()
@@ -363,13 +363,13 @@ impl Application for Window {
                     .add(settings::item(
                         "Slider",
                         slider(0.0..=100.0, self.slider_value, Message::SliderChanged)
-                            .width(Length::Units(250)),
+                            .width(Length::Fixed(250.0)),
                     ))
                     .add(settings::item(
                         "Progress",
                         progress_bar(0.0..=100.0, self.slider_value)
-                            .width(Length::Units(250))
-                            .height(Length::Units(4)),
+                            .width(Length::Fixed(250.0))
+                            .height(Length::Fixed(4.0)),
                     ))
                     .into(),
             ])
@@ -408,6 +408,12 @@ impl Application for Window {
         Message::Close
     }
     fn subscription(&self) -> iced::Subscription<Self::Message> {
-        rectangle_tracker_subscription(0).map(|(i, e)| Message::Rectangle(e))
+        rectangle_tracker_subscription(0).map(|m| {
+            if let Some((_, e)) = m {
+                Message::Rectangle(e)
+            } else {
+                Message::Ignore
+            }
+        })
     }
 }

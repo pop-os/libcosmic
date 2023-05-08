@@ -12,11 +12,12 @@ pub use self::segmented_button::SegmentedButton;
 
 use cosmic_theme::Component;
 use cosmic_theme::LayeredTheme;
-use iced_core::BorderRadius;
+use iced_core::renderer::BorderRadius;
 use iced_style::application;
 use iced_style::button;
 use iced_style::checkbox;
 use iced_style::container;
+use iced_style::core::text;
 use iced_style::menu;
 use iced_style::pane_grid;
 use iced_style::pick_list;
@@ -25,8 +26,8 @@ use iced_style::radio;
 use iced_style::rule;
 use iced_style::scrollable;
 use iced_style::slider;
+use iced_style::slider::Rail;
 use iced_style::svg;
-use iced_style::text;
 use iced_style::text_input;
 use iced_style::toggler;
 
@@ -218,8 +219,8 @@ impl button::StyleSheet for Theme {
         let component = style.cosmic(self);
         button::Appearance {
             border_radius: match style {
-                Button::Link => BorderRadius::from(0.0),
-                _ => BorderRadius::from(24.0),
+                Button::Link => 0.0,
+                _ => 24.0,
             },
             background: match style {
                 Button::Link | Button::Text => None,
@@ -252,22 +253,23 @@ impl button::StyleSheet for Theme {
         }
     }
 
-    fn focused(&self, style: &Self::Style) -> button::Appearance {
-        if let Button::Custom { hover, .. } = style {
-            return hover(self);
-        }
+    // TODO add back
+    // fn focused(&self, style: &Self::Style) -> button::Appearance {
+    //     if let Button::Custom { hover, .. } = style {
+    //         return hover(self);
+    //     }
 
-        let active = self.active(style);
-        let component = style.cosmic(self);
-        button::Appearance {
-            background: match style {
-                Button::Link => None,
-                Button::LinkActive => Some(Background::Color(component.divider.into())),
-                _ => Some(Background::Color(component.hover.into())),
-            },
-            ..active
-        }
-    }
+    //     let active = self.active(style);
+    //     let component = style.cosmic(self);
+    //     button::Appearance {
+    //         background: match style {
+    //             Button::Link => None,
+    //             Button::LinkActive => Some(Background::Color(component.divider.into())),
+    //             _ => Some(Background::Color(component.hover.into())),
+    //         },
+    //         ..active
+    //     }
+    // }
 }
 
 /*
@@ -301,7 +303,7 @@ impl checkbox::StyleSheet for Theme {
                 } else {
                     palette.background.base.into()
                 }),
-                checkmark_color: palette.accent.on.into(),
+                icon_color: palette.accent.on.into(),
                 border_radius: 4.0,
                 border_width: if is_checked { 0.0 } else { 1.0 },
                 border_color: if is_checked {
@@ -318,7 +320,7 @@ impl checkbox::StyleSheet for Theme {
                 } else {
                     palette.background.base.into()
                 }),
-                checkmark_color: palette.background.on.into(),
+                icon_color: palette.background.on.into(),
                 border_radius: 4.0,
                 border_width: if is_checked { 0.0 } else { 1.0 },
                 border_color: neutral_7.into(),
@@ -330,7 +332,7 @@ impl checkbox::StyleSheet for Theme {
                 } else {
                     palette.background.base.into()
                 }),
-                checkmark_color: palette.success.on.into(),
+                icon_color: palette.success.on.into(),
                 border_radius: 4.0,
                 border_width: if is_checked { 0.0 } else { 1.0 },
                 border_color: if is_checked {
@@ -347,7 +349,7 @@ impl checkbox::StyleSheet for Theme {
                 } else {
                     palette.background.base.into()
                 }),
-                checkmark_color: palette.destructive.on.into(),
+                icon_color: palette.destructive.on.into(),
                 border_radius: 4.0,
                 border_width: if is_checked { 0.0 } else { 1.0 },
                 border_color: if is_checked {
@@ -374,7 +376,7 @@ impl checkbox::StyleSheet for Theme {
                 } else {
                     neutral_10.into()
                 }),
-                checkmark_color: palette.accent.on.into(),
+                icon_color: palette.accent.on.into(),
                 border_radius: 4.0,
                 border_width: if is_checked { 0.0 } else { 1.0 },
                 border_color: if is_checked {
@@ -391,7 +393,7 @@ impl checkbox::StyleSheet for Theme {
                 } else {
                     neutral_10.into()
                 }),
-                checkmark_color: self.current_container().on.into(),
+                icon_color: self.current_container().on.into(),
                 border_radius: 4.0,
                 border_width: if is_checked { 0.0 } else { 1.0 },
                 border_color: if is_checked {
@@ -408,7 +410,7 @@ impl checkbox::StyleSheet for Theme {
                 } else {
                     neutral_10.into()
                 }),
-                checkmark_color: palette.success.on.into(),
+                icon_color: palette.success.on.into(),
                 border_radius: 4.0,
                 border_width: if is_checked { 0.0 } else { 1.0 },
                 border_color: if is_checked {
@@ -425,7 +427,7 @@ impl checkbox::StyleSheet for Theme {
                 } else {
                     neutral_10.into()
                 }),
-                checkmark_color: palette.destructive.on.into(),
+                icon_color: palette.destructive.on.into(),
                 border_radius: 4.0,
                 border_width: if is_checked { 0.0 } else { 1.0 },
                 border_color: if is_checked {
@@ -538,11 +540,15 @@ impl slider::StyleSheet for Theme {
 
         //TODO: no way to set rail thickness
         slider::Appearance {
-            rail_colors: (
-                cosmic.accent.base.into(),
-                //TODO: no way to set color before/after slider
-                Color::TRANSPARENT,
-            ),
+            rail: Rail {
+                colors: (
+                    cosmic.accent.base.into(),
+                    //TODO: no way to set color before/after slider
+                    Color::TRANSPARENT,
+                ),
+                width: 4.0,
+            },
+
             handle: slider::Handle {
                 shape: slider::HandleShape::Circle { radius: 10.0 },
                 color: cosmic.accent.base.into(),
@@ -610,7 +616,8 @@ impl pick_list::StyleSheet for Theme {
             border_radius: 24.0,
             border_width: 0.0,
             border_color: Color::TRANSPARENT,
-            icon_size: 0.7,
+            // icon_size: 0.7, // TODO: how to replace
+            handle_color: cosmic.on_bg_color().into(),
         }
     }
 
@@ -856,7 +863,11 @@ impl scrollable::StyleSheet for Theme {
         }
     }
 
-    fn hovered(&self, _style: &Self::Style) -> scrollable::Scrollbar {
+    fn hovered(
+        &self,
+        _style: &Self::Style,
+        is_mouse_over_scrollbar: bool,
+    ) -> scrollable::Scrollbar {
         let theme = self.cosmic();
 
         scrollable::Scrollbar {
@@ -948,7 +959,7 @@ pub enum Text {
     Default,
     Color(Color),
     // TODO: Can't use dyn Fn since this must be copy
-    Custom(fn(&Theme) -> text::Appearance),
+    Custom(fn(&Theme) -> iced_widget::text::Appearance),
 }
 
 impl From<Color> for Text {
@@ -957,16 +968,16 @@ impl From<Color> for Text {
     }
 }
 
-impl text::StyleSheet for Theme {
+impl iced_widget::text::StyleSheet for Theme {
     type Style = Text;
 
-    fn appearance(&self, style: Self::Style) -> text::Appearance {
+    fn appearance(&self, style: Self::Style) -> iced_widget::text::Appearance {
         match style {
-            Text::Accent => text::Appearance {
+            Text::Accent => iced_widget::text::Appearance {
                 color: Some(self.cosmic().accent.base.into()),
             },
-            Text::Default => text::Appearance { color: None },
-            Text::Color(c) => text::Appearance { color: Some(c) },
+            Text::Default => iced_widget::text::Appearance { color: None },
+            Text::Color(c) => iced_widget::text::Appearance { color: Some(c) },
             Text::Custom(f) => f(self),
         }
     }
@@ -995,12 +1006,14 @@ impl text_input::StyleSheet for Theme {
                 border_radius: 8.0,
                 border_width: 1.0,
                 border_color: self.current_container().component.divider.into(),
+                icon_color: self.current_container().on.into(),
             },
             TextInput::Search => text_input::Appearance {
                 background: Color::from(bg).into(),
                 border_radius: 24.0,
                 border_width: 0.0,
                 border_color: Color::TRANSPARENT,
+                icon_color: self.current_container().on.into(),
             },
         }
     }
@@ -1016,12 +1029,14 @@ impl text_input::StyleSheet for Theme {
                 border_radius: 8.0,
                 border_width: 1.0,
                 border_color: palette.accent.base.into(),
+                icon_color: self.current_container().on.into(),
             },
             TextInput::Search => text_input::Appearance {
                 background: Color::from(bg).into(),
                 border_radius: 24.0,
                 border_width: 0.0,
                 border_color: Color::TRANSPARENT,
+                icon_color: self.current_container().on.into(),
             },
         }
     }
@@ -1037,12 +1052,14 @@ impl text_input::StyleSheet for Theme {
                 border_radius: 8.0,
                 border_width: 1.0,
                 border_color: palette.accent.base.into(),
+                icon_color: self.current_container().on.into(),
             },
             TextInput::Search => text_input::Appearance {
                 background: Color::from(bg).into(),
                 border_radius: 24.0,
                 border_width: 0.0,
                 border_color: Color::TRANSPARENT,
+                icon_color: self.current_container().on.into(),
             },
         }
     }
@@ -1064,5 +1081,13 @@ impl text_input::StyleSheet for Theme {
         let palette = self.cosmic();
 
         palette.accent.base.into()
+    }
+
+    fn disabled_color(&self, style: &Self::Style) -> Color {
+        todo!()
+    }
+
+    fn disabled(&self, style: &Self::Style) -> text_input::Appearance {
+        todo!()
     }
 }

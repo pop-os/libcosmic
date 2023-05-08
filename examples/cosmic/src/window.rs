@@ -1,25 +1,27 @@
 /// Copyright 2022 System76 <info@system76.com>
 // SPDX-License-Identifier: MPL-2.0
 use cosmic::{
-    iced::widget::{self, button, column, container, horizontal_space, row, text},
     iced::{self, Application, Command, Length, Subscription},
-    iced_native::{subscription, window},
-    iced_winit::window::{close, drag, minimize, toggle_maximize},
+    iced::{
+        subscription,
+        widget::{self, column, container, horizontal_space, row, text},
+        window::{self, close, drag, minimize, toggle_maximize},
+    },
     keyboard_nav,
-    theme::{self, Theme, COSMIC_DARK, COSMIC_LIGHT},
+    theme::{self, Theme},
     widget::{
         header_bar, icon, list, nav_bar, nav_bar_toggle, scrollable, segmented_button, settings,
         warning, IconSource,
     },
     Element, ElementExt,
 };
-use once_cell::sync::Lazy;
 use std::{
     sync::atomic::{AtomicU32, Ordering},
     vec,
 };
 
-static BTN: Lazy<button::Id> = Lazy::new(button::Id::unique);
+// XXX The use of button is removed because it assigns the same ID to multiple buttons, causing a crash when a11y is enabled...
+// static BTN: Lazy<id::Id> = Lazy::new(|| id::Id::new("BTN"));
 
 mod bluetooth;
 
@@ -237,7 +239,7 @@ impl Window {
             ))
             .padding(0)
             .style(theme::Button::Link)
-            .id(BTN.clone())
+            // .id(BTN.clone())
             .on_press(Message::from(page)),
             row!(
                 text(sub_page.title()).size(30),
@@ -282,7 +284,7 @@ impl Window {
         .padding(0)
         .style(theme::Button::Transparent)
         .on_press(Message::from(sub_page.into_page()))
-        .id(BTN.clone())
+        // .id(BTN.clone())
         .into()
     }
 
@@ -405,10 +407,10 @@ impl Application for Window {
             Message::ToggleNavBarCondensed => {
                 self.nav_bar_toggled_condensed = !self.nav_bar_toggled_condensed
             }
-            Message::Drag => return drag(window::Id::new(0)),
-            Message::Close => return close(window::Id::new(0)),
-            Message::Minimize => return minimize(window::Id::new(0), true),
-            Message::Maximize => return toggle_maximize(window::Id::new(0)),
+            Message::Drag => return drag(),
+            Message::Close => return close(),
+            Message::Minimize => return minimize(true),
+            Message::Maximize => return toggle_maximize(),
 
             Message::InputChanged => {}
 
@@ -553,7 +555,7 @@ impl Application for Window {
             column(vec![
                 header,
                 warning,
-                iced::widget::vertical_space(Length::Units(12)).into(),
+                iced::widget::vertical_space(Length::Fixed(12.0)).into(),
                 content,
             ])
             .into()

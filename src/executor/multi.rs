@@ -7,7 +7,7 @@ use std::future::Future;
 pub struct Executor(tokio::runtime::Runtime);
 
 #[cfg(feature = "tokio")]
-impl iced_native::Executor for Executor {
+impl iced::Executor for Executor {
     fn new() -> Result<Self, iced::futures::io::Error> {
         Ok(Self(
             tokio::runtime::Builder::new_multi_thread()

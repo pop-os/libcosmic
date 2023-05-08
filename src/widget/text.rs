@@ -7,7 +7,7 @@ pub use iced::widget::Text;
 /// [`Text`]: widget::Text
 pub fn text<'a, Renderer>(text: impl Into<Cow<'a, str>>) -> Text<'a, Renderer>
 where
-    Renderer: iced_native::text::Renderer,
+    Renderer: iced_core::text::Renderer,
     Renderer::Theme: iced::widget::text::StyleSheet,
 {
     Text::new(text)

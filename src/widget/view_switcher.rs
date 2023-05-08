@@ -25,7 +25,7 @@ where
         .button_padding([16, 0, 16, 0])
         .button_height(48)
         .style(crate::theme::SegmentedButton::ViewSwitcher)
-        .font_active(crate::font::FONT_SEMIBOLD)
+        .font_active(Some(crate::font::FONT_SEMIBOLD))
 }
 
 /// A collection of tabs for developing a tabbed interface.
@@ -45,5 +45,5 @@ where
         .button_padding([16, 0, 16, 0])
         .button_height(48)
         .style(crate::theme::SegmentedButton::ViewSwitcher)
-        .font_active(crate::font::FONT_SEMIBOLD)
+        .font_active(Some(crate::font::FONT_SEMIBOLD))
 }

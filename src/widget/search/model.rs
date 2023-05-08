@@ -6,7 +6,7 @@ use crate::iced;
 
 /// A model for managing the state of a search widget.
 pub struct Model {
-    pub input_id: iced::widget::text_input::Id,
+    pub input_id: iced_core::id::Id,
     pub phrase: String,
     pub state: State,
 }
@@ -29,7 +29,7 @@ impl Model {
 impl Default for Model {
     fn default() -> Self {
         Self {
-            input_id: iced::widget::text_input::Id::unique(),
+            input_id: iced_core::id::Id::unique(),
             phrase: String::with_capacity(32),
             state: State::Inactive,
         }

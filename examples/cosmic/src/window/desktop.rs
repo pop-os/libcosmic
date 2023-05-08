@@ -219,10 +219,10 @@ impl State {
             for image_path in chunk.iter() {
                 image_row.push(if image_path.ends_with(".svg") {
                     svg(svg::Handle::from_path(image_path))
-                        .width(Length::Units(150))
+                        .width(Length::Fixed(150.0))
                         .into()
                 } else {
-                    image(image_path).width(Length::Units(150)).into()
+                    image(image_path).width(Length::Fixed(150.0)).into()
                 });
             }
             image_column.push(row(image_row).spacing(16).into());
@@ -234,7 +234,7 @@ impl State {
                 horizontal_space(Length::Fill),
                 container(
                     image("/usr/share/backgrounds/pop/kate-hazen-COSMIC-desktop-wallpaper.png")
-                        .width(Length::Units(300))
+                        .width(Length::Fixed(300.0))
                 )
                 .padding(4)
                 .style(theme::Container::Background),

@@ -76,13 +76,13 @@ impl<'a, Message: 'static> SpinButton<'a, Message> {
                     .on_press(model::Message::Increment),
             ]
             .width(Length::Fill)
-            .height(Length::Units(32))
+            .height(Length::Fixed(32.0))
             .align_items(Alignment::Center),
         )
         .padding([4, 4])
         .align_y(Vertical::Center)
-        .width(Length::Units(95))
-        .height(Length::Units(32))
+        .width(Length::Fixed(95.0))
+        .height(Length::Fixed(32.0))
         .style(theme::Container::custom(container_style))
         .apply(Element::from)
         .map(on_change)

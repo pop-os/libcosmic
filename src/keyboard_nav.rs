@@ -3,7 +3,7 @@ use iced::{
     keyboard::{self, KeyCode},
     mouse, subscription, Command, Event, Subscription,
 };
-use iced_native::widget::{operation, Id, Operation};
+use iced_core::widget::{operation, Id, Operation};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum Message {

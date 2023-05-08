@@ -2,7 +2,7 @@ use apply::Apply;
 use cosmic::{
     cosmic_theme,
     iced::widget::{checkbox, pick_list, progress_bar, radio, row, slider, text, text_input},
-    iced::{Alignment, Length},
+    iced::{id, Alignment, Length},
     theme::{self, Button as ButtonTheme, Theme},
     widget::{
         button, container, icon, segmented_button, segmented_selection, settings, spin_button,
@@ -29,7 +29,7 @@ pub enum MultiOption {
     OptionD,
     OptionE,
 }
-static INPUT_ID: Lazy<text_input::Id> = Lazy::new(text_input::Id::unique);
+static INPUT_ID: Lazy<id::Id> = Lazy::new(id::Id::unique);
 
 #[derive(Clone, Debug)]
 pub enum Message {
@@ -253,13 +253,13 @@ impl State {
                         .add(settings::item(
                             "Slider",
                             slider(0.0..=100.0, self.slider_value, Message::SliderChanged)
-                                .width(Length::Units(250)),
+                                .width(Length::Fixed(250.0)),
                         ))
                         .add(settings::item(
                             "Progress",
                             progress_bar(0.0..=100.0, self.slider_value)
-                                .width(Length::Units(250))
-                                .height(Length::Units(4)),
+                                .width(Length::Fixed(250.0))
+                                .height(Length::Fixed(4.0)),
                         ))
                         .add(settings::item_row(vec![checkbox(
                             "Checkbox",
@@ -401,8 +401,8 @@ impl State {
             text_input(
                 "Type to search apps or type “?” for more options...",
                 &self.entry_value,
-                Message::InputChanged,
             )
+            .on_input(Message::InputChanged)
             // .on_submit(Message::Activate(None))
             .padding(8)
             .size(20)
