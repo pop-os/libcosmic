@@ -38,37 +38,37 @@ freedesktop-icons = "0.2.2"
 git = "https://github.com/pop-os/cosmic-theme.git"
 
 [dependencies.iced]
-path = "../fork/iced/"
+path = "iced"
 default-features = false
 features = ["image", "svg"]
 
 [dependencies.iced_core]
-path = "../fork/iced/core"
+path = "iced/core"
 
 [dependencies.iced_widget]
-path = "../fork/iced/widget"
+path = "iced/widget"
 
 [dependencies.iced_accessibility]
-path = "../fork/iced/accessibility"
+path = "iced/accessibility"
 
 optional = true
 [dependencies.iced_tiny_skia]
-path = "../fork/iced/tiny_skia"
+path = "iced/tiny_skia"
 optional = true
 
 [dependencies.iced_style]
-path = "../fork/iced/style"
+path = "iced/style"
 
 [dependencies.iced_sctk]
-path = "../fork/iced/sctk"
+path = "iced/sctk"
 optional = true
 
 [dependencies.iced_winit]
-path = "../fork/iced/winit"
+path = "iced/winit"
 optional = true
 
 [dependencies.iced_wgpu]
-path = "../fork/iced/wgpu"
+path = "iced/wgpu"
 optional = true
 
 [workspace]
