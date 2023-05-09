@@ -9,7 +9,7 @@ pub use window::*;
 
 pub fn main() -> cosmic::iced::Result {
     let env = Env::default()
-        .filter_or("MY_LOG_LEVEL", "debug")
+        .filter_or("MY_LOG_LEVEL", "info")
         .write_style_or("MY_LOG_STYLE", "always");
 
     env_logger::init_from_env(env);

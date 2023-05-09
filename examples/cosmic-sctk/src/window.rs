@@ -12,7 +12,7 @@ use cosmic::{
     widget::{
         button, header_bar, nav_bar, nav_bar_toggle,
         rectangle_tracker::{rectangle_tracker_subscription, RectangleTracker, RectangleUpdate},
-        scrollable, segmented_button, settings, toggler, IconSource,
+        scrollable, segmented_button, segmented_selection, settings, toggler, IconSource,
     },
     Element, ElementExt,
 };
@@ -116,6 +116,7 @@ pub struct Window {
     show_maximize: bool,
     exit: bool,
     rectangle_tracker: Option<RectangleTracker<u32>>,
+    pub selection: segmented_button::SingleSelectModel,
 }
 
 impl Window {
@@ -175,6 +176,7 @@ pub enum Message {
     Rectangle(RectangleUpdate<u32>),
     NavBar(segmented_button::Entity),
     Ignore,
+    Selection(segmented_button::Entity),
 }
 
 impl Application for Window {
@@ -188,6 +190,11 @@ impl Application for Window {
             .nav_bar_toggled(true)
             .show_maximize(true)
             .show_minimize(true);
+        window.selection = segmented_button::Model::builder()
+            .insert(|b| b.text("Choice A").activate())
+            .insert(|b| b.text("Choice B"))
+            .insert(|b| b.text("Choice C"))
+            .build();
         window.slider_value = 50.0;
         //        window.theme = Theme::Light;
         window.pick_list_selected = Some("Option 1");
@@ -253,6 +260,7 @@ impl Application for Window {
                 }
             },
             Message::Ignore => {}
+            Message::Selection(key) => self.selection.activate(key),
         }
 
         Command::none()
@@ -302,7 +310,7 @@ impl Application for Window {
             widgets.push(nav_bar.debug(self.debug));
         }
 
-        if !(self.is_condensed() && nav_bar_toggled) {
+        if !nav_bar_toggled {
             let secondary = button(ButtonTheme::Secondary)
                 .text("Secondary")
                 .on_press(Message::ButtonPressed);
@@ -371,11 +379,14 @@ impl Application for Window {
                             .width(Length::Fixed(250.0))
                             .height(Length::Fixed(4.0)),
                     ))
+                    .add(settings::item(
+                        "Segmented Button",
+                        segmented_selection::horizontal(&self.selection)
+                            .on_activate(Message::Selection),
+                    ))
                     .into(),
             ])
             .into();
-
-            let mut widgets: Vec<Element<_>> = Vec::with_capacity(2);
 
             widgets.push(
                 scrollable(row![
