@@ -11,6 +11,7 @@ use iced::{
     Point, Rectangle, Size,
 };
 use iced_core::renderer::BorderRadius;
+use iced_core::text::{LineHeight, Shaping};
 use iced_core::widget::{self, operation, tree, Operation};
 use iced_core::{layout, renderer, widget::Tree, Clipboard, Layout, Shell, Widget};
 use std::marker::PhantomData;
@@ -106,6 +107,8 @@ where
     pub(super) height: Length,
     /// Desired spacing between items.
     pub(super) spacing: u16,
+    /// LineHeight of the font.
+    pub(super) line_height: LineHeight,
     /// Style to draw the widget in.
     #[setters(into)]
     pub(super) style: <Renderer::Theme as StyleSheet>::Style,
@@ -149,6 +152,7 @@ where
             height: Length::Shrink,
             width: Length::Fill,
             spacing: 0,
+            line_height: LineHeight::default(),
             style: <Renderer::Theme as StyleSheet>::Style::default(),
             on_activate: None,
             on_close: None,
@@ -220,7 +224,14 @@ where
 
             // Add text to measurement if text was given.
             if let Some(text) = self.model.text(key) {
-                let (w, h) = renderer.measure(text, self.font_size, font, bounds);
+                let (w, h) = renderer.measure(
+                    text,
+                    self.font_size,
+                    self.line_height,
+                    font,
+                    bounds,
+                    Shaping::Advanced,
+                );
 
                 button_width = w;
                 button_height = h;
@@ -563,6 +574,8 @@ where
                     font: font.clone(),
                     horizontal_alignment,
                     vertical_alignment: alignment::Vertical::Center,
+                    shaping: Shaping::Advanced,
+                    line_height: self.line_height,
                 });
             }
 
