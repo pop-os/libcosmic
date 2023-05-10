@@ -191,8 +191,9 @@ pub struct Icon<'a> {
     force_svg: bool,
 }
 
-// TODO what to do here
+// XXX Hopefully this will be enough precision
 impl Hash for Icon<'_> {
+    #[allow(clippy::cast_possible_truncation)]
     fn hash<H: Hasher>(&self, state: &mut H) {
         self.source.hash(state);
         self.theme.hash(state);
@@ -200,6 +201,20 @@ impl Hash for Icon<'_> {
         self.size.hash(state);
         self.content_fit.hash(state);
         self.force_svg.hash(state);
+        match self.width {
+            Some(Length::Fill) => 0.hash(state),
+            Some(Length::Shrink) => 1.hash(state),
+            Some(Length::Fixed(v)) => ((v * 1000.0) as i32).hash(state),
+            Some(Length::FillPortion(p)) => p.hash(state),
+            None => 2.hash(state),
+        }
+        match self.height {
+            Some(Length::Fill) => 0.hash(state),
+            Some(Length::Shrink) => 1.hash(state),
+            Some(Length::Fixed(v)) => ((v * 1000.0) as i32).hash(state),
+            Some(Length::FillPortion(p)) => p.hash(state),
+            None => 2.hash(state),
+        }
     }
 }
 
