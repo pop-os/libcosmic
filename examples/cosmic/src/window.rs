@@ -1,6 +1,7 @@
 /// Copyright 2022 System76 <info@system76.com>
 // SPDX-License-Identifier: MPL-2.0
 use cosmic::{
+    font::load_fonts,
     iced::{self, Application, Command, Length, Subscription},
     iced::{
         subscription,
@@ -196,6 +197,7 @@ pub enum Message {
     ToggleNavBar,
     ToggleNavBarCondensed,
     ToggleWarning,
+    FontsLoaded,
 }
 
 impl From<Page> for Message {
@@ -343,7 +345,7 @@ impl Application for Window {
         window.insert_page(Page::Accessibility);
         window.insert_page(Page::Applications);
 
-        (window, Command::none())
+        (window, load_fonts().map(|_| Message::FontsLoaded))
     }
 
     fn title(&self) -> String {
@@ -422,6 +424,7 @@ impl Application for Window {
                 _ => (),
             },
             Message::ToggleWarning => self.toggle_warning(),
+            Message::FontsLoaded => {}
         }
         ret
     }
