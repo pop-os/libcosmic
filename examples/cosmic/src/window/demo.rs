@@ -253,7 +253,8 @@ impl State {
                         .add(settings::item(
                             "Slider",
                             slider(0.0..=100.0, self.slider_value, Message::SliderChanged)
-                                .width(Length::Fixed(250.0)),
+                                .width(Length::Fixed(250.0))
+                                .height(38),
                         ))
                         .add(settings::item(
                             "Progress",
