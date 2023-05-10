@@ -7,9 +7,8 @@ edition = "2021"
 name = "cosmic"
 
 [features]
-default = ["tiny_skia", "wayland", "applet", "tokio", "a11y", "lazy"]
+default = ["tiny_skia", "wayland", "applet", "tokio", "a11y"]
 debug = ["iced/debug"]
-lazy = ["iced/lazy"]
 a11y = ["iced/a11y", "iced_accessibility"]
 tiny_skia = ["iced/tiny-skia", "iced_tiny_skia"]
 wayland = ["iced/wayland", "iced_sctk"]
@@ -40,7 +39,7 @@ git = "https://github.com/pop-os/cosmic-theme.git"
 [dependencies.iced]
 path = "iced"
 default-features = false
-features = ["image", "svg"]
+features = ["image", "svg", "lazy"]
 
 [dependencies.iced_core]
 path = "iced/core"

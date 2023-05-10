@@ -8,7 +8,7 @@ publish = false
 [dependencies]
 apply = "0.3.0"
 fraction = "0.13.0"
-libcosmic = { path = "../..", default-features = false, features = ["debug", "winit_tiny_skia", "a11y", "lazy"] }
+libcosmic = { path = "../..", default-features = false, features = ["debug", "winit_tiny_skia", "a11y"] }
 once_cell = "1.15"
 slotmap = "1.0.6"
 env_logger = "0.10"
