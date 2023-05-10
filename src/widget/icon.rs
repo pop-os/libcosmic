@@ -71,7 +71,7 @@ impl<'a> IconSource<'a> {
             let handle = if let Some(path) = icon {
                 svg::Handle::from_path(path)
             } else {
-                eprintln!("svg icon '{:?}' size {} not found", self, size);
+                eprintln!("svg icon '{self:?}' size {size} not found");
                 svg::Handle::from_memory(Vec::new())
             };
 

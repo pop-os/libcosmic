@@ -253,23 +253,22 @@ impl button::StyleSheet for Theme {
         }
     }
 
-    // TODO add back
-    // fn focused(&self, style: &Self::Style) -> button::Appearance {
-    //     if let Button::Custom { hover, .. } = style {
-    //         return hover(self);
-    //     }
+    fn focused(&self, style: &Self::Style) -> button::Appearance {
+        if let Button::Custom { hover, .. } = style {
+            return hover(self);
+        }
 
-    //     let active = self.active(style);
-    //     let component = style.cosmic(self);
-    //     button::Appearance {
-    //         background: match style {
-    //             Button::Link => None,
-    //             Button::LinkActive => Some(Background::Color(component.divider.into())),
-    //             _ => Some(Background::Color(component.hover.into())),
-    //         },
-    //         ..active
-    //     }
-    // }
+        let active = self.active(style);
+        let component = style.cosmic(self);
+        button::Appearance {
+            background: match style {
+                Button::Link => None,
+                Button::LinkActive => Some(Background::Color(component.divider.into())),
+                _ => Some(Background::Color(component.hover.into())),
+            },
+            ..active
+        }
+    }
 }
 
 /*
