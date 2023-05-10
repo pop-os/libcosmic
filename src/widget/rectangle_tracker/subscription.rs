@@ -41,10 +41,10 @@ async fn start_listening<I: Copy, R: 'static + Hash + Copy + Send + Sync + Debug
             Some(u) => {
                 if let Some(prev) = map.get(&u.0) {
                     let new = u.1;
-                    if prev.width != new.width
-                        || prev.height != new.height
-                        || prev.x != new.x
-                        || prev.y != new.y
+                    if (prev.width - new.width).abs() > 0.1
+                        || (prev.height - new.height).abs() > 0.1
+                        || (prev.x - new.x).abs() > 0.1
+                        || (prev.y - new.y).abs() > 0.1
                     {
                         map.insert(u.0, new);
                         return (

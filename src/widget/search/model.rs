@@ -13,7 +13,6 @@ pub struct Model {
 
 impl Model {
     /// Focuses the search field.
-    #[must_use]
     pub fn focus<Message: 'static>(&mut self) -> crate::iced::Command<Message> {
         self.state = State::Active;
         iced::widget::text_input::focus(self.input_id.clone())

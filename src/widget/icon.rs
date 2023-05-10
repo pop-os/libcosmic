@@ -79,7 +79,7 @@ impl<'a> IconSource<'a> {
         } else if let Some(icon) = icon {
             Handle::Image(icon.into())
         } else {
-            eprintln!("icon '{:?}' size {} not found", self, size);
+            eprintln!("icon '{self:?}' size {size} not found");
             Handle::Image(image::Handle::from_memory(Vec::new()))
         }
     }
@@ -236,8 +236,8 @@ pub fn icon<'a>(source: impl Into<IconSource<'a>>, size: u16) -> Icon<'a> {
 impl<'a> Icon<'a> {
     fn raster_element<Message: 'static>(&self, handle: image::Handle) -> Element<'static, Message> {
         Image::new(handle)
-            .width(self.width.unwrap_or(Length::Fixed(self.size as f32)))
-            .height(self.height.unwrap_or(Length::Fixed(self.size as f32)))
+            .width(self.width.unwrap_or(Length::Fixed(f32::from(self.size))))
+            .height(self.height.unwrap_or(Length::Fixed(f32::from(self.size))))
             .content_fit(self.content_fit)
             .into()
     }
@@ -245,8 +245,8 @@ impl<'a> Icon<'a> {
     fn svg_element<Message: 'static>(&self, handle: svg::Handle) -> Element<'static, Message> {
         svg::Svg::<Renderer>::new(handle)
             .style(self.style.clone())
-            .width(self.width.unwrap_or(Length::Fixed(self.size as f32)))
-            .height(self.height.unwrap_or(Length::Fixed(self.size as f32)))
+            .width(self.width.unwrap_or(Length::Fixed(f32::from(self.size))))
+            .height(self.height.unwrap_or(Length::Fixed(f32::from(self.size))))
             .content_fit(self.content_fit)
             .into()
     }

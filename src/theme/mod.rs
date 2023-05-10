@@ -12,12 +12,10 @@ pub use self::segmented_button::SegmentedButton;
 
 use cosmic_theme::Component;
 use cosmic_theme::LayeredTheme;
-use iced_core::renderer::BorderRadius;
 use iced_style::application;
 use iced_style::button;
 use iced_style::checkbox;
 use iced_style::container;
-use iced_style::core::text;
 use iced_style::menu;
 use iced_style::pane_grid;
 use iced_style::pick_list;
@@ -865,7 +863,7 @@ impl scrollable::StyleSheet for Theme {
     fn hovered(
         &self,
         _style: &Self::Style,
-        is_mouse_over_scrollbar: bool,
+        _is_mouse_over_scrollbar: bool,
     ) -> scrollable::Scrollbar {
         let theme = self.cosmic();
 
@@ -1082,11 +1080,11 @@ impl text_input::StyleSheet for Theme {
         palette.accent.base.into()
     }
 
-    fn disabled_color(&self, style: &Self::Style) -> Color {
+    fn disabled_color(&self, _style: &Self::Style) -> Color {
         todo!()
     }
 
-    fn disabled(&self, style: &Self::Style) -> text_input::Appearance {
+    fn disabled(&self, _style: &Self::Style) -> text_input::Appearance {
         todo!()
     }
 }

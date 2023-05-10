@@ -12,7 +12,7 @@ use iced::{
 };
 use iced_core::renderer::BorderRadius;
 use iced_core::text::{LineHeight, Shaping};
-use iced_core::widget::{self, operation, tree, Operation};
+use iced_core::widget::{self, operation, tree};
 use iced_core::{layout, renderer, widget::Tree, Clipboard, Layout, Shell, Widget};
 use std::marker::PhantomData;
 
@@ -391,7 +391,7 @@ where
         &self,
         tree: &mut Tree,
         _layout: Layout<'_>,
-        renderer: &Renderer,
+        _renderer: &Renderer,
         operation: &mut dyn iced_core::widget::Operation<
             iced_core::widget::OperationOutputWrapper<Message>,
         >,
@@ -568,10 +568,10 @@ where
                 // Draw the text in this button.
                 renderer.fill_text(iced_core::text::Text {
                     content: text,
-                    size: f32::from(self.font_size),
+                    size: self.font_size,
                     bounds,
                     color: status_appearance.text_color,
-                    font: font.clone(),
+                    font,
                     horizontal_alignment,
                     vertical_alignment: alignment::Vertical::Center,
                     shaping: Shaping::Advanced,
@@ -642,7 +642,6 @@ where
 }
 
 /// A command that focuses a segmented item stored in a widget.
-#[must_use]
 pub fn focus<Message: 'static>(id: Id) -> Command<Message> {
     Command::widget(operation::focusable::focus(id.0))
 }

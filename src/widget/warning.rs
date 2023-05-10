@@ -64,6 +64,7 @@ impl<'a, Message: 'static + Clone> From<Warning<'a, Message>> for Element<'a, Me
     }
 }
 
+#[must_use]
 pub fn warning_container(theme: &Theme) -> widget::container::Appearance {
     widget::container::Appearance {
         text_color: Some(theme.cosmic().warning.on.into()),

@@ -14,7 +14,6 @@ pub enum Message {
     Search,
 }
 
-#[must_use]
 pub fn subscription() -> Subscription<Message> {
     subscription::events_with(|event, status| match (event, status) {
         // Focus
@@ -61,7 +60,6 @@ pub fn subscription() -> Subscription<Message> {
 }
 
 /// Unfocuses any actively-focused widget.
-#[must_use]
 pub fn unfocus<Message: 'static>() -> Command<Message> {
     Command::<Message>::widget(unfocus_operation())
 }
