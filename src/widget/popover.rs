@@ -1,0 +1,251 @@
+// Copyright 2022 System76 <info@system76.com>
+// SPDX-License-Identifier: MPL-2.0
+
+//! A widget showing a popup in an overlay positioned relative to another widget.
+
+use iced_native::event::{self, Event};
+use iced_native::layout;
+use iced_native::mouse;
+use iced_native::overlay;
+use iced_native::renderer;
+use iced_native::widget::{Operation, Tree};
+use iced_native::{Clipboard, Element, Layout, Length, Point, Rectangle, Shell, Size, Widget};
+use std::cell::RefCell;
+
+pub use iced_style::container::{Appearance, StyleSheet};
+
+pub fn popover<'a, Message, Renderer>(
+    content: impl Into<Element<'a, Message, Renderer>>,
+    popup: impl Into<Element<'a, Message, Renderer>>,
+) -> Popover<'a, Message, Renderer> {
+    Popover::new(content, popup)
+}
+
+pub struct Popover<'a, Message, Renderer> {
+    content: Element<'a, Message, Renderer>,
+    // XXX Avoid refcell; improve iced overlay API?
+    popup: RefCell<Element<'a, Message, Renderer>>,
+}
+
+impl<'a, Message, Renderer> Popover<'a, Message, Renderer> {
+    fn new(
+        content: impl Into<Element<'a, Message, Renderer>>,
+        popup: impl Into<Element<'a, Message, Renderer>>,
+    ) -> Self {
+        Self {
+            content: content.into(),
+            popup: RefCell::new(popup.into()),
+        }
+    }
+
+    // TODO More options for positioning similar to GdkPopup, xdg_popup
+}
+
+impl<'a, Message, Renderer> Widget<Message, Renderer> for Popover<'a, Message, Renderer>
+where
+    Renderer: iced_native::Renderer,
+    Renderer::Theme: StyleSheet,
+{
+    fn children(&self) -> Vec<Tree> {
+        vec![Tree::new(&self.content), Tree::new(&*self.popup.borrow())]
+    }
+
+    fn diff(&self, tree: &mut Tree) {
+        tree.diff_children(&[&self.content, &self.popup.borrow()])
+    }
+
+    fn width(&self) -> Length {
+        self.content.as_widget().width()
+    }
+
+    fn height(&self) -> Length {
+        self.content.as_widget().height()
+    }
+
+    fn layout(&self, renderer: &Renderer, limits: &layout::Limits) -> layout::Node {
+        self.content.as_widget().layout(renderer, limits)
+    }
+
+    fn operate(&self, tree: &mut Tree, layout: Layout<'_>, operation: &mut dyn Operation<Message>) {
+        self.content
+            .as_widget()
+            .operate(&mut tree.children[0], layout, operation)
+    }
+
+    fn on_event(
+        &mut self,
+        tree: &mut Tree,
+        event: Event,
+        layout: Layout<'_>,
+        cursor_position: Point,
+        renderer: &Renderer,
+        clipboard: &mut dyn Clipboard,
+        shell: &mut Shell<'_, Message>,
+    ) -> event::Status {
+        self.content.as_widget_mut().on_event(
+            &mut tree.children[0],
+            event,
+            layout,
+            cursor_position,
+            renderer,
+            clipboard,
+            shell,
+        )
+    }
+
+    fn mouse_interaction(
+        &self,
+        tree: &Tree,
+        layout: Layout<'_>,
+        cursor_position: Point,
+        viewport: &Rectangle,
+        renderer: &Renderer,
+    ) -> mouse::Interaction {
+        self.content.as_widget().mouse_interaction(
+            &tree.children[0],
+            layout,
+            cursor_position,
+            viewport,
+            renderer,
+        )
+    }
+
+    fn draw(
+        &self,
+        tree: &Tree,
+        renderer: &mut Renderer,
+        theme: &Renderer::Theme,
+        renderer_style: &renderer::Style,
+        layout: Layout<'_>,
+        cursor_position: Point,
+        viewport: &Rectangle,
+    ) {
+        self.content.as_widget().draw(
+            &tree.children[0],
+            renderer,
+            theme,
+            renderer_style,
+            layout,
+            cursor_position,
+            viewport,
+        )
+    }
+
+    fn overlay<'b>(
+        &'b self,
+        tree: &'b mut Tree,
+        layout: Layout<'_>,
+        _renderer: &Renderer,
+    ) -> Option<overlay::Element<'b, Message, Renderer>> {
+        // Set position to center of bottom edge
+        let bounds = layout.bounds();
+        let position = Point::new(bounds.x + bounds.width / 2.0, bounds.y + bounds.height);
+
+        // XXX needed to use RefCell to get &mut for popup element
+        Some(overlay::Element::new(
+            position,
+            Box::new(Overlay {
+                tree: &mut tree.children[1],
+                content: &self.popup,
+            }),
+        ))
+    }
+}
+
+impl<'a, Message, Renderer> From<Popover<'a, Message, Renderer>> for Element<'a, Message, Renderer>
+where
+    Message: 'static,
+    Renderer: iced_native::Renderer + 'static,
+    Renderer::Theme: StyleSheet,
+{
+    fn from(popover: Popover<'a, Message, Renderer>) -> Self {
+        Self::new(popover)
+    }
+}
+
+struct Overlay<'a, 'b, Message, Renderer> {
+    tree: &'a mut Tree,
+    content: &'a RefCell<Element<'b, Message, Renderer>>,
+}
+
+impl<'a, 'b, Message, Renderer> overlay::Overlay<Message, Renderer>
+    for Overlay<'a, 'b, Message, Renderer>
+where
+    Renderer: iced_native::Renderer,
+{
+    fn layout(&self, renderer: &Renderer, bounds: Size, mut position: Point) -> layout::Node {
+        // Position is set to the center bottom of the lower widget
+
+        let limits = layout::Limits::new(Size::UNIT, bounds);
+        let mut node = self.content.borrow().as_widget().layout(renderer, &limits);
+
+        let width = node.size().width;
+        position.x = (position.x - width / 2.0).clamp(0.0, bounds.width - width);
+        node.move_to(position);
+
+        node
+    }
+
+    fn operate(&mut self, layout: Layout<'_>, operation: &mut dyn Operation<Message>) {
+        self.content
+            .borrow()
+            .as_widget()
+            .operate(self.tree, layout, operation)
+    }
+
+    fn on_event(
+        &mut self,
+        event: Event,
+        layout: Layout<'_>,
+        cursor_position: Point,
+        renderer: &Renderer,
+        clipboard: &mut dyn Clipboard,
+        shell: &mut Shell<'_, Message>,
+    ) -> event::Status {
+        self.content.borrow_mut().as_widget_mut().on_event(
+            self.tree,
+            event,
+            layout,
+            cursor_position,
+            renderer,
+            clipboard,
+            shell,
+        )
+    }
+
+    fn mouse_interaction(
+        &self,
+        layout: Layout<'_>,
+        cursor_position: Point,
+        viewport: &Rectangle,
+        renderer: &Renderer,
+    ) -> mouse::Interaction {
+        self.content.borrow().as_widget().mouse_interaction(
+            self.tree,
+            layout,
+            cursor_position,
+            viewport,
+            renderer,
+        )
+    }
+
+    fn draw(
+        &self,
+        renderer: &mut Renderer,
+        theme: &Renderer::Theme,
+        style: &renderer::Style,
+        layout: Layout<'_>,
+        cursor_position: Point,
+    ) {
+        let bounds = layout.bounds();
+        self.content.borrow().as_widget().draw(
+            self.tree,
+            renderer,
+            theme,
+            style,
+            layout,
+            cursor_position,
+            &bounds,
+        )
+    }
+}
