@@ -7,7 +7,7 @@ edition = "2021"
 name = "cosmic"
 
 [features]
-default = ["tiny_skia", "wayland", "applet", "tokio", "a11y"]
+default = ["tiny_skia", "winit", "tokio", "a11y"]
 debug = ["iced/debug"]
 a11y = ["iced/a11y", "iced_accessibility"]
 tiny_skia = ["iced/tiny-skia", "iced_tiny_skia"]
