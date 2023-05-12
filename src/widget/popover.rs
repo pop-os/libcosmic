@@ -3,13 +3,13 @@
 
 //! A widget showing a popup in an overlay positioned relative to another widget.
 
-use iced_native::event::{self, Event};
-use iced_native::layout;
-use iced_native::mouse;
-use iced_native::overlay;
-use iced_native::renderer;
-use iced_native::widget::{Operation, Tree};
-use iced_native::{Clipboard, Element, Layout, Length, Point, Rectangle, Shell, Size, Widget};
+use iced_core::event::{self, Event};
+use iced_core::layout;
+use iced_core::mouse;
+use iced_core::overlay;
+use iced_core::renderer;
+use iced_core::widget::{Operation, OperationOutputWrapper, Tree};
+use iced_core::{Clipboard, Element, Layout, Length, Point, Rectangle, Shell, Size, Widget};
 use std::cell::RefCell;
 
 pub use iced_style::container::{Appearance, StyleSheet};
@@ -43,15 +43,15 @@ impl<'a, Message, Renderer> Popover<'a, Message, Renderer> {
 
 impl<'a, Message, Renderer> Widget<Message, Renderer> for Popover<'a, Message, Renderer>
 where
-    Renderer: iced_native::Renderer,
+    Renderer: iced_core::Renderer,
     Renderer::Theme: StyleSheet,
 {
     fn children(&self) -> Vec<Tree> {
         vec![Tree::new(&self.content), Tree::new(&*self.popup.borrow())]
     }
 
-    fn diff(&self, tree: &mut Tree) {
-        tree.diff_children(&[&self.content, &self.popup.borrow()])
+    fn diff(&mut self, tree: &mut Tree) {
+        tree.diff_children(&mut [&mut self.content, &mut self.popup.borrow_mut()]);
     }
 
     fn width(&self) -> Length {
@@ -66,10 +66,16 @@ where
         self.content.as_widget().layout(renderer, limits)
     }
 
-    fn operate(&self, tree: &mut Tree, layout: Layout<'_>, operation: &mut dyn Operation<Message>) {
+    fn operate(
+        &self,
+        tree: &mut Tree,
+        layout: Layout<'_>,
+        renderer: &Renderer,
+        operation: &mut dyn Operation<OperationOutputWrapper<Message>>,
+    ) {
         self.content
             .as_widget()
-            .operate(&mut tree.children[0], layout, operation)
+            .operate(&mut tree.children[0], layout, renderer, operation);
     }
 
     fn on_event(
@@ -128,11 +134,11 @@ where
             layout,
             cursor_position,
             viewport,
-        )
+        );
     }
 
     fn overlay<'b>(
-        &'b self,
+        &'b mut self,
         tree: &'b mut Tree,
         layout: Layout<'_>,
         _renderer: &Renderer,
@@ -155,7 +161,7 @@ where
 impl<'a, Message, Renderer> From<Popover<'a, Message, Renderer>> for Element<'a, Message, Renderer>
 where
     Message: 'static,
-    Renderer: iced_native::Renderer + 'static,
+    Renderer: iced_core::Renderer + 'static,
     Renderer::Theme: StyleSheet,
 {
     fn from(popover: Popover<'a, Message, Renderer>) -> Self {
@@ -171,7 +177,7 @@ struct Overlay<'a, 'b, Message, Renderer> {
 impl<'a, 'b, Message, Renderer> overlay::Overlay<Message, Renderer>
     for Overlay<'a, 'b, Message, Renderer>
 where
-    Renderer: iced_native::Renderer,
+    Renderer: iced_core::Renderer,
 {
     fn layout(&self, renderer: &Renderer, bounds: Size, mut position: Point) -> layout::Node {
         // Position is set to the center bottom of the lower widget
@@ -186,11 +192,16 @@ where
         node
     }
 
-    fn operate(&mut self, layout: Layout<'_>, operation: &mut dyn Operation<Message>) {
+    fn operate(
+        &mut self,
+        layout: Layout<'_>,
+        renderer: &Renderer,
+        operation: &mut dyn Operation<OperationOutputWrapper<Message>>,
+    ) {
         self.content
             .borrow()
             .as_widget()
-            .operate(self.tree, layout, operation)
+            .operate(self.tree, layout, renderer, operation);
     }
 
     fn on_event(
@@ -246,6 +257,6 @@ where
             layout,
             cursor_position,
             &bounds,
-        )
+        );
     }
 }
