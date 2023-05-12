@@ -5,9 +5,11 @@
 
 pub use cosmic_theme;
 pub use iced;
+pub use iced_runtime;
 #[cfg(feature = "wayland")]
 pub use iced_sctk;
 pub use iced_style;
+pub use iced_widget;
 #[cfg(feature = "winit")]
 pub use iced_winit;
 

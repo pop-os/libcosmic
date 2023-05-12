@@ -41,6 +41,9 @@ path = "iced"
 default-features = false
 features = ["image", "svg", "lazy"]
 
+[dependencies.iced_runtime]
+path = "iced/runtime"
+
 [dependencies.iced_core]
 path = "iced/core"
 
