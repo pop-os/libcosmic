@@ -1,7 +1,11 @@
-use notify::Watcher;
+use iced::subscription;
+use iced_futures::futures::channel::mpsc;
+use notify::{RecommendedWatcher, Watcher};
 use serde::{de::DeserializeOwned, Serialize};
 use std::{
+    borrow::Cow,
     fs,
+    hash::Hash,
     io::Write,
     path::{Path, PathBuf},
     sync::Mutex,
@@ -255,8 +259,122 @@ impl<'a> ConfigSet for ConfigTransaction<'a> {
     }
 }
 
-pub trait CosmicConfigEntry where Self: Sized + Default {
+#[cfg(feature = "iced")]
+pub enum ConfigState<T> {
+    Init(Cow<'static, str>, u64),
+    Waiting(T, RecommendedWatcher, mpsc::Receiver<()>, Config),
+    Failed,
+}
+
+#[cfg(feature = "iced")]
+pub enum ConfigUpdate<T> {
+    Update(T),
+    UpdateError(T, Vec<crate::Error>),
+    Failed,
+}
+
+pub trait CosmicConfigEntry
+where
+    Self: Sized + Default,
+{
     fn write_entry(&self, config: &Config) -> Result<(), crate::Error>;
     fn get_entry(config: &Config) -> Result<Self, (Vec<crate::Error>, Self)>;
 }
 
+#[cfg(feature = "iced")]
+pub fn config_subscription<
+    I: 'static + Copy + Send + Sync + Hash,
+    T: 'static + Send + Sync + PartialEq + Clone + CosmicConfigEntry,
+>(
+    id: I,
+    config_id: Cow<'static, str>,
+    config_version: u64,
+) -> iced::Subscription<(I, Result<T, (Vec<crate::Error>, T)>)> {
+    subscription::unfold(
+        id,
+        ConfigState::Init(config_id, config_version),
+        move |state| start_listening_loop(id, state),
+    )
+}
+
+#[cfg(feature = "iced")]
+async fn start_listening<
+    I: Copy,
+    T: 'static + Send + Sync + PartialEq + Clone + CosmicConfigEntry,
+>(
+    id: I,
+    state: ConfigState<T>,
+) -> (
+    Option<(I, Result<T, (Vec<crate::Error>, T)>)>,
+    ConfigState<T>,
+) {
+    use iced::futures::StreamExt;
+
+    match state {
+        ConfigState::Init(config_id, version) => {
+            let (tx, rx) = mpsc::channel(100);
+            let config = match Config::new(&config_id, version) {
+                Ok(c) => c,
+                Err(e) => return (None, ConfigState::Failed),
+            };
+            let watcher = match config.watch(move |_helper, _keys| {
+                let mut tx = tx.clone();
+                let _ = tx.try_send(());
+            }) {
+                Ok(w) => w,
+                Err(e) => return (None, ConfigState::Failed),
+            };
+
+            match T::get_entry(&config) {
+                Ok(t) => (
+                    Some((id, Ok(t.clone()))),
+                    ConfigState::Waiting(t, watcher, rx, config),
+                ),
+                Err((errors, t)) => (
+                    Some((id, Err((errors, t.clone())))),
+                    ConfigState::Waiting(t, watcher, rx, config),
+                ),
+            }
+        }
+        ConfigState::Waiting(old, watcher, mut rx, config) => match rx.next().await {
+            Some(_) => match T::get_entry(&config) {
+                Ok(t) => (
+                    if t != old {
+                        Some((id, Ok(t.clone())))
+                    } else {
+                        None
+                    },
+                    ConfigState::Waiting(t, watcher, rx, config),
+                ),
+                Err((errors, t)) => (
+                    if t != old {
+                        Some((id, Ok(t.clone())))
+                    } else {
+                        None
+                    },
+                    ConfigState::Waiting(t, watcher, rx, config),
+                ),
+            },
+
+            None => (None, ConfigState::Failed),
+        },
+        ConfigState::Failed => iced::futures::future::pending().await,
+    }
+}
+
+#[cfg(feature = "iced")]
+async fn start_listening_loop<
+    I: Copy,
+    T: 'static + Send + Sync + PartialEq + Clone + CosmicConfigEntry,
+>(
+    id: I,
+    mut state: ConfigState<T>,
+) -> ((I, Result<T, (Vec<crate::Error>, T)>), ConfigState<T>) {
+    loop {
+        let (update, new_state) = start_listening(id, state).await;
+        state = new_state;
+        if let Some(update) = update {
+            return (update, state);
+        }
+    }
+}

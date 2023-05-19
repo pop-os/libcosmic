@@ -15,7 +15,7 @@ pub fn cosmic_config_entry_derive(input: TokenStream) -> TokenStream {
 fn impl_cosmic_config_entry_macro(ast: &syn::DeriveInput) -> TokenStream {
     let name = &ast.ident;
 
-        // Get the fields of the struct
+    // Get the fields of the struct
     let fields = match ast.data {
         syn::Data::Struct(ref data_struct) => match data_struct.fields {
             syn::Fields::Named(ref fields) => &fields.named,
@@ -54,7 +54,7 @@ fn impl_cosmic_config_entry_macro(ast: &syn::DeriveInput) -> TokenStream {
                 let mut errors = Vec::new();
 
                 #(#get_each_config_field)*
-                
+
                 if errors.is_empty() {
                     Ok(default)
                 } else {
