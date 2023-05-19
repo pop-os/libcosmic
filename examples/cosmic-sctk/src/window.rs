@@ -419,12 +419,6 @@ impl Application for Window {
         Message::Close
     }
     fn subscription(&self) -> iced::Subscription<Self::Message> {
-        rectangle_tracker_subscription(0).map(|m| {
-            if let Some((_, e)) = m {
-                Message::Rectangle(e)
-            } else {
-                Message::Ignore
-            }
-        })
+        rectangle_tracker_subscription(0).map(|(_, e)| Message::Rectangle(e))
     }
 }
