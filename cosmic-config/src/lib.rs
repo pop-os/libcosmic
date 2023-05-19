@@ -7,6 +7,9 @@ use std::{
     sync::Mutex,
 };
 
+#[cfg(feature = "macro")]
+pub use cosmic_config_derive;
+
 #[cfg(feature = "calloop")]
 pub mod calloop;
 
@@ -251,3 +254,9 @@ impl<'a> ConfigSet for ConfigTransaction<'a> {
         Ok(())
     }
 }
+
+pub trait CosmicConfigEntry where Self: Sized + Default {
+    fn write_entry(&self, config: &Config) -> Result<(), crate::Error>;
+    fn get_entry(config: &Config) -> Result<Self, (Vec<crate::Error>, Self)>;
+}
+

@@ -3,10 +3,16 @@ name = "cosmic-config"
 version = "0.1.0"
 edition = "2021"
 
+[features]
+default = ["macro"]
+macro = ["cosmic-config-derive"]
+
 [dependencies]
 atomicwrites = "0.4.0"
 calloop = { version = "0.10.5", optional = true }
-dirs = "4.0.0"
-notify = "5.1.0"
+dirs = "5.0.1"
+notify = "6.0.0"
 ron = "0.8.0"
 serde = "1.0.152"
+cosmic-config-derive = { path = "../cosmic-config-derive/", optional = true }
+

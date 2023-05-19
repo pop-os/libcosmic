@@ -76,6 +76,7 @@ optional = true
 [workspace]
 members = [
   "cosmic-config",
+  "cosmic-config-derive",
   "examples/*",
 ]
 exclude = [
