@@ -1,4 +1,6 @@
+#[cfg(feature = "subscription")]
 use iced::subscription;
+#[cfg(feature = "subscription")]
 use iced_futures::futures::channel::mpsc;
 use notify::{RecommendedWatcher, Watcher};
 use serde::{de::DeserializeOwned, Serialize};
