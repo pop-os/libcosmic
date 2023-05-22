@@ -1,9 +1,9 @@
 use apply::Apply;
 use cosmic::{
     cosmic_theme,
-    iced::widget::{checkbox, pick_list, progress_bar, radio, row, slider, text, text_input},
+    iced::widget::{checkbox, column, pick_list, progress_bar, radio, slider, text, text_input},
     iced::{id, Alignment, Length},
-    theme::{self, Button as ButtonTheme, Theme},
+    theme::{self, Button as ButtonTheme, Theme, ThemeType},
     widget::{
         button, container, icon, segmented_button, segmented_selection, settings, spin_button,
         toggler, view_switcher,
@@ -14,6 +14,33 @@ use fraction::{Decimal, ToPrimitive};
 use once_cell::sync::Lazy;
 
 use super::{Page, Window};
+
+#[derive(Clone, Copy, Debug, PartialEq, PartialOrd, Ord, Eq)]
+pub enum ThemeVariant {
+    Light,
+    Dark,
+    HighContrastDark,
+    HighContrastLight,
+    Custom,
+}
+
+impl From<&ThemeType> for ThemeVariant {
+    fn from(theme: &ThemeType) -> Self {
+        match theme {
+            ThemeType::Light => ThemeVariant::Light,
+            ThemeType::Dark => ThemeVariant::Dark,
+            ThemeType::HighContrastDark => ThemeVariant::HighContrastDark,
+            ThemeType::HighContrastLight => ThemeVariant::HighContrastLight,
+            ThemeType::Custom(_) => ThemeVariant::Custom,
+        }
+    }
+}
+
+impl From<ThemeType> for ThemeVariant {
+    fn from(theme: ThemeType) -> Self {
+        ThemeVariant::from(&theme)
+    }
+}
 
 pub enum DemoView {
     TabA,
@@ -44,7 +71,7 @@ pub enum Message {
     Selection(segmented_button::Entity),
     SliderChanged(f32),
     SpinButton(spin_button::Message),
-    ThemeChanged(Theme),
+    ThemeChanged(ThemeVariant),
     ToggleWarning,
     TogglerToggled(bool),
     ViewSwitcher(segmented_button::Entity),
@@ -54,7 +81,7 @@ pub enum Message {
 pub enum Output {
     Debug(bool),
     ScalingFactor(f32),
-    ThemeChanged(Theme),
+    ThemeChanged(ThemeVariant),
     ToggleWarning,
 }
 
@@ -151,20 +178,21 @@ impl State {
 
     pub(super) fn view<'a>(&'a self, window: &'a Window) -> Element<'a, Message> {
         let choose_theme = [
-            Theme::light(),
-            Theme::dark(),
-            Theme::light_hc(),
-            Theme::dark_hc(),
+            ThemeVariant::Light,
+            ThemeVariant::Dark,
+            ThemeVariant::HighContrastLight,
+            ThemeVariant::HighContrastLight,
+            ThemeVariant::Custom,
         ]
-        .iter()
+        .into_iter()
         .fold(
-            row![].spacing(10).align_items(Alignment::Center),
+            column![].spacing(10).align_items(Alignment::Center),
             |row, theme| {
                 row.push(radio(
-                    format!("{:?}", theme.theme_type),
-                    *theme,
-                    if window.theme == *theme {
-                        Some(*theme)
+                    format!("{:?}", theme),
+                    theme,
+                    if ThemeVariant::from(&window.theme.theme_type) == theme {
+                        Some(theme)
                     } else {
                         None
                     },

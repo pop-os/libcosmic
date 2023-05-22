@@ -1,6 +1,6 @@
 use proc_macro::TokenStream;
 use quote::quote;
-use syn::{self, parse_quote};
+use syn::{self};
 
 #[proc_macro_derive(CosmicConfigEntry)]
 pub fn cosmic_config_entry_derive(input: TokenStream) -> TokenStream {
@@ -14,7 +14,7 @@ pub fn cosmic_config_entry_derive(input: TokenStream) -> TokenStream {
 
 fn impl_cosmic_config_entry_macro(ast: &syn::DeriveInput) -> TokenStream {
     let name = &ast.ident;
-    let generics = &ast.generics;
+    // let generics = &ast.generics;
 
     // Get the fields of the struct
     let fields = match ast.data {
@@ -43,29 +43,30 @@ fn impl_cosmic_config_entry_macro(ast: &syn::DeriveInput) -> TokenStream {
         }
     });
 
-    // Get the existing where clause or create a new one if it doesn't exist
-    let mut where_clause = ast
-        .generics
-        .where_clause
-        .clone()
-        .unwrap_or_else(|| parse_quote!(where));
+    // // Get the existing where clause or create a new one if it doesn't exist
+    // let mut where_clause = ast
+    //     .generics
+    //     .where_clause
+    //     .clone()
+    //     .unwrap_or_else(|| parse_quote!(where));
 
-    // Add your additional constraints to the where clause
-    // Here, we add the constraint 'T: Debug' to all generic parameters
-    for param in ast.generics.params.iter() {
-        where_clause
-            .predicates
-            .push(parse_quote!(#param: ::std::default::Default + ::serde::Serialize + ::serde::de::DeserializeOwned));
-    }
+    // // Add your additional constraints to the where clause
+    // // Here, we add the constraint 'T: Debug' to all generic parameters
+    // for param in ast.generics.params.iter() {
+    //     where_clause
+    //         .predicates
+    //         .push(parse_quote!(#param: ::std::default::Default + ::serde::Serialize + ::serde::de::DeserializeOwned));
+    // }
 
     let gen = quote! {
-        impl #generics CosmicConfigEntry for #name #generics #where_clause {
+        impl CosmicConfigEntry for #name {
             fn write_entry(&self, config: &Config) -> Result<(), cosmic_config::Error> {
+                let tx = config.transaction();
                 #(#write_each_config_field)*
-                Ok(())
+                tx.commit()
             }
 
-            fn get_entry(config: &Config) -> Result<Self, (Vec<cosmic_config::Error>, Self)> {
+            fn get_entry(config: &Config) -> Result<Self, (Vec<::cosmic_config::Error>, Self)> {
                 let mut default = Self::default();
                 let mut errors = Vec::new();
 

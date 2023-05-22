@@ -7,6 +7,7 @@ mod segmented_button;
 use std::hash::Hash;
 use std::hash::Hasher;
 use std::rc::Rc;
+use std::sync::Arc;
 
 pub use self::segmented_button::SegmentedButton;
 
@@ -32,10 +33,10 @@ use iced_style::toggler;
 use iced_core::{Background, Color};
 use palette::Srgba;
 
-type CosmicColor = ::palette::rgb::Srgba;
-type CosmicComponent = cosmic_theme::Component<CosmicColor>;
-type CosmicTheme = cosmic_theme::Theme<CosmicColor>;
-type CosmicThemeCss = cosmic_theme::Theme<cosmic_theme::util::CssColor>;
+pub type CosmicColor = ::palette::rgb::Srgba;
+pub type CosmicComponent = cosmic_theme::Component<CosmicColor>;
+pub type CosmicTheme = cosmic_theme::Theme<CosmicColor>;
+pub type CosmicThemeCss = cosmic_theme::Theme<cosmic_theme::util::CssColor>;
 
 lazy_static::lazy_static! {
     pub static ref COSMIC_DARK: CosmicTheme = CosmicThemeCss::dark_default().into_srgba();
@@ -56,16 +57,17 @@ lazy_static::lazy_static! {
     };
 }
 
-#[derive(Debug, Copy, Clone, Eq, PartialEq, Default)]
+#[derive(Debug, Clone, Eq, PartialEq, Default)]
 pub enum ThemeType {
     #[default]
     Dark,
     Light,
     HighContrastDark,
     HighContrastLight,
+    Custom(Arc<CosmicTheme>),
 }
 
-#[derive(Debug, Copy, Clone, Eq, PartialEq, Default)]
+#[derive(Debug, Clone, Eq, PartialEq, Default)]
 pub struct Theme {
     pub theme_type: ThemeType,
     pub layer: cosmic_theme::Layer,
@@ -79,6 +81,7 @@ impl Theme {
             ThemeType::Light => &COSMIC_LIGHT,
             ThemeType::HighContrastDark => &COSMIC_HC_DARK,
             ThemeType::HighContrastLight => &COSMIC_HC_LIGHT,
+            ThemeType::Custom(ref t) => t.as_ref(),
         }
     }
 
@@ -110,6 +113,14 @@ impl Theme {
     pub fn light_hc() -> Self {
         Self {
             theme_type: ThemeType::HighContrastLight,
+            ..Default::default()
+        }
+    }
+
+    #[must_use]
+    pub fn custom(theme: Arc<CosmicTheme>) -> Self {
+        Self {
+            theme_type: ThemeType::Custom(theme),
             ..Default::default()
         }
     }

@@ -3,6 +3,7 @@
 
 #![allow(clippy::module_name_repetitions)]
 
+pub use cosmic_config;
 pub use cosmic_theme;
 pub use iced;
 pub use iced_runtime;
@@ -12,7 +13,6 @@ pub use iced_style;
 pub use iced_widget;
 #[cfg(feature = "winit")]
 pub use iced_winit;
-
 #[cfg(feature = "applet")]
 pub mod applet;
 pub mod executor;

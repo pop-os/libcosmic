@@ -35,7 +35,7 @@ cosmic-config = { path = "cosmic-config" }
 freedesktop-icons = "0.2.2"
 
 [dependencies.cosmic-theme]
-git = "https://github.com/pop-os/cosmic-theme.git"
+path = "cosmic-theme"
 
 [dependencies.iced]
 path = "iced"
@@ -78,6 +78,7 @@ optional = true
 members = [
   "cosmic-config",
   "cosmic-config-derive",
+  "cosmic-theme",
   "examples/*",
 ]
 exclude = [
