@@ -1,6 +1,6 @@
 use proc_macro::TokenStream;
 use quote::quote;
-use syn;
+use syn::{self, parse_quote};
 
 #[proc_macro_derive(CosmicConfigEntry)]
 pub fn cosmic_config_entry_derive(input: TokenStream) -> TokenStream {
@@ -14,6 +14,7 @@ pub fn cosmic_config_entry_derive(input: TokenStream) -> TokenStream {
 
 fn impl_cosmic_config_entry_macro(ast: &syn::DeriveInput) -> TokenStream {
     let name = &ast.ident;
+    let generics = &ast.generics;
 
     // Get the fields of the struct
     let fields = match ast.data {
@@ -42,8 +43,23 @@ fn impl_cosmic_config_entry_macro(ast: &syn::DeriveInput) -> TokenStream {
         }
     });
 
+    // Get the existing where clause or create a new one if it doesn't exist
+    let mut where_clause = ast
+        .generics
+        .where_clause
+        .clone()
+        .unwrap_or_else(|| parse_quote!(where));
+
+    // Add your additional constraints to the where clause
+    // Here, we add the constraint 'T: Debug' to all generic parameters
+    for param in ast.generics.params.iter() {
+        where_clause
+            .predicates
+            .push(parse_quote!(#param: ::std::default::Default + ::serde::Serialize + ::serde::de::DeserializeOwned));
+    }
+
     let gen = quote! {
-        impl CosmicConfigEntry for #name {
+        impl #generics CosmicConfigEntry for #name #generics #where_clause {
             fn write_entry(&self, config: &Config) -> Result<(), cosmic_config::Error> {
                 #(#write_each_config_field)*
                 Ok(())

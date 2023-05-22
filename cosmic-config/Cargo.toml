@@ -6,7 +6,7 @@ edition = "2021"
 [features]
 default = ["macro", "subscription"]
 macro = ["cosmic-config-derive"]
-subscription = ["iced", "iced_futures"]
+subscription = ["iced_futures"]
 
 [dependencies]
 atomicwrites = "0.4.0"

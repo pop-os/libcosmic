@@ -1,7 +1,7 @@
 #[cfg(feature = "subscription")]
-use iced::subscription;
-#[cfg(feature = "subscription")]
 use iced_futures::futures::channel::mpsc;
+#[cfg(feature = "subscription")]
+use iced_futures::subscription;
 use notify::{RecommendedWatcher, Watcher};
 use serde::{de::DeserializeOwned, Serialize};
 use std::{
@@ -277,7 +277,7 @@ pub enum ConfigUpdate<T> {
 
 pub trait CosmicConfigEntry
 where
-    Self: Sized + Default,
+    Self: Sized,
 {
     fn write_entry(&self, config: &Config) -> Result<(), crate::Error>;
     fn get_entry(config: &Config) -> Result<Self, (Vec<crate::Error>, Self)>;

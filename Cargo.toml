@@ -29,6 +29,7 @@ cosmic-panel-config = {git = "https://github.com/pop-os/cosmic-panel", optional 
 sctk = { package = "smithay-client-toolkit", git = "https://github.com/Smithay/client-toolkit", optional = true, rev = "389a4f2" }
 slotmap = "1.0.6"
 fraction = "0.13.0"
+cosmic-config = { path = "cosmic-config" }
 
 [target.'cfg(unix)'.dependencies]
 freedesktop-icons = "0.2.2"
