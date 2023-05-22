@@ -261,14 +261,14 @@ impl<'a> ConfigSet for ConfigTransaction<'a> {
     }
 }
 
-#[cfg(feature = "iced")]
+#[cfg(feature = "subscription")]
 pub enum ConfigState<T> {
     Init(Cow<'static, str>, u64),
     Waiting(T, RecommendedWatcher, mpsc::Receiver<()>, Config),
     Failed,
 }
 
-#[cfg(feature = "iced")]
+#[cfg(feature = "subscription")]
 pub enum ConfigUpdate<T> {
     Update(T),
     UpdateError(T, Vec<crate::Error>),
@@ -283,7 +283,7 @@ where
     fn get_entry(config: &Config) -> Result<Self, (Vec<crate::Error>, Self)>;
 }
 
-#[cfg(feature = "iced")]
+#[cfg(feature = "subscription")]
 pub fn config_subscription<
     I: 'static + Copy + Send + Sync + Hash,
     T: 'static + Send + Sync + PartialEq + Clone + CosmicConfigEntry,
@@ -291,7 +291,7 @@ pub fn config_subscription<
     id: I,
     config_id: Cow<'static, str>,
     config_version: u64,
-) -> iced::Subscription<(I, Result<T, (Vec<crate::Error>, T)>)> {
+) -> iced_futures::Subscription<(I, Result<T, (Vec<crate::Error>, T)>)> {
     subscription::unfold(
         id,
         ConfigState::Init(config_id, config_version),
@@ -299,7 +299,7 @@ pub fn config_subscription<
     )
 }
 
-#[cfg(feature = "iced")]
+#[cfg(feature = "subscription")]
 async fn start_listening<
     I: Copy,
     T: 'static + Send + Sync + PartialEq + Clone + CosmicConfigEntry,
@@ -310,21 +310,21 @@ async fn start_listening<
     Option<(I, Result<T, (Vec<crate::Error>, T)>)>,
     ConfigState<T>,
 ) {
-    use iced::futures::StreamExt;
+    use iced_futures::futures::{future::pending, StreamExt};
 
     match state {
         ConfigState::Init(config_id, version) => {
             let (tx, rx) = mpsc::channel(100);
             let config = match Config::new(&config_id, version) {
                 Ok(c) => c,
-                Err(e) => return (None, ConfigState::Failed),
+                Err(_) => return (None, ConfigState::Failed),
             };
             let watcher = match config.watch(move |_helper, _keys| {
                 let mut tx = tx.clone();
                 let _ = tx.try_send(());
             }) {
                 Ok(w) => w,
-                Err(e) => return (None, ConfigState::Failed),
+                Err(_) => return (None, ConfigState::Failed),
             };
 
             match T::get_entry(&config) {
@@ -350,7 +350,7 @@ async fn start_listening<
                 ),
                 Err((errors, t)) => (
                     if t != old {
-                        Some((id, Ok(t.clone())))
+                        Some((id, Err((errors, t.clone()))))
                     } else {
                         None
                     },
@@ -360,11 +360,11 @@ async fn start_listening<
 
             None => (None, ConfigState::Failed),
         },
-        ConfigState::Failed => iced::futures::future::pending().await,
+        ConfigState::Failed => pending().await,
     }
 }
 
-#[cfg(feature = "iced")]
+#[cfg(feature = "subscription")]
 async fn start_listening_loop<
     I: Copy,
     T: 'static + Send + Sync + PartialEq + Clone + CosmicConfigEntry,
