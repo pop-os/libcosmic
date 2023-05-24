@@ -102,7 +102,7 @@ fn container_style(theme: &crate::Theme) -> iced_style::container::Appearance {
     iced_style::container::Appearance {
         text_color: Some(basic.palette.neutral_10.into()),
         background: Some(Background::Color(neutral_10.into())),
-        border_radius: 24.0,
+        border_radius: 24.0.into(),
         border_width: 0.0,
         border_color: accent.base.into(),
     }

@@ -577,17 +577,21 @@ impl Application for Window {
             .padding([0, 8, 8, 8])
             .width(Length::Fill)
             .height(Length::Fill)
+            .style(theme::Container::Background)
             .into();
         let warning = warning(&self.warning_message)
             .on_close(Message::ToggleWarning)
             .into();
         if self.show_warning {
-            column(vec![
+            column![
                 header,
-                warning,
-                iced::widget::vertical_space(Length::Fixed(12.0)).into(),
-                content,
-            ])
+                container(column(vec![
+                    warning,
+                    iced::widget::vertical_space(Length::Fixed(12.0)).into(),
+                    content,
+                ]))
+                .style(theme::Container::Background)
+            ]
             .into()
         } else {
             column(vec![header, content]).into()

@@ -6,8 +6,9 @@ use cosmic::{
     iced::{
         wayland::window::{start_drag_window, toggle_maximize},
         widget::{column, container, horizontal_space, pick_list, progress_bar, row, slider},
-        window,
+        window, Color,
     },
+    iced_style::application,
     theme::{self, Theme},
     widget::{
         button, header_bar, nav_bar, nav_bar_toggle,
@@ -402,6 +403,7 @@ impl Application for Window {
             .padding([0, 8, 8, 8])
             .width(Length::Fill)
             .height(Length::Fill)
+            .style(theme::Container::Background)
             .into();
 
         column(vec![header, content]).into()
@@ -420,5 +422,12 @@ impl Application for Window {
     }
     fn subscription(&self) -> iced::Subscription<Self::Message> {
         rectangle_tracker_subscription(0).map(|(_, e)| Message::Rectangle(e))
+    }
+
+    fn style(&self) -> <Self::Theme as cosmic::iced_style::application::StyleSheet>::Style {
+        cosmic::theme::Application::Custom(Box::new(|theme| application::Appearance {
+            background_color: Color::TRANSPARENT,
+            text_color: theme.cosmic().on_bg_color().into(),
+        }))
     }
 }

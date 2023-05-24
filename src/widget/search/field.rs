@@ -85,7 +85,7 @@ fn active_style(theme: &crate::Theme) -> container::Appearance {
     iced::widget::container::Appearance {
         text_color: Some(cosmic.palette.neutral_9.into()),
         background: Some(Background::Color(neutral_7.into())),
-        border_radius: 24.0,
+        border_radius: 24.0.into(),
         border_width: 2.0,
         border_color: cosmic.accent.focus.into(),
     }

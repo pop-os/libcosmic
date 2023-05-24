@@ -13,6 +13,7 @@ pub use self::segmented_button::SegmentedButton;
 
 use cosmic_theme::Component;
 use cosmic_theme::LayeredTheme;
+use iced_core::renderer::BorderRadius;
 use iced_style::application;
 use iced_style::button;
 use iced_style::checkbox;
@@ -484,6 +485,7 @@ pub enum Container {
     Secondary,
     #[default]
     Transparent,
+    HeaderBar,
     Custom(Box<dyn Fn(&Theme) -> container::Appearance>),
 }
 
@@ -506,7 +508,18 @@ impl container::StyleSheet for Theme {
                 container::Appearance {
                     text_color: Some(Color::from(palette.background.on)),
                     background: Some(iced::Background::Color(palette.background.base.into())),
-                    border_radius: 2.0,
+                    border_radius: 2.0.into(),
+                    border_width: 0.0,
+                    border_color: Color::TRANSPARENT,
+                }
+            }
+            Container::HeaderBar => {
+                let palette = self.cosmic();
+
+                container::Appearance {
+                    text_color: Some(Color::from(palette.background.on)),
+                    background: Some(iced::Background::Color(palette.background.base.into())),
+                    border_radius: BorderRadius::from([16.0, 16.0, 0.0, 0.0]),
                     border_width: 0.0,
                     border_color: Color::TRANSPARENT,
                 }
@@ -517,7 +530,7 @@ impl container::StyleSheet for Theme {
                 container::Appearance {
                     text_color: Some(Color::from(palette.primary.on)),
                     background: Some(iced::Background::Color(palette.primary.base.into())),
-                    border_radius: 2.0,
+                    border_radius: 2.0.into(),
                     border_width: 0.0,
                     border_color: Color::TRANSPARENT,
                 }
@@ -528,7 +541,7 @@ impl container::StyleSheet for Theme {
                 container::Appearance {
                     text_color: Some(Color::from(palette.secondary.on)),
                     background: Some(iced::Background::Color(palette.secondary.base.into())),
-                    border_radius: 2.0,
+                    border_radius: 2.0.into(),
                     border_width: 0.0,
                     border_color: Color::TRANSPARENT,
                 }
