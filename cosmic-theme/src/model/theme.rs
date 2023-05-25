@@ -164,6 +164,18 @@ impl<C> Eq for Theme<C> where
 {
 }
 
+impl<C> Theme<C> {
+    /// version of the theme
+    pub fn version() -> u32 {
+        1
+    }
+
+    /// id of the theme
+    pub fn id() -> &'static str {
+        NAME
+    }
+}
+
 impl<C> Theme<C>
 where
     C: Clone + fmt::Debug + Default + Into<Srgba> + From<Srgba> + Serialize + DeserializeOwned,
