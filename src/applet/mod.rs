@@ -139,7 +139,7 @@ impl CosmicAppletHelper {
             crate::theme::Container::custom(|theme| Appearance {
                 text_color: Some(theme.cosmic().background.on.into()),
                 background: Some(Color::from(theme.cosmic().background.base).into()),
-                border_radius: 12.0,
+                border_radius: 12.0.into(),
                 border_width: 0.0,
                 border_color: Color::TRANSPARENT,
             }),
