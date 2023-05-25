@@ -32,6 +32,8 @@ pub const THEME_DIR: &str = "themes";
 /// name of the palette directory
 pub const PALETTE_DIR: &str = "palettes";
 
+pub use palette;
+
 /// theme derivation from an image
 #[cfg(feature = "theme-from-image")]
 pub mod theme_from_image {
