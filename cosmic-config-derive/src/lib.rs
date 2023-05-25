@@ -66,7 +66,7 @@ fn impl_cosmic_config_entry_macro(ast: &syn::DeriveInput) -> TokenStream {
                 tx.commit()
             }
 
-            fn get_entry(config: &Config) -> Result<Self, (Vec<::cosmic_config::Error>, Self)> {
+            fn get_entry(config: &Config) -> Result<Self, (Vec<cosmic_config::Error>, Self)> {
                 let mut default = Self::default();
                 let mut errors = Vec::new();
 
