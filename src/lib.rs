@@ -13,6 +13,8 @@ pub use iced_style;
 pub use iced_widget;
 #[cfg(feature = "winit")]
 pub use iced_winit;
+#[cfg(feature = "wayland")]
+pub use sctk;
 #[cfg(feature = "applet")]
 pub mod applet;
 pub mod executor;
