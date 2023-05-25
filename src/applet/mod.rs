@@ -1,4 +1,4 @@
-use cosmic_panel_config::{PanelAnchor, PanelSize};
+use cosmic_panel_config::{CosmicPanelBackground, PanelAnchor, PanelSize};
 use iced::{
     alignment::{Horizontal, Vertical},
     wayland::InitialSurface,
@@ -37,6 +37,8 @@ pub fn applet_button_theme() -> Button {
 pub struct CosmicAppletHelper {
     pub size: Size,
     pub anchor: PanelAnchor,
+    pub background: CosmicPanelBackground,
+    pub output_name: String,
 }
 
 #[derive(Clone, Debug)]
@@ -52,13 +54,18 @@ impl Default for CosmicAppletHelper {
             size: Size::PanelSize(
                 std::env::var("COSMIC_PANEL_SIZE")
                     .ok()
-                    .and_then(|size| size.parse::<PanelSize>().ok())
+                    .and_then(|size| ron::from_str(size.as_str()).ok())
                     .unwrap_or(PanelSize::S),
             ),
             anchor: std::env::var("COSMIC_PANEL_ANCHOR")
                 .ok()
-                .and_then(|size| size.parse::<PanelAnchor>().ok())
+                .and_then(|size| ron::from_str(size.as_str()).ok())
                 .unwrap_or(PanelAnchor::Top),
+            background: std::env::var("COSMIC_PANEL_BACKGROUND")
+                .ok()
+                .and_then(|size| ron::from_str(size.as_str()).ok())
+                .unwrap_or(CosmicPanelBackground::ThemeDefault),
+            output_name: std::env::var("COSMIC_PANEL_OUTPUT").unwrap_or_default(),
         }
     }
 }
@@ -102,7 +109,7 @@ impl CosmicAppletHelper {
                     .max_height(height as f32 + APPLET_PADDING as f32 * 2.0)
                     .min_width(width as f32 + APPLET_PADDING as f32 * 2.0)
                     .max_width(width as f32 + APPLET_PADDING as f32 * 2.0),
-
+                resizable: None,
                 ..Default::default()
             }),
             ..crate::settings_with_flags(flags)
