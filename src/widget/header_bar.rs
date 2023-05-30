@@ -5,7 +5,6 @@ use crate::{theme, Element};
 use apply::Apply;
 use derive_setters::Setters;
 use iced::{self, widget, Length};
-use iced_core::renderer::BorderRadius;
 use std::borrow::Cow;
 
 #[must_use]
@@ -99,7 +98,7 @@ impl<'a, Message: Clone + 'static> HeaderBar<'a, Message> {
         std::mem::swap(&mut title, &mut self.title);
 
         super::text(title)
-            .size(18)
+            .size(16)
             .font(crate::font::FONT_SEMIBOLD)
             .apply(widget::container)
             .center_x()

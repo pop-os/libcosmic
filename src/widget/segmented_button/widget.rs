@@ -147,7 +147,7 @@ where
             font_active: None,
             font_hovered: None,
             font_inactive: None,
-            font_size: 17.0,
+            font_size: 14.0,
             icon_size: 16,
             height: Length::Shrink,
             width: Length::Fill,

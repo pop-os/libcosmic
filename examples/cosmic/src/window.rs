@@ -225,7 +225,7 @@ impl Window {
     }
 
     fn page_title<Message: 'static>(&self, page: Page) -> Element<Message> {
-        row!(text(page.title()).size(30), horizontal_space(Length::Fill),).into()
+        row!(text(page.title()).size(28), horizontal_space(Length::Fill),).into()
     }
 
     fn is_condensed(&self) -> bool {
@@ -245,14 +245,14 @@ impl Window {
         column!(
             iced::widget::Button::new(row!(
                 icon("go-previous-symbolic", 16).style(theme::Svg::SymbolicLink),
-                text(page.title()).size(16),
+                text(page.title()).size(14),
             ))
             .padding(0)
             .style(theme::Button::Link)
             // .id(BTN.clone())
             .on_press(Message::from(page)),
             row!(
-                text(sub_page.title()).size(30),
+                text(sub_page.title()).size(28),
                 horizontal_space(Length::Fill),
             ),
         )
@@ -276,8 +276,8 @@ impl Window {
                         .style(theme::Svg::Symbolic)
                         .into(),
                     column!(
-                        text(sub_page.title()).size(18),
-                        text(sub_page.description()).size(12),
+                        text(sub_page.title()).size(14),
+                        text(sub_page.description()).size(10),
                     )
                     .spacing(2)
                     .into(),
