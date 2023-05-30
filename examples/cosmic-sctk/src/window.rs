@@ -367,7 +367,8 @@ impl Application for Window {
                             vec!["Option 1", "Option 2", "Option 3", "Option 4"],
                             self.pick_list_selected,
                             Message::PickListSelected,
-                        ),
+                        )
+                        .text_size(14.0),
                     ))
                     .add(settings::item(
                         "Slider",
