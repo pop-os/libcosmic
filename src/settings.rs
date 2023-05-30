@@ -27,11 +27,8 @@ pub fn settings<Flags: Default>() -> iced::Settings<Flags> {
 #[must_use]
 pub fn settings_with_flags<Flags>(flags: Flags) -> iced::Settings<Flags> {
     iced::Settings {
-        default_font: match font::FONT {
-            iced::Font::Default => None,
-            iced::Font::External { bytes, .. } => Some(bytes),
-        },
-        default_text_size: 18,
+        default_font: font::FONT,
+        default_text_size: 18.0,
         ..iced::Settings::with_flags(flags)
     }
 }

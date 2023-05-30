@@ -46,43 +46,41 @@ impl<'a, Message: 'static> SpinButton<'a, Message> {
                 icon("list-remove-symbolic", 24)
                     .style(theme::Svg::Symbolic)
                     .apply(container)
-                    .width(Length::Fill)
-                    .height(Length::Fill)
+                    .width(Length::Fixed(32.0))
+                    .height(Length::Fixed(32.0))
                     .align_x(Horizontal::Center)
                     .align_y(Vertical::Center)
                     .apply(button)
-                    .width(Length::Fill)
-                    .height(Length::Fill)
+                    .width(Length::Fixed(32.0))
+                    .height(Length::Fixed(32.0))
                     .style(theme::Button::Text)
                     .on_press(model::Message::Decrement),
                 text(label)
                     .vertical_alignment(Vertical::Center)
                     .apply(container)
-                    .width(Length::Fill)
-                    .height(Length::Fill)
                     .align_x(Horizontal::Center)
                     .align_y(Vertical::Center),
                 icon("list-add-symbolic", 24)
                     .style(theme::Svg::Symbolic)
                     .apply(container)
-                    .width(Length::Fill)
-                    .height(Length::Fill)
+                    .width(Length::Fixed(32.0))
+                    .height(Length::Fixed(32.0))
                     .align_x(Horizontal::Center)
                     .align_y(Vertical::Center)
                     .apply(button)
-                    .width(Length::Fill)
-                    .height(Length::Fill)
+                    .width(Length::Fixed(32.0))
+                    .height(Length::Fixed(32.0))
                     .style(theme::Button::Text)
                     .on_press(model::Message::Increment),
             ]
-            .width(Length::Fill)
-            .height(Length::Units(32))
+            .width(Length::Shrink)
+            .height(Length::Fixed(32.0))
+            .spacing(4.0)
             .align_items(Alignment::Center),
         )
-        .padding([4, 4])
         .align_y(Vertical::Center)
-        .width(Length::Units(95))
-        .height(Length::Units(32))
+        .width(Length::Shrink)
+        .height(Length::Fixed(32.0))
         .style(theme::Container::custom(container_style))
         .apply(Element::from)
         .map(on_change)
@@ -104,7 +102,7 @@ fn container_style(theme: &crate::Theme) -> iced_style::container::Appearance {
     iced_style::container::Appearance {
         text_color: Some(basic.palette.neutral_10.into()),
         background: Some(Background::Color(neutral_10.into())),
-        border_radius: 24.0,
+        border_radius: 24.0.into(),
         border_width: 0.0,
         border_color: accent.base.into(),
     }

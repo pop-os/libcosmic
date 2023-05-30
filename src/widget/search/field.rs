@@ -11,7 +11,7 @@ use apply::Apply;
 
 /// A search field for COSMIC applications.
 pub fn field<Message: 'static + Clone>(
-    id: iced::widget::text_input::Id,
+    id: iced_core::id::Id,
     phrase: &str,
     on_change: fn(String) -> Message,
     on_clear: Message,
@@ -29,7 +29,7 @@ pub fn field<Message: 'static + Clone>(
 /// A search field for COSMIC applications.
 #[must_use]
 pub struct Field<'a, Message: 'static + Clone> {
-    id: iced::widget::text_input::Id,
+    id: iced_core::id::Id,
     phrase: &'a str,
     on_change: fn(String) -> Message,
     on_clear: Message,
@@ -38,7 +38,8 @@ pub struct Field<'a, Message: 'static + Clone> {
 
 impl<'a, Message: 'static + Clone> Field<'a, Message> {
     pub fn into_element(mut self) -> crate::Element<'a, Message> {
-        let mut input = iced::widget::text_input("", self.phrase, self.on_change)
+        let mut input = iced::widget::text_input("", self.phrase)
+            .on_input(self.on_change)
             .style(crate::theme::TextInput::Search)
             .width(Length::Fill)
             .id(self.id);
@@ -52,8 +53,8 @@ impl<'a, Message: 'static + Clone> Field<'a, Message> {
             input,
             clear_button().on_press(self.on_clear)
         )
-        .width(Length::Units(300))
-        .height(Length::Units(38))
+        .width(Length::Fixed(300.0))
+        .height(Length::Fixed(38.0))
         .padding([0, 16])
         .spacing(8)
         .align_items(iced::Alignment::Center)
@@ -84,7 +85,7 @@ fn active_style(theme: &crate::Theme) -> container::Appearance {
     iced::widget::container::Appearance {
         text_color: Some(cosmic.palette.neutral_9.into()),
         background: Some(Background::Color(neutral_7.into())),
-        border_radius: 24.0,
+        border_radius: 24.0.into(),
         border_width: 2.0,
         border_color: cosmic.accent.focus.into(),
     }

@@ -8,6 +8,6 @@ pub fn scrollable<'a, Message>(
     element: impl Into<Element<'a, Message>>,
 ) -> widget::Scrollable<'a, Message, Renderer> {
     widget::scrollable(element)
-        .scrollbar_width(8)
-        .scroller_width(8)
+    // .scrollbar_width(8) TODO add these back
+    // .scroller_width(8)
 }

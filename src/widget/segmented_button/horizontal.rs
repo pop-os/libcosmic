@@ -8,7 +8,7 @@ use super::style::StyleSheet;
 use super::widget::{SegmentedButton, SegmentedVariant};
 
 use iced::{Length, Rectangle, Size};
-use iced_native::layout;
+use iced_core::layout;
 
 /// Horizontal [`SegmentedButton`].
 pub type HorizontalSegmentedButton<'a, SelectionMode, Message, Renderer> =
@@ -25,10 +25,10 @@ pub fn horizontal<SelectionMode: Default, Message, Renderer>(
     model: &Model<SelectionMode>,
 ) -> SegmentedButton<Horizontal, SelectionMode, Message, Renderer>
 where
-    Renderer: iced_native::Renderer
-        + iced_native::text::Renderer
-        + iced_native::image::Renderer
-        + iced_native::svg::Renderer,
+    Renderer: iced_core::Renderer
+        + iced_core::text::Renderer
+        + iced_core::image::Renderer
+        + iced_core::svg::Renderer,
     Renderer::Theme: StyleSheet,
     Model<SelectionMode>: Selectable,
 {
@@ -38,10 +38,10 @@ where
 impl<'a, SelectionMode, Message, Renderer> SegmentedVariant
     for SegmentedButton<'a, Horizontal, SelectionMode, Message, Renderer>
 where
-    Renderer: iced_native::Renderer
-        + iced_native::text::Renderer
-        + iced_native::image::Renderer
-        + iced_native::svg::Renderer,
+    Renderer: iced_core::Renderer
+        + iced_core::text::Renderer
+        + iced_core::image::Renderer
+        + iced_core::svg::Renderer,
     Renderer::Theme: StyleSheet,
     Model<SelectionMode>: Selectable,
     SelectionMode: Default,
@@ -49,8 +49,8 @@ where
     type Renderer = Renderer;
 
     fn variant_appearance(
-        theme: &<Self::Renderer as iced_native::Renderer>::Theme,
-        style: &<<Self::Renderer as iced_native::Renderer>::Theme as StyleSheet>::Style,
+        theme: &<Self::Renderer as iced_core::Renderer>::Theme,
+        style: &<<Self::Renderer as iced_core::Renderer>::Theme as StyleSheet>::Style,
     ) -> super::Appearance {
         theme.horizontal(style)
     }
@@ -85,7 +85,7 @@ where
         }
 
         let size = limits
-            .height(Length::Units(height as u16))
+            .height(Length::Fixed(height))
             .resolve(Size::new(width, height));
 
         layout::Node::new(size)

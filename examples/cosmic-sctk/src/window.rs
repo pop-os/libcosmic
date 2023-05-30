@@ -2,19 +2,18 @@
 // SPDX-License-Identifier: MPL-2.0
 
 use cosmic::{
-    iced::{self, wayland::window::set_mode_window, Alignment, Application, Command, Length},
+    iced::{self, wayland::window::set_mode_window, Application, Command, Length},
     iced::{
         wayland::window::{start_drag_window, toggle_maximize},
-        widget::{
-            column, container, horizontal_space, pick_list, progress_bar, radio, row, slider,
-        },
+        widget::{column, container, horizontal_space, pick_list, progress_bar, row, slider},
+        window, Color,
     },
-    iced_native::window,
+    iced_style::application,
     theme::{self, Theme},
     widget::{
         button, header_bar, nav_bar, nav_bar_toggle,
         rectangle_tracker::{rectangle_tracker_subscription, RectangleTracker, RectangleUpdate},
-        scrollable, segmented_button, settings, toggler, IconSource,
+        scrollable, segmented_button, segmented_selection, settings, toggler, IconSource,
     },
     Element, ElementExt,
 };
@@ -118,6 +117,7 @@ pub struct Window {
     show_maximize: bool,
     exit: bool,
     rectangle_tracker: Option<RectangleTracker<u32>>,
+    pub selection: segmented_button::SingleSelectModel,
 }
 
 impl Window {
@@ -176,6 +176,8 @@ pub enum Message {
     InputChanged,
     Rectangle(RectangleUpdate<u32>),
     NavBar(segmented_button::Entity),
+    Ignore,
+    Selection(segmented_button::Entity),
 }
 
 impl Application for Window {
@@ -189,6 +191,11 @@ impl Application for Window {
             .nav_bar_toggled(true)
             .show_maximize(true)
             .show_minimize(true);
+        window.selection = segmented_button::Model::builder()
+            .insert(|b| b.text("Choice A").activate())
+            .insert(|b| b.text("Choice B"))
+            .insert(|b| b.text("Choice C"))
+            .build();
         window.slider_value = 50.0;
         //        window.theme = Theme::Light;
         window.pick_list_selected = Some("Option 1");
@@ -240,9 +247,9 @@ impl Application for Window {
             Message::ToggleNavBarCondensed => {
                 self.nav_bar_toggled_condensed = !self.nav_bar_toggled_condensed
             }
-            Message::Drag => return start_drag_window(window::Id::new(0)),
-            Message::Minimize => return set_mode_window(window::Id::new(0), window::Mode::Hidden),
-            Message::Maximize => return toggle_maximize(window::Id::new(0)),
+            Message::Drag => return start_drag_window(window::Id(0)),
+            Message::Minimize => return set_mode_window(window::Id(0), window::Mode::Hidden),
+            Message::Maximize => return toggle_maximize(window::Id(0)),
             Message::RowSelected(row) => println!("Selected row {row}"),
             Message::InputChanged => {}
             Message::Rectangle(r) => match r {
@@ -253,6 +260,8 @@ impl Application for Window {
                     self.rectangle_tracker.replace(t);
                 }
             },
+            Message::Ignore => {}
+            Message::Selection(key) => self.selection.activate(key),
         }
 
         Command::none()
@@ -302,7 +311,7 @@ impl Application for Window {
             widgets.push(nav_bar.debug(self.debug));
         }
 
-        if !(self.is_condensed() && nav_bar_toggled) {
+        if !nav_bar_toggled {
             let secondary = button(ButtonTheme::Secondary)
                 .text("Secondary")
                 .on_press(Message::ButtonPressed);
@@ -363,19 +372,22 @@ impl Application for Window {
                     .add(settings::item(
                         "Slider",
                         slider(0.0..=100.0, self.slider_value, Message::SliderChanged)
-                            .width(Length::Units(250)),
+                            .width(Length::Fixed(250.0)),
                     ))
                     .add(settings::item(
                         "Progress",
                         progress_bar(0.0..=100.0, self.slider_value)
-                            .width(Length::Units(250))
-                            .height(Length::Units(4)),
+                            .width(Length::Fixed(250.0))
+                            .height(Length::Fixed(4.0)),
+                    ))
+                    .add(settings::item(
+                        "Segmented Button",
+                        segmented_selection::horizontal(&self.selection)
+                            .on_activate(Message::Selection),
                     ))
                     .into(),
             ])
             .into();
-
-            let mut widgets: Vec<Element<_>> = Vec::with_capacity(2);
 
             widgets.push(
                 scrollable(row![
@@ -391,6 +403,7 @@ impl Application for Window {
             .padding([0, 8, 8, 8])
             .width(Length::Fill)
             .height(Length::Fill)
+            .style(theme::Container::Background)
             .into();
 
         column(vec![header, content]).into()
@@ -408,6 +421,13 @@ impl Application for Window {
         Message::Close
     }
     fn subscription(&self) -> iced::Subscription<Self::Message> {
-        rectangle_tracker_subscription(0).map(|(i, e)| Message::Rectangle(e))
+        rectangle_tracker_subscription(0).map(|(_, e)| Message::Rectangle(e))
+    }
+
+    fn style(&self) -> <Self::Theme as cosmic::iced_style::application::StyleSheet>::Style {
+        cosmic::theme::Application::Custom(Box::new(|theme| application::Appearance {
+            background_color: Color::TRANSPARENT,
+            text_color: theme.cosmic().on_bg_color().into(),
+        }))
     }
 }

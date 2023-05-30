@@ -3,7 +3,7 @@
 
 use crate::widget::segmented_button::{Appearance, ItemAppearance, StyleSheet};
 use crate::{theme::Theme, widget::segmented_button::ItemStatusAppearance};
-use iced_core::{Background, BorderRadius};
+use iced_core::{renderer::BorderRadius, Background};
 use palette::{rgb::Rgb, Alpha};
 
 #[derive(Default)]
@@ -141,7 +141,7 @@ impl StyleSheet for Theme {
 
 mod horizontal {
     use crate::widget::segmented_button::{ItemAppearance, ItemStatusAppearance};
-    use iced_core::{Background, BorderRadius};
+    use iced_core::{renderer::BorderRadius, Background};
     use palette::{rgb::Rgb, Alpha};
 
     pub fn selection_active(cosmic: &cosmic_theme::Theme<Alpha<Rgb, f32>>) -> ItemStatusAppearance {
@@ -222,7 +222,7 @@ pub fn hover(
 
 mod vertical {
     use crate::widget::segmented_button::{ItemAppearance, ItemStatusAppearance};
-    use iced_core::{Background, BorderRadius};
+    use iced_core::{renderer::BorderRadius, Background};
     use palette::{rgb::Rgb, Alpha};
 
     pub fn selection_active(cosmic: &cosmic_theme::Theme<Alpha<Rgb, f32>>) -> ItemStatusAppearance {

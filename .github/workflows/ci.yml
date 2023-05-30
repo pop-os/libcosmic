@@ -41,11 +41,11 @@ jobs:
       fail-fast: false
       matrix:
         features:
-        - 'winit_softbuffer debug'
-        - 'winit_softbuffer tokio'
-        - winit_softbuffer
+        - 'winit_tiny_skia debug'
+        - 'winit_tiny_skia tokio'
+        - winit_tiny_skia
         - winit_wgpu
-        - softbuffer
+        - tiny_skia
         - wayland
         - applet
     runs-on: ubuntu-22.04

@@ -45,7 +45,7 @@ pub fn nav_bar_style(theme: &Theme) -> iced_style::container::Appearance {
     iced_style::container::Appearance {
         text_color: Some(cosmic.on_bg_color().into()),
         background: Some(Background::Color(cosmic.primary.base.into())),
-        border_radius: 8.0,
+        border_radius: 8.0.into(),
         border_width: 0.0,
         border_color: Color::TRANSPARENT,
     }

@@ -63,7 +63,7 @@ pub fn style(theme: &crate::Theme) -> iced::widget::container::Appearance {
     iced::widget::container::Appearance {
         text_color: Some(container.on.into()),
         background: Some(Background::Color(container.base.into())),
-        border_radius: 8.0,
+        border_radius: 8.0.into(),
         border_width: 0.0,
         border_color: Color::TRANSPARENT,
     }

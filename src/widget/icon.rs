@@ -71,7 +71,7 @@ impl<'a> IconSource<'a> {
             let handle = if let Some(path) = icon {
                 svg::Handle::from_path(path)
             } else {
-                eprintln!("svg icon '{:?}' size {} not found", self, size);
+                eprintln!("svg icon '{self:?}' size {size} not found");
                 svg::Handle::from_memory(Vec::new())
             };
 
@@ -79,7 +79,7 @@ impl<'a> IconSource<'a> {
         } else if let Some(icon) = icon {
             Handle::Image(icon.into())
         } else {
-            eprintln!("icon '{:?}' size {} not found", self, size);
+            eprintln!("icon '{self:?}' size {size} not found");
             Handle::Image(image::Handle::from_memory(Vec::new()))
         }
     }
@@ -90,7 +90,13 @@ impl<'a> IconSource<'a> {
     }
 
     /// Get a handle to a raster image from memory.
-    pub fn raster_from_memory(bytes: impl Into<Cow<'static, [u8]>>) -> Self {
+    pub fn raster_from_memory(
+        bytes: impl Into<Cow<'static, [u8]>>
+            + std::convert::AsRef<[u8]>
+            + std::marker::Send
+            + std::marker::Sync
+            + 'static,
+    ) -> Self {
         IconSource::Handle(Handle::Image(image::Handle::from_memory(bytes)))
     }
 
@@ -98,7 +104,11 @@ impl<'a> IconSource<'a> {
     pub fn raster_from_pixels(
         width: u32,
         height: u32,
-        pixels: impl Into<Cow<'static, [u8]>>,
+        pixels: impl Into<Cow<'static, [u8]>>
+            + std::convert::AsRef<[u8]>
+            + std::marker::Send
+            + std::marker::Sync
+            + 'static,
     ) -> Self {
         IconSource::Handle(Handle::Image(image::Handle::from_pixels(
             width, height, pixels,
@@ -165,7 +175,7 @@ impl From<svg::Handle> for IconSource<'static> {
 }
 
 /// A lazily-generated icon.
-#[derive(Hash, Setters)]
+#[derive(Setters)]
 pub struct Icon<'a> {
     #[setters(skip)]
     source: IconSource<'a>,
@@ -179,6 +189,33 @@ pub struct Icon<'a> {
     #[setters(strip_option)]
     height: Option<Length>,
     force_svg: bool,
+}
+
+// XXX Hopefully this will be enough precision
+impl Hash for Icon<'_> {
+    #[allow(clippy::cast_possible_truncation)]
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.source.hash(state);
+        self.theme.hash(state);
+        self.style.hash(state);
+        self.size.hash(state);
+        self.content_fit.hash(state);
+        self.force_svg.hash(state);
+        match self.width {
+            Some(Length::Fill) => 0.hash(state),
+            Some(Length::Shrink) => 1.hash(state),
+            Some(Length::Fixed(v)) => ((v * 1000.0) as i32).hash(state),
+            Some(Length::FillPortion(p)) => p.hash(state),
+            None => 2.hash(state),
+        }
+        match self.height {
+            Some(Length::Fill) => 0.hash(state),
+            Some(Length::Shrink) => 1.hash(state),
+            Some(Length::Fixed(v)) => ((v * 1000.0) as i32).hash(state),
+            Some(Length::FillPortion(p)) => p.hash(state),
+            None => 2.hash(state),
+        }
+    }
 }
 
 /// A lazily-generated icon.
@@ -199,8 +236,8 @@ pub fn icon<'a>(source: impl Into<IconSource<'a>>, size: u16) -> Icon<'a> {
 impl<'a> Icon<'a> {
     fn raster_element<Message: 'static>(&self, handle: image::Handle) -> Element<'static, Message> {
         Image::new(handle)
-            .width(self.width.unwrap_or(Length::Units(self.size)))
-            .height(self.height.unwrap_or(Length::Units(self.size)))
+            .width(self.width.unwrap_or(Length::Fixed(f32::from(self.size))))
+            .height(self.height.unwrap_or(Length::Fixed(f32::from(self.size))))
             .content_fit(self.content_fit)
             .into()
     }
@@ -208,8 +245,8 @@ impl<'a> Icon<'a> {
     fn svg_element<Message: 'static>(&self, handle: svg::Handle) -> Element<'static, Message> {
         svg::Svg::<Renderer>::new(handle)
             .style(self.style.clone())
-            .width(self.width.unwrap_or(Length::Units(self.size)))
-            .height(self.height.unwrap_or(Length::Units(self.size)))
+            .width(self.width.unwrap_or(Length::Fixed(f32::from(self.size))))
+            .height(self.height.unwrap_or(Length::Fixed(f32::from(self.size))))
             .content_fit(self.content_fit)
             .into()
     }
@@ -228,7 +265,7 @@ impl<'a> Icon<'a> {
         let mut source = IconSource::Name(Cow::Borrowed(""));
         std::mem::swap(&mut source, &mut self.source);
 
-        iced_lazy::lazy(hash, move || -> Element<Message> {
+        iced::widget::lazy(hash, move |_| -> Element<Message> {
             match source.load(self.size, self.theme.as_deref(), self.force_svg) {
                 Handle::Svg(handle) => self.svg_element(handle),
                 Handle::Image(handle) => self.raster_element(handle),

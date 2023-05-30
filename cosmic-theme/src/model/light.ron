@@ -1,0 +1,95 @@
+Light (
+    (
+        name: "cosmic-light",
+        blue: (
+            c: "#00496D",
+        ),
+        red: (
+            c: "#A0252B",
+        ),
+        green: (
+            c: "#3B6E43",
+        ),
+        yellow: (
+            c: "#966800",
+        ),
+        gray_1: (
+            c: "#DEDEDE",
+        ),
+        gray_2: (
+            c: "#E9E9E9",
+        ),
+        gray_3: (
+            c: "#F4F4F4",
+        ),
+        neutral_1: (
+            c: "#FFFFFF",
+        ),
+        neutral_2: (
+            c: "#E4E4E4",
+        ),
+        neutral_3: (
+            c: "#C9C9C9",
+        ),
+        neutral_4: (
+            c: "#AEAEAE",
+        ),
+        neutral_5: (
+            c: "#939393",
+        ),
+        neutral_6: (
+            c: "#787878",
+        ),
+        neutral_7: (
+            c: "#5D5D5D",
+        ),
+        neutral_8: (
+            c: "#424242",
+        ),
+        neutral_9: (
+            c: "#272727",
+        ),
+        neutral_10: (
+            c: "#000000",
+        ),
+        ext_warm_grey: (
+            c: "#9B8E8A",
+        ),
+        ext_orange: (
+            c: "#FBB86C",
+        ),
+        ext_yellow: (
+            c: "#F7E062",
+        ),
+        ext_blue: (
+            c: "#6ACAD8",
+        ),
+        ext_purple: (
+            c: "#D58CFF",
+        ),
+        ext_pink: (
+            c: "#FF9CDD",
+        ),
+        ext_indigo: (
+            c: "#95C4FC",
+        ),
+        accent_warm_grey: (
+            c: "#ADA29E",
+        ),
+        accent_orange: (
+            c: "#FFD7A1",
+        ),
+        accent_yellow: (
+            c: "#FFF19E",
+        ),
+        accent_purple: (
+            c: "#D58CFF",
+        ),
+        accent_pink: (
+            c: "#FF9CDD",
+        ),
+        accent_indigo: (
+            c: "#95C4FC",
+        ),
+    )
+)

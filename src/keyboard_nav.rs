@@ -3,7 +3,7 @@ use iced::{
     keyboard::{self, KeyCode},
     mouse, subscription, Command, Event, Subscription,
 };
-use iced_native::widget::{operation, Id, Operation};
+use iced_core::widget::{operation, Id, Operation};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum Message {
@@ -14,7 +14,6 @@ pub enum Message {
     Search,
 }
 
-#[must_use]
 pub fn subscription() -> Subscription<Message> {
     subscription::events_with(|event, status| match (event, status) {
         // Focus
@@ -61,7 +60,6 @@ pub fn subscription() -> Subscription<Message> {
 }
 
 /// Unfocuses any actively-focused widget.
-#[must_use]
 pub fn unfocus<Message: 'static>() -> Command<Message> {
     Command::<Message>::widget(unfocus_operation())
 }

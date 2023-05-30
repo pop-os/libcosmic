@@ -7,16 +7,16 @@ edition = "2021"
 name = "cosmic"
 
 [features]
-default = ["dyrend", "winit", "tokio"]
+default = ["tiny_skia", "winit", "tokio", "a11y"]
 debug = ["iced/debug"]
-softbuffer = ["iced/softbuffer", "iced_softbuffer"]
-dyrend = ["iced/dyrend"]
-wayland = ["iced/wayland", "iced/dyrend", "iced_sctk"]
+a11y = ["iced/a11y", "iced_accessibility"]
+tiny_skia = ["iced/tiny-skia", "iced_tiny_skia"]
+wayland = ["iced/wayland", "iced_sctk", "sctk",]
 wgpu = ["iced/wgpu", "iced_wgpu"]
 tokio = ["dep:tokio", "iced/tokio"]
 winit = ["iced/winit", "iced_winit"]
-applet = ["cosmic-panel-config", "sctk", "wayland"]
-winit_softbuffer = ["winit", "softbuffer"]
+applet = ["cosmic-panel-config", "wayland", "ron", "serde"]
+winit_tiny_skia = ["winit", "tiny_skia"]
 winit_wgpu = ["winit", "wgpu"]
 
 [dependencies]
@@ -25,37 +25,40 @@ derive_setters = "0.1.5"
 lazy_static = "1.4.0"
 palette = "0.6.1"
 tokio = { version = "1.24.2", optional = true }
-cosmic-panel-config = {git = "https://github.com/pop-os/cosmic-panel", optional = true }
-sctk = { package = "smithay-client-toolkit", git = "https://github.com/Smithay/client-toolkit", optional = true, rev = "389a4f2" }
+cosmic-panel-config = {git = "https://github.com/pop-os/cosmic-panel", branch = "bg_jammy", optional = true }
+sctk = { package = "smithay-client-toolkit", git = "https://github.com/pop-os/client-toolkit", optional = true, tag = "themed-pointer"}
 slotmap = "1.0.6"
 fraction = "0.13.0"
+cosmic-config = { path = "cosmic-config" }
+ron = { version = "0.8", optional = true }
+serde = { version = "1.0", optional = true }
 
 [target.'cfg(unix)'.dependencies]
 freedesktop-icons = "0.2.2"
 
 [dependencies.cosmic-theme]
-git = "https://github.com/pop-os/cosmic-theme.git"
+path = "cosmic-theme"
 
 [dependencies.iced]
 path = "iced"
 default-features = false
-features = ["image", "svg"]
+features = ["image", "svg", "lazy"]
+
+[dependencies.iced_runtime]
+path = "iced/runtime"
 
 [dependencies.iced_core]
 path = "iced/core"
 
-[dependencies.iced_lazy]
-path = "iced/lazy"
+[dependencies.iced_widget]
+path = "iced/widget"
 
-[dependencies.iced_native]
-path = "iced/native"
+[dependencies.iced_accessibility]
+path = "iced/accessibility"
 
-[dependencies.iced_softbuffer]
-path = "iced/softbuffer"
 optional = true
-
-[dependencies.iced_dyrend]
-path = "iced/dyrend"
+[dependencies.iced_tiny_skia]
+path = "iced/tiny_skia"
 optional = true
 
 [dependencies.iced_style]
@@ -73,13 +76,11 @@ optional = true
 path = "iced/wgpu"
 optional = true
 
-[dependencies.iced_glow]
-path = "iced/glow"
-optional = true
-
 [workspace]
 members = [
   "cosmic-config",
+  "cosmic-config-derive",
+  "cosmic-theme",
   "examples/*",
 ]
 exclude = [

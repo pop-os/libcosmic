@@ -1,13 +1,13 @@
 use iced::widget::Container;
 use iced::Size;
-use iced_native::alignment;
-use iced_native::event::{self, Event};
-use iced_native::layout;
-use iced_native::mouse;
-use iced_native::overlay;
-use iced_native::renderer;
-use iced_native::widget::{Operation, Tree};
-use iced_native::{Clipboard, Element, Layout, Length, Padding, Point, Rectangle, Shell, Widget};
+use iced_core::alignment;
+use iced_core::event::{self, Event};
+use iced_core::layout;
+use iced_core::mouse;
+use iced_core::overlay;
+use iced_core::renderer;
+use iced_core::widget::Tree;
+use iced_core::{Clipboard, Element, Layout, Length, Padding, Point, Rectangle, Shell, Widget};
 
 pub use iced_style::container::{Appearance, StyleSheet};
 
@@ -27,7 +27,7 @@ where
 #[allow(missing_debug_implementations)]
 pub struct AspectRatio<'a, Message, Renderer>
 where
-    Renderer: iced_native::Renderer,
+    Renderer: iced_core::Renderer,
     Renderer::Theme: StyleSheet,
 {
     ratio: f32,
@@ -36,7 +36,7 @@ where
 
 impl<'a, Message, Renderer> AspectRatio<'a, Message, Renderer>
 where
-    Renderer: iced_native::Renderer,
+    Renderer: iced_core::Renderer,
     Renderer::Theme: StyleSheet,
 {
     fn constrain_limits(&self, size: Size) -> Size {
@@ -55,7 +55,7 @@ where
 
 impl<'a, Message, Renderer> AspectRatio<'a, Message, Renderer>
 where
-    Renderer: iced_native::Renderer,
+    Renderer: iced_core::Renderer,
     Renderer::Theme: StyleSheet,
 {
     /// Creates an empty [`Container`].
@@ -92,14 +92,14 @@ where
 
     /// Sets the maximum width of the [`Container`].
     #[must_use]
-    pub fn max_width(mut self, max_width: u32) -> Self {
+    pub fn max_width(mut self, max_width: f32) -> Self {
         self.container = self.container.max_width(max_width);
         self
     }
 
     /// Sets the maximum height of the [`Container`] in pixels.
     #[must_use]
-    pub fn max_height(mut self, max_height: u32) -> Self {
+    pub fn max_height(mut self, max_height: f32) -> Self {
         self.container = self.container.max_height(max_height);
         self
     }
@@ -142,14 +142,14 @@ where
 
 impl<'a, Message, Renderer> Widget<Message, Renderer> for AspectRatio<'a, Message, Renderer>
 where
-    Renderer: iced_native::Renderer,
+    Renderer: iced_core::Renderer,
     Renderer::Theme: StyleSheet,
 {
     fn children(&self) -> Vec<Tree> {
         self.container.children()
     }
 
-    fn diff(&self, tree: &mut Tree) {
+    fn diff(&mut self, tree: &mut Tree) {
         self.container.diff(tree);
     }
 
@@ -169,8 +169,16 @@ where
         self.container.layout(renderer, &custom_limits)
     }
 
-    fn operate(&self, tree: &mut Tree, layout: Layout<'_>, operation: &mut dyn Operation<Message>) {
-        self.container.operate(tree, layout, operation);
+    fn operate(
+        &self,
+        tree: &mut Tree,
+        layout: Layout<'_>,
+        renderer: &Renderer,
+        operation: &mut dyn iced_core::widget::Operation<
+            iced_core::widget::OperationOutputWrapper<Message>,
+        >,
+    ) {
+        self.container.operate(tree, layout, renderer, operation);
     }
 
     fn on_event(
@@ -228,7 +236,7 @@ where
     }
 
     fn overlay<'b>(
-        &'b self,
+        &'b mut self,
         tree: &'b mut Tree,
         layout: Layout<'_>,
         renderer: &Renderer,
@@ -241,7 +249,7 @@ impl<'a, Message, Renderer> From<AspectRatio<'a, Message, Renderer>>
     for Element<'a, Message, Renderer>
 where
     Message: 'a,
-    Renderer: 'a + iced_native::Renderer,
+    Renderer: 'a + iced_core::Renderer,
     Renderer::Theme: StyleSheet,
 {
     fn from(column: AspectRatio<'a, Message, Renderer>) -> Element<'a, Message, Renderer> {

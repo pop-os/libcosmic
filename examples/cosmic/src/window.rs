@@ -1,25 +1,34 @@
 /// Copyright 2022 System76 <info@system76.com>
 // SPDX-License-Identifier: MPL-2.0
 use cosmic::{
-    iced::widget::{self, button, column, container, horizontal_space, row, text},
+    cosmic_config::config_subscription,
+    font::load_fonts,
     iced::{self, Application, Command, Length, Subscription},
-    iced_native::{subscription, window},
-    iced_winit::window::{close, drag, minimize, toggle_maximize},
+    iced::{
+        subscription,
+        widget::{self, column, container, horizontal_space, row, text},
+        window::{self, close, drag, minimize, toggle_maximize},
+    },
     keyboard_nav,
-    theme::{self, Theme, COSMIC_DARK, COSMIC_LIGHT},
+    theme::{self, CosmicTheme, CosmicThemeCss, Theme},
     widget::{
         header_bar, icon, list, nav_bar, nav_bar_toggle, scrollable, segmented_button, settings,
         warning, IconSource,
     },
     Element, ElementExt,
 };
-use once_cell::sync::Lazy;
+use log::error;
 use std::{
-    sync::atomic::{AtomicU32, Ordering},
+    borrow::Cow,
+    sync::{
+        atomic::{AtomicU32, Ordering},
+        Arc,
+    },
     vec,
 };
 
-static BTN: Lazy<button::Id> = Lazy::new(button::Id::unique);
+// XXX The use of button is removed because it assigns the same ID to multiple buttons, causing a crash when a11y is enabled...
+// static BTN: Lazy<id::Id> = Lazy::new(|| id::Id::new("BTN"));
 
 mod bluetooth;
 
@@ -151,6 +160,7 @@ pub struct Window {
     warning_message: String,
     scale_factor: f64,
     scale_factor_string: String,
+    system_theme: Arc<CosmicTheme>,
 }
 
 impl Window {
@@ -194,6 +204,8 @@ pub enum Message {
     ToggleNavBar,
     ToggleNavBarCondensed,
     ToggleWarning,
+    FontsLoaded,
+    SystemTheme(CosmicTheme),
 }
 
 impl From<Page> for Message {
@@ -237,7 +249,7 @@ impl Window {
             ))
             .padding(0)
             .style(theme::Button::Link)
-            .id(BTN.clone())
+            // .id(BTN.clone())
             .on_press(Message::from(page)),
             row!(
                 text(sub_page.title()).size(30),
@@ -282,7 +294,7 @@ impl Window {
         .padding(0)
         .style(theme::Button::Transparent)
         .on_press(Message::from(sub_page.into_page()))
-        .id(BTN.clone())
+        // .id(BTN.clone())
         .into()
     }
 
@@ -341,7 +353,7 @@ impl Application for Window {
         window.insert_page(Page::Accessibility);
         window.insert_page(Page::Applications);
 
-        (window, Command::none())
+        (window, load_fonts().map(|_| Message::FontsLoaded))
     }
 
     fn title(&self) -> String {
@@ -371,6 +383,16 @@ impl Application for Window {
         Subscription::batch(vec![
             window_break.map(|_| Message::CondensedViewToggle),
             keyboard_nav::subscription().map(Message::KeyboardNav),
+            config_subscription::<_, CosmicThemeCss>(0, Cow::from("com.system76.CosmicTheme"), 1)
+                .map(|(_, update)| match update {
+                    Ok(t) => Message::SystemTheme(t.into_srgba()),
+                    Err((errors, t)) => {
+                        for error in errors {
+                            error!("{:?}", error);
+                        }
+                        Message::SystemTheme(t.into_srgba())
+                    }
+                }),
         ])
     }
 
@@ -391,7 +413,13 @@ impl Application for Window {
                 Some(demo::Output::Debug(debug)) => self.debug = debug,
                 Some(demo::Output::ScalingFactor(factor)) => self.set_scale_factor(factor),
                 Some(demo::Output::ThemeChanged(theme)) => {
-                    self.theme = theme;
+                    self.theme = match theme {
+                        demo::ThemeVariant::Light => Theme::light(),
+                        demo::ThemeVariant::Dark => Theme::dark(),
+                        demo::ThemeVariant::HighContrastDark => Theme::dark_hc(),
+                        demo::ThemeVariant::HighContrastLight => Theme::light_hc(),
+                        demo::ThemeVariant::Custom => Theme::custom(self.system_theme.clone()),
+                    };
                 }
                 Some(demo::Output::ToggleWarning) => self.toggle_warning(),
                 None => (),
@@ -405,10 +433,10 @@ impl Application for Window {
             Message::ToggleNavBarCondensed => {
                 self.nav_bar_toggled_condensed = !self.nav_bar_toggled_condensed
             }
-            Message::Drag => return drag(window::Id::new(0)),
-            Message::Close => return close(window::Id::new(0)),
-            Message::Minimize => return minimize(window::Id::new(0), true),
-            Message::Maximize => return toggle_maximize(window::Id::new(0)),
+            Message::Drag => return drag(),
+            Message::Close => return close(),
+            Message::Minimize => return minimize(true),
+            Message::Maximize => return toggle_maximize(),
 
             Message::InputChanged => {}
 
@@ -420,6 +448,10 @@ impl Application for Window {
                 _ => (),
             },
             Message::ToggleWarning => self.toggle_warning(),
+            Message::FontsLoaded => {}
+            Message::SystemTheme(t) => {
+                self.system_theme = Arc::new(t);
+            }
         }
         ret
     }
@@ -545,17 +577,21 @@ impl Application for Window {
             .padding([0, 8, 8, 8])
             .width(Length::Fill)
             .height(Length::Fill)
+            .style(theme::Container::Background)
             .into();
         let warning = warning(&self.warning_message)
             .on_close(Message::ToggleWarning)
             .into();
         if self.show_warning {
-            column(vec![
+            column![
                 header,
-                warning,
-                iced::widget::vertical_space(Length::Units(12)).into(),
-                content,
-            ])
+                container(column(vec![
+                    warning,
+                    iced::widget::vertical_space(Length::Fixed(12.0)).into(),
+                    content,
+                ]))
+                .style(theme::Container::Background)
+            ]
             .into()
         } else {
             column(vec![header, content]).into()
@@ -567,6 +603,6 @@ impl Application for Window {
     }
 
     fn theme(&self) -> Theme {
-        self.theme
+        self.theme.clone()
     }
 }

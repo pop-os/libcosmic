@@ -10,9 +10,10 @@ use iced::{
     alignment, event, keyboard, mouse, touch, Background, Color, Command, Element, Event, Length,
     Point, Rectangle, Size,
 };
-use iced_core::BorderRadius;
-use iced_native::widget::{self, operation, tree, Operation};
-use iced_native::{layout, renderer, widget::Tree, Clipboard, Layout, Shell, Widget};
+use iced_core::renderer::BorderRadius;
+use iced_core::text::{LineHeight, Shaping};
+use iced_core::widget::{self, operation, tree};
+use iced_core::{layout, renderer, widget::Tree, Clipboard, Layout, Shell, Widget};
 use std::marker::PhantomData;
 
 /// State that is maintained by each individual widget.
@@ -46,15 +47,15 @@ impl operation::Focusable for LocalState {
 
 /// Isolates variant-specific behaviors from [`SegmentedButton`].
 pub trait SegmentedVariant {
-    type Renderer: iced_native::Renderer;
+    type Renderer: iced_core::Renderer;
 
     /// Get the appearance for this variant of the widget.
     fn variant_appearance(
-        theme: &<Self::Renderer as iced_native::Renderer>::Theme,
-        style: &<<Self::Renderer as iced_native::Renderer>::Theme as StyleSheet>::Style,
+        theme: &<Self::Renderer as iced_core::Renderer>::Theme,
+        style: &<<Self::Renderer as iced_core::Renderer>::Theme as StyleSheet>::Style,
     ) -> super::Appearance
     where
-        <Self::Renderer as iced_native::Renderer>::Theme: StyleSheet;
+        <Self::Renderer as iced_core::Renderer>::Theme: StyleSheet;
 
     /// Calculates the bounds for the given button by its position.
     fn variant_button_bounds(&self, bounds: Rectangle, position: usize) -> Rectangle;
@@ -67,10 +68,10 @@ pub trait SegmentedVariant {
 #[derive(Setters)]
 pub struct SegmentedButton<'a, Variant, SelectionMode, Message, Renderer>
 where
-    Renderer: iced_native::Renderer
-        + iced_native::text::Renderer
-        + iced_native::image::Renderer
-        + iced_native::svg::Renderer,
+    Renderer: iced_core::Renderer
+        + iced_core::text::Renderer
+        + iced_core::image::Renderer
+        + iced_core::svg::Renderer,
     Renderer::Theme: StyleSheet,
     Model<SelectionMode>: Selectable,
     SelectionMode: Default,
@@ -91,13 +92,13 @@ where
     /// Spacing between icon and text in button.
     pub(super) button_spacing: u16,
     /// Desired font for active tabs.
-    pub(super) font_active: Renderer::Font,
+    pub(super) font_active: Option<Renderer::Font>,
     /// Desired font for hovered tabs.
-    pub(super) font_hovered: Renderer::Font,
+    pub(super) font_hovered: Option<Renderer::Font>,
     /// Desired font for inactive tabs.
-    pub(super) font_inactive: Renderer::Font,
+    pub(super) font_inactive: Option<Renderer::Font>,
     /// Size of the font.
-    pub(super) font_size: u16,
+    pub(super) font_size: f32,
     /// Size of icon
     pub(super) icon_size: u16,
     /// Desired width of the widget.
@@ -106,6 +107,8 @@ where
     pub(super) height: Length,
     /// Desired spacing between items.
     pub(super) spacing: u16,
+    /// LineHeight of the font.
+    pub(super) line_height: LineHeight,
     /// Style to draw the widget in.
     #[setters(into)]
     pub(super) style: <Renderer::Theme as StyleSheet>::Style,
@@ -122,10 +125,10 @@ where
 impl<'a, Variant, SelectionMode, Message, Renderer>
     SegmentedButton<'a, Variant, SelectionMode, Message, Renderer>
 where
-    Renderer: iced_native::Renderer
-        + iced_native::text::Renderer
-        + iced_native::image::Renderer
-        + iced_native::svg::Renderer,
+    Renderer: iced_core::Renderer
+        + iced_core::text::Renderer
+        + iced_core::image::Renderer
+        + iced_core::svg::Renderer,
     Renderer::Theme: StyleSheet,
     Self: SegmentedVariant<Renderer = Renderer>,
     Model<SelectionMode>: Selectable,
@@ -141,14 +144,15 @@ where
             button_padding: [4, 4, 4, 4],
             button_height: 32,
             button_spacing: 4,
-            font_active: Renderer::Font::default(),
-            font_hovered: Renderer::Font::default(),
-            font_inactive: Renderer::Font::default(),
-            font_size: 17,
+            font_active: None,
+            font_hovered: None,
+            font_inactive: None,
+            font_size: 17.0,
             icon_size: 16,
             height: Length::Shrink,
             width: Length::Fill,
             spacing: 0,
+            line_height: LineHeight::default(),
             style: <Renderer::Theme as StyleSheet>::Style::default(),
             on_activate: None,
             on_close: None,
@@ -212,6 +216,7 @@ where
     pub(super) fn max_button_dimensions(&self, renderer: &Renderer, bounds: Size) -> (f32, f32) {
         let mut width = 0.0f32;
         let mut height = 0.0f32;
+        let font = renderer.default_font();
 
         for key in self.model.order.iter().copied() {
             let mut button_width = 0.0f32;
@@ -219,7 +224,14 @@ where
 
             // Add text to measurement if text was given.
             if let Some(text) = self.model.text(key) {
-                let (w, h) = renderer.measure(text, self.font_size, Default::default(), bounds);
+                let (w, h) = renderer.measure(
+                    text,
+                    self.font_size,
+                    self.line_height,
+                    font,
+                    bounds,
+                    Shaping::Advanced,
+                );
 
                 button_width = w;
                 button_height = h;
@@ -253,10 +265,10 @@ where
 impl<'a, Variant, SelectionMode, Message, Renderer> Widget<Message, Renderer>
     for SegmentedButton<'a, Variant, SelectionMode, Message, Renderer>
 where
-    Renderer: iced_native::Renderer
-        + iced_native::text::Renderer
-        + iced_native::image::Renderer
-        + iced_native::svg::Renderer,
+    Renderer: iced_core::Renderer
+        + iced_core::text::Renderer
+        + iced_core::image::Renderer
+        + iced_core::svg::Renderer,
     Renderer::Theme: StyleSheet,
     Self: SegmentedVariant<Renderer = Renderer>,
     Model<SelectionMode>: Selectable,
@@ -379,7 +391,10 @@ where
         &self,
         tree: &mut Tree,
         _layout: Layout<'_>,
-        operation: &mut dyn Operation<Message>,
+        _renderer: &Renderer,
+        operation: &mut dyn iced_core::widget::Operation<
+            iced_core::widget::OperationOutputWrapper<Message>,
+        >,
     ) {
         let state = tree.state.downcast_mut::<LocalState>();
         operation.focusable(state, self.id.as_ref().map(|id| &id.0));
@@ -392,7 +407,7 @@ where
         cursor_position: iced::Point,
         _viewport: &iced::Rectangle,
         _renderer: &Renderer,
-    ) -> iced_native::mouse::Interaction {
+    ) -> iced_core::mouse::Interaction {
         let bounds = layout.bounds();
 
         if bounds.contains(cursor_position) {
@@ -402,15 +417,15 @@ where
                     .contains(cursor_position)
                 {
                     return if self.model.items[key].enabled {
-                        iced_native::mouse::Interaction::Pointer
+                        iced_core::mouse::Interaction::Pointer
                     } else {
-                        iced_native::mouse::Interaction::Idle
+                        iced_core::mouse::Interaction::Idle
                     };
                 }
             }
         }
 
-        iced_native::mouse::Interaction::Idle
+        iced_core::mouse::Interaction::Idle
     }
 
     #[allow(clippy::too_many_lines)]
@@ -418,7 +433,7 @@ where
         &self,
         tree: &Tree,
         renderer: &mut Renderer,
-        theme: &<Renderer as iced_native::Renderer>::Theme,
+        theme: &<Renderer as iced_core::Renderer>::Theme,
         _style: &renderer::Style,
         layout: Layout<'_>,
         _cursor_position: iced::Point,
@@ -458,6 +473,7 @@ where
             } else {
                 (appearance.inactive, &self.font_inactive)
             };
+            let font = font.unwrap_or_else(|| renderer.default_font());
 
             let button_appearance = if nth == 0 {
                 status_appearance.first
@@ -536,7 +552,7 @@ where
                         unimplemented!()
                     }
                     icon::Handle::Svg(handle) => {
-                        iced_native::svg::Renderer::draw(renderer, handle, icon_color, icon_bounds);
+                        iced_core::svg::Renderer::draw(renderer, handle, icon_color, icon_bounds);
                     }
                 }
 
@@ -550,14 +566,16 @@ where
                 bounds.y = y;
 
                 // Draw the text in this button.
-                renderer.fill_text(iced_native::text::Text {
+                renderer.fill_text(iced_core::text::Text {
                     content: text,
-                    size: f32::from(self.font_size),
+                    size: self.font_size,
                     bounds,
                     color: status_appearance.text_color,
-                    font: font.clone(),
+                    font,
                     horizontal_alignment,
                     vertical_alignment: alignment::Vertical::Center,
+                    shaping: Shaping::Advanced,
+                    line_height: self.line_height,
                 });
             }
 
@@ -575,7 +593,7 @@ where
                         unimplemented!()
                     }
                     icon::Handle::Svg(handle) => {
-                        iced_native::svg::Renderer::draw(
+                        iced_core::svg::Renderer::draw(
                             renderer,
                             handle,
                             Some(status_appearance.text_color),
@@ -588,11 +606,11 @@ where
     }
 
     fn overlay<'b>(
-        &'b self,
+        &'b mut self,
         _tree: &'b mut Tree,
-        _layout: iced_native::Layout<'_>,
+        _layout: iced_core::Layout<'_>,
         _renderer: &Renderer,
-    ) -> Option<iced_native::overlay::Element<'b, Message, Renderer>> {
+    ) -> Option<iced_core::overlay::Element<'b, Message, Renderer>> {
         None
     }
 }
@@ -601,10 +619,10 @@ impl<'a, Variant, SelectionMode, Message, Renderer>
     From<SegmentedButton<'a, Variant, SelectionMode, Message, Renderer>>
     for Element<'a, Message, Renderer>
 where
-    Renderer: iced_native::Renderer
-        + iced_native::text::Renderer
-        + iced_native::image::Renderer
-        + iced_native::svg::Renderer
+    Renderer: iced_core::Renderer
+        + iced_core::text::Renderer
+        + iced_core::image::Renderer
+        + iced_core::svg::Renderer
         + 'a,
     Renderer::Theme: StyleSheet,
     SegmentedButton<'a, Variant, SelectionMode, Message, Renderer>:
@@ -624,7 +642,6 @@ where
 }
 
 /// A command that focuses a segmented item stored in a widget.
-#[must_use]
 pub fn focus<Message: 'static>(id: Id) -> Command<Message> {
     Command::widget(operation::focusable::focus(id.0))
 }

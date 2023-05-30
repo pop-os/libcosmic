@@ -1,16 +1,16 @@
-use cosmic_panel_config::{PanelAnchor, PanelSize};
+use cosmic_panel_config::{CosmicPanelBackground, PanelAnchor, PanelSize};
 use iced::{
     alignment::{Horizontal, Vertical},
     wayland::InitialSurface,
     widget::{self, Container},
     Color, Element, Length, Rectangle, Settings,
 };
-use iced_core::BorderRadius;
-use iced_native::command::platform_specific::wayland::{
+use iced_core::layout::Limits;
+use iced_style::{button::StyleSheet, container::Appearance};
+use iced_widget::runtime::command::platform_specific::wayland::{
     popup::{SctkPopupSettings, SctkPositioner},
     window::SctkWindowSettings,
 };
-use iced_style::{button::StyleSheet, container::Appearance};
 use sctk::reexports::protocols::xdg::shell::client::xdg_positioner::{Anchor, Gravity};
 
 use crate::{theme::Button, Renderer};
@@ -19,14 +19,15 @@ pub use cosmic_panel_config;
 
 const APPLET_PADDING: u32 = 8;
 
+#[must_use]
 pub fn applet_button_theme() -> Button {
     Button::Custom {
         active: Box::new(|t| iced_style::button::Appearance {
-            border_radius: BorderRadius::from(0.0),
+            border_radius: 0.0,
             ..t.active(&Button::Text)
         }),
         hover: Box::new(|t| iced_style::button::Appearance {
-            border_radius: BorderRadius::from(0.0),
+            border_radius: 0.0,
             ..t.hovered(&Button::Text)
         }),
     }
@@ -36,6 +37,8 @@ pub fn applet_button_theme() -> Button {
 pub struct CosmicAppletHelper {
     pub size: Size,
     pub anchor: PanelAnchor,
+    pub background: CosmicPanelBackground,
+    pub output_name: String,
 }
 
 #[derive(Clone, Debug)]
@@ -51,18 +54,24 @@ impl Default for CosmicAppletHelper {
             size: Size::PanelSize(
                 std::env::var("COSMIC_PANEL_SIZE")
                     .ok()
-                    .and_then(|size| size.parse::<PanelSize>().ok())
+                    .and_then(|size| ron::from_str(size.as_str()).ok())
                     .unwrap_or(PanelSize::S),
             ),
             anchor: std::env::var("COSMIC_PANEL_ANCHOR")
                 .ok()
-                .and_then(|size| size.parse::<PanelAnchor>().ok())
+                .and_then(|size| ron::from_str(size.as_str()).ok())
                 .unwrap_or(PanelAnchor::Top),
+            background: std::env::var("COSMIC_PANEL_BACKGROUND")
+                .ok()
+                .and_then(|size| ron::from_str(size.as_str()).ok())
+                .unwrap_or(CosmicPanelBackground::ThemeDefault),
+            output_name: std::env::var("COSMIC_PANEL_OUTPUT").unwrap_or_default(),
         }
     }
 }
 
 impl CosmicAppletHelper {
+    #[must_use]
     pub fn suggested_size(&self) -> (u16, u16) {
         match &self.size {
             Size::PanelSize(size) => match size {
@@ -87,18 +96,20 @@ impl CosmicAppletHelper {
     }
 
     #[must_use]
+    #[allow(clippy::cast_precision_loss)]
     pub fn window_settings_with_flags<F>(&self, flags: F) -> Settings<F> {
         let (width, height) = self.suggested_size();
         let width = u32::from(width);
         let height = u32::from(height);
         Settings {
             initial_surface: InitialSurface::XdgWindow(SctkWindowSettings {
-                iced_settings: iced_native::window::Settings {
-                    size: (width + APPLET_PADDING * 2, height + APPLET_PADDING * 2),
-                    min_size: Some((width + APPLET_PADDING * 2, height + APPLET_PADDING * 2)),
-                    max_size: Some((width + APPLET_PADDING * 2, height + APPLET_PADDING * 2)),
-                    ..Default::default()
-                },
+                size: (width + APPLET_PADDING * 2, height + APPLET_PADDING * 2),
+                size_limits: Limits::NONE
+                    .min_height(height as f32 + APPLET_PADDING as f32 * 2.0)
+                    .max_height(height as f32 + APPLET_PADDING as f32 * 2.0)
+                    .min_width(width as f32 + APPLET_PADDING as f32 * 2.0)
+                    .max_width(width as f32 + APPLET_PADDING as f32 * 2.0),
+                resizable: None,
                 ..Default::default()
             }),
             ..crate::settings_with_flags(flags)
@@ -124,7 +135,7 @@ impl CosmicAppletHelper {
         &self,
         content: impl Into<Element<'a, Message, Renderer>>,
     ) -> Container<'a, Message, Renderer> {
-        let (valign, halign) = match self.anchor {
+        let (vertical_align, horizontal_align) = match self.anchor {
             PanelAnchor::Left => (Vertical::Center, Horizontal::Left),
             PanelAnchor::Right => (Vertical::Center, Horizontal::Right),
             PanelAnchor::Top => (Vertical::Top, Horizontal::Center),
@@ -135,22 +146,23 @@ impl CosmicAppletHelper {
             crate::theme::Container::custom(|theme| Appearance {
                 text_color: Some(theme.cosmic().background.on.into()),
                 background: Some(Color::from(theme.cosmic().background.base).into()),
-                border_radius: 12.0,
+                border_radius: 12.0.into(),
                 border_width: 0.0,
                 border_color: Color::TRANSPARENT,
             }),
         ))
         .width(Length::Shrink)
         .height(Length::Shrink)
-        .align_x(halign)
-        .align_y(valign)
+        .align_x(horizontal_align)
+        .align_y(vertical_align)
     }
 
     #[must_use]
+    #[allow(clippy::cast_possible_wrap)]
     pub fn get_popup_settings(
         &self,
-        parent: iced_native::window::Id,
-        id: iced_native::window::Id,
+        parent: iced_core::window::Id,
+        id: iced_core::window::Id,
         size: Option<(u32, u32)>,
         width_padding: Option<i32>,
         height_padding: Option<i32>,
