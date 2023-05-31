@@ -15,8 +15,6 @@ pub use iced_widget;
 pub use iced_winit;
 #[cfg(feature = "wayland")]
 pub use sctk;
-#[cfg(feature = "applet")]
-pub mod applet;
 pub mod executor;
 pub mod font;
 pub mod keyboard_nav;

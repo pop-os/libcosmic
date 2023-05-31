@@ -47,7 +47,6 @@ jobs:
         - winit_wgpu
         - tiny_skia
         - wayland
-        - applet
     runs-on: ubuntu-22.04
     steps:
       - name: Checkout sources
