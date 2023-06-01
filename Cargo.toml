@@ -14,6 +14,7 @@ tiny_skia = ["iced/tiny-skia", "iced_tiny_skia"]
 wayland = ["iced/wayland", "iced_sctk", "sctk",]
 wgpu = ["iced/wgpu", "iced_wgpu"]
 tokio = ["dep:tokio", "iced/tokio"]
+smol = ["iced/smol"]
 winit = ["iced/winit", "iced_winit"]
 winit_tiny_skia = ["winit", "tiny_skia"]
 winit_wgpu = ["winit", "wgpu"]
@@ -43,11 +44,17 @@ features = ["image", "svg", "lazy"]
 [dependencies.iced_runtime]
 path = "iced/runtime"
 
+[dependencies.iced_renderer]
+path = "iced/renderer"
+
 [dependencies.iced_core]
 path = "iced/core"
 
 [dependencies.iced_widget]
 path = "iced/widget"
+
+[dependencies.iced_futures]
+path = "iced/futures"
 
 [dependencies.iced_accessibility]
 path = "iced/accessibility"

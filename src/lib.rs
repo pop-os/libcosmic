@@ -6,6 +6,9 @@
 pub use cosmic_config;
 pub use cosmic_theme;
 pub use iced;
+pub use iced_core;
+pub use iced_futures;
+pub use iced_renderer;
 pub use iced_runtime;
 #[cfg(feature = "wayland")]
 pub use iced_sctk;
