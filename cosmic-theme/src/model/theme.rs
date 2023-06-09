@@ -27,7 +27,7 @@ pub enum Layer {
 }
 
 /// Cosmic Theme data structure with all colors and its name
-#[derive(Clone, Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
 pub struct Theme<C> {
     /// name of the theme
     pub name: String,
@@ -147,21 +147,6 @@ impl Default for Theme<CssColor> {
 pub trait LayeredTheme {
     /// Set the layer of the theme
     fn set_layer(&mut self, layer: Layer);
-}
-
-// TODO better eq check
-impl<C> PartialEq for Theme<C>
-where
-    C: Clone + fmt::Debug + Default + Into<Srgba> + From<Srgba> + Serialize + DeserializeOwned,
-{
-    fn eq(&self, other: &Self) -> bool {
-        self.name == other.name
-    }
-}
-
-impl<C> Eq for Theme<C> where
-    C: Clone + fmt::Debug + Default + Into<Srgba> + From<Srgba> + Serialize + DeserializeOwned
-{
 }
 
 impl<C> Theme<C> {

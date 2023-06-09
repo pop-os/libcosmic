@@ -58,7 +58,7 @@ lazy_static::lazy_static! {
     };
 }
 
-#[derive(Debug, Clone, Eq, PartialEq, Default)]
+#[derive(Debug, Clone, PartialEq, Default)]
 pub enum ThemeType {
     #[default]
     Dark,
@@ -68,7 +68,7 @@ pub enum ThemeType {
     Custom(Arc<CosmicTheme>),
 }
 
-#[derive(Debug, Clone, Eq, PartialEq, Default)]
+#[derive(Debug, Clone, PartialEq, Default)]
 pub struct Theme {
     pub theme_type: ThemeType,
     pub layer: cosmic_theme::Layer,
