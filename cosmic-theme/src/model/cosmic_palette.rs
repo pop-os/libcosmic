@@ -23,7 +23,7 @@ lazy_static! {
 }
 
 /// Palette type
-#[derive(Clone, Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
 pub enum CosmicPalette<C> {
     /// Dark mode
     Dark(CosmicPaletteInner<C>),
@@ -80,7 +80,7 @@ where
 }
 
 /// The palette for Cosmic Theme, from which all color properties are derived
-#[derive(Clone, Debug, Default, Deserialize, Serialize)]
+#[derive(Clone, Debug, Default, Deserialize, Serialize, PartialEq, Eq)]
 pub struct CosmicPaletteInner<C> {
     /// name of the palette
     pub name: String,

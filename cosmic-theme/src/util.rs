@@ -3,7 +3,7 @@ use palette::Srgba;
 use serde::{Deserialize, Serialize};
 
 /// utility wrapper for serializing and deserializing colors with arbitrary CSS
-#[derive(Clone, Debug, Default, Deserialize, Serialize)]
+#[derive(Clone, Debug, Default, Deserialize, Serialize, PartialEq)]
 pub struct CssColor {
     c: Color,
 }

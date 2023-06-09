@@ -5,7 +5,7 @@ use std::fmt;
 use crate::{util::over, CosmicPalette};
 
 /// Theme Container colors of a theme, can be a theme background container, primary container, or secondary container
-#[derive(Clone, Debug, Default, Deserialize, Serialize)]
+#[derive(Clone, Debug, Default, Deserialize, Serialize, PartialEq, Eq)]
 pub struct Container<C> {
     /// the color of the container
     pub base: C,
@@ -160,7 +160,7 @@ impl fmt::Display for ContainerType {
 }
 
 /// The colors for a widget of the Cosmic theme
-#[derive(Clone, PartialEq, Debug, Default, Deserialize, Serialize)]
+#[derive(Clone, PartialEq, Debug, Default, Deserialize, Serialize, Eq)]
 pub struct Component<C> {
     /// The base color of the widget
     pub base: C,
