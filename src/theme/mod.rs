@@ -11,9 +11,13 @@ use std::sync::Arc;
 
 pub use self::segmented_button::SegmentedButton;
 
+use cosmic_config::config_subscription;
+use cosmic_config::CosmicConfigEntry;
+use cosmic_theme::util::CssColor;
 use cosmic_theme::Component;
 use cosmic_theme::LayeredTheme;
 use iced_core::renderer::BorderRadius;
+use iced_futures::Subscription;
 use iced_style::application;
 use iced_style::button;
 use iced_style::checkbox;
@@ -1111,4 +1115,43 @@ impl text_input::StyleSheet for Theme {
     fn disabled(&self, _style: &Self::Style) -> text_input::Appearance {
         todo!()
     }
+}
+
+pub fn theme() -> Theme {
+    let Ok(helper) = crate::cosmic_config::Config::new(
+        crate::cosmic_theme::NAME,
+        crate::cosmic_theme::Theme::<CssColor>::version(),
+    ) else {
+        return crate::theme::Theme::dark();
+    };
+    let t = crate::cosmic_theme::Theme::get_entry(&helper).map_or_else(
+        |(errors, theme)| {
+            for err in errors {
+                tracing::error!("{:?}", err);
+            }
+            theme.into_srgba()
+        },
+        crate::cosmic_theme::Theme::into_srgba,
+    );
+    crate::theme::Theme::custom(Arc::new(t))
+}
+
+pub fn theme_subscription(id: u64) -> Subscription<crate::theme::Theme> {
+    config_subscription::<u64, crate::cosmic_theme::Theme<CssColor>>(
+        id,
+        crate::cosmic_theme::NAME.into(),
+        crate::cosmic_theme::Theme::<CssColor>::version(),
+    )
+    .map(|(_, res)| {
+        let theme = res.map_or_else(
+            |(errors, theme)| {
+                for err in errors {
+                    tracing::error!("{:?}", err);
+                }
+                theme.into_srgba()
+            },
+            crate::cosmic_theme::Theme::into_srgba,
+        );
+        crate::theme::Theme::custom(Arc::new(theme))
+    })
 }

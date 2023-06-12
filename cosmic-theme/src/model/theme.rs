@@ -151,7 +151,7 @@ pub trait LayeredTheme {
 
 impl<C> Theme<C> {
     /// version of the theme
-    pub fn version() -> u32 {
+    pub fn version() -> u64 {
         1
     }
 
