@@ -29,6 +29,7 @@ sctk = { package = "smithay-client-toolkit", git = "https://github.com/pop-os/cl
 slotmap = "1.0.6"
 fraction = "0.13.0"
 cosmic-config = { path = "cosmic-config" }
+tracing = "0.1"
 
 [target.'cfg(unix)'.dependencies]
 freedesktop-icons = "0.2.2"
