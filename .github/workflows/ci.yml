@@ -41,11 +41,10 @@ jobs:
       fail-fast: false
       matrix:
         features:
-        - 'winit_tiny_skia debug'
-        - 'winit_tiny_skia tokio'
-        - winit_tiny_skia
+        - 'winit_debug'
+        - 'winit_tokio'
+        - winit
         - winit_wgpu
-        - tiny_skia
         - wayland
     runs-on: ubuntu-22.04
     steps:

@@ -15,6 +15,8 @@ wgpu = ["iced/wgpu", "iced_wgpu"]
 tokio = ["dep:tokio", "iced/tokio"]
 smol = ["iced/smol"]
 winit = ["iced/winit", "iced_winit"]
+winit_tokio = ["iced/winit", "iced_winit", "tokio"]
+winit_debug = ["iced/winit", "iced_winit", "debug"]
 winit_wgpu = ["winit", "wgpu"]
 
 [dependencies]
