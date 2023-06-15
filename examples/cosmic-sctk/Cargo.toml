@@ -6,4 +6,4 @@ edition = "2021"
 publish = false
 
 [dependencies]
-libcosmic = { path = "../..", default-features = false, features = ["wayland", "tokio", "tiny_skia", "a11y"] }
+libcosmic = { path = "../..", default-features = false, features = ["wayland", "tokio", "a11y"] }
