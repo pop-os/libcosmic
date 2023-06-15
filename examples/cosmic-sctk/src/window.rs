@@ -6,8 +6,9 @@ use cosmic::{
     iced::{
         wayland::window::{start_drag_window, toggle_maximize},
         widget::{column, container, horizontal_space, pick_list, progress_bar, row, slider},
-        window, Color,
+        window, Color, Event,
     },
+    iced_futures::Subscription,
     iced_style::application,
     theme::{self, Theme},
     widget::{
@@ -17,11 +18,15 @@ use cosmic::{
     },
     Element, ElementExt,
 };
+use cosmic_time::{anim, chain, id, once_cell::sync::Lazy, Instant, Timeline};
 use std::{
     sync::atomic::{AtomicU32, Ordering},
     vec,
 };
 use theme::Button as ButtonTheme;
+
+static DEBUG_TOGGLER: Lazy<id::Toggler> = Lazy::new(id::Toggler::unique);
+static TOGGLER: Lazy<id::Toggler> = Lazy::new(id::Toggler::unique);
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum Page {
@@ -118,6 +123,7 @@ pub struct Window {
     exit: bool,
     rectangle_tracker: Option<RectangleTracker<u32>>,
     pub selection: segmented_button::SingleSelectModel,
+    timeline: Timeline,
 }
 
 impl Window {
@@ -178,6 +184,29 @@ pub enum Message {
     NavBar(segmented_button::Entity),
     Ignore,
     Selection(segmented_button::Entity),
+    Tick(Instant),
+}
+
+impl Window {
+    fn update_togglers(&mut self) {
+        let timeline = &mut self.timeline;
+
+        let chain = if self.toggler_value {
+            chain::Toggler::on(TOGGLER.clone(), 1.)
+        } else {
+            chain::Toggler::off(TOGGLER.clone(), 1.)
+        };
+        timeline.set_chain(chain);
+
+        let chain = if self.debug {
+            chain::Toggler::on(DEBUG_TOGGLER.clone(), 1.)
+        } else {
+            chain::Toggler::off(DEBUG_TOGGLER.clone(), 1.)
+        };
+        timeline.set_chain(chain);
+
+        timeline.start();
+    }
 }
 
 impl Application for Window {
@@ -233,14 +262,20 @@ impl Application for Window {
                 }
             }
             Message::Page(page) => self.page = page,
-            Message::Debug(debug) => self.debug = debug,
+            Message::Debug(debug) => {
+                self.debug = debug;
+                self.update_togglers();
+            }
             Message::ThemeChanged(theme) => self.theme = theme,
             Message::ButtonPressed => {}
             Message::SliderChanged(value) => self.slider_value = value,
             Message::CheckboxToggled(value) => {
                 self.checkbox_value = value;
             }
-            Message::TogglerToggled(value) => self.toggler_value = value,
+            Message::TogglerToggled(value) => {
+                self.toggler_value = value;
+                self.update_togglers();
+            }
             Message::PickListSelected(value) => self.pick_list_selected = Some(value),
             Message::Close => self.exit = true,
             Message::ToggleNavBar => self.nav_bar_toggled = !self.nav_bar_toggled,
@@ -262,6 +297,7 @@ impl Application for Window {
             },
             Message::Ignore => {}
             Message::Selection(key) => self.selection.activate(key),
+            Message::Tick(now) => self.timeline.now(now),
         }
 
         Command::none()
@@ -325,7 +361,14 @@ impl Application for Window {
                 settings::view_section("Debug")
                     .add(settings::item(
                         "Debug layout",
-                        toggler(String::from("Debug layout"), self.debug, Message::Debug),
+                        container(anim!(
+                            //toggler
+                            DEBUG_TOGGLER,
+                            &self.timeline,
+                            String::from("Debug layout"),
+                            self.debug,
+                            |_chain, enable| { Message::Debug(enable) },
+                        )),
                     ))
                     .into(),
                 settings::view_section("Buttons")
@@ -359,7 +402,14 @@ impl Application for Window {
                 settings::view_section("Controls")
                     .add(settings::item(
                         "Toggler",
-                        toggler(None, self.toggler_value, Message::TogglerToggled),
+                        anim!(
+                            //toggler
+                            TOGGLER,
+                            &self.timeline,
+                            None,
+                            self.toggler_value,
+                            |_chain, enable| { Message::TogglerToggled(enable) },
+                        ),
                     ))
                     .add(settings::item(
                         "Pick List (TODO)",
@@ -422,7 +472,12 @@ impl Application for Window {
         Message::Close
     }
     fn subscription(&self) -> iced::Subscription<Self::Message> {
-        rectangle_tracker_subscription(0).map(|(_, e)| Message::Rectangle(e))
+        Subscription::batch(vec![
+            rectangle_tracker_subscription(0).map(|(_, e)| Self::Message::Rectangle(e)),
+            self.timeline
+                .as_subscription()
+                .map(|(_, instant)| Self::Message::Tick(instant)),
+        ])
     }
 
     fn style(&self) -> <Self::Theme as cosmic::iced_style::application::StyleSheet>::Style {
