@@ -7,23 +7,21 @@ edition = "2021"
 name = "cosmic"
 
 [features]
-default = ["tiny_skia", "winit", "tokio", "a11y"]
+default = ["winit", "tokio", "a11y"]
 debug = ["iced/debug"]
 a11y = ["iced/a11y", "iced_accessibility"]
-tiny_skia = ["iced/tiny-skia", "iced_tiny_skia"]
 wayland = ["iced/wayland", "iced_sctk", "sctk",]
 wgpu = ["iced/wgpu", "iced_wgpu"]
 tokio = ["dep:tokio", "iced/tokio"]
 smol = ["iced/smol"]
 winit = ["iced/winit", "iced_winit"]
-winit_tiny_skia = ["winit", "tiny_skia"]
 winit_wgpu = ["winit", "wgpu"]
 
 [dependencies]
 apply = "0.3.0"
 derive_setters = "0.1.5"
 lazy_static = "1.4.0"
-palette = "0.6.1"
+palette = "0.7"
 tokio = { version = "1.24.2", optional = true }
 sctk = { package = "smithay-client-toolkit", git = "https://github.com/pop-os/client-toolkit", optional = true, tag = "themed-pointer"}
 slotmap = "1.0.6"
@@ -61,9 +59,9 @@ path = "iced/futures"
 path = "iced/accessibility"
 
 optional = true
+
 [dependencies.iced_tiny_skia]
 path = "iced/tiny_skia"
-optional = true
 
 [dependencies.iced_style]
 path = "iced/style"

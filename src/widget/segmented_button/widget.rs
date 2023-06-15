@@ -10,9 +10,9 @@ use iced::{
     alignment, event, keyboard, mouse, touch, Background, Color, Command, Element, Event, Length,
     Point, Rectangle, Size,
 };
-use iced_core::renderer::BorderRadius;
 use iced_core::text::{LineHeight, Shaping};
 use iced_core::widget::{self, operation, tree};
+use iced_core::BorderRadius;
 use iced_core::{layout, renderer, widget::Tree, Clipboard, Layout, Shell, Widget};
 use std::marker::PhantomData;
 
@@ -303,7 +303,7 @@ where
         tree: &mut Tree,
         event: Event,
         layout: Layout<'_>,
-        cursor_position: Point,
+        cursor_position: mouse::Cursor,
         _renderer: &Renderer,
         _clipboard: &mut dyn Clipboard,
         shell: &mut Shell<'_, Message>,
@@ -311,10 +311,10 @@ where
         let bounds = layout.bounds();
         let state = tree.state.downcast_mut::<LocalState>();
 
-        if bounds.contains(cursor_position) {
+        if cursor_position.is_over(bounds) {
             for (nth, key) in self.model.order.iter().copied().enumerate() {
                 let bounds = self.variant_button_bounds(bounds, nth);
-                if bounds.contains(cursor_position) {
+                if cursor_position.is_over(bounds) {
                     if self.model.items[key].enabled {
                         // Record that the mouse is hovering over this button.
                         state.hovered = key;
@@ -322,13 +322,11 @@ where
                         // If marked as closable, show a close icon.
                         if self.model.items[key].closable {
                             if let Some(on_close) = self.on_close.as_ref() {
-                                if close_bounds(
+                                if cursor_position.is_over(close_bounds(
                                     bounds,
                                     f32::from(self.icon_size),
                                     self.button_padding,
-                                )
-                                .contains(cursor_position)
-                                {
+                                )) {
                                     if let Event::Mouse(mouse::Event::ButtonReleased(
                                         mouse::Button::Left,
                                     ))
@@ -404,18 +402,15 @@ where
         &self,
         _tree: &Tree,
         layout: Layout<'_>,
-        cursor_position: iced::Point,
+        cursor_position: mouse::Cursor,
         _viewport: &iced::Rectangle,
         _renderer: &Renderer,
     ) -> iced_core::mouse::Interaction {
         let bounds = layout.bounds();
 
-        if bounds.contains(cursor_position) {
+        if cursor_position.is_over(bounds) {
             for (nth, key) in self.model.order.iter().copied().enumerate() {
-                if self
-                    .variant_button_bounds(bounds, nth)
-                    .contains(cursor_position)
-                {
+                if cursor_position.is_over(self.variant_button_bounds(bounds, nth)) {
                     return if self.model.items[key].enabled {
                         iced_core::mouse::Interaction::Pointer
                     } else {
@@ -436,7 +431,7 @@ where
         theme: &<Renderer as iced_core::Renderer>::Theme,
         _style: &renderer::Style,
         layout: Layout<'_>,
-        _cursor_position: iced::Point,
+        _cursor_position: mouse::Cursor,
         _viewport: &iced::Rectangle,
     ) {
         let state = tree.state.downcast_ref::<LocalState>();

@@ -17,7 +17,7 @@ theme-from-image = ["kmeans_colors", "contrast-derivation", "float-cmp", "image"
 hex-color = ["hex"]
 
 [dependencies]
-palette = {version = "0.6", features = ["serializing"] }
+palette = {version = "0.7", features = ["serializing"] }
 anyhow = "1.0"
 hex = {version = "0.4.3", optional = true}
 kmeans_colors = { version = "0.5", features = ["palette_color"], default-features = false, optional = true }
