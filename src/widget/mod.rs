@@ -8,6 +8,9 @@ pub mod aspect_ratio;
 mod button;
 pub use button::*;
 
+pub mod flex_row;
+pub use flex_row::{flex_row, FlexRow};
+
 mod header_bar;
 pub use header_bar::{header_bar, HeaderBar};
 
