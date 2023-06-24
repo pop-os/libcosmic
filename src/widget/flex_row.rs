@@ -1,6 +1,8 @@
 // Copyright 2023 System76 <info@system76.com>
 // SPDX-License-Identifier: MPL-2.0
 
+use std::cell::RefCell;
+
 use crate::Element;
 use apply::Apply;
 use derive_setters::Setters;
@@ -11,7 +13,7 @@ use iced_core::{alignment, Length, Size};
 #[derive(Setters)]
 pub struct FlexRow<'a, Message> {
     #[setters(skip)]
-    generator: Box<dyn Fn(Size) -> (u16, Vec<Element<'a, Message>>) + 'a>,
+    generator: Box<dyn Fn(&mut Vec<Element<'a, Message>>, Size) -> u16 + 'a>,
     /// Sets the space between each column of items.
     column_spacing: u16,
     /// Sets the space between each item in a row.
@@ -31,7 +33,7 @@ pub struct FlexRow<'a, Message> {
 /// Responsively generates rows and columns of widgets based on its dimmensions.
 ///
 /// The `generator` input is a closure which must return the max width of all
-/// elements created, and a `Vec` containing the generated elements.
+/// elements created, while storing elements in the provided `Vec`.
 ///
 /// ## Example
 ///
@@ -40,22 +42,23 @@ pub struct FlexRow<'a, Message> {
 /// a color.
 ///
 /// We already know beforehand that our color buttons will have a fixed width
-/// of `70`, so the `generator` closure returns this with a `Vec` of our color
-/// button widgets.
+/// of `70`, so we store elements in the provided `Vec` and return `70`.
 ///
 /// ```ignore
 /// use iced_core::{alignment, Length};
 ///
-/// let generator = |_size| {
-///     let elements = COLOR_VALUES.iter()
+/// let flex_row = cosmic::widget::flex_row(|vec, _size| {
+///     let elements = DEFAULT_COLORS
+///         .iter()
 ///         .cloned()
-///         .map(color_button)
-///         .collect::<Vec<_>>();
+///         .map(color_button);
 ///
-///     (70, elements)
-/// };
+///     vec.extend(elements);
 ///
-/// cosmic::widget::flex_row(generator)
+///     70
+/// });
+///
+/// flex_row
 ///     .column_spacing(12)
 ///     .row_spacing(16)
 ///     .width(Length::Fill)
@@ -63,7 +66,7 @@ pub struct FlexRow<'a, Message> {
 ///     .into()
 /// ```
 pub fn flex_row<'a, Message: 'static>(
-    generator: impl Fn(Size) -> (u16, Vec<Element<'a, Message>>) + 'a,
+    generator: impl Fn(&mut Vec<Element<'a, Message>>, Size) -> u16 + 'a,
 ) -> FlexRow<'a, Message> {
     FlexRow {
         generator: Box::new(generator),
@@ -79,8 +82,11 @@ pub fn flex_row<'a, Message: 'static>(
 
 impl<'a, Message: 'static> From<FlexRow<'a, Message>> for Element<'a, Message> {
     fn from(container: FlexRow<'a, Message>) -> Self {
+        let elements = RefCell::new(Vec::new());
+
         iced::widget::responsive(move |size| {
-            let (item_width, mut elements) = (container.generator)(size);
+            let mut elements = elements.borrow_mut();
+            let item_width = (container.generator)(&mut elements, size);
 
             let mut items_per_row = flex_row_items(
                 size.width,
