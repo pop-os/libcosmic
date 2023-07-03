@@ -2,7 +2,10 @@
 use iced_futures::futures::channel::mpsc;
 #[cfg(feature = "subscription")]
 use iced_futures::subscription;
-use notify::{RecommendedWatcher, Watcher};
+use notify::{
+    event::{EventKind, ModifyKind},
+    RecommendedWatcher, Watcher,
+};
 use serde::{de::DeserializeOwned, Serialize};
 use std::{
     borrow::Cow,
@@ -137,8 +140,16 @@ impl Config {
         let mut watcher =
             notify::recommended_watcher(move |event_res: Result<notify::Event, notify::Error>| {
                 // println!("{:#?}", event_res);
-                match event_res {
+                match &event_res {
                     Ok(event) => {
+                        match &event.kind {
+                            EventKind::Access(_) | EventKind::Modify(ModifyKind::Metadata(_)) => {
+                                // Data not mutated
+                                return;
+                            }
+                            _ => {}
+                        }
+
                         let mut keys = Vec::new();
                         for path in event.paths.iter() {
                             match path.strip_prefix(&watch_config.user_path) {
