@@ -3,7 +3,7 @@ use cosmic::{
     cosmic_theme,
     iced::widget::{checkbox, column, pick_list, progress_bar, radio, slider, text, text_input},
     iced::{id, Alignment, Length},
-    theme::{self, Button as ButtonTheme, Theme, ThemeType},
+    theme::{self, Button as ButtonTheme, ThemeType},
     widget::{
         button, container, icon, segmented_button, segmented_selection, settings, spin_button,
         toggler, view_switcher,
@@ -417,11 +417,19 @@ impl State {
                 .padding(8)
                 .width(Length::Fill)
                 .into(),
-            container(text("Primary container with some text").size(24))
-                .layer(cosmic_theme::Layer::Primary)
-                .padding(8)
-                .width(Length::Fill)
-                .into(),
+            container(column![
+                text(
+                    "Primary container with some text and a couple icons testing default fallbacks"
+                )
+                .size(24),
+                icon("microphone-sensitivity-high-symbolic-test", 24)
+                    .style(cosmic::theme::Svg::SymbolicActive),
+                icon("microphone-sensitivity-high-symbolic-test", 16).default_fallbacks(false)
+            ])
+            .layer(cosmic_theme::Layer::Primary)
+            .padding(8)
+            .width(Length::Fill)
+            .into(),
             container(text("Secondary container with some text").size(24))
                 .layer(cosmic_theme::Layer::Secondary)
                 .padding(8)

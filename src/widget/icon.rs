@@ -13,6 +13,7 @@ use std::{
     borrow::Cow, collections::hash_map::DefaultHasher, ffi::OsStr, hash::Hash, hash::Hasher,
     path::Path, path::PathBuf,
 };
+use tracing::error;
 
 #[derive(Clone, Debug, Hash)]
 pub enum Handle {
@@ -30,30 +31,30 @@ pub enum IconSource<'a> {
 impl<'a> IconSource<'a> {
     /// Loads the icon as either an image or svg [`Handle`].
     #[must_use]
-    pub fn load(&self, size: u16, theme: Option<&str>, svg: bool) -> Handle {
-        let name_path_buffer: Option<PathBuf>;
+    pub fn load(
+        &self,
+        size: u16,
+        theme: Option<&str>,
+        svg: bool,
+        default_fallbacks: bool,
+    ) -> Handle {
+        let mut name_path_buffer: Option<PathBuf>;
         let icon: Option<&Path> = match self {
             IconSource::Handle(handle) => return handle.clone(),
             IconSource::Path(ref path) => Some(path),
             #[cfg(unix)]
             IconSource::Name(ref name) => {
-                let icon = crate::settings::DEFAULT_ICON_THEME.with(|default_theme| {
-                    let default_theme: &str = &default_theme.borrow();
-                    freedesktop_icons::lookup(name)
-                        .with_size(size)
-                        .with_theme(theme.unwrap_or(default_theme))
-                        .with_cache()
-                        .find()
-                });
-
-                name_path_buffer = if icon.is_none() {
-                    freedesktop_icons::lookup(name)
-                        .with_size(size)
-                        .with_cache()
-                        .find()
-                } else {
-                    icon
-                };
+                name_path_buffer = None;
+                if let Some(path) = load_icon(name, size, theme) {
+                    name_path_buffer = Some(path);
+                } else if default_fallbacks {
+                    for name in name.rmatch_indices('-').map(|(pos, _)| &name[..pos]) {
+                        if let Some(path) = load_icon(name, size, theme) {
+                            name_path_buffer = Some(path);
+                            break;
+                        }
+                    }
+                }
 
                 name_path_buffer.as_deref()
             }
@@ -71,7 +72,7 @@ impl<'a> IconSource<'a> {
             let handle = if let Some(path) = icon {
                 svg::Handle::from_path(path)
             } else {
-                eprintln!("svg icon '{self:?}' size {size} not found");
+                error!("svg icon '{self:?}' size {size} not found");
                 svg::Handle::from_memory(Vec::new())
             };
 
@@ -79,7 +80,7 @@ impl<'a> IconSource<'a> {
         } else if let Some(icon) = icon {
             Handle::Image(icon.into())
         } else {
-            eprintln!("icon '{self:?}' size {size} not found");
+            error!("icon '{self:?}' size {size} not found");
             Handle::Image(image::Handle::from_memory(Vec::new()))
         }
     }
@@ -189,6 +190,7 @@ pub struct Icon<'a> {
     #[setters(strip_option)]
     height: Option<Length>,
     force_svg: bool,
+    default_fallbacks: bool,
 }
 
 // XXX Hopefully this will be enough precision
@@ -230,6 +232,7 @@ pub fn icon<'a>(source: impl Into<IconSource<'a>>, size: u16) -> Icon<'a> {
         theme: None,
         width: None,
         force_svg: false,
+        default_fallbacks: true,
     }
 }
 
@@ -266,7 +269,12 @@ impl<'a> Icon<'a> {
         std::mem::swap(&mut source, &mut self.source);
 
         iced::widget::lazy(hash, move |_| -> Element<Message> {
-            match source.load(self.size, self.theme.as_deref(), self.force_svg) {
+            match source.load(
+                self.size,
+                self.theme.as_deref(),
+                self.force_svg,
+                self.default_fallbacks,
+            ) {
                 Handle::Svg(handle) => self.svg_element(handle),
                 Handle::Image(handle) => self.raster_element(handle),
             }
@@ -278,5 +286,26 @@ impl<'a> Icon<'a> {
 impl<'a, Message: 'static> From<Icon<'a>> for Element<'a, Message> {
     fn from(icon: Icon<'a>) -> Self {
         icon.into_element::<Message>()
+    }
+}
+
+#[must_use]
+pub fn load_icon(name: &str, size: u16, theme: Option<&str>) -> Option<PathBuf> {
+    let icon = crate::settings::DEFAULT_ICON_THEME.with(|default_theme| {
+        let default_theme = default_theme.borrow();
+        freedesktop_icons::lookup(name)
+            .with_size(size)
+            .with_theme(theme.unwrap_or(&default_theme))
+            .with_cache()
+            .find()
+    });
+
+    if icon.is_none() {
+        freedesktop_icons::lookup(name)
+            .with_size(size)
+            .with_cache()
+            .find()
+    } else {
+        icon
     }
 }
