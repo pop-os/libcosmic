@@ -542,7 +542,7 @@ where
                 bounds.x += offset;
                 bounds.width -= offset;
 
-                match icon.load(self.icon_size, None, false) {
+                match icon.load(self.icon_size, None, false, true) {
                     icon::Handle::Image(_handle) => {
                         unimplemented!()
                     }
@@ -583,7 +583,7 @@ where
                 let width = f32::from(self.icon_size);
                 let icon_bounds = close_bounds(original_bounds, width, self.button_padding);
 
-                match self.close_icon.load(self.icon_size, None, false) {
+                match self.close_icon.load(self.icon_size, None, false, true) {
                     icon::Handle::Image(_handle) => {
                         unimplemented!()
                     }
