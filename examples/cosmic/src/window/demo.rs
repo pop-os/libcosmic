@@ -1,3 +1,5 @@
+use std::{cell::RefCell, rc::Rc};
+
 use apply::Apply;
 use cosmic::{
     cosmic_theme,
@@ -10,10 +12,13 @@ use cosmic::{
     },
     Element,
 };
+use cosmic_time::{anim, chain, Timeline};
 use fraction::{Decimal, ToPrimitive};
 use once_cell::sync::Lazy;
 
 use super::{Page, Window};
+
+static CARDS: Lazy<cosmic_time::id::Cards> = Lazy::new(cosmic_time::id::Cards::unique);
 
 #[derive(Clone, Copy, Debug, PartialEq, PartialOrd, Ord, Eq)]
 pub enum ThemeVariant {
@@ -76,6 +81,8 @@ pub enum Message {
     TogglerToggled(bool),
     ViewSwitcher(segmented_button::Entity),
     InputChanged(String),
+    ClearAll,
+    CardsToggled(bool),
 }
 
 pub enum Output {
@@ -98,6 +105,9 @@ pub struct State {
     pub toggler_value: bool,
     pub view_switcher: segmented_button::SingleSelectModel,
     pub entry_value: String,
+    pub cards_value: bool,
+    cards: Vec<String>,
+    pub timeline: Rc<RefCell<Timeline>>,
 }
 
 impl Default for State {
@@ -135,7 +145,15 @@ impl Default for State {
                 .insert(|b| b.text("Segmented Button").data(DemoView::TabB))
                 .insert(|b| b.text("Tab C").data(DemoView::TabC))
                 .build(),
+            cards_value: false,
             entry_value: String::new(),
+            cards: vec![
+                "card 1".to_string(),
+                "card 2".to_string(),
+                "card 3".to_string(),
+                "card 4".to_string(),
+            ],
+            timeline: Rc::new(RefCell::new(Default::default())),
         }
     }
 }
@@ -171,6 +189,13 @@ impl State {
             Message::InputChanged(s) => {
                 self.entry_value = s;
             }
+            Message::ClearAll => {
+                self.cards.clear();
+            }
+            Message::CardsToggled(v) => {
+                self.cards_value = v;
+                self.update_cards();
+            }
         }
 
         None
@@ -203,7 +228,7 @@ impl State {
 
         let choose_icon_theme =
             segmented_selection::horizontal(&self.icon_themes).on_activate(Message::IconTheme);
-
+        let timeline = self.timeline.borrow();
         settings::view_column(vec![
             window.page_title(Page::Demo),
             view_switcher::horizontal(&self.view_switcher)
@@ -435,6 +460,26 @@ impl State {
                 .padding(8)
                 .width(Length::Fill)
                 .into(),
+            container(anim!(
+                //cards
+                CARDS,
+                &timeline,
+                self.cards
+                    .iter()
+                    .map(|c| text(c).size(24).width(Length::Fill).into())
+                    .collect(),
+                Message::ClearAll,
+                |_, e| Message::CardsToggled(e),
+                "Show More",
+                "Show Less",
+                "Clear All",
+                None,
+                self.cards_value,
+            ))
+            .layer(cosmic::cosmic_theme::Layer::Secondary)
+            .padding(16)
+            .style(cosmic::theme::Container::Secondary)
+            .into(),
             text_input(
                 "Type to search apps or type “?” for more options...",
                 &self.entry_value,
@@ -447,5 +492,16 @@ impl State {
             .into(),
         ])
         .into()
+    }
+
+    fn update_cards(&mut self) {
+        let mut timeline = self.timeline.borrow_mut();
+        let chain = if self.cards_value {
+            chain::Cards::on(CARDS.clone(), 1.)
+        } else {
+            chain::Cards::off(CARDS.clone(), 1.)
+        };
+        timeline.set_chain(chain);
+        timeline.start();
     }
 }

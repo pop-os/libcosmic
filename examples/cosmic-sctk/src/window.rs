@@ -10,9 +10,10 @@ use cosmic::{
     },
     iced_futures::Subscription,
     iced_style::application,
+    iced_widget::text,
     theme::{self, Theme},
     widget::{
-        button, header_bar, nav_bar, nav_bar_toggle,
+        button, cosmic_container, header_bar, nav_bar, nav_bar_toggle,
         rectangle_tracker::{rectangle_tracker_subscription, RectangleTracker, RectangleUpdate},
         scrollable, segmented_button, segmented_selection, settings, toggler, IconSource,
     },
@@ -27,6 +28,7 @@ use theme::Button as ButtonTheme;
 
 static DEBUG_TOGGLER: Lazy<id::Toggler> = Lazy::new(id::Toggler::unique);
 static TOGGLER: Lazy<id::Toggler> = Lazy::new(id::Toggler::unique);
+static CARDS: Lazy<id::Cards> = Lazy::new(id::Cards::unique);
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum Page {
@@ -114,6 +116,7 @@ pub struct Window {
     slider_value: f32,
     checkbox_value: bool,
     toggler_value: bool,
+    cards_value: bool,
     pick_list_selected: Option<&'static str>,
     nav_bar_pages: segmented_button::SingleSelectModel,
     nav_bar_toggled_condensed: bool,
@@ -171,6 +174,7 @@ pub enum Message {
     SliderChanged(f32),
     CheckboxToggled(bool),
     TogglerToggled(bool),
+    CardsToggled(bool),
     PickListSelected(&'static str),
     RowSelected(usize),
     Close,
@@ -205,6 +209,17 @@ impl Window {
         };
         timeline.set_chain(chain);
 
+        timeline.start();
+    }
+
+    fn update_cards(&mut self) {
+        let timeline = &mut self.timeline;
+        let chain = if self.cards_value {
+            chain::Cards::on(CARDS.clone(), 1.)
+        } else {
+            chain::Cards::off(CARDS.clone(), 1.)
+        };
+        timeline.set_chain(chain);
         timeline.start();
     }
 }
@@ -276,6 +291,10 @@ impl Application for Window {
                 self.toggler_value = value;
                 self.update_togglers();
             }
+            Message::CardsToggled(value) => {
+                self.cards_value = value;
+                self.update_cards();
+            }
             Message::PickListSelected(value) => self.pick_list_selected = Some(value),
             Message::Close => self.exit = true,
             Message::ToggleNavBar => self.nav_bar_toggled = !self.nav_bar_toggled,
@@ -288,9 +307,7 @@ impl Application for Window {
             Message::RowSelected(row) => println!("Selected row {row}"),
             Message::InputChanged => {}
             Message::Rectangle(r) => match r {
-                RectangleUpdate::Rectangle(r) => {
-                    dbg!(r);
-                }
+                RectangleUpdate::Rectangle(_) => {}
                 RectangleUpdate::Init(t) => {
                     self.rectangle_tracker.replace(t);
                 }
@@ -435,6 +452,30 @@ impl Application for Window {
                         "Segmented Button",
                         segmented_selection::horizontal(&self.selection)
                             .on_activate(Message::Selection),
+                    ))
+                    .add(settings::item(
+                        "Cards",
+                        cosmic_container::container(anim!(
+                            //cards
+                            CARDS,
+                            &self.timeline,
+                            vec![
+                                text("Card 1").size(24).width(Length::Fill).into(),
+                                text("Card 2").size(24).width(Length::Fill).into(),
+                                text("Card 3").size(24).width(Length::Fill).into(),
+                                text("Card 4").size(24).width(Length::Fill).into(),
+                            ],
+                            Message::Ignore,
+                            |_, e| Message::CardsToggled(e),
+                            "Show More",
+                            "Show Less",
+                            "Clear All",
+                            None,
+                            self.cards_value,
+                        ))
+                        .layer(cosmic::cosmic_theme::Layer::Secondary)
+                        .padding(16)
+                        .style(cosmic::theme::Container::Secondary),
                     ))
                     .into(),
             ])
