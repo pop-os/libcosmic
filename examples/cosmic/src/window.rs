@@ -17,9 +17,12 @@ use cosmic::{
     },
     Element, ElementExt,
 };
+use cosmic_time::{Instant, Timeline};
 use log::error;
 use std::{
     borrow::Cow,
+    cell::RefCell,
+    rc::Rc,
     sync::{
         atomic::{AtomicU32, Ordering},
         Arc,
@@ -161,6 +164,7 @@ pub struct Window {
     scale_factor: f64,
     scale_factor_string: String,
     system_theme: Arc<CosmicTheme>,
+    timeline: Rc<RefCell<Timeline>>,
 }
 
 impl Window {
@@ -206,6 +210,7 @@ pub enum Message {
     ToggleWarning,
     FontsLoaded,
     SystemTheme(CosmicTheme),
+    Tick(Instant),
 }
 
 impl From<Page> for Message {
@@ -352,6 +357,7 @@ impl Application for Window {
         window.insert_page(Page::TimeAndLanguage(None));
         window.insert_page(Page::Accessibility);
         window.insert_page(Page::Applications);
+        window.demo.timeline = window.timeline.clone();
 
         (window, load_fonts().map(|_| Message::FontsLoaded))
     }
@@ -393,6 +399,10 @@ impl Application for Window {
                         Message::SystemTheme(t.into_srgba())
                     }
                 }),
+            self.timeline
+                .borrow()
+                .as_subscription()
+                .map(|(_, instant)| Self::Message::Tick(instant)),
         ])
     }
 
@@ -452,6 +462,7 @@ impl Application for Window {
             Message::SystemTheme(t) => {
                 self.system_theme = Arc::new(t);
             }
+            Message::Tick(instant) => self.timeline.borrow_mut().now(instant),
         }
         ret
     }
