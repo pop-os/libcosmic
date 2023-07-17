@@ -193,6 +193,7 @@ pub enum Button {
     Link,
     LinkActive,
     Transparent,
+    Card,
     Custom {
         active: Box<dyn Fn(&Theme) -> button::Appearance>,
         hover: Box<dyn Fn(&Theme) -> button::Appearance>,
@@ -220,6 +221,7 @@ impl Button {
             Button::LinkActive => &cosmic.accent,
             Button::Transparent => &TRANSPARENT_COMPONENT,
             Button::Deactivated => &theme.current_container().component,
+            Button::Card => &theme.current_container().component,
             Button::Custom { .. } => &TRANSPARENT_COMPONENT,
         }
     }
@@ -237,6 +239,7 @@ impl button::StyleSheet for Theme {
         button::Appearance {
             border_radius: match style {
                 Button::Link => 0.0.into(),
+                Button::Card => 8.0.into(),
                 _ => 24.0.into(),
             },
             background: match style {
@@ -282,6 +285,30 @@ impl button::StyleSheet for Theme {
                 Button::Link => None,
                 Button::LinkActive => Some(Background::Color(component.divider.into())),
                 _ => Some(Background::Color(component.hover.into())),
+            },
+            ..active
+        }
+    }
+
+    fn disabled(&self, style: &Self::Style) -> button::Appearance {
+        let active = self.active(style);
+
+        if matches!(style, Button::Card) {
+            return active;
+        }
+
+        button::Appearance {
+            shadow_offset: iced_core::Vector::default(),
+            background: active.background.map(|background| match background {
+                Background::Color(color) => Background::Color(Color {
+                    a: color.a * 0.5,
+                    ..color
+                }),
+                Background::Gradient(gradient) => Background::Gradient(gradient.mul_alpha(0.5)),
+            }),
+            text_color: Color {
+                a: active.text_color.a * 0.5,
+                ..active.text_color
             },
             ..active
         }
@@ -494,6 +521,7 @@ pub enum Container {
     Transparent,
     HeaderBar,
     Custom(Box<dyn Fn(&Theme) -> container::Appearance>),
+    Card,
 }
 
 impl Container {
@@ -558,6 +586,39 @@ impl container::StyleSheet for Theme {
                     border_radius: 2.0.into(),
                     border_width: 0.0,
                     border_color: Color::TRANSPARENT,
+                }
+            }
+            Container::Card => {
+                let palette = self.cosmic();
+
+                match self.layer {
+                    cosmic_theme::Layer::Background => container::Appearance {
+                        text_color: Some(Color::from(palette.background.component.on)),
+                        background: Some(iced::Background::Color(
+                            palette.background.component.base.into(),
+                        )),
+                        border_radius: 8.0.into(),
+                        border_width: 0.0,
+                        border_color: Color::TRANSPARENT,
+                    },
+                    cosmic_theme::Layer::Primary => container::Appearance {
+                        text_color: Some(Color::from(palette.primary.component.on)),
+                        background: Some(iced::Background::Color(
+                            palette.primary.component.base.into(),
+                        )),
+                        border_radius: 8.0.into(),
+                        border_width: 0.0,
+                        border_color: Color::TRANSPARENT,
+                    },
+                    cosmic_theme::Layer::Secondary => container::Appearance {
+                        text_color: Some(Color::from(palette.secondary.component.on)),
+                        background: Some(iced::Background::Color(
+                            palette.secondary.component.base.into(),
+                        )),
+                        border_radius: 8.0.into(),
+                        border_width: 0.0,
+                        border_color: Color::TRANSPARENT,
+                    },
                 }
             }
         }
@@ -784,7 +845,7 @@ impl pane_grid::StyleSheet for Theme {
         })
     }
 
-    fn hovered_region(&self, style: &Self::Style) -> pane_grid::Appearance {
+    fn hovered_region(&self, _style: &Self::Style) -> pane_grid::Appearance {
         let theme = self.cosmic();
         pane_grid::Appearance {
             background: Background::Color(theme.bg_color().into()),
@@ -1175,4 +1236,25 @@ pub fn theme_subscription(id: u64) -> Subscription<crate::theme::Theme> {
         );
         crate::theme::Theme::custom(Arc::new(theme))
     })
+}
+
+impl crate::widget::card::style::StyleSheet for Theme {
+    fn default(&self) -> crate::widget::card::style::Appearance {
+        let cosmic = self.cosmic();
+
+        match self.layer {
+            cosmic_theme::Layer::Background => crate::widget::card::style::Appearance {
+                card_1: Background::Color(cosmic.background.component.hover.into()),
+                card_2: Background::Color(cosmic.background.component.pressed.into()),
+            },
+            cosmic_theme::Layer::Primary => crate::widget::card::style::Appearance {
+                card_1: Background::Color(cosmic.primary.component.hover.into()),
+                card_2: Background::Color(cosmic.primary.component.pressed.into()),
+            },
+            cosmic_theme::Layer::Secondary => crate::widget::card::style::Appearance {
+                card_1: Background::Color(cosmic.secondary.component.hover.into()),
+                card_2: Background::Color(cosmic.secondary.component.pressed.into()),
+            },
+        }
+    }
 }
