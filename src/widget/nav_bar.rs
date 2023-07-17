@@ -14,6 +14,9 @@ use iced_core::Color;
 
 use crate::{theme, widget::segmented_button, Theme};
 
+pub type Id = segmented_button::Entity;
+pub type Model = segmented_button::SingleSelectModel;
+
 /// Navigation side panel for switching between views.
 ///
 /// For details on the model, see the [`segmented_button`] module for more details.

@@ -260,7 +260,7 @@ impl<'a> Icon<'a> {
         self.hash(&mut hasher);
 
         if self.theme.is_none() {
-            crate::settings::DEFAULT_ICON_THEME.with(|f| f.borrow().hash(&mut hasher));
+            crate::icon_theme::DEFAULT.with(|f| f.borrow().hash(&mut hasher));
         }
 
         let hash = hasher.finish();
@@ -291,7 +291,7 @@ impl<'a, Message: 'static> From<Icon<'a>> for Element<'a, Message> {
 
 #[must_use]
 pub fn load_icon(name: &str, size: u16, theme: Option<&str>) -> Option<PathBuf> {
-    let icon = crate::settings::DEFAULT_ICON_THEME.with(|default_theme| {
+    let icon = crate::icon_theme::DEFAULT.with(|default_theme| {
         let default_theme = default_theme.borrow();
         freedesktop_icons::lookup(name)
             .with_size(size)

@@ -1221,7 +1221,7 @@ pub fn theme() -> Theme {
     crate::theme::Theme::custom(Arc::new(t))
 }
 
-pub fn theme_subscription(id: u64) -> Subscription<crate::theme::Theme> {
+pub fn subscription(id: u64) -> Subscription<crate::theme::Theme> {
     config_subscription::<u64, crate::cosmic_theme::Theme<CssColor>>(
         id,
         crate::cosmic_theme::NAME.into(),

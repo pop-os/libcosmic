@@ -184,7 +184,7 @@ impl State {
             Message::IconTheme(key) => {
                 self.icon_themes.activate(key);
                 if let Some(theme) = self.icon_themes.text(key) {
-                    cosmic::settings::set_default_icon_theme(theme);
+                    cosmic::icon_theme::set_default(theme);
                 }
             }
             Message::InputChanged(s) => {

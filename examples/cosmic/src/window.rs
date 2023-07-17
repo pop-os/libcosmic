@@ -483,9 +483,8 @@ impl Application for Window {
             .on_drag(Message::Drag)
             .start(
                 nav_bar_toggle()
-                    .on_nav_bar_toggled(nav_bar_message)
-                    .nav_bar_active(nav_bar_toggled)
-                    .into(),
+                    .on_toggle(nav_bar_message)
+                    .active(nav_bar_toggled),
             );
 
         if self.show_maximize {
