@@ -466,7 +466,7 @@ impl State {
                 &timeline,
                 self.cards
                     .iter()
-                    .map(|c| text(c).size(24).width(Length::Fill).into())
+                    .map(|c| column![text("test"), text(c).size(24).width(Length::Fill)].into())
                     .collect(),
                 Message::ClearAll,
                 |_, e| Message::CardsToggled(e),
