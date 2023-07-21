@@ -81,6 +81,7 @@ pub enum Message {
     TogglerToggled(bool),
     ViewSwitcher(segmented_button::Entity),
     InputChanged(String),
+    DeleteCard(usize),
     ClearAll,
     CardsToggled(bool),
 }
@@ -195,6 +196,9 @@ impl State {
             Message::CardsToggled(v) => {
                 self.cards_value = v;
                 self.update_cards();
+            }
+            Message::DeleteCard(i) => {
+                self.cards.remove(i);
             }
         }
 
@@ -466,7 +470,14 @@ impl State {
                 &timeline,
                 self.cards
                     .iter()
-                    .map(|c| column![text("test"), text(c).size(24).width(Length::Fill)].into())
+                    .enumerate()
+                    .map(|(i, c)| column![
+                        button(cosmic::theme::Button::Text)
+                            .text("Delete me")
+                            .on_press(Message::DeleteCard(i)),
+                        text(c).size(24).width(Length::Fill)
+                    ]
+                    .into())
                     .collect(),
                 Message::ClearAll,
                 |_, e| Message::CardsToggled(e),
