@@ -14,40 +14,43 @@ Light (
             c: "#966800",
         ),
         gray_1: (
-            c: "#DEDEDE",
+            c: "#DDDDDD",
         ),
         gray_2: (
-            c: "#E9E9E9",
+            c: "#E8E8E8",
         ),
         gray_3: (
-            c: "#F4F4F4",
+            c: "#F3F3F3",
         ),
-        neutral_1: (
+        neutral_0: (
             c: "#FFFFFF",
         ),
+        neutral_1: (
+            c: "#E2E2E2",
+        ),
         neutral_2: (
-            c: "#E4E4E4",
+            c: "#C6C6C6",
         ),
         neutral_3: (
-            c: "#C9C9C9",
+            c: "#ABABAB",
         ),
         neutral_4: (
-            c: "#AEAEAE",
+            c: "#919191",
         ),
         neutral_5: (
-            c: "#939393",
+            c: "#777777",
         ),
         neutral_6: (
-            c: "#787878",
+            c: "#5E5E5E",
         ),
         neutral_7: (
-            c: "#5D5D5D",
+            c: "#474747",
         ),
         neutral_8: (
-            c: "#424242",
+            c: "#303030",
         ),
         neutral_9: (
-            c: "#272727",
+            c: "#1B1B1B",
         ),
         neutral_10: (
             c: "#000000",

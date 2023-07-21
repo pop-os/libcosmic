@@ -105,6 +105,8 @@ pub struct CosmicPaletteInner<C> {
 
     /// System Neutrals
     /// A wider spread of dark colors for more general use.
+    pub neutral_0: C,
+    /// A wider spread of dark colors for more general use.
     pub neutral_1: C,
     /// A wider spread of dark colors for more general use.
     pub neutral_2: C,
@@ -166,6 +168,7 @@ impl From<CosmicPaletteInner<CssColor>> for CosmicPaletteInner<Srgba> {
             gray_1: p.gray_1.into(),
             gray_2: p.gray_2.into(),
             gray_3: p.gray_3.into(),
+            neutral_0: p.neutral_0.into(),
             neutral_1: p.neutral_1.into(),
             neutral_2: p.neutral_2.into(),
             neutral_3: p.neutral_3.into(),

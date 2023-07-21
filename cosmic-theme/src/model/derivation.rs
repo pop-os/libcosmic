@@ -334,7 +334,7 @@ where
         match (p, t) {
             (CosmicPalette::Dark(p), ComponentType::Background) => Self::component(
                 p.gray_1,
-                p.neutral_1,
+                p.neutral_0,
                 p.neutral_10,
                 0.08,
                 p.blue,
@@ -344,7 +344,7 @@ where
 
             (CosmicPalette::Dark(p), ComponentType::Primary) => Self::component(
                 p.gray_2,
-                p.neutral_1,
+                p.neutral_0,
                 p.neutral_10,
                 0.08,
                 p.blue,
@@ -354,7 +354,7 @@ where
 
             (CosmicPalette::Dark(p), ComponentType::Secondary) => Self::component(
                 p.gray_3,
-                p.neutral_1,
+                p.neutral_0,
                 p.neutral_10,
                 0.08,
                 p.blue,
@@ -363,7 +363,7 @@ where
             ),
             (CosmicPalette::HighContrastDark(p), ComponentType::Background) => Self::component(
                 p.gray_1,
-                p.neutral_1,
+                p.neutral_0,
                 p.neutral_10,
                 0.08,
                 p.blue,
@@ -372,7 +372,7 @@ where
             ),
             (CosmicPalette::HighContrastDark(p), ComponentType::Primary) => Self::component(
                 p.gray_2,
-                p.neutral_1,
+                p.neutral_0,
                 p.neutral_10,
                 0.08,
                 p.blue,
@@ -381,7 +381,7 @@ where
             ),
             (CosmicPalette::HighContrastDark(p), ComponentType::Secondary) => Self::component(
                 p.gray_3,
-                p.neutral_1,
+                p.neutral_0,
                 p.neutral_10.clone(),
                 0.08,
                 p.blue,
@@ -391,8 +391,8 @@ where
 
             (CosmicPalette::Light(p), ComponentType::Background) => Component::component(
                 p.gray_1.clone(),
-                p.neutral_1.clone(),
-                p.neutral_1,
+                p.neutral_0.clone(),
+                p.neutral_0,
                 0.75,
                 p.blue.clone(),
                 p.neutral_8,
@@ -400,8 +400,8 @@ where
             ),
             (CosmicPalette::Light(p), ComponentType::Primary) => Component::component(
                 p.gray_2.clone(),
-                p.neutral_1.clone(),
-                p.neutral_1,
+                p.neutral_0.clone(),
+                p.neutral_0,
                 0.9,
                 p.blue.clone(),
                 p.neutral_8,
@@ -409,8 +409,8 @@ where
             ),
             (CosmicPalette::Light(p), ComponentType::Secondary) => Component::component(
                 p.gray_3.clone(),
-                p.neutral_1.clone(),
-                p.neutral_1,
+                p.neutral_0.clone(),
+                p.neutral_0,
                 1.0,
                 p.blue.clone(),
                 p.neutral_8,
@@ -419,8 +419,8 @@ where
             (CosmicPalette::HighContrastLight(p), ComponentType::Background) => {
                 Component::component(
                     p.gray_1.clone(),
-                    p.neutral_1.clone(),
-                    p.neutral_1,
+                    p.neutral_0.clone(),
+                    p.neutral_0,
                     0.75,
                     p.blue.clone(),
                     p.neutral_9,
@@ -429,8 +429,8 @@ where
             }
             (CosmicPalette::HighContrastLight(p), ComponentType::Primary) => Component::component(
                 p.gray_2.clone(),
-                p.neutral_1.clone(),
-                p.neutral_1,
+                p.neutral_0.clone(),
+                p.neutral_0,
                 0.9,
                 p.blue.clone(),
                 p.neutral_9,
@@ -439,8 +439,8 @@ where
             (CosmicPalette::HighContrastLight(p), ComponentType::Secondary) => {
                 Component::component(
                     p.gray_3.clone(),
-                    p.neutral_1.clone(),
-                    p.neutral_1,
+                    p.neutral_0.clone(),
+                    p.neutral_0,
                     1.0,
                     p.blue.clone(),
                     p.neutral_9,
@@ -459,21 +459,21 @@ where
             | (CosmicPalette::Light(p), ComponentType::Warning)
             | (CosmicPalette::HighContrastLight(p), ComponentType::Warning)
             | (CosmicPalette::HighContrastDark(p), ComponentType::Warning) => {
-                Component::colored_component(p.yellow.clone(), p.neutral_1, p.blue.clone())
+                Component::colored_component(p.yellow.clone(), p.neutral_0, p.blue.clone())
             }
 
             (CosmicPalette::Dark(p), ComponentType::Success)
             | (CosmicPalette::Light(p), ComponentType::Success)
             | (CosmicPalette::HighContrastLight(p), ComponentType::Success)
             | (CosmicPalette::HighContrastDark(p), ComponentType::Success) => {
-                Component::colored_component(p.green.clone(), p.neutral_1, p.blue.clone())
+                Component::colored_component(p.green.clone(), p.neutral_0, p.blue.clone())
             }
 
             (CosmicPalette::Dark(p), ComponentType::Accent)
             | (CosmicPalette::Light(p), ComponentType::Accent)
             | (CosmicPalette::HighContrastDark(p), ComponentType::Accent)
             | (CosmicPalette::HighContrastLight(p), ComponentType::Accent) => {
-                Component::colored_component(p.blue.clone(), p.neutral_1, p.blue.clone())
+                Component::colored_component(p.blue.clone(), p.neutral_0, p.blue.clone())
             }
         }
     }
