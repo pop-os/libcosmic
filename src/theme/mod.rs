@@ -1191,11 +1191,14 @@ impl text_input::StyleSheet for Theme {
     }
 
     fn disabled_color(&self, _style: &Self::Style) -> Color {
-        todo!()
+        let palette = self.cosmic();
+        let mut neutral_9 = palette.palette.neutral_9;
+        neutral_9.alpha = 0.5;
+        neutral_9.into()
     }
 
-    fn disabled(&self, _style: &Self::Style) -> text_input::Appearance {
-        todo!()
+    fn disabled(&self, style: &Self::Style) -> text_input::Appearance {
+        self.active(style)
     }
 }
 
