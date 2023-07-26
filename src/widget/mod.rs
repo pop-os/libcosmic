@@ -20,6 +20,9 @@ pub use header_bar::{header_bar, HeaderBar};
 pub mod icon;
 pub use icon::{icon, Icon, IconSource};
 
+#[cfg(feature = "animated-image")]
+pub mod frames;
+
 pub mod list;
 pub use list::*;
 
