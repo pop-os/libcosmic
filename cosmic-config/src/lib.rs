@@ -9,7 +9,7 @@ use notify::{
 use serde::{de::DeserializeOwned, Serialize};
 use std::{
     borrow::Cow,
-    fs,
+    fmt, fs,
     hash::Hash,
     io::Write,
     path::{Path, PathBuf},
@@ -32,6 +32,22 @@ pub enum Error {
     Ron(ron::Error),
     RonSpanned(ron::error::SpannedError),
 }
+
+impl fmt::Display for Error {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            Self::AtomicWrites(err) => err.fmt(f),
+            Self::InvalidName(name) => write!(f, "invalid config name '{}'", name),
+            Self::Io(err) => err.fmt(f),
+            Self::NoConfigDirectory => write!(f, "cosmic config directory not found"),
+            Self::Notify(err) => err.fmt(f),
+            Self::Ron(err) => err.fmt(f),
+            Self::RonSpanned(err) => err.fmt(f),
+        }
+    }
+}
+
+impl std::error::Error for Error {}
 
 impl From<atomicwrites::Error<std::io::Error>> for Error {
     fn from(f: atomicwrites::Error<std::io::Error>) -> Self {
