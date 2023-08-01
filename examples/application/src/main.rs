@@ -1,6 +1,9 @@
+// Copyright 2023 System76 <info@system76.com>
+// SPDX-License-Identifier: MPL-2.0
+
 //! Testing ground for improving COSMIC application API ergonomics.
 
-use cosmic::app::{command, Command, Core, Settings};
+use cosmic::app::{Command, Core, Settings};
 use cosmic::widget::nav_bar;
 use cosmic::{executor, iced, ApplicationExt, Element};
 
@@ -31,9 +34,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 /// Messages that are used specifically by our [`App`].
 #[derive(Clone, Debug)]
-pub enum Message {
-    PageSelect(nav_bar::Id),
-}
+pub enum Message {}
 
 /// The [`App`] stores application-specific state.
 pub struct App {
@@ -86,16 +87,12 @@ impl cosmic::Application for App {
 
     /// Called when a navigation item is selected.
     fn on_nav_select(&mut self, id: nav_bar::Id) -> Command<Self::Message> {
-        command::message::app(Message::PageSelect(id))
+        self.nav_model.activate(id);
+        self.update_title()
     }
 
-    fn update(&mut self, message: Self::Message) -> Command<Self::Message> {
-        match message {
-            Message::PageSelect(id) => {
-                self.nav_model.activate(id);
-                return self.update_title();
-            }
-        }
+    fn update(&mut self, _message: Self::Message) -> Command<Self::Message> {
+        Command::none()
     }
 
     fn view(&self) -> Element<Self::Message> {
