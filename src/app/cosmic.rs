@@ -1,3 +1,6 @@
+// Copyright 2023 System76 <info@system76.com>
+// SPDX-License-Identifier: MPL-2.0
+
 use super::{command, Application, ApplicationExt, Core, Subscription};
 use crate::theme::{self, Theme};
 use crate::widget::nav_bar;
