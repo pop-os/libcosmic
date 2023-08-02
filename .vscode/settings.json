@@ -1,5 +1,4 @@
 {
-    "rust-analyzer.check.overrideCommand": [
-        "cargo", "clippy", "--no-deps", "--message-format=json", "--", "-W", "clippy::pedantic"
-    ]
+    "rust-analyzer.check.overrideCommand": ["just", "check-json"],
+    "git-blame.gitWebUrl": ""
 }

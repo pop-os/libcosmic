@@ -6,7 +6,7 @@ use cosmic::{
     iced::{
         wayland::window::{start_drag_window, toggle_maximize},
         widget::{column, container, horizontal_space, pick_list, progress_bar, row, slider},
-        window, Color, Event,
+        window, Color,
     },
     iced_futures::Subscription,
     iced_style::application,
@@ -15,7 +15,7 @@ use cosmic::{
     widget::{
         button, cosmic_container, header_bar, nav_bar, nav_bar_toggle,
         rectangle_tracker::{rectangle_tracker_subscription, RectangleTracker, RectangleUpdate},
-        scrollable, segmented_button, segmented_selection, settings, toggler, IconSource,
+        scrollable, segmented_button, segmented_selection, settings, IconSource,
     },
     Element, ElementExt,
 };
@@ -336,9 +336,8 @@ impl Application for Window {
             .on_drag(Message::Drag)
             .start(
                 nav_bar_toggle()
-                    .on_nav_bar_toggled(nav_bar_message)
-                    .nav_bar_active(nav_bar_toggled)
-                    .into(),
+                    .on_toggle(nav_bar_message)
+                    .active(nav_bar_toggled),
             );
 
         if self.show_maximize {
@@ -509,7 +508,7 @@ impl Application for Window {
         self.theme.clone()
     }
 
-    fn close_requested(&self, id: window::Id) -> Self::Message {
+    fn close_requested(&self, _id: window::Id) -> Self::Message {
         Message::Close
     }
     fn subscription(&self) -> iced::Subscription<Self::Message> {

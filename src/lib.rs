@@ -3,8 +3,22 @@
 
 #![allow(clippy::module_name_repetitions)]
 
+pub mod app;
+pub use app::{Application, ApplicationExt};
+
+pub mod command;
 pub use cosmic_config;
 pub use cosmic_theme;
+
+pub mod executor;
+#[cfg(feature = "tokio")]
+pub use executor::single::Executor as SingleThreadExecutor;
+
+mod ext;
+pub use ext::ElementExt;
+
+pub mod font;
+
 pub use iced;
 pub use iced_core;
 pub use iced_futures;
@@ -16,23 +30,17 @@ pub use iced_style;
 pub use iced_widget;
 #[cfg(feature = "winit")]
 pub use iced_winit;
+
+pub mod icon_theme;
+pub mod keyboard_nav;
+
 #[cfg(feature = "wayland")]
 pub use sctk;
-pub mod executor;
-pub mod font;
-pub mod keyboard_nav;
+
 pub mod theme;
+pub use theme::Theme;
+
 pub mod widget;
 
-#[cfg(feature = "tokio")]
-pub use executor::single::Executor as SingleThreadExecutor;
-
-pub mod settings;
-pub use settings::{settings, settings_with_flags};
-
-mod ext;
-pub use ext::ElementExt;
-
-pub use theme::Theme;
 pub type Renderer = iced::Renderer<Theme>;
 pub type Element<'a, Message> = iced::Element<'a, Message, Renderer>;

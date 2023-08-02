@@ -12,23 +12,23 @@ use super::IconSource;
 
 #[derive(Setters)]
 pub struct NavBarToggle<Message> {
-    nav_bar_active: bool,
+    active: bool,
     #[setters(strip_option)]
-    on_nav_bar_toggled: Option<Message>,
+    on_toggle: Option<Message>,
 }
 
 #[must_use]
 pub fn nav_bar_toggle<Message>() -> NavBarToggle<Message> {
     NavBarToggle {
-        nav_bar_active: false,
-        on_nav_bar_toggled: None,
+        active: false,
+        on_toggle: None,
     }
 }
 
-impl<Message: 'static + Clone> From<NavBarToggle<Message>> for Element<'static, Message> {
+impl<'a, Message: 'static + Clone> From<NavBarToggle<Message>> for Element<'a, Message> {
     fn from(nav_bar_toggle: NavBarToggle<Message>) -> Self {
         let mut widget = super::icon(
-            if nav_bar_toggle.nav_bar_active {
+            if nav_bar_toggle.active {
                 IconSource::svg_from_memory(&include_bytes!("../../res/sidebar-active.svg")[..])
             } else {
                 IconSource::from("open-menu-symbolic")
@@ -41,7 +41,7 @@ impl<Message: 'static + Clone> From<NavBarToggle<Message>> for Element<'static, 
         .padding([8, 16, 8, 16])
         .style(theme::Button::Text);
 
-        if let Some(message) = nav_bar_toggle.on_nav_bar_toggled {
+        if let Some(message) = nav_bar_toggle.on_toggle {
             widget = widget.on_press(message);
         }
 

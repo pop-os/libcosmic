@@ -10,35 +10,80 @@ use std::borrow::Cow;
 #[must_use]
 pub fn header_bar<'a, Message>() -> HeaderBar<'a, Message> {
     HeaderBar {
-        title: "".into(),
+        title: Cow::Borrowed(""),
         on_close: None,
         on_drag: None,
         on_maximize: None,
         on_minimize: None,
-        start: None,
-        center: None,
-        end: None,
+        start: Vec::new(),
+        center: Vec::new(),
+        end: Vec::new(),
     }
 }
 
 #[derive(Setters)]
 pub struct HeaderBar<'a, Message> {
-    #[setters(into)]
+    /// Defines the title of the window
+    #[setters(skip)]
     title: Cow<'a, str>,
+
+    /// A message emitted when the close button is pressed.
     #[setters(strip_option)]
     on_close: Option<Message>,
+
+    /// A message emitted when dragged.
     #[setters(strip_option)]
     on_drag: Option<Message>,
+
+    /// A message emitted when the maximize button is pressed.
     #[setters(strip_option)]
     on_maximize: Option<Message>,
+
+    /// A message emitted when the minimize button is pressed.
     #[setters(strip_option)]
     on_minimize: Option<Message>,
-    #[setters(strip_option)]
-    start: Option<Element<'a, Message>>,
-    #[setters(strip_option)]
-    center: Option<Element<'a, Message>>,
-    #[setters(strip_option)]
-    end: Option<Element<'a, Message>>,
+
+    /// Elements packed at the start of the headerbar.
+    #[setters(skip)]
+    start: Vec<Element<'a, Message>>,
+
+    /// Elements packed in the center of the headerbar.
+    #[setters(skip)]
+    center: Vec<Element<'a, Message>>,
+
+    /// Elements packed at the end of the headerbar.
+    #[setters(skip)]
+    end: Vec<Element<'a, Message>>,
+}
+
+impl<'a, Message: Clone + 'static> HeaderBar<'a, Message> {
+    /// Defines the title of the window
+    #[must_use]
+    pub fn title(mut self, title: impl Into<Cow<'a, str>> + 'a) -> Self {
+        self.title = title.into();
+        self
+    }
+
+    /// Pushes an element to the start region.
+    #[must_use]
+    pub fn start(mut self, widget: impl Into<Element<'a, Message>> + 'a) -> Self {
+        self.start.push(widget.into());
+        self
+    }
+
+    /// Pushes an element to the center region.
+    #[must_use]
+    pub fn center(mut self, widget: impl Into<Element<'a, Message>> + 'a) -> Self {
+        self.center.push(widget.into());
+        self
+    }
+
+    /// Pushes an element to the end region.
+    #[must_use]
+    pub fn end(mut self, widget: impl Into<Element<'a, Message>> + 'a) -> Self {
+        self.end.push(widget.into());
+        self
+    }
 }
 
 impl<'a, Message: Clone + 'static> HeaderBar<'a, Message> {
@@ -46,16 +91,28 @@ impl<'a, Message: Clone + 'static> HeaderBar<'a, Message> {
     pub fn into_element(mut self) -> Element<'a, Message> {
         let mut packed: Vec<Element<Message>> = Vec::with_capacity(4);
 
-        if let Some(start) = self.start.take() {
+        // Take ownership of the regions to be packed.
+        let start = std::mem::take(&mut self.start);
+        let center = std::mem::take(&mut self.center);
+        let mut end = std::mem::take(&mut self.end);
+
+        // If elements exist in the start region, append them here.
+        if !start.is_empty() {
             packed.push(
-                widget::container(start)
+                iced::widget::row(start)
+                    .align_items(iced::Alignment::Center)
+                    .apply(iced::widget::container)
                     .align_x(iced::alignment::Horizontal::Left)
                     .into(),
             );
         }
 
-        packed.push(if let Some(center) = self.center.take() {
-            widget::container(center)
+        // If elements exist in the center region, use them here.
+        // This will otherwise use the title as a widget if a title was defined.
+        packed.push(if !center.is_empty() {
+            iced::widget::row(center)
+                .align_items(iced::Alignment::Center)
+                .apply(iced::widget::container)
                 .align_x(iced::alignment::Horizontal::Center)
                 .into()
         } else if self.title.is_empty() {
@@ -64,15 +121,17 @@ impl<'a, Message: Clone + 'static> HeaderBar<'a, Message> {
             self.title_widget()
         });
 
-        packed.push(if let Some(end) = self.end.take() {
-            widget::row(vec![end, self.window_controls()])
+        // Also packs the window controls at the very end.
+        end.push(self.window_controls());
+        packed.push(
+            iced::widget::row(end)
+                .align_items(iced::Alignment::Center)
                 .apply(widget::container)
                 .align_x(iced::alignment::Horizontal::Right)
-                .into()
-        } else {
-            self.window_controls()
-        });
+                .into(),
+        );
 
+        // Creates the headerbar widget.
         let mut widget = widget::row(packed)
             .height(Length::Fixed(50.0))
             .padding(8)
@@ -82,10 +141,12 @@ impl<'a, Message: Clone + 'static> HeaderBar<'a, Message> {
             .center_y()
             .apply(widget::mouse_area);
 
+        // Assigns a message to emit when the headerbar is dragged.
         if let Some(message) = self.on_drag.clone() {
             widget = widget.on_press(message);
         }
 
+        // Assigns a message to emit when the headerbar is double-clicked.
         if let Some(message) = self.on_maximize.clone() {
             widget = widget.on_release(message);
         }

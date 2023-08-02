@@ -7,7 +7,7 @@ edition = "2021"
 name = "cosmic"
 
 [features]
-default = ["winit", "tokio", "a11y"]
+default = ["wayland", "tokio", "a11y"]
 debug = ["iced/debug"]
 a11y = ["iced/a11y", "iced_accessibility"]
 wayland = ["iced/wayland", "iced_sctk", "sctk"]

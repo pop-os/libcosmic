@@ -1,3 +1,6 @@
+// Copyright 2023 System76 <info@system76.com>
+// SPDX-License-Identifier: MPL-2.0
+
 use iced::{
     event,
     keyboard::{self, KeyCode},
@@ -10,52 +13,57 @@ pub enum Message {
     Escape,
     FocusNext,
     FocusPrevious,
+    Fullscreen,
     Unfocus,
     Search,
 }
 
 pub fn subscription() -> Subscription<Message> {
-    subscription::events_with(|event, status| match (event, status) {
-        // Focus
-        (
+    subscription::events_with(|event, status| {
+        if event::Status::Ignored != status {
+            return None;
+        }
+
+        match event {
             Event::Keyboard(keyboard::Event::KeyPressed {
-                key_code: KeyCode::Tab,
+                key_code,
                 modifiers,
-                ..
-            }),
-            event::Status::Ignored,
-        ) => Some(if modifiers.shift() {
-            Message::FocusPrevious
-        } else {
-            Message::FocusNext
-        }),
-        // Escape
-        (
-            Event::Keyboard(keyboard::Event::KeyPressed {
-                key_code: KeyCode::Escape,
-                ..
-            }),
-            _,
-        ) => Some(Message::Escape),
-        // Search
-        (
-            Event::Keyboard(keyboard::Event::KeyPressed {
-                key_code: KeyCode::F,
-                modifiers,
-            }),
-            event::Status::Ignored,
-        ) => {
-            if modifiers.control() {
-                Some(Message::Search)
-            } else {
-                None
+            }) => match key_code {
+                KeyCode::Tab => {
+                    return Some(if modifiers.shift() {
+                        Message::FocusPrevious
+                    } else {
+                        Message::FocusNext
+                    });
+                }
+
+                KeyCode::Escape => {
+                    return Some(Message::Escape);
+                }
+
+                KeyCode::F11 => {
+                    return Some(Message::Fullscreen);
+                }
+
+                KeyCode::F => {
+                    return if modifiers.control() {
+                        Some(Message::Search)
+                    } else {
+                        None
+                    };
+                }
+
+                _ => (),
+            },
+
+            Event::Mouse(mouse::Event::ButtonPressed { .. }) => {
+                return Some(Message::Unfocus);
             }
+
+            _ => (),
         }
-        // Unfocus
-        (Event::Mouse(mouse::Event::ButtonPressed { .. }), event::Status::Ignored) => {
-            Some(Message::Unfocus)
-        }
-        _ => None,
+
+        None
     })
 }
 
