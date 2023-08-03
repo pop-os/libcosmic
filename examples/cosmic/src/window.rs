@@ -10,7 +10,7 @@ use cosmic::{
         window::{self, close, drag, minimize, toggle_maximize},
     },
     keyboard_nav,
-    theme::{self, CosmicTheme, CosmicThemeCss, Theme},
+    theme::{self, CosmicTheme, Theme},
     widget::{
         header_bar, icon, list, nav_bar, nav_bar_toggle, scrollable, segmented_button, settings,
         warning, IconSource,
@@ -389,16 +389,17 @@ impl Application for Window {
         Subscription::batch(vec![
             window_break.map(|_| Message::CondensedViewToggle),
             keyboard_nav::subscription().map(Message::KeyboardNav),
-            config_subscription::<_, CosmicThemeCss>(0, Cow::from("com.system76.CosmicTheme"), 1)
-                .map(|(_, update)| match update {
-                    Ok(t) => Message::SystemTheme(t.into_srgba()),
+            config_subscription::<_, CosmicTheme>(0, Cow::from("com.system76.CosmicTheme"), 1).map(
+                |(_, update)| match update {
+                    Ok(t) => Message::SystemTheme(t),
                     Err((errors, t)) => {
                         for error in errors {
                             error!("{:?}", error);
                         }
-                        Message::SystemTheme(t.into_srgba())
+                        Message::SystemTheme(t)
                     }
-                }),
+                },
+            ),
             self.timeline
                 .borrow()
                 .as_subscription()
