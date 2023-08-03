@@ -44,13 +44,12 @@ use palette::Srgba;
 pub type CosmicColor = ::palette::rgb::Srgba;
 pub type CosmicComponent = cosmic_theme::Component<CosmicColor>;
 pub type CosmicTheme = cosmic_theme::Theme<CosmicColor>;
-pub type CosmicThemeCss = cosmic_theme::Theme<cosmic_theme::util::CssColor>;
 
 lazy_static::lazy_static! {
-    pub static ref COSMIC_DARK: CosmicTheme = CosmicThemeCss::dark_default().into_srgba();
-    pub static ref COSMIC_HC_DARK: CosmicTheme = CosmicThemeCss::high_contrast_dark_default().into_srgba();
-    pub static ref COSMIC_LIGHT: CosmicTheme = CosmicThemeCss::light_default().into_srgba();
-    pub static ref COSMIC_HC_LIGHT: CosmicTheme = CosmicThemeCss::high_contrast_light_default().into_srgba();
+    pub static ref COSMIC_DARK: CosmicTheme = CosmicTheme::dark_default();
+    pub static ref COSMIC_HC_DARK: CosmicTheme = CosmicTheme::high_contrast_dark_default();
+    pub static ref COSMIC_LIGHT: CosmicTheme = CosmicTheme::light_default();
+    pub static ref COSMIC_HC_LIGHT: CosmicTheme = CosmicTheme::high_contrast_light_default();
     pub static ref TRANSPARENT_COMPONENT: Component<CosmicColor> = Component {
         base: CosmicColor::new(0.0, 0.0, 0.0, 0.0),
         hover: CosmicColor::new(0.0, 0.0, 0.0, 0.0),
@@ -1202,6 +1201,7 @@ impl text_input::StyleSheet for Theme {
     }
 }
 
+#[must_use]
 pub fn theme() -> Theme {
     let Ok(helper) = crate::cosmic_config::Config::new(
         crate::cosmic_theme::NAME,
@@ -1209,34 +1209,28 @@ pub fn theme() -> Theme {
     ) else {
         return crate::theme::Theme::dark();
     };
-    let t = crate::cosmic_theme::Theme::get_entry(&helper).map_or_else(
-        |(errors, theme)| {
-            for err in errors {
-                tracing::error!("{:?}", err);
-            }
-            theme.into_srgba()
-        },
-        crate::cosmic_theme::Theme::into_srgba,
-    );
+    let t = crate::cosmic_theme::Theme::get_entry(&helper).unwrap_or_else(|(errors, theme)| {
+        for err in errors {
+            tracing::error!("{:?}", err);
+        }
+        theme
+    });
     crate::theme::Theme::custom(Arc::new(t))
 }
 
 pub fn subscription(id: u64) -> Subscription<crate::theme::Theme> {
-    config_subscription::<u64, crate::cosmic_theme::Theme<CssColor>>(
+    config_subscription::<u64, crate::cosmic_theme::Theme<Srgba>>(
         id,
         crate::cosmic_theme::NAME.into(),
-        crate::cosmic_theme::Theme::<CssColor>::version(),
+        crate::cosmic_theme::Theme::<Srgba>::version(),
     )
     .map(|(_, res)| {
-        let theme = res.map_or_else(
-            |(errors, theme)| {
-                for err in errors {
-                    tracing::error!("{:?}", err);
-                }
-                theme.into_srgba()
-            },
-            crate::cosmic_theme::Theme::into_srgba,
-        );
+        let theme = res.unwrap_or_else(|(errors, theme)| {
+            for err in errors {
+                tracing::error!("{:?}", err);
+            }
+            theme
+        });
         crate::theme::Theme::custom(Arc::new(theme))
     })
 }
