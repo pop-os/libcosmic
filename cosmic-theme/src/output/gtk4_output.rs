@@ -10,7 +10,7 @@ use std::{fmt, fs::File, io::prelude::*, path::PathBuf};
 pub(crate) const CSS_DIR: &'static str = "css";
 pub(crate) const THEME_DIR: &'static str = "themes";
 
-/// Trait for outputting the Theme as Gtk4CSS
+/// Trait for outputting the Theme variables as Gtk4CSS
 pub trait Gtk4Output {
     /// turn the theme into css
     fn as_css(&self) -> String;
