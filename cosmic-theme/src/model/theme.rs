@@ -597,7 +597,7 @@ impl ThemeBuilder {
         let bg = if let Some(bg_color) = bg_color {
             bg_color
         } else {
-            p_ref.neutral_0.clone()
+            p_ref.gray_1.clone()
         };
         let ok_bg = Oklcha::from_color(bg);
         let step_array = steps(ok_bg);
