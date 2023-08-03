@@ -2,7 +2,7 @@ use palette::Srgba;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use std::fmt;
 
-use crate::{util::over, CosmicPalette};
+use crate::{composite::over, CosmicPalette};
 
 /// Theme Container colors of a theme, can be a theme background container, primary container, or secondary container
 #[derive(Clone, Debug, Default, Deserialize, Serialize, PartialEq, Eq)]

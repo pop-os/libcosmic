@@ -97,3 +97,6 @@ exclude = [
 
 [patch."https://github.com/pop-os/libcosmic"]
 libcosmic = { path = "./", features = ["wayland", "tokio", "a11y"]}
+
+[patch.crates-io]
+palette = {git = "https://github.com/Ogeon/palette", features = ["serializing"] }
