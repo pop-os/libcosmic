@@ -26,7 +26,7 @@ pub struct Settings {
     pub(crate) default_font: Font,
 
     /// Name of the icon theme to search by default.
-    #[setters(strip_option, into)]
+    #[setters(into)]
     pub(crate) default_icon_theme: Option<String>,
 
     /// Default size of fonts.
@@ -34,7 +34,6 @@ pub struct Settings {
 
     /// Whether the window should be resizable or not.
     /// and the size of the window border which can be dragged for a resize
-    #[setters(strip_option)]
     pub(crate) resizable: Option<f64>,
 
     /// Scale factor to use by default.
