@@ -2,7 +2,7 @@ use palette::Srgba;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use std::fmt;
 
-use crate::{composite::over, CosmicPalette};
+use crate::composite::over;
 
 /// Theme Container colors of a theme, can be a theme background container, primary container, or secondary container
 #[derive(Clone, Debug, Default, Deserialize, Serialize, PartialEq, Eq)]
@@ -31,130 +31,16 @@ where
         }
     }
 
-    pub(crate) fn new(
-        palette: CosmicPalette<C>,
-        container_type: ComponentType,
-        bg: C,
-        on_bg: C,
-    ) -> Self {
+    pub(crate) fn new(component: Component<C>, bg: C, on_bg: C) -> Self {
         let mut divider_c: Srgba = on_bg.clone().into();
         divider_c.alpha = 0.2;
 
         let divider = over(divider_c.clone(), bg.clone());
         Self {
             base: bg,
-            component: (palette, container_type).into(),
+            component,
             divider: divider.into(),
             on: on_bg,
-        }
-    }
-}
-
-impl<C> From<(CosmicPalette<C>, ContainerType)> for Container<C>
-where
-    C: Clone + fmt::Debug + Default + Into<Srgba> + From<Srgba> + Serialize + DeserializeOwned,
-{
-    fn from((p, t): (CosmicPalette<C>, ContainerType)) -> Self {
-        match (p, t) {
-            (CosmicPalette::Dark(p), ContainerType::Background) => Self::new(
-                CosmicPalette::Dark(p.clone()),
-                ComponentType::Background,
-                p.gray_1.clone(),
-                p.neutral_7.clone(),
-            ),
-            (CosmicPalette::Dark(p), ContainerType::Primary) => Self::new(
-                CosmicPalette::Dark(p.clone()),
-                ComponentType::Primary,
-                p.gray_2.clone(),
-                p.neutral_8.clone(),
-            ),
-            (CosmicPalette::Dark(p), ContainerType::Secondary) => Self::new(
-                CosmicPalette::Dark(p.clone()),
-                ComponentType::Secondary,
-                p.gray_3.clone(),
-                p.neutral_8.clone(),
-            ),
-            (CosmicPalette::HighContrastDark(p), ContainerType::Background) => Self::new(
-                CosmicPalette::HighContrastDark(p.clone()),
-                ComponentType::Background,
-                p.gray_1.clone(),
-                p.neutral_8.clone(),
-            ),
-            (CosmicPalette::HighContrastDark(p), ContainerType::Primary) => Self::new(
-                CosmicPalette::HighContrastDark(p.clone()),
-                ComponentType::Primary,
-                p.gray_2.clone(),
-                p.neutral_9.clone(),
-            ),
-            (CosmicPalette::HighContrastDark(p), ContainerType::Secondary) => Self::new(
-                CosmicPalette::HighContrastDark(p.clone()),
-                ComponentType::Secondary,
-                p.gray_3.clone(),
-                p.neutral_9.clone(),
-            ),
-            (CosmicPalette::Light(p), ContainerType::Background) => Self::new(
-                CosmicPalette::Light(p.clone()),
-                ComponentType::Background,
-                p.gray_1.clone(),
-                p.neutral_9.clone(),
-            ),
-            (CosmicPalette::Light(p), ContainerType::Primary) => Self::new(
-                CosmicPalette::Light(p.clone()),
-                ComponentType::Primary,
-                p.gray_2.clone(),
-                p.neutral_8.clone(),
-            ),
-            (CosmicPalette::Light(p), ContainerType::Secondary) => Self::new(
-                CosmicPalette::Light(p.clone()),
-                ComponentType::Secondary,
-                p.gray_3.clone(),
-                p.neutral_8.clone(),
-            ),
-            (CosmicPalette::HighContrastLight(p), ContainerType::Background) => Self::new(
-                CosmicPalette::HighContrastLight(p.clone()),
-                ComponentType::Background,
-                p.gray_1.clone(),
-                p.neutral_10.clone(),
-            ),
-            (CosmicPalette::HighContrastLight(p), ContainerType::Primary) => Self::new(
-                CosmicPalette::HighContrastLight(p.clone()),
-                ComponentType::Primary,
-                p.gray_2.clone(),
-                p.neutral_9.clone(),
-            ),
-            (CosmicPalette::HighContrastLight(p), ContainerType::Secondary) => Self::new(
-                CosmicPalette::HighContrastLight(p.clone()),
-                ComponentType::Secondary,
-                p.gray_3.clone(),
-                p.neutral_9.clone(),
-            ),
-        }
-    }
-}
-
-/// The type of the container
-#[derive(Copy, Clone, PartialEq, Debug, Deserialize, Serialize)]
-pub enum ContainerType {
-    /// Background type
-    Background,
-    /// Primary type
-    Primary,
-    /// Secondary type
-    Secondary,
-}
-
-impl Default for ContainerType {
-    fn default() -> Self {
-        Self::Background
-    }
-}
-
-impl fmt::Display for ContainerType {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match *self {
-            ContainerType::Background => write!(f, "Background"),
-            ContainerType::Primary => write!(f, "Primary Container"),
-            ContainerType::Secondary => write!(f, "Secondary Container"),
         }
     }
 }
@@ -263,8 +149,6 @@ where
     pub fn component(
         base: C,
         component_state_overlay: C,
-        base_overlay: C,
-        base_overlay_alpha: f32,
         accent: C,
         on_component: C,
         is_high_contrast: bool,
@@ -276,9 +160,6 @@ where
         component_state_overlay_20.alpha = 0.2;
 
         let base = base.into();
-        let mut base_overlay = base_overlay.into();
-        base_overlay.alpha = base_overlay_alpha;
-        let base = over(base_overlay, base);
         let mut base_50 = base.clone();
         base_50.alpha = 0.5;
 
@@ -303,178 +184,6 @@ where
             on: on_component.clone(),
             disabled: base_50.into(),
             on_disabled: on_50.into(),
-        }
-    }
-}
-
-/// Derived theme element from a palette and constraints
-#[derive(Debug)]
-pub struct Derivation<E> {
-    /// Derived  theme element
-    pub derived: E,
-    /// Derivation errors (Failed constraints)
-    pub errors: Vec<anyhow::Error>,
-}
-
-pub(crate) enum ComponentType {
-    Background,
-    Primary,
-    Secondary,
-    Destructive,
-    Warning,
-    Success,
-    Accent,
-}
-
-impl<C> From<(CosmicPalette<C>, ComponentType)> for Component<C>
-where
-    C: Clone + fmt::Debug + Default + Into<Srgba> + From<Srgba> + Serialize + DeserializeOwned,
-{
-    fn from((p, t): (CosmicPalette<C>, ComponentType)) -> Self {
-        match (p, t) {
-            (CosmicPalette::Dark(p), ComponentType::Background) => Self::component(
-                p.gray_1,
-                p.neutral_0,
-                p.neutral_10,
-                0.08,
-                p.accent,
-                p.neutral_8,
-                false,
-            ),
-
-            (CosmicPalette::Dark(p), ComponentType::Primary) => Self::component(
-                p.gray_2,
-                p.neutral_0,
-                p.neutral_10,
-                0.08,
-                p.accent,
-                p.neutral_8,
-                false,
-            ),
-
-            (CosmicPalette::Dark(p), ComponentType::Secondary) => Self::component(
-                p.gray_3,
-                p.neutral_0,
-                p.neutral_10,
-                0.08,
-                p.accent,
-                p.neutral_9,
-                false,
-            ),
-            (CosmicPalette::HighContrastDark(p), ComponentType::Background) => Self::component(
-                p.gray_1,
-                p.neutral_0,
-                p.neutral_10,
-                0.08,
-                p.accent,
-                p.neutral_9,
-                true,
-            ),
-            (CosmicPalette::HighContrastDark(p), ComponentType::Primary) => Self::component(
-                p.gray_2,
-                p.neutral_0,
-                p.neutral_10,
-                0.08,
-                p.accent,
-                p.neutral_9,
-                true,
-            ),
-            (CosmicPalette::HighContrastDark(p), ComponentType::Secondary) => Self::component(
-                p.gray_3,
-                p.neutral_0,
-                p.neutral_10.clone(),
-                0.08,
-                p.accent,
-                p.neutral_10,
-                true,
-            ),
-
-            (CosmicPalette::Light(p), ComponentType::Background) => Component::component(
-                p.gray_1.clone(),
-                p.neutral_0.clone(),
-                p.neutral_0,
-                0.75,
-                p.accent.clone(),
-                p.neutral_8,
-                false,
-            ),
-            (CosmicPalette::Light(p), ComponentType::Primary) => Component::component(
-                p.gray_2.clone(),
-                p.neutral_0.clone(),
-                p.neutral_0,
-                0.9,
-                p.accent.clone(),
-                p.neutral_8,
-                false,
-            ),
-            (CosmicPalette::Light(p), ComponentType::Secondary) => Component::component(
-                p.gray_3.clone(),
-                p.neutral_0.clone(),
-                p.neutral_0,
-                1.0,
-                p.accent.clone(),
-                p.neutral_8,
-                false,
-            ),
-            (CosmicPalette::HighContrastLight(p), ComponentType::Background) => {
-                Component::component(
-                    p.gray_1.clone(),
-                    p.neutral_0.clone(),
-                    p.neutral_0,
-                    0.75,
-                    p.accent.clone(),
-                    p.neutral_9,
-                    true,
-                )
-            }
-            (CosmicPalette::HighContrastLight(p), ComponentType::Primary) => Component::component(
-                p.gray_2.clone(),
-                p.neutral_0.clone(),
-                p.neutral_0,
-                0.9,
-                p.accent.clone(),
-                p.neutral_9,
-                true,
-            ),
-            (CosmicPalette::HighContrastLight(p), ComponentType::Secondary) => {
-                Component::component(
-                    p.gray_3.clone(),
-                    p.neutral_0.clone(),
-                    p.neutral_0,
-                    1.0,
-                    p.accent.clone(),
-                    p.neutral_9,
-                    true,
-                )
-            }
-
-            (CosmicPalette::Dark(p), ComponentType::Destructive)
-            | (CosmicPalette::Light(p), ComponentType::Destructive)
-            | (CosmicPalette::HighContrastLight(p), ComponentType::Destructive)
-            | (CosmicPalette::HighContrastDark(p), ComponentType::Destructive) => {
-                Component::colored_component(p.red.clone(), p.neutral_1.clone(), p.blue.clone())
-            }
-
-            (CosmicPalette::Dark(p), ComponentType::Warning)
-            | (CosmicPalette::Light(p), ComponentType::Warning)
-            | (CosmicPalette::HighContrastLight(p), ComponentType::Warning)
-            | (CosmicPalette::HighContrastDark(p), ComponentType::Warning) => {
-                Component::colored_component(p.yellow.clone(), p.neutral_0, p.blue.clone())
-            }
-
-            (CosmicPalette::Dark(p), ComponentType::Success)
-            | (CosmicPalette::Light(p), ComponentType::Success)
-            | (CosmicPalette::HighContrastLight(p), ComponentType::Success)
-            | (CosmicPalette::HighContrastDark(p), ComponentType::Success) => {
-                Component::colored_component(p.green.clone(), p.neutral_0, p.blue.clone())
-            }
-
-            (CosmicPalette::Dark(p), ComponentType::Accent)
-            | (CosmicPalette::Light(p), ComponentType::Accent)
-            | (CosmicPalette::HighContrastDark(p), ComponentType::Accent)
-            | (CosmicPalette::HighContrastLight(p), ComponentType::Accent) => {
-                Component::colored_component(p.blue.clone(), p.neutral_0, p.blue.clone())
-            }
         }
     }
 }

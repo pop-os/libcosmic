@@ -1,11 +1,11 @@
 use crate::{
-    util::CssColor, Component, ComponentType, Container, ContainerType, CornerRadii, CosmicPalette,
-    CosmicPaletteInner, Spacing, DARK_PALETTE, LIGHT_PALETTE, NAME, THEME_DIR,
+    steps::steps, Component, Container, CornerRadii, CosmicPalette, CosmicPaletteInner, Spacing,
+    DARK_PALETTE, LIGHT_PALETTE, NAME, THEME_DIR,
 };
 use anyhow::Context;
 use cosmic_config::{Config, ConfigGet, ConfigSet, CosmicConfigEntry};
 use directories::{BaseDirsExt, ProjectDirsExt};
-use palette::{Srgb, Srgba};
+use palette::{FromColor, Oklcha, Srgb, Srgba};
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use std::{
     fmt,
@@ -57,7 +57,7 @@ pub struct Theme<C> {
     pub is_high_contrast: bool,
 }
 
-impl CosmicConfigEntry for Theme<CssColor> {
+impl CosmicConfigEntry for Theme<Srgba> {
     fn write_entry(&self, config: &Config) -> Result<(), cosmic_config::Error> {
         let self_ = self.clone();
         // TODO do as transaction
@@ -86,35 +86,35 @@ impl CosmicConfigEntry for Theme<CssColor> {
             Ok(name) => default.name = name,
             Err(e) => errors.push(e),
         }
-        match config.get::<Container<CssColor>>("background") {
+        match config.get::<Container<Srgba>>("background") {
             Ok(background) => default.background = background,
             Err(e) => errors.push(e),
         }
-        match config.get::<Container<CssColor>>("primary") {
+        match config.get::<Container<Srgba>>("primary") {
             Ok(primary) => default.primary = primary,
             Err(e) => errors.push(e),
         }
-        match config.get::<Container<CssColor>>("secondary") {
+        match config.get::<Container<Srgba>>("secondary") {
             Ok(secondary) => default.secondary = secondary,
             Err(e) => errors.push(e),
         }
-        match config.get::<Component<CssColor>>("accent") {
+        match config.get::<Component<Srgba>>("accent") {
             Ok(accent) => default.accent = accent,
             Err(e) => errors.push(e),
         }
-        match config.get::<Component<CssColor>>("success") {
+        match config.get::<Component<Srgba>>("success") {
             Ok(success) => default.success = success,
             Err(e) => errors.push(e),
         }
-        match config.get::<Component<CssColor>>("destructive") {
+        match config.get::<Component<Srgba>>("destructive") {
             Ok(destructive) => default.destructive = destructive,
             Err(e) => errors.push(e),
         }
-        match config.get::<Component<CssColor>>("warning") {
+        match config.get::<Component<Srgba>>("warning") {
             Ok(warning) => default.warning = warning,
             Err(e) => errors.push(e),
         }
-        match config.get::<CosmicPaletteInner<CssColor>>("palette") {
+        match config.get::<CosmicPaletteInner<Srgba>>("palette") {
             Ok(palette) => default.palette = palette,
             Err(e) => errors.push(e),
         }
@@ -144,12 +144,6 @@ impl CosmicConfigEntry for Theme<CssColor> {
 }
 
 impl Default for Theme<Srgba> {
-    fn default() -> Self {
-        Theme::<CssColor>::dark_default().into_srgba()
-    }
-}
-
-impl Default for Theme<CssColor> {
     fn default() -> Self {
         Self::dark_default()
     }
@@ -426,7 +420,7 @@ where
     }
 }
 
-impl Theme<CssColor> {
+impl Theme<Srgba> {
     /// get the built in light theme
     pub fn light_default() -> Self {
         LIGHT_PALETTE.clone().into()
@@ -446,54 +440,14 @@ impl Theme<CssColor> {
     pub fn high_contrast_light_default() -> Self {
         CosmicPalette::HighContrastLight(LIGHT_PALETTE.as_ref().clone()).into()
     }
-
-    /// convert to srgba
-    pub fn into_srgba(self) -> Theme<Srgba> {
-        Theme {
-            name: self.name,
-            background: self.background.into_srgba(),
-            primary: self.primary.into_srgba(),
-            secondary: self.secondary.into_srgba(),
-            accent: self.accent.into_srgba(),
-            success: self.success.into_srgba(),
-            destructive: self.destructive.into_srgba(),
-            warning: self.warning.into_srgba(),
-            palette: self.palette.into(),
-            is_dark: self.is_dark,
-            is_high_contrast: self.is_high_contrast,
-            corner_radii: self.corner_radii,
-            spacing: self.spacing,
-        }
-    }
 }
 
-impl<C> From<CosmicPalette<C>> for Theme<C>
+impl<C> From<CosmicPalette<C>> for Theme<Srgba>
 where
-    C: Clone + fmt::Debug + Default + Into<Srgba> + From<Srgba> + Serialize + DeserializeOwned,
+    CosmicPalette<C>: Into<CosmicPalette<Srgba>>,
 {
     fn from(p: CosmicPalette<C>) -> Self {
-        let is_dark = p.is_dark();
-        let is_high_contrast = p.is_high_contrast();
-        Self {
-            name: p.name().to_string(),
-            background: (p.clone(), ContainerType::Background).into(),
-            primary: (p.clone(), ContainerType::Primary).into(),
-            secondary: (p.clone(), ContainerType::Secondary).into(),
-            accent: (p.clone(), ComponentType::Accent).into(),
-            success: (p.clone(), ComponentType::Success).into(),
-            destructive: (p.clone(), ComponentType::Destructive).into(),
-            warning: (p.clone(), ComponentType::Warning).into(),
-            palette: match p {
-                CosmicPalette::Dark(p) => p.into(),
-                CosmicPalette::Light(p) => p.into(),
-                CosmicPalette::HighContrastLight(p) => p.into(),
-                CosmicPalette::HighContrastDark(p) => p.into(),
-            },
-            is_dark,
-            is_high_contrast,
-            spacing: Spacing::default(),
-            corner_radii: CornerRadii::default(),
-        }
+        ThemeBuilder::palette(p.into()).build()
     }
 }
 
@@ -506,6 +460,7 @@ pub struct ThemeBuilder {
     neutral_tint: Option<Srgb>,
     bg_color: Option<Srgba>,
     primary_container_bg: Option<Srgba>,
+    secondary_container_bg: Option<Srgba>,
     text_tint: Option<Srgb>,
     accent: Option<Srgb>,
 }
@@ -520,6 +475,7 @@ impl Default for ThemeBuilder {
             text_tint: Default::default(),
             bg_color: Default::default(),
             primary_container_bg: Default::default(),
+            secondary_container_bg: Default::default(),
             accent: Default::default(),
         }
     }
@@ -556,6 +512,14 @@ impl ThemeBuilder {
         let palette: CosmicPalette<Srgba> = LIGHT_PALETTE.to_owned().into();
         Self {
             palette: CosmicPalette::HighContrastLight(palette.inner()),
+            ..Default::default()
+        }
+    }
+
+    /// Get a builder that is initialized with the provided palette
+    pub fn palette(palette: CosmicPalette<Srgba>) -> Self {
+        Self {
+            palette,
             ..Default::default()
         }
     }
@@ -612,6 +576,7 @@ impl ThemeBuilder {
             text_tint,
             bg_color,
             primary_container_bg,
+            secondary_container_bg,
             accent,
         } = self;
 
@@ -619,15 +584,175 @@ impl ThemeBuilder {
             palette.as_mut().accent = accent.into();
         }
 
-        // TODO apply the customizations
+        // TODO apply the tint customizations
+
+        let is_dark = palette.is_dark();
+        let is_high_contrast = palette.is_high_contrast();
 
         if let Some(accent) = accent {
             palette.as_mut().accent = accent.into();
         }
+        let p_ref = palette.as_ref();
 
-        let mut theme: Theme<Srgba> = palette.into();
+        let bg = if let Some(bg_color) = bg_color {
+            bg_color
+        } else {
+            p_ref.neutral_0.clone()
+        };
+        let ok_bg = Oklcha::from_color(bg);
+        let step_array = steps(ok_bg);
+
+        let bg_index = color_index(bg, step_array.len());
+        let primary_container_bg = if let Some(primary_container_bg_color) = primary_container_bg {
+            primary_container_bg_color
+        } else {
+            get_color(bg_index, 5, &step_array, is_dark, &p_ref.neutral_1)
+        };
+
+        let secondary_container_bg = if let Some(secondary_container_bg) = secondary_container_bg {
+            secondary_container_bg
+        } else {
+            get_color(bg_index, 10, &step_array, is_dark, &p_ref.neutral_2)
+        };
+
+        let bg_component = get_color(bg_index, 8, &step_array, is_dark, &p_ref.neutral_2);
+        let on_bg_component = get_text(
+            color_index(bg_component, step_array.len()),
+            &step_array,
+            is_dark,
+            &p_ref.neutral_8,
+        );
+        let bg_component = Component::component(
+            bg_component,
+            p_ref.neutral_0.to_owned(),
+            p_ref.accent.to_owned(),
+            on_bg_component,
+            is_high_contrast,
+        );
+
+        let primary_index = color_index(primary_container_bg, step_array.len());
+        let primary_component = get_color(primary_index, 6, &step_array, is_dark, &p_ref.neutral_3);
+        let on_primary_component = get_text(
+            color_index(primary_component, step_array.len()),
+            &step_array,
+            is_dark,
+            &p_ref.neutral_8,
+        );
+        let primary_component = Component::component(
+            primary_component,
+            p_ref.neutral_0.to_owned(),
+            p_ref.accent.to_owned(),
+            on_primary_component,
+            is_high_contrast,
+        );
+
+        let secondary_index = color_index(secondary_container_bg, step_array.len());
+        let secondary_component =
+            get_color(secondary_index, 3, &step_array, is_dark, &p_ref.neutral_4);
+        let on_secondary_component = get_text(
+            color_index(secondary_component, step_array.len()),
+            &step_array,
+            is_dark,
+            &p_ref.neutral_10,
+        );
+        let secondary_component = Component::component(
+            secondary_component,
+            p_ref.neutral_0.to_owned(),
+            p_ref.accent.to_owned(),
+            on_secondary_component,
+            is_high_contrast,
+        );
+
+        let mut theme: Theme<Srgba> = Theme {
+            name: palette.name().to_string(),
+            background: Container::new(
+                bg_component,
+                bg,
+                get_text(bg_index, &step_array, is_dark, &p_ref.neutral_8),
+            ),
+            primary: Container::new(
+                primary_component,
+                primary_container_bg,
+                get_text(primary_index, &step_array, is_dark, &p_ref.neutral_8),
+            ),
+            secondary: Container::new(
+                secondary_component,
+                secondary_container_bg,
+                get_text(secondary_index, &step_array, is_dark, &p_ref.neutral_8),
+            ),
+            accent: Component::colored_component(
+                p_ref.accent.to_owned(),
+                p_ref.neutral_0.to_owned(),
+                p_ref.accent.to_owned(),
+            ),
+            success: Component::colored_component(
+                p_ref.green.to_owned(),
+                p_ref.neutral_0.to_owned(),
+                p_ref.accent.to_owned(),
+            ),
+            destructive: Component::colored_component(
+                p_ref.red.to_owned(),
+                p_ref.neutral_0.to_owned(),
+                p_ref.accent.to_owned(),
+            ),
+            warning: Component::colored_component(
+                p_ref.yellow.to_owned(),
+                p_ref.neutral_0.to_owned(),
+                p_ref.accent.to_owned(),
+            ),
+            palette: palette.inner(),
+            spacing,
+            corner_radii,
+            is_dark,
+            is_high_contrast,
+        };
         theme.spacing = spacing;
         theme.corner_radii = corner_radii;
         theme
     }
+}
+
+fn get_index(base_index: usize, steps: usize, step_len: usize, is_dark: bool) -> Option<usize> {
+    if is_dark {
+        base_index.checked_add(steps)
+    } else {
+        base_index.checked_sub(steps)
+    }
+    .filter(|i| *i < step_len)
+}
+
+fn get_color(
+    base_index: usize,
+    steps: usize,
+    step_array: &[Srgba; 100],
+    is_dark: bool,
+    fallback: &Srgba,
+) -> Srgba {
+    get_index(base_index, steps, step_array.len(), is_dark)
+        .and_then(|i| step_array.get(i).cloned())
+        .unwrap_or_else(|| fallback.to_owned())
+}
+
+fn get_text(
+    base_index: usize,
+    step_array: &[Srgba; 100],
+    is_dark: bool,
+    fallback: &Srgba,
+) -> Srgba {
+    let Some(index) = get_index(base_index, 70, step_array.len(), is_dark).or_else(|| get_index(base_index, 50, step_array.len(), is_dark)) else {
+        return fallback.to_owned();
+    };
+
+    step_array
+        .get(index)
+        .cloned()
+        .unwrap_or_else(|| fallback.to_owned())
+}
+
+fn color_index<C>(c: C, array_len: usize) -> usize
+where
+    Oklcha: FromColor<C>,
+{
+    let c = Oklcha::from_color(c);
+    ((c.l * array_len as f32).round() as usize).clamp(0, array_len - 1)
 }
