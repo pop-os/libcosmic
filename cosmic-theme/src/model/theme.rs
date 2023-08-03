@@ -1,11 +1,11 @@
 use crate::{
-    util::CssColor, Component, ComponentType, Container, ContainerType, CosmicPalette,
-    CosmicPaletteInner, DARK_PALETTE, LIGHT_PALETTE, NAME, THEME_DIR,
+    util::CssColor, Component, ComponentType, Container, ContainerType, CornerRadii, CosmicPalette,
+    CosmicPaletteInner, Spacing, DARK_PALETTE, LIGHT_PALETTE, NAME, THEME_DIR,
 };
 use anyhow::Context;
 use cosmic_config::{Config, ConfigGet, ConfigSet, CosmicConfigEntry};
 use directories::{BaseDirsExt, ProjectDirsExt};
-use palette::Srgba;
+use palette::{Srgb, Srgba};
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use std::{
     fmt,
@@ -47,6 +47,10 @@ pub struct Theme<C> {
     pub warning: Component<C>,
     /// palette
     pub palette: CosmicPaletteInner<C>,
+    /// spacing
+    pub spacing: Spacing,
+    /// corner radii
+    pub corner_radii: CornerRadii,
     /// is dark
     pub is_dark: bool,
     /// is high contrast
@@ -120,6 +124,14 @@ impl CosmicConfigEntry for Theme<CssColor> {
         }
         match config.get::<bool>("is_high_contrast") {
             Ok(is_high_contrast) => default.is_high_contrast = is_high_contrast,
+            Err(e) => errors.push(e),
+        }
+        match config.get::<Spacing>("spacing") {
+            Ok(spacing) => default.spacing = spacing,
+            Err(e) => errors.push(e),
+        }
+        match config.get::<CornerRadii>("corner_radii") {
+            Ok(corner_radii) => default.corner_radii = corner_radii,
             Err(e) => errors.push(e),
         }
 
@@ -346,6 +358,72 @@ where
     pub fn window_header_bg(&self) -> Srgba {
         self.background.base.clone().into()
     }
+
+    /// get @space_none
+    pub fn space_none(&self) -> u16 {
+        self.spacing.space_none
+    }
+    /// get @space_xxxs
+    pub fn space_xxxs(&self) -> u16 {
+        self.spacing.space_xxxs
+    }
+    /// get @space_xxs
+    pub fn space_xxs(&self) -> u16 {
+        self.spacing.space_xxs
+    }
+    /// get @space_xs
+    pub fn space_xs(&self) -> u16 {
+        self.spacing.space_xs
+    }
+    /// get @space_s
+    pub fn space_s(&self) -> u16 {
+        self.spacing.space_s
+    }
+    /// get @space_m
+    pub fn space_m(&self) -> u16 {
+        self.spacing.space_m
+    }
+    /// get @space_l
+    pub fn space_l(&self) -> u16 {
+        self.spacing.space_l
+    }
+    /// get @space_xl
+    pub fn space_xl(&self) -> u16 {
+        self.spacing.space_xl
+    }
+    /// get @space_xxl
+    pub fn space_xxl(&self) -> u16 {
+        self.spacing.space_xxl
+    }
+    /// get @space_xxxl
+    pub fn space_xxxl(&self) -> u16 {
+        self.spacing.space_xxxl
+    }
+
+    /// get @radius_0
+    pub fn radius_0(&self) -> [u16; 4] {
+        self.corner_radii.radius_0
+    }
+    /// get @radius_xs
+    pub fn radius_xs(&self) -> [u16; 4] {
+        self.corner_radii.radius_xs
+    }
+    /// get @radius_s
+    pub fn radius_s(&self) -> [u16; 4] {
+        self.corner_radii.radius_s
+    }
+    /// get @radius_m
+    pub fn radius_m(&self) -> [u16; 4] {
+        self.corner_radii.radius_m
+    }
+    /// get @radius_l
+    pub fn radius_l(&self) -> [u16; 4] {
+        self.corner_radii.radius_l
+    }
+    /// get @radius_xl
+    pub fn radius_xl(&self) -> [u16; 4] {
+        self.corner_radii.radius_xl
+    }
 }
 
 impl Theme<CssColor> {
@@ -383,6 +461,8 @@ impl Theme<CssColor> {
             palette: self.palette.into(),
             is_dark: self.is_dark,
             is_high_contrast: self.is_high_contrast,
+            corner_radii: self.corner_radii,
+            spacing: self.spacing,
         }
     }
 }
@@ -411,6 +491,143 @@ where
             },
             is_dark,
             is_high_contrast,
+            spacing: Spacing::default(),
+            corner_radii: CornerRadii::default(),
         }
+    }
+}
+
+/// Helper for building customized themes
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ThemeBuilder {
+    palette: CosmicPalette<Srgba>,
+    spacing: Spacing,
+    corner_radii: CornerRadii,
+    neutral_tint: Option<Srgb>,
+    bg_color: Option<Srgba>,
+    primary_container_bg: Option<Srgba>,
+    text_tint: Option<Srgb>,
+    accent: Option<Srgb>,
+}
+
+impl Default for ThemeBuilder {
+    fn default() -> Self {
+        Self {
+            palette: DARK_PALETTE.to_owned().into(),
+            spacing: Spacing::default(),
+            corner_radii: CornerRadii::default(),
+            neutral_tint: Default::default(),
+            text_tint: Default::default(),
+            bg_color: Default::default(),
+            primary_container_bg: Default::default(),
+            accent: Default::default(),
+        }
+    }
+}
+
+impl ThemeBuilder {
+    /// Get a builder that is initialized with the default dark theme
+    pub fn dark() -> Self {
+        Self {
+            palette: DARK_PALETTE.to_owned().into(),
+            ..Default::default()
+        }
+    }
+
+    /// Get a builder that is initialized with the default light theme
+    pub fn light() -> Self {
+        Self {
+            palette: LIGHT_PALETTE.to_owned().into(),
+            ..Default::default()
+        }
+    }
+
+    /// Get a builder that is initialized with the default dark high contrast theme
+    pub fn dark_high_contrast() -> Self {
+        let palette: CosmicPalette<Srgba> = DARK_PALETTE.to_owned().into();
+        Self {
+            palette: CosmicPalette::HighContrastLight(palette.inner()),
+            ..Default::default()
+        }
+    }
+
+    /// Get a builder that is initialized with the default light high contrast theme
+    pub fn light_high_contrast() -> Self {
+        let palette: CosmicPalette<Srgba> = LIGHT_PALETTE.to_owned().into();
+        Self {
+            palette: CosmicPalette::HighContrastLight(palette.inner()),
+            ..Default::default()
+        }
+    }
+
+    /// set the spacing of the builder
+    pub fn spacing(mut self, spacing: Spacing) -> Self {
+        self.spacing = spacing;
+        self
+    }
+
+    /// set the corner_radii of the builder
+    pub fn corner_radii(mut self, corner_radii: CornerRadii) -> Self {
+        self.corner_radii = corner_radii;
+        self
+    }
+
+    /// apply a neutral tint to the palette
+    pub fn neutral_tint(mut self, tint: Srgb) -> Self {
+        self.neutral_tint = Some(tint);
+        self
+    }
+
+    /// apply a text tint to the palette
+    pub fn text_tint(mut self, tint: Srgb) -> Self {
+        self.text_tint = Some(tint);
+        self
+    }
+
+    /// apply a background color to the palette
+    pub fn bg_color(mut self, c: Srgba) -> Self {
+        self.bg_color = Some(c);
+        self
+    }
+
+    /// apply a primary container background color to the palette
+    pub fn primary_container_bg(mut self, c: Srgba) -> Self {
+        self.primary_container_bg = Some(c);
+        self
+    }
+
+    /// apply a accent color to the palette
+    pub fn accent(mut self, c: Srgb) -> Self {
+        self.accent = Some(c);
+        self
+    }
+
+    /// build the theme
+    pub fn build(self) -> Theme<Srgba> {
+        let Self {
+            mut palette,
+            spacing,
+            corner_radii,
+            neutral_tint,
+            text_tint,
+            bg_color,
+            primary_container_bg,
+            accent,
+        } = self;
+
+        if let Some(accent) = accent {
+            palette.as_mut().accent = accent.into();
+        }
+
+        // TODO apply the customizations
+
+        if let Some(accent) = accent {
+            palette.as_mut().accent = accent.into();
+        }
+
+        let mut theme: Theme<Srgba> = palette.into();
+        theme.spacing = spacing;
+        theme.corner_radii = corner_radii;
+        theme
     }
 }

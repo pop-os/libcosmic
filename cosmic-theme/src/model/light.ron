@@ -1,6 +1,9 @@
 Light (
     (
         name: "cosmic-light",
+        accent: (
+            c: "#00496D",
+        ),
         blue: (
             c: "#00496D",
         ),

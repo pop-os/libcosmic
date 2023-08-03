@@ -35,6 +35,29 @@ pub enum CosmicPalette<C> {
     HighContrastDark(CosmicPaletteInner<C>),
 }
 
+impl<C> CosmicPalette<C> {
+    /// extract the inner palette
+    pub fn inner(self) -> CosmicPaletteInner<C> {
+        match self {
+            CosmicPalette::Dark(p) => p,
+            CosmicPalette::Light(p) => p,
+            CosmicPalette::HighContrastLight(p) => p,
+            CosmicPalette::HighContrastDark(p) => p,
+        }
+    }
+}
+
+impl<C> AsMut<CosmicPaletteInner<C>> for CosmicPalette<C> {
+    fn as_mut(&mut self) -> &mut CosmicPaletteInner<C> {
+        match self {
+            CosmicPalette::Dark(p) => p,
+            CosmicPalette::Light(p) => p,
+            CosmicPalette::HighContrastLight(p) => p,
+            CosmicPalette::HighContrastDark(p) => p,
+        }
+    }
+}
+
 impl<C> AsRef<CosmicPaletteInner<C>> for CosmicPalette<C>
 where
     C: Clone + fmt::Debug + Default + Into<Srgba> + From<Srgba> + Serialize + DeserializeOwned,
@@ -84,6 +107,9 @@ where
 pub struct CosmicPaletteInner<C> {
     /// name of the palette
     pub name: String,
+
+    /// the selected accent color
+    pub accent: C,
 
     /// basic palette
     /// blue: colors used for various points of emphasis in the UI
@@ -161,6 +187,7 @@ impl From<CosmicPaletteInner<CssColor>> for CosmicPaletteInner<Srgba> {
     fn from(p: CosmicPaletteInner<CssColor>) -> Self {
         CosmicPaletteInner {
             name: p.name,
+            accent: p.accent.into(),
             blue: p.blue.into(),
             red: p.red.into(),
             green: p.green.into(),
@@ -251,5 +278,16 @@ where
     pub fn load(p: &dyn AsRef<Path>) -> anyhow::Result<Self> {
         let f = File::open(p)?;
         Ok(ron::de::from_reader(f)?)
+    }
+}
+
+impl Into<CosmicPalette<Srgba>> for CosmicPalette<CssColor> {
+    fn into(self) -> CosmicPalette<Srgba> {
+        match self {
+            CosmicPalette::Dark(p) => CosmicPalette::Dark(p.into()),
+            CosmicPalette::Light(p) => CosmicPalette::Light(p.into()),
+            CosmicPalette::HighContrastLight(p) => CosmicPalette::HighContrastLight(p.into()),
+            CosmicPalette::HighContrastDark(p) => CosmicPalette::HighContrastDark(p.into()),
+        }
     }
 }
