@@ -1,16 +1,17 @@
 use crate::{
-    steps::steps, Component, Container, CornerRadii, CosmicPalette, CosmicPaletteInner, Spacing,
+    steps::*, Component, Container, CornerRadii, CosmicPalette, CosmicPaletteInner, Spacing,
     DARK_PALETTE, LIGHT_PALETTE, NAME, THEME_DIR,
 };
 use anyhow::Context;
 use cosmic_config::{Config, ConfigGet, ConfigSet, CosmicConfigEntry};
 use directories::{BaseDirsExt, ProjectDirsExt};
-use palette::{FromColor, Oklcha, Srgb, Srgba};
+use palette::{Srgb, Srgba};
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use std::{
     fmt,
     fs::File,
     io::Write,
+    num::NonZeroUsize,
     path::{Path, PathBuf},
 };
 
@@ -580,14 +581,34 @@ impl ThemeBuilder {
             accent,
         } = self;
 
+        let is_dark = palette.is_dark();
+        let is_high_contrast = palette.is_high_contrast();
+
         if let Some(accent) = accent {
             palette.as_mut().accent = accent.into();
         }
 
-        // TODO apply the tint customizations
+        let text_steps_array = text_tint.map(|c| steps(c, NonZeroUsize::new(100).unwrap()));
 
-        let is_dark = palette.is_dark();
-        let is_high_contrast = palette.is_high_contrast();
+        if let Some(neutral_tint) = neutral_tint {
+            let mut neutral_steps_arr = steps(neutral_tint, NonZeroUsize::new(11).unwrap());
+            if !is_dark {
+                neutral_steps_arr.reverse();
+            }
+
+            let p = palette.as_mut();
+            p.neutral_0 = neutral_steps_arr[0];
+            p.neutral_1 = neutral_steps_arr[1];
+            p.neutral_2 = neutral_steps_arr[2];
+            p.neutral_3 = neutral_steps_arr[3];
+            p.neutral_4 = neutral_steps_arr[4];
+            p.neutral_5 = neutral_steps_arr[5];
+            p.neutral_6 = neutral_steps_arr[6];
+            p.neutral_7 = neutral_steps_arr[7];
+            p.neutral_8 = neutral_steps_arr[8];
+            p.neutral_9 = neutral_steps_arr[9];
+            p.neutral_10 = neutral_steps_arr[10];
+        }
 
         if let Some(accent) = accent {
             palette.as_mut().accent = accent.into();
@@ -599,8 +620,7 @@ impl ThemeBuilder {
         } else {
             p_ref.gray_1.clone()
         };
-        let ok_bg = Oklcha::from_color(bg);
-        let step_array = steps(ok_bg);
+        let step_array = steps(bg, NonZeroUsize::new(100).unwrap());
 
         let bg_index = color_index(bg, step_array.len());
         let primary_container_bg = if let Some(primary_container_bg_color) = primary_container_bg {
@@ -621,6 +641,7 @@ impl ThemeBuilder {
             &step_array,
             is_dark,
             &p_ref.neutral_8,
+            text_steps_array.as_ref(),
         );
         let bg_component = Component::component(
             bg_component,
@@ -637,6 +658,7 @@ impl ThemeBuilder {
             &step_array,
             is_dark,
             &p_ref.neutral_8,
+            text_steps_array.as_ref(),
         );
         let primary_component = Component::component(
             primary_component,
@@ -654,6 +676,7 @@ impl ThemeBuilder {
             &step_array,
             is_dark,
             &p_ref.neutral_10,
+            text_steps_array.as_ref(),
         );
         let secondary_component = Component::component(
             secondary_component,
@@ -668,17 +691,35 @@ impl ThemeBuilder {
             background: Container::new(
                 bg_component,
                 bg,
-                get_text(bg_index, &step_array, is_dark, &p_ref.neutral_8),
+                get_text(
+                    bg_index,
+                    &step_array,
+                    is_dark,
+                    &p_ref.neutral_8,
+                    text_steps_array.as_ref(),
+                ),
             ),
             primary: Container::new(
                 primary_component,
                 primary_container_bg,
-                get_text(primary_index, &step_array, is_dark, &p_ref.neutral_8),
+                get_text(
+                    primary_index,
+                    &step_array,
+                    is_dark,
+                    &p_ref.neutral_8,
+                    text_steps_array.as_ref(),
+                ),
             ),
             secondary: Container::new(
                 secondary_component,
                 secondary_container_bg,
-                get_text(secondary_index, &step_array, is_dark, &p_ref.neutral_8),
+                get_text(
+                    secondary_index,
+                    &step_array,
+                    is_dark,
+                    &p_ref.neutral_8,
+                    text_steps_array.as_ref(),
+                ),
             ),
             accent: Component::colored_component(
                 p_ref.accent.to_owned(),
@@ -710,49 +751,4 @@ impl ThemeBuilder {
         theme.corner_radii = corner_radii;
         theme
     }
-}
-
-fn get_index(base_index: usize, steps: usize, step_len: usize, is_dark: bool) -> Option<usize> {
-    if is_dark {
-        base_index.checked_add(steps)
-    } else {
-        base_index.checked_sub(steps)
-    }
-    .filter(|i| *i < step_len)
-}
-
-fn get_color(
-    base_index: usize,
-    steps: usize,
-    step_array: &[Srgba; 100],
-    is_dark: bool,
-    fallback: &Srgba,
-) -> Srgba {
-    get_index(base_index, steps, step_array.len(), is_dark)
-        .and_then(|i| step_array.get(i).cloned())
-        .unwrap_or_else(|| fallback.to_owned())
-}
-
-fn get_text(
-    base_index: usize,
-    step_array: &[Srgba; 100],
-    is_dark: bool,
-    fallback: &Srgba,
-) -> Srgba {
-    let Some(index) = get_index(base_index, 70, step_array.len(), is_dark).or_else(|| get_index(base_index, 50, step_array.len(), is_dark)) else {
-        return fallback.to_owned();
-    };
-
-    step_array
-        .get(index)
-        .cloned()
-        .unwrap_or_else(|| fallback.to_owned())
-}
-
-fn color_index<C>(c: C, array_len: usize) -> usize
-where
-    Oklcha: FromColor<C>,
-{
-    let c = Oklcha::from_color(c);
-    ((c.l * array_len as f32).round() as usize).clamp(0, array_len - 1)
 }

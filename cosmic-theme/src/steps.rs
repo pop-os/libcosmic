@@ -1,19 +1,83 @@
+use std::num::NonZeroUsize;
+
 use almost::equal;
-use palette::{convert::FromColorUnclamped, ClampAssign, Oklcha, Srgb, Srgba};
+use palette::{convert::FromColorUnclamped, ClampAssign, FromColor, Oklcha, Srgb, Srgba};
 
 /// Get an array of 100 colors with a specific hue and chroma
 /// over the full range of lightness.
 /// Colors which are not valid Srgba will fallback to a color with the nearest valid chroma.
-pub fn steps(mut c: Oklcha) -> [Srgba; 100] {
-    let mut steps = [Srgba::new(0.0, 0.0, 0.0, 1.0); 100];
+pub fn steps<C>(c: C, len: NonZeroUsize) -> Vec<Srgba>
+where
+    Oklcha: FromColor<C>,
+{
+    let mut c = Oklcha::from_color(c);
+    let mut steps = Vec::with_capacity(len.get());
 
-    for i in 0..steps.len() {
-        let lightness = i as f32 / 100.0;
+    for i in 0..len.get() {
+        let lightness = i as f32 / (len.get() - 1) as f32;
         c.l = lightness;
-        steps[i] = oklch_to_srgba_nearest_chroma(c)
+        steps.push(oklch_to_srgba_nearest_chroma(c))
     }
-
     steps
+}
+
+/// get the index for a new color some steps away from a base color
+pub fn get_index(base_index: usize, steps: usize, step_len: usize, is_dark: bool) -> Option<usize> {
+    if is_dark {
+        base_index.checked_add(steps)
+    } else {
+        base_index.checked_sub(steps)
+    }
+    .filter(|i| *i < step_len)
+}
+
+/// get color given a base and some steps
+pub fn get_color(
+    base_index: usize,
+    steps: usize,
+    step_array: &Vec<Srgba>,
+    is_dark: bool,
+    fallback: &Srgba,
+) -> Srgba {
+    assert!(step_array.len() == 100);
+    get_index(base_index, steps, step_array.len(), is_dark)
+        .and_then(|i| step_array.get(i).cloned())
+        .unwrap_or_else(|| fallback.to_owned())
+}
+
+/// get text color given a base background color
+pub fn get_text(
+    base_index: usize,
+    step_array: &Vec<Srgba>,
+    is_dark: bool,
+    fallback: &Srgba,
+    tint_array: Option<&Vec<Srgba>>,
+) -> Srgba {
+    assert!(step_array.len() == 100);
+    let step_array = if let Some(tint_array) = tint_array {
+        assert!(tint_array.len() == 100);
+        tint_array
+    } else {
+        step_array
+    };
+    let Some(index) = get_index(base_index, 70, step_array.len(), is_dark).or_else(|| get_index(base_index, 50, step_array.len(), is_dark)) else {
+        return fallback.to_owned();
+    };
+
+    step_array
+        .get(index)
+        .cloned()
+        .unwrap_or_else(|| fallback.to_owned())
+}
+
+/// get the index into the steps array for a given color
+/// the index is the lightness value of the color converted to Oklcha, scaled to the range [0, 100]
+pub fn color_index<C>(c: C, array_len: usize) -> usize
+where
+    Oklcha: FromColor<C>,
+{
+    let c = Oklcha::from_color(c);
+    ((c.l * array_len as f32).round() as usize).clamp(0, array_len - 1)
 }
 
 /// find the nearest chroma which makes our color a valid color in Srgba
@@ -39,7 +103,7 @@ pub fn oklch_to_srgba_nearest_chroma(mut c: Oklcha) -> Srgba {
             c.chroma = (c.chroma + l_chroma) / 2.0;
         }
     }
-    Srgba::from_color_unclamped(c)
+    Srgba::from_color(c)
 }
 
 /// checks that the color is valid srgb
