@@ -67,6 +67,8 @@ impl CosmicConfigEntry for Theme<Srgba> {
         tx.set("palette", self_.palette)?;
         tx.set("is_dark", self_.is_dark)?;
         tx.set("is_high_contrast", self_.is_high_contrast)?;
+        tx.set("spacing", self_.spacing)?;
+        tx.set("corner_radii", self_.corner_radii)?;
 
         tx.commit()
     }
