@@ -253,12 +253,13 @@ impl button::StyleSheet for Theme {
             return active(self);
         }
 
+        let corner_radii = &self.cosmic().corner_radii;
         let component = style.cosmic(self);
         button::Appearance {
             border_radius: match style {
-                Button::Link => 0.0.into(),
-                Button::Card => 8.0.into(),
-                _ => 24.0.into(),
+                Button::Link => corner_radii.radius_0.into(),
+                Button::Card => corner_radii.radius_xs.into(),
+                _ => corner_radii.radius_xl.into(),
             },
             background: match style {
                 Button::Link | Button::Text => None,
