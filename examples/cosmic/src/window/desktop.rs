@@ -193,7 +193,7 @@ impl State {
     }
 
     fn view_desktop_wallpaper<'a>(&'a self, window: &'a Window) -> Element<'a, Message> {
-        let mut image_paths: Vec<std::path::PathBuf> = Vec::new();
+        let image_paths: Vec<std::path::PathBuf> = Vec::new();
         /*
         //TODO: load image paths, do this asynchronously somehow
         if let Ok(entries) = std::fs::read_dir("/usr/share/backgrounds") {

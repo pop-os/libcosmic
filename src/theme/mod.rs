@@ -4,6 +4,7 @@
 pub mod expander;
 mod segmented_button;
 
+use std::cell::RefCell;
 use std::f32::consts::PI;
 use std::hash::Hash;
 use std::hash::Hasher;
@@ -64,6 +65,10 @@ lazy_static::lazy_static! {
     };
 }
 
+thread_local! {
+    pub(crate) static THEME: RefCell<Theme> = RefCell::new(Theme { theme_type: ThemeType::Dark, layer: cosmic_theme::Layer::Background });
+}
+
 #[derive(Debug, Clone, PartialEq, Default)]
 pub enum ThemeType {
     #[default]
@@ -72,6 +77,7 @@ pub enum ThemeType {
     HighContrastDark,
     HighContrastLight,
     Custom(Arc<CosmicTheme>),
+    System(Arc<CosmicTheme>),
 }
 
 #[derive(Debug, Clone, PartialEq, Default)]
@@ -88,7 +94,7 @@ impl Theme {
             ThemeType::Light => &COSMIC_LIGHT,
             ThemeType::HighContrastDark => &COSMIC_HC_DARK,
             ThemeType::HighContrastLight => &COSMIC_HC_LIGHT,
-            ThemeType::Custom(ref t) => t.as_ref(),
+            ThemeType::Custom(ref t) | ThemeType::System(ref t) => t.as_ref(),
         }
     }
 
@@ -132,6 +138,14 @@ impl Theme {
         }
     }
 
+    #[must_use]
+    pub fn system(theme: Arc<CosmicTheme>) -> Self {
+        Self {
+            theme_type: ThemeType::System(theme),
+            ..Default::default()
+        }
+    }
+
     /// get current container
     /// can be used in a component that is intended to be a child of a `CosmicContainer`
     #[must_use]
@@ -141,6 +155,11 @@ impl Theme {
             cosmic_theme::Layer::Primary => &self.cosmic().primary,
             cosmic_theme::Layer::Secondary => &self.cosmic().secondary,
         }
+    }
+
+    /// set the theme
+    pub fn set_theme(&mut self, theme: ThemeType) {
+        self.theme_type = theme;
     }
 }
 
@@ -1215,7 +1234,7 @@ pub fn theme() -> Theme {
         }
         theme
     });
-    crate::theme::Theme::custom(Arc::new(t))
+    crate::theme::Theme::system(Arc::new(t))
 }
 
 pub fn subscription(id: u64) -> Subscription<crate::theme::Theme> {
@@ -1231,7 +1250,8 @@ pub fn subscription(id: u64) -> Subscription<crate::theme::Theme> {
             }
             theme
         });
-        crate::theme::Theme::custom(Arc::new(theme))
+
+        crate::theme::Theme::system(Arc::new(theme))
     })
 }
 
