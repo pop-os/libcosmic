@@ -20,7 +20,7 @@ pub enum Layer {
 }
 
 /// Cosmic Theme data structure with all colors and its name
-#[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
+#[derive(Clone, Debug, Deserialize, Serialize, PartialEq)]
 pub struct Theme<C> {
     /// name of the theme
     pub name: String,
@@ -346,27 +346,27 @@ where
     }
 
     /// get @radius_0
-    pub fn radius_0(&self) -> [u16; 4] {
+    pub fn radius_0(&self) -> [f32; 4] {
         self.corner_radii.radius_0
     }
     /// get @radius_xs
-    pub fn radius_xs(&self) -> [u16; 4] {
+    pub fn radius_xs(&self) -> [f32; 4] {
         self.corner_radii.radius_xs
     }
     /// get @radius_s
-    pub fn radius_s(&self) -> [u16; 4] {
+    pub fn radius_s(&self) -> [f32; 4] {
         self.corner_radii.radius_s
     }
     /// get @radius_m
-    pub fn radius_m(&self) -> [u16; 4] {
+    pub fn radius_m(&self) -> [f32; 4] {
         self.corner_radii.radius_m
     }
     /// get @radius_l
-    pub fn radius_l(&self) -> [u16; 4] {
+    pub fn radius_l(&self) -> [f32; 4] {
         self.corner_radii.radius_l
     }
     /// get @radius_xl
-    pub fn radius_xl(&self) -> [u16; 4] {
+    pub fn radius_xl(&self) -> [f32; 4] {
         self.corner_radii.radius_xl
     }
 }
