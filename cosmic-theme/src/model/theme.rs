@@ -3,7 +3,7 @@ use crate::{
     DARK_PALETTE, LIGHT_PALETTE, NAME,
 };
 use cosmic_config::{Config, ConfigGet, ConfigSet, CosmicConfigEntry};
-use palette::{Srgb, Srgba};
+use palette::{IntoColor, Srgb, Srgba};
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use std::{fmt, num::NonZeroUsize};
 
@@ -412,6 +412,9 @@ pub struct ThemeBuilder {
     secondary_container_bg: Option<Srgba>,
     text_tint: Option<Srgb>,
     accent: Option<Srgb>,
+    success: Option<Srgb>,
+    warning: Option<Srgb>,
+    destructive: Option<Srgb>,
 }
 
 impl Default for ThemeBuilder {
@@ -426,6 +429,9 @@ impl Default for ThemeBuilder {
             primary_container_bg: Default::default(),
             secondary_container_bg: Default::default(),
             accent: Default::default(),
+            success: Default::default(),
+            warning: Default::default(),
+            destructive: Default::default(),
         }
     }
 }
@@ -515,6 +521,24 @@ impl ThemeBuilder {
         self
     }
 
+    /// apply a success color to the palette
+    pub fn success(mut self, c: Srgb) -> Self {
+        self.success = Some(c);
+        self
+    }
+
+    /// apply a warning color to the palette
+    pub fn warning(mut self, c: Srgb) -> Self {
+        self.warning = Some(c);
+        self
+    }
+
+    /// apply a destructive color to the palette
+    pub fn destructive(mut self, c: Srgb) -> Self {
+        self.destructive = Some(c);
+        self
+    }
+
     /// build the theme
     pub fn build(self) -> Theme<Srgba> {
         let Self {
@@ -527,14 +551,37 @@ impl ThemeBuilder {
             primary_container_bg,
             secondary_container_bg,
             accent,
+            success,
+            warning,
+            destructive,
         } = self;
 
         let is_dark = palette.is_dark();
         let is_high_contrast = palette.is_high_contrast();
 
-        if let Some(accent) = accent {
-            palette.as_mut().accent = accent.into();
-        }
+        let accent = if let Some(accent) = accent {
+            accent.into_color()
+        } else {
+            palette.as_ref().blue.to_owned()
+        };
+
+        let success = if let Some(success) = success {
+            success.into_color()
+        } else {
+            palette.as_ref().green.to_owned()
+        };
+
+        let warning = if let Some(warning) = warning {
+            warning.into_color()
+        } else {
+            palette.as_ref().yellow.to_owned()
+        };
+
+        let destructive = if let Some(destructive) = destructive {
+            destructive.into_color()
+        } else {
+            palette.as_ref().red.to_owned()
+        };
 
         let text_steps_array = text_tint.map(|c| steps(c, NonZeroUsize::new(100).unwrap()));
 
@@ -558,9 +605,6 @@ impl ThemeBuilder {
             p.neutral_10 = neutral_steps_arr[10];
         }
 
-        if let Some(accent) = accent {
-            palette.as_mut().accent = accent.into();
-        }
         let p_ref = palette.as_ref();
 
         let bg = if let Some(bg_color) = bg_color {
@@ -594,7 +638,7 @@ impl ThemeBuilder {
         let bg_component = Component::component(
             bg_component,
             p_ref.neutral_0.to_owned(),
-            p_ref.accent.to_owned(),
+            accent.clone(),
             on_bg_component,
             is_high_contrast,
         );
@@ -611,7 +655,7 @@ impl ThemeBuilder {
         let primary_component = Component::component(
             primary_component,
             p_ref.neutral_0.to_owned(),
-            p_ref.accent.to_owned(),
+            accent.clone(),
             on_primary_component,
             is_high_contrast,
         );
@@ -629,7 +673,7 @@ impl ThemeBuilder {
         let secondary_component = Component::component(
             secondary_component,
             p_ref.neutral_0.to_owned(),
-            p_ref.accent.to_owned(),
+            accent.clone(),
             on_secondary_component,
             is_high_contrast,
         );
@@ -670,24 +714,24 @@ impl ThemeBuilder {
                 ),
             ),
             accent: Component::colored_component(
-                p_ref.accent.to_owned(),
+                accent.clone(),
                 p_ref.neutral_0.to_owned(),
-                p_ref.accent.to_owned(),
+                accent.clone(),
             ),
             success: Component::colored_component(
-                p_ref.green.to_owned(),
+                success,
                 p_ref.neutral_0.to_owned(),
-                p_ref.accent.to_owned(),
+                accent.clone(),
             ),
             destructive: Component::colored_component(
-                p_ref.red.to_owned(),
+                destructive,
                 p_ref.neutral_0.to_owned(),
-                p_ref.accent.to_owned(),
+                accent.clone(),
             ),
             warning: Component::colored_component(
-                p_ref.yellow.to_owned(),
+                warning,
                 p_ref.neutral_0.to_owned(),
-                p_ref.accent.to_owned(),
+                accent.clone(),
             ),
             palette: palette.inner(),
             spacing,

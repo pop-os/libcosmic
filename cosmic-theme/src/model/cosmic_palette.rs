@@ -101,9 +101,6 @@ pub struct CosmicPaletteInner<C> {
     /// name of the palette
     pub name: String,
 
-    /// the selected accent color
-    pub accent: C,
-
     /// basic palette
     /// blue: colors used for various points of emphasis in the UI
     pub blue: C,
@@ -180,7 +177,6 @@ impl From<CosmicPaletteInner<CssColor>> for CosmicPaletteInner<Srgba> {
     fn from(p: CosmicPaletteInner<CssColor>) -> Self {
         CosmicPaletteInner {
             name: p.name,
-            accent: p.accent.into(),
             blue: p.blue.into(),
             red: p.red.into(),
             green: p.green.into(),

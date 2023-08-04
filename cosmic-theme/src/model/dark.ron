@@ -1,9 +1,6 @@
 Dark (
     (
         name: "cosmic-dark",
-        accent: (
-            c: "#94EBEB",
-        ),
         blue: (
             c: "#94EBEB",
         ),
