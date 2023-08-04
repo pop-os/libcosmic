@@ -1,7 +1,10 @@
 // Copyright 2022 System76 <info@system76.com>
 // SPDX-License-Identifier: MPL-2.0
 
-use crate::{theme, Element, Renderer};
+use crate::{
+    theme::{self, THEME},
+    Element, Renderer,
+};
 use iced::widget;
 
 /// A button widget with COSMIC styling
@@ -44,9 +47,11 @@ impl<Message: 'static> Button<Message> {
 
     /// A custom button that has the desired default spacing and padding.
     pub fn custom(self, children: Vec<Element<Message>>) -> widget::Button<Message, Renderer> {
+        let theme = THEME.with(|t| t.borrow().clone());
+        let theme = theme.cosmic();
         let button = widget::button(widget::row(children).spacing(8))
             .style(self.style)
-            .padding([8, 16]);
+            .padding([theme.space_xs(), theme.space_s()]);
 
         if let Some(message) = self.message {
             button.on_press(message)
