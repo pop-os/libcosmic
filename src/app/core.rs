@@ -40,7 +40,7 @@ pub struct Core {
     /// Scaling factor used by the application
     scale_factor: f32,
 
-    pub theme: Theme,
+    pub system_theme: Theme,
     pub(crate) title: String,
     pub window: Window,
 }
@@ -56,7 +56,7 @@ impl Default for Core {
                 toggled_condensed: true,
             },
             scale_factor: 1.0,
-            theme: theme::theme(),
+            system_theme: theme::theme(),
             title: String::new(),
             window: Window {
                 can_fullscreen: false,

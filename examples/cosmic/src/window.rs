@@ -1,7 +1,10 @@
 /// Copyright 2022 System76 <info@system76.com>
 // SPDX-License-Identifier: MPL-2.0
 use cosmic::{
-    cosmic_config::config_subscription,
+    cosmic_theme::{
+        palette::{rgb::Rgb, Srgba},
+        ThemeBuilder,
+    },
     font::load_fonts,
     iced::{self, Application, Command, Length, Subscription},
     iced::{
@@ -10,7 +13,7 @@ use cosmic::{
         window::{self, close, drag, minimize, toggle_maximize},
     },
     keyboard_nav,
-    theme::{self, CosmicTheme, Theme},
+    theme::{self, Theme},
     widget::{
         header_bar, icon, list, nav_bar, nav_bar_toggle, scrollable, segmented_button, settings,
         warning, IconSource,
@@ -18,9 +21,7 @@ use cosmic::{
     Element, ElementExt,
 };
 use cosmic_time::{Instant, Timeline};
-use log::error;
 use std::{
-    borrow::Cow,
     cell::RefCell,
     rc::Rc,
     sync::{
@@ -163,7 +164,6 @@ pub struct Window {
     warning_message: String,
     scale_factor: f64,
     scale_factor_string: String,
-    system_theme: Arc<CosmicTheme>,
     timeline: Rc<RefCell<Timeline>>,
 }
 
@@ -209,7 +209,6 @@ pub enum Message {
     ToggleNavBarCondensed,
     ToggleWarning,
     FontsLoaded,
-    SystemTheme(CosmicTheme),
     Tick(Instant),
 }
 
@@ -389,17 +388,6 @@ impl Application for Window {
         Subscription::batch(vec![
             window_break.map(|_| Message::CondensedViewToggle),
             keyboard_nav::subscription().map(Message::KeyboardNav),
-            config_subscription::<_, CosmicTheme>(0, Cow::from("com.system76.CosmicTheme"), 1).map(
-                |(_, update)| match update {
-                    Ok(t) => Message::SystemTheme(t),
-                    Err((errors, t)) => {
-                        for error in errors {
-                            error!("{:?}", error);
-                        }
-                        Message::SystemTheme(t)
-                    }
-                },
-            ),
             self.timeline
                 .borrow()
                 .as_subscription()
@@ -429,7 +417,18 @@ impl Application for Window {
                         demo::ThemeVariant::Dark => Theme::dark(),
                         demo::ThemeVariant::HighContrastDark => Theme::dark_hc(),
                         demo::ThemeVariant::HighContrastLight => Theme::light_hc(),
-                        demo::ThemeVariant::Custom => Theme::custom(self.system_theme.clone()),
+                        demo::ThemeVariant::Custom => Theme::custom(Arc::new(
+                            ThemeBuilder::light()
+                                .bg_color(Srgba::new(1.0, 0.9, 0.9, 1.0))
+                                .text_tint(Rgb::new(0.0, 1.0, 0.0))
+                                .neutral_tint(Rgb::new(0.0, 0.5, 1.0))
+                                .accent(Rgb::new(0.5, 0.1, 0.5))
+                                .success(Rgb::new(0.0, 0.5, 0.3))
+                                .warning(Rgb::new(0.894, 0.816, 0.039))
+                                .destructive(Rgb::new(0.890, 0.145, 0.420))
+                                .build(),
+                        )),
+                        demo::ThemeVariant::System => cosmic::theme::theme(),
                     };
                 }
                 Some(demo::Output::ToggleWarning) => self.toggle_warning(),
@@ -460,9 +459,6 @@ impl Application for Window {
             },
             Message::ToggleWarning => self.toggle_warning(),
             Message::FontsLoaded => {}
-            Message::SystemTheme(t) => {
-                self.system_theme = Arc::new(t);
-            }
             Message::Tick(instant) => self.timeline.borrow_mut().now(instant),
         }
         ret

@@ -33,6 +33,7 @@ pub mod message {
 
 pub use self::core::Core;
 pub use self::settings::Settings;
+use crate::theme::THEME;
 use crate::widget::nav_bar;
 use crate::{Element, ElementExt};
 use apply::Apply;
@@ -58,7 +59,10 @@ pub fn run<App: Application>(settings: Settings, flags: App::Flags) -> iced::Res
     core.set_scale_factor(settings.scale_factor);
     core.set_window_width(settings.size.0);
     core.set_window_height(settings.size.1);
-    core.theme = settings.theme;
+    THEME.with(move |t| {
+        let mut cosmic_theme = t.borrow_mut();
+        cosmic_theme.set_theme(settings.theme.theme_type);
+    });
 
     let mut iced = iced::Settings::with_flags((core, flags));
 

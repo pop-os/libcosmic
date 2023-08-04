@@ -1,5 +1,4 @@
-use apply::Apply;
-use cosmic::iced::widget::{horizontal_space, row, scrollable};
+use cosmic::iced::widget::{horizontal_space, row};
 use cosmic::iced::{Alignment, Length};
 use cosmic::widget::{button, segmented_button, view_switcher};
 use cosmic::{theme, Element};
@@ -60,7 +59,7 @@ impl State {
         self.pages.remove(id);
     }
 
-    pub(super) fn view<'a>(&'a self, window: &'a super::Window) -> Element<'a, Message> {
+    pub(super) fn view<'a>(&'a self, _window: &'a super::Window) -> Element<'a, Message> {
         let tabs = view_switcher::horizontal(&self.pages)
             .show_close_icon_on_hover(true)
             .on_activate(Message::Activate)

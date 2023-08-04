@@ -27,6 +27,7 @@ pub enum ThemeVariant {
     HighContrastDark,
     HighContrastLight,
     Custom,
+    System,
 }
 
 impl From<&ThemeType> for ThemeVariant {
@@ -37,6 +38,7 @@ impl From<&ThemeType> for ThemeVariant {
             ThemeType::HighContrastDark => ThemeVariant::HighContrastDark,
             ThemeType::HighContrastLight => ThemeVariant::HighContrastLight,
             ThemeType::Custom(_) => ThemeVariant::Custom,
+            ThemeType::System(_) => ThemeVariant::System,
         }
     }
 }
@@ -210,8 +212,9 @@ impl State {
             ThemeVariant::Light,
             ThemeVariant::Dark,
             ThemeVariant::HighContrastLight,
-            ThemeVariant::HighContrastLight,
+            ThemeVariant::HighContrastDark,
             ThemeVariant::Custom,
+            ThemeVariant::System,
         ]
         .into_iter()
         .fold(
