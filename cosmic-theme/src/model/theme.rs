@@ -620,16 +620,16 @@ impl ThemeBuilder {
         let primary_container_bg = if let Some(primary_container_bg_color) = primary_container_bg {
             primary_container_bg_color
         } else {
-            get_color(bg_index, 5, &step_array, is_dark, &p_ref.neutral_1)
+            get_surface_color(bg_index, 5, &step_array, is_dark, &p_ref.neutral_1)
         };
 
         let secondary_container_bg = if let Some(secondary_container_bg) = secondary_container_bg {
             secondary_container_bg
         } else {
-            get_color(bg_index, 10, &step_array, is_dark, &p_ref.neutral_2)
+            get_surface_color(bg_index, 10, &step_array, is_dark, &p_ref.neutral_2)
         };
 
-        let bg_component = get_color(bg_index, 8, &step_array, is_dark, &p_ref.neutral_2);
+        let bg_component = get_surface_color(bg_index, 8, &step_array, is_dark, &p_ref.neutral_2);
         let on_bg_component = get_text(
             color_index(bg_component, step_array.len()),
             &step_array,
@@ -646,7 +646,8 @@ impl ThemeBuilder {
         );
 
         let primary_index = color_index(primary_container_bg, step_array.len());
-        let primary_component = get_color(primary_index, 6, &step_array, is_dark, &p_ref.neutral_3);
+        let primary_component =
+            get_surface_color(primary_index, 6, &step_array, is_dark, &p_ref.neutral_3);
         let on_primary_component = get_text(
             color_index(primary_component, step_array.len()),
             &step_array,
@@ -664,7 +665,7 @@ impl ThemeBuilder {
 
         let secondary_index = color_index(secondary_container_bg, step_array.len());
         let secondary_component =
-            get_color(secondary_index, 3, &step_array, is_dark, &p_ref.neutral_4);
+            get_surface_color(secondary_index, 3, &step_array, is_dark, &p_ref.neutral_4);
         let on_secondary_component = get_text(
             color_index(secondary_component, step_array.len()),
             &step_array,

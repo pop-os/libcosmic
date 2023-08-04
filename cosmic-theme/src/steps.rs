@@ -31,15 +31,18 @@ pub fn get_index(base_index: usize, steps: usize, step_len: usize, is_dark: bool
     .filter(|i| *i < step_len)
 }
 
-/// get color given a base and some steps
-pub fn get_color(
+/// get surface color given a base and some steps
+pub fn get_surface_color(
     base_index: usize,
     steps: usize,
     step_array: &Vec<Srgba>,
-    is_dark: bool,
+    mut is_dark: bool,
     fallback: &Srgba,
 ) -> Srgba {
     assert!(step_array.len() == 100);
+    if !is_dark && base_index >= 88 {
+        is_dark = true;
+    }
     get_index(base_index, steps, step_array.len(), is_dark)
         .and_then(|i| step_array.get(i).cloned())
         .unwrap_or_else(|| fallback.to_owned())
