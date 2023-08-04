@@ -1,17 +1,10 @@
-use std::{
-    fmt,
-    fs::File,
-    io::Write,
-    path::{Path, PathBuf},
-};
+use std::fmt;
 
-use anyhow::Context;
-use directories::{BaseDirsExt, ProjectDirsExt};
 use lazy_static::lazy_static;
 use palette::Srgba;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 
-use crate::{util::CssColor, NAME, PALETTE_DIR};
+use crate::util::CssColor;
 
 lazy_static! {
     /// built in light palette
@@ -235,49 +228,6 @@ where
             CosmicPalette::HighContrastLight(p) => &p.name,
             CosmicPalette::HighContrastDark(p) => &p.name,
         }
-    }
-    /// save the theme to the theme directory
-    pub fn save(&self) -> anyhow::Result<()> {
-        let ron_path: PathBuf = [NAME, PALETTE_DIR].iter().collect();
-        let ron_dirs = directories::ProjectDirs::from_path(ron_path)
-            .context("Failed to get project directories.")?;
-        let ron_name = format!("{}.ron", self.name());
-
-        if let Ok(p) = ron_dirs.place_config_file(ron_name) {
-            let mut f = File::create(p)?;
-            f.write_all(ron::ser::to_string_pretty(self, Default::default())?.as_bytes())?;
-        } else {
-            anyhow::bail!("Failed to write RON theme.");
-        }
-        Ok(())
-    }
-
-    /// init the theme directory
-    pub fn init() -> anyhow::Result<PathBuf> {
-        let ron_path: PathBuf = [NAME, PALETTE_DIR].iter().collect();
-        let base_dirs = directories::BaseDirs::new().context("Failed to get base directories.")?;
-        Ok(base_dirs.create_config_directory(ron_path)?)
-    }
-
-    /// load a theme by name
-    pub fn load_from_name(name: &str) -> anyhow::Result<Self> {
-        let ron_path: PathBuf = [NAME, PALETTE_DIR].iter().collect();
-        let ron_dirs = directories::ProjectDirs::from_path(ron_path)
-            .context("Failed to get project directories.")?;
-
-        let ron_name = format!("{}.ron", name);
-        if let Some(p) = ron_dirs.find_config_file(ron_name) {
-            let f = File::open(p)?;
-            Ok(ron::de::from_reader(f)?)
-        } else {
-            anyhow::bail!("Failed to write RON theme.");
-        }
-    }
-
-    /// load a theme by path
-    pub fn load(p: &dyn AsRef<Path>) -> anyhow::Result<Self> {
-        let f = File::open(p)?;
-        Ok(ron::de::from_reader(f)?)
     }
 }
 

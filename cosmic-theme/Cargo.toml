@@ -18,13 +18,10 @@ theme-from-image = ["kmeans_colors", "image"]
 # palette = {version = "0.7", features = ["serializing"] }
 almost = "0.2"
 palette = {git = "https://github.com/Ogeon/palette", features = ["serializing"] }
-anyhow = "1.0"
 kmeans_colors = { version = "0.5", features = ["palette_color"], default-features = false, optional = true }
 image = {version = "0.24.1", optional = true }
 serde = { version = "1.0.129", features = ["derive"] }
 ron = "0.8"
 lazy_static = "1.4.0"
 csscolorparser = {version = "0.6.2", features = ["serde"]}
-directories = { git = "https://github.com/edfloreshz/directories-rs", version = "4.0.1" }
 cosmic-config = { path = "../cosmic-config/", default-features = false, features = ["subscription"] }
-

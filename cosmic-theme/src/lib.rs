@@ -21,9 +21,5 @@ pub mod util;
 
 /// name of cosmic theme
 pub const NAME: &'static str = "com.system76.CosmicTheme";
-/// Name of the theme directory
-pub const THEME_DIR: &str = "themes";
-/// name of the palette directory
-pub const PALETTE_DIR: &str = "palettes";
 
 pub use palette;
