@@ -70,6 +70,10 @@ pub struct Component<C> {
     pub disabled: C,
     /// the color of text in the widget when it is disabled
     pub on_disabled: C,
+    /// the color of the border for the widget
+    pub border: C,
+    /// the color of the border for the widget when it is disabled
+    pub disabled_border: C,
 }
 
 impl<C> Component<C>
@@ -109,6 +113,8 @@ where
             on: self.on.into(),
             disabled: self.disabled.into(),
             on_disabled: self.on_disabled.into(),
+            border: self.border.into(),
+            disabled_border: self.disabled_border.into(),
         }
     }
 
@@ -124,7 +130,7 @@ where
 
         let base: Srgba = base.into();
         let mut base_50 = base.clone();
-        base_50.alpha = 0.5;
+        base_50.alpha *= 0.5;
 
         let on_20 = neutral.clone();
         let mut on_50 = on_20.clone();
@@ -142,6 +148,8 @@ where
             disabled: base_50.into(),
             on_disabled: on_50.into(),
             focus: accent,
+            border: base.into(),
+            disabled_border: base_50.into(),
         }
     }
 
@@ -152,6 +160,7 @@ where
         accent: C,
         on_component: C,
         is_high_contrast: bool,
+        border: C,
     ) -> Self {
         let component_state_overlay = component_state_overlay.clone().into();
         let mut component_state_overlay_10 = component_state_overlay.clone();
@@ -161,13 +170,17 @@ where
 
         let base = base.into();
         let mut base_50 = base.clone();
-        base_50.alpha = 0.5;
+        base_50.alpha *= 0.5;
 
         let mut on_20 = on_component.clone().into();
         let mut on_50 = on_20.clone();
 
         on_20.alpha = 0.2;
         on_50.alpha = 0.5;
+
+        let border = border.into();
+        let mut disabled_border = border;
+        disabled_border.alpha *= 0.5;
 
         Component {
             base: base.clone().into(),
@@ -184,6 +197,8 @@ where
             on: on_component.clone(),
             disabled: base_50.into(),
             on_disabled: on_50.into(),
+            border: border.into(),
+            disabled_border: disabled_border.into(),
         }
     }
 }
