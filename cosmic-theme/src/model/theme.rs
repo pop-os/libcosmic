@@ -4,8 +4,8 @@ use crate::{
 };
 use cosmic_config::{Config, ConfigGet, ConfigSet, CosmicConfigEntry};
 use palette::{IntoColor, Srgb, Srgba};
-use serde::{de::DeserializeOwned, Deserialize, Serialize};
-use std::{fmt, num::NonZeroUsize};
+use serde::{Deserialize, Serialize};
+use std::num::NonZeroUsize;
 
 #[derive(Clone, Copy, Debug, Default, Deserialize, Serialize, PartialEq, Eq)]
 /// Theme layer type
@@ -38,6 +38,8 @@ pub struct Theme<C> {
     pub destructive: Component<C>,
     /// warning element colors
     pub warning: Component<C>,
+    /// button component styling
+    pub button: Component<C>,
     /// palette
     pub palette: CosmicPaletteInner<C>,
     /// spacing
@@ -162,10 +164,27 @@ impl<C> Theme<C> {
     }
 }
 
-impl<C> Theme<C>
-where
-    C: Clone + fmt::Debug + Default + Into<Srgba> + From<Srgba> + Serialize + DeserializeOwned,
-{
+impl Theme<Srgba> {
+    /// get the built in light theme
+    pub fn light_default() -> Self {
+        LIGHT_PALETTE.clone().into()
+    }
+
+    /// get the built in dark theme
+    pub fn dark_default() -> Self {
+        DARK_PALETTE.clone().into()
+    }
+
+    /// get the built in high contrast dark theme
+    pub fn high_contrast_dark_default() -> Self {
+        CosmicPalette::HighContrastDark(DARK_PALETTE.as_ref().clone()).into()
+    }
+
+    /// get the built in high contrast light theme
+    pub fn high_contrast_light_default() -> Self {
+        CosmicPalette::HighContrastLight(LIGHT_PALETTE.as_ref().clone()).into()
+    }
+
     /// Convert the theme to a high-contrast variant
     pub fn to_high_contrast(&self) -> Self {
         todo!();
@@ -174,134 +193,142 @@ where
     // TODO convenient getter functions for each named color variable
     /// get @accent_color
     pub fn accent_color(&self) -> Srgba {
-        self.accent.base.clone().into()
+        self.accent.base.clone()
     }
     /// get @success_color
     pub fn success_color(&self) -> Srgba {
-        self.success.base.clone().into()
+        self.success.base.clone()
     }
     /// get @destructive_color
     pub fn destructive_color(&self) -> Srgba {
-        self.destructive.base.clone().into()
+        self.destructive.base.clone()
     }
     /// get @warning_color
     pub fn warning_color(&self) -> Srgba {
-        self.warning.base.clone().into()
+        self.warning.base.clone()
     }
 
     // Containers
     /// get @bg_color
     pub fn bg_color(&self) -> Srgba {
-        self.background.base.clone().into()
+        self.background.base.clone()
     }
     /// get @bg_component_color
     pub fn bg_component_color(&self) -> Srgba {
-        self.background.component.base.clone().into()
+        self.background.component.base.clone()
     }
     /// get @primary_container_color
     pub fn primary_container_color(&self) -> Srgba {
-        self.primary.base.clone().into()
+        self.primary.base.clone()
     }
     /// get @primary_component_color
     pub fn primary_component_color(&self) -> Srgba {
-        self.primary.component.base.clone().into()
+        self.primary.component.base.clone()
     }
     /// get @secondary_container_color
     pub fn secondary_container_color(&self) -> Srgba {
-        self.secondary.base.clone().into()
+        self.secondary.base.clone()
     }
     /// get @secondary_component_color
     pub fn secondary_component_color(&self) -> Srgba {
-        self.secondary.component.base.clone().into()
+        self.secondary.component.base.clone()
+    }
+    /// get @button_bg_color
+    pub fn button_bg_color(&self) -> Srgba {
+        self.button.base.clone()
     }
 
     // Text
     /// get @on_bg_color
     pub fn on_bg_color(&self) -> Srgba {
-        self.background.on.clone().into()
+        self.background.on.clone()
     }
     /// get @on_bg_component_color
     pub fn on_bg_component_color(&self) -> Srgba {
-        self.background.component.on.clone().into()
+        self.background.component.on.clone()
     }
     /// get @on_primary_color
     pub fn on_primary_container_color(&self) -> Srgba {
-        self.primary.on.clone().into()
+        self.primary.on.clone()
     }
     /// get @on_primary_component_color
     pub fn on_primary_component_color(&self) -> Srgba {
-        self.primary.component.on.clone().into()
+        self.primary.component.on.clone()
     }
     /// get @on_secondary_color
     pub fn on_secondary_container_color(&self) -> Srgba {
-        self.secondary.on.clone().into()
+        self.secondary.on.clone()
     }
     /// get @on_secondary_component_color
     pub fn on_secondary_component_color(&self) -> Srgba {
-        self.secondary.component.on.clone().into()
+        self.secondary.component.on.clone()
     }
     /// get @accent_text_color
     pub fn accent_text_color(&self) -> Srgba {
-        self.accent.base.clone().into()
+        self.accent.base.clone()
     }
     /// get @success_text_color
     pub fn success_text_color(&self) -> Srgba {
-        self.success.base.clone().into()
+        self.success.base.clone()
     }
     /// get @warning_text_color
     pub fn warning_text_color(&self) -> Srgba {
-        self.warning.base.clone().into()
+        self.warning.base.clone()
     }
     /// get @destructive_text_color
     pub fn destructive_text_color(&self) -> Srgba {
-        self.destructive.base.clone().into()
+        self.destructive.base.clone()
     }
     /// get @on_accent_color
     pub fn on_accent_color(&self) -> Srgba {
-        self.accent.on.clone().into()
+        self.accent.on.clone()
     }
     /// get @on_success_color
     pub fn on_success_color(&self) -> Srgba {
-        self.success.on.clone().into()
+        self.success.on.clone()
     }
     /// get @oon_warning_color
     pub fn on_warning_color(&self) -> Srgba {
-        self.warning.on.clone().into()
+        self.warning.on.clone()
     }
     /// get @on_destructive_color
     pub fn on_destructive_color(&self) -> Srgba {
-        self.destructive.on.clone().into()
+        self.destructive.on.clone()
+    }
+    /// get @button_color
+    pub fn button_color(&self) -> Srgba {
+        self.button.on.clone()
     }
 
     // Borders and Dividers
     /// get @bg_divider
     pub fn bg_divider(&self) -> Srgba {
-        self.background.divider.clone().into()
+        self.background.divider.clone()
     }
     /// get @bg_component_divider
     pub fn bg_component_divider(&self) -> Srgba {
-        self.background.component.divider.clone().into()
+        self.background.component.divider.clone()
     }
     /// get @primary_container_divider
     pub fn primary_container_divider(&self) -> Srgba {
-        self.primary.divider.clone().into()
+        self.primary.divider.clone()
     }
     /// get @primary_component_divider
     pub fn primary_component_divider(&self) -> Srgba {
-        self.primary.component.divider.clone().into()
+        self.primary.component.divider.clone()
     }
     /// get @secondary_container_divider
     pub fn secondary_container_divider(&self) -> Srgba {
-        self.secondary.divider.clone().into()
+        self.secondary.divider.clone()
     }
-    /// get @secondary_component_divider
-    pub fn secondary_component_divider(&self) -> Srgba {
-        self.secondary.component.divider.clone().into()
+    /// get @button_divider
+    pub fn button_divider(&self) -> Srgba {
+        self.button.divider.clone()
     }
 
     /// get @window_header_bg
     pub fn window_header_bg(&self) -> Srgba {
-        self.background.base.clone().into()
+        self.background.base.clone()
     }
 
     /// get @space_none
@@ -368,28 +395,6 @@ where
     /// get @radius_xl
     pub fn radius_xl(&self) -> [f32; 4] {
         self.corner_radii.radius_xl
-    }
-}
-
-impl Theme<Srgba> {
-    /// get the built in light theme
-    pub fn light_default() -> Self {
-        LIGHT_PALETTE.clone().into()
-    }
-
-    /// get the built in dark theme
-    pub fn dark_default() -> Self {
-        DARK_PALETTE.clone().into()
-    }
-
-    /// get the built in high contrast dark theme
-    pub fn high_contrast_dark_default() -> Self {
-        CosmicPalette::HighContrastDark(DARK_PALETTE.as_ref().clone()).into()
-    }
-
-    /// get the built in high contrast light theme
-    pub fn high_contrast_light_default() -> Self {
-        CosmicPalette::HighContrastLight(LIGHT_PALETTE.as_ref().clone()).into()
     }
 }
 
@@ -643,6 +648,7 @@ impl ThemeBuilder {
             accent.clone(),
             on_bg_component,
             is_high_contrast,
+            p_ref.neutral_8,
         );
 
         let primary_index = color_index(primary_container_bg, step_array.len());
@@ -661,6 +667,7 @@ impl ThemeBuilder {
             accent.clone(),
             on_primary_component,
             is_high_contrast,
+            p_ref.neutral_8,
         );
 
         let secondary_index = color_index(secondary_container_bg, step_array.len());
@@ -679,7 +686,22 @@ impl ThemeBuilder {
             accent.clone(),
             on_secondary_component,
             is_high_contrast,
+            p_ref.neutral_8,
         );
+        let neutral_7 = p_ref.neutral_7;
+        let mut button_bg = neutral_7;
+        button_bg.alpha = 0.25;
+        let neutral_10 = p_ref.neutral_10;
+        let mut button_hover_overlay = neutral_10;
+        button_hover_overlay.alpha = 0.10;
+        let mut button_press_overlay = neutral_10;
+        button_press_overlay.alpha = 0.20;
+
+        let mut button_disabled_bg = button_bg;
+        button_disabled_bg.alpha *= 0.5;
+        let button_border = p_ref.neutral_8.clone();
+        let mut button_disabled_border = button_border;
+        button_disabled_border.alpha *= 0.5;
 
         let mut theme: Theme<Srgba> = Theme {
             name: palette.name().to_string(),
@@ -735,6 +757,14 @@ impl ThemeBuilder {
                 warning,
                 p_ref.neutral_0.to_owned(),
                 accent.clone(),
+            ),
+            button: Component::component(
+                button_bg,
+                p_ref.neutral_10,
+                accent,
+                p_ref.neutral_9,
+                is_high_contrast,
+                p_ref.neutral_8,
             ),
             palette: palette.inner(),
             spacing,

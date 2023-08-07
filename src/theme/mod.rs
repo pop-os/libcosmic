@@ -62,6 +62,8 @@ lazy_static::lazy_static! {
         on: CosmicColor::new(0.0, 0.0, 0.0, 0.0),
         on_disabled: CosmicColor::new(0.0, 0.0, 0.0, 0.0),
         divider: CosmicColor::new(0.0, 0.0, 0.0, 0.0),
+        border: CosmicColor::new(0.0, 0.0, 0.0, 0.0),
+        disabled_border: CosmicColor::new(0.0, 0.0, 0.0, 0.0),
     };
 }
 
@@ -355,69 +357,69 @@ impl checkbox::StyleSheet for Theme {
     type Style = Checkbox;
 
     fn active(&self, style: &Self::Style, is_checked: bool) -> checkbox::Appearance {
-        let palette = self.cosmic();
-        let neutral_7 = palette.palette.neutral_10;
+        let cosmic = self.cosmic();
 
+        let corners = &cosmic.corner_radii;
         match style {
             Checkbox::Primary => checkbox::Appearance {
                 background: Background::Color(if is_checked {
-                    palette.accent.base.into()
+                    cosmic.accent.base.into()
                 } else {
-                    palette.background.base.into()
+                    cosmic.button.base.into()
                 }),
-                icon_color: palette.accent.on.into(),
-                border_radius: 4.0.into(),
+                icon_color: cosmic.accent.on.into(),
+                border_radius: corners.radius_xs.into(),
                 border_width: if is_checked { 0.0 } else { 1.0 },
                 border_color: if is_checked {
-                    palette.accent.base
+                    cosmic.accent.base
                 } else {
-                    neutral_7
+                    cosmic.button.border
                 }
                 .into(),
                 text_color: None,
             },
             Checkbox::Secondary => checkbox::Appearance {
                 background: Background::Color(if is_checked {
-                    palette.background.component.base.into()
+                    cosmic.background.component.base.into()
                 } else {
-                    palette.background.base.into()
+                    cosmic.background.base.into()
                 }),
-                icon_color: palette.background.on.into(),
-                border_radius: 4.0.into(),
+                icon_color: cosmic.background.on.into(),
+                border_radius: corners.radius_xs.into(),
                 border_width: if is_checked { 0.0 } else { 1.0 },
-                border_color: neutral_7.into(),
+                border_color: cosmic.button.border.into(),
                 text_color: None,
             },
             Checkbox::Success => checkbox::Appearance {
                 background: Background::Color(if is_checked {
-                    palette.success.base.into()
+                    cosmic.success.base.into()
                 } else {
-                    palette.background.base.into()
+                    cosmic.button.base.into()
                 }),
-                icon_color: palette.success.on.into(),
-                border_radius: 4.0.into(),
+                icon_color: cosmic.success.on.into(),
+                border_radius: corners.radius_xs.into(),
                 border_width: if is_checked { 0.0 } else { 1.0 },
                 border_color: if is_checked {
-                    palette.success.base
+                    cosmic.success.base
                 } else {
-                    neutral_7
+                    cosmic.button.border
                 }
                 .into(),
                 text_color: None,
             },
             Checkbox::Danger => checkbox::Appearance {
                 background: Background::Color(if is_checked {
-                    palette.destructive.base.into()
+                    cosmic.destructive.base.into()
                 } else {
-                    palette.background.base.into()
+                    cosmic.button.base.into()
                 }),
-                icon_color: palette.destructive.on.into(),
-                border_radius: 4.0.into(),
+                icon_color: cosmic.destructive.on.into(),
+                border_radius: corners.radius_xs.into(),
                 border_width: if is_checked { 0.0 } else { 1.0 },
                 border_color: if is_checked {
-                    palette.destructive.base
+                    cosmic.destructive.base
                 } else {
-                    neutral_7
+                    cosmic.button.border
                 }
                 .into(),
                 text_color: None,
@@ -426,25 +428,23 @@ impl checkbox::StyleSheet for Theme {
     }
 
     fn hovered(&self, style: &Self::Style, is_checked: bool) -> checkbox::Appearance {
-        let palette = self.cosmic();
-        let mut neutral_10 = palette.palette.neutral_10;
-        let neutral_7 = palette.palette.neutral_10;
+        let cosmic = self.cosmic();
+        let corners = &cosmic.corner_radii;
 
-        neutral_10.alpha = 0.1;
         match style {
             Checkbox::Primary => checkbox::Appearance {
                 background: Background::Color(if is_checked {
-                    palette.accent.base.into()
+                    cosmic.accent.base.into()
                 } else {
-                    neutral_10.into()
+                    cosmic.button.base.into()
                 }),
-                icon_color: palette.accent.on.into(),
-                border_radius: 4.0.into(),
+                icon_color: cosmic.accent.on.into(),
+                border_radius: corners.radius_xs.into(),
                 border_width: if is_checked { 0.0 } else { 1.0 },
                 border_color: if is_checked {
-                    palette.accent.base
+                    cosmic.accent.base
                 } else {
-                    neutral_7
+                    cosmic.button.border
                 }
                 .into(),
                 text_color: None,
@@ -453,49 +453,49 @@ impl checkbox::StyleSheet for Theme {
                 background: Background::Color(if is_checked {
                     self.current_container().base.into()
                 } else {
-                    neutral_10.into()
+                    cosmic.button.base.into()
                 }),
                 icon_color: self.current_container().on.into(),
-                border_radius: 4.0.into(),
+                border_radius: corners.radius_xs.into(),
                 border_width: if is_checked { 0.0 } else { 1.0 },
                 border_color: if is_checked {
                     self.current_container().base
                 } else {
-                    neutral_7
+                    cosmic.button.border
                 }
                 .into(),
                 text_color: None,
             },
             Checkbox::Success => checkbox::Appearance {
                 background: Background::Color(if is_checked {
-                    palette.success.base.into()
+                    cosmic.success.base.into()
                 } else {
-                    neutral_10.into()
+                    cosmic.button.base.into()
                 }),
-                icon_color: palette.success.on.into(),
-                border_radius: 4.0.into(),
+                icon_color: cosmic.success.on.into(),
+                border_radius: corners.radius_xs.into(),
                 border_width: if is_checked { 0.0 } else { 1.0 },
                 border_color: if is_checked {
-                    palette.success.base
+                    cosmic.success.base
                 } else {
-                    neutral_7
+                    cosmic.button.border
                 }
                 .into(),
                 text_color: None,
             },
             Checkbox::Danger => checkbox::Appearance {
                 background: Background::Color(if is_checked {
-                    palette.destructive.base.into()
+                    cosmic.destructive.base.into()
                 } else {
-                    neutral_10.into()
+                    cosmic.button.base.into()
                 }),
-                icon_color: palette.destructive.on.into(),
-                border_radius: 4.0.into(),
+                icon_color: cosmic.destructive.on.into(),
+                border_radius: corners.radius_xs.into(),
                 border_width: if is_checked { 0.0 } else { 1.0 },
                 border_color: if is_checked {
-                    palette.destructive.base
+                    cosmic.destructive.base
                 } else {
-                    neutral_7
+                    cosmic.button.border
                 }
                 .into(),
                 text_color: None,

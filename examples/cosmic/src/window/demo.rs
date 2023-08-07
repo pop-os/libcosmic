@@ -492,7 +492,7 @@ impl State {
             ))
             .layer(cosmic::cosmic_theme::Layer::Secondary)
             .padding(16)
-            .style(cosmic::theme::Container::Secondary)
+            .style(cosmic::theme::Container::Background)
             .into(),
             text_input(
                 "Type to search apps or type “?” for more options...",
