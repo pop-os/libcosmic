@@ -233,13 +233,13 @@ impl Button {
     fn cosmic<'a>(&'a self, theme: &'a Theme) -> &CosmicComponent {
         let cosmic = theme.cosmic();
         match self {
-            Button::Primary => &cosmic.accent,
+            Button::Primary => &cosmic.accent_button,
             Button::Secondary => &theme.current_container().component,
-            Button::Positive => &cosmic.success,
-            Button::Destructive => &cosmic.destructive,
-            Button::Text => &theme.current_container().component,
-            Button::Link => &cosmic.accent,
-            Button::LinkActive => &cosmic.accent,
+            Button::Positive => &cosmic.success_button,
+            Button::Destructive => &cosmic.destructive_button,
+            Button::Text => &cosmic.text_button,
+            Button::Link => &cosmic.accent_button,
+            Button::LinkActive => &cosmic.accent_button,
             Button::Transparent => &TRANSPARENT_COMPONENT,
             Button::Deactivated => &theme.current_container().component,
             Button::Card => &theme.current_container().component,
