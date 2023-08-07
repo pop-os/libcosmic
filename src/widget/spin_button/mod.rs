@@ -12,7 +12,7 @@ use apply::Apply;
 use iced::{
     alignment::{Horizontal, Vertical},
     widget::{button, container, row},
-    Alignment, Background, Length,
+    Alignment, Length,
 };
 
 pub struct SpinButton<'a, Message> {
@@ -98,11 +98,12 @@ fn container_style(theme: &crate::Theme) -> iced_style::container::Appearance {
     let basic = &theme.cosmic();
     let mut neutral_10 = basic.palette.neutral_10;
     neutral_10.alpha = 0.1;
-    let accent = &theme.cosmic().accent;
+    let accent = &basic.accent;
+    let corners = &basic.corner_radii;
     iced_style::container::Appearance {
         text_color: Some(basic.palette.neutral_10.into()),
-        background: Some(Background::Color(neutral_10.into())),
-        border_radius: 24.0.into(),
+        background: None,
+        border_radius: corners.radius_s.into(),
         border_width: 0.0,
         border_color: accent.base.into(),
     }

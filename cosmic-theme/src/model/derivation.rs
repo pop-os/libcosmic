@@ -153,6 +153,16 @@ where
         }
     }
 
+    /// helper for producing a button component
+    pub fn colored_button(base: C, overlay: C, on_button: C, accent: C) -> Self {
+        let mut component = Component::colored_component(base, overlay, accent);
+        component.on = on_button.clone();
+        let mut on_disabled = on_button.into();
+        on_disabled.alpha = 0.5;
+        component.on_disabled = on_disabled.into();
+        component
+    }
+
     /// helper for producing a component color theme
     pub fn component(
         base: C,

@@ -38,6 +38,16 @@ pub struct Theme<C> {
     pub destructive: Component<C>,
     /// warning element colors
     pub warning: Component<C>,
+    /// accent button element colors
+    pub accent_button: Component<C>,
+    /// suggested button element colors
+    pub success_button: Component<C>,
+    /// destructive button element colors
+    pub destructive_button: Component<C>,
+    /// warning button element colors
+    pub warning_button: Component<C>,
+    /// text button element colors
+    pub text_button: Component<C>,
     /// button component styling
     pub button: Component<C>,
     /// palette
@@ -760,6 +770,38 @@ impl ThemeBuilder {
             ),
             button: Component::component(
                 button_bg,
+                p_ref.neutral_10,
+                accent,
+                p_ref.neutral_9,
+                is_high_contrast,
+                p_ref.neutral_8,
+            ),
+            accent_button: Component::colored_button(
+                accent.clone(),
+                p_ref.neutral_10.to_owned(),
+                p_ref.neutral_0.to_owned(),
+                accent.clone(),
+            ),
+            success_button: Component::colored_button(
+                success,
+                p_ref.neutral_10.to_owned(),
+                p_ref.neutral_0.to_owned(),
+                accent.clone(),
+            ),
+            destructive_button: Component::colored_button(
+                destructive,
+                p_ref.neutral_10.to_owned(),
+                p_ref.neutral_0.to_owned(),
+                accent.clone(),
+            ),
+            warning_button: Component::colored_button(
+                warning,
+                p_ref.neutral_10.to_owned(),
+                p_ref.neutral_0.to_owned(),
+                accent.clone(),
+            ),
+            text_button: Component::component(
+                Srgba::new(0.0, 0.0, 0.0, 0.0),
                 p_ref.neutral_10,
                 accent,
                 p_ref.neutral_9,
