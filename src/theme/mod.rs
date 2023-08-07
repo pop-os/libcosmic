@@ -15,6 +15,7 @@ pub use self::segmented_button::SegmentedButton;
 
 use cosmic_config::config_subscription;
 use cosmic_config::CosmicConfigEntry;
+use cosmic_theme::composite::over;
 use cosmic_theme::util::CssColor;
 use cosmic_theme::Component;
 use cosmic_theme::LayeredTheme;
@@ -808,16 +809,13 @@ impl toggler::StyleSheet for Theme {
 
     fn active(&self, _style: &Self::Style, is_active: bool) -> toggler::Appearance {
         let theme = self.cosmic();
-
         toggler::Appearance {
             background: if is_active {
                 theme.accent.base.into()
             } else {
-                //TODO: Grab neutral from palette
                 theme.palette.neutral_5.into()
             },
             background_border: None,
-            //TODO: Grab neutral from palette
             foreground: theme.palette.neutral_2.into(),
             foreground_border: None,
         }
@@ -828,11 +826,12 @@ impl toggler::StyleSheet for Theme {
         //TODO: grab colors from palette
         let mut neutral_10 = cosmic.palette.neutral_10;
         neutral_10.alpha = 0.1;
+
         toggler::Appearance {
             background: if is_active {
-                cosmic.accent.hover
+                over(neutral_10, cosmic.accent_color())
             } else {
-                neutral_10
+                over(neutral_10, cosmic.palette.neutral_5)
             }
             .into(),
             ..self.active(style, is_active)
