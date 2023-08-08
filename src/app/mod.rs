@@ -6,6 +6,8 @@
 //! Check out our [application](https://github.com/pop-os/libcosmic/tree/master/examples/application)
 //! example in our repository.
 
+#[cfg(feature = "applet")]
+pub mod applet;
 pub mod command;
 mod core;
 pub mod cosmic;
@@ -196,6 +198,11 @@ where
     /// Constructs views for other windows.
     fn view_window(&self, id: window::Id) -> Element<Self::Message> {
         panic!("no view for window {}", id.0);
+    }
+
+    /// Overrides the default style for applications
+    fn style(&self) -> Option<<crate::Theme as iced_style::application::StyleSheet>::Style> {
+        None
     }
 }
 
