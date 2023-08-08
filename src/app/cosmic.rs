@@ -103,7 +103,9 @@ where
     }
 
     fn style(&self) -> <Self::Theme as iced_style::application::StyleSheet>::Style {
-        if self.app.core().window.sharp_corners {
+        if let Some(style) = self.app.style() {
+            style
+        } else if self.app.core().window.sharp_corners {
             theme::Application::default()
         } else {
             theme::Application::Custom(Box::new(|theme| iced_style::application::Appearance {
@@ -163,8 +165,11 @@ where
         if id != window::Id(0) {
             return self.app.view_window(id).map(super::Message::App);
         }
-
-        self.app.view_main()
+        if self.app.core().window.use_template {
+            self.app.view_main()
+        } else {
+            self.app.view().map(super::Message::App)
+        }
     }
 
     #[cfg(not(feature = "wayland"))]

@@ -15,6 +15,7 @@ pub struct NavBar {
 #[allow(clippy::struct_excessive_bools)]
 #[derive(Clone)]
 pub struct Window {
+    pub use_template: bool,
     pub can_fullscreen: bool,
     pub sharp_corners: bool,
     pub show_headerbar: bool,
@@ -43,6 +44,8 @@ pub struct Core {
     pub system_theme: Theme,
     pub(crate) title: String,
     pub window: Window,
+    #[cfg(feature = "applet")]
+    pub applet_helper: super::applet::CosmicAppletHelper,
 }
 
 impl Default for Core {
@@ -59,6 +62,7 @@ impl Default for Core {
             system_theme: theme::theme(),
             title: String::new(),
             window: Window {
+                use_template: true,
                 can_fullscreen: false,
                 sharp_corners: false,
                 show_headerbar: true,
@@ -68,6 +72,8 @@ impl Default for Core {
                 height: 0,
                 width: 0,
             },
+            #[cfg(feature = "applet")]
+            applet_helper: super::applet::CosmicAppletHelper::default(),
         }
     }
 }

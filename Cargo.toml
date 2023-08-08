@@ -31,6 +31,7 @@ winit_tokio = ["iced/winit", "iced_winit", "tokio"]
 winit_wgpu = ["winit", "wgpu"]
 # Enables XDG portal integrations
 xdg-portal = ["ashpd"]
+applet = ["wayland", "tokio", "a11y", "cosmic-panel-config", "ron"]
 
 [dependencies]
 apply = "0.3.0"
@@ -97,6 +98,15 @@ optional = true
 [dependencies.iced_wgpu]
 path = "iced/wgpu"
 optional = true
+
+[dependencies.cosmic-panel-config]
+git = "https://github.com/pop-os/cosmic-panel"
+optional = true
+
+[dependencies.ron]
+version = "0.8"
+optional = true
+
 
 [workspace]
 members = [
