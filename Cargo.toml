@@ -24,7 +24,7 @@ animated-image = ["image", "dep:async-fs", "tokio?/io-util", "tokio?/fs"]
 apply = "0.3.0"
 derive_setters = "0.1.5"
 lazy_static = "1.4.0"
-palette = "0.7"
+palette = "0.7.3"
 tokio = { version = "1.24.2", optional = true }
 sctk = { package = "smithay-client-toolkit", git = "https://github.com/smithay/client-toolkit", optional = true, rev = "c9940f4"}
 slotmap = "1.0.6"
@@ -97,7 +97,3 @@ exclude = [
 
 [patch."https://github.com/pop-os/libcosmic"]
 libcosmic = { path = "./", features = ["wayland", "tokio", "a11y"]}
-
-# TODO Remove me when the palette crate gets an update & before merging
-[patch.crates-io]
-palette = {git = "https://github.com/Ogeon/palette", features = ["serializing"] }

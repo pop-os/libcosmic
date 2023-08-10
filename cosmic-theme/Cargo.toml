@@ -15,9 +15,8 @@ no-default = []
 theme-from-image = ["kmeans_colors", "image"]
 
 [dependencies]
-# palette = {version = "0.7", features = ["serializing"] }
+palette = {version = "0.7.3", features = ["serializing"] }
 almost = "0.2"
-palette = {git = "https://github.com/Ogeon/palette", features = ["serializing"] }
 kmeans_colors = { version = "0.5", features = ["palette_color"], default-features = false, optional = true }
 image = {version = "0.24.1", optional = true }
 serde = { version = "1.0.129", features = ["derive"] }
