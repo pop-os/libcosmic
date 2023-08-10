@@ -26,7 +26,7 @@ pub struct Settings {
     pub(crate) default_font: Font,
 
     /// Name of the icon theme to search by default.
-    #[setters(into)]
+    #[setters(into, strip_option)]
     pub(crate) default_icon_theme: Option<String>,
 
     /// Default size of fonts.
