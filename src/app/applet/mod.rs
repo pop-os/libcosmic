@@ -104,7 +104,7 @@ impl CosmicAppletHelper {
         let (width, height) = self.suggested_size();
         let width = u32::from(width);
         let height = u32::from(height);
-        super::Settings::default()
+        let settings = super::Settings::default()
             .size((width + APPLET_PADDING * 2, height + APPLET_PADDING * 2))
             .size_limits(
                 Limits::NONE
@@ -116,8 +116,11 @@ impl CosmicAppletHelper {
             .resizable(None)
             .default_text_size(18.0)
             .default_font(crate::font::FONT)
-            .transparent(true)
-            .theme(self.theme())
+            .transparent(true);
+        if let Some(theme) = self.theme() {
+            settings.theme(theme);
+        }
+        settings
     }
 
     #[must_use]
@@ -199,26 +202,11 @@ impl CosmicAppletHelper {
     }
 
     #[must_use]
-    pub fn theme(&self) -> theme::Theme {
+    pub fn theme(&self) -> Option<theme::Theme> {
         match self.background {
-            CosmicPanelBackground::ThemeDefault | CosmicPanelBackground::Color(_) => {
-                let Ok(helper) = cosmic_config::Config::new(
-                    cosmic_theme::NAME,
-                    cosmic_theme::Theme::<CssColor>::version(),
-                ) else {
-                    return theme::Theme::dark();
-                };
-                let t =
-                    cosmic_theme::Theme::get_entry(&helper).unwrap_or_else(|(errors, theme)| {
-                        for err in errors {
-                            error!("{:?}", err);
-                        }
-                        theme
-                    });
-                theme::Theme::custom(Arc::new(t))
-            }
             CosmicPanelBackground::Dark => theme::Theme::dark(),
             CosmicPanelBackground::Light => theme::Theme::light(),
+            _ => None,
         }
     }
 }
