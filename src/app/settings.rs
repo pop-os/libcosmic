@@ -60,7 +60,7 @@ impl Settings {
         self.default_icon_theme = if value.is_empty() {
             None
         } else {
-            Some(value.to_string())
+            Some(value)
         };
         self
     }
