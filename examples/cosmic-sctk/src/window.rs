@@ -15,7 +15,7 @@ use cosmic::{
     widget::{
         button, cosmic_container, header_bar, nav_bar, nav_bar_toggle,
         rectangle_tracker::{rectangle_tracker_subscription, RectangleTracker, RectangleUpdate},
-        scrollable, segmented_button, segmented_selection, settings, IconSource,
+        scrollable, segmented_button, segmented_selection, settings, text_input, IconSource,
     },
     Element, ElementExt,
 };
@@ -127,6 +127,7 @@ pub struct Window {
     rectangle_tracker: Option<RectangleTracker<u32>>,
     pub selection: segmented_button::SingleSelectModel,
     timeline: Timeline,
+    input_value: String,
 }
 
 impl Window {
@@ -183,12 +184,12 @@ pub enum Message {
     Drag,
     Minimize,
     Maximize,
-    InputChanged,
     Rectangle(RectangleUpdate<u32>),
     NavBar(segmented_button::Entity),
     Ignore,
     Selection(segmented_button::Entity),
     Tick(Instant),
+    InputChanged(String),
 }
 
 impl Window {
@@ -305,7 +306,6 @@ impl Application for Window {
             Message::Minimize => return set_mode_window(window::Id(0), window::Mode::Hidden),
             Message::Maximize => return toggle_maximize(window::Id(0)),
             Message::RowSelected(row) => println!("Selected row {row}"),
-            Message::InputChanged => {}
             Message::Rectangle(r) => match r {
                 RectangleUpdate::Rectangle(_) => {}
                 RectangleUpdate::Init(t) => {
@@ -315,6 +315,9 @@ impl Application for Window {
             Message::Ignore => {}
             Message::Selection(key) => self.selection.activate(key),
             Message::Tick(now) => self.timeline.now(now),
+            Message::InputChanged(v) => {
+                self.input_value = v;
+            }
         }
 
         Command::none()
@@ -476,6 +479,34 @@ impl Application for Window {
                         .padding(16)
                         .style(cosmic::theme::Container::Secondary),
                     ))
+                    .add(settings::item(
+                        "Text Input",
+                        text_input("test", &self.input_value)
+                            .width(Length::Fill)
+                            .on_input(Message::InputChanged),
+                    ))
+                    .add(settings::item(
+                        "Text Input",
+                        text_input("test", &self.input_value)
+                            .label("Test Label")
+                            .helper_text("helper_text")
+                            .width(Length::Fill)
+                            .on_input(Message::InputChanged),
+                    ))
+                    // .add(settings::item(
+                    //     "Text Input",
+                    //     text_input("test", &self.input_value)
+                    //         .helper_text("helper_text")
+                    //         .width(Length::Fill)
+                    //         .on_input(Message::InputChanged),
+                    // ))
+                    // .add(settings::item(
+                    //     "Text Input",
+                    //     text_input("test", &self.input_value)
+                    //         .helper_text("helper_text")
+                    //         .width(Length::Fill)
+                    //         .on_input(Message::InputChanged),
+                    // ))
                     .into(),
             ])
             .into();

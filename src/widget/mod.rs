@@ -70,6 +70,10 @@ pub use warning::*;
 
 pub mod cosmic_container;
 pub use cosmic_container::*;
+#[cfg(feature = "wayland")]
+pub mod text_input;
+#[cfg(feature = "wayland")]
+pub use text_input::*;
 
 /// An element to distinguish a boundary between two elements.
 pub mod divider {

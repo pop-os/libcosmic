@@ -124,3 +124,5 @@ exclude = [
 
 [patch."https://github.com/pop-os/libcosmic"]
 libcosmic = { path = "./", features = ["wayland", "tokio", "a11y"]}
+[patch."https://github.com/pop-os/cosmic-time"]
+cosmic-time = { path = "../cosmic-time"}
