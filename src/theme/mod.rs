@@ -1,6 +1,8 @@
 // Copyright 2022 System76 <info@system76.com>
 // SPDX-License-Identifier: MPL-2.0
 
+//! Use COSMIC's themes and styles.
+
 pub mod expander;
 mod segmented_button;
 
