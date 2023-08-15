@@ -5,7 +5,7 @@
 
 use apply::Apply;
 use cosmic::app::{Command, Core, Settings};
-use cosmic::dialog::{open_file, FileFilter};
+use cosmic::dialog::file_chooser::{self, FileFilter};
 use cosmic::iced_core::Length;
 use cosmic::{executor, iced, ApplicationExt, Element};
 use tokio::io::AsyncReadExt;
@@ -27,7 +27,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 pub enum Message {
     CloseError,
     DialogClosed,
-    DialogInit(open_file::Sender),
+    DialogInit(file_chooser::Sender),
     DialogOpened,
     Error(String),
     FileRead(Url, String),
@@ -38,7 +38,7 @@ pub enum Message {
 /// The [`App`] stores application-specific state.
 pub struct App {
     core: Core,
-    open_sender: Option<open_file::Sender>,
+    open_sender: Option<file_chooser::Sender>,
     file_contents: String,
     selected_file: Option<Url>,
     error_status: Option<String>,
@@ -90,15 +90,15 @@ impl cosmic::Application for App {
 
     fn subscription(&self) -> cosmic::iced_futures::Subscription<Self::Message> {
         // Creates a subscription for handling open dialogs.
-        open_file::subscription(|response| match response {
-            open_file::Message::Closed => Message::DialogClosed,
-            open_file::Message::Opened => Message::DialogOpened,
-            open_file::Message::Selected(files) => match files.uris().first() {
+        file_chooser::subscription(|response| match response {
+            file_chooser::Message::Closed => Message::DialogClosed,
+            file_chooser::Message::Opened => Message::DialogOpened,
+            file_chooser::Message::Selected(files) => match files.uris().first() {
                 Some(file) => Message::Selected(file.to_owned()),
                 None => Message::DialogClosed,
             },
-            open_file::Message::Init(sender) => Message::DialogInit(sender),
-            open_file::Message::Err(why) => {
+            file_chooser::Message::Init(sender) => Message::DialogInit(sender),
+            file_chooser::Message::Err(why) => {
                 let mut source: &dyn std::error::Error = &why;
                 let mut string = format!("open dialog subscription errored\n    cause: {source}");
 
@@ -180,7 +180,7 @@ impl cosmic::Application for App {
             // Creates a new open dialog.
             Message::OpenFile => {
                 if let Some(sender) = self.open_sender.as_mut() {
-                    if let Some(dialog) = open_file::builder() {
+                    if let Some(dialog) = file_chooser::open_file() {
                         eprintln!("opening new dialog");
 
                         return dialog

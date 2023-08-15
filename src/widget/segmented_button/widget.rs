@@ -8,7 +8,7 @@ use crate::widget::{icon, IconSource};
 use derive_setters::Setters;
 use iced::{
     alignment, event, keyboard, mouse, touch, Background, Color, Command, Element, Event, Length,
-    Point, Rectangle, Size,
+    Rectangle, Size,
 };
 use iced_core::text::{LineHeight, Shaping};
 use iced_core::widget::{self, operation, tree};

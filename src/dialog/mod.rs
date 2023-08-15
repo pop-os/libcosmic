@@ -3,7 +3,6 @@
 
 //! Create dialogs for retrieving user input.
 
-pub use ashpd::desktop::file_chooser::{Choice, FileFilter, SelectedFiles};
 pub use ashpd::WindowIdentifier;
 
-pub mod open_file;
+pub mod file_chooser;
