@@ -51,7 +51,7 @@ impl<Message: 'static> Button<Message> {
         let theme = theme.cosmic();
         let button = widget::button(widget::row(children).spacing(8))
             .style(self.style)
-            .padding([theme.space_xs(), theme.space_s()]);
+            .padding([theme.space_xxs(), theme.space_s()]);
 
         if let Some(message) = self.message {
             button.on_press(message)
