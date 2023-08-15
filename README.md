@@ -1,51 +1,90 @@
 # LIBCOSMIC
 
-Building blocks for COSMIC applications.
+A platform toolkit based on iced which provides the building blocks for developing the
+future COSMIC desktop environment. Applications and applets alike are equally supported
+targets of Libcosmic. Applets integrate directly with COSMIC's interface as shell
+components, which was made possible by the Layer Shell protocol of Wayland.
 
 ## Building
-Libcosmic is written in pure Rust, so `cargo` is all you need.
 
-```shell
-cargo build
+Libcosmic is written entirely in Rust, with minimal dependence on system libraries. On
+Pop!_OS, the following dependencies are all that's necessary compile the cosmic library:
+
+```sh
+sudo apt install cargo cmake just libexpat1-dev libfontconfig-dev libfreetype-dev pkg-config
 ```
 
-## Usage
-There's examples in the `examples` directory.
+Some examples are included in the [examples](./examples) directory to to kickstart your
+COSMIC adventure. To run them, you need to clone the repository with the following commands:
 
-### Widget library
-```shell
-cargo run --release --example cosmic
-```
-
-On Pop!_OS
-```shell
-sudo apt install cargo libexpat1-dev libfontconfig-dev libfreetype-dev pkg-config cmake
+```sh
 git clone https://github.com/pop-os/libcosmic
 cd libcosmic
-git submodule update --init
-cargo run --release -p cosmic
+git submodule update --init --recursive
 ```
 
-If already cloned
-```shell
-cd libcosmic
-git pull origin master
-cargo run --release -p cosmic
+If you have already cloned the repository, run these to sync with the latest updates:
+
+```sh
+git fetch origin
+git checkout master
+git reset --hard origin/master
+git submodule update --init --recursive
 ```
 
-### Text rendering
-```shell
-cargo run --release --example text
+To create a new COSMIC project, use `cargo new {{name_of_project}}` to create a new
+project workspace, edit the `Cargo.toml` contained within, and add this to begin.
+
+```toml
+[workspace.dependencies.libcosmic]
+git = "https://github.com/pop-os/libcosmic"
+default-features = false
+features = ["wayland", "tokio"]
 ```
+
+### Cargo Features
+
+Available cargo features to choose from:
+
+- `a11y`: Experimental accessibility support.
+- `animated-image`: Enables animated images from the image crate.
+- `debug`: Enables addtional debugging features.
+- `smol`: Uses smol as the preferred async runtime.
+    - Conflicts with `tokio`
+- `tokio`: Uses tokio as the preferred async runtime.
+    - If unset, the default executor defined by iced will be used.
+    - Conflicts with `smol`
+- `wayland`: Wayland-compatible client windows.
+    - Conflicts with `winit`
+- `winit`: Cross-platform and X11 client window support
+    - Conflicts with `wayland`
+- `wgpu`: GPU accelerated rendering with WGPU.
+    - By default, softbuffer is used for software rendering.
+- `xdg-portal`: Enables XDG portal dialog integrations.
+
+### Project Showcase
+
+- [COSMIC App Library](https://github.com/pop-os/cosmic-applibrary)
+- [COSMIC Applets](https://github.com/pop-os/cosmic-applets)
+- [COSMIC Launcher](https://github.com/pop-os/cosmic-launcher)
+- [COSMIC Notifications](https://github.com/pop-os/cosmic-notifications)
+- [COSMIC Panel](https://github.com/pop-os/cosmic-panel)
+- [COSMIC Text Editor](https://github.com/pop-os/cosmic-text-editor)
+- [COSMIC Settings](https://github.com/pop-os/cosmic-settings)
 
 ## Documentation
-The documentation can be found [here](https://pop-os.github.io/docs/).
+
+Documentation can be found [here](https://pop-os.github.io/docs/).
 
 ## Licence
-Libcosmic is licenced under the MPL-2.0
+
+Licensed under the [Mozilla Public License 2.0](https://choosealicense.com/licenses/mpl-2.0).
 
 ## Contact
+
 - [Mattermost](https://chat.pop-os.org/)
-- [Discord](https://chat.pop-os.org/)
+- [Lemmy](https://lemmy.world/c/pop_os)
+- [Mastodon](https://fosstodon.org/@pop_os_official)
+- [Reddit](https://www.reddit.com/r/pop_os/)
 - [Twitter](https://twitter.com/pop_os_official)
-- [Instagram](https://www.instagram.com/pop_os_official/)
+- [Instagram](https://www.instagram.com/pop_os_official)
