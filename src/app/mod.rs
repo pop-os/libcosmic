@@ -1,6 +1,11 @@
 // Copyright 2023 System76 <info@system76.com>
 // SPDX-License-Identifier: MPL-2.0
 
+//! Build interactive cross-platform COSMIC applications.
+//!
+//! Check out our [application](https://github.com/pop-os/libcosmic/tree/master/examples/application)
+//! example in our repository.
+
 pub mod command;
 mod core;
 pub mod cosmic;
@@ -9,7 +14,7 @@ pub mod settings;
 pub mod message {
     #[derive(Clone, Debug)]
     #[must_use]
-    pub enum Message<M: Send + 'static> {
+    pub enum Message<M> {
         /// Messages from the application, for the application.
         App(M),
         /// Internal messages to be handled by libcosmic.
@@ -18,19 +23,20 @@ pub mod message {
         None,
     }
 
-    pub fn app<M: Send + 'static>(message: M) -> Message<M> {
+    pub const fn app<M>(message: M) -> Message<M> {
         Message::App(message)
     }
 
-    pub fn cosmic<M: Send + 'static>(message: super::cosmic::Message) -> Message<M> {
+    pub const fn cosmic<M>(message: super::cosmic::Message) -> Message<M> {
         Message::Cosmic(message)
     }
 
-    pub fn none<M: Send + 'static>() -> Message<M> {
+    pub const fn none<M>() -> Message<M> {
         Message::None
     }
 }
 
+pub use self::command::Command;
 pub use self::core::Core;
 pub use self::settings::Settings;
 use crate::theme::THEME;
@@ -41,10 +47,7 @@ use iced::Subscription;
 use iced::{window, Application as IcedApplication};
 pub use message::Message;
 
-/// Commands for COSMIC applications.
-pub type Command<M> = iced::Command<Message<M>>;
-
-/// Launch the application with the given settings.
+/// Launch a COSMIC application with the given [`Settings`].
 ///
 /// # Errors
 ///
@@ -102,6 +105,7 @@ pub fn run<App: Application>(settings: Settings, flags: App::Flags) -> iced::Res
     cosmic::Cosmic::<App>::run(iced)
 }
 
+/// An interactive cross-platform COSMIC application.
 #[allow(unused_variables)]
 pub trait Application
 where
@@ -245,6 +249,7 @@ impl<App: Application> ApplicationExt for App {
         iced::Command::none()
     }
 
+    /// Creates the view for the main window.
     fn view_main<'a>(&'a self) -> Element<'a, Message<Self::Message>> {
         let core = self.core();
         let is_condensed = core.is_condensed();
@@ -313,7 +318,7 @@ impl<App: Application> ApplicationExt for App {
                     }
                 }
 
-                if core.show_content() {
+                if self.nav_model().is_none() || core.show_content() {
                     let main_content = self.view().debug(core.debug).map(Message::App);
 
                     widgets.push(main_content);

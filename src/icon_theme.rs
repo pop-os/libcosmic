@@ -1,6 +1,8 @@
 // Copyright 2023 System76 <info@system76.com>
 // SPDX-License-Identifier: MPL-2.0
 
+//! Select the preferred icon theme.
+
 use std::cell::RefCell;
 
 thread_local! {

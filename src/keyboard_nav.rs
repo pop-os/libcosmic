@@ -1,6 +1,8 @@
 // Copyright 2023 System76 <info@system76.com>
 // SPDX-License-Identifier: MPL-2.0
 
+//! Subscribe to common application keyboard shortcuts.
+
 use iced::{
     event,
     keyboard::{self, KeyCode},

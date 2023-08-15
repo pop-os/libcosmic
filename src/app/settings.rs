@@ -1,11 +1,14 @@
 // Copyright 2023 System76 <info@system76.com>
 // SPDX-License-Identifier: MPL-2.0
 
+//! Configure a new COSMIC application.
+
 use crate::{font, Theme};
 #[cfg(feature = "wayland")]
 use iced::Limits;
 use iced_core::Font;
 
+/// Configure a new COSMIC application.
 #[allow(clippy::struct_excessive_bools)]
 #[derive(derive_setters::Setters)]
 pub struct Settings {

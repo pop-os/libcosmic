@@ -1,6 +1,8 @@
 // Copyright 2023 System76 <info@system76.com>
 // SPDX-License-Identifier: MPL-2.0
 
+//! An async executor that schedules tasks across a pol ofbackground thread.
+
 use std::future::Future;
 
 #[cfg(feature = "tokio")]

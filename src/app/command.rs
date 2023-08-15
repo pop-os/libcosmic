@@ -1,22 +1,11 @@
 // Copyright 2023 System76 <info@system76.com>
 // SPDX-License-Identifier: MPL-2.0
 
-use std::future::Future;
+/// Asynchronous actions for COSMIC applications.
+use super::Message;
 
-use super::{Command, Message};
-use iced_runtime::command::Action;
-
-/// Yields a command which contains a batch of commands.
-pub fn batch<M: Send + 'static>(commands: impl IntoIterator<Item = Command<M>>) -> Command<M> {
-    Command::batch(commands)
-}
-
-/// Yields a command which will run the future on the runtime executor.
-pub fn future<M: Send + 'static>(
-    future: impl Future<Output = Message<M>> + Send + 'static,
-) -> Command<M> {
-    Command::single(Action::Future(Box::pin(future)))
-}
+/// Commands for COSMIC applications.
+pub type Command<M> = iced::Command<Message<M>>;
 
 /// Creates a command which yields a [`crate::app::Message`].
 pub fn message<M: Send + 'static>(message: Message<M>) -> Command<M> {
