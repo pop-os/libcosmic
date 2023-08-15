@@ -122,6 +122,7 @@ impl<'a, Message: Clone + 'static> HeaderBar<'a, Message> {
         });
 
         // Also packs the window controls at the very end.
+        end.push(iced::widget::horizontal_space(Length::Fixed(12.0)).into());
         end.push(self.window_controls());
         packed.push(
             iced::widget::row(end)
