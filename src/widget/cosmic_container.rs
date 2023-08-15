@@ -7,7 +7,7 @@ use iced_core::mouse;
 use iced_core::overlay;
 use iced_core::renderer;
 use iced_core::widget::Tree;
-use iced_core::{Clipboard, Element, Layout, Length, Padding, Point, Rectangle, Shell, Widget};
+use iced_core::{Clipboard, Element, Layout, Length, Padding, Rectangle, Shell, Widget};
 pub use iced_style::container::{Appearance, StyleSheet};
 
 pub fn container<'a, Message: 'static, T>(
