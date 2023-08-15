@@ -104,7 +104,7 @@ impl CosmicAppletHelper {
         let (width, height) = self.suggested_size();
         let width = u32::from(width);
         let height = u32::from(height);
-        let settings = super::Settings::default()
+        let mut settings = super::Settings::default()
             .size((width + APPLET_PADDING * 2, height + APPLET_PADDING * 2))
             .size_limits(
                 Limits::NONE
@@ -118,7 +118,7 @@ impl CosmicAppletHelper {
             .default_font(crate::font::FONT)
             .transparent(true);
         if let Some(theme) = self.theme() {
-            settings.theme(theme);
+            settings = settings.theme(theme);
         }
         settings
     }
@@ -204,8 +204,8 @@ impl CosmicAppletHelper {
     #[must_use]
     pub fn theme(&self) -> Option<theme::Theme> {
         match self.background {
-            CosmicPanelBackground::Dark => theme::Theme::dark(),
-            CosmicPanelBackground::Light => theme::Theme::light(),
+            CosmicPanelBackground::Dark => Some(theme::Theme::dark()),
+            CosmicPanelBackground::Light => Some(theme::Theme::light()),
             _ => None,
         }
     }
