@@ -1,0 +1,16 @@
+[package]
+name = "open_dialog"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+apply = "0.3.0"
+tokio = { version = "1.31", features = ["full"] }
+tracing = "0.1.37"
+tracing-subscriber = "0.3.17"
+url = "2.4.0"
+
+[dependencies.libcosmic]
+path = "../../"
+default-features = false
+features = ["debug", "wayland", "tokio", "xdg-portal"]

@@ -1,27 +1,46 @@
 // Copyright 2023 System76 <info@system76.com>
 // SPDX-License-Identifier: MPL-2.0
 
-//! Testing ground for improving COSMIC application API ergonomics.
+//! Application API example
 
 use cosmic::app::{Command, Core, Settings};
 use cosmic::widget::nav_bar;
 use cosmic::{executor, iced, ApplicationExt, Element};
 
+#[derive(Clone, Copy)]
+pub enum Page {
+    Page1,
+    Page2,
+    Page3,
+    Page4,
+}
+
+impl Page {
+    const fn as_str(self) -> &'static str {
+        match self {
+            Page::Page1 => "Page 1",
+            Page::Page2 => "Page 2",
+            Page::Page3 => "Page 3",
+            Page::Page4 => "Page 4",
+        }
+    }
+}
+
 /// Runs application with these settings
 #[rustfmt::skip]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let input = vec![
-        ("Page 1".into(), "🖖 Hello from libcosmic.".into()),
-        ("Page 2".into(), "🌟 This is an example application.".into()),
-        ("Page 3".into(), "🚧 The libcosmic API is not stable yet.".into()),
-        ("Page 4".into(), "🚀 Copy the source code and experiment today!".into()),
+        (Page::Page1, "🖖 Hello from libcosmic.".into()),
+        (Page::Page2, "🌟 This is an example application.".into()),
+        (Page::Page3, "🚧 The libcosmic API is not stable yet.".into()),
+        (Page::Page4, "🚀 Copy the source code and experiment today!".into()),
     ];
 
     let settings = Settings::default()
         .antialiasing(true)
         .client_decorations(true)
         .debug(false)
-        .default_icon_theme("Pop")
+        .default_icon_theme(Some("Pop".into()))
         .default_text_size(16.0)
         .scale_factor(1.0)
         .size((1024, 768))
@@ -48,7 +67,7 @@ impl cosmic::Application for App {
     type Executor = executor::Default;
 
     /// Argument received [`cosmic::Application::new`].
-    type Flags = Vec<(String, String)>;
+    type Flags = Vec<(Page, String)>;
 
     /// Message type specific to our [`App`].
     type Message = Message;
@@ -68,7 +87,7 @@ impl cosmic::Application for App {
         let mut nav_model = nav_bar::Model::default();
 
         for (title, content) in input {
-            nav_model.insert().text(title).data(content);
+            nav_model.insert().text(title.as_str()).data(content);
         }
 
         nav_model.activate_position(0);
@@ -91,10 +110,12 @@ impl cosmic::Application for App {
         self.update_title()
     }
 
+    /// Handle application events here.
     fn update(&mut self, _message: Self::Message) -> Command<Self::Message> {
         Command::none()
     }
 
+    /// Creates a view after each update.
     fn view(&self) -> Element<Self::Message> {
         let page_content = self
             .nav_model

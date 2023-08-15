@@ -10,6 +10,9 @@ pub mod command;
 pub use cosmic_config;
 pub use cosmic_theme;
 
+#[cfg(feature = "xdg-portal")]
+pub mod dialog;
+
 pub mod executor;
 #[cfg(feature = "tokio")]
 pub use executor::single::Executor as SingleThreadExecutor;

@@ -8,17 +8,29 @@ name = "cosmic"
 
 [features]
 default = ["wayland", "tokio", "a11y"]
-debug = ["iced/debug"]
+# Accessibility support
 a11y = ["iced/a11y", "iced_accessibility"]
-wayland = ["iced/wayland", "iced_sctk", "sctk"]
-wgpu = ["iced/wgpu", "iced_wgpu"]
-tokio = ["dep:tokio", "iced/tokio"]
-smol = ["iced/smol"]
-winit = ["iced/winit", "iced_winit"]
-winit_tokio = ["iced/winit", "iced_winit", "tokio"]
-winit_debug = ["iced/winit", "iced_winit", "debug"]
-winit_wgpu = ["winit", "wgpu"]
+# Builds support for animated images
 animated-image = ["image", "dep:async-fs", "tokio?/io-util", "tokio?/fs"]
+# Debug features
+debug = ["iced/debug"]
+# Enables pipewire support in ashpd, if ashpd is enabled
+pipewire = ["ashpd?/pipewire"]
+# smol async runtime
+smol = ["iced/smol"]
+# Tokio async runtime
+tokio = ["dep:tokio", "ashpd/tokio", "iced/tokio"]
+# Wayland window support
+wayland = ["ashpd?/wayland", "iced/wayland", "iced_sctk", "sctk"]
+# Render with wgpu
+wgpu = ["iced/wgpu", "iced_wgpu"]
+# X11 window support via winit
+winit = ["iced/winit", "iced_winit"]
+winit_debug = ["iced/winit", "iced_winit", "debug"]
+winit_tokio = ["iced/winit", "iced_winit", "tokio"]
+winit_wgpu = ["winit", "wgpu"]
+# Enables XDG portal integrations
+xdg-portal = ["ashpd"]
 
 [dependencies]
 apply = "0.3.0"
@@ -34,6 +46,8 @@ tracing = "0.1"
 image = { version = "0.24.6", optional = true }
 thiserror = "1.0.44"
 async-fs = { version = "1.6", optional = true }
+ashpd = { version = "0.5.0", default-features = false, optional = true }
+url = "2.4.0"
 
 [target.'cfg(unix)'.dependencies]
 freedesktop-icons = "0.2.2"
