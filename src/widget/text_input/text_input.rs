@@ -9,12 +9,13 @@ use super::editor::Editor;
 use super::style::StyleSheet;
 pub use super::value::Value;
 
-use iced_core::{alignment, Background};
+use apply::Also;
+use iced::Limits;
 use iced_core::event::{self, Event};
 use iced_core::keyboard;
 use iced_core::layout;
 use iced_core::mouse::{self, click};
-use iced_core::renderer;
+use iced_core::renderer::{self, Renderer as CoreRenderer};
 use iced_core::text::{self, Renderer, Text};
 use iced_core::time::{Duration, Instant};
 use iced_core::touch;
@@ -22,6 +23,7 @@ use iced_core::widget::operation::{self, Operation};
 use iced_core::widget::tree::{self, Tree};
 use iced_core::widget::Id;
 use iced_core::window;
+use iced_core::{alignment, Background};
 use iced_core::{
     Clipboard, Color, Element, Layout, Length, Padding, Pixels, Point, Rectangle, Shell, Size,
     Vector, Widget,
@@ -37,12 +39,9 @@ use sctk::reexports::client::protocol::wl_data_device_manager::DndAction;
 /// Creates a new [`TextInput`].
 ///
 /// [`TextInput`]: widget::TextInput
-pub fn text_input<'a, Message>(
-    placeholder: &str,
-    value: &str,
-) -> TextInput<'a, Message>
+pub fn text_input<'a, Message>(placeholder: &str, value: &str) -> TextInput<'a, Message>
 where
-    Message: Clone
+    Message: Clone,
 {
     TextInput::new(placeholder, value)
 }
@@ -55,11 +54,10 @@ pub fn expandable_search_input<'a, Message>(
     value: &str,
 ) -> TextInput<'a, Message>
 where
-    Message: Clone
+    Message: Clone,
 {
-    TextInput::new(placeholder, value)
+    TextInput::new(placeholder, value).style(super::style::TextInput::Default)
 }
-
 
 /// Creates a new search [`TextInput`].
 ///
@@ -67,24 +65,36 @@ where
 pub fn search_input<'a, Message>(
     placeholder: &str,
     value: &str,
+    on_clear: Message,
 ) -> TextInput<'a, Message>
 where
-    Message: Clone
+    Message: Clone + 'static,
 {
+    let spacing = THEME.with(|t| t.borrow().cosmic().space_xxs());
     TextInput::new(placeholder, value)
+        .style(super::style::TextInput::Search)
+        .start_icon(
+            iced_widget::container(crate::widget::icon("system-search-symbolic", 16))
+                .padding([spacing, spacing, spacing, 2 * spacing])
+                .into(),
+        )
+        .end_icon(
+            crate::widget::button::button(crate::theme::Button::Text)
+                .icon(crate::theme::Svg::Symbolic, "edit-clear-symbolic", 16)
+                .on_press(on_clear)
+                .padding([spacing, 2 * spacing, spacing, spacing])
+                .into(),
+        )
 }
 
 /// Creates a new inline [`TextInput`].
 ///
 /// [`TextInput`]: widget::TextInput
-pub fn inline_input<'a, Message>(
-    placeholder: &str,
-    value: &str,
-) -> TextInput<'a, Message>
+pub fn inline_input<'a, Message>(value: &str) -> TextInput<'a, Message>
 where
-    Message: Clone
+    Message: Clone,
 {
-    TextInput::new(placeholder, value)
+    TextInput::new("", value).style(super::style::TextInput::Inline)
 }
 
 const SUPPORTED_MIME_TYPES: &[&str; 6] = &[
@@ -138,7 +148,8 @@ pub struct TextInput<'a, Message> {
     on_input: Option<Box<dyn Fn(String) -> Message + 'a>>,
     on_paste: Option<Box<dyn Fn(String) -> Message + 'a>>,
     on_submit: Option<Message>,
-    icon: Option<Icon<<crate::Renderer as iced_core::text::Renderer>::Font>>,
+    start_icon: Option<Element<'a, Message, crate::Renderer>>,
+    end_element: Option<Element<'a, Message, crate::Renderer>>,
     style: <<crate::Renderer as iced_core::Renderer>::Theme as StyleSheet>::Style,
     // (text_input::State, mime_type, dnd_action) -> Message
     on_create_dnd_source: Option<Box<dyn Fn(State) -> Message + 'a>>,
@@ -173,7 +184,8 @@ where
             on_input: None,
             on_paste: None,
             on_submit: None,
-            icon: None,
+            start_icon: None,
+            end_element: None,
             error: None,
             style: super::style::TextInput::default(),
             on_dnd_command_produced: None,
@@ -256,12 +268,15 @@ where
         self
     }
 
-    /// Sets the [`Icon`] of the [`TextInput`].
-    pub fn icon(
-        mut self,
-        icon: Icon<<crate::Renderer as iced_core::text::Renderer>::Font>,
-    ) -> Self {
-        self.icon = Some(icon);
+    /// Sets the start [`Icon`] of the [`TextInput`].
+    pub fn start_icon(mut self, icon: Element<'a, Message, crate::Renderer>) -> Self {
+        self.start_icon = Some(icon);
+        self
+    }
+
+    /// Sets the end [`Icon`] of the [`TextInput`].
+    pub fn end_icon(mut self, icon: Element<'a, Message, crate::Renderer>) -> Self {
+        self.end_element = Some(icon);
         self
     }
 
@@ -310,14 +325,15 @@ where
             theme,
             layout,
             cursor_position,
-            tree.state.downcast_ref::<State>(),
+            tree,
             value.unwrap_or(&self.value),
             &self.placeholder,
             self.size,
             self.font,
             self.on_input.is_none(),
             self.is_secure,
-            self.icon.as_ref(),
+            self.start_icon.as_ref(),
+            self.end_element.as_ref(),
             &self.style,
             self.dnd_icon,
             self.line_height,
@@ -325,7 +341,8 @@ where
             self.label,
             self.helper_text,
             self.helper_size,
-            self.helper_line_height
+            self.helper_line_height,
+            &layout.bounds(),
         );
     }
 
@@ -398,6 +415,21 @@ where
             state.is_pasting = None;
             state.dragging_state = None;
         }
+        let mut children: Vec<_> = self
+            .start_icon
+            .iter_mut()
+            .chain(self.end_element.iter_mut())
+            .map(iced_core::Element::as_widget_mut)
+            .collect();
+        tree.diff_children(children.as_mut_slice());
+    }
+
+    fn children(&self) -> Vec<Tree> {
+        self.start_icon
+            .iter()
+            .chain(self.end_element.iter())
+            .map(|icon| Tree::new(icon))
+            .collect()
     }
 
     fn width(&self) -> Length {
@@ -435,12 +467,13 @@ where
                 self.width,
                 self.padding,
                 self.size,
-                self.icon.as_ref(),
+                self.start_icon.as_ref(),
+                self.end_element.as_ref(),
                 self.line_height,
                 self.label,
                 self.helper_text,
                 self.helper_size,
-                self.helper_line_height
+                self.helper_line_height,
             )
         }
     }
@@ -467,11 +500,48 @@ where
         renderer: &crate::Renderer,
         clipboard: &mut dyn Clipboard,
         shell: &mut Shell<'_, Message>,
-        _viewport: &Rectangle,
+        viewport: &Rectangle,
     ) -> event::Status {
+        if let (Some(start_icon), Some(tree)) = (self.start_icon.as_mut(), tree.children.get_mut(0))
+        {
+            if matches!(
+                start_icon.as_widget_mut().on_event(
+                    tree,
+                    event.clone(),
+                    layout,
+                    cursor_position,
+                    renderer,
+                    clipboard,
+                    shell,
+                    viewport
+                ),
+                event::Status::Captured
+            ) {
+                return event::Status::Captured;
+            }
+        }
+        if let (Some(end_icon), Some(tree)) = (self.end_element.as_mut(), tree.children.get_mut(2))
+        {
+            if matches!(
+                end_icon.as_widget_mut().on_event(
+                    tree,
+                    event.clone(),
+                    layout,
+                    cursor_position,
+                    renderer,
+                    clipboard,
+                    shell,
+                    viewport
+                ),
+                event::Status::Captured
+            ) {
+                return event::Status::Captured;
+            }
+        }
+
         update(
             event,
-            layout,
+            self.text_layout(layout),
             cursor_position,
             renderer,
             clipboard,
@@ -500,21 +570,22 @@ where
         _style: &renderer::Style,
         layout: Layout<'_>,
         cursor_position: mouse::Cursor,
-        _viewport: &Rectangle,
+        viewport: &Rectangle,
     ) {
         draw(
             renderer,
             theme,
             layout,
             cursor_position,
-            tree.state.downcast_ref::<State>(),
+            tree,
             &self.value,
             &self.placeholder,
             self.size,
             self.font,
             self.on_input.is_none(),
             self.is_secure,
-            self.icon.as_ref(),
+            self.start_icon.as_ref(),
+            self.end_element.as_ref(),
             &self.style,
             self.dnd_icon,
             self.line_height,
@@ -523,6 +594,7 @@ where
             self.helper_text,
             self.helper_size,
             self.helper_line_height,
+            viewport,
         );
     }
 
@@ -546,30 +618,6 @@ where
     fn from(text_input: TextInput<'a, Message>) -> Element<'a, Message, crate::Renderer> {
         Element::new(text_input)
     }
-}
-
-/// The content of the [`Icon`].
-#[derive(Debug, Clone)]
-pub struct Icon<Font> {
-    /// The font that will be used to display the `code_point`.
-    pub font: Font,
-    /// The unicode code point that will be used as the icon.
-    pub code_point: char,
-    /// The font size of the content.
-    pub size: Option<f32>,
-    /// The spacing between the [`Icon`] and the text in a [`TextInput`].
-    pub spacing: f32,
-    /// The side of a [`TextInput`] where to display the [`Icon`].
-    pub side: Side,
-}
-
-/// The side of a [`TextInput`].
-#[derive(Debug, Clone)]
-pub enum Side {
-    /// The left side of a [`TextInput`].
-    Left,
-    /// The right side of a [`TextInput`].
-    Right,
 }
 
 /// Produces a [`Command`] that focuses the [`TextInput`] with the given [`Id`].
@@ -603,22 +651,21 @@ pub fn select_all<Message: 'static>(id: Id) -> Command<Message> {
 /// Computes the layout of a [`TextInput`].
 #[allow(clippy::cast_precision_loss)]
 #[allow(clippy::too_many_arguments)]
-pub fn layout<Renderer>(
-    renderer: &Renderer,
+#[allow(clippy::too_many_lines)]
+pub fn layout<Message>(
+    renderer: &crate::Renderer,
     limits: &layout::Limits,
     width: Length,
     padding: Padding,
     size: Option<f32>,
-    icon: Option<&Icon<Renderer::Font>>,
+    start_icon: Option<&Element<'_, Message, crate::Renderer>>,
+    end_icon: Option<&Element<'_, Message, crate::Renderer>>,
     line_height: text::LineHeight,
     label: Option<&str>,
     helper_text: Option<&str>,
     helper_text_size: f32,
     helper_text_line_height: text::LineHeight,
-) -> layout::Node
-where
-    Renderer: text::Renderer,
-{
+) -> layout::Node {
     let spacing = THEME.with(|t| t.borrow().cosmic().space_xxs());
     let mut nodes = Vec::with_capacity(3);
 
@@ -644,42 +691,62 @@ where
     let text_size = size.unwrap_or_else(|| renderer.default_size());
     let padding = padding.fit(Size::ZERO, limits.max());
 
-    let helper_pos = if let Some(icon) = icon {
-        let limits = limits.width(width).pad(padding).height(text_size * 1.2);
-        let text_bounds = limits.resolve(Size::ZERO);
-    
-        let icon_width = renderer.measure_width(
-            &icon.code_point.to_string(),
-            icon.size.unwrap_or_else(|| renderer.default_size()),
-            icon.font,
-            text::Shaping::Advanced,
-        );
-
-        let mut text_node =
-            layout::Node::new(text_bounds - Size::new(icon_width + icon.spacing, 0.0));
-
-        let mut icon_node = layout::Node::new(Size::new(icon_width, text_bounds.height));
-
-        match icon.side {
-            Side::Left => {
-                text_node.move_to(Point::new(
-                    padding.left + icon_width + icon.spacing,
-                    padding.top,
-                ));
-
-                icon_node.move_to(Point::new(padding.left, padding.top));
-            }
-            Side::Right => {
-                text_node.move_to(Point::new(padding.left, padding.top));
-
-                icon_node.move_to(Point::new(
-                    padding.left + text_bounds.width - icon_width,
-                    padding.top,
-                ));
-            }
+    let helper_pos = if start_icon.is_some() || end_icon.is_some() {
+        // TODO configurable icon spacing, maybe via appearance
+        let mut height = text_size * 1.2;
+        let icon_spacing = 8.0;
+        let (start_icon_width, mut start_icon) = if let Some(icon) = start_icon.as_ref() {
+            let icon_node = icon.layout(
+                renderer,
+                &Limits::NONE
+                    .width(icon.as_widget().width())
+                    .height(icon.as_widget().height()),
+            );
+            height = height.max(icon_node.bounds().height);
+            (icon_node.bounds().width + icon_spacing, Some(icon_node))
+        } else {
+            (0.0, None)
         };
 
-        let node = layout::Node::with_children(text_bounds.pad(padding), vec![text_node, icon_node]).translate(text_pos);
+        let (end_icon_width, mut end_icon) = if let Some(icon) = end_icon.as_ref() {
+            let icon_node = icon.layout(
+                renderer,
+                &Limits::NONE
+                    .width(icon.as_widget().width())
+                    .height(icon.as_widget().height()),
+            );
+            height = height.max(icon_node.bounds().height);
+            (icon_node.bounds().width + icon_spacing, Some(icon_node))
+        } else {
+            (0.0, None)
+        };
+        let limits = limits.width(width).pad(padding).height(height);
+
+        let text_bounds = limits.resolve(Size::ZERO);
+
+        let mut text_node =
+            layout::Node::new(text_bounds - Size::new(start_icon_width + end_icon_width, 0.0));
+
+        text_node.move_to(Point::new(padding.left + start_icon_width, padding.top));
+        let mut node_list: Vec<_> = Vec::with_capacity(3);
+
+        let text_node_bounds = text_node.bounds();
+        node_list.push(text_node);
+
+        if let Some(mut start_icon) = start_icon.take() {
+            start_icon.move_to(Point::new(padding.left, padding.top));
+            node_list.push(start_icon);
+        }
+        if let Some(mut end_icon) = end_icon.take() {
+            end_icon.move_to(Point::new(
+                text_node_bounds.x + text_node_bounds.width + icon_spacing,
+                padding.top,
+            ));
+            node_list.push(end_icon);
+        }
+
+        let node =
+            layout::Node::with_children(text_bounds.pad(padding), node_list).translate(text_pos);
         let y_pos = node.bounds().y + node.bounds().height + f32::from(spacing);
         nodes.push(node);
 
@@ -687,11 +754,12 @@ where
     } else {
         let limits = limits.width(width).pad(padding).height(text_size * 1.2);
         let text_bounds = limits.resolve(Size::ZERO);
-    
+
         let mut text = layout::Node::new(text_bounds);
         text.move_to(Point::new(padding.left, padding.top));
 
-        let node = layout::Node::with_children(text_bounds.pad(padding), vec![text]).translate(text_pos);
+        let node =
+            layout::Node::with_children(text_bounds.pad(padding), vec![text]).translate(text_pos);
         let y_pos = node.bounds().y + node.bounds().height + f32::from(spacing);
         nodes.push(node);
 
@@ -699,7 +767,10 @@ where
     };
 
     if let Some(helper_text) = helper_text {
-        let limits = limits.width(width).pad(padding).height(helper_text_size * 1.2);
+        let limits = limits
+            .width(width)
+            .pad(padding)
+            .height(helper_text_size * 1.2);
         let text_bounds = limits.resolve(Size::ZERO);
 
         let helper_text_size = renderer.measure(
@@ -715,7 +786,10 @@ where
     };
 
     let mut size = nodes.iter().fold(Size::ZERO, |size, node| {
-        Size::new(size.width.max(node.bounds().width), size.height + node.bounds().height)
+        Size::new(
+            size.width.max(node.bounds().width),
+            size.height + node.bounds().height,
+        )
     });
     size.height += (nodes.len() - 1) as f32 * f32::from(spacing);
     let limits = limits.width(width).pad(padding).height(size.height);
@@ -732,7 +806,7 @@ where
 #[allow(clippy::cast_possible_truncation)]
 pub fn update<'a, Message, Renderer>(
     event: Event,
-    layout: Layout<'_>,
+    text_layout: Layout<'_>,
     cursor_position: mouse::Cursor,
     renderer: &Renderer,
     clipboard: &mut dyn Clipboard,
@@ -759,7 +833,7 @@ where
         Event::Mouse(mouse::Event::ButtonPressed(mouse::Button::Left))
         | Event::Touch(touch::Event::FingerPressed { .. }) => {
             let state = state();
-            let is_clicked = cursor_position.is_over(layout.bounds()) && on_input.is_some();
+            let is_clicked = cursor_position.is_over(text_layout.bounds()) && on_input.is_some();
 
             state.is_focused = if is_clicked {
                 state.is_focused.or_else(|| {
@@ -779,7 +853,6 @@ where
                 let Some(pos) = cursor_position.position() else {
                     return event::Status::Ignored;
                 };
-                let text_layout = layout.children().next().unwrap();
                 let target = pos.x - text_layout.bounds().x;
 
                 let click = mouse::Click::new(pos, state.last_click);
@@ -807,7 +880,6 @@ where
                             surface_ids,
                             on_input,
                         ) {
-                            let text_bounds = layout.children().next().unwrap().bounds();
                             let actual_size = size.unwrap_or_else(|| renderer.default_size());
 
                             let left = start.min(end);
@@ -815,7 +887,7 @@ where
 
                             let (left_position, _left_offset) = measure_cursor_and_scroll_offset(
                                 renderer,
-                                text_bounds,
+                                text_layout.bounds(),
                                 value,
                                 actual_size,
                                 left,
@@ -824,7 +896,7 @@ where
 
                             let (right_position, _right_offset) = measure_cursor_and_scroll_offset(
                                 renderer,
-                                text_bounds,
+                                text_layout.bounds(),
                                 value,
                                 actual_size,
                                 right,
@@ -833,10 +905,10 @@ where
 
                             let width = right_position - left_position;
                             let selection_bounds = Rectangle {
-                                x: text_bounds.x + left_position,
-                                y: text_bounds.y,
+                                x: text_layout.bounds().x + left_position,
+                                y: text_layout.bounds().y,
                                 width,
-                                height: text_bounds.height,
+                                height: text_layout.bounds().height,
                             };
 
                             if cursor_position.is_over(selection_bounds) {
@@ -969,7 +1041,6 @@ where
             let state = state();
 
             if matches!(state.dragging_state, Some(DraggingState::Selection)) {
-                let text_layout = layout.children().next().unwrap();
                 let target = position.x - text_layout.bounds().x;
 
                 let value: Value = if is_secure {
@@ -1255,8 +1326,7 @@ where
             };
 
             let state = state();
-            let bounds = layout.bounds();
-            let is_clicked = bounds.contains(Point {
+            let is_clicked = text_layout.bounds().contains(Point {
                 x: x as f32,
                 y: y as f32,
             });
@@ -1284,7 +1354,6 @@ where
                         accepted: DndAction::Move.union(DndAction::Copy),
                     }
                 })));
-                let text_layout = layout.children().next().unwrap();
                 let target = x as f32 - text_layout.bounds().x;
                 state.dnd_offer = DndOfferState::HandlingOffer(mime_types.clone(), DndAction::None);
                 // existing logic for setting the selection
@@ -1323,8 +1392,7 @@ where
             };
 
             let state = state();
-            let bounds = layout.bounds();
-            let is_clicked = bounds.contains(Point {
+            let is_clicked = text_layout.bounds().contains(Point {
                 x: x as f32,
                 y: y as f32,
             });
@@ -1367,7 +1435,6 @@ where
                     state.dnd_offer = DndOfferState::HandlingOffer(mime_types.clone(), action);
                 }
             };
-            let text_layout = layout.children().next().unwrap();
             let target = x as f32 - text_layout.bounds().x;
             // existing logic for setting the selection
             let position = if target > 0.0 {
@@ -1408,10 +1475,8 @@ where
                     .iter()
                     .find(|m| mime_types.contains(&(**m).to_string()))
                 else {
-                    
                         state.dnd_offer = DndOfferState::None;
                         return event::Status::Captured;
-                    
                 };
                 state.dnd_offer = DndOfferState::Dropped;
                 shell.publish(on_dnd_command_produced(Box::new(move || {
@@ -1507,20 +1572,21 @@ where
 #[allow(clippy::too_many_arguments)]
 #[allow(clippy::too_many_lines)]
 #[allow(clippy::missing_panics_doc)]
-pub fn draw<Renderer>(
-    renderer: &mut Renderer,
-    theme: &Renderer::Theme,
+pub fn draw<'a, Message>(
+    renderer: &mut crate::Renderer,
+    theme: &crate::Theme,
     layout: Layout<'_>,
     cursor_position: mouse::Cursor,
-    state: &State,
+    tree: &Tree,
     value: &Value,
     placeholder: &str,
     size: Option<f32>,
-    font: Option<Renderer::Font>,
+    font: Option<<crate::Renderer as iced_core::text::Renderer>::Font>,
     is_disabled: bool,
     is_secure: bool,
-    icon: Option<&Icon<Renderer::Font>>,
-    style: &<Renderer::Theme as StyleSheet>::Style,
+    icon: Option<&Element<'a, Message, crate::Renderer>>,
+    end_element: Option<&Element<'a, Message, crate::Renderer>>,
+    style: &<crate::Theme as StyleSheet>::Style,
     dnd_icon: bool,
     line_height: text::LineHeight,
     error: Option<&str>,
@@ -1528,10 +1594,13 @@ pub fn draw<Renderer>(
     helper_text: Option<&str>,
     helper_text_size: f32,
     helper_line_height: text::LineHeight,
-) where
-    Renderer: text::Renderer,
-    Renderer::Theme: StyleSheet,
-{
+    viewport: &Rectangle,
+) {
+    // all children should be icon images
+    let children = &tree.children;
+    let start_icon_tree = children.get(0);
+    let end_icon_tree = children.get(1);
+    let state = tree.state.downcast_ref::<State>();
     let secure_value = is_secure.then(|| value.secure());
     let value = secure_value.as_ref().unwrap_or(value);
 
@@ -1556,7 +1625,6 @@ pub fn draw<Renderer>(
         (None, layout, None)
     };
 
-
     let mut children_layout = layout.children();
     let bounds = layout.bounds();
     let text_bounds = children_layout.next().unwrap().bounds();
@@ -1576,7 +1644,7 @@ pub fn draw<Renderer>(
     };
 
     // draw background and its border
-    if let Some(border_offset) = appearance.border_offset  {
+    if let Some(border_offset) = appearance.border_offset {
         let offset_bounds = Rectangle {
             x: bounds.x - border_offset,
             y: bounds.y - border_offset,
@@ -1627,22 +1695,22 @@ pub fn draw<Renderer>(
             shaping: text::Shaping::Advanced,
         });
     }
-    
+
     // draw the start icon in the text input
-    if let Some(icon) = icon {
+    if let (Some(icon), Some(tree)) = (icon, start_icon_tree) {
         let icon_layout = children_layout.next().unwrap();
 
-        renderer.fill_text(Text {
-            content: &icon.code_point.to_string(),
-            size: icon.size.unwrap_or_else(|| renderer.default_size()),
-            font: icon.font,
-            color: appearance.icon_color,
-            bounds: icon_layout.bounds(),
-            horizontal_alignment: alignment::Horizontal::Left,
-            vertical_alignment: alignment::Vertical::Top,
-            line_height: text::LineHeight::default(),
-            shaping: text::Shaping::Advanced,
-        });
+        icon.as_widget().draw(
+            tree,
+            renderer,
+            theme,
+            &renderer::Style {
+                text_color: appearance.icon_color,
+            },
+            icon_layout,
+            cursor_position,
+            viewport,
+        );
     }
 
     let text = value.to_string();
@@ -1761,7 +1829,7 @@ pub fn draw<Renderer>(
         theme.value_color(style)
     };
 
-    let render = |renderer: &mut Renderer| {
+    let render = |renderer: &mut crate::Renderer| {
         if let Some((cursor, color)) = cursor {
             renderer.fill_quad(cursor, color);
         } else {
@@ -1791,6 +1859,23 @@ pub fn draw<Renderer>(
         });
     } else {
         render(renderer);
+    }
+
+    // draw the end icon in the text input
+    if let (Some(icon), Some(tree)) = (end_element, end_icon_tree) {
+        let icon_layout = children_layout.next().unwrap();
+
+        icon.as_widget().draw(
+            tree,
+            renderer,
+            theme,
+            &renderer::Style {
+                text_color: appearance.icon_color,
+            },
+            icon_layout,
+            cursor_position,
+            viewport,
+        );
     }
 
     // draw the helper text if it exists

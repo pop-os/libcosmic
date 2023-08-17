@@ -13,9 +13,10 @@ use cosmic::{
     iced_widget::text,
     theme::{self, Theme},
     widget::{
-        button, cosmic_container, header_bar, nav_bar, nav_bar_toggle,
+        button, cosmic_container, header_bar, icon, inline_input, nav_bar, nav_bar_toggle,
         rectangle_tracker::{rectangle_tracker_subscription, RectangleTracker, RectangleUpdate},
-        scrollable, segmented_button, segmented_selection, settings, text_input, IconSource,
+        scrollable, search_input, segmented_button, segmented_selection, settings, text_input,
+        IconSource,
     },
     Element, ElementExt,
 };
@@ -488,25 +489,29 @@ impl Application for Window {
                     .add(settings::item(
                         "Text Input",
                         text_input("test", &self.input_value)
+                            .start_icon(icon("document-properties-symbolic", 16).into())
+                            .end_icon(icon("document-properties-symbolic", 16).into())
                             .label("Test Label")
                             .helper_text("helper_text")
                             .width(Length::Fill)
                             .on_input(Message::InputChanged),
                     ))
-                    // .add(settings::item(
-                    //     "Text Input",
-                    //     text_input("test", &self.input_value)
-                    //         .helper_text("helper_text")
-                    //         .width(Length::Fill)
-                    //         .on_input(Message::InputChanged),
-                    // ))
-                    // .add(settings::item(
-                    //     "Text Input",
-                    //     text_input("test", &self.input_value)
-                    //         .helper_text("helper_text")
-                    //         .width(Length::Fill)
-                    //         .on_input(Message::InputChanged),
-                    // ))
+                    .add(settings::item(
+                        "Text Input",
+                        search_input(
+                            "search for stuff",
+                            &self.input_value,
+                            Message::InputChanged("".to_string()),
+                        )
+                        .width(Length::Fill)
+                        .on_input(Message::InputChanged),
+                    ))
+                    .add(settings::item(
+                        "Text Input",
+                        inline_input(&self.input_value)
+                            .width(Length::Fill)
+                            .on_input(Message::InputChanged),
+                    ))
                     .into(),
             ])
             .into();
