@@ -1,6 +1,7 @@
 //! Display fields that can be filled with text.
 //!
 //! A [`TextInput`] has some local [`State`].
+use crate::app;
 use crate::theme::THEME;
 
 use super::cursor;
@@ -9,7 +10,6 @@ use super::editor::Editor;
 use super::style::StyleSheet;
 pub use super::value::Value;
 
-use apply::Also;
 use iced::Limits;
 use iced_core::event::{self, Event};
 use iced_core::keyboard;
@@ -1798,7 +1798,7 @@ pub fn draw<'a, Message>(
             renderer,
             theme,
             &renderer::Style {
-                text_color: appearance.icon_color,
+                text_color: appearance.text_color,
             },
             icon_layout,
             cursor_position,
@@ -1844,7 +1844,7 @@ pub fn draw<'a, Message>(
                                     border_width: 0.0,
                                     border_color: Color::TRANSPARENT,
                                 },
-                                theme.value_color(style),
+                                appearance.text_color,
                             )),
                             offset,
                         )
@@ -1893,7 +1893,7 @@ pub fn draw<'a, Message>(
                                 border_width: 0.0,
                                 border_color: Color::TRANSPARENT,
                             },
-                            theme.selection_color(style),
+                            appearance.selected_fill,
                         )),
                         if end == right {
                             right_offset
@@ -1917,10 +1917,8 @@ pub fn draw<'a, Message>(
 
     let color = if text.is_empty() {
         theme.placeholder_color(style)
-    } else if is_disabled {
-        theme.disabled_color(style)
     } else {
-        theme.value_color(style)
+        appearance.text_color
     };
 
     let render = |renderer: &mut crate::Renderer| {
@@ -1966,7 +1964,7 @@ pub fn draw<'a, Message>(
             renderer,
             theme,
             &renderer::Style {
-                text_color: appearance.icon_color,
+                text_color: appearance.text_color,
             },
             icon_layout,
             cursor_position,
