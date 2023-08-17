@@ -14,8 +14,6 @@ use iced_runtime::command::platform_specific::wayland::Action as WaylandAction;
 #[cfg(feature = "wayland")]
 use iced_runtime::command::platform_specific::Action as PlatformAction;
 use iced_runtime::command::Action;
-#[cfg(not(feature = "wayland"))]
-use iced_runtime::window::Action as WindowAction;
 use std::future::Future;
 
 /// Yields a command which contains a batch of commands.
@@ -42,7 +40,7 @@ pub fn drag<M>() -> Command<M> {
 /// Initiates a window drag.
 #[cfg(not(feature = "wayland"))]
 pub fn drag<M>() -> Command<M> {
-    iced::Command::none()
+    iced_runtime::window::drag()
 }
 
 /// Fullscreens the window.
@@ -54,7 +52,7 @@ pub fn fullscreen<M>() -> Command<M> {
 /// Fullscreens the window.
 #[cfg(not(feature = "wayland"))]
 pub fn fullscreen<M>() -> Command<M> {
-    iced::Command::single(Action::Window(WindowAction::ChangeMode(Mode::Fullscreen)))
+    iced_runtime::window::change_mode(Mode::Fullscreen)
 }
 
 /// Minimizes the window.
@@ -66,7 +64,7 @@ pub fn minimize<M>() -> Command<M> {
 /// Minimizes the window.
 #[cfg(not(feature = "wayland"))]
 pub fn minimize<M>() -> Command<M> {
-    iced::Command::single(Action::Window(WindowAction::ChangeMode(Mode::Hidden)))
+    iced_runtime::window::minimize(true)
 }
 
 /// Sets the title of a window.
@@ -94,7 +92,7 @@ pub fn set_windowed<M>() -> Command<M> {
 /// Sets the window mode to windowed.
 #[cfg(not(feature = "wayland"))]
 pub fn set_windowed<M>() -> Command<M> {
-    iced::Command::single(Action::Window(WindowAction::ChangeMode(Mode::Windowed)))
+    iced_runtime::window::change_mode(Mode::Windowed)
 }
 
 /// Toggles the windows' maximization state.
@@ -106,7 +104,7 @@ pub fn toggle_fullscreen<M>() -> Command<M> {
 /// Toggles the windows' maximization state.
 #[cfg(not(feature = "wayland"))]
 pub fn toggle_fullscreen<M>() -> Command<M> {
-    iced::Command::single(Action::Window(WindowAction::ToggleMaximize))
+    iced_runtime::window::toggle_maximize()
 }
 
 /// Creates a command to apply an action to a window.
