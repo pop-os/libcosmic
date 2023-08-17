@@ -15,8 +15,8 @@ use cosmic::{
     widget::{
         button, cosmic_container, header_bar, icon, inline_input, nav_bar, nav_bar_toggle,
         rectangle_tracker::{rectangle_tracker_subscription, RectangleTracker, RectangleUpdate},
-        scrollable, search_input, segmented_button, segmented_selection, settings, text_input,
-        IconSource,
+        scrollable, search_input, secure_input, segmented_button, segmented_selection, settings,
+        text_input, IconSource,
     },
     Element, ElementExt,
 };
@@ -129,6 +129,7 @@ pub struct Window {
     pub selection: segmented_button::SingleSelectModel,
     timeline: Timeline,
     input_value: String,
+    secure_input_visible: bool,
 }
 
 impl Window {
@@ -191,6 +192,7 @@ pub enum Message {
     Selection(segmented_button::Entity),
     Tick(Instant),
     InputChanged(String),
+    ToggleVisible,
 }
 
 impl Window {
@@ -318,6 +320,9 @@ impl Application for Window {
             Message::Tick(now) => self.timeline.now(now),
             Message::InputChanged(v) => {
                 self.input_value = v;
+            }
+            Message::ToggleVisible => {
+                self.secure_input_visible = !self.secure_input_visible;
             }
         }
 
@@ -488,20 +493,23 @@ impl Application for Window {
                     ))
                     .add(settings::item(
                         "Text Input",
-                        text_input("test", &self.input_value)
-                            .start_icon(icon("document-properties-symbolic", 16).into())
-                            .end_icon(icon("document-properties-symbolic", 16).into())
-                            .label("Test Label")
-                            .helper_text("helper_text")
-                            .width(Length::Fill)
-                            .on_input(Message::InputChanged),
+                        secure_input(
+                            "test",
+                            &self.input_value,
+                            Some(Message::ToggleVisible),
+                            !self.secure_input_visible,
+                        )
+                        .label("Test Secure Input Label")
+                        .helper_text("password")
+                        .width(Length::Fill)
+                        .on_input(Message::InputChanged),
                     ))
                     .add(settings::item(
                         "Text Input",
                         search_input(
                             "search for stuff",
                             &self.input_value,
-                            Message::InputChanged("".to_string()),
+                            Some(Message::InputChanged("".to_string())),
                         )
                         .width(Length::Fill)
                         .on_input(Message::InputChanged),

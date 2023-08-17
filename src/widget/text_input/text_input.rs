@@ -46,45 +46,84 @@ where
     TextInput::new(placeholder, value)
 }
 
-/// Creates a new expandable search [`TextInput`].
-///
-/// [`TextInput`]: widget::TextInput
-pub fn expandable_search_input<'a, Message>(
-    placeholder: &str,
-    value: &str,
-) -> TextInput<'a, Message>
-where
-    Message: Clone,
-{
-    TextInput::new(placeholder, value).style(super::style::TextInput::Default)
-}
-
 /// Creates a new search [`TextInput`].
 ///
 /// [`TextInput`]: widget::TextInput
 pub fn search_input<'a, Message>(
     placeholder: &str,
     value: &str,
-    on_clear: Message,
+    on_clear: Option<Message>,
 ) -> TextInput<'a, Message>
 where
     Message: Clone + 'static,
 {
     let spacing = THEME.with(|t| t.borrow().cosmic().space_xxs());
-    TextInput::new(placeholder, value)
+    let input = TextInput::new(placeholder, value)
+        .padding([0, spacing, 0, spacing])
         .style(super::style::TextInput::Search)
         .start_icon(
-            iced_widget::container(crate::widget::icon("system-search-symbolic", 16))
-                .padding([spacing, spacing, spacing, 2 * spacing])
-                .into(),
-        )
-        .end_icon(
+            iced_widget::container(
+                crate::widget::icon("system-search-symbolic", 16)
+                    .style(crate::theme::Svg::Symbolic),
+            )
+            .padding([spacing, spacing, spacing, spacing])
+            .into(),
+        );
+
+    if let Some(msg) = on_clear {
+        input.end_icon(
             crate::widget::button::button(crate::theme::Button::Text)
                 .icon(crate::theme::Svg::Symbolic, "edit-clear-symbolic", 16)
-                .on_press(on_clear)
-                .padding([spacing, 2 * spacing, spacing, spacing])
+                .on_press(msg)
+                .padding([spacing, spacing, spacing, spacing])
                 .into(),
         )
+    } else {
+        input
+    }
+}
+/// Creates a new search [`TextInput`].
+///
+/// [`TextInput`]: widget::TextInput
+pub fn secure_input<'a, Message>(
+    placeholder: &str,
+    value: &str,
+    on_visible_toggle: Option<Message>,
+    hidden: bool,
+) -> TextInput<'a, Message>
+where
+    Message: Clone + 'static,
+{
+    let spacing = THEME.with(|t| t.borrow().cosmic().space_xxs());
+    let mut input = TextInput::new(placeholder, value)
+        .padding([0, spacing, 0, spacing])
+        .style(super::style::TextInput::Default)
+        .start_icon(
+            iced_widget::container(
+                crate::widget::icon("system-lock-screen-symbolic", 16)
+                    .style(crate::theme::Svg::Symbolic),
+            )
+            .padding([spacing, spacing, spacing, spacing])
+            .into(),
+        );
+    if hidden {
+        input = input.password();
+    }
+    if let Some(msg) = on_visible_toggle {
+        input.end_icon(
+            crate::widget::button::button(crate::theme::Button::Text)
+                .icon(
+                    crate::theme::Svg::Symbolic,
+                    "document-properties-symbolic",
+                    16,
+                )
+                .on_press(msg)
+                .padding([spacing, spacing, spacing, spacing])
+                .into(),
+        )
+    } else {
+        input
+    }
 }
 
 /// Creates a new inline [`TextInput`].
@@ -94,7 +133,11 @@ pub fn inline_input<'a, Message>(value: &str) -> TextInput<'a, Message>
 where
     Message: Clone,
 {
-    TextInput::new("", value).style(super::style::TextInput::Inline)
+    let spacing = THEME.with(|t| t.borrow().cosmic().space_xxs());
+
+    TextInput::new("", value)
+        .style(super::style::TextInput::Inline)
+        .padding([spacing, spacing, spacing, spacing])
 }
 
 const SUPPORTED_MIME_TYPES: &[&str; 6] = &[
@@ -170,6 +213,8 @@ where
     /// - a placeholder,
     /// - the current value
     pub fn new(placeholder: &str, value: &str) -> Self {
+        let spacing = THEME.with(|t| t.borrow().cosmic().space_xxs());
+
         TextInput {
             id: None,
             placeholder: String::from(placeholder),
@@ -177,7 +222,7 @@ where
             is_secure: false,
             font: None,
             width: Length::Fill,
-            padding: Padding::new(5.0),
+            padding: [spacing, spacing, spacing, spacing].into(),
             size: None,
             helper_size: 10.0,
             helper_line_height: text::LineHeight::from(14.0),
@@ -502,10 +547,15 @@ where
         shell: &mut Shell<'_, Message>,
         viewport: &Rectangle,
     ) -> event::Status {
-        if let (Some(start_icon), Some(tree)) = (self.start_icon.as_mut(), tree.children.get_mut(0))
-        {
-            if matches!(
-                start_icon.as_widget_mut().on_event(
+        let text_layout = self.text_layout(layout);
+        let mut child_state = tree.children.iter_mut();
+        if let (Some(start_icon), Some(tree)) = (self.start_icon.as_mut(), child_state.next()) {
+            let mut children = text_layout.children();
+            children.next();
+            let start_icon_layout = children.next().unwrap();
+
+            if cursor_position.is_over(start_icon_layout.bounds()) {
+                return start_icon.as_widget_mut().on_event(
                     tree,
                     event.clone(),
                     layout,
@@ -513,17 +563,18 @@ where
                     renderer,
                     clipboard,
                     shell,
-                    viewport
-                ),
-                event::Status::Captured
-            ) {
-                return event::Status::Captured;
+                    viewport,
+                );
             }
         }
-        if let (Some(end_icon), Some(tree)) = (self.end_element.as_mut(), tree.children.get_mut(2))
-        {
-            if matches!(
-                end_icon.as_widget_mut().on_event(
+        if let (Some(end_icon), Some(tree)) = (self.end_element.as_mut(), child_state.next()) {
+            let mut children = text_layout.children();
+            children.next();
+            children.next();
+            let end_icon_layout = children.next().unwrap();
+
+            if cursor_position.is_over(end_icon_layout.bounds()) {
+                return end_icon.as_widget_mut().on_event(
                     tree,
                     event.clone(),
                     layout,
@@ -531,17 +582,14 @@ where
                     renderer,
                     clipboard,
                     shell,
-                    viewport
-                ),
-                event::Status::Captured
-            ) {
-                return event::Status::Captured;
+                    viewport,
+                );
             }
         }
 
         update(
             event,
-            self.text_layout(layout),
+            text_layout.children().next().unwrap(),
             cursor_position,
             renderer,
             clipboard,
@@ -600,13 +648,51 @@ where
 
     fn mouse_interaction(
         &self,
-        _state: &Tree,
+        state: &Tree,
         layout: Layout<'_>,
         cursor_position: mouse::Cursor,
-        _viewport: &Rectangle,
-        _renderer: &crate::Renderer,
+        viewport: &Rectangle,
+        renderer: &crate::Renderer,
     ) -> mouse::Interaction {
         let layout = self.text_layout(layout);
+        let mut index = 0;
+        if let (Some(start_icon), Some(tree)) =
+            (self.start_icon.as_ref(), state.children.get(index))
+        {
+            let mut children = layout.children();
+            children.next();
+            let start_icon_layout = children.next().unwrap();
+
+            if cursor_position.is_over(start_icon_layout.bounds()) {
+                return start_icon.mouse_interaction(
+                    tree,
+                    layout,
+                    cursor_position,
+                    viewport,
+                    renderer,
+                );
+            }
+            index += 1;
+        }
+
+        if let (Some(end_icon), Some(tree)) = (self.end_element.as_ref(), state.children.get(index))
+        {
+            let mut children = layout.children();
+            children.next();
+            children.next();
+            let end_icon_layout = children.next().unwrap();
+
+            if cursor_position.is_over(end_icon_layout.bounds()) {
+                return end_icon.mouse_interaction(
+                    tree,
+                    layout,
+                    cursor_position,
+                    viewport,
+                    renderer,
+                );
+            }
+        }
+
         mouse_interaction(layout, cursor_position, self.on_input.is_none())
     }
 }
@@ -720,35 +806,42 @@ pub fn layout<Message>(
         } else {
             (0.0, None)
         };
-        let limits = limits.width(width).pad(padding).height(height);
+        let text_limits = limits.width(width).pad(padding).height(text_size * 1.2);
 
-        let text_bounds = limits.resolve(Size::ZERO);
+        let text_bounds = text_limits.resolve(Size::ZERO);
 
         let mut text_node =
             layout::Node::new(text_bounds - Size::new(start_icon_width + end_icon_width, 0.0));
 
-        text_node.move_to(Point::new(padding.left + start_icon_width, padding.top));
+        text_node.move_to(Point::new(
+            padding.left + start_icon_width,
+            padding.top + ((height - text_size * 1.2) / 2.0).max(0.0),
+        ));
         let mut node_list: Vec<_> = Vec::with_capacity(3);
 
         let text_node_bounds = text_node.bounds();
         node_list.push(text_node);
 
         if let Some(mut start_icon) = start_icon.take() {
-            start_icon.move_to(Point::new(padding.left, padding.top));
+            start_icon.move_to(Point::new(
+                padding.left,
+                padding.top + ((text_size * 1.2 - start_icon.bounds().height) / 2.0).max(0.0),
+            ));
             node_list.push(start_icon);
         }
         if let Some(mut end_icon) = end_icon.take() {
             end_icon.move_to(Point::new(
-                text_node_bounds.x + text_node_bounds.width + icon_spacing,
-                padding.top,
+                text_node_bounds.x + text_node_bounds.width,
+                padding.top + ((text_size * 1.2 - end_icon.bounds().height) / 2.0).max(0.0),
             ));
             node_list.push(end_icon);
         }
 
-        let node =
-            layout::Node::with_children(text_bounds.pad(padding), node_list).translate(text_pos);
-        let y_pos = node.bounds().y + node.bounds().height + f32::from(spacing);
-        nodes.push(node);
+        let input_limits = limits.width(width).pad(padding).height(height);
+        let input_bounds = input_limits.resolve(Size::ZERO);
+        let input_node = layout::Node::with_children(input_bounds, node_list).translate(text_pos);
+        let y_pos = input_node.bounds().y + input_node.bounds().height + f32::from(spacing);
+        nodes.push(input_node);
 
         Vector::new(0.0, y_pos)
     } else {
@@ -1598,8 +1691,7 @@ pub fn draw<'a, Message>(
 ) {
     // all children should be icon images
     let children = &tree.children;
-    let start_icon_tree = children.get(0);
-    let end_icon_tree = children.get(1);
+
     let state = tree.state.downcast_ref::<State>();
     let secure_value = is_secure.then(|| value.secure());
     let value = secure_value.as_ref().unwrap_or(value);
@@ -1695,7 +1787,8 @@ pub fn draw<'a, Message>(
             shaping: text::Shaping::Advanced,
         });
     }
-
+    let mut child_index = 0;
+    let start_icon_tree = children.get(child_index);
     // draw the start icon in the text input
     if let (Some(icon), Some(tree)) = (icon, start_icon_tree) {
         let icon_layout = children_layout.next().unwrap();
@@ -1711,6 +1804,7 @@ pub fn draw<'a, Message>(
             cursor_position,
             viewport,
         );
+        child_index += 1;
     }
 
     let text = value.to_string();
@@ -1860,6 +1954,8 @@ pub fn draw<'a, Message>(
     } else {
         render(renderer);
     }
+
+    let end_icon_tree = children.get(child_index);
 
     // draw the end icon in the text input
     if let (Some(icon), Some(tree)) = (end_element, end_icon_tree) {
