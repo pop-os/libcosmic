@@ -40,7 +40,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .antialiasing(true)
         .client_decorations(true)
         .debug(false)
-        .default_icon_theme(Some("Pop".into()))
+        .default_icon_theme("Pop")
         .default_text_size(16.0)
         .scale_factor(1.0)
         .size((1024, 768))
