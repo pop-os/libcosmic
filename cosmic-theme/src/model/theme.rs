@@ -713,6 +713,24 @@ impl ThemeBuilder {
         let mut button_disabled_border = button_border;
         button_disabled_border.alpha *= 0.5;
 
+        let mut text_button = Component::component(
+            Srgba::new(0.0, 0.0, 0.0, 0.0),
+            p_ref.neutral_10,
+            accent,
+            p_ref.neutral_9,
+            is_high_contrast,
+            p_ref.neutral_8,
+        );
+
+        let overlay = p_ref.neutral_10.clone();
+        let mut hover = overlay.clone();
+        hover.alpha = 0.1;
+        text_button.hover = hover;
+        let mut press = overlay.clone();
+        press.alpha = 0.2;
+        text_button.pressed = press;
+        text_button.focus = text_button.base.clone();
+
         let mut theme: Theme<Srgba> = Theme {
             name: palette.name().to_string(),
             background: Container::new(
@@ -800,14 +818,7 @@ impl ThemeBuilder {
                 p_ref.neutral_0.to_owned(),
                 accent.clone(),
             ),
-            text_button: Component::component(
-                Srgba::new(0.0, 0.0, 0.0, 0.0),
-                p_ref.neutral_10,
-                accent,
-                p_ref.neutral_9,
-                is_high_contrast,
-                p_ref.neutral_8,
-            ),
+            text_button,
             palette: palette.inner(),
             spacing,
             corner_radii,
