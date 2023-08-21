@@ -7,7 +7,7 @@ edition = "2021"
 name = "cosmic"
 
 [features]
-default = ["wayland", "tokio", "a11y"]
+default = ["wayland", "tokio"]
 # Accessibility support
 a11y = ["iced/a11y", "iced_accessibility"]
 # Builds support for animated images
@@ -21,7 +21,7 @@ smol = ["iced/smol"]
 # Tokio async runtime
 tokio = ["dep:tokio", "ashpd/tokio", "iced/tokio"]
 # Wayland window support
-wayland = ["ashpd?/wayland", "iced/wayland", "iced_sctk", "sctk"]
+wayland = ["ashpd?/wayland", "iced_runtime/wayland", "iced/wayland", "iced_sctk", "sctk"]
 # Render with wgpu
 wgpu = ["iced/wgpu", "iced_wgpu"]
 # X11 window support via winit
@@ -50,6 +50,7 @@ thiserror = "1.0.44"
 async-fs = { version = "1.6", optional = true }
 ashpd = { version = "0.5.0", default-features = false, optional = true }
 url = "2.4.0"
+unicode-segmentation = "1.6"
 
 [target.'cfg(unix)'.dependencies]
 freedesktop-icons = "0.2.2"
@@ -119,6 +120,7 @@ members = [
 exclude = [
   "iced",
 ]
+
 
 [patch."https://github.com/pop-os/libcosmic"]
 libcosmic = { path = "./", features = ["wayland", "tokio", "a11y"]}

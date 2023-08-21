@@ -189,6 +189,7 @@ where
         renderer: &Renderer,
         clipboard: &mut dyn Clipboard,
         shell: &mut Shell<'_, Message>,
+        viewport: &iced_core::Rectangle,
     ) -> event::Status {
         self.container.on_event(
             tree,
@@ -198,6 +199,7 @@ where
             renderer,
             clipboard,
             shell,
+            viewport,
         )
     }
 

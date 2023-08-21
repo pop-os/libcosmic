@@ -6,6 +6,5 @@ edition = "2021"
 publish = false
 
 [dependencies]
-libcosmic = { path = "../..", default-features = false, features = ["wayland", "tokio", "a11y"] }
-cosmic-time = { git = "https://github.com/pop-os/cosmic-time", rev="c39e737", default-features = false, features = ["libcosmic", "once_cell"] }
-# cosmic-time = { path = "../../../cosmic-time", default-features = false, features = ["libcosmic", "once_cell"] }
+libcosmic = { path = "../..", default-features = false, features = ["wayland", "tokio"] }
+cosmic-time = { git = "https://github.com/pop-os/cosmic-time", rev="6f3ff1aa", default-features = false, features = ["libcosmic", "once_cell"] }

@@ -224,7 +224,7 @@ where
 
             // Add text to measurement if text was given.
             if let Some(text) = self.model.text(key) {
-                let (w, h) = renderer.measure(
+                let Size { width, height } = renderer.measure(
                     text,
                     self.font_size,
                     self.line_height,
@@ -233,8 +233,8 @@ where
                     Shaping::Advanced,
                 );
 
-                button_width = w;
-                button_height = h;
+                button_width = width;
+                button_height = height;
             }
 
             // Add icon to measurement if icon was given.
@@ -307,6 +307,7 @@ where
         _renderer: &Renderer,
         _clipboard: &mut dyn Clipboard,
         shell: &mut Shell<'_, Message>,
+        _viewport: &iced::Rectangle,
     ) -> event::Status {
         let bounds = layout.bounds();
         let state = tree.state.downcast_mut::<LocalState>();

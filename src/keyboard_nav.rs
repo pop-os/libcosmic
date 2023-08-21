@@ -8,7 +8,10 @@ use iced::{
     keyboard::{self, KeyCode},
     mouse, subscription, Command, Event, Subscription,
 };
-use iced_core::widget::{operation, Id, Operation};
+use iced_core::{
+    widget::{operation, Id, Operation},
+    Rectangle,
+};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum Message {
@@ -88,6 +91,7 @@ fn unfocus_operation<T>() -> impl Operation<T> {
         fn container(
             &mut self,
             _id: Option<&Id>,
+            _bounds: Rectangle,
             operate_on_children: &mut dyn FnMut(&mut dyn Operation<T>),
         ) {
             operate_on_children(self);
