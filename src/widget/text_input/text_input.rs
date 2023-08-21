@@ -364,6 +364,7 @@ where
         layout: Layout<'_>,
         cursor_position: mouse::Cursor,
         value: Option<&Value>,
+        style: &renderer::Style,
     ) {
         draw(
             renderer,
@@ -388,6 +389,7 @@ where
             self.helper_size,
             self.helper_line_height,
             &layout.bounds(),
+            style,
         );
     }
 
@@ -615,7 +617,7 @@ where
         tree: &Tree,
         renderer: &mut crate::Renderer,
         theme: &<crate::Renderer as iced_core::Renderer>::Theme,
-        _style: &renderer::Style,
+        style: &renderer::Style,
         layout: Layout<'_>,
         cursor_position: mouse::Cursor,
         viewport: &Rectangle,
@@ -643,6 +645,7 @@ where
             self.helper_size,
             self.helper_line_height,
             viewport,
+            style,
         );
     }
 
@@ -1688,6 +1691,7 @@ pub fn draw<'a, Message>(
     helper_text_size: f32,
     helper_line_height: text::LineHeight,
     viewport: &Rectangle,
+    renderer_style: &renderer::Style,
 ) {
     // all children should be icon images
     let children = &tree.children;
@@ -1799,6 +1803,7 @@ pub fn draw<'a, Message>(
             theme,
             &renderer::Style {
                 text_color: appearance.text_color,
+                scale_factor: renderer_style.scale_factor,
             },
             icon_layout,
             cursor_position,
@@ -1965,6 +1970,7 @@ pub fn draw<'a, Message>(
             theme,
             &renderer::Style {
                 text_color: appearance.text_color,
+                scale_factor: renderer_style.scale_factor,
             },
             icon_layout,
             cursor_position,
