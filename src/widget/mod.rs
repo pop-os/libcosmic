@@ -3,6 +3,17 @@
 
 //! Cosmic-themed widget implementations.
 
+// Re-exports from Iced
+pub use iced::widget::{checkbox, Checkbox};
+pub use iced::widget::{column, Column};
+pub use iced::widget::{image, Image};
+pub use iced::widget::{pick_list, PickList};
+pub use iced::widget::{radio, Radio};
+pub use iced::widget::{row, Row};
+pub use iced::widget::{slider, Slider};
+pub use iced::widget::{space, Space};
+pub use iced::widget::{text_input, TextInput};
+
 pub mod aspect_ratio;
 
 mod button;
@@ -37,20 +48,15 @@ pub use popover::{popover, Popover};
 
 pub mod rectangle_tracker;
 
+mod scrollable;
+pub use scrollable::*;
+
 pub mod search;
 
 pub mod segmented_button;
-pub use segmented_button::horizontal as horizontal_segmented_button;
-pub use segmented_button::vertical as vertical_segmented_button;
-
 pub mod segmented_selection;
-pub use segmented_selection::horizontal as horizontal_segmented_selection;
-pub use segmented_selection::vertical as vertical_segmented_selection;
 
 pub mod settings;
-
-mod scrollable;
-pub use scrollable::*;
 
 pub mod spin_button;
 pub use spin_button::{spin_button, SpinButton};
