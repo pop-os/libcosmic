@@ -29,7 +29,7 @@ pub struct Settings {
     pub(crate) default_font: Font,
 
     /// Name of the icon theme to search by default.
-    #[setters(into)]
+    #[setters(skip)]
     pub(crate) default_icon_theme: Option<String>,
 
     /// Default size of fonts.
@@ -54,6 +54,15 @@ pub struct Settings {
 
     /// Whether the window should be transparent.
     pub(crate) transparent: bool,
+}
+
+impl Settings {
+    /// Sets the default icon theme, passing an empty string will unset the theme.
+    pub fn default_icon_theme(mut self, value: impl Into<String>) -> Self {
+        let value: String = value.into();
+        self.default_icon_theme = if value.is_empty() { None } else { Some(value) };
+        self
+    }
 }
 
 impl Default for Settings {
