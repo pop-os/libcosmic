@@ -7,4 +7,4 @@ publish = false
 
 [dependencies]
 libcosmic = { path = "../..", default-features = false, features = ["wayland", "tokio"] }
-cosmic-time = { git = "https://github.com/pop-os/cosmic-time", rev="6f3ff1aa", default-features = false, features = ["libcosmic", "once_cell"] }
+cosmic-time = { git = "https://github.com/pop-os/cosmic-time", rev="c4895f6", default-features = false, features = ["libcosmic", "once_cell"] }
