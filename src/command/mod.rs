@@ -22,7 +22,7 @@ pub fn batch<M>(commands: impl IntoIterator<Item = Command<M>>) -> Command<M> {
 }
 
 /// Yields a command which will run the future on the runtime executor.
-pub fn future<M: Send + 'static>(future: impl Future<Output = M> + Send + 'static) -> Command<M> {
+pub fn future<M>(future: impl Future<Output = M> + Send + 'static) -> Command<M> {
     Command::single(Action::Future(Box::pin(future)))
 }
 
