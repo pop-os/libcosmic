@@ -6,6 +6,7 @@
 pub mod app;
 pub use app::{Application, ApplicationExt};
 
+pub use iced::Command;
 pub mod command;
 pub use cosmic_config;
 pub use cosmic_theme;
