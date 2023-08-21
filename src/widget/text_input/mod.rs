@@ -1,9 +1,10 @@
-//! A text input widget from iced_widgets plus some added details.
+//! A text input widget from iced widgets plus some added details.
 
 pub mod cursor;
 pub mod editor;
-pub mod style;
-mod text_input;
+mod input;
+mod style;
 pub mod value;
 
-pub use text_input::*;
+pub use input::*;
+pub use style::{Appearance as TextInputAppearance, StyleSheet as TextInputStyleSheet};

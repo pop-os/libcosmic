@@ -38,33 +38,27 @@ impl<'a> Editor<'a> {
     }
 
     pub fn backspace(&mut self) {
-        match self.cursor.selection(self.value) {
-            Some((start, end)) => {
-                self.cursor.move_left(self.value);
-                self.value.remove_many(start, end);
-            }
-            None => {
-                let start = self.cursor.start(self.value);
+        if let Some((start, end)) = self.cursor.selection(self.value) {
+            self.cursor.move_left(self.value);
+            self.value.remove_many(start, end);
+        } else {
+            let start = self.cursor.start(self.value);
 
-                if start > 0 {
-                    self.cursor.move_left(self.value);
-                    self.value.remove(start - 1);
-                }
+            if start > 0 {
+                self.cursor.move_left(self.value);
+                self.value.remove(start - 1);
             }
         }
     }
 
     pub fn delete(&mut self) {
-        match self.cursor.selection(self.value) {
-            Some(_) => {
-                self.backspace();
-            }
-            None => {
-                let end = self.cursor.end(self.value);
+        if self.cursor.selection(self.value).is_some() {
+            self.backspace();
+        } else {
+            let end = self.cursor.end(self.value);
 
-                if end < self.value.len() {
-                    self.value.remove(end);
-                }
+            if end < self.value.len() {
+                self.value.remove(end);
             }
         }
     }

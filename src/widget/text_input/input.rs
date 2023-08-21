@@ -1,7 +1,6 @@
 //! Display fields that can be filled with text.
 //!
 //! A [`TextInput`] has some local [`State`].
-use crate::app;
 use crate::theme::THEME;
 
 use super::cursor;
@@ -28,12 +27,16 @@ use iced_core::{
     Clipboard, Color, Element, Layout, Length, Padding, Pixels, Point, Rectangle, Shell, Size,
     Vector, Widget,
 };
+#[cfg(feature = "wayland")]
 use iced_renderer::core::event::{wayland, PlatformSpecific};
 use iced_renderer::core::widget::OperationOutputWrapper;
+#[cfg(feature = "wayland")]
+use iced_runtime::command::platform_specific;
 use iced_runtime::Command;
 
-use iced_runtime::command::platform_specific;
+#[cfg(feature = "wayland")]
 use iced_runtime::command::platform_specific::wayland::data_device::{DataFromMimeType, DndIcon};
+#[cfg(feature = "wayland")]
 use sctk::reexports::client::protocol::wl_data_device_manager::DndAction;
 
 /// Creates a new [`TextInput`].
@@ -140,6 +143,7 @@ where
         .padding([spacing, spacing, spacing, spacing])
 }
 
+#[cfg(feature = "wayland")]
 const SUPPORTED_MIME_TYPES: &[&str; 6] = &[
     "text/plain;charset=utf-8",
     "text/plain;charset=UTF-8",
@@ -148,8 +152,11 @@ const SUPPORTED_MIME_TYPES: &[&str; 6] = &[
     "text/plain",
     "TEXT",
 ];
+#[cfg(feature = "wayland")]
 pub type DnDCommand =
     Box<dyn Send + Sync + Fn() -> platform_specific::wayland::data_device::ActionInner>;
+#[cfg(not(feature = "wayland"))]
+pub type DnDCommand = ();
 
 /// A field that can be filled with text.
 ///
@@ -356,6 +363,7 @@ where
     /// [`Value`] if provided.
     ///
     /// [`Renderer`]: text::Renderer
+    #[allow(clippy::too_many_arguments)]
     pub fn draw(
         &self,
         tree: &Tree,
@@ -394,6 +402,7 @@ where
     }
 
     /// Sets the start dnd handler of the [`TextInput`].
+    #[cfg(feature = "wayland")]
     pub fn on_start_dnd(mut self, on_start_dnd: impl Fn(State) -> Message + 'a) -> Self {
         self.on_create_dnd_source = Some(Box::new(on_start_dnd));
         self
@@ -401,6 +410,7 @@ where
 
     /// Sets the dnd command produced handler of the [`TextInput`].
     /// Commands should be returned in the update function of the application.
+    #[cfg(feature = "wayland")]
     pub fn on_dnd_command_produced(
         mut self,
         on_dnd_command_produced: impl Fn(
@@ -958,6 +968,7 @@ where
                     click.kind(),
                     state.cursor().state(value),
                 ) {
+                    #[cfg(feature = "wayland")]
                     (None, click::Kind::Single, cursor::State::Selection { start, end }) => {
                         // if something is already selected, we can start a drag and drop for a
                         // single click that is on top of the selected text
@@ -965,6 +976,7 @@ where
                         if is_secure {
                             return event::Status::Ignored;
                         }
+
                         if let (
                             Some(on_start_dnd),
                             Some(on_dnd_command_produced),
@@ -1384,6 +1396,7 @@ where
                 ));
             }
         }
+        #[cfg(feature = "wayland")]
         Event::PlatformSpecific(PlatformSpecific::Wayland(wayland::Event::DataSource(
             wayland::DataSourceEvent::DndFinished | wayland::DataSourceEvent::Cancelled,
         ))) => {
@@ -1393,6 +1406,7 @@ where
                 return event::Status::Captured;
             }
         }
+        #[cfg(feature = "wayland")]
         Event::PlatformSpecific(PlatformSpecific::Wayland(wayland::Event::DataSource(
             wayland::DataSourceEvent::Cancelled
             | wayland::DataSourceEvent::DndFinished
@@ -1404,6 +1418,7 @@ where
                 return event::Status::Captured;
             }
         }
+        #[cfg(feature = "wayland")]
         Event::PlatformSpecific(PlatformSpecific::Wayland(wayland::Event::DataSource(
             wayland::DataSourceEvent::DndActionAccepted(action),
         ))) => {
@@ -1413,7 +1428,7 @@ where
                 return event::Status::Captured;
             }
         }
-        // TODO: handle dnd offer events
+        #[cfg(feature = "wayland")]
         Event::PlatformSpecific(PlatformSpecific::Wayland(wayland::Event::DndOffer(
             wayland::DndOfferEvent::Enter { x, y, mime_types },
         ))) => {
@@ -1480,6 +1495,7 @@ where
                 return event::Status::Captured;
             }
         }
+        #[cfg(feature = "wayland")]
         Event::PlatformSpecific(PlatformSpecific::Wayland(wayland::Event::DndOffer(
             wayland::DndOfferEvent::Motion { x, y },
         ))) => {
@@ -1558,6 +1574,7 @@ where
             state.cursor.move_to(position.unwrap_or(0));
             return event::Status::Captured;
         }
+        #[cfg(feature = "wayland")]
         Event::PlatformSpecific(PlatformSpecific::Wayland(wayland::Event::DndOffer(
             wayland::DndOfferEvent::DropPerformed,
         ))) => {
@@ -1586,6 +1603,7 @@ where
             }
             return event::Status::Ignored;
         }
+        #[cfg(feature = "wayland")]
         Event::PlatformSpecific(PlatformSpecific::Wayland(wayland::Event::DndOffer(
             wayland::DndOfferEvent::Leave,
         ))) => {
@@ -1600,6 +1618,7 @@ where
             };
             return event::Status::Captured;
         }
+        #[cfg(feature = "wayland")]
         Event::PlatformSpecific(PlatformSpecific::Wayland(wayland::Event::DndOffer(
             wayland::DndOfferEvent::DndData { mime_type, data },
         ))) => {
@@ -1636,6 +1655,7 @@ where
             }
             return event::Status::Ignored;
         }
+        #[cfg(feature = "wayland")]
         Event::PlatformSpecific(PlatformSpecific::Wayland(wayland::Event::DndOffer(
             wayland::DndOfferEvent::SourceActions(actions),
         ))) => {
@@ -2016,6 +2036,7 @@ pub fn mouse_interaction(
 #[derive(Debug, Clone)]
 pub struct TextInputString(String);
 
+#[cfg(feature = "wayland")]
 impl DataFromMimeType for TextInputString {
     fn from_mime_type(&self, mime_type: &str) -> Option<Vec<u8>> {
         if SUPPORTED_MIME_TYPES.contains(&mime_type) {
@@ -2029,9 +2050,11 @@ impl DataFromMimeType for TextInputString {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub(crate) enum DraggingState {
     Selection,
+    #[cfg(feature = "wayland")]
     Dnd(DndAction, String),
 }
 
+#[cfg(feature = "wayland")]
 #[derive(Debug, Default, Clone)]
 pub(crate) enum DndOfferState {
     #[default]
@@ -2040,6 +2063,9 @@ pub(crate) enum DndOfferState {
     HandlingOffer(Vec<String>, DndAction),
     Dropped,
 }
+#[derive(Debug, Default, Clone)]
+#[cfg(not(feature = "wayland"))]
+pub(crate) struct DndOfferState;
 
 /// The state of a [`TextInput`].
 #[derive(Debug, Default, Clone)]
@@ -2081,6 +2107,7 @@ impl State {
         }
     }
 
+    #[cfg(feature = "wayland")]
     /// Returns the current value of the dragged text in the [`TextInput`].
     #[must_use]
     pub fn dragged_text(&self) -> Option<String> {
@@ -2095,7 +2122,7 @@ impl State {
         Self {
             is_focused: None,
             dragging_state: None,
-            dnd_offer: DndOfferState::None,
+            dnd_offer: DndOfferState::default(),
             is_pasting: None,
             last_click: None,
             cursor: Cursor::default(),
