@@ -220,6 +220,9 @@ pub fn run<App: Application>(autosize: bool, flags: App::Flags) -> iced::Result 
     let helper = CosmicAppletHelper::default();
     let mut settings = helper.window_settings();
     settings.autosize = autosize;
+    if autosize {
+        settings.size_limits = Limits::NONE;
+    }
 
     if let Some(icon_theme) = settings.default_icon_theme {
         crate::icon_theme::set_default(icon_theme);
