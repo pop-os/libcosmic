@@ -80,17 +80,21 @@ pub fn run<App: Application>(settings: Settings, flags: App::Flags) -> iced::Res
     {
         use iced::wayland::actions::window::SctkWindowSettings;
         use iced_sctk::settings::InitialSurface;
-        iced.initial_surface = InitialSurface::XdgWindow(SctkWindowSettings {
-            app_id: Some(App::APP_ID.to_owned()),
-            autosize: settings.autosize,
-            client_decorations: settings.client_decorations,
-            resizable: settings.resizable,
-            size: settings.size,
-            size_limits: settings.size_limits,
-            title: None,
-            transparent: settings.transparent,
-            ..SctkWindowSettings::default()
-        });
+        iced.initial_surface = if settings.no_main_window {
+            InitialSurface::None
+        } else {
+            InitialSurface::XdgWindow(SctkWindowSettings {
+                app_id: Some(App::APP_ID.to_owned()),
+                autosize: settings.autosize,
+                client_decorations: settings.client_decorations,
+                resizable: settings.resizable,
+                size: settings.size,
+                size_limits: settings.size_limits,
+                title: None,
+                transparent: settings.transparent,
+                ..SctkWindowSettings::default()
+            })
+        };
     }
 
     #[cfg(not(feature = "wayland"))]
