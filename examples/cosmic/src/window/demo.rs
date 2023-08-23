@@ -508,6 +508,14 @@ impl State {
                 .width(Length::Fill)
                 .on_input(Message::InputChanged)
                 .into(),
+            cosmic::widget::search_input(
+                "test",
+                &self.entry_value,
+                Some(Message::InputChanged("".to_string())),
+            )
+            .width(Length::Fill)
+            .on_input(Message::InputChanged)
+            .into(),
         ])
         .into()
     }

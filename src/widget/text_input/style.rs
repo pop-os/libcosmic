@@ -94,9 +94,9 @@ impl StyleSheet for crate::Theme {
             TextInput::Search => Appearance {
                 background: Color::from(bg).into(),
                 border_radius: corner.radius_xl.into(),
-                border_width: 0.0,
+                border_width: 1.0,
                 border_offset: None,
-                border_color: Color::TRANSPARENT,
+                border_color: self.current_container().component.divider.into(),
                 text_color: self.current_container().on.into(),
                 selected_text_color: palette.on_accent_color().into(),
                 selected_fill: palette.accent_color().into(),
@@ -179,7 +179,18 @@ impl StyleSheet for crate::Theme {
                 selected_fill: palette.accent_color().into(),
                 label_color: label_color.into(),
             },
-            TextInput::Search | TextInput::ExpandableSearch => Appearance {
+            TextInput::Search => Appearance {
+                background: Color::from(bg).into(),
+                border_radius: corner.radius_xl.into(),
+                border_offset: None,
+                border_width: 1.0,
+                border_color: palette.accent.base.into(),
+                text_color: self.current_container().on.into(),
+                selected_text_color: palette.on_accent_color().into(),
+                selected_fill: palette.accent_color().into(),
+                label_color: label_color.into(),
+            },
+            TextInput::ExpandableSearch => Appearance {
                 background: Color::from(bg).into(),
                 border_radius: corner.radius_xl.into(),
                 border_offset: None,
@@ -226,9 +237,9 @@ impl StyleSheet for crate::Theme {
             TextInput::Search | TextInput::ExpandableSearch => Appearance {
                 background: Color::from(bg).into(),
                 border_radius: corner.radius_xl.into(),
-                border_width: 0.0,
+                border_width: 1.0,
                 border_offset: Some(2.0),
-                border_color: Color::TRANSPARENT,
+                border_color: palette.accent.base.into(),
                 text_color: self.current_container().on.into(),
                 selected_text_color: palette.on_accent_color().into(),
                 selected_fill: palette.accent_color().into(),
