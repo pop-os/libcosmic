@@ -504,6 +504,10 @@ impl State {
             .size(20)
             .id(INPUT_ID.clone())
             .into(),
+            cosmic::widget::text_input("test", &self.entry_value)
+                .width(Length::Fill)
+                .on_input(Message::InputChanged)
+                .into(),
         ])
         .into()
     }
