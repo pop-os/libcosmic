@@ -705,7 +705,8 @@ where
                 );
             }
         }
-
+        let mut children = layout.children();
+        let layout = children.next().unwrap();
         mouse_interaction(layout, cursor_position, self.on_input.is_none())
     }
 }
@@ -765,11 +766,11 @@ pub fn layout<Message>(
     helper_text_size: f32,
     helper_text_line_height: text::LineHeight,
 ) -> layout::Node {
+    let limits = limits.width(width);
     let spacing = THEME.with(|t| t.borrow().cosmic().space_xxs());
     let mut nodes = Vec::with_capacity(3);
 
     let text_pos = if let Some(label) = label {
-        let limits = limits.width(width);
         let text_bounds = limits.resolve(Size::ZERO);
 
         let label_size = renderer.measure(
@@ -788,11 +789,14 @@ pub fn layout<Message>(
     };
 
     let text_size = size.unwrap_or_else(|| renderer.default_size());
+    let mut text_input_height = text_size * 1.2;
     let padding = padding.fit(Size::ZERO, limits.max());
 
     let helper_pos = if start_icon.is_some() || end_icon.is_some() {
         // TODO configurable icon spacing, maybe via appearance
-        let mut height = text_size * 1.2;
+        let limits_copy = limits;
+
+        let limits = limits.pad(padding);
         let icon_spacing = 8.0;
         let (start_icon_width, mut start_icon) = if let Some(icon) = start_icon.as_ref() {
             let icon_node = icon.layout(
@@ -801,7 +805,7 @@ pub fn layout<Message>(
                     .width(icon.as_widget().width())
                     .height(icon.as_widget().height()),
             );
-            height = height.max(icon_node.bounds().height);
+            text_input_height = text_input_height.max(icon_node.bounds().height);
             (icon_node.bounds().width + icon_spacing, Some(icon_node))
         } else {
             (0.0, None)
@@ -814,12 +818,12 @@ pub fn layout<Message>(
                     .width(icon.as_widget().width())
                     .height(icon.as_widget().height()),
             );
-            height = height.max(icon_node.bounds().height);
+            text_input_height = text_input_height.max(icon_node.bounds().height);
             (icon_node.bounds().width + icon_spacing, Some(icon_node))
         } else {
             (0.0, None)
         };
-        let text_limits = limits.width(width).pad(padding).height(text_size * 1.2);
+        let text_limits = limits.width(width).height(text_size * 1.2);
 
         let text_bounds = text_limits.resolve(Size::ZERO);
 
@@ -828,7 +832,7 @@ pub fn layout<Message>(
 
         text_node.move_to(Point::new(
             padding.left + start_icon_width,
-            padding.top + ((height - text_size * 1.2) / 2.0).max(0.0),
+            padding.top + ((text_input_height - text_size * 1.2) / 2.0).max(0.0),
         ));
         let mut node_list: Vec<_> = Vec::with_capacity(3);
 
@@ -844,21 +848,33 @@ pub fn layout<Message>(
         }
         if let Some(mut end_icon) = end_icon.take() {
             end_icon.move_to(Point::new(
-                text_node_bounds.x + text_node_bounds.width,
+                text_node_bounds.x + text_node_bounds.width + f32::from(spacing),
                 padding.top + ((text_size * 1.2 - end_icon.bounds().height) / 2.0).max(0.0),
             ));
             node_list.push(end_icon);
         }
 
-        let input_limits = limits.width(width).pad(padding).height(height);
-        let input_bounds = input_limits.resolve(Size::ZERO);
+        let text_input_size = Size::new(
+            text_node_bounds.x + text_node_bounds.width + end_icon_width,
+            text_input_height,
+        )
+        .pad(padding);
+
+        let input_limits = limits_copy
+            .width(width)
+            .height(text_input_height.max(text_input_size.height))
+            .min_width(text_input_size.width);
+        let input_bounds = input_limits.resolve(text_input_size);
         let input_node = layout::Node::with_children(input_bounds, node_list).translate(text_pos);
         let y_pos = input_node.bounds().y + input_node.bounds().height + f32::from(spacing);
         nodes.push(input_node);
 
         Vector::new(0.0, y_pos)
     } else {
-        let limits = limits.width(width).pad(padding).height(text_size * 1.2);
+        let limits = limits
+            .width(width)
+            .height(text_input_height + padding.vertical())
+            .pad(padding);
         let text_bounds = limits.resolve(Size::ZERO);
 
         let mut text = layout::Node::new(text_bounds);
@@ -898,7 +914,11 @@ pub fn layout<Message>(
         )
     });
     size.height += (nodes.len() - 1) as f32 * f32::from(spacing);
-    let limits = limits.width(width).pad(padding).height(size.height);
+
+    let limits = limits
+        .width(width)
+        .height(size.height)
+        .min_width(size.width);
 
     layout::Node::with_children(limits.resolve(size), nodes)
 }
@@ -1182,7 +1202,9 @@ where
             let state = state();
 
             if let Some(focus) = &mut state.is_focused {
-                let Some(on_input) = on_input else { return event::Status::Ignored };
+                let Some(on_input) = on_input else {
+                    return event::Status::Ignored;
+                };
 
                 if state.is_pasting.is_none()
                     && !state.keyboard_modifiers.command()
@@ -1205,7 +1227,9 @@ where
             let state = state();
 
             if let Some(focus) = &mut state.is_focused {
-                let Some(on_input) = on_input else { return event::Status::Ignored };
+                let Some(on_input) = on_input else {
+                    return event::Status::Ignored;
+                };
 
                 let modifiers = state.keyboard_modifiers;
                 focus.updated_at = Instant::now();
@@ -1433,7 +1457,7 @@ where
             wayland::DndOfferEvent::Enter { x, y, mime_types },
         ))) => {
             let Some(on_dnd_command_produced) = on_dnd_command_produced else {
-                return event::Status::Ignored
+                return event::Status::Ignored;
             };
 
             let state = state();
@@ -1588,8 +1612,8 @@ where
                     .iter()
                     .find(|m| mime_types.contains(&(**m).to_string()))
                 else {
-                        state.dnd_offer = DndOfferState::None;
-                        return event::Status::Captured;
+                    state.dnd_offer = DndOfferState::None;
+                    return event::Status::Captured;
                 };
                 state.dnd_offer = DndOfferState::Dropped;
                 shell.publish(on_dnd_command_produced(Box::new(move || {

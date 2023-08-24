@@ -339,7 +339,7 @@ where
     /// ```
     pub fn position_set(&mut self, id: Entity, position: u16) -> Option<usize> {
         let Some(index) = self.position(id) else {
-            return None
+            return None;
         };
 
         let position = self.order.len().min(position as usize);
@@ -360,11 +360,11 @@ where
     /// ```
     pub fn position_swap(&mut self, first: Entity, second: Entity) -> bool {
         let Some(first_index) = self.position(first) else {
-            return false
+            return false;
         };
 
         let Some(second_index) = self.position(second) else {
-            return false
+            return false;
         };
 
         self.order.swap(first_index as usize, second_index as usize);

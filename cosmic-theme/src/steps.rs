@@ -63,7 +63,9 @@ pub fn get_text(
     } else {
         step_array
     };
-    let Some(index) = get_index(base_index, 70, step_array.len(), is_dark).or_else(|| get_index(base_index, 50, step_array.len(), is_dark)) else {
+    let Some(index) = get_index(base_index, 70, step_array.len(), is_dark)
+        .or_else(|| get_index(base_index, 50, step_array.len(), is_dark))
+    else {
         return fallback.to_owned();
     };
 
