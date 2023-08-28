@@ -50,13 +50,21 @@ pub trait StyleSheet {
     fn disabled(&self, style: &Self::Style) -> Appearance;
 }
 
-#[derive(Copy, Clone, Default)]
+#[derive(Default)]
 pub enum TextInput {
     #[default]
     Default,
     ExpandableSearch,
     Search,
     Inline,
+    Custom {
+        active: Box<dyn Fn(&crate::Theme) -> Appearance>,
+        error: Box<dyn Fn(&crate::Theme) -> Appearance>,
+        hovered: Box<dyn Fn(&crate::Theme) -> Appearance>,
+        focused: Box<dyn Fn(&crate::Theme) -> Appearance>,
+        disabled: Box<dyn Fn(&crate::Theme) -> Appearance>,
+        placeholder_color: Box<dyn Fn(&crate::Theme) -> Color>,
+    },
 }
 
 impl StyleSheet for crate::Theme {
@@ -113,6 +121,7 @@ impl StyleSheet for crate::Theme {
                 selected_fill: palette.accent_color().into(),
                 label_color: label_color.into(),
             },
+            TextInput::Custom { active, .. } => active(self),
         }
     }
 
@@ -157,6 +166,7 @@ impl StyleSheet for crate::Theme {
                 selected_fill: palette.accent_color().into(),
                 label_color: label_color.into(),
             },
+            TextInput::Custom { error, .. } => error(self),
         }
     }
 
@@ -212,6 +222,7 @@ impl StyleSheet for crate::Theme {
                 selected_fill: palette.accent_color().into(),
                 label_color: label_color.into(),
             },
+            TextInput::Custom { hovered, .. } => hovered(self),
         }
     }
 
@@ -258,10 +269,17 @@ impl StyleSheet for crate::Theme {
                 selected_fill: palette.accent_color().into(),
                 label_color: label_color.into(),
             },
+            TextInput::Custom { focused, .. } => focused(self),
         }
     }
 
-    fn placeholder_color(&self, _style: &Self::Style) -> Color {
+    fn placeholder_color(&self, style: &Self::Style) -> Color {
+        if let TextInput::Custom {
+            placeholder_color, ..
+        } = style
+        {
+            return placeholder_color(self);
+        }
         let palette = self.cosmic();
         let mut neutral_9 = palette.palette.neutral_9;
         neutral_9.alpha = 0.7;
@@ -269,6 +287,9 @@ impl StyleSheet for crate::Theme {
     }
 
     fn disabled(&self, style: &Self::Style) -> Appearance {
+        if let TextInput::Custom { disabled, .. } = style {
+            return disabled(self);
+        }
         self.active(style)
     }
 }
