@@ -12,6 +12,7 @@ pub use iced::widget::{radio, Radio};
 pub use iced::widget::{row, Row};
 pub use iced::widget::{slider, Slider};
 pub use iced::widget::{space, Space};
+pub use iced::widget::{text_input as crate_text_input, TextInput};
 
 pub mod aspect_ratio;
 
