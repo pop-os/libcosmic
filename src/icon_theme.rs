@@ -7,7 +7,7 @@ use std::cell::RefCell;
 
 thread_local! {
     /// The fallback icon theme to search if no icon theme was specified.
-    pub(crate) static DEFAULT: RefCell<String> = RefCell::new(String::from("Pop"));
+    pub(crate) static DEFAULT: RefCell<String> = RefCell::new(String::from("Cosmic"));
 }
 
 /// The fallback icon theme to search if no icon theme was specified.
