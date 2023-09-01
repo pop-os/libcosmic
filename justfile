@@ -1,4 +1,4 @@
-projects := 'application cosmic cosmic_sctk open_dialog'
+projects := 'application cosmic cosmic_sctk design open_dialog'
 
 # Check for errors and linter warnings
 check *args:
