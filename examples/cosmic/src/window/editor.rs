@@ -1,7 +1,7 @@
 use cosmic::iced::widget::{horizontal_space, row};
 use cosmic::iced::{Alignment, Length};
-use cosmic::widget::{button, segmented_button, view_switcher};
-use cosmic::{theme, Element};
+use cosmic::widget::{button, icon, segmented_button, view_switcher};
+use cosmic::{theme, Apply, Element};
 use slotmap::Key;
 
 #[derive(Clone, Copy, Debug)]
@@ -66,8 +66,9 @@ impl State {
             .on_close(Message::Close)
             .width(Length::Shrink);
 
-        let new_tab_button = button(theme::Button::Text)
-            .icon(theme::Svg::Symbolic, "tab-new-symbolic", 20)
+        let new_tab_button = icon::handle::from_name("tab-new-symbolic")
+            .size(20)
+            .apply(button::icon)
             .on_press(Message::AddNew);
 
         let tab_header = row!(tabs, new_tab_button).align_items(Alignment::Center);

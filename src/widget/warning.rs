@@ -1,13 +1,11 @@
 // Copyright 2022 System76 <info@system76.com>
 // SPDX-License-Identifier: MPL-2.0
 
-use std::borrow::Cow;
-
-use iced::{alignment, widget, Alignment, Background, Color, Length};
-
-use crate::{theme, Element, Renderer, Theme};
-
 use super::icon;
+use crate::{theme, widget, Element, Renderer, Theme};
+use apply::Apply;
+use iced::{alignment, Alignment, Background, Color, Length};
+use std::borrow::Cow;
 
 #[must_use]
 pub fn warning<'a, Message>(message: impl Into<Cow<'a, str>>) -> Warning<'a, Message> {
@@ -32,29 +30,22 @@ impl<'a, Message: 'static + Clone> Warning<'a, Message> {
 
     /// A custom button that has the desired default spacing and padding.
     pub fn into_widget(self) -> widget::Container<'a, Message, Renderer> {
-        let close_button =
-            widget::button(icon("window-close-symbolic", 16).style(theme::Svg::Default))
-                .style(theme::Button::Transparent);
+        let label = widget::container(crate::widget::text(self.message)).width(Length::Fill);
 
-        let close_button = if let Some(message) = self.on_close {
-            close_button.on_press(message)
-        } else {
-            close_button
-        };
+        let close_button = icon::handle::from_name("window-close-symbolic")
+            .size(16)
+            .apply(widget::button::icon)
+            .on_press_maybe(self.on_close);
 
-        widget::container(
-            widget::row(vec![
-                widget::container(crate::widget::text(self.message))
-                    .width(Length::Fill)
-                    .into(),
-                close_button.into(),
-            ])
-            .align_items(Alignment::Center),
-        )
-        .style(theme::Container::custom(warning_container))
-        .padding(10)
-        .align_y(alignment::Vertical::Center)
-        .width(Length::Fill)
+        widget::row::with_capacity(2)
+            .push(label)
+            .push(close_button)
+            .align_items(Alignment::Center)
+            .apply(widget::container)
+            .style(theme::Container::custom(warning_container))
+            .padding(10)
+            .align_y(alignment::Vertical::Center)
+            .width(Length::Fill)
     }
 }
 
@@ -67,6 +58,7 @@ impl<'a, Message: 'static + Clone> From<Warning<'a, Message>> for Element<'a, Me
 #[must_use]
 pub fn warning_container(theme: &Theme) -> widget::container::Appearance {
     widget::container::Appearance {
+        icon_color: Some(theme.cosmic().warning.on.into()),
         text_color: Some(theme.cosmic().warning.on.into()),
         background: Some(Background::Color(theme.cosmic().warning_color().into())),
         border_radius: 0.0.into(),

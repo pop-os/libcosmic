@@ -1,3 +1,7 @@
+// Copyright 2019 H�ctor Ram�n, Iced contributors
+// Copyright 2023 System76 <info@system76.com>
+// SPDX-License-Identifier: MIT
+
 //! Display fields that can be filled with text.
 //!
 //! A [`TextInput`] has some local [`State`].
@@ -9,6 +13,7 @@ use super::editor::Editor;
 use super::style::StyleSheet;
 pub use super::value::Value;
 
+use apply::Apply;
 use iced::Limits;
 use iced_core::event::{self, Event};
 use iced_core::keyboard;
@@ -66,8 +71,9 @@ where
         .style(super::style::TextInput::Search)
         .start_icon(
             iced_widget::container(
-                crate::widget::icon("system-search-symbolic", 16)
-                    .style(crate::theme::Svg::Symbolic),
+                crate::widget::icon::handle::from_name("system-search-symbolic")
+                    .size(16)
+                    .icon(),
             )
             .padding([spacing, spacing, spacing, spacing])
             .into(),
@@ -75,8 +81,10 @@ where
 
     if let Some(msg) = on_clear {
         input.end_icon(
-            crate::widget::button::button(crate::theme::Button::Text)
-                .icon(crate::theme::Svg::Symbolic, "edit-clear-symbolic", 16)
+            crate::widget::icon::handle::from_name("edit-clear-symbolic")
+                .size(16)
+                .handle()
+                .apply(crate::widget::button::icon)
                 .on_press(msg)
                 .padding([spacing, spacing, spacing, spacing])
                 .into(),
@@ -102,24 +110,22 @@ where
         .padding([0, spacing, 0, spacing])
         .style(super::style::TextInput::Default)
         .start_icon(
-            iced_widget::container(
-                crate::widget::icon("system-lock-screen-symbolic", 16)
-                    .style(crate::theme::Svg::Symbolic),
-            )
-            .padding([spacing, spacing, spacing, spacing])
-            .into(),
+            crate::widget::icon::handle::from_name("system-lock-screen-symbolic")
+                .size(16)
+                .icon()
+                .apply(iced_widget::container)
+                .padding([spacing, spacing, spacing, spacing])
+                .into(),
         );
     if hidden {
         input = input.password();
     }
     if let Some(msg) = on_visible_toggle {
         input.end_icon(
-            crate::widget::button::button(crate::theme::Button::Text)
-                .icon(
-                    crate::theme::Svg::Symbolic,
-                    "document-properties-symbolic",
-                    16,
-                )
+            crate::widget::icon::handle::from_name("document-properties-symbolic")
+                .size(16)
+                .handle()
+                .apply(crate::widget::button::icon)
                 .on_press(msg)
                 .padding([spacing, spacing, spacing, spacing])
                 .into(),
@@ -300,8 +306,14 @@ where
 
     /// Sets the message that should be produced when the [`TextInput`] is
     /// focused and the enter key is pressed.
-    pub fn on_submit(mut self, message: Message) -> Self {
-        self.on_submit = Some(message);
+    pub fn on_submit(self, message: Message) -> Self {
+        self.on_submit_maybe(Some(message))
+    }
+
+    /// Maybe sets the message that should be produced when the [`TextInput`] is
+    /// focused and the enter key is pressed.
+    pub fn on_submit_maybe(mut self, message: Option<Message>) -> Self {
+        self.on_submit = message;
         self
     }
 
@@ -1846,6 +1858,7 @@ pub fn draw<'a, Message>(
             renderer,
             theme,
             &renderer::Style {
+                icon_color: renderer_style.icon_color,
                 text_color: appearance.text_color,
                 scale_factor: renderer_style.scale_factor,
             },
@@ -2013,6 +2026,7 @@ pub fn draw<'a, Message>(
             renderer,
             theme,
             &renderer::Style {
+                icon_color: renderer_style.icon_color,
                 text_color: appearance.text_color,
                 scale_factor: renderer_style.scale_factor,
             },
@@ -2063,11 +2077,9 @@ pub struct TextInputString(String);
 #[cfg(feature = "wayland")]
 impl DataFromMimeType for TextInputString {
     fn from_mime_type(&self, mime_type: &str) -> Option<Vec<u8>> {
-        if SUPPORTED_MIME_TYPES.contains(&mime_type) {
-            Some(self.0.as_bytes().to_vec())
-        } else {
-            None
-        }
+        SUPPORTED_MIME_TYPES
+            .contains(&mime_type)
+            .then(|| self.0.as_bytes().to_vec())
     }
 }
 

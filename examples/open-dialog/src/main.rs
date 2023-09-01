@@ -7,6 +7,7 @@ use apply::Apply;
 use cosmic::app::{Command, Core, Settings};
 use cosmic::dialog::file_chooser::{self, FileFilter};
 use cosmic::iced_core::Length;
+use cosmic::widget::button;
 use cosmic::{executor, iced, ApplicationExt, Element};
 use tokio::io::AsyncReadExt;
 use url::Url;
@@ -82,10 +83,7 @@ impl cosmic::Application for App {
 
     fn header_end(&self) -> Vec<Element<Self::Message>> {
         // Places a button the header to create open dialogs.
-        vec![cosmic::widget::button(cosmic::theme::Button::Primary)
-            .text("Open")
-            .on_press(Message::OpenFile)
-            .into()]
+        vec![button::suggested("Open").on_press(Message::OpenFile).into()]
     }
 
     fn subscription(&self) -> cosmic::iced_futures::Subscription<Self::Message> {

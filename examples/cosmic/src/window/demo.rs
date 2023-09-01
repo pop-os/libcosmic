@@ -7,8 +7,8 @@ use cosmic::{
     iced::{id, Alignment, Length},
     theme::{self, Button as ButtonTheme, ThemeType},
     widget::{
-        button, container, icon, segmented_button, segmented_selection, settings, spin_button,
-        toggler, view_switcher,
+        button, cosmic_container::container, icon, segmented_button, segmented_selection, settings,
+        spin_button, toggler, view_switcher,
     },
     Element,
 };
@@ -186,7 +186,7 @@ impl State {
             Message::IconTheme(key) => {
                 self.icon_themes.activate(key);
                 if let Some(theme) = self.icon_themes.text(key) {
-                    cosmic::icon_theme::set_default(theme);
+                    cosmic::icon_theme::set_default(theme.to_owned());
                 }
             }
             Message::InputChanged(s) => {
@@ -255,45 +255,13 @@ impl State {
                             "Scaling Factor",
                             spin_button(&window.scale_factor_string, Message::ScalingFactor),
                         ))
-                        .add(settings::item_row(vec![button(ButtonTheme::Destructive)
-                            .on_press(Message::ToggleWarning)
-                            .custom(vec![
-                                icon("dialog-warning-symbolic", 16)
-                                    .style(theme::Svg::SymbolicPrimary)
-                                    .into(),
-                                text("Do Not Touch").into(),
-                            ])
-                            .into()]))
-                        .into(),
-                    settings::view_section("Buttons")
                         .add(settings::item_row(vec![
-                            button(ButtonTheme::Primary)
-                                .text("Primary")
-                                .on_press(Message::ButtonPressed)
+                            cosmic::widget::button::destructive("Do not Touch")
+                                .trailing_icon(
+                                    icon::handle::from_name("dialog-warning-symbolic").size(16),
+                                )
+                                .on_press(Message::ToggleWarning)
                                 .into(),
-                            button(ButtonTheme::Secondary)
-                                .text("Secondary")
-                                .on_press(Message::ButtonPressed)
-                                .into(),
-                            button(ButtonTheme::Positive)
-                                .text("Positive")
-                                .on_press(Message::ButtonPressed)
-                                .into(),
-                            button(ButtonTheme::Destructive)
-                                .text("Destructive")
-                                .on_press(Message::ButtonPressed)
-                                .into(),
-                            button(ButtonTheme::Text)
-                                .text("Text")
-                                .on_press(Message::ButtonPressed)
-                                .into(),
-                        ]))
-                        .add(settings::item_row(vec![
-                            button(ButtonTheme::Primary).text("Primary").into(),
-                            button(ButtonTheme::Secondary).text("Secondary").into(),
-                            button(ButtonTheme::Positive).text("Positive").into(),
-                            button(ButtonTheme::Destructive).text("Destructive").into(),
-                            button(ButtonTheme::Text).text("Text").into(),
                         ]))
                         .into(),
                     settings::view_section("Controls")
@@ -454,9 +422,13 @@ impl State {
                     "Primary container with some text and a couple icons testing default fallbacks"
                 )
                 .size(24),
-                icon("microphone-sensitivity-high-symbolic-test", 24)
-                    .style(cosmic::theme::Svg::SymbolicActive),
-                icon("microphone-sensitivity-high-symbolic-test", 16).default_fallbacks(false)
+                icon::handle::from_name("microphone-sensitivity-high-symbolic-test")
+                    .size(24)
+                    .icon(),
+                icon::handle::from_name("microphone-sensitivity-high-symbolic-test")
+                    .size(24)
+                    .fallback(false)
+                    .icon(),
             ])
             .layer(cosmic_theme::Layer::Primary)
             .padding(8)
@@ -475,9 +447,7 @@ impl State {
                     .iter()
                     .enumerate()
                     .map(|(i, c)| column![
-                        button(cosmic::theme::Button::Text)
-                            .text("Delete me")
-                            .on_press(Message::DeleteCard(i)),
+                        button::text("Delete me").on_press(Message::DeleteCard(i)),
                         text(c).size(24).width(Length::Fill)
                     ]
                     .into())

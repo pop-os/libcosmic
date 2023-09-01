@@ -6,12 +6,11 @@ use std::borrow::Cow;
 
 pub use self::model::{Message, Model};
 
-use crate::widget::{icon, text};
+use crate::widget::{button, container, icon, row, text};
 use crate::{theme, Element};
 use apply::Apply;
 use iced::{
     alignment::{Horizontal, Vertical},
-    widget::{button, container, row},
     Alignment, Length,
 };
 
@@ -42,9 +41,10 @@ impl<'a, Message: 'static> SpinButton<'a, Message> {
     pub fn into_element(self) -> Element<'a, Message> {
         let Self { on_change, label } = self;
         container(
-            row![
-                icon("list-remove-symbolic", 24)
-                    .style(theme::Svg::Symbolic)
+            row::with_children(vec![
+                icon::handle::from_name("list-remove-symbolic")
+                    .size(24)
+                    .icon()
                     .apply(container)
                     .width(Length::Fixed(32.0))
                     .height(Length::Fixed(32.0))
@@ -54,14 +54,17 @@ impl<'a, Message: 'static> SpinButton<'a, Message> {
                     .width(Length::Fixed(32.0))
                     .height(Length::Fixed(32.0))
                     .style(theme::Button::Text)
-                    .on_press(model::Message::Decrement),
+                    .on_press(model::Message::Decrement)
+                    .into(),
                 text(label)
                     .vertical_alignment(Vertical::Center)
                     .apply(container)
                     .align_x(Horizontal::Center)
-                    .align_y(Vertical::Center),
-                icon("list-add-symbolic", 24)
-                    .style(theme::Svg::Symbolic)
+                    .align_y(Vertical::Center)
+                    .into(),
+                icon::handle::from_name("list-add-symbolic")
+                    .size(24)
+                    .icon()
                     .apply(container)
                     .width(Length::Fixed(32.0))
                     .height(Length::Fixed(32.0))
@@ -71,8 +74,9 @@ impl<'a, Message: 'static> SpinButton<'a, Message> {
                     .width(Length::Fixed(32.0))
                     .height(Length::Fixed(32.0))
                     .style(theme::Button::Text)
-                    .on_press(model::Message::Increment),
-            ]
+                    .on_press(model::Message::Increment)
+                    .into(),
+            ])
             .width(Length::Shrink)
             .height(Length::Fixed(32.0))
             .spacing(4.0)
@@ -101,6 +105,7 @@ fn container_style(theme: &crate::Theme) -> iced_style::container::Appearance {
     let accent = &basic.accent;
     let corners = &basic.corner_radii;
     iced_style::container::Appearance {
+        icon_color: Some(basic.palette.neutral_10.into()),
         text_color: Some(basic.palette.neutral_10.into()),
         background: None,
         border_radius: corners.radius_s.into(),

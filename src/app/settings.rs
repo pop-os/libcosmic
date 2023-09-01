@@ -10,6 +10,7 @@ use iced_core::Font;
 
 /// Configure a new COSMIC application.
 #[allow(clippy::struct_excessive_bools)]
+#[must_use]
 #[derive(derive_setters::Setters)]
 pub struct Settings {
     /// Produces a smoother result in some widgets, at a performance cost.

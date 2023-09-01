@@ -1,10 +1,10 @@
 // Copyright 2022 System76 <info@system76.com>
 // SPDX-License-Identifier: MPL-2.0
 
-use crate::{theme, Element};
+use crate::{ext::CollectionWidget, widget, Element};
 use apply::Apply;
 use derive_setters::Setters;
-use iced::{self, widget, Length};
+use iced::Length;
 use std::borrow::Cow;
 
 #[must_use]
@@ -89,51 +89,43 @@ impl<'a, Message: Clone + 'static> HeaderBar<'a, Message> {
 impl<'a, Message: Clone + 'static> HeaderBar<'a, Message> {
     /// Converts the headerbar builder into an Iced element.
     pub fn into_element(mut self) -> Element<'a, Message> {
-        let mut packed: Vec<Element<Message>> = Vec::with_capacity(4);
-
         // Take ownership of the regions to be packed.
         let start = std::mem::take(&mut self.start);
         let center = std::mem::take(&mut self.center);
         let mut end = std::mem::take(&mut self.end);
 
-        // If elements exist in the start region, append them here.
-        if !start.is_empty() {
-            packed.push(
-                iced::widget::row(start)
-                    .align_items(iced::Alignment::Center)
-                    .apply(iced::widget::container)
-                    .align_x(iced::alignment::Horizontal::Left)
-                    .into(),
-            );
-        }
-
-        // If elements exist in the center region, use them here.
-        // This will otherwise use the title as a widget if a title was defined.
-        packed.push(if !center.is_empty() {
-            iced::widget::row(center)
-                .align_items(iced::Alignment::Center)
-                .apply(iced::widget::container)
-                .align_x(iced::alignment::Horizontal::Center)
-                .into()
-        } else if self.title.is_empty() {
-            widget::horizontal_space(Length::Fill).into()
-        } else {
-            self.title_widget()
-        });
-
         // Also packs the window controls at the very end.
-        end.push(iced::widget::horizontal_space(Length::Fixed(12.0)).into());
+        end.push(widget::horizontal_space(Length::Fixed(12.0)).into());
         end.push(self.window_controls());
-        packed.push(
-            iced::widget::row(end)
-                .align_items(iced::Alignment::Center)
-                .apply(widget::container)
-                .align_x(iced::alignment::Horizontal::Right)
-                .into(),
-        );
 
         // Creates the headerbar widget.
-        let mut widget = widget::row(packed)
+        let mut widget = widget::row::with_capacity(4)
+            // If elements exist in the start region, append them here.
+            .push_maybe((!start.is_empty()).then(|| {
+                widget::row::with_children(start)
+                    .align_items(iced::Alignment::Center)
+                    .apply(widget::container)
+                    .align_x(iced::alignment::Horizontal::Left)
+            }))
+            // If elements exist in the center region, use them here.
+            // This will otherwise use the title as a widget if a title was defined.
+            .push(if !center.is_empty() {
+                widget::row::with_children(center)
+                    .align_items(iced::Alignment::Center)
+                    .apply(widget::container)
+                    .align_x(iced::alignment::Horizontal::Center)
+                    .into()
+            } else if self.title.is_empty() {
+                widget::horizontal_space(Length::Fill).into()
+            } else {
+                self.title_widget()
+            })
+            .push(
+                widget::row::with_children(end)
+                    .align_items(iced::Alignment::Center)
+                    .apply(widget::container)
+                    .align_x(iced::alignment::Horizontal::Right),
+            )
             .height(Length::Fixed(50.0))
             .padding(8)
             .spacing(8)
@@ -159,7 +151,7 @@ impl<'a, Message: Clone + 'static> HeaderBar<'a, Message> {
         let mut title = Cow::default();
         std::mem::swap(&mut title, &mut self.title);
 
-        super::text(title)
+        widget::text(title)
             .size(16)
             .font(crate::font::FONT_SEMIBOLD)
             .apply(widget::container)
@@ -172,30 +164,30 @@ impl<'a, Message: Clone + 'static> HeaderBar<'a, Message> {
 
     /// Creates the widget for window controls.
     fn window_controls(&mut self) -> Element<'a, Message> {
-        let mut widgets: Vec<Element<_>> = Vec::with_capacity(3);
-
         let icon = |name, size, on_press| {
-            super::icon(name, size)
-                .force_svg(true)
-                .style(crate::theme::Svg::SymbolicActive)
-                .apply(widget::button)
-                .style(theme::Button::Text)
+            widget::icon::handle::from_name(name)
+                .size(size)
+                .handle()
+                .apply(widget::button::icon)
                 .on_press(on_press)
         };
 
-        if let Some(message) = self.on_minimize.take() {
-            widgets.push(icon("window-minimize-symbolic", 16, message).into());
-        }
-
-        if let Some(message) = self.on_maximize.take() {
-            widgets.push(icon("window-maximize-symbolic", 16, message).into());
-        }
-
-        if let Some(message) = self.on_close.take() {
-            widgets.push(icon("window-close-symbolic", 16, message).into());
-        }
-
-        widget::row(widgets)
+        widget::row::with_capacity(3)
+            .push_maybe(
+                self.on_minimize
+                    .take()
+                    .map(|m| icon("window-minimize-symbolic", 16, m)),
+            )
+            .push_maybe(
+                self.on_maximize
+                    .take()
+                    .map(|m| icon("window-maximize-symbolic", 16, m)),
+            )
+            .push_maybe(
+                self.on_close
+                    .take()
+                    .map(|m| icon("window-close-symbolic", 16, m)),
+            )
             .spacing(8)
             .apply(widget::container)
             .height(Length::Fill)

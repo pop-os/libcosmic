@@ -97,11 +97,3 @@ pub type SecondaryMap<T> = slotmap::SecondaryMap<Entity, T>;
 ///
 /// Sparse maps internally use a `HashMap`, for data that is sparsely associated.
 pub type SparseSecondaryMap<T> = slotmap::SparseSecondaryMap<Entity, T>;
-
-/// Defines the color of the icon for a segmented item.
-#[derive(Clone, Copy, Debug, Default, PartialEq)]
-enum IconColor {
-    #[default]
-    None,
-    Color(crate::iced::Color),
-}

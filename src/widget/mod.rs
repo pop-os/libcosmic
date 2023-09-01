@@ -16,8 +16,8 @@ pub use iced::widget::{svg, Svg};
 
 pub mod aspect_ratio;
 
-mod button;
-pub use button::*;
+pub mod button;
+pub use button::{button, Button, IconButton, LinkButton, TextButton};
 
 pub mod card;
 pub use card::*;

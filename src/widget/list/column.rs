@@ -41,9 +41,9 @@ impl<'a, Message: 'static> ListColumn<'a, Message> {
 
     #[must_use]
     pub fn into_element(self) -> Element<'a, Message> {
-        iced::widget::column(self.children)
+        crate::widget::column::with_children(self.children)
             .spacing(12)
-            .apply(iced::widget::container)
+            .apply(crate::widget::container)
             .padding([16, 6])
             .style(theme::Container::custom(style))
             .into()
@@ -58,9 +58,10 @@ impl<'a, Message: 'static> From<ListColumn<'a, Message>> for Element<'a, Message
 
 #[must_use]
 #[allow(clippy::trivially_copy_pass_by_ref)]
-pub fn style(theme: &crate::Theme) -> iced::widget::container::Appearance {
+pub fn style(theme: &crate::Theme) -> crate::widget::container::Appearance {
     let container = &theme.current_container().component;
-    iced::widget::container::Appearance {
+    crate::widget::container::Appearance {
+        icon_color: Some(container.on.into()),
         text_color: Some(container.on.into()),
         background: Some(Background::Color(container.base.into())),
         border_radius: 8.0.into(),
