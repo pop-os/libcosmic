@@ -14,44 +14,32 @@ use iced_core::layout;
 pub struct Vertical;
 
 /// Vertical [`SegmentedButton`].
-pub type VerticalSegmentedButton<'a, SelectionMode, Message, Renderer> =
-    SegmentedButton<'a, Vertical, SelectionMode, Message, Renderer>;
+pub type VerticalSegmentedButton<'a, SelectionMode, Message> =
+    SegmentedButton<'a, Vertical, SelectionMode, Message>;
 
 /// Vertical implementation of the [`SegmentedButton`].
 ///
 /// For details on the model, see the [`segmented_button`](super) module for more details.
 #[must_use]
-pub fn vertical<SelectionMode, Message, Renderer>(
+pub fn vertical<SelectionMode, Message>(
     model: &Model<SelectionMode>,
-) -> SegmentedButton<Vertical, SelectionMode, Message, Renderer>
+) -> SegmentedButton<Vertical, SelectionMode, Message>
 where
-    Renderer: iced_core::Renderer
-        + iced_core::text::Renderer
-        + iced_core::image::Renderer
-        + iced_core::svg::Renderer,
-    Renderer::Theme: StyleSheet,
     Model<SelectionMode>: Selectable,
     SelectionMode: Default,
 {
     SegmentedButton::new(model)
 }
 
-impl<'a, SelectionMode, Message, Renderer> SegmentedVariant
-    for SegmentedButton<'a, Vertical, SelectionMode, Message, Renderer>
+impl<'a, SelectionMode, Message> SegmentedVariant
+    for SegmentedButton<'a, Vertical, SelectionMode, Message>
 where
-    Renderer: iced_core::Renderer
-        + iced_core::text::Renderer
-        + iced_core::image::Renderer
-        + iced_core::svg::Renderer,
-    Renderer::Theme: StyleSheet,
     Model<SelectionMode>: Selectable,
     SelectionMode: Default,
 {
-    type Renderer = Renderer;
-
     fn variant_appearance(
-        theme: &<Self::Renderer as iced_core::Renderer>::Theme,
-        style: &<<Self::Renderer as iced_core::Renderer>::Theme as StyleSheet>::Style,
+        theme: &crate::Theme,
+        style: &crate::theme::SegmentedButton,
     ) -> super::Appearance {
         theme.vertical(style)
     }
@@ -74,7 +62,7 @@ where
     #[allow(clippy::cast_precision_loss)]
     #[allow(clippy::cast_possible_truncation)]
     #[allow(clippy::cast_sign_loss)]
-    fn variant_layout(&self, renderer: &Renderer, limits: &layout::Limits) -> layout::Node {
+    fn variant_layout(&self, renderer: &crate::Renderer, limits: &layout::Limits) -> layout::Node {
         let limits = limits.width(self.width);
         let (width, mut height) = self.max_button_dimensions(renderer, limits.max());
 

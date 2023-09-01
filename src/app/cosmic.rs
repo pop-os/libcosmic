@@ -110,6 +110,7 @@ where
         } else {
             theme::Application::Custom(Box::new(|theme| iced_style::application::Appearance {
                 background_color: iced_core::Color::TRANSPARENT,
+                icon_color: theme.cosmic().on_bg_color().into(),
                 text_color: theme.cosmic().on_bg_color().into(),
             }))
         }

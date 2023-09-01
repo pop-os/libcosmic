@@ -31,7 +31,6 @@ where
         .button_height(32)
         .button_padding([16, 10, 16, 10])
         .button_spacing(8)
-        .icon_size(16)
         .on_activate(on_activate)
         .spacing(8)
         .style(crate::theme::SegmentedButton::ViewSwitcher)
@@ -46,6 +45,7 @@ where
 pub fn nav_bar_style(theme: &Theme) -> iced_style::container::Appearance {
     let cosmic = &theme.cosmic();
     iced_style::container::Appearance {
+        icon_color: Some(cosmic.on_bg_color().into()),
         text_color: Some(cosmic.on_bg_color().into()),
         background: Some(Background::Color(cosmic.primary.base.into())),
         border_radius: 8.0.into(),

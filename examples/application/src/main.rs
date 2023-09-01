@@ -125,9 +125,9 @@ impl cosmic::Application for App {
 
         let text = cosmic::widget::text(page_content);
 
-        let centered = iced::widget::container(text)
+        let centered = cosmic::widget::container(text)
             .width(iced::Length::Fill)
-            .height(iced::Length::Fill)
+            .height(iced::Length::Shrink)
             .align_x(iced::alignment::Horizontal::Center)
             .align_y(iced::alignment::Vertical::Center);
 

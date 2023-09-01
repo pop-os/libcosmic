@@ -13,12 +13,13 @@ use cosmic::{
         window::{self, close, drag, minimize, toggle_maximize},
     },
     keyboard_nav,
+    prelude::*,
     theme::{self, Theme},
     widget::{
-        header_bar, icon, list, nav_bar, nav_bar_toggle, scrollable, segmented_button, settings,
-        warning, IconSource,
+        button, header_bar, icon, list, nav_bar, nav_bar_toggle, scrollable, segmented_button,
+        settings, warning,
     },
-    Element, ElementExt,
+    Element,
 };
 use cosmic_time::{Instant, Timeline};
 use std::{
@@ -224,7 +225,7 @@ impl Window {
         self.nav_bar
             .insert()
             .text(page.title())
-            .icon(IconSource::from(page.icon_name()))
+            .icon(icon::handle::from_name(page.icon_name()).icon())
             .secondary(&mut self.nav_id_to_page, page)
     }
 
@@ -247,14 +248,10 @@ impl Window {
     ) -> Element<Message> {
         let page = sub_page.parent_page();
         column!(
-            iced::widget::Button::new(row!(
-                icon("go-previous-symbolic", 16).style(theme::Svg::SymbolicLink),
-                text(page.title()).size(14),
-            ))
-            .padding(0)
-            .style(theme::Button::Link)
-            // .id(BTN.clone())
-            .on_press(Message::from(page)),
+            button::icon(icon::handle::from_name("go-previous-symbolic").size(16))
+                .label(page.title())
+                .padding(0)
+                .on_press(Message::from(page)),
             row!(
                 text(sub_page.title()).size(28),
                 horizontal_space(Length::Fill),
@@ -276,8 +273,9 @@ impl Window {
         iced::widget::Button::new(
             container(
                 settings::item_row(vec![
-                    icon(sub_page.icon_name(), 20)
-                        .style(theme::Svg::Symbolic)
+                    icon::handle::from_name(sub_page.icon_name())
+                        .size(20)
+                        .icon()
                         .into(),
                     column!(
                         text(sub_page.title()).size(14),
@@ -286,8 +284,9 @@ impl Window {
                     .spacing(2)
                     .into(),
                     horizontal_space(iced::Length::Fill).into(),
-                    icon("go-next-symbolic", 20)
-                        .style(theme::Svg::Symbolic)
+                    icon::handle::from_name("go-next-symbolic")
+                        .size(20)
+                        .icon()
                         .into(),
                 ])
                 .spacing(16),
@@ -296,7 +295,7 @@ impl Window {
             .style(theme::Container::custom(list::column::style)),
         )
         .padding(0)
-        .style(theme::Button::Transparent)
+        .style(theme::IcedButton::Transparent)
         .on_press(Message::from(sub_page.into_page()))
         // .id(BTN.clone())
         .into()

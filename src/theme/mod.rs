@@ -4,16 +4,17 @@
 //! Use COSMIC's themes and styles.
 
 pub mod expander;
+
+mod button;
+pub use self::button::Button;
+
 mod segmented_button;
+pub use self::segmented_button::SegmentedButton;
 
 use std::cell::RefCell;
 use std::f32::consts::PI;
-use std::hash::Hash;
-use std::hash::Hasher;
 use std::rc::Rc;
 use std::sync::Arc;
-
-pub use self::segmented_button::SegmentedButton;
 
 use cosmic_config::config_subscription;
 use cosmic_config::CosmicConfigEntry;
@@ -26,7 +27,7 @@ use iced_core::BorderRadius;
 use iced_core::Radians;
 use iced_futures::Subscription;
 use iced_style::application;
-use iced_style::button;
+use iced_style::button as iced_button;
 use iced_style::checkbox;
 use iced_style::container;
 use iced_style::menu;
@@ -195,6 +196,7 @@ impl application::StyleSheet for Theme {
 
         match style {
             Application::Default => application::Appearance {
+                icon_color: cosmic.bg_color().into(),
                 background_color: cosmic.bg_color().into(),
                 text_color: cosmic.on_bg_color().into(),
             },
@@ -203,13 +205,13 @@ impl application::StyleSheet for Theme {
     }
 }
 
-/*
- * TODO: Button
- */
-pub enum Button {
+/// Styles for the button widget from iced-rs.
+#[derive(Default)]
+pub enum IcedButton {
     Deactivated,
     Destructive,
     Positive,
+    #[default]
     Primary,
     Secondary,
     Text,
@@ -218,110 +220,104 @@ pub enum Button {
     Transparent,
     Card,
     Custom {
-        active: Box<dyn Fn(&Theme) -> button::Appearance>,
-        hover: Box<dyn Fn(&Theme) -> button::Appearance>,
+        active: Box<dyn Fn(&Theme) -> iced_button::Appearance>,
+        hover: Box<dyn Fn(&Theme) -> iced_button::Appearance>,
     },
 }
 
-impl Default for Button {
-    fn default() -> Self {
-        Self::Primary
-    }
-}
-
-impl Button {
+impl IcedButton {
     #[allow(clippy::trivially_copy_pass_by_ref)]
     #[allow(clippy::match_same_arms)]
     fn cosmic<'a>(&'a self, theme: &'a Theme) -> &CosmicComponent {
         let cosmic = theme.cosmic();
         match self {
-            Button::Primary => &cosmic.accent_button,
-            Button::Secondary => &theme.current_container().component,
-            Button::Positive => &cosmic.success_button,
-            Button::Destructive => &cosmic.destructive_button,
-            Button::Text => &cosmic.text_button,
-            Button::Link => &cosmic.accent_button,
-            Button::LinkActive => &cosmic.accent_button,
-            Button::Transparent => &TRANSPARENT_COMPONENT,
-            Button::Deactivated => &theme.current_container().component,
-            Button::Card => &theme.current_container().component,
-            Button::Custom { .. } => &TRANSPARENT_COMPONENT,
+            IcedButton::Primary => &cosmic.accent_button,
+            IcedButton::Secondary => &theme.current_container().component,
+            IcedButton::Positive => &cosmic.success_button,
+            IcedButton::Destructive => &cosmic.destructive_button,
+            IcedButton::Text => &cosmic.text_button,
+            IcedButton::Link => &cosmic.accent_button,
+            IcedButton::LinkActive => &cosmic.accent_button,
+            IcedButton::Transparent => &TRANSPARENT_COMPONENT,
+            IcedButton::Deactivated => &theme.current_container().component,
+            IcedButton::Card => &theme.current_container().component,
+            IcedButton::Custom { .. } => &TRANSPARENT_COMPONENT,
         }
     }
 }
 
-impl button::StyleSheet for Theme {
-    type Style = Button;
+impl iced_button::StyleSheet for Theme {
+    type Style = IcedButton;
 
-    fn active(&self, style: &Self::Style) -> button::Appearance {
-        if let Button::Custom { active, .. } = style {
+    fn active(&self, style: &Self::Style) -> iced_button::Appearance {
+        if let IcedButton::Custom { active, .. } = style {
             return active(self);
         }
 
         let corner_radii = &self.cosmic().corner_radii;
         let component = style.cosmic(self);
-        button::Appearance {
+        iced_button::Appearance {
             border_radius: match style {
-                Button::Link => corner_radii.radius_0.into(),
-                Button::Card => corner_radii.radius_xs.into(),
+                IcedButton::Link => corner_radii.radius_0.into(),
+                IcedButton::Card => corner_radii.radius_xs.into(),
                 _ => corner_radii.radius_xl.into(),
             },
             background: match style {
-                Button::Link | Button::Text => None,
-                Button::LinkActive => Some(Background::Color(component.divider.into())),
+                IcedButton::Link | IcedButton::Text => None,
+                IcedButton::LinkActive => Some(Background::Color(component.divider.into())),
                 _ => Some(Background::Color(component.base.into())),
             },
             text_color: match style {
-                Button::Link | Button::LinkActive => component.base.into(),
+                IcedButton::Link | IcedButton::LinkActive => component.base.into(),
                 _ => component.on.into(),
             },
-            ..button::Appearance::default()
+            ..iced_button::Appearance::default()
         }
     }
 
-    fn hovered(&self, style: &Self::Style) -> button::Appearance {
-        if let Button::Custom { hover, .. } = style {
+    fn hovered(&self, style: &Self::Style) -> iced_button::Appearance {
+        if let IcedButton::Custom { hover, .. } = style {
             return hover(self);
         }
 
         let active = self.active(style);
         let component = style.cosmic(self);
 
-        button::Appearance {
+        iced_button::Appearance {
             background: match style {
-                Button::Link => None,
-                Button::LinkActive => Some(Background::Color(component.divider.into())),
+                IcedButton::Link => None,
+                IcedButton::LinkActive => Some(Background::Color(component.divider.into())),
                 _ => Some(Background::Color(component.hover.into())),
             },
             ..active
         }
     }
 
-    fn focused(&self, style: &Self::Style) -> button::Appearance {
-        if let Button::Custom { hover, .. } = style {
+    fn focused(&self, style: &Self::Style) -> iced_button::Appearance {
+        if let IcedButton::Custom { hover, .. } = style {
             return hover(self);
         }
 
         let active = self.active(style);
         let component = style.cosmic(self);
-        button::Appearance {
+        iced_button::Appearance {
             background: match style {
-                Button::Link => None,
-                Button::LinkActive => Some(Background::Color(component.divider.into())),
+                IcedButton::Link => None,
+                IcedButton::LinkActive => Some(Background::Color(component.divider.into())),
                 _ => Some(Background::Color(component.hover.into())),
             },
             ..active
         }
     }
 
-    fn disabled(&self, style: &Self::Style) -> button::Appearance {
+    fn disabled(&self, style: &Self::Style) -> iced_button::Appearance {
         let active = self.active(style);
 
-        if matches!(style, Button::Card) {
+        if matches!(style, IcedButton::Card) {
             return active;
         }
 
-        button::Appearance {
+        iced_button::Appearance {
             shadow_offset: iced_core::Vector::default(),
             background: active.background.map(|background| match background {
                 Background::Color(color) => Background::Color(Color {
@@ -563,6 +559,7 @@ impl container::StyleSheet for Theme {
                 let palette = self.cosmic();
 
                 container::Appearance {
+                    icon_color: Some(Color::from(palette.background.on)),
                     text_color: Some(Color::from(palette.background.on)),
                     background: Some(iced::Background::Color(palette.background.base.into())),
                     border_radius: 2.0.into(),
@@ -577,6 +574,7 @@ impl container::StyleSheet for Theme {
                 header_top.alpha = 0.8;
 
                 container::Appearance {
+                    icon_color: Some(Color::from(palette.accent.base)),
                     text_color: Some(Color::from(palette.background.on)),
                     background: Some(iced::Background::Gradient(iced_core::Gradient::Linear(
                         Linear::new(Radians(3.0 * PI / 2.0))
@@ -592,6 +590,7 @@ impl container::StyleSheet for Theme {
                 let palette = self.cosmic();
 
                 container::Appearance {
+                    icon_color: Some(Color::from(palette.primary.on)),
                     text_color: Some(Color::from(palette.primary.on)),
                     background: Some(iced::Background::Color(palette.primary.base.into())),
                     border_radius: 2.0.into(),
@@ -603,6 +602,7 @@ impl container::StyleSheet for Theme {
                 let palette = self.cosmic();
 
                 container::Appearance {
+                    icon_color: Some(Color::from(palette.secondary.on)),
                     text_color: Some(Color::from(palette.secondary.on)),
                     background: Some(iced::Background::Color(palette.secondary.base.into())),
                     border_radius: 2.0.into(),
@@ -615,6 +615,7 @@ impl container::StyleSheet for Theme {
 
                 match self.layer {
                     cosmic_theme::Layer::Background => container::Appearance {
+                        icon_color: Some(Color::from(palette.background.component.on)),
                         text_color: Some(Color::from(palette.background.component.on)),
                         background: Some(iced::Background::Color(
                             palette.background.component.base.into(),
@@ -624,6 +625,7 @@ impl container::StyleSheet for Theme {
                         border_color: Color::TRANSPARENT,
                     },
                     cosmic_theme::Layer::Primary => container::Appearance {
+                        icon_color: Some(Color::from(palette.primary.component.on)),
                         text_color: Some(Color::from(palette.primary.component.on)),
                         background: Some(iced::Background::Color(
                             palette.primary.component.base.into(),
@@ -633,6 +635,7 @@ impl container::StyleSheet for Theme {
                         border_color: Color::TRANSPARENT,
                     },
                     cosmic_theme::Layer::Secondary => container::Appearance {
+                        icon_color: Some(Color::from(palette.secondary.component.on)),
                         text_color: Some(Color::from(palette.secondary.component.on)),
                         background: Some(iced::Background::Color(
                             palette.secondary.component.base.into(),
@@ -1021,29 +1024,6 @@ pub enum Svg {
     /// No filtering is applied
     #[default]
     Default,
-    /// Icon fill color will match text color
-    Symbolic,
-    /// Icon fill color will match accent color
-    SymbolicActive,
-    /// Icon fill color will match on primary color
-    SymbolicPrimary,
-    /// Icon fill color will use accent color
-    SymbolicLink,
-}
-
-impl Hash for Svg {
-    fn hash<H: Hasher>(&self, state: &mut H) {
-        let id = match self {
-            Svg::Custom(_) => 0,
-            Svg::Default => 1,
-            Svg::Symbolic => 2,
-            Svg::SymbolicActive => 3,
-            Svg::SymbolicPrimary => 4,
-            Svg::SymbolicLink => 5,
-        };
-
-        id.hash(state);
-    }
 }
 
 impl Svg {
@@ -1060,18 +1040,6 @@ impl svg::StyleSheet for Theme {
         match style {
             Svg::Default => svg::Appearance::default(),
             Svg::Custom(appearance) => appearance(self),
-            Svg::Symbolic => svg::Appearance {
-                color: Some(self.current_container().on.into()),
-            },
-            Svg::SymbolicActive => svg::Appearance {
-                color: Some(self.cosmic().accent.base.into()),
-            },
-            Svg::SymbolicPrimary => svg::Appearance {
-                color: Some(self.cosmic().accent.on.into()),
-            },
-            Svg::SymbolicLink => svg::Appearance {
-                color: Some(self.cosmic().accent.base.into()),
-            },
         }
     }
 }

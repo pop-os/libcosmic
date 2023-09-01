@@ -10,14 +10,11 @@ pub use self::entity::EntityMut;
 mod selection;
 pub use self::selection::{MultiSelect, Selectable, SingleSelect};
 
-use crate::widget::IconSource;
-use iced::Color;
+use crate::widget::Icon;
 use slotmap::{SecondaryMap, SlotMap};
 use std::any::{Any, TypeId};
 use std::borrow::Cow;
 use std::collections::{HashMap, VecDeque};
-
-use super::IconColor;
 
 slotmap::new_key_type! {
     /// A unique ID for an item in the [`Model`].
@@ -62,7 +59,7 @@ pub struct Model<SelectionMode: Default> {
     pub(super) items: SlotMap<Entity, Settings>,
 
     /// Icons optionally-defined for each item.
-    pub(super) icons: SecondaryMap<Entity, IconSource<'static>>,
+    pub(super) icons: SecondaryMap<Entity, Icon>,
 
     /// Text optionally-defined for each item.
     pub(super) text: SecondaryMap<Entity, Cow<'static, str>>,
@@ -224,7 +221,7 @@ where
     ///     println!("has icon: {:?}", icon);
     /// }
     /// ```
-    pub fn icon(&self, id: Entity) -> Option<&IconSource<'static>> {
+    pub fn icon(&self, id: Entity) -> Option<&Icon> {
         self.icons.get(id)
     }
 
@@ -235,34 +232,12 @@ where
     ///     println!("previously had icon: {:?}", old_icon);
     /// }
     /// ```
-    pub fn icon_set(
-        &mut self,
-        id: Entity,
-        icon: impl Into<IconSource<'static>>,
-    ) -> Option<IconSource<'static>> {
+    pub fn icon_set(&mut self, id: Entity, icon: Icon) -> Option<Icon> {
         if !self.contains_item(id) {
             return None;
         }
 
-        self.icons.insert(id, icon.into())
-    }
-
-    /// Sets the color of the icon. By default, the color matches the text.
-    pub fn icon_color_set(&mut self, id: Entity, color: Option<Color>) {
-        if self.contains_item(id) {
-            self.data_set(
-                id,
-                match color {
-                    Some(color) => IconColor::Color(color),
-                    None => IconColor::None,
-                },
-            );
-        }
-    }
-
-    /// Unsets the defined color of an icon.
-    pub fn icon_color_remove(&mut self, id: Entity) {
-        self.data_remove::<IconColor>(id);
+        self.icons.insert(id, icon)
     }
 
     /// Removes the icon from an item.
@@ -271,7 +246,7 @@ where
     /// if let Some(old_icon) = model.icon_remove(id) {
     ///     println!("previously had icon: {:?}", old_icon);
     /// }
-    pub fn icon_remove(&mut self, id: Entity) -> Option<IconSource<'static>> {
+    pub fn icon_remove(&mut self, id: Entity) -> Option<Icon> {
         self.icons.remove(id)
     }
 

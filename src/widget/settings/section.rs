@@ -1,9 +1,8 @@
 // Copyright 2022 System76 <info@system76.com>
 // SPDX-License-Identifier: MPL-2.0
 
-use crate::widget::ListColumn;
+use crate::widget::{column, text, ListColumn};
 use crate::Element;
-use iced::widget::{column, text};
 use std::borrow::Cow;
 
 /// A section within a settings view column.
@@ -31,10 +30,10 @@ impl<'a, Message: 'static> Section<'a, Message> {
 
 impl<'a, Message: 'static> From<Section<'a, Message>> for Element<'a, Message> {
     fn from(data: Section<'a, Message>) -> Self {
-        let title = text(data.title).font(crate::font::FONT_SEMIBOLD).into();
-
-        column(vec![title, data.children.into_element()])
+        column::with_capacity(2)
             .spacing(8)
+            .push(text(data.title).font(crate::font::FONT_SEMIBOLD))
+            .push(data.children)
             .into()
     }
 }

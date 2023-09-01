@@ -41,9 +41,9 @@ pub mod message {
 pub use self::command::Command;
 pub use self::core::Core;
 pub use self::settings::Settings;
+use crate::prelude::*;
 use crate::theme::THEME;
 use crate::widget::nav_bar;
-use crate::{Element, ElementExt};
 use apply::Apply;
 use iced::Subscription;
 use iced::{window, Application as IcedApplication};
@@ -261,91 +261,90 @@ impl<App: Application> ApplicationExt for App {
     }
 
     /// Creates the view for the main window.
-    fn view_main<'a>(&'a self) -> Element<'a, Message<Self::Message>> {
+    fn view_main(&self) -> Element<Message<Self::Message>> {
         let core = self.core();
         let is_condensed = core.is_condensed();
-        let mut main: Vec<Element<'a, Message<Self::Message>>> = Vec::with_capacity(2);
 
-        if core.window.show_headerbar {
-            main.push({
-                let mut header = crate::widget::header_bar()
-                    .title(self.title())
-                    .on_drag(Message::Cosmic(cosmic::Message::Drag))
-                    .on_close(Message::Cosmic(cosmic::Message::Close));
+        crate::widget::column::with_capacity(2)
+            .push_maybe(if core.window.show_headerbar {
+                Some({
+                    let mut header = crate::widget::header_bar()
+                        .title(self.title())
+                        .on_drag(Message::Cosmic(cosmic::Message::Drag))
+                        .on_close(Message::Cosmic(cosmic::Message::Close));
 
-                if self.nav_model().is_some() {
-                    let toggle = crate::widget::nav_bar_toggle()
-                        .active(core.nav_bar_active())
-                        .on_toggle(if is_condensed {
-                            Message::Cosmic(cosmic::Message::ToggleNavBarCondensed)
-                        } else {
-                            Message::Cosmic(cosmic::Message::ToggleNavBar)
-                        });
+                    if self.nav_model().is_some() {
+                        let toggle = crate::widget::nav_bar_toggle()
+                            .active(core.nav_bar_active())
+                            .on_toggle(if is_condensed {
+                                Message::Cosmic(cosmic::Message::ToggleNavBarCondensed)
+                            } else {
+                                Message::Cosmic(cosmic::Message::ToggleNavBar)
+                            });
 
-                    header = header.start(toggle);
-                }
-
-                if core.window.show_maximize {
-                    header = header.on_maximize(Message::Cosmic(cosmic::Message::Maximize));
-                }
-
-                if core.window.show_minimize {
-                    header = header.on_minimize(Message::Cosmic(cosmic::Message::Minimize));
-                }
-
-                for element in self.header_start() {
-                    header = header.start(element.map(Message::App));
-                }
-
-                for element in self.header_center() {
-                    header = header.center(element.map(Message::App));
-                }
-
-                for element in self.header_end() {
-                    header = header.end(element.map(Message::App));
-                }
-
-                Element::from(header).debug(core.debug)
-            });
-        }
-
-        // The content element contains every element beneath the header.
-        main.push(
-            iced::widget::row({
-                let mut widgets = Vec::with_capacity(2);
-
-                // Insert nav bar onto the left side of the window.
-                if core.nav_bar_active() {
-                    if let Some(nav_model) = self.nav_model() {
-                        let mut nav = crate::widget::nav_bar(nav_model, |entity| {
-                            Message::Cosmic(cosmic::Message::NavBar(entity))
-                        });
-
-                        if !is_condensed {
-                            nav = nav.max_width(300);
-                        }
-
-                        widgets.push(nav.apply(Element::from).debug(core.debug));
+                        header = header.start(toggle);
                     }
-                }
 
-                if self.nav_model().is_none() || core.show_content() {
-                    let main_content = self.view().debug(core.debug).map(Message::App);
+                    if core.window.show_maximize {
+                        header = header.on_maximize(Message::Cosmic(cosmic::Message::Maximize));
+                    }
 
-                    widgets.push(main_content);
-                }
+                    if core.window.show_minimize {
+                        header = header.on_minimize(Message::Cosmic(cosmic::Message::Minimize));
+                    }
 
-                widgets
+                    for element in self.header_start() {
+                        header = header.start(element.map(Message::App));
+                    }
+
+                    for element in self.header_center() {
+                        header = header.center(element.map(Message::App));
+                    }
+
+                    for element in self.header_end() {
+                        header = header.end(element.map(Message::App));
+                    }
+
+                    header
+                })
+            } else {
+                None
             })
-            .spacing(8)
-            .apply(iced::widget::container)
-            .padding([0, 8, 8, 8])
-            .width(iced::Length::Fill)
-            .height(iced::Length::Fill)
-            .style(crate::theme::Container::Background)
-            .into(),
-        );
+            // The content element contains every element beneath the header.
+            .push(
+                crate::widget::row::with_children({
+                    let mut widgets = Vec::with_capacity(2);
 
-        iced::widget::column(main).into()
+                    // Insert nav bar onto the left side of the window.
+                    if core.nav_bar_active() {
+                        if let Some(nav_model) = self.nav_model() {
+                            let mut nav = crate::widget::nav_bar(nav_model, |entity| {
+                                Message::Cosmic(cosmic::Message::NavBar(entity))
+                            });
+
+                            if !is_condensed {
+                                nav = nav.max_width(300);
+                            }
+
+                            widgets.push(nav.apply(Element::from).debug(core.debug));
+                        }
+                    }
+
+                    if self.nav_model().is_none() || core.show_content() {
+                        let main_content = self.view().debug(core.debug).map(Message::App);
+
+                        widgets.push(main_content);
+                    }
+
+                    widgets
+                })
+                .spacing(8)
+                .apply(crate::widget::container)
+                .padding([0, 8, 8, 8])
+                .width(iced::Length::Fill)
+                .height(iced::Length::Fill)
+                .style(crate::theme::Container::Background),
+            )
+            .into()
     }
 }

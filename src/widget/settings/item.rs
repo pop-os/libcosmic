@@ -3,16 +3,18 @@
 
 use std::borrow::Cow;
 
-use crate::{widget::text, Element, Renderer};
+use crate::{
+    widget::{column, horizontal_space, row, text, Row},
+    Element, Renderer,
+};
 use derive_setters::Setters;
-use iced::widget::{column, horizontal_space, row, Row};
 
 /// A settings item aligned in a row
 #[must_use]
 #[allow(clippy::module_name_repetitions)]
 pub fn item<'a, Message: 'static>(
-    title: impl Into<Cow<'a, str>>,
-    widget: impl Into<Element<'a, Message>>,
+    title: impl Into<Cow<'a, str>> + 'a,
+    widget: impl Into<Element<'a, Message>> + 'a,
 ) -> Row<'a, Message, Renderer> {
     item_row(vec![
         text(title).into(),
@@ -25,7 +27,7 @@ pub fn item<'a, Message: 'static>(
 #[must_use]
 #[allow(clippy::module_name_repetitions)]
 pub fn item_row<Message>(children: Vec<Element<Message>>) -> Row<Message, Renderer> {
-    row(children)
+    row::with_children(children)
         .align_items(iced::Alignment::Center)
         .padding([0, 18])
         .spacing(12)
@@ -65,10 +67,12 @@ impl<'a, Message: 'static> Item<'a, Message> {
         }
 
         if let Some(description) = self.description {
-            let title = text(self.title);
-            let desc = text(description).size(10);
+            let column = column::with_capacity(2)
+                .spacing(2)
+                .push(text(self.title))
+                .push(text(description).size(10));
 
-            contents.push(column!(title, desc).spacing(2).into());
+            contents.push(column.into());
         } else {
             contents.push(text(self.title).into());
         }

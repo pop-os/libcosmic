@@ -10,22 +10,21 @@ use cosmic::{
     },
     iced_futures::Subscription,
     iced_style::application,
-    iced_widget::text,
+    prelude::*,
     theme::{self, Theme},
     widget::{
         button, cosmic_container, header_bar, icon, inline_input, nav_bar, nav_bar_toggle,
         rectangle_tracker::{rectangle_tracker_subscription, RectangleTracker, RectangleUpdate},
         scrollable, search_input, secure_input, segmented_button, segmented_selection, settings,
-        text_input, IconSource,
+        text, text_input,
     },
-    Element, ElementExt,
+    Element,
 };
 use cosmic_time::{anim, chain, id, once_cell::sync::Lazy, Instant, Timeline};
 use std::{
     sync::atomic::{AtomicU32, Ordering},
     vec,
 };
-use theme::Button as ButtonTheme;
 
 static DEBUG_TOGGLER: Lazy<id::Toggler> = Lazy::new(id::Toggler::unique);
 static TOGGLER: Lazy<id::Toggler> = Lazy::new(id::Toggler::unique);
@@ -138,7 +137,7 @@ impl Window {
         self.nav_bar_pages
             .insert()
             .text(page.title())
-            .icon(IconSource::from(page.icon_name()))
+            .icon(icon::handle::from_name(page.icon_name()).icon())
             .data(page)
     }
 
@@ -373,15 +372,6 @@ impl Application for Window {
         }
 
         if !nav_bar_toggled {
-            let secondary = button(ButtonTheme::Secondary)
-                .text("Secondary")
-                .on_press(Message::ButtonPressed);
-
-            let secondary = if let Some(tracker) = self.rectangle_tracker.as_ref() {
-                tracker.container(0, secondary).into()
-            } else {
-                secondary.into()
-            };
             let content: Element<_> = settings::view_column(vec![
                 settings::view_section("Debug")
                     .add(settings::item(
@@ -395,34 +385,6 @@ impl Application for Window {
                             |_chain, enable| { Message::Debug(enable) },
                         )),
                     ))
-                    .into(),
-                settings::view_section("Buttons")
-                    .add(settings::item_row(vec![
-                        button(ButtonTheme::Primary)
-                            .text("Primary")
-                            .on_press(Message::ButtonPressed)
-                            .into(),
-                        secondary,
-                        button(ButtonTheme::Positive)
-                            .text("Positive")
-                            .on_press(Message::ButtonPressed)
-                            .into(),
-                        button(ButtonTheme::Destructive)
-                            .text("Destructive")
-                            .on_press(Message::ButtonPressed)
-                            .into(),
-                        button(ButtonTheme::Text)
-                            .text("Text")
-                            .on_press(Message::ButtonPressed)
-                            .into(),
-                    ]))
-                    .add(settings::item_row(vec![
-                        button(ButtonTheme::Primary).text("Primary").into(),
-                        button(ButtonTheme::Secondary).text("Secondary").into(),
-                        button(ButtonTheme::Positive).text("Positive").into(),
-                        button(ButtonTheme::Destructive).text("Destructive").into(),
-                        button(ButtonTheme::Text).text("Text").into(),
-                    ]))
                     .into(),
                 settings::view_section("Controls")
                     .add(settings::item(
@@ -567,6 +529,7 @@ impl Application for Window {
     fn style(&self) -> <Self::Theme as cosmic::iced_style::application::StyleSheet>::Style {
         cosmic::theme::Application::Custom(Box::new(|theme| application::Appearance {
             background_color: Color::TRANSPARENT,
+            icon_color: theme.cosmic().on_bg_color().into(),
             text_color: theme.cosmic().on_bg_color().into(),
         }))
     }

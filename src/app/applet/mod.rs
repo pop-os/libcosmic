@@ -127,7 +127,7 @@ impl CosmicAppletHelper {
     pub fn icon_button<'a, Message: 'static>(
         &self,
         icon_name: &'a str,
-    ) -> iced::widget::Button<'a, Message, Renderer> {
+    ) -> crate::widget::Button<'a, Message, Renderer> {
         crate::widget::button(theme::Button::Text)
             .icon(theme::Svg::Symbolic, icon_name, self.suggested_size().0)
             .padding(8)

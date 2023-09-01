@@ -2,18 +2,18 @@
 // SPDX-License-Identifier: MPL-2.0
 
 use super::model::{Entity, Model, Selectable};
-use super::style::StyleSheet;
-use super::IconColor;
-use crate::widget::{icon, IconSource};
+use crate::theme::SegmentedButton as Style;
+use crate::widget::{icon, Icon};
+use crate::{Element, Renderer};
 use derive_setters::Setters;
 use iced::{
-    alignment, event, keyboard, mouse, touch, Background, Color, Command, Element, Event, Length,
-    Rectangle, Size,
+    alignment, event, keyboard, mouse, touch, Background, Color, Command, Event, Length, Rectangle,
+    Size,
 };
-use iced_core::text::{LineHeight, Shaping};
+use iced_core::text::{LineHeight, Renderer as TextRenderer, Shaping};
 use iced_core::widget::{self, operation, tree};
-use iced_core::BorderRadius;
 use iced_core::{layout, renderer, widget::Tree, Clipboard, Layout, Shell, Widget};
+use iced_core::{BorderRadius, Point, Renderer as IcedRenderer};
 use std::marker::PhantomData;
 
 /// State that is maintained by each individual widget.
@@ -47,32 +47,23 @@ impl operation::Focusable for LocalState {
 
 /// Isolates variant-specific behaviors from [`SegmentedButton`].
 pub trait SegmentedVariant {
-    type Renderer: iced_core::Renderer;
-
     /// Get the appearance for this variant of the widget.
     fn variant_appearance(
-        theme: &<Self::Renderer as iced_core::Renderer>::Theme,
-        style: &<<Self::Renderer as iced_core::Renderer>::Theme as StyleSheet>::Style,
-    ) -> super::Appearance
-    where
-        <Self::Renderer as iced_core::Renderer>::Theme: StyleSheet;
+        theme: &crate::Theme,
+        style: &crate::theme::SegmentedButton,
+    ) -> super::Appearance;
 
     /// Calculates the bounds for the given button by its position.
     fn variant_button_bounds(&self, bounds: Rectangle, position: usize) -> Rectangle;
 
     /// Calculates the layout of this variant.
-    fn variant_layout(&self, renderer: &Self::Renderer, limits: &layout::Limits) -> layout::Node;
+    fn variant_layout(&self, renderer: &crate::Renderer, limits: &layout::Limits) -> layout::Node;
 }
 
 /// A conjoined group of items that function together as a button.
 #[derive(Setters)]
-pub struct SegmentedButton<'a, Variant, SelectionMode, Message, Renderer>
+pub struct SegmentedButton<'a, Variant, SelectionMode, Message>
 where
-    Renderer: iced_core::Renderer
-        + iced_core::text::Renderer
-        + iced_core::image::Renderer
-        + iced_core::svg::Renderer,
-    Renderer::Theme: StyleSheet,
     Model<SelectionMode>: Selectable,
     SelectionMode: Default,
 {
@@ -82,7 +73,7 @@ where
     /// iced widget ID
     pub(super) id: Option<Id>,
     /// The icon used for the close button.
-    pub(super) close_icon: IconSource<'a>,
+    pub(super) close_icon: Icon,
     /// Show the close icon only when item is hovered.
     pub(super) show_close_icon_on_hover: bool,
     /// Padding around a button.
@@ -92,15 +83,13 @@ where
     /// Spacing between icon and text in button.
     pub(super) button_spacing: u16,
     /// Desired font for active tabs.
-    pub(super) font_active: Option<Renderer::Font>,
+    pub(super) font_active: Option<crate::font::Font>,
     /// Desired font for hovered tabs.
-    pub(super) font_hovered: Option<Renderer::Font>,
+    pub(super) font_hovered: Option<crate::font::Font>,
     /// Desired font for inactive tabs.
-    pub(super) font_inactive: Option<Renderer::Font>,
+    pub(super) font_inactive: Option<crate::font::Font>,
     /// Size of the font.
     pub(super) font_size: f32,
-    /// Size of icon
-    pub(super) icon_size: u16,
     /// Desired width of the widget.
     pub(super) width: Length,
     /// Desired height of the widget.
@@ -111,7 +100,7 @@ where
     pub(super) line_height: LineHeight,
     /// Style to draw the widget in.
     #[setters(into)]
-    pub(super) style: <Renderer::Theme as StyleSheet>::Style,
+    pub(super) style: Style,
     /// Emits the ID of the item that was activated.
     #[setters(strip_option)]
     pub(super) on_activate: Option<fn(Entity) -> Message>,
@@ -122,15 +111,9 @@ where
     variant: PhantomData<Variant>,
 }
 
-impl<'a, Variant, SelectionMode, Message, Renderer>
-    SegmentedButton<'a, Variant, SelectionMode, Message, Renderer>
+impl<'a, Variant, SelectionMode, Message> SegmentedButton<'a, Variant, SelectionMode, Message>
 where
-    Renderer: iced_core::Renderer
-        + iced_core::text::Renderer
-        + iced_core::image::Renderer
-        + iced_core::svg::Renderer,
-    Renderer::Theme: StyleSheet,
-    Self: SegmentedVariant<Renderer = Renderer>,
+    Self: SegmentedVariant,
     Model<SelectionMode>: Selectable,
     SelectionMode: Default,
 {
@@ -139,7 +122,9 @@ where
         Self {
             model,
             id: None,
-            close_icon: IconSource::from("window-close-symbolic"),
+            close_icon: icon::handle::from_name("window-close-symbolic")
+                .size(16)
+                .icon(),
             show_close_icon_on_hover: false,
             button_padding: [4, 4, 4, 4],
             button_height: 32,
@@ -148,12 +133,11 @@ where
             font_hovered: None,
             font_inactive: None,
             font_size: 14.0,
-            icon_size: 16,
             height: Length::Shrink,
             width: Length::Fill,
             spacing: 0,
             line_height: LineHeight::default(),
-            style: <Renderer::Theme as StyleSheet>::Style::default(),
+            style: Style::default(),
             on_activate: None,
             on_close: None,
             variant: PhantomData,
@@ -238,15 +222,16 @@ where
             }
 
             // Add icon to measurement if icon was given.
-            if self.model.icon(key).is_some() {
-                button_height = button_height.max(f32::from(self.icon_size));
-                button_width += f32::from(self.icon_size) + f32::from(self.button_spacing);
+            if let Some(icon) = self.model.icon(key) {
+                button_height = button_height.max(f32::from(icon.size));
+                button_width += f32::from(icon.size) + f32::from(self.button_spacing);
             }
 
             // Add close button to measurement if found.
             if self.model.is_closable(key) {
-                button_height = button_height.max(f32::from(self.icon_size));
-                button_width += f32::from(self.icon_size) + f32::from(self.button_spacing) + 8.0;
+                button_height = button_height.max(f32::from(self.close_icon.size));
+                button_width +=
+                    f32::from(self.close_icon.size) + f32::from(self.button_spacing) + 8.0;
             }
 
             height = height.max(button_height);
@@ -262,15 +247,10 @@ where
     }
 }
 
-impl<'a, Variant, SelectionMode, Message, Renderer> Widget<Message, Renderer>
-    for SegmentedButton<'a, Variant, SelectionMode, Message, Renderer>
+impl<'a, Variant, SelectionMode, Message> Widget<Message, Renderer>
+    for SegmentedButton<'a, Variant, SelectionMode, Message>
 where
-    Renderer: iced_core::Renderer
-        + iced_core::text::Renderer
-        + iced_core::image::Renderer
-        + iced_core::svg::Renderer,
-    Renderer::Theme: StyleSheet,
-    Self: SegmentedVariant<Renderer = Renderer>,
+    Self: SegmentedVariant,
     Model<SelectionMode>: Selectable,
     SelectionMode: Default,
     Message: 'static + Clone,
@@ -325,7 +305,7 @@ where
                             if let Some(on_close) = self.on_close.as_ref() {
                                 if cursor_position.is_over(close_bounds(
                                     bounds,
-                                    f32::from(self.icon_size),
+                                    f32::from(self.close_icon.size),
                                     self.button_padding,
                                 )) {
                                     if let Event::Mouse(mouse::Event::ButtonReleased(
@@ -429,11 +409,11 @@ where
         &self,
         tree: &Tree,
         renderer: &mut Renderer,
-        theme: &<Renderer as iced_core::Renderer>::Theme,
-        _style: &renderer::Style,
+        theme: &crate::Theme,
+        style: &renderer::Style,
         layout: Layout<'_>,
-        _cursor_position: mouse::Cursor,
-        _viewport: &iced::Rectangle,
+        cursor: mouse::Cursor,
+        viewport: &iced::Rectangle,
     ) {
         let state = tree.state.downcast_ref::<LocalState>();
         let appearance = Self::variant_appearance(theme, &self.style);
@@ -477,12 +457,6 @@ where
                 status_appearance.last
             } else {
                 status_appearance.middle
-            };
-
-            let icon_color = match self.model.data::<IconColor>(key).copied() {
-                Some(IconColor::None) => None,
-                Some(IconColor::Color(color)) => Some(color),
-                None => Some(status_appearance.text_color),
             };
 
             // Render the background of the button.
@@ -530,27 +504,29 @@ where
                 bounds.height -=
                     f32::from(self.button_padding[1]) - f32::from(self.button_padding[3]);
 
-                let width = f32::from(self.icon_size);
+                let width = f32::from(icon.size);
                 let offset = width + f32::from(self.button_spacing);
                 bounds.y = y - width / 2.0;
 
-                let icon_bounds = Rectangle {
+                let mut layout_node = layout::Node::new(Size {
                     width,
-                    height: width,
-                    ..bounds
-                };
+                    height: width - offset,
+                });
+                layout_node.move_to(Point {
+                    x: bounds.x + offset,
+                    y: bounds.y,
+                });
 
-                bounds.x += offset;
-                bounds.width -= offset;
-
-                match icon.load(self.icon_size, None, false, true) {
-                    icon::Handle::Image(_handle) => {
-                        unimplemented!()
-                    }
-                    icon::Handle::Svg(handle) => {
-                        iced_core::svg::Renderer::draw(renderer, handle, icon_color, icon_bounds);
-                    }
-                }
+                Widget::<Message, Renderer>::draw(
+                    &Element::<Message>::from(icon.clone()),
+                    &Tree::empty(),
+                    renderer,
+                    theme,
+                    style,
+                    Layout::new(&layout_node),
+                    cursor,
+                    viewport,
+                );
 
                 alignment::Horizontal::Left
             } else {
@@ -581,22 +557,27 @@ where
 
             // Draw a close button if this is set.
             if show_close_button {
-                let width = f32::from(self.icon_size);
+                let width = f32::from(self.close_icon.size);
                 let icon_bounds = close_bounds(original_bounds, width, self.button_padding);
+                let mut layout_node = layout::Node::new(Size {
+                    width: icon_bounds.width,
+                    height: icon_bounds.height,
+                });
+                layout_node.move_to(Point {
+                    x: icon_bounds.x,
+                    y: icon_bounds.y,
+                });
 
-                match self.close_icon.load(self.icon_size, None, false, true) {
-                    icon::Handle::Image(_handle) => {
-                        unimplemented!()
-                    }
-                    icon::Handle::Svg(handle) => {
-                        iced_core::svg::Renderer::draw(
-                            renderer,
-                            handle,
-                            Some(status_appearance.text_color),
-                            icon_bounds,
-                        );
-                    }
-                }
+                Widget::<Message, Renderer>::draw(
+                    &Element::<Message>::from(self.close_icon.clone()),
+                    &Tree::empty(),
+                    renderer,
+                    theme,
+                    style,
+                    Layout::new(&layout_node),
+                    cursor,
+                    viewport,
+                );
             }
         }
     }
@@ -611,24 +592,16 @@ where
     }
 }
 
-impl<'a, Variant, SelectionMode, Message, Renderer>
-    From<SegmentedButton<'a, Variant, SelectionMode, Message, Renderer>>
-    for Element<'a, Message, Renderer>
+impl<'a, Variant, SelectionMode, Message> From<SegmentedButton<'a, Variant, SelectionMode, Message>>
+    for Element<'a, Message>
 where
-    Renderer: iced_core::Renderer
-        + iced_core::text::Renderer
-        + iced_core::image::Renderer
-        + iced_core::svg::Renderer
-        + 'a,
-    Renderer::Theme: StyleSheet,
-    SegmentedButton<'a, Variant, SelectionMode, Message, Renderer>:
-        SegmentedVariant<Renderer = Renderer>,
+    SegmentedButton<'a, Variant, SelectionMode, Message>: SegmentedVariant,
     Variant: 'static,
     Model<SelectionMode>: Selectable,
     SelectionMode: Default,
     Message: 'static + Clone,
 {
-    fn from(mut widget: SegmentedButton<'a, Variant, SelectionMode, Message, Renderer>) -> Self {
+    fn from(mut widget: SegmentedButton<'a, Variant, SelectionMode, Message>) -> Self {
         if widget.model.items.is_empty() {
             widget.spacing = 0;
         }

@@ -43,37 +43,19 @@ mod field;
 mod model;
 
 mod button {
-    use crate::iced::{self, widget::container};
+    use crate::widget::{container, icon};
     use apply::Apply;
 
     /// A search button which converts to a search [`field`] on click.
     #[must_use]
     pub fn button<Message: 'static + Clone>(on_press: Message) -> crate::Element<'static, Message> {
-        super::icon::search(16)
-            .style(crate::theme::Svg::SymbolicActive)
-            .apply(iced::widget::button)
-            .style(crate::theme::Button::Text)
+        icon::handle::from_svg_bytes(&include_bytes!("search.svg")[..])
+            .symbolic(true)
+            .apply(crate::widget::button::icon)
             .on_press(on_press)
             .apply(container)
             .padding([0, 0, 0, 11])
             .into()
-    }
-}
-
-pub mod icon {
-    use crate::widget::IconSource;
-
-    #[must_use]
-    pub fn search(size: u16) -> crate::widget::Icon<'static> {
-        crate::widget::icon(
-            IconSource::svg_from_memory(&include_bytes!("search.svg")[..]),
-            size,
-        )
-    }
-
-    #[must_use]
-    pub fn edit_clear(size: u16) -> crate::widget::Icon<'static> {
-        crate::widget::icon(IconSource::from("edit-clear-symbolic"), size)
     }
 }
 

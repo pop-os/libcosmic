@@ -1,17 +1,18 @@
 // Copyright 2023 System76 <info@system76.com>
 // SPDX-License-Identifier: MPL-2.0
 
-use std::cell::RefCell;
-
+use crate::ext::CollectionWidget;
+use crate::widget::{column, row};
 use crate::Element;
 use apply::Apply;
 use derive_setters::Setters;
-use iced::widget::{column, row};
 use iced_core::{alignment, Length, Size};
+use std::cell::RefCell;
 
 /// Responsively generates rows and columns of widgets based on its dimmensions.
 #[derive(Setters)]
 pub struct FlexRow<'a, Message> {
+    #[allow(clippy::type_complexity)]
     #[setters(skip)]
     generator: Box<dyn Fn(&mut Vec<Element<'a, Message>>, Size) -> u16 + 'a>,
     /// Sets the space between each column of items.
@@ -103,17 +104,15 @@ impl<'a, Message: 'static> From<FlexRow<'a, Message>> for Element<'a, Message> {
             let mut iterator = elements.drain(..);
 
             while let Some(element) = iterator.next() {
-                let mut elements_row = Vec::with_capacity(items_per_row);
-                elements_row.push(element);
+                let elements_row = row::with_capacity(items_per_row)
+                    .spacing(container.row_spacing)
+                    .push(element)
+                    .extend(iterator.by_ref().take(items_per_row - 1));
 
-                for element in iterator.by_ref().take(items_per_row - 1) {
-                    elements_row.push(element);
-                }
-
-                elements_column.push(row(elements_row).spacing(container.row_spacing).into());
+                elements_column.push(elements_row.into());
             }
 
-            column(elements_column)
+            column::with_children(elements_column)
                 .spacing(container.column_spacing)
                 .apply(iced::widget::container)
                 .align_x(container.align_x)

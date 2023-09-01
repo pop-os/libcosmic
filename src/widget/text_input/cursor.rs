@@ -1,3 +1,7 @@
+// Copyright 2019 H�ctor Ram�n, Iced contributors
+// Copyright 2023 System76 <info@system76.com>
+// SPDX-License-Identifier: MIT
+
 //! Track the cursor of a text input.
 use super::value::Value;
 

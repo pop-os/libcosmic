@@ -1,12 +1,8 @@
 // Copyright 2023 System76 <info@system76.com>
 // SPDX-License-Identifier: MPL-2.0
 
-use crate::iced::{
-    self,
-    widget::{container, Button},
-    Background, Length,
-};
-use crate::Renderer;
+use crate::iced::{Background, Length};
+use crate::widget::{container, icon, row, text_input};
 use apply::Apply;
 
 /// A search field for COSMIC applications.
@@ -38,29 +34,29 @@ pub struct Field<'a, Message: 'static + Clone> {
 
 impl<'a, Message: 'static + Clone> Field<'a, Message> {
     pub fn into_element(mut self) -> crate::Element<'a, Message> {
-        let mut input = iced::widget::text_input("", self.phrase)
+        let input = text_input("", self.phrase)
             .on_input(self.on_change)
-            .style(crate::theme::TextInput::Search)
             .width(Length::Fill)
-            .id(self.id);
+            .id(self.id)
+            .on_submit_maybe(self.on_submit.take());
 
-        if let Some(message) = self.on_submit.take() {
-            input = input.on_submit(message);
-        }
-
-        iced::widget::row!(
-            super::icon::search(16),
-            input,
-            clear_button().on_press(self.on_clear)
-        )
-        .width(Length::Fixed(300.0))
-        .height(Length::Fixed(38.0))
-        .padding([0, 16])
-        .spacing(8)
-        .align_items(iced::Alignment::Center)
-        .apply(container)
-        .style(crate::theme::Container::custom(active_style))
-        .into()
+        row::with_capacity(3)
+            .push(
+                icon::handle::from_svg_bytes(&include_bytes!("search.svg")[..])
+                    .symbolic(true)
+                    .icon()
+                    .size(16),
+            )
+            .push(input)
+            .push(clear_button().on_press(self.on_clear))
+            .width(Length::Fixed(300.0))
+            .height(Length::Fixed(38.0))
+            .padding([0, 16])
+            .spacing(8)
+            .align_items(iced::Alignment::Center)
+            .apply(container)
+            .style(crate::theme::Container::custom(active_style))
+            .into()
     }
 }
 
@@ -70,11 +66,10 @@ impl<'a, Message: 'static + Clone> From<Field<'a, Message>> for crate::Element<'
     }
 }
 
-fn clear_button<Message: 'static>() -> Button<'static, Message, Renderer> {
-    super::icon::edit_clear(16)
-        .style(crate::theme::Svg::Symbolic)
-        .apply(iced::widget::button)
-        .style(crate::theme::Button::Text)
+fn clear_button<Message: 'static>() -> crate::widget::IconButton<'static, Message> {
+    icon::handle::from_name("edit-clear-symbolic")
+        .size(16)
+        .apply(crate::widget::button::icon)
 }
 
 #[allow(clippy::trivially_copy_pass_by_ref)]
@@ -83,6 +78,7 @@ fn active_style(theme: &crate::Theme) -> container::Appearance {
     let mut neutral_7 = cosmic.palette.neutral_7;
     neutral_7.alpha = 0.25;
     iced::widget::container::Appearance {
+        icon_color: Some(cosmic.palette.neutral_9.into()),
         text_color: Some(cosmic.palette.neutral_9.into()),
         background: Some(Background::Color(neutral_7.into())),
         border_radius: 24.0.into(),
