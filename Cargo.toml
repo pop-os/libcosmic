@@ -7,7 +7,6 @@ edition = "2021"
 name = "cosmic"
 
 [features]
-default = ["wayland", "tokio"]
 # Accessibility support
 a11y = ["iced/a11y", "iced_accessibility"]
 # Builds support for animated images
@@ -121,6 +120,5 @@ exclude = [
   "iced",
 ]
 
-
 [patch."https://github.com/pop-os/libcosmic"]
-libcosmic = { path = "./", features = ["wayland", "tokio", "a11y"]}
+libcosmic = { path = "./" }
