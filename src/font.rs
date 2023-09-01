@@ -10,6 +10,8 @@ use iced::{
 };
 use iced_core::font::Family;
 
+pub const DEFAULT: Font = FONT;
+
 pub const FONT: Font = Font {
     family: Family::Name("Fira Sans"),
     weight: iced_core::font::Weight::Normal,
@@ -37,10 +39,20 @@ pub const FONT_SEMIBOLD: Font = Font {
 
 pub const FONT_SEMIBOLD_DATA: &[u8] = include_bytes!("../res/Fira/FiraSans-SemiBold.otf");
 
+pub const FONT_MONO_REGULAR: Font = Font {
+    family: Family::Name("Fira Mono"),
+    weight: iced_core::font::Weight::Normal,
+    stretch: iced_core::font::Stretch::Normal,
+    monospaced: true,
+};
+
+pub const FONT_MONO_REGULAR_DATA: &[u8] = include_bytes!("../res/Fira/FiraMono-Regular.otf");
+
 pub fn load_fonts() -> Command<Result<(), Error>> {
     Command::batch(vec![
         load(FONT_DATA),
         load(FONT_LIGHT_DATA),
         load(FONT_SEMIBOLD_DATA),
+        load(FONT_MONO_REGULAR_DATA),
     ])
 }
