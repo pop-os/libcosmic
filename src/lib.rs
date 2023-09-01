@@ -6,7 +6,7 @@
 /// Recommended default imports.
 pub mod prelude {
     pub use crate::ext::*;
-    pub use crate::{Element, Renderer, Theme};
+    pub use crate::{Also, ApplicationExt, Apply, Element, Renderer, Theme};
 }
 
 pub use apply::{Also, Apply};
