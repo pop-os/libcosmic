@@ -60,7 +60,7 @@ pub mod settings;
 pub mod spin_button;
 pub use spin_button::{spin_button, SpinButton};
 
-mod text;
+pub mod text;
 pub use text::{text, Text};
 
 mod toggler;
