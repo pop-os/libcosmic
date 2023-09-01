@@ -3,6 +3,14 @@
 
 #![allow(clippy::module_name_repetitions)]
 
+/// Recommended default imports.
+pub mod prelude {
+    pub use crate::ext::*;
+    pub use crate::{Element, Renderer, Theme};
+}
+
+pub use apply::{Also, Apply};
+
 pub mod app;
 pub use app::{Application, ApplicationExt};
 
@@ -19,7 +27,6 @@ pub mod executor;
 pub use executor::single::Executor as SingleThreadExecutor;
 
 mod ext;
-pub use ext::ElementExt;
 
 pub mod font;
 
