@@ -3,6 +3,12 @@
 
 #![allow(clippy::module_name_repetitions)]
 
+#[cfg(all(not(feature = "wayland"), not(feature = "winit")))]
+compile_error!("must define `wayland` or `winit` feature");
+
+#[cfg(all(feature = "wayland", feature = "winit"))]
+compile_error!("cannot use `wayland` feature with `winit");
+
 /// Recommended default imports.
 pub mod prelude {
     pub use crate::ext::*;
@@ -55,3 +61,5 @@ pub mod widget;
 
 pub type Renderer = iced::Renderer<Theme>;
 pub type Element<'a, Message> = iced::Element<'a, Message, Renderer>;
+
+
