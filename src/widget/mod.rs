@@ -21,6 +21,9 @@ pub use button::*;
 pub mod card;
 pub use card::*;
 
+pub mod cosmic_container;
+pub use cosmic_container::LayerContainer;
+
 pub mod flex_row;
 pub use flex_row::{flex_row, FlexRow};
 
@@ -63,6 +66,9 @@ pub use spin_button::{spin_button, SpinButton};
 pub mod text;
 pub use text::{text, Text};
 
+pub mod text_input;
+pub use text_input::*;
+
 mod toggler;
 pub use toggler::toggler;
 
@@ -72,13 +78,6 @@ pub use view_switcher::vertical as vertical_view_switcher;
 
 pub mod warning;
 pub use warning::*;
-
-pub mod cosmic_container;
-pub use cosmic_container::*;
-// #[cfg(feature = "wayland")]
-pub mod text_input;
-// #[cfg(feature = "wayland")]
-pub use text_input::*;
 
 /// An element to distinguish a boundary between two elements.
 pub mod divider {
