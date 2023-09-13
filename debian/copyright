@@ -1,0 +1,7 @@
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: cosmic-design-demo
+Upstream-Contact: Michael Murphy <michael@mmurphy.dev>
+Source: https://github.com/pop-os/libcosmic
+Files: *
+Copyright: System76 <info@system76.com>
+License: MPL-2.0

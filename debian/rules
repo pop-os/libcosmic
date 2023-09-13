@@ -1,0 +1,23 @@
+#!/usr/bin/make -f
+
+export DESTDIR = debian/tmp
+export VENDOR ?= 1
+
+%:
+	dh $@
+
+override_dh_auto_clean:
+	if ! ischroot && test "${VENDOR}" = "1"; then \
+		rm -rf .cargo vendor vendor.tar; \
+		mkdir -p .cargo; \
+		cargo vendor --sync design-demo/Cargo.toml | head -n -1 > .cargo/config; \
+		echo 'directory = "vendor"' >> .cargo/config; \
+		tar pcf vendor.tar vendor; \
+		rm -rf vendor; \
+	fi
+
+override_dh_auto_build:
+	just --unstable --working-directory . --justfile design-demo/justfile build-vendored
+
+override_dh_auto_install:
+	just --unstable --working-directory . --justfile design-demo/justfile rootdir=$(DESTDIR) install

@@ -1,3 +1,13 @@
-/target
+debian/*
+!debian/changelog
+!debian/control
+!debian/copyright
+!debian/install
+!debian/rules
+!debian/source
+.cargo
+.idea
 Cargo.lock
-/.idea
+target
+vendor
+vendor.tar
