@@ -5,14 +5,20 @@
 
 // Re-exports from Iced
 pub use iced::widget::{checkbox, Checkbox};
+pub use iced::widget::{combo_box, ComboBox};
 pub use iced::widget::{container, Container};
 pub use iced::widget::{horizontal_space, space, vertical_space, Space};
 pub use iced::widget::{image, Image};
+pub use iced::widget::{lazy, Lazy};
 pub use iced::widget::{mouse_area, MouseArea};
+pub use iced::widget::{pane_grid, PaneGrid};
 pub use iced::widget::{pick_list, PickList};
+pub use iced::widget::{progress_bar, ProgressBar};
 pub use iced::widget::{radio, Radio};
-pub use iced::widget::{slider, Slider};
+pub use iced::widget::{responsive, Responsive};
+pub use iced::widget::{slider, vertical_slider, Slider, VerticalSlider};
 pub use iced::widget::{svg, Svg};
+pub use iced_core::widget::{Id, Operation, Widget};
 
 pub mod aspect_ratio;
 
