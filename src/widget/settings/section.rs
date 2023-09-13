@@ -1,6 +1,7 @@
 // Copyright 2022 System76 <info@system76.com>
 // SPDX-License-Identifier: MPL-2.0
 
+use crate::ext::CollectionWidget;
 use crate::widget::{column, text, ListColumn};
 use crate::Element;
 use std::borrow::Cow;
@@ -32,7 +33,11 @@ impl<'a, Message: 'static> From<Section<'a, Message>> for Element<'a, Message> {
     fn from(data: Section<'a, Message>) -> Self {
         column::with_capacity(2)
             .spacing(8)
-            .push(text(data.title).font(crate::font::FONT_SEMIBOLD))
+            .push_maybe(if data.title.is_empty() {
+                None
+            } else {
+                Some(text::heading(data.title))
+            })
             .push(data.children)
             .into()
     }
