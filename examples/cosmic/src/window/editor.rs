@@ -66,7 +66,7 @@ impl State {
             .on_close(Message::Close)
             .width(Length::Shrink);
 
-        let new_tab_button = icon::handle::from_name("tab-new-symbolic")
+        let new_tab_button = icon::from_name("tab-new-symbolic")
             .size(20)
             .apply(button::icon)
             .on_press(Message::AddNew);

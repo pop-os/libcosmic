@@ -257,9 +257,7 @@ impl State {
                         ))
                         .add(settings::item_row(vec![
                             cosmic::widget::button::destructive("Do not Touch")
-                                .trailing_icon(
-                                    icon::handle::from_name("dialog-warning-symbolic").size(16),
-                                )
+                                .trailing_icon(icon::from_name("dialog-warning-symbolic").size(16))
                                 .on_press(Message::ToggleWarning)
                                 .into(),
                         ]))
@@ -422,10 +420,10 @@ impl State {
                     "Primary container with some text and a couple icons testing default fallbacks"
                 )
                 .size(24),
-                icon::handle::from_name("microphone-sensitivity-high-symbolic-test")
+                icon::from_name("microphone-sensitivity-high-symbolic-test")
                     .size(24)
                     .icon(),
-                icon::handle::from_name("microphone-sensitivity-high-symbolic-test")
+                icon::from_name("microphone-sensitivity-high-symbolic-test")
                     .size(24)
                     .fallback(false)
                     .icon(),

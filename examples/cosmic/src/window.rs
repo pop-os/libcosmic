@@ -225,7 +225,7 @@ impl Window {
         self.nav_bar
             .insert()
             .text(page.title())
-            .icon(icon::handle::from_name(page.icon_name()).icon())
+            .icon(icon::from_name(page.icon_name()).icon())
             .secondary(&mut self.nav_id_to_page, page)
     }
 
@@ -248,7 +248,7 @@ impl Window {
     ) -> Element<Message> {
         let page = sub_page.parent_page();
         column!(
-            button::icon(icon::handle::from_name("go-previous-symbolic").size(16))
+            button::icon(icon::from_name("go-previous-symbolic").size(16))
                 .label(page.title())
                 .padding(0)
                 .on_press(Message::from(page)),
@@ -273,10 +273,7 @@ impl Window {
         iced::widget::Button::new(
             container(
                 settings::item_row(vec![
-                    icon::handle::from_name(sub_page.icon_name())
-                        .size(20)
-                        .icon()
-                        .into(),
+                    icon::from_name(sub_page.icon_name()).size(20).icon().into(),
                     column!(
                         text(sub_page.title()).size(14),
                         text(sub_page.description()).size(10),
@@ -284,10 +281,7 @@ impl Window {
                     .spacing(2)
                     .into(),
                     horizontal_space(iced::Length::Fill).into(),
-                    icon::handle::from_name("go-next-symbolic")
-                        .size(20)
-                        .icon()
-                        .into(),
+                    icon::from_name("go-next-symbolic").size(20).icon().into(),
                 ])
                 .spacing(16),
             )
@@ -295,7 +289,7 @@ impl Window {
             .style(theme::Container::custom(list::column::style)),
         )
         .padding(0)
-        .style(theme::IcedButton::Transparent)
+        .style(theme::iced::Button::Transparent)
         .on_press(Message::from(sub_page.into_page()))
         // .id(BTN.clone())
         .into()
@@ -427,7 +421,7 @@ impl Application for Window {
                                 .destructive(Rgb::new(0.890, 0.145, 0.420))
                                 .build(),
                         )),
-                        demo::ThemeVariant::System => cosmic::theme::theme(),
+                        demo::ThemeVariant::System => cosmic::theme::system_preference(),
                     };
                 }
                 Some(demo::Output::ToggleWarning) => self.toggle_warning(),

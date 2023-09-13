@@ -62,7 +62,7 @@ impl State {
             window.parent_page_button(SystemAndAccountsPage::About),
             row!(
                 horizontal_space(Length::Fill),
-                icon::handle::from_name("distributor-logo").size(78).icon(),
+                icon::from_name("distributor-logo").size(78).icon(),
                 horizontal_space(Length::Fill),
             )
             .into(),
