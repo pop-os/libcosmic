@@ -271,7 +271,7 @@ impl Window {
         sub_page: impl SubPage,
     ) -> Element<Message> {
         iced::widget::Button::new(
-            container(
+            list::container(
                 settings::item_row(vec![
                     icon::from_name(sub_page.icon_name()).size(20).icon().into(),
                     column!(
@@ -285,8 +285,7 @@ impl Window {
                 ])
                 .spacing(16),
             )
-            .padding([20, 24])
-            .style(theme::Container::custom(list::column::style)),
+            .padding([20, 24]),
         )
         .padding(0)
         .style(theme::iced::Button::Transparent)
