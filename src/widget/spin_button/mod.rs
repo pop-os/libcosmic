@@ -42,9 +42,8 @@ impl<'a, Message: 'static> SpinButton<'a, Message> {
         let Self { on_change, label } = self;
         container(
             row::with_children(vec![
-                icon::handle::from_name("list-remove-symbolic")
+                icon::from_name("list-remove-symbolic")
                     .size(24)
-                    .icon()
                     .apply(container)
                     .width(Length::Fixed(32.0))
                     .height(Length::Fixed(32.0))
@@ -62,9 +61,8 @@ impl<'a, Message: 'static> SpinButton<'a, Message> {
                     .align_x(Horizontal::Center)
                     .align_y(Vertical::Center)
                     .into(),
-                icon::handle::from_name("list-add-symbolic")
+                icon::from_name("list-add-symbolic")
                     .size(24)
-                    .icon()
                     .apply(container)
                     .width(Length::Fixed(32.0))
                     .height(Length::Fixed(32.0))

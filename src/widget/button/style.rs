@@ -84,7 +84,4 @@ pub trait StyleSheet {
 
     /// Produces the pressed [`Appearance`] of a button.
     fn pressed(&self, focused: bool, style: &Self::Style) -> Appearance;
-
-    /// [`Appearance`] when a button is selected.
-    fn selected(&self, focused: bool, style: &Self::Style) -> Appearance;
 }

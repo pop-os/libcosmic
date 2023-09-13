@@ -165,7 +165,7 @@ impl<'a, Message: Clone + 'static> HeaderBar<'a, Message> {
     /// Creates the widget for window controls.
     fn window_controls(&mut self) -> Element<'a, Message> {
         let icon = |name, size, on_press| {
-            widget::icon::handle::from_name(name)
+            widget::icon::from_name(name)
                 .size(size)
                 .handle()
                 .apply(widget::button::icon)

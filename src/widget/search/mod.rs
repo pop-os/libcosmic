@@ -49,7 +49,7 @@ mod button {
     /// A search button which converts to a search [`field`] on click.
     #[must_use]
     pub fn button<Message: 'static + Clone>(on_press: Message) -> crate::Element<'static, Message> {
-        icon::handle::from_svg_bytes(&include_bytes!("search.svg")[..])
+        icon::from_svg_bytes(&include_bytes!("search.svg")[..])
             .symbolic(true)
             .apply(crate::widget::button::icon)
             .on_press(on_press)

@@ -42,7 +42,7 @@ impl<'a, Message: 'static + Clone> Field<'a, Message> {
 
         row::with_capacity(3)
             .push(
-                icon::handle::from_svg_bytes(&include_bytes!("search.svg")[..])
+                icon::from_svg_bytes(&include_bytes!("search.svg")[..])
                     .symbolic(true)
                     .icon()
                     .size(16),
@@ -67,7 +67,7 @@ impl<'a, Message: 'static + Clone> From<Field<'a, Message>> for crate::Element<'
 }
 
 fn clear_button<Message: 'static>() -> crate::widget::IconButton<'static, Message> {
-    icon::handle::from_name("edit-clear-symbolic")
+    icon::from_name("edit-clear-symbolic")
         .size(16)
         .apply(crate::widget::button::icon)
 }

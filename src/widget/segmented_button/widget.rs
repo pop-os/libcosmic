@@ -122,9 +122,7 @@ where
         Self {
             model,
             id: None,
-            close_icon: icon::handle::from_name("window-close-symbolic")
-                .size(16)
-                .icon(),
+            close_icon: icon::from_name("window-close-symbolic").size(16).icon(),
             show_close_icon_on_hover: false,
             button_padding: [4, 4, 4, 4],
             button_height: 32,

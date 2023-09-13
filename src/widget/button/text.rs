@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: MPL-2.0
 
 use super::{button, Builder, Style};
-use crate::widget::{self, icon::Handle, row};
+use crate::widget::{icon, row, tooltip};
 use crate::{ext::CollectionWidget, Element};
 use apply::Apply;
 use iced_core::{font::Weight, text::LineHeight, widget::Id, Alignment, Length, Padding};
@@ -34,8 +34,8 @@ pub fn text<'a, Message>(label: impl Into<Cow<'a, str>>) -> Button<'a, Message> 
 }
 
 pub struct Text {
-    pub(super) leading_icon: Option<crate::widget::icon::Handle>,
-    pub(super) trailing_icon: Option<crate::widget::icon::Handle>,
+    pub(super) leading_icon: Option<icon::Handle>,
+    pub(super) trailing_icon: Option<icon::Handle>,
 }
 
 impl Text {
@@ -55,6 +55,7 @@ impl<'a, Message> Button<'a, Message> {
             Self {
                 id: Id::unique(),
                 label: Cow::Borrowed(""),
+                tooltip: Cow::Borrowed(""),
                 on_press: None,
                 width: Length::Shrink,
                 height: Length::Fixed(theme.space_l().into()),
@@ -70,54 +71,76 @@ impl<'a, Message> Button<'a, Message> {
         })
     }
 
-    pub fn leading_icon(mut self, icon: impl Into<Handle>) -> Self {
+    pub fn leading_icon(mut self, icon: impl Into<icon::Handle>) -> Self {
         self.variant.leading_icon = Some(icon.into());
         self
     }
 
-    pub fn trailing_icon(mut self, icon: impl Into<Handle>) -> Self {
+    pub fn trailing_icon(mut self, icon: impl Into<icon::Handle>) -> Self {
         self.variant.trailing_icon = Some(icon.into());
         self
     }
 }
 
 impl<'a, Message: Clone + 'static> From<Button<'a, Message>> for Element<'a, Message> {
-    fn from(mut b: Button<'a, Message>) -> Element<'a, Message> {
-        // TODO: Determine why this needs to be set before the label to prevent lifetime conflict.
-        let trailing_icon = b
-            .variant
-            .trailing_icon
-            .map(|i| Element::from(widget::icon(i).size(b.icon_size)));
+    fn from(mut builder: Button<'a, Message>) -> Element<'a, Message> {
+        let trailing_icon = builder.variant.trailing_icon.map(|mut i| {
+            if let icon::Data::Name(ref mut named) = i.data {
+                named.size = Some(builder.icon_size);
+            }
 
-        row::with_capacity(3)
+            i.icon()
+        });
+
+        let leading_icon = builder.variant.leading_icon.map(|mut i| {
+            if let icon::Data::Name(ref mut named) = i.data {
+                named.size = Some(builder.icon_size);
+            }
+
+            i.icon()
+        });
+
+        let label: Option<Element<'_, _>> = (!builder.label.is_empty()).then(|| {
+            let mut font = crate::font::DEFAULT;
+            font.weight = builder.font_weight;
+
+            // TODO: Avoid allocation
+            crate::widget::text(builder.label.to_string())
+                .size(builder.font_size)
+                .line_height(LineHeight::Absolute(builder.line_height.into()))
+                .font(font)
+                .into()
+        });
+
+        let button: super::Button<'a, Message, crate::Renderer> = row::with_capacity(3)
             // Optional icon to place before label.
-            .push_maybe(
-                b.variant
-                    .leading_icon
-                    .map(|i| widget::icon(i).size(b.icon_size)),
-            )
+            .push_maybe(leading_icon)
             // Optional label between icons.
-            .push_maybe((!b.label.is_empty()).then(|| {
-                let mut font = crate::font::DEFAULT;
-                font.weight = b.font_weight;
-
-                crate::widget::text(b.label)
-                    .size(b.font_size)
-                    .line_height(LineHeight::Absolute(b.line_height.into()))
-                    .font(font)
-            }))
+            .push_maybe(label)
             // Optional icon to place behind the label.
             .push_maybe(trailing_icon)
-            .padding(b.padding)
-            .width(b.width)
-            .height(b.height)
-            .spacing(b.spacing)
+            .padding(builder.padding)
+            .width(builder.width)
+            .height(builder.height)
+            .spacing(builder.spacing)
             .align_items(Alignment::Center)
             .apply(button)
             .padding(0)
-            .id(b.id)
-            .on_press_maybe(b.on_press.take())
-            .style(b.style)
-            .into()
+            .id(builder.id)
+            .on_press_maybe(builder.on_press.take())
+            .style(builder.style);
+
+        if builder.tooltip.is_empty() {
+            button.into()
+        } else {
+            tooltip(button, builder.tooltip, tooltip::Position::Top)
+                .size(builder.font_size)
+                .font({
+                    let mut font = crate::font::DEFAULT;
+                    font.weight = builder.font_weight;
+                    font
+                })
+                .into()
+        }
     }
 }
