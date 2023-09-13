@@ -508,10 +508,11 @@ where
 
                 let mut layout_node = layout::Node::new(Size {
                     width,
-                    height: width - offset,
+                    height: width,
                 });
+
                 layout_node.move_to(Point {
-                    x: bounds.x + offset,
+                    x: bounds.x,
                     y: bounds.y,
                 });
 
@@ -525,6 +526,9 @@ where
                     cursor,
                     viewport,
                 );
+
+                bounds.x += offset;
+                bounds.width -= offset;
 
                 alignment::Horizontal::Left
             } else {
