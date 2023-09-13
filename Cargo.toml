@@ -25,8 +25,8 @@ wayland = ["ashpd?/wayland", "iced_runtime/wayland", "iced/wayland", "iced_sctk"
 wgpu = ["iced/wgpu", "iced_wgpu"]
 # X11 window support via winit
 winit = ["iced/winit", "iced_winit"]
-winit_debug = ["iced/winit", "iced_winit", "debug"]
-winit_tokio = ["iced/winit", "iced_winit", "tokio"]
+winit_debug = ["winit", "debug"]
+winit_tokio = ["winit", "tokio"]
 winit_wgpu = ["winit", "wgpu"]
 # Enables XDG portal integrations
 xdg-portal = ["ashpd"]
