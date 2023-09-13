@@ -20,7 +20,10 @@ impl<'a, Message: 'static> ElementExt for crate::Element<'a, Message> {
 }
 
 /// Additional methods for the [`Column`] and [`Row`] widgets.
-pub trait CollectionWidget<'a, Message>: Widget<Message, crate::Renderer> {
+pub trait CollectionWidget<'a, Message: 'a>: Widget<Message, crate::Renderer>
+where
+    Self: Sized,
+{
     /// Moves all the elements of `other` into `self`, leaving `other` empty.
     #[must_use]
     fn append<E>(self, other: &mut Vec<E>) -> Self
@@ -29,36 +32,23 @@ pub trait CollectionWidget<'a, Message>: Widget<Message, crate::Renderer> {
 
     /// Appends all elements in an iterator to the widget.
     #[must_use]
-    fn extend<E>(self, iterator: impl Iterator<Item = E>) -> Self
+    fn extend<E>(mut self, iterator: impl Iterator<Item = E>) -> Self
     where
-        E: Into<crate::Element<'a, Message>>;
+        E: Into<crate::Element<'a, Message>>,
+    {
+        for item in iterator {
+            self = self.push(item.into());
+        }
+
+        self
+    }
+
+    /// Pushes an element into the widget.
+    #[must_use]
+    fn push(self, element: impl Into<crate::Element<'a, Message>>) -> Self;
 
     /// Conditionally pushes an element to the widget.
     #[must_use]
-    fn push_maybe(self, element: Option<impl Into<crate::Element<'a, Message>>>) -> Self;
-}
-
-impl<'a, Message> CollectionWidget<'a, Message>
-    for crate::widget::Column<'a, Message, crate::Renderer>
-{
-    fn append<E>(self, other: &mut Vec<E>) -> Self
-    where
-        E: Into<crate::Element<'a, Message>>,
-    {
-        self.extend(other.drain(..))
-    }
-
-    fn extend<E>(mut self, iterator: impl Iterator<Item = E>) -> Self
-    where
-        E: Into<crate::Element<'a, Message>>,
-    {
-        for item in iterator {
-            self = self.push(item.into());
-        }
-
-        self
-    }
-
     fn push_maybe(self, element: Option<impl Into<crate::Element<'a, Message>>>) -> Self {
         if let Some(element) = element {
             self.push(element.into())
@@ -68,9 +58,7 @@ impl<'a, Message> CollectionWidget<'a, Message>
     }
 }
 
-impl<'a, Message> CollectionWidget<'a, Message>
-    for crate::widget::Row<'a, Message, crate::Renderer>
-{
+impl<'a, Message: 'a> CollectionWidget<'a, Message> for crate::widget::Column<'a, Message> {
     fn append<E>(self, other: &mut Vec<E>) -> Self
     where
         E: Into<crate::Element<'a, Message>>,
@@ -78,22 +66,20 @@ impl<'a, Message> CollectionWidget<'a, Message>
         self.extend(other.drain(..))
     }
 
-    fn extend<E>(mut self, iterator: impl Iterator<Item = E>) -> Self
+    fn push(self, element: impl Into<crate::Element<'a, Message>>) -> Self {
+        self.push(element)
+    }
+}
+
+impl<'a, Message: 'a> CollectionWidget<'a, Message> for crate::widget::Row<'a, Message> {
+    fn append<E>(self, other: &mut Vec<E>) -> Self
     where
         E: Into<crate::Element<'a, Message>>,
     {
-        for item in iterator {
-            self = self.push(item.into());
-        }
-
-        self
+        self.extend(other.drain(..))
     }
 
-    fn push_maybe(self, element: Option<impl Into<crate::Element<'a, Message>>>) -> Self {
-        if let Some(element) = element {
-            self.push(element.into())
-        } else {
-            self
-        }
+    fn push(self, element: impl Into<crate::Element<'a, Message>>) -> Self {
+        self.push(element)
     }
 }
