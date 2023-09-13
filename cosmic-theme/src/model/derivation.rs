@@ -119,34 +119,25 @@ where
     }
 
     /// helper for producing a component from a base color a neutral and an accent
-    pub fn colored_component(base: C, neutral: C, accent: C) -> Self {
-        let neutral = neutral.clone().into();
-        let mut neutral_05 = neutral.clone();
-        let mut neutral_10 = neutral.clone();
-        let mut neutral_20 = neutral.clone();
-        neutral_05.alpha = 0.05;
-        neutral_10.alpha = 0.1;
-        neutral_20.alpha = 0.2;
-
+    pub fn colored_component(base: C, neutral: C, accent: C, hovered: C, pressed: C) -> Self {
         let base: Srgba = base.into();
         let mut base_50 = base.clone();
         base_50.alpha *= 0.5;
 
         let on_20 = neutral.clone();
-        let mut on_50 = on_20.clone();
-
+        let mut on_50: Srgba = on_20.clone().into();
         on_50.alpha = 0.5;
 
         Component {
             base: base.clone().into(),
-            hover: over(neutral_10, base).into(),
-            pressed: over(neutral_20, base).into(),
-            selected: over(neutral_10, base).into(),
+            hover: over(hovered.clone(), base).into(),
+            pressed: over(pressed, base).into(),
+            selected: over(hovered, base).into(),
             selected_text: accent.clone(),
-            divider: on_20.into(),
-            on: neutral.into(),
-            disabled: base_50.into(),
-            on_disabled: on_50.into(),
+            divider: on_20,
+            on: neutral,
+            disabled: over(base_50, base).into(),
+            on_disabled: over(on_50, base).into(),
             focus: accent,
             border: base.into(),
             disabled_border: base_50.into(),
@@ -154,30 +145,34 @@ where
     }
 
     /// helper for producing a button component
-    pub fn colored_button(base: C, overlay: C, on_button: C, accent: C) -> Self {
-        let mut component = Component::colored_component(base, overlay, accent);
+    pub fn colored_button(
+        base: C,
+        overlay: C,
+        on_button: C,
+        accent: C,
+        hovered: C,
+        pressed: C,
+    ) -> Self {
+        let mut component = Component::colored_component(base, overlay, accent, hovered, pressed);
         component.on = on_button.clone();
+
         let mut on_disabled = on_button.into();
         on_disabled.alpha = 0.5;
         component.on_disabled = on_disabled.into();
+
         component
     }
 
     /// helper for producing a component color theme
     pub fn component(
         base: C,
-        component_state_overlay: C,
         accent: C,
         on_component: C,
+        hovered: C,
+        pressed: C,
         is_high_contrast: bool,
         border: C,
     ) -> Self {
-        let component_state_overlay = component_state_overlay.clone().into();
-        let mut component_state_overlay_10 = component_state_overlay.clone();
-        let mut component_state_overlay_20 = component_state_overlay.clone();
-        component_state_overlay_10.alpha = 0.1;
-        component_state_overlay_20.alpha = 0.2;
-
         let base = base.into();
         let mut base_50 = base.clone();
         base_50.alpha *= 0.5;
@@ -194,9 +189,9 @@ where
 
         Component {
             base: base.clone().into(),
-            hover: over(component_state_overlay_10, base).into(),
-            pressed: over(component_state_overlay_20, base).into(),
-            selected: over(component_state_overlay_10, base).into(),
+            hover: over(hovered.clone(), base).into(),
+            pressed: over(pressed, base).into(),
+            selected: over(hovered, base).into(),
             selected_text: accent.clone(),
             focus: accent.clone(),
             divider: if is_high_contrast {
@@ -205,8 +200,8 @@ where
                 on_20.into()
             },
             on: on_component.clone(),
-            disabled: base_50.into(),
-            on_disabled: on_50.into(),
+            disabled: over(base_50, base).into(),
+            on_disabled: over(on_50, base).into(),
             border: border.into(),
             disabled_border: disabled_border.into(),
         }

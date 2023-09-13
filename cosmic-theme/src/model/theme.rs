@@ -1,6 +1,6 @@
 use crate::{
-    steps::*, Component, Container, CornerRadii, CosmicPalette, CosmicPaletteInner, Spacing,
-    DARK_PALETTE, LIGHT_PALETTE, NAME,
+    composite::over, steps::*, Component, Container, CornerRadii, CosmicPalette,
+    CosmicPaletteInner, Spacing, DARK_PALETTE, LIGHT_PALETTE, NAME,
 };
 use cosmic_config::{Config, ConfigGet, ConfigSet, CosmicConfigEntry};
 use palette::{IntoColor, Srgb, Srgba};
@@ -46,6 +46,10 @@ pub struct Theme<C> {
     pub destructive_button: Component<C>,
     /// warning button element colors
     pub warning_button: Component<C>,
+    /// icon button element colors
+    pub icon_button: Component<C>,
+    /// link button element colors
+    pub link_button: Component<C>,
     /// text button element colors
     pub text_button: Component<C>,
     /// button component styling
@@ -629,9 +633,10 @@ impl ThemeBuilder {
         } else {
             p_ref.gray_1.clone()
         };
-        let step_array = steps(bg, NonZeroUsize::new(100).unwrap());
 
+        let step_array = steps(bg, NonZeroUsize::new(100).unwrap());
         let bg_index = color_index(bg, step_array.len());
+
         let primary_container_bg = if let Some(primary_container_bg_color) = primary_container_bg {
             primary_container_bg_color
         } else {
@@ -652,11 +657,19 @@ impl ThemeBuilder {
             &p_ref.neutral_8,
             text_steps_array.as_ref(),
         );
+
+        let mut component_hovered_overlay = p_ref.neutral_0.clone();
+        component_hovered_overlay.alpha = 0.1;
+
+        let mut component_pressed_overlay = p_ref.neutral_0.clone();
+        component_pressed_overlay.alpha = 0.2;
+
         let bg_component = Component::component(
             bg_component,
-            p_ref.neutral_0.to_owned(),
-            accent.clone(),
+            accent,
             on_bg_component,
+            component_hovered_overlay,
+            component_pressed_overlay,
             is_high_contrast,
             p_ref.neutral_8,
         );
@@ -673,9 +686,10 @@ impl ThemeBuilder {
         );
         let primary_component = Component::component(
             primary_component,
-            p_ref.neutral_0.to_owned(),
-            accent.clone(),
+            accent,
             on_primary_component,
+            component_hovered_overlay,
+            component_pressed_overlay,
             is_high_contrast,
             p_ref.neutral_8,
         );
@@ -687,63 +701,48 @@ impl ThemeBuilder {
             color_index(secondary_component, step_array.len()),
             &step_array,
             is_dark,
-            &p_ref.neutral_10,
+            &p_ref.neutral_8,
             text_steps_array.as_ref(),
         );
         let secondary_component = Component::component(
             secondary_component,
-            p_ref.neutral_0.to_owned(),
-            accent.clone(),
+            accent,
             on_secondary_component,
+            component_hovered_overlay,
+            component_pressed_overlay,
             is_high_contrast,
             p_ref.neutral_8,
         );
         let neutral_7 = p_ref.neutral_7;
-        let mut button_bg = neutral_7;
-        button_bg.alpha = 0.25;
-        let neutral_10 = p_ref.neutral_10;
-        let mut button_hover_overlay = neutral_10;
-        button_hover_overlay.alpha = 0.10;
-        let mut button_press_overlay = neutral_10;
-        button_press_overlay.alpha = 0.20;
 
-        let mut button_disabled_bg = button_bg;
-        button_disabled_bg.alpha *= 0.5;
-        let button_border = p_ref.neutral_8.clone();
-        let mut button_disabled_border = button_border;
-        button_disabled_border.alpha *= 0.5;
+        // Standard button background is neutral 7 with 25% opacity
+        let button_bg = {
+            let mut color = neutral_7.clone();
+            color.alpha = 0.25;
+            color
+        };
 
-        let mut text_button = Component::component(
-            Srgba::new(0.0, 0.0, 0.0, 0.0),
-            p_ref.neutral_10,
-            accent,
-            p_ref.neutral_9,
-            is_high_contrast,
-            p_ref.neutral_8,
+        let (button_hovered_hue, button_pressed_hye) = if is_dark {
+            (46.0, 22.0)
+        } else {
+            (158.0, 190.0)
+        };
+
+        let button_hovered_overlay = Srgba::new(
+            button_hovered_hue / 255.0,
+            button_hovered_hue / 255.0,
+            button_hovered_hue / 255.0,
+            0.5,
         );
-
-        let overlay = p_ref.neutral_10.clone();
-        let mut hover = overlay.clone();
-        hover.alpha = 0.1;
-        text_button.hover = hover;
-        let mut press = overlay.clone();
-        press.alpha = 0.2;
-        text_button.pressed = press;
-        text_button.focus = text_button.base.clone();
+        let button_pressed_overlay = Srgba::new(
+            button_pressed_hye / 255.0,
+            button_pressed_hye / 255.0,
+            button_pressed_hye / 255.0,
+            0.5,
+        );
 
         let mut theme: Theme<Srgba> = Theme {
             name: palette.name().to_string(),
-            background: Container::new(
-                bg_component,
-                bg,
-                get_text(
-                    bg_index,
-                    &step_array,
-                    is_dark,
-                    &p_ref.neutral_8,
-                    text_steps_array.as_ref(),
-                ),
-            ),
             primary: Container::new(
                 primary_component,
                 primary_container_bg,
@@ -767,58 +766,120 @@ impl ThemeBuilder {
                 ),
             ),
             accent: Component::colored_component(
-                accent.clone(),
-                p_ref.neutral_0.to_owned(),
-                accent.clone(),
+                accent,
+                p_ref.neutral_0,
+                accent,
+                button_hovered_overlay,
+                button_pressed_overlay,
             ),
-            success: Component::colored_component(
-                success,
-                p_ref.neutral_0.to_owned(),
-                accent.clone(),
+            accent_button: Component::colored_button(
+                accent,
+                p_ref.neutral_1,
+                p_ref.neutral_0,
+                accent,
+                button_hovered_overlay,
+                button_pressed_overlay,
             ),
-            destructive: Component::colored_component(
-                destructive,
-                p_ref.neutral_0.to_owned(),
-                accent.clone(),
-            ),
-            warning: Component::colored_component(
-                warning,
-                p_ref.neutral_0.to_owned(),
-                accent.clone(),
+            background: Container::new(
+                bg_component,
+                bg,
+                get_text(
+                    bg_index,
+                    &step_array,
+                    is_dark,
+                    &p_ref.neutral_8,
+                    text_steps_array.as_ref(),
+                ),
             ),
             button: Component::component(
-                button_bg,
-                p_ref.neutral_10,
+                bg,
                 accent,
-                p_ref.neutral_9,
+                on_bg_component,
+                button_hovered_overlay,
+                button_pressed_overlay,
                 is_high_contrast,
                 p_ref.neutral_8,
             ),
-            accent_button: Component::colored_button(
-                accent.clone(),
-                p_ref.neutral_10.to_owned(),
-                p_ref.neutral_0.to_owned(),
-                accent.clone(),
-            ),
-            success_button: Component::colored_button(
-                success,
-                p_ref.neutral_10.to_owned(),
-                p_ref.neutral_0.to_owned(),
-                accent.clone(),
+            destructive: Component::colored_component(
+                destructive,
+                p_ref.neutral_0,
+                accent,
+                button_hovered_overlay,
+                button_pressed_overlay,
             ),
             destructive_button: Component::colored_button(
                 destructive,
-                p_ref.neutral_10.to_owned(),
-                p_ref.neutral_0.to_owned(),
-                accent.clone(),
+                p_ref.neutral_1,
+                p_ref.neutral_0,
+                accent,
+                button_hovered_overlay,
+                button_pressed_overlay,
+            ),
+            icon_button: Component::component(
+                Srgba::new(0.0, 0.0, 0.0, 0.0),
+                accent,
+                p_ref.neutral_8,
+                button_hovered_overlay,
+                button_pressed_overlay,
+                is_high_contrast,
+                p_ref.neutral_8,
+            ),
+            link_button: {
+                let mut component = Component::component(
+                    Srgba::new(0.0, 0.0, 0.0, 0.0),
+                    accent,
+                    accent,
+                    Srgba::new(0.0, 0.0, 0.0, 0.0),
+                    Srgba::new(0.0, 0.0, 0.0, 0.0),
+                    is_high_contrast,
+                    p_ref.neutral_8,
+                );
+
+                let mut on_50 = component.on.clone();
+                on_50.alpha = 0.5;
+
+                component.on_disabled = over(on_50, component.base);
+                component
+            },
+            success: Component::colored_component(
+                success,
+                p_ref.neutral_0,
+                accent,
+                button_hovered_overlay,
+                button_pressed_overlay,
+            ),
+            success_button: Component::colored_button(
+                success,
+                p_ref.neutral_1,
+                p_ref.neutral_0,
+                accent,
+                button_hovered_overlay,
+                button_pressed_overlay,
+            ),
+            text_button: Component::component(
+                Srgba::new(0.0, 0.0, 0.0, 0.0),
+                accent,
+                accent,
+                button_hovered_overlay,
+                button_pressed_overlay,
+                is_high_contrast,
+                p_ref.neutral_8,
+            ),
+            warning: Component::colored_component(
+                warning,
+                p_ref.neutral_0,
+                accent,
+                button_hovered_overlay,
+                button_pressed_overlay,
             ),
             warning_button: Component::colored_button(
                 warning,
-                p_ref.neutral_10.to_owned(),
-                p_ref.neutral_0.to_owned(),
-                accent.clone(),
+                p_ref.neutral_10,
+                p_ref.neutral_0,
+                accent,
+                button_hovered_overlay,
+                button_pressed_overlay,
             ),
-            text_button,
             palette: palette.inner(),
             spacing,
             corner_radii,
