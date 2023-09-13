@@ -93,22 +93,20 @@ pub mod rectangle_tracker;
 
 pub use row::{row, Row};
 pub mod row {
-    pub use iced::widget::Row;
+    pub type Row<'a, Message> = iced::widget::Row<'a, Message, crate::Renderer>;
 
     #[must_use]
-    pub fn row<'a, Message>() -> Row<'a, Message, crate::Renderer> {
+    pub fn row<'a, Message>() -> Row<'a, Message> {
         Row::new()
     }
 
     #[must_use]
-    pub fn with_capacity<'a, Message>(capacity: usize) -> Row<'a, Message, crate::Renderer> {
+    pub fn with_capacity<'a, Message>(capacity: usize) -> Row<'a, Message> {
         Row::with_children(Vec::with_capacity(capacity))
     }
 
     #[must_use]
-    pub fn with_children<Message>(
-        children: Vec<crate::Element<Message>>,
-    ) -> Row<Message, crate::Renderer> {
+    pub fn with_children<Message>(children: Vec<crate::Element<Message>>) -> Row<Message> {
         Row::with_children(children)
     }
 }
