@@ -1,7 +1,7 @@
 // Copyright 2023 System76 <info@system76.com>
 // SPDX-License-Identifier: MPL-2.0
 
-use super::{Builder, Icon};
+use super::{Icon, Named};
 use crate::widget::{image, svg};
 use std::borrow::Cow;
 use std::ffi::OsStr;
@@ -13,7 +13,7 @@ use std::path::PathBuf;
 pub struct Handle {
     pub symbolic: bool,
     #[setters(skip)]
-    pub variant: Variant,
+    pub data: Data,
 }
 
 impl Handle {
@@ -24,14 +24,10 @@ impl Handle {
 
 #[must_use]
 #[derive(Clone, Debug, Hash)]
-pub enum Variant {
+pub enum Data {
+    Name(Named),
     Image(image::Handle),
     Svg(svg::Handle),
-}
-
-/// Create an icon handle from its XDG icon name.
-pub fn from_name(name: &str) -> Builder {
-    Builder::new(name)
 }
 
 /// Create an icon handle from its path.
@@ -41,10 +37,10 @@ pub fn from_path(path: PathBuf) -> Handle {
             .file_stem()
             .and_then(OsStr::to_str)
             .is_some_and(|name| name.ends_with("-symbolic")),
-        variant: if path.extension().is_some_and(|ext| ext == OsStr::new("svg")) {
-            Variant::Svg(svg::Handle::from_path(path))
+        data: if path.extension().is_some_and(|ext| ext == OsStr::new("svg")) {
+            Data::Svg(svg::Handle::from_path(path))
         } else {
-            Variant::Image(image::Handle::from_path(path))
+            Data::Image(image::Handle::from_path(path))
         },
     }
 }
@@ -59,7 +55,7 @@ pub fn from_raster_bytes(
 ) -> Handle {
     Handle {
         symbolic: false,
-        variant: Variant::Image(image::Handle::from_memory(bytes)),
+        data: Data::Image(image::Handle::from_memory(bytes)),
     }
 }
 
@@ -75,7 +71,7 @@ pub fn from_raster_pixels(
 ) -> Handle {
     Handle {
         symbolic: false,
-        variant: Variant::Image(image::Handle::from_pixels(width, height, pixels)),
+        data: Data::Image(image::Handle::from_pixels(width, height, pixels)),
     }
 }
 
@@ -83,6 +79,6 @@ pub fn from_raster_pixels(
 pub fn from_svg_bytes(bytes: impl Into<Cow<'static, [u8]>>) -> Handle {
     Handle {
         symbolic: false,
-        variant: Variant::Svg(svg::Handle::from_memory(bytes)),
+        data: Data::Svg(svg::Handle::from_memory(bytes)),
     }
 }

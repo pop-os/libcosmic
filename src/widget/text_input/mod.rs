@@ -10,5 +10,6 @@ mod input;
 mod style;
 pub mod value;
 
+pub use crate::theme::TextInput as Style;
 pub use input::*;
-pub use style::{Appearance as TextInputAppearance, StyleSheet as TextInputStyleSheet};
+pub use style::{Appearance, StyleSheet};

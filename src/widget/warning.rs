@@ -32,7 +32,7 @@ impl<'a, Message: 'static + Clone> Warning<'a, Message> {
     pub fn into_widget(self) -> widget::Container<'a, Message, Renderer> {
         let label = widget::container(crate::widget::text(self.message)).width(Length::Fill);
 
-        let close_button = icon::handle::from_name("window-close-symbolic")
+        let close_button = icon::from_name("window-close-symbolic")
             .size(16)
             .apply(widget::button::icon)
             .on_press_maybe(self.on_close);

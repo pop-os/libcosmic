@@ -68,23 +68,23 @@ where
     let spacing = THEME.with(|t| t.borrow().cosmic().space_xxs());
     let input = TextInput::new(placeholder, value)
         .padding([0, spacing, 0, spacing])
-        .style(super::style::TextInput::Search)
-        .start_icon(
-            iced_widget::container(
-                crate::widget::icon::handle::from_name("system-search-symbolic")
-                    .size(16)
-                    .icon(),
-            )
-            .padding([spacing, spacing, spacing, spacing])
-            .into(),
+        .style(crate::theme::TextInput::Search)
+        .leading_icon(
+            crate::widget::icon::from_name("system-search-symbolic")
+                .size(16)
+                .apply(crate::widget::container)
+                .padding([spacing, spacing, spacing, spacing])
+                .into(),
         );
 
     if let Some(msg) = on_clear {
-        input.end_icon(
-            crate::widget::icon::handle::from_name("edit-clear-symbolic")
+        input.trailing_icon(
+            crate::widget::icon::from_name("edit-clear-symbolic")
                 .size(16)
-                .handle()
-                .apply(crate::widget::button::icon)
+                .apply(crate::widget::button)
+                .style(crate::theme::Button::Icon)
+                .width(32)
+                .height(32)
                 .on_press(msg)
                 .padding([spacing, spacing, spacing, spacing])
                 .into(),
@@ -108,12 +108,11 @@ where
     let spacing = THEME.with(|t| t.borrow().cosmic().space_xxs());
     let mut input = TextInput::new(placeholder, value)
         .padding([0, spacing, 0, spacing])
-        .style(super::style::TextInput::Default)
-        .start_icon(
-            crate::widget::icon::handle::from_name("system-lock-screen-symbolic")
+        .style(crate::theme::TextInput::Default)
+        .leading_icon(
+            crate::widget::icon::from_name("system-lock-screen-symbolic")
                 .size(16)
-                .icon()
-                .apply(iced_widget::container)
+                .apply(crate::widget::container)
                 .padding([spacing, spacing, spacing, spacing])
                 .into(),
         );
@@ -121,11 +120,11 @@ where
         input = input.password();
     }
     if let Some(msg) = on_visible_toggle {
-        input.end_icon(
-            crate::widget::icon::handle::from_name("document-properties-symbolic")
+        input.trailing_icon(
+            crate::widget::icon::from_name("document-properties-symbolic")
                 .size(16)
-                .handle()
-                .apply(crate::widget::button::icon)
+                .apply(crate::widget::button)
+                .style(crate::theme::Button::Icon)
                 .on_press(msg)
                 .padding([spacing, spacing, spacing, spacing])
                 .into(),
@@ -145,7 +144,7 @@ where
     let spacing = THEME.with(|t| t.borrow().cosmic().space_xxs());
 
     TextInput::new("", value)
-        .style(super::style::TextInput::Inline)
+        .style(crate::theme::TextInput::Inline)
         .padding([spacing, spacing, spacing, spacing])
 }
 
@@ -204,8 +203,8 @@ pub struct TextInput<'a, Message> {
     on_input: Option<Box<dyn Fn(String) -> Message + 'a>>,
     on_paste: Option<Box<dyn Fn(String) -> Message + 'a>>,
     on_submit: Option<Message>,
-    start_icon: Option<Element<'a, Message, crate::Renderer>>,
-    end_element: Option<Element<'a, Message, crate::Renderer>>,
+    leading_icon: Option<Element<'a, Message, crate::Renderer>>,
+    trailing_icon: Option<Element<'a, Message, crate::Renderer>>,
     style: <<crate::Renderer as iced_core::Renderer>::Theme as StyleSheet>::Style,
     // (text_input::State, mime_type, dnd_action) -> Message
     on_create_dnd_source: Option<Box<dyn Fn(State) -> Message + 'a>>,
@@ -242,10 +241,10 @@ where
             on_input: None,
             on_paste: None,
             on_submit: None,
-            start_icon: None,
-            end_element: None,
+            leading_icon: None,
+            trailing_icon: None,
             error: None,
-            style: super::style::TextInput::default(),
+            style: crate::theme::TextInput::default(),
             on_dnd_command_produced: None,
             on_create_dnd_source: None,
             surface_ids: None,
@@ -333,14 +332,14 @@ where
     }
 
     /// Sets the start [`Icon`] of the [`TextInput`].
-    pub fn start_icon(mut self, icon: Element<'a, Message, crate::Renderer>) -> Self {
-        self.start_icon = Some(icon);
+    pub fn leading_icon(mut self, icon: Element<'a, Message, crate::Renderer>) -> Self {
+        self.leading_icon = Some(icon);
         self
     }
 
     /// Sets the end [`Icon`] of the [`TextInput`].
-    pub fn end_icon(mut self, icon: Element<'a, Message, crate::Renderer>) -> Self {
-        self.end_element = Some(icon);
+    pub fn trailing_icon(mut self, icon: Element<'a, Message, crate::Renderer>) -> Self {
+        self.trailing_icon = Some(icon);
         self
     }
 
@@ -398,8 +397,8 @@ where
             self.font,
             self.on_input.is_none(),
             self.is_secure,
-            self.start_icon.as_ref(),
-            self.end_element.as_ref(),
+            self.leading_icon.as_ref(),
+            self.trailing_icon.as_ref(),
             &self.style,
             self.dnd_icon,
             self.line_height,
@@ -485,18 +484,18 @@ where
             state.dragging_state = None;
         }
         let mut children: Vec<_> = self
-            .start_icon
+            .leading_icon
             .iter_mut()
-            .chain(self.end_element.iter_mut())
+            .chain(self.trailing_icon.iter_mut())
             .map(iced_core::Element::as_widget_mut)
             .collect();
         tree.diff_children(children.as_mut_slice());
     }
 
     fn children(&self) -> Vec<Tree> {
-        self.start_icon
+        self.leading_icon
             .iter()
-            .chain(self.end_element.iter())
+            .chain(self.trailing_icon.iter())
             .map(|icon| Tree::new(icon))
             .collect()
     }
@@ -536,8 +535,8 @@ where
                 self.width,
                 self.padding,
                 self.size,
-                self.start_icon.as_ref(),
-                self.end_element.as_ref(),
+                self.leading_icon.as_ref(),
+                self.trailing_icon.as_ref(),
                 self.line_height,
                 self.label,
                 self.helper_text,
@@ -573,13 +572,13 @@ where
     ) -> event::Status {
         let text_layout = self.text_layout(layout);
         let mut child_state = tree.children.iter_mut();
-        if let (Some(start_icon), Some(tree)) = (self.start_icon.as_mut(), child_state.next()) {
+        if let (Some(leading_icon), Some(tree)) = (self.leading_icon.as_mut(), child_state.next()) {
             let mut children = text_layout.children();
             children.next();
-            let start_icon_layout = children.next().unwrap();
+            let leading_icon_layout = children.next().unwrap();
 
-            if cursor_position.is_over(start_icon_layout.bounds()) {
-                return start_icon.as_widget_mut().on_event(
+            if cursor_position.is_over(leading_icon_layout.bounds()) {
+                return leading_icon.as_widget_mut().on_event(
                     tree,
                     event.clone(),
                     layout,
@@ -591,14 +590,15 @@ where
                 );
             }
         }
-        if let (Some(end_icon), Some(tree)) = (self.end_element.as_mut(), child_state.next()) {
+        if let (Some(trailing_icon), Some(tree)) = (self.trailing_icon.as_mut(), child_state.next())
+        {
             let mut children = text_layout.children();
             children.next();
             children.next();
-            let end_icon_layout = children.next().unwrap();
+            let trailing_icon_layout = children.next().unwrap();
 
-            if cursor_position.is_over(end_icon_layout.bounds()) {
-                return end_icon.as_widget_mut().on_event(
+            if cursor_position.is_over(trailing_icon_layout.bounds()) {
+                return trailing_icon.as_widget_mut().on_event(
                     tree,
                     event.clone(),
                     layout,
@@ -656,8 +656,8 @@ where
             self.font,
             self.on_input.is_none(),
             self.is_secure,
-            self.start_icon.as_ref(),
-            self.end_element.as_ref(),
+            self.leading_icon.as_ref(),
+            self.trailing_icon.as_ref(),
             &self.style,
             self.dnd_icon,
             self.line_height,
@@ -681,15 +681,15 @@ where
     ) -> mouse::Interaction {
         let layout = self.text_layout(layout);
         let mut index = 0;
-        if let (Some(start_icon), Some(tree)) =
-            (self.start_icon.as_ref(), state.children.get(index))
+        if let (Some(leading_icon), Some(tree)) =
+            (self.leading_icon.as_ref(), state.children.get(index))
         {
             let mut children = layout.children();
             children.next();
-            let start_icon_layout = children.next().unwrap();
+            let leading_icon_layout = children.next().unwrap();
 
-            if cursor_position.is_over(start_icon_layout.bounds()) {
-                return start_icon.mouse_interaction(
+            if cursor_position.is_over(leading_icon_layout.bounds()) {
+                return leading_icon.mouse_interaction(
                     tree,
                     layout,
                     cursor_position,
@@ -700,15 +700,16 @@ where
             index += 1;
         }
 
-        if let (Some(end_icon), Some(tree)) = (self.end_element.as_ref(), state.children.get(index))
+        if let (Some(trailing_icon), Some(tree)) =
+            (self.trailing_icon.as_ref(), state.children.get(index))
         {
             let mut children = layout.children();
             children.next();
             children.next();
-            let end_icon_layout = children.next().unwrap();
+            let trailing_icon_layout = children.next().unwrap();
 
-            if cursor_position.is_over(end_icon_layout.bounds()) {
-                return end_icon.mouse_interaction(
+            if cursor_position.is_over(trailing_icon_layout.bounds()) {
+                return trailing_icon.mouse_interaction(
                     tree,
                     layout,
                     cursor_position,
@@ -770,8 +771,8 @@ pub fn layout<Message>(
     width: Length,
     padding: Padding,
     size: Option<f32>,
-    start_icon: Option<&Element<'_, Message, crate::Renderer>>,
-    end_icon: Option<&Element<'_, Message, crate::Renderer>>,
+    leading_icon: Option<&Element<'_, Message, crate::Renderer>>,
+    trailing_icon: Option<&Element<'_, Message, crate::Renderer>>,
     line_height: text::LineHeight,
     label: Option<&str>,
     helper_text: Option<&str>,
@@ -804,13 +805,13 @@ pub fn layout<Message>(
     let mut text_input_height = text_size * 1.2;
     let padding = padding.fit(Size::ZERO, limits.max());
 
-    let helper_pos = if start_icon.is_some() || end_icon.is_some() {
+    let helper_pos = if leading_icon.is_some() || trailing_icon.is_some() {
         // TODO configurable icon spacing, maybe via appearance
         let limits_copy = limits;
 
         let limits = limits.pad(padding);
         let icon_spacing = 8.0;
-        let (start_icon_width, mut start_icon) = if let Some(icon) = start_icon.as_ref() {
+        let (leading_icon_width, mut leading_icon) = if let Some(icon) = leading_icon.as_ref() {
             let icon_node = icon.layout(
                 renderer,
                 &Limits::NONE
@@ -823,7 +824,7 @@ pub fn layout<Message>(
             (0.0, None)
         };
 
-        let (end_icon_width, mut end_icon) = if let Some(icon) = end_icon.as_ref() {
+        let (trailing_icon_width, mut trailing_icon) = if let Some(icon) = trailing_icon.as_ref() {
             let icon_node = icon.layout(
                 renderer,
                 &Limits::NONE
@@ -839,11 +840,12 @@ pub fn layout<Message>(
 
         let text_bounds = text_limits.resolve(Size::ZERO);
 
-        let mut text_node =
-            layout::Node::new(text_bounds - Size::new(start_icon_width + end_icon_width, 0.0));
+        let mut text_node = layout::Node::new(
+            text_bounds - Size::new(leading_icon_width + trailing_icon_width, 0.0),
+        );
 
         text_node.move_to(Point::new(
-            padding.left + start_icon_width,
+            padding.left + leading_icon_width,
             padding.top + ((text_input_height - text_size * 1.2) / 2.0).max(0.0),
         ));
         let mut node_list: Vec<_> = Vec::with_capacity(3);
@@ -851,23 +853,23 @@ pub fn layout<Message>(
         let text_node_bounds = text_node.bounds();
         node_list.push(text_node);
 
-        if let Some(mut start_icon) = start_icon.take() {
-            start_icon.move_to(Point::new(
+        if let Some(mut leading_icon) = leading_icon.take() {
+            leading_icon.move_to(Point::new(
                 padding.left,
-                padding.top + ((text_size * 1.2 - start_icon.bounds().height) / 2.0).max(0.0),
+                padding.top + ((text_size * 1.2 - leading_icon.bounds().height) / 2.0).max(0.0),
             ));
-            node_list.push(start_icon);
+            node_list.push(leading_icon);
         }
-        if let Some(mut end_icon) = end_icon.take() {
-            end_icon.move_to(Point::new(
+        if let Some(mut trailing_icon) = trailing_icon.take() {
+            trailing_icon.move_to(Point::new(
                 text_node_bounds.x + text_node_bounds.width + f32::from(spacing),
-                padding.top + ((text_size * 1.2 - end_icon.bounds().height) / 2.0).max(0.0),
+                padding.top + ((text_size * 1.2 - trailing_icon.bounds().height) / 2.0).max(0.0),
             ));
-            node_list.push(end_icon);
+            node_list.push(trailing_icon);
         }
 
         let text_input_size = Size::new(
-            text_node_bounds.x + text_node_bounds.width + end_icon_width,
+            text_node_bounds.x + text_node_bounds.width + trailing_icon_width,
             text_input_height,
         )
         .pad(padding);
@@ -987,6 +989,7 @@ where
 
             let font: <Renderer as text::Renderer>::Font =
                 font.unwrap_or_else(|| renderer.default_font());
+
             if is_clicked {
                 let Some(pos) = cursor_position.position() else {
                     return event::Status::Ignored;
@@ -1737,7 +1740,7 @@ pub fn draw<'a, Message>(
     is_disabled: bool,
     is_secure: bool,
     icon: Option<&Element<'a, Message, crate::Renderer>>,
-    end_element: Option<&Element<'a, Message, crate::Renderer>>,
+    trailing_icon: Option<&Element<'a, Message, crate::Renderer>>,
     style: &<crate::Theme as StyleSheet>::Style,
     dnd_icon: bool,
     line_height: text::LineHeight,
@@ -1848,9 +1851,9 @@ pub fn draw<'a, Message>(
         });
     }
     let mut child_index = 0;
-    let start_icon_tree = children.get(child_index);
+    let leading_icon_tree = children.get(child_index);
     // draw the start icon in the text input
-    if let (Some(icon), Some(tree)) = (icon, start_icon_tree) {
+    if let (Some(icon), Some(tree)) = (icon, leading_icon_tree) {
         let icon_layout = children_layout.next().unwrap();
 
         icon.as_widget().draw(
@@ -1858,7 +1861,7 @@ pub fn draw<'a, Message>(
             renderer,
             theme,
             &renderer::Style {
-                icon_color: renderer_style.icon_color,
+                icon_color: appearance.icon_color,
                 text_color: appearance.text_color,
                 scale_factor: renderer_style.scale_factor,
             },
@@ -1977,12 +1980,6 @@ pub fn draw<'a, Message>(
         text::Shaping::Advanced,
     );
 
-    let color = if text.is_empty() {
-        theme.placeholder_color(style)
-    } else {
-        appearance.text_color
-    };
-
     let render = |renderer: &mut crate::Renderer| {
         if let Some((cursor, color)) = cursor {
             renderer.fill_quad(cursor, color);
@@ -1992,7 +1989,11 @@ pub fn draw<'a, Message>(
 
         renderer.fill_text(Text {
             content: if text.is_empty() { placeholder } else { &text },
-            color,
+            color: if text.is_empty() {
+                appearance.placeholder_color
+            } else {
+                appearance.text_color
+            },
             font,
             bounds: Rectangle {
                 y: text_bounds.center_y(),
@@ -2015,10 +2016,10 @@ pub fn draw<'a, Message>(
         render(renderer);
     }
 
-    let end_icon_tree = children.get(child_index);
+    let trailing_icon_tree = children.get(child_index);
 
     // draw the end icon in the text input
-    if let (Some(icon), Some(tree)) = (end_element, end_icon_tree) {
+    if let (Some(icon), Some(tree)) = (trailing_icon, trailing_icon_tree) {
         let icon_layout = children_layout.next().unwrap();
 
         icon.as_widget().draw(
@@ -2042,7 +2043,7 @@ pub fn draw<'a, Message>(
             content: helper_text,
             size: helper_text_size,
             font,
-            color,
+            color: appearance.text_color,
             bounds: helper_text_layout.bounds(),
             horizontal_alignment: alignment::Horizontal::Left,
             vertical_alignment: alignment::Vertical::Top,

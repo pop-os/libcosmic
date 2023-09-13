@@ -3,18 +3,19 @@
 
 //! Lazily-generated SVG icon widget for Iced.
 
-mod builder;
-pub use builder::Builder;
+mod named;
+use std::ffi::OsStr;
+use std::sync::Arc;
 
-pub mod handle;
-pub use handle::Handle;
+pub use named::Named;
+
+mod handle;
+pub use handle::{from_path, from_raster_bytes, from_raster_pixels, from_svg_bytes, Data, Handle};
 
 use crate::{Element, Renderer};
 use derive_setters::Setters;
 use iced::widget::{Image, Svg};
 use iced::{ContentFit, Length};
-use std::borrow::Cow;
-use std::path::PathBuf;
 
 /// Create an [`Icon`] from a pre-existing [`Handle`]
 pub fn icon(handle: Handle) -> Icon {
@@ -28,38 +29,9 @@ pub fn icon(handle: Handle) -> Icon {
     }
 }
 
-/// Create an [`Icon`] from its path.
-pub fn from_path(path: PathBuf) -> Icon {
-    icon(handle::from_path(path))
-}
-
-/// Create an image [`Icon`] from memory.
-pub fn from_raster_bytes(
-    bytes: impl Into<Cow<'static, [u8]>>
-        + std::convert::AsRef<[u8]>
-        + std::marker::Send
-        + std::marker::Sync
-        + 'static,
-) -> Icon {
-    icon(handle::from_raster_bytes(bytes))
-}
-
-/// Create an image [`Icon`] from RGBA data, where you must define the width and height.
-pub fn from_raster_pixels(
-    width: u32,
-    height: u32,
-    pixels: impl Into<Cow<'static, [u8]>>
-        + std::convert::AsRef<[u8]>
-        + std::marker::Send
-        + std::marker::Sync
-        + 'static,
-) -> Icon {
-    icon(handle::from_raster_pixels(width, height, pixels))
-}
-
-/// Create a SVG [`Icon`] from memory.
-pub fn from_svg_bytes(bytes: impl Into<Cow<'static, [u8]>>) -> Icon {
-    icon(handle::from_svg_bytes(bytes))
+/// Create an icon handle from its XDG icon name.
+pub fn from_name(name: impl Into<Arc<str>>) -> Named {
+    Named::new(name)
 }
 
 /// An image which may be an SVG or PNG.
@@ -80,19 +52,40 @@ pub struct Icon {
 impl Icon {
     #[must_use]
     fn into_element<Message: 'static>(self) -> Element<'static, Message> {
-        match self.handle.variant {
-            handle::Variant::Image(handle) => Image::new(handle)
+        let from_image = |handle| {
+            Image::new(handle)
                 .width(self.width.unwrap_or(Length::Fixed(f32::from(self.size))))
                 .height(self.height.unwrap_or(Length::Fixed(f32::from(self.size))))
                 .content_fit(self.content_fit)
-                .into(),
-            handle::Variant::Svg(handle) => Svg::<Renderer>::new(handle)
+                .into()
+        };
+
+        let from_svg = |handle| {
+            Svg::<Renderer>::new(handle)
                 .style(self.style.clone())
                 .width(self.width.unwrap_or(Length::Fixed(f32::from(self.size))))
                 .height(self.height.unwrap_or(Length::Fixed(f32::from(self.size))))
                 .content_fit(self.content_fit)
                 .symbolic(self.handle.symbolic)
-                .into(),
+                .into()
+        };
+
+        match self.handle.data {
+            Data::Name(named) => {
+                if let Some(path) = named.path() {
+                    if path.extension().is_some_and(|ext| ext == OsStr::new("svg")) {
+                        from_svg(iced_core::svg::Handle::from_path(path))
+                    } else {
+                        from_image(iced_core::image::Handle::from_path(path))
+                    }
+                } else {
+                    let bytes: &'static [u8] = &[];
+                    from_svg(iced_core::svg::Handle::from_memory(bytes))
+                }
+            }
+
+            Data::Image(handle) => from_image(handle),
+            Data::Svg(handle) => from_svg(handle),
         }
     }
 }
