@@ -72,6 +72,7 @@ impl cosmic::Application for App {
     /// Message type specific to our [`App`].
     type Message = Message;
 
+    /// The unique application ID to supply to the window manager.
     const APP_ID: &'static str = "org.cosmic.AppDemo";
 
     fn core(&self) -> &Core {
