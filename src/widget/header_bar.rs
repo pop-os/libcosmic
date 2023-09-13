@@ -136,7 +136,7 @@ impl<'a, Message: Clone + 'static> HeaderBar<'a, Message> {
 
         // Assigns a message to emit when the headerbar is dragged.
         if let Some(message) = self.on_drag.clone() {
-            widget = widget.on_press(message);
+            widget = widget.on_drag(message);
         }
 
         // Assigns a message to emit when the headerbar is double-clicked.
