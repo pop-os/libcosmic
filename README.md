@@ -32,6 +32,8 @@ git reset --hard origin/master
 git submodule update --init --recursive
 ```
 
+The examples may then be run by their cargo project names, such as `just run cosmic-design-demo`.
+
 To create a new COSMIC project, use `cargo new {{name_of_project}}` to create a new
 project workspace, edit the `Cargo.toml` contained within, and add this to begin.
 
