@@ -44,7 +44,7 @@ pub fn set_scaling_factor<M: Send + 'static>(factor: f32) -> iced::Command<Messa
 }
 
 pub fn set_theme<M: Send + 'static>(theme: crate::Theme) -> iced::Command<Message<M>> {
-    message::cosmic(super::cosmic::Message::ThemeChange(theme))
+    message::cosmic(super::cosmic::Message::AppThemeChange(theme))
 }
 
 pub fn set_title<M: Send + 'static>(title: String) -> iced::Command<Message<M>> {
