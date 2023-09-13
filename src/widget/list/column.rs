@@ -1,9 +1,7 @@
 // Copyright 2022 System76 <info@system76.com>
 // SPDX-License-Identifier: MPL-2.0
 
-use crate::{theme, widget::divider, Element};
-use apply::Apply;
-use iced::{Background, Color};
+use crate::{widget::divider, Apply, Element};
 
 #[must_use]
 pub fn list_column<'a, Message: 'static>() -> ListColumn<'a, Message> {
@@ -43,9 +41,7 @@ impl<'a, Message: 'static> ListColumn<'a, Message> {
     pub fn into_element(self) -> Element<'a, Message> {
         crate::widget::column::with_children(self.children)
             .spacing(12)
-            .apply(crate::widget::container)
-            .padding([16, 6])
-            .style(theme::Container::custom(style))
+            .apply(super::container)
             .into()
     }
 }
@@ -53,19 +49,5 @@ impl<'a, Message: 'static> ListColumn<'a, Message> {
 impl<'a, Message: 'static> From<ListColumn<'a, Message>> for Element<'a, Message> {
     fn from(column: ListColumn<'a, Message>) -> Self {
         column.into_element()
-    }
-}
-
-#[must_use]
-#[allow(clippy::trivially_copy_pass_by_ref)]
-pub fn style(theme: &crate::Theme) -> crate::widget::container::Appearance {
-    let container = &theme.current_container().component;
-    crate::widget::container::Appearance {
-        icon_color: Some(container.on.into()),
-        text_color: Some(container.on.into()),
-        background: Some(Background::Color(container.base.into())),
-        border_radius: 8.0.into(),
-        border_width: 0.0,
-        border_color: Color::TRANSPARENT,
     }
 }
