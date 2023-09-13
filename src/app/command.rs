@@ -39,6 +39,14 @@ pub fn minimize<M: Send + 'static>() -> iced::Command<Message<M>> {
     crate::command::minimize().map(Message::Cosmic)
 }
 
+pub fn set_scaling_factor<M: Send + 'static>(factor: f32) -> iced::Command<Message<M>> {
+    message::cosmic(super::cosmic::Message::ScaleFactor(factor))
+}
+
+pub fn set_theme<M: Send + 'static>(theme: crate::Theme) -> iced::Command<Message<M>> {
+    message::cosmic(super::cosmic::Message::ThemeChange(theme))
+}
+
 pub fn set_title<M: Send + 'static>(title: String) -> iced::Command<Message<M>> {
     crate::command::set_title(title).map(Message::Cosmic)
 }
