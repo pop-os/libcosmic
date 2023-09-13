@@ -24,22 +24,20 @@ pub use card::*;
 
 pub use column::{column, Column};
 pub mod column {
-    pub use iced::widget::Column;
+    pub type Column<'a, Message> = iced::widget::Column<'a, Message, crate::Renderer>;
 
     #[must_use]
-    pub fn column<'a, Message>() -> Column<'a, Message, crate::Renderer> {
+    pub fn column<'a, Message>() -> Column<'a, Message> {
         Column::new()
     }
 
     #[must_use]
-    pub fn with_capacity<'a, Message>(capacity: usize) -> Column<'a, Message, crate::Renderer> {
+    pub fn with_capacity<'a, Message>(capacity: usize) -> Column<'a, Message> {
         Column::with_children(Vec::with_capacity(capacity))
     }
 
     #[must_use]
-    pub fn with_children<Message>(
-        children: Vec<crate::Element<Message>>,
-    ) -> Column<Message, crate::Renderer> {
+    pub fn with_children<Message>(children: Vec<crate::Element<Message>>) -> Column<Message> {
         Column::with_children(children)
     }
 }
