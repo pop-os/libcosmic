@@ -1,8 +1,6 @@
 // Copyright 2023 System76 <info@system76.com>
 // SPDX-License-Identifier: MPL-2.0
 
-use crate::{theme, Theme};
-
 /// Status of the nav bar and its panels.
 #[derive(Clone)]
 pub struct NavBar {
@@ -41,7 +39,6 @@ pub struct Core {
     /// Scaling factor used by the application
     scale_factor: f32,
 
-    pub system_theme: Theme,
     pub(crate) title: String,
     pub window: Window,
     #[cfg(feature = "applet")]
@@ -59,7 +56,6 @@ impl Default for Core {
                 toggled_condensed: true,
             },
             scale_factor: 1.0,
-            system_theme: theme::theme(),
             title: String::new(),
             window: Window {
                 use_template: true,

@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: MPL-2.0
 
 use super::{command, Application, ApplicationExt, Core, Subscription};
-use crate::theme::{self, Theme, ThemeType, THEME};
+use crate::theme::{self, Theme, THEME};
 use crate::widget::nav_bar;
 use crate::{keyboard_nav, Element};
 #[cfg(feature = "wayland")]
@@ -36,8 +36,6 @@ pub enum Message {
     ScaleFactor(f32),
     /// Requests theme changes.
     ThemeChange(Theme),
-    /// Notification of system theme changes.
-    SystemThemeChange(Theme),
     /// Toggles visibility of the nav bar.
     ToggleNavBar,
     /// Toggles the condensed status of the nav bar.
@@ -151,7 +149,7 @@ where
                 .map(Message::KeyboardNav)
                 .map(super::Message::Cosmic),
             theme::subscription(0)
-                .map(Message::SystemThemeChange)
+                .map(Message::ThemeChange)
                 .map(super::Message::Cosmic),
             window_events.map(super::Message::Cosmic),
         ])
@@ -275,13 +273,6 @@ impl<T: Application> Cosmic<T> {
             }
 
             Message::ThemeChange(theme) => {
-                // our system theme is always receiving updates so we should use it instead
-                let theme = if matches!(theme.theme_type, ThemeType::System(_)) {
-                    self.app.core().system_theme.clone()
-                } else {
-                    theme
-                };
-
                 THEME.with(move |t| {
                     let mut cosmic_theme = t.borrow_mut();
                     cosmic_theme.set_theme(theme.theme_type);
@@ -290,16 +281,6 @@ impl<T: Application> Cosmic<T> {
 
             Message::ScaleFactor(factor) => {
                 self.app.core_mut().set_scale_factor(factor);
-            }
-            Message::SystemThemeChange(theme) => {
-                self.app.core_mut().system_theme = theme.clone();
-                THEME.with(move |t| {
-                    let mut cosmic_theme = t.borrow_mut();
-                    // only apply update if the theme is set to load a system theme
-                    if matches!(cosmic_theme.theme_type, ThemeType::System(_)) {
-                        cosmic_theme.set_theme(theme.theme_type);
-                    }
-                });
             }
         }
 
