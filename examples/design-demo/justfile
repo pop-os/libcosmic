@@ -1,5 +1,5 @@
-!include ../just/rust.just
-!include ../just/packaging.just
+!include ../../just/rust.just
+!include ../../just/packaging.just
 
 rootdir := ''
 prefix := '/usr'
