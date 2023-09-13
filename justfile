@@ -18,6 +18,14 @@ check-winit *args:
 # Runs a check with JSON message format for IDE integration
 check-json: (check '--message-format=json')
 
+# Remove Cargo build artifacts
+clean:
+    cargo clean
+
+# Also remove .cargo and vendored dependencies
+clean-dist: clean
+    rm -rf .cargo vendor vendor.tar target
+
 # Runs an example of the given {{name}}
-example name:
+run name:
     cargo run --release -p {{name}}
