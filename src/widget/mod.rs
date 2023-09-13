@@ -51,6 +51,12 @@ pub mod divider {
     pub mod horizontal {
         use iced::widget::{horizontal_rule, Rule};
 
+        /// Horizontal divider with default thickness
+        #[must_use]
+        pub fn default() -> Rule<crate::Renderer> {
+            horizontal_rule(1).style(crate::theme::Rule::Default)
+        }
+
         /// Horizontal divider with light thickness
         #[must_use]
         pub fn light() -> Rule<crate::Renderer> {
