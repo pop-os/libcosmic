@@ -162,6 +162,29 @@ pub use text_input::*;
 mod toggler;
 pub use toggler::toggler;
 
+pub use tooltip::{tooltip, Tooltip};
+pub mod tooltip {
+    use crate::Element;
+    use std::borrow::Cow;
+
+    pub use iced::widget::tooltip::Position;
+
+    pub type Tooltip<'a, Message> = iced::widget::Tooltip<'a, Message, crate::Renderer>;
+
+    pub fn tooltip<'a, Message>(
+        content: impl Into<Element<'a, Message>>,
+        tooltip: impl Into<Cow<'a, str>>,
+        position: Position,
+    ) -> Tooltip<'a, Message> {
+        let xxs = crate::theme::active().cosmic().space_xxs();
+
+        Tooltip::new(content, tooltip, position)
+            .style(crate::theme::Container::Tooltip)
+            .padding(xxs)
+            .gap(1)
+    }
+}
+
 pub mod view_switcher;
 pub use view_switcher::horizontal as horiontal_view_switcher;
 pub use view_switcher::vertical as vertical_view_switcher;
