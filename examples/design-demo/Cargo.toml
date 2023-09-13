@@ -15,6 +15,5 @@ features = ["debug", "winit", "tokio"]
 
 [dependencies.cosmic-time]
 git = "https://github.com/pop-os/cosmic-time"
-branch = "icon-color"
 default-features = false
 features = ["libcosmic", "once_cell"]
