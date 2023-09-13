@@ -55,7 +55,7 @@ pub mod keyboard_nav;
 pub use sctk;
 
 pub mod theme;
-pub use theme::Theme;
+pub use theme::{style, Theme};
 
 pub mod widget;
 
