@@ -83,3 +83,20 @@ impl<'a, Message: 'a> CollectionWidget<'a, Message> for crate::widget::Row<'a, M
         self.push(element)
     }
 }
+
+pub trait ColorExt {
+    /// Combines color with background to create appearance of transparency.
+    #[must_use]
+    fn blend_alpha(self, background: Self, alpha: f32) -> Self;
+}
+
+impl ColorExt for iced::Color {
+    fn blend_alpha(self, background: Self, alpha: f32) -> Self {
+        Color {
+            a: 1.0,
+            r: background.r + (self.r - background.r) * alpha,
+            g: background.g + (self.g - background.g) * alpha,
+            b: background.b + (self.b - background.b) * alpha,
+        }
+    }
+}
