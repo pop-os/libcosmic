@@ -156,7 +156,7 @@ where
     }
 
     fn theme(&self) -> Self::Theme {
-        THEME.with(|t| t.borrow().clone())
+        crate::theme::active()
     }
 
     #[cfg(feature = "wayland")]

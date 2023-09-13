@@ -1,5 +1,7 @@
-// Copyright 2023 System76 <info@system76.com>
+// Copyright 2022 System76 <info@system76.com>
 // SPDX-License-Identifier: MPL-2.0
+
+//! Contains stylesheet implementation for [`crate::widget::segmented_button`].
 
 use crate::widget::segmented_button::{Appearance, ItemAppearance, StyleSheet};
 use crate::{theme::Theme, widget::segmented_button::ItemStatusAppearance};
