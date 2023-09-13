@@ -1,0 +1,10 @@
+[Desktop Entry]
+Name=COSMIC Design System Demo
+Type=Application
+Exec=cosmic-design-demo
+Terminal=true
+Categories=COSMIC;
+Keywords=COSMIC;Design;Demo;
+Icon=preferences-pop-desktop-appearance
+StartupNotify=true
+NoDisplay=false
