@@ -13,6 +13,8 @@ pub struct NavBar {
 #[allow(clippy::struct_excessive_bools)]
 #[derive(Clone)]
 pub struct Window {
+    /// Label to as title in headerbar.
+    pub header_title: String,
     pub use_template: bool,
     pub can_fullscreen: bool,
     pub sharp_corners: bool,
@@ -58,6 +60,7 @@ impl Default for Core {
             scale_factor: 1.0,
             title: String::new(),
             window: Window {
+                header_title: String::new(),
                 use_template: true,
                 can_fullscreen: false,
                 sharp_corners: false,
