@@ -8,11 +8,11 @@ pub use self::item::{item, item_row};
 pub use self::section::{view_section, Section};
 
 use crate::widget::{column, Column};
-use crate::{Element, Renderer};
+use crate::Element;
 
 /// A column with a predefined style for creating a settings panel
 #[must_use]
-pub fn view_column<Message: 'static>(children: Vec<Element<Message>>) -> Column<Message, Renderer> {
+pub fn view_column<Message: 'static>(children: Vec<Element<Message>>) -> Column<Message> {
     column::with_children(children)
         .spacing(24)
         .padding([0, 24])
