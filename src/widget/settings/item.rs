@@ -5,7 +5,7 @@ use std::borrow::Cow;
 
 use crate::{
     widget::{column, horizontal_space, row, text, Row},
-    Element, Renderer,
+    Element,
 };
 use derive_setters::Setters;
 
@@ -15,7 +15,7 @@ use derive_setters::Setters;
 pub fn item<'a, Message: 'static>(
     title: impl Into<Cow<'a, str>> + 'a,
     widget: impl Into<Element<'a, Message>> + 'a,
-) -> Row<'a, Message, Renderer> {
+) -> Row<'a, Message> {
     item_row(vec![
         text(title).into(),
         horizontal_space(iced::Length::Fill).into(),
@@ -26,7 +26,7 @@ pub fn item<'a, Message: 'static>(
 /// A settings item aligned in a row
 #[must_use]
 #[allow(clippy::module_name_repetitions)]
-pub fn item_row<Message>(children: Vec<Element<Message>>) -> Row<Message, Renderer> {
+pub fn item_row<Message>(children: Vec<Element<Message>>) -> Row<Message> {
     row::with_children(children)
         .align_items(iced::Alignment::Center)
         .padding([0, 18])
@@ -59,7 +59,7 @@ pub struct Item<'a, Message> {
 
 impl<'a, Message: 'static> Item<'a, Message> {
     /// Assigns a control to the item.
-    pub fn control(self, widget: impl Into<Element<'a, Message>>) -> Row<'a, Message, Renderer> {
+    pub fn control(self, widget: impl Into<Element<'a, Message>>) -> Row<'a, Message> {
         let mut contents = Vec::with_capacity(4);
 
         if let Some(icon) = self.icon {
@@ -87,7 +87,7 @@ impl<'a, Message: 'static> Item<'a, Message> {
         self,
         is_checked: bool,
         message: impl Fn(bool) -> Message + 'static,
-    ) -> Row<'a, Message, Renderer> {
+    ) -> Row<'a, Message> {
         self.control(crate::widget::toggler(None, is_checked, message))
     }
 }
