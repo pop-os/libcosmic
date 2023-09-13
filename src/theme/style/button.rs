@@ -9,8 +9,14 @@ use palette::{rgb::Rgb, Alpha};
 
 use crate::widget::button::{Appearance, StyleSheet};
 
-#[derive(Copy, Clone, Debug, Default)]
+#[derive(Default)]
 pub enum Button {
+    Custom {
+        active: Box<dyn Fn(bool, &crate::Theme) -> Appearance>,
+        disabled: Box<dyn Fn(&crate::Theme) -> Appearance>,
+        hovered: Box<dyn Fn(bool, &crate::Theme) -> Appearance>,
+        pressed: Box<dyn Fn(bool, &crate::Theme) -> Appearance>,
+    },
     Destructive,
     Link,
     Icon,
@@ -69,6 +75,8 @@ pub fn appearance(
             appearance.text_color = cosmic.accent.base.into();
             corner_radii = &cosmic.corner_radii.radius_0;
         }
+
+        Button::Custom { .. } => (),
     }
 
     appearance.border_radius = (*corner_radii).into();
@@ -87,6 +95,10 @@ impl StyleSheet for crate::Theme {
     type Style = Button;
 
     fn active(&self, focused: bool, style: &Self::Style) -> Appearance {
+        if let Button::Custom { active, .. } = style {
+            return active(focused, self);
+        }
+
         appearance(self, focused, style, |component| {
             (
                 component.base.into(),
@@ -97,6 +109,10 @@ impl StyleSheet for crate::Theme {
     }
 
     fn disabled(&self, style: &Self::Style) -> Appearance {
+        if let Button::Custom { disabled, .. } = style {
+            return disabled(self);
+        }
+
         appearance(self, false, style, |component| {
             let mut background = Color::from(component.base);
             background.a *= 0.5;
@@ -113,6 +129,10 @@ impl StyleSheet for crate::Theme {
     }
 
     fn hovered(&self, focused: bool, style: &Self::Style) -> Appearance {
+        if let Button::Custom { hovered, .. } = style {
+            return hovered(focused, self);
+        }
+
         appearance(self, focused, style, |component| {
             (
                 component.hover.into(),
@@ -123,6 +143,10 @@ impl StyleSheet for crate::Theme {
     }
 
     fn pressed(&self, focused: bool, style: &Self::Style) -> Appearance {
+        if let Button::Custom { pressed, .. } = style {
+            return pressed(focused, self);
+        }
+
         appearance(self, focused, style, |component| {
             (
                 component.pressed.into(),
