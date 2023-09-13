@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: MPL-2.0
 
 use super::{command, Application, ApplicationExt, Core, Subscription};
-use crate::theme::{self, Theme, THEME};
+use crate::theme::{self, Theme, ThemeType, THEME};
 use crate::widget::nav_bar;
 use crate::{keyboard_nav, Element};
 #[cfg(feature = "wayland")]
@@ -20,6 +20,8 @@ use sctk::reexports::csd_frame::{WindowManagerCapabilities, WindowState};
 /// A message managed internally by COSMIC.
 #[derive(Clone, Debug)]
 pub enum Message {
+    /// Application requests theme change.
+    AppThemeChange(Theme),
     /// Requests to close the window.
     Close,
     /// Requests to drag the window.
@@ -34,12 +36,12 @@ pub enum Message {
     NavBar(nav_bar::Id),
     /// Set scaling factor
     ScaleFactor(f32),
-    /// Requests theme changes.
-    ThemeChange(Theme),
     /// Toggles visibility of the nav bar.
     ToggleNavBar,
     /// Toggles the condensed status of the nav bar.
     ToggleNavBarCondensed,
+    /// Notification of system theme changes.
+    SystemThemeChange(Theme),
     /// Updates the tracked window geometry.
     WindowResize(window::Id, u32, u32),
     /// Tracks updates to window state.
@@ -149,7 +151,7 @@ where
                 .map(Message::KeyboardNav)
                 .map(super::Message::Cosmic),
             theme::subscription(0)
-                .map(Message::ThemeChange)
+                .map(Message::SystemThemeChange)
                 .map(super::Message::Cosmic),
             window_events.map(super::Message::Cosmic),
         ])
@@ -272,10 +274,29 @@ impl<T: Application> Cosmic<T> {
                 self.app.core_mut().nav_bar_toggle_condensed();
             }
 
-            Message::ThemeChange(theme) => {
+            Message::AppThemeChange(mut theme) => {
+                // Apply last-known system theme if the system theme is preferred.
+                if let ThemeType::System(_) = theme.theme_type {
+                    theme = self.app.core().system_theme.clone();
+                }
+
                 THEME.with(move |t| {
                     let mut cosmic_theme = t.borrow_mut();
                     cosmic_theme.set_theme(theme.theme_type);
+                });
+            }
+
+            Message::SystemThemeChange(theme) => {
+                // Record the last-known system theme in event that the current theme is custom.
+                self.app.core_mut().system_theme = theme.clone();
+
+                THEME.with(move |t| {
+                    let mut cosmic_theme = t.borrow_mut();
+
+                    // Anly apply update if the theme is set to load a system theme
+                    if let ThemeType::System(_) = cosmic_theme.theme_type {
+                        cosmic_theme.set_theme(theme.theme_type);
+                    }
                 });
             }
 
