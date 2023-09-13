@@ -124,6 +124,11 @@ impl<'a, Message> Button<'a, Message> {
         self
     }
 
+    pub fn inherit_colors(mut self) -> Self {
+        self.style = Style::IconInheritColors;
+        self
+    }
+
     pub fn vertical(mut self, vertical: bool) -> Self {
         self.variant.vertical = vertical;
         self.style = Style::IconVertical;
@@ -162,6 +167,8 @@ impl<'a, Message: Clone + 'static> From<Button<'a, Message>> for Element<'a, Mes
         let button = if builder.variant.vertical {
             crate::widget::column::with_children(content)
                 .padding(builder.padding)
+                // .width(builder.width)
+                // .height(builder.height)
                 .spacing(builder.spacing)
                 .align_items(Alignment::Center)
                 .apply(button)

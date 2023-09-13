@@ -20,6 +20,7 @@ pub enum Button {
     Destructive,
     Link,
     Icon,
+    IconInheritColors,
     IconVertical,
     #[default]
     Standard,
@@ -53,14 +54,16 @@ pub fn appearance(
             appearance.icon_color = icon;
         }
 
-        Button::Icon | Button::IconVertical => {
+        Button::Icon | Button::IconInheritColors | Button::IconVertical => {
             if let Button::IconVertical = style {
                 corner_radii = &cosmic.corner_radii.radius_m;
             }
 
             let (background, text, icon) = color(&cosmic.icon_button);
             appearance.background = Some(Background::Color(background));
-            if focused {
+
+            if let Button::IconInheritColors = style {
+            } else if focused {
                 appearance.text_color = cosmic.accent.on.into();
                 appearance.icon_color = Some(cosmic.accent.on.into());
             } else {

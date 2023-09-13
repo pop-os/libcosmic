@@ -167,8 +167,8 @@ impl<'a, Message: Clone + 'static> HeaderBar<'a, Message> {
         let icon = |name, size, on_press| {
             widget::icon::from_name(name)
                 .size(size)
-                .handle()
                 .apply(widget::button::icon)
+                .inherit_colors()
                 .on_press(on_press)
         };
 
