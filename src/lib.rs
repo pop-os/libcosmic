@@ -61,5 +61,3 @@ pub mod widget;
 
 pub type Renderer = iced::Renderer<Theme>;
 pub type Element<'a, Message> = iced::Element<'a, Message, Renderer>;
-
-
