@@ -88,7 +88,7 @@ jobs:
       matrix:
         examples:
           - "cosmic"
-          - "cosmic_sctk"
+          - "design-demo"
     runs-on: ubuntu-22.04
     steps:
       - name: Checkout sources
