@@ -69,6 +69,29 @@ pub mod divider {
             horizontal_rule(10).style(crate::theme::Rule::HeavyDivider)
         }
     }
+
+    /// Vertical variant of a divider.
+    pub mod vertical {
+        use iced::widget::{vertical_rule, Rule};
+
+        /// Vertical divider with default thickness
+        #[must_use]
+        pub fn default() -> Rule<crate::Renderer> {
+            vertical_rule(1).style(crate::theme::Rule::Default)
+        }
+
+        /// Vertical divider with light thickness
+        #[must_use]
+        pub fn light() -> Rule<crate::Renderer> {
+            vertical_rule(4).style(crate::theme::Rule::LightDivider)
+        }
+
+        /// Vertical divider with heavy thickness.
+        #[must_use]
+        pub fn heavy() -> Rule<crate::Renderer> {
+            vertical_rule(10).style(crate::theme::Rule::HeavyDivider)
+        }
+    }
 }
 
 pub mod flex_row;
