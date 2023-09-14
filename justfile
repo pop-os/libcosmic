@@ -1,4 +1,4 @@
-examples := 'application cosmic design open_dialog'
+examples := 'application cosmic cosmic-design-demo open-dialog'
 
 # Check for errors and linter warnings
 check *args: (check-wayland args) (check-winit args) (check-examples args)
