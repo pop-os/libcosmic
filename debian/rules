@@ -8,6 +8,8 @@ export VENDOR ?= 1
 
 override_dh_auto_clean:
 	if ! ischroot && test "${VENDOR}" = "1"; then \
+		git submodule deinit -f .; \
+		git submodule update --init --recursive; \
 		rm -rf .cargo vendor vendor.tar; \
 		mkdir -p .cargo; \
 		cargo vendor --sync examples/design-demo/Cargo.toml | head -n -1 > .cargo/config; \
