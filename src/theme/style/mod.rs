@@ -7,13 +7,13 @@ mod button;
 pub use self::button::Button;
 
 pub mod iced;
-pub use iced::Application;
-pub use iced::Checkbox;
-pub use iced::Container;
-pub use iced::ProgressBar;
-pub use iced::Rule;
-pub use iced::Svg;
-pub use iced::Text;
+pub use self::iced::Application;
+pub use self::iced::Checkbox;
+pub use self::iced::Container;
+pub use self::iced::ProgressBar;
+pub use self::iced::Rule;
+pub use self::iced::Svg;
+pub use self::iced::Text;
 
 mod segmented_button;
 pub use self::segmented_button::SegmentedButton;
