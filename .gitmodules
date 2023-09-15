@@ -2,3 +2,6 @@
 	path = iced
 	url = https://github.com/pop-os/iced.git
 	branch = master
+[submodule "examples/design-demo"]
+	path = examples/design-demo
+	url = https://github.com/pop-os/cosmic-design-demo

@@ -117,6 +117,7 @@ members = [
   "examples/*",
 ]
 exclude = [
+  "examples/design-demo",
   "iced",
 ]
 
