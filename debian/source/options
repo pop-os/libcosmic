@@ -1,5 +1,0 @@
-tar-ignore=.github
-tar-ignore=.vscode
-tar-ignore=result
-tar-ignore=target
-tar-ignore=vendor
