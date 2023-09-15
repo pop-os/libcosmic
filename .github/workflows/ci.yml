@@ -87,8 +87,8 @@ jobs:
       fail-fast: false
       matrix:
         examples:
-          - "cosmic"
-          - "cosmic-design-demo"
+          - "application"
+          - "open-dialog"
     runs-on: ubuntu-22.04
     steps:
       - name: Checkout sources
