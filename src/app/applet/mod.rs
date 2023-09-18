@@ -1,9 +1,6 @@
-use std::sync::Arc;
-
+use crate::widget::button::StyleSheet;
 use crate::{
     app::Core,
-    cosmic_config::CosmicConfigEntry,
-    cosmic_theme::util::CssColor,
     iced::{
         self,
         alignment::{Horizontal, Vertical},
@@ -12,16 +9,15 @@ use crate::{
     },
     iced_style, iced_widget, sctk,
     theme::{self, Button, THEME},
-    Application, Element, Renderer,
+    widget, Application, Element, Renderer,
 };
 pub use cosmic_panel_config;
 use cosmic_panel_config::{CosmicPanelBackground, PanelAnchor, PanelSize};
-use iced_style::{button::StyleSheet, container::Appearance};
+use iced_style::container::Appearance;
 use iced_widget::runtime::command::platform_specific::wayland::popup::{
     SctkPopupSettings, SctkPositioner,
 };
 use sctk::reexports::protocols::xdg::shell::client::xdg_positioner::{Anchor, Gravity};
-use tracing::error;
 
 use super::cosmic;
 
@@ -30,13 +26,21 @@ const APPLET_PADDING: u32 = 8;
 #[must_use]
 pub fn applet_button_theme() -> Button {
     Button::Custom {
-        active: Box::new(|t| iced_style::button::Appearance {
+        active: Box::new(|active, t| widget::button::Appearance {
             border_radius: 0.0.into(),
-            ..t.active(&Button::Text)
+            ..t.active(active, &Button::Text)
         }),
-        hover: Box::new(|t| iced_style::button::Appearance {
+        hovered: Box::new(|hovered, t| widget::button::Appearance {
             border_radius: 0.0.into(),
-            ..t.hovered(&Button::Text)
+            ..t.hovered(hovered, &Button::Text)
+        }),
+        pressed: Box::new(|pressed, t| widget::button::Appearance {
+            border_radius: 0.0.into(),
+            ..t.pressed(pressed, &Button::Text)
+        }),
+        disabled: Box::new(|t| widget::button::Appearance {
+            border_radius: 0.0.into(),
+            ..t.disabled(&Button::Text)
         }),
     }
 }
@@ -128,9 +132,12 @@ impl CosmicAppletHelper {
         &self,
         icon_name: &'a str,
     ) -> crate::widget::Button<'a, Message, Renderer> {
-        crate::widget::button(theme::Button::Text)
-            .icon(theme::Svg::Symbolic, icon_name, self.suggested_size().0)
-            .padding(8)
+        crate::widget::button(
+            widget::icon::from_name(icon_name)
+                .prefer_svg(true)
+                .size(self.suggested_size().0),
+        )
+        .padding(8)
     }
 
     // TODO popup container which tracks the size of itself and requests the popup to resize to match
@@ -152,6 +159,7 @@ impl CosmicAppletHelper {
                 border_radius: 12.0.into(),
                 border_width: 0.0,
                 border_color: Color::TRANSPARENT,
+                icon_color: Some(theme.cosmic().background.on.into()),
             }),
         ))
         .width(Length::Shrink)
@@ -278,6 +286,7 @@ pub fn style() -> <crate::Theme as iced_style::application::StyleSheet>::Style {
         iced_style::application::Appearance {
             background_color: Color::from_rgba(0.0, 0.0, 0.0, 0.0),
             text_color: theme.cosmic().on_bg_color().into(),
+            icon_color: theme.cosmic().on_bg_color().into(),
         }
     }))
 }
