@@ -306,7 +306,7 @@ where
             theme,
             &renderer::Style {
                 icon_color: styling.icon_color.unwrap_or(renderer_style.icon_color),
-                text_color: styling.text_color,
+                text_color: styling.text_color.unwrap_or(renderer_style.icon_color),
                 scale_factor: renderer_style.scale_factor,
             },
             content_layout,

@@ -168,7 +168,6 @@ impl<'a, Message: Clone + 'static> HeaderBar<'a, Message> {
             widget::icon::from_name(name)
                 .size(size)
                 .apply(widget::button::icon)
-                .inherit_colors()
                 .on_press(on_press)
         };
 

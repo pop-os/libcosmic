@@ -20,7 +20,6 @@ pub enum Button {
     Destructive,
     Link,
     Icon,
-    IconInheritColors,
     IconVertical,
     #[default]
     Standard,
@@ -32,7 +31,7 @@ pub fn appearance(
     theme: &crate::Theme,
     focused: bool,
     style: &Button,
-    color: impl Fn(&Component<Alpha<Rgb, f32>>) -> (Color, Color, Option<Color>),
+    color: impl Fn(&Component<Alpha<Rgb, f32>>) -> (Color, Option<Color>, Option<Color>),
 ) -> Appearance {
     let cosmic = theme.cosmic();
     let mut corner_radii = &cosmic.corner_radii.radius_xl;
@@ -54,28 +53,26 @@ pub fn appearance(
             appearance.icon_color = icon;
         }
 
-        Button::Icon | Button::IconInheritColors | Button::IconVertical => {
+        Button::Icon | Button::IconVertical => {
             if let Button::IconVertical = style {
                 corner_radii = &cosmic.corner_radii.radius_m;
             }
 
-            let (background, text, icon) = color(&cosmic.icon_button);
+            let (background, _text, icon) = color(&cosmic.icon_button);
             appearance.background = Some(Background::Color(background));
+            // appearance.text_color = text;
+            // appearance.icon_color = icon;
 
-            if let Button::IconInheritColors = style {
-            } else if focused {
-                appearance.text_color = cosmic.accent.on.into();
+            if focused {
+                appearance.text_color = Some(cosmic.accent.on.into());
                 appearance.icon_color = Some(cosmic.accent.on.into());
-            } else {
-                appearance.text_color = text;
-                appearance.icon_color = icon;
             }
         }
 
         Button::Link => {
             appearance.background = None;
             appearance.icon_color = Some(cosmic.accent.base.into());
-            appearance.text_color = cosmic.accent.base.into();
+            appearance.text_color = Some(cosmic.accent.base.into());
             corner_radii = &cosmic.corner_radii.radius_0;
         }
 
@@ -105,7 +102,7 @@ impl StyleSheet for crate::Theme {
         appearance(self, focused, style, |component| {
             (
                 component.base.into(),
-                component.on.into(),
+                Some(component.on.into()),
                 Some(component.on.into()),
             )
         })
@@ -121,7 +118,7 @@ impl StyleSheet for crate::Theme {
             background.a *= 0.5;
             (
                 background,
-                component.on_disabled.into(),
+                Some(component.on_disabled.into()),
                 Some(component.on_disabled.into()),
             )
         })
@@ -139,7 +136,7 @@ impl StyleSheet for crate::Theme {
         appearance(self, focused, style, |component| {
             (
                 component.hover.into(),
-                component.on.into(),
+                Some(component.on.into()),
                 Some(component.on.into()),
             )
         })
@@ -153,7 +150,7 @@ impl StyleSheet for crate::Theme {
         appearance(self, focused, style, |component| {
             (
                 component.pressed.into(),
-                component.on.into(),
+                Some(component.on.into()),
                 Some(component.on.into()),
             )
         })

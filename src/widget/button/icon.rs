@@ -124,11 +124,6 @@ impl<'a, Message> Button<'a, Message> {
         self
     }
 
-    pub fn inherit_colors(mut self) -> Self {
-        self.style = Style::IconInheritColors;
-        self
-    }
-
     pub fn vertical(mut self, vertical: bool) -> Self {
         self.variant.vertical = vertical;
         self.style = Style::IconVertical;

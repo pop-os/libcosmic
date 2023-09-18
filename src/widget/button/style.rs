@@ -23,9 +23,6 @@ pub struct Appearance {
     /// The border [`Color`] of the button.
     pub border_color: Color,
 
-    /// Opacity of the button.
-    pub opacity: f32,
-
     /// An outline placed around the border.
     pub outline_width: f32,
 
@@ -36,7 +33,7 @@ pub struct Appearance {
     pub icon_color: Option<Color>,
 
     /// The text [`Color`] of the button.
-    pub text_color: Color,
+    pub text_color: Option<Color>,
 }
 
 impl Appearance {
@@ -48,11 +45,10 @@ impl Appearance {
             border_radius: BorderRadius::from(0.0),
             border_width: 0.0,
             border_color: Color::TRANSPARENT,
-            opacity: 1.0,
             outline_width: 0.0,
             outline_color: Color::TRANSPARENT,
             icon_color: None,
-            text_color: Color::BLACK,
+            text_color: None,
         }
     }
 }
