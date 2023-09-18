@@ -792,7 +792,7 @@ impl ThemeBuilder {
                 ),
             ),
             button: Component::component(
-                bg,
+                button_bg,
                 accent,
                 on_bg_component,
                 button_hovered_overlay,
