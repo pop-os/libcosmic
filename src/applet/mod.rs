@@ -28,7 +28,7 @@ pub fn button_theme() -> Button {
     Button::Custom {
         active: Box::new(|active, t| widget::button::Appearance {
             border_radius: 0.0.into(),
-            ..t.active(active, &Button::Text)
+            ..t.active(active, &Button::Standard)
         }),
         hovered: Box::new(|hovered, t| widget::button::Appearance {
             border_radius: 0.0.into(),
@@ -40,7 +40,7 @@ pub fn button_theme() -> Button {
         }),
         disabled: Box::new(|t| widget::button::Appearance {
             border_radius: 0.0.into(),
-            ..t.disabled(&Button::Text)
+            ..t.disabled(&Button::Standard)
         }),
     }
 }
@@ -134,7 +134,7 @@ impl Context {
     ) -> crate::widget::Button<'a, Message, Renderer> {
         crate::widget::button(
             widget::icon::from_name(icon_name)
-                .prefer_svg(true)
+                .symbolic(true)
                 .size(self.suggested_size().0),
         )
         .padding(8)
