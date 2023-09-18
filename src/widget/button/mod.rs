@@ -4,6 +4,7 @@
 pub use crate::theme::Button as Style;
 
 pub mod link;
+use derive_setters::Setters;
 pub use link::link;
 pub use link::Button as LinkButton;
 
@@ -34,79 +35,61 @@ pub fn button<'a, Message>(
 }
 
 #[must_use]
+#[derive(Setters)]
 pub struct Builder<'a, Message, Variant> {
+    /// Sets the [`Id`] of the button.
     id: Id,
+
+    /// The label to display within the button.
+    #[setters(into)]
     label: Cow<'a, str>,
+
+    // Adds a tooltip to the button.
+    #[setters(into)]
     tooltip: Cow<'a, str>,
+
+    /// Sets the message that will be produced when the button is pressed.
+    ///
+    /// If `None`, the button will be disabled.
+    #[setters(strip_option)]
     on_press: Option<Message>,
+
+    /// Sets the preferred width of the button.
     width: Length,
+
+    /// Sets the preferred height of the button.
     height: Length,
+
+    /// Sets the preferred padding of the button.
+    #[setters(into)]
     padding: Padding,
+
+    /// Sets the preferred spacing between elements in the button.
     spacing: u16,
+
+    /// Sets the preferred size of icons.
     icon_size: u16,
+
+    /// Sets the prefered font line height.
     line_height: u16,
+
+    /// Sets the preferred font size.
     font_size: u16,
+
+    /// Sets the preferred font weight.
     font_weight: Weight,
+
+    // The preferred style of the button.
     style: Style,
+
+    #[setters(skip)]
     variant: Variant,
 }
 
 impl<'a, Message, Variant> Builder<'a, Message, Variant> {
-    /// Sets the [`Id`] of the button.
-    pub fn id(mut self, id: Id) -> Self {
-        self.id = id;
-        self
-    }
-
-    pub fn label(mut self, label: impl Into<Cow<'a, str>>) -> Self {
-        self.label = label.into();
-        self
-    }
-
-    /// Sets the width of the button.
-    pub fn width(mut self, width: impl Into<Length>) -> Self {
-        self.width = width.into();
-        self
-    }
-
-    /// Sets the height of the button.
-    pub fn height(mut self, height: impl Into<Length>) -> Self {
-        self.height = height.into();
-        self
-    }
-
-    /// Sets the [`Padding`] of the button.
-    pub fn padding<P: Into<Padding>>(mut self, padding: P) -> Self {
-        self.padding = padding.into();
-        self
-    }
-
-    /// Sets the message that will be produced when the button is pressed.
-    ///
-    /// Unless `on_press` is called, the button will be disabled.
-    pub fn on_press(mut self, on_press: Message) -> Self {
-        self.on_press = Some(on_press);
-        self
-    }
-
-    /// Sets the message that will be produced when the button is pressed,
-    /// if `Some`.
-    ///
-    /// If `None`, the button will be disabled.
+    /// Set the value of [`on_press`] as either `Some` or `None`.
     pub fn on_press_maybe(mut self, on_press: Option<Message>) -> Self {
         self.on_press = on_press;
-        self
-    }
-
-    /// Overrides the preferred style of the button.
-    pub fn style(mut self, style: Style) -> Self {
-        self.style = style;
-        self
-    }
-
-    /// Adds a tooltip to the button.
-    pub fn tooltip(mut self, tooltip: impl Into<Cow<'a, str>>) -> Self {
-        self.tooltip = tooltip.into();
         self
     }
 }
