@@ -47,9 +47,11 @@ pub struct Core {
     pub(super) system_theme: Theme,
 
     pub(super) title: String,
+
     pub window: Window,
+
     #[cfg(feature = "applet")]
-    pub applet_helper: super::applet::CosmicAppletHelper,
+    pub applet: crate::applet::Context,
 }
 
 impl Default for Core {
@@ -78,7 +80,7 @@ impl Default for Core {
                 width: 0,
             },
             #[cfg(feature = "applet")]
-            applet_helper: super::applet::CosmicAppletHelper::default(),
+            applet: crate::applet::Context::default(),
         }
     }
 }

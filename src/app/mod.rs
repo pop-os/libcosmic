@@ -6,8 +6,6 @@
 //! Check out our [application](https://github.com/pop-os/libcosmic/tree/master/examples/application)
 //! example in our repository.
 
-#[cfg(feature = "applet")]
-pub mod applet;
 pub mod command;
 mod core;
 pub mod cosmic;

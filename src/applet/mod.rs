@@ -19,12 +19,12 @@ use iced_widget::runtime::command::platform_specific::wayland::popup::{
 };
 use sctk::reexports::protocols::xdg::shell::client::xdg_positioner::{Anchor, Gravity};
 
-use super::cosmic;
+use crate::app::cosmic;
 
 const APPLET_PADDING: u32 = 8;
 
 #[must_use]
-pub fn applet_button_theme() -> Button {
+pub fn button_theme() -> Button {
     Button::Custom {
         active: Box::new(|active, t| widget::button::Appearance {
             border_radius: 0.0.into(),
@@ -46,7 +46,7 @@ pub fn applet_button_theme() -> Button {
 }
 
 #[derive(Debug, Clone)]
-pub struct CosmicAppletHelper {
+pub struct Context {
     pub size: Size,
     pub anchor: PanelAnchor,
     pub background: CosmicPanelBackground,
@@ -60,7 +60,7 @@ pub enum Size {
     Hardcoded((u16, u16)),
 }
 
-impl Default for CosmicAppletHelper {
+impl Default for Context {
     fn default() -> Self {
         Self {
             size: Size::PanelSize(
@@ -82,7 +82,7 @@ impl Default for CosmicAppletHelper {
     }
 }
 
-impl CosmicAppletHelper {
+impl Context {
     #[must_use]
     pub fn suggested_size(&self) -> (u16, u16) {
         match &self.size {
@@ -104,11 +104,11 @@ impl CosmicAppletHelper {
 
     #[must_use]
     #[allow(clippy::cast_precision_loss)]
-    pub fn window_settings(&self) -> super::Settings {
+    pub fn window_settings(&self) -> crate::app::Settings {
         let (width, height) = self.suggested_size();
         let width = u32::from(width);
         let height = u32::from(height);
-        let mut settings = super::Settings::default()
+        let mut settings = crate::app::Settings::default()
             .size((width + APPLET_PADDING * 2, height + APPLET_PADDING * 2))
             .size_limits(
                 Limits::NONE
@@ -225,7 +225,7 @@ impl CosmicAppletHelper {
 ///
 /// Returns error on application failure.
 pub fn run<App: Application>(autosize: bool, flags: App::Flags) -> iced::Result {
-    let helper = CosmicAppletHelper::default();
+    let helper = Context::default();
     let mut settings = helper.window_settings();
     settings.autosize = autosize;
     if autosize {

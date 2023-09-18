@@ -65,7 +65,7 @@ impl cosmic::Application for Window {
                     self.popup.replace(new_id);
                     let mut popup_settings =
                         self.core
-                            .applet_helper
+                            .applet
                             .get_popup_settings(Id(0), new_id, None, None, None);
                     popup_settings.positioner.size_limits = Limits::NONE
                         .max_width(372.0)
@@ -87,7 +87,7 @@ impl cosmic::Application for Window {
 
     fn view(&self) -> Element<Self::Message> {
         self.core
-            .applet_helper
+            .applet
             .icon_button(ID)
             .on_press(Message::TogglePopup)
             .style(Button::Text)
@@ -102,10 +102,10 @@ impl cosmic::Application for Window {
             }),
         ));
 
-        self.core.applet_helper.popup_container(content_list).into()
+        self.core.applet.popup_container(content_list).into()
     }
 
     fn style(&self) -> Option<<Theme as application::StyleSheet>::Style> {
-        Some(cosmic::app::applet::style())
+        Some(cosmic::applet::style())
     }
 }

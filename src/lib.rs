@@ -20,6 +20,9 @@ pub use apply::{Also, Apply};
 pub mod app;
 pub use app::{Application, ApplicationExt};
 
+#[cfg(feature = "applet")]
+pub mod applet;
+
 pub use iced::Command;
 pub mod command;
 pub use cosmic_config;
