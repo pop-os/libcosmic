@@ -28,7 +28,7 @@ pub fn button_theme() -> Button {
     Button::Custom {
         active: Box::new(|active, t| widget::button::Appearance {
             border_radius: 0.0.into(),
-            ..t.active(active, &Button::Standard)
+            ..t.active(active, &Button::Text)
         }),
         hovered: Box::new(|hovered, t| widget::button::Appearance {
             border_radius: 0.0.into(),
@@ -40,7 +40,7 @@ pub fn button_theme() -> Button {
         }),
         disabled: Box::new(|t| widget::button::Appearance {
             border_radius: 0.0.into(),
-            ..t.disabled(&Button::Standard)
+            ..t.disabled(&Button::Text)
         }),
     }
 }
