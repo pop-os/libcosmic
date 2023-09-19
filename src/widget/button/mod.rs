@@ -55,9 +55,11 @@ pub struct Builder<'a, Message, Variant> {
     on_press: Option<Message>,
 
     /// Sets the preferred width of the button.
+    #[setters(into)]
     width: Length,
 
     /// Sets the preferred height of the button.
+    #[setters(into)]
     height: Length,
 
     /// Sets the preferred padding of the button.
