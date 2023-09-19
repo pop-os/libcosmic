@@ -5,11 +5,11 @@ use iced_core::Padding;
 
 use crate::{widget::divider, Apply, Element};
 
-#[must_use]
 pub fn list_column<'a, Message: 'static>() -> ListColumn<'a, Message> {
     ListColumn::default()
 }
 
+#[must_use]
 pub struct ListColumn<'a, Message> {
     spacing: u16,
     padding: Padding,
@@ -19,7 +19,7 @@ pub struct ListColumn<'a, Message> {
 impl<'a, Message: 'static> Default for ListColumn<'a, Message> {
     fn default() -> Self {
         Self {
-            spacing: Default::default(),
+            spacing: 12,
             padding: Padding::from(0),
             children: Vec::with_capacity(4),
         }
@@ -27,12 +27,10 @@ impl<'a, Message: 'static> Default for ListColumn<'a, Message> {
 }
 
 impl<'a, Message: 'static> ListColumn<'a, Message> {
-    #[must_use]
     pub fn new() -> Self {
         Self::default()
     }
 
-    #[must_use]
     #[allow(clippy::should_implement_trait)]
     pub fn add(mut self, item: impl Into<Element<'a, Message>>) -> Self {
         if !self.children.is_empty() {
