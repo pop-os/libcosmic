@@ -7,7 +7,10 @@ use cosmic_theme::Component;
 use iced_core::{Background, Color};
 use palette::{rgb::Rgb, Alpha};
 
-use crate::widget::button::{Appearance, StyleSheet};
+use crate::{
+    theme::TRANSPARENT_COMPONENT,
+    widget::button::{Appearance, StyleSheet},
+};
 
 #[derive(Default)]
 pub enum Button {
@@ -25,6 +28,7 @@ pub enum Button {
     Standard,
     Suggested,
     Text,
+    Transparent,
 }
 
 pub fn appearance(
@@ -38,12 +42,17 @@ pub fn appearance(
     let mut appearance = Appearance::new();
 
     match style {
-        Button::Standard | Button::Text | Button::Suggested | Button::Destructive => {
+        Button::Standard
+        | Button::Text
+        | Button::Suggested
+        | Button::Destructive
+        | Button::Transparent => {
             let style_component = match style {
                 Button::Standard => &cosmic.button,
                 Button::Text => &cosmic.text_button,
                 Button::Suggested => &cosmic.accent_button,
                 Button::Destructive => &cosmic.destructive_button,
+                Button::Transparent => &TRANSPARENT_COMPONENT,
                 _ => return appearance,
             };
 
