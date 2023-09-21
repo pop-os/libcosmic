@@ -49,7 +49,7 @@ use sctk::reexports::client::protocol::wl_data_device_manager::DndAction;
 /// [`TextInput`]: widget::TextInput
 pub fn text_input<'a, Message>(placeholder: &str, value: &str) -> TextInput<'a, Message>
 where
-    Message: Clone,
+    Message: Clone + 'static,
 {
     TextInput::new(placeholder, value)
 }
@@ -57,16 +57,13 @@ where
 /// Creates a new search [`TextInput`].
 ///
 /// [`TextInput`]: widget::TextInput
-pub fn search_input<'a, Message>(
-    placeholder: &str,
-    value: &str,
-    on_clear: Option<Message>,
-) -> TextInput<'a, Message>
+pub fn search_input<'a, Message>(placeholder: &str, value: &str) -> TextInput<'a, Message>
 where
     Message: Clone + 'static,
 {
     let spacing = THEME.with(|t| t.borrow().cosmic().space_xxs());
-    let input = TextInput::new(placeholder, value)
+
+    TextInput::new(placeholder, value)
         .padding([0, spacing, 0, spacing])
         .style(crate::theme::TextInput::Search)
         .leading_icon(
@@ -75,23 +72,7 @@ where
                 .apply(crate::widget::container)
                 .padding([spacing, spacing, spacing, spacing])
                 .into(),
-        );
-
-    if let Some(msg) = on_clear {
-        input.trailing_icon(
-            crate::widget::icon::from_name("edit-clear-symbolic")
-                .size(16)
-                .apply(crate::widget::button)
-                .style(crate::theme::Button::Icon)
-                .width(32)
-                .height(32)
-                .on_press(msg)
-                .padding([spacing, spacing, spacing, spacing])
-                .into(),
         )
-    } else {
-        input
-    }
 }
 /// Creates a new search [`TextInput`].
 ///
@@ -139,7 +120,7 @@ where
 /// [`TextInput`]: widget::TextInput
 pub fn inline_input<'a, Message>(value: &str) -> TextInput<'a, Message>
 where
-    Message: Clone,
+    Message: Clone + 'static,
 {
     let spacing = THEME.with(|t| t.borrow().cosmic().space_xxs());
 
@@ -217,7 +198,7 @@ pub struct TextInput<'a, Message> {
 
 impl<'a, Message> TextInput<'a, Message>
 where
-    Message: Clone,
+    Message: Clone + 'static,
 {
     /// Creates a new [`TextInput`].
     ///
@@ -447,6 +428,22 @@ where
         self
     }
 
+    pub fn on_clear(self, on_clear: Message) -> Self {
+        let spacing = THEME.with(|t| t.borrow().cosmic().space_xxs());
+
+        self.trailing_icon(
+            crate::widget::icon::from_name("edit-clear-symbolic")
+                .size(16)
+                .apply(crate::widget::button)
+                .style(crate::theme::Button::Icon)
+                .width(32)
+                .height(32)
+                .on_press(on_clear)
+                .padding([spacing, spacing, spacing, spacing])
+                .into(),
+        )
+    }
+
     /// Get the layout node of the actual text input
     fn text_layout<'b>(&'a self, layout: Layout<'b>) -> Layout<'b> {
         if self.dnd_icon {
@@ -463,7 +460,7 @@ where
 
 impl<'a, Message> Widget<Message, crate::Renderer> for TextInput<'a, Message>
 where
-    Message: Clone,
+    Message: Clone + 'static,
 {
     fn tag(&self) -> tree::Tag {
         tree::Tag::of::<State>()
@@ -571,8 +568,10 @@ where
         viewport: &Rectangle,
     ) -> event::Status {
         let text_layout = self.text_layout(layout);
-        let mut child_state = tree.children.iter_mut();
-        if let (Some(leading_icon), Some(tree)) = (self.leading_icon.as_mut(), child_state.next()) {
+        let mut index = 0;
+        if let (Some(leading_icon), Some(tree)) =
+            (self.leading_icon.as_mut(), tree.children.get_mut(index))
+        {
             let mut children = text_layout.children();
             children.next();
             let leading_icon_layout = children.next().unwrap();
@@ -589,12 +588,16 @@ where
                     viewport,
                 );
             }
+            index += 1;
         }
-        if let (Some(trailing_icon), Some(tree)) = (self.trailing_icon.as_mut(), child_state.next())
+        if let (Some(trailing_icon), Some(tree)) =
+            (self.trailing_icon.as_mut(), tree.children.get_mut(index))
         {
             let mut children = text_layout.children();
             children.next();
-            children.next();
+            if self.leading_icon.is_some() {
+                children.next();
+            }
             let trailing_icon_layout = children.next().unwrap();
 
             if cursor_position.is_over(trailing_icon_layout.bounds()) {
@@ -705,7 +708,10 @@ where
         {
             let mut children = layout.children();
             children.next();
-            children.next();
+            // skip if there is no leading icon
+            if self.leading_icon.is_some() {
+                children.next();
+            }
             let trailing_icon_layout = children.next().unwrap();
 
             if cursor_position.is_over(trailing_icon_layout.bounds()) {
@@ -726,7 +732,7 @@ where
 
 impl<'a, Message> From<TextInput<'a, Message>> for Element<'a, Message, crate::Renderer>
 where
-    Message: 'a + Clone,
+    Message: 'static + Clone,
 {
     fn from(text_input: TextInput<'a, Message>) -> Element<'a, Message, crate::Renderer> {
         Element::new(text_input)

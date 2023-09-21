@@ -5,7 +5,7 @@ use cosmic::{
     cosmic_theme,
     iced::widget::{checkbox, column, pick_list, progress_bar, radio, slider, text, text_input},
     iced::{id, Alignment, Length},
-    theme::{self, Button as ButtonTheme, ThemeType},
+    theme::ThemeType,
     widget::{
         button, cosmic_container::container, icon, segmented_button, segmented_selection, settings,
         spin_button, toggler, view_switcher,
@@ -472,6 +472,7 @@ impl State {
             .id(INPUT_ID.clone())
             .into(),
             cosmic::widget::text_input("test", &self.entry_value)
+                .on_clear(Message::InputChanged("".to_string()))
                 .width(Length::Fill)
                 .on_input(Message::InputChanged)
                 .into(),
@@ -480,51 +481,36 @@ impl State {
                 .padding(32)
                 .on_input(Message::InputChanged)
                 .into(),
-            cosmic::widget::search_input(
-                "test",
-                &self.entry_value,
-                Some(Message::InputChanged("".to_string())),
-            )
-            .width(Length::Fill)
-            .on_input(Message::InputChanged)
-            .into(),
+            cosmic::widget::search_input("test", &self.entry_value)
+                .on_clear(Message::InputChanged("".to_string()))
+                .width(Length::Fill)
+                .on_input(Message::InputChanged)
+                .into(),
             cosmic::widget::text_input("test", &self.entry_value)
                 .width(Length::Fixed(600.0))
                 .on_input(Message::InputChanged)
                 .into(),
-            cosmic::widget::search_input(
-                "test",
-                &self.entry_value,
-                Some(Message::InputChanged("".to_string())),
-            )
-            .width(Length::Fixed(100.0))
-            .on_input(Message::InputChanged)
-            .into(),
-            cosmic::widget::search_input(
-                "test",
-                &self.entry_value,
-                Some(Message::InputChanged("".to_string())),
-            )
-            .padding([24, 48])
-            .width(Length::Fixed(400.0))
-            .on_input(Message::InputChanged)
-            .into(),
-            cosmic::widget::search_input(
-                "test",
-                &self.entry_value,
-                Some(Message::InputChanged("".to_string())),
-            )
-            .width(Length::Fixed(400.0))
-            .on_input(Message::InputChanged)
-            .into(),
-            cosmic::widget::search_input(
-                "test",
-                &self.entry_value,
-                Some(Message::InputChanged("".to_string())),
-            )
-            .width(Length::Fixed(800.0))
-            .on_input(Message::InputChanged)
-            .into(),
+            cosmic::widget::search_input("test", &self.entry_value)
+                .on_clear(Message::InputChanged("".to_string()))
+                .width(Length::Fixed(100.0))
+                .on_input(Message::InputChanged)
+                .into(),
+            cosmic::widget::search_input("test", &self.entry_value)
+                .on_clear(Message::InputChanged("".to_string()))
+                .padding([24, 48])
+                .width(Length::Fixed(400.0))
+                .on_input(Message::InputChanged)
+                .into(),
+            cosmic::widget::search_input("test", &self.entry_value)
+                .on_clear(Message::InputChanged("".to_string()))
+                .width(Length::Fixed(400.0))
+                .on_input(Message::InputChanged)
+                .into(),
+            cosmic::widget::search_input("test", &self.entry_value)
+                .on_clear(Message::InputChanged("".to_string()))
+                .width(Length::Fixed(800.0))
+                .on_input(Message::InputChanged)
+                .into(),
         ])
         .into()
     }
