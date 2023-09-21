@@ -58,7 +58,7 @@ url = "2.4.0"
 unicode-segmentation = "1.6"
 
 [target.'cfg(unix)'.dependencies]
-freedesktop-icons = "0.2.2"
+freedesktop-icons = "0.2.4"
 
 [dependencies.cosmic-theme]
 path = "cosmic-theme"
