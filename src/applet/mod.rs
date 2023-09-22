@@ -18,6 +18,7 @@ use iced_widget::runtime::command::platform_specific::wayland::popup::{
     SctkPopupSettings, SctkPositioner,
 };
 use sctk::reexports::protocols::xdg::shell::client::xdg_positioner::{Anchor, Gravity};
+use std::rc::Rc;
 
 use crate::app::cosmic;
 
@@ -132,12 +133,24 @@ impl Context {
         &self,
         icon_name: &'a str,
     ) -> crate::widget::Button<'a, Message, Renderer> {
+        let suggested = self.suggested_size();
         crate::widget::button(
-            widget::icon::from_name(icon_name)
-                .symbolic(true)
-                .size(self.suggested_size().0),
+            widget::icon(
+                widget::icon::from_name(icon_name)
+                    .symbolic(true)
+                    .size(self.suggested_size().0)
+                    .into(),
+            )
+            .style(theme::Svg::Custom(Rc::new(|theme| {
+                crate::iced_style::svg::Appearance {
+                    color: Some(theme.cosmic().background.on.into()),
+                }
+            })))
+            .width(Length::Fixed(suggested.0 as f32))
+            .height(Length::Fixed(suggested.1 as f32)),
         )
-        .padding(8)
+        .padding(APPLET_PADDING as u16)
+        .style(Button::Text)
     }
 
     // TODO popup container which tracks the size of itself and requests the popup to resize to match
