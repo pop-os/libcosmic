@@ -4,7 +4,6 @@ use cosmic::iced::window::Id;
 use cosmic::iced::{Command, Limits};
 use cosmic::iced_runtime::core::window;
 use cosmic::iced_style::application;
-use cosmic::theme::Button;
 use cosmic::widget::{list_column, settings, toggler};
 use cosmic::{Element, Theme};
 
@@ -88,9 +87,8 @@ impl cosmic::Application for Window {
     fn view(&self) -> Element<Self::Message> {
         self.core
             .applet
-            .icon_button(ID)
+            .icon_button("display-symbolic")
             .on_press(Message::TogglePopup)
-            .style(Button::Text)
             .into()
     }
 
