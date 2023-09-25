@@ -45,7 +45,7 @@ derive_setters = "0.1.5"
 lazy_static = "1.4.0"
 palette = "0.7.3"
 tokio = { version = "1.24.2", optional = true }
-sctk = { package = "smithay-client-toolkit", git = "https://github.com/smithay/client-toolkit", optional = true, rev = "f49df45" }
+sctk = { package = "smithay-client-toolkit", git = "https://github.com/smithay/client-toolkit", optional = true, rev = "dc8c4a0" }
 slotmap = "1.0.6"
 fraction = "0.13.0"
 cosmic-config = { path = "cosmic-config" }
