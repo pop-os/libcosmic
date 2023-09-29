@@ -495,53 +495,81 @@ impl container::StyleSheet for Theme {
     }
 }
 
+#[derive(Default)]
+pub enum Slider {
+    #[default]
+    Standard,
+    Custom {
+        active: Rc<dyn Fn(&Theme) -> slider::Appearance>,
+        hovered: Rc<dyn Fn(&Theme) -> slider::Appearance>,
+        dragging: Rc<dyn Fn(&Theme) -> slider::Appearance>,
+    },
+}
+
 /*
  * Slider
  */
 impl slider::StyleSheet for Theme {
-    type Style = ();
+    type Style = Slider;
 
-    fn active(&self, _style: &Self::Style) -> slider::Appearance {
-        let cosmic = self.cosmic();
+    fn active(&self, style: &Self::Style) -> slider::Appearance {
+        match style {
+            Slider::Standard =>
+            //TODO: no way to set rail thickness
+            {
+                let cosmic: &cosmic_theme::Theme<palette::Alpha<palette::rgb::Rgb, f32>> =
+                    self.cosmic();
 
-        //TODO: no way to set rail thickness
-        slider::Appearance {
-            rail: Rail {
-                colors: (
-                    cosmic.accent.base.into(),
-                    //TODO: no way to set color before/after slider
-                    Color::TRANSPARENT,
-                ),
-                width: 4.0,
-                border_radius: 2.0.into(),
-            },
+                slider::Appearance {
+                    rail: Rail {
+                        colors: slider::RailBackground::Pair(
+                            cosmic.accent.base.into(),
+                            //TODO: no way to set color before/after slider
+                            Color::TRANSPARENT,
+                        ),
+                        width: 4.0,
+                        border_radius: 2.0.into(),
+                    },
 
-            handle: slider::Handle {
-                shape: slider::HandleShape::Circle { radius: 10.0 },
-                color: cosmic.accent.base.into(),
-                border_color: Color::TRANSPARENT,
-                border_width: 0.0,
-            },
+                    handle: slider::Handle {
+                        shape: slider::HandleShape::Circle { radius: 10.0 },
+                        color: cosmic.accent.base.into(),
+                        border_color: Color::TRANSPARENT,
+                        border_width: 0.0,
+                    },
+                }
+            }
+            Slider::Custom { active, .. } => active(self),
         }
     }
 
     fn hovered(&self, style: &Self::Style) -> slider::Appearance {
-        let mut style = self.active(style);
-        style.handle.shape = slider::HandleShape::Circle { radius: 16.0 };
-        style.handle.border_width = 6.0;
-        let mut border_color = self.cosmic().palette.neutral_10;
-        border_color.alpha = 0.1;
-        style.handle.border_color = border_color.into();
-        style
+        match style {
+            Slider::Standard => {
+                let mut style = self.active(style);
+                style.handle.shape = slider::HandleShape::Circle { radius: 16.0 };
+                style.handle.border_width = 6.0;
+                let mut border_color = self.cosmic().palette.neutral_10;
+                border_color.alpha = 0.1;
+                style.handle.border_color = border_color.into();
+                style
+            }
+            Slider::Custom { hovered, .. } => hovered(self),
+        }
     }
 
     fn dragging(&self, style: &Self::Style) -> slider::Appearance {
-        let mut style = self.hovered(style);
-        let mut border_color = self.cosmic().palette.neutral_10;
-        border_color.alpha = 0.2;
-        style.handle.border_color = border_color.into();
+        match style {
+            Slider::Standard => {
+                let mut style = self.hovered(style);
+                let mut border_color = self.cosmic().palette.neutral_10;
+                border_color.alpha = 0.2;
+                style.handle.border_color = border_color.into();
 
-        style
+                style
+            }
+            Slider::Custom { dragging, .. } => dragging(self),
+        }
     }
 }
 

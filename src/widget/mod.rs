@@ -28,6 +28,9 @@ pub use button::{button, Button, IconButton, LinkButton, TextButton};
 pub mod card;
 pub use card::*;
 
+pub mod color_picker;
+pub use color_picker::*;
+
 pub use column::{column, Column};
 pub mod column {
     pub type Column<'a, Message> = iced::widget::Column<'a, Message, crate::Renderer>;

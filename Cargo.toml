@@ -56,6 +56,7 @@ async-fs = { version = "1.6", optional = true }
 ashpd = { version = "0.5.0", default-features = false, optional = true }
 url = "2.4.0"
 unicode-segmentation = "1.6"
+css-color = "0.2.5"
 
 [target.'cfg(unix)'.dependencies]
 freedesktop-icons = "0.2.4"
@@ -64,46 +65,47 @@ freedesktop-icons = "0.2.4"
 path = "cosmic-theme"
 
 [dependencies.iced]
-path = "iced"
+path = "../cosmic-iced"
 default-features = false
 features = ["image", "svg", "lazy"]
 
 [dependencies.iced_runtime]
-path = "iced/runtime"
+path = "../cosmic-iced/runtime"
 
 [dependencies.iced_renderer]
-path = "iced/renderer"
+path = "../cosmic-iced/renderer"
 
 [dependencies.iced_core]
-path = "iced/core"
+path = "../cosmic-iced/core"
 
 [dependencies.iced_widget]
-path = "iced/widget"
+path = "../cosmic-iced/widget"
+features = ["canvas"]
 
 [dependencies.iced_futures]
-path = "iced/futures"
+path = "../cosmic-iced/futures"
 
 [dependencies.iced_accessibility]
-path = "iced/accessibility"
+path = "../cosmic-iced/accessibility"
 
 optional = true
 
 [dependencies.iced_tiny_skia]
-path = "iced/tiny_skia"
+path = "../cosmic-iced/tiny_skia"
 
 [dependencies.iced_style]
-path = "iced/style"
+path = "../cosmic-iced/style"
 
 [dependencies.iced_sctk]
-path = "iced/sctk"
+path = "../cosmic-iced/sctk"
 optional = true
 
 [dependencies.iced_winit]
-path = "iced/winit"
+path = "../cosmic-iced/winit"
 optional = true
 
 [dependencies.iced_wgpu]
-path = "iced/wgpu"
+path = "../cosmic-iced/wgpu"
 optional = true
 
 [dependencies.cosmic-panel-config]
@@ -126,3 +128,6 @@ exclude = ["examples/design-demo", "iced"]
 
 [patch."https://github.com/pop-os/libcosmic"]
 libcosmic = { path = "./" }
+
+# [patch."https://github.com/pop-os/cosmic-time"]
+# cosmic-time = { path = "../cosmic-time" }

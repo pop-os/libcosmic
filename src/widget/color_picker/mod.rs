@@ -1,0 +1,820 @@
+// Copyright 2023 System76 <info@system76.com>
+// SPDX-License-Identifier: MPL-2.0
+
+use std::borrow::Cow;
+use std::rc::Rc;
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::time::{Duration, Instant};
+
+use crate::theme::iced::Slider;
+use crate::theme::{Button, THEME};
+use crate::widget::{container, segmented_button::Entity, slider};
+use crate::Element;
+use derive_setters::Setters;
+use iced::Command;
+use iced_core::event::{self, Event};
+use iced_core::gradient::{ColorStop, Linear};
+use iced_core::renderer::Quad;
+use iced_core::widget::{tree, Tree};
+use iced_core::{
+    layout, mouse, renderer, Clipboard, Color, Layout, Length, Radians, Rectangle, Renderer, Shell,
+    Vector, Widget,
+};
+#[cfg(feature = "wayland")]
+use iced_sctk::commands::data_device::set_selection;
+use iced_style::slider::{HandleShape, RailBackground};
+use iced_widget::{canvas, column, scrollable, vertical_space, Row};
+use lazy_static::lazy_static;
+use palette::{FromColor, RgbHue};
+
+use super::divider::horizontal;
+use super::icon::from_name;
+use super::segmented_button::{self, Model, SingleSelect};
+use super::{button, segmented_selection, text, text_input, tooltip};
+
+// TODO is this going to look correct enough?
+lazy_static! {
+    pub static ref HSV_RAINBOW: Vec<ColorStop> = (0u16..8)
+        .map(|h| ColorStop {
+            color: iced::Color::from(palette::Srgba::from_color(palette::Hsv::new_srgb_const(
+                RgbHue::new(f32::from(h) * 360.0 / 7.0),
+                1.0,
+                1.0
+            ))),
+            offset: f32::from(h) / 7.0
+        })
+        .collect();
+}
+
+const MAX_RECENT: usize = 20;
+
+#[derive(Debug, Clone)]
+pub enum ColorPickerUpdate {
+    ActiveColor(palette::Hsv),
+    ActionFinished,
+    Input(String),
+    AppliedColor,
+    Reset,
+    ActivateSegmented(Entity),
+    Copied(Instant),
+    Cancel,
+    ToggleColorPicker,
+}
+
+#[derive(Setters)]
+pub struct ColorPickerModel {
+    #[setters(skip)]
+    segmented_model: Model<SingleSelect>,
+    #[setters(skip)]
+    active_color: palette::Hsv,
+    #[setters(skip)]
+    save_next: Option<Color>,
+    #[setters(skip)]
+    input_color: String,
+    #[setters(skip)]
+    applied_color: Color,
+    #[setters(skip)]
+    initial_color: Color,
+    #[setters(skip)]
+    recent_colors: Vec<Color>,
+    active: bool,
+    width: Length,
+    height: Length,
+    #[setters(skip)]
+    must_clear_cache: Rc<AtomicBool>,
+    #[setters(skip)]
+    copied_at: Option<Instant>,
+}
+
+impl ColorPickerModel {
+    #[must_use]
+    pub fn new(
+        hex: impl Into<Cow<'static, str>> + Clone,
+        rgb: impl Into<Cow<'static, str>> + Clone,
+        fallback_color: Color,
+        initial_color: Option<Color>,
+    ) -> Self {
+        let initial = initial_color.unwrap_or(fallback_color);
+        let initial_srgb = palette::Srgb::from(initial);
+        let hsv = palette::Hsv::from_color(initial_srgb);
+        Self {
+            segmented_model: segmented_button::Model::builder()
+                .insert(move |b| b.text(hex.clone()).activate())
+                .insert(move |b| b.text(rgb.clone()))
+                .build(),
+            active_color: hsv,
+            save_next: Some(initial),
+            input_color: color_to_string(hsv, true),
+            applied_color: fallback_color,
+            initial_color: initial,
+            recent_colors: Vec::new(), // TODO should all color pickers show the same recent colors?
+            active: false,
+            width: Length::Fixed(300.0),
+            height: Length::Fixed(200.0),
+            must_clear_cache: Rc::new(AtomicBool::new(false)),
+            copied_at: None,
+        }
+    }
+
+    /// Get a color picker button that displays the applied color
+    ///
+    pub fn picker_button<'a, Message: 'a, T: Fn(ColorPickerUpdate) -> Message>(
+        &self,
+        f: T,
+    ) -> crate::widget::Button<'a, Message, crate::Renderer> {
+        color_button(
+            Some(f(ColorPickerUpdate::ToggleColorPicker)),
+            self.applied_color,
+        )
+    }
+
+    pub fn update<Message>(&mut self, update: ColorPickerUpdate) -> Command<Message> {
+        match update {
+            ColorPickerUpdate::ActiveColor(c) => {
+                self.must_clear_cache.store(true, Ordering::SeqCst);
+                self.input_color = color_to_string(c, self.is_hex());
+                if let Some(to_save) = self.save_next.take() {
+                    self.recent_colors.insert(0, to_save);
+                    self.recent_colors.truncate(MAX_RECENT);
+                }
+                self.active_color = c;
+                self.copied_at = None;
+            }
+            ColorPickerUpdate::AppliedColor => {
+                let srgb = palette::Srgb::from_color(self.active_color);
+                self.recent_colors.push(self.applied_color);
+                self.applied_color = Color::from(srgb);
+                self.active = false;
+            }
+            ColorPickerUpdate::ActivateSegmented(e) => {
+                self.input_color = color_to_string(self.active_color, self.is_hex());
+                self.segmented_model.activate(e);
+                self.copied_at = None;
+            }
+            ColorPickerUpdate::Copied(t) => {
+                self.copied_at = Some(t);
+                #[cfg(feature = "wayland")]
+                return set_selection(
+                    crate::widget::SUPPORTED_TEXT_MIME_TYPES
+                        .iter()
+                        .map(ToString::to_string)
+                        .collect(),
+                    Box::new(crate::widget::text_input::TextInputString(
+                        self.input_color.clone(),
+                    )),
+                );
+            }
+            ColorPickerUpdate::Reset => {
+                self.must_clear_cache.store(true, Ordering::SeqCst);
+
+                let initial_srgb = palette::Srgb::from(self.initial_color);
+                let hsv = palette::Hsv::from_color(initial_srgb);
+                self.active_color = hsv;
+                self.applied_color = self.initial_color;
+                self.copied_at = None;
+            }
+            ColorPickerUpdate::Cancel => {
+                self.must_clear_cache.store(true, Ordering::SeqCst);
+
+                self.active = false;
+                self.copied_at = None;
+            }
+            ColorPickerUpdate::Input(c) => {
+                self.must_clear_cache.store(true, Ordering::SeqCst);
+
+                self.input_color = c;
+                self.copied_at = None;
+                // parse as rgba or hex and update active color
+                if let Ok(c) = self.input_color.parse::<css_color::Srgb>() {
+                    self.active_color =
+                        palette::Hsv::from_color(palette::Srgb::new(c.red, c.green, c.blue));
+                }
+            }
+            ColorPickerUpdate::ActionFinished => {
+                let srgb = palette::Srgb::from_color(self.active_color);
+
+                self.save_next = Some(Color::from(srgb));
+            }
+            ColorPickerUpdate::ToggleColorPicker => {
+                self.active = !self.active;
+                self.copied_at = None;
+            }
+        };
+        Command::none()
+    }
+
+    #[must_use]
+    pub fn is_hex(&self) -> bool {
+        self.segmented_model.position(self.segmented_model.active()) == Some(0)
+    }
+
+    /// Get whether or not the picker should be visible
+    #[must_use]
+    pub fn get_is_active(&self) -> bool {
+        self.active
+    }
+
+    #[must_use]
+    pub fn builder<Message>(
+        &self,
+        on_update: fn(ColorPickerUpdate) -> Message,
+    ) -> ColorPickerBuilder<Message> {
+        ColorPickerBuilder {
+            model: &self.segmented_model,
+            active_color: self.active_color,
+            recent_colors: &self.recent_colors,
+            on_update,
+            width: self.width,
+            height: self.height,
+            must_clear_cache: self.must_clear_cache.clone(),
+            input_color: &self.input_color,
+            reset_label: None,
+            save_label: None,
+            cancel_label: None,
+            copied_at: self.copied_at,
+        }
+    }
+}
+
+#[derive(Setters, Clone)]
+pub struct ColorPickerBuilder<'a, Message> {
+    #[setters(skip)]
+    model: &'a Model<SingleSelect>,
+    #[setters(skip)]
+    active_color: palette::Hsv,
+    #[setters(skip)]
+    input_color: &'a str,
+    #[setters(skip)]
+    on_update: fn(ColorPickerUpdate) -> Message,
+    #[setters(skip)]
+    recent_colors: &'a Vec<Color>,
+    #[setters(skip)]
+    must_clear_cache: Rc<AtomicBool>,
+    #[setters(skip)]
+    copied_at: Option<Instant>,
+    // can be set
+    width: Length,
+    height: Length,
+    #[setters(strip_option, into)]
+    reset_label: Option<Cow<'a, str>>,
+    #[setters(strip_option, into)]
+    save_label: Option<Cow<'a, str>>,
+    #[setters(strip_option, into)]
+    cancel_label: Option<Cow<'a, str>>,
+}
+
+impl<'a, Message> ColorPickerBuilder<'a, Message>
+where
+    Message: Clone + 'static,
+{
+    #[allow(clippy::too_many_lines)]
+    pub fn build<T: Into<Cow<'a, str>> + 'a>(
+        mut self,
+        recent_colors_label: T,
+        copy_to_clipboard_label: T,
+        copied_to_clipboard_label: T,
+    ) -> ColorPicker<'a, Message> {
+        let on_update = self.on_update;
+        let spacing = THEME.with(|t| t.borrow().cosmic().spacing);
+        let mut inner = column![
+            // segmented buttons
+            segmented_selection::horizontal(self.model)
+                .on_activate(Box::new(move |e| on_update(
+                    ColorPickerUpdate::ActivateSegmented(e)
+                )))
+                .width(self.width),
+            // canvas with gradient for the current color
+            // still needs the canvas and the handle to be drawn on it
+            container(vertical_space(self.height))
+                .width(self.width)
+                .height(self.height),
+            slider(
+                0.0..=359.99,
+                self.active_color.hue.into_positive_degrees(),
+                move |v| {
+                    let mut new = self.active_color;
+                    new.hue = v.into();
+                    on_update(ColorPickerUpdate::ActiveColor(new))
+                }
+            )
+            .style(Slider::Custom {
+                active: Rc::new(|t| {
+                    let cosmic = t.cosmic();
+                    let mut a = iced_style::slider::StyleSheet::active(t, &Slider::default());
+                    a.rail.colors = RailBackground::Gradient {
+                        gradient: Linear::new(Radians(0.0)).add_stops(HSV_RAINBOW.clone()),
+                        auto_angle: true,
+                    };
+                    a.rail.width = 8.0;
+                    a.handle.color = Color::TRANSPARENT;
+                    a.handle.shape = HandleShape::Circle { radius: 8.0 };
+                    a.handle.border_color = cosmic.palette.neutral_10.into();
+                    a.handle.border_width = 4.0;
+                    a
+                }),
+                hovered: Rc::new(|t| {
+                    let cosmic = t.cosmic();
+                    let mut a = iced_style::slider::StyleSheet::active(t, &Slider::default());
+                    a.rail.colors = RailBackground::Gradient {
+                        gradient: Linear::new(Radians(0.0)).add_stops(HSV_RAINBOW.clone()),
+                        auto_angle: true,
+                    };
+                    a.rail.width = 8.0;
+                    a.handle.color = Color::TRANSPARENT;
+                    a.handle.shape = HandleShape::Circle { radius: 8.0 };
+                    a.handle.border_color = cosmic.palette.neutral_10.into();
+                    a.handle.border_width = 4.0;
+                    a
+                }),
+                dragging: Rc::new(|t| {
+                    let cosmic = t.cosmic();
+                    let mut a = iced_style::slider::StyleSheet::active(t, &Slider::default());
+                    a.rail.colors = RailBackground::Gradient {
+                        gradient: Linear::new(Radians(0.0)).add_stops(HSV_RAINBOW.clone()),
+                        auto_angle: true,
+                    };
+                    a.rail.width = 8.0;
+                    a.handle.color = Color::TRANSPARENT;
+                    a.handle.shape = HandleShape::Circle { radius: 8.0 };
+                    a.handle.border_color = cosmic.palette.neutral_10.into();
+                    a.handle.border_width = 4.0;
+                    a
+                }),
+            })
+            .width(self.width),
+            text_input("", self.input_color)
+                .on_input(move |s| on_update(ColorPickerUpdate::Input(s)))
+                .on_paste(move |s| on_update(ColorPickerUpdate::Input(s)))
+                .on_submit(on_update(ColorPickerUpdate::AppliedColor))
+                .leading_icon(
+                    color_button(
+                        None,
+                        Color::from(palette::Srgb::from_color(self.active_color))
+                    )
+                    .into()
+                )
+                // TODO copy paste input contents
+                .trailing_icon({
+                    let button = button(crate::widget::icon(
+                        from_name("edit-copy-symbolic").size(spacing.space_s).into(),
+                    ))
+                    .on_press(on_update(ColorPickerUpdate::Copied(Instant::now())))
+                    .style(Button::Text);
+
+                    match self.copied_at.take() {
+                        Some(t) if Instant::now().duration_since(t) > Duration::from_secs(2) => {
+                            button.into()
+                        }
+                        Some(_) => tooltip(
+                            button,
+                            copied_to_clipboard_label,
+                            iced_widget::tooltip::Position::Bottom,
+                        )
+                        .into(),
+                        None => tooltip(
+                            button,
+                            copy_to_clipboard_label,
+                            iced_widget::tooltip::Position::Bottom,
+                        )
+                        .into(),
+                    }
+                })
+                .width(self.width),
+        ]
+        // Should we ensure the side padding is at least half the width of the handle?
+        .padding([
+            spacing.space_none,
+            spacing.space_s,
+            spacing.space_s,
+            spacing.space_s,
+        ])
+        .spacing(spacing.space_s);
+
+        if !self.recent_colors.is_empty() {
+            inner = inner.push(horizontal::light().width(self.width));
+            inner = inner.push(
+                column![text(recent_colors_label), {
+                    // TODO get global colors from some cache?
+                    // TODO how to handle overflow? should this use a grid widget for the list or a horizontal scroll and a limit for the max?
+                    crate::widget::scrollable(
+                        Row::with_children(
+                            self.recent_colors
+                                .iter()
+                                .map(|c| {
+                                    let initial_srgb = palette::Srgb::from(*c);
+                                    let hsv = palette::Hsv::from_color(initial_srgb);
+                                    color_button(
+                                        Some(on_update(ColorPickerUpdate::ActiveColor(hsv))),
+                                        *c,
+                                    )
+                                    .into()
+                                })
+                                .collect(),
+                        )
+                        .spacing(spacing.space_xxs),
+                    )
+                    .width(self.width)
+                    .direction(iced_widget::scrollable::Direction::Horizontal(
+                        scrollable::Properties::new().alignment(scrollable::Alignment::End),
+                    ))
+                }]
+                .spacing(spacing.space_xxs),
+            );
+        }
+
+        if let Some(reset_to_default) = self.reset_label.take() {
+            inner = inner.push(
+                column![
+                    horizontal::light().width(self.width),
+                    button(
+                        text(reset_to_default)
+                            .width(self.width)
+                            .horizontal_alignment(iced_core::alignment::Horizontal::Center)
+                    )
+                    .width(self.width)
+                    .on_press(on_update(ColorPickerUpdate::Reset))
+                ]
+                .spacing(spacing.space_xs)
+                .width(self.width),
+            );
+        }
+        if let (Some(save), Some(cancel)) = (self.save_label.take(), self.cancel_label.take()) {
+            inner = inner.push(
+                column![
+                    horizontal::light().width(self.width),
+                    button(
+                        text(cancel)
+                            .width(self.width)
+                            .horizontal_alignment(iced_core::alignment::Horizontal::Center)
+                    )
+                    .width(self.width)
+                    .on_press(on_update(ColorPickerUpdate::Cancel)),
+                    button(
+                        text(save)
+                            .width(self.width)
+                            .horizontal_alignment(iced_core::alignment::Horizontal::Center)
+                    )
+                    .width(self.width)
+                    .on_press(on_update(ColorPickerUpdate::AppliedColor))
+                    .style(Button::Suggested)
+                ]
+                .spacing(spacing.space_xs)
+                .width(self.width),
+            );
+        }
+
+        ColorPicker {
+            on_update,
+            inner: inner.into(),
+            width: self.width,
+            active_color: self.active_color,
+            must_clear_cache: self.must_clear_cache,
+        }
+    }
+}
+
+#[must_use]
+pub struct ColorPicker<'a, Message> {
+    pub(crate) on_update: fn(ColorPickerUpdate) -> Message,
+    width: Length,
+    active_color: palette::Hsv,
+    inner: Element<'a, Message>,
+    must_clear_cache: Rc<AtomicBool>,
+}
+
+impl<'a, Message> Widget<Message, crate::Renderer> for ColorPicker<'a, Message>
+where
+    Message: Clone + 'static,
+{
+    fn tag(&self) -> tree::Tag {
+        tree::Tag::of::<State>()
+    }
+
+    fn state(&self) -> tree::State {
+        tree::State::new(State::new())
+    }
+
+    fn diff(&mut self, tree: &mut Tree) {
+        tree.diff_children(std::slice::from_mut(&mut self.inner));
+    }
+
+    fn children(&self) -> Vec<Tree> {
+        vec![Tree::new(&self.inner)]
+    }
+
+    fn width(&self) -> Length {
+        self.width
+    }
+
+    fn height(&self) -> Length {
+        Length::Shrink
+    }
+
+    fn layout(&self, renderer: &crate::Renderer, limits: &layout::Limits) -> layout::Node {
+        self.inner.as_widget().layout(renderer, limits)
+    }
+
+    #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
+    fn draw(
+        &self,
+        tree: &Tree,
+        renderer: &mut crate::Renderer,
+        theme: &<crate::Renderer as iced_core::Renderer>::Theme,
+        style: &renderer::Style,
+        layout: Layout<'_>,
+        cursor: mouse::Cursor,
+        viewport: &Rectangle,
+    ) {
+        let column_layout = layout;
+        // First draw children
+        self.inner.as_widget().draw(
+            &tree.children[0],
+            renderer,
+            theme,
+            style,
+            layout,
+            cursor,
+            viewport,
+        );
+        // Draw saturation value canvas
+        let state: &State = tree.state.downcast_ref();
+
+        let active_color = self.active_color;
+        let canvas_layout = column_layout.children().nth(1).unwrap();
+
+        if self
+            .must_clear_cache
+            .compare_exchange(true, false, Ordering::SeqCst, Ordering::SeqCst)
+            .unwrap_or_default()
+        {
+            state.canvas_cache.clear();
+        }
+        let geo = state
+            .canvas_cache
+            .draw(renderer, canvas_layout.bounds().size(), move |frame| {
+                let column_count = frame.width() as u16;
+                let row_count = frame.height() as u16;
+
+                for column in 0..column_count {
+                    for row in 0..row_count {
+                        let saturation = f32::from(column) / frame.width();
+                        let value = 1.0 - f32::from(row) / frame.height();
+
+                        let mut c = active_color;
+                        c.saturation = saturation;
+                        c.value = value;
+                        frame.fill_rectangle(
+                            iced::Point::new(f32::from(column), f32::from(row)),
+                            iced::Size::new(1.0, 1.0),
+                            Color::from(palette::Srgb::from_color(c)),
+                        );
+                    }
+                }
+            });
+
+        let translation = Vector::new(canvas_layout.bounds().x, canvas_layout.bounds().y);
+        iced_core::Renderer::with_translation(renderer, translation, |renderer| {
+            canvas::Renderer::draw(renderer, vec![geo]);
+        });
+
+        let bounds = canvas_layout.bounds();
+        // Draw the handle on the saturation value canvas
+
+        let t = THEME.with(|t| t.borrow().clone());
+        let t = t.cosmic();
+        let handle_radius = f32::from(t.space_xs()) / 2.0;
+        let (x, y) = (
+            (self.active_color.saturation * bounds.width) + bounds.position().x - handle_radius,
+            ((1.0 - self.active_color.value) * bounds.height) + bounds.position().y - handle_radius,
+        );
+        renderer.fill_quad(
+            Quad {
+                bounds: Rectangle {
+                    x,
+                    y,
+                    width: 1.0 + handle_radius * 2.0,
+                    height: 1.0 + handle_radius * 2.0,
+                },
+                border_radius: (1.0 + handle_radius).into(),
+                border_width: 1.0,
+                border_color: t.palette.neutral_5.into(),
+            },
+            Color::TRANSPARENT,
+        );
+        renderer.fill_quad(
+            Quad {
+                bounds: Rectangle {
+                    x,
+                    y,
+                    width: handle_radius * 2.0,
+                    height: handle_radius * 2.0,
+                },
+                border_radius: handle_radius.into(),
+                border_width: 1.0,
+                border_color: t.palette.neutral_10.into(),
+            },
+            Color::TRANSPARENT,
+        );
+    }
+
+    fn on_event(
+        &mut self,
+        tree: &mut Tree,
+        event: Event,
+        layout: Layout<'_>,
+        cursor: mouse::Cursor,
+        renderer: &crate::Renderer,
+        clipboard: &mut dyn Clipboard,
+        shell: &mut Shell<'_, Message>,
+        viewport: &Rectangle,
+    ) -> event::Status {
+        // if the pointer is performing a drag, intercept pointer motion and button events
+        // else check if event is handled by child elements
+        // if the event is not handled by a child element, check if it is over the canvas when pressing a button
+        let state: &mut State = tree.state.downcast_mut();
+        let column_layout = layout;
+        if state.dragging {
+            let bounds = column_layout.children().nth(1).unwrap().bounds();
+            match event {
+                Event::Mouse(mouse::Event::CursorMoved { .. } | mouse::Event::CursorEntered) => {
+                    if let Some(mut clamped) = cursor.position() {
+                        clamped.x = clamped.x.min(bounds.x + bounds.width).max(bounds.x);
+                        clamped.y = clamped.y.min(bounds.y + bounds.height).max(bounds.y);
+                        let relative_pos = clamped - bounds.position();
+                        let (s, v) = (
+                            relative_pos.x / bounds.width,
+                            1.0 - relative_pos.y / bounds.height,
+                        );
+
+                        let hsv: palette::Hsv = palette::Hsv::new(self.active_color.hue, s, v);
+                        shell.publish((self.on_update)(ColorPickerUpdate::ActiveColor(hsv)));
+                    }
+                }
+                Event::Mouse(
+                    mouse::Event::ButtonReleased(mouse::Button::Left) | mouse::Event::CursorLeft,
+                ) => {
+                    shell.publish((self.on_update)(ColorPickerUpdate::ActionFinished));
+                    state.dragging = false;
+                }
+                _ => return event::Status::Ignored,
+            };
+            return event::Status::Captured;
+        }
+
+        let column_tree = &mut tree.children[0];
+        if let event::Status::Captured = self.inner.as_widget_mut().on_event(
+            column_tree,
+            event.clone(),
+            column_layout,
+            cursor,
+            renderer,
+            clipboard,
+            shell,
+            viewport,
+        ) {
+            return event::Status::Captured;
+        }
+
+        match event {
+            Event::Mouse(mouse::Event::ButtonPressed(mouse::Button::Left)) => {
+                let bounds = column_layout.children().nth(1).unwrap().bounds();
+                if let Some(point) = cursor.position_over(bounds) {
+                    let relative_pos = point - bounds.position();
+                    let (s, v) = (
+                        relative_pos.x / bounds.width,
+                        1.0 - relative_pos.y / bounds.height,
+                    );
+                    state.dragging = true;
+                    let hsv: palette::Hsv = palette::Hsv::new(self.active_color.hue, s, v);
+                    shell.publish((self.on_update)(ColorPickerUpdate::ActiveColor(hsv)));
+                    event::Status::Captured
+                } else {
+                    event::Status::Ignored
+                }
+            }
+            _ => event::Status::Ignored,
+        }
+    }
+}
+
+#[derive(Debug, Default)]
+pub struct State {
+    canvas_cache: canvas::Cache,
+    dragging: bool,
+}
+
+impl State {
+    fn new() -> Self {
+        Self::default()
+    }
+}
+
+impl<'a, Message> ColorPicker<'a, Message> where Message: Clone + 'static {}
+// TODO convert active color to hex or rgba
+fn color_to_string(c: palette::Hsv, is_hex: bool) -> String {
+    let srgb = palette::Srgb::from_color(c);
+    let hex = srgb.into_format::<u8>();
+    if is_hex {
+        format!("#{:02X}{:02X}{:02X}", hex.red, hex.green, hex.blue)
+    } else {
+        format!("rgb({}, {}, {})", hex.red, hex.green, hex.blue)
+    }
+}
+
+fn color_button<'a, Message: 'a>(
+    on_press: Option<Message>,
+    color: Color,
+) -> crate::widget::Button<'a, Message, crate::Renderer> {
+    let spacing = THEME.with(|t| t.borrow().cosmic().spacing);
+
+    button(vertical_space(Length::Fixed(f32::from(spacing.space_s))))
+        .width(Length::Fixed(f32::from(spacing.space_s)))
+        .height(Length::Fixed(f32::from(spacing.space_s)))
+        .on_press_maybe(on_press)
+        .style(crate::theme::Button::Custom {
+            active: Box::new(move |focused, theme| {
+                let cosmic = theme.cosmic();
+
+                let (outline_width, outline_color) = if focused {
+                    (1.0, cosmic.accent_color().into())
+                } else {
+                    (0.0, Color::TRANSPARENT)
+                };
+                button::Appearance {
+                    shadow_offset: Vector::default(),
+                    background: Some(color.into()),
+                    border_radius: cosmic.radius_xs().into(),
+                    border_width: 1.0,
+                    border_color: cosmic.on_bg_color().into(),
+                    outline_width,
+                    outline_color,
+                    icon_color: None,
+                    text_color: None,
+                }
+            }),
+            disabled: Box::new(move |theme| {
+                let cosmic = theme.cosmic();
+
+                button::Appearance {
+                    shadow_offset: Vector::default(),
+                    background: Some(color.into()),
+                    border_radius: cosmic.radius_xs().into(),
+                    border_width: 1.0,
+                    border_color: cosmic.on_bg_color().into(),
+                    outline_width: 0.0,
+                    outline_color: Color::TRANSPARENT,
+                    icon_color: None,
+                    text_color: None,
+                }
+            }),
+            hovered: Box::new(move |focused, theme| {
+                let cosmic = theme.cosmic();
+
+                let (outline_width, outline_color) = if focused {
+                    (1.0, cosmic.accent_color().into())
+                } else {
+                    (0.0, Color::TRANSPARENT)
+                };
+                button::Appearance {
+                    shadow_offset: Vector::default(),
+                    background: Some(color.into()),
+                    border_radius: cosmic.radius_xs().into(),
+                    border_width: 1.0,
+                    border_color: cosmic.on_bg_color().into(),
+                    outline_width,
+                    outline_color,
+                    icon_color: None,
+                    text_color: None,
+                }
+            }),
+            pressed: Box::new(move |focused, theme| {
+                let cosmic = theme.cosmic();
+
+                let (outline_width, outline_color) = if focused {
+                    (1.0, cosmic.accent_color().into())
+                } else {
+                    (0.0, Color::TRANSPARENT)
+                };
+                button::Appearance {
+                    shadow_offset: Vector::default(),
+                    background: Some(color.into()),
+                    border_radius: cosmic.radius_xs().into(),
+                    border_width: 1.0,
+                    border_color: cosmic.on_bg_color().into(),
+                    outline_width,
+                    outline_color,
+                    icon_color: None,
+                    text_color: None,
+                }
+            }),
+        })
+}
+
+impl<'a, Message> From<ColorPicker<'a, Message>> for iced::Element<'a, Message, crate::Renderer>
+where
+    Message: 'static + Clone,
+{
+    fn from(picker: ColorPicker<'a, Message>) -> iced::Element<'a, Message, crate::Renderer> {
+        Element::new(picker)
+    }
+}
