@@ -65,47 +65,47 @@ freedesktop-icons = "0.2.4"
 path = "cosmic-theme"
 
 [dependencies.iced]
-path = "../cosmic-iced"
+path = "./iced"
 default-features = false
 features = ["image", "svg", "lazy"]
 
 [dependencies.iced_runtime]
-path = "../cosmic-iced/runtime"
+path = "./iced/runtime"
 
 [dependencies.iced_renderer]
-path = "../cosmic-iced/renderer"
+path = "./iced/renderer"
 
 [dependencies.iced_core]
-path = "../cosmic-iced/core"
+path = "./iced/core"
 
 [dependencies.iced_widget]
-path = "../cosmic-iced/widget"
+path = "./iced/widget"
 features = ["canvas"]
 
 [dependencies.iced_futures]
-path = "../cosmic-iced/futures"
+path = "./iced/futures"
 
 [dependencies.iced_accessibility]
-path = "../cosmic-iced/accessibility"
+path = "./iced/accessibility"
 
 optional = true
 
 [dependencies.iced_tiny_skia]
-path = "../cosmic-iced/tiny_skia"
+path = "./iced/tiny_skia"
 
 [dependencies.iced_style]
-path = "../cosmic-iced/style"
+path = "./iced/style"
 
 [dependencies.iced_sctk]
-path = "../cosmic-iced/sctk"
+path = "./iced/sctk"
 optional = true
 
 [dependencies.iced_winit]
-path = "../cosmic-iced/winit"
+path = "./iced/winit"
 optional = true
 
 [dependencies.iced_wgpu]
-path = "../cosmic-iced/wgpu"
+path = "./iced/wgpu"
 optional = true
 
 [dependencies.cosmic-panel-config]
