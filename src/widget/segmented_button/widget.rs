@@ -102,10 +102,10 @@ where
     #[setters(into)]
     pub(super) style: Style,
     /// Emits the ID of the item that was activated.
-    #[setters(strip_option)]
-    pub(super) on_activate: Option<fn(Entity) -> Message>,
-    #[setters(strip_option)]
-    pub(super) on_close: Option<fn(Entity) -> Message>,
+    #[setters(skip)]
+    pub(super) on_activate: Option<Box<dyn Fn(Entity) -> Message + 'static>>,
+    #[setters(skip)]
+    pub(super) on_close: Option<Box<dyn Fn(Entity) -> Message + 'static>>,
     #[setters(skip)]
     /// Defines the implementation of this struct
     variant: PhantomData<Variant>,
@@ -140,6 +140,22 @@ where
             on_close: None,
             variant: PhantomData,
         }
+    }
+
+    pub fn on_activate<T>(mut self, on_activate: T) -> Self
+    where
+        T: Fn(Entity) -> Message + 'static,
+    {
+        self.on_activate = Some(Box::new(on_activate));
+        self
+    }
+
+    pub fn on_close<T>(mut self, on_close: T) -> Self
+    where
+        T: Fn(Entity) -> Message + 'static,
+    {
+        self.on_close = Some(Box::new(on_close));
+        self
     }
 
     /// Check if an item is enabled.
@@ -626,7 +642,7 @@ pub fn focus<Message: 'static>(id: Id) -> Command<Message> {
 }
 
 /// The iced identifier of a segmented button.
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Id(widget::Id);
 
 impl Id {

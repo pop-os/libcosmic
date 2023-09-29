@@ -5,10 +5,11 @@ use cosmic::{
     cosmic_theme,
     iced::widget::{checkbox, column, pick_list, progress_bar, radio, slider, text, text_input},
     iced::{id, Alignment, Length},
+    iced_core::Color,
     theme::ThemeType,
     widget::{
         button, cosmic_container::container, icon, segmented_button, segmented_selection, settings,
-        spin_button, toggler, view_switcher,
+        spin_button, toggler, view_switcher, ColorPickerModel, ColorPickerUpdate,
     },
     Element,
 };
@@ -86,6 +87,7 @@ pub enum Message {
     DeleteCard(usize),
     ClearAll,
     CardsToggled(bool),
+    ColorPickerUpdate(ColorPickerUpdate),
 }
 
 pub enum Output {
@@ -111,6 +113,7 @@ pub struct State {
     pub cards_value: bool,
     cards: Vec<String>,
     pub timeline: Rc<RefCell<Timeline>>,
+    pub color_picker_model: ColorPickerModel,
 }
 
 impl Default for State {
@@ -157,6 +160,12 @@ impl Default for State {
                 "card 4".to_string(),
             ],
             timeline: Rc::new(RefCell::new(Default::default())),
+            color_picker_model: ColorPickerModel::new(
+                "Hex",
+                "RGB",
+                Color::new(0.8, 0.3, 0.8, 1.0),
+                None,
+            ),
         }
     }
 }
@@ -201,6 +210,9 @@ impl State {
             }
             Message::DeleteCard(i) => {
                 self.cards.remove(i);
+            }
+            Message::ColorPickerUpdate(u) => {
+                _ = self.color_picker_model.update::<Message>(u);
             }
         }
 
@@ -511,6 +523,20 @@ impl State {
                 .width(Length::Fixed(800.0))
                 .on_input(Message::InputChanged)
                 .into(),
+            self.color_picker_model
+                .picker_button(Message::ColorPickerUpdate)
+                .into(),
+            if self.color_picker_model.get_is_active() {
+                self.color_picker_model
+                    .builder(Message::ColorPickerUpdate)
+                    .reset_label("Reset to default")
+                    .save_label("Save")
+                    .cancel_label("Cancel")
+                    .build("Recent Colors", "Copy to clipboard", "Copied to clipboard")
+                    .into()
+            } else {
+                text("The color picker is not active.").into()
+            },
         ])
         .into()
     }

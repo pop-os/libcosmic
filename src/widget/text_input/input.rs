@@ -130,7 +130,7 @@ where
 }
 
 #[cfg(feature = "wayland")]
-const SUPPORTED_MIME_TYPES: &[&str; 6] = &[
+pub(crate) const SUPPORTED_TEXT_MIME_TYPES: &[&str; 6] = &[
     "text/plain;charset=utf-8",
     "text/plain;charset=UTF-8",
     "UTF8_STRING",
@@ -862,14 +862,14 @@ pub fn layout<Message>(
         if let Some(mut leading_icon) = leading_icon.take() {
             leading_icon.move_to(Point::new(
                 padding.left,
-                padding.top + ((text_size * 1.2 - leading_icon.bounds().height) / 2.0).max(0.0),
+                padding.top + ((text_input_height - leading_icon.bounds().height) / 2.0).max(0.0),
             ));
             node_list.push(leading_icon);
         }
         if let Some(mut trailing_icon) = trailing_icon.take() {
             trailing_icon.move_to(Point::new(
                 text_node_bounds.x + text_node_bounds.width + f32::from(spacing),
-                padding.top + ((text_size * 1.2 - trailing_icon.bounds().height) / 2.0).max(0.0),
+                padding.top + ((text_input_height - trailing_icon.bounds().height) / 2.0).max(0.0),
             ));
             node_list.push(trailing_icon);
         }
@@ -1074,7 +1074,7 @@ where
                                 let state = state.clone();
                                 shell.publish(on_dnd_command_produced(Box::new(move || {
                                     platform_specific::wayland::data_device::ActionInner::StartDnd {
-                                        mime_types: SUPPORTED_MIME_TYPES
+                                        mime_types: SUPPORTED_TEXT_MIME_TYPES
                                             .iter()
                                             .map(std::string::ToString::to_string)
                                             .collect(),
@@ -1493,7 +1493,7 @@ where
             }
             let mut accepted = false;
             for m in &mime_types {
-                if SUPPORTED_MIME_TYPES.contains(&m.as_str()) {
+                if SUPPORTED_TEXT_MIME_TYPES.contains(&m.as_str()) {
                     let clone = m.clone();
                     accepted = true;
                     shell.publish(on_dnd_command_produced(Box::new(move || {
@@ -1572,7 +1572,7 @@ where
             {
                 let mut accepted = false;
                 for m in &mime_types {
-                    if SUPPORTED_MIME_TYPES.contains(&m.as_str()) {
+                    if SUPPORTED_TEXT_MIME_TYPES.contains(&m.as_str()) {
                         accepted = true;
                         let clone = m.clone();
                         shell.publish(on_dnd_command_produced(Box::new(move || {
@@ -1629,7 +1629,7 @@ where
 
             let state = state();
             if let DndOfferState::HandlingOffer(mime_types, _action) = state.dnd_offer.clone() {
-                let Some(mime_type) = SUPPORTED_MIME_TYPES
+                let Some(mime_type) = SUPPORTED_TEXT_MIME_TYPES
                     .iter()
                     .find(|m| mime_types.contains(&(**m).to_string()))
                 else {
@@ -1674,7 +1674,7 @@ where
             let state = state();
             if let DndOfferState::Dropped = state.dnd_offer.clone() {
                 state.dnd_offer = DndOfferState::None;
-                if !SUPPORTED_MIME_TYPES.contains(&mime_type.as_str()) || data.is_empty() {
+                if !SUPPORTED_TEXT_MIME_TYPES.contains(&mime_type.as_str()) || data.is_empty() {
                     return event::Status::Captured;
                 }
                 let Ok(content) = String::from_utf8(data) else {
@@ -2079,12 +2079,12 @@ pub fn mouse_interaction(
 
 /// A string which can be sent to the clipboard or drag-and-dropped.
 #[derive(Debug, Clone)]
-pub struct TextInputString(String);
+pub struct TextInputString(pub String);
 
 #[cfg(feature = "wayland")]
 impl DataFromMimeType for TextInputString {
     fn from_mime_type(&self, mime_type: &str) -> Option<Vec<u8>> {
-        SUPPORTED_MIME_TYPES
+        SUPPORTED_TEXT_MIME_TYPES
             .contains(&mime_type)
             .then(|| self.0.as_bytes().to_vec())
     }
