@@ -617,6 +617,17 @@ where
         );
     }
 
+    fn overlay<'b>(
+        &'b mut self,
+        state: &'b mut Tree,
+        layout: Layout<'_>,
+        renderer: &crate::Renderer,
+    ) -> Option<iced_core::overlay::Element<'b, Message, crate::Renderer>> {
+        self.inner
+            .as_widget_mut()
+            .overlay(&mut state.children[0], layout, renderer)
+    }
+
     fn on_event(
         &mut self,
         tree: &mut Tree,

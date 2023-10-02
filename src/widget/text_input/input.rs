@@ -17,8 +17,8 @@ use apply::Apply;
 use iced::Limits;
 use iced_core::event::{self, Event};
 use iced_core::keyboard;
-use iced_core::layout;
 use iced_core::mouse::{self, click};
+use iced_core::overlay::Group;
 use iced_core::renderer::{self, Renderer as CoreRenderer};
 use iced_core::text::{self, Renderer, Text};
 use iced_core::time::{Duration, Instant};
@@ -28,6 +28,7 @@ use iced_core::widget::tree::{self, Tree};
 use iced_core::widget::Id;
 use iced_core::window;
 use iced_core::{alignment, Background};
+use iced_core::{layout, overlay};
 use iced_core::{
     Clipboard, Color, Element, Layout, Length, Padding, Pixels, Point, Rectangle, Shell, Size,
     Vector, Widget,
@@ -556,6 +557,40 @@ where
         operation.text_input(state, self.id.as_ref());
     }
 
+    fn overlay<'b>(
+        &'b mut self,
+        tree: &'b mut Tree,
+        layout: Layout<'_>,
+        renderer: &crate::Renderer,
+    ) -> Option<overlay::Element<'b, Message, crate::Renderer>> {
+        let mut layout_ = Vec::with_capacity(2);
+        if self.leading_icon.is_some() {
+            let mut children = self.text_layout(layout).children();
+            children.next();
+            layout_.push(children.next().unwrap());
+        }
+        if self.trailing_icon.is_some() {
+            let mut children = self.text_layout(layout).children();
+            children.next();
+            if self.leading_icon.is_some() {
+                children.next();
+            }
+            layout_.push(children.next().unwrap());
+        };
+        let children = self
+            .leading_icon
+            .iter_mut()
+            .chain(self.trailing_icon.iter_mut())
+            .zip(&mut tree.children)
+            .zip(layout_)
+            .filter_map(|((child, state), layout)| {
+                child.as_widget_mut().overlay(state, layout, renderer)
+            })
+            .collect::<Vec<_>>();
+
+        (!children.is_empty()).then(|| Group::with_children(children).overlay())
+    }
+
     fn on_event(
         &mut self,
         tree: &mut Tree,
@@ -580,7 +615,21 @@ where
                 return leading_icon.as_widget_mut().on_event(
                     tree,
                     event.clone(),
-                    layout,
+                    leading_icon_layout,
+                    cursor_position,
+                    renderer,
+                    clipboard,
+                    shell,
+                    viewport,
+                );
+            } else if matches!(
+                event,
+                Event::Mouse(mouse::Event::CursorMoved { .. } | mouse::Event::CursorLeft)
+            ) {
+                leading_icon.as_widget_mut().on_event(
+                    tree,
+                    event.clone(),
+                    leading_icon_layout,
                     cursor_position,
                     renderer,
                     clipboard,
@@ -604,7 +653,21 @@ where
                 return trailing_icon.as_widget_mut().on_event(
                     tree,
                     event.clone(),
-                    layout,
+                    trailing_icon_layout,
+                    cursor_position,
+                    renderer,
+                    clipboard,
+                    shell,
+                    viewport,
+                );
+            } else if matches!(
+                event,
+                Event::Mouse(mouse::Event::CursorMoved { .. } | mouse::Event::CursorLeft)
+            ) {
+                trailing_icon.as_widget_mut().on_event(
+                    tree,
+                    event.clone(),
+                    trailing_icon_layout,
                     cursor_position,
                     renderer,
                     clipboard,
