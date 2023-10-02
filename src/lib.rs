@@ -3,21 +3,22 @@
 
 #![allow(clippy::module_name_repetitions)]
 
-#[cfg(all(not(feature = "wayland"), not(feature = "winit")))]
-compile_error!("must define `wayland` or `winit` feature");
-
 #[cfg(all(feature = "wayland", feature = "winit"))]
 compile_error!("cannot use `wayland` feature with `winit");
 
 /// Recommended default imports.
 pub mod prelude {
     pub use crate::ext::*;
-    pub use crate::{Also, ApplicationExt, Apply, Element, Renderer, Theme};
+    #[cfg(any(feature = "winit", feature = "wayland"))]
+    pub use crate::ApplicationExt;
+    pub use crate::{Also, Apply, Element, Renderer, Theme};
 }
 
 pub use apply::{Also, Apply};
 
+#[cfg(any(feature = "winit", feature = "wayland"))]
 pub mod app;
+#[cfg(any(feature = "winit", feature = "wayland"))]
 pub use app::{Application, ApplicationExt};
 
 #[cfg(feature = "applet")]
