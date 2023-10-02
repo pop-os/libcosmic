@@ -106,6 +106,9 @@ pub mod divider {
 pub mod flex_row;
 pub use flex_row::{flex_row, FlexRow};
 
+pub mod grid;
+pub use grid::{grid, Grid};
+
 mod header_bar;
 pub use header_bar::{header_bar, HeaderBar};
 
