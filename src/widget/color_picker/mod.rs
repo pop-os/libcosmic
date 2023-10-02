@@ -214,6 +214,12 @@ impl ColorPickerModel {
         self.active
     }
 
+    /// Get the applied color of the picker
+    #[must_use]
+    pub fn get_applied_color(&self) -> Color {
+        self.applied_color
+    }
+
     #[must_use]
     pub fn builder<Message>(
         &self,
