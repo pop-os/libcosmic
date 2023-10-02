@@ -41,6 +41,7 @@ jobs:
       fail-fast: false
       matrix:
         features:
+        - "" # for cosmic-comp, don't remove!
         - 'winit_debug'
         - 'winit_tokio'
         - winit
