@@ -116,6 +116,9 @@ optional = true
 version = "0.8"
 optional = true
 
+[dependencies.taffy]
+git = "https://github.com/DioxusLabs/taffy"
+features = ["grid"]
 
 [workspace]
 members = [
