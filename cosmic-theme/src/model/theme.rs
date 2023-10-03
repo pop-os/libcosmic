@@ -1,11 +1,23 @@
 use crate::{
     composite::over, steps::*, Component, Container, CornerRadii, CosmicPalette,
-    CosmicPaletteInner, Spacing, DARK_PALETTE, LIGHT_PALETTE, NAME,
+    CosmicPaletteInner, Spacing, ThemeMode, DARK_PALETTE, LIGHT_PALETTE, NAME,
 };
 use cosmic_config::{Config, ConfigGet, ConfigSet, CosmicConfigEntry};
 use palette::{IntoColor, Srgb, Srgba};
 use serde::{Deserialize, Serialize};
 use std::num::NonZeroUsize;
+
+/// ID for the current dark ThemeBuilder config
+pub const DARK_THEME_BUILDER_ID: &str = "com.system76.CosmicTheme.Dark.Builder";
+
+/// ID for the current dark Theme config
+pub const DARK_THEME_ID: &str = "com.system76.CosmicTheme.Dark";
+
+/// ID for the current light ThemeBuilder config
+pub const LIGHT_THEME_BUILDER_ID: &str = "com.system76.CosmicTheme.Light.Builder";
+
+/// ID for the current light Theme config
+pub const LIGHT_THEME_ID: &str = "com.system76.CosmicTheme.Light";
 
 #[derive(Clone, Copy, Debug, Default, Deserialize, Serialize, PartialEq, Eq)]
 /// Theme layer type
@@ -66,7 +78,7 @@ pub struct Theme<C> {
     pub is_high_contrast: bool,
 }
 
-impl CosmicConfigEntry for Theme<Srgba> {
+impl cosmic_config::CosmicConfigEntry for Theme<Srgba> {
     fn write_entry(&self, config: &Config) -> Result<(), cosmic_config::Error> {
         let self_ = self.clone();
         // TODO do as transaction
@@ -175,6 +187,16 @@ impl<C> Theme<C> {
     /// id of the theme
     pub fn id() -> &'static str {
         NAME
+    }
+
+    /// Get the config for the current dark theme
+    pub fn dark_config() -> Result<Config, cosmic_config::Error> {
+        Config::new(DARK_THEME_ID, Self::version())
+    }
+
+    /// Get the config for the current light theme
+    pub fn light_config() -> Result<Config, cosmic_config::Error> {
+        Config::new(LIGHT_THEME_ID, Self::version())
     }
 }
 
@@ -410,6 +432,20 @@ impl Theme<Srgba> {
     pub fn radius_xl(&self) -> [f32; 4] {
         self.corner_radii.radius_xl
     }
+
+    /// get the active theme
+    pub fn get_active() -> Result<Self, (Vec<cosmic_config::Error>, Self)> {
+        let config =
+            Config::new(Self::id(), Self::version()).map_err(|e| (vec![e], Self::default()))?;
+        let is_dark = ThemeMode::is_dark(&config).map_err(|e| (vec![e], Self::default()))?;
+        let config = if is_dark {
+            Self::dark_config()
+        } else {
+            Self::light_config()
+        }
+        .map_err(|e| (vec![e], Self::default()))?;
+        Self::get_entry(&config)
+    }
 }
 
 impl<C> From<CosmicPalette<C>> for Theme<Srgba>
@@ -422,7 +458,7 @@ where
 }
 
 /// Helper for building customized themes
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, cosmic_config::cosmic_config_derive::CosmicConfigEntry)]
 pub struct ThemeBuilder {
     palette: CosmicPalette<Srgba>,
     spacing: Spacing,
@@ -889,5 +925,20 @@ impl ThemeBuilder {
         theme.spacing = spacing;
         theme.corner_radii = corner_radii;
         theme
+    }
+
+    /// Get the builder for the dark config
+    pub fn dark_config() -> Result<Config, cosmic_config::Error> {
+        Config::new(DARK_THEME_BUILDER_ID, Self::version())
+    }
+
+    /// Get the builder for the light config
+    pub fn light_config() -> Result<Config, cosmic_config::Error> {
+        Config::new(LIGHT_THEME_BUILDER_ID, Self::version())
+    }
+
+    /// version of the theme builder
+    pub fn version() -> u64 {
+        1
     }
 }

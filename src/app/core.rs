@@ -1,6 +1,9 @@
 // Copyright 2023 System76 <info@system76.com>
 // SPDX-License-Identifier: MPL-2.0
 
+use cosmic_config::CosmicConfigEntry;
+use cosmic_theme::ThemeMode;
+
 use crate::Theme;
 
 /// Status of the nav bar and its panels.
@@ -49,6 +52,9 @@ pub struct Core {
     /// Last known system theme
     pub(super) system_theme: Theme,
 
+    /// Theme mode
+    pub(super) system_theme_mode: ThemeMode,
+
     pub(super) title: String,
 
     pub window: Window,
@@ -70,6 +76,16 @@ impl Default for Core {
             scale_factor: 1.0,
             title: String::new(),
             system_theme: crate::theme::active(),
+            system_theme_mode: ThemeMode::config()
+                .map(|c| {
+                    ThemeMode::get_entry(&c).unwrap_or_else(|(errors, mode)| {
+                        for e in errors {
+                            tracing::error!("{e}");
+                        }
+                        mode
+                    })
+                })
+                .unwrap_or_default(),
             window: Window {
                 context_title: String::new(),
                 header_title: String::new(),
@@ -168,5 +184,16 @@ impl Core {
     pub(crate) fn set_window_width(&mut self, new_width: u32) {
         self.window.width = new_width;
         self.is_condensed_update();
+    }
+
+    /// Get the current system theme
+    pub fn system_theme(&self) -> &Theme {
+        &self.system_theme
+    }
+
+    #[must_use]
+    /// Get the current system theme mode
+    pub fn system_theme_mode(&self) -> ThemeMode {
+        self.system_theme_mode
     }
 }

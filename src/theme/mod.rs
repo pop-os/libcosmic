@@ -4,11 +4,11 @@
 //! Contains the [`Theme`] type and its widget stylesheet implementations.
 
 pub mod style;
+use cosmic_theme::ThemeMode;
 pub use style::*;
 
 use cosmic_config::config_subscription;
 use cosmic_config::CosmicConfigEntry;
-use cosmic_theme::util::CssColor;
 use cosmic_theme::Component;
 use cosmic_theme::LayeredTheme;
 use iced_futures::Subscription;
@@ -68,10 +68,15 @@ pub fn is_high_contrast() -> bool {
 }
 
 /// Watches for changes to the system's theme preference.
-pub fn subscription(id: u64) -> Subscription<crate::theme::Theme> {
-    config_subscription::<u64, crate::cosmic_theme::Theme<Srgba>>(
-        id,
-        crate::cosmic_theme::NAME.into(),
+pub fn subscription(id: u64, is_dark: bool) -> Subscription<crate::theme::Theme> {
+    config_subscription::<_, crate::cosmic_theme::Theme<Srgba>>(
+        (id, is_dark),
+        if is_dark {
+            cosmic_theme::DARK_THEME_ID
+        } else {
+            cosmic_theme::LIGHT_THEME_ID
+        }
+        .into(),
         crate::cosmic_theme::Theme::<Srgba>::version(),
     )
     .map(|(_, res)| {
@@ -88,10 +93,21 @@ pub fn subscription(id: u64) -> Subscription<crate::theme::Theme> {
 
 /// Loads the preferred system theme from `cosmic-config`.
 pub fn system_preference() -> Theme {
-    let Ok(helper) = crate::cosmic_config::Config::new(
-        crate::cosmic_theme::NAME,
-        crate::cosmic_theme::Theme::<CssColor>::version(),
-    ) else {
+    let Ok(mode_config) = ThemeMode::config() else {
+        return Theme::dark();
+    };
+
+    let Ok(is_dark) = ThemeMode::is_dark(&mode_config) else {
+        return Theme::dark();
+    };
+
+    let helper = if is_dark {
+        crate::cosmic_theme::Theme::<Srgba>::dark_config()
+    } else {
+        crate::cosmic_theme::Theme::<Srgba>::light_config()
+    };
+
+    let Ok(helper) = helper else {
         return Theme::dark();
     };
 
