@@ -7,7 +7,7 @@ use iced_core::layout::{Limits, Node};
 use iced_core::{Alignment, Length, Padding, Point, Size};
 
 use taffy::geometry::{Line, Rect};
-use taffy::style::{AlignContent, AlignItems, Display, GridPlacement, Style};
+use taffy::style::{AlignItems, Dimension, Display, GridPlacement, Style};
 use taffy::style_helpers::{auto, length};
 use taffy::Taffy;
 
@@ -35,7 +35,8 @@ pub fn resolve<Message>(
     // Attach widgets as child nodes.
     for (child, assignment) in items.iter().zip(assignments.iter()) {
         // Calculate the dimensions of the item.
-        let child_node = child.as_widget().layout(renderer, limits);
+        let child_widget = child.as_widget();
+        let child_node = child_widget.layout(renderer, limits);
         let size = child_node.size();
 
         nodes.push(child_node);
@@ -44,15 +45,23 @@ pub fn resolve<Message>(
         let leaf = taffy.new_leaf(Style {
             grid_column: Line {
                 start: GridPlacement::Line((assignment.column as i16).into()),
-                end: GridPlacement::Span(assignment.height.into()),
+                end: GridPlacement::Line(
+                    (assignment.column as i16 + assignment.width as i16).into(),
+                ),
             },
             grid_row: Line {
                 start: GridPlacement::Line((assignment.row as i16).into()),
-                end: GridPlacement::Span(assignment.width.into()),
+                end: GridPlacement::Line((assignment.row as i16 + assignment.height as i16).into()),
             },
             size: taffy::geometry::Size {
-                width: length(size.width),
-                height: length(size.height),
+                width: match child_widget.width() {
+                    Length::Fill | Length::FillPortion(_) => Dimension::Auto,
+                    _ => length(size.width),
+                },
+                height: match child_widget.height() {
+                    Length::Fill | Length::FillPortion(_) => Dimension::Auto,
+                    _ => length(size.height),
+                },
             },
 
             ..Style::default()
