@@ -34,8 +34,8 @@ pub fn resolve<Message>(
 
     // Attach widgets as child nodes.
     for (child, assignment) in items.iter().zip(assignments.iter()) {
-        // Calculate the dimensdrawions of the item.
-        let child_node = child.as_widget().layout(renderer, &limits);
+        // Calculate the dimensions of the item.
+        let child_node = child.as_widget().layout(renderer, limits);
         let size = child_node.size();
 
         nodes.push(child_node);
@@ -54,6 +54,7 @@ pub fn resolve<Message>(
                 width: length(size.width),
                 height: length(size.height),
             },
+
             ..Style::default()
         });
 
@@ -84,12 +85,12 @@ pub fn resolve<Message>(
                 height: length(column_spacing),
             },
 
-            justify_content: Some(match height {
-                Length::Fill | Length::FillPortion(_) => AlignContent::Stretch,
+            justify_items: Some(match height {
+                Length::Fill | Length::FillPortion(_) => AlignItems::Stretch,
                 _ => match column_alignment {
-                    Alignment::Start => AlignContent::Start,
-                    Alignment::Center => AlignContent::Center,
-                    Alignment::End => AlignContent::End,
+                    Alignment::Start => AlignItems::Start,
+                    Alignment::Center => AlignItems::Center,
+                    Alignment::End => AlignItems::End,
                 },
             }),
 
