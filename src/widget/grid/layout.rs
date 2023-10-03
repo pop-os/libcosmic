@@ -7,9 +7,9 @@ use iced_core::layout::{Limits, Node};
 use iced_core::{Alignment, Length, Padding, Point, Size};
 
 use taffy::geometry::{Line, Rect};
-use taffy::style::{AlignItems, Dimension, Display, GridPlacement, Style};
+use taffy::style::{AlignContent, AlignItems, Dimension, Display, GridPlacement, Style};
 use taffy::style_helpers::{auto, length};
-use taffy::Taffy;
+use taffy::{LayoutTree, Taffy};
 
 #[allow(clippy::too_many_lines)]
 pub fn resolve<Message>(
@@ -41,6 +41,11 @@ pub fn resolve<Message>(
 
         nodes.push(child_node);
 
+        let (width, justify_self) = match child_widget.width() {
+            Length::Fill | Length::FillPortion(_) => (Dimension::Auto, Some(AlignItems::Stretch)),
+            _ => (length(size.width), None),
+        };
+
         // Attach widget as leaf to be later assigned to grid.
         let leaf = taffy.new_leaf(Style {
             grid_column: Line {
@@ -54,16 +59,13 @@ pub fn resolve<Message>(
                 end: GridPlacement::Line((assignment.row as i16 + assignment.height as i16).into()),
             },
             size: taffy::geometry::Size {
-                width: match child_widget.width() {
-                    Length::Fill | Length::FillPortion(_) => Dimension::Auto,
-                    _ => length(size.width),
-                },
+                width,
                 height: match child_widget.height() {
                     Length::Fill | Length::FillPortion(_) => Dimension::Auto,
                     _ => length(size.height),
                 },
             },
-
+            justify_self,
             ..Style::default()
         });
 
@@ -153,12 +155,19 @@ pub fn resolve<Message>(
         }
     };
 
-    for (leaf, node) in leafs.into_iter().zip(nodes.iter_mut()) {
+    for (leaf, (child, node)) in leafs.into_iter().zip(items.iter().zip(nodes.iter_mut())) {
         if let Ok(leaf_layout) = taffy.layout(leaf) {
-            let location = leaf_layout.location;
+            let child_widget = child.as_widget();
+            match child_widget.width() {
+                Length::Fill | Length::FillPortion(_) => {
+                    *node = child_widget.layout(renderer, &limits.width(leaf_layout.size.width));
+                }
+                _ => (),
+            }
+
             node.move_to(Point {
-                x: location.x,
-                y: location.y,
+                x: leaf_layout.location.x,
+                y: leaf_layout.location.y,
             });
         }
     }
