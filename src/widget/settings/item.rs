@@ -8,6 +8,8 @@ use crate::{
     Element,
 };
 use derive_setters::Setters;
+use iced_core::Length;
+use iced_widget::container;
 
 /// A settings item aligned in a row
 #[must_use]
@@ -70,15 +72,20 @@ impl<'a, Message: 'static> Item<'a, Message> {
             let column = column::with_capacity(2)
                 .spacing(2)
                 .push(text(self.title))
-                .push(text(description).size(10));
+                .push(text(description).size(10))
+                .width(Length::FillPortion(12));
 
             contents.push(column.into());
         } else {
             contents.push(text(self.title).into());
         }
 
-        contents.push(horizontal_space(iced::Length::Fill).into());
-        contents.push(widget.into());
+        contents.push(
+            container(widget.into())
+                .width(Length::FillPortion(4))
+                .align_x(iced_core::alignment::Horizontal::Right)
+                .into(),
+        );
 
         item_row(contents)
     }
