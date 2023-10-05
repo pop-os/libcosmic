@@ -458,20 +458,34 @@ where
 }
 
 /// Helper for building customized themes
-#[derive(Debug, Serialize, Deserialize, cosmic_config::cosmic_config_derive::CosmicConfigEntry)]
+#[derive(
+    Clone, Debug, Serialize, Deserialize, cosmic_config::cosmic_config_derive::CosmicConfigEntry,
+)]
 pub struct ThemeBuilder {
-    palette: CosmicPalette<Srgba>,
-    spacing: Spacing,
-    corner_radii: CornerRadii,
-    neutral_tint: Option<Srgb>,
-    bg_color: Option<Srgba>,
-    primary_container_bg: Option<Srgba>,
-    secondary_container_bg: Option<Srgba>,
-    text_tint: Option<Srgb>,
-    accent: Option<Srgb>,
-    success: Option<Srgb>,
-    warning: Option<Srgb>,
-    destructive: Option<Srgb>,
+    /// override the palette for the builder
+    pub palette: CosmicPalette<Srgba>,
+    /// override spacing for the builder
+    pub spacing: Spacing,
+    /// override corner radii for the builder
+    pub corner_radii: CornerRadii,
+    /// override neutral_tint for the builder
+    pub neutral_tint: Option<Srgb>,
+    /// override bg_color for the builder
+    pub bg_color: Option<Srgba>,
+    /// override the primary container bg color for the builder
+    pub primary_container_bg: Option<Srgba>,
+    /// override the secontary container bg color for the builder
+    pub secondary_container_bg: Option<Srgba>,
+    /// override the text tint for the builder
+    pub text_tint: Option<Srgb>,
+    /// override the accent color for the builder
+    pub accent: Option<Srgb>,
+    /// override the success color for the builder
+    pub success: Option<Srgb>,
+    /// override the warning color for the builder
+    pub warning: Option<Srgb>,
+    /// override the destructive color for the builder
+    pub destructive: Option<Srgb>,
 }
 
 impl Default for ThemeBuilder {
