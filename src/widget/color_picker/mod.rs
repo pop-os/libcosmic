@@ -72,9 +72,11 @@ pub struct ColorPickerModel {
     #[setters(skip)]
     input_color: String,
     #[setters(skip)]
-    applied_color: Color,
+    applied_color: Option<Color>,
     #[setters(skip)]
-    initial_color: Color,
+    initial_color: Option<Color>,
+    #[setters(skip)]
+    fallback_color: Option<Color>,
     #[setters(skip)]
     recent_colors: Vec<Color>,
     active: bool,
@@ -91,11 +93,11 @@ impl ColorPickerModel {
     pub fn new(
         hex: impl Into<Cow<'static, str>> + Clone,
         rgb: impl Into<Cow<'static, str>> + Clone,
-        fallback_color: Color,
+        fallback_color: Option<Color>,
         initial_color: Option<Color>,
     ) -> Self {
-        let initial = initial_color.unwrap_or(fallback_color);
-        let initial_srgb = palette::Srgb::from(initial);
+        let initial = initial_color.or(fallback_color);
+        let initial_srgb = palette::Srgb::from(initial.unwrap_or(Color::BLACK));
         let hsv = palette::Hsv::from_color(initial_srgb);
         Self {
             segmented_model: segmented_button::Model::builder()
@@ -103,10 +105,11 @@ impl ColorPickerModel {
                 .insert(move |b| b.text(rgb.clone()))
                 .build(),
             active_color: hsv,
-            save_next: Some(initial),
+            save_next: None,
             input_color: color_to_string(hsv, true),
-            applied_color: fallback_color,
-            initial_color: initial,
+            applied_color: initial,
+            initial_color,
+            fallback_color,
             recent_colors: Vec::new(), // TODO should all color pickers show the same recent colors?
             active: false,
             width: Length::Fixed(300.0),
@@ -124,7 +127,7 @@ impl ColorPickerModel {
     ) -> crate::widget::Button<'a, Message, crate::Renderer> {
         color_button(
             Some(f(ColorPickerUpdate::ToggleColorPicker)),
-            self.applied_color,
+            self.applied_color.unwrap_or(Color::BLACK),
         )
     }
 
@@ -142,8 +145,10 @@ impl ColorPickerModel {
             }
             ColorPickerUpdate::AppliedColor => {
                 let srgb = palette::Srgb::from_color(self.active_color);
-                self.recent_colors.push(self.applied_color);
-                self.applied_color = Color::from(srgb);
+                if let Some(applied_color) = self.applied_color.take() {
+                    self.recent_colors.push(applied_color);
+                }
+                self.applied_color = Some(Color::from(srgb));
                 self.active = false;
             }
             ColorPickerUpdate::ActivateSegmented(e) => {
@@ -167,10 +172,10 @@ impl ColorPickerModel {
             ColorPickerUpdate::Reset => {
                 self.must_clear_cache.store(true, Ordering::SeqCst);
 
-                let initial_srgb = palette::Srgb::from(self.initial_color);
+                let initial_srgb = palette::Srgb::from(self.fallback_color.unwrap_or(Color::BLACK));
                 let hsv = palette::Hsv::from_color(initial_srgb);
                 self.active_color = hsv;
-                self.applied_color = self.initial_color;
+                self.applied_color = self.fallback_color;
                 self.copied_at = None;
             }
             ColorPickerUpdate::Cancel => {
@@ -216,7 +221,7 @@ impl ColorPickerModel {
 
     /// Get the applied color of the picker
     #[must_use]
-    pub fn get_applied_color(&self) -> Color {
+    pub fn get_applied_color(&self) -> Option<Color> {
         self.applied_color
     }
 
