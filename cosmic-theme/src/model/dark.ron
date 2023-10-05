@@ -55,6 +55,15 @@ Dark (
         neutral_10: (
             c: "#FFFFFF",
         ),
+        bright_green: (
+            c: "#5EDB8C",
+        ),
+        bright_red: (
+            c: "#FFA090",
+        ),
+        bright_orange: (
+            c: "#FFA37D",
+        ),
         ext_warm_grey: (
             c: "#9B8E8A",
         ),
@@ -76,23 +85,32 @@ Dark (
         ext_indigo: (
             c: "#3E88FF",
         ),
+        accent_blue: (
+            c: "#63D0DF",
+        ),
+        accent_green: (
+            c: "#92CF9C",
+        ),
         accent_warm_grey: (
-            c: "#554742",
+            c: "#CABAB4",
         ),
         accent_orange: (
-            c: "#AF5C02",
+            c: "#FFAD00",
         ),
         accent_yellow: (
-            c: "#966800",
+            c: "#F7E062",
         ),
         accent_purple: (
-            c: "#813FFF",
+            c: "#E79CFE",
         ),
         accent_pink: (
-            c: "#F93A83",
+            c: "#FF9CB1",
+        ),
+        accent_red: (
+            c: "#FDA1A0",
         ),
         accent_indigo: (
-            c: "#3E88FF",
+            c: "#A1C0EB",
         ),
     )
 )
