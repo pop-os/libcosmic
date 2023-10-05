@@ -459,7 +459,12 @@ where
 
 /// Helper for building customized themes
 #[derive(
-    Clone, Debug, Serialize, Deserialize, cosmic_config::cosmic_config_derive::CosmicConfigEntry,
+    Clone,
+    Debug,
+    Serialize,
+    Deserialize,
+    cosmic_config::cosmic_config_derive::CosmicConfigEntry,
+    PartialEq,
 )]
 pub struct ThemeBuilder {
     /// override the palette for the builder
@@ -528,7 +533,7 @@ impl ThemeBuilder {
     pub fn dark_high_contrast() -> Self {
         let palette: CosmicPalette<Srgba> = DARK_PALETTE.to_owned().into();
         Self {
-            palette: CosmicPalette::HighContrastLight(palette.inner()),
+            palette: CosmicPalette::HighContrastDark(palette.inner()),
             ..Default::default()
         }
     }

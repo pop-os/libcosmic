@@ -163,16 +163,13 @@ where
                 cosmic_theme::THEME_MODE_ID.into(),
                 cosmic_theme::ThemeMode::version(),
             )
-            .map(|(_, u)| {
-                tracing::error!("{u:?}");
-                match u {
-                    Ok(t) => Message::SystemThemeModeChange(t),
-                    Err((errors, t)) => {
-                        for e in errors {
-                            tracing::error!("{e}");
-                        }
-                        Message::SystemThemeModeChange(t)
+            .map(|(_, u)| match u {
+                Ok(t) => Message::SystemThemeModeChange(t),
+                Err((errors, t)) => {
+                    for e in errors {
+                        tracing::error!("{e}");
                     }
+                    Message::SystemThemeModeChange(t)
                 }
             })
             .map(super::Message::Cosmic),
