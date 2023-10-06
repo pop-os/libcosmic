@@ -163,7 +163,7 @@ impl Default for State {
             color_picker_model: ColorPickerModel::new(
                 "Hex",
                 "RGB",
-                Color::new(0.8, 0.3, 0.8, 1.0),
+                Some(Color::new(0.8, 0.3, 0.8, 1.0)),
                 None,
             ),
         }
