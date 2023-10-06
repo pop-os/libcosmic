@@ -76,6 +76,14 @@ pub struct Theme<C> {
     pub is_dark: bool,
     /// is high contrast
     pub is_high_contrast: bool,
+    /// cosmic-comp window gaps size (outer, inner)
+    pub gaps: (u32, u32),
+    /// cosmic-comp active hint window outline width
+    pub active_hint: u32,
+    /// cosmic-comp custom window hint color
+    pub window_hint: Option<Srgb>,
+    /// enables blurred transparency
+    pub is_frosted: bool,
 }
 
 impl cosmic_config::CosmicConfigEntry for Theme<Srgba> {
@@ -491,6 +499,14 @@ pub struct ThemeBuilder {
     pub warning: Option<Srgb>,
     /// override the destructive color for the builder
     pub destructive: Option<Srgb>,
+    /// enabled blurred transparency
+    pub is_frosted: bool, // TODO handle
+    /// cosmic-comp window gaps size (outer, inner)
+    pub gaps: (u32, u32),
+    /// cosmic-comp active hint window outline width
+    pub active_hint: u32,
+    /// cosmic-comp custom window hint color
+    pub window_hint: Option<Srgb>,
 }
 
 impl Default for ThemeBuilder {
@@ -508,6 +524,11 @@ impl Default for ThemeBuilder {
             success: Default::default(),
             warning: Default::default(),
             destructive: Default::default(),
+            is_frosted: false,
+            // cosmic-comp theme settings
+            gaps: (0, 4),
+            active_hint: 4,
+            window_hint: None,
         }
     }
 }
@@ -630,6 +651,10 @@ impl ThemeBuilder {
             success,
             warning,
             destructive,
+            gaps,
+            active_hint,
+            window_hint,
+            is_frosted,
         } = self;
 
         let is_dark = palette.is_dark();
@@ -940,6 +965,10 @@ impl ThemeBuilder {
             corner_radii,
             is_dark,
             is_high_contrast,
+            gaps,
+            active_hint,
+            window_hint,
+            is_frosted,
         };
         theme.spacing = spacing;
         theme.corner_radii = corner_radii;
