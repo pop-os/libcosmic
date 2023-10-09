@@ -59,6 +59,9 @@ pub struct Settings {
 
     /// Whether the window should be transparent.
     pub(crate) transparent: bool,
+
+    /// Whether the application should exit when there are no open windows
+    pub(crate) exit_on_close: bool,
 }
 
 impl Settings {
@@ -93,6 +96,7 @@ impl Default for Settings {
             size_limits: Limits::NONE.min_height(1.0).min_width(1.0),
             theme: crate::theme::system_preference(),
             transparent: false,
+            exit_on_close: true,
         }
     }
 }

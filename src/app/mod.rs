@@ -72,6 +72,7 @@ pub fn run<App: Application>(settings: Settings, flags: App::Flags) -> iced::Res
     iced.antialiasing = settings.antialiasing;
     iced.default_font = settings.default_font;
     iced.default_text_size = settings.default_text_size;
+    iced.exit_on_close_request = settings.exit_on_close;
     iced.id = Some(App::APP_ID.to_owned());
 
     #[cfg(feature = "wayland")]
