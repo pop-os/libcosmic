@@ -132,6 +132,41 @@ impl Config {
             Err(Error::InvalidName(name.to_string()))
         }
     }
+    
+    /// Get state for the given application name and config version. State is meant to be used to
+    /// store items that may need to be exposed to other programs but will change regularly without
+    /// user action
+    // Use folder at XDG config/name for config storage, return Config if successful
+    //TODO: fallbacks for flatpak (HOST_XDG_CONFIG_HOME, xdg-desktop settings proxy)
+    pub fn new_state(name: &str, version: u64) -> Result<Self, Error> {
+        // Get libcosmic system defaults path
+        //TODO: support non-UNIX OS
+        let cosmic_system_path = Path::new("/var/lib/cosmic");
+        // Append [name]/v[version]
+        let system_path = cosmic_system_path.join(name).join(format!("v{}", version));
+
+        // Get libcosmic user configuration directory
+        let cosmic_user_path = dirs::state_dir()
+            .ok_or(Error::NoConfigDirectory)?
+            .join("cosmic");
+        // Append [name]/v[version]
+        let user_path = cosmic_user_path.join(name).join(format!("v{}", version));
+
+        // If the app paths are children of the cosmic paths
+        if system_path.starts_with(&cosmic_system_path) && user_path.starts_with(&cosmic_user_path)
+        {
+            // Create app user path
+            fs::create_dir_all(&user_path)?;
+            // Return Config
+            Ok(Self {
+                system_path,
+                user_path,
+            })
+        } else {
+            // Return error for invalid name
+            Err(Error::InvalidName(name.to_string()))
+        }
+    }
 
     // Start a transaction (to set multiple configs at the same time)
     pub fn transaction<'a>(&'a self) -> ConfigTransaction<'a> {
