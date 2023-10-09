@@ -3,9 +3,7 @@
 
 use cosmic_config::{Config, ConfigGet, ConfigSet};
 
-pub fn main() {
-    let config = Config::new("com.system76.Example", 1).unwrap();
-
+fn test_config(config: Config) {
     let watcher = config
         .watch(|config, keys| {
             println!("Changed: {:?}", keys);
@@ -82,4 +80,12 @@ pub fn main() {
     );
     println!("Committing transaction");
     println!("Commit transaction: {:?}", tx.commit());
+}
+
+pub fn main() {
+    println!("Testing config");
+    test_config(Config::new("com.system76.Example", 1).unwrap());
+    
+    println!("Testing state");
+    test_config(Config::new_state("com.system76.Example", 1).unwrap());
 }
