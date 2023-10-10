@@ -105,6 +105,9 @@ impl cosmic_config::CosmicConfigEntry for Theme<Srgba> {
         tx.set("is_high_contrast", self_.is_high_contrast)?;
         tx.set("spacing", self_.spacing)?;
         tx.set("corner_radii", self_.corner_radii)?;
+        tx.set("active_hint", self_.active_hint)?;
+        tx.set("gaps", self_.gaps)?;
+        tx.set("window_hint", self_.window_hint)?;
 
         tx.commit()
     }
@@ -165,7 +168,18 @@ impl cosmic_config::CosmicConfigEntry for Theme<Srgba> {
             Ok(corner_radii) => default.corner_radii = corner_radii,
             Err(e) => errors.push(e),
         }
-
+        match config.get::<u32>("active_hint") {
+            Ok(active_hint) => default.active_hint = active_hint,
+            Err(e) => errors.push(e),
+        }
+        match config.get::<(u32, u32)>("gaps") {
+            Ok(gaps) => default.gaps = gaps,
+            Err(e) => errors.push(e),
+        }
+        match config.get::<Option<Srgb>>("window_hint") {
+            Ok(window_hint) => default.window_hint = window_hint,
+            Err(e) => errors.push(e),
+        }
         if errors.is_empty() {
             Ok(default)
         } else {
