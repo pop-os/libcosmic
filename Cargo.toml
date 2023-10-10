@@ -118,6 +118,7 @@ optional = true
 
 [dependencies.taffy]
 git = "https://github.com/DioxusLabs/taffy"
+rev = "65bedf"
 features = ["grid"]
 
 [workspace]
