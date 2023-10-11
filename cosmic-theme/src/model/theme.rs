@@ -100,6 +100,14 @@ impl cosmic_config::CosmicConfigEntry for Theme<Srgba> {
         tx.set("success", self_.success)?;
         tx.set("destructive", self_.destructive)?;
         tx.set("warning", self_.warning)?;
+        tx.set("accent_button", self_.accent_button)?;
+        tx.set("success_button", self_.success_button)?;
+        tx.set("warning_button", self_.warning_button)?;
+        tx.set("destructive_button", self_.destructive_button)?;
+        tx.set("icon_button", self_.icon_button)?;
+        tx.set("link_button", self_.link_button)?;
+        tx.set("text_button", self_.text_button)?;
+        tx.set("button", self_.button)?;
         tx.set("palette", self_.palette)?;
         tx.set("is_dark", self_.is_dark)?;
         tx.set("is_high_contrast", self_.is_high_contrast)?;
@@ -146,6 +154,38 @@ impl cosmic_config::CosmicConfigEntry for Theme<Srgba> {
         }
         match config.get::<Component<Srgba>>("warning") {
             Ok(warning) => default.warning = warning,
+            Err(e) => errors.push(e),
+        }
+        match config.get::<Component<Srgba>>("success_button") {
+            Ok(b) => default.success_button = b,
+            Err(e) => errors.push(e),
+        }
+        match config.get::<Component<Srgba>>("accent_button") {
+            Ok(b) => default.accent_button = b,
+            Err(e) => errors.push(e),
+        }
+        match config.get::<Component<Srgba>>("destructive_button") {
+            Ok(b) => default.destructive_button = b,
+            Err(e) => errors.push(e),
+        }
+        match config.get::<Component<Srgba>>("warning_button") {
+            Ok(warning) => default.warning_button = warning,
+            Err(e) => errors.push(e),
+        }
+        match config.get::<Component<Srgba>>("icon_button") {
+            Ok(b) => default.link_button = b,
+            Err(e) => errors.push(e),
+        }
+        match config.get::<Component<Srgba>>("link_button") {
+            Ok(b) => default.link_button = b,
+            Err(e) => errors.push(e),
+        }
+        match config.get::<Component<Srgba>>("text_button") {
+            Ok(b) => default.text_button = b,
+            Err(e) => errors.push(e),
+        }
+        match config.get::<Component<Srgba>>("button") {
+            Ok(b) => default.button = b,
             Err(e) => errors.push(e),
         }
         match config.get::<CosmicPaletteInner<Srgba>>("palette") {
