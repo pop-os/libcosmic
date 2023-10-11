@@ -30,7 +30,7 @@ pub fn resolve<Message>(
     let mut leafs = Vec::with_capacity(items.len());
     let mut nodes = Vec::with_capacity(items.len());
 
-    let mut taffy = Taffy::with_capacity(items.len() + 1);
+    let mut taffy = Taffy::<()>::with_capacity(items.len() + 1);
 
     // Attach widgets as child nodes.
     for (child, assignment) in items.iter().zip(assignments.iter()) {
