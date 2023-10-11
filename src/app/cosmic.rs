@@ -213,6 +213,7 @@ impl<T: Application> Cosmic<T> {
         iced::Command::single(Action::Window(WindowAction::Close))
     }
 
+    #[allow(clippy::too_many_lines)]
     fn cosmic_update(&mut self, message: Message) -> iced::Command<super::Message<T::Message>> {
         match message {
             Message::WindowResize(id, width, height) => {
@@ -330,7 +331,18 @@ impl<T: Application> Cosmic<T> {
             }
             Message::SystemThemeModeChange(mode) => {
                 let core = self.app.core_mut();
+                let changed = core.system_theme_mode.is_dark != mode.is_dark;
                 core.system_theme_mode = mode;
+                if changed {
+                    THEME.with(move |t| {
+                        let mut cosmic_theme = t.borrow_mut();
+
+                        // Only apply update if the theme is set to load a system theme
+                        if let ThemeType::System(_) = cosmic_theme.theme_type {
+                            cosmic_theme.set_theme(crate::theme::system_preference().theme_type);
+                        }
+                    });
+                }
             }
         }
 
