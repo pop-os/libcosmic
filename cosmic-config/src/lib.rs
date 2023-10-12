@@ -132,7 +132,7 @@ impl Config {
             Err(Error::InvalidName(name.to_string()))
         }
     }
-    
+
     /// Get state for the given application name and config version. State is meant to be used to
     /// store items that may need to be exposed to other programs but will change regularly without
     /// user action
