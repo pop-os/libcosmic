@@ -31,6 +31,9 @@ pub use card::*;
 pub mod color_picker;
 pub use color_picker::{ColorPicker, ColorPickerModel};
 
+pub mod context_drawer;
+pub use context_drawer::{context_drawer, ContextDrawer};
+
 pub use column::{column, Column};
 pub mod column {
     pub type Column<'a, Message> = iced::widget::Column<'a, Message, crate::Renderer>;
