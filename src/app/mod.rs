@@ -240,7 +240,7 @@ pub trait ApplicationExt: Application {
     }
 
     /// Set the title of the main window.
-    fn set_title(&mut self, title: String) -> iced::Command<Message<Self::Message>>;
+    fn set_window_title(&mut self, title: String) -> iced::Command<Message<Self::Message>>;
 
     /// View template for the main window.
     fn view_main(&self) -> Element<Message<Self::Message>>;
@@ -264,13 +264,13 @@ impl<App: Application> ApplicationExt for App {
     }
 
     #[cfg(feature = "wayland")]
-    fn set_title(&mut self, title: String) -> iced::Command<Message<Self::Message>> {
+    fn set_window_title(&mut self, title: String) -> iced::Command<Message<Self::Message>> {
         self.core_mut().title = title.clone();
         command::set_title(title)
     }
 
     #[cfg(not(feature = "wayland"))]
-    fn set_title(&mut self, title: String) -> iced::Command<Message<Self::Message>> {
+    fn set_window_title(&mut self, title: String) -> iced::Command<Message<Self::Message>> {
         self.core_mut().title = title.clone();
         iced::Command::none()
     }

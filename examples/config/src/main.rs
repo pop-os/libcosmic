@@ -85,7 +85,7 @@ fn test_config(config: Config) {
 pub fn main() {
     println!("Testing config");
     test_config(Config::new("com.system76.Example", 1).unwrap());
-    
+
     println!("Testing state");
     test_config(Config::new_state("com.system76.Example", 1).unwrap());
 }
