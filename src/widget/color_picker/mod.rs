@@ -745,7 +745,7 @@ fn color_to_string(c: palette::Hsv, is_hex: bool) -> String {
     }
 }
 
-fn color_button<'a, Message: 'static>(
+pub fn color_button<'a, Message: 'static>(
     on_press: Option<Message>,
     color: Option<Color>,
     icon_portion: Length,
