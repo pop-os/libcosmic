@@ -15,11 +15,14 @@ pub struct NavBar {
 #[allow(clippy::struct_excessive_bools)]
 #[derive(Clone)]
 pub struct Window {
-    /// Label to as title in headerbar.
+    /// Label to display as context drawer title.
+    pub context_title: String,
+    /// Label to display as header bar title.
     pub header_title: String,
     pub use_template: bool,
     pub can_fullscreen: bool,
     pub sharp_corners: bool,
+    pub show_context: bool,
     pub show_headerbar: bool,
     pub show_window_menu: bool,
     pub show_maximize: bool,
@@ -68,10 +71,12 @@ impl Default for Core {
             title: String::new(),
             system_theme: crate::theme::active(),
             window: Window {
+                context_title: String::new(),
                 header_title: String::new(),
                 use_template: true,
                 can_fullscreen: false,
                 sharp_corners: false,
+                show_context: false,
                 show_headerbar: true,
                 show_maximize: true,
                 show_minimize: true,

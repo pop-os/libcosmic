@@ -24,6 +24,8 @@ pub enum Message {
     AppThemeChange(Theme),
     /// Requests to close the window.
     Close,
+    /// Closes or shows the context drawer.
+    ContextDrawer(bool),
     /// Requests to drag the window.
     Drag,
     /// Keyboard shortcuts managed by libcosmic.
@@ -166,6 +168,7 @@ where
         if id != window::Id(0) {
             return self.app.view_window(id).map(super::Message::App);
         }
+
         if self.app.core().window.use_template {
             self.app.view_main()
         } else {
@@ -242,12 +245,11 @@ impl<T: Application> Cosmic<T> {
                 keyboard_nav::Message::Fullscreen => return command::toggle_fullscreen(),
             },
 
-            Message::Drag => return command::drag(),
-
-            Message::Close => {
-                self.app.on_app_exit();
-                return self.close();
+            Message::ContextDrawer(show) => {
+                self.app.core_mut().window.show_context = show;
             }
+
+            Message::Drag => return command::drag(),
 
             Message::Minimize => return command::minimize(),
 
@@ -302,6 +304,11 @@ impl<T: Application> Cosmic<T> {
 
             Message::ScaleFactor(factor) => {
                 self.app.core_mut().set_scale_factor(factor);
+            }
+
+            Message::Close => {
+                self.app.on_app_exit();
+                return self.close();
             }
         }
 

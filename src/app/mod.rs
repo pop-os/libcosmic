@@ -41,7 +41,7 @@ pub use self::core::Core;
 pub use self::settings::Settings;
 use crate::prelude::*;
 use crate::theme::THEME;
-use crate::widget::nav_bar;
+use crate::widget::{context_drawer, nav_bar};
 use apply::Apply;
 use iced::Subscription;
 use iced::{window, Application as IcedApplication};
@@ -62,6 +62,7 @@ pub fn run<App: Application>(settings: Settings, flags: App::Flags) -> iced::Res
     core.set_scale_factor(settings.scale_factor);
     core.set_window_width(settings.size.0);
     core.set_window_height(settings.size.1);
+
     THEME.with(move |t| {
         let mut cosmic_theme = t.borrow_mut();
         cosmic_theme.set_theme(settings.theme.theme_type);
@@ -138,6 +139,11 @@ where
 
     /// Creates the application, and optionally emits command on initialize.
     fn init(core: Core, flags: Self::Flags) -> (Self, iced::Command<Message<Self::Message>>);
+
+    /// Displays a context drawer on the side of the application window when `Some`.
+    fn context_drawer(&self) -> Option<Element<Self::Message>> {
+        None
+    }
 
     /// Attaches elements to the start section of the header.
     fn header_start(&self) -> Vec<Element<Self::Message>> {
@@ -332,7 +338,17 @@ impl<App: Application> ApplicationExt for App {
                     if self.nav_model().is_none() || core.show_content() {
                         let main_content = self.view().debug(core.debug).map(Message::App);
 
-                        widgets.push(main_content);
+                        widgets.push(if let Some(context) = self.context_drawer() {
+                            context_drawer(
+                                &core.window.context_title,
+                                Message::Cosmic(cosmic::Message::ContextDrawer(false)),
+                                main_content,
+                                context.map(Message::App),
+                            )
+                            .into()
+                        } else {
+                            main_content
+                        });
                     }
 
                     widgets
