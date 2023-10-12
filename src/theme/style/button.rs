@@ -67,10 +67,10 @@ pub fn appearance(
                 corner_radii = &cosmic.corner_radii.radius_m;
             }
 
-            let (background, _text, icon) = color(&cosmic.icon_button);
+            let (background, text, icon) = color(&cosmic.icon_button);
             appearance.background = Some(Background::Color(background));
-            // appearance.text_color = text;
-            // appearance.icon_color = icon;
+            appearance.text_color = text;
+            appearance.icon_color = icon;
 
             if focused {
                 appearance.text_color = Some(cosmic.accent.on.into());
