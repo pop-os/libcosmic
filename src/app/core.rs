@@ -109,6 +109,16 @@ impl Core {
         self.is_condensed_update();
     }
 
+    /// Set context drawer header title
+    pub fn set_context_title(&mut self, title: String) {
+        self.window.context_title = title;
+    }
+
+    /// Set header bar title
+    pub fn set_header_title(&mut self, title: String) {
+        self.window.header_title = title;
+    }
+
     /// Whether to show or hide the main window's content.
     pub(crate) fn show_content(&self) -> bool {
         !self.is_condensed || !self.nav_bar.toggled_condensed
