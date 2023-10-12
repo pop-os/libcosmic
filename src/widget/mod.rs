@@ -29,7 +29,7 @@ pub mod card;
 pub use card::*;
 
 pub mod color_picker;
-pub use color_picker::*;
+pub use color_picker::{ColorPicker, ColorPickerModel};
 
 pub use column::{column, Column};
 pub mod column {
