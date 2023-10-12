@@ -4,7 +4,7 @@
 pub mod layout;
 pub mod widget;
 
-pub use widget::{Grid, Item};
+pub use widget::Grid;
 
 /// Responsively generates rows and columns of widgets based on its dimmensions.
 pub const fn grid<'a, Message>() -> Grid<'a, Message> {

@@ -7,9 +7,9 @@ use iced_core::layout::{Limits, Node};
 use iced_core::{Alignment, Length, Padding, Point, Size};
 
 use taffy::geometry::{Line, Rect};
-use taffy::style::{AlignContent, AlignItems, Dimension, Display, GridPlacement, Style};
+use taffy::style::{AlignItems, Dimension, Display, GridPlacement, Style};
 use taffy::style_helpers::{auto, length};
-use taffy::{LayoutTree, Taffy};
+use taffy::Taffy;
 
 #[allow(clippy::too_many_lines)]
 pub fn resolve<Message>(
