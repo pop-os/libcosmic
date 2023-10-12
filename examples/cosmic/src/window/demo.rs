@@ -520,7 +520,7 @@ impl State {
                 .on_input(Message::InputChanged)
                 .into(),
             self.color_picker_model
-                .picker_button(Message::ColorPickerUpdate)
+                .picker_button(Message::ColorPickerUpdate, None)
                 .width(Length::Fixed(128.0))
                 .height(Length::Fixed(128.0))
                 .into(),

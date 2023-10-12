@@ -122,10 +122,12 @@ impl ColorPickerModel {
     pub fn picker_button<'a, Message: 'static, T: Fn(ColorPickerUpdate) -> Message>(
         &self,
         f: T,
+        icon_portion: Option<u16>,
     ) -> crate::widget::Button<'a, Message, crate::Renderer> {
         color_button(
             Some(f(ColorPickerUpdate::ToggleColorPicker)),
             self.applied_color,
+            Length::FillPortion(icon_portion.unwrap_or(12)),
         )
     }
 
@@ -358,7 +360,8 @@ where
                 .leading_icon(
                     color_button(
                         None,
-                        Some(Color::from(palette::Srgb::from_color(self.active_color)))
+                        Some(Color::from(palette::Srgb::from_color(self.active_color))),
+                        Length::FillPortion(12)
                     )
                     .into()
                 )
@@ -415,6 +418,7 @@ where
                                     color_button(
                                         Some(on_update(ColorPickerUpdate::ActiveColor(hsv))),
                                         Some(*c),
+                                        Length::FillPortion(12),
                                     )
                                     .into()
                                 })
@@ -744,6 +748,7 @@ fn color_to_string(c: palette::Hsv, is_hex: bool) -> String {
 fn color_button<'a, Message: 'static>(
     on_press: Option<Message>,
     color: Option<Color>,
+    icon_portion: Length,
 ) -> crate::widget::Button<'a, Message, crate::Renderer> {
     let spacing = THEME.with(|t| t.borrow().cosmic().spacing);
 
@@ -751,27 +756,23 @@ fn color_button<'a, Message: 'static>(
         Element::from(vertical_space(Length::Fixed(f32::from(spacing.space_s))))
     } else {
         Element::from(column![
-            vertical_space(Length::FillPortion(1)),
-            vertical_space(Length::FillPortion(1)),
+            vertical_space(Length::FillPortion(6)),
             row![
-                horizontal_space(Length::FillPortion(1)),
-                horizontal_space(Length::FillPortion(1)),
+                horizontal_space(Length::FillPortion(6)),
                 Icon::from(
                     icon::from_name("list-add-symbolic")
                         .prefer_svg(true)
                         .symbolic(true)
                         .size(64)
                 )
-                .width(Length::FillPortion(2))
+                .width(icon_portion)
                 .height(Length::Fill)
                 .content_fit(iced_core::ContentFit::Contain),
-                horizontal_space(Length::FillPortion(1)),
-                horizontal_space(Length::FillPortion(1)),
+                horizontal_space(Length::FillPortion(6)),
             ]
-            .height(Length::FillPortion(2))
+            .height(icon_portion)
             .width(Length::Fill),
-            vertical_space(Length::FillPortion(1)),
-            vertical_space(Length::FillPortion(1)),
+            vertical_space(Length::FillPortion(6)),
         ])
     })
     .width(Length::Fixed(f32::from(spacing.space_s)))
