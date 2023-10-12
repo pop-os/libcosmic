@@ -16,6 +16,27 @@ use std::{fmt::Debug, hash::Hash};
 
 pub use iced_style::container::{Appearance, StyleSheet};
 
+pub fn rectangle_tracker<'a, Message, I, T>(
+    content: T,
+    id: I,
+    tx: UnboundedSender<(I, Rectangle)>,
+) -> RectangleTrackingContainer<'a, Message, crate::Renderer, I>
+where
+    I: Hash + Copy + Send + Sync + Debug + 'a,
+    T: Into<Element<'a, Message, crate::Renderer>>,
+{
+    RectangleTrackingContainer::new(content, id, tx)
+}
+
+pub fn subscription<
+    I: 'static + Hash + Copy + Send + Sync + Debug,
+    R: 'static + Hash + Copy + Send + Sync + Debug + Eq,
+>(
+    id: I,
+) -> iced::Subscription<(I, RectangleUpdate<R>)> {
+    subscription::rectangle_tracker_subscription(id)
+}
+
 #[derive(Clone, Debug)]
 pub struct RectangleTracker<I> {
     tx: UnboundedSender<(I, Rectangle)>,

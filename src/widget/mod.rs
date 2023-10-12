@@ -133,6 +133,7 @@ pub mod popover;
 pub use popover::{popover, Popover};
 
 pub mod rectangle_tracker;
+pub use rectangle_tracker::{rectangle_tracker, RectangleTracker};
 
 pub use row::{row, Row};
 pub mod row {
