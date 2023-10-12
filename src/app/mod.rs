@@ -229,6 +229,16 @@ pub trait ApplicationExt: Application {
     /// Get the title of the main window.
     fn title(&self) -> &str;
 
+    /// Set the context drawer title.
+    fn set_context_title(&mut self, title: String) {
+        self.core_mut().set_context_title(title);
+    }
+
+    /// Set the header bar title.
+    fn set_header_title(&mut self, title: String) {
+        self.core_mut().set_header_title(title);
+    }
+
     /// Set the title of the main window.
     fn set_title(&mut self, title: String) -> iced::Command<Message<Self::Message>>;
 
