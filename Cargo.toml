@@ -67,7 +67,7 @@ path = "cosmic-theme"
 [dependencies.iced]
 path = "./iced"
 default-features = false
-features = ["image", "svg", "lazy"]
+features = ["advanced", "image", "svg", "lazy"]
 
 [dependencies.iced_runtime]
 path = "./iced/runtime"
