@@ -1,7 +1,7 @@
 // Copyright 2023 System76 <info@system76.com>
 // SPDX-License-Identifier: MPL-2.0
 
-use crate::widget::{button, column, container, horizontal_space, icon, list, row, text, Column};
+use crate::widget::{button, column, container, horizontal_space, icon, list, row, text};
 use crate::{theme, Apply, Element};
 use iced::Length;
 
