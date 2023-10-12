@@ -147,7 +147,9 @@ where
     }
 
     fn update_title(&mut self) -> Command<Message> {
-        let title = self.active_page_title().to_owned();
-        self.set_title(title)
+        let header_title = self.active_page_title().to_owned();
+        let window_title = format!("{header_title} — COSMIC AppDemo");
+        self.set_header_title(header_title);
+        self.set_window_title(window_title)
     }
 }

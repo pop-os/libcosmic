@@ -76,9 +76,10 @@ impl cosmic::Application for App {
             error_status: None,
         };
 
-        let command = app.set_title("Open a file".into());
+        app.set_header_title("Open a file".into());
+        let cmd = app.set_window_title("COSMIC OpenDialog Demo".into());
 
-        (app, command)
+        (app, cmd)
     }
 
     fn header_end(&self) -> Vec<Element<Self::Message>> {
@@ -136,43 +137,40 @@ impl cosmic::Application for App {
                 let mut contents = String::new();
                 std::mem::swap(&mut contents, &mut self.file_contents);
 
-                return Command::batch(vec![
-                    // Set the file's URL as the application title.
-                    self.set_title(url.to_string()),
-                    // Reads the selected file into memory.
-                    cosmic::command::future(async move {
-                        // Check if its a valid local file path.
-                        let path = match url.scheme() {
-                            "file" => url.path(),
-                            other => {
-                                return Message::Error(format!(
-                                    "{url} has unknown scheme: {other}"
-                                ));
-                            }
-                        };
+                // Set the file's URL as the application title.
+                self.set_header_title(url.to_string());
 
-                        // Open the file by its path.
-                        let mut file = match tokio::fs::File::open(path).await {
-                            Ok(file) => file,
-                            Err(why) => {
-                                return Message::Error(format!("failed to open {path}: {why}"));
-                            }
-                        };
-
-                        // Read the file into our contents buffer.
-                        contents.clear();
-
-                        if let Err(why) = file.read_to_string(&mut contents).await {
-                            return Message::Error(format!("failed to read {path}: {why}"));
+                // Reads the selected file into memory.
+                return cosmic::command::future(async move {
+                    // Check if its a valid local file path.
+                    let path = match url.scheme() {
+                        "file" => url.path(),
+                        other => {
+                            return Message::Error(format!("{url} has unknown scheme: {other}"));
                         }
+                    };
 
-                        contents.shrink_to_fit();
+                    // Open the file by its path.
+                    let mut file = match tokio::fs::File::open(path).await {
+                        Ok(file) => file,
+                        Err(why) => {
+                            return Message::Error(format!("failed to open {path}: {why}"));
+                        }
+                    };
 
-                        // Send this back to the application.
-                        Message::FileRead(url, contents)
-                    })
-                    .map(cosmic::app::message::app),
-                ]);
+                    // Read the file into our contents buffer.
+                    contents.clear();
+
+                    if let Err(why) = file.read_to_string(&mut contents).await {
+                        return Message::Error(format!("failed to read {path}: {why}"));
+                    }
+
+                    contents.shrink_to_fit();
+
+                    // Send this back to the application.
+                    Message::FileRead(url, contents)
+                })
+                .map(cosmic::app::message::app);
             }
 
             // Creates a new open dialog.
