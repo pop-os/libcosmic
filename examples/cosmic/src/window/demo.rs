@@ -160,12 +160,7 @@ impl Default for State {
                 "card 4".to_string(),
             ],
             timeline: Rc::new(RefCell::new(Default::default())),
-            color_picker_model: ColorPickerModel::new(
-                "Hex",
-                "RGB",
-                Some(Color::new(0.8, 0.3, 0.8, 1.0)),
-                None,
-            ),
+            color_picker_model: ColorPickerModel::new("Hex", "RGB", None, None),
         }
     }
 }
@@ -525,6 +520,8 @@ impl State {
                 .into(),
             self.color_picker_model
                 .picker_button(Message::ColorPickerUpdate)
+                .width(Length::Fixed(128.0))
+                .height(Length::Fixed(128.0))
                 .into(),
             if self.color_picker_model.get_is_active() {
                 self.color_picker_model
