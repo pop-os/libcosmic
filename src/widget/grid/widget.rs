@@ -309,21 +309,3 @@ impl From<(u16, u16, u16, u16)> for Assignment {
         }
     }
 }
-
-#[must_use]
-pub struct Item<'a, Message> {
-    widget: Element<'a, Message>,
-    assignment: Assignment,
-}
-
-impl<'a, Message> Item<'a, Message> {
-    pub fn width(mut self, width: u16) -> Self {
-        self.assignment.width = width;
-        self
-    }
-
-    pub fn height(mut self, height: u16) -> Self {
-        self.assignment.height = height;
-        self
-    }
-}
