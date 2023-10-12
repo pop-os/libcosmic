@@ -109,11 +109,13 @@ impl StyleSheet for crate::Theme {
         }
 
         appearance(self, focused, style, |component| {
-            (
-                component.base.into(),
-                Some(component.on.into()),
-                Some(component.on.into()),
-            )
+            let text_color = if let Button::Icon | Button::IconVertical = style {
+                None
+            } else {
+                Some(component.on.into())
+            };
+
+            (component.base.into(), text_color, text_color)
         })
     }
 
