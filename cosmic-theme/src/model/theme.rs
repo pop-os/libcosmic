@@ -1,11 +1,23 @@
 use crate::{
     composite::over, steps::*, Component, Container, CornerRadii, CosmicPalette,
-    CosmicPaletteInner, Spacing, DARK_PALETTE, LIGHT_PALETTE, NAME,
+    CosmicPaletteInner, Spacing, ThemeMode, DARK_PALETTE, LIGHT_PALETTE, NAME,
 };
 use cosmic_config::{Config, ConfigGet, ConfigSet, CosmicConfigEntry};
 use palette::{IntoColor, Srgb, Srgba};
 use serde::{Deserialize, Serialize};
 use std::num::NonZeroUsize;
+
+/// ID for the current dark ThemeBuilder config
+pub const DARK_THEME_BUILDER_ID: &str = "com.system76.CosmicTheme.Dark.Builder";
+
+/// ID for the current dark Theme config
+pub const DARK_THEME_ID: &str = "com.system76.CosmicTheme.Dark";
+
+/// ID for the current light ThemeBuilder config
+pub const LIGHT_THEME_BUILDER_ID: &str = "com.system76.CosmicTheme.Light.Builder";
+
+/// ID for the current light Theme config
+pub const LIGHT_THEME_ID: &str = "com.system76.CosmicTheme.Light";
 
 #[derive(Clone, Copy, Debug, Default, Deserialize, Serialize, PartialEq, Eq)]
 /// Theme layer type
@@ -64,9 +76,17 @@ pub struct Theme<C> {
     pub is_dark: bool,
     /// is high contrast
     pub is_high_contrast: bool,
+    /// cosmic-comp window gaps size (outer, inner)
+    pub gaps: (u32, u32),
+    /// cosmic-comp active hint window outline width
+    pub active_hint: u32,
+    /// cosmic-comp custom window hint color
+    pub window_hint: Option<Srgb>,
+    /// enables blurred transparency
+    pub is_frosted: bool,
 }
 
-impl CosmicConfigEntry for Theme<Srgba> {
+impl cosmic_config::CosmicConfigEntry for Theme<Srgba> {
     fn write_entry(&self, config: &Config) -> Result<(), cosmic_config::Error> {
         let self_ = self.clone();
         // TODO do as transaction
@@ -80,11 +100,22 @@ impl CosmicConfigEntry for Theme<Srgba> {
         tx.set("success", self_.success)?;
         tx.set("destructive", self_.destructive)?;
         tx.set("warning", self_.warning)?;
+        tx.set("accent_button", self_.accent_button)?;
+        tx.set("success_button", self_.success_button)?;
+        tx.set("warning_button", self_.warning_button)?;
+        tx.set("destructive_button", self_.destructive_button)?;
+        tx.set("icon_button", self_.icon_button)?;
+        tx.set("link_button", self_.link_button)?;
+        tx.set("text_button", self_.text_button)?;
+        tx.set("button", self_.button)?;
         tx.set("palette", self_.palette)?;
         tx.set("is_dark", self_.is_dark)?;
         tx.set("is_high_contrast", self_.is_high_contrast)?;
         tx.set("spacing", self_.spacing)?;
         tx.set("corner_radii", self_.corner_radii)?;
+        tx.set("active_hint", self_.active_hint)?;
+        tx.set("gaps", self_.gaps)?;
+        tx.set("window_hint", self_.window_hint)?;
 
         tx.commit()
     }
@@ -125,6 +156,38 @@ impl CosmicConfigEntry for Theme<Srgba> {
             Ok(warning) => default.warning = warning,
             Err(e) => errors.push(e),
         }
+        match config.get::<Component<Srgba>>("success_button") {
+            Ok(b) => default.success_button = b,
+            Err(e) => errors.push(e),
+        }
+        match config.get::<Component<Srgba>>("accent_button") {
+            Ok(b) => default.accent_button = b,
+            Err(e) => errors.push(e),
+        }
+        match config.get::<Component<Srgba>>("destructive_button") {
+            Ok(b) => default.destructive_button = b,
+            Err(e) => errors.push(e),
+        }
+        match config.get::<Component<Srgba>>("warning_button") {
+            Ok(warning) => default.warning_button = warning,
+            Err(e) => errors.push(e),
+        }
+        match config.get::<Component<Srgba>>("icon_button") {
+            Ok(b) => default.link_button = b,
+            Err(e) => errors.push(e),
+        }
+        match config.get::<Component<Srgba>>("link_button") {
+            Ok(b) => default.link_button = b,
+            Err(e) => errors.push(e),
+        }
+        match config.get::<Component<Srgba>>("text_button") {
+            Ok(b) => default.text_button = b,
+            Err(e) => errors.push(e),
+        }
+        match config.get::<Component<Srgba>>("button") {
+            Ok(b) => default.button = b,
+            Err(e) => errors.push(e),
+        }
         match config.get::<CosmicPaletteInner<Srgba>>("palette") {
             Ok(palette) => default.palette = palette,
             Err(e) => errors.push(e),
@@ -145,7 +208,18 @@ impl CosmicConfigEntry for Theme<Srgba> {
             Ok(corner_radii) => default.corner_radii = corner_radii,
             Err(e) => errors.push(e),
         }
-
+        match config.get::<u32>("active_hint") {
+            Ok(active_hint) => default.active_hint = active_hint,
+            Err(e) => errors.push(e),
+        }
+        match config.get::<(u32, u32)>("gaps") {
+            Ok(gaps) => default.gaps = gaps,
+            Err(e) => errors.push(e),
+        }
+        match config.get::<Option<Srgb>>("window_hint") {
+            Ok(window_hint) => default.window_hint = window_hint,
+            Err(e) => errors.push(e),
+        }
         if errors.is_empty() {
             Ok(default)
         } else {
@@ -175,6 +249,16 @@ impl<C> Theme<C> {
     /// id of the theme
     pub fn id() -> &'static str {
         NAME
+    }
+
+    /// Get the config for the current dark theme
+    pub fn dark_config() -> Result<Config, cosmic_config::Error> {
+        Config::new(DARK_THEME_ID, Self::version())
+    }
+
+    /// Get the config for the current light theme
+    pub fn light_config() -> Result<Config, cosmic_config::Error> {
+        Config::new(LIGHT_THEME_ID, Self::version())
     }
 }
 
@@ -410,6 +494,20 @@ impl Theme<Srgba> {
     pub fn radius_xl(&self) -> [f32; 4] {
         self.corner_radii.radius_xl
     }
+
+    /// get the active theme
+    pub fn get_active() -> Result<Self, (Vec<cosmic_config::Error>, Self)> {
+        let config =
+            Config::new(Self::id(), Self::version()).map_err(|e| (vec![e], Self::default()))?;
+        let is_dark = ThemeMode::is_dark(&config).map_err(|e| (vec![e], Self::default()))?;
+        let config = if is_dark {
+            Self::dark_config()
+        } else {
+            Self::light_config()
+        }
+        .map_err(|e| (vec![e], Self::default()))?;
+        Self::get_entry(&config)
+    }
 }
 
 impl<C> From<CosmicPalette<C>> for Theme<Srgba>
@@ -422,20 +520,47 @@ where
 }
 
 /// Helper for building customized themes
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(
+    Clone,
+    Debug,
+    Serialize,
+    Deserialize,
+    cosmic_config::cosmic_config_derive::CosmicConfigEntry,
+    PartialEq,
+)]
 pub struct ThemeBuilder {
-    palette: CosmicPalette<Srgba>,
-    spacing: Spacing,
-    corner_radii: CornerRadii,
-    neutral_tint: Option<Srgb>,
-    bg_color: Option<Srgba>,
-    primary_container_bg: Option<Srgba>,
-    secondary_container_bg: Option<Srgba>,
-    text_tint: Option<Srgb>,
-    accent: Option<Srgb>,
-    success: Option<Srgb>,
-    warning: Option<Srgb>,
-    destructive: Option<Srgb>,
+    /// override the palette for the builder
+    pub palette: CosmicPalette<Srgba>,
+    /// override spacing for the builder
+    pub spacing: Spacing,
+    /// override corner radii for the builder
+    pub corner_radii: CornerRadii,
+    /// override neutral_tint for the builder
+    pub neutral_tint: Option<Srgb>,
+    /// override bg_color for the builder
+    pub bg_color: Option<Srgba>,
+    /// override the primary container bg color for the builder
+    pub primary_container_bg: Option<Srgba>,
+    /// override the secontary container bg color for the builder
+    pub secondary_container_bg: Option<Srgba>,
+    /// override the text tint for the builder
+    pub text_tint: Option<Srgb>,
+    /// override the accent color for the builder
+    pub accent: Option<Srgb>,
+    /// override the success color for the builder
+    pub success: Option<Srgb>,
+    /// override the warning color for the builder
+    pub warning: Option<Srgb>,
+    /// override the destructive color for the builder
+    pub destructive: Option<Srgb>,
+    /// enabled blurred transparency
+    pub is_frosted: bool, // TODO handle
+    /// cosmic-comp window gaps size (outer, inner)
+    pub gaps: (u32, u32),
+    /// cosmic-comp active hint window outline width
+    pub active_hint: u32,
+    /// cosmic-comp custom window hint color
+    pub window_hint: Option<Srgb>,
 }
 
 impl Default for ThemeBuilder {
@@ -453,6 +578,11 @@ impl Default for ThemeBuilder {
             success: Default::default(),
             warning: Default::default(),
             destructive: Default::default(),
+            is_frosted: false,
+            // cosmic-comp theme settings
+            gaps: (0, 4),
+            active_hint: 4,
+            window_hint: None,
         }
     }
 }
@@ -478,7 +608,7 @@ impl ThemeBuilder {
     pub fn dark_high_contrast() -> Self {
         let palette: CosmicPalette<Srgba> = DARK_PALETTE.to_owned().into();
         Self {
-            palette: CosmicPalette::HighContrastLight(palette.inner()),
+            palette: CosmicPalette::HighContrastDark(palette.inner()),
             ..Default::default()
         }
     }
@@ -575,6 +705,10 @@ impl ThemeBuilder {
             success,
             warning,
             destructive,
+            gaps,
+            active_hint,
+            window_hint,
+            is_frosted,
         } = self;
 
         let is_dark = palette.is_dark();
@@ -885,9 +1019,28 @@ impl ThemeBuilder {
             corner_radii,
             is_dark,
             is_high_contrast,
+            gaps,
+            active_hint,
+            window_hint,
+            is_frosted,
         };
         theme.spacing = spacing;
         theme.corner_radii = corner_radii;
         theme
+    }
+
+    /// Get the builder for the dark config
+    pub fn dark_config() -> Result<Config, cosmic_config::Error> {
+        Config::new(DARK_THEME_BUILDER_ID, Self::version())
+    }
+
+    /// Get the builder for the light config
+    pub fn light_config() -> Result<Config, cosmic_config::Error> {
+        Config::new(LIGHT_THEME_BUILDER_ID, Self::version())
+    }
+
+    /// version of the theme builder
+    pub fn version() -> u64 {
+        1
     }
 }

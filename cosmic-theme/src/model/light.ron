@@ -55,6 +55,15 @@ Light (
         neutral_10: (
             c: "#000000",
         ),
+        bright_green: (
+            c: "#00572C",
+        ),
+        bright_red: (
+            c: "#890418",
+        ),
+        bright_orange: (
+            c: "#792C00",
+        ),
         ext_warm_grey: (
             c: "#9B8E8A",
         ),
@@ -76,23 +85,32 @@ Light (
         ext_indigo: (
             c: "#95C4FC",
         ),
+        accent_blue: (
+            c: "#00525A",
+        ),
+        accent_red: (
+            c: "#78292E",
+        ),
+        accent_green: (
+            c: "#185529",
+        ),
         accent_warm_grey: (
-            c: "#ADA29E",
+            c: "#554742",
         ),
         accent_orange: (
-            c: "#FFD7A1",
+            c: "#624000",
         ),
         accent_yellow: (
-            c: "#FFF19E",
+            c: "#534800",
         ),
         accent_purple: (
-            c: "#D58CFF",
+            c: "#68217C",
         ),
         accent_pink: (
-            c: "#FF9CDD",
+            c: "#86043A",
         ),
         accent_indigo: (
-            c: "#95C4FC",
+            c: "#2E496D",
         ),
     )
 )

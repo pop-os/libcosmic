@@ -28,7 +28,7 @@ fn impl_cosmic_config_entry_macro(ast: &syn::DeriveInput) -> TokenStream {
     let write_each_config_field = fields.iter().map(|field| {
         let field_name = &field.ident;
         quote! {
-            config.set(stringify!(#field_name), &self.#field_name)?;
+            cosmic_config::ConfigSet::set(config, stringify!(#field_name), &self.#field_name)?;
         }
     });
 
@@ -36,7 +36,7 @@ fn impl_cosmic_config_entry_macro(ast: &syn::DeriveInput) -> TokenStream {
         let field_name = &field.ident;
         let field_type = &field.ty;
         quote! {
-            match config.get::<#field_type>(stringify!(#field_name)) {
+            match cosmic_config::ConfigGet::get::<#field_type>(config, stringify!(#field_name)) {
                 Ok(#field_name) => default.#field_name = #field_name,
                 Err(e) => errors.push(e),
             }
@@ -60,13 +60,13 @@ fn impl_cosmic_config_entry_macro(ast: &syn::DeriveInput) -> TokenStream {
 
     let gen = quote! {
         impl CosmicConfigEntry for #name {
-            fn write_entry(&self, config: &Config) -> Result<(), cosmic_config::Error> {
+            fn write_entry(&self, config: &cosmic_config::Config) -> Result<(), cosmic_config::Error> {
                 let tx = config.transaction();
                 #(#write_each_config_field)*
                 tx.commit()
             }
 
-            fn get_entry(config: &Config) -> Result<Self, (Vec<cosmic_config::Error>, Self)> {
+            fn get_entry(config: &cosmic_config::Config) -> Result<Self, (Vec<cosmic_config::Error>, Self)> {
                 let mut default = Self::default();
                 let mut errors = Vec::new();
 

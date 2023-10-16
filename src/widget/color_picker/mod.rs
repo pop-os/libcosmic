@@ -17,20 +17,21 @@ use iced_core::gradient::{ColorStop, Linear};
 use iced_core::renderer::Quad;
 use iced_core::widget::{tree, Tree};
 use iced_core::{
-    layout, mouse, renderer, Clipboard, Color, Layout, Length, Radians, Rectangle, Renderer, Shell,
-    Vector, Widget,
+    layout, mouse, renderer, Background, Clipboard, Color, Layout, Length, Radians, Rectangle,
+    Renderer, Shell, Vector, Widget,
 };
 #[cfg(feature = "wayland")]
 use iced_sctk::commands::data_device::set_selection;
 use iced_style::slider::{HandleShape, RailBackground};
-use iced_widget::{canvas, column, scrollable, vertical_space, Row};
+use iced_widget::{canvas, column, horizontal_space, row, scrollable, vertical_space, Row};
 use lazy_static::lazy_static;
 use palette::{FromColor, RgbHue};
 
+use super::button::StyleSheet;
 use super::divider::horizontal;
-use super::icon::from_name;
+use super::icon::{self, from_name};
 use super::segmented_button::{self, Model, SingleSelect};
-use super::{button, segmented_selection, text, text_input, tooltip};
+use super::{button, segmented_selection, text, text_input, tooltip, Icon};
 
 // TODO is this going to look correct enough?
 lazy_static! {
@@ -72,9 +73,9 @@ pub struct ColorPickerModel {
     #[setters(skip)]
     input_color: String,
     #[setters(skip)]
-    applied_color: Color,
+    applied_color: Option<Color>,
     #[setters(skip)]
-    initial_color: Color,
+    fallback_color: Option<Color>,
     #[setters(skip)]
     recent_colors: Vec<Color>,
     active: bool,
@@ -91,11 +92,11 @@ impl ColorPickerModel {
     pub fn new(
         hex: impl Into<Cow<'static, str>> + Clone,
         rgb: impl Into<Cow<'static, str>> + Clone,
-        fallback_color: Color,
+        fallback_color: Option<Color>,
         initial_color: Option<Color>,
     ) -> Self {
-        let initial = initial_color.unwrap_or(fallback_color);
-        let initial_srgb = palette::Srgb::from(initial);
+        let initial = initial_color.or(fallback_color);
+        let initial_srgb = palette::Srgb::from(initial.unwrap_or(Color::BLACK));
         let hsv = palette::Hsv::from_color(initial_srgb);
         Self {
             segmented_model: segmented_button::Model::builder()
@@ -103,10 +104,10 @@ impl ColorPickerModel {
                 .insert(move |b| b.text(rgb.clone()))
                 .build(),
             active_color: hsv,
-            save_next: Some(initial),
+            save_next: None,
             input_color: color_to_string(hsv, true),
-            applied_color: fallback_color,
-            initial_color: initial,
+            applied_color: initial,
+            fallback_color,
             recent_colors: Vec::new(), // TODO should all color pickers show the same recent colors?
             active: false,
             width: Length::Fixed(300.0),
@@ -118,13 +119,15 @@ impl ColorPickerModel {
 
     /// Get a color picker button that displays the applied color
     ///
-    pub fn picker_button<'a, Message: 'a, T: Fn(ColorPickerUpdate) -> Message>(
+    pub fn picker_button<'a, Message: 'static, T: Fn(ColorPickerUpdate) -> Message>(
         &self,
         f: T,
+        icon_portion: Option<u16>,
     ) -> crate::widget::Button<'a, Message, crate::Renderer> {
         color_button(
             Some(f(ColorPickerUpdate::ToggleColorPicker)),
             self.applied_color,
+            Length::FillPortion(icon_portion.unwrap_or(12)),
         )
     }
 
@@ -142,8 +145,10 @@ impl ColorPickerModel {
             }
             ColorPickerUpdate::AppliedColor => {
                 let srgb = palette::Srgb::from_color(self.active_color);
-                self.recent_colors.push(self.applied_color);
-                self.applied_color = Color::from(srgb);
+                if let Some(applied_color) = self.applied_color.take() {
+                    self.recent_colors.push(applied_color);
+                }
+                self.applied_color = Some(Color::from(srgb));
                 self.active = false;
             }
             ColorPickerUpdate::ActivateSegmented(e) => {
@@ -167,10 +172,10 @@ impl ColorPickerModel {
             ColorPickerUpdate::Reset => {
                 self.must_clear_cache.store(true, Ordering::SeqCst);
 
-                let initial_srgb = palette::Srgb::from(self.initial_color);
+                let initial_srgb = palette::Srgb::from(self.fallback_color.unwrap_or(Color::BLACK));
                 let hsv = palette::Hsv::from_color(initial_srgb);
                 self.active_color = hsv;
-                self.applied_color = self.initial_color;
+                self.applied_color = self.fallback_color;
                 self.copied_at = None;
             }
             ColorPickerUpdate::Cancel => {
@@ -216,7 +221,7 @@ impl ColorPickerModel {
 
     /// Get the applied color of the picker
     #[must_use]
-    pub fn get_applied_color(&self) -> Color {
+    pub fn get_applied_color(&self) -> Option<Color> {
         self.applied_color
     }
 
@@ -355,7 +360,8 @@ where
                 .leading_icon(
                     color_button(
                         None,
-                        Color::from(palette::Srgb::from_color(self.active_color))
+                        Some(Color::from(palette::Srgb::from_color(self.active_color))),
+                        Length::FillPortion(12)
                     )
                     .into()
                 )
@@ -411,7 +417,8 @@ where
                                     let hsv = palette::Hsv::from_color(initial_srgb);
                                     color_button(
                                         Some(on_update(ColorPickerUpdate::ActiveColor(hsv))),
-                                        *c,
+                                        Some(*c),
+                                        Length::FillPortion(12),
                                     )
                                     .into()
                                 })
@@ -738,93 +745,122 @@ fn color_to_string(c: palette::Hsv, is_hex: bool) -> String {
     }
 }
 
-fn color_button<'a, Message: 'a>(
+pub fn color_button<'a, Message: 'static>(
     on_press: Option<Message>,
-    color: Color,
+    color: Option<Color>,
+    icon_portion: Length,
 ) -> crate::widget::Button<'a, Message, crate::Renderer> {
     let spacing = THEME.with(|t| t.borrow().cosmic().spacing);
 
-    button(vertical_space(Length::Fixed(f32::from(spacing.space_s))))
-        .width(Length::Fixed(f32::from(spacing.space_s)))
-        .height(Length::Fixed(f32::from(spacing.space_s)))
-        .on_press_maybe(on_press)
-        .style(crate::theme::Button::Custom {
-            active: Box::new(move |focused, theme| {
-                let cosmic = theme.cosmic();
+    button(if color.is_some() {
+        Element::from(vertical_space(Length::Fixed(f32::from(spacing.space_s))))
+    } else {
+        Element::from(column![
+            vertical_space(Length::FillPortion(6)),
+            row![
+                horizontal_space(Length::FillPortion(6)),
+                Icon::from(
+                    icon::from_name("list-add-symbolic")
+                        .prefer_svg(true)
+                        .symbolic(true)
+                        .size(64)
+                )
+                .width(icon_portion)
+                .height(Length::Fill)
+                .content_fit(iced_core::ContentFit::Contain),
+                horizontal_space(Length::FillPortion(6)),
+            ]
+            .height(icon_portion)
+            .width(Length::Fill),
+            vertical_space(Length::FillPortion(6)),
+        ])
+    })
+    .width(Length::Fixed(f32::from(spacing.space_s)))
+    .height(Length::Fixed(f32::from(spacing.space_s)))
+    .on_press_maybe(on_press)
+    .style(crate::theme::Button::Custom {
+        active: Box::new(move |focused, theme| {
+            let cosmic = theme.cosmic();
 
-                let (outline_width, outline_color) = if focused {
-                    (1.0, cosmic.accent_color().into())
-                } else {
-                    (0.0, Color::TRANSPARENT)
-                };
-                button::Appearance {
-                    shadow_offset: Vector::default(),
-                    background: Some(color.into()),
-                    border_radius: cosmic.radius_xs().into(),
-                    border_width: 1.0,
-                    border_color: cosmic.on_bg_color().into(),
-                    outline_width,
-                    outline_color,
-                    icon_color: None,
-                    text_color: None,
-                }
-            }),
-            disabled: Box::new(move |theme| {
-                let cosmic = theme.cosmic();
+            let (outline_width, outline_color) = if focused {
+                (1.0, cosmic.accent_color().into())
+            } else {
+                (0.0, Color::TRANSPARENT)
+            };
+            let standard = theme.active(focused, &Button::Standard);
+            button::Appearance {
+                shadow_offset: Vector::default(),
+                background: color.map(Background::from).or(standard.background),
+                border_radius: cosmic.radius_xs().into(),
+                border_width: 1.0,
+                border_color: cosmic.on_bg_color().into(),
+                outline_width,
+                outline_color,
+                icon_color: None,
+                text_color: None,
+            }
+        }),
+        disabled: Box::new(move |theme| {
+            let cosmic = theme.cosmic();
 
-                button::Appearance {
-                    shadow_offset: Vector::default(),
-                    background: Some(color.into()),
-                    border_radius: cosmic.radius_xs().into(),
-                    border_width: 1.0,
-                    border_color: cosmic.on_bg_color().into(),
-                    outline_width: 0.0,
-                    outline_color: Color::TRANSPARENT,
-                    icon_color: None,
-                    text_color: None,
-                }
-            }),
-            hovered: Box::new(move |focused, theme| {
-                let cosmic = theme.cosmic();
+            let standard = theme.disabled(&Button::Standard);
+            button::Appearance {
+                shadow_offset: Vector::default(),
+                background: color.map(Background::from).or(standard.background),
+                border_radius: cosmic.radius_xs().into(),
+                border_width: 1.0,
+                border_color: cosmic.on_bg_color().into(),
+                outline_width: 0.0,
+                outline_color: Color::TRANSPARENT,
+                icon_color: None,
+                text_color: None,
+            }
+        }),
+        hovered: Box::new(move |focused, theme| {
+            let cosmic = theme.cosmic();
 
-                let (outline_width, outline_color) = if focused {
-                    (1.0, cosmic.accent_color().into())
-                } else {
-                    (0.0, Color::TRANSPARENT)
-                };
-                button::Appearance {
-                    shadow_offset: Vector::default(),
-                    background: Some(color.into()),
-                    border_radius: cosmic.radius_xs().into(),
-                    border_width: 1.0,
-                    border_color: cosmic.on_bg_color().into(),
-                    outline_width,
-                    outline_color,
-                    icon_color: None,
-                    text_color: None,
-                }
-            }),
-            pressed: Box::new(move |focused, theme| {
-                let cosmic = theme.cosmic();
+            let (outline_width, outline_color) = if focused {
+                (1.0, cosmic.accent_color().into())
+            } else {
+                (0.0, Color::TRANSPARENT)
+            };
 
-                let (outline_width, outline_color) = if focused {
-                    (1.0, cosmic.accent_color().into())
-                } else {
-                    (0.0, Color::TRANSPARENT)
-                };
-                button::Appearance {
-                    shadow_offset: Vector::default(),
-                    background: Some(color.into()),
-                    border_radius: cosmic.radius_xs().into(),
-                    border_width: 1.0,
-                    border_color: cosmic.on_bg_color().into(),
-                    outline_width,
-                    outline_color,
-                    icon_color: None,
-                    text_color: None,
-                }
-            }),
-        })
+            let standard = theme.hovered(focused, &Button::Standard);
+            button::Appearance {
+                shadow_offset: Vector::default(),
+                background: color.map(Background::from).or(standard.background),
+                border_radius: cosmic.radius_xs().into(),
+                border_width: 1.0,
+                border_color: cosmic.on_bg_color().into(),
+                outline_width,
+                outline_color,
+                icon_color: None,
+                text_color: None,
+            }
+        }),
+        pressed: Box::new(move |focused, theme| {
+            let cosmic = theme.cosmic();
+
+            let (outline_width, outline_color) = if focused {
+                (1.0, cosmic.accent_color().into())
+            } else {
+                (0.0, Color::TRANSPARENT)
+            };
+
+            let standard = theme.pressed(focused, &Button::Standard);
+            button::Appearance {
+                shadow_offset: Vector::default(),
+                background: color.map(Background::from).or(standard.background),
+                border_radius: cosmic.radius_xs().into(),
+                border_width: 1.0,
+                border_color: cosmic.on_bg_color().into(),
+                outline_width,
+                outline_color,
+                icon_color: None,
+                text_color: None,
+            }
+        }),
+    })
 }
 
 impl<'a, Message> From<ColorPicker<'a, Message>> for iced::Element<'a, Message, crate::Renderer>

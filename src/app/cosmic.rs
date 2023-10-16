@@ -5,6 +5,7 @@ use super::{command, Application, ApplicationExt, Core, Subscription};
 use crate::theme::{self, Theme, ThemeType, THEME};
 use crate::widget::nav_bar;
 use crate::{keyboard_nav, Element};
+use cosmic_theme::ThemeMode;
 #[cfg(feature = "wayland")]
 use iced::event::wayland::{self, WindowEvent};
 #[cfg(feature = "wayland")]
@@ -44,6 +45,8 @@ pub enum Message {
     ToggleNavBarCondensed,
     /// Notification of system theme changes.
     SystemThemeChange(Theme),
+    /// Notification of system theme mode changes.
+    SystemThemeModeChange(ThemeMode),
     /// Updates the tracked window geometry.
     WindowResize(window::Id, u32, u32),
     /// Tracks updates to window state.
@@ -152,9 +155,24 @@ where
             keyboard_nav::subscription()
                 .map(Message::KeyboardNav)
                 .map(super::Message::Cosmic),
-            theme::subscription(0)
+            theme::subscription(0, self.app.core().system_theme_mode.is_dark)
                 .map(Message::SystemThemeChange)
                 .map(super::Message::Cosmic),
+            cosmic_config::config_subscription::<_, cosmic_theme::ThemeMode>(
+                0,
+                cosmic_theme::THEME_MODE_ID.into(),
+                cosmic_theme::ThemeMode::version(),
+            )
+            .map(|(_, u)| match u {
+                Ok(t) => Message::SystemThemeModeChange(t),
+                Err((errors, t)) => {
+                    for e in errors {
+                        tracing::error!("{e}");
+                    }
+                    Message::SystemThemeModeChange(t)
+                }
+            })
+            .map(super::Message::Cosmic),
             window_events.map(super::Message::Cosmic),
         ])
     }
@@ -195,6 +213,7 @@ impl<T: Application> Cosmic<T> {
         iced::Command::single(Action::Window(WindowAction::Close))
     }
 
+    #[allow(clippy::too_many_lines)]
     fn cosmic_update(&mut self, message: Message) -> iced::Command<super::Message<T::Message>> {
         match message {
             Message::WindowResize(id, width, height) => {
@@ -295,7 +314,7 @@ impl<T: Application> Cosmic<T> {
                 THEME.with(move |t| {
                     let mut cosmic_theme = t.borrow_mut();
 
-                    // Anly apply update if the theme is set to load a system theme
+                    // Only apply update if the theme is set to load a system theme
                     if let ThemeType::System(_) = cosmic_theme.theme_type {
                         cosmic_theme.set_theme(theme.theme_type);
                     }
@@ -309,6 +328,21 @@ impl<T: Application> Cosmic<T> {
             Message::Close => {
                 self.app.on_app_exit();
                 return self.close();
+            }
+            Message::SystemThemeModeChange(mode) => {
+                let core = self.app.core_mut();
+                let changed = core.system_theme_mode.is_dark != mode.is_dark;
+                core.system_theme_mode = mode;
+                if changed {
+                    THEME.with(move |t| {
+                        let mut cosmic_theme = t.borrow_mut();
+
+                        // Only apply update if the theme is set to load a system theme
+                        if let ThemeType::System(_) = cosmic_theme.theme_type {
+                            cosmic_theme.set_theme(crate::theme::system_preference().theme_type);
+                        }
+                    });
+                }
             }
         }
 

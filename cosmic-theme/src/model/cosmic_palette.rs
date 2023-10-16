@@ -143,6 +143,14 @@ pub struct CosmicPaletteInner<C> {
     /// A wider spread of dark colors for more general use.
     pub neutral_10: C,
 
+    // Utility Colors
+    /// Utility bright green
+    pub bright_green: C,
+    /// Utility bright red
+    pub bright_red: C,
+    /// Utility bright orange
+    pub bright_orange: C,
+
     /// Extended Color Palette
     /// Colors used for themes, app icons, illustrations, and other brand purposes.
     pub ext_warm_grey: C,
@@ -159,6 +167,12 @@ pub struct CosmicPaletteInner<C> {
     /// Colors used for themes, app icons, illustrations, and other brand purposes.
     pub ext_indigo: C,
 
+    /// Potential Accent Color Combos
+    pub accent_blue: C,
+    /// Potential Accent Color Combos
+    pub accent_red: C,
+    /// Potential Accent Color Combos
+    pub accent_green: C,
     /// Potential Accent Color Combos
     pub accent_warm_grey: C,
     /// Potential Accent Color Combos
@@ -195,6 +209,9 @@ impl From<CosmicPaletteInner<CssColor>> for CosmicPaletteInner<Srgba> {
             neutral_8: p.neutral_8.into(),
             neutral_9: p.neutral_9.into(),
             neutral_10: p.neutral_10.into(),
+            bright_green: p.bright_green.into(),
+            bright_red: p.bright_red.into(),
+            bright_orange: p.bright_orange.into(),
             ext_warm_grey: p.ext_warm_grey.into(),
             ext_orange: p.ext_orange.into(),
             ext_yellow: p.ext_yellow.into(),
@@ -202,6 +219,9 @@ impl From<CosmicPaletteInner<CssColor>> for CosmicPaletteInner<Srgba> {
             ext_purple: p.ext_purple.into(),
             ext_pink: p.ext_pink.into(),
             ext_indigo: p.ext_indigo.into(),
+            accent_blue: p.accent_blue.into(),
+            accent_red: p.accent_red.into(),
+            accent_green: p.accent_green.into(),
             accent_warm_grey: p.accent_warm_grey.into(),
             accent_orange: p.accent_orange.into(),
             accent_yellow: p.accent_yellow.into(),

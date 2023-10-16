@@ -8,8 +8,9 @@ use cosmic::{
     iced_core::Color,
     theme::ThemeType,
     widget::{
-        button, cosmic_container::container, icon, segmented_button, segmented_selection, settings,
-        spin_button, toggler, view_switcher, ColorPickerModel, ColorPickerUpdate,
+        button, color_picker::ColorPickerUpdate, cosmic_container::container, icon,
+        segmented_button, segmented_selection, settings, spin_button, toggler, view_switcher,
+        ColorPickerModel,
     },
     Element,
 };
@@ -160,12 +161,7 @@ impl Default for State {
                 "card 4".to_string(),
             ],
             timeline: Rc::new(RefCell::new(Default::default())),
-            color_picker_model: ColorPickerModel::new(
-                "Hex",
-                "RGB",
-                Color::new(0.8, 0.3, 0.8, 1.0),
-                None,
-            ),
+            color_picker_model: ColorPickerModel::new("Hex", "RGB", None, None),
         }
     }
 }
@@ -524,7 +520,9 @@ impl State {
                 .on_input(Message::InputChanged)
                 .into(),
             self.color_picker_model
-                .picker_button(Message::ColorPickerUpdate)
+                .picker_button(Message::ColorPickerUpdate, None)
+                .width(Length::Fixed(128.0))
+                .height(Length::Fixed(128.0))
                 .into(),
             if self.color_picker_model.get_is_active() {
                 self.color_picker_model

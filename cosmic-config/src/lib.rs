@@ -390,8 +390,6 @@ async fn start_listening<
                 Ok(w) => w,
                 Err(_) => return ConfigState::Failed,
             };
-            let msg = T::get_entry(&config);
-            _ = output.send((id, msg)).await;
 
             match T::get_entry(&config) {
                 Ok(t) => {

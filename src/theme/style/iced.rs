@@ -412,7 +412,12 @@ impl container::StyleSheet for Theme {
                             .add_stop(0.0, header_top.into())
                             .add_stop(1.0, header_bottom.into()),
                     ))),
-                    border_radius: BorderRadius::from([16.0, 16.0, 0.0, 0.0]),
+                    border_radius: BorderRadius::from([
+                        palette.corner_radii.radius_xs[0],
+                        palette.corner_radii.radius_xs[3],
+                        0.0,
+                        0.0,
+                    ]),
                     border_width: 0.0,
                     border_color: Color::TRANSPARENT,
                 }
