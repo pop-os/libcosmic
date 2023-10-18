@@ -166,13 +166,17 @@ impl Context {
         };
 
         Container::<Message, Renderer>::new(Container::<Message, Renderer>::new(content).style(
-            theme::Container::custom(|theme| Appearance {
-                text_color: Some(theme.cosmic().background.on.into()),
-                background: Some(Color::from(theme.cosmic().background.base).into()),
-                border_radius: 12.0.into(),
-                border_width: 0.0,
-                border_color: Color::TRANSPARENT,
-                icon_color: Some(theme.cosmic().background.on.into()),
+            theme::Container::custom(|theme| {
+                let cosmic = theme.cosmic();
+
+                Appearance {
+                    text_color: Some(cosmic.background.on.into()),
+                    background: Some(Color::from(cosmic.background.base).into()),
+                    border_radius: 12.0.into(),
+                    border_width: 1.0,
+                    border_color: cosmic.background.divider.into(),
+                    icon_color: Some(cosmic.background.on.into()),
+                }
             }),
         ))
         .width(Length::Shrink)
