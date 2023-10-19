@@ -24,28 +24,6 @@ use crate::app::cosmic;
 
 const APPLET_PADDING: u32 = 8;
 
-#[must_use]
-pub fn button_theme() -> Button {
-    Button::Custom {
-        active: Box::new(|active, t| widget::button::Appearance {
-            border_radius: 0.0.into(),
-            ..t.active(active, &Button::Text)
-        }),
-        hovered: Box::new(|hovered, t| widget::button::Appearance {
-            border_radius: 0.0.into(),
-            ..t.hovered(hovered, &Button::Text)
-        }),
-        pressed: Box::new(|pressed, t| widget::button::Appearance {
-            border_radius: 0.0.into(),
-            ..t.pressed(pressed, &Button::Text)
-        }),
-        disabled: Box::new(|t| widget::button::Appearance {
-            border_radius: 0.0.into(),
-            ..t.disabled(&Button::Text)
-        }),
-    }
-}
-
 #[derive(Debug, Clone)]
 pub struct Context {
     pub size: Size,
@@ -150,7 +128,7 @@ impl Context {
             .height(Length::Fixed(suggested.1 as f32)),
         )
         .padding(APPLET_PADDING as u16)
-        .style(Button::Text)
+        .style(Button::AppletIcon)
     }
 
     // TODO popup container which tracks the size of itself and requests the popup to resize to match
@@ -306,4 +284,13 @@ pub fn style() -> <crate::Theme as iced_style::application::StyleSheet>::Style {
             icon_color: theme.cosmic().on_bg_color().into(),
         }
     }))
+}
+
+pub fn menu_button<'a, Message>(
+    content: impl Into<Element<'a, Message>>,
+) -> crate::widget::Button<'a, Message, crate::Renderer> {
+    crate::widget::Button::new(content)
+        .style(Button::AppletMenu)
+        .padding([8, 24])
+        .width(Length::Fill)
 }
