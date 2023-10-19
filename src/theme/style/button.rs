@@ -29,6 +29,8 @@ pub enum Button {
     Suggested,
     Text,
     Transparent,
+    AppletMenu,
+    AppletIcon,
 }
 
 pub fn appearance(
@@ -86,6 +88,21 @@ pub fn appearance(
         }
 
         Button::Custom { .. } => (),
+        Button::AppletMenu => {
+            let (background, _, _) = color(&cosmic.text_button);
+            appearance.background = Some(Background::Color(background));
+
+            appearance.icon_color = Some(cosmic.background.on.into());
+            appearance.text_color = Some(cosmic.background.on.into());
+            corner_radii = &cosmic.corner_radii.radius_0;
+        }
+        Button::AppletIcon => {
+            let (background, _, _) = color(&cosmic.text_button);
+            appearance.background = Some(Background::Color(background));
+
+            appearance.icon_color = Some(cosmic.background.on.into());
+            appearance.text_color = Some(cosmic.background.on.into());
+        }
     }
 
     appearance.border_radius = (*corner_radii).into();
