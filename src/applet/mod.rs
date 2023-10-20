@@ -1,4 +1,3 @@
-use crate::widget::button::StyleSheet;
 use crate::{
     app::Core,
     iced::{
@@ -13,6 +12,7 @@ use crate::{
 };
 pub use cosmic_panel_config;
 use cosmic_panel_config::{CosmicPanelBackground, PanelAnchor, PanelSize};
+use iced_core::Padding;
 use iced_style::container::Appearance;
 use iced_widget::runtime::command::platform_specific::wayland::popup::{
     SctkPopupSettings, SctkPositioner,
@@ -291,6 +291,24 @@ pub fn menu_button<'a, Message>(
 ) -> crate::widget::Button<'a, Message, crate::Renderer> {
     crate::widget::Button::new(content)
         .style(Button::AppletMenu)
-        .padding([8, 24])
+        .padding(menu_control_padding())
         .width(Length::Fill)
+}
+
+pub fn padded_control<'a, Message>(
+    content: impl Into<Element<'a, Message>>,
+) -> crate::widget::container::Container<'a, Message, crate::Renderer> {
+    crate::widget::container(content)
+        .padding(menu_control_padding())
+        .width(Length::Fill)
+}
+
+pub fn menu_control_padding() -> Padding {
+    THEME
+        .with(|t| {
+            let t = t.borrow();
+            let cosmic = t.cosmic();
+            [cosmic.space_xxs(), cosmic.space_m()]
+        })
+        .into()
 }
