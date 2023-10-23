@@ -364,6 +364,7 @@ pub enum Container {
     Background,
     Card,
     Custom(Box<dyn Fn(&Theme) -> container::Appearance>),
+    Dropdown,
     HeaderBar,
     Primary,
     Secondary,
@@ -444,6 +445,19 @@ impl container::StyleSheet for Theme {
                     border_radius: 2.0.into(),
                     border_width: 0.0,
                     border_color: Color::TRANSPARENT,
+                }
+            }
+
+            Container::Dropdown => {
+                let theme = self.cosmic();
+
+                container::Appearance {
+                    icon_color: None,
+                    text_color: None,
+                    background: Some(iced::Background::Color(theme.primary.base.into())),
+                    border_radius: f32::from(theme.space_xxs()).into(),
+                    border_width: 1.0,
+                    border_color: theme.bg_divider().into(),
                 }
             }
 
@@ -593,8 +607,7 @@ impl menu::StyleSheet for Theme {
             border_width: 0.0,
             border_radius: 16.0.into(),
             border_color: Color::TRANSPARENT,
-            selected_text_color: cosmic.on_bg_color().into(),
-            // TODO doesn't seem to be specified
+            selected_text_color: cosmic.accent.base.into(),
             selected_background: Background::Color(cosmic.background.component.hover.into()),
         }
     }

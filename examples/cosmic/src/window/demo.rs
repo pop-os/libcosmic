@@ -3,12 +3,12 @@ use std::{cell::RefCell, rc::Rc};
 use apply::Apply;
 use cosmic::{
     cosmic_theme,
-    iced::widget::{checkbox, column, pick_list, progress_bar, radio, slider, text, text_input},
+    iced::widget::{checkbox, column, progress_bar, radio, slider, text, text_input},
     iced::{id, Alignment, Length},
     iced_core::Color,
     theme::ThemeType,
     widget::{
-        button, color_picker::ColorPickerUpdate, cosmic_container::container, icon,
+        button, color_picker::ColorPickerUpdate, cosmic_container::container, dropdown, icon,
         segmented_button, segmented_selection, settings, spin_button, toggler, view_switcher,
         ColorPickerModel,
     },
@@ -74,7 +74,7 @@ pub enum Message {
     Debug(bool),
     IconTheme(segmented_button::Entity),
     MultiSelection(segmented_button::Entity),
-    PickListSelected(&'static str),
+    DropdownSelect(usize),
     RowSelected(usize),
     ScalingFactor(spin_button::Message),
     Selection(segmented_button::Entity),
@@ -102,8 +102,8 @@ pub struct State {
     pub checkbox_value: bool,
     pub icon_themes: segmented_button::SingleSelectModel,
     pub multi_selection: segmented_button::MultiSelectModel,
-    pub pick_list_selected: Option<&'static str>,
-    pub pick_list_options: Vec<&'static str>,
+    pub dropdown_selected: Option<usize>,
+    pub dropdown_options: Vec<&'static str>,
     pub scaling_value: spin_button::Model<Decimal>,
     pub selection: segmented_button::SingleSelectModel,
     pub slider_value: f32,
@@ -121,8 +121,8 @@ impl Default for State {
     fn default() -> State {
         State {
             checkbox_value: false,
-            pick_list_selected: Some("Option 1"),
-            pick_list_options: vec!["Option 1", "Option 2", "Option 3", "Option 4"],
+            dropdown_selected: Some(0),
+            dropdown_options: vec!["Option 1", "Option 2", "Option 3", "Option 4"],
             scaling_value: spin_button::Model::default()
                 .value(1.0)
                 .min(0.5)
@@ -172,7 +172,7 @@ impl State {
             Message::ButtonPressed => (),
             Message::CheckboxToggled(value) => self.checkbox_value = value,
             Message::Debug(value) => return Some(Output::Debug(value)),
-            Message::PickListSelected(value) => self.pick_list_selected = Some(value),
+            Message::DropdownSelect(value) => self.dropdown_selected = Some(value),
             Message::RowSelected(row) => println!("Selected row {row}"),
             Message::MultiSelection(key) => self.multi_selection.activate(key),
             Message::ScalingFactor(message) => {
@@ -277,10 +277,10 @@ impl State {
                         ))
                         .add(settings::item(
                             "Pick List (TODO)",
-                            pick_list(
-                                &self.pick_list_options,
-                                self.pick_list_selected,
-                                Message::PickListSelected,
+                            dropdown(
+                                &self.dropdown_options,
+                                self.dropdown_selected,
+                                Message::DropdownSelect,
                             )
                             .padding([8, 0, 8, 16]),
                         ))
