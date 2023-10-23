@@ -12,7 +12,6 @@ pub use iced::widget::{image, Image};
 pub use iced::widget::{lazy, Lazy};
 pub use iced::widget::{mouse_area, MouseArea};
 pub use iced::widget::{pane_grid, PaneGrid};
-pub use iced::widget::{pick_list, PickList};
 pub use iced::widget::{progress_bar, ProgressBar};
 pub use iced::widget::{radio, Radio};
 pub use iced::widget::{responsive, Responsive};
@@ -105,6 +104,9 @@ pub mod divider {
         }
     }
 }
+
+pub mod dropdown;
+pub use dropdown::{dropdown, Dropdown};
 
 pub mod flex_row;
 pub use flex_row::{flex_row, FlexRow};

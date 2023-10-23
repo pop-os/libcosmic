@@ -6,6 +6,8 @@
 mod button;
 pub use self::button::Button;
 
+mod dropdown;
+
 pub mod iced;
 pub use self::iced::Application;
 pub use self::iced::Checkbox;
