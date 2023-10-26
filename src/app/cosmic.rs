@@ -155,9 +155,12 @@ where
             keyboard_nav::subscription()
                 .map(Message::KeyboardNav)
                 .map(super::Message::Cosmic),
-            theme::subscription(0, self.app.core().system_theme_mode.is_dark)
-                .map(Message::SystemThemeChange)
-                .map(super::Message::Cosmic),
+            theme::subscription(
+                self.app.core().theme_sub_counter,
+                self.app.core().system_theme_mode.is_dark,
+            )
+            .map(Message::SystemThemeChange)
+            .map(super::Message::Cosmic),
             cosmic_config::config_subscription::<_, cosmic_theme::ThemeMode>(
                 0,
                 cosmic_theme::THEME_MODE_ID.into(),
@@ -298,6 +301,7 @@ impl<T: Application> Cosmic<T> {
             Message::AppThemeChange(mut theme) => {
                 // Apply last-known system theme if the system theme is preferred.
                 if let ThemeType::System(_) = theme.theme_type {
+                    self.app.core_mut().theme_sub_counter += 1;
                     theme = self.app.core().system_theme.clone();
                 }
 
@@ -310,7 +314,6 @@ impl<T: Application> Cosmic<T> {
             Message::SystemThemeChange(theme) => {
                 // Record the last-known system theme in event that the current theme is custom.
                 self.app.core_mut().system_theme = theme.clone();
-
                 THEME.with(move |t| {
                     let mut cosmic_theme = t.borrow_mut();
 
@@ -333,6 +336,7 @@ impl<T: Application> Cosmic<T> {
                 let core = self.app.core_mut();
                 let changed = core.system_theme_mode.is_dark != mode.is_dark;
                 core.system_theme_mode = mode;
+                core.theme_sub_counter += 1;
                 if changed {
                     let new_theme = crate::theme::system_preference();
                     core.system_theme = new_theme.clone();

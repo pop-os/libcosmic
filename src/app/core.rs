@@ -49,6 +49,7 @@ pub struct Core {
     /// Scaling factor used by the application
     scale_factor: f32,
 
+    pub(super) theme_sub_counter: u64,
     /// Last known system theme
     pub(super) system_theme: Theme,
 
@@ -75,6 +76,7 @@ impl Default for Core {
             },
             scale_factor: 1.0,
             title: String::new(),
+            theme_sub_counter: 0,
             system_theme: crate::theme::active(),
             system_theme_mode: ThemeMode::config()
                 .map(|c| {
