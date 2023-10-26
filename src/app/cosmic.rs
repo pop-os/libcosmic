@@ -334,12 +334,14 @@ impl<T: Application> Cosmic<T> {
                 let changed = core.system_theme_mode.is_dark != mode.is_dark;
                 core.system_theme_mode = mode;
                 if changed {
+                    let new_theme = crate::theme::system_preference();
+                    core.system_theme = new_theme.clone();
                     THEME.with(move |t| {
                         let mut cosmic_theme = t.borrow_mut();
 
                         // Only apply update if the theme is set to load a system theme
                         if let ThemeType::System(_) = cosmic_theme.theme_type {
-                            cosmic_theme.set_theme(crate::theme::system_preference().theme_type);
+                            cosmic_theme.set_theme(new_theme.theme_type);
                         }
                     });
                 }
