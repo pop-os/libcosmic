@@ -189,9 +189,21 @@ where
 
         Component {
             base: base.clone().into(),
-            hover: over(hovered.clone(), base).into(),
-            pressed: over(pressed, base).into(),
-            selected: over(hovered, base).into(),
+            hover: if base.alpha < 0.001 {
+                hovered.clone()
+            } else {
+                over(hovered.clone(), base).into()
+            },
+            pressed: if base.alpha < 0.001 {
+                pressed.clone()
+            } else {
+                over(pressed.clone(), base).into()
+            },
+            selected: if base.alpha < 0.001 {
+                hovered.clone()
+            } else {
+                over(hovered.clone(), base).into()
+            },
             selected_text: accent.clone(),
             focus: accent.clone(),
             divider: if is_high_contrast {
