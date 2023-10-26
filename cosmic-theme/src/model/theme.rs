@@ -856,24 +856,10 @@ impl ThemeBuilder {
             color
         };
 
-        let (button_hovered_hue, button_pressed_hye) = if is_dark {
-            (46.0, 22.0)
-        } else {
-            (158.0, 190.0)
-        };
-
-        let button_hovered_overlay = Srgba::new(
-            button_hovered_hue / 255.0,
-            button_hovered_hue / 255.0,
-            button_hovered_hue / 255.0,
-            0.5,
-        );
-        let button_pressed_overlay = Srgba::new(
-            button_pressed_hye / 255.0,
-            button_pressed_hye / 255.0,
-            button_pressed_hye / 255.0,
-            0.5,
-        );
+        let (mut button_hovered_overlay, mut button_pressed_overlay) =
+            (p_ref.neutral_5, p_ref.neutral_2);
+        button_hovered_overlay.alpha = 0.2;
+        button_pressed_overlay.alpha = 0.5;
 
         let mut theme: Theme<Srgba> = Theme {
             name: palette.name().to_string(),
