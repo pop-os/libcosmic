@@ -36,6 +36,9 @@ pub mod message {
     }
 }
 
+use std::any::TypeId;
+use std::env::args;
+
 pub use self::command::Command;
 pub use self::core::Core;
 pub use self::settings::Settings;
@@ -45,7 +48,10 @@ use crate::widget::{context_drawer, nav_bar};
 use apply::Apply;
 use iced::Subscription;
 use iced::{window, Application as IcedApplication};
+use iced_futures::futures::channel::mpsc::{Receiver, Sender};
+use iced_futures::futures::{SinkExt, StreamExt};
 pub use message::Message;
+use zbus::{dbus_interface, dbus_proxy};
 
 /// Launch a COSMIC application with the given [`Settings`].
 ///
@@ -62,6 +68,8 @@ pub fn run<App: Application>(settings: Settings, flags: App::Flags) -> iced::Res
     core.set_scale_factor(settings.scale_factor);
     core.set_window_width(settings.size.0);
     core.set_window_height(settings.size.1);
+
+    core.single_instance = settings.single_instance;
 
     THEME.with(move |t| {
         let mut cosmic_theme = t.borrow_mut();
@@ -109,6 +117,90 @@ pub fn run<App: Application>(settings: Settings, flags: App::Flags) -> iced::Res
     }
 
     cosmic::Cosmic::<App>::run(iced)
+}
+
+#[derive(Debug, Default)]
+pub struct SingleInstance(Option<Sender<Vec<String>>>);
+
+impl SingleInstance {
+    #[must_use]
+    pub fn new() -> Self {
+        Self(None)
+    }
+
+    pub fn rx(&mut self) -> Receiver<Vec<String>> {
+        let (tx, rx) = iced_futures::futures::channel::mpsc::channel(10);
+        self.0 = Some(tx);
+        rx
+    }
+}
+
+#[dbus_interface(name = "com.system76.SingleInstance")]
+impl SingleInstance {
+    async fn activate(&mut self, args: Vec<String>) {
+        if let Some(tx) = &mut self.0 {
+            let _ = tx.send(args).await;
+        }
+    }
+}
+
+#[dbus_proxy(interface = "com.system76.SingleInstance")]
+pub trait SingleInstanceClient {
+    fn activate(&mut self, args: Vec<String>) -> zbus::Result<()>;
+}
+/// Launch a COSMIC application with the given [`Settings`].
+/// If the application is already running, the arguments will be passed to the
+/// running instance.
+/// # Errors
+/// Returns error on application failure.
+pub fn run_single_instance<App: Application>(
+    mut settings: Settings,
+    flags: App::Flags,
+) -> iced::Result {
+    // try to claim the dbus name with our app id
+    settings.single_instance = true;
+    let path: String = format!("/{}", App::APP_ID.replace('.', "/"));
+
+    let override_single = std::env::var("COSMIC_SINGLE_INSTANCE")
+        .map(|v| &v.to_lowercase() == "false")
+        .unwrap_or_default();
+
+    if override_single {
+        return run::<App>(settings, flags);
+    }
+
+    let Ok(conn) = zbus::blocking::Connection::session() else {
+        tracing::warn!("Failed to connect to dbus");
+        return run::<App>(settings, flags);
+    };
+
+    if SingleInstanceClientProxyBlocking::builder(&conn)
+        .destination(App::APP_ID)
+        .ok()
+        .and_then(|b| b.path(path).ok())
+        .and_then(|b| b.destination(App::APP_ID).ok())
+        .and_then(|b| b.build().ok())
+        .is_some_and(|mut p| {
+            match {
+                let args = args().collect::<Vec<String>>();
+                p.activate(args)
+            } {
+                Ok(()) => {
+                    tracing::info!("Successfully activated another instance");
+                    true
+                }
+                Err(err) => {
+                    tracing::warn!(?err, "Failed to activate another instance");
+                    false
+                }
+            }
+        })
+    {
+        tracing::info!("Another instance is running");
+        Ok(())
+    } else {
+        run::<App>(settings, flags)
+    }
 }
 
 /// An interactive cross-platform COSMIC application.
@@ -194,6 +286,12 @@ where
     /// Event sources that are to be listened to.
     fn subscription(&self) -> Subscription<Self::Message> {
         Subscription::none()
+    }
+
+    /// Another instance of the application received these arguments.
+    #[must_use]
+    fn update_args(args: Vec<String>) -> Option<Self::Message> {
+        None
     }
 
     /// Respond to an application-specific message.
@@ -372,4 +470,66 @@ impl<App: Application> ApplicationExt for App {
             )
             .into()
     }
+}
+
+fn single_instance_subscription<App: ApplicationExt>() -> Subscription<App::Message> {
+    iced::subscription::channel(
+        TypeId::of::<SingleInstance>(),
+        10,
+        |mut output| async move {
+            let mut single_instance: SingleInstance = SingleInstance::new();
+            let mut rx = single_instance.rx();
+            if let Ok(builder) = zbus::ConnectionBuilder::session() {
+                let path: String = format!("/{}", App::APP_ID.replace('.', "/"));
+
+                if let Ok(conn) = builder.build().await {
+                    // XXX Setup done this way seems to be more reliable.
+                    //
+                    // the docs for serve_at seem to imply it will replace the
+                    // existing interface at the requested path, but it doesn't
+                    // seem to work that way all the time. The docs for
+                    // object_server().at() imply it won't replace the existing
+                    // interface.
+                    //
+                    // request_name is used either way, with the builder or
+                    // with the connection, but it must be done after the
+                    // object server is setup.
+                    if conn.object_server().at(path, single_instance).await != Ok(true) {
+                        tracing::error!("Failed to serve dbus");
+                        std::process::exit(1);
+                    }
+                    if conn.request_name(App::APP_ID).await.is_err() {
+                        tracing::error!("Failed to serve dbus");
+                        std::process::exit(1);
+                    }
+
+                    #[cfg(feature = "smol")]
+                    let handle = {
+                        std::thread::spawn(move || {
+                            let conn_clone = _conn.clone();
+
+                            zbus::block_on(async move {
+                                loop {
+                                    conn_clone.executor().tick().await;
+                                }
+                            })
+                        })
+                    };
+                    while let Some(msg) = rx.next().await {
+                        if let Some(msg) = App::update_args(msg) {
+                            let _ = output.send(msg).await;
+                        } else {
+                            tracing::warn!("Failed to parse arguments from another instance");
+                        }
+                    }
+                }
+            } else {
+                tracing::warn!("Failed to connect to dbus for single instance");
+            }
+
+            loop {
+                iced::futures::pending!();
+            }
+        },
+    )
 }

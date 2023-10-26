@@ -150,6 +150,13 @@ where
             None
         });
 
+        let single_instance = self
+            .app
+            .core()
+            .single_instance
+            .then(|| super::single_instance_subscription::<T>())
+            .map_or_else(Subscription::none, |s| s.map(super::Message::App));
+
         Subscription::batch(vec![
             self.app.subscription().map(super::Message::App),
             keyboard_nav::subscription()
@@ -174,6 +181,7 @@ where
             })
             .map(super::Message::Cosmic),
             window_events.map(super::Message::Cosmic),
+            single_instance,
         ])
     }
 

@@ -16,9 +16,9 @@ debug = ["iced/debug"]
 # Enables pipewire support in ashpd, if ashpd is enabled
 pipewire = ["ashpd?/pipewire"]
 # smol async runtime
-smol = ["iced/smol"]
+smol = ["iced/smol", "zbus/async-io"]
 # Tokio async runtime
-tokio = ["dep:tokio", "ashpd/tokio", "iced/tokio"]
+tokio = ["dep:tokio", "ashpd/tokio", "iced/tokio", "zbus/tokio"]
 # Wayland window support
 wayland = [
   "ashpd?/wayland",
@@ -57,6 +57,7 @@ ashpd = { version = "0.5.0", default-features = false, optional = true }
 url = "2.4.0"
 unicode-segmentation = "1.6"
 css-color = "0.2.5"
+zbus = {version = "3.14.1", default-features = false}
 
 [target.'cfg(unix)'.dependencies]
 freedesktop-icons = "0.2.4"

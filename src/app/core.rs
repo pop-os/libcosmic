@@ -61,6 +61,8 @@ pub struct Core {
 
     #[cfg(feature = "applet")]
     pub applet: crate::applet::Context,
+
+    pub single_instance: bool,
 }
 
 impl Default for Core {
@@ -102,6 +104,7 @@ impl Default for Core {
             },
             #[cfg(feature = "applet")]
             applet: crate::applet::Context::default(),
+            single_instance: false,
         }
     }
 }
