@@ -39,6 +39,15 @@ pub const FONT_SEMIBOLD: Font = Font {
 
 pub const FONT_SEMIBOLD_DATA: &[u8] = include_bytes!("../res/Fira/FiraSans-SemiBold.otf");
 
+pub const FONT_BOLD: Font = Font {
+    family: Family::Name("Fira Sans"),
+    weight: iced_core::font::Weight::Bold,
+    stretch: iced_core::font::Stretch::Normal,
+    monospaced: false,
+};
+
+pub const FONT_BOLD_DATA: &[u8] = include_bytes!("../res/Fira/FiraSans-Bold.otf");
+
 pub const FONT_MONO_REGULAR: Font = Font {
     family: Family::Name("Fira Mono"),
     weight: iced_core::font::Weight::Normal,
@@ -53,6 +62,7 @@ pub fn load_fonts() -> Command<Result<(), Error>> {
         load(FONT_DATA),
         load(FONT_LIGHT_DATA),
         load(FONT_SEMIBOLD_DATA),
+        load(FONT_BOLD_DATA),
         load(FONT_MONO_REGULAR_DATA),
     ])
 }
