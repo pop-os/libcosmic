@@ -9,13 +9,13 @@ use iced_runtime::core::widget::Id;
 use iced_runtime::{keyboard, Command};
 
 use iced_core::event::{self, Event};
-use iced_core::layout;
 use iced_core::mouse;
 use iced_core::overlay;
-use iced_core::renderer;
+use iced_core::renderer::{self, Quad};
 use iced_core::touch;
 use iced_core::widget::tree::{self, Tree};
 use iced_core::widget::Operation;
+use iced_core::{layout, svg};
 use iced_core::{
     Background, Clipboard, Color, Element, Layout, Length, Padding, Point, Rectangle, Shell,
     Vector, Widget,
@@ -23,6 +23,10 @@ use iced_core::{
 use iced_renderer::core::widget::{operation, OperationOutputWrapper};
 
 pub use super::style::{Appearance, StyleSheet};
+
+struct Selected {
+    icon: svg::Handle,
+}
 
 /// A generic widget that produces a message when pressed.
 ///
@@ -77,6 +81,7 @@ where
     width: Length,
     height: Length,
     padding: Padding,
+    selected: Option<Selected>,
     style: <Renderer::Theme as StyleSheet>::Style,
 }
 
@@ -100,8 +105,15 @@ where
             width: Length::Shrink,
             height: Length::Shrink,
             padding: Padding::new(5.0),
+            selected: None,
             style: <Renderer::Theme as StyleSheet>::Style::default(),
         }
+    }
+
+    /// Sets the [`Id`] of the [`Button`].
+    pub fn id(mut self, id: Id) -> Self {
+        self.id = id;
+        self
     }
 
     /// Sets the width of the [`Button`].
@@ -139,15 +151,27 @@ where
         self
     }
 
-    /// Sets the style variant of this [`Button`].
-    pub fn style(mut self, style: <Renderer::Theme as StyleSheet>::Style) -> Self {
-        self.style = style;
+    /// Sets the widget to a selected state.
+    ///
+    /// Displays a selection indicator on image buttons.
+    pub(super) fn selected(mut self, selected: bool) -> Self {
+        self.selected = selected.then(|| Selected {
+            icon: crate::widget::icon::from_name("object-select-symbolic")
+                .size(16)
+                .icon()
+                .into_svg_handle()
+                .unwrap_or_else(|| {
+                    let bytes: &'static [u8] = &[];
+                    iced_core::svg::Handle::from_memory(bytes)
+                }),
+        });
+
         self
     }
 
-    /// Sets the [`Id`] of the [`Button`].
-    pub fn id(mut self, id: Id) -> Self {
-        self.id = id;
+    /// Sets the style variant of this [`Button`].
+    pub fn style(mut self, style: <Renderer::Theme as StyleSheet>::Style) -> Self {
+        self.style = style;
         self
     }
 
@@ -185,7 +209,7 @@ where
 impl<'a, Message, Renderer> Widget<Message, Renderer> for Button<'a, Message, Renderer>
 where
     Message: 'a + Clone,
-    Renderer: 'a + iced_core::Renderer,
+    Renderer: 'a + iced_core::Renderer + svg::Renderer,
     Renderer::Theme: StyleSheet,
 {
     fn tag(&self) -> tree::Tag {
@@ -295,6 +319,7 @@ where
             bounds,
             cursor,
             self.on_press.is_some(),
+            self.selected.is_some(),
             theme,
             &self.style,
             || tree.state.downcast_ref::<State>(),
@@ -313,6 +338,37 @@ where
             cursor,
             &bounds,
         );
+
+        if let Some(ref selected) = self.selected {
+            renderer.fill_quad(
+                Quad {
+                    bounds: Rectangle {
+                        width: 24.0,
+                        height: 20.0,
+                        x: bounds.x,
+                        y: bounds.y + (bounds.height - 20.0),
+                    },
+                    border_radius: [0.0, 8.0, 0.0, 8.0].into(),
+                    border_width: 0.0,
+                    border_color: Color::TRANSPARENT,
+                },
+                styling
+                    .background
+                    .unwrap_or(Background::Color(Color::TRANSPARENT)),
+            );
+
+            iced_core::svg::Renderer::draw(
+                renderer,
+                selected.icon.clone(),
+                styling.icon_color,
+                Rectangle {
+                    width: 16.0,
+                    height: 16.0,
+                    x: bounds.x + 4.0,
+                    y: bounds.y + (bounds.height - 16.0),
+                },
+            );
+        }
     }
 
     fn mouse_interaction(
@@ -417,7 +473,7 @@ where
 impl<'a, Message, Renderer> From<Button<'a, Message, Renderer>> for Element<'a, Message, Renderer>
 where
     Message: Clone + 'a,
-    Renderer: iced_core::Renderer + 'a,
+    Renderer: iced_core::Renderer + svg::Renderer + 'a,
     Renderer::Theme: StyleSheet,
 {
     fn from(button: Button<'a, Message, Renderer>) -> Self {
@@ -538,12 +594,13 @@ pub fn update<'a, Message: Clone>(
     event::Status::Ignored
 }
 
-/// Draws a [`Button`].
+#[allow(clippy::too_many_arguments)]
 pub fn draw<'a, Renderer: iced_core::Renderer>(
     renderer: &mut Renderer,
     bounds: Rectangle,
     cursor: mouse::Cursor,
     is_enabled: bool,
+    is_selected: bool,
     style_sheet: &dyn StyleSheet<Style = <Renderer::Theme as StyleSheet>::Style>,
     style: &<Renderer::Theme as StyleSheet>::Style,
     state: impl FnOnce() -> &'a State,
@@ -559,12 +616,12 @@ where
         style_sheet.disabled(style)
     } else if is_mouse_over {
         if state.is_pressed {
-            style_sheet.pressed(state.is_focused, style)
+            style_sheet.pressed(state.is_focused || is_selected, style)
         } else {
-            style_sheet.hovered(state.is_focused, style)
+            style_sheet.hovered(state.is_focused || is_selected, style)
         }
     } else {
-        style_sheet.active(state.is_focused, style)
+        style_sheet.active(state.is_focused || is_selected, style)
     };
 
     let doubled_border_width = styling.border_width * 2.0;
@@ -595,7 +652,8 @@ where
                     bounds: Rectangle {
                         x: bounds.x + styling.shadow_offset.x,
                         y: bounds.y + styling.shadow_offset.y,
-                        ..bounds
+                        width: bounds.width,
+                        height: bounds.height,
                     },
                     border_radius: styling.border_radius,
                     border_width: 0.0,
@@ -607,7 +665,12 @@ where
 
         renderer.fill_quad(
             renderer::Quad {
-                bounds,
+                bounds: Rectangle {
+                    x: bounds.x + if is_selected { -1.0 } else { 0.0 },
+                    y: bounds.y + if is_selected { -1.0 } else { 0.0 },
+                    width: bounds.width + if is_selected { 2.0 } else { 0.0 },
+                    height: bounds.height + if is_selected { 2.0 } else { 0.0 },
+                },
                 border_radius: styling.border_radius,
                 border_width: styling.border_width,
                 border_color: styling.border_color,

@@ -24,6 +24,7 @@ pub enum Button {
     Link,
     Icon,
     IconVertical,
+    Image,
     #[default]
     Standard,
     Suggested,
@@ -78,6 +79,22 @@ pub fn appearance(
                 appearance.text_color = Some(cosmic.accent.on.into());
                 appearance.icon_color = Some(cosmic.accent.on.into());
             }
+        }
+
+        Button::Image => {
+            appearance.background = Some(Background::Color(cosmic.bg_color().into()));
+            appearance.text_color = Some(cosmic.accent.base.into());
+            appearance.icon_color = Some(cosmic.accent.base.into());
+
+            corner_radii = &cosmic.corner_radii.radius_s;
+            appearance.border_radius = (*corner_radii).into();
+
+            if focused {
+                appearance.border_width = 3.0;
+                appearance.border_color = cosmic.accent.base.into();
+            }
+
+            return appearance;
         }
 
         Button::Link => {
