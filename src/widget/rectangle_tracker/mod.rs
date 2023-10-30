@@ -71,6 +71,7 @@ where
     tx: UnboundedSender<(I, Rectangle)>,
     id: I,
     container: Container<'a, Message, Renderer>,
+    ignore_bounds: bool,
 }
 
 impl<'a, Message, Renderer, I> RectangleTrackingContainer<'a, Message, Renderer, I>
@@ -88,6 +89,7 @@ where
             id,
             tx,
             container: Container::new(content),
+            ignore_bounds: false,
         }
     }
 
@@ -160,6 +162,14 @@ where
         self.container = self.container.style(style);
         self
     }
+
+    /// Set to true to ignore parent container bounds when performing layout.
+    /// This can be useful for widgets that are in auto-sized surfaces.
+    #[must_use]
+    pub fn ignore_bounds(mut self, ignore_bounds: bool) -> Self {
+        self.ignore_bounds = ignore_bounds;
+        self
+    }
 }
 
 impl<'a, Message, Renderer, I> Widget<Message, Renderer>
@@ -186,7 +196,14 @@ where
     }
 
     fn layout(&self, renderer: &Renderer, limits: &layout::Limits) -> layout::Node {
-        self.container.layout(renderer, limits)
+        self.container.layout(
+            renderer,
+            if self.ignore_bounds {
+                &layout::Limits::NONE
+            } else {
+                limits
+            },
+        )
     }
 
     fn operate(
