@@ -12,6 +12,10 @@ mod icon;
 pub use icon::icon;
 pub use icon::Button as IconButton;
 
+mod image;
+pub use image::image;
+pub use image::Button as ImageButton;
+
 mod style;
 pub use style::{Appearance, StyleSheet};
 
@@ -81,7 +85,7 @@ pub struct Builder<'a, Message, Variant> {
     /// Sets the preferred font weight.
     font_weight: Weight,
 
-    // The preferred style of the button.
+    /// The preferred style of the button.
     style: Style,
 
     #[setters(skip)]

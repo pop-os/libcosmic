@@ -8,9 +8,6 @@ use apply::Apply;
 use iced_core::{font::Weight, text::LineHeight, widget::Id, Alignment, Length, Padding};
 use std::borrow::Cow;
 
-/// A [`Button`] with the highest level of attention.
-///
-/// There should only be one primary button used per page.
 pub type Button<'a, Message> = Builder<'a, Message, Text>;
 
 pub fn destructive<'a, Message>(label: impl Into<Cow<'a, str>>) -> Button<'a, Message> {

@@ -51,6 +51,24 @@ pub struct Icon {
 
 impl Icon {
     #[must_use]
+    pub fn into_svg_handle(self) -> Option<crate::widget::svg::Handle> {
+        match self.handle.data {
+            Data::Name(named) => {
+                if let Some(path) = named.path() {
+                    if path.extension().is_some_and(|ext| ext == OsStr::new("svg")) {
+                        return Some(iced_core::svg::Handle::from_path(path));
+                    }
+                }
+            }
+
+            Data::Image(_) => (),
+            Data::Svg(handle) => return Some(handle),
+        }
+
+        None
+    }
+
+    #[must_use]
     fn into_element<Message: 'static>(self) -> Element<'static, Message> {
         let from_image = |handle| {
             Image::new(handle)
