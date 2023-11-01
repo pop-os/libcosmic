@@ -101,13 +101,13 @@ impl<'a, Message: Clone + 'static> HeaderBar<'a, Message> {
         // Creates the headerbar widget.
         let mut widget = widget::row::with_capacity(4)
             // If elements exist in the start region, append them here.
-            .push_maybe((!start.is_empty()).then(|| {
+            .push(
                 widget::row::with_children(start)
                     .align_items(iced::Alignment::Center)
                     .apply(widget::container)
                     .align_x(iced::alignment::Horizontal::Left)
-                    .width(Length::Fill)
-            }))
+                    .width(Length::Fill),
+            )
             // If elements exist in the center region, use them here.
             // This will otherwise use the title as a widget if a title was defined.
             .push(if !center.is_empty() {
