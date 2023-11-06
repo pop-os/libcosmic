@@ -231,9 +231,15 @@ impl<T: Application> Cosmic<T> {
             #[cfg(feature = "wayland")]
             Message::WindowState(id, state) => {
                 if window::Id(0) == id {
-                    self.app.core_mut().window.sharp_corners =
-                        matches!(state, WindowState::ACTIVATED)
-                            || state.contains(WindowState::TILED);
+                    self.app.core_mut().window.sharp_corners = state.intersects(
+                        WindowState::MAXIMIZED
+                            | WindowState::FULLSCREEN
+                            | WindowState::TILED
+                            | WindowState::TILED_RIGHT
+                            | WindowState::TILED_LEFT
+                            | WindowState::TILED_TOP
+                            | WindowState::TILED_BOTTOM,
+                    );
                 }
             }
 
