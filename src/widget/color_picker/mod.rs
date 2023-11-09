@@ -20,8 +20,7 @@ use iced_core::{
     layout, mouse, renderer, Background, Clipboard, Color, Layout, Length, Radians, Rectangle,
     Renderer, Shell, Vector, Widget,
 };
-#[cfg(feature = "wayland")]
-use iced_sctk::commands::data_device::set_selection;
+
 use iced_style::slider::{HandleShape, RailBackground};
 use iced_widget::{canvas, column, horizontal_space, row, scrollable, vertical_space, Row};
 use lazy_static::lazy_static;
@@ -158,16 +157,8 @@ impl ColorPickerModel {
             }
             ColorPickerUpdate::Copied(t) => {
                 self.copied_at = Some(t);
-                #[cfg(feature = "wayland")]
-                return set_selection(
-                    crate::widget::SUPPORTED_TEXT_MIME_TYPES
-                        .iter()
-                        .map(ToString::to_string)
-                        .collect(),
-                    Box::new(crate::widget::text_input::TextInputString(
-                        self.input_color.clone(),
-                    )),
-                );
+
+                return iced::clipboard::write(self.input_color.clone());
             }
             ColorPickerUpdate::Reset => {
                 self.must_clear_cache.store(true, Ordering::SeqCst);
