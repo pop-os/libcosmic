@@ -209,7 +209,7 @@ impl Context {
         match self.background {
             CosmicPanelBackground::Dark => Some(theme::Theme::dark()),
             CosmicPanelBackground::Light => Some(theme::Theme::light()),
-            _ => None,
+            _ => Some(theme::system_preference()),
         }
     }
 }
