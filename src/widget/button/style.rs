@@ -80,4 +80,7 @@ pub trait StyleSheet {
 
     /// Produces the pressed [`Appearance`] of a button.
     fn pressed(&self, focused: bool, style: &Self::Style) -> Appearance;
+
+    /// Background color of the selection indicator
+    fn selection_background(&self) -> Background;
 }

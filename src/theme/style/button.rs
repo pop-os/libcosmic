@@ -82,7 +82,7 @@ pub fn appearance(
         }
 
         Button::Image => {
-            appearance.background = Some(Background::Color(cosmic.bg_color().into()));
+            appearance.background = None;
             appearance.text_color = Some(cosmic.accent.base.into());
             appearance.icon_color = Some(cosmic.accent.base.into());
 
@@ -90,7 +90,7 @@ pub fn appearance(
             appearance.border_radius = (*corner_radii).into();
 
             if focused {
-                appearance.border_width = 3.0;
+                appearance.border_width = 2.0;
                 appearance.border_color = cosmic.accent.base.into();
             }
 
@@ -178,13 +178,18 @@ impl StyleSheet for crate::Theme {
             return hovered(focused, self);
         }
 
-        appearance(self, focused, style, |component| {
-            (
-                component.hover.into(),
-                Some(component.on.into()),
-                Some(component.on.into()),
-            )
-        })
+        appearance(
+            self,
+            focused || matches!(style, Button::Image),
+            style,
+            |component| {
+                (
+                    component.hover.into(),
+                    Some(component.on.into()),
+                    Some(component.on.into()),
+                )
+            },
+        )
     }
 
     fn pressed(&self, focused: bool, style: &Self::Style) -> Appearance {
@@ -199,5 +204,9 @@ impl StyleSheet for crate::Theme {
                 Some(component.on.into()),
             )
         })
+    }
+
+    fn selection_background(&self) -> Background {
+        Background::Color(self.cosmic().bg_color().into())
     }
 }
