@@ -154,7 +154,7 @@ where
     /// Sets the widget to a selected state.
     ///
     /// Displays a selection indicator on image buttons.
-    pub(super) fn selected(mut self, selected: bool) -> Self {
+    pub fn selected(mut self, selected: bool) -> Self {
         self.selected = selected.then(|| Selected {
             icon: crate::widget::icon::from_name("object-select-symbolic")
                 .size(16)
@@ -323,20 +323,21 @@ where
             theme,
             &self.style,
             || tree.state.downcast_ref::<State>(),
-        );
-
-        self.content.as_widget().draw(
-            &tree.children[0],
-            renderer,
-            theme,
-            &renderer::Style {
-                icon_color: styling.icon_color.unwrap_or(renderer_style.icon_color),
-                text_color: styling.text_color.unwrap_or(renderer_style.icon_color),
-                scale_factor: renderer_style.scale_factor,
+            |renderer, styling| {
+                self.content.as_widget().draw(
+                    &tree.children[0],
+                    renderer,
+                    theme,
+                    &renderer::Style {
+                        icon_color: styling.icon_color.unwrap_or(renderer_style.icon_color),
+                        text_color: styling.text_color.unwrap_or(renderer_style.icon_color),
+                        scale_factor: renderer_style.scale_factor,
+                    },
+                    content_layout,
+                    cursor,
+                    &bounds,
+                );
             },
-            content_layout,
-            cursor,
-            &bounds,
         );
 
         if let Some(ref selected) = self.selected {
@@ -345,16 +346,14 @@ where
                     bounds: Rectangle {
                         width: 24.0,
                         height: 20.0,
-                        x: bounds.x,
-                        y: bounds.y + (bounds.height - 20.0),
+                        x: bounds.x + styling.border_width,
+                        y: bounds.y + (bounds.height - 20.0 - styling.border_width),
                     },
                     border_radius: [0.0, 8.0, 0.0, 8.0].into(),
                     border_width: 0.0,
                     border_color: Color::TRANSPARENT,
                 },
-                styling
-                    .background
-                    .unwrap_or(Background::Color(Color::TRANSPARENT)),
+                theme.selection_background(),
             );
 
             iced_core::svg::Renderer::draw(
@@ -364,8 +363,8 @@ where
                 Rectangle {
                     width: 16.0,
                     height: 16.0,
-                    x: bounds.x + 4.0,
-                    y: bounds.y + (bounds.height - 16.0),
+                    x: bounds.x + 5.0 + styling.border_width,
+                    y: bounds.y + (bounds.height - 18.0 - styling.border_width),
                 },
             );
         }
@@ -604,6 +603,7 @@ pub fn draw<'a, Renderer: iced_core::Renderer>(
     style_sheet: &dyn StyleSheet<Style = <Renderer::Theme as StyleSheet>::Style>,
     style: &<Renderer::Theme as StyleSheet>::Style,
     state: impl FnOnce() -> &'a State,
+    draw_contents: impl FnOnce(&mut Renderer, Appearance),
 ) -> Appearance
 where
     Renderer::Theme: StyleSheet,
@@ -663,22 +663,34 @@ where
             );
         }
 
+        // Draw the button background first.
+        if let Some(background) = styling.background {
+            renderer.fill_quad(
+                renderer::Quad {
+                    bounds,
+                    border_radius: styling.border_radius,
+                    border_width: 0.0,
+                    border_color: Color::TRANSPARENT,
+                },
+                background,
+            );
+        }
+
+        // Then draw the button contents onto the background.
+        draw_contents(renderer, styling);
+
+        // Finish by drawing the border above the contents.
         renderer.fill_quad(
             renderer::Quad {
-                bounds: Rectangle {
-                    x: bounds.x + if is_selected { -1.0 } else { 0.0 },
-                    y: bounds.y + if is_selected { -1.0 } else { 0.0 },
-                    width: bounds.width + if is_selected { 2.0 } else { 0.0 },
-                    height: bounds.height + if is_selected { 2.0 } else { 0.0 },
-                },
+                bounds,
                 border_radius: styling.border_radius,
                 border_width: styling.border_width,
                 border_color: styling.border_color,
             },
-            styling
-                .background
-                .unwrap_or(Background::Color(Color::TRANSPARENT)),
+            Color::TRANSPARENT,
         );
+    } else {
+        draw_contents(renderer, styling);
     }
 
     styling
