@@ -44,8 +44,12 @@ pub fn save_file() -> Option<save::Dialog> {
 }
 
 /// Creates a subscription for file chooser events.
-pub fn subscription<M: Send + 'static>(handle: fn(Message) -> M) -> Subscription<M> {
-    let type_id = std::any::TypeId::of::<Handler<M>>();
+pub fn subscription<M, H>(handle: H) -> Subscription<M>
+where
+    M: Send + 'static,
+    H: Fn(Message) -> M + Send + Sync + 'static,
+{
+    let type_id = std::any::TypeId::of::<Handler<M, H>>();
 
     iced::subscription::channel(type_id, 1, move |output| async move {
         let mut state = Handler {
@@ -156,13 +160,13 @@ impl Sender {
     }
 }
 
-struct Handler<M> {
+struct Handler<M, Handle: Fn(Message) -> M> {
     active: Option<ashpd::desktop::Request<SelectedFiles>>,
-    handle: fn(Message) -> M,
+    handle: Handle,
     output: channel::mpsc::Sender<M>,
 }
 
-impl<M> Handler<M> {
+impl<M, Handle: Fn(Message) -> M> Handler<M, Handle> {
     /// Emits close request if there is an active dialog request.
     async fn close(&mut self) {
         if let Some(request) = self.active.take() {
