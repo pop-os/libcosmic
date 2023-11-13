@@ -55,6 +55,8 @@ pub enum Message {
     /// Capabilities the window manager supports
     #[cfg(feature = "wayland")]
     WmCapabilities(window::Id, WindowManagerCapabilities),
+    /// Activate the application
+    Activate(String),
 }
 
 #[derive(Default)]
@@ -177,6 +179,12 @@ where
             })
             .map(super::Message::Cosmic),
             window_events.map(super::Message::Cosmic),
+            #[cfg(feature = "zbus")]
+            self.app
+                .core()
+                .single_instance
+                .then(|| super::single_instance_subscription::<T>())
+                .unwrap_or_else(Subscription::none),
         ])
     }
 
@@ -355,6 +363,13 @@ impl<T: Application> Cosmic<T> {
                         }
                     });
                 }
+            }
+            Message::Activate(token) => {
+                #[cfg(feature = "wayland")]
+                return iced_sctk::commands::activation::activate(
+                    iced::window::Id::default(),
+                    token,
+                );
             }
         }
 

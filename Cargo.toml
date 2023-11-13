@@ -18,9 +18,9 @@ pipewire = ["ashpd?/pipewire"]
 # Enables keycode serialization
 serde-keycode = ["iced_core/serde"]
 # smol async runtime
-smol = ["iced/smol"]
+smol = ["iced/smol", "zbus?/async-io"]
 # Tokio async runtime
-tokio = ["dep:tokio", "ashpd/tokio", "iced/tokio"]
+tokio = ["dep:tokio", "ashpd/tokio", "iced/tokio", "zbus?/tokio"]
 # Wayland window support
 wayland = [
   "ashpd?/wayland",
@@ -40,6 +40,7 @@ winit_wgpu = ["winit", "wgpu"]
 xdg-portal = ["ashpd"]
 # XXX Use "a11y"; which is causing a panic currently
 applet = ["wayland", "tokio", "cosmic-panel-config", "ron"]
+zbus = ["dep:zbus", "serde", "ron"]
 
 [dependencies]
 apply = "0.3.0"
@@ -59,6 +60,8 @@ ashpd = { version = "0.5.0", default-features = false, optional = true }
 url = "2.4.0"
 unicode-segmentation = "1.6"
 css-color = "0.2.5"
+zbus = {version = "3.14.1", default-features = false, optional = true}
+serde = { version = "1.0.180", optional = true }
 
 [target.'cfg(unix)'.dependencies]
 freedesktop-icons = "0.2.4"
