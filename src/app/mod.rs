@@ -36,6 +36,8 @@ pub mod message {
     }
 }
 
+use std::str::FromStr;
+
 pub use self::command::Command;
 pub use self::core::Core;
 pub use self::settings::Settings;
@@ -46,7 +48,15 @@ use apply::Apply;
 use iced::Subscription;
 use iced::{window, Application as IcedApplication};
 pub use message::Message;
-
+use url::Url;
+#[cfg(feature = "zbus")]
+use {
+    iced_futures::futures::channel::mpsc::{Receiver, Sender},
+    iced_futures::futures::SinkExt,
+    std::any::TypeId,
+    std::collections::HashMap,
+    zbus::{dbus_interface, dbus_proxy, zvariant::Value},
+};
 /// Launch a COSMIC application with the given [`Settings`].
 ///
 /// # Errors
@@ -62,6 +72,7 @@ pub fn run<App: Application>(settings: Settings, flags: App::Flags) -> iced::Res
     core.set_scale_factor(settings.scale_factor);
     core.set_window_width(settings.size.0);
     core.set_window_height(settings.size.1);
+    core.single_instance = settings.single_instance;
 
     THEME.with(move |t| {
         let mut cosmic_theme = t.borrow_mut();
@@ -92,6 +103,7 @@ pub fn run<App: Application>(settings: Settings, flags: App::Flags) -> iced::Res
                 size_limits: settings.size_limits,
                 title: None,
                 transparent: settings.transparent,
+                xdg_activation_token: std::env::var("XDG_ACTIVATION_TOKEN").ok(),
                 ..SctkWindowSettings::default()
             })
         };
@@ -110,6 +122,223 @@ pub fn run<App: Application>(settings: Settings, flags: App::Flags) -> iced::Res
 
     cosmic::Cosmic::<App>::run(iced)
 }
+#[cfg(feature = "zbus")]
+#[derive(Debug, Clone)]
+pub struct DbusActivationMessage<Action = String, Args = Vec<String>> {
+    pub activation_token: Option<String>,
+    pub desktop_startup_id: Option<String>,
+    pub msg: DbusActivationDetails<Action, Args>,
+}
+
+#[derive(Debug, Clone)]
+pub enum DbusActivationDetails<Action = String, Args = Vec<String>> {
+    Activate,
+    Open {
+        url: Vec<Url>,
+    },
+    /// action can be deserialized as Flags
+    ActivateAction {
+        action: Action,
+        args: Args,
+    },
+}
+#[cfg(feature = "zbus")]
+#[derive(Debug, Default)]
+pub struct DbusActivation(Option<Sender<DbusActivationMessage>>);
+#[cfg(feature = "zbus")]
+impl DbusActivation {
+    #[must_use]
+    pub fn new() -> Self {
+        Self(None)
+    }
+
+    pub fn rx(&mut self) -> Receiver<DbusActivationMessage> {
+        let (tx, rx) = iced_futures::futures::channel::mpsc::channel(10);
+        self.0 = Some(tx);
+        rx
+    }
+}
+
+#[cfg(feature = "zbus")]
+#[dbus_proxy(interface = "org.freedesktop.DbusActivation")]
+pub trait DbusActivationInterface {
+    /// Activate the application.
+    fn activate(&mut self, platform_data: HashMap<&str, Value<'_>>) -> zbus::Result<()>;
+
+    /// Open the given URIs.
+    fn open(
+        &mut self,
+        uris: Vec<&str>,
+        platform_data: HashMap<&str, Value<'_>>,
+    ) -> zbus::Result<()>;
+
+    /// Activate the given action.
+    fn activate_action(
+        &mut self,
+        action_name: &str,
+        parameter: Vec<&str>,
+        platform_data: HashMap<&str, Value<'_>>,
+    ) -> zbus::Result<()>;
+}
+
+#[cfg(feature = "zbus")]
+#[dbus_interface(interface = "org.freedesktop.DbusActivation")]
+impl DbusActivation {
+    async fn activate(&mut self, platform_data: HashMap<&str, Value<'_>>) {
+        if let Some(tx) = &mut self.0 {
+            let _ = tx
+                .send(DbusActivationMessage {
+                    activation_token: platform_data.get("activation-token").and_then(|t| match t {
+                        Value::Str(t) => Some(t.to_string()),
+                        _ => None,
+                    }),
+                    desktop_startup_id: platform_data.get("desktop-startup-id").and_then(
+                        |t| match t {
+                            Value::Str(t) => Some(t.to_string()),
+                            _ => None,
+                        },
+                    ),
+                    msg: DbusActivationDetails::Activate,
+                })
+                .await;
+        }
+    }
+
+    async fn open(&mut self, uris: Vec<&str>, platform_data: HashMap<&str, Value<'_>>) {
+        if let Some(tx) = &mut self.0 {
+            let _ = tx
+                .send(DbusActivationMessage {
+                    activation_token: platform_data.get("activation-token").and_then(|t| match t {
+                        Value::Str(t) => Some(t.to_string()),
+                        _ => None,
+                    }),
+                    desktop_startup_id: platform_data.get("desktop-startup-id").and_then(
+                        |t| match t {
+                            Value::Str(t) => Some(t.to_string()),
+                            _ => None,
+                        },
+                    ),
+                    msg: DbusActivationDetails::Open {
+                        url: uris.iter().filter_map(|u| Url::parse(u).ok()).collect(),
+                    },
+                })
+                .await;
+        }
+    }
+
+    async fn activate_action(
+        &mut self,
+        action_name: &str,
+        parameter: Vec<&str>,
+        platform_data: HashMap<&str, Value<'_>>,
+    ) {
+        if let Some(tx) = &mut self.0 {
+            let _ = tx
+                .send(DbusActivationMessage {
+                    activation_token: platform_data.get("activation-token").and_then(|t| match t {
+                        Value::Str(t) => Some(t.to_string()),
+                        _ => None,
+                    }),
+                    desktop_startup_id: platform_data.get("desktop-startup-id").and_then(
+                        |t| match t {
+                            Value::Str(t) => Some(t.to_string()),
+                            _ => None,
+                        },
+                    ),
+                    msg: DbusActivationDetails::ActivateAction {
+                        action: action_name.to_string(),
+                        args: parameter
+                            .iter()
+                            .map(std::string::ToString::to_string)
+                            .collect(),
+                    },
+                })
+                .await;
+        }
+    }
+}
+
+#[cfg(feature = "zbus")]
+
+/// Launch a COSMIC application with the given [`Settings`].
+/// If the application is already running, the arguments will be passed to the
+/// running instance.
+/// # Errors
+/// Returns error on application failure.
+pub fn run_single_instance<App: Application>(
+    mut settings: Settings,
+    flags: App::Flags,
+) -> iced::Result {
+    let activation_token = std::env::var("XDG_ACTIVATION_TOKEN").ok();
+
+    let override_single = std::env::var("COSMIC_SINGLE_INSTANCE")
+        .map(|v| &v.to_lowercase() == "false" || &v == "0")
+        .unwrap_or_default();
+    if override_single {
+        return run::<App>(settings, flags);
+    }
+
+    let path: String = format!("/{}", App::APP_ID.replace('.', "/"));
+    settings.single_instance = true;
+
+    let Ok(conn) = zbus::blocking::Connection::session() else {
+        tracing::warn!("Failed to connect to dbus");
+        return run::<App>(settings, flags);
+    };
+
+    if DbusActivationInterfaceProxyBlocking::builder(&conn)
+        .destination(App::APP_ID)
+        .ok()
+        .and_then(|b| b.path(path).ok())
+        .and_then(|b| b.destination(App::APP_ID).ok())
+        .and_then(|b| b.build().ok())
+        .is_some_and(|mut p| {
+            match {
+                let mut platform_data = HashMap::new();
+                if let Some(activation_token) = activation_token {
+                    platform_data.insert("activation-token", activation_token.into());
+                }
+                if let Ok(startup_id) = std::env::var("DESKTOP_STARTUP_ID") {
+                    platform_data.insert("desktop-startup-id", startup_id.into());
+                }
+                if let Some(action) = flags.action() {
+                    let action = action.to_string();
+                    p.activate_action(&action, flags.args(), platform_data)
+                } else {
+                    p.activate(platform_data)
+                }
+            } {
+                Ok(()) => {
+                    tracing::info!("Successfully activated another instance");
+                    true
+                }
+                Err(err) => {
+                    tracing::warn!(?err, "Failed to activate another instance");
+                    false
+                }
+            }
+        })
+    {
+        tracing::info!("Another instance is running");
+        Ok(())
+    } else {
+        run::<App>(settings, flags)
+    }
+}
+
+pub trait CosmicFlags {
+    type SubCommand: FromStr + ToString + std::fmt::Debug + Clone + Send + 'static;
+    type Args: TryFrom<Vec<String>> + Into<Vec<String>> + std::fmt::Debug + Clone + Send + 'static;
+    #[must_use]
+    fn action(&self) -> Option<&Self::SubCommand> {
+        None
+    }
+
+    #[must_use]
+    fn args(&self) -> Vec<&str> {
+        Vec::new()
+    }
+}
 
 /// An interactive cross-platform COSMIC application.
 #[allow(unused_variables)]
@@ -120,9 +349,27 @@ where
     /// Default async executor to use with the app.
     type Executor: iced_futures::Executor;
 
+    #[cfg(feature = "zbus")]
+    /// Argument received [`Application::new`].
+    type Flags: Clone + CosmicFlags;
+
+    #[cfg(not(feature = "zbus"))]
     /// Argument received [`Application::new`].
     type Flags: Clone;
 
+    #[cfg(feature = "zbus")]
+    /// Message type specific to our app.
+    type Message: Clone
+        + From<
+            DbusActivationDetails<
+                <Self::Flags as CosmicFlags>::SubCommand,
+                <Self::Flags as CosmicFlags>::Args,
+            >,
+        > + std::fmt::Debug
+        + Send
+        + 'static;
+
+    #[cfg(not(feature = "zbus"))]
     /// Message type specific to our app.
     type Message: Clone + std::fmt::Debug + Send + 'static;
 
@@ -377,4 +624,102 @@ impl<App: Application> ApplicationExt for App {
             )
             .into()
     }
+}
+
+#[cfg(feature = "zbus")]
+fn single_instance_subscription<App: ApplicationExt>() -> Subscription<Message<App::Message>> {
+    use iced_futures::futures::StreamExt;
+
+    iced::subscription::channel(
+        TypeId::of::<DbusActivation>(),
+        10,
+        |mut output| async move {
+            let mut single_instance: DbusActivation = DbusActivation::new();
+            let mut rx = single_instance.rx();
+            if let Ok(builder) = zbus::ConnectionBuilder::session() {
+                let path: String = format!("/{}", App::APP_ID.replace('.', "/"));
+                if let Ok(conn) = builder.build().await {
+                    // XXX Setup done this way seems to be more reliable.
+                    //
+                    // the docs for serve_at seem to imply it will replace the
+                    // existing interface at the requested path, but it doesn't
+                    // seem to work that way all the time. The docs for
+                    // object_server().at() imply it won't replace the existing
+                    // interface.
+                    //
+                    // request_name is used either way, with the builder or
+                    // with the connection, but it must be done after the
+                    // object server is setup.
+                    if conn.object_server().at(path, single_instance).await != Ok(true) {
+                        tracing::error!("Failed to serve dbus");
+                        std::process::exit(1);
+                    }
+                    if conn.request_name(App::APP_ID).await.is_err() {
+                        tracing::error!("Failed to serve dbus");
+                        std::process::exit(1);
+                    }
+
+                    #[cfg(feature = "smol")]
+                    let handle = {
+                        std::thread::spawn(move || {
+                            let conn_clone = _conn.clone();
+
+                            zbus::block_on(async move {
+                                loop {
+                                    conn_clone.executor().tick().await;
+                                }
+                            })
+                        })
+                    };
+                    while let Some(mut msg) = rx.next().await {
+                        if let Some(token) = msg.activation_token.take() {
+                            if let Err(err) = output
+                                .send(Message::Cosmic(cosmic::Message::Activate(token)))
+                                .await
+                            {
+                                tracing::error!(?err, "Failed to send message");
+                            }
+                        }
+                        if let Some(msg) = match msg.msg {
+                            DbusActivationDetails::Activate => {
+                                Some(DbusActivationDetails::Activate)
+                            }
+                            DbusActivationDetails::Open { url } => {
+                                Some(DbusActivationDetails::Open { url })
+                            }
+                            DbusActivationDetails::ActivateAction { action, args } => {
+                                if let (Ok(action), Ok(args)) = (
+                                    <App::Flags as CosmicFlags>::SubCommand::from_str(&action),
+                                    <App::Flags as CosmicFlags>::Args::try_from(args),
+                                ) {
+                                    Some(DbusActivationDetails::ActivateAction::<
+                                        <App::Flags as CosmicFlags>::SubCommand,
+                                        <App::Flags as CosmicFlags>::Args,
+                                    > {
+                                        action,
+                                        args,
+                                    })
+                                } else {
+                                    tracing::error!("Invalid action or args");
+                                    None
+                                }
+                            }
+                        } {
+                            if let Err(err) =
+                                output.send(Message::App(App::Message::from(msg))).await
+                            {
+                                tracing::error!(?err, "Failed to send message");
+                            }
+                        }
+                    }
+                }
+            } else {
+                tracing::warn!("Failed to connect to dbus for single instance");
+            }
+
+            loop {
+                iced::futures::pending!();
+            }
+        },
+    )
 }
