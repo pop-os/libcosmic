@@ -5,6 +5,8 @@ use super::{command, Application, ApplicationExt, Core, Subscription};
 use crate::theme::{self, Theme, ThemeType, THEME};
 use crate::widget::nav_bar;
 use crate::{keyboard_nav, Element};
+#[cfg(feature = "wayland")]
+use cctk::sctk::reexports::csd_frame::{WindowManagerCapabilities, WindowState};
 use cosmic_theme::ThemeMode;
 #[cfg(feature = "wayland")]
 use iced::event::wayland::{self, WindowEvent};
@@ -15,8 +17,6 @@ use iced::window;
 use iced_runtime::command::Action;
 #[cfg(not(feature = "wayland"))]
 use iced_runtime::window::Action as WindowAction;
-#[cfg(feature = "wayland")]
-use sctk::reexports::csd_frame::{WindowManagerCapabilities, WindowState};
 
 /// A message managed internally by COSMIC.
 #[derive(Clone, Debug)]
