@@ -1,12 +1,16 @@
+#[cfg(feature = "applet-token")]
+pub mod token;
+
 use crate::{
     app::Core,
+    cctk::sctk,
     iced::{
         self,
         alignment::{Horizontal, Vertical},
         widget::Container,
         window, Color, Length, Limits, Rectangle,
     },
-    iced_style, iced_widget, sctk,
+    iced_style, iced_widget,
     theme::{self, Button, THEME},
     widget, Application, Element, Renderer,
 };

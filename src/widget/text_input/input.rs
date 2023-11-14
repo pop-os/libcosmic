@@ -41,9 +41,9 @@ use iced_runtime::command::platform_specific;
 use iced_runtime::Command;
 
 #[cfg(feature = "wayland")]
-use iced_runtime::command::platform_specific::wayland::data_device::{DataFromMimeType, DndIcon};
+use cctk::sctk::reexports::client::protocol::wl_data_device_manager::DndAction;
 #[cfg(feature = "wayland")]
-use sctk::reexports::client::protocol::wl_data_device_manager::DndAction;
+use iced_runtime::command::platform_specific::wayland::data_device::{DataFromMimeType, DndIcon};
 
 /// Creates a new [`TextInput`].
 ///
