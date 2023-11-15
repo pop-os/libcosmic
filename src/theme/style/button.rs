@@ -207,6 +207,6 @@ impl StyleSheet for crate::Theme {
     }
 
     fn selection_background(&self) -> Background {
-        Background::Color(self.cosmic().bg_color().into())
+        Background::Color(self.cosmic().primary.base.into())
     }
 }

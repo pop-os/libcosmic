@@ -5,6 +5,7 @@
 //! Allow your users to perform actions by pressing a button.
 //!
 //! A [`Button`] has some local [`State`].
+
 use iced_runtime::core::widget::Id;
 use iced_runtime::{keyboard, Command};
 
@@ -24,44 +25,17 @@ use iced_renderer::core::widget::{operation, OperationOutputWrapper};
 
 pub use super::style::{Appearance, StyleSheet};
 
-struct Selected {
-    icon: svg::Handle,
+/// Internally defines different button widget variants.
+enum Variant<Message> {
+    Normal,
+    Image {
+        close_icon: svg::Handle,
+        selection_icon: svg::Handle,
+        on_remove: Option<Message>,
+    },
 }
 
-/// A generic widget that produces a message when pressed.
-///
-/// ```no_run
-/// # type Button<'a, Message> =
-/// #     iced_widget::Button<'a, Message, iced_widget::renderer::Renderer<iced_widget::style::Theme>>;
-/// #
-/// #[derive(Clone)]
-/// enum Message {
-///     ButtonPressed,
-/// }
-///
-/// let button = Button::new("Press me!").on_press(Message::ButtonPressed);
-/// ```
-///
-/// If a [`Button::on_press`] handler is not set, the resulting [`Button`] will
-/// be disabled:
-///
-/// ```
-/// # type Button<'a, Message> =
-/// #     iced_widget::Button<'a, Message, iced_widget::renderer::Renderer<iced_widget::style::Theme>>;
-/// #
-/// #[derive(Clone)]
-/// enum Message {
-///     ButtonPressed,
-/// }
-///
-/// fn disabled_button<'a>() -> Button<'a, Message> {
-///     Button::new("I'm disabled!")
-/// }
-///
-/// fn enabled_button<'a>() -> Button<'a, Message> {
-///     disabled_button().on_press(Message::ButtonPressed)
-/// }
-/// ```
+/// A generic button which emits a message when pressed.
 #[allow(missing_debug_implementations)]
 #[must_use]
 pub struct Button<'a, Message, Renderer>
@@ -81,8 +55,9 @@ where
     width: Length,
     height: Length,
     padding: Padding,
-    selected: Option<Selected>,
+    selected: bool,
     style: <Renderer::Theme as StyleSheet>::Style,
+    variant: Variant<Message>,
 }
 
 impl<'a, Message, Renderer> Button<'a, Message, Renderer>
@@ -92,7 +67,7 @@ where
 {
     /// Creates a new [`Button`] with the given content.
     pub fn new(content: impl Into<Element<'a, Message, Renderer>>) -> Self {
-        Button {
+        Self {
             id: Id::unique(),
             #[cfg(feature = "a11y")]
             name: None,
@@ -105,8 +80,50 @@ where
             width: Length::Shrink,
             height: Length::Shrink,
             padding: Padding::new(5.0),
-            selected: None,
+            selected: false,
             style: <Renderer::Theme as StyleSheet>::Style::default(),
+            variant: Variant::Normal,
+        }
+    }
+
+    pub fn new_image(
+        content: impl Into<Element<'a, Message, Renderer>>,
+        on_remove: Option<Message>,
+    ) -> Self {
+        Self {
+            id: Id::unique(),
+            #[cfg(feature = "a11y")]
+            name: None,
+            #[cfg(feature = "a11y")]
+            description: None,
+            #[cfg(feature = "a11y")]
+            label: None,
+            content: content.into(),
+            on_press: None,
+            width: Length::Shrink,
+            height: Length::Shrink,
+            padding: Padding::new(5.0),
+            selected: false,
+            style: <Renderer::Theme as StyleSheet>::Style::default(),
+            variant: Variant::Image {
+                on_remove,
+                close_icon: crate::widget::icon::from_name("window-close-symbolic")
+                    .size(8)
+                    .icon()
+                    .into_svg_handle()
+                    .unwrap_or_else(|| {
+                        let bytes: &'static [u8] = &[];
+                        iced_core::svg::Handle::from_memory(bytes)
+                    }),
+                selection_icon: crate::widget::icon::from_name("object-select-symbolic")
+                    .size(16)
+                    .icon()
+                    .into_svg_handle()
+                    .unwrap_or_else(|| {
+                        let bytes: &'static [u8] = &[];
+                        iced_core::svg::Handle::from_memory(bytes)
+                    }),
+            },
         }
     }
 
@@ -155,16 +172,7 @@ where
     ///
     /// Displays a selection indicator on image buttons.
     pub fn selected(mut self, selected: bool) -> Self {
-        self.selected = selected.then(|| Selected {
-            icon: crate::widget::icon::from_name("object-select-symbolic")
-                .size(16)
-                .icon()
-                .into_svg_handle()
-                .unwrap_or_else(|| {
-                    let bytes: &'static [u8] = &[];
-                    iced_core::svg::Handle::from_memory(bytes)
-                }),
-        });
+        self.selected = selected;
 
         self
     }
@@ -277,6 +285,27 @@ where
         shell: &mut Shell<'_, Message>,
         viewport: &Rectangle,
     ) -> event::Status {
+        if let Variant::Image {
+            on_remove: Some(on_remove),
+            ..
+        } = &self.variant
+        {
+            // Capture mouse/touch events on the removal button
+            match event {
+                Event::Mouse(mouse::Event::ButtonReleased(mouse::Button::Left))
+                | Event::Touch(touch::Event::FingerPressed { .. }) => {
+                    if let Some(position) = cursor.position() {
+                        if removal_bounds(layout.bounds(), 4.0).contains(position) {
+                            shell.publish(on_remove.clone());
+                            return event::Status::Captured;
+                        }
+                    }
+                }
+
+                _ => (),
+            }
+        }
+
         if let event::Status::Captured = self.content.as_widget_mut().on_event(
             &mut tree.children[0],
             event.clone(),
@@ -319,7 +348,7 @@ where
             bounds,
             cursor,
             self.on_press.is_some(),
-            self.selected.is_some(),
+            self.selected,
             theme,
             &self.style,
             || tree.state.downcast_ref::<State>(),
@@ -340,33 +369,71 @@ where
             },
         );
 
-        if let Some(ref selected) = self.selected {
-            renderer.fill_quad(
-                Quad {
-                    bounds: Rectangle {
-                        width: 24.0,
-                        height: 20.0,
-                        x: bounds.x + styling.border_width,
-                        y: bounds.y + (bounds.height - 20.0 - styling.border_width),
-                    },
-                    border_radius: [0.0, 8.0, 0.0, 8.0].into(),
-                    border_width: 0.0,
-                    border_color: Color::TRANSPARENT,
-                },
-                theme.selection_background(),
-            );
+        if let Variant::Image {
+            close_icon,
+            selection_icon,
+            on_remove,
+        } = &self.variant
+        {
+            let selection_background = theme.selection_background();
 
-            iced_core::svg::Renderer::draw(
-                renderer,
-                selected.icon.clone(),
-                styling.icon_color,
-                Rectangle {
-                    width: 16.0,
-                    height: 16.0,
-                    x: bounds.x + 5.0 + styling.border_width,
-                    y: bounds.y + (bounds.height - 18.0 - styling.border_width),
-                },
-            );
+            if self.selected {
+                renderer.fill_quad(
+                    Quad {
+                        bounds: Rectangle {
+                            width: 24.0,
+                            height: 20.0,
+                            x: bounds.x + styling.border_width,
+                            y: bounds.y + (bounds.height - 20.0 - styling.border_width),
+                        },
+                        border_radius: [0.0, 8.0, 0.0, 8.0].into(),
+                        border_width: 0.0,
+                        border_color: Color::TRANSPARENT,
+                    },
+                    selection_background,
+                );
+
+                iced_core::svg::Renderer::draw(
+                    renderer,
+                    selection_icon.clone(),
+                    styling.icon_color,
+                    Rectangle {
+                        width: 16.0,
+                        height: 16.0,
+                        x: bounds.x + 5.0 + styling.border_width,
+                        y: bounds.y + (bounds.height - 18.0 - styling.border_width),
+                    },
+                );
+            }
+
+            if on_remove.is_some() {
+                if let Some(position) = cursor.position() {
+                    if bounds.contains(position) {
+                        let bounds = removal_bounds(layout.bounds(), 4.0);
+                        renderer.fill_quad(
+                            renderer::Quad {
+                                bounds,
+                                border_radius: 20.0.into(),
+                                border_width: 0.0,
+                                border_color: Color::TRANSPARENT,
+                            },
+                            selection_background,
+                        );
+
+                        iced_core::svg::Renderer::draw(
+                            renderer,
+                            close_icon.clone(),
+                            styling.icon_color,
+                            Rectangle {
+                                width: 16.0,
+                                height: 16.0,
+                                x: bounds.x + 4.0,
+                                y: bounds.y + 4.0,
+                            },
+                        );
+                    }
+                }
+            }
         }
     }
 
@@ -748,5 +815,14 @@ impl operation::Focusable for State {
 
     fn unfocus(&mut self) {
         State::unfocus(self);
+    }
+}
+
+fn removal_bounds(bounds: Rectangle, offset: f32) -> Rectangle {
+    Rectangle {
+        x: bounds.x + bounds.width - 12.0 - offset,
+        y: bounds.y - 12.0 + offset,
+        width: 24.0,
+        height: 24.0,
     }
 }
