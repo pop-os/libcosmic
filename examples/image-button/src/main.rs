@@ -17,12 +17,15 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 /// Messages that are used specifically by our [`App`].
 #[derive(Clone, Debug)]
 pub enum Message {
-    Clicked,
+    Clicked(usize),
+    Remove(usize),
 }
 
 /// The [`App`] stores application-specific state.
 pub struct App {
     core: Core,
+    selected: usize,
+    images: Vec<String>,
 }
 
 /// Implement [`cosmic::Application`] to integrate with COSMIC.
@@ -49,7 +52,14 @@ impl cosmic::Application for App {
 
     /// Creates the application, and optionally emits command on initialize.
     fn init(core: Core, _input: Self::Flags) -> (Self, Command<Self::Message>) {
-        let mut app = App { core };
+        let mut app = App {
+            core,
+            selected: 0,
+            images: vec![
+                "/usr/share/backgrounds/pop/kait-herzog-8242.jpg".into(),
+                "/usr/share/backgrounds/pop/kate-hazen-unleash-your-robot-blue.png".into(),
+            ],
+        };
 
         let command = app.update_title();
 
@@ -58,8 +68,11 @@ impl cosmic::Application for App {
 
     /// Handle application events here.
     fn update(&mut self, message: Self::Message) -> Command<Self::Message> {
-        if let Message::Clicked = message {
-            eprintln!("clicked");
+        match message {
+            Message::Clicked(id) => self.selected = id,
+            Message::Remove(id) => {
+                self.images.remove(id);
+            }
         }
 
         Command::none()
@@ -67,22 +80,17 @@ impl cosmic::Application for App {
 
     /// Creates a view after each update.
     fn view(&self) -> Element<Self::Message> {
-        let content = cosmic::widget::column()
-            .spacing(12)
-            .push(
-                cosmic::widget::button::image("/usr/share/backgrounds/pop/kait-herzog-8242.jpg")
-                    .width(600.0)
-                    .selected(true)
-                    .on_press(Message::Clicked),
-            )
-            .push(
-                cosmic::widget::button::image(
-                    "/usr/share/backgrounds/pop/kate-hazen-unleash-your-robot-blue.png",
-                )
-                .width(600.0)
-                .selected(true)
-                .on_press(Message::Clicked),
+        let mut content = cosmic::widget::column().spacing(12);
+
+        for (id, image) in self.images.iter().enumerate() {
+            content = content.push(
+                cosmic::widget::button::image(image)
+                    .width(300.0)
+                    .on_press(Message::Clicked(id))
+                    .selected(self.selected == id)
+                    .on_remove(Message::Remove(id)),
             );
+        }
 
         let centered = cosmic::widget::container(content)
             .width(iced::Length::Fill)

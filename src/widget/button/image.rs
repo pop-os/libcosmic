@@ -6,26 +6,27 @@ use crate::{
     widget::{self, image::Handle},
     Element,
 };
-use apply::Apply;
 use iced_core::{font::Weight, widget::Id, Length, Padding};
 use std::borrow::Cow;
 
-pub type Button<'a, Message> = Builder<'a, Message, Image<'a, Handle>>;
+pub type Button<'a, Message> = Builder<'a, Message, Image<'a, Handle, Message>>;
 
 pub fn image<'a, Message>(handle: impl Into<Handle> + 'a) -> Button<'a, Message> {
     Button::new(Image {
         image: widget::image(handle).border_radius([9.0; 4]),
         selected: false,
+        on_remove: None,
     })
 }
 
-pub struct Image<'a, Handle> {
+pub struct Image<'a, Handle, Message> {
     image: widget::Image<'a, Handle>,
     selected: bool,
+    on_remove: Option<Message>,
 }
 
 impl<'a, Message> Button<'a, Message> {
-    pub fn new(variant: Image<'a, Handle>) -> Self {
+    pub fn new(variant: Image<'a, Handle, Message>) -> Self {
         Self {
             id: Id::unique(),
             label: Cow::Borrowed(""),
@@ -44,6 +45,16 @@ impl<'a, Message> Button<'a, Message> {
         }
     }
 
+    pub fn on_remove(mut self, message: Message) -> Self {
+        self.variant.on_remove = Some(message);
+        self
+    }
+
+    pub fn on_remove_maybe(mut self, message: Option<Message>) -> Self {
+        self.variant.on_remove = message;
+        self
+    }
+
     pub fn selected(mut self, selected: bool) -> Self {
         self.variant.selected = selected;
         self
@@ -56,12 +67,13 @@ where
     Message: Clone + 'static,
 {
     fn from(builder: Button<'a, Message>) -> Element<'a, Message> {
-        builder
+        let content = builder
             .variant
             .image
             .width(builder.width)
-            .height(builder.height)
-            .apply(widget::button)
+            .height(builder.height);
+
+        super::custom_image_button(content, builder.variant.on_remove)
             .padding(0)
             .selected(builder.variant.selected)
             .id(builder.id)

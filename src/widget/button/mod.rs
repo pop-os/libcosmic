@@ -38,6 +38,13 @@ pub fn button<'a, Message>(
     Button::new(content)
 }
 
+pub fn custom_image_button<'a, Message>(
+    content: impl Into<Element<'a, Message>>,
+    on_remove: Option<Message>,
+) -> Button<'a, Message, crate::Renderer> {
+    Button::new_image(content, on_remove)
+}
+
 #[must_use]
 #[derive(Setters)]
 pub struct Builder<'a, Message, Variant> {
