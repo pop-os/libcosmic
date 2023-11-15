@@ -104,7 +104,7 @@ where
 
     #[cfg(feature = "wayland")]
     fn should_exit(&self) -> bool {
-        self.should_exit
+        self.should_exit || self.app.should_exit()
     }
 
     fn style(&self) -> <Self::Theme as iced_style::application::StyleSheet>::Style {

@@ -168,6 +168,11 @@ where
     /// Called before closing the application.
     fn on_app_exit(&mut self) {}
 
+    #[cfg(feature = "wayland")]
+    fn should_exit(&self) -> bool {
+        false
+    }
+
     /// Called when a window requests to be closed.
     fn on_close_requested(&self, id: window::Id) -> Option<Self::Message> {
         None
