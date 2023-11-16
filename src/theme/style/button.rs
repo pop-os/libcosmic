@@ -32,6 +32,8 @@ pub enum Button {
     Transparent,
     AppletMenu,
     AppletIcon,
+    MenuRoot,
+    MenuItem,
 }
 
 pub fn appearance(
@@ -119,6 +121,19 @@ pub fn appearance(
 
             appearance.icon_color = Some(cosmic.background.on.into());
             appearance.text_color = Some(cosmic.background.on.into());
+        }
+        Button::MenuRoot => {
+            appearance.background = None;
+            appearance.icon_color = Some(cosmic.accent.base.into());
+            appearance.text_color = Some(cosmic.accent.base.into());
+        }
+        Button::MenuItem => {
+            let (background, _, _) = color(&cosmic.background.component);
+            appearance.background = Some(Background::Color(background));
+
+            appearance.icon_color = Some(cosmic.background.on.into());
+            appearance.text_color = Some(cosmic.background.on.into());
+            corner_radii = &cosmic.corner_radii.radius_s;
         }
     }
 
