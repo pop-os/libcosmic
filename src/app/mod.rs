@@ -362,7 +362,7 @@ where
     type Executor: iced_futures::Executor;
 
     /// Argument received [`Application::new`].
-    type Flags: Clone;
+    type Flags;
 
     /// Message type specific to our app.
     type Message: Clone + std::fmt::Debug + Send + 'static;
