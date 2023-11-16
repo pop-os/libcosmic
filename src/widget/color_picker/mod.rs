@@ -192,6 +192,7 @@ impl ColorPickerModel {
                 self.save_next = Some(Color::from(srgb));
             }
             ColorPickerUpdate::ToggleColorPicker => {
+                self.must_clear_cache.store(true, Ordering::SeqCst);
                 self.active = !self.active;
                 self.copied_at = None;
             }
