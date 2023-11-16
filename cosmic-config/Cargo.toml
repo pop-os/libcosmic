@@ -9,7 +9,8 @@ macro = ["cosmic-config-derive"]
 subscription = ["iced_futures"]
 
 [dependencies]
-atomicwrites = "0.4.0"
+# For redox support
+atomicwrites = { git = "https://github.com/jackpot51/rust-atomicwrites" }
 calloop = { version = "0.12.2", optional = true }
 dirs = "5.0.1"
 notify = "6.0.0"
