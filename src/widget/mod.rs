@@ -126,6 +126,8 @@ pub mod frames;
 pub mod list;
 pub use list::*;
 
+pub mod menu;
+
 pub mod nav_bar;
 pub use nav_bar::nav_bar;
 

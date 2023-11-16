@@ -17,6 +17,8 @@ pub use self::iced::Rule;
 pub use self::iced::Svg;
 pub use self::iced::Text;
 
+pub mod menu_bar;
+
 mod segmented_button;
 pub use self::segmented_button::SegmentedButton;
 
