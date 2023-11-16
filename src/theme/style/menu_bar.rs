@@ -1,8 +1,8 @@
 // From iced_aw, license MIT
 
 //! Change the appearance of menu bars and their menus.
-use iced_widget::core::Color;
 use crate::Theme;
+use iced_widget::core::Color;
 
 /// The appearance of a menu bar and its menus.
 #[derive(Debug, Clone, Copy)]
