@@ -104,6 +104,12 @@ where
         self.id
     }
 
+    #[allow(clippy::must_use_candidate, clippy::return_self_not_must_use)]
+    pub fn indent(self, indent: u16) -> Self {
+        self.model.indent_set(self.id, indent);
+        self
+    }
+
     /// Define the position of the item.
     #[allow(clippy::must_use_candidate, clippy::return_self_not_must_use)]
     pub fn position(self, position: u16) -> Self {

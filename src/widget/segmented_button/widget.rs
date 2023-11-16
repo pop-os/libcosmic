@@ -82,6 +82,8 @@ where
     pub(super) button_height: u16,
     /// Spacing between icon and text in button.
     pub(super) button_spacing: u16,
+    /// Spacing for each indent.
+    pub(super) indent_spacing: u16,
     /// Desired font for active tabs.
     pub(super) font_active: Option<crate::font::Font>,
     /// Desired font for hovered tabs.
@@ -127,6 +129,7 @@ where
             button_padding: [4, 4, 4, 4],
             button_height: 32,
             button_spacing: 4,
+            indent_spacing: 16,
             font_active: None,
             font_hovered: None,
             font_inactive: None,
@@ -233,6 +236,11 @@ where
 
                 button_width = width;
                 button_height = height;
+            }
+
+            // Add indent to measurement if found.
+            if let Some(indent) = self.model.indent(key) {
+                button_width += f32::from(indent) * f32::from(self.indent_spacing);
             }
 
             // Add icon to measurement if icon was given.
@@ -508,6 +516,13 @@ where
             let original_bounds = bounds;
 
             let y = bounds.center_y();
+
+            // Adjust bounds by indent
+            if let Some(indent) = self.model.indent(key) {
+                let adjustment = f32::from(indent) * f32::from(self.indent_spacing);
+                bounds.x += adjustment;
+                bounds.width -= adjustment;
+            }
 
             // Draw the image beside the text.
             let horizontal_alignment = if let Some(icon) = self.model.icon(key) {
