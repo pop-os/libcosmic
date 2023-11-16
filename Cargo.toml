@@ -79,6 +79,7 @@ path = "./iced/renderer"
 
 [dependencies.iced_core]
 path = "./iced/core"
+features = ["serde"]
 
 [dependencies.iced_widget]
 path = "./iced/widget"
