@@ -61,6 +61,9 @@ pub struct Model<SelectionMode: Default> {
     /// Icons optionally-defined for each item.
     pub(super) icons: SecondaryMap<Entity, Icon>,
 
+    /// Indent optionally-defined for each item.
+    pub(super) indents: SecondaryMap<Entity, u16>,
+
     /// Text optionally-defined for each item.
     pub(super) text: SecondaryMap<Entity, Cow<'static, str>>,
 
@@ -291,6 +294,22 @@ where
     /// Iterates across items in the model in the order that they are displayed.
     pub fn iter(&self) -> impl Iterator<Item = Entity> + '_ {
         self.order.iter().copied()
+    }
+
+    pub fn indent(&self, id: Entity) -> Option<u16> {
+        self.indents.get(id).map(|indent| *indent)
+    }
+
+    pub fn indent_set(&mut self, id: Entity, indent: u16) -> Option<u16> {
+        if !self.contains_item(id) {
+            return None;
+        }
+
+        self.indents.insert(id, indent)
+    }
+
+    pub fn indent_remove(&mut self, id: Entity) -> Option<u16> {
+        self.indents.remove(id)
     }
 
     /// The position of the item in the model.
