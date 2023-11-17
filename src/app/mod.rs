@@ -49,7 +49,7 @@ use iced::Subscription;
 use iced::{window, Application as IcedApplication};
 pub use message::Message;
 use url::Url;
-#[cfg(feature = "zbus")]
+#[cfg(feature = "single-instance")]
 use {
     iced_futures::futures::channel::mpsc::{Receiver, Sender},
     iced_futures::futures::SinkExt,
@@ -122,7 +122,7 @@ pub fn run<App: Application>(settings: Settings, flags: App::Flags) -> iced::Res
 
     cosmic::Cosmic::<App>::run(iced)
 }
-#[cfg(feature = "zbus")]
+#[cfg(feature = "single-instance")]
 #[derive(Debug, Clone)]
 pub struct DbusActivationMessage<Action = String, Args = Vec<String>> {
     pub activation_token: Option<String>,
@@ -142,10 +142,10 @@ pub enum DbusActivationDetails<Action = String, Args = Vec<String>> {
         args: Args,
     },
 }
-#[cfg(feature = "zbus")]
+#[cfg(feature = "single-instance")]
 #[derive(Debug, Default)]
 pub struct DbusActivation(Option<Sender<DbusActivationMessage>>);
-#[cfg(feature = "zbus")]
+#[cfg(feature = "single-instance")]
 impl DbusActivation {
     #[must_use]
     pub fn new() -> Self {
@@ -159,7 +159,7 @@ impl DbusActivation {
     }
 }
 
-#[cfg(feature = "zbus")]
+#[cfg(feature = "single-instance")]
 #[dbus_proxy(interface = "org.freedesktop.DbusActivation")]
 pub trait DbusActivationInterface {
     /// Activate the application.
@@ -181,7 +181,7 @@ pub trait DbusActivationInterface {
     ) -> zbus::Result<()>;
 }
 
-#[cfg(feature = "zbus")]
+#[cfg(feature = "single-instance")]
 #[dbus_interface(interface = "org.freedesktop.DbusActivation")]
 impl DbusActivation {
     async fn activate(&mut self, platform_data: HashMap<&str, Value<'_>>) {
@@ -258,7 +258,7 @@ impl DbusActivation {
     }
 }
 
-#[cfg(feature = "zbus")]
+#[cfg(feature = "single-instance")]
 
 /// Launch a COSMIC application with the given [`Settings`].
 /// If the application is already running, the arguments will be passed to the
@@ -349,15 +349,15 @@ where
     /// Default async executor to use with the app.
     type Executor: iced_futures::Executor;
 
-    #[cfg(feature = "zbus")]
+    #[cfg(feature = "single-instance")]
     /// Argument received [`Application::new`].
     type Flags: Clone + CosmicFlags;
 
-    #[cfg(not(feature = "zbus"))]
+    #[cfg(not(feature = "single-instance"))]
     /// Argument received [`Application::new`].
     type Flags: Clone;
 
-    #[cfg(feature = "zbus")]
+    #[cfg(feature = "single-instance")]
     /// Message type specific to our app.
     type Message: Clone
         + From<
@@ -369,7 +369,7 @@ where
         + Send
         + 'static;
 
-    #[cfg(not(feature = "zbus"))]
+    #[cfg(not(feature = "single-instance"))]
     /// Message type specific to our app.
     type Message: Clone + std::fmt::Debug + Send + 'static;
 
@@ -626,7 +626,7 @@ impl<App: Application> ApplicationExt for App {
     }
 }
 
-#[cfg(feature = "zbus")]
+#[cfg(feature = "single-instance")]
 fn single_instance_subscription<App: ApplicationExt>() -> Subscription<Message<App::Message>> {
     use iced_futures::futures::StreamExt;
 

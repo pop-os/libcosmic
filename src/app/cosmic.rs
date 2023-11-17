@@ -179,7 +179,7 @@ where
             })
             .map(super::Message::Cosmic),
             window_events.map(super::Message::Cosmic),
-            #[cfg(feature = "zbus")]
+            #[cfg(feature = "single-instance")]
             self.app
                 .core()
                 .single_instance
