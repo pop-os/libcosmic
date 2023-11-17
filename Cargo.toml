@@ -43,7 +43,7 @@ xdg-portal = ["ashpd"]
 # XXX Use "a11y"; which is causing a panic currently
 applet = ["wayland", "tokio", "cosmic-panel-config", "ron"]
 applet-token = []
-zbus = ["dep:zbus", "serde", "ron"]
+single-instance = ["dep:zbus", "serde", "ron"]
 
 [dependencies]
 apply = "0.3.0"
