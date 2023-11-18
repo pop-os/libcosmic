@@ -5,6 +5,8 @@ use super::{command, Application, ApplicationExt, Core, Subscription};
 use crate::theme::{self, Theme, ThemeType, THEME};
 use crate::widget::nav_bar;
 use crate::{keyboard_nav, Element};
+#[cfg(feature = "wayland")]
+use cctk::sctk::reexports::csd_frame::{WindowManagerCapabilities, WindowState};
 use cosmic_theme::ThemeMode;
 #[cfg(feature = "wayland")]
 use iced::event::wayland::{self, WindowEvent};
@@ -15,8 +17,6 @@ use iced::window;
 use iced_runtime::command::Action;
 #[cfg(not(feature = "wayland"))]
 use iced_runtime::window::Action as WindowAction;
-#[cfg(feature = "wayland")]
-use sctk::reexports::csd_frame::{WindowManagerCapabilities, WindowState};
 
 /// A message managed internally by COSMIC.
 #[derive(Clone, Debug)]
@@ -55,6 +55,8 @@ pub enum Message {
     /// Capabilities the window manager supports
     #[cfg(feature = "wayland")]
     WmCapabilities(window::Id, WindowManagerCapabilities),
+    /// Activate the application
+    Activate(String),
 }
 
 #[derive(Default)]
@@ -177,6 +179,12 @@ where
             })
             .map(super::Message::Cosmic),
             window_events.map(super::Message::Cosmic),
+            #[cfg(feature = "single-instance")]
+            self.app
+                .core()
+                .single_instance
+                .then(|| super::single_instance_subscription::<T>())
+                .unwrap_or_else(Subscription::none),
         ])
     }
 
@@ -355,6 +363,13 @@ impl<T: Application> Cosmic<T> {
                         }
                     });
                 }
+            }
+            Message::Activate(token) => {
+                #[cfg(feature = "wayland")]
+                return iced_sctk::commands::activation::activate(
+                    iced::window::Id::default(),
+                    token,
+                );
             }
         }
 

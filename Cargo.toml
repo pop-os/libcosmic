@@ -15,19 +15,21 @@ animated-image = ["image", "dep:async-fs", "tokio?/io-util", "tokio?/fs"]
 debug = ["iced/debug"]
 # Enables pipewire support in ashpd, if ashpd is enabled
 pipewire = ["ashpd?/pipewire"]
+# Enables process spawning helper
+process = ["nix"]
 # Enables keycode serialization
 serde-keycode = ["iced_core/serde"]
 # smol async runtime
-smol = ["iced/smol"]
+smol = ["iced/smol", "zbus?/async-io"]
 # Tokio async runtime
-tokio = ["dep:tokio", "ashpd/tokio", "iced/tokio"]
+tokio = ["dep:tokio", "ashpd/tokio", "iced/tokio", "zbus?/tokio"]
 # Wayland window support
 wayland = [
   "ashpd?/wayland",
   "iced_runtime/wayland",
   "iced/wayland",
   "iced_sctk",
-  "sctk",
+  "cctk",
 ]
 # Render with wgpu
 wgpu = ["iced/wgpu", "iced_wgpu"]
@@ -40,6 +42,8 @@ winit_wgpu = ["winit", "wgpu"]
 xdg-portal = ["ashpd"]
 # XXX Use "a11y"; which is causing a panic currently
 applet = ["wayland", "tokio", "cosmic-panel-config", "ron"]
+applet-token = []
+single-instance = ["dep:zbus", "serde", "ron"]
 
 [dependencies]
 apply = "0.3.0"
@@ -47,7 +51,7 @@ derive_setters = "0.1.5"
 lazy_static = "1.4.0"
 palette = "0.7.3"
 tokio = { version = "1.24.2", optional = true }
-sctk = { package = "smithay-client-toolkit", git = "https://github.com/smithay/client-toolkit", optional = true, rev = "dc8c4a0" }
+cctk = { git = "https://github.com/pop-os/cosmic-protocols", package = "cosmic-client-toolkit", rev = "5faec87", optional = true }
 slotmap = "1.0.6"
 fraction = "0.13.0"
 cosmic-config = { path = "cosmic-config" }
@@ -59,6 +63,9 @@ ashpd = { version = "0.5.0", default-features = false, optional = true }
 url = "2.4.0"
 unicode-segmentation = "1.6"
 css-color = "0.2.5"
+nix = { version = "0.26", optional = true }
+zbus = {version = "3.14.1", default-features = false, optional = true}
+serde = { version = "1.0.180", optional = true }
 
 [target.'cfg(unix)'.dependencies]
 freedesktop-icons = "0.2.4"

@@ -41,6 +41,7 @@ impl Named {
         }
     }
 
+    #[cfg(not(windows))]
     #[must_use]
     pub fn path(self) -> Option<PathBuf> {
         let mut name = &*self.name;
@@ -82,6 +83,13 @@ impl Named {
 
             result
         })
+    }
+
+    #[cfg(windows)]
+    #[must_use]
+    pub fn path(self) -> Option<PathBuf> {
+        //TODO: implement icon lookup for Windows
+        None
     }
 
     pub fn handle(self) -> Handle {
