@@ -183,7 +183,7 @@ where
             self.storage
                 .0
                 .entry(TypeId::of::<Data>())
-                .or_insert_with(SecondaryMap::new)
+                .or_default()
                 .insert(id, Box::new(data));
         }
     }
@@ -297,7 +297,7 @@ where
     }
 
     pub fn indent(&self, id: Entity) -> Option<u16> {
-        self.indents.get(id).map(|indent| *indent)
+        self.indents.get(id).copied()
     }
 
     pub fn indent_set(&mut self, id: Entity, indent: u16) -> Option<u16> {

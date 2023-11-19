@@ -78,7 +78,7 @@ where
     fn new((core, flags): Self::Flags) -> (Self, iced::Command<Self::Message>) {
         let (model, command) = T::init(core, flags);
 
-        (Cosmic::new(model), command)
+        (Self::new(model), command)
     }
 
     #[cfg(feature = "wayland")]

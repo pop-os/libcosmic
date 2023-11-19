@@ -215,7 +215,7 @@ impl Config {
                                         //TODO: handle errors
                                     }
                                 },
-                                Err(err) => {
+                                Err(_err) => {
                                     //TODO: handle errors
                                 }
                             }
@@ -224,7 +224,7 @@ impl Config {
                             f(&watch_config, &keys);
                         }
                     }
-                    Err(err) => {
+                    Err(_err) => {
                         //TODO: handle errors
                     }
                 }

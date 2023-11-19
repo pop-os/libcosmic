@@ -915,7 +915,7 @@ pub fn layout<Message>(
 
         text_node.move_to(Point::new(
             padding.left + leading_icon_width,
-            padding.top + ((text_input_height - text_size * 1.2) / 2.0).max(0.0),
+            padding.top + (text_size.mul_add(-1.2, text_input_height) / 2.0).max(0.0),
         ));
         let mut node_list: Vec<_> = Vec::with_capacity(3);
 
@@ -1516,18 +1516,6 @@ where
         }
         #[cfg(feature = "wayland")]
         Event::PlatformSpecific(PlatformSpecific::Wayland(wayland::Event::DataSource(
-            wayland::DataSourceEvent::Cancelled
-            | wayland::DataSourceEvent::DndFinished
-            | wayland::DataSourceEvent::Cancelled,
-        ))) => {
-            let state = state();
-            if matches!(state.dragging_state, Some(DraggingState::Dnd(..))) {
-                state.dragging_state = None;
-                return event::Status::Captured;
-            }
-        }
-        #[cfg(feature = "wayland")]
-        Event::PlatformSpecific(PlatformSpecific::Wayland(wayland::Event::DataSource(
             wayland::DataSourceEvent::DndActionAccepted(action),
         ))) => {
             let state = state();
@@ -1872,8 +1860,8 @@ pub fn draw<'a, Message>(
         let offset_bounds = Rectangle {
             x: bounds.x - border_offset,
             y: bounds.y - border_offset,
-            width: bounds.width + border_offset * 2.0,
-            height: bounds.height + border_offset * 2.0,
+            width: border_offset.mul_add(2.0, bounds.width),
+            height: border_offset.mul_add(2.0, bounds.height),
         };
         renderer.fill_quad(
             renderer::Quad {
@@ -2228,6 +2216,7 @@ impl State {
         Self {
             is_focused: None,
             dragging_state: None,
+            #[allow(clippy::default_constructed_unit_structs)]
             dnd_offer: DndOfferState::default(),
             is_pasting: None,
             last_click: None,
@@ -2288,33 +2277,33 @@ impl State {
 
 impl operation::Focusable for State {
     fn is_focused(&self) -> bool {
-        State::is_focused(self)
+        Self::is_focused(self)
     }
 
     fn focus(&mut self) {
-        State::focus(self);
+        Self::focus(self);
     }
 
     fn unfocus(&mut self) {
-        State::unfocus(self);
+        Self::unfocus(self);
     }
 }
 
 impl operation::TextInput for State {
     fn move_cursor_to_front(&mut self) {
-        State::move_cursor_to_front(self);
+        Self::move_cursor_to_front(self);
     }
 
     fn move_cursor_to_end(&mut self) {
-        State::move_cursor_to_end(self);
+        Self::move_cursor_to_end(self);
     }
 
     fn move_cursor_to(&mut self, position: usize) {
-        State::move_cursor_to(self, position);
+        Self::move_cursor_to(self, position);
     }
 
     fn select_all(&mut self) {
-        State::select_all(self);
+        Self::select_all(self);
     }
 }
 

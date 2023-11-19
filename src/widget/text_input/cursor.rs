@@ -28,7 +28,7 @@ pub enum State {
 
 impl Default for Cursor {
     fn default() -> Self {
-        Cursor {
+        Self {
             state: State::Index(0),
         }
     }

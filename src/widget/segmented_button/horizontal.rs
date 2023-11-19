@@ -48,10 +48,10 @@ where
         let num = self.model.items.len();
         if num != 0 {
             let spacing = f32::from(self.spacing);
-            bounds.width = (bounds.width - (num as f32 * spacing) + spacing) / num as f32;
+            bounds.width = ((num as f32).mul_add(-spacing, bounds.width) + spacing) / num as f32;
 
             if nth != 0 {
-                bounds.x += (nth as f32 * bounds.width) + (nth as f32 * spacing);
+                bounds.x += (nth as f32).mul_add(bounds.width, nth as f32 * spacing);
             }
         }
 
@@ -69,7 +69,7 @@ where
         let spacing = f32::from(self.spacing);
 
         if num != 0 {
-            width = (num as f32 * width) + (num as f32 * spacing) - spacing;
+            width = (num as f32).mul_add(width, num as f32 * spacing) - spacing;
         }
 
         let size = limits

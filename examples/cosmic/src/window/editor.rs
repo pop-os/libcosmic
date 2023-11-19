@@ -1,7 +1,7 @@
 use cosmic::iced::widget::{horizontal_space, row};
 use cosmic::iced::{Alignment, Length};
 use cosmic::widget::{button, icon, segmented_button, view_switcher};
-use cosmic::{theme, Apply, Element};
+use cosmic::{Apply, Element};
 use slotmap::Key;
 
 #[derive(Clone, Copy, Debug)]

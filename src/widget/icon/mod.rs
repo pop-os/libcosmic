@@ -72,8 +72,14 @@ impl Icon {
     fn into_element<Message: 'static>(self) -> Element<'static, Message> {
         let from_image = |handle| {
             Image::new(handle)
-                .width(self.width.unwrap_or(Length::Fixed(f32::from(self.size))))
-                .height(self.height.unwrap_or(Length::Fixed(f32::from(self.size))))
+                .width(
+                    self.width
+                        .unwrap_or_else(|| Length::Fixed(f32::from(self.size))),
+                )
+                .height(
+                    self.height
+                        .unwrap_or_else(|| Length::Fixed(f32::from(self.size))),
+                )
                 .content_fit(self.content_fit)
                 .into()
         };
@@ -81,8 +87,14 @@ impl Icon {
         let from_svg = |handle| {
             Svg::<Renderer>::new(handle)
                 .style(self.style.clone())
-                .width(self.width.unwrap_or(Length::Fixed(f32::from(self.size))))
-                .height(self.height.unwrap_or(Length::Fixed(f32::from(self.size))))
+                .width(
+                    self.width
+                        .unwrap_or_else(|| Length::Fixed(f32::from(self.size))),
+                )
+                .height(
+                    self.height
+                        .unwrap_or_else(|| Length::Fixed(f32::from(self.size))),
+                )
                 .content_fit(self.content_fit)
                 .symbolic(self.handle.symbolic)
                 .into()

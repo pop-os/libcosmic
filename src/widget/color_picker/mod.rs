@@ -589,16 +589,20 @@ where
         let t = t.cosmic();
         let handle_radius = f32::from(t.space_xs()) / 2.0;
         let (x, y) = (
-            (self.active_color.saturation * bounds.width) + bounds.position().x - handle_radius,
-            ((1.0 - self.active_color.value) * bounds.height) + bounds.position().y - handle_radius,
+            self.active_color
+                .saturation
+                .mul_add(bounds.width, bounds.position().x)
+                - handle_radius,
+            (1.0 - self.active_color.value).mul_add(bounds.height, bounds.position().y)
+                - handle_radius,
         );
         renderer.fill_quad(
             Quad {
                 bounds: Rectangle {
                     x,
                     y,
-                    width: 1.0 + handle_radius * 2.0,
-                    height: 1.0 + handle_radius * 2.0,
+                    width: handle_radius.mul_add(2.0, 1.0),
+                    height: handle_radius.mul_add(2.0, 1.0),
                 },
                 border_radius: (1.0 + handle_radius).into(),
                 border_width: 1.0,
@@ -654,8 +658,8 @@ where
             match event {
                 Event::Mouse(mouse::Event::CursorMoved { .. } | mouse::Event::CursorEntered) => {
                     if let Some(mut clamped) = cursor.position() {
-                        clamped.x = clamped.x.min(bounds.x + bounds.width).max(bounds.x);
-                        clamped.y = clamped.y.min(bounds.y + bounds.height).max(bounds.y);
+                        clamped.x = clamped.x.clamp(bounds.x, bounds.x + bounds.width);
+                        clamped.y = clamped.y.clamp(bounds.y, bounds.y + bounds.height);
                         let relative_pos = clamped - bounds.position();
                         let (s, v) = (
                             relative_pos.x / bounds.width,
@@ -678,7 +682,7 @@ where
         }
 
         let column_tree = &mut tree.children[0];
-        if let event::Status::Captured = self.inner.as_widget_mut().on_event(
+        if self.inner.as_widget_mut().on_event(
             column_tree,
             event.clone(),
             column_layout,
@@ -687,7 +691,8 @@ where
             clipboard,
             shell,
             viewport,
-        ) {
+        ) == event::Status::Captured
+        {
             return event::Status::Captured;
         }
 

@@ -306,7 +306,7 @@ where
             }
         }
 
-        if let event::Status::Captured = self.content.as_widget_mut().on_event(
+        if self.content.as_widget_mut().on_event(
             &mut tree.children[0],
             event.clone(),
             layout.children().next().unwrap(),
@@ -315,7 +315,8 @@ where
             clipboard,
             shell,
             viewport,
-        ) {
+        ) == event::Status::Captured
+        {
             return event::Status::Captured;
         }
 
@@ -557,8 +558,8 @@ pub struct State {
 
 impl State {
     /// Creates a new [`State`].
-    pub fn new() -> State {
-        State::default()
+    pub fn new() -> Self {
+        Self::default()
     }
 
     /// Returns whether the [`Button`] is currently focused or not.
@@ -806,15 +807,15 @@ pub fn focus<Message: 'static>(id: Id) -> Command<Message> {
 
 impl operation::Focusable for State {
     fn is_focused(&self) -> bool {
-        State::is_focused(*self)
+        Self::is_focused(*self)
     }
 
     fn focus(&mut self) {
-        State::focus(self);
+        Self::focus(self);
     }
 
     fn unfocus(&mut self) {
-        State::unfocus(self);
+        Self::unfocus(self);
     }
 }
 

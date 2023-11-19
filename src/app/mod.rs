@@ -259,7 +259,6 @@ impl DbusActivation {
 }
 
 #[cfg(feature = "single-instance")]
-
 /// Launch a COSMIC application with the given [`Settings`].
 /// If the application is already running, the arguments will be passed to the
 /// running instance.

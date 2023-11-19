@@ -68,7 +68,7 @@ pub fn appearance(
         }
 
         Button::Icon | Button::IconVertical => {
-            if let Button::IconVertical = style {
+            if matches!(style, Button::IconVertical) {
                 corner_radii = &cosmic.corner_radii.radius_m;
             }
 

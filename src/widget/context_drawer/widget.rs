@@ -17,7 +17,6 @@ use iced_core::{
 };
 
 use iced_renderer::core::widget::OperationOutputWrapper;
-pub use iced_style::container::{Appearance, StyleSheet};
 
 #[must_use]
 pub struct ContextDrawer<'a, Message> {
