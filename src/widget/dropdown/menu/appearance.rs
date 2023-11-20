@@ -26,6 +26,8 @@ pub struct Appearance {
     pub selected_text_color: Color,
     /// Background when selected
     pub selected_background: Background,
+    /// Description text color
+    pub description_color: Color,
 }
 
 /// The style sheet of a menu.
