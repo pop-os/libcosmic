@@ -23,6 +23,8 @@ impl dropdown::menu::StyleSheet for Theme {
 
             selected_text_color: cosmic.accent.base.into(),
             selected_background: Background::Color(cosmic.primary.component.hover.into()),
+
+            description_color: cosmic.primary.component.on_disabled.into(),
         }
     }
 }

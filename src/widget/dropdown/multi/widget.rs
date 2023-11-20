@@ -16,13 +16,11 @@ pub use iced_widget::style::pick_list::{Appearance, StyleSheet};
 
 /// A widget for selecting a single value from a list of selections.
 #[derive(Setters)]
-pub struct Dropdown<'a, S: AsRef<str>, Message> {
+pub struct Dropdown<'a, S: AsRef<str>, Message, Item> {
     #[setters(skip)]
-    on_selected: Box<dyn Fn(usize) -> Message + 'a>,
+    on_selected: Box<dyn Fn(Item) -> Message + 'a>,
     #[setters(skip)]
-    selections: &'a [S],
-    #[setters(skip)]
-    selected: Option<usize>,
+    selections: &'a super::Model<S, Item>,
     #[setters(into)]
     width: Length,
     gap: f32,
@@ -35,7 +33,7 @@ pub struct Dropdown<'a, S: AsRef<str>, Message> {
     font: Option<crate::font::Font>,
 }
 
-impl<'a, S: AsRef<str>, Message> Dropdown<'a, S, Message> {
+impl<'a, S: AsRef<str>, Message, Item: Clone + PartialEq + 'static> Dropdown<'a, S, Message, Item> {
     /// The default gap.
     pub const DEFAULT_GAP: f32 = 4.0;
 
@@ -45,14 +43,12 @@ impl<'a, S: AsRef<str>, Message> Dropdown<'a, S, Message> {
     /// Creates a new [`Dropdown`] with the given list of selections, the current
     /// selected value, and the message to produce when an option is selected.
     pub fn new(
-        selections: &'a [S],
-        selected: Option<usize>,
-        on_selected: impl Fn(usize) -> Message + 'a,
+        selections: &'a super::Model<S, Item>,
+        on_selected: impl Fn(Item) -> Message + 'a,
     ) -> Self {
         Self {
             on_selected: Box::new(on_selected),
             selections,
-            selected,
             width: Length::Shrink,
             gap: Self::DEFAULT_GAP,
             padding: Self::DEFAULT_PADDING,
@@ -63,13 +59,15 @@ impl<'a, S: AsRef<str>, Message> Dropdown<'a, S, Message> {
     }
 }
 
-impl<'a, S: AsRef<str>, Message: 'a> Widget<Message, crate::Renderer> for Dropdown<'a, S, Message> {
+impl<'a, S: AsRef<str>, Message: 'a, Item: Clone + PartialEq + 'static>
+    Widget<Message, crate::Renderer> for Dropdown<'a, S, Message, Item>
+{
     fn tag(&self) -> tree::Tag {
-        tree::Tag::of::<State>()
+        tree::Tag::of::<State<Item>>()
     }
 
     fn state(&self) -> tree::State {
-        tree::State::new(State::new())
+        tree::State::new(State::<Item>::new())
     }
 
     fn width(&self) -> Length {
@@ -90,7 +88,9 @@ impl<'a, S: AsRef<str>, Message: 'a> Widget<Message, crate::Renderer> for Dropdo
             self.text_size.unwrap_or(14.0),
             self.text_line_height,
             self.font,
-            self.selected
+            self.selections
+                .selected
+                .as_ref()
                 .and_then(|id| self.selections.get(id))
                 .map(AsRef::as_ref),
         )
@@ -113,9 +113,8 @@ impl<'a, S: AsRef<str>, Message: 'a> Widget<Message, crate::Renderer> for Dropdo
             cursor,
             shell,
             self.on_selected.as_ref(),
-            self.selected,
             self.selections,
-            || tree.state.downcast_mut::<State>(),
+            || tree.state.downcast_mut::<State<Item>>(),
         )
     }
 
@@ -143,6 +142,7 @@ impl<'a, S: AsRef<str>, Message: 'a> Widget<Message, crate::Renderer> for Dropdo
         let font = self
             .font
             .unwrap_or_else(|| text::Renderer::default_font(renderer));
+
         draw(
             renderer,
             theme,
@@ -153,8 +153,11 @@ impl<'a, S: AsRef<str>, Message: 'a> Widget<Message, crate::Renderer> for Dropdo
             self.text_size,
             self.text_line_height,
             font,
-            self.selected.and_then(|id| self.selections.get(id)),
-            tree.state.downcast_ref::<State>(),
+            self.selections
+                .selected
+                .as_ref()
+                .and_then(|id| self.selections.get(id)),
+            tree.state.downcast_ref::<State<Item>>(),
         );
     }
 
@@ -164,7 +167,7 @@ impl<'a, S: AsRef<str>, Message: 'a> Widget<Message, crate::Renderer> for Dropdo
         layout: Layout<'_>,
         renderer: &crate::Renderer,
     ) -> Option<overlay::Element<'b, Message, crate::Renderer>> {
-        let state = tree.state.downcast_mut::<State>();
+        let state = tree.state.downcast_mut::<State<Item>>();
 
         overlay(
             layout,
@@ -173,32 +176,32 @@ impl<'a, S: AsRef<str>, Message: 'a> Widget<Message, crate::Renderer> for Dropdo
             self.gap,
             self.padding,
             self.text_size.unwrap_or(14.0),
+            self.font,
             self.selections,
-            self.selected,
             &self.on_selected,
         )
     }
 }
 
-impl<'a, S: AsRef<str>, Message: 'a> From<Dropdown<'a, S, Message>>
-    for crate::Element<'a, Message>
+impl<'a, S: AsRef<str>, Message: 'a, Item: Clone + PartialEq + 'static>
+    From<Dropdown<'a, S, Message, Item>> for crate::Element<'a, Message>
 {
-    fn from(pick_list: Dropdown<'a, S, Message>) -> Self {
+    fn from(pick_list: Dropdown<'a, S, Message, Item>) -> Self {
         Self::new(pick_list)
     }
 }
 
 /// The local state of a [`Dropdown`].
 #[derive(Debug)]
-pub struct State {
+pub struct State<Item: Clone + PartialEq + 'static> {
     icon: Option<svg::Handle>,
     menu: menu::State,
     keyboard_modifiers: keyboard::Modifiers,
     is_open: bool,
-    hovered_option: Option<usize>,
+    hovered_option: Option<Item>,
 }
 
-impl State {
+impl<Item: Clone + PartialEq + 'static> State<Item> {
     /// Creates a new [`State`] for a [`Dropdown`].
     pub fn new() -> Self {
         Self {
@@ -218,7 +221,7 @@ impl State {
     }
 }
 
-impl Default for State {
+impl<Item: Clone + PartialEq + 'static> Default for State<Item> {
     fn default() -> Self {
         Self::new()
     }
@@ -275,15 +278,14 @@ pub fn layout(
 /// Processes an [`Event`] and updates the [`State`] of a [`Dropdown`]
 /// accordingly.
 #[allow(clippy::too_many_arguments)]
-pub fn update<'a, S: AsRef<str>, Message>(
+pub fn update<'a, S: AsRef<str>, Message, Item: Clone + PartialEq + 'static + 'a>(
     event: &Event,
     layout: Layout<'_>,
     cursor: mouse::Cursor,
     shell: &mut Shell<'_, Message>,
-    on_selected: &dyn Fn(usize) -> Message,
-    selected: Option<usize>,
-    selections: &[S],
-    state: impl FnOnce() -> &'a mut State,
+    on_selected: &dyn Fn(Item) -> Message,
+    selections: &super::Model<S, Item>,
+    state: impl FnOnce() -> &'a mut State<Item>,
 ) -> event::Status {
     match event {
         Event::Mouse(mouse::Event::ButtonPressed(mouse::Button::Left))
@@ -298,7 +300,7 @@ pub fn update<'a, S: AsRef<str>, Message>(
                 event::Status::Captured
             } else if cursor.is_over(layout.bounds()) {
                 state.is_open = true;
-                state.hovered_option = selected;
+                state.hovered_option = selections.selected.clone();
 
                 event::Status::Captured
             } else {
@@ -314,10 +316,8 @@ pub fn update<'a, S: AsRef<str>, Message>(
                 && cursor.is_over(layout.bounds())
                 && !state.is_open
             {
-                let next_index = selected.map(|index| index + 1).unwrap_or_default();
-
-                if selections.len() < next_index {
-                    shell.publish((on_selected)(next_index));
+                if let Some(option) = selections.next() {
+                    shell.publish((on_selected)(option.1.clone()));
                 }
 
                 event::Status::Captured
@@ -351,16 +351,16 @@ pub fn mouse_interaction(layout: Layout<'_>, cursor: mouse::Cursor) -> mouse::In
 
 /// Returns the current overlay of a [`Dropdown`].
 #[allow(clippy::too_many_arguments)]
-pub fn overlay<'a, S: AsRef<str>, Message: 'a>(
+pub fn overlay<'a, S: AsRef<str>, Message: 'a, Item: Clone + PartialEq + 'static>(
     layout: Layout<'_>,
     renderer: &crate::Renderer,
-    state: &'a mut State,
+    state: &'a mut State<Item>,
     gap: f32,
     padding: Padding,
     text_size: f32,
-    selections: &'a [S],
-    selected_option: Option<usize>,
-    on_selected: &'a dyn Fn(usize) -> Message,
+    font: Option<crate::font::Font>,
+    selections: &'a super::Model<S, Item>,
+    on_selected: &'a dyn Fn(Item) -> Message,
 ) -> Option<overlay::Element<'a, Message, crate::Renderer>> {
     if state.is_open {
         let bounds = layout.bounds();
@@ -369,7 +369,7 @@ pub fn overlay<'a, S: AsRef<str>, Message: 'a>(
             &mut state.menu,
             selections,
             &mut state.hovered_option,
-            selected_option,
+            selections.selected.as_ref(),
             |option| {
                 state.is_open = false;
 
@@ -390,20 +390,40 @@ pub fn overlay<'a, S: AsRef<str>, Message: 'a>(
                 width.round()
             };
 
+            let measure_description = |label: &str| -> f32 {
+                let width = text::Renderer::measure_width(
+                    renderer,
+                    label,
+                    text_size + 4.0,
+                    crate::font::FONT,
+                    text::Shaping::Advanced,
+                );
+
+                width.round()
+            };
+
             selections
-                .iter()
-                .map(|label| measure(label.as_ref()))
+                .elements()
+                .map(|element| match element {
+                    super::menu::OptionElement::Description(desc) => {
+                        measure_description(desc.as_ref())
+                    }
+
+                    super::menu::OptionElement::Option((option, _item)) => measure(option.as_ref()),
+
+                    super::menu::OptionElement::Separator => 1.0,
+                })
                 .fold(0.0, |next, current| current.max(next))
                 + gap
                 + 16.0
-                + padding.horizontal()
-                + padding.horizontal()
+                + (padding.horizontal() * 2.0)
         })
         .padding(padding)
         .text_size(text_size);
 
         let mut position = layout.position();
         position.x -= padding.left;
+
         Some(menu.overlay(position, bounds.height))
     } else {
         None
@@ -412,7 +432,7 @@ pub fn overlay<'a, S: AsRef<str>, Message: 'a>(
 
 /// Draws a [`Dropdown`].
 #[allow(clippy::too_many_arguments)]
-pub fn draw<'a, S>(
+pub fn draw<'a, S, Item: Clone + PartialEq + 'static>(
     renderer: &mut crate::Renderer,
     theme: &crate::Theme,
     layout: Layout<'_>,
@@ -423,7 +443,7 @@ pub fn draw<'a, S>(
     text_line_height: text::LineHeight,
     font: crate::font::Font,
     selected: Option<&'a S>,
-    state: &'a State,
+    state: &'a State<Item>,
 ) where
     S: AsRef<str> + 'a,
 {
