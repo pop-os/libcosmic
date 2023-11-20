@@ -160,7 +160,7 @@ impl DbusActivation {
 }
 
 #[cfg(feature = "single-instance")]
-#[dbus_proxy(interface = "org.freedesktop.DbusActivation")]
+#[dbus_proxy(interface = "org.freedesktop.DbusActivation", assume_defaults = true)]
 pub trait DbusActivationInterface {
     /// Activate the application.
     fn activate(&mut self, platform_data: HashMap<&str, Value<'_>>) -> zbus::Result<()>;
@@ -182,7 +182,7 @@ pub trait DbusActivationInterface {
 }
 
 #[cfg(feature = "single-instance")]
-#[dbus_interface(interface = "org.freedesktop.DbusActivation")]
+#[dbus_interface(name = "org.freedesktop.DbusActivation")]
 impl DbusActivation {
     async fn activate(&mut self, platform_data: HashMap<&str, Value<'_>>) {
         if let Some(tx) = &mut self.0 {
