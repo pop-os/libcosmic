@@ -550,6 +550,7 @@ where
 
 /// The local state of a [`Button`].
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+#[allow(clippy::struct_field_names)]
 pub struct State {
     is_hovered: bool,
     is_pressed: bool,
