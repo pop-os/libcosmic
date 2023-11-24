@@ -62,9 +62,6 @@ pub struct Settings {
 
     /// Whether the application should exit when there are no open windows
     pub(crate) exit_on_close: bool,
-
-    /// Only allow a single instance of the application to run
-    pub single_instance: bool,
 }
 
 impl Settings {
@@ -100,7 +97,6 @@ impl Default for Settings {
             theme: crate::theme::system_preference(),
             transparent: false,
             exit_on_close: true,
-            single_instance: false,
         }
     }
 }

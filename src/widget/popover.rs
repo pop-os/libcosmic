@@ -9,7 +9,9 @@ use iced_core::mouse;
 use iced_core::overlay;
 use iced_core::renderer;
 use iced_core::widget::{Operation, OperationOutputWrapper, Tree};
-use iced_core::{Clipboard, Element, Layout, Length, Point, Rectangle, Shell, Size, Widget};
+use iced_core::{
+    Clipboard, Element, Layout, Length, Point, Rectangle, Shell, Size, Vector, Widget,
+};
 use std::cell::RefCell;
 
 pub use iced_style::container::{Appearance, StyleSheet};
@@ -25,17 +27,24 @@ pub struct Popover<'a, Message, Renderer> {
     content: Element<'a, Message, Renderer>,
     // XXX Avoid refcell; improve iced overlay API?
     popup: RefCell<Element<'a, Message, Renderer>>,
+    position: Option<Point>,
 }
 
 impl<'a, Message, Renderer> Popover<'a, Message, Renderer> {
-    fn new(
+    pub fn new(
         content: impl Into<Element<'a, Message, Renderer>>,
         popup: impl Into<Element<'a, Message, Renderer>>,
     ) -> Self {
         Self {
             content: content.into(),
             popup: RefCell::new(popup.into()),
+            position: None,
         }
+    }
+
+    pub fn position(mut self, position: Point) -> Self {
+        self.position = Some(position);
+        self
     }
 
     // TODO More options for positioning similar to GdkPopup, xdg_popup
@@ -145,9 +154,20 @@ where
         layout: Layout<'_>,
         _renderer: &Renderer,
     ) -> Option<overlay::Element<'b, Message, Renderer>> {
-        // Set position to center of bottom edge
         let bounds = layout.bounds();
-        let position = Point::new(bounds.x + bounds.width / 2.0, bounds.y + bounds.height);
+        let (position, centered) = match self.position {
+            Some(relative) => (
+                bounds.position() + Vector::new(relative.x, relative.y),
+                false,
+            ),
+            None => {
+                // Set position to center of bottom edge
+                (
+                    Point::new(bounds.x + bounds.width / 2.0, bounds.y + bounds.height),
+                    true,
+                )
+            }
+        };
 
         // XXX needed to use RefCell to get &mut for popup element
         Some(overlay::Element::new(
@@ -155,6 +175,7 @@ where
             Box::new(Overlay {
                 tree: &mut tree.children[1],
                 content: &self.popup,
+                centered,
             }),
         ))
     }
@@ -171,9 +192,10 @@ where
     }
 }
 
-struct Overlay<'a, 'b, Message, Renderer> {
+pub struct Overlay<'a, 'b, Message, Renderer> {
     tree: &'a mut Tree,
     content: &'a RefCell<Element<'b, Message, Renderer>>,
+    centered: bool,
 }
 
 impl<'a, 'b, Message, Renderer> overlay::Overlay<Message, Renderer>
@@ -182,13 +204,13 @@ where
     Renderer: iced_core::Renderer,
 {
     fn layout(&self, renderer: &Renderer, bounds: Size, mut position: Point) -> layout::Node {
-        // Position is set to the center bottom of the lower widget
-
         let limits = layout::Limits::new(Size::UNIT, bounds);
         let mut node = self.content.borrow().as_widget().layout(renderer, &limits);
-
-        let width = node.size().width;
-        position.x = (position.x - width / 2.0).clamp(0.0, bounds.width - width);
+        if self.centered {
+            // Position is set to the center bottom of the lower widget
+            let width = node.size().width;
+            position.x = (position.x - width / 2.0).clamp(0.0, bounds.width - width);
+        }
         node.move_to(position);
 
         node

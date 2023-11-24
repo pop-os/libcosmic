@@ -97,6 +97,8 @@ where
             super::Message::App(message) => self.app.update(message),
             super::Message::Cosmic(message) => self.cosmic_update(message),
             super::Message::None => iced::Command::none(),
+            #[cfg(feature = "single-instance")]
+            super::Message::DbusActivation(message) => self.app.dbus_activation(message),
         }
     }
 
@@ -184,7 +186,7 @@ where
                 .core()
                 .single_instance
                 .then(|| super::single_instance_subscription::<T>())
-                .unwrap_or_else(Subscription::none),
+                .unwrap_or_else(|| Subscription::none()),
         ])
     }
 
@@ -364,11 +366,12 @@ impl<T: Application> Cosmic<T> {
                     });
                 }
             }
-            Message::Activate(token) => {
+            Message::Activate(_token) => {
                 #[cfg(feature = "wayland")]
                 return iced_sctk::commands::activation::activate(
                     iced::window::Id::default(),
-                    token,
+                    #[allow(clippy::used_underscore_binding)]
+                    _token,
                 );
             }
         }

@@ -19,6 +19,9 @@ pub mod message {
         App(M),
         /// Internal messages to be handled by libcosmic.
         Cosmic(super::cosmic::Message),
+        #[cfg(feature = "single-instance")]
+        /// Dbus activation messages
+        DbusActivation(super::DbusActivationMessage),
         /// Do nothing
         None,
     }
@@ -35,8 +38,6 @@ pub mod message {
         Message::None
     }
 }
-
-use std::str::FromStr;
 
 pub use self::command::Command;
 pub use self::core::Core;
@@ -57,12 +58,11 @@ use {
     std::collections::HashMap,
     zbus::{dbus_interface, dbus_proxy, zvariant::Value},
 };
-/// Launch a COSMIC application with the given [`Settings`].
-///
-/// # Errors
-///
-/// Returns error on application failure.
-pub fn run<App: Application>(settings: Settings, flags: App::Flags) -> iced::Result {
+
+pub(crate) fn iced_settings<App: Application>(
+    settings: Settings,
+    flags: App::Flags,
+) -> iced::Settings<(Core, App::Flags)> {
     if let Some(icon_theme) = settings.default_icon_theme {
         crate::icon_theme::set_default(icon_theme);
     }
@@ -72,7 +72,6 @@ pub fn run<App: Application>(settings: Settings, flags: App::Flags) -> iced::Res
     core.set_scale_factor(settings.scale_factor);
     core.set_window_width(settings.size.0);
     core.set_window_height(settings.size.1);
-    core.single_instance = settings.single_instance;
 
     THEME.with(move |t| {
         let mut cosmic_theme = t.borrow_mut();
@@ -120,8 +119,20 @@ pub fn run<App: Application>(settings: Settings, flags: App::Flags) -> iced::Res
         iced.window.transparent = settings.transparent;
     }
 
-    cosmic::Cosmic::<App>::run(iced)
+    iced
 }
+
+/// Launch a COSMIC application with the given [`Settings`].
+///
+/// # Errors
+///
+/// Returns error on application failure.
+pub fn run<App: Application>(settings: Settings, flags: App::Flags) -> iced::Result {
+    let settings = iced_settings::<App>(settings, flags);
+
+    cosmic::Cosmic::<App>::run(settings)
+}
+
 #[cfg(feature = "single-instance")]
 #[derive(Debug, Clone)]
 pub struct DbusActivationMessage<Action = String, Args = Vec<String>> {
@@ -160,7 +171,7 @@ impl DbusActivation {
 }
 
 #[cfg(feature = "single-instance")]
-#[dbus_proxy(interface = "org.freedesktop.DbusActivation")]
+#[dbus_proxy(interface = "org.freedesktop.DbusActivation", assume_defaults = true)]
 pub trait DbusActivationInterface {
     /// Activate the application.
     fn activate(&mut self, platform_data: HashMap<&str, Value<'_>>) -> zbus::Result<()>;
@@ -182,7 +193,7 @@ pub trait DbusActivationInterface {
 }
 
 #[cfg(feature = "single-instance")]
-#[dbus_interface(interface = "org.freedesktop.DbusActivation")]
+#[dbus_interface(name = "org.freedesktop.DbusActivation")]
 impl DbusActivation {
     async fn activate(&mut self, platform_data: HashMap<&str, Value<'_>>) {
         if let Some(tx) = &mut self.0 {
@@ -259,16 +270,16 @@ impl DbusActivation {
 }
 
 #[cfg(feature = "single-instance")]
-
 /// Launch a COSMIC application with the given [`Settings`].
 /// If the application is already running, the arguments will be passed to the
 /// running instance.
 /// # Errors
 /// Returns error on application failure.
-pub fn run_single_instance<App: Application>(
-    mut settings: Settings,
-    flags: App::Flags,
-) -> iced::Result {
+pub fn run_single_instance<App: Application>(settings: Settings, flags: App::Flags) -> iced::Result
+where
+    App::Flags: CosmicFlags + Clone,
+    App::Message: Clone + std::fmt::Debug + Send + 'static,
+{
     let activation_token = std::env::var("XDG_ACTIVATION_TOKEN").ok();
 
     let override_single = std::env::var("COSMIC_SINGLE_INSTANCE")
@@ -279,7 +290,6 @@ pub fn run_single_instance<App: Application>(
     }
 
     let path: String = format!("/{}", App::APP_ID.replace('.', "/"));
-    settings.single_instance = true;
 
     let Ok(conn) = zbus::blocking::Connection::session() else {
         tracing::warn!("Failed to connect to dbus");
@@ -322,13 +332,15 @@ pub fn run_single_instance<App: Application>(
         tracing::info!("Another instance is running");
         Ok(())
     } else {
-        run::<App>(settings, flags)
+        let mut settings = iced_settings::<App>(settings, flags);
+        settings.flags.0.single_instance = true;
+        cosmic::Cosmic::<App>::run(settings)
     }
 }
 
 pub trait CosmicFlags {
-    type SubCommand: FromStr + ToString + std::fmt::Debug + Clone + Send + 'static;
-    type Args: TryFrom<Vec<String>> + Into<Vec<String>> + std::fmt::Debug + Clone + Send + 'static;
+    type SubCommand: ToString + std::fmt::Debug + Clone + Send + 'static;
+    type Args: Into<Vec<String>> + std::fmt::Debug + Clone + Send + 'static;
     #[must_use]
     fn action(&self) -> Option<&Self::SubCommand> {
         None
@@ -349,27 +361,9 @@ where
     /// Default async executor to use with the app.
     type Executor: iced_futures::Executor;
 
-    #[cfg(feature = "single-instance")]
-    /// Argument received [`Application::new`].
-    type Flags: Clone + CosmicFlags;
-
-    #[cfg(not(feature = "single-instance"))]
     /// Argument received [`Application::new`].
     type Flags;
 
-    #[cfg(feature = "single-instance")]
-    /// Message type specific to our app.
-    type Message: Clone
-        + From<
-            DbusActivationDetails<
-                <Self::Flags as CosmicFlags>::SubCommand,
-                <Self::Flags as CosmicFlags>::Args,
-            >,
-        > + std::fmt::Debug
-        + Send
-        + 'static;
-
-    #[cfg(not(feature = "single-instance"))]
     /// Message type specific to our app.
     type Message: Clone + std::fmt::Debug + Send + 'static;
 
@@ -464,6 +458,15 @@ where
     /// Overrides the default style for applications
     fn style(&self) -> Option<<crate::Theme as iced_style::application::StyleSheet>::Style> {
         None
+    }
+
+    /// Handles dbus activation messages
+    #[cfg(feature = "single-instance")]
+    fn dbus_activation(
+        &mut self,
+        msg: DbusActivationMessage,
+    ) -> iced::Command<Message<Self::Message>> {
+        iced::Command::none()
     }
 }
 
@@ -633,7 +636,7 @@ fn single_instance_subscription<App: ApplicationExt>() -> Subscription<Message<A
     iced::subscription::channel(
         TypeId::of::<DbusActivation>(),
         10,
-        |mut output| async move {
+        move |mut output| async move {
             let mut single_instance: DbusActivation = DbusActivation::new();
             let mut rx = single_instance.rx();
             if let Ok(builder) = zbus::ConnectionBuilder::session() {
@@ -680,36 +683,8 @@ fn single_instance_subscription<App: ApplicationExt>() -> Subscription<Message<A
                                 tracing::error!(?err, "Failed to send message");
                             }
                         }
-                        if let Some(msg) = match msg.msg {
-                            DbusActivationDetails::Activate => {
-                                Some(DbusActivationDetails::Activate)
-                            }
-                            DbusActivationDetails::Open { url } => {
-                                Some(DbusActivationDetails::Open { url })
-                            }
-                            DbusActivationDetails::ActivateAction { action, args } => {
-                                if let (Ok(action), Ok(args)) = (
-                                    <App::Flags as CosmicFlags>::SubCommand::from_str(&action),
-                                    <App::Flags as CosmicFlags>::Args::try_from(args),
-                                ) {
-                                    Some(DbusActivationDetails::ActivateAction::<
-                                        <App::Flags as CosmicFlags>::SubCommand,
-                                        <App::Flags as CosmicFlags>::Args,
-                                    > {
-                                        action,
-                                        args,
-                                    })
-                                } else {
-                                    tracing::error!("Invalid action or args");
-                                    None
-                                }
-                            }
-                        } {
-                            if let Err(err) =
-                                output.send(Message::App(App::Message::from(msg))).await
-                            {
-                                tracing::error!(?err, "Failed to send message");
-                            }
+                        if let Err(err) = output.send(Message::DbusActivation(msg)).await {
+                            tracing::error!(?err, "Failed to send message");
                         }
                     }
                 }

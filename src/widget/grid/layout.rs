@@ -9,7 +9,7 @@ use iced_core::{Alignment, Length, Padding, Point, Size};
 use taffy::geometry::{Line, Rect};
 use taffy::style::{AlignItems, Dimension, Display, GridPlacement, Style};
 use taffy::style_helpers::{auto, length};
-use taffy::Taffy;
+use taffy::TaffyTree;
 
 #[allow(clippy::too_many_lines)]
 pub fn resolve<Message>(
@@ -30,7 +30,7 @@ pub fn resolve<Message>(
     let mut leafs = Vec::with_capacity(items.len());
     let mut nodes = Vec::with_capacity(items.len());
 
-    let mut taffy = Taffy::<()>::with_capacity(items.len() + 1);
+    let mut taffy = TaffyTree::<()>::with_capacity(items.len() + 1);
 
     // Attach widgets as child nodes.
     for (child, assignment) in items.iter().zip(assignments.iter()) {
