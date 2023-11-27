@@ -401,6 +401,25 @@ where
         Vec::new()
     }
 
+    /// Allows overriding the default nav bar widget
+    fn nav_bar(&self) -> Option<Element<Message<Self::Message>>> {
+        if !self.core().nav_bar_active() {
+            return None;
+        }
+
+        let nav_model = self.nav_model()?;
+
+        let mut nav = crate::widget::nav_bar(nav_model, |entity| {
+            Message::Cosmic(cosmic::Message::NavBar(entity))
+        });
+
+        if !self.core().is_condensed() {
+            nav = nav.max_width(300);
+        }
+
+        Some(Element::from(nav))
+    }
+
     /// Allows COSMIC to integrate with your application's [`nav_bar::Model`].
     fn nav_model(&self) -> Option<&nav_bar::Model> {
         None
@@ -586,18 +605,8 @@ impl<App: Application> ApplicationExt for App {
                     let mut widgets = Vec::with_capacity(2);
 
                     // Insert nav bar onto the left side of the window.
-                    if core.nav_bar_active() {
-                        if let Some(nav_model) = self.nav_model() {
-                            let mut nav = crate::widget::nav_bar(nav_model, |entity| {
-                                Message::Cosmic(cosmic::Message::NavBar(entity))
-                            });
-
-                            if !is_condensed {
-                                nav = nav.max_width(300);
-                            }
-
-                            widgets.push(nav.apply(Element::from).debug(core.debug));
-                        }
+                    if let Some(nav) = self.nav_bar() {
+                        widgets.push(nav.debug(core.debug));
                     }
 
                     if self.nav_model().is_none() || core.show_content() {
