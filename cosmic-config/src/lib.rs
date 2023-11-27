@@ -324,7 +324,7 @@ impl<'a> ConfigSet for ConfigTransaction<'a> {
 
 #[cfg(feature = "subscription")]
 pub enum ConfigState<T> {
-    Init(Cow<'static, str>, u64),
+    Init(Cow<'static, str>, u64, bool),
     Waiting(T, RecommendedWatcher, mpsc::Receiver<()>, Config),
     Failed,
 }
@@ -357,7 +357,29 @@ pub fn config_subscription<
         let config_id = config_id.clone();
         async move {
             let config_id = config_id.clone();
-            let mut state = ConfigState::Init(config_id, config_version);
+            let mut state = ConfigState::Init(config_id, config_version, false);
+
+            loop {
+                state = start_listening(state, &mut output, id).await;
+            }
+        }
+    })
+}
+
+#[cfg(feature = "subscription")]
+pub fn config_state_subscription<
+    I: 'static + Copy + Send + Sync + Hash,
+    T: 'static + Send + Sync + PartialEq + Clone + CosmicConfigEntry,
+>(
+    id: I,
+    config_id: Cow<'static, str>,
+    config_version: u64,
+) -> iced_futures::Subscription<(I, Result<T, (Vec<crate::Error>, T)>)> {
+    subscription::channel(id, 100, move |mut output| {
+        let config_id = config_id.clone();
+        async move {
+            let config_id = config_id.clone();
+            let mut state = ConfigState::Init(config_id, config_version, true);
 
             loop {
                 state = start_listening(state, &mut output, id).await;
@@ -377,9 +399,13 @@ async fn start_listening<
     use iced_futures::futures::{future::pending, StreamExt};
 
     match state {
-        ConfigState::Init(config_id, version) => {
+        ConfigState::Init(config_id, version, is_state) => {
             let (tx, rx) = mpsc::channel(100);
-            let config = match Config::new(&config_id, version) {
+            let config = match if is_state {
+                Config::new_state(&config_id, version)
+            } else {
+                Config::new(&config_id, version)
+            } {
                 Ok(c) => c,
                 Err(_) => return ConfigState::Failed,
             };
