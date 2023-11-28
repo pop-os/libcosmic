@@ -92,11 +92,11 @@ pub trait ColorExt {
 
 impl ColorExt for iced::Color {
     fn blend_alpha(self, background: Self, alpha: f32) -> Self {
-        Color {
+        Self {
             a: 1.0,
-            r: background.r + (self.r - background.r) * alpha,
-            g: background.g + (self.g - background.g) * alpha,
-            b: background.b + (self.b - background.b) * alpha,
+            r: (self.r - background.r).mul_add(alpha, background.r),
+            g: (self.g - background.g).mul_add(alpha, background.g),
+            b: (self.b - background.b).mul_add(alpha, background.b),
         }
     }
 }

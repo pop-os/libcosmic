@@ -423,14 +423,14 @@ impl<'a, S: AsRef<str>, Message> Widget<Message, crate::Renderer> for List<'a, S
 
             let bounds = Rectangle {
                 x: bounds.x,
-                y: bounds.y + (option_height * i as f32),
+                y: option_height.mul_add(i as f32, bounds.y),
                 width: bounds.width,
                 height: option_height,
             };
 
             let (color, font) = if self.selected_option == Some(i) {
                 let item_x = bounds.x + appearance.border_width;
-                let item_width = bounds.width - appearance.border_width * 2.0;
+                let item_width = appearance.border_width.mul_add(-2.0, bounds.width);
 
                 renderer.fill_quad(
                     renderer::Quad {
@@ -463,7 +463,7 @@ impl<'a, S: AsRef<str>, Message> Widget<Message, crate::Renderer> for List<'a, S
                 (appearance.selected_text_color, crate::font::FONT_SEMIBOLD)
             } else if *self.hovered_option == Some(i) {
                 let item_x = bounds.x + appearance.border_width;
-                let item_width = bounds.width - appearance.border_width * 2.0;
+                let item_width = appearance.border_width.mul_add(-2.0, bounds.width);
 
                 renderer.fill_quad(
                     renderer::Quad {

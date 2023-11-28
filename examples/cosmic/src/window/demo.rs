@@ -5,7 +5,6 @@ use cosmic::{
     cosmic_theme,
     iced::widget::{checkbox, column, progress_bar, radio, slider, text, text_input},
     iced::{id, Alignment, Length},
-    iced_core::Color,
     theme::ThemeType,
     widget::{
         button, color_picker::ColorPickerUpdate, cosmic_container::container, dropdown, icon,

@@ -84,17 +84,17 @@ impl Button {
     fn cosmic<'a>(&'a self, theme: &'a Theme) -> &CosmicComponent {
         let cosmic = theme.cosmic();
         match self {
-            Button::Primary => &cosmic.accent_button,
-            Button::Secondary => &theme.current_container().component,
-            Button::Positive => &cosmic.success_button,
-            Button::Destructive => &cosmic.destructive_button,
-            Button::Text => &cosmic.text_button,
-            Button::Link => &cosmic.accent_button,
-            Button::LinkActive => &cosmic.accent_button,
-            Button::Transparent => &TRANSPARENT_COMPONENT,
-            Button::Deactivated => &theme.current_container().component,
-            Button::Card => &theme.current_container().component,
-            Button::Custom { .. } => &TRANSPARENT_COMPONENT,
+            Self::Primary => &cosmic.accent_button,
+            Self::Secondary => &theme.current_container().component,
+            Self::Positive => &cosmic.success_button,
+            Self::Destructive => &cosmic.destructive_button,
+            Self::Text => &cosmic.text_button,
+            Self::Link => &cosmic.accent_button,
+            Self::LinkActive => &cosmic.accent_button,
+            Self::Transparent => &TRANSPARENT_COMPONENT,
+            Self::Deactivated => &theme.current_container().component,
+            Self::Card => &theme.current_container().component,
+            Self::Custom { .. } => &TRANSPARENT_COMPONENT,
         }
     }
 }
@@ -950,7 +950,7 @@ pub enum Text {
 
 impl From<Color> for Text {
     fn from(color: Color) -> Self {
-        Text::Color(color)
+        Self::Color(color)
     }
 }
 
