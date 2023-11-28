@@ -26,12 +26,15 @@ pub fn nav_bar_toggle<Message>() -> NavBarToggle<Message> {
 impl<'a, Message: 'static + Clone> From<NavBarToggle<Message>> for Element<'a, Message> {
     fn from(nav_bar_toggle: NavBarToggle<Message>) -> Self {
         let icon = if nav_bar_toggle.active {
-            widget::icon::from_svg_bytes(&include_bytes!("../../res/sidebar-active.svg")[..])
-                .symbolic(true)
+            widget::icon::from_svg_bytes(
+                &include_bytes!("../../res/icons/close-menu-symbolic.svg")[..],
+            )
+            .symbolic(true)
         } else {
-            widget::icon::from_name("open-menu-symbolic")
-                .size(16)
-                .handle()
+            widget::icon::from_svg_bytes(
+                &include_bytes!("../../res/icons/open-menu-symbolic.svg")[..],
+            )
+            .symbolic(true)
         };
 
         widget::button::text("")
