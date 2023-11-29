@@ -50,7 +50,7 @@ pub fn title4<'a>(text: impl Into<Cow<'a, str>> + 'a) -> Text<'a, Renderer> {
 pub fn heading<'a>(text: impl Into<Cow<'a, str>> + 'a) -> Text<'a, Renderer> {
     Text::new(text)
         .size(14.0)
-        .line_height(20.0)
+        .line_height(1.0)
         .font(crate::font::FONT_SEMIBOLD)
 }
 
