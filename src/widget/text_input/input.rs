@@ -483,22 +483,6 @@ where
     fn diff(&mut self, tree: &mut Tree) {
         let state = tree.state.downcast_mut::<State>();
 
-        // TODO get values from renderer somehow.
-        replace_paragraph(
-            state,
-            Layout::new(&layout::Node::with_children(
-                Size::INFINITY,
-                vec![layout::Node::with_children(
-                    Size::INFINITY,
-                    vec![layout::Node::default()],
-                )],
-            )),
-            &self.value,
-            self.font.unwrap_or(crate::font::FONT),
-            Pixels(self.size.unwrap_or(14.0)),
-            self.line_height,
-        );
-
         // Unfocus text input if it becomes disabled
         if self.on_input.is_none() {
             state.last_click = None;
