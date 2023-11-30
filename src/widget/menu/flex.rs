@@ -1,5 +1,6 @@
 // From iced_aw, license MIT
 
+use iced_core::widget::Tree;
 use iced_widget::core::{
     layout::{Limits, Node},
     renderer, Alignment, Element, Padding, Point, Size,
@@ -54,6 +55,7 @@ pub fn resolve<'a, E, Message, Renderer>(
     spacing: f32,
     align_items: Alignment,
     items: &[E],
+    tree: &mut [Tree],
 ) -> Node
 where
     E: std::borrow::Borrow<Element<'a, Message, Renderer>>,
@@ -73,7 +75,7 @@ where
     if align_items == Alignment::Center {
         let mut fill_cross = axis.cross(limits.min());
 
-        for child in items {
+        for (child, tree) in items.iter().zip(tree.iter_mut()) {
             let child = child.borrow();
             let cross_fill_factor = match axis {
                 Axis::Horizontal => child.as_widget().height(),
@@ -86,7 +88,7 @@ where
 
                 let child_limits = Limits::new(Size::ZERO, Size::new(max_width, max_height));
 
-                let layout = child.as_widget().layout(renderer, &child_limits);
+                let layout = child.as_widget().layout(tree, renderer, &child_limits);
                 let size = layout.size();
 
                 fill_cross = fill_cross.max(axis.cross(size));
@@ -96,7 +98,7 @@ where
         cross = fill_cross;
     }
 
-    for (i, child) in items.iter().enumerate() {
+    for (i, (child, tree)) in items.iter().zip(tree.iter_mut()).enumerate() {
         let child = child.borrow();
         let fill_factor = match axis {
             Axis::Horizontal => child.as_widget().width(),
@@ -122,7 +124,7 @@ where
                 Size::new(max_width, max_height),
             );
 
-            let layout = child.as_widget().layout(renderer, &child_limits);
+            let layout = child.as_widget().layout(tree, renderer, &child_limits);
             let size = layout.size();
 
             available -= axis.main(size);
@@ -139,7 +141,7 @@ where
 
     let remaining = available.max(0.0);
 
-    for (i, child) in items.iter().enumerate() {
+    for (i, (child, tree)) in items.iter().zip(tree.iter_mut()).enumerate() {
         let child = child.borrow();
         let fill_factor = match axis {
             Axis::Horizontal => child.as_widget().width(),
@@ -172,7 +174,7 @@ where
                 Size::new(max_width, max_height),
             );
 
-            let layout = child.as_widget().layout(renderer, &child_limits);
+            let layout = child.as_widget().layout(tree, renderer, &child_limits);
 
             if align_items != Alignment::Center {
                 cross = cross.max(axis.cross(layout.size()));

@@ -13,6 +13,7 @@ use iced::event::wayland::{self, WindowEvent};
 #[cfg(feature = "wayland")]
 use iced::event::PlatformSpecific;
 use iced::window;
+use iced_futures::event::listen_raw;
 #[cfg(not(feature = "wayland"))]
 use iced_runtime::command::Action;
 #[cfg(not(feature = "wayland"))]
@@ -126,7 +127,7 @@ where
     }
 
     fn subscription(&self) -> Subscription<Self::Message> {
-        let window_events = iced::subscription::events_with(|event, _| {
+        let window_events = listen_raw(|event, _| {
             match event {
                 iced::Event::Window(id, window::Event::Resized { width, height }) => {
                     return Some(Message::WindowResize(id, width, height));

@@ -66,5 +66,6 @@ pub use theme::{style, Theme};
 
 pub mod widget;
 
+type Paragraph = <Renderer as iced_core::text::Renderer>::Paragraph;
 pub type Renderer = iced::Renderer<Theme>;
 pub type Element<'a, Message> = iced::Element<'a, Message, Renderer>;

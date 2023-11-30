@@ -144,6 +144,10 @@ where
         self.container.diff(tree);
     }
 
+    fn state(&self) -> iced_core::widget::tree::State {
+        self.container.state()
+    }
+
     fn width(&self) -> Length {
         Widget::width(&self.container)
     }
@@ -152,8 +156,13 @@ where
         Widget::height(&self.container)
     }
 
-    fn layout(&self, renderer: &Renderer, limits: &layout::Limits) -> layout::Node {
-        self.container.layout(renderer, limits)
+    fn layout(
+        &self,
+        tree: &mut Tree,
+        renderer: &Renderer,
+        limits: &layout::Limits,
+    ) -> layout::Node {
+        self.container.layout(tree, renderer, limits)
     }
 
     fn operate(

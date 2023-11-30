@@ -20,12 +20,20 @@ impl<'a, 'b, Message> overlay::Overlay<Message, crate::Renderer> for Overlay<'a,
 where
     Message: Clone,
 {
-    fn layout(&self, renderer: &crate::Renderer, bounds: Size, position: Point) -> layout::Node {
+    fn layout(
+        &mut self,
+        renderer: &crate::Renderer,
+        bounds: Size,
+        position: Point,
+    ) -> layout::Node {
         let limits = layout::Limits::new(Size::ZERO, bounds)
             .width(self.width)
             .height(bounds.height - 8.0 - position.y);
 
-        let mut node = self.content.as_widget().layout(renderer, &limits);
+        let mut node =
+            self.content
+                .as_widget()
+                .layout(&mut self.tree.children[0], renderer, &limits);
         let node_size = node.size();
 
         node.move_to(Point {

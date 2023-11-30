@@ -4,6 +4,7 @@
 use super::widget::Assignment;
 use crate::{Element, Renderer};
 use iced_core::layout::{Limits, Node};
+use iced_core::widget::Tree;
 use iced_core::{Alignment, Length, Padding, Point, Size};
 
 use taffy::geometry::{Line, Rect};
@@ -24,6 +25,7 @@ pub fn resolve<Message>(
     row_alignment: Alignment,
     column_spacing: f32,
     row_spacing: f32,
+    tree: &mut [Tree],
 ) -> Node {
     let max_size = limits.max();
 
@@ -33,10 +35,10 @@ pub fn resolve<Message>(
     let mut taffy = TaffyTree::<()>::with_capacity(items.len() + 1);
 
     // Attach widgets as child nodes.
-    for (child, assignment) in items.iter().zip(assignments.iter()) {
+    for ((child, assignment), tree) in items.iter().zip(assignments.iter()).zip(tree.iter_mut()) {
         // Calculate the dimensions of the item.
         let child_widget = child.as_widget();
-        let child_node = child_widget.layout(renderer, limits);
+        let child_node = child_widget.layout(tree, renderer, limits);
         let size = child_node.size();
 
         nodes.push(child_node);
@@ -155,12 +157,18 @@ pub fn resolve<Message>(
         }
     };
 
-    for (leaf, (child, node)) in leafs.into_iter().zip(items.iter().zip(nodes.iter_mut())) {
+    for (((leaf, child), node), tree) in leafs
+        .into_iter()
+        .zip(items.iter())
+        .zip(nodes.iter_mut())
+        .zip(tree)
+    {
         if let Ok(leaf_layout) = taffy.layout(leaf) {
             let child_widget = child.as_widget();
             match child_widget.width() {
                 Length::Fill | Length::FillPortion(_) => {
-                    *node = child_widget.layout(renderer, &limits.width(leaf_layout.size.width));
+                    *node =
+                        child_widget.layout(tree, renderer, &limits.width(leaf_layout.size.width));
                 }
                 _ => (),
             }

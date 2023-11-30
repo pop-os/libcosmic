@@ -122,8 +122,15 @@ impl<'a, Message: Clone> Widget<Message, Renderer> for ContextDrawer<'a, Message
         self.content.as_widget().height()
     }
 
-    fn layout(&self, renderer: &Renderer, limits: &layout::Limits) -> layout::Node {
-        self.content.as_widget().layout(renderer, limits)
+    fn layout(
+        &self,
+        tree: &mut Tree,
+        renderer: &Renderer,
+        limits: &layout::Limits,
+    ) -> layout::Node {
+        self.content
+            .as_widget()
+            .layout(&mut tree.children[0], renderer, limits)
     }
 
     fn operate(

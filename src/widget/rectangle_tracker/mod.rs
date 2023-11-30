@@ -195,8 +195,14 @@ where
         Widget::height(&self.container)
     }
 
-    fn layout(&self, renderer: &Renderer, limits: &layout::Limits) -> layout::Node {
+    fn layout(
+        &self,
+        tree: &mut Tree,
+        renderer: &Renderer,
+        limits: &layout::Limits,
+    ) -> layout::Node {
         self.container.layout(
+            tree,
             renderer,
             if self.ignore_bounds {
                 &layout::Limits::NONE

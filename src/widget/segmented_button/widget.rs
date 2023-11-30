@@ -10,15 +10,16 @@ use iced::{
     alignment, event, keyboard, mouse, touch, Background, Color, Command, Event, Length, Rectangle,
     Size,
 };
-use iced_core::text::{LineHeight, Renderer as TextRenderer, Shaping};
+use iced_core::text::{LineHeight, Paragraph, Renderer as TextRenderer, Shaping};
 use iced_core::widget::{self, operation, tree};
 use iced_core::{layout, renderer, widget::Tree, Clipboard, Layout, Shell, Widget};
-use iced_core::{BorderRadius, Point, Renderer as IcedRenderer};
+use iced_core::{BorderRadius, Point, Renderer as IcedRenderer, Text};
+use slotmap::SecondaryMap;
 use std::marker::PhantomData;
 
 /// State that is maintained by each individual widget.
 #[derive(Default)]
-struct LocalState {
+pub struct LocalState {
     /// The first focusable key.
     first: Entity,
     /// If the widget is focused or not.
@@ -27,6 +28,8 @@ struct LocalState {
     focused_key: Entity,
     /// The ID of the button that is being hovered. Defaults to null.
     hovered: Entity,
+    /// The paragraphs for each text.
+    paragraphs: SecondaryMap<Entity, crate::Paragraph>,
 }
 
 impl operation::Focusable for LocalState {
@@ -57,7 +60,12 @@ pub trait SegmentedVariant {
     fn variant_button_bounds(&self, bounds: Rectangle, position: usize) -> Rectangle;
 
     /// Calculates the layout of this variant.
-    fn variant_layout(&self, renderer: &crate::Renderer, limits: &layout::Limits) -> layout::Node;
+    fn variant_layout(
+        &self,
+        state: &mut LocalState,
+        renderer: &crate::Renderer,
+        limits: &layout::Limits,
+    ) -> layout::Node;
 }
 
 /// A conjoined group of items that function together as a button.
@@ -214,7 +222,12 @@ where
         event::Status::Ignored
     }
 
-    pub(super) fn max_button_dimensions(&self, renderer: &Renderer, bounds: Size) -> (f32, f32) {
+    pub(super) fn max_button_dimensions(
+        &self,
+        state: &mut LocalState,
+        renderer: &Renderer,
+        bounds: Size,
+    ) -> (f32, f32) {
         let mut width = 0.0f32;
         let mut height = 0.0f32;
         let font = renderer.default_font();
@@ -224,15 +237,21 @@ where
             let mut button_height = 0.0f32;
 
             // Add text to measurement if text was given.
-            if let Some(text) = self.model.text(key) {
-                let Size { width, height } = renderer.measure(
-                    text,
-                    self.font_size,
-                    self.line_height,
-                    font,
-                    bounds,
-                    Shaping::Advanced,
-                );
+            if let Some((text, entry)) = self.model.text.get(key).zip(state.paragraphs.entry(key)) {
+                let paragraph = entry.or_insert_with(|| {
+                    crate::Paragraph::with_text(Text {
+                        content: text,
+                        size: iced::Pixels(self.font_size),
+                        bounds: Size::INFINITY,
+                        font,
+                        horizontal_alignment: alignment::Horizontal::Left,
+                        vertical_alignment: alignment::Vertical::Center,
+                        shaping: Shaping::Advanced,
+                        line_height: self.line_height,
+                    })
+                });
+
+                let Size { width, height } = paragraph.min_bounds();
 
                 button_width = width;
                 button_height = height;
@@ -282,10 +301,42 @@ where
     }
 
     fn state(&self) -> tree::State {
+        // update the paragraphs for the model
         tree::State::new(LocalState {
             first: self.model.order.iter().copied().next().unwrap_or_default(),
+            paragraphs: SecondaryMap::new(),
             ..LocalState::default()
         })
+    }
+
+    fn diff(&mut self, tree: &mut Tree) {
+        for e in self.model.order.iter().copied() {
+            if let Some(text) = self.model.text.get(e) {
+                let text = Text {
+                    content: text,
+                    size: iced::Pixels(self.font_size),
+                    bounds: Size::INFINITY,
+                    font: self.font_active.unwrap_or(crate::font::FONT),
+                    horizontal_alignment: alignment::Horizontal::Left,
+                    vertical_alignment: alignment::Vertical::Center,
+                    shaping: Shaping::Advanced,
+                    line_height: self.line_height,
+                };
+                if let Some(paragraph) = tree
+                    .state
+                    .downcast_mut::<LocalState>()
+                    .paragraphs
+                    .get_mut(e)
+                {
+                    paragraph.update(text);
+                } else {
+                    tree.state
+                        .downcast_mut::<LocalState>()
+                        .paragraphs
+                        .insert(e, crate::Paragraph::with_text(text));
+                }
+            }
+        }
     }
 
     fn width(&self) -> Length {
@@ -296,8 +347,13 @@ where
         self.height
     }
 
-    fn layout(&self, renderer: &Renderer, limits: &layout::Limits) -> layout::Node {
-        self.variant_layout(renderer, limits)
+    fn layout(
+        &self,
+        tree: &mut Tree,
+        renderer: &Renderer,
+        limits: &layout::Limits,
+    ) -> layout::Node {
+        self.variant_layout(tree.state.downcast_mut::<LocalState>(), renderer, limits)
     }
 
     fn on_event(
@@ -548,7 +604,7 @@ where
                 });
 
                 Widget::<Message, Renderer>::draw(
-                    &Element::<Message>::from(icon.clone()),
+                    Element::<Message>::from(icon.clone()).as_widget(),
                     &Tree::empty(),
                     renderer,
                     theme,
@@ -575,17 +631,20 @@ where
                 bounds.y = y;
 
                 // Draw the text in this button.
-                renderer.fill_text(iced_core::text::Text {
-                    content: text,
-                    size: self.font_size,
-                    bounds,
-                    color: status_appearance.text_color,
-                    font,
-                    horizontal_alignment,
-                    vertical_alignment: alignment::Vertical::Center,
-                    shaping: Shaping::Advanced,
-                    line_height: self.line_height,
-                });
+                renderer.fill_text(
+                    iced_core::text::Text {
+                        content: text,
+                        size: iced::Pixels(self.font_size),
+                        bounds: bounds.size(),
+                        font,
+                        horizontal_alignment,
+                        vertical_alignment: alignment::Vertical::Center,
+                        shaping: Shaping::Advanced,
+                        line_height: self.line_height,
+                    },
+                    bounds.position(),
+                    status_appearance.text_color,
+                );
             }
 
             let show_close_button =

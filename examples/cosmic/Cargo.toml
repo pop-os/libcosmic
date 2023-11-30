@@ -17,4 +17,5 @@ log = "0.4.17"
 [dependencies.cosmic-time]
 git = "https://github.com/pop-os/cosmic-time"
 default-features = false
+branch = "update-0.12"
 features = ["libcosmic", "once_cell"]

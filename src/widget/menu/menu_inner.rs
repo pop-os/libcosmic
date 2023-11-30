@@ -252,8 +252,13 @@ impl MenuBounds {
     where
         Renderer: renderer::Renderer,
     {
-        let (children_size, child_positions, child_sizes) =
-            get_children_layout(menu_tree, renderer, item_width, item_height);
+        let (children_size, child_positions, child_sizes) = get_children_layout(
+            menu_tree,
+            renderer,
+            item_width,
+            item_height,
+            &mut Tree::new(&menu_tree.item),
+        );
 
         // viewport space parent bounds
         let view_parent_bounds = parent_bounds + overlay_offset;
@@ -299,6 +304,7 @@ impl MenuState {
         slice: MenuSlice,
         renderer: &Renderer,
         menu_tree: &MenuTree<'_, Message, Renderer>,
+        tree: &mut [Tree],
     ) -> Node
     where
         Renderer: renderer::Renderer,
@@ -322,7 +328,8 @@ impl MenuState {
             .iter()
             .zip(self.menu_bounds.child_sizes[start_index..=end_index].iter())
             .zip(menu_tree.children[start_index..=end_index].iter())
-            .map(|((cp, size), mt)| {
+            .zip(tree[start_index..=end_index].iter_mut())
+            .map(|(((cp, size), mt), tree)| {
                 let mut position = *cp;
                 let mut size = *size;
 
@@ -336,7 +343,7 @@ impl MenuState {
 
                 let limits = Limits::new(Size::ZERO, size);
 
-                let mut node = mt.item.as_widget().layout(renderer, &limits);
+                let mut node = mt.item.as_widget().layout(tree, renderer, &limits);
                 node.move_to(Point::new(0.0, position + self.scroll_offset));
                 node
             })
@@ -353,6 +360,7 @@ impl MenuState {
         index: usize,
         renderer: &Renderer,
         menu_tree: &MenuTree<'_, Message, Renderer>,
+        tree: &mut Tree,
     ) -> Node
     where
         Renderer: renderer::Renderer,
@@ -363,7 +371,7 @@ impl MenuState {
         let position = self.menu_bounds.child_positions[index];
         let limits = Limits::new(Size::ZERO, self.menu_bounds.child_sizes[index]);
         let parent_offset = children_bounds.position() - Point::ORIGIN;
-        let mut node = menu_tree.item.as_widget().layout(renderer, &limits);
+        let mut node = menu_tree.item.as_widget().layout(tree, renderer, &limits);
         node.move_to(Point::new(
             parent_offset.x,
             parent_offset.y + position + self.scroll_offset,
@@ -458,9 +466,44 @@ where
     Renderer: renderer::Renderer,
     Renderer::Theme: StyleSheet,
 {
-    fn layout(&self, _renderer: &Renderer, bounds: Size, position: Point) -> Node {
+    fn layout(&mut self, renderer: &Renderer, bounds: Size, position: Point) -> Node {
+        // layout children
+        let state = self.tree.state.downcast_mut::<MenuBarState>();
+        let overlay_offset = Point::ORIGIN - position;
+        let tree_children = &mut self.tree.children;
+        let children = state
+            .active_root
+            .map(|active_root| {
+                let root = &self.menu_roots[active_root];
+                let active_tree = &mut tree_children[active_root];
+                state.menu_states.iter().enumerate().fold(
+                    (root, Vec::new()),
+                    |(menu_root, mut nodes), (i, ms)| {
+                        let slice = ms.slice(bounds, overlay_offset, self.item_height);
+                        let start_index = slice.start_index;
+                        let end_index = slice.end_index;
+                        let children_node = ms.layout(
+                            overlay_offset,
+                            slice,
+                            renderer,
+                            menu_root,
+                            &mut active_tree.children[start_index..=end_index],
+                        );
+                        nodes.push(children_node);
+                        // only the last menu can have a None active index
+                        (
+                            ms.index
+                                .map_or(menu_root, |active| &menu_root.children[active]),
+                            nodes,
+                        )
+                    },
+                )
+            })
+            .map(|(_, l)| l)
+            .unwrap_or_default();
+
         // overlay space viewport rectangle
-        Node::new(bounds).translate(Point::ORIGIN - position)
+        Node::with_children(bounds, children).translate(Point::ORIGIN - position)
     }
 
     fn on_event(
@@ -610,8 +653,9 @@ where
         state
             .menu_states
             .iter()
+            .zip(layout.children())
             .enumerate()
-            .fold(root, |menu_root, (i, ms)| {
+            .fold(root, |menu_root, (i, (ms, children_layout))| {
                 let draw_path = self.path_highlight.as_ref().map_or(false, |ph| match ph {
                     PathHighlight::Full => true,
                     PathHighlight::OmitActive => !indices.is_empty() && i < indices.len() - 1,
@@ -631,9 +675,6 @@ where
                     let start_index = slice.start_index;
                     let end_index = slice.end_index;
 
-                    // calc layout
-                    let children_node = ms.layout(overlay_offset, slice, r, menu_root);
-                    let children_layout = Layout::new(&children_node);
                     let children_bounds = children_layout.bounds();
 
                     // draw menu background
@@ -808,11 +849,17 @@ where
 
     // get layout
     let last_ms = &state.menu_states[indices.len() - 1];
+    let last_tree = tree.children[active_root]
+        .children
+        .iter_mut()
+        .last()
+        .unwrap();
     let child_node = last_ms.layout_single(
         overlay_offset,
         last_ms.index.expect("missing index within menu state."),
         renderer,
         mt,
+        last_tree,
     );
     let child_layout = Layout::new(&child_node);
 
@@ -1108,6 +1155,7 @@ fn get_children_layout<Message, Renderer>(
     renderer: &Renderer,
     item_width: ItemWidth,
     item_height: ItemHeight,
+    tree: &mut Tree,
 ) -> (Size, Vec<f32>, Vec<Size>)
 where
     Renderer: renderer::Renderer,
@@ -1130,13 +1178,15 @@ where
         ItemHeight::Dynamic(d) => menu_tree
             .children
             .iter()
-            .map(|mt| {
+            .zip(tree.children.iter_mut())
+            .map(|(mt, tree)| {
                 let w = mt.item.as_widget();
                 match w.height() {
                     Length::Fixed(f) => Size::new(width, f),
                     Length::Shrink => {
                         let l_height = w
                             .layout(
+                                tree,
                                 renderer,
                                 &Limits::new(Size::ZERO, Size::new(width, f32::MAX)),
                             )

@@ -3,6 +3,7 @@
 
 use crate::{Element, Renderer};
 use iced_core::layout::{Limits, Node};
+use iced_core::widget::Tree;
 use iced_core::{Padding, Point, Size};
 
 pub fn resolve<Message>(
@@ -12,6 +13,7 @@ pub fn resolve<Message>(
     padding: Padding,
     column_spacing: f32,
     row_spacing: f32,
+    tree: &mut [Tree],
 ) -> Node {
     let limits = limits.pad(padding);
 
@@ -26,9 +28,9 @@ pub fn resolve<Message>(
 
     let mut row_buffer = Vec::<Node>::with_capacity(8);
 
-    for child in items {
+    for (child, tree) in items.iter().zip(tree.into_iter()) {
         // Calculate the dimensions of the item.
-        let child_node = child.as_widget().layout(renderer, &limits);
+        let child_node = child.as_widget().layout(tree, renderer, &limits);
         let size = child_node.size();
 
         // Calculate the required additional width to fit the item into the current row.

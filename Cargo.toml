@@ -143,5 +143,3 @@ exclude = ["examples/design-demo", "iced"]
 [patch."https://github.com/pop-os/libcosmic"]
 libcosmic = { path = "./" }
 
-# [patch."https://github.com/pop-os/cosmic-time"]
-# cosmic-time = { path = "../cosmic-time" }

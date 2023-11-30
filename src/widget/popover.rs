@@ -71,8 +71,14 @@ where
         self.content.as_widget().height()
     }
 
-    fn layout(&self, renderer: &Renderer, limits: &layout::Limits) -> layout::Node {
-        self.content.as_widget().layout(renderer, limits)
+    fn layout(
+        &self,
+        tree: &mut Tree,
+        renderer: &Renderer,
+        limits: &layout::Limits,
+    ) -> layout::Node {
+        let tree = &mut tree.children[0];
+        self.content.as_widget().layout(tree, renderer, limits)
     }
 
     fn operate(
@@ -203,9 +209,13 @@ impl<'a, 'b, Message, Renderer> overlay::Overlay<Message, Renderer>
 where
     Renderer: iced_core::Renderer,
 {
-    fn layout(&self, renderer: &Renderer, bounds: Size, mut position: Point) -> layout::Node {
+    fn layout(&mut self, renderer: &Renderer, bounds: Size, mut position: Point) -> layout::Node {
         let limits = layout::Limits::new(Size::UNIT, bounds);
-        let mut node = self.content.borrow().as_widget().layout(renderer, &limits);
+        let mut node = self
+            .content
+            .borrow()
+            .as_widget()
+            .layout(self.tree, renderer, &limits);
         if self.centered {
             // Position is set to the center bottom of the lower widget
             let width = node.size().width;

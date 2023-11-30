@@ -515,8 +515,15 @@ where
         Length::Shrink
     }
 
-    fn layout(&self, renderer: &crate::Renderer, limits: &layout::Limits) -> layout::Node {
-        self.inner.as_widget().layout(renderer, limits)
+    fn layout(
+        &self,
+        tree: &mut Tree,
+        renderer: &crate::Renderer,
+        limits: &layout::Limits,
+    ) -> layout::Node {
+        self.inner
+            .as_widget()
+            .layout(&mut tree.children[0], renderer, limits)
     }
 
     #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]

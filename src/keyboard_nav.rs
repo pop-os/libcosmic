@@ -12,6 +12,7 @@ use iced_core::{
     widget::{operation, Id, Operation},
     Rectangle,
 };
+use iced_futures::event::listen_raw;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum Message {
@@ -24,7 +25,7 @@ pub enum Message {
 }
 
 pub fn subscription() -> Subscription<Message> {
-    subscription::events_with(|event, status| {
+    listen_raw(|event, status| {
         if event::Status::Ignored != status {
             return None;
         }
