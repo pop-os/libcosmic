@@ -279,7 +279,7 @@ where
             .collect()
     }
 
-    fn layout(&self, renderer: &Renderer, limits: &Limits) -> Node {
+    fn layout(&self, tree: &mut Tree, renderer: &Renderer, limits: &Limits) -> Node {
         use super::flex;
 
         let limits = limits.width(self.width).height(self.height);
@@ -296,6 +296,8 @@ where
             self.spacing,
             Alignment::Center,
             &children,
+            // the children of the tree are the menu roots
+            &mut tree.children,
         )
     }
 

@@ -5,7 +5,7 @@
 
 use crate::{font, Theme};
 #[cfg(feature = "wayland")]
-use iced::Limits;
+use iced_core::layout::Limits;
 use iced_core::Font;
 
 /// Configure a new COSMIC application.

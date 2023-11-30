@@ -12,6 +12,7 @@ use cosmic::{
         widget::{self, column, container, horizontal_space, row, text},
         window::{self, close, drag, minimize, toggle_maximize},
     },
+    iced_futures::event::listen_raw,
     keyboard_nav,
     prelude::*,
     theme::{self, Theme},
@@ -358,7 +359,7 @@ impl Application for Window {
     }
 
     fn subscription(&self) -> Subscription<Message> {
-        let window_break = subscription::events_with(|event, _| match event {
+        let window_break = listen_raw(|event, _| match event {
             cosmic::iced::Event::Window(
                 _window_id,
                 window::Event::Resized { width, height: _ },
@@ -450,7 +451,7 @@ impl Application for Window {
                 _ => (),
             },
             Message::ToggleWarning => self.toggle_warning(),
-            Message::FontsLoaded => {}
+            Message::FontsLoaded => {} // Message::Tick(instant) => self.timeline.borrow_mut().now(instant),            Message::Tick(instant) => self.timeline.borrow_mut().now(instant),
             Message::Tick(instant) => self.timeline.borrow_mut().now(instant),
         }
         ret

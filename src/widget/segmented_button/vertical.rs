@@ -5,7 +5,7 @@
 
 use super::model::{Model, Selectable};
 use super::style::StyleSheet;
-use super::widget::{SegmentedButton, SegmentedVariant};
+use super::widget::{LocalState, SegmentedButton, SegmentedVariant};
 
 use iced::{Length, Rectangle, Size};
 use iced_core::layout;
@@ -62,9 +62,14 @@ where
     #[allow(clippy::cast_precision_loss)]
     #[allow(clippy::cast_possible_truncation)]
     #[allow(clippy::cast_sign_loss)]
-    fn variant_layout(&self, renderer: &crate::Renderer, limits: &layout::Limits) -> layout::Node {
+    fn variant_layout(
+        &self,
+        state: &mut LocalState,
+        renderer: &crate::Renderer,
+        limits: &layout::Limits,
+    ) -> layout::Node {
         let limits = limits.width(self.width);
-        let (width, mut height) = self.max_button_dimensions(renderer, limits.max());
+        let (width, mut height) = self.max_button_dimensions(state, renderer, limits.max());
 
         let num = self.model.items.len();
         let spacing = f32::from(self.spacing);

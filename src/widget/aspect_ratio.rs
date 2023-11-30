@@ -161,12 +161,18 @@ where
         Widget::height(&self.container)
     }
 
-    fn layout(&self, renderer: &Renderer, limits: &layout::Limits) -> layout::Node {
+    fn layout(
+        &self,
+        tree: &mut Tree,
+        renderer: &Renderer,
+        limits: &layout::Limits,
+    ) -> layout::Node {
         let custom_limits = layout::Limits::new(
             self.constrain_limits(limits.min()),
             self.constrain_limits(limits.max()),
         );
-        self.container.layout(renderer, &custom_limits)
+        self.container
+            .layout(&mut tree.children[0], renderer, &custom_limits)
     }
 
     fn operate(

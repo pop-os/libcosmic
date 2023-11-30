@@ -82,7 +82,7 @@ pub(crate) fn iced_settings<App: Application>(
 
     iced.antialiasing = settings.antialiasing;
     iced.default_font = settings.default_font;
-    iced.default_text_size = settings.default_text_size;
+    iced.default_text_size = iced::Pixels(settings.default_text_size);
     iced.exit_on_close_request = settings.exit_on_close;
     iced.id = Some(App::APP_ID.to_owned());
 

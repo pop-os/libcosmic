@@ -58,7 +58,12 @@ impl<'a, Message: 'static + Clone> Widget<Message, Renderer> for FlexRow<'a, Mes
         Length::Shrink
     }
 
-    fn layout(&self, renderer: &Renderer, limits: &layout::Limits) -> layout::Node {
+    fn layout(
+        &self,
+        tree: &mut Tree,
+        renderer: &Renderer,
+        limits: &layout::Limits,
+    ) -> layout::Node {
         let limits = limits
             .max_width(self.max_width)
             .width(self.width())
@@ -71,6 +76,7 @@ impl<'a, Message: 'static + Clone> Widget<Message, Renderer> for FlexRow<'a, Mes
             self.padding,
             f32::from(self.column_spacing),
             f32::from(self.row_spacing),
+            &mut tree.children,
         )
     }
 

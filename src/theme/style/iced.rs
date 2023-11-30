@@ -146,23 +146,6 @@ impl iced_button::StyleSheet for Theme {
         }
     }
 
-    fn focused(&self, style: &Self::Style) -> iced_button::Appearance {
-        if let Button::Custom { hover, .. } = style {
-            return hover(self);
-        }
-
-        let active = self.active(style);
-        let component = style.cosmic(self);
-        iced_button::Appearance {
-            background: match style {
-                Button::Link => None,
-                Button::LinkActive => Some(Background::Color(component.divider.into())),
-                _ => Some(Background::Color(component.hover.into())),
-            },
-            ..active
-        }
-    }
-
     fn disabled(&self, style: &Self::Style) -> iced_button::Appearance {
         let active = self.active(style);
 

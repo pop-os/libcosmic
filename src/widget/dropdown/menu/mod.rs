@@ -187,7 +187,12 @@ impl<'a, Message: 'a> Overlay<'a, Message> {
 }
 
 impl<'a, Message> iced_core::Overlay<Message, crate::Renderer> for Overlay<'a, Message> {
-    fn layout(&self, renderer: &crate::Renderer, bounds: Size, position: Point) -> layout::Node {
+    fn layout(
+        &mut self,
+        renderer: &crate::Renderer,
+        bounds: Size,
+        position: Point,
+    ) -> layout::Node {
         let space_below = bounds.height - (position.y + self.target_height);
         let space_above = position.y;
 
@@ -204,7 +209,7 @@ impl<'a, Message> iced_core::Overlay<Message, crate::Renderer> for Overlay<'a, M
         )
         .width(self.width);
 
-        let mut node = self.container.layout(renderer, &limits);
+        let mut node = self.container.layout(&mut self.state, renderer, &limits);
 
         node.move_to(if space_below > space_above {
             position + Vector::new(0.0, self.target_height)
@@ -289,13 +294,18 @@ impl<'a, S: AsRef<str>, Message> Widget<Message, crate::Renderer> for List<'a, S
         Length::Shrink
     }
 
-    fn layout(&self, renderer: &crate::Renderer, limits: &layout::Limits) -> layout::Node {
+    fn layout(
+        &self,
+        _tree: &mut Tree,
+        renderer: &crate::Renderer,
+        limits: &layout::Limits,
+    ) -> layout::Node {
         use std::f32;
 
         let limits = limits.width(Length::Fill).height(Length::Shrink);
         let text_size = self
             .text_size
-            .unwrap_or_else(|| text::Renderer::default_size(renderer));
+            .unwrap_or_else(|| text::Renderer::default_size(renderer).0);
 
         let text_line_height = self.text_line_height.to_absolute(Pixels(text_size));
 
@@ -335,7 +345,7 @@ impl<'a, S: AsRef<str>, Message> Widget<Message, crate::Renderer> for List<'a, S
                 if let Some(cursor_position) = cursor.position_in(layout.bounds()) {
                     let text_size = self
                         .text_size
-                        .unwrap_or_else(|| text::Renderer::default_size(renderer));
+                        .unwrap_or_else(|| text::Renderer::default_size(renderer).0);
 
                     let option_height =
                         f32::from(self.text_line_height.to_absolute(Pixels(text_size)))
@@ -356,7 +366,7 @@ impl<'a, S: AsRef<str>, Message> Widget<Message, crate::Renderer> for List<'a, S
                 if let Some(cursor_position) = cursor.position_in(layout.bounds()) {
                     let text_size = self
                         .text_size
-                        .unwrap_or_else(|| text::Renderer::default_size(renderer));
+                        .unwrap_or_else(|| text::Renderer::default_size(renderer).0);
 
                     let option_height =
                         f32::from(self.text_line_height.to_absolute(Pixels(text_size)))
@@ -408,7 +418,7 @@ impl<'a, S: AsRef<str>, Message> Widget<Message, crate::Renderer> for List<'a, S
 
         let text_size = self
             .text_size
-            .unwrap_or_else(|| text::Renderer::default_size(renderer));
+            .unwrap_or_else(|| text::Renderer::default_size(renderer).0);
         let option_height = f32::from(self.text_line_height.to_absolute(Pixels(text_size)))
             + self.padding.vertical();
 
@@ -484,24 +494,26 @@ impl<'a, S: AsRef<str>, Message> Widget<Message, crate::Renderer> for List<'a, S
                 (appearance.text_color, crate::font::FONT)
             };
 
+            let bounds = Rectangle {
+                x: bounds.x + self.padding.left,
+                y: bounds.center_y(),
+                width: f32::INFINITY,
+                ..bounds
+            };
             text::Renderer::fill_text(
                 renderer,
                 Text {
                     content: option.as_ref(),
-                    bounds: Rectangle {
-                        x: bounds.x + self.padding.left,
-                        y: bounds.center_y(),
-                        width: f32::INFINITY,
-                        ..bounds
-                    },
-                    size: text_size,
+                    bounds: bounds.size(),
+                    size: Pixels(text_size),
                     line_height: self.text_line_height,
                     font,
-                    color,
                     horizontal_alignment: alignment::Horizontal::Left,
                     vertical_alignment: alignment::Vertical::Center,
                     shaping: text::Shaping::Advanced,
                 },
+                bounds.position(),
+                color,
             );
         }
     }

@@ -6,7 +6,7 @@ use super::menu::{self, Menu};
 use crate::widget::icon;
 use derive_setters::Setters;
 use iced_core::event::{self, Event};
-use iced_core::text::{self, Text};
+use iced_core::text::{self, Paragraph, Text};
 use iced_core::widget::tree::{self, Tree};
 use iced_core::{alignment, keyboard, layout, mouse, overlay, renderer, svg, touch};
 use iced_core::{Clipboard, Layout, Length, Padding, Pixels, Rectangle, Shell, Size, Widget};
@@ -61,6 +61,28 @@ impl<'a, S: AsRef<str>, Message> Dropdown<'a, S, Message> {
             font: None,
         }
     }
+
+    fn update_paragraphs(&self, state: &mut tree::State) {
+        let state = state.downcast_mut::<State>();
+
+        state
+            .selections
+            .resize_with(self.selections.len(), crate::Paragraph::new);
+        for (i, selection) in self.selections.iter().enumerate() {
+            state.selections[i].update(Text {
+                content: selection.as_ref(),
+                bounds: Size::INFINITY,
+                // TODO use the renderer default size
+                size: iced::Pixels(self.text_size.unwrap_or(14.0)),
+
+                line_height: self.text_line_height,
+                font: self.font.unwrap_or(crate::font::FONT),
+                horizontal_alignment: alignment::Horizontal::Left,
+                vertical_alignment: alignment::Vertical::Top,
+                shaping: text::Shaping::Advanced,
+            });
+        }
+    }
 }
 
 impl<'a, S: AsRef<str>, Message: 'a> Widget<Message, crate::Renderer> for Dropdown<'a, S, Message> {
@@ -69,7 +91,31 @@ impl<'a, S: AsRef<str>, Message: 'a> Widget<Message, crate::Renderer> for Dropdo
     }
 
     fn state(&self) -> tree::State {
-        tree::State::new(State::new())
+        let mut tree = tree::State::new(State::new());
+        self.update_paragraphs(&mut tree);
+        tree
+    }
+
+    fn diff(&mut self, tree: &mut Tree) {
+        let state = tree.state.downcast_mut::<State>();
+
+        state
+            .selections
+            .resize_with(self.selections.len(), crate::Paragraph::new);
+        for (i, selection) in self.selections.iter().enumerate() {
+            state.selections[i].update(Text {
+                content: selection.as_ref(),
+                bounds: Size::INFINITY,
+                // TODO use the renderer default size
+                size: iced::Pixels(self.text_size.unwrap_or(14.0)),
+
+                line_height: self.text_line_height,
+                font: self.font.unwrap_or(crate::font::FONT),
+                horizontal_alignment: alignment::Horizontal::Left,
+                vertical_alignment: alignment::Vertical::Top,
+                shaping: text::Shaping::Advanced,
+            });
+        }
     }
 
     fn width(&self) -> Length {
@@ -80,7 +126,12 @@ impl<'a, S: AsRef<str>, Message: 'a> Widget<Message, crate::Renderer> for Dropdo
         Length::Shrink
     }
 
-    fn layout(&self, renderer: &crate::Renderer, limits: &layout::Limits) -> layout::Node {
+    fn layout(
+        &self,
+        tree: &mut Tree,
+        renderer: &crate::Renderer,
+        limits: &layout::Limits,
+    ) -> layout::Node {
         layout(
             renderer,
             limits,
@@ -90,9 +141,12 @@ impl<'a, S: AsRef<str>, Message: 'a> Widget<Message, crate::Renderer> for Dropdo
             self.text_size.unwrap_or(14.0),
             self.text_line_height,
             self.font,
-            self.selected
-                .and_then(|id| self.selections.get(id))
-                .map(AsRef::as_ref),
+            self.selected.and_then(|id| {
+                self.selections
+                    .get(id)
+                    .map(AsRef::as_ref)
+                    .zip(tree.state.downcast_mut::<State>().selections.get_mut(id))
+            }),
         )
     }
 
@@ -173,6 +227,8 @@ impl<'a, S: AsRef<str>, Message: 'a> Widget<Message, crate::Renderer> for Dropdo
             self.gap,
             self.padding,
             self.text_size.unwrap_or(14.0),
+            self.text_line_height,
+            self.font,
             self.selections,
             self.selected,
             &self.on_selected,
@@ -196,6 +252,7 @@ pub struct State {
     keyboard_modifiers: keyboard::Modifiers,
     is_open: bool,
     hovered_option: Option<usize>,
+    selections: Vec<crate::Paragraph>,
 }
 
 impl State {
@@ -214,6 +271,7 @@ impl State {
             keyboard_modifiers: keyboard::Modifiers::default(),
             is_open: false,
             hovered_option: None,
+            selections: Vec::new(),
         }
     }
 }
@@ -235,7 +293,7 @@ pub fn layout(
     text_size: f32,
     text_line_height: text::LineHeight,
     font: Option<crate::font::Font>,
-    selection: Option<&str>,
+    selection: Option<(&str, &mut crate::Paragraph)>,
 ) -> layout::Node {
     use std::f32;
 
@@ -243,16 +301,18 @@ pub fn layout(
 
     let max_width = match width {
         Length::Shrink => {
-            let measure = |label: &str| -> f32 {
-                let width = text::Renderer::measure_width(
-                    renderer,
-                    label,
-                    text_size,
-                    font.unwrap_or_else(|| text::Renderer::default_font(renderer)),
-                    text::Shaping::Advanced,
-                );
-
-                width.round()
+            let measure = move |(label, paragraph): (_, &mut crate::Paragraph)| -> f32 {
+                paragraph.update(Text {
+                    content: label,
+                    bounds: Size::new(f32::MAX, f32::MAX),
+                    size: iced::Pixels(text_size),
+                    line_height: text_line_height,
+                    font: font.unwrap_or_else(|| text::Renderer::default_font(renderer)),
+                    horizontal_alignment: alignment::Horizontal::Left,
+                    vertical_alignment: alignment::Vertical::Top,
+                    shaping: text::Shaping::Advanced,
+                });
+                paragraph.min_width().round()
             };
 
             selection.map(measure).unwrap_or_default()
@@ -358,6 +418,8 @@ pub fn overlay<'a, S: AsRef<str>, Message: 'a>(
     gap: f32,
     padding: Padding,
     text_size: f32,
+    text_line_height: text::LineHeight,
+    font: Option<crate::font::Font>,
     selections: &'a [S],
     selected_option: Option<usize>,
     on_selected: &'a dyn Fn(usize) -> Message,
@@ -378,21 +440,14 @@ pub fn overlay<'a, S: AsRef<str>, Message: 'a>(
             None,
         )
         .width({
-            let measure = |label: &str| -> f32 {
-                let width = text::Renderer::measure_width(
-                    renderer,
-                    label,
-                    text_size,
-                    crate::font::FONT,
-                    text::Shaping::Advanced,
-                );
-
-                width.round()
+            let measure = |label: &str, selection_paragraph: &mut crate::Paragraph| -> f32 {
+                selection_paragraph.min_width().round()
             };
 
             selections
                 .iter()
-                .map(|label| measure(label.as_ref()))
+                .zip(state.selections.iter_mut())
+                .map(|(label, selection)| measure(label.as_ref(), selection))
                 .fold(0.0, |next, current| current.max(next))
                 + gap
                 + 16.0
@@ -462,26 +517,27 @@ pub fn draw<'a, S>(
     }
 
     if let Some(content) = selected.map(AsRef::as_ref) {
-        let text_size = text_size.unwrap_or_else(|| text::Renderer::default_size(renderer));
-
+        let text_size = text_size.unwrap_or_else(|| text::Renderer::default_size(renderer).0);
+        let bounds = Rectangle {
+            x: bounds.x + padding.left,
+            y: bounds.center_y(),
+            width: bounds.width - padding.horizontal(),
+            height: f32::from(text_line_height.to_absolute(Pixels(text_size))),
+        };
         text::Renderer::fill_text(
             renderer,
             Text {
                 content,
-                size: text_size,
+                size: iced::Pixels(text_size),
                 line_height: text_line_height,
                 font,
-                color: style.text_color,
-                bounds: Rectangle {
-                    x: bounds.x + padding.left,
-                    y: bounds.center_y(),
-                    width: bounds.width - padding.horizontal(),
-                    height: f32::from(text_line_height.to_absolute(Pixels(text_size))),
-                },
+                bounds: bounds.size(),
                 horizontal_alignment: alignment::Horizontal::Left,
                 vertical_alignment: alignment::Vertical::Center,
                 shaping: text::Shaping::Advanced,
             },
+            bounds.position(),
+            style.text_color,
         );
     }
 }

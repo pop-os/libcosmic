@@ -4,7 +4,8 @@ use apply::Apply;
 use cosmic::{
     cosmic_theme,
     iced::widget::{checkbox, column, progress_bar, radio, slider, text, text_input},
-    iced::{id, Alignment, Length},
+    iced::{Alignment, Length},
+    iced_core::id,
     theme::ThemeType,
     widget::{
         button, color_picker::ColorPickerUpdate, cosmic_container::container, dropdown, icon,
@@ -498,7 +499,6 @@ impl State {
                 .on_input(Message::InputChanged)
                 .into(),
             cosmic::widget::search_input("test", &self.entry_value)
-                .on_clear(Message::InputChanged("".to_string()))
                 .width(Length::Fixed(100.0))
                 .on_input(Message::InputChanged)
                 .into(),
