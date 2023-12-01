@@ -190,7 +190,12 @@ impl<'a, Message: 'a> Overlay<'a, Message> {
 }
 
 impl<'a, Message> iced_core::Overlay<Message, crate::Renderer> for Overlay<'a, Message> {
-    fn layout(&self, renderer: &crate::Renderer, bounds: Size, position: Point) -> layout::Node {
+    fn layout(
+        &mut self,
+        renderer: &crate::Renderer,
+        bounds: Size,
+        position: Point,
+    ) -> layout::Node {
         let space_below = bounds.height - (position.y + self.target_height);
         let space_above = position.y;
 
@@ -207,7 +212,9 @@ impl<'a, Message> iced_core::Overlay<Message, crate::Renderer> for Overlay<'a, M
         )
         .width(self.width);
 
-        let mut node = self.container.layout(renderer, &limits);
+        let mut node = self
+            .container
+            .layout(&mut self.state.children[0], renderer, &limits);
 
         node.move_to(if space_below > space_above {
             position + Vector::new(0.0, self.target_height)
@@ -296,13 +303,18 @@ where
         Length::Shrink
     }
 
-    fn layout(&self, renderer: &crate::Renderer, limits: &layout::Limits) -> layout::Node {
+    fn layout(
+        &self,
+        _tree: &mut Tree,
+        renderer: &crate::Renderer,
+        limits: &layout::Limits,
+    ) -> layout::Node {
         use std::f32;
 
         let limits = limits.width(Length::Fill).height(Length::Shrink);
         let text_size = self
             .text_size
-            .unwrap_or_else(|| text::Renderer::default_size(renderer));
+            .unwrap_or_else(|| text::Renderer::default_size(renderer).0);
 
         let text_line_height = self.text_line_height.to_absolute(Pixels(text_size));
 
@@ -359,7 +371,7 @@ where
                 if let Some(cursor_position) = cursor.position_in(bounds) {
                     let text_size = self
                         .text_size
-                        .unwrap_or_else(|| text::Renderer::default_size(renderer));
+                        .unwrap_or_else(|| text::Renderer::default_size(renderer).0);
 
                     let text_line_height =
                         f32::from(self.text_line_height.to_absolute(Pixels(text_size)));
@@ -406,7 +418,7 @@ where
                 if let Some(cursor_position) = cursor.position_in(bounds) {
                     let text_size = self
                         .text_size
-                        .unwrap_or_else(|| text::Renderer::default_size(renderer));
+                        .unwrap_or_else(|| text::Renderer::default_size(renderer).0);
 
                     let text_line_height =
                         f32::from(self.text_line_height.to_absolute(Pixels(text_size)));
@@ -488,7 +500,7 @@ where
 
         let text_size = self
             .text_size
-            .unwrap_or_else(|| text::Renderer::default_size(renderer));
+            .unwrap_or_else(|| text::Renderer::default_size(renderer).0);
 
         let offset = viewport.y - bounds.y;
 
@@ -571,24 +583,26 @@ where
                         (appearance.text_color, crate::font::FONT)
                     };
 
+                    let bounds = Rectangle {
+                        x: bounds.x + self.padding.left,
+                        y: bounds.y + self.padding.top,
+                        width: bounds.width,
+                        height: bounds.height,
+                    };
                     text::Renderer::fill_text(
                         renderer,
                         Text {
                             content: option.as_ref(),
-                            bounds: Rectangle {
-                                x: bounds.x + self.padding.left,
-                                y: bounds.center_y(),
-                                width: bounds.width,
-                                ..bounds
-                            },
-                            size: text_size,
+                            bounds: bounds.size(),
+                            size: iced::Pixels(text_size),
                             line_height: self.text_line_height,
                             font,
-                            color,
                             horizontal_alignment: alignment::Horizontal::Left,
                             vertical_alignment: alignment::Vertical::Center,
                             shaping: text::Shaping::Advanced,
                         },
+                        bounds.position(),
+                        color,
                     );
                 }
 
@@ -618,23 +632,25 @@ where
                 }
 
                 OptionElement::Description(description) => {
+                    let bounds = Rectangle {
+                        x: bounds.center_x(),
+                        y: bounds.center_y(),
+                        ..bounds
+                    };
                     text::Renderer::fill_text(
                         renderer,
                         Text {
                             content: description.as_ref(),
-                            bounds: Rectangle {
-                                x: bounds.center_x(),
-                                y: bounds.center_y(),
-                                ..bounds
-                            },
-                            size: text_size,
+                            bounds: bounds.size(),
+                            size: iced::Pixels(text_size),
                             line_height: text::LineHeight::Absolute(Pixels(text_line_height + 4.0)),
                             font: crate::font::FONT,
-                            color: appearance.description_color,
                             horizontal_alignment: alignment::Horizontal::Center,
                             vertical_alignment: alignment::Vertical::Center,
                             shaping: text::Shaping::Advanced,
                         },
+                        bounds.position(),
+                        appearance.description_color,
                     );
                 }
             }
