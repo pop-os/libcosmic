@@ -257,7 +257,7 @@ pub fn run<App: Application>(autosize: bool, flags: App::Flags) -> iced::Result 
 
     iced.antialiasing = settings.antialiasing;
     iced.default_font = settings.default_font;
-    iced.default_text_size = settings.default_text_size;
+    iced.default_text_size = settings.default_text_size.into();
     iced.id = Some(App::APP_ID.to_owned());
 
     {
