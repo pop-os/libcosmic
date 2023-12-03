@@ -1084,3 +1084,86 @@ impl crate::widget::card::style::StyleSheet for Theme {
         }
     }
 }
+
+#[derive(Default)]
+pub enum TextEditor {
+    #[default]
+    Default,
+    Custom(Box<dyn iced_style::text_editor::StyleSheet<Style = Theme>>),
+}
+
+impl iced_style::text_editor::StyleSheet for Theme {
+    type Style = TextEditor;
+
+    fn active(&self, style: &Self::Style) -> iced_style::text_editor::Appearance {
+        if let TextEditor::Custom(style) = style {
+            return style.active(self);
+        }
+
+        let cosmic = self.cosmic();
+        iced_style::text_editor::Appearance {
+            background: iced::Color::from(cosmic.bg_color()).into(),
+            border_radius: cosmic.corner_radii.radius_0.into(),
+            border_width: f32::from(cosmic.space_xxxs()),
+            border_color: iced::Color::from(cosmic.bg_divider()),
+        }
+    }
+
+    fn focused(&self, style: &Self::Style) -> iced_style::text_editor::Appearance {
+        if let TextEditor::Custom(style) = style {
+            return style.focused(self);
+        }
+
+        let cosmic = self.cosmic();
+        iced_style::text_editor::Appearance {
+            background: iced::Color::from(cosmic.bg_color()).into(),
+            border_radius: cosmic.corner_radii.radius_0.into(),
+            border_width: f32::from(cosmic.space_xxxs()),
+            border_color: iced::Color::from(cosmic.accent.base),
+        }
+    }
+
+    fn placeholder_color(&self, style: &Self::Style) -> Color {
+        if let TextEditor::Custom(style) = style {
+            return style.placeholder_color(self);
+        }
+        let palette = self.cosmic();
+        let mut neutral_9 = palette.palette.neutral_9;
+        neutral_9.alpha = 0.7;
+        neutral_9.into()
+    }
+
+    fn value_color(&self, style: &Self::Style) -> Color {
+        if let TextEditor::Custom(style) = style {
+            return style.value_color(self);
+        }
+        let palette = self.cosmic();
+
+        palette.palette.neutral_9.into()
+    }
+
+    fn disabled_color(&self, style: &Self::Style) -> Color {
+        if let TextEditor::Custom(style) = style {
+            return style.disabled_color(self);
+        }
+        let palette = self.cosmic();
+        let mut neutral_9 = palette.palette.neutral_9;
+        neutral_9.alpha = 0.5;
+        neutral_9.into()
+    }
+
+    fn selection_color(&self, style: &Self::Style) -> Color {
+        if let TextEditor::Custom(style) = style {
+            return style.selection_color(self);
+        }
+        let cosmic = self.cosmic();
+        cosmic.accent.base.into()
+    }
+
+    fn disabled(&self, style: &Self::Style) -> iced_style::text_editor::Appearance {
+        if let TextEditor::Custom(style) = style {
+            return style.disabled(self);
+        }
+        self.active(style)
+    }
+}
