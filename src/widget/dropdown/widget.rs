@@ -192,7 +192,7 @@ impl<'a, S: AsRef<str>, Message: 'a> Widget<Message, crate::Renderer> for Dropdo
         _style: &iced_core::renderer::Style,
         layout: Layout<'_>,
         cursor: mouse::Cursor,
-        _viewport: &Rectangle,
+        viewport: &Rectangle,
     ) {
         let font = self
             .font
@@ -209,6 +209,7 @@ impl<'a, S: AsRef<str>, Message: 'a> Widget<Message, crate::Renderer> for Dropdo
             font,
             self.selected.and_then(|id| self.selections.get(id)),
             tree.state.downcast_ref::<State>(),
+            viewport,
         );
     }
 
@@ -479,6 +480,7 @@ pub fn draw<'a, S>(
     font: crate::font::Font,
     selected: Option<&'a S>,
     state: &'a State,
+    viewport: &Rectangle,
 ) where
     S: AsRef<str> + 'a,
 {
@@ -538,6 +540,7 @@ pub fn draw<'a, S>(
             },
             bounds.position(),
             style.text_color,
+            *viewport,
         );
     }
 }

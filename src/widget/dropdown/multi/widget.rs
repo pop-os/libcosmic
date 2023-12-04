@@ -147,7 +147,7 @@ impl<'a, S: AsRef<str>, Message: 'a, Item: Clone + PartialEq + 'static>
         _style: &iced_core::renderer::Style,
         layout: Layout<'_>,
         cursor: mouse::Cursor,
-        _viewport: &Rectangle,
+        viewport: &Rectangle,
     ) {
         let font = self
             .font
@@ -168,6 +168,7 @@ impl<'a, S: AsRef<str>, Message: 'a, Item: Clone + PartialEq + 'static>
                 .as_ref()
                 .and_then(|id| self.selections.get(id)),
             tree.state.downcast_ref::<State<Item>>(),
+            viewport,
         );
     }
 
@@ -486,6 +487,7 @@ pub fn draw<'a, S, Item: Clone + PartialEq + 'static>(
     font: crate::font::Font,
     selected: Option<&'a S>,
     state: &'a State<Item>,
+    viewport: &Rectangle,
 ) where
     S: AsRef<str> + 'a,
 {
@@ -547,6 +549,7 @@ pub fn draw<'a, S, Item: Clone + PartialEq + 'static>(
             },
             bounds.position(),
             style.text_color,
+            *viewport,
         );
     }
 }

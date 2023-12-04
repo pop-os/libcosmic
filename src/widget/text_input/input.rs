@@ -1904,6 +1904,7 @@ pub fn draw<'a, Message>(
             },
             bounds.position(),
             appearance.label_color,
+            *viewport,
         );
     }
     let mut child_index = 0;
@@ -2044,6 +2045,7 @@ pub fn draw<'a, Message>(
             },
             bounds.position(),
             color,
+            *viewport,
         );
     };
 
@@ -2091,6 +2093,7 @@ pub fn draw<'a, Message>(
             },
             helper_text_layout.bounds().position(),
             appearance.text_color,
+            *viewport,
         );
     }
 }

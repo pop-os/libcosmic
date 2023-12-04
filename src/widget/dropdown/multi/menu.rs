@@ -195,6 +195,7 @@ impl<'a, Message> iced_core::Overlay<Message, crate::Renderer> for Overlay<'a, M
         renderer: &crate::Renderer,
         bounds: Size,
         position: Point,
+        _translation: iced::Vector,
     ) -> layout::Node {
         let space_below = bounds.height - (position.y + self.target_height);
         let space_above = position.y;
@@ -603,6 +604,7 @@ where
                         },
                         bounds.position(),
                         color,
+                        *viewport,
                     );
                 }
 
@@ -651,6 +653,7 @@ where
                         },
                         bounds.position(),
                         appearance.description_color,
+                        *viewport,
                     );
                 }
             }

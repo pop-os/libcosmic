@@ -475,49 +475,9 @@ impl State {
                 &self.entry_value,
             )
             .on_input(Message::InputChanged)
-            // .on_submit(Message::Activate(None))
             .size(20)
             .id(INPUT_ID.clone())
             .into(),
-            cosmic::widget::text_input("test", &self.entry_value)
-                .on_clear(Message::InputChanged("".to_string()))
-                .width(Length::Fill)
-                .on_input(Message::InputChanged)
-                .into(),
-            cosmic::widget::text_input("test", &self.entry_value)
-                .width(Length::Fixed(600.0))
-                .padding(32)
-                .on_input(Message::InputChanged)
-                .into(),
-            cosmic::widget::search_input("test", &self.entry_value)
-                .on_clear(Message::InputChanged("".to_string()))
-                .width(Length::Fill)
-                .on_input(Message::InputChanged)
-                .into(),
-            cosmic::widget::text_input("test", &self.entry_value)
-                .width(Length::Fixed(600.0))
-                .on_input(Message::InputChanged)
-                .into(),
-            cosmic::widget::search_input("test", &self.entry_value)
-                .width(Length::Fixed(100.0))
-                .on_input(Message::InputChanged)
-                .into(),
-            cosmic::widget::search_input("test", &self.entry_value)
-                .on_clear(Message::InputChanged("".to_string()))
-                .padding([24, 48])
-                .width(Length::Fixed(400.0))
-                .on_input(Message::InputChanged)
-                .into(),
-            cosmic::widget::search_input("test", &self.entry_value)
-                .on_clear(Message::InputChanged("".to_string()))
-                .width(Length::Fixed(400.0))
-                .on_input(Message::InputChanged)
-                .into(),
-            cosmic::widget::search_input("test", &self.entry_value)
-                .on_clear(Message::InputChanged("".to_string()))
-                .width(Length::Fixed(800.0))
-                .on_input(Message::InputChanged)
-                .into(),
             self.color_picker_model
                 .picker_button(Message::ColorPickerUpdate, None)
                 .width(Length::Fixed(128.0))
