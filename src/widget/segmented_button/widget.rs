@@ -226,7 +226,7 @@ where
         &self,
         state: &mut LocalState,
         renderer: &Renderer,
-        bounds: Size,
+        _bounds: Size,
     ) -> (f32, f32) {
         let mut width = 0.0f32;
         let mut height = 0.0f32;

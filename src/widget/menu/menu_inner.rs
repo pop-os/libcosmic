@@ -478,7 +478,7 @@ where
                 let active_tree = &mut tree_children[active_root];
                 state.menu_states.iter().enumerate().fold(
                     (root, Vec::new()),
-                    |(menu_root, mut nodes), (i, ms)| {
+                    |(menu_root, mut nodes), (_i, ms)| {
                         let slice = ms.slice(bounds, overlay_offset, self.item_height);
                         let start_index = slice.start_index;
                         let end_index = slice.end_index;
