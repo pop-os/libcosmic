@@ -209,7 +209,13 @@ impl<'a, 'b, Message, Renderer> overlay::Overlay<Message, Renderer>
 where
     Renderer: iced_core::Renderer,
 {
-    fn layout(&mut self, renderer: &Renderer, bounds: Size, mut position: Point) -> layout::Node {
+    fn layout(
+        &mut self,
+        renderer: &Renderer,
+        bounds: Size,
+        mut position: Point,
+        _translation: iced::Vector,
+    ) -> layout::Node {
         let limits = layout::Limits::new(Size::UNIT, bounds);
         let mut node = self
             .content

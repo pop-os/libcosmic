@@ -466,7 +466,13 @@ where
     Renderer: renderer::Renderer,
     Renderer::Theme: StyleSheet,
 {
-    fn layout(&mut self, renderer: &Renderer, bounds: Size, position: Point) -> Node {
+    fn layout(
+        &mut self,
+        renderer: &Renderer,
+        bounds: Size,
+        position: Point,
+        _translation: iced::Vector,
+    ) -> Node {
         // layout children
         let state = self.tree.state.downcast_mut::<MenuBarState>();
         let overlay_offset = Point::ORIGIN - position;

@@ -25,6 +25,7 @@ where
         renderer: &crate::Renderer,
         bounds: Size,
         position: Point,
+        _translation: iced::Vector,
     ) -> layout::Node {
         let limits = layout::Limits::new(Size::ZERO, bounds)
             .width(self.width)

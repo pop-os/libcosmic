@@ -644,6 +644,7 @@ where
                     },
                     bounds.position(),
                     status_appearance.text_color,
+                    *viewport,
                 );
             }
 
