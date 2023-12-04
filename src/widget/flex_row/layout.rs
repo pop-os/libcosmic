@@ -28,7 +28,7 @@ pub fn resolve<Message>(
 
     let mut row_buffer = Vec::<Node>::with_capacity(8);
 
-    for (child, tree) in items.iter().zip(tree.into_iter()) {
+    for (child, tree) in items.iter().zip(tree.iter_mut()) {
         // Calculate the dimensions of the item.
         let child_node = child.as_widget().layout(tree, renderer, &limits);
         let size = child_node.size();

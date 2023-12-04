@@ -196,7 +196,6 @@ pub struct TextInput<'a, Message> {
     leading_icon: Option<Element<'a, Message, crate::Renderer>>,
     trailing_icon: Option<Element<'a, Message, crate::Renderer>>,
     style: <<crate::Renderer as iced_core::Renderer>::Theme as StyleSheet>::Style,
-    // (text_input::State, mime_type, dnd_action) -> Message
     on_create_dnd_source: Option<Box<dyn Fn(State) -> Message + 'a>>,
     on_dnd_command_produced: Option<Box<dyn Fn(DnDCommand) -> Message + 'a>>,
     surface_ids: Option<(window::Id, window::Id)>,
@@ -1074,10 +1073,10 @@ pub fn update<'a, Message>(
     on_paste: Option<&dyn Fn(String) -> Message>,
     on_submit: &Option<Message>,
     state: impl FnOnce() -> &'a mut State,
-    on_start_dnd_source: Option<&dyn Fn(State) -> Message>,
-    _dnd_icon: bool,
-    on_dnd_command_produced: Option<&dyn Fn(DnDCommand) -> Message>,
-    surface_ids: Option<(window::Id, window::Id)>,
+    #[allow(unused_variables)] on_start_dnd_source: Option<&dyn Fn(State) -> Message>,
+    #[allow(unused_variables)] dnd_icon: bool,
+    #[allow(unused_variables)] on_dnd_command_produced: Option<&dyn Fn(DnDCommand) -> Message>,
+    #[allow(unused_variables)] surface_ids: Option<(window::Id, window::Id)>,
     line_height: text::LineHeight,
     layout: Layout<'_>,
 ) -> event::Status
@@ -1203,7 +1202,7 @@ where
                                     find_cursor_position(
                                         text_layout.bounds(),
                                         &value,
-                                        &state,
+                                        state,
                                         target,
                                     )
                                 } else {
@@ -2156,6 +2155,7 @@ pub struct State {
     pub label: crate::Paragraph,
     is_focused: Option<Focus>,
     dragging_state: Option<DraggingState>,
+    #[cfg(feature = "wayland")]
     dnd_offer: DndOfferState,
     is_pasting: Option<Value>,
     last_click: Option<mouse::Click>,
@@ -2209,7 +2209,7 @@ impl State {
 
             is_focused: None,
             dragging_state: None,
-            #[allow(clippy::default_constructed_unit_structs)]
+            #[cfg(feature = "wayland")]
             dnd_offer: DndOfferState::default(),
             is_pasting: None,
             last_click: None,

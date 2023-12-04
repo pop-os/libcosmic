@@ -6,7 +6,7 @@
 use iced::{
     event,
     keyboard::{self, KeyCode},
-    mouse, subscription, Command, Event, Subscription,
+    mouse, Command, Event, Subscription,
 };
 use iced_core::{
     widget::{operation, Id, Operation},

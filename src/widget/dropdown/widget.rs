@@ -413,13 +413,13 @@ pub fn mouse_interaction(layout: Layout<'_>, cursor: mouse::Cursor) -> mouse::In
 #[allow(clippy::too_many_arguments)]
 pub fn overlay<'a, S: AsRef<str>, Message: 'a>(
     layout: Layout<'_>,
-    renderer: &crate::Renderer,
+    _renderer: &crate::Renderer,
     state: &'a mut State,
     gap: f32,
     padding: Padding,
     text_size: f32,
-    text_line_height: text::LineHeight,
-    font: Option<crate::font::Font>,
+    _text_line_height: text::LineHeight,
+    _font: Option<crate::font::Font>,
     selections: &'a [S],
     selected_option: Option<usize>,
     on_selected: &'a dyn Fn(usize) -> Message,
@@ -440,7 +440,7 @@ pub fn overlay<'a, S: AsRef<str>, Message: 'a>(
             None,
         )
         .width({
-            let measure = |label: &str, selection_paragraph: &mut crate::Paragraph| -> f32 {
+            let measure = |_label: &str, selection_paragraph: &mut crate::Paragraph| -> f32 {
                 selection_paragraph.min_width().round()
             };
 
