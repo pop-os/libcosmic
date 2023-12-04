@@ -24,7 +24,7 @@ pub fn resolve<Message>(
     let mut current_row_width = 0.0f32;
     let mut current_row_height = 0.0f32;
 
-    let mut row_buffer = Vec::with_capacity(8);
+    let mut row_buffer = Vec::<Node>::with_capacity(8);
 
     for child in items {
         // Calculate the dimensions of the item.
@@ -40,12 +40,7 @@ pub fn resolve<Message>(
             };
 
         // If it fits, add it to the current row, or create a new one.
-        if current_row_width + required_width <= max_flex_width {
-            current_row_width += required_width;
-            current_row_height = current_row_height.max(size.height);
-
-            row_buffer.push(child_node);
-        } else {
+        if current_row_width + required_width > max_flex_width {
             if flex_height != 0.0f32 {
                 flex_height += column_spacing;
             }
@@ -61,8 +56,32 @@ pub fn resolve<Message>(
 
             flex_height += current_row_height;
             flex_width = flex_width.max(current_row_width);
-            current_row_width = 0.0f32;
+
+            current_row_width = 0.0;
         }
+
+        current_row_width += required_width;
+        current_row_height = current_row_height.max(size.height);
+
+        row_buffer.push(child_node);
+    }
+
+    if !row_buffer.is_empty() {
+        if flex_height != 0.0f32 {
+            flex_height += column_spacing;
+        }
+
+        let mut pos_x = 0.0f32;
+        let pos_y = flex_height;
+
+        for mut child_node in row_buffer.drain(..) {
+            child_node.move_to(Point::new(pos_x, pos_y));
+            pos_x += row_spacing + child_node.size().width;
+            nodes.push(child_node);
+        }
+
+        flex_height += current_row_height;
+        flex_width = flex_width.max(current_row_width);
     }
 
     let flex_size = limits.resolve(Size::new(flex_width, flex_height));
