@@ -93,6 +93,10 @@ where
         }
     }
 
+    pub fn diff(&mut self, tree: &mut Tree) {
+        self.container.diff(tree);
+    }
+
     /// Sets the [`Padding`] of the [`Container`].
     #[must_use]
     pub fn padding<P: Into<Padding>>(mut self, padding: P) -> Self {
@@ -181,6 +185,10 @@ where
 {
     fn children(&self) -> Vec<Tree> {
         self.container.children()
+    }
+
+    fn state(&self) -> iced_core::widget::tree::State {
+        self.container.state()
     }
 
     fn diff(&mut self, tree: &mut Tree) {
