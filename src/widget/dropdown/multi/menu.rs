@@ -213,9 +213,7 @@ impl<'a, Message> iced_core::Overlay<Message, crate::Renderer> for Overlay<'a, M
         )
         .width(self.width);
 
-        let mut node = self
-            .container
-            .layout(&mut self.state.children[0], renderer, &limits);
+        let mut node = self.container.layout(self.state, renderer, &limits);
 
         node.move_to(if space_below > space_above {
             position + Vector::new(0.0, self.target_height)
