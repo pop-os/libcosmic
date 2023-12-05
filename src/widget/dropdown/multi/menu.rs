@@ -515,7 +515,7 @@ where
         let mut current_offset = 0.0;
 
         for (elem, elem_height) in visible_options {
-            let bounds = Rectangle {
+            let mut bounds = Rectangle {
                 x: bounds.x,
                 y: bounds.y + current_offset,
                 width: bounds.width,
@@ -530,13 +530,15 @@ where
                         let item_x = bounds.x + appearance.border_width;
                         let item_width = bounds.width - appearance.border_width * 2.0;
 
+                        bounds = Rectangle {
+                            x: item_x,
+                            width: item_width,
+                            ..bounds
+                        };
+
                         renderer.fill_quad(
                             renderer::Quad {
-                                bounds: Rectangle {
-                                    x: item_x,
-                                    width: item_width,
-                                    ..bounds
-                                },
+                                bounds,
                                 border_color: Color::TRANSPARENT,
                                 border_width: 0.0,
                                 border_radius: appearance.border_radius,
@@ -563,13 +565,15 @@ where
                         let item_x = bounds.x + appearance.border_width;
                         let item_width = bounds.width - appearance.border_width * 2.0;
 
+                        bounds = Rectangle {
+                            x: item_x,
+                            width: item_width,
+                            ..bounds
+                        };
+
                         renderer.fill_quad(
                             renderer::Quad {
-                                bounds: Rectangle {
-                                    x: item_x,
-                                    width: item_width,
-                                    ..bounds
-                                },
+                                bounds,
                                 border_color: Color::TRANSPARENT,
                                 border_width: 0.0,
                                 border_radius: appearance.border_radius,
@@ -617,7 +621,7 @@ where
 
                     layout_node.move_to(Point {
                         x: bounds.x,
-                        y: bounds.y + self.padding.top,
+                        y: bounds.y + (self.padding.vertical() / 2.0) - 4.0,
                     });
 
                     Widget::<Message, crate::Renderer>::draw(
