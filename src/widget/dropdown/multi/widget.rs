@@ -94,14 +94,25 @@ impl<'a, S: AsRef<str>, Message: 'a, Item: Clone + PartialEq + 'static>
             self.text_line_height,
             self.font,
             self.selections.selected.as_ref().and_then(|id| {
-                self.selections.get(id).map(AsRef::as_ref).zip(
-                    tree.state
-                        .downcast_mut::<State<Item>>()
+                self.selections.get(id).map(AsRef::as_ref).zip({
+                    let state = tree.state.downcast_mut::<State<Item>>();
+
+                    if state.selections.is_empty() {
+                        for list in &self.selections.lists {
+                            for (_, item) in &list.options {
+                                state
+                                    .selections
+                                    .push((item.clone(), crate::Paragraph::new()));
+                            }
+                        }
+                    }
+
+                    state
                         .selections
                         .iter_mut()
                         .find(|(i, _)| i == id)
-                        .map(|(_, p)| p),
-                )
+                        .map(|(_, p)| p)
+                })
             }),
         )
     }
@@ -432,16 +443,14 @@ pub fn overlay<'a, S: AsRef<str>, Message: 'a, Item: Clone + PartialEq + 'static
                     }
 
                     super::menu::OptionElement::Option((option, item)) => {
-                        let paragraph = if let Some(index) =
-                            state.selections.iter().position(|(i, _)| i == item)
-                        {
-                            &mut state.selections[index].1
-                        } else {
-                            state
-                                .selections
-                                .push((item.clone(), crate::Paragraph::new()));
-                            &mut state.selections.last_mut().unwrap().1
-                        };
+                        let selection_index = state
+                            .selections
+                            .iter()
+                            .position(|(i, _)| i == item)
+                            .expect("selection missing from state");
+
+                        let paragraph = &mut state.selections[selection_index].1;
+
                         measure(option.as_ref(), paragraph, text_line_height)
                     }
 
