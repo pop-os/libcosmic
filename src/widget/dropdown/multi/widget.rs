@@ -382,6 +382,10 @@ pub fn overlay<'a, S: AsRef<str>, Message: 'a, Item: Clone + PartialEq + 'static
     on_selected: &'a dyn Fn(Item) -> Message,
 ) -> Option<overlay::Element<'a, Message, crate::Renderer>> {
     if state.is_open {
+        let description_line_height = text::LineHeight::Absolute(Pixels(
+            text_line_height.to_absolute(Pixels(text_size)).0 + 4.0,
+        ));
+
         let bounds = layout.bounds();
 
         let menu = Menu::new(
@@ -397,33 +401,20 @@ pub fn overlay<'a, S: AsRef<str>, Message: 'a, Item: Clone + PartialEq + 'static
             None,
         )
         .width({
-            let measure = |label: &str, paragraph: &mut crate::Paragraph| {
-                paragraph.update(Text {
-                    content: label,
-                    bounds: Size::new(f32::MAX, f32::MAX),
-                    size: iced::Pixels(text_size),
-                    line_height: text_line_height,
-                    font: font.unwrap_or_else(|| text::Renderer::default_font(renderer)),
-                    horizontal_alignment: alignment::Horizontal::Left,
-                    vertical_alignment: alignment::Vertical::Top,
-                    shaping: text::Shaping::Advanced,
-                });
-                paragraph.min_width().round()
-            };
-
-            let measure_description = |label: &str, paragraph: &mut crate::Paragraph| {
-                paragraph.update(Text {
-                    content: label,
-                    bounds: Size::new(f32::MAX, f32::MAX),
-                    size: iced::Pixels(text_size + 4.0),
-                    line_height: text_line_height,
-                    font: font.unwrap_or_else(|| text::Renderer::default_font(renderer)),
-                    horizontal_alignment: alignment::Horizontal::Left,
-                    vertical_alignment: alignment::Vertical::Top,
-                    shaping: text::Shaping::Advanced,
-                });
-                paragraph.min_width().round()
-            };
+            let measure =
+                |label: &str, paragraph: &mut crate::Paragraph, line_height: text::LineHeight| {
+                    paragraph.update(Text {
+                        content: label,
+                        bounds: Size::new(f32::MAX, f32::MAX),
+                        size: iced::Pixels(text_size),
+                        line_height,
+                        font: font.unwrap_or_else(|| text::Renderer::default_font(renderer)),
+                        horizontal_alignment: alignment::Horizontal::Left,
+                        vertical_alignment: alignment::Vertical::Top,
+                        shaping: text::Shaping::Advanced,
+                    });
+                    paragraph.min_width().round()
+                };
 
             let mut desc_count = 0;
             selections
@@ -437,7 +428,7 @@ pub fn overlay<'a, S: AsRef<str>, Message: 'a, Item: Clone + PartialEq + 'static
                             state.descriptions.last_mut().unwrap()
                         };
                         desc_count += 1;
-                        measure_description(desc.as_ref(), paragraph)
+                        measure(desc.as_ref(), paragraph, description_line_height)
                     }
 
                     super::menu::OptionElement::Option((option, item)) => {
@@ -451,7 +442,7 @@ pub fn overlay<'a, S: AsRef<str>, Message: 'a, Item: Clone + PartialEq + 'static
                                 .push((item.clone(), crate::Paragraph::new()));
                             &mut state.selections.last_mut().unwrap().1
                         };
-                        measure(option.as_ref(), paragraph)
+                        measure(option.as_ref(), paragraph, text_line_height)
                     }
 
                     super::menu::OptionElement::Separator => 1.0,
