@@ -584,9 +584,10 @@ where
 
                     let bounds = Rectangle {
                         x: bounds.x + self.padding.left,
-                        y: bounds.y + self.padding.top,
+                        // TODO: Figure out why it's offset by 8 pixels
+                        y: bounds.y + self.padding.top + 8.0,
                         width: bounds.width,
-                        height: bounds.height,
+                        height: elem_height,
                     };
                     text::Renderer::fill_text(
                         renderer,
