@@ -248,17 +248,13 @@ impl MenuBounds {
         aod: &Aod,
         bounds_expand: u16,
         parent_bounds: Rectangle,
+        tree: &mut [Tree],
     ) -> Self
     where
         Renderer: renderer::Renderer,
     {
-        let (children_size, child_positions, child_sizes) = get_children_layout(
-            menu_tree,
-            renderer,
-            item_width,
-            item_height,
-            &mut Tree::new(&menu_tree.item),
-        );
+        let (children_size, child_positions, child_sizes) =
+            get_children_layout(menu_tree, renderer, item_width, item_height, tree);
 
         // viewport space parent bounds
         let view_parent_bounds = parent_bounds + overlay_offset;
@@ -809,6 +805,7 @@ fn init_root_menu<Message, Renderer>(
                 &aod,
                 menu.bounds_expand,
                 root_bounds,
+                &mut menu.tree.children[i].children,
             );
 
             state.active_root = Some(i);
@@ -1072,6 +1069,7 @@ where
                 &aod,
                 menu.bounds_expand,
                 item_bounds,
+                &mut menu.tree.children[active_root].children,
             ),
         });
     }
@@ -1163,7 +1161,7 @@ fn get_children_layout<Message, Renderer>(
     renderer: &Renderer,
     item_width: ItemWidth,
     item_height: ItemHeight,
-    tree: &mut Tree,
+    tree: &mut [Tree],
 ) -> (Size, Vec<f32>, Vec<Size>)
 where
     Renderer: renderer::Renderer,
@@ -1186,15 +1184,14 @@ where
         ItemHeight::Dynamic(d) => menu_tree
             .children
             .iter()
-            .zip(tree.children.iter_mut())
-            .map(|(mt, tree)| {
+            .map(|mt| {
                 let w = mt.item.as_widget();
                 match w.height() {
                     Length::Fixed(f) => Size::new(width, f),
                     Length::Shrink => {
                         let l_height = w
                             .layout(
-                                tree,
+                                &mut tree[mt.index],
                                 renderer,
                                 &Limits::new(Size::ZERO, Size::new(width, f32::MAX)),
                             )
