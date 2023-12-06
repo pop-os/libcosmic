@@ -216,20 +216,24 @@ where
             tree.children.truncate(self.menu_roots.len());
         }
 
-        /*TODO
         tree.children
             .iter_mut()
             .zip(self.menu_roots.iter())
             .for_each(|(t, root)| {
-                let flat = root
+                let mut flat = root
                     .flattern()
                     .iter()
-                    .map(|mt| mt.item.as_widget())
+                    .map(|mt| {
+                        let widget = mt.item.as_widget();
+                        let widget_ptr = widget as *const dyn Widget<Message, Renderer>;
+                        let widget_ptr_mut = widget_ptr as *mut dyn Widget<Message, Renderer>;
+                        //TODO: find a way to diff_children without unsafe code
+                        unsafe { &mut *widget_ptr_mut }
+                    })
                     .collect::<Vec<_>>();
 
-                t.diff_children(&flat);
+                t.diff_children(flat.as_mut_slice());
             });
-        */
 
         if tree.children.len() < self.menu_roots.len() {
             let extended = self.menu_roots[tree.children.len()..].iter().map(|root| {
