@@ -328,8 +328,7 @@ impl MenuState {
             .iter()
             .zip(self.menu_bounds.child_sizes[start_index..=end_index].iter())
             .zip(menu_tree.children[start_index..=end_index].iter())
-            .zip(tree[start_index..=end_index].iter_mut())
-            .map(|(((cp, size), mt), tree)| {
+            .map(|((cp, size), mt)| {
                 let mut position = *cp;
                 let mut size = *size;
 
@@ -343,7 +342,10 @@ impl MenuState {
 
                 let limits = Limits::new(Size::ZERO, size);
 
-                let mut node = mt.item.as_widget().layout(tree, renderer, &limits);
+                let mut node = mt
+                    .item
+                    .as_widget()
+                    .layout(&mut tree[mt.index], renderer, &limits);
                 node.move_to(Point::new(0.0, position + self.scroll_offset));
                 node
             })
@@ -493,7 +495,7 @@ where
                             slice,
                             renderer,
                             menu_root,
-                            &mut active_tree.children[start_index..=end_index],
+                            &mut active_tree.children,
                         );
                         nodes.push(children_node);
                         // only the last menu can have a None active index
