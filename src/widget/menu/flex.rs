@@ -55,7 +55,7 @@ pub fn resolve<'a, E, Message, Renderer>(
     spacing: f32,
     align_items: Alignment,
     items: &[E],
-    tree: &mut [Tree],
+    tree: &mut [&mut Tree],
 ) -> Node
 where
     E: std::borrow::Borrow<Element<'a, Message, Renderer>>,

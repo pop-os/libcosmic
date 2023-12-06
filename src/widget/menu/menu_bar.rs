@@ -288,6 +288,12 @@ where
             .iter()
             .map(|root| &root.item)
             .collect::<Vec<_>>();
+        // the first children of the tree are the menu roots items
+        let mut tree_children = tree
+            .children
+            .iter_mut()
+            .map(|t| &mut t.children[0])
+            .collect::<Vec<_>>();
         flex::resolve(
             &flex::Axis::Horizontal,
             renderer,
@@ -296,8 +302,7 @@ where
             self.spacing,
             Alignment::Center,
             &children,
-            // the children of the tree are the menu roots
-            &mut tree.children,
+            &mut tree_children,
         )
     }
 
