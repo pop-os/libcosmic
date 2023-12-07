@@ -1,11 +1,11 @@
 use std::collections::HashMap;
 
 use cosmic::{
-    app::Core,
+    app::{command::message::cosmic, Core},
     iced::{self, event, window},
     iced_core::{id, Alignment, Length, Point},
     iced_widget::{column, scrollable, text, text_input},
-    widget::{button, container},
+    widget::{button, container, cosmic_container},
     Command,
 };
 
@@ -132,25 +132,18 @@ impl cosmic::Application for MultiWindow {
 
         let new_window_button = button(text("New Window")).on_press(Message::NewWindow);
 
-        let content = scrollable(
-            column![input, new_window_button]
-                .spacing(50)
-                .width(Length::Fill)
-                .align_items(Alignment::Center),
-        );
+        let content = column![input, new_window_button]
+            .spacing(50)
+            .width(Length::Fill)
+            .align_items(Alignment::Center);
 
-        container(container(content).width(200).center_x())
+        cosmic_container::container(container(content).width(200).center_x())
+            .style(cosmic::style::Container::Background)
             .width(Length::Fill)
             .height(Length::Fill)
             .center_x()
             .center_y()
             .into()
-    }
-
-    fn style(
-        &self,
-    ) -> Option<<cosmic::Theme as cosmic::iced_style::application::StyleSheet>::Style> {
-        Some(Default::default())
     }
 
     fn view(&self) -> cosmic::prelude::Element<Self::Message> {

@@ -392,7 +392,7 @@ impl container::StyleSheet for Theme {
                     icon_color: Some(Color::from(palette.accent.base)),
                     text_color: Some(Color::from(palette.background.on)),
                     background: Some(iced::Background::Gradient(iced_core::Gradient::Linear(
-                        Linear::new(Radians(3.0 * PI / 2.0))
+                        Linear::new(Radians(PI))
                             .add_stop(0.0, header_top.into())
                             .add_stop(1.0, header_bottom.into()),
                     ))),

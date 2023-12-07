@@ -95,7 +95,7 @@ impl Default for Settings {
             #[cfg(feature = "wayland")]
             size_limits: Limits::NONE.min_height(1.0).min_width(1.0),
             theme: crate::theme::system_preference(),
-            transparent: false,
+            transparent: true,
             exit_on_close: true,
         }
     }
