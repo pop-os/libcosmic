@@ -114,7 +114,7 @@ where
     }
 
     #[cfg(feature = "multi-window")]
-    fn scale_factor(&self, id: window::Id) -> f64 {
+    fn scale_factor(&self, _id: window::Id) -> f64 {
         f64::from(self.app.core().scale_factor())
     }
 
@@ -203,7 +203,7 @@ where
     }
 
     #[cfg(feature = "multi-window")]
-    fn theme(&self, id: window::Id) -> Self::Theme {
+    fn theme(&self, _id: window::Id) -> Self::Theme {
         crate::theme::active()
     }
 
