@@ -47,6 +47,9 @@ use crate::theme::THEME;
 use crate::widget::{context_drawer, nav_bar};
 use apply::Apply;
 use iced::Subscription;
+#[cfg(all(feature = "winit", feature = "multi-window"))]
+use iced::{multi_window::Application as IcedApplication, window};
+#[cfg(any(not(feature = "winit"), not(feature = "multi-window")))]
 use iced::{window, Application as IcedApplication};
 pub use message::Message;
 use url::Url;
@@ -70,8 +73,8 @@ pub(crate) fn iced_settings<App: Application>(
     let mut core = Core::default();
     core.debug = settings.debug;
     core.set_scale_factor(settings.scale_factor);
-    core.set_window_width(settings.size.0);
-    core.set_window_height(settings.size.1);
+    core.set_window_width(settings.size.width as u32);
+    core.set_window_height(settings.size.height as u32);
 
     THEME.with(move |t| {
         let mut cosmic_theme = t.borrow_mut();
@@ -98,7 +101,7 @@ pub(crate) fn iced_settings<App: Application>(
                 autosize: settings.autosize,
                 client_decorations: settings.client_decorations,
                 resizable: settings.resizable,
-                size: settings.size,
+                size: (settings.size.width as u32, settings.size.height as u32).into(),
                 size_limits: settings.size_limits,
                 title: None,
                 transparent: settings.transparent,
@@ -428,11 +431,6 @@ where
     /// Called before closing the application.
     fn on_app_exit(&mut self) {}
 
-    #[cfg(feature = "wayland")]
-    fn should_exit(&self) -> bool {
-        false
-    }
-
     /// Called when a window requests to be closed.
     fn on_close_requested(&self, id: window::Id) -> Option<Self::Message> {
         None
@@ -471,7 +469,7 @@ where
 
     /// Constructs views for other windows.
     fn view_window(&self, id: window::Id) -> Element<Self::Message> {
-        panic!("no view for window {}", id.0);
+        panic!("no view for window {:?}", id);
     }
 
     /// Overrides the default style for applications
@@ -499,9 +497,14 @@ pub trait ApplicationExt: Application {
 
     /// Minimizes the window.
     fn minimize(&mut self) -> iced::Command<Message<Self::Message>>;
-
     /// Get the title of the main window.
+
+    #[cfg(not(feature = "multi-window"))]
     fn title(&self) -> &str;
+
+    #[cfg(feature = "multi-window")]
+    /// Get the title of a window.
+    fn title(&self, id: window::Id) -> &str;
 
     /// Set the context drawer title.
     fn set_context_title(&mut self, title: String) {
@@ -513,8 +516,17 @@ pub trait ApplicationExt: Application {
         self.core_mut().set_header_title(title);
     }
 
+    #[cfg(not(feature = "multi-window"))]
     /// Set the title of the main window.
     fn set_window_title(&mut self, title: String) -> iced::Command<Message<Self::Message>>;
+
+    #[cfg(feature = "multi-window")]
+    /// Set the title of a window.
+    fn set_window_title(
+        &mut self,
+        title: String,
+        id: window::Id,
+    ) -> iced::Command<Message<Self::Message>>;
 
     /// View template for the main window.
     fn view_main(&self) -> Element<Message<Self::Message>>;
@@ -522,30 +534,42 @@ pub trait ApplicationExt: Application {
 
 impl<App: Application> ApplicationExt for App {
     fn drag(&mut self) -> iced::Command<Message<Self::Message>> {
-        command::drag()
+        command::drag(Some(window::Id::MAIN))
     }
 
     fn fullscreen(&mut self) -> iced::Command<Message<Self::Message>> {
-        command::fullscreen()
+        command::fullscreen(Some(window::Id::MAIN))
     }
 
     fn minimize(&mut self) -> iced::Command<Message<Self::Message>> {
-        command::minimize()
+        command::minimize(Some(window::Id::MAIN))
     }
 
+    #[cfg(feature = "multi-window")]
+    fn title(&self, id: window::Id) -> &str {
+        self.core().title.get(&id).map(|s| s.as_str()).unwrap_or("")
+    }
+
+    #[cfg(not(feature = "multi-window"))]
     fn title(&self) -> &str {
-        &self.core().title
+        &self.core().window.header_title
     }
 
-    #[cfg(feature = "wayland")]
-    fn set_window_title(&mut self, title: String) -> iced::Command<Message<Self::Message>> {
-        self.core_mut().title = title.clone();
-        command::set_title(title)
+    #[cfg(feature = "multi-window")]
+    fn set_window_title(
+        &mut self,
+        title: String,
+        id: window::Id,
+    ) -> iced::Command<Message<Self::Message>> {
+        self.core_mut().title.insert(id, title.clone());
+        command::set_title(Some(id), title)
     }
 
-    #[cfg(not(feature = "wayland"))]
+    #[cfg(not(feature = "multi-window"))]
     fn set_window_title(&mut self, title: String) -> iced::Command<Message<Self::Message>> {
-        self.core_mut().title = title.clone();
+        self.core_mut()
+            .title
+            .insert(window::Id::MAIN, title.clone());
         iced::Command::none()
     }
 

@@ -4,6 +4,7 @@
 //! Application API example
 
 use cosmic::app::{Command, Core, Settings};
+use cosmic::iced_core::Size;
 use cosmic::widget::nav_bar;
 use cosmic::{executor, iced, ApplicationExt, Element};
 
@@ -43,7 +44,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .default_icon_theme("Pop")
         .default_text_size(16.0)
         .scale_factor(1.0)
-        .size((1024, 768))
+        .size(Size::new(1024., 768.))
         .theme(cosmic::Theme::dark());
 
     cosmic::app::run::<App>(settings, input)?;

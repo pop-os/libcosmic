@@ -1,8 +1,11 @@
 // Copyright 2023 System76 <info@system76.com>
 // SPDX-License-Identifier: MPL-2.0
 
+use std::collections::HashMap;
+
 use cosmic_config::CosmicConfigEntry;
 use cosmic_theme::ThemeMode;
+use iced_core::window::Id;
 
 use crate::Theme;
 
@@ -56,7 +59,7 @@ pub struct Core {
     /// Theme mode
     pub(super) system_theme_mode: ThemeMode,
 
-    pub(super) title: String,
+    pub(super) title: HashMap<Id, String>,
 
     pub window: Window,
 
@@ -78,7 +81,7 @@ impl Default for Core {
                 toggled_condensed: true,
             },
             scale_factor: 1.0,
-            title: String::new(),
+            title: HashMap::new(),
             theme_sub_counter: 0,
             system_theme: crate::theme::active(),
             system_theme_mode: ThemeMode::config()

@@ -31,10 +31,10 @@ where
             .width(self.width)
             .height(bounds.height - 8.0 - position.y);
 
-        let mut node =
-            self.content
-                .as_widget()
-                .layout(&mut self.tree, renderer, &limits);
+        let mut node = self
+            .content
+            .as_widget()
+            .layout(&mut self.tree, renderer, &limits);
         let node_size = node.size();
 
         node.move_to(Point {

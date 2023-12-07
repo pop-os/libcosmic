@@ -12,7 +12,13 @@ use cosmic_theme::ThemeMode;
 use iced::event::wayland::{self, WindowEvent};
 #[cfg(feature = "wayland")]
 use iced::event::PlatformSpecific;
+#[cfg(all(feature = "winit", feature = "multi-window"))]
+use iced::multi_window::Application as IcedApplication;
+#[cfg(feature = "wayland")]
+use iced::wayland::Application as IcedApplication;
 use iced::window;
+#[cfg(not(feature = "multi-window"))]
+use iced::Application as IcedApplication;
 use iced_futures::event::listen_raw;
 #[cfg(not(feature = "wayland"))]
 use iced_runtime::command::Action;
@@ -67,7 +73,7 @@ pub(crate) struct Cosmic<App> {
     pub(crate) should_exit: bool,
 }
 
-impl<T: Application> iced::Application for Cosmic<T>
+impl<T: Application> IcedApplication for Cosmic<T>
 where
     T::Message: Send + 'static,
 {
@@ -82,15 +88,14 @@ where
         (Self::new(model), command)
     }
 
-    #[cfg(feature = "wayland")]
-    fn close_requested(&self, id: window::Id) -> Self::Message {
-        self.app
-            .on_close_requested(id)
-            .map_or(super::Message::None, super::Message::App)
-    }
-
+    #[cfg(not(feature = "multi-window"))]
     fn title(&self) -> String {
         self.app.title().to_string()
+    }
+
+    #[cfg(feature = "multi-window")]
+    fn title(&self, id: window::Id) -> String {
+        self.app.title(id).to_string()
     }
 
     fn update(&mut self, message: Self::Message) -> iced::Command<Self::Message> {
@@ -103,13 +108,14 @@ where
         }
     }
 
+    #[cfg(not(feature = "multi-window"))]
     fn scale_factor(&self) -> f64 {
         f64::from(self.app.core().scale_factor())
     }
 
-    #[cfg(feature = "wayland")]
-    fn should_exit(&self) -> bool {
-        self.should_exit || self.app.should_exit()
+    #[cfg(feature = "multi-window")]
+    fn scale_factor(&self, id: window::Id) -> f64 {
+        f64::from(self.app.core().scale_factor())
     }
 
     fn style(&self) -> <Self::Theme as iced_style::application::StyleSheet>::Style {
@@ -191,13 +197,19 @@ where
         ])
     }
 
+    #[cfg(not(feature = "multi-window"))]
     fn theme(&self) -> Self::Theme {
         crate::theme::active()
     }
 
-    #[cfg(feature = "wayland")]
+    #[cfg(feature = "multi-window")]
+    fn theme(&self, id: window::Id) -> Self::Theme {
+        crate::theme::active()
+    }
+
+    #[cfg(feature = "multi-window")]
     fn view(&self, id: window::Id) -> Element<Self::Message> {
-        if id != window::Id(0) {
+        if id != window::Id::MAIN {
             return self.app.view_window(id).map(super::Message::App);
         }
 
@@ -208,7 +220,7 @@ where
         }
     }
 
-    #[cfg(not(feature = "wayland"))]
+    #[cfg(not(feature = "multi-window"))]
     fn view(&self) -> Element<Self::Message> {
         self.app.view_main()
     }
@@ -224,14 +236,14 @@ impl<T: Application> Cosmic<T> {
     #[cfg(not(feature = "wayland"))]
     #[allow(clippy::unused_self)]
     pub fn close(&mut self) -> iced::Command<super::Message<T::Message>> {
-        iced::Command::single(Action::Window(WindowAction::Close))
+        iced::Command::single(Action::Window(WindowAction::Close(window::Id::MAIN)))
     }
 
     #[allow(clippy::too_many_lines)]
     fn cosmic_update(&mut self, message: Message) -> iced::Command<super::Message<T::Message>> {
         match message {
             Message::WindowResize(id, width, height) => {
-                if window::Id(0) == id {
+                if window::Id::MAIN == id {
                     self.app.core_mut().set_window_width(width);
                     self.app.core_mut().set_window_height(height);
                 }
@@ -241,7 +253,7 @@ impl<T: Application> Cosmic<T> {
 
             #[cfg(feature = "wayland")]
             Message::WindowState(id, state) => {
-                if window::Id(0) == id {
+                if window::Id::MAIN == id {
                     self.app.core_mut().window.sharp_corners = state.intersects(
                         WindowState::MAXIMIZED
                             | WindowState::FULLSCREEN
@@ -256,7 +268,7 @@ impl<T: Application> Cosmic<T> {
 
             #[cfg(feature = "wayland")]
             Message::WmCapabilities(id, capabilities) => {
-                if window::Id(0) == id {
+                if window::Id::MAIN == id {
                     self.app.core_mut().window.can_fullscreen =
                         capabilities.contains(WindowManagerCapabilities::FULLSCREEN);
                     self.app.core_mut().window.show_maximize =
@@ -281,25 +293,25 @@ impl<T: Application> Cosmic<T> {
                 keyboard_nav::Message::Escape => return self.app.on_escape(),
                 keyboard_nav::Message::Search => return self.app.on_search(),
 
-                keyboard_nav::Message::Fullscreen => return command::toggle_fullscreen(),
+                keyboard_nav::Message::Fullscreen => return command::toggle_fullscreen(None),
             },
 
             Message::ContextDrawer(show) => {
                 self.app.core_mut().window.show_context = show;
             }
 
-            Message::Drag => return command::drag(),
+            Message::Drag => return command::drag(None),
 
-            Message::Minimize => return command::minimize(),
+            Message::Minimize => return command::minimize(None),
 
             Message::Maximize => {
                 if self.app.core().window.sharp_corners {
                     self.app.core_mut().window.sharp_corners = false;
-                    return command::set_windowed();
+                    return command::set_windowed(None);
                 }
 
                 self.app.core_mut().window.sharp_corners = true;
-                return command::fullscreen();
+                return command::fullscreen(None);
             }
 
             Message::NavBar(key) => {
@@ -370,7 +382,7 @@ impl<T: Application> Cosmic<T> {
             Message::Activate(_token) => {
                 #[cfg(feature = "wayland")]
                 return iced_sctk::commands::activation::activate(
-                    iced::window::Id::default(),
+                    iced::window::Id::MAIN,
                     #[allow(clippy::used_underscore_binding)]
                     _token,
                 );

@@ -1,6 +1,8 @@
 // Copyright 2023 System76 <info@system76.com>
 // SPDX-License-Identifier: MPL-2.0
 
+use iced::window;
+
 /// Asynchronous actions for COSMIC applications.
 use super::Message;
 
@@ -27,16 +29,16 @@ pub mod message {
     }
 }
 
-pub fn drag<M: Send + 'static>() -> iced::Command<Message<M>> {
-    crate::command::drag().map(Message::Cosmic)
+pub fn drag<M: Send + 'static>(id: Option<window::Id>) -> iced::Command<Message<M>> {
+    crate::command::drag(id).map(Message::Cosmic)
 }
 
-pub fn fullscreen<M: Send + 'static>() -> iced::Command<Message<M>> {
-    crate::command::fullscreen().map(Message::Cosmic)
+pub fn fullscreen<M: Send + 'static>(id: Option<window::Id>) -> iced::Command<Message<M>> {
+    crate::command::fullscreen(id).map(Message::Cosmic)
 }
 
-pub fn minimize<M: Send + 'static>() -> iced::Command<Message<M>> {
-    crate::command::minimize().map(Message::Cosmic)
+pub fn minimize<M: Send + 'static>(id: Option<window::Id>) -> iced::Command<Message<M>> {
+    crate::command::minimize(id).map(Message::Cosmic)
 }
 
 pub fn set_scaling_factor<M: Send + 'static>(factor: f32) -> iced::Command<Message<M>> {
@@ -47,14 +49,17 @@ pub fn set_theme<M: Send + 'static>(theme: crate::Theme) -> iced::Command<Messag
     message::cosmic(super::cosmic::Message::AppThemeChange(theme))
 }
 
-pub fn set_title<M: Send + 'static>(title: String) -> iced::Command<Message<M>> {
-    crate::command::set_title(title).map(Message::Cosmic)
+pub fn set_title<M: Send + 'static>(
+    id: Option<window::Id>,
+    title: String,
+) -> iced::Command<Message<M>> {
+    crate::command::set_title(id, title).map(Message::Cosmic)
 }
 
-pub fn set_windowed<M: Send + 'static>() -> iced::Command<Message<M>> {
-    crate::command::set_windowed().map(Message::Cosmic)
+pub fn set_windowed<M: Send + 'static>(id: Option<window::Id>) -> iced::Command<Message<M>> {
+    crate::command::set_windowed(id).map(Message::Cosmic)
 }
 
-pub fn toggle_fullscreen<M: Send + 'static>() -> iced::Command<Message<M>> {
-    crate::command::toggle_fullscreen().map(Message::Cosmic)
+pub fn toggle_fullscreen<M: Send + 'static>(id: Option<window::Id>) -> iced::Command<Message<M>> {
+    crate::command::toggle_fullscreen(id).map(Message::Cosmic)
 }

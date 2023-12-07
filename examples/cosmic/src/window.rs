@@ -436,10 +436,10 @@ impl Application for Window {
             Message::ToggleNavBarCondensed => {
                 self.nav_bar_toggled_condensed = !self.nav_bar_toggled_condensed
             }
-            Message::Drag => return drag(),
-            Message::Close => return close(),
-            Message::Minimize => return minimize(true),
-            Message::Maximize => return toggle_maximize(),
+            Message::Drag => return drag(window::Id::MAIN),
+            Message::Close => return close(window::Id::MAIN),
+            Message::Minimize => return minimize(window::Id::MAIN, true),
+            Message::Maximize => return toggle_maximize(window::Id::MAIN),
 
             Message::InputChanged => {}
 

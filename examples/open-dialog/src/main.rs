@@ -16,7 +16,7 @@ use url::Url;
 #[rustfmt::skip]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let settings = Settings::default()
-        .size((1024, 768));
+        .size(cosmic::iced::Size::new(1024.0, 768.0));
 
     cosmic::app::run::<App>(settings, ())?;
 
@@ -77,7 +77,10 @@ impl cosmic::Application for App {
         };
 
         app.set_header_title("Open a file".into());
-        let cmd = app.set_window_title("COSMIC OpenDialog Demo".into());
+        let cmd = app.set_window_title(
+            "COSMIC OpenDialog Demo".into(),
+            cosmic::iced::window::Id::MAIN,
+        );
 
         (app, cmd)
     }
