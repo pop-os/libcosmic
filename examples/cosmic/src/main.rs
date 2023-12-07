@@ -15,6 +15,6 @@ pub fn main() -> cosmic::iced::Result {
     env_logger::init_from_env(env);
     cosmic::icon_theme::set_default("Pop");
     let mut settings = Settings::default();
-    settings.window.min_size = Some((600, 300));
+    settings.window.min_size = Some(cosmic::iced::Size::new(600., 300.));
     Window::run(settings)
 }

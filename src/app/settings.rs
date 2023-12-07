@@ -48,7 +48,7 @@ pub struct Settings {
     pub(crate) scale_factor: f32,
 
     /// Initial size of the window.
-    pub(crate) size: (u32, u32),
+    pub(crate) size: iced::Size,
 
     /// Limitations of the window size
     #[cfg(feature = "wayland")]
@@ -91,7 +91,7 @@ impl Default for Settings {
                 .ok()
                 .and_then(|scale| scale.parse::<f32>().ok())
                 .unwrap_or(1.0),
-            size: (1024, 768),
+            size: iced::Size::new(1024.0, 768.0),
             #[cfg(feature = "wayland")]
             size_limits: Limits::NONE.min_height(1.0).min_width(1.0),
             theme: crate::theme::system_preference(),

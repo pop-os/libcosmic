@@ -30,7 +30,10 @@ wayland = [
   "iced/wayland",
   "iced_sctk",
   "cctk",
+  "multi-window",
 ]
+# multi-window support
+multi-window = ["iced_runtime/multi-window", "iced/multi-window", "iced_winit?/multi-window"]
 # Render with wgpu
 wgpu = ["iced/wgpu", "iced_wgpu"]
 # X11 window support via winit

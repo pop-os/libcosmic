@@ -3,7 +3,6 @@
 
 //! Create asynchronous actions to be performed in the background.
 
-#[cfg(feature = "wayland")]
 use iced::window;
 use iced::Command;
 use iced_core::window::Mode;
@@ -33,45 +32,45 @@ pub fn message<M: Send + 'static>(message: M) -> Command<M> {
 
 /// Initiates a window drag.
 #[cfg(feature = "wayland")]
-pub fn drag<M>() -> Command<M> {
-    iced_sctk::commands::window::start_drag_window(window::Id(0))
+pub fn drag<M>(id: Option<window::Id>) -> Command<M> {
+    iced_sctk::commands::window::start_drag_window(id.unwrap_or(window::Id::MAIN))
 }
 
 /// Initiates a window drag.
 #[cfg(not(feature = "wayland"))]
-pub fn drag<M>() -> Command<M> {
-    iced_runtime::window::drag()
+pub fn drag<M>(id: Option<window::Id>) -> Command<M> {
+    iced_runtime::window::drag(id.unwrap_or(window::Id::MAIN))
 }
 
 /// Fullscreens the window.
 #[cfg(feature = "wayland")]
-pub fn fullscreen<M>() -> Command<M> {
-    iced_sctk::commands::window::set_mode_window(window::Id(0), Mode::Fullscreen)
+pub fn fullscreen<M>(id: Option<window::Id>) -> Command<M> {
+    iced_sctk::commands::window::set_mode_window(id.unwrap_or(window::Id::MAIN), Mode::Fullscreen)
 }
 
 /// Fullscreens the window.
 #[cfg(not(feature = "wayland"))]
-pub fn fullscreen<M>() -> Command<M> {
-    iced_runtime::window::change_mode(Mode::Fullscreen)
+pub fn fullscreen<M>(id: Option<window::Id>) -> Command<M> {
+    iced_runtime::window::change_mode(id.unwrap_or(window::Id::MAIN), Mode::Fullscreen)
 }
 
 /// Minimizes the window.
 #[cfg(feature = "wayland")]
-pub fn minimize<M>() -> Command<M> {
-    iced_sctk::commands::window::set_mode_window(window::Id(0), Mode::Hidden)
+pub fn minimize<M>(id: Option<window::Id>) -> Command<M> {
+    iced_sctk::commands::window::set_mode_window(id.unwrap_or(window::Id::MAIN), Mode::Hidden)
 }
 
 /// Minimizes the window.
 #[cfg(not(feature = "wayland"))]
-pub fn minimize<M>() -> Command<M> {
-    iced_runtime::window::minimize(true)
+pub fn minimize<M>(id: Option<window::Id>) -> Command<M> {
+    iced_runtime::window::minimize(id.unwrap_or(window::Id::MAIN), true)
 }
 
 /// Sets the title of a window.
 #[cfg(feature = "wayland")]
-pub fn set_title<M>(title: String) -> Command<M> {
+pub fn set_title<M>(id: Option<window::Id>, title: String) -> Command<M> {
     window_action(WindowAction::Title {
-        id: window::Id(0),
+        id: id.unwrap_or(window::Id::MAIN),
         title,
     })
 }
@@ -79,32 +78,34 @@ pub fn set_title<M>(title: String) -> Command<M> {
 /// Sets the title of a window.
 #[cfg(not(feature = "wayland"))]
 #[allow(unused_variables, clippy::needless_pass_by_value)]
-pub fn set_title<M>(title: String) -> Command<M> {
+pub fn set_title<M>(id: Option<window::Id>, title: String) -> Command<M> {
     Command::none()
 }
 
 /// Sets the window mode to windowed.
 #[cfg(feature = "wayland")]
-pub fn set_windowed<M>() -> Command<M> {
-    iced_sctk::commands::window::set_mode_window(window::Id(0), Mode::Windowed)
+pub fn set_windowed<M>(id: Option<window::Id>) -> Command<M> {
+    iced_sctk::commands::window::set_mode_window(id.unwrap_or(window::Id::MAIN), Mode::Windowed)
 }
 
 /// Sets the window mode to windowed.
 #[cfg(not(feature = "wayland"))]
-pub fn set_windowed<M>() -> Command<M> {
-    iced_runtime::window::change_mode(Mode::Windowed)
+pub fn set_windowed<M>(id: Option<window::Id>) -> Command<M> {
+    iced_runtime::window::change_mode(id.unwrap_or(window::Id::MAIN), Mode::Windowed)
 }
 
 /// Toggles the windows' maximization state.
 #[cfg(feature = "wayland")]
-pub fn toggle_fullscreen<M>() -> Command<M> {
-    window_action(WindowAction::ToggleFullscreen { id: window::Id(0) })
+pub fn toggle_fullscreen<M>(id: Option<window::Id>) -> Command<M> {
+    window_action(WindowAction::ToggleFullscreen {
+        id: id.unwrap_or(window::Id::MAIN),
+    })
 }
 
 /// Toggles the windows' maximization state.
 #[cfg(not(feature = "wayland"))]
-pub fn toggle_fullscreen<M>() -> Command<M> {
-    iced_runtime::window::toggle_maximize()
+pub fn toggle_fullscreen<M>(id: Option<window::Id>) -> Command<M> {
+    iced_runtime::window::toggle_maximize(id.unwrap_or(window::Id::MAIN))
 }
 
 /// Creates a command to apply an action to a window.
