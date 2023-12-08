@@ -89,10 +89,13 @@ impl Context {
     #[allow(clippy::cast_precision_loss)]
     pub fn window_settings(&self) -> crate::app::Settings {
         let (width, height) = self.suggested_size();
-        let width = u32::from(width);
-        let height = u32::from(height);
+        let width = f32::from(width);
+        let height = f32::from(height);
         let mut settings = crate::app::Settings::default()
-            .size((width + APPLET_PADDING * 2, height + APPLET_PADDING * 2))
+            .size(iced_core::Size::new(
+                width + APPLET_PADDING as f32 * 2.,
+                height + APPLET_PADDING as f32 * 2.,
+            ))
             .size_limits(
                 Limits::NONE
                     .min_height(height as f32 + APPLET_PADDING as f32 * 2.0)
@@ -235,6 +238,8 @@ pub fn run<App: Application>(autosize: bool, flags: App::Flags) -> iced::Result 
         crate::icon_theme::set_default(icon_theme);
     }
 
+    let (width, height) = (settings.size.width as u32, settings.size.height as u32);
+
     let mut core = Core::default();
     core.window.show_window_menu = false;
     core.window.show_headerbar = false;
@@ -245,8 +250,8 @@ pub fn run<App: Application>(autosize: bool, flags: App::Flags) -> iced::Result 
 
     core.debug = settings.debug;
     core.set_scale_factor(settings.scale_factor);
-    core.set_window_width(settings.size.0);
-    core.set_window_height(settings.size.1);
+    core.set_window_width(width);
+    core.set_window_height(height);
 
     THEME.with(move |t| {
         let mut cosmic_theme = t.borrow_mut();
@@ -268,7 +273,7 @@ pub fn run<App: Application>(autosize: bool, flags: App::Flags) -> iced::Result 
             autosize: settings.autosize,
             client_decorations: settings.client_decorations,
             resizable: settings.resizable,
-            size: settings.size,
+            size: (width, height),
             size_limits: settings.size_limits,
             title: None,
             transparent: settings.transparent,
