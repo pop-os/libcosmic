@@ -443,11 +443,17 @@ pub fn overlay<'a, S: AsRef<str>, Message: 'a, Item: Clone + PartialEq + 'static
                     }
 
                     super::menu::OptionElement::Option((option, item)) => {
-                        let selection_index = state
-                            .selections
-                            .iter()
-                            .position(|(i, _)| i == item)
-                            .expect("selection missing from state");
+                        let selection_index = state.selections.iter().position(|(i, _)| i == item);
+
+                        let selection_index = match selection_index {
+                            Some(index) => index,
+                            None => {
+                                state
+                                    .selections
+                                    .push((item.clone(), crate::Paragraph::new()));
+                                state.selections.len() - 1
+                            }
+                        };
 
                         let paragraph = &mut state.selections[selection_index].1;
 
