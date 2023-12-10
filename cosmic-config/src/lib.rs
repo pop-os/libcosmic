@@ -169,7 +169,7 @@ impl Config {
     }
 
     // Start a transaction (to set multiple configs at the same time)
-    pub fn transaction<'a>(&'a self) -> ConfigTransaction<'a> {
+    pub fn transaction(&self) -> ConfigTransaction<'_> {
         ConfigTransaction {
             config: self,
             updates: Mutex::new(Vec::new()),
