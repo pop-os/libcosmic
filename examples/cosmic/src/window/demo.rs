@@ -229,7 +229,7 @@ impl State {
             column![].spacing(10).align_items(Alignment::Center),
             |row, theme| {
                 row.push(radio(
-                    format!("{:?}", theme),
+                    format!("{theme:?}"),
                     theme,
                     if ThemeVariant::from(&window.theme.theme_type) == theme {
                         Some(theme)

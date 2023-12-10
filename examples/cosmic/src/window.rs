@@ -263,7 +263,7 @@ impl Window {
 
     fn set_scale_factor(&mut self, factor: f32) {
         self.scale_factor = factor as f64;
-        self.scale_factor_string = format!("{:.2}", factor);
+        self.scale_factor_string = format!("{factor:.2}");
     }
 
     fn sub_page_button<Message: Clone + From<Page> + 'static>(

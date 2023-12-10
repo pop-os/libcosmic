@@ -103,7 +103,7 @@ impl cosmic::Application for MultiWindow {
                 self.windows.insert(
                     id,
                     Window {
-                        input_id: id::Id::new(format!("window_{}", count)),
+                        input_id: id::Id::new(format!("window_{count}")),
                         input_value: String::new(),
                     },
                 );

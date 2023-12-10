@@ -469,7 +469,7 @@ where
 
     /// Constructs views for other windows.
     fn view_window(&self, id: window::Id) -> Element<Self::Message> {
-        panic!("no view for window {:?}", id);
+        panic!("no view for window {id:?}");
     }
 
     /// Overrides the default style for applications
