@@ -291,142 +291,142 @@ impl Theme<Srgba> {
     // TODO convenient getter functions for each named color variable
     /// get @accent_color
     pub fn accent_color(&self) -> Srgba {
-        self.accent.base.clone()
+        self.accent.base
     }
     /// get @success_color
     pub fn success_color(&self) -> Srgba {
-        self.success.base.clone()
+        self.success.base
     }
     /// get @destructive_color
     pub fn destructive_color(&self) -> Srgba {
-        self.destructive.base.clone()
+        self.destructive.base
     }
     /// get @warning_color
     pub fn warning_color(&self) -> Srgba {
-        self.warning.base.clone()
+        self.warning.base
     }
 
     // Containers
     /// get @bg_color
     pub fn bg_color(&self) -> Srgba {
-        self.background.base.clone()
+        self.background.base
     }
     /// get @bg_component_color
     pub fn bg_component_color(&self) -> Srgba {
-        self.background.component.base.clone()
+        self.background.component.base
     }
     /// get @primary_container_color
     pub fn primary_container_color(&self) -> Srgba {
-        self.primary.base.clone()
+        self.primary.base
     }
     /// get @primary_component_color
     pub fn primary_component_color(&self) -> Srgba {
-        self.primary.component.base.clone()
+        self.primary.component.base
     }
     /// get @secondary_container_color
     pub fn secondary_container_color(&self) -> Srgba {
-        self.secondary.base.clone()
+        self.secondary.base
     }
     /// get @secondary_component_color
     pub fn secondary_component_color(&self) -> Srgba {
-        self.secondary.component.base.clone()
+        self.secondary.component.base
     }
     /// get @button_bg_color
     pub fn button_bg_color(&self) -> Srgba {
-        self.button.base.clone()
+        self.button.base
     }
 
     // Text
     /// get @on_bg_color
     pub fn on_bg_color(&self) -> Srgba {
-        self.background.on.clone()
+        self.background.on
     }
     /// get @on_bg_component_color
     pub fn on_bg_component_color(&self) -> Srgba {
-        self.background.component.on.clone()
+        self.background.component.on
     }
     /// get @on_primary_color
     pub fn on_primary_container_color(&self) -> Srgba {
-        self.primary.on.clone()
+        self.primary.on
     }
     /// get @on_primary_component_color
     pub fn on_primary_component_color(&self) -> Srgba {
-        self.primary.component.on.clone()
+        self.primary.component.on
     }
     /// get @on_secondary_color
     pub fn on_secondary_container_color(&self) -> Srgba {
-        self.secondary.on.clone()
+        self.secondary.on
     }
     /// get @on_secondary_component_color
     pub fn on_secondary_component_color(&self) -> Srgba {
-        self.secondary.component.on.clone()
+        self.secondary.component.on
     }
     /// get @accent_text_color
     pub fn accent_text_color(&self) -> Srgba {
-        self.accent.base.clone()
+        self.accent.base
     }
     /// get @success_text_color
     pub fn success_text_color(&self) -> Srgba {
-        self.success.base.clone()
+        self.success.base
     }
     /// get @warning_text_color
     pub fn warning_text_color(&self) -> Srgba {
-        self.warning.base.clone()
+        self.warning.base
     }
     /// get @destructive_text_color
     pub fn destructive_text_color(&self) -> Srgba {
-        self.destructive.base.clone()
+        self.destructive.base
     }
     /// get @on_accent_color
     pub fn on_accent_color(&self) -> Srgba {
-        self.accent.on.clone()
+        self.accent.on
     }
     /// get @on_success_color
     pub fn on_success_color(&self) -> Srgba {
-        self.success.on.clone()
+        self.success.on
     }
     /// get @oon_warning_color
     pub fn on_warning_color(&self) -> Srgba {
-        self.warning.on.clone()
+        self.warning.on
     }
     /// get @on_destructive_color
     pub fn on_destructive_color(&self) -> Srgba {
-        self.destructive.on.clone()
+        self.destructive.on
     }
     /// get @button_color
     pub fn button_color(&self) -> Srgba {
-        self.button.on.clone()
+        self.button.on
     }
 
     // Borders and Dividers
     /// get @bg_divider
     pub fn bg_divider(&self) -> Srgba {
-        self.background.divider.clone()
+        self.background.divider
     }
     /// get @bg_component_divider
     pub fn bg_component_divider(&self) -> Srgba {
-        self.background.component.divider.clone()
+        self.background.component.divider
     }
     /// get @primary_container_divider
     pub fn primary_container_divider(&self) -> Srgba {
-        self.primary.divider.clone()
+        self.primary.divider
     }
     /// get @primary_component_divider
     pub fn primary_component_divider(&self) -> Srgba {
-        self.primary.component.divider.clone()
+        self.primary.component.divider
     }
     /// get @secondary_container_divider
     pub fn secondary_container_divider(&self) -> Srgba {
-        self.secondary.divider.clone()
+        self.secondary.divider
     }
     /// get @button_divider
     pub fn button_divider(&self) -> Srgba {
-        self.button.divider.clone()
+        self.button.divider
     }
 
     /// get @window_header_bg
     pub fn window_header_bg(&self) -> Srgba {
-        self.background.base.clone()
+        self.background.base
     }
 
     /// get @space_none
@@ -765,7 +765,7 @@ impl ThemeBuilder {
         let bg = if let Some(bg_color) = bg_color {
             bg_color
         } else {
-            p_ref.gray_1.clone()
+            p_ref.gray_1
         };
 
         let step_array = steps(bg, NonZeroUsize::new(100).unwrap());
@@ -792,10 +792,10 @@ impl ThemeBuilder {
             text_steps_array.as_ref(),
         );
 
-        let mut component_hovered_overlay = p_ref.neutral_0.clone();
+        let mut component_hovered_overlay = p_ref.neutral_0;
         component_hovered_overlay.alpha = 0.1;
 
-        let mut component_pressed_overlay = p_ref.neutral_0.clone();
+        let mut component_pressed_overlay = p_ref.neutral_0;
         component_pressed_overlay.alpha = 0.2;
 
         let bg_component = Component::component(
@@ -851,7 +851,7 @@ impl ThemeBuilder {
 
         // Standard button background is neutral 7 with 25% opacity
         let button_bg = {
-            let mut color = neutral_7.clone();
+            let mut color = neutral_7;
             color.alpha = 0.25;
             color
         };
@@ -955,7 +955,7 @@ impl ThemeBuilder {
                     p_ref.neutral_8,
                 );
 
-                let mut on_50 = component.on.clone();
+                let mut on_50 = component.on;
                 on_50.alpha = 0.5;
 
                 component.on_disabled = over(on_50, component.base);
