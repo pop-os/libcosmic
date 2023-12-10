@@ -8,7 +8,6 @@ use cosmic::{
     font::load_fonts,
     iced::{self, Application, Command, Length, Subscription},
     iced::{
-        subscription,
         widget::{self, column, container, horizontal_space, row, text},
         window::{self, close, drag, minimize, toggle_maximize},
     },
@@ -306,10 +305,10 @@ impl Window {
         ]).into()
     }
 
-    fn view_unimplemented_sub_page<'a, Message: Clone + From<Page> + 'static>(
-        &'a self,
+    fn view_unimplemented_sub_page<Message: Clone + From<Page> + 'static>(
+        &self,
         sub_page: impl SubPage,
-    ) -> Element<'a, Message> {
+    ) -> Element<'_, Message> {
         settings::view_column(vec![
             self.parent_page_button(sub_page),
             text("We haven't created that panel yet, and/or it is using a similar idea as current Pop! designs.").into(),

@@ -5,7 +5,7 @@ use cosmic::{
     iced::{self, event, window},
     iced_core::{id, Alignment, Length, Point},
     iced_widget::{column, container, scrollable, text, text_input},
-    widget::{button, cosmic_container},
+    widget::button,
     Command,
 };
 
