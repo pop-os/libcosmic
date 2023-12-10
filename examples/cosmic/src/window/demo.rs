@@ -35,19 +35,19 @@ pub enum ThemeVariant {
 impl From<&ThemeType> for ThemeVariant {
     fn from(theme: &ThemeType) -> Self {
         match theme {
-            ThemeType::Light => ThemeVariant::Light,
-            ThemeType::Dark => ThemeVariant::Dark,
-            ThemeType::HighContrastDark => ThemeVariant::HighContrastDark,
-            ThemeType::HighContrastLight => ThemeVariant::HighContrastLight,
-            ThemeType::Custom(_) => ThemeVariant::Custom,
-            ThemeType::System(_) => ThemeVariant::System,
+            ThemeType::Light => Self::Light,
+            ThemeType::Dark => Self::Dark,
+            ThemeType::HighContrastDark => Self::HighContrastDark,
+            ThemeType::HighContrastLight => Self::HighContrastLight,
+            ThemeType::Custom(_) => Self::Custom,
+            ThemeType::System(_) => Self::System,
         }
     }
 }
 
 impl From<ThemeType> for ThemeVariant {
     fn from(theme: ThemeType) -> Self {
-        ThemeVariant::from(&theme)
+        Self::from(&theme)
     }
 }
 
@@ -118,8 +118,8 @@ pub struct State {
 }
 
 impl Default for State {
-    fn default() -> State {
-        State {
+    fn default() -> Self {
+        Self {
             checkbox_value: false,
             dropdown_selected: Some(0),
             dropdown_options: vec!["Option 1", "Option 2", "Option 3", "Option 4"],

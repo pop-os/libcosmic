@@ -43,7 +43,7 @@ impl cosmic::Application for MultiWindow {
     }
 
     fn init(core: Core, _input: Self::Flags) -> (Self, cosmic::app::Command<Self::Message>) {
-        let windows = MultiWindow {
+        let windows = Self {
             windows: HashMap::from([(
                 window::Id::MAIN,
                 Window {

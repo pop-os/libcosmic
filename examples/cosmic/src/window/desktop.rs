@@ -42,8 +42,8 @@ pub enum Message {
 }
 
 impl From<Page> for Message {
-    fn from(page: Page) -> Message {
-        Message::Page(page)
+    fn from(page: Page) -> Self {
+        Self::Page(page)
     }
 }
 

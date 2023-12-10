@@ -135,9 +135,9 @@ impl Page {
 }
 
 impl Default for Page {
-    fn default() -> Page {
+    fn default() -> Self {
         //TODO: what should the default page be?
-        Page::Desktop(None)
+        Self::Desktop(None)
     }
 }
 
@@ -214,8 +214,8 @@ pub enum Message {
 }
 
 impl From<Page> for Message {
-    fn from(page: Page) -> Message {
-        Message::Page(page)
+    fn from(page: Page) -> Self {
+        Self::Page(page)
     }
 }
 
@@ -323,7 +323,7 @@ impl Application for Window {
     type Theme = Theme;
 
     fn new(_flags: ()) -> (Self, Command<Self::Message>) {
-        let mut window = Window::default()
+        let mut window = Self::default()
             .nav_bar_toggled(true)
             .show_maximize(true)
             .show_minimize(true);

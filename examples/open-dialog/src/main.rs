@@ -68,7 +68,7 @@ impl cosmic::Application for App {
 
     /// Creates the application, and optionally emits command on initialize.
     fn init(core: Core, _input: Self::Flags) -> (Self, Command<Self::Message>) {
-        let mut app = App {
+        let mut app = Self {
             core,
             open_sender: None,
             file_contents: String::new(),

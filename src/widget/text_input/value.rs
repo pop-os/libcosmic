@@ -100,7 +100,7 @@ impl Value {
     }
 
     /// Inserts a bunch of graphemes at the given grapheme `index`.
-    pub fn insert_many(&mut self, index: usize, mut value: Value) {
+    pub fn insert_many(&mut self, index: usize, mut value: Self) {
         let _ = self
             .graphemes
             .splice(index..index, value.graphemes.drain(..));

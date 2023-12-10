@@ -19,10 +19,10 @@ pub enum Page {
 impl Page {
     const fn as_str(self) -> &'static str {
         match self {
-            Page::Page1 => "Page 1",
-            Page::Page2 => "Page 2",
-            Page::Page3 => "Page 3",
-            Page::Page4 => "Page 4",
+            Self::Page1 => "Page 1",
+            Self::Page2 => "Page 2",
+            Self::Page3 => "Page 3",
+            Self::Page4 => "Page 4",
         }
     }
 }
@@ -94,7 +94,7 @@ impl cosmic::Application for App {
 
         nav_model.activate_position(0);
 
-        let mut app = App { core, nav_model };
+        let mut app = Self { core, nav_model };
 
         let command = app.update_title();
 
