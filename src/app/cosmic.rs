@@ -17,7 +17,7 @@ use iced::multi_window::Application as IcedApplication;
 #[cfg(feature = "wayland")]
 use iced::wayland::Application as IcedApplication;
 use iced::window;
-#[cfg(not(feature = "multi-window"))]
+#[cfg(not(any(feature = "multi-window", feature = "wayland")))]
 use iced::Application as IcedApplication;
 use iced_futures::event::listen_raw;
 #[cfg(not(feature = "wayland"))]
@@ -88,12 +88,12 @@ where
         (Self::new(model), command)
     }
 
-    #[cfg(not(feature = "multi-window"))]
+    #[cfg(not(any(feature = "multi-window", feature = "wayland")))]
     fn title(&self) -> String {
         self.app.title().to_string()
     }
 
-    #[cfg(feature = "multi-window")]
+    #[cfg(any(feature = "multi-window", feature = "wayland"))]
     fn title(&self, id: window::Id) -> String {
         self.app.title(id).to_string()
     }
@@ -108,12 +108,12 @@ where
         }
     }
 
-    #[cfg(not(feature = "multi-window"))]
+    #[cfg(not(any(feature = "multi-window", feature = "wayland")))]
     fn scale_factor(&self) -> f64 {
         f64::from(self.app.core().scale_factor())
     }
 
-    #[cfg(feature = "multi-window")]
+    #[cfg(any(feature = "multi-window", feature = "wayland"))]
     fn scale_factor(&self, _id: window::Id) -> f64 {
         f64::from(self.app.core().scale_factor())
     }
@@ -197,17 +197,17 @@ where
         ])
     }
 
-    #[cfg(not(feature = "multi-window"))]
+    #[cfg(not(any(feature = "multi-window", feature = "wayland")))]
     fn theme(&self) -> Self::Theme {
         crate::theme::active()
     }
 
-    #[cfg(feature = "multi-window")]
+    #[cfg(any(feature = "multi-window", feature = "wayland"))]
     fn theme(&self, _id: window::Id) -> Self::Theme {
         crate::theme::active()
     }
 
-    #[cfg(feature = "multi-window")]
+    #[cfg(any(feature = "multi-window", feature = "wayland"))]
     fn view(&self, id: window::Id) -> Element<Self::Message> {
         if id != window::Id::MAIN {
             return self.app.view_window(id).map(super::Message::App);
@@ -220,7 +220,7 @@ where
         }
     }
 
-    #[cfg(not(feature = "multi-window"))]
+    #[cfg(not(any(feature = "multi-window", feature = "wayland")))]
     fn view(&self) -> Element<Self::Message> {
         self.app.view_main()
     }
