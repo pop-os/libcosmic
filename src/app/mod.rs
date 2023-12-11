@@ -499,10 +499,10 @@ pub trait ApplicationExt: Application {
     fn minimize(&mut self) -> iced::Command<Message<Self::Message>>;
     /// Get the title of the main window.
 
-    #[cfg(not(feature = "multi-window"))]
+    #[cfg(not(any(feature = "multi-window", feature = "wayland")))]
     fn title(&self) -> &str;
 
-    #[cfg(feature = "multi-window")]
+    #[cfg(any(feature = "multi-window", feature = "wayland"))]
     /// Get the title of a window.
     fn title(&self, id: window::Id) -> &str;
 
@@ -516,11 +516,11 @@ pub trait ApplicationExt: Application {
         self.core_mut().set_header_title(title);
     }
 
-    #[cfg(not(feature = "multi-window"))]
+    #[cfg(not(any(feature = "multi-window", feature = "wayland")))]
     /// Set the title of the main window.
     fn set_window_title(&mut self, title: String) -> iced::Command<Message<Self::Message>>;
 
-    #[cfg(feature = "multi-window")]
+    #[cfg(any(feature = "multi-window", feature = "wayland"))]
     /// Set the title of a window.
     fn set_window_title(
         &mut self,
@@ -545,17 +545,17 @@ impl<App: Application> ApplicationExt for App {
         command::minimize(Some(window::Id::MAIN))
     }
 
-    #[cfg(feature = "multi-window")]
+    #[cfg(any(feature = "multi-window", feature = "wayland"))]
     fn title(&self, id: window::Id) -> &str {
         self.core().title.get(&id).map(|s| s.as_str()).unwrap_or("")
     }
 
-    #[cfg(not(feature = "multi-window"))]
+    #[cfg(not(any(feature = "multi-window", feature = "wayland")))]
     fn title(&self) -> &str {
         &self.core().window.header_title
     }
 
-    #[cfg(feature = "multi-window")]
+    #[cfg(any(feature = "multi-window", feature = "wayland"))]
     fn set_window_title(
         &mut self,
         title: String,
@@ -565,7 +565,7 @@ impl<App: Application> ApplicationExt for App {
         command::set_title(Some(id), title)
     }
 
-    #[cfg(not(feature = "multi-window"))]
+    #[cfg(not(any(feature = "multi-window", feature = "wayland")))]
     fn set_window_title(&mut self, title: String) -> iced::Command<Message<Self::Message>> {
         self.core_mut()
             .title
