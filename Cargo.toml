@@ -53,19 +53,19 @@ derive_setters = "0.1.5"
 lazy_static = "1.4.0"
 palette = "0.7.3"
 tokio = { version = "1.24.2", optional = true }
-cctk = { git = "https://github.com/pop-os/cosmic-protocols", package = "cosmic-client-toolkit", rev = "5faec87", optional = true }
+cctk = { git = "https://github.com/pop-os/cosmic-protocols", package = "cosmic-client-toolkit", rev = "c1b6516", optional = true }
 slotmap = "1.0.6"
-fraction = "0.13.0"
+fraction = "0.14.0"
 cosmic-config = { path = "cosmic-config" }
 tracing = "0.1"
 image = { version = "0.24.6", optional = true }
 thiserror = "1.0.44"
-async-fs = { version = "1.6", optional = true }
-ashpd = { version = "0.5.0", default-features = false, optional = true }
+async-fs = { version = "2.1", optional = true }
+ashpd = { version = "0.6.0", default-features = false, optional = true }
 url = "2.4.0"
 unicode-segmentation = "1.6"
 css-color = "0.2.5"
-nix = { version = "0.26", optional = true }
+nix = { version = "0.27", features = ["process"], optional = true }
 zbus = {version = "3.14.1", default-features = false, optional = true}
 serde = { version = "1.0.180", optional = true }
 
