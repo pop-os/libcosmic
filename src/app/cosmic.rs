@@ -69,8 +69,6 @@ pub enum Message {
 #[derive(Default)]
 pub(crate) struct Cosmic<App> {
     pub(crate) app: App,
-    #[cfg(feature = "wayland")]
-    pub(crate) should_exit: bool,
 }
 
 impl<T: Application> IcedApplication for Cosmic<T>
@@ -229,8 +227,7 @@ where
 impl<T: Application> Cosmic<T> {
     #[cfg(feature = "wayland")]
     pub fn close(&mut self) -> iced::Command<super::Message<T::Message>> {
-        self.should_exit = true;
-        iced::Command::none()
+        iced_sctk::commands::window::close_window(window::Id::MAIN)
     }
 
     #[cfg(not(feature = "wayland"))]
@@ -395,10 +392,6 @@ impl<T: Application> Cosmic<T> {
 
 impl<App: Application> Cosmic<App> {
     pub fn new(app: App) -> Self {
-        Self {
-            app,
-            #[cfg(feature = "wayland")]
-            should_exit: false,
-        }
+        Self { app }
     }
 }
