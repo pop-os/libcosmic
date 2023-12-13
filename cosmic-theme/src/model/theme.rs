@@ -2,7 +2,7 @@ use crate::{
     composite::over, steps::*, Component, Container, CornerRadii, CosmicPalette,
     CosmicPaletteInner, Spacing, ThemeMode, DARK_PALETTE, LIGHT_PALETTE, NAME,
 };
-use cosmic_config::{Config, ConfigGet, ConfigSet, CosmicConfigEntry};
+use cosmic_config::{Config, CosmicConfigEntry};
 use palette::{IntoColor, Srgb, Srgba};
 use serde::{Deserialize, Serialize};
 use std::num::NonZeroUsize;
@@ -32,42 +32,49 @@ pub enum Layer {
 }
 
 /// Cosmic Theme data structure with all colors and its name
-#[derive(Clone, Debug, Deserialize, Serialize, PartialEq)]
-pub struct Theme<C> {
+#[derive(
+    Clone,
+    Debug,
+    Serialize,
+    Deserialize,
+    PartialEq,
+    cosmic_config::cosmic_config_derive::CosmicConfigEntry,
+)]
+pub struct Theme {
     /// name of the theme
     pub name: String,
     /// background element colors
-    pub background: Container<C>,
+    pub background: Container,
     /// primary element colors
-    pub primary: Container<C>,
+    pub primary: Container,
     /// secondary element colors
-    pub secondary: Container<C>,
+    pub secondary: Container,
     /// accent element colors
-    pub accent: Component<C>,
+    pub accent: Component,
     /// suggested element colors
-    pub success: Component<C>,
+    pub success: Component,
     /// destructive element colors
-    pub destructive: Component<C>,
+    pub destructive: Component,
     /// warning element colors
-    pub warning: Component<C>,
+    pub warning: Component,
     /// accent button element colors
-    pub accent_button: Component<C>,
+    pub accent_button: Component,
     /// suggested button element colors
-    pub success_button: Component<C>,
+    pub success_button: Component,
     /// destructive button element colors
-    pub destructive_button: Component<C>,
+    pub destructive_button: Component,
     /// warning button element colors
-    pub warning_button: Component<C>,
+    pub warning_button: Component,
     /// icon button element colors
-    pub icon_button: Component<C>,
+    pub icon_button: Component,
     /// link button element colors
-    pub link_button: Component<C>,
+    pub link_button: Component,
     /// text button element colors
-    pub text_button: Component<C>,
+    pub text_button: Component,
     /// button component styling
-    pub button: Component<C>,
+    pub button: Component,
     /// palette
-    pub palette: CosmicPaletteInner<C>,
+    pub palette: CosmicPaletteInner,
     /// spacing
     pub spacing: Spacing,
     /// corner radii
@@ -86,149 +93,7 @@ pub struct Theme<C> {
     pub is_frosted: bool,
 }
 
-impl cosmic_config::CosmicConfigEntry for Theme<Srgba> {
-    fn write_entry(&self, config: &Config) -> Result<(), cosmic_config::Error> {
-        let self_ = self.clone();
-        // TODO do as transaction
-        let tx = config.transaction();
-
-        tx.set("name", self_.name)?;
-        tx.set("background", self_.background)?;
-        tx.set("primary", self_.primary)?;
-        tx.set("secondary", self_.secondary)?;
-        tx.set("accent", self_.accent)?;
-        tx.set("success", self_.success)?;
-        tx.set("destructive", self_.destructive)?;
-        tx.set("warning", self_.warning)?;
-        tx.set("accent_button", self_.accent_button)?;
-        tx.set("success_button", self_.success_button)?;
-        tx.set("warning_button", self_.warning_button)?;
-        tx.set("destructive_button", self_.destructive_button)?;
-        tx.set("icon_button", self_.icon_button)?;
-        tx.set("link_button", self_.link_button)?;
-        tx.set("text_button", self_.text_button)?;
-        tx.set("button", self_.button)?;
-        tx.set("palette", self_.palette)?;
-        tx.set("is_dark", self_.is_dark)?;
-        tx.set("is_high_contrast", self_.is_high_contrast)?;
-        tx.set("spacing", self_.spacing)?;
-        tx.set("corner_radii", self_.corner_radii)?;
-        tx.set("active_hint", self_.active_hint)?;
-        tx.set("gaps", self_.gaps)?;
-        tx.set("window_hint", self_.window_hint)?;
-
-        tx.commit()
-    }
-
-    fn get_entry(config: &Config) -> Result<Self, (Vec<cosmic_config::Error>, Self)> {
-        let mut default = Self::default();
-        let mut errors = Vec::new();
-
-        match config.get::<String>("name") {
-            Ok(name) => default.name = name,
-            Err(e) => errors.push(e),
-        }
-        match config.get::<Container<Srgba>>("background") {
-            Ok(background) => default.background = background,
-            Err(e) => errors.push(e),
-        }
-        match config.get::<Container<Srgba>>("primary") {
-            Ok(primary) => default.primary = primary,
-            Err(e) => errors.push(e),
-        }
-        match config.get::<Container<Srgba>>("secondary") {
-            Ok(secondary) => default.secondary = secondary,
-            Err(e) => errors.push(e),
-        }
-        match config.get::<Component<Srgba>>("accent") {
-            Ok(accent) => default.accent = accent,
-            Err(e) => errors.push(e),
-        }
-        match config.get::<Component<Srgba>>("success") {
-            Ok(success) => default.success = success,
-            Err(e) => errors.push(e),
-        }
-        match config.get::<Component<Srgba>>("destructive") {
-            Ok(destructive) => default.destructive = destructive,
-            Err(e) => errors.push(e),
-        }
-        match config.get::<Component<Srgba>>("warning") {
-            Ok(warning) => default.warning = warning,
-            Err(e) => errors.push(e),
-        }
-        match config.get::<Component<Srgba>>("success_button") {
-            Ok(b) => default.success_button = b,
-            Err(e) => errors.push(e),
-        }
-        match config.get::<Component<Srgba>>("accent_button") {
-            Ok(b) => default.accent_button = b,
-            Err(e) => errors.push(e),
-        }
-        match config.get::<Component<Srgba>>("destructive_button") {
-            Ok(b) => default.destructive_button = b,
-            Err(e) => errors.push(e),
-        }
-        match config.get::<Component<Srgba>>("warning_button") {
-            Ok(warning) => default.warning_button = warning,
-            Err(e) => errors.push(e),
-        }
-        match config.get::<Component<Srgba>>("icon_button") {
-            Ok(b) => default.link_button = b,
-            Err(e) => errors.push(e),
-        }
-        match config.get::<Component<Srgba>>("link_button") {
-            Ok(b) => default.link_button = b,
-            Err(e) => errors.push(e),
-        }
-        match config.get::<Component<Srgba>>("text_button") {
-            Ok(b) => default.text_button = b,
-            Err(e) => errors.push(e),
-        }
-        match config.get::<Component<Srgba>>("button") {
-            Ok(b) => default.button = b,
-            Err(e) => errors.push(e),
-        }
-        match config.get::<CosmicPaletteInner<Srgba>>("palette") {
-            Ok(palette) => default.palette = palette,
-            Err(e) => errors.push(e),
-        }
-        match config.get::<bool>("is_dark") {
-            Ok(is_dark) => default.is_dark = is_dark,
-            Err(e) => errors.push(e),
-        }
-        match config.get::<bool>("is_high_contrast") {
-            Ok(is_high_contrast) => default.is_high_contrast = is_high_contrast,
-            Err(e) => errors.push(e),
-        }
-        match config.get::<Spacing>("spacing") {
-            Ok(spacing) => default.spacing = spacing,
-            Err(e) => errors.push(e),
-        }
-        match config.get::<CornerRadii>("corner_radii") {
-            Ok(corner_radii) => default.corner_radii = corner_radii,
-            Err(e) => errors.push(e),
-        }
-        match config.get::<u32>("active_hint") {
-            Ok(active_hint) => default.active_hint = active_hint,
-            Err(e) => errors.push(e),
-        }
-        match config.get::<(u32, u32)>("gaps") {
-            Ok(gaps) => default.gaps = gaps,
-            Err(e) => errors.push(e),
-        }
-        match config.get::<Option<Srgb>>("window_hint") {
-            Ok(window_hint) => default.window_hint = window_hint,
-            Err(e) => errors.push(e),
-        }
-        if errors.is_empty() {
-            Ok(default)
-        } else {
-            Err((errors, default))
-        }
-    }
-}
-
-impl Default for Theme<Srgba> {
+impl Default for Theme {
     fn default() -> Self {
         Self::dark_default()
     }
@@ -240,7 +105,7 @@ pub trait LayeredTheme {
     fn set_layer(&mut self, layer: Layer);
 }
 
-impl<C> Theme<C> {
+impl Theme {
     /// version of the theme
     pub fn version() -> u64 {
         1
@@ -260,9 +125,7 @@ impl<C> Theme<C> {
     pub fn light_config() -> Result<Config, cosmic_config::Error> {
         Config::new(LIGHT_THEME_ID, Self::version())
     }
-}
 
-impl Theme<Srgba> {
     /// get the built in light theme
     pub fn light_default() -> Self {
         LIGHT_PALETTE.clone().into()
@@ -510,12 +373,9 @@ impl Theme<Srgba> {
     }
 }
 
-impl<C> From<CosmicPalette<C>> for Theme<Srgba>
-where
-    CosmicPalette<C>: Into<CosmicPalette<Srgba>>,
-{
-    fn from(p: CosmicPalette<C>) -> Self {
-        ThemeBuilder::palette(p.into()).build()
+impl From<CosmicPalette> for Theme {
+    fn from(p: CosmicPalette) -> Self {
+        ThemeBuilder::palette(p).build()
     }
 }
 
@@ -530,7 +390,7 @@ where
 )]
 pub struct ThemeBuilder {
     /// override the palette for the builder
-    pub palette: CosmicPalette<Srgba>,
+    pub palette: CosmicPalette,
     /// override spacing for the builder
     pub spacing: Spacing,
     /// override corner radii for the builder
@@ -606,7 +466,7 @@ impl ThemeBuilder {
 
     /// Get a builder that is initialized with the default dark high contrast theme
     pub fn dark_high_contrast() -> Self {
-        let palette: CosmicPalette<Srgba> = DARK_PALETTE.to_owned().into();
+        let palette: CosmicPalette = DARK_PALETTE.to_owned().into();
         Self {
             palette: CosmicPalette::HighContrastDark(palette.inner()),
             ..Default::default()
@@ -615,7 +475,7 @@ impl ThemeBuilder {
 
     /// Get a builder that is initialized with the default light high contrast theme
     pub fn light_high_contrast() -> Self {
-        let palette: CosmicPalette<Srgba> = LIGHT_PALETTE.to_owned().into();
+        let palette: CosmicPalette = LIGHT_PALETTE.to_owned().into();
         Self {
             palette: CosmicPalette::HighContrastLight(palette.inner()),
             ..Default::default()
@@ -623,7 +483,7 @@ impl ThemeBuilder {
     }
 
     /// Get a builder that is initialized with the provided palette
-    pub fn palette(palette: CosmicPalette<Srgba>) -> Self {
+    pub fn palette(palette: CosmicPalette) -> Self {
         Self {
             palette,
             ..Default::default()
@@ -691,7 +551,7 @@ impl ThemeBuilder {
     }
 
     /// build the theme
-    pub fn build(self) -> Theme<Srgba> {
+    pub fn build(self) -> Theme {
         let Self {
             mut palette,
             spacing,
@@ -861,7 +721,7 @@ impl ThemeBuilder {
         button_hovered_overlay.alpha = 0.2;
         button_pressed_overlay.alpha = 0.5;
 
-        let mut theme: Theme<Srgba> = Theme {
+        let mut theme: Theme = Theme {
             name: palette.name().to_string(),
             primary: Container::new(
                 primary_component,

@@ -325,7 +325,7 @@ impl<'a> ConfigSet for ConfigTransaction<'a> {
 #[cfg(feature = "subscription")]
 pub enum ConfigState<T> {
     Init(Cow<'static, str>, u64, bool),
-    Waiting(T, RecommendedWatcher, mpsc::Receiver<()>, Config),
+    Waiting(T, RecommendedWatcher, mpsc::Receiver<Vec<String>>, Config),
     Failed,
 }
 
@@ -342,6 +342,12 @@ where
 {
     fn write_entry(&self, config: &Config) -> Result<(), crate::Error>;
     fn get_entry(config: &Config) -> Result<Self, (Vec<crate::Error>, Self)>;
+    /// Returns the keys that were updated
+    fn update_keys<T: AsRef<str>>(
+        &mut self,
+        config: &Config,
+        changed_keys: &[T],
+    ) -> (Vec<crate::Error>, Vec<&str>);
 }
 
 #[cfg(feature = "subscription")]
@@ -409,9 +415,9 @@ async fn start_listening<
                 Ok(c) => c,
                 Err(_) => return ConfigState::Failed,
             };
-            let watcher = match config.watch(move |_helper, _keys| {
+            let watcher = match config.watch(move |_helper, keys| {
                 let mut tx = tx.clone();
-                let _ = tx.try_send(());
+                let _ = tx.try_send(keys.to_vec());
             }) {
                 Ok(w) => w,
                 Err(_) => return ConfigState::Failed,
@@ -428,24 +434,19 @@ async fn start_listening<
                 }
             }
         }
-        ConfigState::Waiting(mut old, watcher, mut rx, config) => match rx.next().await {
-            Some(_) => match T::get_entry(&config) {
-                Ok(t) => {
-                    if t != old {
-                        old = t;
-                        _ = output.send((id, Ok(old.clone()))).await;
-                    }
-                    ConfigState::Waiting(old, watcher, rx, config)
-                }
-                Err((errors, t)) => {
-                    if t != old {
-                        old = t;
-                        _ = output.send((id, Err((errors, old.clone())))).await;
-                    }
-                    ConfigState::Waiting(old, watcher, rx, config)
-                }
-            },
+        ConfigState::Waiting(mut conf_data, watcher, mut rx, config) => match rx.next().await {
+            Some(keys) => {
+                let (errors, changed) = conf_data.update_keys(&config, &keys);
 
+                if !changed.is_empty() {
+                    if errors.is_empty() {
+                        _ = output.send((id, Ok(conf_data.clone()))).await;
+                    } else {
+                        _ = output.send((id, Err((errors, conf_data.clone())))).await;
+                    }
+                }
+                ConfigState::Waiting(conf_data, watcher, rx, config)
+            }
             None => ConfigState::Failed,
         },
         ConfigState::Failed => pending().await,

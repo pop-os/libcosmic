@@ -12,20 +12,20 @@ use cosmic_config::CosmicConfigEntry;
 use cosmic_theme::Component;
 use cosmic_theme::LayeredTheme;
 use iced_futures::Subscription;
-use palette::Srgba;
+
 use std::cell::RefCell;
 use std::sync::Arc;
 
 pub type CosmicColor = ::palette::rgb::Srgba;
-pub type CosmicComponent = cosmic_theme::Component<CosmicColor>;
-pub type CosmicTheme = cosmic_theme::Theme<CosmicColor>;
+pub type CosmicComponent = cosmic_theme::Component;
+pub type CosmicTheme = cosmic_theme::Theme;
 
 lazy_static::lazy_static! {
     pub static ref COSMIC_DARK: CosmicTheme = CosmicTheme::dark_default();
     pub static ref COSMIC_HC_DARK: CosmicTheme = CosmicTheme::high_contrast_dark_default();
     pub static ref COSMIC_LIGHT: CosmicTheme = CosmicTheme::light_default();
     pub static ref COSMIC_HC_LIGHT: CosmicTheme = CosmicTheme::high_contrast_light_default();
-    pub static ref TRANSPARENT_COMPONENT: Component<CosmicColor> = Component {
+    pub static ref TRANSPARENT_COMPONENT: Component = Component {
         base: CosmicColor::new(0.0, 0.0, 0.0, 0.0),
         hover: CosmicColor::new(0.0, 0.0, 0.0, 0.0),
         pressed: CosmicColor::new(0.0, 0.0, 0.0, 0.0),
@@ -69,7 +69,7 @@ pub fn is_high_contrast() -> bool {
 
 /// Watches for changes to the system's theme preference.
 pub fn subscription(id: u64, is_dark: bool) -> Subscription<crate::theme::Theme> {
-    config_subscription::<_, crate::cosmic_theme::Theme<Srgba>>(
+    config_subscription::<_, crate::cosmic_theme::Theme>(
         (id, is_dark),
         if is_dark {
             cosmic_theme::DARK_THEME_ID
@@ -77,7 +77,7 @@ pub fn subscription(id: u64, is_dark: bool) -> Subscription<crate::theme::Theme>
             cosmic_theme::LIGHT_THEME_ID
         }
         .into(),
-        crate::cosmic_theme::Theme::<Srgba>::version(),
+        crate::cosmic_theme::Theme::version(),
     )
     .map(|(_, res)| {
         let theme = res.unwrap_or_else(|(errors, theme)| {
@@ -102,9 +102,9 @@ pub fn system_preference() -> Theme {
     };
 
     let helper = if is_dark {
-        crate::cosmic_theme::Theme::<Srgba>::dark_config()
+        crate::cosmic_theme::Theme::dark_config()
     } else {
-        crate::cosmic_theme::Theme::<Srgba>::light_config()
+        crate::cosmic_theme::Theme::light_config()
     };
 
     let Ok(helper) = helper else {
@@ -164,7 +164,7 @@ pub struct Theme {
 
 impl Theme {
     #[must_use]
-    pub fn cosmic(&self) -> &cosmic_theme::Theme<Srgba> {
+    pub fn cosmic(&self) -> &cosmic_theme::Theme {
         match self.theme_type {
             ThemeType::Dark => &COSMIC_DARK,
             ThemeType::Light => &COSMIC_LIGHT,
@@ -219,7 +219,7 @@ impl Theme {
     /// get current container
     /// can be used in a component that is intended to be a child of a `CosmicContainer`
     #[must_use]
-    pub fn current_container(&self) -> &cosmic_theme::Container<Srgba> {
+    pub fn current_container(&self) -> &cosmic_theme::Container {
         match self.layer {
             cosmic_theme::Layer::Background => &self.cosmic().background,
             cosmic_theme::Layer::Primary => &self.cosmic().primary,

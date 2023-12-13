@@ -5,7 +5,7 @@
 
 use cosmic_theme::Component;
 use iced_core::{Background, Color};
-use palette::{rgb::Rgb, Alpha};
+
 
 use crate::{
     theme::TRANSPARENT_COMPONENT,
@@ -40,7 +40,7 @@ pub fn appearance(
     theme: &crate::Theme,
     focused: bool,
     style: &Button,
-    color: impl Fn(&Component<Alpha<Rgb, f32>>) -> (Color, Option<Color>, Option<Color>),
+    color: impl Fn(&Component) -> (Color, Option<Color>, Option<Color>),
 ) -> Appearance {
     let cosmic = theme.cosmic();
     let mut corner_radii = &cosmic.corner_radii.radius_xl;

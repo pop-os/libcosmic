@@ -7,7 +7,6 @@
 //!
 
 pub use model::*;
-pub use output::*;
 
 mod model;
 mod output;
@@ -16,8 +15,6 @@ mod output;
 pub mod composite;
 /// get color steps
 pub mod steps;
-/// utilities
-pub mod util;
 
 /// name of cosmic theme
 pub const NAME: &'static str = "com.system76.CosmicTheme";

@@ -1,28 +1,24 @@
 use palette::Srgba;
-use serde::{de::DeserializeOwned, Deserialize, Serialize};
-use std::fmt;
+use serde::{Deserialize, Serialize};
 
 use crate::composite::over;
 
 /// Theme Container colors of a theme, can be a theme background container, primary container, or secondary container
-#[derive(Clone, Debug, Default, Deserialize, Serialize, PartialEq, Eq)]
-pub struct Container<C> {
+#[derive(Clone, Debug, Default, Deserialize, Serialize, PartialEq)]
+pub struct Container {
     /// the color of the container
-    pub base: C,
+    pub base: Srgba,
     /// the color of components in the container
-    pub component: Component<C>,
+    pub component: Component,
     /// the color of dividers in the container
-    pub divider: C,
+    pub divider: Srgba,
     /// the color of text in the container
-    pub on: C,
+    pub on: Srgba,
 }
 
-impl<C> Container<C>
-where
-    C: Clone + fmt::Debug + Default + Into<Srgba> + From<Srgba> + Serialize + DeserializeOwned,
-{
+impl Container {
     /// convert to srgba
-    pub fn into_srgba(self) -> Container<Srgba> {
+    pub fn into_srgba(self) -> Container {
         Container {
             base: self.base.into(),
             component: self.component.into_srgba(),
@@ -31,7 +27,7 @@ where
         }
     }
 
-    pub(crate) fn new(component: Component<C>, bg: C, on_bg: C) -> Self {
+    pub(crate) fn new(component: Component, bg: Srgba, on_bg: Srgba) -> Self {
         let mut divider_c: Srgba = on_bg.clone().into();
         divider_c.alpha = 0.2;
 
@@ -46,40 +42,37 @@ where
 }
 
 /// The colors for a widget of the Cosmic theme
-#[derive(Clone, PartialEq, Debug, Default, Deserialize, Serialize, Eq)]
-pub struct Component<C> {
+#[derive(Clone, PartialEq, Debug, Default, Deserialize, Serialize)]
+pub struct Component {
     /// The base color of the widget
-    pub base: C,
+    pub base: Srgba,
     /// The color of the widget when it is hovered
-    pub hover: C,
+    pub hover: Srgba,
     /// the color of the widget when it is pressed
-    pub pressed: C,
+    pub pressed: Srgba,
     /// the color of the widget when it is selected
-    pub selected: C,
+    pub selected: Srgba,
     /// the color of the widget when it is selected
-    pub selected_text: C,
+    pub selected_text: Srgba,
     /// the color of the widget when it is focused
-    pub focus: C,
+    pub focus: Srgba,
     /// the color of dividers for this widget
-    pub divider: C,
+    pub divider: Srgba,
     /// the color of text for this widget
-    pub on: C,
+    pub on: Srgba,
     // the color of text with opacity 80 for this widget
-    // pub text_opacity_80: C,
+    // pub text_opacity_80: Srgba,
     /// the color of the widget when it is disabled
-    pub disabled: C,
+    pub disabled: Srgba,
     /// the color of text in the widget when it is disabled
-    pub on_disabled: C,
+    pub on_disabled: Srgba,
     /// the color of the border for the widget
-    pub border: C,
+    pub border: Srgba,
     /// the color of the border for the widget when it is disabled
-    pub disabled_border: C,
+    pub disabled_border: Srgba,
 }
 
-impl<C> Component<C>
-where
-    C: Clone + fmt::Debug + Default + Into<Srgba> + From<Srgba> + Serialize + DeserializeOwned,
-{
+impl Component {
     /// get @hover_state_color
     pub fn hover_state_color(&self) -> Srgba {
         self.hover.clone().into()
@@ -101,7 +94,7 @@ where
         self.focus.clone().into()
     }
     /// convert to srgba
-    pub fn into_srgba(self) -> Component<Srgba> {
+    pub fn into_srgba(self) -> Component {
         Component {
             base: self.base.into(),
             hover: self.hover.into(),
@@ -119,7 +112,13 @@ where
     }
 
     /// helper for producing a component from a base color a neutral and an accent
-    pub fn colored_component(base: C, neutral: C, accent: C, hovered: C, pressed: C) -> Self {
+    pub fn colored_component(
+        base: Srgba,
+        neutral: Srgba,
+        accent: Srgba,
+        hovered: Srgba,
+        pressed: Srgba,
+    ) -> Self {
         let base: Srgba = base.into();
         let mut base_50 = base.clone();
         base_50.alpha *= 0.5;
@@ -146,44 +145,42 @@ where
 
     /// helper for producing a button component
     pub fn colored_button(
-        base: C,
-        overlay: C,
-        on_button: C,
-        accent: C,
-        hovered: C,
-        pressed: C,
+        base: Srgba,
+        overlay: Srgba,
+        on_button: Srgba,
+        accent: Srgba,
+        hovered: Srgba,
+        pressed: Srgba,
     ) -> Self {
         let mut component = Component::colored_component(base, overlay, accent, hovered, pressed);
         component.on = on_button.clone();
 
-        let mut on_disabled = on_button.into();
+        let mut on_disabled = on_button;
         on_disabled.alpha = 0.5;
-        component.on_disabled = on_disabled.into();
+        component.on_disabled = on_disabled;
 
         component
     }
 
     /// helper for producing a component color theme
     pub fn component(
-        base: C,
-        accent: C,
-        on_component: C,
-        hovered: C,
-        pressed: C,
+        base: Srgba,
+        accent: Srgba,
+        on_component: Srgba,
+        hovered: Srgba,
+        pressed: Srgba,
         is_high_contrast: bool,
-        border: C,
+        border: Srgba,
     ) -> Self {
-        let base = base.into();
         let mut base_50 = base.clone();
         base_50.alpha *= 0.5;
 
-        let mut on_20 = on_component.clone().into();
+        let mut on_20 = on_component.clone();
         let mut on_50 = on_20.clone();
 
         on_20.alpha = 0.2;
         on_50.alpha = 0.5;
 
-        let border = border.into();
         let mut disabled_border = border;
         disabled_border.alpha *= 0.5;
 

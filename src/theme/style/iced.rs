@@ -520,8 +520,7 @@ impl slider::StyleSheet for Theme {
             Slider::Standard =>
             //TODO: no way to set rail thickness
             {
-                let cosmic: &cosmic_theme::Theme<palette::Alpha<palette::rgb::Rgb, f32>> =
-                    self.cosmic();
+                let cosmic: &cosmic_theme::Theme = self.cosmic();
 
                 slider::Appearance {
                     rail: Rail {
