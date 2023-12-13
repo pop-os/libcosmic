@@ -367,6 +367,7 @@ impl container::StyleSheet for Theme {
 
     #[allow(clippy::too_many_lines)]
     fn appearance(&self, style: &Self::Style) -> container::Appearance {
+        let cosmic = self.cosmic();
         match style {
             Container::Transparent => container::Appearance::default(),
             Container::Custom(f) => f(self),
@@ -377,7 +378,7 @@ impl container::StyleSheet for Theme {
                     icon_color: Some(Color::from(palette.background.on)),
                     text_color: Some(Color::from(palette.background.on)),
                     background: Some(iced::Background::Color(palette.background.base.into())),
-                    border_radius: 2.0.into(),
+                    border_radius: cosmic.corner_radii.radius_xs.into(),
                     border_width: 0.0,
                     border_color: Color::TRANSPARENT,
                 }
@@ -413,7 +414,7 @@ impl container::StyleSheet for Theme {
                     icon_color: Some(Color::from(palette.primary.on)),
                     text_color: Some(Color::from(palette.primary.on)),
                     background: Some(iced::Background::Color(palette.primary.base.into())),
-                    border_radius: 2.0.into(),
+                    border_radius: cosmic.corner_radii.radius_xs.into(),
                     border_width: 0.0,
                     border_color: Color::TRANSPARENT,
                 }
@@ -425,7 +426,7 @@ impl container::StyleSheet for Theme {
                     icon_color: Some(Color::from(palette.secondary.on)),
                     text_color: Some(Color::from(palette.secondary.on)),
                     background: Some(iced::Background::Color(palette.secondary.base.into())),
-                    border_radius: 2.0.into(),
+                    border_radius: cosmic.corner_radii.radius_xs.into(),
                     border_width: 0.0,
                     border_color: Color::TRANSPARENT,
                 }
@@ -438,7 +439,7 @@ impl container::StyleSheet for Theme {
                     icon_color: None,
                     text_color: None,
                     background: Some(iced::Background::Color(theme.primary.base.into())),
-                    border_radius: f32::from(theme.space_xxs()).into(),
+                    border_radius: theme.corner_radii.radius_xs.into(),
                     border_width: 1.0,
                     border_color: theme.bg_divider().into(),
                 }
@@ -451,7 +452,7 @@ impl container::StyleSheet for Theme {
                     icon_color: None,
                     text_color: None,
                     background: Some(iced::Background::Color(theme.palette.neutral_2.into())),
-                    border_radius: f32::from(theme.space_xl()).into(),
+                    border_radius: theme.corner_radii.radius_l.into(),
                     border_width: 0.0,
                     border_color: Color::TRANSPARENT,
                 }
@@ -467,7 +468,7 @@ impl container::StyleSheet for Theme {
                         background: Some(iced::Background::Color(
                             palette.background.component.base.into(),
                         )),
-                        border_radius: 8.0.into(),
+                        border_radius: cosmic.corner_radii.radius_s.into(),
                         border_width: 0.0,
                         border_color: Color::TRANSPARENT,
                     },
@@ -477,7 +478,7 @@ impl container::StyleSheet for Theme {
                         background: Some(iced::Background::Color(
                             palette.primary.component.base.into(),
                         )),
-                        border_radius: 8.0.into(),
+                        border_radius: cosmic.corner_radii.radius_s.into(),
                         border_width: 0.0,
                         border_color: Color::TRANSPARENT,
                     },
@@ -487,7 +488,7 @@ impl container::StyleSheet for Theme {
                         background: Some(iced::Background::Color(
                             palette.secondary.component.base.into(),
                         )),
-                        border_radius: 8.0.into(),
+                        border_radius: cosmic.corner_radii.radius_s.into(),
                         border_width: 0.0,
                         border_color: Color::TRANSPARENT,
                     },
@@ -530,7 +531,7 @@ impl slider::StyleSheet for Theme {
                             Color::TRANSPARENT,
                         ),
                         width: 4.0,
-                        border_radius: 2.0.into(),
+                        border_radius: cosmic.corner_radii.radius_xs.into(),
                     },
 
                     handle: slider::Handle {
@@ -588,7 +589,7 @@ impl menu::StyleSheet for Theme {
             text_color: cosmic.on_bg_color().into(),
             background: Background::Color(cosmic.background.base.into()),
             border_width: 0.0,
-            border_radius: 16.0.into(),
+            border_radius: cosmic.corner_radii.radius_m.into(),
             border_color: Color::TRANSPARENT,
             selected_text_color: cosmic.accent.base.into(),
             selected_background: Background::Color(cosmic.background.component.hover.into()),
@@ -609,7 +610,7 @@ impl pick_list::StyleSheet for Theme {
             text_color: cosmic.on_bg_color().into(),
             background: Color::TRANSPARENT.into(),
             placeholder_color: cosmic.on_bg_color().into(),
-            border_radius: 24.0.into(),
+            border_radius: cosmic.corner_radii.radius_m.into(),
             border_width: 0.0,
             border_color: Color::TRANSPARENT,
             // icon_size: 0.7, // TODO: how to replace
@@ -748,7 +749,7 @@ impl pane_grid::StyleSheet for Theme {
             background: Background::Color(theme.bg_color().into()),
             border_width: 2.0,
             border_color: theme.bg_divider().into(),
-            border_radius: 0.0.into(),
+            border_radius: theme.corner_radii.radius_0.into(),
         }
     }
 }
@@ -781,17 +782,17 @@ impl progress_bar::StyleSheet for Theme {
             ProgressBar::Primary => progress_bar::Appearance {
                 background: Color::from(theme.background.divider).into(),
                 bar: Color::from(theme.accent.base).into(),
-                border_radius: 2.0.into(),
+                border_radius: theme.corner_radii.radius_xs.into(),
             },
             ProgressBar::Success => progress_bar::Appearance {
                 background: Color::from(theme.background.divider).into(),
                 bar: Color::from(theme.success.base).into(),
-                border_radius: 2.0.into(),
+                border_radius: theme.corner_radii.radius_xs.into(),
             },
             ProgressBar::Danger => progress_bar::Appearance {
                 background: Color::from(theme.background.divider).into(),
                 bar: Color::from(theme.destructive.base).into(),
-                border_radius: 2.0.into(),
+                border_radius: theme.corner_radii.radius_xs.into(),
             },
             ProgressBar::Custom(f) => f(self),
         }
@@ -851,16 +852,17 @@ impl scrollable::StyleSheet for Theme {
     type Style = ();
 
     fn active(&self, _style: &Self::Style) -> scrollable::Scrollbar {
+        let cosmic = self.cosmic();
         scrollable::Scrollbar {
             background: Some(Background::Color(
                 self.current_container().component.base.into(),
             )),
-            border_radius: 4.0.into(),
+            border_radius: cosmic.corner_radii.radius_s.into(),
             border_width: 0.0,
             border_color: Color::TRANSPARENT,
             scroller: scrollable::Scroller {
                 color: self.current_container().component.divider.into(),
-                border_radius: 4.0.into(),
+                border_radius: cosmic.corner_radii.radius_s.into(),
                 border_width: 0.0,
                 border_color: Color::TRANSPARENT,
             },
@@ -878,12 +880,12 @@ impl scrollable::StyleSheet for Theme {
             background: Some(Background::Color(
                 self.current_container().component.hover.into(),
             )),
-            border_radius: 4.0.into(),
+            border_radius: theme.corner_radii.radius_s.into(),
             border_width: 0.0,
             border_color: Color::TRANSPARENT,
             scroller: scrollable::Scroller {
                 color: theme.accent.base.into(),
-                border_radius: 4.0.into(),
+                border_radius: theme.corner_radii.radius_s.into(),
                 border_width: 0.0,
                 border_color: Color::TRANSPARENT,
             },
@@ -972,14 +974,14 @@ impl text_input::StyleSheet for Theme {
         match style {
             TextInput::Default => text_input::Appearance {
                 background: Color::from(bg).into(),
-                border_radius: 8.0.into(),
+                border_radius: palette.corner_radii.radius_s.into(),
                 border_width: 1.0,
                 border_color: self.current_container().component.divider.into(),
                 icon_color: self.current_container().on.into(),
             },
             TextInput::Search => text_input::Appearance {
                 background: Color::from(bg).into(),
-                border_radius: 24.0.into(),
+                border_radius: palette.corner_radii.radius_m.into(),
                 border_width: 0.0,
                 border_color: Color::TRANSPARENT,
                 icon_color: self.current_container().on.into(),
@@ -995,14 +997,14 @@ impl text_input::StyleSheet for Theme {
         match style {
             TextInput::Default => text_input::Appearance {
                 background: Color::from(bg).into(),
-                border_radius: 8.0.into(),
+                border_radius: palette.corner_radii.radius_s.into(),
                 border_width: 1.0,
                 border_color: palette.accent.base.into(),
                 icon_color: self.current_container().on.into(),
             },
             TextInput::Search => text_input::Appearance {
                 background: Color::from(bg).into(),
-                border_radius: 24.0.into(),
+                border_radius: palette.corner_radii.radius_m.into(),
                 border_width: 0.0,
                 border_color: Color::TRANSPARENT,
                 icon_color: self.current_container().on.into(),
@@ -1018,14 +1020,14 @@ impl text_input::StyleSheet for Theme {
         match style {
             TextInput::Default => text_input::Appearance {
                 background: Color::from(bg).into(),
-                border_radius: 8.0.into(),
+                border_radius: palette.corner_radii.radius_s.into(),
                 border_width: 1.0,
                 border_color: palette.accent.base.into(),
                 icon_color: self.current_container().on.into(),
             },
             TextInput::Search => text_input::Appearance {
                 background: Color::from(bg).into(),
-                border_radius: 24.0.into(),
+                border_radius: palette.corner_radii.radius_m.into(),
                 border_width: 0.0,
                 border_color: Color::TRANSPARENT,
                 icon_color: self.current_container().on.into(),

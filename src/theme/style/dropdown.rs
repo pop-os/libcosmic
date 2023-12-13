@@ -15,7 +15,7 @@ impl dropdown::menu::StyleSheet for Theme {
             text_color: cosmic.on_bg_color().into(),
             background: Background::Color(cosmic.background.component.base.into()),
             border_width: 0.0,
-            border_radius: 16.0.into(),
+            border_radius: cosmic.corner_radii.radius_m.into(),
             border_color: Color::TRANSPARENT,
 
             hovered_text_color: cosmic.on_bg_color().into(),

@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: MPL-2.0
 
 use super::model::{Entity, Model, Selectable};
-use crate::theme::SegmentedButton as Style;
+use crate::theme::{SegmentedButton as Style, THEME};
 use crate::widget::{icon, Icon};
 use crate::{Element, Renderer};
 use derive_setters::Setters;
@@ -558,10 +558,11 @@ where
                 bounds.y = bounds.y + bounds.height - width;
                 bounds.height = width;
 
+                let rad_0 = THEME.with(|t| t.borrow().cosmic().corner_radii.radius_0);
                 renderer.fill_quad(
                     renderer::Quad {
                         bounds,
-                        border_radius: BorderRadius::from(0.0),
+                        border_radius: rad_0.into(),
                         border_width: 0.0,
                         border_color: Color::TRANSPARENT,
                     },
