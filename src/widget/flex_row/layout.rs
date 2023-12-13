@@ -34,7 +34,7 @@ pub fn resolve<Message>(
         let size = child_node.size();
 
         // Calculate the required additional width to fit the item into the current row.
-        let required_width = size.width
+        let mut required_width = size.width
             + if row_buffer.is_empty() {
                 0.0
             } else {
@@ -58,7 +58,7 @@ pub fn resolve<Message>(
 
             flex_height += current_row_height;
             flex_width = flex_width.max(current_row_width);
-
+            required_width -= row_spacing;
             current_row_width = 0.0;
         }
 
