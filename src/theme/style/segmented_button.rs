@@ -67,7 +67,9 @@ impl StyleSheet for Theme {
                     inactive: ItemStatusAppearance {
                         background: Some(Background::Color(neutral_5.into())),
                         first: ItemAppearance {
-                            border_radius: BorderRadius::from([rad_m[0], rad_0[1], rad_0[2], 24.0]),
+                            border_radius: BorderRadius::from([
+                                rad_m[0], rad_0[1], rad_0[2], rad_m[3],
+                            ]),
                             ..Default::default()
                         },
                         middle: ItemAppearance {
