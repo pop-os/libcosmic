@@ -133,6 +133,17 @@ impl Default for Model<usize> {
     }
 }
 
+impl Default for Model<u64> {
+    fn default() -> Self {
+        Self {
+            value: 0,
+            step: 1,
+            min: u64::MIN,
+            max: u64::MAX,
+        }
+    }
+}
+
 impl Default for Model<Decimal> {
     fn default() -> Self {
         Self {

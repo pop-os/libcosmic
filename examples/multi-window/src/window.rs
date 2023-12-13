@@ -6,7 +6,7 @@ use cosmic::{
     iced_core::{id, Alignment, Length, Point},
     iced_widget::{column, container, scrollable, text, text_input},
     widget::{button, cosmic_container},
-    Command,
+    ApplicationExt, Command,
 };
 
 #[derive(Debug, Clone, PartialEq)]
@@ -107,6 +107,7 @@ impl cosmic::Application for MultiWindow {
                         input_value: String::new(),
                     },
                 );
+                _ = self.set_window_title(format!("window_{}", count), id);
 
                 spawn_window
             }

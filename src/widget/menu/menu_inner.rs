@@ -484,8 +484,8 @@ where
                     (root, Vec::new()),
                     |(menu_root, mut nodes), (_i, ms)| {
                         let slice = ms.slice(bounds, overlay_offset, self.item_height);
-                        let start_index = slice.start_index;
-                        let end_index = slice.end_index;
+                        let _start_index = slice.start_index;
+                        let _end_index = slice.end_index;
                         let children_node = ms.layout(
                             overlay_offset,
                             slice,

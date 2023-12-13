@@ -14,7 +14,6 @@ pub fn cosmic_config_entry_derive(input: TokenStream) -> TokenStream {
 
 fn impl_cosmic_config_entry_macro(ast: &syn::DeriveInput) -> TokenStream {
     let name = &ast.ident;
-    // let generics = &ast.generics;
 
     // Get the fields of the struct
     let fields = match ast.data {
@@ -43,20 +42,25 @@ fn impl_cosmic_config_entry_macro(ast: &syn::DeriveInput) -> TokenStream {
         }
     });
 
-    // // Get the existing where clause or create a new one if it doesn't exist
-    // let mut where_clause = ast
-    //     .generics
-    //     .where_clause
-    //     .clone()
-    //     .unwrap_or_else(|| parse_quote!(where));
-
-    // // Add your additional constraints to the where clause
-    // // Here, we add the constraint 'T: Debug' to all generic parameters
-    // for param in ast.generics.params.iter() {
-    //     where_clause
-    //         .predicates
-    //         .push(parse_quote!(#param: ::std::default::Default + ::serde::Serialize + ::serde::de::DeserializeOwned));
-    // }
+    let update_each_config_field = fields.iter().map(|field| {
+        let field_name = &field.ident;
+        let field_type = &field.ty;
+        quote! {
+            stringify!(#field_name) => {
+                match cosmic_config::ConfigGet::get::<#field_type>(config, stringify!(#field_name)) {
+                    Ok(value) => {
+                        if self.#field_name != value {
+                            keys.push(stringify!(#field_name));
+                        }
+                        self.#field_name = value;
+                    },
+                    Err(e) => {
+                        errors.push(e);
+                    }
+                }
+            }
+        }
+    });
 
     let gen = quote! {
         impl CosmicConfigEntry for #name {
@@ -77,6 +81,18 @@ fn impl_cosmic_config_entry_macro(ast: &syn::DeriveInput) -> TokenStream {
                 } else {
                     Err((errors, default))
                 }
+            }
+
+            fn update_keys<T: AsRef<str>>(&mut self, config: &cosmic_config::Config, changed_keys: &[T]) -> (Vec<cosmic_config::Error>, Vec<&str>){
+                let mut keys = Vec::with_capacity(changed_keys.len());
+                let mut errors = Vec::new();
+                for key in changed_keys.iter() {
+                    match key.as_ref() {
+                        #(#update_each_config_field)*
+                        _ => (),
+                    }
+                }
+                (errors, keys)
             }
         }
     };

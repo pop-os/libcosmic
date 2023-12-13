@@ -6,7 +6,6 @@
 use crate::widget::segmented_button::{Appearance, ItemAppearance, StyleSheet};
 use crate::{theme::Theme, widget::segmented_button::ItemStatusAppearance};
 use iced_core::{Background, BorderRadius};
-use palette::{rgb::Rgb, Alpha};
 
 #[derive(Default)]
 pub enum SegmentedButton {
@@ -155,9 +154,8 @@ impl StyleSheet for Theme {
 mod horizontal {
     use crate::widget::segmented_button::{ItemAppearance, ItemStatusAppearance};
     use iced_core::{Background, BorderRadius};
-    use palette::{rgb::Rgb, white_point::C, Alpha};
 
-    pub fn selection_active(cosmic: &cosmic_theme::Theme<Alpha<Rgb, f32>>) -> ItemStatusAppearance {
+    pub fn selection_active(cosmic: &cosmic_theme::Theme) -> ItemStatusAppearance {
         let mut neutral_5 = cosmic.palette.neutral_5;
         neutral_5.alpha = 0.2;
         let rad_m = cosmic.corner_radii.radius_m;
@@ -180,9 +178,7 @@ mod horizontal {
         }
     }
 
-    pub fn view_switcher_active(
-        cosmic: &cosmic_theme::Theme<Alpha<Rgb, f32>>,
-    ) -> ItemStatusAppearance {
+    pub fn view_switcher_active(cosmic: &cosmic_theme::Theme) -> ItemStatusAppearance {
         let mut neutral_5 = cosmic.palette.neutral_5;
         neutral_5.alpha = 0.2;
         let rad_s = cosmic.corner_radii.radius_s;
@@ -209,10 +205,7 @@ mod horizontal {
     }
 }
 
-pub fn focus(
-    cosmic: &cosmic_theme::Theme<Alpha<Rgb, f32>>,
-    default: &ItemStatusAppearance,
-) -> ItemStatusAppearance {
+pub fn focus(cosmic: &cosmic_theme::Theme, default: &ItemStatusAppearance) -> ItemStatusAppearance {
     // TODO: This is a hack to make the hover color lighter than the selected color
     // I'm not sure why the alpha is being applied differently here than in figma
     let mut neutral_5 = cosmic.palette.neutral_5;
@@ -224,10 +217,7 @@ pub fn focus(
     }
 }
 
-pub fn hover(
-    cosmic: &cosmic_theme::Theme<Alpha<Rgb, f32>>,
-    default: &ItemStatusAppearance,
-) -> ItemStatusAppearance {
+pub fn hover(cosmic: &cosmic_theme::Theme, default: &ItemStatusAppearance) -> ItemStatusAppearance {
     let mut neutral_10 = cosmic.palette.neutral_10;
     neutral_10.alpha = 0.1;
     ItemStatusAppearance {
@@ -240,9 +230,8 @@ pub fn hover(
 mod vertical {
     use crate::widget::segmented_button::{ItemAppearance, ItemStatusAppearance};
     use iced_core::{Background, BorderRadius};
-    use palette::{rgb::Rgb, Alpha};
 
-    pub fn selection_active(cosmic: &cosmic_theme::Theme<Alpha<Rgb, f32>>) -> ItemStatusAppearance {
+    pub fn selection_active(cosmic: &cosmic_theme::Theme) -> ItemStatusAppearance {
         let mut neutral_5 = cosmic.palette.neutral_5;
         neutral_5.alpha = 0.2;
         let rad_0 = cosmic.corner_radii.radius_0;
@@ -265,9 +254,7 @@ mod vertical {
         }
     }
 
-    pub fn view_switcher_active(
-        cosmic: &cosmic_theme::Theme<Alpha<Rgb, f32>>,
-    ) -> ItemStatusAppearance {
+    pub fn view_switcher_active(cosmic: &cosmic_theme::Theme) -> ItemStatusAppearance {
         let mut neutral_5 = cosmic.palette.neutral_5;
         neutral_5.alpha = 0.2;
         ItemStatusAppearance {

@@ -1,36 +1,32 @@
-use std::fmt;
-
 use lazy_static::lazy_static;
 use palette::Srgba;
-use serde::{de::DeserializeOwned, Deserialize, Serialize};
-
-use crate::util::CssColor;
+use serde::{Deserialize, Serialize};
 
 lazy_static! {
     /// built in light palette
-    pub static ref LIGHT_PALETTE: CosmicPalette<CssColor> =
+    pub static ref LIGHT_PALETTE: CosmicPalette =
         ron::from_str(include_str!("light.ron")).unwrap();
     /// built in dark palette
-    pub static ref DARK_PALETTE: CosmicPalette<CssColor> =
+    pub static ref DARK_PALETTE: CosmicPalette =
         ron::from_str(include_str!("dark.ron")).unwrap();
 }
 
 /// Palette type
-#[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
-pub enum CosmicPalette<C> {
+#[derive(Clone, Debug, Deserialize, Serialize, PartialEq)]
+pub enum CosmicPalette {
     /// Dark mode
-    Dark(CosmicPaletteInner<C>),
+    Dark(CosmicPaletteInner),
     /// Light mode
-    Light(CosmicPaletteInner<C>),
+    Light(CosmicPaletteInner),
     /// High contrast light mode
-    HighContrastLight(CosmicPaletteInner<C>),
+    HighContrastLight(CosmicPaletteInner),
     /// High contrast dark mode
-    HighContrastDark(CosmicPaletteInner<C>),
+    HighContrastDark(CosmicPaletteInner),
 }
 
-impl<C> CosmicPalette<C> {
+impl CosmicPalette {
     /// extract the inner palette
-    pub fn inner(self) -> CosmicPaletteInner<C> {
+    pub fn inner(self) -> CosmicPaletteInner {
         match self {
             CosmicPalette::Dark(p) => p,
             CosmicPalette::Light(p) => p,
@@ -40,8 +36,8 @@ impl<C> CosmicPalette<C> {
     }
 }
 
-impl<C> AsMut<CosmicPaletteInner<C>> for CosmicPalette<C> {
-    fn as_mut(&mut self) -> &mut CosmicPaletteInner<C> {
+impl AsMut<CosmicPaletteInner> for CosmicPalette {
+    fn as_mut(&mut self) -> &mut CosmicPaletteInner {
         match self {
             CosmicPalette::Dark(p) => p,
             CosmicPalette::Light(p) => p,
@@ -51,11 +47,8 @@ impl<C> AsMut<CosmicPaletteInner<C>> for CosmicPalette<C> {
     }
 }
 
-impl<C> AsRef<CosmicPaletteInner<C>> for CosmicPalette<C>
-where
-    C: Clone + fmt::Debug + Default + Into<Srgba> + From<Srgba> + Serialize + DeserializeOwned,
-{
-    fn as_ref(&self) -> &CosmicPaletteInner<C> {
+impl AsRef<CosmicPaletteInner> for CosmicPalette {
+    fn as_ref(&self) -> &CosmicPaletteInner {
         match self {
             CosmicPalette::Dark(p) => p,
             CosmicPalette::Light(p) => p,
@@ -65,10 +58,7 @@ where
     }
 }
 
-impl<C> CosmicPalette<C>
-where
-    C: Clone + fmt::Debug + Default + Into<Srgba> + From<Srgba> + Serialize + DeserializeOwned,
-{
+impl CosmicPalette {
     /// check if the palette is dark
     pub fn is_dark(&self) -> bool {
         match self {
@@ -86,156 +76,105 @@ where
     }
 }
 
-impl<C> Default for CosmicPalette<C>
-where
-    C: Clone + fmt::Debug + Default + Into<Srgba> + From<Srgba> + Serialize + DeserializeOwned,
-{
+impl Default for CosmicPalette {
     fn default() -> Self {
         CosmicPalette::Dark(Default::default())
     }
 }
 
 /// The palette for Cosmic Theme, from which all color properties are derived
-#[derive(Clone, Debug, Default, Deserialize, Serialize, PartialEq, Eq)]
-pub struct CosmicPaletteInner<C> {
+#[derive(Clone, Debug, Default, Deserialize, Serialize, PartialEq)]
+pub struct CosmicPaletteInner {
     /// name of the palette
     pub name: String,
 
     /// basic palette
     /// blue: colors used for various points of emphasis in the UI
-    pub blue: C,
+    pub blue: Srgba,
     /// red: colors used for various points of emphasis in the UI
-    pub red: C,
+    pub red: Srgba,
     /// green: colors used for various points of emphasis in the UI
-    pub green: C,
+    pub green: Srgba,
     /// yellow: colors used for various points of emphasis in the UI
-    pub yellow: C,
+    pub yellow: Srgba,
 
     /// surface grays
     /// colors used for three levels of surfaces in the UI
-    pub gray_1: C,
+    pub gray_1: Srgba,
     /// colors used for three levels of surfaces in the UI
-    pub gray_2: C,
+    pub gray_2: Srgba,
     /// colors used for three levels of surfaces in the UI
-    pub gray_3: C,
+    pub gray_3: Srgba,
 
     /// System Neutrals
     /// A wider spread of dark colors for more general use.
-    pub neutral_0: C,
+    pub neutral_0: Srgba,
     /// A wider spread of dark colors for more general use.
-    pub neutral_1: C,
+    pub neutral_1: Srgba,
     /// A wider spread of dark colors for more general use.
-    pub neutral_2: C,
+    pub neutral_2: Srgba,
     /// A wider spread of dark colors for more general use.
-    pub neutral_3: C,
+    pub neutral_3: Srgba,
     /// A wider spread of dark colors for more general use.
-    pub neutral_4: C,
+    pub neutral_4: Srgba,
     /// A wider spread of dark colors for more general use.
-    pub neutral_5: C,
+    pub neutral_5: Srgba,
     /// A wider spread of dark colors for more general use.
-    pub neutral_6: C,
+    pub neutral_6: Srgba,
     /// A wider spread of dark colors for more general use.
-    pub neutral_7: C,
+    pub neutral_7: Srgba,
     /// A wider spread of dark colors for more general use.
-    pub neutral_8: C,
+    pub neutral_8: Srgba,
     /// A wider spread of dark colors for more general use.
-    pub neutral_9: C,
+    pub neutral_9: Srgba,
     /// A wider spread of dark colors for more general use.
-    pub neutral_10: C,
+    pub neutral_10: Srgba,
 
     // Utility Colors
     /// Utility bright green
-    pub bright_green: C,
+    pub bright_green: Srgba,
     /// Utility bright red
-    pub bright_red: C,
+    pub bright_red: Srgba,
     /// Utility bright orange
-    pub bright_orange: C,
+    pub bright_orange: Srgba,
 
     /// Extended Color Palette
     /// Colors used for themes, app icons, illustrations, and other brand purposes.
-    pub ext_warm_grey: C,
+    pub ext_warm_grey: Srgba,
     /// Colors used for themes, app icons, illustrations, and other brand purposes.
-    pub ext_orange: C,
+    pub ext_orange: Srgba,
     /// Colors used for themes, app icons, illustrations, and other brand purposes.
-    pub ext_yellow: C,
+    pub ext_yellow: Srgba,
     /// Colors used for themes, app icons, illustrations, and other brand purposes.
-    pub ext_blue: C,
+    pub ext_blue: Srgba,
     /// Colors used for themes, app icons, illustrations, and other brand purposes.
-    pub ext_purple: C,
+    pub ext_purple: Srgba,
     /// Colors used for themes, app icons, illustrations, and other brand purposes.
-    pub ext_pink: C,
+    pub ext_pink: Srgba,
     /// Colors used for themes, app icons, illustrations, and other brand purposes.
-    pub ext_indigo: C,
+    pub ext_indigo: Srgba,
 
     /// Potential Accent Color Combos
-    pub accent_blue: C,
+    pub accent_blue: Srgba,
     /// Potential Accent Color Combos
-    pub accent_red: C,
+    pub accent_red: Srgba,
     /// Potential Accent Color Combos
-    pub accent_green: C,
+    pub accent_green: Srgba,
     /// Potential Accent Color Combos
-    pub accent_warm_grey: C,
+    pub accent_warm_grey: Srgba,
     /// Potential Accent Color Combos
-    pub accent_orange: C,
+    pub accent_orange: Srgba,
     /// Potential Accent Color Combos
-    pub accent_yellow: C,
+    pub accent_yellow: Srgba,
     /// Potential Accent Color Combos
-    pub accent_purple: C,
+    pub accent_purple: Srgba,
     /// Potential Accent Color Combos
-    pub accent_pink: C,
+    pub accent_pink: Srgba,
     /// Potential Accent Color Combos
-    pub accent_indigo: C,
+    pub accent_indigo: Srgba,
 }
 
-impl From<CosmicPaletteInner<CssColor>> for CosmicPaletteInner<Srgba> {
-    fn from(p: CosmicPaletteInner<CssColor>) -> Self {
-        CosmicPaletteInner {
-            name: p.name,
-            blue: p.blue.into(),
-            red: p.red.into(),
-            green: p.green.into(),
-            yellow: p.yellow.into(),
-            gray_1: p.gray_1.into(),
-            gray_2: p.gray_2.into(),
-            gray_3: p.gray_3.into(),
-            neutral_0: p.neutral_0.into(),
-            neutral_1: p.neutral_1.into(),
-            neutral_2: p.neutral_2.into(),
-            neutral_3: p.neutral_3.into(),
-            neutral_4: p.neutral_4.into(),
-            neutral_5: p.neutral_5.into(),
-            neutral_6: p.neutral_6.into(),
-            neutral_7: p.neutral_7.into(),
-            neutral_8: p.neutral_8.into(),
-            neutral_9: p.neutral_9.into(),
-            neutral_10: p.neutral_10.into(),
-            bright_green: p.bright_green.into(),
-            bright_red: p.bright_red.into(),
-            bright_orange: p.bright_orange.into(),
-            ext_warm_grey: p.ext_warm_grey.into(),
-            ext_orange: p.ext_orange.into(),
-            ext_yellow: p.ext_yellow.into(),
-            ext_blue: p.ext_blue.into(),
-            ext_purple: p.ext_purple.into(),
-            ext_pink: p.ext_pink.into(),
-            ext_indigo: p.ext_indigo.into(),
-            accent_blue: p.accent_blue.into(),
-            accent_red: p.accent_red.into(),
-            accent_green: p.accent_green.into(),
-            accent_warm_grey: p.accent_warm_grey.into(),
-            accent_orange: p.accent_orange.into(),
-            accent_yellow: p.accent_yellow.into(),
-            accent_purple: p.accent_purple.into(),
-            accent_pink: p.accent_pink.into(),
-            accent_indigo: p.accent_indigo.into(),
-        }
-    }
-}
-
-impl<C> CosmicPalette<C>
-where
-    C: Clone + fmt::Debug + Default + Into<Srgba> + From<Srgba> + Serialize + DeserializeOwned,
-{
+impl CosmicPalette {
     /// name of the palette
     pub fn name(&self) -> &str {
         match &self {
@@ -243,17 +182,6 @@ where
             CosmicPalette::Light(p) => &p.name,
             CosmicPalette::HighContrastLight(p) => &p.name,
             CosmicPalette::HighContrastDark(p) => &p.name,
-        }
-    }
-}
-
-impl Into<CosmicPalette<Srgba>> for CosmicPalette<CssColor> {
-    fn into(self) -> CosmicPalette<Srgba> {
-        match self {
-            CosmicPalette::Dark(p) => CosmicPalette::Dark(p.into()),
-            CosmicPalette::Light(p) => CosmicPalette::Light(p.into()),
-            CosmicPalette::HighContrastLight(p) => CosmicPalette::HighContrastLight(p.into()),
-            CosmicPalette::HighContrastDark(p) => CosmicPalette::HighContrastDark(p.into()),
         }
     }
 }
