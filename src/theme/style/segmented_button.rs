@@ -29,21 +29,21 @@ impl StyleSheet for Theme {
                 let cosmic = self.cosmic();
                 let active = horizontal::view_switcher_active(cosmic);
                 Appearance {
-                    border_radius: BorderRadius::from(0.0),
+                    border_radius: cosmic.corner_radii.radius_0.into(),
                     inactive: ItemStatusAppearance {
                         background: None,
                         first: ItemAppearance {
-                            border_radius: BorderRadius::from(0.0),
+                            border_radius: cosmic.corner_radii.radius_0.into(),
                             border_bottom: Some((1.0, cosmic.accent.base.into())),
                             ..Default::default()
                         },
                         middle: ItemAppearance {
-                            border_radius: BorderRadius::from(0.0),
+                            border_radius: cosmic.corner_radii.radius_0.into(),
                             border_bottom: Some((1.0, cosmic.accent.base.into())),
                             ..Default::default()
                         },
                         last: ItemAppearance {
-                            border_radius: BorderRadius::from(0.0),
+                            border_radius: cosmic.corner_radii.radius_0.into(),
                             border_bottom: Some((1.0, cosmic.accent.base.into())),
                             ..Default::default()
                         },
@@ -60,20 +60,24 @@ impl StyleSheet for Theme {
                 let active = horizontal::selection_active(cosmic);
                 let mut neutral_5 = cosmic.palette.neutral_5;
                 neutral_5.alpha = 0.2;
+                let rad_m = cosmic.corner_radii.radius_m;
+                let rad_0 = cosmic.corner_radii.radius_0;
                 Appearance {
-                    border_radius: BorderRadius::from(0.0),
+                    border_radius: cosmic.corner_radii.radius_0.into(),
                     inactive: ItemStatusAppearance {
                         background: Some(Background::Color(neutral_5.into())),
                         first: ItemAppearance {
-                            border_radius: BorderRadius::from([24.0, 0.0, 0.0, 24.0]),
+                            border_radius: BorderRadius::from([rad_m[0], rad_0[1], rad_0[2], 24.0]),
                             ..Default::default()
                         },
                         middle: ItemAppearance {
-                            border_radius: BorderRadius::from(0.0),
+                            border_radius: cosmic.corner_radii.radius_0.into(),
                             ..Default::default()
                         },
                         last: ItemAppearance {
-                            border_radius: BorderRadius::from([0.0, 24.0, 24.0, 0.0]),
+                            border_radius: BorderRadius::from([
+                                rad_0[0], rad_m[1], rad_m[2], rad_0[3],
+                            ]),
                             ..Default::default()
                         },
                         text_color: cosmic.on_bg_color().into(),
@@ -90,12 +94,14 @@ impl StyleSheet for Theme {
 
     #[allow(clippy::too_many_lines)]
     fn vertical(&self, style: &Self::Style) -> Appearance {
+        let cosmic = self.cosmic();
+        let rad_m = cosmic.corner_radii.radius_m;
+        let rad_0 = cosmic.corner_radii.radius_0;
         match style {
             SegmentedButton::ViewSwitcher => {
-                let cosmic = self.cosmic();
                 let active = vertical::view_switcher_active(cosmic);
                 Appearance {
-                    border_radius: BorderRadius::from(0.0),
+                    border_radius: cosmic.corner_radii.radius_0.into(),
                     inactive: ItemStatusAppearance {
                         background: None,
                         text_color: cosmic.on_bg_color().into(),
@@ -108,24 +114,27 @@ impl StyleSheet for Theme {
                 }
             }
             SegmentedButton::Selection => {
-                let cosmic = self.cosmic();
                 let active = vertical::selection_active(cosmic);
                 let mut neutral_5 = cosmic.palette.neutral_5;
                 neutral_5.alpha = 0.2;
                 Appearance {
-                    border_radius: BorderRadius::from(0.0),
+                    border_radius: cosmic.corner_radii.radius_0.into(),
                     inactive: ItemStatusAppearance {
                         background: Some(Background::Color(neutral_5.into())),
                         first: ItemAppearance {
-                            border_radius: BorderRadius::from([24.0, 24.0, 0.0, 0.0]),
+                            border_radius: BorderRadius::from([
+                                rad_m[0], rad_m[1], rad_0[0], rad_0[0],
+                            ]),
                             ..Default::default()
                         },
                         middle: ItemAppearance {
-                            border_radius: BorderRadius::from(0.0),
+                            border_radius: cosmic.corner_radii.radius_0.into(),
                             ..Default::default()
                         },
                         last: ItemAppearance {
-                            border_radius: BorderRadius::from([0.0, 0.0, 24.0, 24.0]),
+                            border_radius: BorderRadius::from([
+                                rad_0[0], rad_0[1], rad_m[2], rad_m[3],
+                            ]),
                             ..Default::default()
                         },
                         text_color: cosmic.on_bg_color().into(),
@@ -144,23 +153,25 @@ impl StyleSheet for Theme {
 mod horizontal {
     use crate::widget::segmented_button::{ItemAppearance, ItemStatusAppearance};
     use iced_core::{Background, BorderRadius};
-    use palette::{rgb::Rgb, Alpha};
+    use palette::{rgb::Rgb, white_point::C, Alpha};
 
     pub fn selection_active(cosmic: &cosmic_theme::Theme<Alpha<Rgb, f32>>) -> ItemStatusAppearance {
         let mut neutral_5 = cosmic.palette.neutral_5;
         neutral_5.alpha = 0.2;
+        let rad_m = cosmic.corner_radii.radius_m;
+        let rad_0 = cosmic.corner_radii.radius_0;
         ItemStatusAppearance {
             background: Some(Background::Color(neutral_5.into())),
             first: ItemAppearance {
-                border_radius: BorderRadius::from([24.0, 0.0, 0.0, 24.0]),
+                border_radius: BorderRadius::from([rad_m[0], rad_0[1], rad_0[2], rad_m[3]]),
                 ..Default::default()
             },
             middle: ItemAppearance {
-                border_radius: BorderRadius::from(0.0),
+                border_radius: cosmic.corner_radii.radius_0.into(),
                 ..Default::default()
             },
             last: ItemAppearance {
-                border_radius: BorderRadius::from([0.0, 24.0, 24.0, 0.0]),
+                border_radius: BorderRadius::from([rad_0[0], rad_m[1], rad_m[2], rad_0[3]]),
                 ..Default::default()
             },
             text_color: cosmic.accent.base.into(),
@@ -172,20 +183,22 @@ mod horizontal {
     ) -> ItemStatusAppearance {
         let mut neutral_5 = cosmic.palette.neutral_5;
         neutral_5.alpha = 0.2;
+        let rad_s = cosmic.corner_radii.radius_s;
+        let rad_0 = cosmic.corner_radii.radius_0;
         ItemStatusAppearance {
             background: Some(Background::Color(neutral_5.into())),
             first: ItemAppearance {
-                border_radius: BorderRadius::from([8.0, 8.0, 0.0, 0.0]),
+                border_radius: BorderRadius::from([rad_s[0], rad_s[1], rad_0[2], rad_0[3]]),
                 border_bottom: Some((4.0, cosmic.accent.base.into())),
                 ..Default::default()
             },
             middle: ItemAppearance {
-                border_radius: BorderRadius::from([8.0, 8.0, 0.0, 0.0]),
+                border_radius: BorderRadius::from([rad_s[0], rad_s[1], rad_0[2], rad_0[3]]),
                 border_bottom: Some((4.0, cosmic.accent.base.into())),
                 ..Default::default()
             },
             last: ItemAppearance {
-                border_radius: BorderRadius::from([8.0, 8.0, 0.0, 0.0]),
+                border_radius: BorderRadius::from([rad_s[0], rad_s[1], rad_0[2], rad_0[3]]),
                 border_bottom: Some((4.0, cosmic.accent.base.into())),
                 ..Default::default()
             },
@@ -230,18 +243,20 @@ mod vertical {
     pub fn selection_active(cosmic: &cosmic_theme::Theme<Alpha<Rgb, f32>>) -> ItemStatusAppearance {
         let mut neutral_5 = cosmic.palette.neutral_5;
         neutral_5.alpha = 0.2;
+        let rad_0 = cosmic.corner_radii.radius_0;
+        let rad_m = cosmic.corner_radii.radius_m;
         ItemStatusAppearance {
             background: Some(Background::Color(neutral_5.into())),
             first: ItemAppearance {
-                border_radius: BorderRadius::from([24.0, 24.0, 0.0, 0.0]),
+                border_radius: BorderRadius::from([rad_m[0], rad_m[1], rad_0[2], rad_0[3]]),
                 ..Default::default()
             },
             middle: ItemAppearance {
-                border_radius: BorderRadius::from(0.0),
+                border_radius: cosmic.corner_radii.radius_0.into(),
                 ..Default::default()
             },
             last: ItemAppearance {
-                border_radius: BorderRadius::from([0.0, 0.0, 24.0, 24.0]),
+                border_radius: BorderRadius::from([rad_0[0], rad_0[1], rad_m[2], rad_m[3]]),
                 ..Default::default()
             },
             text_color: cosmic.accent.base.into(),
@@ -256,15 +271,15 @@ mod vertical {
         ItemStatusAppearance {
             background: Some(Background::Color(neutral_5.into())),
             first: ItemAppearance {
-                border_radius: BorderRadius::from(24.0),
+                border_radius: cosmic.corner_radii.radius_m.into(),
                 ..Default::default()
             },
             middle: ItemAppearance {
-                border_radius: BorderRadius::from(24.0),
+                border_radius: cosmic.corner_radii.radius_m.into(),
                 ..Default::default()
             },
             last: ItemAppearance {
-                border_radius: BorderRadius::from(24.0),
+                border_radius: cosmic.corner_radii.radius_m.into(),
                 ..Default::default()
             },
             text_color: cosmic.accent.base.into(),

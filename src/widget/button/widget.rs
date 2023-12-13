@@ -23,6 +23,8 @@ use iced_core::{
 };
 use iced_renderer::core::widget::{operation, OperationOutputWrapper};
 
+use crate::theme::THEME;
+
 pub use super::style::{Appearance, StyleSheet};
 
 /// Internally defines different button widget variants.
@@ -387,6 +389,8 @@ where
         {
             let selection_background = theme.selection_background();
 
+            let c_rad = THEME.with(|t| t.borrow().cosmic().corner_radii);
+
             if self.selected {
                 renderer.fill_quad(
                     Quad {
@@ -396,7 +400,13 @@ where
                             x: bounds.x + styling.border_width,
                             y: bounds.y + (bounds.height - 20.0 - styling.border_width),
                         },
-                        border_radius: [0.0, 8.0, 0.0, 8.0].into(),
+                        border_radius: [
+                            c_rad.radius_0[0],
+                            c_rad.radius_s[1],
+                            c_rad.radius_0[2],
+                            c_rad.radius_s[3],
+                        ]
+                        .into(),
                         border_width: 0.0,
                         border_color: Color::TRANSPARENT,
                     },
@@ -423,7 +433,7 @@ where
                         renderer.fill_quad(
                             renderer::Quad {
                                 bounds,
-                                border_radius: 20.0.into(),
+                                border_radius: c_rad.radius_m.into(),
                                 border_width: 0.0,
                                 border_color: Color::TRANSPARENT,
                             },

@@ -1933,6 +1933,9 @@ pub fn draw<'a, Message>(
     let font = font.unwrap_or_else(|| renderer.default_font());
     let size = size.unwrap_or_else(|| renderer.default_size().0);
 
+    let radius_0 = THEME
+        .with(|t| t.borrow().cosmic().corner_radii.radius_0)
+        .into();
     let (cursor, offset) = if let Some(focus) = &state.is_focused {
         match state.cursor.state(value) {
             cursor::State::Index(position) => {
@@ -1956,7 +1959,7 @@ pub fn draw<'a, Message>(
                                         width: 1.0,
                                         height: text_bounds.height,
                                     },
-                                    border_radius: 0.0.into(),
+                                    border_radius: radius_0,
                                     border_width: 0.0,
                                     border_color: Color::TRANSPARENT,
                                 },
@@ -1994,7 +1997,7 @@ pub fn draw<'a, Message>(
                                     width,
                                     height: text_bounds.height,
                                 },
-                                border_radius: 0.0.into(),
+                                border_radius: radius_0,
                                 border_width: 0.0,
                                 border_color: Color::TRANSPARENT,
                             },

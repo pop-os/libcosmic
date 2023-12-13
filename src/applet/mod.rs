@@ -157,7 +157,7 @@ impl Context {
                 Appearance {
                     text_color: Some(cosmic.background.on.into()),
                     background: Some(Color::from(cosmic.background.base).into()),
-                    border_radius: 12.0.into(),
+                    border_radius: cosmic.corner_radii.radius_m.into(),
                     border_width: 1.0,
                     border_color: cosmic.background.divider.into(),
                     icon_color: Some(cosmic.background.on.into()),

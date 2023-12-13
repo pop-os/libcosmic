@@ -28,7 +28,7 @@ pub fn style(theme: &crate::Theme) -> crate::widget::container::Appearance {
         icon_color: Some(container.on.into()),
         text_color: Some(container.on.into()),
         background: Some(Background::Color(container.base.into())),
-        border_radius: 8.0.into(),
+        border_radius: theme.cosmic().corner_radii.radius_s.into(),
         border_width: 0.0,
         border_color: Color::TRANSPARENT,
     }

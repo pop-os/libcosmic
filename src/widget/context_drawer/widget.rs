@@ -84,7 +84,7 @@ impl<'a, Message: Clone + 'static> ContextDrawer<'a, Message> {
                         icon_color: Some(Color::from(palette.primary.on)),
                         text_color: Some(Color::from(palette.primary.on)),
                         background: Some(iced::Background::Color(palette.primary.base.into())),
-                        border_radius: 8.0.into(),
+                        border_radius: palette.corner_radii.radius_s.into(),
                         border_width: 0.0,
                         border_color: Color::TRANSPARENT,
                     }

@@ -4,6 +4,8 @@
 //! Change the apperance of a button.
 use iced_core::{Background, BorderRadius, Color, Vector};
 
+use crate::theme::THEME;
+
 /// The appearance of a button.
 #[must_use]
 #[derive(Debug, Clone, Copy)]
@@ -39,10 +41,11 @@ pub struct Appearance {
 impl Appearance {
     // TODO: `BorderRadius` is not `const fn` compatible.
     pub fn new() -> Self {
+        let rad_0 = THEME.with(|t| t.borrow().cosmic().corner_radii.radius_0);
         Self {
             shadow_offset: Vector::new(0.0, 0.0),
             background: None,
-            border_radius: BorderRadius::from(0.0),
+            border_radius: BorderRadius::from(rad_0),
             border_width: 0.0,
             border_color: Color::TRANSPARENT,
             outline_width: 0.0,
