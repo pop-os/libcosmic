@@ -5,11 +5,13 @@ edition = "2021"
 
 [features]
 default = ["macro", "subscription"]
+dbus = ["dep:zbus", "cosmic-settings-daemon", "futures-util", "subscription"]
 macro = ["cosmic-config-derive"]
 subscription = ["iced_futures"]
 
 [dependencies]
 # For redox support
+zbus = { version = "3.14.1", default-features = false, optional = true }
 atomicwrites = { git = "https://github.com/jackpot51/rust-atomicwrites" }
 calloop = { version = "0.12.2", optional = true }
 dirs = "5.0.1"
@@ -19,4 +21,6 @@ serde = "1.0.152"
 cosmic-config-derive = { path = "../cosmic-config-derive/", optional = true }
 iced = { path = "../iced/", default-features = false,  optional = true }
 iced_futures = { path = "../iced/futures/", default-features = false, optional = true }
-
+once_cell = "1.19.0"
+cosmic-settings-daemon = { git = "https://github.com/pop-os/dbus-settings-bindings", branch = "cosmic-settings-daemon", optional = true }
+futures-util = { version = "0.3", optional = true }

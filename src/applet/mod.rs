@@ -153,11 +153,11 @@ impl Context {
         Container::<Message, Renderer>::new(Container::<Message, Renderer>::new(content).style(
             theme::Container::custom(|theme| {
                 let cosmic = theme.cosmic();
-
+                let corners = cosmic.corner_radii.clone();
                 Appearance {
                     text_color: Some(cosmic.background.on.into()),
                     background: Some(Color::from(cosmic.background.base).into()),
-                    border_radius: cosmic.corner_radii.radius_m.into(),
+                    border_radius: corners.radius_m.into(),
                     border_width: 1.0,
                     border_color: cosmic.background.divider.into(),
                     icon_color: Some(cosmic.background.on.into()),

@@ -69,6 +69,9 @@ pub struct Core {
 
     #[cfg(feature = "single-instance")]
     pub(crate) single_instance: bool,
+
+    #[cfg(feature = "dbus-config")]
+    pub(crate) settings_daemon: Option<cosmic_settings_daemon::CosmicSettingsDaemonProxy<'static>>,
 }
 
 impl Default for Core {
@@ -114,6 +117,8 @@ impl Default for Core {
             applet: crate::applet::Context::default(),
             #[cfg(feature = "single-instance")]
             single_instance: false,
+            #[cfg(feature = "dbus-config")]
+            settings_daemon: None,
         }
     }
 }
@@ -207,5 +212,17 @@ impl Core {
     /// Get the current system theme mode
     pub fn system_theme_mode(&self) -> ThemeMode {
         self.system_theme_mode
+    }
+
+    #[cfg(feature = "dbus-config")]
+    pub fn watch_config<T: CosmicConfigEntry + Send + Sync + Default + 'static + Clone>(
+        &self,
+        config_id: &'static str,
+    ) -> iced::Subscription<cosmic_config::dbus::ConfigUpdate<T>> {
+        if let Some(settings_daemon) = self.settings_daemon.clone() {
+            cosmic_config::dbus::watcher_subscription(settings_daemon, config_id)
+        } else {
+            iced::Subscription::none()
+        }
     }
 }

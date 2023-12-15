@@ -1,6 +1,8 @@
 // Copyright 2023 System76 <info@system76.com>
 // SPDX-License-Identifier: MPL-2.0
 
+use std::sync::Arc;
+
 use super::{command, Application, ApplicationExt, Core, Subscription};
 use crate::theme::{self, Theme, ThemeType, THEME};
 use crate::widget::nav_bar;
@@ -64,6 +66,9 @@ pub enum Message {
     WmCapabilities(window::Id, WindowManagerCapabilities),
     /// Activate the application
     Activate(String),
+    #[cfg(feature = "dbus-config")]
+    /// dbus settings daemon setup
+    SettingsDaemon(zbus::Result<cosmic_settings_daemon::CosmicSettingsDaemonProxy<'static>>),
 }
 
 #[derive(Default)]
@@ -83,6 +88,13 @@ where
     fn new((core, flags): Self::Flags) -> (Self, iced::Command<Self::Message>) {
         let (model, command) = T::init(core, flags);
 
+        #[cfg(feature = "dbus-config")]
+        let command = iced::Command::batch(vec![
+            command,
+            iced::Command::perform(cosmic_config::dbus::settings_daemon_proxy(), |p| {
+                super::Message::Cosmic(super::cosmic::Message::SettingsDaemon(p))
+            }),
+        ]);
         (Self::new(model), command)
     }
 
@@ -164,12 +176,26 @@ where
             keyboard_nav::subscription()
                 .map(Message::KeyboardNav)
                 .map(super::Message::Cosmic),
-            theme::subscription(
-                self.app.core().theme_sub_counter,
-                self.app.core().system_theme_mode.is_dark,
-            )
-            .map(Message::SystemThemeChange)
-            .map(super::Message::Cosmic),
+            #[cfg(feature = "dbus-config")]
+            self.app
+                .core()
+                .watch_config::<cosmic_theme::Theme>(if self.app.core().system_theme_mode.is_dark {
+                    cosmic_theme::DARK_THEME_ID
+                } else {
+                    cosmic_theme::LIGHT_THEME_ID
+                })
+                .map(|update| {
+                    for e in update.errors {
+                        tracing::error!("{e}");
+                    }
+                    Message::SystemThemeChange(crate::theme::Theme::system(Arc::new(update.config)))
+                })
+                .map(super::Message::Cosmic),
+            #[cfg(not(feature = "dbus-config"))]
+            theme::subscription(self.app.core().system_theme_mode.is_dark)
+                .map(Message::SystemThemeChange)
+                .map(super::Message::Cosmic),
+            #[cfg(not(feature = "dbus-config"))]
             cosmic_config::config_subscription::<_, cosmic_theme::ThemeMode>(
                 0,
                 cosmic_theme::THEME_MODE_ID.into(),
@@ -185,6 +211,17 @@ where
                 }
             })
             .map(super::Message::Cosmic),
+            #[cfg(feature = "dbus-config")]
+            self.app
+                .core()
+                .watch_config::<ThemeMode>(cosmic_theme::THEME_MODE_ID)
+                .map(|update| {
+                    for e in update.errors {
+                        tracing::error!("{e}");
+                    }
+                    Message::SystemThemeModeChange(update.config)
+                })
+                .map(super::Message::Cosmic),
             window_events.map(super::Message::Cosmic),
             #[cfg(feature = "single-instance")]
             self.app
@@ -384,6 +421,15 @@ impl<T: Application> Cosmic<T> {
                     _token,
                 );
             }
+            #[cfg(feature = "dbus-config")]
+            Message::SettingsDaemon(p) => match p {
+                Ok(p) => {
+                    self.app.core_mut().settings_daemon = Some(p);
+                }
+                Err(e) => {
+                    tracing::error!("Failed to connect to settings daemon: {e}");
+                }
+            },
         }
 
         iced::Command::none()

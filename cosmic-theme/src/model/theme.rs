@@ -40,6 +40,7 @@ pub enum Layer {
     PartialEq,
     cosmic_config::cosmic_config_derive::CosmicConfigEntry,
 )]
+#[version = 1]
 pub struct Theme {
     /// name of the theme
     pub name: String,
@@ -388,6 +389,7 @@ impl From<CosmicPalette> for Theme {
     cosmic_config::cosmic_config_derive::CosmicConfigEntry,
     PartialEq,
 )]
+#[version = 1]
 pub struct ThemeBuilder {
     /// override the palette for the builder
     pub palette: CosmicPalette,

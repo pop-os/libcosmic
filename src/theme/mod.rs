@@ -16,6 +16,9 @@ use iced_futures::Subscription;
 use std::cell::RefCell;
 use std::sync::Arc;
 
+#[cfg(feature = "dbus-config")]
+use cosmic_config::dbus;
+
 pub type CosmicColor = ::palette::rgb::Srgba;
 pub type CosmicComponent = cosmic_theme::Component;
 pub type CosmicTheme = cosmic_theme::Theme;
@@ -68,9 +71,12 @@ pub fn is_high_contrast() -> bool {
 }
 
 /// Watches for changes to the system's theme preference.
-pub fn subscription(id: u64, is_dark: bool) -> Subscription<crate::theme::Theme> {
+pub fn subscription(is_dark: bool) -> Subscription<crate::theme::Theme> {
     config_subscription::<_, crate::cosmic_theme::Theme>(
-        (id, is_dark),
+        (
+            std::any::TypeId::of::<crate::cosmic_theme::Theme>(),
+            is_dark,
+        ),
         if is_dark {
             cosmic_theme::DARK_THEME_ID
         } else {
