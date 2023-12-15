@@ -6,7 +6,6 @@
 use cosmic_theme::Component;
 use iced_core::{Background, Color};
 
-
 use crate::{
     theme::TRANSPARENT_COMPONENT,
     widget::button::{Appearance, StyleSheet},
