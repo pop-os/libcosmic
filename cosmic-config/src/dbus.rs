@@ -55,7 +55,6 @@ pub fn watcher_subscription<T: CosmicConfigEntry + Send + Sync + Default + 'stat
             pending::<()>().await;
             unreachable!();
         };
-        dbg!(config_id, version, &cosmic_config);
         let mut config = match T::get_entry(&cosmic_config) {
             Ok(config) => config,
             Err((errors, default)) => {
@@ -76,15 +75,10 @@ pub fn watcher_subscription<T: CosmicConfigEntry + Send + Sync + Default + 'stat
             eprintln!("Failed to send config: {err}");
         }
 
-        dbg!("sent init");
-
         let Ok(watcher) = Watcher::new_config(&settings_daemon, config_id, version).await else {
-            dbg!("failed to create watcher");
             pending::<()>().await;
             unreachable!();
         };
-
-        dbg!("watcher created");
 
         loop {
             let Ok(changes) = watcher.receive_changed().await else {
