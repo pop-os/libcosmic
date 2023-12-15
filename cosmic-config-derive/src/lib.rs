@@ -2,7 +2,7 @@ use proc_macro::TokenStream;
 use quote::quote;
 use syn::{self};
 
-#[proc_macro_derive(CosmicConfigEntry)]
+#[proc_macro_derive(CosmicConfigEntry, attributes(version, id))]
 pub fn cosmic_config_entry_derive(input: TokenStream) -> TokenStream {
     // Construct a representation of Rust code as a syntax tree
     // that we can manipulate
@@ -13,6 +13,24 @@ pub fn cosmic_config_entry_derive(input: TokenStream) -> TokenStream {
 }
 
 fn impl_cosmic_config_entry_macro(ast: &syn::DeriveInput) -> TokenStream {
+    let attributes = &ast.attrs;
+    let version = attributes
+        .iter()
+        .find_map(|attr| {
+            if attr.path.is_ident("version") {
+                match attr.parse_meta() {
+                    Ok(syn::Meta::NameValue(syn::MetaNameValue {
+                        lit: syn::Lit::Int(lit_int),
+                        ..
+                    })) => Some(lit_int.base10_parse::<u64>().unwrap()),
+                    _ => None,
+                }
+            } else {
+                None
+            }
+        })
+        .unwrap_or(0);
+
     let name = &ast.ident;
 
     // Get the fields of the struct
@@ -64,6 +82,8 @@ fn impl_cosmic_config_entry_macro(ast: &syn::DeriveInput) -> TokenStream {
 
     let gen = quote! {
         impl CosmicConfigEntry for #name {
+            const VERSION: u64 = #version;
+
             fn write_entry(&self, config: &cosmic_config::Config) -> Result<(), cosmic_config::Error> {
                 let tx = config.transaction();
                 #(#write_each_config_field)*
@@ -83,7 +103,7 @@ fn impl_cosmic_config_entry_macro(ast: &syn::DeriveInput) -> TokenStream {
                 }
             }
 
-            fn update_keys<T: AsRef<str>>(&mut self, config: &cosmic_config::Config, changed_keys: &[T]) -> (Vec<cosmic_config::Error>, Vec<&str>){
+            fn update_keys<T: AsRef<str>>(&mut self, config: &cosmic_config::Config, changed_keys: &[T]) -> (Vec<cosmic_config::Error>, Vec<&'static str>){
                 let mut keys = Vec::with_capacity(changed_keys.len());
                 let mut errors = Vec::new();
                 for key in changed_keys.iter() {

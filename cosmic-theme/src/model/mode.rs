@@ -7,6 +7,7 @@ pub const THEME_MODE_ID: &str = "com.system76.CosmicTheme.Mode";
 #[derive(
     Debug, Clone, Copy, PartialEq, Eq, cosmic_config::cosmic_config_derive::CosmicConfigEntry,
 )]
+#[version = 1]
 pub struct ThemeMode {
     /// The theme dark mode setting.
     pub is_dark: bool,

@@ -46,6 +46,7 @@ xdg-portal = ["ashpd"]
 applet = ["wayland", "tokio", "cosmic-panel-config", "ron"]
 applet-token = []
 single-instance = ["dep:zbus", "serde", "ron"]
+dbus-config = ["cosmic-config/dbus", "dep:zbus", "cosmic-settings-daemon"]
 
 [dependencies]
 apply = "0.3.0"
@@ -68,6 +69,8 @@ css-color = "0.2.5"
 nix = { version = "0.27", features = ["process"], optional = true }
 zbus = {version = "3.14.1", default-features = false, optional = true}
 serde = { version = "1.0.180", optional = true }
+cosmic-settings-daemon = { git = "https://github.com/pop-os/dbus-settings-bindings", branch = "cosmic-settings-daemon", optional = true }
+
 
 [target.'cfg(unix)'.dependencies]
 freedesktop-icons = "0.2.4"
