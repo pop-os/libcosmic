@@ -578,6 +578,45 @@ impl<App: Application> ApplicationExt for App {
         let core = self.core();
         let is_condensed = core.is_condensed();
 
+        let content_row = crate::widget::row::with_children({
+            let mut widgets = Vec::with_capacity(2);
+
+            // Insert nav bar onto the left side of the window.
+            if let Some(nav) = self.nav_bar() {
+                widgets.push(nav.debug(core.debug));
+            }
+
+            if self.nav_model().is_none() || core.show_content() {
+                let main_content = self.view().debug(core.debug).map(Message::App);
+
+                widgets.push(if let Some(context) = self.context_drawer() {
+                    context_drawer(
+                        &core.window.context_title,
+                        Message::Cosmic(cosmic::Message::ContextDrawer(false)),
+                        main_content,
+                        context.map(Message::App),
+                    )
+                    .into()
+                } else {
+                    main_content
+                });
+            }
+
+            widgets
+        })
+        .spacing(8);
+        let content: Element<_> = if core.window.content_container {
+            content_row
+                .apply(crate::widget::container)
+                .padding([0, 8, 8, 8])
+                .width(iced::Length::Fill)
+                .height(iced::Length::Fill)
+                .style(crate::theme::Container::Background)
+                .into()
+        } else {
+            content_row.into()
+        };
+
         crate::widget::column::with_capacity(2)
             .push_maybe(if core.window.show_headerbar {
                 Some({
@@ -624,40 +663,7 @@ impl<App: Application> ApplicationExt for App {
                 None
             })
             // The content element contains every element beneath the header.
-            .push(
-                crate::widget::row::with_children({
-                    let mut widgets = Vec::with_capacity(2);
-
-                    // Insert nav bar onto the left side of the window.
-                    if let Some(nav) = self.nav_bar() {
-                        widgets.push(nav.debug(core.debug));
-                    }
-
-                    if self.nav_model().is_none() || core.show_content() {
-                        let main_content = self.view().debug(core.debug).map(Message::App);
-
-                        widgets.push(if let Some(context) = self.context_drawer() {
-                            context_drawer(
-                                &core.window.context_title,
-                                Message::Cosmic(cosmic::Message::ContextDrawer(false)),
-                                main_content,
-                                context.map(Message::App),
-                            )
-                            .into()
-                        } else {
-                            main_content
-                        });
-                    }
-
-                    widgets
-                })
-                .spacing(8)
-                .apply(crate::widget::container)
-                .padding([0, 8, 8, 8])
-                .width(iced::Length::Fill)
-                .height(iced::Length::Fill)
-                .style(crate::theme::Container::Background),
-            )
+            .push(content)
             .into()
     }
 }

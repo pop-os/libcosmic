@@ -26,6 +26,7 @@ pub struct Window {
     /// Label to display as header bar title.
     pub header_title: String,
     pub use_template: bool,
+    pub content_container: bool,
     pub can_fullscreen: bool,
     pub sharp_corners: bool,
     pub show_context: bool,
@@ -98,6 +99,7 @@ impl Default for Core {
                 context_title: String::new(),
                 header_title: String::new(),
                 use_template: true,
+                content_container: true,
                 can_fullscreen: false,
                 sharp_corners: false,
                 show_context: false,
