@@ -94,8 +94,21 @@ pub trait ConfigSet {
 
 #[derive(Clone, Debug)]
 pub struct Config {
-    system_path: PathBuf,
+    system_path: Option<PathBuf>,
     user_path: PathBuf,
+}
+
+/// Check that the name is relative and doesn't contain . or ..
+fn sanitize_name(name: &str) -> Result<&Path, Error> {
+    let path = Path::new(name);
+    if path
+        .components()
+        .all(|x| matches!(x, std::path::Component::Normal(_)))
+    {
+        Ok(path)
+    } else {
+        Err(Error::InvalidName(name.to_owned()))
+    }
 }
 
 impl Config {
@@ -108,33 +121,34 @@ impl Config {
     // Use folder at XDG config/name for config storage, return Config if successful
     //TODO: fallbacks for flatpak (HOST_XDG_CONFIG_HOME, xdg-desktop settings proxy)
     pub fn new(name: &str, version: u64) -> Result<Self, Error> {
-        // Get libcosmic system defaults path
-        //TODO: support non-UNIX OS
-        let cosmic_system_path = Path::new("/usr/share/cosmic");
-        // Append [name]/v[version]
-        let system_path = cosmic_system_path.join(name).join(format!("v{}", version));
+        // Look for [name]/v[version]
+        let path = sanitize_name(name)?.join(format!("v{}", version));
+
+        // Search data file, which provides default (e.g. /usr/share)
+        #[cfg(unix)]
+        let system_path = xdg::BaseDirectories::with_prefix("cosmic")
+            .map_err(std::io::Error::from)?
+            .find_data_file(&path);
+
+        #[cfg(windows)]
+        let system_path =
+            known_folders::get_known_folder_path(known_folders::KnownFolder::ProgramFilesCommon)
+                .map(|x| x.join("COSMIC").join(&path));
 
         // Get libcosmic user configuration directory
         let cosmic_user_path = dirs::config_dir()
             .ok_or(Error::NoConfigDirectory)?
             .join("cosmic");
-        // Append [name]/v[version]
-        let user_path = cosmic_user_path.join(name).join(format!("v{}", version));
 
-        // If the app paths are children of the cosmic paths
-        if system_path.starts_with(&cosmic_system_path) && user_path.starts_with(&cosmic_user_path)
-        {
-            // Create app user path
-            fs::create_dir_all(&user_path)?;
-            // Return Config
-            Ok(Self {
-                system_path,
-                user_path,
-            })
-        } else {
-            // Return error for invalid name
-            Err(Error::InvalidName(name.to_string()))
-        }
+        let user_path = cosmic_user_path.join(path);
+        // Create new configuration directory if not found.
+        fs::create_dir_all(&user_path)?;
+
+        // Return Config
+        Ok(Self {
+            system_path,
+            user_path,
+        })
     }
 
     /// Get state for the given application name and config version. State is meant to be used to
@@ -143,33 +157,22 @@ impl Config {
     // Use folder at XDG config/name for config storage, return Config if successful
     //TODO: fallbacks for flatpak (HOST_XDG_CONFIG_HOME, xdg-desktop settings proxy)
     pub fn new_state(name: &str, version: u64) -> Result<Self, Error> {
-        // Get libcosmic system defaults path
-        //TODO: support non-UNIX OS
-        let cosmic_system_path = Path::new("/var/lib/cosmic");
-        // Append [name]/v[version]
-        let system_path = cosmic_system_path.join(name).join(format!("v{}", version));
+        // Look for [name]/v[version]
+        let path = sanitize_name(name)?.join(format!("v{}", version));
 
-        // Get libcosmic user configuration directory
+        // Get libcosmic user state directory
         let cosmic_user_path = dirs::state_dir()
             .ok_or(Error::NoConfigDirectory)?
             .join("cosmic");
-        // Append [name]/v[version]
-        let user_path = cosmic_user_path.join(name).join(format!("v{}", version));
 
-        // If the app paths are children of the cosmic paths
-        if system_path.starts_with(&cosmic_system_path) && user_path.starts_with(&cosmic_user_path)
-        {
-            // Create app user path
-            fs::create_dir_all(&user_path)?;
-            // Return Config
-            Ok(Self {
-                system_path,
-                user_path,
-            })
-        } else {
-            // Return error for invalid name
-            Err(Error::InvalidName(name.to_string()))
-        }
+        let user_path = cosmic_user_path.join(path);
+        // Create new state directory if not found.
+        fs::create_dir_all(&user_path)?;
+
+        Ok(Self {
+            system_path: None,
+            user_path,
+        })
     }
 
     // Start a transaction (to set multiple configs at the same time)
@@ -238,23 +241,15 @@ impl Config {
     }
 
     fn default_path(&self, key: &str) -> Result<PathBuf, Error> {
-        let default_path = self.system_path.join(key);
-        // Ensure key path is a direct child of config directory
-        if default_path.parent() == Some(&self.system_path) {
-            Ok(default_path)
-        } else {
-            Err(Error::InvalidName(key.to_string()))
-        }
+        let Some(system_path) = self.system_path.as_ref() else {
+            return Err(Error::NoConfigDirectory);
+        };
+
+        Ok(system_path.join(sanitize_name(key)?))
     }
 
     fn key_path(&self, key: &str) -> Result<PathBuf, Error> {
-        let key_path = self.user_path.join(key);
-        // Ensure key path is a direct child of config directory
-        if key_path.parent() == Some(&self.user_path) {
-            Ok(key_path)
-        } else {
-            Err(Error::InvalidName(key.to_string()))
-        }
+        Ok(self.user_path.join(sanitize_name(key)?))
     }
 }
 
