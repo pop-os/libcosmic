@@ -88,6 +88,10 @@ pub(crate) fn iced_settings<App: Application>(
     iced.default_text_size = iced::Pixels(settings.default_text_size);
     iced.exit_on_close_request = settings.exit_on_close;
     iced.id = Some(App::APP_ID.to_owned());
+    #[cfg(all(not(feature = "wayland"), target_os = "linux"))]
+    {
+        iced.window.platform_specific.application_id = App::APP_ID.to_string();
+    }
 
     #[cfg(feature = "wayland")]
     {
