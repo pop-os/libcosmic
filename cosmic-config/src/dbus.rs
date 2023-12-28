@@ -1,7 +1,7 @@
 use std::ops::Deref;
 
 use crate::CosmicConfigEntry;
-use cosmic_settings_daemon::{Changed, ConfigProxy, CosmicSettingsDaemonProxy, Ping};
+use cosmic_settings_daemon::{ConfigProxy, CosmicSettingsDaemonProxy};
 use futures_util::SinkExt;
 use iced_futures::futures::{future::pending, StreamExt};
 pub async fn settings_daemon_proxy() -> zbus::Result<CosmicSettingsDaemonProxy<'static>> {
@@ -35,10 +35,24 @@ impl Watcher {
             .await
             .map(|proxy| Self { proxy })
     }
+
+    pub async fn new_state(
+        settings_daemon_proxy: &CosmicSettingsDaemonProxy<'static>,
+        id: &str,
+        version: u64,
+    ) -> zbus::Result<Self> {
+        let (path, name) = settings_daemon_proxy.watch_state(id, version).await?;
+        ConfigProxy::builder(settings_daemon_proxy.connection())
+            .path(path)?
+            .destination(name)?
+            .build()
+            .await
+            .map(|proxy| Self { proxy })
+    }
 }
 
 #[derive(Debug)]
-pub struct ConfigUpdate<T> {
+pub struct Update<T> {
     pub errors: Vec<crate::Error>,
     pub keys: Vec<&'static str>,
     pub config: T,
@@ -47,11 +61,17 @@ pub struct ConfigUpdate<T> {
 pub fn watcher_subscription<T: CosmicConfigEntry + Send + Sync + Default + 'static + Clone>(
     settings_daemon: CosmicSettingsDaemonProxy<'static>,
     config_id: &'static str,
-) -> iced_futures::Subscription<ConfigUpdate<T>> {
+    is_state: bool,
+) -> iced_futures::Subscription<Update<T>> {
     let id = std::any::TypeId::of::<T>();
-    iced_futures::subscription::channel((config_id, id), 5, move |mut tx| async move {
+    iced_futures::subscription::channel((is_state, config_id, id), 5, move |mut tx| async move {
         let version = T::VERSION;
-        let Ok(cosmic_config) = crate::Config::new(config_id, version) else {
+
+        let Ok(cosmic_config) = (if is_state {
+            crate::Config::new_state(config_id, version)
+        } else {
+            crate::Config::new(config_id, version)
+        }) else {
             pending::<()>().await;
             unreachable!();
         };
@@ -65,7 +85,7 @@ pub fn watcher_subscription<T: CosmicConfigEntry + Send + Sync + Default + 'stat
             }
         };
         if let Err(err) = tx
-            .send(ConfigUpdate {
+            .send(Update {
                 errors: Vec::new(),
                 keys: Vec::new(),
                 config: config.clone(),
@@ -75,57 +95,39 @@ pub fn watcher_subscription<T: CosmicConfigEntry + Send + Sync + Default + 'stat
             eprintln!("Failed to send config: {err}");
         }
 
-        let Ok(watcher) = Watcher::new_config(&settings_daemon, config_id, version).await else {
+        let watcher = if is_state {
+            Watcher::new_state(&settings_daemon, config_id, version).await
+        } else {
+            Watcher::new_config(&settings_daemon, config_id, version).await
+        };
+        let Ok(watcher) = watcher else {
             pending::<()>().await;
             unreachable!();
         };
 
         loop {
-            let Ok(changes) = watcher.receive_changed().await else {
+            let Ok(mut changes) = watcher.receive_changed().await else {
                 pending::<()>().await;
                 unreachable!();
             };
-            let Ok(pings) = watcher.receive_ping().await else {
-                pending::<()>().await;
-                unreachable!();
-            };
-            let mut streams = futures_util::stream_select!(
-                changes.map(Message::ConfigChanged),
-                pings.map(Message::ConfigPing)
-            );
-            while let Some(v) = streams.next().await {
-                match v {
-                    Message::ConfigChanged(change) => {
-                        let Ok(args) = change.args() else {
-                            continue;
-                        };
-                        let (errors, keys) = config.update_keys(&cosmic_config, &[args.key]);
-                        if !keys.is_empty() {
-                            if let Err(err) = tx
-                                .send(ConfigUpdate {
-                                    errors,
-                                    keys,
-                                    config: config.clone(),
-                                })
-                                .await
-                            {
-                                eprintln!("Failed to send config update: {err}");
-                            }
-                        }
-                    }
-                    Message::ConfigPing(_) => {
-                        // send pong
-                        if let Err(err) = watcher.pong().await {
-                            eprintln!("Failed to send pong: {err}");
-                        }
+            while let Some(change) = changes.next().await {
+                let Ok(args) = change.args() else {
+                    continue;
+                };
+                let (errors, keys) = config.update_keys(&cosmic_config, &[args.key]);
+                if !keys.is_empty() {
+                    if let Err(err) = tx
+                        .send(Update {
+                            errors,
+                            keys,
+                            config: config.clone(),
+                        })
+                        .await
+                    {
+                        eprintln!("Failed to send config update: {err}");
                     }
                 }
             }
         }
     })
-}
-
-pub enum Message {
-    ConfigChanged(Changed),
-    ConfigPing(Ping),
 }

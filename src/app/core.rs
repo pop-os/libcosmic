@@ -216,9 +216,21 @@ impl Core {
     pub fn watch_config<T: CosmicConfigEntry + Send + Sync + Default + 'static + Clone>(
         &self,
         config_id: &'static str,
-    ) -> iced::Subscription<cosmic_config::dbus::ConfigUpdate<T>> {
+    ) -> iced::Subscription<cosmic_config::dbus::Update<T>> {
         if let Some(settings_daemon) = self.settings_daemon.clone() {
-            cosmic_config::dbus::watcher_subscription(settings_daemon, config_id)
+            cosmic_config::dbus::watcher_subscription(settings_daemon, config_id, false)
+        } else {
+            iced::Subscription::none()
+        }
+    }
+
+    #[cfg(feature = "dbus-config")]
+    pub fn watch_state<T: CosmicConfigEntry + Send + Sync + Default + 'static + Clone>(
+        &self,
+        state_id: &'static str,
+    ) -> iced::Subscription<cosmic_config::dbus::Update<T>> {
+        if let Some(settings_daemon) = self.settings_daemon.clone() {
+            cosmic_config::dbus::watcher_subscription(settings_daemon, state_id, true)
         } else {
             iced::Subscription::none()
         }
