@@ -433,7 +433,7 @@ impl State {
                     .icon(),
                 icon::from_name("microphone-sensitivity-high-symbolic-test")
                     .size(24)
-                    .fallback(false)
+                    .fallback(None)
                     .icon(),
             ])
             .layer(cosmic_theme::Layer::Primary)
