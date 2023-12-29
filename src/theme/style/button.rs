@@ -76,11 +76,6 @@ pub fn appearance(
             appearance.background = Some(Background::Color(background));
             appearance.text_color = text;
             appearance.icon_color = icon;
-
-            if focused {
-                appearance.text_color = Some(cosmic.accent.on.into());
-                appearance.icon_color = Some(cosmic.accent.on.into());
-            }
         }
 
         Button::Image => {
