@@ -2,7 +2,17 @@
 // SPDX-License-Identifier: MPL-2.0
 
 use super::{Handle, Icon};
-use std::{path::PathBuf, sync::Arc};
+use std::{borrow::Cow, path::PathBuf, sync::Arc};
+
+#[derive(Debug, Clone, Default, Hash)]
+/// Fallback icon to use if the icon was not found.
+pub enum IconFallback {
+    #[default]
+    /// Default fallback using the icon name.
+    Default,
+    /// Fallback to specific icon names.
+    Names(Vec<Cow<'static, str>>),
+}
 
 #[must_use]
 #[derive(derive_setters::Setters, Clone, Debug, Hash)]
@@ -11,7 +21,7 @@ pub struct Named {
     pub(super) name: Arc<str>,
 
     /// Checks for a fallback if the icon was not found.
-    pub fallback: bool,
+    pub fallback: Option<IconFallback>,
 
     /// Restrict the lookup to a given scale.
     #[setters(strip_option)]
@@ -34,7 +44,7 @@ impl Named {
         Self {
             symbolic: name.ends_with("-symbolic"),
             name,
-            fallback: true,
+            fallback: Some(IconFallback::Default),
             size: None,
             scale: None,
             prefer_svg: false,
@@ -45,6 +55,7 @@ impl Named {
     #[must_use]
     pub fn path(self) -> Option<PathBuf> {
         let mut name = &*self.name;
+        let fallback = &self.fallback;
         crate::icon_theme::DEFAULT.with(|theme| {
             let theme = theme.borrow();
 
@@ -71,12 +82,22 @@ impl Named {
             let mut result = locate();
 
             // On failure, attempt to locate fallback icon.
-            if result.is_none() && self.fallback {
-                for new_name in name.rmatch_indices('-').map(|(pos, _)| &name[..pos]) {
-                    name = new_name;
-                    result = locate();
-                    if result.is_some() {
-                        break;
+            if result.is_none() {
+                if matches!(fallback, Some(IconFallback::Default)) {
+                    for new_name in name.rmatch_indices('-').map(|(pos, _)| &name[..pos]) {
+                        name = new_name;
+                        result = locate();
+                        if result.is_some() {
+                            break;
+                        }
+                    }
+                } else if let Some(IconFallback::Names(fallbacks)) = fallback {
+                    for fallback in fallbacks {
+                        name = fallback;
+                        result = locate();
+                        if result.is_some() {
+                            break;
+                        }
                     }
                 }
             }
