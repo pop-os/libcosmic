@@ -35,7 +35,7 @@ where
         let mut divider_c: Srgba = on_bg.clone().into();
         divider_c.alpha = 0.2;
 
-        let divider = over(divider_c.clone(), bg.clone());
+        let divider = over(divider_c, bg.clone());
         Self {
             base: bg,
             component,
@@ -121,7 +121,7 @@ where
     /// helper for producing a component from a base color a neutral and an accent
     pub fn colored_component(base: C, neutral: C, accent: C, hovered: C, pressed: C) -> Self {
         let base: Srgba = base.into();
-        let mut base_50 = base.clone();
+        let mut base_50 = base;
         base_50.alpha *= 0.5;
 
         let on_20 = neutral.clone();
@@ -129,7 +129,7 @@ where
         on_50.alpha = 0.5;
 
         Component {
-            base: base.clone().into(),
+            base: base.into(),
             hover: over(hovered.clone(), base).into(),
             pressed: over(pressed, base).into(),
             selected: over(hovered, base).into(),
@@ -174,11 +174,11 @@ where
         border: C,
     ) -> Self {
         let base = base.into();
-        let mut base_50 = base.clone();
+        let mut base_50 = base;
         base_50.alpha *= 0.5;
 
         let mut on_20 = on_component.clone().into();
-        let mut on_50 = on_20.clone();
+        let mut on_50 = on_20;
 
         on_20.alpha = 0.2;
         on_50.alpha = 0.5;
@@ -188,7 +188,7 @@ where
         disabled_border.alpha *= 0.5;
 
         Component {
-            base: base.clone().into(),
+            base: base.into(),
             hover: if base.alpha < 0.001 {
                 hovered.clone()
             } else {
@@ -207,7 +207,7 @@ where
             selected_text: accent.clone(),
             focus: accent.clone(),
             divider: if is_high_contrast {
-                on_50.clone().into()
+                on_50.into()
             } else {
                 on_20.into()
             },

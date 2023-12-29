@@ -640,7 +640,7 @@ where
             if cursor_position.is_over(leading_icon_layout.bounds()) {
                 return leading_icon.as_widget_mut().on_event(
                     tree,
-                    event.clone(),
+                    event,
                     leading_icon_layout,
                     cursor_position,
                     renderer,
@@ -678,7 +678,7 @@ where
             if cursor_position.is_over(trailing_icon_layout.bounds()) {
                 return trailing_icon.as_widget_mut().on_event(
                     tree,
-                    event.clone(),
+                    event,
                     trailing_icon_layout,
                     cursor_position,
                     renderer,
@@ -1579,7 +1579,7 @@ where
                     }
                 })));
                 let target = x as f32 - text_layout.bounds().x;
-                state.dnd_offer = DndOfferState::HandlingOffer(mime_types.clone(), DndAction::None);
+                state.dnd_offer = DndOfferState::HandlingOffer(mime_types, DndAction::None);
                 // existing logic for setting the selection
                 let position = if target > 0.0 {
                     let value = if is_secure {
@@ -1646,7 +1646,7 @@ where
                             accepted: DndAction::Move.union(DndAction::Copy),
                         }
                     })));
-                    state.dnd_offer = DndOfferState::HandlingOffer(mime_types.clone(), action);
+                    state.dnd_offer = DndOfferState::HandlingOffer(mime_types, action);
                 }
             };
             let target = x as f32 - text_layout.bounds().x;

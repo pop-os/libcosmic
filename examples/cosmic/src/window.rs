@@ -8,7 +8,6 @@ use cosmic::{
     font::load_fonts,
     iced::{self, Application, Command, Length, Subscription},
     iced::{
-        subscription,
         widget::{self, column, container, horizontal_space, row, text},
         window::{self, close, drag, minimize, toggle_maximize},
     },
@@ -136,9 +135,9 @@ impl Page {
 }
 
 impl Default for Page {
-    fn default() -> Page {
+    fn default() -> Self {
         //TODO: what should the default page be?
-        Page::Desktop(None)
+        Self::Desktop(None)
     }
 }
 
@@ -215,8 +214,8 @@ pub enum Message {
 }
 
 impl From<Page> for Message {
-    fn from(page: Page) -> Message {
-        Message::Page(page)
+    fn from(page: Page) -> Self {
+        Self::Page(page)
     }
 }
 
@@ -264,7 +263,7 @@ impl Window {
 
     fn set_scale_factor(&mut self, factor: f32) {
         self.scale_factor = factor as f64;
-        self.scale_factor_string = format!("{:.2}", factor);
+        self.scale_factor_string = format!("{factor:.2}");
     }
 
     fn sub_page_button<Message: Clone + From<Page> + 'static>(
@@ -306,10 +305,10 @@ impl Window {
         ]).into()
     }
 
-    fn view_unimplemented_sub_page<'a, Message: Clone + From<Page> + 'static>(
-        &'a self,
+    fn view_unimplemented_sub_page<Message: Clone + From<Page> + 'static>(
+        &self,
         sub_page: impl SubPage,
-    ) -> Element<'a, Message> {
+    ) -> Element<'_, Message> {
         settings::view_column(vec![
             self.parent_page_button(sub_page),
             text("We haven't created that panel yet, and/or it is using a similar idea as current Pop! designs.").into(),
@@ -324,7 +323,7 @@ impl Application for Window {
     type Theme = Theme;
 
     fn new(_flags: ()) -> (Self, Command<Self::Message>) {
-        let mut window = Window::default()
+        let mut window = Self::default()
             .nav_bar_toggled(true)
             .show_maximize(true)
             .show_minimize(true);

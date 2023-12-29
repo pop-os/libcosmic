@@ -5,7 +5,7 @@ use cosmic::{
     iced::{self, event, window},
     iced_core::{id, Alignment, Length, Point},
     iced_widget::{column, container, scrollable, text, text_input},
-    widget::{button, cosmic_container},
+    widget::button,
     Command,
 };
 
@@ -43,7 +43,7 @@ impl cosmic::Application for MultiWindow {
     }
 
     fn init(core: Core, _input: Self::Flags) -> (Self, cosmic::app::Command<Self::Message>) {
-        let windows = MultiWindow {
+        let windows = Self {
             windows: HashMap::from([(
                 window::Id::MAIN,
                 Window {
@@ -103,7 +103,7 @@ impl cosmic::Application for MultiWindow {
                 self.windows.insert(
                     id,
                     Window {
-                        input_id: id::Id::new(format!("window_{}", count)),
+                        input_id: id::Id::new(format!("window_{count}")),
                         input_value: String::new(),
                     },
                 );

@@ -4,9 +4,9 @@
 use cosmic_config::{Config, ConfigGet, ConfigSet};
 
 fn test_config(config: Config) {
-    let watcher = config
+    let _watcher = config
         .watch(|config, keys| {
-            println!("Changed: {:?}", keys);
+            println!("Changed: {keys:?}");
             for key in keys.iter() {
                 println!(" - {} = {:?}", key, config.get::<ron::Value>(key));
             }

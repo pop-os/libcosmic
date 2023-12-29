@@ -7,7 +7,6 @@
 //!
 
 pub use model::*;
-pub use output::*;
 
 mod model;
 mod output;
@@ -20,6 +19,6 @@ pub mod steps;
 pub mod util;
 
 /// name of cosmic theme
-pub const NAME: &'static str = "com.system76.CosmicTheme";
+pub const NAME: &str = "com.system76.CosmicTheme";
 
 pub use palette;

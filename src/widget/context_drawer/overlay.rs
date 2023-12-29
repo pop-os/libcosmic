@@ -34,7 +34,7 @@ where
         let mut node = self
             .content
             .as_widget()
-            .layout(&mut self.tree, renderer, &limits);
+            .layout(self.tree, renderer, &limits);
         let node_size = node.size();
 
         node.move_to(Point {

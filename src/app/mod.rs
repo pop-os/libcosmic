@@ -105,7 +105,7 @@ pub(crate) fn iced_settings<App: Application>(
                 autosize: settings.autosize,
                 client_decorations: settings.client_decorations,
                 resizable: settings.resizable,
-                size: (settings.size.width as u32, settings.size.height as u32).into(),
+                size: (settings.size.width as u32, settings.size.height as u32),
                 size_limits: settings.size_limits,
                 title: None,
                 transparent: settings.transparent,
@@ -571,9 +571,7 @@ impl<App: Application> ApplicationExt for App {
 
     #[cfg(not(any(feature = "multi-window", feature = "wayland")))]
     fn set_window_title(&mut self, title: String) -> iced::Command<Message<Self::Message>> {
-        self.core_mut()
-            .title
-            .insert(window::Id::MAIN, title.clone());
+        self.core_mut().title.insert(window::Id::MAIN, title);
         iced::Command::none()
     }
 
