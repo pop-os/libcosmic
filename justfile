@@ -1,4 +1,5 @@
-examples := 'application cosmic cosmic-design-demo open-dialog'
+examples := 'applet application config cosmic cosmic-design-demo multi-window open-dialog'
+clippy_args := '-W clippy::all -W clippy::pedantic'
 
 # Check for errors and linter warnings
 check *args: (check-wayland args) (check-winit args) (check-examples args)
@@ -6,14 +7,14 @@ check *args: (check-wayland args) (check-winit args) (check-examples args)
 check-examples *args:
     #!/bin/bash
     for project in {{examples}}; do
-        cargo check -p ${project} {{args}}
+        cargo clippy -p ${project} {{args}} -- {{clippy_args}}
     done
 
 check-wayland *args:
-    cargo clippy --no-deps --features="wayland,tokio" {{args}} -- -W clippy::pedantic
+    cargo clippy --no-deps --features="wayland,tokio" {{args}} -- {{clippy_args}}
 
 check-winit *args:
-    cargo clippy --no-deps --features="winit,tokio" {{args}} -- -W clippy::pedantic
+    cargo clippy --no-deps --features="winit,tokio" {{args}} -- {{clippy_args}}
 
 # Runs a check with JSON message format for IDE integration
 check-json: (check '--message-format=json')
