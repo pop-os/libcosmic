@@ -7,7 +7,7 @@ mod named;
 use std::ffi::OsStr;
 use std::sync::Arc;
 
-pub use named::Named;
+pub use named::{IconFallback, Named};
 
 mod handle;
 pub use handle::{from_path, from_raster_bytes, from_raster_pixels, from_svg_bytes, Data, Handle};
