@@ -54,12 +54,12 @@ impl Named {
     #[cfg(not(windows))]
     #[must_use]
     pub fn path(self) -> Option<PathBuf> {
-        let mut name = &*self.name;
+        let name = &*self.name;
         let fallback = &self.fallback;
         crate::icon_theme::DEFAULT.with(|theme| {
             let theme = theme.borrow();
 
-            let locate = || {
+            let locate = |name| {
                 let mut lookup = freedesktop_icons::lookup(name)
                     .with_theme(theme.as_ref())
                     .with_cache();
@@ -79,22 +79,20 @@ impl Named {
                 lookup.find()
             };
 
-            let mut result = locate();
+            let mut result = locate(name);
 
             // On failure, attempt to locate fallback icon.
             if result.is_none() {
                 if matches!(fallback, Some(IconFallback::Default)) {
                     for new_name in name.rmatch_indices('-').map(|(pos, _)| &name[..pos]) {
-                        name = new_name;
-                        result = locate();
+                        result = locate(new_name);
                         if result.is_some() {
                             break;
                         }
                     }
                 } else if let Some(IconFallback::Names(fallbacks)) = fallback {
                     for fallback in fallbacks {
-                        name = fallback;
-                        result = locate();
+                        result = locate(fallback);
                         if result.is_some() {
                             break;
                         }
