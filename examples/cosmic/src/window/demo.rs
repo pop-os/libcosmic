@@ -478,6 +478,12 @@ impl State {
             .size(20)
             .id(INPUT_ID.clone())
             .into(),
+            cosmic::widget::text_input("", &self.entry_value)
+                .label("Test Input")
+                .on_input(Message::InputChanged)
+                .size(20)
+                .id(INPUT_ID.clone())
+                .into(),
             self.color_picker_model
                 .picker_button(Message::ColorPickerUpdate, None)
                 .width(Length::Fixed(128.0))

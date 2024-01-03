@@ -1902,7 +1902,7 @@ pub fn draw<'a, Message>(
                 line_height,
                 shaping: text::Shaping::Advanced,
             },
-            bounds.position(),
+            label_layout.bounds().position(),
             appearance.label_color,
             *viewport,
         );
