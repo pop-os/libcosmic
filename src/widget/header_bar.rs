@@ -167,10 +167,14 @@ impl<'a, Message: Clone + 'static> HeaderBar<'a, Message> {
 
     /// Creates the widget for window controls.
     fn window_controls(&mut self) -> Element<'a, Message> {
-        let icon = |name, size, on_press| {
-            widget::icon::from_name(name)
-                .size(size)
+        let icon = |icon_bytes, size, on_press| {
+            
+            widget::icon::from_svg_bytes(
+                icon_bytes,
+            )
+                .symbolic(true)
                 .apply(widget::button::icon)
+                .icon_size(size)
                 .on_press(on_press)
         };
 
@@ -178,17 +182,17 @@ impl<'a, Message: Clone + 'static> HeaderBar<'a, Message> {
             .push_maybe(
                 self.on_minimize
                     .take()
-                    .map(|m| icon("window-minimize-symbolic", 16, m)),
+                    .map(|m| icon(&include_bytes!("../../res/icons/window-minimize-symbolic.svg")[..], 16, m)),
             )
             .push_maybe(
                 self.on_maximize
                     .take()
-                    .map(|m| icon("window-maximize-symbolic", 16, m)),
+                    .map(|m| icon(&include_bytes!("../../res/icons/window-maximize-symbolic.svg")[..], 16, m)),
             )
             .push_maybe(
                 self.on_close
                     .take()
-                    .map(|m| icon("window-close-symbolic", 16, m)),
+                    .map(|m| icon(&include_bytes!("../../res/icons/window-close-symbolic.svg")[..], 16, m)),
             )
             .spacing(8)
             .apply(widget::container)
