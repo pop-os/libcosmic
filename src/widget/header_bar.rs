@@ -168,10 +168,7 @@ impl<'a, Message: Clone + 'static> HeaderBar<'a, Message> {
     /// Creates the widget for window controls.
     fn window_controls(&mut self) -> Element<'a, Message> {
         let icon = |icon_bytes, size, on_press| {
-            
-            widget::icon::from_svg_bytes(
-                icon_bytes,
-            )
+            widget::icon::from_svg_bytes(icon_bytes)
                 .symbolic(true)
                 .apply(widget::button::icon)
                 .icon_size(size)
@@ -179,21 +176,27 @@ impl<'a, Message: Clone + 'static> HeaderBar<'a, Message> {
         };
 
         widget::row::with_capacity(3)
-            .push_maybe(
-                self.on_minimize
-                    .take()
-                    .map(|m| icon(&include_bytes!("../../res/icons/window-minimize-symbolic.svg")[..], 16, m)),
-            )
-            .push_maybe(
-                self.on_maximize
-                    .take()
-                    .map(|m| icon(&include_bytes!("../../res/icons/window-maximize-symbolic.svg")[..], 16, m)),
-            )
-            .push_maybe(
-                self.on_close
-                    .take()
-                    .map(|m| icon(&include_bytes!("../../res/icons/window-close-symbolic.svg")[..], 16, m)),
-            )
+            .push_maybe(self.on_minimize.take().map(|m| {
+                icon(
+                    &include_bytes!("../../res/icons/window-minimize-symbolic.svg")[..],
+                    16,
+                    m,
+                )
+            }))
+            .push_maybe(self.on_maximize.take().map(|m| {
+                icon(
+                    &include_bytes!("../../res/icons/window-maximize-symbolic.svg")[..],
+                    16,
+                    m,
+                )
+            }))
+            .push_maybe(self.on_close.take().map(|m| {
+                icon(
+                    &include_bytes!("../../res/icons/window-close-symbolic.svg")[..],
+                    16,
+                    m,
+                )
+            }))
             .spacing(8)
             .apply(widget::container)
             .height(Length::Fill)
