@@ -28,6 +28,7 @@ pub struct Popover<'a, Message, Renderer> {
     // XXX Avoid refcell; improve iced overlay API?
     popup: RefCell<Element<'a, Message, Renderer>>,
     position: Option<Point>,
+    show_popup: bool,
 }
 
 impl<'a, Message, Renderer> Popover<'a, Message, Renderer> {
@@ -39,11 +40,17 @@ impl<'a, Message, Renderer> Popover<'a, Message, Renderer> {
             content: content.into(),
             popup: RefCell::new(popup.into()),
             position: None,
+            show_popup: true,
         }
     }
 
     pub fn position(mut self, position: Point) -> Self {
         self.position = Some(position);
+        self
+    }
+
+    pub fn show_popup(mut self, show_popup: bool) -> Self {
+        self.show_popup = show_popup;
         self
     }
 
@@ -160,6 +167,10 @@ where
         layout: Layout<'_>,
         _renderer: &Renderer,
     ) -> Option<overlay::Element<'b, Message, Renderer>> {
+        if !self.show_popup {
+            return None;
+        }
+
         let bounds = layout.bounds();
         let (position, centered) = match self.position {
             Some(relative) => (
