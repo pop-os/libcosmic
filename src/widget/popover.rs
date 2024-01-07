@@ -237,6 +237,13 @@ where
             // Position is set to the center bottom of the lower widget
             let width = node.size().width;
             position.x = (position.x - width / 2.0).clamp(0.0, bounds.width - width);
+        } else {
+            // Position is using context menu logic
+            let size = node.size();
+            position.x = position.x.clamp(0.0, bounds.width - size.width);
+            if position.y + size.height > bounds.height {
+                position.y = (position.y - size.height).clamp(0.0, bounds.height - size.height);
+            }
         }
         node.move_to(position);
 
