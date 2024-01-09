@@ -552,6 +552,7 @@ where
         init_root_menu(
             self,
             renderer,
+            shell,
             overlay_cursor,
             viewport_size,
             overlay_offset,
@@ -750,6 +751,7 @@ fn pad_rectangle(rect: Rectangle, padding: Padding) -> Rectangle {
 fn init_root_menu<Message, Renderer>(
     menu: &mut Menu<'_, '_, Message, Renderer>,
     renderer: &Renderer,
+    shell: &mut Shell<'_, Message>,
     overlay_cursor: Point,
     viewport_size: Size,
     overlay_offset: Vector,
@@ -815,6 +817,9 @@ fn init_root_menu<Message, Renderer>(
                 menu_bounds,
             });
 
+            // Hack to ensure menu opens properly
+            shell.invalidate_layout();
+
             break;
         }
     }
@@ -852,24 +857,19 @@ where
         .iter()
         .fold(&mut menu_roots[active_root], |mt, &i| &mut mt.children[i]);
 
+    // widget tree
+    let tree = &mut tree.children[active_root].children[mt.index];
+
     // get layout
     let last_ms = &state.menu_states[indices.len() - 1];
-    let last_tree = tree.children[active_root]
-        .children
-        .iter_mut()
-        .last()
-        .unwrap();
     let child_node = last_ms.layout_single(
         overlay_offset,
         last_ms.index.expect("missing index within menu state."),
         renderer,
         mt,
-        last_tree,
+        tree,
     );
     let child_layout = Layout::new(&child_node);
-
-    // widget tree
-    let tree = &mut tree.children[active_root].children[mt.index];
 
     // process only the last widget
     mt.item.as_widget_mut().on_event(
