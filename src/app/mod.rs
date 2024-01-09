@@ -440,6 +440,11 @@ where
         None
     }
 
+    // Called when context drawer is toggled
+    fn on_context_drawer(&mut self) -> iced::Command<Message<Self::Message>> {
+        iced::Command::none()
+    }
+
     /// Called when the escape key is pressed.
     fn on_escape(&mut self) -> iced::Command<Message<Self::Message>> {
         iced::Command::none()
