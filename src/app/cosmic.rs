@@ -332,6 +332,7 @@ impl<T: Application> Cosmic<T> {
 
             Message::ContextDrawer(show) => {
                 self.app.core_mut().window.show_context = show;
+                return self.app.on_context_drawer();
             }
 
             Message::Drag => return command::drag(None),
