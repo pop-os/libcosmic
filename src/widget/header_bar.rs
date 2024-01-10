@@ -106,7 +106,7 @@ impl<'a, Message: Clone + 'static> HeaderBar<'a, Message> {
                     .align_items(iced::Alignment::Center)
                     .apply(widget::container)
                     .align_x(iced::alignment::Horizontal::Left)
-                    .width(Length::Fill),
+                    .width(Length::Shrink),
             )
             // If elements exist in the center region, use them here.
             // This will otherwise use the title as a widget if a title was defined.
@@ -127,7 +127,7 @@ impl<'a, Message: Clone + 'static> HeaderBar<'a, Message> {
                     .align_items(iced::Alignment::Center)
                     .apply(widget::container)
                     .align_x(iced::alignment::Horizontal::Right)
-                    .width(Length::Fill),
+                    .width(Length::Shrink),
             )
             .height(Length::Fixed(50.0))
             .padding(8)
