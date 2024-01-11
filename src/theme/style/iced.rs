@@ -838,51 +838,74 @@ impl rule::StyleSheet for Theme {
     }
 }
 
+#[derive(Default, Clone, Copy)]
+pub enum Scrollable {
+    #[default]
+    Permanent,
+    Minimal,
+}
+
 /*
  * TODO: Scrollable
  */
 impl scrollable::StyleSheet for Theme {
-    type Style = ();
+    type Style = Scrollable;
 
-    fn active(&self, _style: &Self::Style) -> scrollable::Scrollbar {
+    fn active(&self, style: &Self::Style) -> scrollable::Scrollbar {
         let cosmic = self.cosmic();
-        scrollable::Scrollbar {
-            background: Some(Background::Color(
-                self.current_container().component.base.into(),
-            )),
+        let mut neutral_5 = cosmic.palette.neutral_5;
+        neutral_5.alpha = 0.7;
+        let mut a = scrollable::Scrollbar {
+            background: None,
             border_radius: cosmic.corner_radii.radius_s.into(),
             border_width: 0.0,
             border_color: Color::TRANSPARENT,
             scroller: scrollable::Scroller {
-                color: self.current_container().component.divider.into(),
+                color: neutral_5.into(),
                 border_radius: cosmic.corner_radii.radius_s.into(),
                 border_width: 0.0,
                 border_color: Color::TRANSPARENT,
             },
+        };
+
+        if matches!(style, Scrollable::Permanent) {
+            let mut neutral_3 = cosmic.palette.neutral_3;
+            neutral_3.alpha = 0.7;
+            a.background = Some(Background::Color(neutral_3.into()));
         }
+
+        a
     }
 
-    fn hovered(
-        &self,
-        _style: &Self::Style,
-        _is_mouse_over_scrollbar: bool,
-    ) -> scrollable::Scrollbar {
-        let theme = self.cosmic();
+    fn hovered(&self, style: &Self::Style, is_mouse_over_scrollbar: bool) -> scrollable::Scrollbar {
+        let cosmic = self.cosmic();
+        let mut neutral_5 = cosmic.palette.neutral_5;
+        neutral_5.alpha = 0.7;
 
-        scrollable::Scrollbar {
-            background: Some(Background::Color(
-                self.current_container().component.hover.into(),
-            )),
-            border_radius: theme.corner_radii.radius_s.into(),
+        if is_mouse_over_scrollbar {
+            let mut hover_overlay = cosmic.palette.neutral_0;
+            hover_overlay.alpha = 0.2;
+            neutral_5 = over(hover_overlay, neutral_5);
+        }
+        let mut a = scrollable::Scrollbar {
+            background: None,
+            border_radius: cosmic.corner_radii.radius_s.into(),
             border_width: 0.0,
             border_color: Color::TRANSPARENT,
             scroller: scrollable::Scroller {
-                color: theme.accent.base.into(),
-                border_radius: theme.corner_radii.radius_s.into(),
+                color: neutral_5.into(),
+                border_radius: cosmic.corner_radii.radius_s.into(),
                 border_width: 0.0,
                 border_color: Color::TRANSPARENT,
             },
+        };
+        if matches!(style, Scrollable::Permanent) {
+            let mut neutral_3 = cosmic.palette.neutral_3;
+            neutral_3.alpha = 0.7;
+            a.background = Some(Background::Color(neutral_3.into()));
         }
+
+        a
     }
 }
 
