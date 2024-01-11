@@ -5,7 +5,7 @@ use cosmic::{
     iced::{self, event, window},
     iced_core::{id, Alignment, Length, Point},
     iced_widget::{column, container, scrollable, text, text_input},
-    widget::{button, cosmic_container},
+    widget::{button, header_bar},
     ApplicationExt, Command,
 };
 
@@ -97,6 +97,7 @@ impl cosmic::Application for MultiWindow {
                 let (id, spawn_window) = window::spawn(window::Settings {
                     position: Default::default(),
                     exit_on_close_request: count % 2 == 0,
+                    decorations: false,
                     ..Default::default()
                 });
 
@@ -140,13 +141,18 @@ impl cosmic::Application for MultiWindow {
                 .align_items(Alignment::Center),
         );
 
-        container(container(content).width(200).center_x())
+        let window_content = container(container(content).width(200).center_x())
             .style(cosmic::style::Container::Background)
             .width(Length::Fill)
             .height(Length::Fill)
             .center_x()
-            .center_y()
-            .into()
+            .center_y();
+
+        if id == window::Id::MAIN {
+            window_content.into()
+        } else {
+            column![header_bar().window_id(id), window_content].into()
+        }
     }
 
     fn view(&self) -> cosmic::prelude::Element<Self::Message> {
