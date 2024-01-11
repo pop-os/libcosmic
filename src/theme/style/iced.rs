@@ -385,18 +385,12 @@ impl container::StyleSheet for Theme {
             }
             Container::HeaderBar => {
                 let palette = self.cosmic();
-                let mut header_top = palette.background.base;
-                let header_bottom = palette.background.base;
-                header_top.alpha = 0.8;
+                let header_top = palette.background.base;
 
                 container::Appearance {
                     icon_color: Some(Color::from(palette.accent.base)),
                     text_color: Some(Color::from(palette.background.on)),
-                    background: Some(iced::Background::Gradient(iced_core::Gradient::Linear(
-                        Linear::new(Radians(PI))
-                            .add_stop(0.0, header_top.into())
-                            .add_stop(1.0, header_bottom.into()),
-                    ))),
+                    background: Some(iced::Background::Color(header_top.into())),
                     border_radius: BorderRadius::from([
                         palette.corner_radii.radius_xs[0],
                         palette.corner_radii.radius_xs[3],

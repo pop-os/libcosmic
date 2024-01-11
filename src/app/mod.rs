@@ -647,6 +647,7 @@ impl<App: Application> ApplicationExt for App {
             .push_maybe(if core.window.show_headerbar {
                 Some({
                     let mut header = crate::widget::header_bar()
+                        .window_id(window::Id::MAIN)
                         .title(&core.window.header_title)
                         .on_drag(Message::Cosmic(cosmic::Message::Drag))
                         .on_close(Message::Cosmic(cosmic::Message::Close));
