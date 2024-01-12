@@ -35,11 +35,6 @@ impl ThemeMode {
         1
     }
 
-    /// Set auto-switch from light to dark mode
-    pub fn set_auto_switch(config: &Config, value: bool) -> Result<(), cosmic_config::Error> {
-        config.set("auto_switch", value)
-    }
-
     /// Get the config for the theme mode
     pub fn config() -> Result<Config, cosmic_config::Error> {
         Config::new(THEME_MODE_ID, Self::version())
