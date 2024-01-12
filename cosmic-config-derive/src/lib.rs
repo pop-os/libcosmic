@@ -45,7 +45,7 @@ fn impl_cosmic_config_entry_macro(ast: &syn::DeriveInput) -> TokenStream {
     let write_each_config_field = fields.iter().map(|field| {
         let field_name = &field.ident;
         quote! {
-            cosmic_config::ConfigSet::set(config, stringify!(#field_name), &self.#field_name)?;
+            cosmic_config::ConfigSet::set(&tx, stringify!(#field_name), &self.#field_name)?;
         }
     });
 
