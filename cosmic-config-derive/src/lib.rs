@@ -80,6 +80,27 @@ fn impl_cosmic_config_entry_macro(ast: &syn::DeriveInput) -> TokenStream {
         }
     });
 
+    let setters = fields.iter().filter_map(|field| {
+        let field_name = &field.ident.as_ref()?;
+        let field_type = &field.ty;
+        let setter_name = quote::format_ident!("set_{}", field_name);
+        let doc = format!("Sets [`{name}::{field_name}`] and writes to [`cosmic_config::Config`] if changed");
+        Some(quote! {
+            #[doc = #doc]
+            ///
+            /// Returns `Ok(true)` when the field's value has changed and was written to disk
+            pub fn #setter_name(&mut self, config: &cosmic_config::Config, value: #field_type) -> Result<bool, cosmic_config::Error> {
+                if self.#field_name != value {
+                    self.#field_name = value;
+                    cosmic_config::ConfigSet::set(config, stringify!(#field_name), &self.#field_name)?;
+                    Ok(true)
+                } else {
+                    Ok(false)
+                }
+            }
+        })
+    });
+
     let gen = quote! {
         impl CosmicConfigEntry for #name {
             const VERSION: u64 = #version;
@@ -114,6 +135,10 @@ fn impl_cosmic_config_entry_macro(ast: &syn::DeriveInput) -> TokenStream {
                 }
                 (errors, keys)
             }
+        }
+
+        impl #name {
+            #(#setters)*
         }
     };
 
