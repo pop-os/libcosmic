@@ -314,7 +314,7 @@ impl<'a> ConfigSet for ConfigTransaction<'a> {
     fn set<T: Serialize>(&self, key: &str, value: T) -> Result<(), Error> {
         //TODO: sanitize key (no slashes, cannot be . or ..)
         let key_path = self.config.key_path(key)?;
-        let data = ron::to_string(&value)?;
+        let data = ron::ser::to_string_pretty(&value, ron::ser::PrettyConfig::new())?;
         //TODO: replace duplicates?
         {
             let mut updates = self.updates.lock().unwrap();
