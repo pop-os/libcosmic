@@ -54,7 +54,7 @@ derive_setters = "0.1.5"
 lazy_static = "1.4.0"
 palette = "0.7.3"
 tokio = { version = "1.24.2", optional = true }
-cctk = { git = "https://github.com/pop-os/cosmic-protocols", package = "cosmic-client-toolkit", rev = "c1b6516", optional = true }
+cctk = { git = "https://github.com/pop-os/cosmic-protocols", package = "cosmic-client-toolkit", rev = "e65fa5e", optional = true }
 slotmap = "1.0.6"
 fraction = "0.14.0"
 cosmic-config = { path = "cosmic-config" }
