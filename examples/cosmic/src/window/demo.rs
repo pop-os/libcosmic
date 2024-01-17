@@ -89,6 +89,7 @@ pub enum Message {
     ClearAll,
     CardsToggled(bool),
     ColorPickerUpdate(ColorPickerUpdate),
+    Hidden,
 }
 
 pub enum Output {
@@ -115,6 +116,7 @@ pub struct State {
     cards: Vec<String>,
     pub timeline: Rc<RefCell<Timeline>>,
     pub color_picker_model: ColorPickerModel,
+    pub hidden: bool,
 }
 
 impl Default for State {
@@ -162,6 +164,7 @@ impl Default for State {
             ],
             timeline: Rc::new(RefCell::new(Default::default())),
             color_picker_model: ColorPickerModel::new("Hex", "RGB", None, None),
+            hidden: false,
         }
     }
 }
@@ -209,6 +212,9 @@ impl State {
             }
             Message::ColorPickerUpdate(u) => {
                 _ = self.color_picker_model.update::<Message>(u);
+            }
+            Message::Hidden => {
+                self.hidden = !self.hidden;
             }
         }
 
@@ -470,9 +476,11 @@ impl State {
             .padding(16)
             .style(cosmic::theme::Container::Background)
             .into(),
-            text_input(
+            cosmic::widget::text_input::secure_input(
                 "Type to search apps or type “?” for more options...",
                 &self.entry_value,
+                Some(Message::Hidden),
+                self.hidden,
             )
             .on_input(Message::InputChanged)
             .size(20)
