@@ -476,7 +476,7 @@ where
     }
 
     fn state(&self) -> tree::State {
-        tree::State::new(State::new())
+        tree::State::new(State::new(self.is_secure))
     }
 
     fn diff(&mut self, tree: &mut Tree) {
@@ -489,6 +489,12 @@ where
             state.is_pasting = None;
             state.dragging_state = None;
         }
+
+        if state.is_secure != self.is_secure {
+            state.is_secure = self.is_secure;
+            state.dirty = true;
+        }
+
         let mut children: Vec<_> = self
             .leading_icon
             .iter_mut()
@@ -522,13 +528,13 @@ where
     ) -> layout::Node {
         let font = self.font.unwrap_or_else(|| renderer.default_font());
         if self.dnd_icon {
+            let state = tree.state.downcast_mut::<State>();
             let limits = limits.width(Length::Shrink).height(Length::Shrink);
 
             let size = self.size.unwrap_or_else(|| renderer.default_size().0);
 
             let bounds = limits.max();
 
-            let state = tree.state.downcast_mut::<State>();
             let value_paragraph = &mut state.value;
             let v = self.value.to_string();
             value_paragraph.update(Text {
@@ -551,7 +557,7 @@ where
             let size = limits.resolve(Size::new(width, height));
             layout::Node::with_children(size, vec![layout::Node::new(size)])
         } else {
-            layout(
+            let res = layout(
                 renderer,
                 limits,
                 self.width,
@@ -566,7 +572,29 @@ where
                 self.helper_line_height,
                 font,
                 tree,
-            )
+            );
+
+            // XXX not ideal, but we need to update the cache when is_secure changes
+            let size = self.size.unwrap_or_else(|| renderer.default_size().0);
+            let line_height = self.line_height;
+            let state = tree.state.downcast_mut::<State>();
+            if state.dirty {
+                state.dirty = false;
+                let value = if self.is_secure {
+                    self.value.secure()
+                } else {
+                    self.value.clone()
+                };
+                replace_paragraph(
+                    state,
+                    Layout::new(&res),
+                    &value,
+                    font,
+                    iced::Pixels(size),
+                    line_height,
+                );
+            }
+            res
         }
     }
 
@@ -630,6 +658,10 @@ where
     ) -> event::Status {
         let text_layout = self.text_layout(layout);
         let mut index = 0;
+        let font = self.font.unwrap_or_else(|| renderer.default_font());
+        let size = self.size.unwrap_or_else(|| renderer.default_size().0);
+        let line_height = self.line_height;
+
         if let (Some(leading_icon), Some(tree)) =
             (self.leading_icon.as_mut(), tree.children.get_mut(index))
         {
@@ -637,8 +669,13 @@ where
             children.next();
             let leading_icon_layout = children.next().unwrap();
 
-            if cursor_position.is_over(leading_icon_layout.bounds()) {
-                return leading_icon.as_widget_mut().on_event(
+            if cursor_position.is_over(leading_icon_layout.bounds())
+                || matches!(
+                    event,
+                    Event::Mouse(mouse::Event::CursorMoved { .. } | mouse::Event::CursorLeft)
+                )
+            {
+                let res = leading_icon.as_widget_mut().on_event(
                     tree,
                     event.clone(),
                     leading_icon_layout,
@@ -648,20 +685,9 @@ where
                     shell,
                     viewport,
                 );
-            } else if matches!(
-                event,
-                Event::Mouse(mouse::Event::CursorMoved { .. } | mouse::Event::CursorLeft)
-            ) {
-                leading_icon.as_widget_mut().on_event(
-                    tree,
-                    event.clone(),
-                    leading_icon_layout,
-                    cursor_position,
-                    renderer,
-                    clipboard,
-                    shell,
-                    viewport,
-                );
+                if res == event::Status::Captured {
+                    return res;
+                }
             }
             index += 1;
         }
@@ -675,8 +701,13 @@ where
             }
             let trailing_icon_layout = children.next().unwrap();
 
-            if cursor_position.is_over(trailing_icon_layout.bounds()) {
-                return trailing_icon.as_widget_mut().on_event(
+            if cursor_position.is_over(trailing_icon_layout.bounds())
+                | matches!(
+                    event,
+                    Event::Mouse(mouse::Event::CursorMoved { .. } | mouse::Event::CursorLeft)
+                )
+            {
+                let res = trailing_icon.as_widget_mut().on_event(
                     tree,
                     event.clone(),
                     trailing_icon_layout,
@@ -686,20 +717,9 @@ where
                     shell,
                     viewport,
                 );
-            } else if matches!(
-                event,
-                Event::Mouse(mouse::Event::CursorMoved { .. } | mouse::Event::CursorLeft)
-            ) {
-                trailing_icon.as_widget_mut().on_event(
-                    tree,
-                    event.clone(),
-                    trailing_icon_layout,
-                    cursor_position,
-                    renderer,
-                    clipboard,
-                    shell,
-                    viewport,
-                );
+                if res == event::Status::Captured {
+                    return res;
+                }
             }
         }
 
@@ -707,12 +727,11 @@ where
             event,
             text_layout.children().next().unwrap(),
             cursor_position,
-            renderer,
             clipboard,
             shell,
             &mut self.value,
-            self.size,
-            self.font,
+            size,
+            font,
             self.is_secure,
             self.on_input.as_deref(),
             self.on_paste.as_deref(),
@@ -722,7 +741,7 @@ where
             self.dnd_icon,
             self.on_dnd_command_produced.as_deref(),
             self.surface_ids,
-            self.line_height,
+            line_height,
             layout,
         )
     }
@@ -1062,12 +1081,11 @@ pub fn update<'a, Message>(
     event: Event,
     text_layout: Layout<'_>,
     cursor_position: mouse::Cursor,
-    renderer: &crate::Renderer,
     clipboard: &mut dyn Clipboard,
     shell: &mut Shell<'_, Message>,
     value: &mut Value,
-    size: Option<f32>,
-    font: Option<<crate::Renderer as iced_core::text::Renderer>::Font>,
+    size: f32,
+    font: <crate::Renderer as iced_core::text::Renderer>::Font,
     is_secure: bool,
     on_input: Option<&dyn Fn(String) -> Message>,
     on_paste: Option<&dyn Fn(String) -> Message>,
@@ -1083,11 +1101,17 @@ pub fn update<'a, Message>(
 where
     Message: Clone,
 {
-    let font = font.unwrap_or_else(|| renderer.default_font());
-    let size = size.unwrap_or_else(|| renderer.default_size().0);
     let update_cache = |state, value| {
         replace_paragraph(state, layout, value, font, iced::Pixels(size), line_height);
     };
+
+    let mut secured_value = if is_secure {
+        value.secure()
+    } else {
+        value.clone()
+    };
+    let unsecured_value = value;
+    let value = &mut secured_value;
 
     match event {
         Event::Mouse(mouse::Event::ButtonPressed(mouse::Button::Left))
@@ -1125,9 +1149,6 @@ where
                         // if something is already selected, we can start a drag and drop for a
                         // single click that is on top of the selected text
                         // is the click on selected text?
-                        if is_secure {
-                            return event::Status::Ignored;
-                        }
 
                         if let (
                             Some(on_start_dnd),
@@ -1164,17 +1185,23 @@ where
                             };
 
                             if cursor_position.is_over(selection_bounds) {
+                                // XXX never start a dnd if the input is secure
+                                if is_secure {
+                                    return event::Status::Ignored;
+                                }
                                 let text =
                                     state.selected_text(&value.to_string()).unwrap_or_default();
                                 state.dragging_state =
                                     Some(DraggingState::Dnd(DndAction::empty(), text.clone()));
-                                let mut editor = Editor::new(value, &mut state.cursor);
+                                let mut editor = Editor::new(unsecured_value, &mut state.cursor);
                                 editor.delete();
 
-                                let message = (on_input)(editor.contents());
+                                let contents = editor.contents();
+                                let unsecured_value = Value::new(&contents);
+                                let message = (on_input)(contents);
                                 shell.publish(message);
                                 shell.publish(on_start_dnd(state.clone()));
-                                let state = state.clone();
+                                let state_clone = state.clone();
                                 shell.publish(on_dnd_command_produced(Box::new(move || {
                                     platform_specific::wayland::data_device::ActionInner::StartDnd {
                                         mime_types: SUPPORTED_TEXT_MIME_TYPES
@@ -1185,26 +1212,18 @@ where
                                         origin_id: window_id,
                                         icon_id: Some(DndIcon::Widget(
                                             icon_id,
-                                            Box::new(state.clone()),
+                                            Box::new(state_clone.clone()),
                                         )),
                                         data: Box::new(TextInputString(text.clone())),
                                     }
                                 })));
+
+                                update_cache(state, &unsecured_value);
                             } else {
+                                update_cache(state, value);
                                 // existing logic for setting the selection
                                 let position = if target > 0.0 {
-                                    let value = if is_secure {
-                                        value.secure()
-                                    } else {
-                                        value.clone()
-                                    };
-
-                                    find_cursor_position(
-                                        text_layout.bounds(),
-                                        &value,
-                                        state,
-                                        target,
-                                    )
+                                    find_cursor_position(text_layout.bounds(), value, state, target)
                                 } else {
                                     None
                                 };
@@ -1219,13 +1238,8 @@ where
                     (None, click::Kind::Single, _) => {
                         // existing logic for setting the selection
                         let position = if target > 0.0 {
-                            let value = if is_secure {
-                                value.secure()
-                            } else {
-                                value.clone()
-                            };
-
-                            find_cursor_position(text_layout.bounds(), &value, state, target)
+                            update_cache(state, value);
+                            find_cursor_position(text_layout.bounds(), value, state, target)
                         } else {
                             None
                         };
@@ -1234,6 +1248,8 @@ where
                         state.dragging_state = Some(DraggingState::Selection);
                     }
                     (None | Some(DraggingState::Selection), click::Kind::Double, _) => {
+                        update_cache(state, value);
+
                         if is_secure {
                             state.cursor.select_all(value);
                         } else {
@@ -1249,6 +1265,7 @@ where
                         state.dragging_state = Some(DraggingState::Selection);
                     }
                     (None | Some(DraggingState::Selection), click::Kind::Triple, _) => {
+                        update_cache(state, value);
                         state.cursor.select_all(value);
                         state.dragging_state = Some(DraggingState::Selection);
                     }
@@ -1274,17 +1291,13 @@ where
             if matches!(state.dragging_state, Some(DraggingState::Selection)) {
                 let target = position.x - text_layout.bounds().x;
 
-                let value: Value = if is_secure {
-                    value.secure()
-                } else {
-                    value.clone()
-                };
+                update_cache(state, value);
                 let position =
-                    find_cursor_position(text_layout.bounds(), &value, state, target).unwrap_or(0);
+                    find_cursor_position(text_layout.bounds(), value, state, target).unwrap_or(0);
 
                 state
                     .cursor
-                    .select_range(state.cursor.start(&value), position);
+                    .select_range(state.cursor.start(value), position);
 
                 return event::Status::Captured;
             }
@@ -1301,16 +1314,22 @@ where
                     && !state.keyboard_modifiers.command()
                     && !c.is_control()
                 {
-                    let mut editor = Editor::new(value, &mut state.cursor);
+                    let mut editor = Editor::new(unsecured_value, &mut state.cursor);
 
                     editor.insert(c);
-
-                    let message = (on_input)(editor.contents());
+                    let contents = editor.contents();
+                    let unsecured_value = Value::new(&contents);
+                    let message = (on_input)(contents);
                     shell.publish(message);
 
                     focus.updated_at = Instant::now();
 
-                    update_cache(state, value);
+                    let value = if is_secure {
+                        unsecured_value.secure()
+                    } else {
+                        unsecured_value
+                    };
+                    update_cache(state, &value);
 
                     return event::Status::Captured;
                 }
@@ -1345,33 +1364,46 @@ where
                             }
                         }
 
-                        let mut editor = Editor::new(value, &mut state.cursor);
+                        let mut editor = Editor::new(unsecured_value, &mut state.cursor);
                         editor.backspace();
 
+                        let contents = editor.contents();
+                        let unsecured_value = Value::new(&contents);
                         let message = (on_input)(editor.contents());
                         shell.publish(message);
 
-                        update_cache(state, value);
+                        let value = if is_secure {
+                            unsecured_value.secure()
+                        } else {
+                            unsecured_value
+                        };
+                        update_cache(state, &value);
                     }
                     keyboard::KeyCode::Delete => {
                         if platform::is_jump_modifier_pressed(modifiers)
                             && state.cursor.selection(value).is_none()
                         {
                             if is_secure {
-                                let cursor_pos = state.cursor.end(value);
-                                state.cursor.select_range(cursor_pos, value.len());
+                                let cursor_pos = state.cursor.end(unsecured_value);
+                                state.cursor.select_range(cursor_pos, unsecured_value.len());
                             } else {
-                                state.cursor.select_right_by_words(value);
+                                state.cursor.select_right_by_words(unsecured_value);
                             }
                         }
 
-                        let mut editor = Editor::new(value, &mut state.cursor);
+                        let mut editor = Editor::new(unsecured_value, &mut state.cursor);
                         editor.delete();
-
-                        let message = (on_input)(editor.contents());
+                        let contents = editor.contents();
+                        let unsecured_value = Value::new(&contents);
+                        let message = (on_input)(contents);
                         shell.publish(message);
+                        let value = if is_secure {
+                            unsecured_value.secure()
+                        } else {
+                            unsecured_value
+                        };
 
-                        update_cache(state, value);
+                        update_cache(state, &value);
                     }
                     keyboard::KeyCode::Left => {
                         if platform::is_jump_modifier_pressed(modifiers) && !is_secure {
@@ -1416,22 +1448,27 @@ where
                         }
                     }
                     keyboard::KeyCode::C if state.keyboard_modifiers.command() => {
-                        if let Some((start, end)) = state.cursor.selection(value) {
-                            clipboard.write(value.select(start, end).to_string());
+                        if !is_secure {
+                            if let Some((start, end)) = state.cursor.selection(value) {
+                                clipboard.write(value.select(start, end).to_string());
+                            }
                         }
                     }
+                    // XXX if we want to allow cutting of secure text, we need to
+                    // update the cache and decide which value to cut
                     keyboard::KeyCode::X if state.keyboard_modifiers.command() => {
-                        if let Some((start, end)) = state.cursor.selection(value) {
-                            clipboard.write(value.select(start, end).to_string());
+                        if !is_secure {
+                            if let Some((start, end)) = state.cursor.selection(value) {
+                                clipboard.write(value.select(start, end).to_string());
+                            }
+
+                            let mut editor = Editor::new(value, &mut state.cursor);
+                            editor.delete();
+
+                            let message = (on_input)(editor.contents());
+
+                            shell.publish(message);
                         }
-
-                        let mut editor = Editor::new(value, &mut state.cursor);
-                        editor.delete();
-
-                        let message = (on_input)(editor.contents());
-                        shell.publish(message);
-
-                        update_cache(state, value);
                     }
                     keyboard::KeyCode::V => {
                         if state.keyboard_modifiers.command() {
@@ -1448,20 +1485,28 @@ where
                                 Value::new(&content)
                             };
 
-                            let mut editor = Editor::new(value, &mut state.cursor);
+                            let mut editor = Editor::new(unsecured_value, &mut state.cursor);
 
                             editor.paste(content.clone());
 
+                            let contents = editor.contents();
+                            let unsecured_value = Value::new(&contents);
                             let message = if let Some(paste) = &on_paste {
-                                (paste)(editor.contents())
+                                (paste)(contents)
                             } else {
-                                (on_input)(editor.contents())
+                                (on_input)(contents)
                             };
                             shell.publish(message);
 
                             state.is_pasting = Some(content);
 
-                            update_cache(state, value);
+                            let value = if is_secure {
+                                unsecured_value.secure()
+                            } else {
+                                unsecured_value
+                            };
+
+                            update_cache(state, &value);
                         } else {
                             state.is_pasting = None;
                         }
@@ -1582,13 +1627,8 @@ where
                 state.dnd_offer = DndOfferState::HandlingOffer(mime_types.clone(), DndAction::None);
                 // existing logic for setting the selection
                 let position = if target > 0.0 {
-                    let value = if is_secure {
-                        value.secure()
-                    } else {
-                        value.clone()
-                    };
-
-                    find_cursor_position(text_layout.bounds(), &value, state, target)
+                    update_cache(state, value);
+                    find_cursor_position(text_layout.bounds(), value, state, target)
                 } else {
                     None
                 };
@@ -1652,13 +1692,8 @@ where
             let target = x as f32 - text_layout.bounds().x;
             // existing logic for setting the selection
             let position = if target > 0.0 {
-                let value = if is_secure {
-                    value.secure()
-                } else {
-                    value.clone()
-                };
-
-                find_cursor_position(text_layout.bounds(), &value, state, target)
+                update_cache(state, value);
+                find_cursor_position(text_layout.bounds(), value, state, target)
             } else {
                 None
             };
@@ -1728,21 +1763,26 @@ where
                     return event::Status::Captured;
                 };
 
-                let mut editor = Editor::new(value, &mut state.cursor);
+                let mut editor = Editor::new(unsecured_value, &mut state.cursor);
 
                 editor.paste(Value::new(content.as_str()));
+                let contents = editor.contents();
+                let unsecured_value = Value::new(&contents);
+
                 if let Some(on_paste) = on_paste.as_ref() {
-                    let message = (on_paste)(editor.contents());
-                    shell.publish(message);
-                }
-                if let Some(on_paste) = on_paste {
-                    let message = (on_paste)(editor.contents());
+                    let message = (on_paste)(contents);
                     shell.publish(message);
                 }
 
                 shell.publish(on_dnd_command_produced(Box::new(move || {
                     platform_specific::wayland::data_device::ActionInner::DndFinished
                 })));
+                let value = if is_secure {
+                    unsecured_value.secure()
+                } else {
+                    unsecured_value
+                };
+                update_cache(state, &value);
                 return event::Status::Captured;
             }
             return event::Status::Ignored;
@@ -2159,6 +2199,8 @@ pub struct State {
     pub value: crate::Paragraph,
     pub placeholder: crate::Paragraph,
     pub label: crate::Paragraph,
+    pub dirty: bool,
+    pub is_secure: bool,
     is_focused: Option<Focus>,
     dragging_state: Option<DraggingState>,
     #[cfg(feature = "wayland")]
@@ -2178,8 +2220,11 @@ struct Focus {
 
 impl State {
     /// Creates a new [`State`], representing an unfocused [`TextInput`].
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(is_secure: bool) -> Self {
+        Self {
+            is_secure,
+            ..Self::default()
+        }
     }
 
     /// Returns the current value of the selected text in the [`TextInput`].
@@ -2207,8 +2252,9 @@ impl State {
     }
 
     /// Creates a new [`State`], representing a focused [`TextInput`].
-    pub fn focused() -> Self {
+    pub fn focused(is_secure: bool) -> Self {
         Self {
+            is_secure,
             value: crate::Paragraph::new(),
             placeholder: crate::Paragraph::new(),
             label: crate::Paragraph::new(),
@@ -2221,6 +2267,7 @@ impl State {
             last_click: None,
             cursor: Cursor::default(),
             keyboard_modifiers: keyboard::Modifiers::default(),
+            dirty: false,
         }
     }
 

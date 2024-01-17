@@ -228,7 +228,7 @@ where
                 .core()
                 .single_instance
                 .then(|| super::single_instance_subscription::<T>())
-                .unwrap_or_else(|| Subscription::none()),
+                .unwrap_or_else(Subscription::none),
         ])
     }
 
