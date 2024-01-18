@@ -59,13 +59,12 @@ impl cosmic::Application for Window {
                 return if let Some(p) = self.popup.take() {
                     destroy_popup(p)
                 } else {
-                    self.id_ctr += 1;
-                    let new_id = Id(self.id_ctr);
+                    let new_id = Id::unique();
                     self.popup.replace(new_id);
                     let mut popup_settings =
                         self.core
                             .applet
-                            .get_popup_settings(Id(0), new_id, None, None, None);
+                            .get_popup_settings(Id::MAIN, new_id, None, None, None);
                     popup_settings.positioner.size_limits = Limits::NONE
                         .max_width(372.0)
                         .min_width(300.0)
