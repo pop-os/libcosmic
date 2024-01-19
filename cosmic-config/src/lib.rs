@@ -32,6 +32,7 @@ pub enum Error {
     Notify(notify::Error),
     Ron(ron::Error),
     RonSpanned(ron::error::SpannedError),
+    GetKey(String, std::io::Error),
 }
 
 impl fmt::Display for Error {
@@ -44,6 +45,7 @@ impl fmt::Display for Error {
             Self::Notify(err) => err.fmt(f),
             Self::Ron(err) => err.fmt(f),
             Self::RonSpanned(err) => err.fmt(f),
+            Self::GetKey(key, err) => write!(f, "failed to get key '{}': {}", key, err),
         }
     }
 }
@@ -264,11 +266,11 @@ impl ConfigGet for Config {
         let key_path = self.key_path(key)?;
         let data = if key_path.is_file() {
             // Load user override
-            fs::read_to_string(key_path)?
+            fs::read_to_string(key_path).map_err(|err| Error::GetKey(key.to_string(), err))?
         } else {
             // Load system default
             let default_path = self.default_path(key)?;
-            fs::read_to_string(default_path)?
+            fs::read_to_string(default_path).map_err(|err| Error::GetKey(key.to_string(), err))?
         };
         let t = ron::from_str(&data)?;
         Ok(t)
@@ -338,4 +340,10 @@ where
         config: &Config,
         changed_keys: &[T],
     ) -> (Vec<crate::Error>, Vec<&'static str>);
+}
+
+pub struct Update<T> {
+    pub errors: Vec<crate::Error>,
+    pub keys: Vec<&'static str>,
+    pub config: T,
 }

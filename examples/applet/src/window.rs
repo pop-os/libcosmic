@@ -13,7 +13,6 @@ const ID: &str = "com.system76.CosmicAppletExample";
 pub struct Window {
     core: Core,
     popup: Option<Id>,
-    id_ctr: u128,
     example_row: bool,
 }
 

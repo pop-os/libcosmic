@@ -85,15 +85,12 @@ pub fn subscription(is_dark: bool) -> Subscription<crate::theme::Theme> {
         .into(),
         crate::cosmic_theme::Theme::version(),
     )
-    .map(|(_, res)| {
-        let theme = res.unwrap_or_else(|(errors, theme)| {
-            for err in errors {
-                tracing::error!("{:?}", err);
-            }
-            theme
-        });
+    .map(|res| {
+        for err in res.errors {
+            tracing::error!("{:?}", err);
+        }
 
-        Theme::system(Arc::new(theme))
+        Theme::system(Arc::new(res.config))
     })
 }
 
