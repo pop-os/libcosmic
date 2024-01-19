@@ -12,8 +12,7 @@ pub enum ConfigState<T> {
 }
 
 pub enum ConfigUpdate<T> {
-    Update(T),
-    UpdateError(T, Vec<crate::Error>),
+    Update(crate::Update<T>),
     Failed,
 }
 
@@ -24,7 +23,7 @@ pub fn config_subscription<
     id: I,
     config_id: Cow<'static, str>,
     config_version: u64,
-) -> iced_futures::Subscription<(I, Result<T, (Vec<crate::Error>, T)>)> {
+) -> iced_futures::Subscription<crate::Update<T>> {
     subscription::channel(id, 100, move |mut output| {
         let config_id = config_id.clone();
         async move {
@@ -45,7 +44,7 @@ pub fn config_state_subscription<
     id: I,
     config_id: Cow<'static, str>,
     config_version: u64,
-) -> iced_futures::Subscription<(I, Result<T, (Vec<crate::Error>, T)>)> {
+) -> iced_futures::Subscription<crate::Update<T>> {
     subscription::channel(id, 100, move |mut output| {
         let config_id = config_id.clone();
         async move {
@@ -64,7 +63,7 @@ async fn start_listening<
     T: 'static + Send + Sync + PartialEq + Clone + CosmicConfigEntry,
 >(
     state: ConfigState<T>,
-    output: &mut mpsc::Sender<(I, Result<T, (Vec<crate::Error>, T)>)>,
+    output: &mut mpsc::Sender<crate::Update<T>>,
     id: I,
 ) -> ConfigState<T> {
     use iced_futures::futures::{future::pending, StreamExt};
@@ -90,11 +89,21 @@ async fn start_listening<
 
             match T::get_entry(&config) {
                 Ok(t) => {
-                    _ = output.send((id, Ok(t.clone()))).await;
+                    let update = crate::Update {
+                        errors: Vec::new(),
+                        keys: Vec::new(),
+                        config: t.clone(),
+                    };
+                    _ = output.send(update).await;
                     ConfigState::Waiting(t, watcher, rx, config)
                 }
                 Err((errors, t)) => {
-                    _ = output.send((id, Err((errors, t.clone())))).await;
+                    let update = crate::Update {
+                        errors: errors,
+                        keys: Vec::new(),
+                        config: t.clone(),
+                    };
+                    _ = output.send(update).await;
                     ConfigState::Waiting(t, watcher, rx, config)
                 }
             }
@@ -104,11 +113,13 @@ async fn start_listening<
                 let (errors, changed) = conf_data.update_keys(&config, &keys);
 
                 if !changed.is_empty() {
-                    if errors.is_empty() {
-                        _ = output.send((id, Ok(conf_data.clone()))).await;
-                    } else {
-                        _ = output.send((id, Err((errors, conf_data.clone())))).await;
-                    }
+                    _ = output
+                        .send(crate::Update {
+                            errors: errors,
+                            keys: changed,
+                            config: conf_data.clone(),
+                        })
+                        .await;
                 }
                 ConfigState::Waiting(conf_data, watcher, rx, config)
             }

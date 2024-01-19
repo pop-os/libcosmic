@@ -1,6 +1,6 @@
 use std::ops::Deref;
 
-use crate::CosmicConfigEntry;
+use crate::{CosmicConfigEntry, Update};
 use cosmic_settings_daemon::{ConfigProxy, CosmicSettingsDaemonProxy};
 use futures_util::SinkExt;
 use iced_futures::futures::{future::pending, StreamExt};
@@ -51,13 +51,6 @@ impl Watcher {
     }
 }
 
-#[derive(Debug)]
-pub struct Update<T> {
-    pub errors: Vec<crate::Error>,
-    pub keys: Vec<&'static str>,
-    pub config: T,
-}
-
 pub fn watcher_subscription<T: CosmicConfigEntry + Send + Sync + Default + 'static + Clone>(
     settings_daemon: CosmicSettingsDaemonProxy<'static>,
     config_id: &'static str,
@@ -79,7 +72,7 @@ pub fn watcher_subscription<T: CosmicConfigEntry + Send + Sync + Default + 'stat
             Ok(config) => config,
             Err((errors, default)) => {
                 if !errors.is_empty() {
-                    eprintln!("Failed to get config: {errors:?}");
+                    eprintln!("Error getting config: {config_id} {errors:?}");
                 }
                 default
             }

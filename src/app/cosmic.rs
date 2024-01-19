@@ -22,6 +22,7 @@ use iced::window;
 #[cfg(not(any(feature = "multi-window", feature = "wayland")))]
 use iced::Application as IcedApplication;
 use iced_futures::event::listen_raw;
+use iced_futures::futures::executor::block_on;
 #[cfg(not(feature = "wayland"))]
 use iced_runtime::command::Action;
 #[cfg(not(feature = "wayland"))]
@@ -66,9 +67,6 @@ pub enum Message {
     WmCapabilities(window::Id, WindowManagerCapabilities),
     /// Activate the application
     Activate(String),
-    #[cfg(feature = "dbus-config")]
-    /// dbus settings daemon setup
-    SettingsDaemon(zbus::Result<cosmic_settings_daemon::CosmicSettingsDaemonProxy<'static>>),
 }
 
 #[derive(Default)]
@@ -85,16 +83,14 @@ where
     type Message = super::Message<T::Message>;
     type Theme = Theme;
 
-    fn new((core, flags): Self::Flags) -> (Self, iced::Command<Self::Message>) {
+    fn new((mut core, flags): Self::Flags) -> (Self, iced::Command<Self::Message>) {
+        #[cfg(feature = "dbus-config")]
+        {
+            core.settings_daemon = block_on(cosmic_config::dbus::settings_daemon_proxy()).ok();
+        }
+
         let (model, command) = T::init(core, flags);
 
-        #[cfg(feature = "dbus-config")]
-        let command = iced::Command::batch(vec![
-            command,
-            iced::Command::perform(cosmic_config::dbus::settings_daemon_proxy(), |p| {
-                super::Message::Cosmic(super::cosmic::Message::SettingsDaemon(p))
-            }),
-        ]);
         (Self::new(model), command)
     }
 
@@ -176,7 +172,6 @@ where
             keyboard_nav::subscription()
                 .map(Message::KeyboardNav)
                 .map(super::Message::Cosmic),
-            #[cfg(feature = "dbus-config")]
             self.app
                 .core()
                 .watch_config::<cosmic_theme::Theme>(if self.app.core().system_theme_mode.is_dark {
@@ -191,27 +186,6 @@ where
                     Message::SystemThemeChange(crate::theme::Theme::system(Arc::new(update.config)))
                 })
                 .map(super::Message::Cosmic),
-            #[cfg(not(feature = "dbus-config"))]
-            theme::subscription(self.app.core().system_theme_mode.is_dark)
-                .map(Message::SystemThemeChange)
-                .map(super::Message::Cosmic),
-            #[cfg(not(feature = "dbus-config"))]
-            cosmic_config::config_subscription::<_, cosmic_theme::ThemeMode>(
-                0,
-                cosmic_theme::THEME_MODE_ID.into(),
-                cosmic_theme::ThemeMode::version(),
-            )
-            .map(|(_, u)| match u {
-                Ok(t) => Message::SystemThemeModeChange(t),
-                Err((errors, t)) => {
-                    for e in errors {
-                        tracing::error!("{e}");
-                    }
-                    Message::SystemThemeModeChange(t)
-                }
-            })
-            .map(super::Message::Cosmic),
-            #[cfg(feature = "dbus-config")]
             self.app
                 .core()
                 .watch_config::<ThemeMode>(cosmic_theme::THEME_MODE_ID)
@@ -422,15 +396,6 @@ impl<T: Application> Cosmic<T> {
                     _token,
                 );
             }
-            #[cfg(feature = "dbus-config")]
-            Message::SettingsDaemon(p) => match p {
-                Ok(p) => {
-                    self.app.core_mut().settings_daemon = Some(p);
-                }
-                Err(e) => {
-                    tracing::error!("Failed to connect to settings daemon: {e}");
-                }
-            },
         }
 
         iced::Command::none()
