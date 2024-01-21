@@ -73,7 +73,7 @@ pub fn search<M: 'static + Clone>(model: &Model, on_emit: fn(Message) -> M) -> c
             &model.phrase,
             Message::Changed,
             Message::Clear,
-            Some(Message::Clear),
+            Some(Message::Submit),
         )
         .into(),
 
