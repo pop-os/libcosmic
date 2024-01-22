@@ -10,12 +10,14 @@ use iced::{
     alignment, event, keyboard, mouse, touch, Background, Color, Command, Event, Length, Rectangle,
     Size,
 };
+use iced_core::mouse::ScrollDelta;
 use iced_core::text::{LineHeight, Paragraph, Renderer as TextRenderer, Shaping};
 use iced_core::widget::{self, operation, tree};
 use iced_core::{layout, renderer, widget::Tree, Clipboard, Layout, Shell, Widget};
 use iced_core::{Point, Renderer as IcedRenderer, Text};
-use slotmap::SecondaryMap;
+use slotmap::{Key, SecondaryMap};
 use std::marker::PhantomData;
+use std::time::{Duration, Instant};
 
 /// State that is maintained by each individual widget.
 #[derive(Default)]
@@ -30,6 +32,8 @@ pub struct LocalState {
     hovered: Entity,
     /// The paragraphs for each text.
     paragraphs: SecondaryMap<Entity, crate::Paragraph>,
+    /// Time since last tab activation from wheel movements.
+    wheel_timestamp: Option<Instant>,
 }
 
 impl operation::Focusable for LocalState {
@@ -420,6 +424,57 @@ where
                     }
 
                     break;
+                }
+            }
+
+            if let Some(on_activate) = self.on_activate.as_ref() {
+                if let Event::Mouse(mouse::Event::WheelScrolled { delta }) = event {
+                    let current = Instant::now();
+
+                    // Permit successive scroll wheel events only after a given delay.
+                    if state.wheel_timestamp.map_or(true, |previous| {
+                        current.duration_since(previous) > Duration::from_millis(250)
+                    }) {
+                        state.wheel_timestamp = Some(current);
+
+                        match delta {
+                            ScrollDelta::Lines { y, .. } | ScrollDelta::Pixels { y, .. } => {
+                                let mut activate_key = None;
+
+                                if y < 0.0 {
+                                    let mut prev_key = Entity::null();
+
+                                    for key in self.model.order.iter().copied() {
+                                        if self.model.is_active(key) && !prev_key.is_null() {
+                                            activate_key = Some(prev_key);
+                                        }
+
+                                        if self.model.is_enabled(key) {
+                                            prev_key = key;
+                                        }
+                                    }
+                                } else if y > 0.0 {
+                                    let mut buttons = self.model.order.iter().copied();
+                                    while let Some(key) = buttons.next() {
+                                        if self.model.is_active(key) {
+                                            for key in buttons {
+                                                if self.model.is_enabled(key) {
+                                                    activate_key = Some(key);
+                                                    break;
+                                                }
+                                            }
+                                            break;
+                                        }
+                                    }
+                                }
+
+                                if let Some(key) = activate_key {
+                                    shell.publish(on_activate(key));
+                                    return event::Status::Captured;
+                                }
+                            }
+                        }
+                    }
                 }
             }
         } else {
