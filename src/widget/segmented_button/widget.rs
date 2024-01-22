@@ -13,7 +13,7 @@ use iced::{
 use iced_core::text::{LineHeight, Paragraph, Renderer as TextRenderer, Shaping};
 use iced_core::widget::{self, operation, tree};
 use iced_core::{layout, renderer, widget::Tree, Clipboard, Layout, Shell, Widget};
-use iced_core::{BorderRadius, Point, Renderer as IcedRenderer, Text};
+use iced_core::{Point, Renderer as IcedRenderer, Text};
 use slotmap::SecondaryMap;
 use std::marker::PhantomData;
 
@@ -70,6 +70,7 @@ pub trait SegmentedVariant {
 
 /// A conjoined group of items that function together as a button.
 #[derive(Setters)]
+#[must_use]
 pub struct SegmentedButton<'a, Variant, SelectionMode, Message>
 where
     Model<SelectionMode>: Selectable,
@@ -380,6 +381,7 @@ where
 
                         // If marked as closable, show a close icon.
                         if self.model.items[key].closable {
+                            // Emit close message if the close button is pressed.
                             if let Some(on_close) = self.on_close.as_ref() {
                                 if cursor_position.is_over(close_bounds(
                                     bounds,
@@ -394,6 +396,15 @@ where
                                         shell.publish(on_close(key));
                                         return event::Status::Captured;
                                     }
+                                }
+
+                                // Emit close message if the tab is middle clicked.
+                                if let Event::Mouse(mouse::Event::ButtonReleased(
+                                    mouse::Button::Middle,
+                                )) = event
+                                {
+                                    shell.publish(on_close(key));
+                                    return event::Status::Captured;
                                 }
                             }
                         }
