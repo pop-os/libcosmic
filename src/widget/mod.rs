@@ -134,8 +134,6 @@ pub use nav_bar::nav_bar;
 pub mod nav_bar_toggle;
 pub use nav_bar_toggle::{nav_bar_toggle, NavBarToggle};
 
-pub mod navigation;
-
 pub mod popover;
 pub use popover::{popover, Popover};
 
