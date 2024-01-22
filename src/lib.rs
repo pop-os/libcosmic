@@ -29,7 +29,7 @@ pub mod command;
 pub use cosmic_config;
 pub use cosmic_theme;
 
-#[cfg(feature = "xdg-portal")]
+#[cfg(any(feature = "xdg-portal", feature = "rfd"))]
 pub mod dialog;
 
 pub mod executor;
