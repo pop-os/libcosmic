@@ -11,10 +11,10 @@ check-examples *args:
     done
 
 check-wayland *args:
-    cargo clippy --no-deps --features="wayland,tokio" {{args}} -- {{clippy_args}}
+    cargo clippy --no-deps --features="wayland,tokio,xdg-portal" {{args}} -- {{clippy_args}}
 
 check-winit *args:
-    cargo clippy --no-deps --features="winit,tokio" {{args}} -- {{clippy_args}}
+    cargo clippy --no-deps --features="winit,tokio,xdg-portal" {{args}} -- {{clippy_args}}
 
 # Runs a check with JSON message format for IDE integration
 check-json: (check '--message-format=json')

@@ -3,6 +3,7 @@
 
 //! Create dialogs for retrieving user input.
 
-pub use ashpd::WindowIdentifier;
+#[cfg(feature = "xdg-portal")]
+pub use ashpd;
 
 pub mod file_chooser;
