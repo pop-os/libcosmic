@@ -163,8 +163,6 @@ pub mod row {
 mod scrollable;
 pub use scrollable::*;
 
-pub mod search;
-
 pub mod segmented_button;
 pub mod segmented_selection;
 
