@@ -44,18 +44,38 @@ where
     }
 
     #[allow(clippy::cast_precision_loss)]
-    fn variant_button_bounds(&self, mut bounds: Rectangle, nth: usize) -> Rectangle {
-        let num = self.model.items.len();
-        if num != 0 {
-            let spacing = f32::from(self.spacing);
-            bounds.width = ((num as f32).mul_add(-spacing, bounds.width) + spacing) / num as f32;
+    fn variant_button_bounds(
+        &self,
+        state: &LocalState,
+        mut bounds: Rectangle,
+        nth: usize,
+    ) -> Option<Rectangle> {
+        let num = state.buttons_visible;
 
-            if nth != 0 {
-                bounds.x += (nth as f32).mul_add(bounds.width, nth as f32 * spacing);
+        // Do not display tabs that are currently hidden due to width constraints.
+        if state.collapsed && nth < state.buttons_offset {
+            return None;
+        }
+
+        if num != 0 {
+            let offset_width;
+            (bounds.x, offset_width) = if state.collapsed {
+                (bounds.x + 16.0, 32.0)
+            } else {
+                (bounds.x, 0.0)
+            };
+
+            let spacing = f32::from(self.spacing);
+            bounds.width = ((num as f32).mul_add(-spacing, bounds.width - offset_width) + spacing)
+                / num as f32;
+
+            if nth != state.buttons_offset {
+                let pos = (nth - state.buttons_offset) as f32;
+                bounds.x += pos.mul_add(bounds.width, pos * spacing);
             }
         }
 
-        bounds
+        Some(bounds)
     }
 
     #[allow(clippy::cast_precision_loss)]
@@ -80,6 +100,15 @@ where
         let size = limits
             .height(Length::Fixed(height))
             .resolve(Size::new(width, height));
+
+        let actual_width = size.width as usize;
+        let minimum_width = self.minimum_button_width as usize * self.model.items.len();
+
+        state.buttons_visible = num;
+        state.collapsed = actual_width < minimum_width;
+        if state.collapsed {
+            state.buttons_visible = (actual_width / self.minimum_button_width as usize).min(num);
+        }
 
         layout::Node::new(size)
     }

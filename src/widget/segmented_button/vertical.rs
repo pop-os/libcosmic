@@ -45,7 +45,12 @@ where
     }
 
     #[allow(clippy::cast_precision_loss)]
-    fn variant_button_bounds(&self, mut bounds: Rectangle, nth: usize) -> Rectangle {
+    fn variant_button_bounds(
+        &self,
+        _state: &LocalState,
+        mut bounds: Rectangle,
+        nth: usize,
+    ) -> Option<Rectangle> {
         let num = self.model.items.len();
         if num != 0 {
             let spacing = f32::from(self.spacing);
@@ -56,7 +61,7 @@ where
             }
         }
 
-        bounds
+        Some(bounds)
     }
 
     #[allow(clippy::cast_precision_loss)]
