@@ -19,37 +19,9 @@ use slotmap::{Key, SecondaryMap};
 use std::marker::PhantomData;
 use std::time::{Duration, Instant};
 
-/// State that is maintained by each individual widget.
-#[derive(Default)]
-pub struct LocalState {
-    /// The first focusable key.
-    first: Entity,
-    /// If the widget is focused or not.
-    focused: bool,
-    /// The key inside the widget that is currently focused.
-    focused_key: Entity,
-    /// The ID of the button that is being hovered. Defaults to null.
-    hovered: Entity,
-    /// The paragraphs for each text.
-    paragraphs: SecondaryMap<Entity, crate::Paragraph>,
-    /// Time since last tab activation from wheel movements.
-    wheel_timestamp: Option<Instant>,
-}
-
-impl operation::Focusable for LocalState {
-    fn is_focused(&self) -> bool {
-        self.focused
-    }
-
-    fn focus(&mut self) {
-        self.focused = true;
-        self.focused_key = self.first;
-    }
-
-    fn unfocus(&mut self) {
-        self.focused = false;
-        self.focused_key = Entity::default();
-    }
+/// A command that focuses a segmented item stored in a widget.
+pub fn focus<Message: 'static>(id: Id) -> Command<Message> {
+    Command::widget(operation::focusable::focus(id.0))
 }
 
 /// Isolates variant-specific behaviors from [`SegmentedButton`].
@@ -61,7 +33,12 @@ pub trait SegmentedVariant {
     ) -> super::Appearance;
 
     /// Calculates the bounds for the given button by its position.
-    fn variant_button_bounds(&self, bounds: Rectangle, position: usize) -> Rectangle;
+    fn variant_button_bounds(
+        &self,
+        state: &LocalState,
+        bounds: Rectangle,
+        position: usize,
+    ) -> Option<Rectangle>;
 
     /// Calculates the layout of this variant.
     fn variant_layout(
@@ -95,6 +72,8 @@ where
     pub(super) button_height: u16,
     /// Spacing between icon and text in button.
     pub(super) button_spacing: u16,
+    /// Minimum width of a button.
+    pub(super) minimum_button_width: u16,
     /// Spacing for each indent.
     pub(super) indent_spacing: u16,
     /// Desired font for active tabs.
@@ -132,7 +111,6 @@ where
     Model<SelectionMode>: Selectable,
     SelectionMode: Default,
 {
-    #[must_use]
     pub fn new(model: &'a Model<SelectionMode>) -> Self {
         Self {
             model,
@@ -142,6 +120,7 @@ where
             button_padding: [4, 4, 4, 4],
             button_height: 32,
             button_spacing: 4,
+            minimum_button_width: 150,
             indent_spacing: 16,
             font_active: None,
             font_hovered: None,
@@ -181,50 +160,137 @@ where
 
     /// Focus the previous item in the widget.
     fn focus_previous(&mut self, state: &mut LocalState) -> event::Status {
-        let mut keys = self.model.order.iter().copied().rev();
+        match state.focused_item {
+            Focus::Tab(entity) => {
+                let mut keys = self.iterate_visible_tabs(state).rev();
 
-        while let Some(key) = keys.next() {
-            if key == state.focused_key {
-                for key in keys {
-                    // Skip disabled buttons.
-                    if !self.is_enabled(key) {
-                        continue;
+                while let Some(key) = keys.next() {
+                    if key == entity {
+                        for key in keys {
+                            // Skip disabled buttons.
+                            if !self.is_enabled(key) {
+                                continue;
+                            }
+
+                            state.focused_item = Focus::Tab(key);
+                            return event::Status::Captured;
+                        }
+
+                        break;
                     }
-
-                    state.focused_key = key;
-                    return event::Status::Captured;
                 }
 
-                break;
+                if self.prev_tab_sensitive(state) {
+                    state.focused_item = Focus::PrevButton;
+                    return event::Status::Captured;
+                }
             }
+
+            Focus::NextButton => {
+                if let Some(last) = self.last_tab(state) {
+                    state.focused_item = Focus::Tab(last);
+                    return event::Status::Captured;
+                }
+            }
+
+            Focus::None => {
+                if self.next_tab_sensitive(state) {
+                    state.focused_item = Focus::NextButton;
+                    return event::Status::Captured;
+                } else if let Some(last) = self.last_tab(state) {
+                    state.focused_item = Focus::Tab(last);
+                    return event::Status::Captured;
+                }
+            }
+
+            Focus::PrevButton | Focus::Set => (),
         }
 
-        state.focused_key = Entity::default();
+        state.focused_item = Focus::None;
         event::Status::Ignored
     }
 
     /// Focus the next item in the widget.
     fn focus_next(&mut self, state: &mut LocalState) -> event::Status {
-        let mut keys = self.model.order.iter().copied();
+        match state.focused_item {
+            Focus::Tab(entity) => {
+                let mut keys = self.iterate_visible_tabs(state);
+                while let Some(key) = keys.next() {
+                    if key == entity {
+                        for key in keys {
+                            // Skip disabled buttons.
+                            if !self.is_enabled(key) {
+                                continue;
+                            }
 
-        while let Some(key) = keys.next() {
-            if key == state.focused_key {
-                for key in keys {
-                    // Skip disabled buttons.
-                    if !self.is_enabled(key) {
-                        continue;
+                            state.focused_item = Focus::Tab(key);
+                            return event::Status::Captured;
+                        }
+
+                        break;
                     }
-
-                    state.focused_key = key;
-                    return event::Status::Captured;
                 }
 
-                break;
+                if self.next_tab_sensitive(state) {
+                    state.focused_item = Focus::NextButton;
+                    return event::Status::Captured;
+                }
             }
+
+            Focus::PrevButton => {
+                if let Some(first) = self.first_tab(state) {
+                    state.focused_item = Focus::Tab(first);
+                    return event::Status::Captured;
+                }
+            }
+
+            Focus::None => {
+                if self.prev_tab_sensitive(state) {
+                    state.focused_item = Focus::PrevButton;
+                    return event::Status::Captured;
+                } else if let Some(first) = self.first_tab(state) {
+                    state.focused_item = Focus::Tab(first);
+                    return event::Status::Captured;
+                }
+            }
+
+            Focus::NextButton | Focus::Set => (),
         }
 
-        state.focused_key = Entity::default();
+        state.focused_item = Focus::None;
         event::Status::Ignored
+    }
+
+    fn iterate_visible_tabs<'b>(
+        &'b self,
+        state: &LocalState,
+    ) -> impl DoubleEndedIterator<Item = Entity> + 'b {
+        self.model
+            .order
+            .iter()
+            .copied()
+            .skip(state.buttons_offset)
+            .take(state.buttons_visible)
+    }
+
+    fn first_tab(&self, state: &LocalState) -> Option<Entity> {
+        self.model.order.get(state.buttons_offset).copied()
+    }
+
+    fn last_tab(&self, state: &LocalState) -> Option<Entity> {
+        self.model
+            .order
+            .get(state.buttons_offset + state.buttons_visible)
+            .copied()
+    }
+
+    #[allow(clippy::unused_self)]
+    fn prev_tab_sensitive(&self, state: &LocalState) -> bool {
+        state.buttons_offset > 0
+    }
+
+    fn next_tab_sensitive(&self, state: &LocalState) -> bool {
+        state.buttons_offset < self.model.order.len() - state.buttons_visible
     }
 
     pub(super) fn max_button_dimensions(
@@ -264,7 +330,8 @@ where
 
             // Add indent to measurement if found.
             if let Some(indent) = self.model.indent(key) {
-                button_width += f32::from(indent) * f32::from(self.indent_spacing);
+                button_width =
+                    f32::from(indent).mul_add(f32::from(self.indent_spacing), button_width);
             }
 
             // Add icon to measurement if icon was given.
@@ -361,6 +428,7 @@ where
         self.variant_layout(tree.state.downcast_mut::<LocalState>(), renderer, limits)
     }
 
+    #[allow(clippy::too_many_lines)]
     fn on_event(
         &mut self,
         tree: &mut Tree,
@@ -376,8 +444,53 @@ where
         let state = tree.state.downcast_mut::<LocalState>();
 
         if cursor_position.is_over(bounds) {
-            for (nth, key) in self.model.order.iter().copied().enumerate() {
-                let bounds = self.variant_button_bounds(bounds, nth);
+            // Check for clicks on the previous and next tab buttons, when tabs are collapsed.
+            if state.collapsed {
+                // Check if the prev tab button was clicked.
+                if cursor_position.is_over(Rectangle {
+                    y: bounds.y + 8.0,
+                    width: 16.0,
+                    ..bounds
+                }) {
+                    if let Event::Mouse(mouse::Event::ButtonReleased(mouse::Button::Left))
+                    | Event::Touch(touch::Event::FingerLifted { .. }) = event
+                    {
+                        if self.prev_tab_sensitive(state) {
+                            state.buttons_offset -= 1;
+                        }
+                    }
+                } else {
+                    // Check if the next tab button was clicked.
+                    if cursor_position.is_over(Rectangle {
+                        x: bounds.width,
+                        y: bounds.y + 8.0,
+                        width: 16.0,
+                        ..bounds
+                    }) {
+                        if let Event::Mouse(mouse::Event::ButtonReleased(mouse::Button::Left))
+                        | Event::Touch(touch::Event::FingerLifted { .. }) = event
+                        {
+                            if self.next_tab_sensitive(state) {
+                                state.buttons_offset += 1;
+                            }
+                        }
+                    }
+                }
+            }
+
+            for (nth, key) in self
+                .model
+                .order
+                .iter()
+                .copied()
+                .enumerate()
+                .skip(state.buttons_offset)
+                .take(state.buttons_visible)
+            {
+                let Some(bounds) = self.variant_button_bounds(state, bounds, nth) else {
+                    continue;
+                };
+
                 if cursor_position.is_over(bounds) {
                     if self.model.items[key].enabled {
                         // Record that the mouse is hovering over this button.
@@ -501,7 +614,40 @@ where
                     ..
                 }) = event
                 {
-                    shell.publish(on_activate(state.focused_key));
+                    match state.focused_item {
+                        Focus::Tab(entity) => {
+                            shell.publish(on_activate(entity));
+                        }
+
+                        Focus::PrevButton => {
+                            if self.prev_tab_sensitive(state) {
+                                state.buttons_offset -= 1;
+
+                                // If the change would cause it to be insensitive, focus the first tab.
+                                if !self.prev_tab_sensitive(state) {
+                                    if let Some(first) = self.first_tab(state) {
+                                        state.focused_item = Focus::Tab(first);
+                                    }
+                                }
+                            }
+                        }
+
+                        Focus::NextButton => {
+                            if self.next_tab_sensitive(state) {
+                                state.buttons_offset += 1;
+
+                                // If the change would cause it to be insensitive, focus the last tab.
+                                if !self.next_tab_sensitive(state) {
+                                    if let Some(last) = self.last_tab(state) {
+                                        state.focused_item = Focus::Tab(last);
+                                    }
+                                }
+                            }
+                        }
+
+                        Focus::None | Focus::Set => (),
+                    }
+
                     return event::Status::Captured;
                 }
             }
@@ -521,21 +667,42 @@ where
     ) {
         let state = tree.state.downcast_mut::<LocalState>();
         operation.focusable(state, self.id.as_ref().map(|id| &id.0));
+
+        if let Focus::Set = state.focused_item {
+            if self.prev_tab_sensitive(state) {
+                state.focused_item = Focus::PrevButton;
+            } else if let Some(first) = self.first_tab(state) {
+                state.focused_item = Focus::Tab(first);
+            }
+        }
     }
 
     fn mouse_interaction(
         &self,
-        _tree: &Tree,
+        tree: &Tree,
         layout: Layout<'_>,
         cursor_position: mouse::Cursor,
         _viewport: &iced::Rectangle,
         _renderer: &Renderer,
     ) -> iced_core::mouse::Interaction {
+        let state = tree.state.downcast_ref::<LocalState>();
         let bounds = layout.bounds();
 
         if cursor_position.is_over(bounds) {
-            for (nth, key) in self.model.order.iter().copied().enumerate() {
-                if cursor_position.is_over(self.variant_button_bounds(bounds, nth)) {
+            for (nth, key) in self
+                .model
+                .order
+                .iter()
+                .copied()
+                .enumerate()
+                .skip(state.buttons_offset)
+                .take(state.buttons_visible)
+            {
+                let Some(bounds) = self.variant_button_bounds(state, bounds, nth) else {
+                    continue;
+                };
+
+                if cursor_position.is_over(bounds) {
                     return if self.model.items[key].enabled {
                         iced_core::mouse::Interaction::Pointer
                     } else {
@@ -577,14 +744,106 @@ where
             );
         }
 
+        // Draw previous and next tab buttons if there is a need to paginate tabs.
+        if state.collapsed {
+            // Previous tab button
+            let prev_bounds = Rectangle {
+                y: bounds.y + 8.0,
+                width: 16.0,
+                ..bounds
+            };
+
+            if let Focus::PrevButton = state.focused_item {
+                renderer.fill_quad(
+                    renderer::Quad {
+                        bounds: prev_bounds,
+                        border_radius: appearance.focus.first.border_radius,
+                        border_width: 0.0,
+                        border_color: Color::TRANSPARENT,
+                    },
+                    appearance
+                        .focus
+                        .background
+                        .unwrap_or(Background::Color(Color::TRANSPARENT)),
+                );
+            }
+
+            draw_icon::<Message>(
+                renderer,
+                theme,
+                style,
+                cursor,
+                viewport,
+                if state.buttons_offset == 0 {
+                    appearance.inactive.text_color
+                } else if let Focus::PrevButton = state.focused_item {
+                    appearance.focus.text_color
+                } else {
+                    appearance.active.text_color
+                },
+                prev_bounds,
+                icon::from_name("go-previous-symbolic").size(16).icon(),
+            );
+
+            // Next tab button
+            let next_bounds = Rectangle {
+                x: bounds.width,
+                y: bounds.y + 8.0,
+                width: 16.0,
+                ..bounds
+            };
+
+            if let Focus::NextButton = state.focused_item {
+                renderer.fill_quad(
+                    renderer::Quad {
+                        bounds: next_bounds,
+                        border_radius: appearance.focus.last.border_radius,
+                        border_width: 0.0,
+                        border_color: Color::TRANSPARENT,
+                    },
+                    appearance
+                        .focus
+                        .background
+                        .unwrap_or(Background::Color(Color::TRANSPARENT)),
+                );
+            }
+
+            draw_icon::<Message>(
+                renderer,
+                theme,
+                style,
+                cursor,
+                viewport,
+                if self.next_tab_sensitive(state) {
+                    appearance.active.text_color
+                } else if let Focus::NextButton = state.focused_item {
+                    appearance.focus.text_color
+                } else {
+                    appearance.inactive.text_color
+                },
+                next_bounds,
+                icon::from_name("go-next-symbolic").size(16).icon(),
+            );
+        }
+
         // Draw each of the items in the widget.
-        for (nth, key) in self.model.order.iter().copied().enumerate() {
-            let mut bounds = self.variant_button_bounds(bounds, nth);
+        for (nth, key) in self
+            .model
+            .order
+            .iter()
+            .copied()
+            .enumerate()
+            .skip(state.buttons_offset)
+            .take(state.buttons_visible)
+        {
+            let Some(mut bounds) = self.variant_button_bounds(state, bounds, nth) else {
+                continue;
+            };
 
             let key_is_active = self.model.is_active(key);
             let key_is_hovered = state.hovered == key;
 
-            let (status_appearance, font) = if state.focused_key == key {
+            let (status_appearance, font) = if Focus::Tab(key) == state.focused_item {
                 (appearance.focus, &self.font_active)
             } else if key_is_active {
                 (appearance.active, &self.font_active)
@@ -660,29 +919,19 @@ where
                 let offset = width + f32::from(self.button_spacing);
                 bounds.y = y - width / 2.0;
 
-                let mut layout_node = layout::Node::new(Size {
-                    width,
-                    height: width,
-                });
-
-                layout_node.move_to(Point {
-                    x: bounds.x,
-                    y: bounds.y,
-                });
-
-                Widget::<Message, Renderer>::draw(
-                    Element::<Message>::from(icon.clone()).as_widget(),
-                    &Tree::empty(),
+                draw_icon::<Message>(
                     renderer,
                     theme,
-                    &renderer::Style {
-                        icon_color: status_appearance.text_color,
-                        text_color: status_appearance.text_color,
-                        scale_factor: style.scale_factor,
-                    },
-                    Layout::new(&layout_node),
+                    style,
                     cursor,
                     viewport,
+                    status_appearance.text_color,
+                    Rectangle {
+                        width,
+                        height: width,
+                        ..bounds
+                    },
+                    icon.clone(),
                 );
 
                 bounds.x += offset;
@@ -724,7 +973,7 @@ where
                     bounds.position(),
                     status_appearance.text_color,
                     Rectangle {
-                        width: bounds.width - close_icon_width - 16.0,
+                        width: bounds.width - close_icon_width - 12.0,
                         ..original_bounds
                     },
                 );
@@ -735,29 +984,15 @@ where
                 let close_button_bounds =
                     close_bounds(original_bounds, close_icon_width, self.button_padding);
 
-                let mut layout_node = layout::Node::new(Size {
-                    width: close_button_bounds.width,
-                    height: close_button_bounds.height,
-                });
-
-                layout_node.move_to(Point {
-                    x: close_button_bounds.x,
-                    y: close_button_bounds.y,
-                });
-
-                Widget::<Message, Renderer>::draw(
-                    &Element::<Message>::from(self.close_icon.clone()),
-                    &Tree::empty(),
+                draw_icon::<Message>(
                     renderer,
                     theme,
-                    &renderer::Style {
-                        icon_color: status_appearance.text_color,
-                        text_color: status_appearance.text_color,
-                        scale_factor: style.scale_factor,
-                    },
-                    Layout::new(&layout_node),
+                    style,
                     cursor,
                     viewport,
+                    status_appearance.text_color,
+                    close_button_bounds,
+                    self.close_icon.clone(),
                 );
             }
         }
@@ -791,9 +1026,53 @@ where
     }
 }
 
-/// A command that focuses a segmented item stored in a widget.
-pub fn focus<Message: 'static>(id: Id) -> Command<Message> {
-    Command::widget(operation::focusable::focus(id.0))
+/// State that is maintained by each individual widget.
+#[derive(Default)]
+pub struct LocalState {
+    /// Whether buttons need to be collapsed to preserve minimum width
+    pub(super) collapsed: bool,
+    /// Defines how many buttons to show at a time.
+    pub(super) buttons_visible: usize,
+    /// Button visibility offset, when collapsed.
+    pub(super) buttons_offset: usize,
+    /// The first focusable key.
+    first: Entity,
+    /// If the widget is focused or not.
+    focused: bool,
+    /// The key inside the widget that is currently focused.
+    focused_item: Focus,
+    /// The ID of the button that is being hovered. Defaults to null.
+    hovered: Entity,
+    /// The paragraphs for each text.
+    paragraphs: SecondaryMap<Entity, crate::Paragraph>,
+    /// Time since last tab activation from wheel movements.
+    wheel_timestamp: Option<Instant>,
+}
+
+#[derive(Default, PartialEq)]
+enum Focus {
+    NextButton,
+    #[default]
+    None,
+    PrevButton,
+    Set,
+    Tab(Entity),
+}
+
+impl operation::Focusable for LocalState {
+    fn is_focused(&self) -> bool {
+        self.focused
+    }
+
+    fn focus(&mut self) {
+        self.focused = true;
+        self.focused_item = Focus::Set;
+    }
+
+    fn unfocus(&mut self) {
+        self.focused = false;
+        self.focused_item = Focus::None;
+    }
 }
 
 /// The iced identifier of a segmented button.
@@ -831,4 +1110,41 @@ fn close_bounds(area: Rectangle<f32>, icon_size: f32, button_padding: [u16; 4]) 
         width: icon_size,
         height: icon_size,
     }
+}
+
+#[allow(clippy::too_many_arguments)]
+fn draw_icon<Message: 'static>(
+    renderer: &mut Renderer,
+    theme: &crate::Theme,
+    style: &renderer::Style,
+    cursor: mouse::Cursor,
+    viewport: &Rectangle,
+    color: Color,
+    bounds: Rectangle,
+    icon: Icon,
+) {
+    let mut layout_node = layout::Node::new(Size {
+        width: bounds.width,
+        height: bounds.width,
+    });
+
+    layout_node.move_to(Point {
+        x: bounds.x,
+        y: bounds.y,
+    });
+
+    Widget::<Message, Renderer>::draw(
+        Element::<Message>::from(icon.clone()).as_widget(),
+        &Tree::empty(),
+        renderer,
+        theme,
+        &renderer::Style {
+            icon_color: color,
+            text_color: color,
+            scale_factor: style.scale_factor,
+        },
+        Layout::new(&layout_node),
+        cursor,
+        viewport,
+    );
 }
