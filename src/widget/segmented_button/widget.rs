@@ -694,10 +694,22 @@ where
                 alignment::Horizontal::Center
             };
 
+            // Whether to show the close button on this tab.
+            let show_close_button =
+                (key_is_active || !self.show_close_icon_on_hover || key_is_hovered)
+                    && self.model.is_closable(key);
+
+            // Width of the icon used by the close button, which we will subtract from the text bounds.
+            let close_icon_width = if show_close_button {
+                f32::from(self.close_icon.size)
+            } else {
+                0.0
+            };
+
             if let Some(text) = self.model.text(key) {
                 bounds.y = y;
 
-                // Draw the text in this button.
+                // Draw the text for this segmented button or tab.
                 renderer.fill_text(
                     iced_core::text::Text {
                         content: text,
@@ -711,25 +723,26 @@ where
                     },
                     bounds.position(),
                     status_appearance.text_color,
-                    *viewport,
+                    Rectangle {
+                        width: bounds.width - close_icon_width - 16.0,
+                        ..original_bounds
+                    },
                 );
             }
 
-            let show_close_button =
-                (key_is_active || !self.show_close_icon_on_hover || key_is_hovered)
-                    && self.model.is_closable(key);
-
-            // Draw a close button if this is set.
+            // Draw a close button if set.
             if show_close_button {
-                let width = f32::from(self.close_icon.size);
-                let icon_bounds = close_bounds(original_bounds, width, self.button_padding);
+                let close_button_bounds =
+                    close_bounds(original_bounds, close_icon_width, self.button_padding);
+
                 let mut layout_node = layout::Node::new(Size {
-                    width: icon_bounds.width,
-                    height: icon_bounds.height,
+                    width: close_button_bounds.width,
+                    height: close_button_bounds.height,
                 });
+
                 layout_node.move_to(Point {
-                    x: icon_bounds.x,
-                    y: icon_bounds.y,
+                    x: close_button_bounds.x,
+                    y: close_button_bounds.y,
                 });
 
                 Widget::<Message, Renderer>::draw(
