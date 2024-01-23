@@ -909,15 +909,12 @@ where
             // Draw the image beside the text.
             let horizontal_alignment = if let Some(icon) = self.model.icon(key) {
                 bounds.x += f32::from(self.button_padding[0]);
-                bounds.y += f32::from(self.button_padding[1]);
-                bounds.width -=
-                    f32::from(self.button_padding[0]) - f32::from(self.button_padding[2]);
-                bounds.height -=
-                    f32::from(self.button_padding[1]) - f32::from(self.button_padding[3]);
 
+                let mut image_bounds = bounds;
                 let width = f32::from(icon.size);
                 let offset = width + f32::from(self.button_spacing);
-                bounds.y = y - width / 2.0;
+                image_bounds.y += f32::from(self.button_padding[1]);
+                image_bounds.y = y - width / 2.0;
 
                 draw_icon::<Message>(
                     renderer,
@@ -929,7 +926,7 @@ where
                     Rectangle {
                         width,
                         height: width,
-                        ..bounds
+                        ..image_bounds
                     },
                     icon.clone(),
                 );
@@ -973,7 +970,7 @@ where
                     bounds.position(),
                     status_appearance.text_color,
                     Rectangle {
-                        width: bounds.width - close_icon_width - 12.0,
+                        width: bounds.width - close_icon_width,
                         ..original_bounds
                     },
                 );
