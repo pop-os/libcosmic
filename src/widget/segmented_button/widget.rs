@@ -32,13 +32,12 @@ pub trait SegmentedVariant {
         style: &crate::theme::SegmentedButton,
     ) -> super::Appearance;
 
-    /// Calculates the bounds for the given button by its position.
+    /// Calculates the bounds for visible buttons.
     fn variant_button_bounds(
         &self,
         state: &LocalState,
         bounds: Rectangle,
-        position: usize,
-    ) -> Option<Rectangle>;
+    ) -> impl Iterator<Item = (Entity, Rectangle)>;
 
     /// Calculates the layout of this variant.
     fn variant_layout(
@@ -137,6 +136,7 @@ where
         }
     }
 
+    /// Emitted when a tab is pressed.
     pub fn on_activate<T>(mut self, on_activate: T) -> Self
     where
         T: Fn(Entity) -> Message + 'static,
@@ -145,6 +145,7 @@ where
         self
     }
 
+    /// Emitted when a tab close button is pressed.
     pub fn on_close<T>(mut self, on_close: T) -> Self
     where
         T: Fn(Entity) -> Message + 'static,
@@ -293,6 +294,65 @@ where
         state.buttons_offset < self.model.order.len() - state.buttons_visible
     }
 
+    pub(super) fn button_dimensions(
+        &self,
+        state: &mut LocalState,
+        font: crate::font::Font,
+        button: Entity,
+    ) -> (f32, f32) {
+        let mut width = 0.0f32;
+        let mut height = 0.0f32;
+
+        // Add text to measurement if text was given.
+        if let Some((text, entry)) = self
+            .model
+            .text
+            .get(button)
+            .zip(state.paragraphs.entry(button))
+        {
+            let paragraph = entry.or_insert_with(|| {
+                crate::Paragraph::with_text(Text {
+                    content: text,
+                    size: iced::Pixels(self.font_size),
+                    bounds: Size::INFINITY,
+                    font,
+                    horizontal_alignment: alignment::Horizontal::Left,
+                    vertical_alignment: alignment::Vertical::Center,
+                    shaping: Shaping::Advanced,
+                    line_height: self.line_height,
+                })
+            });
+
+            let size = paragraph.min_bounds();
+            width += size.width;
+            height += size.height;
+        }
+
+        // Add indent to measurement if found.
+        if let Some(indent) = self.model.indent(button) {
+            width = f32::from(indent).mul_add(f32::from(self.indent_spacing), width);
+        }
+
+        // Add icon to measurement if icon was given.
+        if let Some(icon) = self.model.icon(button) {
+            height = height.max(f32::from(icon.size));
+            width += f32::from(icon.size) + f32::from(self.button_spacing);
+        }
+
+        // Add close button to measurement if found.
+        if self.model.is_closable(button) {
+            height = height.max(f32::from(self.close_icon.size));
+            width += f32::from(self.close_icon.size) + f32::from(self.button_spacing) + 8.0;
+        }
+
+        // Add button padding to the max size found
+        width += f32::from(self.button_padding[0]) + f32::from(self.button_padding[2]);
+        height += f32::from(self.button_padding[1]) + f32::from(self.button_padding[3]);
+        height = height.max(f32::from(self.button_height));
+
+        (width, height)
+    }
+
     pub(super) fn max_button_dimensions(
         &self,
         state: &mut LocalState,
@@ -304,57 +364,11 @@ where
         let font = renderer.default_font();
 
         for key in self.model.order.iter().copied() {
-            let mut button_width = 0.0f32;
-            let mut button_height = 0.0f32;
-
-            // Add text to measurement if text was given.
-            if let Some((text, entry)) = self.model.text.get(key).zip(state.paragraphs.entry(key)) {
-                let paragraph = entry.or_insert_with(|| {
-                    crate::Paragraph::with_text(Text {
-                        content: text,
-                        size: iced::Pixels(self.font_size),
-                        bounds: Size::INFINITY,
-                        font,
-                        horizontal_alignment: alignment::Horizontal::Left,
-                        vertical_alignment: alignment::Vertical::Center,
-                        shaping: Shaping::Advanced,
-                        line_height: self.line_height,
-                    })
-                });
-
-                let Size { width, height } = paragraph.min_bounds();
-
-                button_width = width;
-                button_height = height;
-            }
-
-            // Add indent to measurement if found.
-            if let Some(indent) = self.model.indent(key) {
-                button_width =
-                    f32::from(indent).mul_add(f32::from(self.indent_spacing), button_width);
-            }
-
-            // Add icon to measurement if icon was given.
-            if let Some(icon) = self.model.icon(key) {
-                button_height = button_height.max(f32::from(icon.size));
-                button_width += f32::from(icon.size) + f32::from(self.button_spacing);
-            }
-
-            // Add close button to measurement if found.
-            if self.model.is_closable(key) {
-                button_height = button_height.max(f32::from(self.close_icon.size));
-                button_width +=
-                    f32::from(self.close_icon.size) + f32::from(self.button_spacing) + 8.0;
-            }
+            let (button_width, button_height) = self.button_dimensions(state, font, key);
 
             height = height.max(button_height);
             width = width.max(button_width);
         }
-
-        // Add button padding to the max size found
-        width += f32::from(self.button_padding[0]) + f32::from(self.button_padding[2]);
-        height += f32::from(self.button_padding[1]) + f32::from(self.button_padding[3]);
-        height = height.max(f32::from(self.button_height));
 
         (width, height)
     }
@@ -373,9 +387,7 @@ where
     }
 
     fn state(&self) -> tree::State {
-        // update the paragraphs for the model
         tree::State::new(LocalState {
-            first: self.model.order.iter().copied().next().unwrap_or_default(),
             paragraphs: SecondaryMap::new(),
             ..LocalState::default()
         })
@@ -478,19 +490,10 @@ where
                 }
             }
 
-            for (nth, key) in self
-                .model
-                .order
-                .iter()
-                .copied()
-                .enumerate()
-                .skip(state.buttons_offset)
-                .take(state.buttons_visible)
+            for (key, bounds) in self
+                .variant_button_bounds(state, bounds)
+                .collect::<Vec<_>>()
             {
-                let Some(bounds) = self.variant_button_bounds(state, bounds, nth) else {
-                    continue;
-                };
-
                 if cursor_position.is_over(bounds) {
                     if self.model.items[key].enabled {
                         // Record that the mouse is hovering over this button.
@@ -689,19 +692,7 @@ where
         let bounds = layout.bounds();
 
         if cursor_position.is_over(bounds) {
-            for (nth, key) in self
-                .model
-                .order
-                .iter()
-                .copied()
-                .enumerate()
-                .skip(state.buttons_offset)
-                .take(state.buttons_visible)
-            {
-                let Some(bounds) = self.variant_button_bounds(state, bounds, nth) else {
-                    continue;
-                };
-
+            for (key, bounds) in self.variant_button_bounds(state, bounds) {
                 if cursor_position.is_over(bounds) {
                     return if self.model.items[key].enabled {
                         iced_core::mouse::Interaction::Pointer
@@ -827,19 +818,7 @@ where
         }
 
         // Draw each of the items in the widget.
-        for (nth, key) in self
-            .model
-            .order
-            .iter()
-            .copied()
-            .enumerate()
-            .skip(state.buttons_offset)
-            .take(state.buttons_visible)
-        {
-            let Some(mut bounds) = self.variant_button_bounds(state, bounds, nth) else {
-                continue;
-            };
-
+        for (nth, (key, mut bounds)) in self.variant_button_bounds(state, bounds).enumerate() {
             let key_is_active = self.model.is_active(key);
             let key_is_hovered = state.hovered == key;
 
@@ -970,7 +949,15 @@ where
                     bounds.position(),
                     status_appearance.text_color,
                     Rectangle {
-                        width: bounds.width - close_icon_width,
+                        width: {
+                            let width = bounds.width - close_icon_width;
+                            // TODO: determine cause of differences here.
+                            if self.model.icon(key).is_some() {
+                                width - f32::from(self.button_spacing)
+                            } else {
+                                width - 12.0
+                            }
+                        },
                         ..original_bounds
                     },
                 );
@@ -1026,20 +1013,22 @@ where
 /// State that is maintained by each individual widget.
 #[derive(Default)]
 pub struct LocalState {
-    /// Whether buttons need to be collapsed to preserve minimum width
-    pub(super) collapsed: bool,
     /// Defines how many buttons to show at a time.
     pub(super) buttons_visible: usize,
     /// Button visibility offset, when collapsed.
     pub(super) buttons_offset: usize,
-    /// The first focusable key.
-    first: Entity,
+    /// Whether buttons need to be collapsed to preserve minimum width
+    pub(super) collapsed: bool,
     /// If the widget is focused or not.
     focused: bool,
     /// The key inside the widget that is currently focused.
     focused_item: Focus,
     /// The ID of the button that is being hovered. Defaults to null.
     hovered: Entity,
+    /// Last known length of the model.
+    pub(super) known_length: usize,
+    /// Dimensions of internal buttons when shrinking
+    pub(super) internal_layout: Vec<Size>,
     /// The paragraphs for each text.
     paragraphs: SecondaryMap<Entity, crate::Paragraph>,
     /// Time since last tab activation from wheel movements.
@@ -1131,7 +1120,7 @@ fn draw_icon<Message: 'static>(
     });
 
     Widget::<Message, Renderer>::draw(
-        Element::<Message>::from(icon.clone()).as_widget(),
+        Element::<Message>::from(icon).as_widget(),
         &Tree::empty(),
         renderer,
         theme,

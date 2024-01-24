@@ -3,12 +3,13 @@
 
 //! Implementation details for the horizontal layout of a segmented button.
 
-use super::model::{Model, Selectable};
+use super::model::{Entity, Model, Selectable};
 use super::style::StyleSheet;
 use super::widget::{LocalState, SegmentedButton, SegmentedVariant};
 
 use iced::{Length, Rectangle, Size};
 use iced_core::layout;
+use iced_core::text::Renderer;
 
 /// Horizontal [`SegmentedButton`].
 pub type HorizontalSegmentedButton<'a, SelectionMode, Message> =
@@ -48,34 +49,40 @@ where
         &self,
         state: &LocalState,
         mut bounds: Rectangle,
-        nth: usize,
-    ) -> Option<Rectangle> {
+    ) -> impl Iterator<Item = (Entity, Rectangle)> {
         let num = state.buttons_visible;
+        let spacing = f32::from(self.spacing);
+        let mut homogenous_width = 0.0;
 
-        // Do not display tabs that are currently hidden due to width constraints.
-        if state.collapsed && nth < state.buttons_offset {
-            return None;
-        }
-
-        if num != 0 {
-            let offset_width;
-            (bounds.x, offset_width) = if state.collapsed {
-                (bounds.x + 16.0, 32.0)
-            } else {
-                (bounds.x, 0.0)
-            };
-
-            let spacing = f32::from(self.spacing);
-            bounds.width = ((num as f32).mul_add(-spacing, bounds.width - offset_width) + spacing)
-                / num as f32;
-
-            if nth != state.buttons_offset {
-                let pos = (nth - state.buttons_offset) as f32;
-                bounds.x += pos.mul_add(bounds.width, pos * spacing);
+        if Length::Shrink != self.width || state.collapsed {
+            if state.collapsed {
+                bounds.x += 16.0;
+                bounds.width -= 32.0;
             }
+
+            homogenous_width =
+                ((num as f32).mul_add(-spacing, bounds.width) + spacing) / num as f32;
         }
 
-        Some(bounds)
+        self.model
+            .order
+            .iter()
+            .copied()
+            .enumerate()
+            .skip(state.buttons_offset)
+            .take(state.buttons_visible)
+            .map(move |(nth, key)| {
+                let mut this_bounds = bounds;
+
+                if !state.collapsed && Length::Shrink == self.width {
+                    this_bounds.width = state.internal_layout[nth].width;
+                } else {
+                    this_bounds.width = homogenous_width;
+                }
+
+                bounds.x += this_bounds.width + spacing;
+                (key, this_bounds)
+            })
     }
 
     #[allow(clippy::cast_precision_loss)]
@@ -87,27 +94,92 @@ where
         renderer: &crate::Renderer,
         limits: &layout::Limits,
     ) -> layout::Node {
-        let limits = limits.width(self.width);
-        let (mut width, height) = self.max_button_dimensions(state, renderer, limits.max());
-
-        let num = self.model.items.len();
+        let num = self.model.order.len();
+        let mut total_width = 0.0;
         let spacing = f32::from(self.spacing);
+        let limits = limits.width(self.width);
+        let size;
 
-        if num != 0 {
-            width = (num as f32).mul_add(width, num as f32 * spacing) - spacing;
+        if state.known_length != num {
+            if state.known_length > num {
+                state.buttons_offset -= state.buttons_offset.min(state.known_length - num);
+            } else {
+                state.buttons_offset += num - state.known_length;
+            }
+
+            state.known_length = num;
         }
 
-        let size = limits
-            .height(Length::Fixed(height))
-            .resolve(Size::new(width, height));
+        if let Length::Shrink = self.width {
+            // Buttons will be rendered at their smallest widths possible.
+            state.internal_layout.clear();
 
-        let actual_width = size.width as usize;
-        let minimum_width = self.minimum_button_width as usize * self.model.items.len();
+            let font = renderer.default_font();
+            let mut total_height = 0.0f32;
 
-        state.buttons_visible = num;
-        state.collapsed = actual_width < minimum_width;
-        if state.collapsed {
-            state.buttons_visible = (actual_width / self.minimum_button_width as usize).min(num);
+            for &button in &self.model.order {
+                let (mut width, height) = self.button_dimensions(state, font, button);
+                width = f32::from(self.minimum_button_width).max(width);
+                total_width += width + spacing;
+                total_height = total_height.max(height);
+
+                state.internal_layout.push(Size::new(width, height));
+            }
+
+            // Get the max available width for placing buttons into.
+            let max_size = limits
+                .height(Length::Fixed(total_height))
+                .resolve(Size::new(f32::MAX, total_height));
+
+            let mut visible_width = 32.0;
+            state.buttons_visible = 0;
+
+            for button_size in &state.internal_layout {
+                visible_width += button_size.width;
+
+                if max_size.width >= visible_width {
+                    state.buttons_visible += 1;
+                } else {
+                    break;
+                }
+
+                visible_width += spacing;
+            }
+
+            state.collapsed = num > 1 && state.buttons_visible != num;
+
+            // If collapsed, use the maximum width available.
+            visible_width = if state.collapsed {
+                max_size.width - 32.0
+            } else {
+                total_width
+            };
+
+            size = limits
+                .height(Length::Fixed(total_height))
+                .resolve(Size::new(visible_width, total_height));
+        } else {
+            // Buttons will be rendered with equal widths.
+            state.buttons_visible = self.model.items.len();
+            let (width, height) = self.max_button_dimensions(state, renderer, limits.max());
+            let total_width = (state.buttons_visible as f32) * (width + spacing);
+
+            size = limits
+                .height(Length::Fixed(height))
+                .resolve(Size::new(total_width, height));
+
+            let actual_width = size.width as usize;
+            let minimum_width = state.buttons_visible * self.minimum_button_width as usize;
+            state.collapsed = actual_width < minimum_width;
+
+            if state.collapsed {
+                state.buttons_visible =
+                    (actual_width / self.minimum_button_width as usize).min(state.buttons_visible);
+            }
+        }
+
+        if !state.collapsed {
+            state.buttons_offset = 0;
         }
 
         layout::Node::new(size)
