@@ -3,7 +3,7 @@
 
 //! Implementation details for the vertical layout of a segmented button.
 
-use super::model::{Model, Selectable};
+use super::model::{Entity, Model, Selectable};
 use super::style::StyleSheet;
 use super::widget::{LocalState, SegmentedButton, SegmentedVariant};
 
@@ -47,21 +47,22 @@ where
     #[allow(clippy::cast_precision_loss)]
     fn variant_button_bounds(
         &self,
-        _state: &LocalState,
+        state: &LocalState,
         mut bounds: Rectangle,
-        nth: usize,
-    ) -> Option<Rectangle> {
-        let num = self.model.items.len();
-        if num != 0 {
-            let spacing = f32::from(self.spacing);
-            bounds.height = (bounds.height - (num as f32 * spacing) + spacing) / num as f32;
+    ) -> impl Iterator<Item = (Entity, Rectangle)> {
+        let spacing = f32::from(self.spacing);
 
-            if nth != 0 {
-                bounds.y += (nth as f32 * bounds.height) + (nth as f32 * spacing);
-            }
-        }
-
-        Some(bounds)
+        self.model
+            .order
+            .iter()
+            .copied()
+            .enumerate()
+            .map(move |(_nth, key)| {
+                let mut this_bounds = bounds;
+                this_bounds.height = state.internal_layout[0].height;
+                bounds.y += this_bounds.height + spacing;
+                (key, this_bounds)
+            })
     }
 
     #[allow(clippy::cast_precision_loss)]
@@ -73,8 +74,10 @@ where
         renderer: &crate::Renderer,
         limits: &layout::Limits,
     ) -> layout::Node {
+        state.internal_layout.clear();
         let limits = limits.width(self.width);
         let (width, mut height) = self.max_button_dimensions(state, renderer, limits.max());
+        state.internal_layout.push(Size::new(width, height));
 
         let num = self.model.items.len();
         let spacing = f32::from(self.spacing);
