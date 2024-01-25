@@ -377,6 +377,7 @@ where
         tree::State::new(LocalState {
             first: self.model.order.iter().copied().next().unwrap_or_default(),
             paragraphs: SecondaryMap::new(),
+            buttons_visible: usize::MAX, // TODO: Maybe calculate this based on the size of the widget.
             ..LocalState::default()
         })
     }
