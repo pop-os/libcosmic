@@ -55,6 +55,8 @@ pub use iced_winit;
 pub mod icon_theme;
 pub mod keyboard_nav;
 
+#[cfg(feature = "desktop")]
+pub mod desktop;
 #[cfg(feature = "process")]
 pub mod process;
 
