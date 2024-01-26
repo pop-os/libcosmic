@@ -55,13 +55,15 @@ where
         let mut homogenous_width = 0.0;
 
         if Length::Shrink != self.width || state.collapsed {
+            let mut width_offset = 0.0;
             if state.collapsed {
-                bounds.x += 16.0;
-                bounds.width -= 32.0;
+                bounds.x += f32::from(self.button_height);
+                width_offset = f32::from(self.button_height) * 2.0;
             }
 
-            homogenous_width =
-                ((num as f32).mul_add(-spacing, bounds.width) + spacing) / num as f32;
+            homogenous_width = ((num as f32).mul_add(-spacing, bounds.width - width_offset)
+                + spacing)
+                / num as f32;
         }
 
         self.model
@@ -98,7 +100,7 @@ where
         let mut total_width = 0.0;
         let spacing = f32::from(self.spacing);
         let limits = limits.width(self.width);
-        let size;
+        let mut size;
 
         if state.known_length != num {
             if state.known_length > num {
@@ -131,7 +133,7 @@ where
                 .height(Length::Fixed(total_height))
                 .resolve(Size::new(f32::MAX, total_height));
 
-            let mut visible_width = 32.0;
+            let mut visible_width = f32::from(self.button_height) * 2.0;
             state.buttons_visible = 0;
 
             for button_size in &state.internal_layout {
@@ -150,12 +152,13 @@ where
 
             // If collapsed, use the maximum width available.
             visible_width = if state.collapsed {
-                max_size.width - 32.0
+                max_size.width - f32::from(self.button_height)
             } else {
                 total_width
             };
 
             size = limits
+                .width(Length::Fixed(visible_width))
                 .height(Length::Fixed(total_height))
                 .resolve(Size::new(visible_width, total_height));
         } else {
@@ -173,6 +176,10 @@ where
             state.collapsed = actual_width < minimum_width;
 
             if state.collapsed {
+                size = limits
+                    .height(Length::Fixed(height))
+                    .resolve(Size::new(f32::MAX, height));
+
                 state.buttons_visible =
                     (actual_width / self.minimum_button_width as usize).min(state.buttons_visible);
             }

@@ -159,10 +159,10 @@ where
         self.model.items.get(key).map_or(false, |item| item.enabled)
     }
 
-    /// Focus the previous item in the widget.
+    /// Item the previous item in the widget.
     fn focus_previous(&mut self, state: &mut LocalState) -> event::Status {
         match state.focused_item {
-            Focus::Tab(entity) => {
+            Item::Tab(entity) => {
                 let mut keys = self.iterate_visible_tabs(state).rev();
 
                 while let Some(key) = keys.next() {
@@ -173,7 +173,7 @@ where
                                 continue;
                             }
 
-                            state.focused_item = Focus::Tab(key);
+                            state.focused_item = Item::Tab(key);
                             return event::Status::Captured;
                         }
 
@@ -182,39 +182,39 @@ where
                 }
 
                 if self.prev_tab_sensitive(state) {
-                    state.focused_item = Focus::PrevButton;
+                    state.focused_item = Item::PrevButton;
                     return event::Status::Captured;
                 }
             }
 
-            Focus::NextButton => {
+            Item::NextButton => {
                 if let Some(last) = self.last_tab(state) {
-                    state.focused_item = Focus::Tab(last);
+                    state.focused_item = Item::Tab(last);
                     return event::Status::Captured;
                 }
             }
 
-            Focus::None => {
+            Item::None => {
                 if self.next_tab_sensitive(state) {
-                    state.focused_item = Focus::NextButton;
+                    state.focused_item = Item::NextButton;
                     return event::Status::Captured;
                 } else if let Some(last) = self.last_tab(state) {
-                    state.focused_item = Focus::Tab(last);
+                    state.focused_item = Item::Tab(last);
                     return event::Status::Captured;
                 }
             }
 
-            Focus::PrevButton | Focus::Set => (),
+            Item::PrevButton | Item::Set => (),
         }
 
-        state.focused_item = Focus::None;
+        state.focused_item = Item::None;
         event::Status::Ignored
     }
 
-    /// Focus the next item in the widget.
+    /// Item the next item in the widget.
     fn focus_next(&mut self, state: &mut LocalState) -> event::Status {
         match state.focused_item {
-            Focus::Tab(entity) => {
+            Item::Tab(entity) => {
                 let mut keys = self.iterate_visible_tabs(state);
                 while let Some(key) = keys.next() {
                     if key == entity {
@@ -224,7 +224,7 @@ where
                                 continue;
                             }
 
-                            state.focused_item = Focus::Tab(key);
+                            state.focused_item = Item::Tab(key);
                             return event::Status::Captured;
                         }
 
@@ -233,32 +233,32 @@ where
                 }
 
                 if self.next_tab_sensitive(state) {
-                    state.focused_item = Focus::NextButton;
+                    state.focused_item = Item::NextButton;
                     return event::Status::Captured;
                 }
             }
 
-            Focus::PrevButton => {
+            Item::PrevButton => {
                 if let Some(first) = self.first_tab(state) {
-                    state.focused_item = Focus::Tab(first);
+                    state.focused_item = Item::Tab(first);
                     return event::Status::Captured;
                 }
             }
 
-            Focus::None => {
+            Item::None => {
                 if self.prev_tab_sensitive(state) {
-                    state.focused_item = Focus::PrevButton;
+                    state.focused_item = Item::PrevButton;
                     return event::Status::Captured;
                 } else if let Some(first) = self.first_tab(state) {
-                    state.focused_item = Focus::Tab(first);
+                    state.focused_item = Item::Tab(first);
                     return event::Status::Captured;
                 }
             }
 
-            Focus::NextButton | Focus::Set => (),
+            Item::NextButton | Item::Set => (),
         }
 
-        state.focused_item = Focus::None;
+        state.focused_item = Item::None;
         event::Status::Ignored
     }
 
@@ -460,31 +460,33 @@ where
             if state.collapsed {
                 // Check if the prev tab button was clicked.
                 if cursor_position.is_over(Rectangle {
-                    y: bounds.y + 8.0,
-                    width: 16.0,
-                    ..bounds
-                }) {
+                    x: bounds.x,
+                    y: bounds.y,
+                    width: f32::from(self.button_height),
+                    height: f32::from(self.button_height),
+                }) && self.prev_tab_sensitive(state)
+                {
+                    state.hovered = Item::PrevButton;
                     if let Event::Mouse(mouse::Event::ButtonReleased(mouse::Button::Left))
                     | Event::Touch(touch::Event::FingerLifted { .. }) = event
                     {
-                        if self.prev_tab_sensitive(state) {
-                            state.buttons_offset -= 1;
-                        }
+                        state.buttons_offset -= 1;
                     }
                 } else {
                     // Check if the next tab button was clicked.
                     if cursor_position.is_over(Rectangle {
-                        x: bounds.width,
-                        y: bounds.y + 8.0,
-                        width: 16.0,
-                        ..bounds
-                    }) {
+                        x: bounds.width - f32::from(self.button_height) / 4.0 - 8.0,
+                        y: bounds.y,
+                        width: f32::from(self.button_height),
+                        height: f32::from(self.button_height),
+                    }) && self.next_tab_sensitive(state)
+                    {
+                        state.hovered = Item::NextButton;
+
                         if let Event::Mouse(mouse::Event::ButtonReleased(mouse::Button::Left))
                         | Event::Touch(touch::Event::FingerLifted { .. }) = event
                         {
-                            if self.next_tab_sensitive(state) {
-                                state.buttons_offset += 1;
-                            }
+                            state.buttons_offset += 1;
                         }
                     }
                 }
@@ -497,7 +499,7 @@ where
                 if cursor_position.is_over(bounds) {
                     if self.model.items[key].enabled {
                         // Record that the mouse is hovering over this button.
-                        state.hovered = key;
+                        state.hovered = Item::Tab(key);
 
                         // If marked as closable, show a close icon.
                         if self.model.items[key].closable {
@@ -594,7 +596,7 @@ where
                 }
             }
         } else {
-            state.hovered = Entity::default();
+            state.hovered = Item::None;
         }
 
         if state.focused {
@@ -618,37 +620,37 @@ where
                 }) = event
                 {
                     match state.focused_item {
-                        Focus::Tab(entity) => {
+                        Item::Tab(entity) => {
                             shell.publish(on_activate(entity));
                         }
 
-                        Focus::PrevButton => {
+                        Item::PrevButton => {
                             if self.prev_tab_sensitive(state) {
                                 state.buttons_offset -= 1;
 
                                 // If the change would cause it to be insensitive, focus the first tab.
                                 if !self.prev_tab_sensitive(state) {
                                     if let Some(first) = self.first_tab(state) {
-                                        state.focused_item = Focus::Tab(first);
+                                        state.focused_item = Item::Tab(first);
                                     }
                                 }
                             }
                         }
 
-                        Focus::NextButton => {
+                        Item::NextButton => {
                             if self.next_tab_sensitive(state) {
                                 state.buttons_offset += 1;
 
                                 // If the change would cause it to be insensitive, focus the last tab.
                                 if !self.next_tab_sensitive(state) {
                                     if let Some(last) = self.last_tab(state) {
-                                        state.focused_item = Focus::Tab(last);
+                                        state.focused_item = Item::Tab(last);
                                     }
                                 }
                             }
                         }
 
-                        Focus::None | Focus::Set => (),
+                        Item::None | Item::Set => (),
                     }
 
                     return event::Status::Captured;
@@ -671,11 +673,11 @@ where
         let state = tree.state.downcast_mut::<LocalState>();
         operation.focusable(state, self.id.as_ref().map(|id| &id.0));
 
-        if let Focus::Set = state.focused_item {
+        if let Item::Set = state.focused_item {
             if self.prev_tab_sensitive(state) {
-                state.focused_item = Focus::PrevButton;
+                state.focused_item = Item::PrevButton;
             } else if let Some(first) = self.first_tab(state) {
-                state.focused_item = Focus::Tab(first);
+                state.focused_item = Item::Tab(first);
             }
         }
     }
@@ -717,6 +719,7 @@ where
         cursor: mouse::Cursor,
         viewport: &iced::Rectangle,
     ) {
+        let cosmic_theme = theme.cosmic();
         let state = tree.state.downcast_ref::<LocalState>();
         let appearance = Self::variant_appearance(theme, &self.style);
         let bounds = layout.bounds();
@@ -738,22 +741,28 @@ where
         // Draw previous and next tab buttons if there is a need to paginate tabs.
         if state.collapsed {
             // Previous tab button
-            let prev_bounds = Rectangle {
-                y: bounds.y + 8.0,
-                width: 16.0,
-                ..bounds
+            let mut background_appearance = if Item::PrevButton == state.focused_item {
+                Some(appearance.focus)
+            } else if Item::PrevButton == state.hovered {
+                Some(appearance.hover)
+            } else {
+                None
             };
 
-            if let Focus::PrevButton = state.focused_item {
+            if let Some(background_appearance) = background_appearance.take() {
                 renderer.fill_quad(
                     renderer::Quad {
-                        bounds: prev_bounds,
-                        border_radius: appearance.focus.first.border_radius,
+                        bounds: Rectangle {
+                            x: bounds.x,
+                            y: bounds.y,
+                            width: f32::from(self.button_height),
+                            height: bounds.height,
+                        },
+                        border_radius: cosmic_theme.radius_s().into(),
                         border_width: 0.0,
                         border_color: Color::TRANSPARENT,
                     },
-                    appearance
-                        .focus
+                    background_appearance
                         .background
                         .unwrap_or(Background::Color(Color::TRANSPARENT)),
                 );
@@ -767,33 +776,49 @@ where
                 viewport,
                 if state.buttons_offset == 0 {
                     appearance.inactive.text_color
-                } else if let Focus::PrevButton = state.focused_item {
+                } else if let Item::PrevButton = state.focused_item {
                     appearance.focus.text_color
                 } else {
                     appearance.active.text_color
                 },
-                prev_bounds,
+                Rectangle {
+                    x: bounds.x + f32::from(self.button_height) / 4.0,
+                    y: bounds.y + f32::from(self.button_height) / 4.0,
+                    width: 16.0,
+                    height: 16.0,
+                },
                 icon::from_name("go-previous-symbolic").size(16).icon(),
             );
 
             // Next tab button
-            let next_bounds = Rectangle {
-                x: bounds.width,
-                y: bounds.y + 8.0,
-                width: 16.0,
-                ..bounds
+            background_appearance = if Item::NextButton == state.focused_item {
+                Some(appearance.focus)
+            } else if Item::NextButton == state.hovered {
+                Some(appearance.hover)
+            } else {
+                None
             };
 
-            if let Focus::NextButton = state.focused_item {
+            if let Some(background_appearance) = background_appearance {
                 renderer.fill_quad(
                     renderer::Quad {
-                        bounds: next_bounds,
-                        border_radius: appearance.focus.last.border_radius,
+                        bounds: Rectangle {
+                            x: bounds.width
+                                - f32::from(self.button_height) / 2.0
+                                - if let Length::Shrink = self.width {
+                                    0.0
+                                } else {
+                                    8.0
+                                },
+                            y: bounds.y,
+                            width: f32::from(self.button_height),
+                            height: bounds.height,
+                        },
+                        border_radius: cosmic_theme.radius_s().into(),
                         border_width: 0.0,
                         border_color: Color::TRANSPARENT,
                     },
-                    appearance
-                        .focus
+                    background_appearance
                         .background
                         .unwrap_or(Background::Color(Color::TRANSPARENT)),
                 );
@@ -807,12 +832,23 @@ where
                 viewport,
                 if self.next_tab_sensitive(state) {
                     appearance.active.text_color
-                } else if let Focus::NextButton = state.focused_item {
+                } else if let Item::NextButton = state.focused_item {
                     appearance.focus.text_color
                 } else {
                     appearance.inactive.text_color
                 },
-                next_bounds,
+                Rectangle {
+                    x: bounds.width
+                        - f32::from(self.button_height) / 4.0
+                        - if let Length::Shrink = self.width {
+                            0.0
+                        } else {
+                            8.0
+                        },
+                    y: bounds.y + f32::from(self.button_height) / 4.0,
+                    width: 16.0,
+                    height: 16.0,
+                },
                 icon::from_name("go-next-symbolic").size(16).icon(),
             );
         }
@@ -820,9 +856,9 @@ where
         // Draw each of the items in the widget.
         for (nth, (key, mut bounds)) in self.variant_button_bounds(state, bounds).enumerate() {
             let key_is_active = self.model.is_active(key);
-            let key_is_hovered = state.hovered == key;
+            let key_is_hovered = state.hovered == Item::Tab(key);
 
-            let (status_appearance, font) = if Focus::Tab(key) == state.focused_item {
+            let (status_appearance, font) = if Item::Tab(key) == state.focused_item {
                 (appearance.focus, &self.font_active)
             } else if key_is_active {
                 (appearance.active, &self.font_active)
@@ -1022,9 +1058,9 @@ pub struct LocalState {
     /// If the widget is focused or not.
     focused: bool,
     /// The key inside the widget that is currently focused.
-    focused_item: Focus,
+    focused_item: Item,
     /// The ID of the button that is being hovered. Defaults to null.
-    hovered: Entity,
+    hovered: Item,
     /// Last known length of the model.
     pub(super) known_length: usize,
     /// Dimensions of internal buttons when shrinking
@@ -1036,7 +1072,7 @@ pub struct LocalState {
 }
 
 #[derive(Default, PartialEq)]
-enum Focus {
+enum Item {
     NextButton,
     #[default]
     None,
@@ -1052,12 +1088,12 @@ impl operation::Focusable for LocalState {
 
     fn focus(&mut self) {
         self.focused = true;
-        self.focused_item = Focus::Set;
+        self.focused_item = Item::Set;
     }
 
     fn unfocus(&mut self) {
         self.focused = false;
-        self.focused_item = Focus::None;
+        self.focused_item = Item::None;
     }
 }
 
