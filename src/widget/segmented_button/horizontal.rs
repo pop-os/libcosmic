@@ -152,7 +152,7 @@ where
 
             // If collapsed, use the maximum width available.
             visible_width = if state.collapsed {
-                max_size.width - f32::from(self.button_height)
+                max_size.width
             } else {
                 total_width
             };

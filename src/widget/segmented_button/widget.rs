@@ -475,7 +475,7 @@ where
                 } else {
                     // Check if the next tab button was clicked.
                     if cursor_position.is_over(Rectangle {
-                        x: bounds.width - f32::from(self.button_height) / 4.0 - 8.0,
+                        x: bounds.x + bounds.width - f32::from(self.button_height),
                         y: bounds.y,
                         width: f32::from(self.button_height),
                         height: f32::from(self.button_height),
@@ -803,13 +803,7 @@ where
                 renderer.fill_quad(
                     renderer::Quad {
                         bounds: Rectangle {
-                            x: bounds.width
-                                - f32::from(self.button_height) / 2.0
-                                - if let Length::Shrink = self.width {
-                                    0.0
-                                } else {
-                                    8.0
-                                },
+                            x: bounds.x + bounds.width - f32::from(self.button_height),
                             y: bounds.y,
                             width: f32::from(self.button_height),
                             height: bounds.height,
@@ -838,13 +832,8 @@ where
                     appearance.inactive.text_color
                 },
                 Rectangle {
-                    x: bounds.width
-                        - f32::from(self.button_height) / 4.0
-                        - if let Length::Shrink = self.width {
-                            0.0
-                        } else {
-                            8.0
-                        },
+                    x: bounds.x + bounds.width - f32::from(self.button_height)
+                        + f32::from(self.button_height) / 4.0,
                     y: bounds.y + f32::from(self.button_height) / 4.0,
                     width: 16.0,
                     height: 16.0,
