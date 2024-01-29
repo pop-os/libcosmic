@@ -45,11 +45,11 @@ where
     }
 
     #[allow(clippy::cast_precision_loss)]
-    fn variant_button_bounds(
-        &self,
-        state: &LocalState,
+    fn variant_button_bounds<'b>(
+        &'b self,
+        state: &'b LocalState,
         mut bounds: Rectangle,
-    ) -> impl Iterator<Item = (Entity, Rectangle)> {
+    ) -> Box<dyn Iterator<Item = (Entity, Rectangle)> + 'b> {
         let num = state.buttons_visible;
         let spacing = f32::from(self.spacing);
         let mut homogenous_width = 0.0;
@@ -66,25 +66,27 @@ where
                 / num as f32;
         }
 
-        self.model
-            .order
-            .iter()
-            .copied()
-            .enumerate()
-            .skip(state.buttons_offset)
-            .take(state.buttons_visible)
-            .map(move |(nth, key)| {
-                let mut this_bounds = bounds;
+        Box::new(
+            self.model
+                .order
+                .iter()
+                .copied()
+                .enumerate()
+                .skip(state.buttons_offset)
+                .take(state.buttons_visible)
+                .map(move |(nth, key)| {
+                    let mut this_bounds = bounds;
 
-                if !state.collapsed && Length::Shrink == self.width {
-                    this_bounds.width = state.internal_layout[nth].width;
-                } else {
-                    this_bounds.width = homogenous_width;
-                }
+                    if !state.collapsed && Length::Shrink == self.width {
+                        this_bounds.width = state.internal_layout[nth].width;
+                    } else {
+                        this_bounds.width = homogenous_width;
+                    }
 
-                bounds.x += this_bounds.width + spacing;
-                (key, this_bounds)
-            })
+                    bounds.x += this_bounds.width + spacing;
+                    (key, this_bounds)
+                }),
+        )
     }
 
     #[allow(clippy::cast_precision_loss)]

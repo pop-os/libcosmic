@@ -45,24 +45,26 @@ where
     }
 
     #[allow(clippy::cast_precision_loss)]
-    fn variant_button_bounds(
-        &self,
-        state: &LocalState,
+    fn variant_button_bounds<'b>(
+        &'b self,
+        state: &'b LocalState,
         mut bounds: Rectangle,
-    ) -> impl Iterator<Item = (Entity, Rectangle)> {
+    ) -> Box<dyn Iterator<Item = (Entity, Rectangle)> + 'b> {
         let spacing = f32::from(self.spacing);
 
-        self.model
-            .order
-            .iter()
-            .copied()
-            .enumerate()
-            .map(move |(_nth, key)| {
-                let mut this_bounds = bounds;
-                this_bounds.height = state.internal_layout[0].height;
-                bounds.y += this_bounds.height + spacing;
-                (key, this_bounds)
-            })
+        Box::new(
+            self.model
+                .order
+                .iter()
+                .copied()
+                .enumerate()
+                .map(move |(_nth, key)| {
+                    let mut this_bounds = bounds;
+                    this_bounds.height = state.internal_layout[0].height;
+                    bounds.y += this_bounds.height + spacing;
+                    (key, this_bounds)
+                }),
+        )
     }
 
     #[allow(clippy::cast_precision_loss)]

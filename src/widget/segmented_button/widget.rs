@@ -33,11 +33,11 @@ pub trait SegmentedVariant {
     ) -> super::Appearance;
 
     /// Calculates the bounds for visible buttons.
-    fn variant_button_bounds(
-        &self,
-        state: &LocalState,
+    fn variant_button_bounds<'b>(
+        &'b self,
+        state: &'b LocalState,
         bounds: Rectangle,
-    ) -> impl Iterator<Item = (Entity, Rectangle)>;
+    ) -> Box<dyn Iterator<Item = (Entity, Rectangle)> + 'b>;
 
     /// Calculates the layout of this variant.
     fn variant_layout(
