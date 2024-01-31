@@ -1,187 +1,200 @@
-use crate::{
-    model::{Accent, Container, ContainerType, Destructive, Widget},
-    Hex, Theme, NAME,
-};
-use anyhow::{bail, Result};
-use palette::Srgba;
-use serde::{de::DeserializeOwned, Serialize};
-use std::{fmt, fs::File, io::prelude::*, path::PathBuf};
+use crate::{composite::over, Component, Theme};
+use palette::{rgb::Rgba, Srgba};
+use std::{fs::File, io::prelude::*};
+use thiserror::Error;
 
-pub(crate) const CSS_DIR: &'static str = "css";
-pub(crate) const THEME_DIR: &'static str = "themes";
-
-/// Trait for outputting the Theme variables as Gtk4CSS
-pub trait Gtk4Output {
-    /// turn the theme into css
-    fn as_css(&self) -> String;
-    /// Serialize the theme as RON and write the CSS to the appropriate directories
-    /// Should be written in the XDG data directory for cosmic-theme
-    fn write(&self) -> Result<()>;
+#[derive(Error, Debug)]
+pub enum OutputError {
+    #[error("IO Error: {0}")]
+    Io(std::io::Error),
+    #[error("Missing config directory")]
+    MissingConfigDir,
 }
 
-impl<C> Gtk4Output for Theme<C>
-where
-    C: Clone
-        + fmt::Debug
-        + Default
-        + Into<Hex>
-        + Into<Srgba>
-        + From<Srgba>
-        + Serialize
-        + DeserializeOwned,
-{
-    fn as_css(&self) -> String {
+impl Theme {
+    /// turn the theme into css
+    pub fn as_gtk4(&self) -> String {
         let Self {
             background,
             primary,
             secondary,
             accent,
             destructive,
+            warning,
+            success,
             ..
         } = self;
-        let mut css = String::new();
 
-        css.push_str(&background.as_css());
-        css.push_str(&primary.as_css());
-        css.push_str(&secondary.as_css());
-        css.push_str(&accent.as_css());
-        css.push_str(&destructive.as_css());
+        let window_bg = to_hex(background.base);
+        let window_fg = to_hex(background.on);
+
+        let view_bg = to_hex(primary.base);
+        let view_fg = to_hex(primary.on);
+
+        let headerbar_bg = to_hex(background.base);
+        let headerbar_fg = to_hex(background.on);
+        let headerbar_border_color = to_hex(background.divider);
+        // TODO undefined
+        // headerbar_darker_shade_color
+        // headerbar_shade_color
+
+        // TODO confirm with design
+        let sidebar_bg = to_hex(primary.base);
+        let sidebar_fg = to_hex(primary.on);
+        let sidebar_shade = to_hex(if self.is_dark {
+            Rgba::new(0.0, 0.0, 0.0, 0.08)
+        } else {
+            Rgba::new(0.0, 0.0, 0.0, 0.32)
+        });
+        let backdrop_overlay = Srgba::new(1.0, 1.0, 1.0, if self.is_dark { 0.08 } else { 0.32 });
+        let sidebar_backdrop = to_hex(over(backdrop_overlay, primary.base));
+
+        let secondary_sidebar_bg = to_hex(secondary.base);
+        let secondary_sidebar_fg = to_hex(secondary.on);
+        let secondary_sidebar_shade = to_hex(if self.is_dark {
+            Rgba::new(0.0, 0.0, 0.0, 0.08)
+        } else {
+            Rgba::new(0.0, 0.0, 0.0, 0.32)
+        });
+        let secondary_sidebar_backdrop = to_hex(over(backdrop_overlay, secondary.base));
+
+        // TODO undefined
+        let headerbar_backdrop = to_hex(background.base);
+        // TODO undefined
+        // let headerbar_shade = to_hex(background.base);
+
+        let card_bg = to_hex(background.component.base);
+        let card_fg = to_hex(background.component.on);
+        // TODO undefined
+        // let card_shade = to_hex(background.component.base);
+
+        // TODO undefined
+        let thumbnail_bg = to_hex(background.component.base);
+        let thumbnail_fg = to_hex(background.component.on);
+
+        let dialog_bg = to_hex(primary.base);
+        let dialog_fg = to_hex(primary.on);
+
+        let popover_bg = to_hex(background.component.base);
+        let popover_fg = to_hex(background.component.on);
+
+        let shade = to_hex(if self.is_dark {
+            Rgba::new(0.0, 0.0, 0.0, 0.32)
+        } else {
+            Rgba::new(0.0, 0.0, 0.0, 0.08)
+        });
+
+        // TODO undefined
+        let mut inverted_bg_divider = background.base;
+        inverted_bg_divider.alpha = 0.5;
+        let scrollbar_outline = to_hex(inverted_bg_divider);
+
+        // TODO define currentColor
+        // let borders = to_hex(if self.is_high_contrast {
+        //     Rgba::new(0.0, 0.0, 0.0, 0.2)
+        // } else {
+        //     Rgba::new(0.0, 0.0, 0.0, 0.5)
+        // });
+
+        let mut css = format! {r#"
+@define-color window_bg_color #{window_bg};
+@define-color window_fg_color #{window_fg};
+
+@define-color view_bg_color #{view_bg};
+@define-color view_fg_color #{view_fg};
+
+@define-color headerbar_bg_color #{headerbar_bg};
+@define-color headerbar_fg_color #{headerbar_fg};
+@define-color headerbar_border_color_color #{headerbar_border_color};
+@define-color headerbar_backdrop_color #{headerbar_backdrop};
+
+@define-color sidebar_bg_color #{sidebar_bg};
+@define-color sidebar_fg_color #{sidebar_fg};
+@define-color sidebar_shade_color #{sidebar_shade};
+@define-color sidebar_backdrop_color #{sidebar_backdrop};
+
+@define-color secondary_sidebar_bg_color #{secondary_sidebar_bg};
+@define-color secondary_sidebar_fg_color #{secondary_sidebar_fg};
+@define-color secondary_sidebar_shade_color #{secondary_sidebar_shade};
+@define-color secondary_sidebar_backdrop_color #{secondary_sidebar_backdrop};
+
+@define-color card_bg_color #{card_bg};
+@define-color card_fg_color #{card_fg};
+
+@define-color thumbnail_bg_color #{thumbnail_bg};
+@define-color thumbnail_fg_color #{thumbnail_fg};
+
+@define-color dialog_bg_color #{dialog_bg};
+@define-color dialog_fg_color #{dialog_fg};
+
+@define-color popover_bg_color #{popover_bg};
+@define-color popover_fg_color #{popover_fg};
+
+@define-color shade_color #{shade};
+@define-color scrollbar_outline_color #{scrollbar_outline};
+        "#};
+
+        css.push_str(&component_gtk4_css("accent", accent));
+        css.push_str(&component_gtk4_css("destructive", destructive));
+        css.push_str(&component_gtk4_css("warning", warning));
+        css.push_str(&component_gtk4_css("success", success));
+        css.push_str(&component_gtk4_css("accent", accent));
+        css.push_str(&component_gtk4_css("error", destructive));
 
         css
     }
 
-    fn write(&self) -> Result<()> {
-        // TODO sass -> css
-        let ron_str = ron::ser::to_string_pretty(self, Default::default())?;
-        let css_str = self.as_css();
+    /// write the CSS to the appropriate directory
+    /// Should be written in the XDG config directory for gtk-4.0
+    ///
+    /// # Errors
+    ///
+    /// Returns an `OutputError` if there is an error writing the CSS file.
+    pub fn write_gtk4(&self) -> Result<(), OutputError> {
+        let css_str = self.as_gtk4();
+        let Some(config_dir) = dirs::config_dir() else {
+            return Err(OutputError::MissingConfigDir);
+        };
 
-        let ron_path: PathBuf = [NAME, THEME_DIR].iter().collect();
-        let css_path: PathBuf = [NAME, CSS_DIR].iter().collect();
-
-        let ron_dirs = xdg::BaseDirectories::with_prefix(ron_path)?;
-        let css_dirs = xdg::BaseDirectories::with_prefix(css_path)?;
-
-        let ron_name = format!("{}.ron", &self.name);
-        let css_name = format!("{}.css", &self.name);
-
-        if let Ok(p) = ron_dirs.place_data_file(ron_name) {
-            let mut f = File::create(p)?;
-            f.write_all(ron_str.as_bytes())?;
+        let name = if self.is_dark {
+            "dark.css"
         } else {
-            bail!("Failed to write RON theme.")
+            "light.css"
+        };
+
+        let config_dir = config_dir.join("gtk-4.0").join("cosmic");
+        if !config_dir.exists() {
+            std::fs::create_dir_all(&config_dir).map_err(OutputError::Io)?;
         }
 
-        if let Ok(p) = css_dirs.place_data_file(css_name) {
-            let mut f = File::create(p)?;
-            f.write_all(css_str.as_bytes())?;
-        } else {
-            bail!("Failed to write RON theme.")
-        }
+        let mut file = File::create(config_dir.join(name)).map_err(OutputError::Io)?;
+        file.write_all(css_str.as_bytes())
+            .map_err(OutputError::Io)?;
 
         Ok(())
     }
 }
 
 /// Trait for converting theme data into gtk4 CSS
-pub trait AsGtk4Css<C>
-where
-    C: Copy + Into<Srgba> + From<Srgba>,
-{
+pub trait AsGtk4Css {
     /// function for converting theme data into gtk4 CSS
     fn as_css(&self) -> String;
 }
 
-impl<C> AsGtk4Css<C> for Container<C>
-where
-    C: Copy + Clone + fmt::Debug + Default + Into<Srgba> + From<Srgba> + fmt::Display,
-{
-    fn as_css(&self) -> String {
-        let Self {
-            prefix,
-            container,
-            container_component,
-            container_divider,
-            container_fg,
-            ..
-        } = self;
-
-        let prefix_lower = match prefix {
-            ContainerType::Background => "background",
-            ContainerType::Primary => "primary",
-            ContainerType::Secondary => "secondary",
-        };
-        let component = widget_gtk4_css(prefix_lower, container_component);
-
-        format!(
-            r#"
-@define-color {prefix_lower}_container #{{{container}}};
-@define-color {prefix_lower}_container_divider #{{{container_divider}}};
-@define-color {prefix_lower}_container_fg #{{{container_fg}}};
-{component}
-"#
-        )
-    }
-}
-
-impl<C> AsGtk4Css<C> for Accent<C>
-where
-    C: Clone + fmt::Debug + Default + Into<Srgba> + From<Srgba> + Serialize + DeserializeOwned,
-{
-    fn as_css(&self) -> String {
-        let Accent {
-            accent,
-            accent_fg,
-            accent_nav_handle_fg,
-            suggested,
-        } = self;
-        let suggested = widget_gtk4_css("suggested", suggested);
-
-        format!(
-            r#"
-@define-color accent #{{{accent}}};
-@define-color accent_fg #{{{accent_fg}}};
-@define-color accent_nav_handle_fg #{{{accent_nav_handle_fg}}};
-{suggested}
-"#
-        )
-    }
-}
-
-impl<C> AsGtk4Css<C> for Destructive<C>
-where
-    C: Clone + fmt::Debug + Default + Into<Srgba> + From<Srgba> + Serialize + DeserializeOwned,
-{
-    fn as_css(&self) -> String {
-        let Destructive { destructive } = &self;
-        widget_gtk4_css("destructive", destructive)
-    }
-}
-
-fn widget_gtk4_css<C: fmt::Display>(
-    prefix: &str,
-    Widget {
-        base,
-        hover,
-        pressed,
-        focused,
-        divider,
-        text,
-        text_opacity_80,
-        disabled,
-        disabled_fg,
-    }: &Widget<C>,
-) -> String {
+fn component_gtk4_css(prefix: &str, c: &Component) -> String {
     format!(
         r#"
-@define-color {prefix}_widget_base #{{{base}}};
-@define-color {prefix}_widget_hover #{{{hover}}};
-@define-color {prefix}_widget_pressed #{{{pressed}}};
-@define-color {prefix}_widget_focused #{{{focused}}};
-@define-color {prefix}_widget_divider #{{{divider}}};
-@define-color {prefix}_widget_fg #{{{text}}};
-@define-color {prefix}_widget_fg_opacity_80 #{{{text_opacity_80}}};
-@define-color {prefix}_widget_disabled #{{{disabled}}};
-@define-color {prefix}_widget_disabled_fg #{{{disabled_fg}}};
-"#
+@define-color {prefix}_color #{};
+@define-color {prefix}_bg_color #{};
+@define-color {prefix}_fg_color #{};
+"#,
+        to_hex(c.base),
+        to_hex(c.base),
+        to_hex(c.on),
     )
+}
+
+fn to_hex(c: Srgba) -> String {
+    let c_u8: Rgba<palette::encoding::Srgb, u8> = c.into_format();
+    format!("{:02x}{:02x}{:02x}", c_u8.red, c_u8.green, c_u8.blue)
 }
