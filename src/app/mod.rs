@@ -609,11 +609,11 @@ impl<App: Application> ApplicationExt for App {
 
             // Insert nav bar onto the left side of the window.
             if let Some(nav) = self.nav_bar() {
-                widgets.push(nav.debug(core.debug));
+                widgets.push(nav);
             }
 
             if self.nav_model().is_none() || core.show_content() {
-                let main_content = self.view().debug(core.debug).map(Message::App);
+                let main_content = self.view().map(Message::App);
 
                 widgets.push(if let Some(context) = self.context_drawer() {
                     context_drawer(
@@ -643,7 +643,7 @@ impl<App: Application> ApplicationExt for App {
             content_row.into()
         };
 
-        crate::widget::column::with_capacity(2)
+        let view_element: Element<_> = crate::widget::column::with_capacity(2)
             .push_maybe(if core.window.show_headerbar {
                 Some({
                     let mut header = crate::widget::header_bar()
@@ -691,7 +691,8 @@ impl<App: Application> ApplicationExt for App {
             })
             // The content element contains every element beneath the header.
             .push(content)
-            .into()
+            .into();
+        view_element.debug(core.debug)
     }
 }
 
