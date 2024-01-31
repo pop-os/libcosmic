@@ -323,6 +323,7 @@ impl<'a, Message: Clone + 'static> HeaderBar<'a, Message> {
                     .align_x(iced::alignment::Horizontal::Right)
                     .width(Length::Shrink),
             )
+            .align_items(iced::Alignment::Center)
             .height(Length::Fixed(50.0))
             .padding(8)
             .spacing(8)
