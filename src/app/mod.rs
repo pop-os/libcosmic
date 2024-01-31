@@ -123,6 +123,14 @@ pub(crate) fn iced_settings<App: Application>(
         }
         iced.window.decorations = !settings.client_decorations;
         iced.window.size = settings.size;
+        let min_size = settings.size_limits.min();
+        if min_size != iced::Size::ZERO {
+            iced.window.min_size = Some(min_size);
+        }
+        let max_size = settings.size_limits.max();
+        if max_size != iced::Size::INFINITY {
+            iced.window.max_size = Some(max_size);
+        }
         iced.window.transparent = settings.transparent;
     }
 
