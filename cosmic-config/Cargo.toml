@@ -13,7 +13,6 @@ subscription = ["iced_futures"]
 zbus = { version = "3.14.1", default-features = false, optional = true }
 atomicwrites = { git = "https://github.com/jackpot51/rust-atomicwrites" }
 calloop = { version = "0.12.2", optional = true }
-dirs = "5.0.1"
 notify = "6.0.0"
 ron = "0.8.0"
 serde = "1.0.152"
@@ -23,6 +22,7 @@ iced_futures = { path = "../iced/futures/", default-features = false, optional =
 once_cell = "1.19.0"
 cosmic-settings-daemon = { git = "https://github.com/pop-os/dbus-settings-bindings", branch = "cosmic-settings-daemon", optional = true }
 futures-util = { version = "0.3", optional = true }
+dirs.workspace = true
 
 [target.'cfg(unix)'.dependencies]
 xdg = "2.1"

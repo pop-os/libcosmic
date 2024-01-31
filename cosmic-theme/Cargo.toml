@@ -11,6 +11,7 @@ rustdoc-args = ["--cfg", "docsrs"]
 
 [features]
 default = []
+gtk4-output = []
 no-default = []
 theme-from-image = ["kmeans_colors", "image"]
 
@@ -24,3 +25,5 @@ ron = "0.8"
 lazy_static = "1.4.0"
 csscolorparser = {version = "0.6.2", features = ["serde"]}
 cosmic-config = { path = "../cosmic-config/", default-features = false, features = ["subscription", "macro"] }
+dirs.workspace = true
+thiserror = "1.0.5"
