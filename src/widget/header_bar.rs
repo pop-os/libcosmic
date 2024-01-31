@@ -5,10 +5,8 @@ use crate::{ext::CollectionWidget, widget, Element};
 use apply::Apply;
 use derive_setters::Setters;
 use iced::{window, Length};
-use iced_core::{
-    renderer::Quad, widget::tree, Background, Renderer, Widget,
-};
-use std::{borrow::Cow};
+use iced_core::{renderer::Quad, widget::tree, Background, Renderer, Widget};
+use std::borrow::Cow;
 
 #[must_use]
 pub fn header_bar<'a, Message>() -> HeaderBar<'a, Message> {
