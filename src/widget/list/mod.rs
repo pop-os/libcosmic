@@ -9,7 +9,7 @@ pub use self::column::{list_column, ListColumn};
 
 use crate::widget::Container;
 use crate::Element;
-use iced::{Background};
+use iced::Background;
 use iced_core::Shadow;
 
 pub fn container<'a, Message>(
