@@ -10,7 +10,7 @@ use iced::{
     widget::{container, scrollable},
     Background, Length,
 };
-use iced_core::Color;
+use iced_core::{Border, Color, Shadow};
 
 use crate::{theme, widget::segmented_button, Theme};
 
@@ -23,7 +23,7 @@ pub type Model = segmented_button::SingleSelectModel;
 pub fn nav_bar<Message>(
     model: &segmented_button::SingleSelectModel,
     on_activate: fn(segmented_button::Entity) -> Message,
-) -> iced::widget::Container<Message, crate::Renderer>
+) -> iced::widget::Container<Message, crate::Theme, crate::Renderer>
 where
     Message: Clone + 'static,
 {
@@ -48,8 +48,11 @@ pub fn nav_bar_style(theme: &Theme) -> iced_style::container::Appearance {
         icon_color: Some(cosmic.on_bg_color().into()),
         text_color: Some(cosmic.on_bg_color().into()),
         background: Some(Background::Color(cosmic.primary.base.into())),
-        border_radius: cosmic.corner_radii.radius_s.into(),
-        border_width: 0.0,
-        border_color: Color::TRANSPARENT,
+        border: Border {
+            width: 0.0,
+            color: Color::TRANSPARENT,
+            radius: cosmic.corner_radii.radius_s.into(),
+        },
+        shadow: Shadow::default(),
     }
 }

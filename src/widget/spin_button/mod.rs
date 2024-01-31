@@ -13,6 +13,7 @@ use iced::{
     alignment::{Horizontal, Vertical},
     Alignment, Length,
 };
+use iced_core::{Border, Shadow};
 
 pub struct SpinButton<'a, Message> {
     label: Cow<'a, str>,
@@ -106,8 +107,11 @@ fn container_style(theme: &crate::Theme) -> iced_style::container::Appearance {
         icon_color: Some(basic.palette.neutral_10.into()),
         text_color: Some(basic.palette.neutral_10.into()),
         background: None,
-        border_radius: corners.radius_s.into(),
-        border_width: 0.0,
-        border_color: accent.base.into(),
+        border: Border {
+            radius: corners.radius_s.into(),
+            width: 0.0,
+            color: accent.base.into(),
+        },
+        shadow: Shadow::default(),
     }
 }

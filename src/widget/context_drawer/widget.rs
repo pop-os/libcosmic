@@ -8,9 +8,9 @@ use crate::{Apply, Element, Renderer, Theme};
 
 use super::overlay::Overlay;
 
-use iced_core::alignment;
 use iced_core::event::{self, Event};
 use iced_core::widget::{Operation, Tree};
+use iced_core::{alignment, Border};
 use iced_core::{
     layout, mouse, overlay as iced_overlay, renderer, Clipboard, Color, Layout, Length, Padding,
     Rectangle, Shell, Widget,
@@ -84,9 +84,11 @@ impl<'a, Message: Clone + 'static> ContextDrawer<'a, Message> {
                         icon_color: Some(Color::from(palette.primary.on)),
                         text_color: Some(Color::from(palette.primary.on)),
                         background: Some(iced::Background::Color(palette.primary.base.into())),
-                        border_radius: palette.corner_radii.radius_s.into(),
-                        border_width: 0.0,
-                        border_color: Color::TRANSPARENT,
+                        border: Border {
+                            radius: palette.corner_radii.radius_s.into(),
+                            ..Default::default()
+                        },
+                        ..Default::default()
                     }
                 }))
                 .layer(cosmic_theme::Layer::Primary)
@@ -105,7 +107,7 @@ impl<'a, Message: Clone + 'static> ContextDrawer<'a, Message> {
     }
 }
 
-impl<'a, Message: Clone> Widget<Message, Renderer> for ContextDrawer<'a, Message> {
+impl<'a, Message: Clone> Widget<Message, crate::Theme, Renderer> for ContextDrawer<'a, Message> {
     fn children(&self) -> Vec<Tree> {
         vec![Tree::new(&self.content), Tree::new(&self.drawer)]
     }
@@ -114,12 +116,8 @@ impl<'a, Message: Clone> Widget<Message, Renderer> for ContextDrawer<'a, Message
         tree.diff_children(&mut [&mut self.content, &mut self.drawer]);
     }
 
-    fn width(&self) -> Length {
-        self.content.as_widget().width()
-    }
-
-    fn height(&self) -> Length {
-        self.content.as_widget().height()
+    fn size(&self) -> iced_core::Size<Length> {
+        self.content.as_widget().size()
     }
 
     fn layout(
@@ -211,7 +209,7 @@ impl<'a, Message: Clone> Widget<Message, Renderer> for ContextDrawer<'a, Message
         tree: &'b mut Tree,
         layout: Layout<'_>,
         _renderer: &Renderer,
-    ) -> Option<iced_overlay::Element<'b, Message, Renderer>> {
+    ) -> Option<iced_overlay::Element<'b, Message, crate::Theme, Renderer>> {
         let bounds = layout.bounds();
 
         Some(iced_overlay::Element::new(

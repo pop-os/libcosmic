@@ -8,7 +8,7 @@ use derive_setters::Setters;
 use iced_core::event::{self, Event};
 use iced_core::text::{self, Paragraph, Text};
 use iced_core::widget::tree::{self, Tree};
-use iced_core::{alignment, keyboard, layout, mouse, overlay, renderer, svg, touch};
+use iced_core::{alignment, keyboard, layout, mouse, overlay, renderer, svg, touch, Shadow};
 use iced_core::{Clipboard, Layout, Length, Padding, Pixels, Rectangle, Shell, Size, Widget};
 use std::ffi::OsStr;
 
@@ -60,7 +60,7 @@ impl<'a, S: AsRef<str>, Message, Item: Clone + PartialEq + 'static> Dropdown<'a,
 }
 
 impl<'a, S: AsRef<str>, Message: 'a, Item: Clone + PartialEq + 'static>
-    Widget<Message, crate::Renderer> for Dropdown<'a, S, Message, Item>
+    Widget<Message, crate::Theme, crate::Renderer> for Dropdown<'a, S, Message, Item>
 {
     fn tag(&self) -> tree::Tag {
         tree::Tag::of::<State<Item>>()
@@ -70,12 +70,8 @@ impl<'a, S: AsRef<str>, Message: 'a, Item: Clone + PartialEq + 'static>
         tree::State::new(State::<Item>::new())
     }
 
-    fn width(&self) -> Length {
-        self.width
-    }
-
-    fn height(&self) -> Length {
-        Length::Shrink
+    fn size(&self) -> Size<Length> {
+        Size::new(self.width, Length::Shrink)
     }
 
     fn layout(
@@ -188,7 +184,7 @@ impl<'a, S: AsRef<str>, Message: 'a, Item: Clone + PartialEq + 'static>
         tree: &'b mut Tree,
         layout: Layout<'_>,
         renderer: &crate::Renderer,
-    ) -> Option<overlay::Element<'b, Message, crate::Renderer>> {
+    ) -> Option<overlay::Element<'b, Message, crate::Theme, crate::Renderer>> {
         let state = tree.state.downcast_mut::<State<Item>>();
 
         overlay(
@@ -269,7 +265,7 @@ pub fn layout(
 ) -> layout::Node {
     use std::f32;
 
-    let limits = limits.width(width).height(Length::Shrink).pad(padding);
+    let limits = limits.width(width).height(Length::Shrink).shrink(padding);
 
     let max_width = match width {
         Length::Shrink => {
@@ -298,7 +294,9 @@ pub fn layout(
             f32::from(text_line_height.to_absolute(Pixels(text_size))),
         );
 
-        limits.resolve(intrinsic).pad(padding)
+        limits
+            .resolve(width, Length::Shrink, intrinsic)
+            .expand(padding)
     };
 
     layout::Node::new(size)
@@ -391,7 +389,7 @@ pub fn overlay<'a, S: AsRef<str>, Message: 'a, Item: Clone + PartialEq + 'static
     text_line_height: text::LineHeight,
     selections: &'a super::Model<S, Item>,
     on_selected: &'a dyn Fn(Item) -> Message,
-) -> Option<overlay::Element<'a, Message, crate::Renderer>> {
+) -> Option<overlay::Element<'a, Message, crate::Theme, crate::Renderer>> {
     if state.is_open {
         let description_line_height = text::LineHeight::Absolute(Pixels(
             text_line_height.to_absolute(Pixels(text_size)).0 + 4.0,
@@ -510,9 +508,8 @@ pub fn draw<'a, S, Item: Clone + PartialEq + 'static>(
         renderer,
         renderer::Quad {
             bounds,
-            border_color: style.border_color,
-            border_width: style.border_width,
-            border_radius: style.border_radius,
+            border: style.border,
+            shadow: Shadow::default(),
         },
         style.background,
     );

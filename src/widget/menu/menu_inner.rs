@@ -4,13 +4,14 @@
 use super::{menu_bar::MenuBarState, menu_tree::MenuTree};
 use crate::style::menu_bar::StyleSheet;
 
+use iced_core::{Border, Shadow};
 use iced_widget::core::{
     event,
     layout::{Limits, Node},
     mouse::{self, Cursor},
     overlay, renderer, touch,
     widget::Tree,
-    Clipboard, Color, Layout, Length, Padding, Point, Rectangle, Shell, Size, Vector,
+    Clipboard, Layout, Length, Padding, Point, Rectangle, Shell, Size, Vector,
 };
 
 /// The condition of when to close a menu
@@ -338,18 +339,14 @@ impl MenuState {
 
                 let limits = Limits::new(Size::ZERO, size);
 
-                let mut node = mt
-                    .item
+                mt.item
                     .as_widget()
-                    .layout(&mut tree[mt.index], renderer, &limits);
-                node.move_to(Point::new(0.0, position + self.scroll_offset));
-                node
+                    .layout(&mut tree[mt.index], renderer, &limits)
+                    .move_to(Point::new(0.0, position + self.scroll_offset))
             })
             .collect::<Vec<_>>();
 
-        let mut node = Node::with_children(children_bounds.size(), child_nodes);
-        node.move_to(children_bounds.position());
-        node
+        Node::with_children(children_bounds.size(), child_nodes).move_to(children_bounds.position())
     }
 
     fn layout_single<Message, Renderer>(
@@ -369,12 +366,11 @@ impl MenuState {
         let position = self.menu_bounds.child_positions[index];
         let limits = Limits::new(Size::ZERO, self.menu_bounds.child_sizes[index]);
         let parent_offset = children_bounds.position() - Point::ORIGIN;
-        let mut node = menu_tree.item.as_widget().layout(tree, renderer, &limits);
-        node.move_to(Point::new(
+        let node = menu_tree.item.as_widget().layout(tree, renderer, &limits);
+        node.clone().move_to(Point::new(
             parent_offset.x,
             parent_offset.y + position + self.scroll_offset,
-        ));
-        node
+        ))
     }
 
     fn slice(
@@ -434,7 +430,6 @@ impl MenuState {
 pub(super) struct Menu<'a, 'b, Message, Renderer>
 where
     Renderer: renderer::Renderer,
-    Renderer::Theme: StyleSheet,
 {
     pub(super) tree: &'b mut Tree,
     pub(super) menu_roots: &'b mut Vec<MenuTree<'a, Message, Renderer>>,
@@ -447,22 +442,20 @@ where
     pub(super) cross_offset: i32,
     pub(super) root_bounds_list: Vec<Rectangle>,
     pub(super) path_highlight: Option<PathHighlight>,
-    pub(super) style: &'b <Renderer::Theme as StyleSheet>::Style,
+    pub(super) style: &'b <crate::Theme as StyleSheet>::Style,
 }
 impl<'a, 'b, Message, Renderer> Menu<'a, 'b, Message, Renderer>
 where
     Renderer: renderer::Renderer,
-    Renderer::Theme: StyleSheet,
 {
-    pub(super) fn overlay(self) -> overlay::Element<'b, Message, Renderer> {
+    pub(super) fn overlay(self) -> overlay::Element<'b, Message, crate::Theme, Renderer> {
         overlay::Element::new(Point::ORIGIN, Box::new(self))
     }
 }
-impl<'a, 'b, Message, Renderer> overlay::Overlay<Message, Renderer>
+impl<'a, 'b, Message, Renderer> overlay::Overlay<Message, crate::Theme, Renderer>
     for Menu<'a, 'b, Message, Renderer>
 where
     Renderer: renderer::Renderer,
-    Renderer::Theme: StyleSheet,
 {
     fn layout(
         &mut self,
@@ -633,7 +626,7 @@ where
     fn draw(
         &self,
         renderer: &mut Renderer,
-        theme: &Renderer::Theme,
+        theme: &crate::Theme,
         style: &renderer::Style,
         layout: Layout<'_>,
         view_cursor: Cursor,
@@ -689,9 +682,12 @@ where
                     // println!("color: {:?}\n", styling.background);
                     let menu_quad = renderer::Quad {
                         bounds: pad_rectangle(children_bounds, styling.background_expand.into()),
-                        border_radius: styling.menu_border_radius.into(),
-                        border_width: styling.border_width,
-                        border_color: styling.border_color,
+                        border: Border {
+                            radius: styling.menu_border_radius.into(),
+                            width: styling.border_width,
+                            color: styling.border_color,
+                        },
+                        shadow: Shadow::default(),
                     };
                     let menu_color = styling.background;
                     r.fill_quad(menu_quad, menu_color);
@@ -705,9 +701,11 @@ where
                             .bounds();
                         let path_quad = renderer::Quad {
                             bounds: active_bounds,
-                            border_radius: styling.menu_border_radius.into(),
-                            border_width: 0.0,
-                            border_color: Color::TRANSPARENT,
+                            border: Border {
+                                radius: styling.menu_border_radius.into(),
+                                ..Default::default()
+                            },
+                            shadow: Shadow::default(),
                         };
                         let path_color = styling.path;
                         r.fill_quad(path_quad, path_color);
@@ -759,7 +757,6 @@ fn init_root_menu<Message, Renderer>(
     main_offset: f32,
 ) where
     Renderer: renderer::Renderer,
-    Renderer::Theme: StyleSheet,
 {
     let state = menu.tree.state.downcast_mut::<MenuBarState>();
     if !(state.menu_states.is_empty() && bar_bounds.contains(overlay_cursor)) {
@@ -896,7 +893,6 @@ fn process_overlay_events<Message, Renderer>(
 ) -> event::Status
 where
     Renderer: renderer::Renderer,
-    Renderer::Theme: StyleSheet,
 {
     use event::Status::{Captured, Ignored};
     /*
@@ -1086,7 +1082,6 @@ fn process_scroll_events<Message, Renderer>(
 ) -> event::Status
 where
     Renderer: renderer::Renderer,
-    Renderer::Theme: StyleSheet,
 {
     use event::Status::{Captured, Ignored};
     use mouse::ScrollDelta;
@@ -1186,7 +1181,7 @@ where
             .iter()
             .map(|mt| {
                 let w = mt.item.as_widget();
-                match w.height() {
+                match w.size().height {
                     Length::Fixed(f) => Size::new(width, f),
                     Length::Shrink => {
                         let l_height = w

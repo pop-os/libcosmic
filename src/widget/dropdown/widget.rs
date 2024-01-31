@@ -8,7 +8,7 @@ use derive_setters::Setters;
 use iced_core::event::{self, Event};
 use iced_core::text::{self, Paragraph, Text};
 use iced_core::widget::tree::{self, Tree};
-use iced_core::{alignment, keyboard, layout, mouse, overlay, renderer, svg, touch};
+use iced_core::{alignment, keyboard, layout, mouse, overlay, renderer, svg, touch, Shadow};
 use iced_core::{Clipboard, Layout, Length, Padding, Pixels, Rectangle, Shell, Size, Widget};
 use std::ffi::OsStr;
 
@@ -85,7 +85,9 @@ impl<'a, S: AsRef<str>, Message> Dropdown<'a, S, Message> {
     }
 }
 
-impl<'a, S: AsRef<str>, Message: 'a> Widget<Message, crate::Renderer> for Dropdown<'a, S, Message> {
+impl<'a, S: AsRef<str>, Message: 'a> Widget<Message, crate::Theme, crate::Renderer>
+    for Dropdown<'a, S, Message>
+{
     fn tag(&self) -> tree::Tag {
         tree::Tag::of::<State>()
     }
@@ -118,12 +120,8 @@ impl<'a, S: AsRef<str>, Message: 'a> Widget<Message, crate::Renderer> for Dropdo
         }
     }
 
-    fn width(&self) -> Length {
-        self.width
-    }
-
-    fn height(&self) -> Length {
-        Length::Shrink
+    fn size(&self) -> Size<Length> {
+        Size::new(self.width, Length::Shrink)
     }
 
     fn layout(
@@ -218,7 +216,7 @@ impl<'a, S: AsRef<str>, Message: 'a> Widget<Message, crate::Renderer> for Dropdo
         tree: &'b mut Tree,
         layout: Layout<'_>,
         renderer: &crate::Renderer,
-    ) -> Option<overlay::Element<'b, Message, crate::Renderer>> {
+    ) -> Option<overlay::Element<'b, Message, crate::Theme, crate::Renderer>> {
         let state = tree.state.downcast_mut::<State>();
 
         overlay(
@@ -298,7 +296,7 @@ pub fn layout(
 ) -> layout::Node {
     use std::f32;
 
-    let limits = limits.width(width).height(Length::Shrink).pad(padding);
+    let limits = limits.width(width).height(Length::Shrink).shrink(padding);
 
     let max_width = match width {
         Length::Shrink => {
@@ -327,7 +325,9 @@ pub fn layout(
             f32::from(text_line_height.to_absolute(Pixels(text_size))),
         );
 
-        limits.resolve(intrinsic).pad(padding)
+        limits
+            .resolve(width, Length::Shrink, intrinsic)
+            .expand(padding)
     };
 
     layout::Node::new(size)
@@ -424,7 +424,7 @@ pub fn overlay<'a, S: AsRef<str>, Message: 'a>(
     selections: &'a [S],
     selected_option: Option<usize>,
     on_selected: &'a dyn Fn(usize) -> Message,
-) -> Option<overlay::Element<'a, Message, crate::Renderer>> {
+) -> Option<overlay::Element<'a, Message, crate::Theme, crate::Renderer>> {
     if state.is_open {
         let bounds = layout.bounds();
 
@@ -497,9 +497,8 @@ pub fn draw<'a, S>(
         renderer,
         renderer::Quad {
             bounds,
-            border_color: style.border_color,
-            border_width: style.border_width,
-            border_radius: style.border_radius,
+            border: style.border,
+            shadow: Shadow::default(),
         },
         style.background,
     );

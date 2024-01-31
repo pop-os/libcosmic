@@ -4,7 +4,7 @@
 
 //! Change the appearance of a text input.
 
-use iced_core::{Background, BorderRadius, Color};
+use iced_core::{border::Radius, Background, Color};
 
 /// The appearance of a text input.
 #[derive(Debug, Clone, Copy)]
@@ -12,7 +12,7 @@ pub struct Appearance {
     /// The [`Background`] of the text input.
     pub background: Background,
     /// The border radius of the text input.
-    pub border_radius: BorderRadius,
+    pub border_radius: Radius,
     /// The border offset
     pub border_offset: Option<f32>,
     /// The border width of the text input.

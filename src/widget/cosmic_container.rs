@@ -14,7 +14,7 @@ pub fn container<'a, Message: 'static, T>(
     content: T,
 ) -> LayerContainer<'a, Message, crate::Renderer>
 where
-    T: Into<Element<'a, Message, crate::Renderer>>,
+    T: Into<Element<'a, Message, crate::Theme, crate::Renderer>>,
 {
     LayerContainer::new(content)
 }
@@ -26,22 +26,19 @@ where
 pub struct LayerContainer<'a, Message, Renderer>
 where
     Renderer: iced_core::Renderer,
-    Renderer::Theme: StyleSheet + Clone + cosmic_theme::LayeredTheme,
 {
     layer: Option<cosmic_theme::Layer>,
-    container: Container<'a, Message, Renderer>,
+    container: Container<'a, Message, crate::Theme, Renderer>,
 }
 
 impl<'a, Message, Renderer> LayerContainer<'a, Message, Renderer>
 where
     Renderer: iced_core::Renderer,
-    Renderer::Theme: StyleSheet + Clone + cosmic_theme::LayeredTheme,
-    <Renderer::Theme as StyleSheet>::Style: std::convert::From<crate::theme::Container>,
 {
     /// Creates an empty [`Container`].
     pub(crate) fn new<T>(content: T) -> Self
     where
-        T: Into<Element<'a, Message, Renderer>>,
+        T: Into<Element<'a, Message, crate::Theme, Renderer>>,
     {
         LayerContainer {
             layer: None,
@@ -125,16 +122,16 @@ where
 
     /// Sets the style of the [`LayerContainer`].
     #[must_use]
-    pub fn style(mut self, style: impl Into<<Renderer::Theme as StyleSheet>::Style>) -> Self {
+    pub fn style(mut self, style: impl Into<<crate::Theme as StyleSheet>::Style>) -> Self {
         self.container = self.container.style(style);
         self
     }
 }
 
-impl<'a, Message, Renderer> Widget<Message, Renderer> for LayerContainer<'a, Message, Renderer>
+impl<'a, Message, Renderer> Widget<Message, crate::Theme, Renderer>
+    for LayerContainer<'a, Message, Renderer>
 where
     Renderer: iced_core::Renderer,
-    Renderer::Theme: StyleSheet + Clone + cosmic_theme::LayeredTheme,
 {
     fn children(&self) -> Vec<Tree> {
         self.container.children()
@@ -152,12 +149,8 @@ where
         self.container.state()
     }
 
-    fn width(&self) -> Length {
-        Widget::width(&self.container)
-    }
-
-    fn height(&self) -> Length {
-        Widget::height(&self.container)
+    fn size(&self) -> iced_core::Size<Length> {
+        self.container.size()
     }
 
     fn layout(
@@ -220,7 +213,7 @@ where
         &self,
         tree: &Tree,
         renderer: &mut Renderer,
-        theme: &Renderer::Theme,
+        theme: &crate::Theme,
         renderer_style: &renderer::Style,
         layout: Layout<'_>,
         cursor_position: mouse::Cursor,
@@ -249,19 +242,20 @@ where
         tree: &'b mut Tree,
         layout: Layout<'_>,
         renderer: &Renderer,
-    ) -> Option<overlay::Element<'b, Message, Renderer>> {
+    ) -> Option<overlay::Element<'b, Message, crate::Theme, Renderer>> {
         self.container.overlay(tree, layout, renderer)
     }
 }
 
 impl<'a, Message, Renderer> From<LayerContainer<'a, Message, Renderer>>
-    for Element<'a, Message, Renderer>
+    for Element<'a, Message, crate::Theme, Renderer>
 where
     Message: 'a,
     Renderer: 'a + iced_core::Renderer,
-    Renderer::Theme: StyleSheet + Clone + cosmic_theme::LayeredTheme,
 {
-    fn from(column: LayerContainer<'a, Message, Renderer>) -> Element<'a, Message, Renderer> {
+    fn from(
+        column: LayerContainer<'a, Message, Renderer>,
+    ) -> Element<'a, Message, crate::Theme, Renderer> {
         Element::new(column)
     }
 }

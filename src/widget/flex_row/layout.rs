@@ -15,7 +15,7 @@ pub fn resolve<Message>(
     row_spacing: f32,
     tree: &mut [Tree],
 ) -> Node {
-    let limits = limits.pad(padding);
+    let limits = limits.shrink(padding);
 
     let mut nodes = Vec::with_capacity(items.len());
 
@@ -51,7 +51,7 @@ pub fn resolve<Message>(
             let pos_y = flex_height;
 
             for mut child_node in row_buffer.drain(..) {
-                child_node.move_to(Point::new(pos_x, pos_y));
+                child_node = child_node.move_to(Point::new(pos_x, pos_y));
                 pos_x += row_spacing + child_node.size().width;
                 nodes.push(child_node);
             }
@@ -77,7 +77,7 @@ pub fn resolve<Message>(
         let pos_y = flex_height;
 
         for mut child_node in row_buffer.drain(..) {
-            child_node.move_to(Point::new(pos_x, pos_y));
+            child_node = child_node.move_to(Point::new(pos_x, pos_y));
             pos_x += row_spacing + child_node.size().width;
             nodes.push(child_node);
         }
@@ -86,6 +86,6 @@ pub fn resolve<Message>(
         flex_width = flex_width.max(current_row_width);
     }
 
-    let flex_size = limits.resolve(Size::new(flex_width, flex_height));
-    Node::with_children(flex_size.pad(padding), nodes)
+    let flex_size = limits.resolve(flex_width, flex_height, Size::new(flex_width, flex_height));
+    Node::with_children(flex_size.expand(padding), nodes)
 }

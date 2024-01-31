@@ -16,7 +16,7 @@ pub fn aspect_ratio_container<'a, Message: 'static, T>(
     ratio: f32,
 ) -> AspectRatio<'a, Message, crate::Renderer>
 where
-    T: Into<Element<'a, Message, crate::Renderer>>,
+    T: Into<Element<'a, Message, crate::Theme, crate::Renderer>>,
 {
     AspectRatio::new(content, ratio)
 }
@@ -28,16 +28,14 @@ where
 pub struct AspectRatio<'a, Message, Renderer>
 where
     Renderer: iced_core::Renderer,
-    Renderer::Theme: StyleSheet,
 {
     ratio: f32,
-    container: Container<'a, Message, Renderer>,
+    container: Container<'a, Message, crate::Theme, Renderer>,
 }
 
 impl<'a, Message, Renderer> AspectRatio<'a, Message, Renderer>
 where
     Renderer: iced_core::Renderer,
-    Renderer::Theme: StyleSheet,
 {
     fn constrain_limits(&self, size: Size) -> Size {
         let Size {
@@ -56,12 +54,11 @@ where
 impl<'a, Message, Renderer> AspectRatio<'a, Message, Renderer>
 where
     Renderer: iced_core::Renderer,
-    Renderer::Theme: StyleSheet,
 {
     /// Creates an empty [`Container`].
     pub(crate) fn new<T>(content: T, ratio: f32) -> Self
     where
-        T: Into<Element<'a, Message, Renderer>>,
+        T: Into<Element<'a, Message, crate::Theme, Renderer>>,
     {
         AspectRatio {
             ratio,
@@ -134,16 +131,16 @@ where
 
     /// Sets the style of the [`Container`].
     #[must_use]
-    pub fn style(mut self, style: impl Into<<Renderer::Theme as StyleSheet>::Style>) -> Self {
+    pub fn style(mut self, style: impl Into<<crate::Theme as StyleSheet>::Style>) -> Self {
         self.container = self.container.style(style);
         self
     }
 }
 
-impl<'a, Message, Renderer> Widget<Message, Renderer> for AspectRatio<'a, Message, Renderer>
+impl<'a, Message, Renderer> Widget<Message, crate::Theme, Renderer>
+    for AspectRatio<'a, Message, Renderer>
 where
     Renderer: iced_core::Renderer,
-    Renderer::Theme: StyleSheet,
 {
     fn children(&self) -> Vec<Tree> {
         self.container.children()
@@ -153,12 +150,8 @@ where
         self.container.diff(tree);
     }
 
-    fn width(&self) -> Length {
-        Widget::width(&self.container)
-    }
-
-    fn height(&self) -> Length {
-        Widget::height(&self.container)
+    fn size(&self) -> Size<Length> {
+        self.container.size()
     }
 
     fn layout(
@@ -226,7 +219,7 @@ where
         &self,
         tree: &Tree,
         renderer: &mut Renderer,
-        theme: &Renderer::Theme,
+        theme: &crate::Theme,
         renderer_style: &renderer::Style,
         layout: Layout<'_>,
         cursor_position: mouse::Cursor,
@@ -248,19 +241,20 @@ where
         tree: &'b mut Tree,
         layout: Layout<'_>,
         renderer: &Renderer,
-    ) -> Option<overlay::Element<'b, Message, Renderer>> {
+    ) -> Option<overlay::Element<'b, Message, crate::Theme, Renderer>> {
         self.container.overlay(tree, layout, renderer)
     }
 }
 
 impl<'a, Message, Renderer> From<AspectRatio<'a, Message, Renderer>>
-    for Element<'a, Message, Renderer>
+    for Element<'a, Message, crate::Theme, Renderer>
 where
     Message: 'a,
     Renderer: 'a + iced_core::Renderer,
-    Renderer::Theme: StyleSheet,
 {
-    fn from(column: AspectRatio<'a, Message, Renderer>) -> Element<'a, Message, Renderer> {
+    fn from(
+        column: AspectRatio<'a, Message, Renderer>,
+    ) -> Element<'a, Message, crate::Theme, Renderer> {
         Element::new(column)
     }
 }

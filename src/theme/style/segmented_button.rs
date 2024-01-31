@@ -5,7 +5,7 @@
 
 use crate::widget::segmented_button::{Appearance, ItemAppearance, StyleSheet};
 use crate::{theme::Theme, widget::segmented_button::ItemStatusAppearance};
-use iced_core::{Background, BorderRadius};
+use iced_core::{border::Radius, Background};
 
 #[derive(Default)]
 pub enum SegmentedButton {
@@ -66,9 +66,7 @@ impl StyleSheet for Theme {
                     inactive: ItemStatusAppearance {
                         background: Some(Background::Color(neutral_5.into())),
                         first: ItemAppearance {
-                            border_radius: BorderRadius::from([
-                                rad_m[0], rad_0[1], rad_0[2], rad_m[3],
-                            ]),
+                            border_radius: Radius::from([rad_m[0], rad_0[1], rad_0[2], rad_m[3]]),
                             ..Default::default()
                         },
                         middle: ItemAppearance {
@@ -76,9 +74,7 @@ impl StyleSheet for Theme {
                             ..Default::default()
                         },
                         last: ItemAppearance {
-                            border_radius: BorderRadius::from([
-                                rad_0[0], rad_m[1], rad_m[2], rad_0[3],
-                            ]),
+                            border_radius: Radius::from([rad_0[0], rad_m[1], rad_m[2], rad_0[3]]),
                             ..Default::default()
                         },
                         text_color: cosmic.on_bg_color().into(),
@@ -123,9 +119,7 @@ impl StyleSheet for Theme {
                     inactive: ItemStatusAppearance {
                         background: Some(Background::Color(neutral_5.into())),
                         first: ItemAppearance {
-                            border_radius: BorderRadius::from([
-                                rad_m[0], rad_m[1], rad_0[0], rad_0[0],
-                            ]),
+                            border_radius: Radius::from([rad_m[0], rad_m[1], rad_0[0], rad_0[0]]),
                             ..Default::default()
                         },
                         middle: ItemAppearance {
@@ -133,9 +127,7 @@ impl StyleSheet for Theme {
                             ..Default::default()
                         },
                         last: ItemAppearance {
-                            border_radius: BorderRadius::from([
-                                rad_0[0], rad_0[1], rad_m[2], rad_m[3],
-                            ]),
+                            border_radius: Radius::from([rad_0[0], rad_0[1], rad_m[2], rad_m[3]]),
                             ..Default::default()
                         },
                         text_color: cosmic.on_bg_color().into(),
@@ -153,7 +145,7 @@ impl StyleSheet for Theme {
 
 mod horizontal {
     use crate::widget::segmented_button::{ItemAppearance, ItemStatusAppearance};
-    use iced_core::{Background, BorderRadius};
+    use iced_core::{border::Radius, Background};
 
     pub fn selection_active(cosmic: &cosmic_theme::Theme) -> ItemStatusAppearance {
         let mut neutral_5 = cosmic.palette.neutral_5;
@@ -163,7 +155,7 @@ mod horizontal {
         ItemStatusAppearance {
             background: Some(Background::Color(neutral_5.into())),
             first: ItemAppearance {
-                border_radius: BorderRadius::from([rad_m[0], rad_0[1], rad_0[2], rad_m[3]]),
+                border_radius: Radius::from([rad_m[0], rad_0[1], rad_0[2], rad_m[3]]),
                 ..Default::default()
             },
             middle: ItemAppearance {
@@ -171,7 +163,7 @@ mod horizontal {
                 ..Default::default()
             },
             last: ItemAppearance {
-                border_radius: BorderRadius::from([rad_0[0], rad_m[1], rad_m[2], rad_0[3]]),
+                border_radius: Radius::from([rad_0[0], rad_m[1], rad_m[2], rad_0[3]]),
                 ..Default::default()
             },
             text_color: cosmic.accent.base.into(),
@@ -186,17 +178,17 @@ mod horizontal {
         ItemStatusAppearance {
             background: Some(Background::Color(neutral_5.into())),
             first: ItemAppearance {
-                border_radius: BorderRadius::from([rad_s[0], rad_s[1], rad_0[2], rad_0[3]]),
+                border_radius: Radius::from([rad_s[0], rad_s[1], rad_0[2], rad_0[3]]),
                 border_bottom: Some((4.0, cosmic.accent.base.into())),
                 ..Default::default()
             },
             middle: ItemAppearance {
-                border_radius: BorderRadius::from([rad_s[0], rad_s[1], rad_0[2], rad_0[3]]),
+                border_radius: Radius::from([rad_s[0], rad_s[1], rad_0[2], rad_0[3]]),
                 border_bottom: Some((4.0, cosmic.accent.base.into())),
                 ..Default::default()
             },
             last: ItemAppearance {
-                border_radius: BorderRadius::from([rad_s[0], rad_s[1], rad_0[2], rad_0[3]]),
+                border_radius: Radius::from([rad_s[0], rad_s[1], rad_0[2], rad_0[3]]),
                 border_bottom: Some((4.0, cosmic.accent.base.into())),
                 ..Default::default()
             },
@@ -229,7 +221,7 @@ pub fn hover(cosmic: &cosmic_theme::Theme, default: &ItemStatusAppearance) -> It
 
 mod vertical {
     use crate::widget::segmented_button::{ItemAppearance, ItemStatusAppearance};
-    use iced_core::{Background, BorderRadius};
+    use iced_core::{border::Radius, Background};
 
     pub fn selection_active(cosmic: &cosmic_theme::Theme) -> ItemStatusAppearance {
         let mut neutral_5 = cosmic.palette.neutral_5;
@@ -239,7 +231,7 @@ mod vertical {
         ItemStatusAppearance {
             background: Some(Background::Color(neutral_5.into())),
             first: ItemAppearance {
-                border_radius: BorderRadius::from([rad_m[0], rad_m[1], rad_0[2], rad_0[3]]),
+                border_radius: Radius::from([rad_m[0], rad_m[1], rad_0[2], rad_0[3]]),
                 ..Default::default()
             },
             middle: ItemAppearance {
@@ -247,7 +239,7 @@ mod vertical {
                 ..Default::default()
             },
             last: ItemAppearance {
-                border_radius: BorderRadius::from([rad_0[0], rad_0[1], rad_m[2], rad_m[3]]),
+                border_radius: Radius::from([rad_0[0], rad_0[1], rad_m[2], rad_m[3]]),
                 ..Default::default()
             },
             text_color: cosmic.accent.base.into(),

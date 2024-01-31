@@ -16,7 +16,7 @@ use crate::{
 };
 pub use cosmic_panel_config;
 use cosmic_panel_config::{CosmicPanelBackground, PanelAnchor, PanelSize};
-use iced_core::Padding;
+use iced_core::{Padding, Shadow};
 use iced_style::container::Appearance;
 use iced_widget::runtime::command::platform_specific::wayland::popup::{
     SctkPopupSettings, SctkPositioner,
@@ -142,7 +142,7 @@ impl Context {
     pub fn popup_container<'a, Message: 'static>(
         &self,
         content: impl Into<Element<'a, Message>>,
-    ) -> Container<'a, Message, Renderer> {
+    ) -> Container<'a, Message, crate::Theme, Renderer> {
         let (vertical_align, horizontal_align) = match self.anchor {
             PanelAnchor::Left => (Vertical::Center, Horizontal::Left),
             PanelAnchor::Right => (Vertical::Center, Horizontal::Right),
@@ -150,20 +150,25 @@ impl Context {
             PanelAnchor::Bottom => (Vertical::Bottom, Horizontal::Center),
         };
 
-        Container::<Message, Renderer>::new(Container::<Message, Renderer>::new(content).style(
-            theme::Container::custom(|theme| {
-                let cosmic = theme.cosmic();
-                let corners = cosmic.corner_radii.clone();
-                Appearance {
-                    text_color: Some(cosmic.background.on.into()),
-                    background: Some(Color::from(cosmic.background.base).into()),
-                    border_radius: corners.radius_m.into(),
-                    border_width: 1.0,
-                    border_color: cosmic.background.divider.into(),
-                    icon_color: Some(cosmic.background.on.into()),
-                }
-            }),
-        ))
+        Container::<Message, _, Renderer>::new(
+            Container::<Message, _, Renderer>::new(content).style(theme::Container::custom(
+                |theme| {
+                    let cosmic = theme.cosmic();
+                    let corners = cosmic.corner_radii.clone();
+                    Appearance {
+                        text_color: Some(cosmic.background.on.into()),
+                        background: Some(Color::from(cosmic.background.base).into()),
+                        border: iced::Border {
+                            radius: corners.radius_m.into(),
+                            width: 1.0,
+                            color: cosmic.background.divider.into(),
+                        },
+                        shadow: Shadow::default(),
+                        icon_color: Some(cosmic.background.on.into()),
+                    }
+                },
+            )),
+        )
         .width(Length::Shrink)
         .height(Length::Shrink)
         .align_x(horizontal_align)
@@ -306,7 +311,7 @@ pub fn menu_button<'a, Message>(
 
 pub fn padded_control<'a, Message>(
     content: impl Into<Element<'a, Message>>,
-) -> crate::widget::container::Container<'a, Message, crate::Renderer> {
+) -> crate::widget::container::Container<'a, Message, crate::Theme, crate::Renderer> {
     crate::widget::container(content)
         .padding(menu_control_padding())
         .width(Length::Fill)

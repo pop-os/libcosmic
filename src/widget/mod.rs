@@ -35,7 +35,7 @@ pub use context_drawer::{context_drawer, ContextDrawer};
 
 pub use column::{column, Column};
 pub mod column {
-    pub type Column<'a, Message> = iced::widget::Column<'a, Message, crate::Renderer>;
+    pub type Column<'a, Message> = iced::widget::Column<'a, Message, crate::Theme, crate::Renderer>;
 
     #[must_use]
     pub fn column<'a, Message>() -> Column<'a, Message> {
@@ -64,19 +64,19 @@ pub mod divider {
 
         /// Horizontal divider with default thickness
         #[must_use]
-        pub fn default() -> Rule<crate::Renderer> {
+        pub fn default() -> Rule<crate::Theme> {
             horizontal_rule(1).style(crate::theme::Rule::Default)
         }
 
         /// Horizontal divider with light thickness
         #[must_use]
-        pub fn light() -> Rule<crate::Renderer> {
+        pub fn light() -> Rule<crate::Theme> {
             horizontal_rule(4).style(crate::theme::Rule::LightDivider)
         }
 
         /// Horizontal divider with heavy thickness.
         #[must_use]
-        pub fn heavy() -> Rule<crate::Renderer> {
+        pub fn heavy() -> Rule<crate::Theme> {
             horizontal_rule(10).style(crate::theme::Rule::HeavyDivider)
         }
     }
@@ -87,19 +87,19 @@ pub mod divider {
 
         /// Vertical divider with default thickness
         #[must_use]
-        pub fn default() -> Rule<crate::Renderer> {
+        pub fn default() -> Rule<crate::Theme> {
             vertical_rule(1).style(crate::theme::Rule::Default)
         }
 
         /// Vertical divider with light thickness
         #[must_use]
-        pub fn light() -> Rule<crate::Renderer> {
+        pub fn light() -> Rule<crate::Theme> {
             vertical_rule(4).style(crate::theme::Rule::LightDivider)
         }
 
         /// Vertical divider with heavy thickness.
         #[must_use]
-        pub fn heavy() -> Rule<crate::Renderer> {
+        pub fn heavy() -> Rule<crate::Theme> {
             vertical_rule(10).style(crate::theme::Rule::HeavyDivider)
         }
     }
@@ -142,7 +142,7 @@ pub use rectangle_tracker::{rectangle_tracker, RectangleTracker};
 
 pub use row::{row, Row};
 pub mod row {
-    pub type Row<'a, Message> = iced::widget::Row<'a, Message, crate::Renderer>;
+    pub type Row<'a, Message> = iced::widget::Row<'a, Message, crate::Theme, crate::Renderer>;
 
     #[must_use]
     pub fn row<'a, Message>() -> Row<'a, Message> {
@@ -187,7 +187,8 @@ pub mod tooltip {
 
     pub use iced::widget::tooltip::Position;
 
-    pub type Tooltip<'a, Message> = iced::widget::Tooltip<'a, Message, crate::Renderer>;
+    pub type Tooltip<'a, Message> =
+        iced::widget::Tooltip<'a, Message, crate::Theme, crate::Renderer>;
 
     pub fn tooltip<'a, Message>(
         content: impl Into<Element<'a, Message>>,

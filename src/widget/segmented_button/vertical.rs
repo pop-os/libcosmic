@@ -88,9 +88,10 @@ where
             height = (num as f32 * height) + (num as f32 * spacing) - spacing;
         }
 
-        let size = limits
-            .height(Length::Fixed(height))
-            .resolve(Size::new(width, height));
+        let size =
+            limits
+                .height(Length::Fixed(height))
+                .resolve(width, height, Size::new(width, height));
 
         layout::Node::new(size)
     }

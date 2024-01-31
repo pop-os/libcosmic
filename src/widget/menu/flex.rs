@@ -58,15 +58,15 @@ pub fn resolve<'a, E, Message, Renderer>(
     tree: &mut [&mut Tree],
 ) -> Node
 where
-    E: std::borrow::Borrow<Element<'a, Message, Renderer>>,
+    E: std::borrow::Borrow<Element<'a, Message, crate::Theme, Renderer>>,
     Renderer: renderer::Renderer,
 {
-    let limits = limits.pad(padding);
+    let limits = limits.shrink(padding);
     let total_spacing = spacing * items.len().saturating_sub(1) as f32;
     let max_cross = axis.cross(limits.max());
 
     let mut fill_sum = 0;
-    let mut cross = axis.cross(limits.min()).max(axis.cross(limits.fill()));
+    let mut cross = axis.cross(limits.min()).max(axis.cross(Size::INFINITY));
     let mut available = axis.main(limits.max()) - total_spacing;
 
     let mut nodes: Vec<Node> = Vec::with_capacity(items.len());
@@ -77,9 +77,10 @@ where
 
         for (child, tree) in items.iter().zip(tree.iter_mut()) {
             let child = child.borrow();
+            let c_size = child.as_widget().size();
             let cross_fill_factor = match axis {
-                Axis::Horizontal => child.as_widget().height(),
-                Axis::Vertical => child.as_widget().width(),
+                Axis::Horizontal => c_size.height,
+                Axis::Vertical => c_size.width,
             }
             .fill_factor();
 
@@ -100,9 +101,10 @@ where
 
     for (i, (child, tree)) in items.iter().zip(tree.iter_mut()).enumerate() {
         let child = child.borrow();
+        let c_size = child.as_widget().size();
         let fill_factor = match axis {
-            Axis::Horizontal => child.as_widget().width(),
-            Axis::Vertical => child.as_widget().height(),
+            Axis::Horizontal => c_size.width,
+            Axis::Vertical => c_size.height,
         }
         .fill_factor();
 
@@ -143,9 +145,10 @@ where
 
     for (i, (child, tree)) in items.iter().zip(tree.iter_mut()).enumerate() {
         let child = child.borrow();
+        let c_size = child.as_widget().size();
         let fill_factor = match axis {
-            Axis::Horizontal => child.as_widget().width(),
-            Axis::Vertical => child.as_widget().height(),
+            Axis::Horizontal => c_size.width,
+            Axis::Vertical => c_size.height,
         }
         .fill_factor();
 
@@ -194,24 +197,22 @@ where
 
         let (x, y) = axis.pack(main, pad.1);
 
-        node.move_to(Point::new(x, y));
+        let node_ = node.clone().move_to(Point::new(x, y));
 
-        match axis {
-            Axis::Horizontal => {
-                node.align(Alignment::Start, align_items, Size::new(0.0, cross));
-            }
-            Axis::Vertical => {
-                node.align(align_items, Alignment::Start, Size::new(cross, 0.0));
-            }
-        }
+        let node_ = match axis {
+            Axis::Horizontal => node_.align(Alignment::Start, align_items, Size::new(0.0, cross)),
+            Axis::Vertical => node_.align(align_items, Alignment::Start, Size::new(cross, 0.0)),
+        };
 
-        let size = node.size();
+        let size = node_.bounds().size();
+
+        *node = node_;
 
         main += axis.main(size);
     }
 
     let (width, height) = axis.pack(main - pad.0, cross);
-    let size = limits.resolve(Size::new(width, height));
+    let size = limits.resolve(width, height, Size::new(width, height));
 
-    Node::with_children(size.pad(padding), nodes)
+    Node::with_children(size.expand(padding), nodes)
 }

@@ -8,7 +8,7 @@ pub fn toggler<'a, Message>(
     label: impl Into<Option<String>>,
     is_checked: bool,
     f: impl Fn(bool) -> Message + 'a,
-) -> widget::Toggler<'a, Message, Renderer> {
+) -> widget::Toggler<'a, Message, crate::Theme, Renderer> {
     widget::Toggler::new(label, is_checked, f)
         .size(24)
         .spacing(12)

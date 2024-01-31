@@ -5,9 +5,7 @@
 
 use crate::theme::{CosmicComponent, Theme, TRANSPARENT_COMPONENT};
 use cosmic_theme::composite::over;
-use iced_core::gradient::Linear;
-use iced_core::BorderRadius;
-use iced_core::Radians;
+use iced_core::Border;
 use iced_core::{Background, Color};
 use iced_style::application;
 use iced_style::button as iced_button;
@@ -25,7 +23,7 @@ use iced_style::slider::Rail;
 use iced_style::svg;
 use iced_style::text_input;
 use iced_style::toggler;
-use std::f32::consts::PI;
+
 use std::rc::Rc;
 
 #[derive(Default)]
@@ -203,14 +201,17 @@ impl checkbox::StyleSheet for Theme {
                     cosmic.button.base.into()
                 }),
                 icon_color: cosmic.accent.on.into(),
-                border_radius: corners.radius_xs.into(),
-                border_width: if is_checked { 0.0 } else { 1.0 },
-                border_color: if is_checked {
-                    cosmic.accent.base
-                } else {
-                    cosmic.button.border
-                }
-                .into(),
+                border: Border {
+                    radius: corners.radius_xs.into(),
+                    width: if is_checked { 0.0 } else { 1.0 },
+                    color: if is_checked {
+                        cosmic.accent.base
+                    } else {
+                        cosmic.button.border
+                    }
+                    .into(),
+                },
+
                 text_color: None,
             },
             Checkbox::Secondary => checkbox::Appearance {
@@ -220,9 +221,11 @@ impl checkbox::StyleSheet for Theme {
                     cosmic.background.base.into()
                 }),
                 icon_color: cosmic.background.on.into(),
-                border_radius: corners.radius_xs.into(),
-                border_width: if is_checked { 0.0 } else { 1.0 },
-                border_color: cosmic.button.border.into(),
+                border: Border {
+                    radius: corners.radius_xs.into(),
+                    width: if is_checked { 0.0 } else { 1.0 },
+                    color: cosmic.button.border.into(),
+                },
                 text_color: None,
             },
             Checkbox::Success => checkbox::Appearance {
@@ -232,14 +235,16 @@ impl checkbox::StyleSheet for Theme {
                     cosmic.button.base.into()
                 }),
                 icon_color: cosmic.success.on.into(),
-                border_radius: corners.radius_xs.into(),
-                border_width: if is_checked { 0.0 } else { 1.0 },
-                border_color: if is_checked {
-                    cosmic.success.base
-                } else {
-                    cosmic.button.border
-                }
-                .into(),
+                border: Border {
+                    radius: corners.radius_xs.into(),
+                    width: if is_checked { 0.0 } else { 1.0 },
+                    color: if is_checked {
+                        cosmic.success.base
+                    } else {
+                        cosmic.button.border
+                    }
+                    .into(),
+                },
                 text_color: None,
             },
             Checkbox::Danger => checkbox::Appearance {
@@ -249,14 +254,16 @@ impl checkbox::StyleSheet for Theme {
                     cosmic.button.base.into()
                 }),
                 icon_color: cosmic.destructive.on.into(),
-                border_radius: corners.radius_xs.into(),
-                border_width: if is_checked { 0.0 } else { 1.0 },
-                border_color: if is_checked {
-                    cosmic.destructive.base
-                } else {
-                    cosmic.button.border
-                }
-                .into(),
+                border: Border {
+                    radius: corners.radius_xs.into(),
+                    width: if is_checked { 0.0 } else { 1.0 },
+                    color: if is_checked {
+                        cosmic.destructive.base
+                    } else {
+                        cosmic.button.border
+                    }
+                    .into(),
+                },
                 text_color: None,
             },
         }
@@ -274,14 +281,16 @@ impl checkbox::StyleSheet for Theme {
                     cosmic.button.base.into()
                 }),
                 icon_color: cosmic.accent.on.into(),
-                border_radius: corners.radius_xs.into(),
-                border_width: if is_checked { 0.0 } else { 1.0 },
-                border_color: if is_checked {
-                    cosmic.accent.base
-                } else {
-                    cosmic.button.border
-                }
-                .into(),
+                border: Border {
+                    radius: corners.radius_xs.into(),
+                    width: if is_checked { 0.0 } else { 1.0 },
+                    color: if is_checked {
+                        cosmic.accent.base
+                    } else {
+                        cosmic.button.border
+                    }
+                    .into(),
+                },
                 text_color: None,
             },
             Checkbox::Secondary => checkbox::Appearance {
@@ -291,14 +300,16 @@ impl checkbox::StyleSheet for Theme {
                     cosmic.button.base.into()
                 }),
                 icon_color: self.current_container().on.into(),
-                border_radius: corners.radius_xs.into(),
-                border_width: if is_checked { 0.0 } else { 1.0 },
-                border_color: if is_checked {
-                    self.current_container().base
-                } else {
-                    cosmic.button.border
-                }
-                .into(),
+                border: Border {
+                    radius: corners.radius_xs.into(),
+                    width: if is_checked { 0.0 } else { 1.0 },
+                    color: if is_checked {
+                        self.current_container().base
+                    } else {
+                        cosmic.button.border
+                    }
+                    .into(),
+                },
                 text_color: None,
             },
             Checkbox::Success => checkbox::Appearance {
@@ -308,14 +319,16 @@ impl checkbox::StyleSheet for Theme {
                     cosmic.button.base.into()
                 }),
                 icon_color: cosmic.success.on.into(),
-                border_radius: corners.radius_xs.into(),
-                border_width: if is_checked { 0.0 } else { 1.0 },
-                border_color: if is_checked {
-                    cosmic.success.base
-                } else {
-                    cosmic.button.border
-                }
-                .into(),
+                border: Border {
+                    radius: corners.radius_xs.into(),
+                    width: if is_checked { 0.0 } else { 1.0 },
+                    color: if is_checked {
+                        cosmic.success.base
+                    } else {
+                        cosmic.button.border
+                    }
+                    .into(),
+                },
                 text_color: None,
             },
             Checkbox::Danger => checkbox::Appearance {
@@ -325,14 +338,16 @@ impl checkbox::StyleSheet for Theme {
                     cosmic.button.base.into()
                 }),
                 icon_color: cosmic.destructive.on.into(),
-                border_radius: corners.radius_xs.into(),
-                border_width: if is_checked { 0.0 } else { 1.0 },
-                border_color: if is_checked {
-                    cosmic.destructive.base
-                } else {
-                    cosmic.button.border
-                }
-                .into(),
+                border: Border {
+                    radius: corners.radius_xs.into(),
+                    width: if is_checked { 0.0 } else { 1.0 },
+                    color: if is_checked {
+                        cosmic.destructive.base
+                    } else {
+                        cosmic.button.border
+                    }
+                    .into(),
+                },
                 text_color: None,
             },
         }
@@ -371,61 +386,50 @@ impl container::StyleSheet for Theme {
         match style {
             Container::Transparent => container::Appearance::default(),
             Container::Custom(f) => f(self),
-            Container::Background => {
-                let palette = self.cosmic();
-
-                container::Appearance {
-                    icon_color: Some(Color::from(palette.background.on)),
-                    text_color: Some(Color::from(palette.background.on)),
-                    background: Some(iced::Background::Color(palette.background.base.into())),
-                    border_radius: cosmic.corner_radii.radius_xs.into(),
-                    border_width: 0.0,
-                    border_color: Color::TRANSPARENT,
-                }
-            }
+            Container::Background => container::Appearance {
+                icon_color: Some(Color::from(cosmic.background.on)),
+                text_color: Some(Color::from(cosmic.background.on)),
+                background: Some(iced::Background::Color(cosmic.background.base.into())),
+                border: Border {
+                    radius: cosmic.corner_radii.radius_xs.into(),
+                    ..Default::default()
+                },
+                shadow: Default::default(),
+            },
             Container::HeaderBar => {
-                let palette = self.cosmic();
-                let header_top = palette.background.base;
+                let header_top = cosmic.background.base;
 
                 container::Appearance {
-                    icon_color: Some(Color::from(palette.accent.base)),
-                    text_color: Some(Color::from(palette.background.on)),
+                    icon_color: Some(Color::from(cosmic.accent.base)),
+                    text_color: Some(Color::from(cosmic.background.on)),
                     background: Some(iced::Background::Color(header_top.into())),
-                    border_radius: BorderRadius::from([
-                        palette.corner_radii.radius_xs[0],
-                        palette.corner_radii.radius_xs[3],
-                        0.0,
-                        0.0,
-                    ]),
-                    border_width: 0.0,
-                    border_color: Color::TRANSPARENT,
+                    border: Border {
+                        radius: cosmic.corner_radii.radius_xs.into(),
+                        ..Default::default()
+                    },
+                    shadow: Default::default(),
                 }
             }
-            Container::Primary => {
-                let palette = self.cosmic();
-
-                container::Appearance {
-                    icon_color: Some(Color::from(palette.primary.on)),
-                    text_color: Some(Color::from(palette.primary.on)),
-                    background: Some(iced::Background::Color(palette.primary.base.into())),
-                    border_radius: cosmic.corner_radii.radius_xs.into(),
-                    border_width: 0.0,
-                    border_color: Color::TRANSPARENT,
-                }
-            }
-            Container::Secondary => {
-                let palette = self.cosmic();
-
-                container::Appearance {
-                    icon_color: Some(Color::from(palette.secondary.on)),
-                    text_color: Some(Color::from(palette.secondary.on)),
-                    background: Some(iced::Background::Color(palette.secondary.base.into())),
-                    border_radius: cosmic.corner_radii.radius_xs.into(),
-                    border_width: 0.0,
-                    border_color: Color::TRANSPARENT,
-                }
-            }
-
+            Container::Primary => container::Appearance {
+                icon_color: Some(Color::from(cosmic.primary.on)),
+                text_color: Some(Color::from(cosmic.primary.on)),
+                background: Some(iced::Background::Color(cosmic.primary.base.into())),
+                border: Border {
+                    radius: cosmic.corner_radii.radius_xs.into(),
+                    ..Default::default()
+                },
+                shadow: Default::default(),
+            },
+            Container::Secondary => container::Appearance {
+                icon_color: Some(Color::from(cosmic.secondary.on)),
+                text_color: Some(Color::from(cosmic.secondary.on)),
+                background: Some(iced::Background::Color(cosmic.secondary.base.into())),
+                border: Border {
+                    radius: cosmic.corner_radii.radius_xs.into(),
+                    ..Default::default()
+                },
+                shadow: Default::default(),
+            },
             Container::Dropdown => {
                 let theme = self.cosmic();
 
@@ -433,58 +437,63 @@ impl container::StyleSheet for Theme {
                     icon_color: None,
                     text_color: None,
                     background: Some(iced::Background::Color(theme.primary.base.into())),
-                    border_radius: theme.corner_radii.radius_xs.into(),
-                    border_width: 1.0,
-                    border_color: theme.bg_divider().into(),
+                    border: Border {
+                        radius: cosmic.corner_radii.radius_xs.into(),
+                        ..Default::default()
+                    },
+                    shadow: Default::default(),
                 }
             }
-
-            Container::Tooltip => {
-                let theme = self.cosmic();
-
-                container::Appearance {
-                    icon_color: None,
-                    text_color: None,
-                    background: Some(iced::Background::Color(theme.palette.neutral_2.into())),
-                    border_radius: theme.corner_radii.radius_l.into(),
-                    border_width: 0.0,
-                    border_color: Color::TRANSPARENT,
-                }
-            }
+            Container::Tooltip => container::Appearance {
+                icon_color: None,
+                text_color: None,
+                background: Some(iced::Background::Color(cosmic.palette.neutral_2.into())),
+                border: Border {
+                    radius: cosmic.corner_radii.radius_l.into(),
+                    ..Default::default()
+                },
+                shadow: Default::default(),
+            },
 
             Container::Card => {
-                let palette = self.cosmic();
+                let cosmic = self.cosmic();
 
                 match self.layer {
                     cosmic_theme::Layer::Background => container::Appearance {
-                        icon_color: Some(Color::from(palette.background.component.on)),
-                        text_color: Some(Color::from(palette.background.component.on)),
+                        icon_color: Some(Color::from(cosmic.background.component.on)),
+                        text_color: Some(Color::from(cosmic.background.component.on)),
                         background: Some(iced::Background::Color(
-                            palette.background.component.base.into(),
+                            cosmic.background.component.base.into(),
                         )),
-                        border_radius: cosmic.corner_radii.radius_s.into(),
-                        border_width: 0.0,
-                        border_color: Color::TRANSPARENT,
+                        border: Border {
+                            radius: cosmic.corner_radii.radius_s.into(),
+                            ..Default::default()
+                        },
+                        shadow: Default::default(),
                     },
                     cosmic_theme::Layer::Primary => container::Appearance {
-                        icon_color: Some(Color::from(palette.primary.component.on)),
-                        text_color: Some(Color::from(palette.primary.component.on)),
+                        icon_color: Some(Color::from(cosmic.primary.component.on)),
+                        text_color: Some(Color::from(cosmic.primary.component.on)),
                         background: Some(iced::Background::Color(
-                            palette.primary.component.base.into(),
+                            cosmic.primary.component.base.into(),
                         )),
-                        border_radius: cosmic.corner_radii.radius_s.into(),
-                        border_width: 0.0,
-                        border_color: Color::TRANSPARENT,
+                        border: Border {
+                            radius: cosmic.corner_radii.radius_s.into(),
+                            ..Default::default()
+                        },
+                        shadow: Default::default(),
                     },
                     cosmic_theme::Layer::Secondary => container::Appearance {
-                        icon_color: Some(Color::from(palette.secondary.component.on)),
-                        text_color: Some(Color::from(palette.secondary.component.on)),
+                        icon_color: Some(Color::from(cosmic.secondary.component.on)),
+                        text_color: Some(Color::from(cosmic.secondary.component.on)),
                         background: Some(iced::Background::Color(
-                            palette.secondary.component.base.into(),
+                            cosmic.secondary.component.base.into(),
                         )),
-                        border_radius: cosmic.corner_radii.radius_s.into(),
-                        border_width: 0.0,
-                        border_color: Color::TRANSPARENT,
+                        border: Border {
+                            radius: cosmic.corner_radii.radius_s.into(),
+                            ..Default::default()
+                        },
+                        shadow: Default::default(),
                     },
                 }
             }
@@ -581,9 +590,10 @@ impl menu::StyleSheet for Theme {
         menu::Appearance {
             text_color: cosmic.on_bg_color().into(),
             background: Background::Color(cosmic.background.base.into()),
-            border_width: 0.0,
-            border_radius: cosmic.corner_radii.radius_m.into(),
-            border_color: Color::TRANSPARENT,
+            border: Border {
+                radius: cosmic.corner_radii.radius_m.into(),
+                ..Default::default()
+            },
             selected_text_color: cosmic.accent.base.into(),
             selected_background: Background::Color(cosmic.background.component.hover.into()),
         }
@@ -603,9 +613,10 @@ impl pick_list::StyleSheet for Theme {
             text_color: cosmic.on_bg_color().into(),
             background: Color::TRANSPARENT.into(),
             placeholder_color: cosmic.on_bg_color().into(),
-            border_radius: cosmic.corner_radii.radius_m.into(),
-            border_width: 0.0,
-            border_color: Color::TRANSPARENT,
+            border: Border {
+                radius: cosmic.corner_radii.radius_m.into(),
+                ..Default::default()
+            },
             // icon_size: 0.7, // TODO: how to replace
             handle_color: cosmic.on_bg_color().into(),
         }
@@ -740,9 +751,11 @@ impl pane_grid::StyleSheet for Theme {
         let theme = self.cosmic();
         pane_grid::Appearance {
             background: Background::Color(theme.bg_color().into()),
-            border_width: 2.0,
-            border_color: theme.bg_divider().into(),
-            border_radius: theme.corner_radii.radius_0.into(),
+            border: Border {
+                radius: theme.corner_radii.radius_0.into(),
+                width: 2.0,
+                color: theme.bg_divider().into(),
+            },
         }
     }
 }
@@ -857,14 +870,16 @@ impl scrollable::StyleSheet for Theme {
         neutral_5.alpha = 0.7;
         let mut a = scrollable::Scrollbar {
             background: None,
-            border_radius: cosmic.corner_radii.radius_s.into(),
-            border_width: 0.0,
-            border_color: Color::TRANSPARENT,
+            border: Border {
+                radius: cosmic.corner_radii.radius_s.into(),
+                ..Default::default()
+            },
             scroller: scrollable::Scroller {
                 color: neutral_5.into(),
-                border_radius: cosmic.corner_radii.radius_s.into(),
-                border_width: 0.0,
-                border_color: Color::TRANSPARENT,
+                border: Border {
+                    radius: cosmic.corner_radii.radius_s.into(),
+                    ..Default::default()
+                },
             },
         };
 
@@ -889,14 +904,16 @@ impl scrollable::StyleSheet for Theme {
         }
         let mut a = scrollable::Scrollbar {
             background: None,
-            border_radius: cosmic.corner_radii.radius_s.into(),
-            border_width: 0.0,
-            border_color: Color::TRANSPARENT,
+            border: Border {
+                radius: cosmic.corner_radii.radius_s.into(),
+                ..Default::default()
+            },
             scroller: scrollable::Scroller {
                 color: neutral_5.into(),
-                border_radius: cosmic.corner_radii.radius_s.into(),
-                border_width: 0.0,
-                border_color: Color::TRANSPARENT,
+                border: Border {
+                    radius: cosmic.corner_radii.radius_s.into(),
+                    ..Default::default()
+                },
             },
         };
         if matches!(style, Scrollable::Permanent) {
@@ -933,6 +950,10 @@ impl svg::StyleSheet for Theme {
             Svg::Default => svg::Appearance::default(),
             Svg::Custom(appearance) => appearance(self),
         }
+    }
+
+    fn hovered(&self, style: &Self::Style) -> svg::Appearance {
+        self.appearance(style)
     }
 }
 
@@ -990,16 +1011,19 @@ impl text_input::StyleSheet for Theme {
         match style {
             TextInput::Default => text_input::Appearance {
                 background: Color::from(bg).into(),
-                border_radius: palette.corner_radii.radius_s.into(),
-                border_width: 1.0,
-                border_color: self.current_container().component.divider.into(),
+                border: Border {
+                    radius: palette.corner_radii.radius_s.into(),
+                    width: 1.0,
+                    color: self.current_container().component.divider.into(),
+                },
                 icon_color: self.current_container().on.into(),
             },
             TextInput::Search => text_input::Appearance {
                 background: Color::from(bg).into(),
-                border_radius: palette.corner_radii.radius_m.into(),
-                border_width: 0.0,
-                border_color: Color::TRANSPARENT,
+                border: Border {
+                    radius: palette.corner_radii.radius_m.into(),
+                    ..Default::default()
+                },
                 icon_color: self.current_container().on.into(),
             },
         }
@@ -1013,16 +1037,19 @@ impl text_input::StyleSheet for Theme {
         match style {
             TextInput::Default => text_input::Appearance {
                 background: Color::from(bg).into(),
-                border_radius: palette.corner_radii.radius_s.into(),
-                border_width: 1.0,
-                border_color: palette.accent.base.into(),
+                border: Border {
+                    radius: palette.corner_radii.radius_s.into(),
+                    width: 1.0,
+                    color: self.current_container().on.into(),
+                },
                 icon_color: self.current_container().on.into(),
             },
             TextInput::Search => text_input::Appearance {
                 background: Color::from(bg).into(),
-                border_radius: palette.corner_radii.radius_m.into(),
-                border_width: 0.0,
-                border_color: Color::TRANSPARENT,
+                border: Border {
+                    radius: palette.corner_radii.radius_m.into(),
+                    ..Default::default()
+                },
                 icon_color: self.current_container().on.into(),
             },
         }
@@ -1036,16 +1063,19 @@ impl text_input::StyleSheet for Theme {
         match style {
             TextInput::Default => text_input::Appearance {
                 background: Color::from(bg).into(),
-                border_radius: palette.corner_radii.radius_s.into(),
-                border_width: 1.0,
-                border_color: palette.accent.base.into(),
+                border: Border {
+                    radius: palette.corner_radii.radius_s.into(),
+                    width: 1.0,
+                    color: palette.accent.base.into(),
+                },
                 icon_color: self.current_container().on.into(),
             },
             TextInput::Search => text_input::Appearance {
                 background: Color::from(bg).into(),
-                border_radius: palette.corner_radii.radius_m.into(),
-                border_width: 0.0,
-                border_color: Color::TRANSPARENT,
+                border: Border {
+                    radius: palette.corner_radii.radius_m.into(),
+                    ..Default::default()
+                },
                 icon_color: self.current_container().on.into(),
             },
         }
@@ -1121,9 +1151,11 @@ impl iced_style::text_editor::StyleSheet for Theme {
         let cosmic = self.cosmic();
         iced_style::text_editor::Appearance {
             background: iced::Color::from(cosmic.bg_color()).into(),
-            border_radius: cosmic.corner_radii.radius_0.into(),
-            border_width: f32::from(cosmic.space_xxxs()),
-            border_color: iced::Color::from(cosmic.bg_divider()),
+            border: Border {
+                radius: cosmic.corner_radii.radius_0.into(),
+                width: f32::from(cosmic.space_xxxs()),
+                color: iced::Color::from(cosmic.bg_divider()),
+            },
         }
     }
 
@@ -1135,9 +1167,11 @@ impl iced_style::text_editor::StyleSheet for Theme {
         let cosmic = self.cosmic();
         iced_style::text_editor::Appearance {
             background: iced::Color::from(cosmic.bg_color()).into(),
-            border_radius: cosmic.corner_radii.radius_0.into(),
-            border_width: f32::from(cosmic.space_xxxs()),
-            border_color: iced::Color::from(cosmic.accent.base),
+            border: Border {
+                radius: cosmic.corner_radii.radius_0.into(),
+                width: f32::from(cosmic.space_xxxs()),
+                color: iced::Color::from(cosmic.accent.base),
+            },
         }
     }
 

@@ -18,7 +18,6 @@ pub use super::value::Value;
 use apply::Apply;
 use iced::Limits;
 use iced_core::event::{self, Event};
-use iced_core::keyboard;
 use iced_core::mouse::{self, click};
 use iced_core::overlay::Group;
 use iced_core::renderer::{self, Renderer as CoreRenderer};
@@ -30,6 +29,7 @@ use iced_core::widget::tree::{self, Tree};
 use iced_core::widget::Id;
 use iced_core::window;
 use iced_core::{alignment, Background};
+use iced_core::{keyboard, Border, Shadow};
 use iced_core::{layout, overlay};
 use iced_core::{
     Clipboard, Color, Element, Layout, Length, Padding, Pixels, Point, Rectangle, Shell, Size,
@@ -193,9 +193,9 @@ pub struct TextInput<'a, Message> {
     on_input: Option<Box<dyn Fn(String) -> Message + 'a>>,
     on_paste: Option<Box<dyn Fn(String) -> Message + 'a>>,
     on_submit: Option<Message>,
-    leading_icon: Option<Element<'a, Message, crate::Renderer>>,
-    trailing_icon: Option<Element<'a, Message, crate::Renderer>>,
-    style: <<crate::Renderer as iced_core::Renderer>::Theme as StyleSheet>::Style,
+    leading_icon: Option<Element<'a, Message, crate::Theme, crate::Renderer>>,
+    trailing_icon: Option<Element<'a, Message, crate::Theme, crate::Renderer>>,
+    style: <crate::Theme as StyleSheet>::Style,
     on_create_dnd_source: Option<Box<dyn Fn(State) -> Message + 'a>>,
     on_dnd_command_produced: Option<Box<dyn Fn(DnDCommand) -> Message + 'a>>,
     surface_ids: Option<(window::Id, window::Id)>,
@@ -322,13 +322,19 @@ where
     }
 
     /// Sets the start [`Icon`] of the [`TextInput`].
-    pub fn leading_icon(mut self, icon: Element<'a, Message, crate::Renderer>) -> Self {
+    pub fn leading_icon(
+        mut self,
+        icon: Element<'a, Message, crate::Theme, crate::Renderer>,
+    ) -> Self {
         self.leading_icon = Some(icon);
         self
     }
 
     /// Sets the end [`Icon`] of the [`TextInput`].
-    pub fn trailing_icon(mut self, icon: Element<'a, Message, crate::Renderer>) -> Self {
+    pub fn trailing_icon(
+        mut self,
+        icon: Element<'a, Message, crate::Theme, crate::Renderer>,
+    ) -> Self {
         self.trailing_icon = Some(icon);
         self
     }
@@ -352,10 +358,7 @@ where
     }
 
     /// Sets the style of the [`TextInput`].
-    pub fn style(
-        mut self,
-        style: impl Into<<<crate::Renderer as iced_core::Renderer>::Theme as StyleSheet>::Style>,
-    ) -> Self {
+    pub fn style(mut self, style: impl Into<<crate::Theme as StyleSheet>::Style>) -> Self {
         self.style = style.into();
         self
     }
@@ -369,7 +372,7 @@ where
         &self,
         tree: &Tree,
         renderer: &mut crate::Renderer,
-        theme: &<crate::Renderer as iced_core::Renderer>::Theme,
+        theme: &crate::Theme,
         layout: Layout<'_>,
         cursor_position: mouse::Cursor,
         value: Option<&Value>,
@@ -467,7 +470,7 @@ where
     }
 }
 
-impl<'a, Message> Widget<Message, crate::Renderer> for TextInput<'a, Message>
+impl<'a, Message> Widget<Message, crate::Theme, crate::Renderer> for TextInput<'a, Message>
 where
     Message: Clone + 'static,
 {
@@ -512,12 +515,11 @@ where
             .collect()
     }
 
-    fn width(&self) -> Length {
-        self.width
-    }
-
-    fn height(&self) -> Length {
-        Length::Shrink
+    fn size(&self) -> Size<Length> {
+        Size {
+            width: self.width,
+            height: Length::Shrink,
+        }
     }
 
     fn layout(
@@ -552,9 +554,10 @@ where
                 shaping: text::Shaping::Advanced,
             });
 
-            let Size { width, height } = limits.resolve(value_paragraph.min_bounds());
+            let Size { width, height } =
+                limits.resolve(Length::Shrink, Length::Shrink, value_paragraph.min_bounds());
 
-            let size = limits.resolve(Size::new(width, height));
+            let size = limits.resolve(width, height, Size::new(width, height));
             layout::Node::with_children(size, vec![layout::Node::new(size)])
         } else {
             let res = layout(
@@ -616,7 +619,7 @@ where
         tree: &'b mut Tree,
         layout: Layout<'_>,
         renderer: &crate::Renderer,
-    ) -> Option<overlay::Element<'b, Message, crate::Renderer>> {
+    ) -> Option<overlay::Element<'b, Message, crate::Theme, crate::Renderer>> {
         let mut layout_ = Vec::with_capacity(2);
         if self.leading_icon.is_some() {
             let mut children = self.text_layout(layout).children();
@@ -750,7 +753,7 @@ where
         &self,
         tree: &Tree,
         renderer: &mut crate::Renderer,
-        theme: &<crate::Renderer as iced_core::Renderer>::Theme,
+        theme: &crate::Theme,
         style: &renderer::Style,
         layout: Layout<'_>,
         cursor_position: mouse::Cursor,
@@ -801,7 +804,7 @@ where
             let leading_icon_layout = children.next().unwrap();
 
             if cursor_position.is_over(leading_icon_layout.bounds()) {
-                return leading_icon.mouse_interaction(
+                return leading_icon.as_widget().mouse_interaction(
                     tree,
                     layout,
                     cursor_position,
@@ -824,7 +827,7 @@ where
             let trailing_icon_layout = children.next().unwrap();
 
             if cursor_position.is_over(trailing_icon_layout.bounds()) {
-                return trailing_icon.mouse_interaction(
+                return trailing_icon.as_widget().mouse_interaction(
                     tree,
                     layout,
                     cursor_position,
@@ -839,11 +842,14 @@ where
     }
 }
 
-impl<'a, Message> From<TextInput<'a, Message>> for Element<'a, Message, crate::Renderer>
+impl<'a, Message> From<TextInput<'a, Message>>
+    for Element<'a, Message, crate::Theme, crate::Renderer>
 where
     Message: 'static + Clone,
 {
-    fn from(text_input: TextInput<'a, Message>) -> Element<'a, Message, crate::Renderer> {
+    fn from(
+        text_input: TextInput<'a, Message>,
+    ) -> Element<'a, Message, crate::Theme, crate::Renderer> {
         Element::new(text_input)
     }
 }
@@ -886,8 +892,8 @@ pub fn layout<Message>(
     width: Length,
     padding: Padding,
     size: Option<f32>,
-    leading_icon: Option<&Element<'_, Message, crate::Renderer>>,
-    trailing_icon: Option<&Element<'_, Message, crate::Renderer>>,
+    leading_icon: Option<&Element<'_, Message, crate::Theme, crate::Renderer>>,
+    trailing_icon: Option<&Element<'_, Message, crate::Theme, crate::Renderer>>,
     line_height: text::LineHeight,
     label: Option<&str>,
     helper_text: Option<&str>,
@@ -901,7 +907,7 @@ pub fn layout<Message>(
     let mut nodes = Vec::with_capacity(3);
 
     let text_pos = if let Some(label) = label {
-        let text_bounds = limits.resolve(Size::ZERO);
+        let text_bounds = limits.resolve(Length::Shrink, Length::Shrink, Size::ZERO);
         let state = tree.state.downcast_mut::<State>();
         let label_paragraph = &mut state.label;
         label_paragraph.update(Text {
@@ -931,17 +937,16 @@ pub fn layout<Message>(
         // TODO configurable icon spacing, maybe via appearance
         let limits_copy = limits;
 
-        let limits = limits.pad(padding);
+        let limits = limits.shrink(padding);
         let icon_spacing = 8.0;
         let mut c_i = 0;
         let (leading_icon_width, mut leading_icon) =
             if let Some((icon, tree)) = leading_icon.zip(children.get_mut(c_i)) {
+                let size = icon.as_widget().size();
                 let icon_node = icon.as_widget().layout(
                     tree,
                     renderer,
-                    &Limits::NONE
-                        .width(icon.as_widget().width())
-                        .height(icon.as_widget().height()),
+                    &Limits::NONE.width(size.width).height(size.height),
                 );
                 text_input_height = text_input_height.max(icon_node.bounds().height);
                 c_i += 1;
@@ -952,12 +957,11 @@ pub fn layout<Message>(
 
         let (trailing_icon_width, mut trailing_icon) =
             if let Some((icon, tree)) = trailing_icon.zip(children.get_mut(c_i)) {
-                let icon_node = icon.layout(
+                let size = icon.as_widget().size();
+                let icon_node = icon.as_widget().layout(
                     tree,
                     renderer,
-                    &Limits::NONE
-                        .width(icon.as_widget().width())
-                        .height(icon.as_widget().height()),
+                    &Limits::NONE.width(size.width).height(size.height),
                 );
                 text_input_height = text_input_height.max(icon_node.bounds().height);
                 (icon_node.bounds().width + icon_spacing, Some(icon_node))
@@ -966,13 +970,12 @@ pub fn layout<Message>(
             };
         let text_limits = limits.width(width).height(text_size * 1.2);
 
-        let text_bounds = text_limits.resolve(Size::ZERO);
+        let text_bounds = text_limits.resolve(Length::Shrink, Length::Shrink, Size::ZERO);
 
-        let mut text_node = layout::Node::new(
+        let text_node = layout::Node::new(
             text_bounds - Size::new(leading_icon_width + trailing_icon_width, 0.0),
-        );
-
-        text_node.move_to(Point::new(
+        )
+        .move_to(Point::new(
             padding.left + leading_icon_width,
             padding.top + (text_size.mul_add(-1.2, text_input_height) / 2.0).max(0.0),
         ));
@@ -981,32 +984,38 @@ pub fn layout<Message>(
         let text_node_bounds = text_node.bounds();
         node_list.push(text_node);
 
-        if let Some(mut leading_icon) = leading_icon.take() {
-            leading_icon.move_to(Point::new(
+        if let Some(leading_icon) = leading_icon.take() {
+            node_list.push(leading_icon.clone().move_to(Point::new(
                 padding.left,
                 padding.top + ((text_input_height - leading_icon.bounds().height) / 2.0).max(0.0),
-            ));
-            node_list.push(leading_icon);
+            )));
         }
-        if let Some(mut trailing_icon) = trailing_icon.take() {
-            trailing_icon.move_to(Point::new(
+        if let Some(trailing_icon) = trailing_icon.take() {
+            node_list.push(trailing_icon.clone().move_to(Point::new(
                 text_node_bounds.x + text_node_bounds.width + f32::from(spacing),
                 padding.top + ((text_input_height - trailing_icon.bounds().height) / 2.0).max(0.0),
-            ));
-            node_list.push(trailing_icon);
+            )));
         }
 
         let text_input_size = Size::new(
             text_node_bounds.x + text_node_bounds.width + trailing_icon_width,
             text_input_height,
         )
-        .pad(padding);
+        .expand(Size {
+            height: -padding.top - padding.bottom,
+            width: -padding.left - padding.right,
+        })
+        .expand(padding);
 
         let input_limits = limits_copy
             .width(width)
             .height(text_input_height.max(text_input_size.height))
             .min_width(text_input_size.width);
-        let input_bounds = input_limits.resolve(text_input_size);
+        let input_bounds = input_limits.resolve(
+            width,
+            text_input_height.max(text_input_size.height),
+            text_input_size,
+        );
         let input_node = layout::Node::with_children(input_bounds, node_list).translate(text_pos);
         let y_pos = input_node.bounds().y + input_node.bounds().height + f32::from(spacing);
         nodes.push(input_node);
@@ -1016,14 +1025,13 @@ pub fn layout<Message>(
         let limits = limits
             .width(width)
             .height(text_input_height + padding.vertical())
-            .pad(padding);
-        let text_bounds = limits.resolve(Size::ZERO);
+            .shrink(padding);
+        let text_bounds = limits.resolve(Length::Shrink, Length::Shrink, Size::ZERO);
 
-        let mut text = layout::Node::new(text_bounds);
-        text.move_to(Point::new(padding.left, padding.top));
+        let text = layout::Node::new(text_bounds).move_to(Point::new(padding.left, padding.top));
 
-        let node =
-            layout::Node::with_children(text_bounds.pad(padding), vec![text]).translate(text_pos);
+        let node = layout::Node::with_children(text_bounds.expand(padding), vec![text])
+            .translate(text_pos);
         let y_pos = node.bounds().y + node.bounds().height + f32::from(spacing);
         nodes.push(node);
 
@@ -1033,9 +1041,9 @@ pub fn layout<Message>(
     if let Some(helper_text) = helper_text {
         let limits = limits
             .width(width)
-            .pad(padding)
+            .shrink(padding)
             .height(helper_text_size * 1.2);
-        let text_bounds = limits.resolve(Size::ZERO);
+        let text_bounds = limits.resolve(Length::Shrink, Length::Shrink, Size::ZERO);
 
         let state = tree.state.downcast_mut::<State>();
         let helper_text_paragraph = &mut state.label;
@@ -1067,7 +1075,7 @@ pub fn layout<Message>(
         .height(size.height)
         .min_width(size.width);
 
-    layout::Node::with_children(limits.resolve(size), nodes)
+    layout::Node::with_children(limits.resolve(width, size.height, size), nodes)
 }
 
 /// Processes an [`Event`] and updates the [`State`] of a [`TextInput`]
@@ -1302,7 +1310,11 @@ where
                 return event::Status::Captured;
             }
         }
-        Event::Keyboard(keyboard::Event::CharacterReceived(c)) => {
+        Event::Keyboard(keyboard::Event::KeyReleased {
+            key: keyboard::Key::Character(c),
+            modifiers,
+            ..
+        }) => {
             let state = state();
 
             if let Some(focus) = &mut state.is_focused {
@@ -1312,11 +1324,11 @@ where
 
                 if state.is_pasting.is_none()
                     && !state.keyboard_modifiers.command()
-                    && !c.is_control()
+                    && !modifiers.control()
                 {
                     let mut editor = Editor::new(unsecured_value, &mut state.cursor);
 
-                    editor.insert(c);
+                    editor.insert(c.chars().next().unwrap_or_default());
                     let contents = editor.contents();
                     let unsecured_value = Value::new(&contents);
                     let message = (on_input)(contents);
@@ -1335,7 +1347,7 @@ where
                 }
             }
         }
-        Event::Keyboard(keyboard::Event::KeyPressed { key_code, .. }) => {
+        Event::Keyboard(keyboard::Event::KeyPressed { key, .. }) => {
             let state = state();
 
             if let Some(focus) = &mut state.is_focused {
@@ -1346,13 +1358,13 @@ where
                 let modifiers = state.keyboard_modifiers;
                 focus.updated_at = Instant::now();
 
-                match key_code {
-                    keyboard::KeyCode::Enter | keyboard::KeyCode::NumpadEnter => {
+                match key {
+                    keyboard::Key::Named(keyboard::key::Named::Enter) => {
                         if let Some(on_submit) = on_submit.clone() {
                             shell.publish(on_submit);
                         }
                     }
-                    keyboard::KeyCode::Backspace => {
+                    keyboard::Key::Named(keyboard::key::Named::Backspace) => {
                         if platform::is_jump_modifier_pressed(modifiers)
                             && state.cursor.selection(value).is_none()
                         {
@@ -1379,7 +1391,7 @@ where
                         };
                         update_cache(state, &value);
                     }
-                    keyboard::KeyCode::Delete => {
+                    keyboard::Key::Named(keyboard::key::Named::Delete) => {
                         if platform::is_jump_modifier_pressed(modifiers)
                             && state.cursor.selection(value).is_none()
                         {
@@ -1405,7 +1417,7 @@ where
 
                         update_cache(state, &value);
                     }
-                    keyboard::KeyCode::Left => {
+                    keyboard::Key::Named(keyboard::key::Named::ArrowLeft) => {
                         if platform::is_jump_modifier_pressed(modifiers) && !is_secure {
                             if modifiers.shift() {
                                 state.cursor.select_left_by_words(value);
@@ -1418,7 +1430,7 @@ where
                             state.cursor.move_left(value);
                         }
                     }
-                    keyboard::KeyCode::Right => {
+                    keyboard::Key::Named(keyboard::key::Named::ArrowRight) => {
                         if platform::is_jump_modifier_pressed(modifiers) && !is_secure {
                             if modifiers.shift() {
                                 state.cursor.select_right_by_words(value);
@@ -1431,14 +1443,14 @@ where
                             state.cursor.move_right(value);
                         }
                     }
-                    keyboard::KeyCode::Home => {
+                    keyboard::Key::Named(keyboard::key::Named::Home) => {
                         if modifiers.shift() {
                             state.cursor.select_range(state.cursor.start(value), 0);
                         } else {
                             state.cursor.move_to(0);
                         }
                     }
-                    keyboard::KeyCode::End => {
+                    keyboard::Key::Named(keyboard::key::Named::End) => {
                         if modifiers.shift() {
                             state
                                 .cursor
@@ -1447,7 +1459,9 @@ where
                             state.cursor.move_to(value.len());
                         }
                     }
-                    keyboard::KeyCode::C if state.keyboard_modifiers.command() => {
+                    keyboard::Key::Character(ref c)
+                        if "c" == c && state.keyboard_modifiers.command() =>
+                    {
                         if !is_secure {
                             if let Some((start, end)) = state.cursor.selection(value) {
                                 clipboard.write(value.select(start, end).to_string());
@@ -1456,7 +1470,9 @@ where
                     }
                     // XXX if we want to allow cutting of secure text, we need to
                     // update the cache and decide which value to cut
-                    keyboard::KeyCode::X if state.keyboard_modifiers.command() => {
+                    keyboard::Key::Character(c)
+                        if "x" == c && state.keyboard_modifiers.command() =>
+                    {
                         if !is_secure {
                             if let Some((start, end)) = state.cursor.selection(value) {
                                 clipboard.write(value.select(start, end).to_string());
@@ -1470,7 +1486,7 @@ where
                             shell.publish(message);
                         }
                     }
-                    keyboard::KeyCode::V => {
+                    keyboard::Key::Character(c) if "v" == c => {
                         if state.keyboard_modifiers.command() {
                             let content = if let Some(content) = state.is_pasting.take() {
                                 content
@@ -1511,17 +1527,21 @@ where
                             state.is_pasting = None;
                         }
                     }
-                    keyboard::KeyCode::A if state.keyboard_modifiers.command() => {
+                    keyboard::Key::Character(c)
+                        if "a" == c && state.keyboard_modifiers.command() =>
+                    {
                         state.cursor.select_all(value);
                     }
-                    keyboard::KeyCode::Escape => {
+                    keyboard::Key::Named(keyboard::key::Named::Escape) => {
                         state.is_focused = None;
                         state.dragging_state = None;
                         state.is_pasting = None;
 
                         state.keyboard_modifiers = keyboard::Modifiers::default();
                     }
-                    keyboard::KeyCode::Tab | keyboard::KeyCode::Up | keyboard::KeyCode::Down => {
+                    keyboard::Key::Named(keyboard::key::Named::Tab)
+                    | keyboard::Key::Named(keyboard::key::Named::ArrowUp)
+                    | keyboard::Key::Named(keyboard::key::Named::ArrowDown) => {
                         return event::Status::Ignored;
                     }
                     _ => {}
@@ -1530,15 +1550,17 @@ where
                 return event::Status::Captured;
             }
         }
-        Event::Keyboard(keyboard::Event::KeyReleased { key_code, .. }) => {
+        Event::Keyboard(keyboard::Event::KeyReleased { key, .. }) => {
             let state = state();
 
             if state.is_focused.is_some() {
-                match key_code {
-                    keyboard::KeyCode::V => {
+                match key {
+                    keyboard::Key::Character(c) if "v" == c => {
                         state.is_pasting = None;
                     }
-                    keyboard::KeyCode::Tab | keyboard::KeyCode::Up | keyboard::KeyCode::Down => {
+                    keyboard::Key::Named(keyboard::key::Named::Tab)
+                    | keyboard::Key::Named(keyboard::key::Named::ArrowUp)
+                    | keyboard::Key::Named(keyboard::key::Named::ArrowDown) => {
                         return event::Status::Ignored;
                     }
                     _ => {}
@@ -1832,8 +1854,8 @@ pub fn draw<'a, Message>(
     font: Option<<crate::Renderer as iced_core::text::Renderer>::Font>,
     is_disabled: bool,
     is_secure: bool,
-    icon: Option<&Element<'a, Message, crate::Renderer>>,
-    trailing_icon: Option<&Element<'a, Message, crate::Renderer>>,
+    icon: Option<&Element<'a, Message, crate::Theme, crate::Renderer>>,
+    trailing_icon: Option<&Element<'a, Message, crate::Theme, crate::Renderer>>,
     style: &<crate::Theme as StyleSheet>::Style,
     dnd_icon: bool,
     line_height: text::LineHeight,
@@ -1902,18 +1924,32 @@ pub fn draw<'a, Message>(
         renderer.fill_quad(
             renderer::Quad {
                 bounds,
-                border_radius: appearance.border_radius,
-                border_width: 0.0,
-                border_color: Color::TRANSPARENT,
+                border: Border {
+                    width: appearance.border_width,
+                    color: appearance.border_color,
+                    radius: appearance.border_radius,
+                },
+                shadow: Shadow {
+                    offset: Vector::new(0.0, 1.0),
+                    color: Color::TRANSPARENT,
+                    blur_radius: 0.0,
+                },
             },
             appearance.background,
         );
         renderer.fill_quad(
             renderer::Quad {
                 bounds: offset_bounds,
-                border_radius: appearance.border_radius,
-                border_width: appearance.border_width,
-                border_color: appearance.border_color,
+                border: Border {
+                    width: appearance.border_width,
+                    color: appearance.border_color,
+                    radius: appearance.border_radius,
+                },
+                shadow: Shadow {
+                    offset: Vector::new(0.0, 1.0),
+                    color: Color::TRANSPARENT,
+                    blur_radius: 0.0,
+                },
             },
             Background::Color(Color::TRANSPARENT),
         );
@@ -1921,9 +1957,16 @@ pub fn draw<'a, Message>(
         renderer.fill_quad(
             renderer::Quad {
                 bounds,
-                border_radius: appearance.border_radius,
-                border_width: appearance.border_width,
-                border_color: appearance.border_color,
+                border: Border {
+                    width: appearance.border_width,
+                    color: appearance.border_color,
+                    radius: appearance.border_radius,
+                },
+                shadow: Shadow {
+                    offset: Vector::new(0.0, 1.0),
+                    color: Color::TRANSPARENT,
+                    blur_radius: 0.0,
+                },
             },
             appearance.background,
         );
@@ -1999,9 +2042,16 @@ pub fn draw<'a, Message>(
                                         width: 1.0,
                                         height: text_bounds.height,
                                     },
-                                    border_radius: radius_0,
-                                    border_width: 0.0,
-                                    border_color: Color::TRANSPARENT,
+                                    border: Border {
+                                        width: 0.0,
+                                        color: Color::TRANSPARENT,
+                                        radius: radius_0,
+                                    },
+                                    shadow: Shadow {
+                                        offset: Vector::ZERO,
+                                        color: Color::TRANSPARENT,
+                                        blur_radius: 0.0,
+                                    },
                                 },
                                 appearance.text_color,
                             )),
@@ -2037,9 +2087,16 @@ pub fn draw<'a, Message>(
                                     width,
                                     height: text_bounds.height,
                                 },
-                                border_radius: radius_0,
-                                border_width: 0.0,
-                                border_color: Color::TRANSPARENT,
+                                border: Border {
+                                    width: 0.0,
+                                    color: Color::TRANSPARENT,
+                                    radius: radius_0,
+                                },
+                                shadow: Shadow {
+                                    offset: Vector::ZERO,
+                                    color: Color::TRANSPARENT,
+                                    blur_radius: 0.0,
+                                },
                             },
                             appearance.selected_fill,
                         )),

@@ -23,7 +23,7 @@ pub fn rectangle_tracker<'a, Message, I, T>(
 ) -> RectangleTrackingContainer<'a, Message, crate::Renderer, I>
 where
     I: Hash + Copy + Send + Sync + Debug + 'a,
-    T: Into<Element<'a, Message, crate::Renderer>>,
+    T: Into<Element<'a, Message, crate::Theme, crate::Renderer>>,
 {
     RectangleTrackingContainer::new(content, id, tx)
 }
@@ -53,7 +53,7 @@ where
     ) -> RectangleTrackingContainer<'a, Message, crate::Renderer, I>
     where
         I: 'a,
-        T: Into<Element<'a, Message, crate::Renderer>>,
+        T: Into<Element<'a, Message, crate::Theme, crate::Renderer>>,
     {
         RectangleTrackingContainer::new(content, id, self.tx.clone())
     }
@@ -66,24 +66,22 @@ where
 pub struct RectangleTrackingContainer<'a, Message, Renderer, I>
 where
     Renderer: iced_core::Renderer,
-    Renderer::Theme: StyleSheet,
 {
     tx: UnboundedSender<(I, Rectangle)>,
     id: I,
-    container: Container<'a, Message, Renderer>,
+    container: Container<'a, Message, crate::Theme, Renderer>,
     ignore_bounds: bool,
 }
 
 impl<'a, Message, Renderer, I> RectangleTrackingContainer<'a, Message, Renderer, I>
 where
     Renderer: iced_core::Renderer,
-    Renderer::Theme: StyleSheet,
     I: 'a + Hash + Copy + Send + Sync + Debug,
 {
     /// Creates an empty [`Container`].
     pub(crate) fn new<T>(content: T, id: I, tx: UnboundedSender<(I, Rectangle)>) -> Self
     where
-        T: Into<Element<'a, Message, Renderer>>,
+        T: Into<Element<'a, Message, crate::Theme, Renderer>>,
     {
         RectangleTrackingContainer {
             id,
@@ -162,7 +160,7 @@ where
 
     /// Sets the style of the [`Container`].
     #[must_use]
-    pub fn style(mut self, style: impl Into<<Renderer::Theme as StyleSheet>::Style>) -> Self {
+    pub fn style(mut self, style: impl Into<<crate::Theme as StyleSheet>::Style>) -> Self {
         self.container = self.container.style(style);
         self
     }
@@ -176,11 +174,10 @@ where
     }
 }
 
-impl<'a, Message, Renderer, I> Widget<Message, Renderer>
+impl<'a, Message, Renderer, I> Widget<Message, crate::Theme, Renderer>
     for RectangleTrackingContainer<'a, Message, Renderer, I>
 where
     Renderer: iced_core::Renderer,
-    Renderer::Theme: StyleSheet,
     I: 'a + Hash + Copy + Send + Sync + Debug,
 {
     fn children(&self) -> Vec<Tree> {
@@ -195,12 +192,8 @@ where
         self.container.diff(tree);
     }
 
-    fn width(&self) -> Length {
-        Widget::width(&self.container)
-    }
-
-    fn height(&self) -> Length {
-        Widget::height(&self.container)
+    fn size(&self) -> iced_core::Size<Length> {
+        self.container.size()
     }
 
     fn layout(
@@ -271,7 +264,7 @@ where
         &self,
         tree: &Tree,
         renderer: &mut Renderer,
-        theme: &Renderer::Theme,
+        theme: &crate::Theme,
         renderer_style: &renderer::Style,
         layout: Layout<'_>,
         cursor_position: mouse::Cursor,
@@ -295,22 +288,21 @@ where
         tree: &'b mut Tree,
         layout: Layout<'_>,
         renderer: &Renderer,
-    ) -> Option<overlay::Element<'b, Message, Renderer>> {
+    ) -> Option<overlay::Element<'b, Message, crate::Theme, Renderer>> {
         self.container.overlay(tree, layout, renderer)
     }
 }
 
 impl<'a, Message, Renderer, I> From<RectangleTrackingContainer<'a, Message, Renderer, I>>
-    for Element<'a, Message, Renderer>
+    for Element<'a, Message, crate::Theme, Renderer>
 where
     Message: 'a,
     Renderer: 'a + iced_core::Renderer,
-    Renderer::Theme: StyleSheet,
     I: 'a + Hash + Copy + Send + Sync + Debug,
 {
     fn from(
         column: RectangleTrackingContainer<'a, Message, Renderer, I>,
-    ) -> Element<'a, Message, Renderer> {
+    ) -> Element<'a, Message, crate::Theme, Renderer> {
         Element::new(column)
     }
 }

@@ -14,7 +14,7 @@ use iced_core::mouse::ScrollDelta;
 use iced_core::text::{LineHeight, Paragraph, Renderer as TextRenderer, Shaping};
 use iced_core::widget::{self, operation, tree};
 use iced_core::{layout, renderer, widget::Tree, Clipboard, Layout, Shell, Widget};
-use iced_core::{Point, Renderer as IcedRenderer, Text};
+use iced_core::{Border, Point, Renderer as IcedRenderer, Shadow, Text};
 use slotmap::{Key, SecondaryMap};
 use std::marker::PhantomData;
 use std::time::{Duration, Instant};
@@ -374,7 +374,7 @@ where
     }
 }
 
-impl<'a, Variant, SelectionMode, Message> Widget<Message, Renderer>
+impl<'a, Variant, SelectionMode, Message> Widget<Message, crate::Theme, Renderer>
     for SegmentedButton<'a, Variant, SelectionMode, Message>
 where
     Self: SegmentedVariant,
@@ -423,12 +423,8 @@ where
         }
     }
 
-    fn width(&self) -> Length {
-        self.width
-    }
-
-    fn height(&self) -> Length {
-        self.height
+    fn size(&self) -> Size<Length> {
+        Size::new(self.width, self.height)
     }
 
     fn layout(
@@ -601,7 +597,7 @@ where
 
         if state.focused {
             if let Event::Keyboard(keyboard::Event::KeyPressed {
-                key_code: keyboard::KeyCode::Tab,
+                key: keyboard::Key::Named(keyboard::key::Named::Tab),
                 modifiers,
                 ..
             }) = event
@@ -615,7 +611,7 @@ where
 
             if let Some(on_activate) = self.on_activate.as_ref() {
                 if let Event::Keyboard(keyboard::Event::KeyReleased {
-                    key_code: keyboard::KeyCode::Enter,
+                    key: keyboard::Key::Named(keyboard::key::Named::Enter),
                     ..
                 }) = event
                 {
@@ -719,7 +715,6 @@ where
         cursor: mouse::Cursor,
         viewport: &iced::Rectangle,
     ) {
-        let cosmic_theme = theme.cosmic();
         let state = tree.state.downcast_ref::<LocalState>();
         let appearance = Self::variant_appearance(theme, &self.style);
         let bounds = layout.bounds();
@@ -730,9 +725,11 @@ where
             renderer.fill_quad(
                 renderer::Quad {
                     bounds,
-                    border_radius: appearance.border_radius,
-                    border_width: 0.0,
-                    border_color: Color::TRANSPARENT,
+                    border: Border {
+                        radius: appearance.border_radius,
+                        ..Default::default()
+                    },
+                    shadow: Shadow::default(),
                 },
                 background,
             );
@@ -758,9 +755,11 @@ where
                             width: f32::from(self.button_height),
                             height: bounds.height,
                         },
-                        border_radius: cosmic_theme.radius_s().into(),
-                        border_width: 0.0,
-                        border_color: Color::TRANSPARENT,
+                        border: Border {
+                            radius: appearance.focus.first.border_radius,
+                            ..Default::default()
+                        },
+                        shadow: Shadow::default(),
                     },
                     background_appearance
                         .background
@@ -808,9 +807,11 @@ where
                             width: f32::from(self.button_height),
                             height: bounds.height,
                         },
-                        border_radius: cosmic_theme.radius_s().into(),
-                        border_width: 0.0,
-                        border_color: Color::TRANSPARENT,
+                        border: Border {
+                            radius: appearance.focus.last.border_radius,
+                            ..Default::default()
+                        },
+                        shadow: Shadow::default(),
                     },
                     background_appearance
                         .background
@@ -871,9 +872,11 @@ where
                 renderer.fill_quad(
                     renderer::Quad {
                         bounds,
-                        border_radius: button_appearance.border_radius,
-                        border_width: 0.0,
-                        border_color: Color::TRANSPARENT,
+                        border: Border {
+                            radius: button_appearance.border_radius,
+                            ..Default::default()
+                        },
+                        shadow: Shadow::default(),
                     },
                     status_appearance
                         .background
@@ -891,9 +894,11 @@ where
                 renderer.fill_quad(
                     renderer::Quad {
                         bounds,
-                        border_radius: rad_0.into(),
-                        border_width: 0.0,
-                        border_color: Color::TRANSPARENT,
+                        border: Border {
+                            radius: rad_0.into(),
+                            ..Default::default()
+                        },
+                        shadow: Shadow::default(),
                     },
                     background,
                 );
@@ -1012,7 +1017,7 @@ where
         _tree: &'b mut Tree,
         _layout: iced_core::Layout<'_>,
         _renderer: &Renderer,
-    ) -> Option<iced_core::overlay::Element<'b, Message, Renderer>> {
+    ) -> Option<iced_core::overlay::Element<'b, Message, crate::Theme, Renderer>> {
         None
     }
 }
@@ -1134,18 +1139,17 @@ fn draw_icon<Message: 'static>(
     bounds: Rectangle,
     icon: Icon,
 ) {
-    let mut layout_node = layout::Node::new(Size {
+    let layout_node = layout::Node::new(Size {
         width: bounds.width,
         height: bounds.width,
-    });
-
-    layout_node.move_to(Point {
+    })
+    .move_to(Point {
         x: bounds.x,
         y: bounds.y,
     });
 
-    Widget::<Message, Renderer>::draw(
-        Element::<Message>::from(icon).as_widget(),
+    Widget::<Message, crate::Theme, Renderer>::draw(
+        Element::<Message>::from(icon.clone()).as_widget(),
         &Tree::empty(),
         renderer,
         theme,

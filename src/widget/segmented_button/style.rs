@@ -1,13 +1,13 @@
 // Copyright 2022 System76 <info@system76.com>
 // SPDX-License-Identifier: MPL-2.0
 
-use iced_core::{Background, BorderRadius, Color};
+use iced_core::{border::Radius, Background, Color};
 
 /// Appearance of the segmented button.
 #[derive(Default, Clone, Copy)]
 pub struct Appearance {
     pub background: Option<Background>,
-    pub border_radius: BorderRadius,
+    pub border_radius: Radius,
     pub border_bottom: Option<(f32, Color)>,
     pub border_end: Option<(f32, Color)>,
     pub border_start: Option<(f32, Color)>,
@@ -21,7 +21,7 @@ pub struct Appearance {
 /// Appearance of an item in the segmented button.
 #[derive(Default, Clone, Copy)]
 pub struct ItemAppearance {
-    pub border_radius: BorderRadius,
+    pub border_radius: Radius,
     pub border_bottom: Option<(f32, Color)>,
     pub border_end: Option<(f32, Color)>,
     pub border_start: Option<(f32, Color)>,

@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: MPL-2.0 AND MIT
 
 //! Change the appearance of menus.
-use iced_core::{Background, BorderRadius, Color};
+use iced_core::{border::Radius, Background, Color};
 
 /// The appearance of a menu.
 #[derive(Debug, Clone, Copy)]
@@ -15,7 +15,7 @@ pub struct Appearance {
     /// Menu border width
     pub border_width: f32,
     /// Menu border radius
-    pub border_radius: BorderRadius,
+    pub border_radius: Radius,
     /// Menu border color
     pub border_color: Color,
     /// Text color when hovered

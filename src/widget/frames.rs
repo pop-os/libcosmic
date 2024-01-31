@@ -268,7 +268,7 @@ impl<'a> AnimatedImage<'a> {
     }
 }
 
-impl<'a, Message, Renderer> Widget<Message, Renderer> for AnimatedImage<'a>
+impl<'a, Message, Renderer> Widget<Message, crate::Theme, Renderer> for AnimatedImage<'a>
 where
     Renderer: ImageRenderer<Handle = Handle>,
 {
@@ -355,7 +355,7 @@ where
         &self,
         tree: &Tree,
         renderer: &mut Renderer,
-        _theme: &Renderer::Theme,
+        _theme: &crate::Theme,
         _style: &renderer::Style,
         layout: Layout<'_>,
         _cursor_position: Cursor,
@@ -397,11 +397,11 @@ where
     }
 }
 
-impl<'a, Message, Renderer> From<AnimatedImage<'a>> for Element<'a, Message, Renderer>
+impl<'a, Message, Renderer> From<AnimatedImage<'a>> for Element<'a, Message, crate::Theme, Renderer>
 where
     Renderer: ImageRenderer<Handle = Handle> + 'a,
 {
-    fn from(gif: AnimatedImage<'a>) -> Element<'a, Message, Renderer> {
+    fn from(gif: AnimatedImage<'a>) -> Element<'a, Message, crate::Theme, Renderer> {
         Element::new(gif)
     }
 }

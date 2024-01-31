@@ -17,8 +17,8 @@ use iced_core::gradient::{ColorStop, Linear};
 use iced_core::renderer::Quad;
 use iced_core::widget::{tree, Tree};
 use iced_core::{
-    layout, mouse, renderer, Background, Clipboard, Color, Layout, Length, Radians, Rectangle,
-    Renderer, Shell, Vector, Widget,
+    layout, mouse, renderer, Background, Border, Clipboard, Color, Layout, Length, Radians,
+    Rectangle, Renderer, Shadow, Shell, Size, Vector, Widget,
 };
 
 use iced_style::slider::{HandleShape, RailBackground};
@@ -414,7 +414,7 @@ where
                                     )
                                     .into()
                                 })
-                                .collect(),
+                                .collect::<Vec<_>>(),
                         )
                         .spacing(spacing.space_xxs),
                     )
@@ -487,7 +487,7 @@ pub struct ColorPicker<'a, Message> {
     must_clear_cache: Rc<AtomicBool>,
 }
 
-impl<'a, Message> Widget<Message, crate::Renderer> for ColorPicker<'a, Message>
+impl<'a, Message> Widget<Message, crate::Theme, crate::Renderer> for ColorPicker<'a, Message>
 where
     Message: Clone + 'static,
 {
@@ -507,14 +507,6 @@ where
         vec![Tree::new(&self.inner)]
     }
 
-    fn width(&self) -> Length {
-        self.width
-    }
-
-    fn height(&self) -> Length {
-        Length::Shrink
-    }
-
     fn layout(
         &self,
         tree: &mut Tree,
@@ -531,7 +523,7 @@ where
         &self,
         tree: &Tree,
         renderer: &mut crate::Renderer,
-        theme: &<crate::Renderer as iced_core::Renderer>::Theme,
+        theme: &crate::Theme,
         style: &renderer::Style,
         layout: Layout<'_>,
         cursor: mouse::Cursor,
@@ -611,9 +603,12 @@ where
                     width: handle_radius.mul_add(2.0, 1.0),
                     height: handle_radius.mul_add(2.0, 1.0),
                 },
-                border_radius: (1.0 + handle_radius).into(),
-                border_width: 1.0,
-                border_color: t.palette.neutral_5.into(),
+                border: Border {
+                    width: 1.0,
+                    color: t.palette.neutral_5.into(),
+                    radius: (1.0 + handle_radius).into(),
+                },
+                shadow: Shadow::default(),
             },
             Color::TRANSPARENT,
         );
@@ -625,9 +620,12 @@ where
                     width: handle_radius * 2.0,
                     height: handle_radius * 2.0,
                 },
-                border_radius: handle_radius.into(),
-                border_width: 1.0,
-                border_color: t.palette.neutral_10.into(),
+                border: Border {
+                    width: 1.0,
+                    color: t.palette.neutral_10.into(),
+                    radius: handle_radius.into(),
+                },
+                shadow: Shadow::default(),
             },
             Color::TRANSPARENT,
         );
@@ -638,7 +636,7 @@ where
         state: &'b mut Tree,
         layout: Layout<'_>,
         renderer: &crate::Renderer,
-    ) -> Option<iced_core::overlay::Element<'b, Message, crate::Renderer>> {
+    ) -> Option<iced_core::overlay::Element<'b, Message, crate::Theme, crate::Renderer>> {
         self.inner
             .as_widget_mut()
             .overlay(&mut state.children[0], layout, renderer)
@@ -722,6 +720,10 @@ where
             }
             _ => event::Status::Ignored,
         }
+    }
+
+    fn size(&self) -> Size<Length> {
+        Size::new(self.width, Length::Shrink)
     }
 }
 
@@ -867,11 +869,14 @@ pub fn color_button<'a, Message: 'static>(
     })
 }
 
-impl<'a, Message> From<ColorPicker<'a, Message>> for iced::Element<'a, Message, crate::Renderer>
+impl<'a, Message> From<ColorPicker<'a, Message>>
+    for iced::Element<'a, Message, crate::Theme, crate::Renderer>
 where
     Message: 'static + Clone,
 {
-    fn from(picker: ColorPicker<'a, Message>) -> iced::Element<'a, Message, crate::Renderer> {
+    fn from(
+        picker: ColorPicker<'a, Message>,
+    ) -> iced::Element<'a, Message, crate::Theme, crate::Renderer> {
         Element::new(picker)
     }
 }

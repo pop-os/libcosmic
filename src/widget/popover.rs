@@ -17,24 +17,24 @@ use std::cell::RefCell;
 pub use iced_style::container::{Appearance, StyleSheet};
 
 pub fn popover<'a, Message, Renderer>(
-    content: impl Into<Element<'a, Message, Renderer>>,
-    popup: impl Into<Element<'a, Message, Renderer>>,
+    content: impl Into<Element<'a, Message, crate::Theme, Renderer>>,
+    popup: impl Into<Element<'a, Message, crate::Theme, Renderer>>,
 ) -> Popover<'a, Message, Renderer> {
     Popover::new(content, popup)
 }
 
 pub struct Popover<'a, Message, Renderer> {
-    content: Element<'a, Message, Renderer>,
+    content: Element<'a, Message, crate::Theme, Renderer>,
     // XXX Avoid refcell; improve iced overlay API?
-    popup: RefCell<Element<'a, Message, Renderer>>,
+    popup: RefCell<Element<'a, Message, crate::Theme, Renderer>>,
     position: Option<Point>,
     show_popup: bool,
 }
 
 impl<'a, Message, Renderer> Popover<'a, Message, Renderer> {
     pub fn new(
-        content: impl Into<Element<'a, Message, Renderer>>,
-        popup: impl Into<Element<'a, Message, Renderer>>,
+        content: impl Into<Element<'a, Message, crate::Theme, Renderer>>,
+        popup: impl Into<Element<'a, Message, crate::Theme, Renderer>>,
     ) -> Self {
         Self {
             content: content.into(),
@@ -57,10 +57,10 @@ impl<'a, Message, Renderer> Popover<'a, Message, Renderer> {
     // TODO More options for positioning similar to GdkPopup, xdg_popup
 }
 
-impl<'a, Message, Renderer> Widget<Message, Renderer> for Popover<'a, Message, Renderer>
+impl<'a, Message, Renderer> Widget<Message, crate::Theme, Renderer>
+    for Popover<'a, Message, Renderer>
 where
     Renderer: iced_core::Renderer,
-    Renderer::Theme: StyleSheet,
 {
     fn children(&self) -> Vec<Tree> {
         vec![Tree::new(&self.content), Tree::new(&*self.popup.borrow())]
@@ -70,12 +70,8 @@ where
         tree.diff_children(&mut [&mut self.content, &mut self.popup.borrow_mut()]);
     }
 
-    fn width(&self) -> Length {
-        self.content.as_widget().width()
-    }
-
-    fn height(&self) -> Length {
-        self.content.as_widget().height()
+    fn size(&self) -> Size<Length> {
+        self.content.as_widget().size()
     }
 
     fn layout(
@@ -144,7 +140,7 @@ where
         &self,
         tree: &Tree,
         renderer: &mut Renderer,
-        theme: &Renderer::Theme,
+        theme: &crate::Theme,
         renderer_style: &renderer::Style,
         layout: Layout<'_>,
         cursor_position: mouse::Cursor,
@@ -166,7 +162,7 @@ where
         tree: &'b mut Tree,
         layout: Layout<'_>,
         _renderer: &Renderer,
-    ) -> Option<overlay::Element<'b, Message, Renderer>> {
+    ) -> Option<overlay::Element<'b, Message, crate::Theme, Renderer>> {
         if !self.show_popup {
             return None;
         }
@@ -198,11 +194,11 @@ where
     }
 }
 
-impl<'a, Message, Renderer> From<Popover<'a, Message, Renderer>> for Element<'a, Message, Renderer>
+impl<'a, Message, Renderer> From<Popover<'a, Message, Renderer>>
+    for Element<'a, Message, crate::Theme, Renderer>
 where
     Message: 'static,
     Renderer: iced_core::Renderer + 'static,
-    Renderer::Theme: StyleSheet,
 {
     fn from(popover: Popover<'a, Message, Renderer>) -> Self {
         Self::new(popover)
@@ -211,11 +207,11 @@ where
 
 pub struct Overlay<'a, 'b, Message, Renderer> {
     tree: &'a mut Tree,
-    content: &'a RefCell<Element<'b, Message, Renderer>>,
+    content: &'a RefCell<Element<'b, Message, crate::Theme, Renderer>>,
     centered: bool,
 }
 
-impl<'a, 'b, Message, Renderer> overlay::Overlay<Message, Renderer>
+impl<'a, 'b, Message, Renderer> overlay::Overlay<Message, crate::Theme, Renderer>
     for Overlay<'a, 'b, Message, Renderer>
 where
     Renderer: iced_core::Renderer,
@@ -228,7 +224,7 @@ where
         _translation: iced::Vector,
     ) -> layout::Node {
         let limits = layout::Limits::new(Size::UNIT, bounds);
-        let mut node = self
+        let node = self
             .content
             .borrow()
             .as_widget()
@@ -245,9 +241,7 @@ where
                 position.y = (position.y - size.height).clamp(0.0, bounds.height - size.height);
             }
         }
-        node.move_to(position);
-
-        node
+        node.move_to(position)
     }
 
     fn operate(
@@ -302,7 +296,7 @@ where
     fn draw(
         &self,
         renderer: &mut Renderer,
-        theme: &Renderer::Theme,
+        theme: &crate::Theme,
         style: &renderer::Style,
         layout: Layout<'_>,
         cursor_position: mouse::Cursor,

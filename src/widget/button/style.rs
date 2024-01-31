@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: MPL-2.0
 
 //! Change the apperance of a button.
-use iced_core::{Background, BorderRadius, Color, Vector};
+use iced_core::{border::Radius, Background, Color, Vector};
 
 use crate::theme::THEME;
 
@@ -17,7 +17,7 @@ pub struct Appearance {
     pub background: Option<Background>,
 
     /// The border radius of the button.
-    pub border_radius: BorderRadius,
+    pub border_radius: Radius,
 
     /// The border width of the button.
     pub border_width: f32,
@@ -39,13 +39,13 @@ pub struct Appearance {
 }
 
 impl Appearance {
-    // TODO: `BorderRadius` is not `const fn` compatible.
+    // TODO: `Radius` is not `const fn` compatible.
     pub fn new() -> Self {
         let rad_0 = THEME.with(|t| t.borrow().cosmic().corner_radii.radius_0);
         Self {
             shadow_offset: Vector::new(0.0, 0.0),
             background: None,
-            border_radius: BorderRadius::from(rad_0),
+            border_radius: Radius::from(rad_0),
             border_width: 0.0,
             border_color: Color::TRANSPARENT,
             outline_width: 0.0,
