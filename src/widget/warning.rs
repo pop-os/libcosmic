@@ -5,6 +5,7 @@ use super::icon;
 use crate::{theme, widget, Element, Renderer, Theme};
 use apply::Apply;
 use iced::{alignment, Alignment, Background, Color, Length};
+use iced_core::{Border, Shadow};
 use std::borrow::Cow;
 
 #[must_use]
@@ -29,7 +30,7 @@ impl<'a, Message: 'static + Clone> Warning<'a, Message> {
     }
 
     /// A custom button that has the desired default spacing and padding.
-    pub fn into_widget(self) -> widget::Container<'a, Message, Renderer> {
+    pub fn into_widget(self) -> widget::Container<'a, Message, crate::Theme, Renderer> {
         let label = widget::container(crate::widget::text(self.message)).width(Length::Fill);
 
         let close_button = icon::from_name("window-close-symbolic")
@@ -62,8 +63,15 @@ pub fn warning_container(theme: &Theme) -> widget::container::Appearance {
         icon_color: Some(theme.cosmic().warning.on.into()),
         text_color: Some(theme.cosmic().warning.on.into()),
         background: Some(Background::Color(theme.cosmic().warning_color().into())),
-        border_radius: cosmic.corner_radii.radius_0.into(),
-        border_width: 0.0,
-        border_color: Color::TRANSPARENT,
+        border: Border {
+            color: Color::TRANSPARENT,
+            width: 1.0,
+            radius: cosmic.corner_radii.radius_0.into(),
+        },
+        shadow: Shadow {
+            color: Color::TRANSPARENT,
+            offset: iced::Vector::new(0.0, 0.0),
+            blur_radius: 0.0,
+        },
     }
 }

@@ -3,12 +3,9 @@
 
 //! Subscribe to common application keyboard shortcuts.
 
-use iced::{
-    event,
-    keyboard::{self, KeyCode},
-    mouse, Command, Event, Subscription,
-};
+use iced::{event, keyboard, mouse, Command, Event, Subscription};
 use iced_core::{
+    keyboard::key::Named,
     widget::{operation, Id, Operation},
     Rectangle,
 };
@@ -32,10 +29,11 @@ pub fn subscription() -> Subscription<Message> {
 
         match event {
             Event::Keyboard(keyboard::Event::KeyPressed {
-                key_code,
+                key: keyboard::Key::Named(key),
                 modifiers,
-            }) => match key_code {
-                KeyCode::Tab => {
+                ..
+            }) => match key {
+                Named::Tab => {
                     return Some(if modifiers.shift() {
                         Message::FocusPrevious
                     } else {
@@ -43,24 +41,23 @@ pub fn subscription() -> Subscription<Message> {
                     });
                 }
 
-                KeyCode::Escape => {
+                Named::Escape => {
                     return Some(Message::Escape);
                 }
 
-                KeyCode::F11 => {
+                Named::F11 => {
                     return Some(Message::Fullscreen);
-                }
-
-                KeyCode::F => {
-                    return if modifiers.control() {
-                        Some(Message::Search)
-                    } else {
-                        None
-                    };
                 }
 
                 _ => (),
             },
+            Event::Keyboard(keyboard::Event::KeyPressed {
+                key: keyboard::Key::Character(c),
+                modifiers,
+                ..
+            }) if c == "f" && modifiers.control() => {
+                return Some(Message::Search);
+            }
 
             Event::Mouse(mouse::Event::ButtonPressed { .. }) => {
                 return Some(Message::Unfocus);

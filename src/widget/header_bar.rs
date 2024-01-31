@@ -5,8 +5,10 @@ use crate::{ext::CollectionWidget, widget, Element};
 use apply::Apply;
 use derive_setters::Setters;
 use iced::{window, Length};
-use iced_core::{renderer::Quad, widget::tree, Background, Color, Renderer, Widget};
-use std::{borrow::Cow, process::Child};
+use iced_core::{
+    renderer::Quad, widget::tree, Background, Renderer, Widget,
+};
+use std::{borrow::Cow};
 
 #[must_use]
 pub fn header_bar<'a, Message>() -> HeaderBar<'a, Message> {
@@ -106,19 +108,15 @@ pub struct HeaderBarWidget<'a, Message> {
     window_id: Option<iced::window::Id>,
 }
 
-impl<'a, Message: Clone + 'static> Widget<Message, crate::Renderer>
+impl<'a, Message: Clone + 'static> Widget<Message, crate::Theme, crate::Renderer>
     for HeaderBarWidget<'a, Message>
 {
     fn children(&self) -> Vec<tree::Tree> {
         vec![tree::Tree::new(&self.header_bar_inner)]
     }
 
-    fn width(&self) -> Length {
-        self.header_bar_inner.width()
-    }
-
-    fn height(&self) -> Length {
-        self.header_bar_inner.height()
+    fn size(&self) -> iced_core::Size<Length> {
+        self.header_bar_inner.as_widget().size()
     }
 
     fn tag(&self) -> tree::Tag {
@@ -156,7 +154,7 @@ impl<'a, Message: Clone + 'static> Widget<Message, crate::Renderer>
         &self,
         tree: &tree::Tree,
         renderer: &mut crate::Renderer,
-        theme: &<crate::Renderer as iced_core::Renderer>::Theme,
+        theme: &crate::Theme,
         style: &iced_core::renderer::Style,
         layout: iced_core::Layout<'_>,
         cursor: iced_core::mouse::Cursor,
@@ -189,9 +187,8 @@ impl<'a, Message: Clone + 'static> Widget<Message, crate::Renderer>
             renderer.fill_quad(
                 Quad {
                     bounds: layout.bounds(),
-                    border_radius: header_bar_appearance.border_radius,
-                    border_width: 0.0,
-                    border_color: Color::TRANSPARENT,
+                    border: header_bar_appearance.border,
+                    shadow: header_bar_appearance.shadow,
                 },
                 Background::Color(neutral_0.into()),
             );
@@ -271,7 +268,7 @@ impl<'a, Message: Clone + 'static> Widget<Message, crate::Renderer>
         state: &'b mut tree::Tree,
         layout: iced_core::Layout<'_>,
         renderer: &crate::Renderer,
-    ) -> Option<iced_core::overlay::Element<'b, Message, crate::Renderer>> {
+    ) -> Option<iced_core::overlay::Element<'b, Message, crate::Theme, crate::Renderer>> {
         let child_tree = &mut state.children[0];
         let child_layout = layout.children().next().unwrap();
         self.header_bar_inner

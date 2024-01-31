@@ -41,7 +41,9 @@ impl<'a, Message> FlexRow<'a, Message> {
     }
 }
 
-impl<'a, Message: 'static + Clone> Widget<Message, Renderer> for FlexRow<'a, Message> {
+impl<'a, Message: 'static + Clone> Widget<Message, crate::Theme, Renderer>
+    for FlexRow<'a, Message>
+{
     fn children(&self) -> Vec<Tree> {
         self.children.iter().map(Tree::new).collect()
     }
@@ -50,12 +52,8 @@ impl<'a, Message: 'static + Clone> Widget<Message, Renderer> for FlexRow<'a, Mes
         tree.diff_children(self.children.as_mut_slice());
     }
 
-    fn width(&self) -> Length {
-        self.width
-    }
-
-    fn height(&self) -> Length {
-        Length::Shrink
+    fn size(&self) -> iced_core::Size<Length> {
+        iced_core::Size::new(self.width, Length::Shrink)
     }
 
     fn layout(
@@ -64,10 +62,11 @@ impl<'a, Message: 'static + Clone> Widget<Message, Renderer> for FlexRow<'a, Mes
         renderer: &Renderer,
         limits: &layout::Limits,
     ) -> layout::Node {
+        let size = self.size();
         let limits = limits
             .max_width(self.max_width)
-            .width(self.width())
-            .height(self.height());
+            .width(size.width)
+            .height(size.height);
 
         super::layout::resolve(
             renderer,
@@ -178,7 +177,7 @@ impl<'a, Message: 'static + Clone> Widget<Message, Renderer> for FlexRow<'a, Mes
         tree: &'b mut Tree,
         layout: Layout<'_>,
         renderer: &Renderer,
-    ) -> Option<overlay::Element<'b, Message, Renderer>> {
+    ) -> Option<overlay::Element<'b, Message, crate::Theme, Renderer>> {
         overlay::from_children(&mut self.children, tree, layout, renderer)
     }
 

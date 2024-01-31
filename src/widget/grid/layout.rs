@@ -43,7 +43,8 @@ pub fn resolve<Message>(
 
         nodes.push(child_node);
 
-        let (width, justify_self) = match child_widget.width() {
+        let c_size = child_widget.size();
+        let (width, justify_self) = match c_size.width {
             Length::Fill | Length::FillPortion(_) => (Dimension::Auto, Some(AlignItems::Stretch)),
             _ => (length(size.width), None),
         };
@@ -62,7 +63,7 @@ pub fn resolve<Message>(
             },
             size: taffy::geometry::Size {
                 width,
-                height: match child_widget.height() {
+                height: match c_size.height {
                     Length::Fill | Length::FillPortion(_) => Dimension::Auto,
                     _ => length(size.height),
                 },
@@ -165,7 +166,8 @@ pub fn resolve<Message>(
     {
         if let Ok(leaf_layout) = taffy.layout(leaf) {
             let child_widget = child.as_widget();
-            match child_widget.width() {
+            let c_size = child_widget.size();
+            match c_size.width {
                 Length::Fill | Length::FillPortion(_) => {
                     *node =
                         child_widget.layout(tree, renderer, &limits.width(leaf_layout.size.width));
@@ -173,10 +175,10 @@ pub fn resolve<Message>(
                 _ => (),
             }
 
-            node.move_to(Point {
+            *node = node.clone().move_to(Point {
                 x: leaf_layout.location.x,
                 y: leaf_layout.location.y,
-            });
+            })
         }
     }
 
@@ -185,5 +187,5 @@ pub fn resolve<Message>(
         height: grid_layout.size.height,
     };
 
-    Node::with_children(grid_size.pad(padding), nodes)
+    Node::with_children(grid_size.expand(padding), nodes)
 }

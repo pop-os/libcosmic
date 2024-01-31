@@ -18,7 +18,7 @@ pub struct MenuTree<'a, Message, Renderer = crate::Renderer> {
     pub(super) index: usize,
 
     /// The item of the menu tree
-    pub(super) item: Element<'a, Message, Renderer>,
+    pub(super) item: Element<'a, Message, crate::Theme, Renderer>,
     /// The children of the menu tree
     pub(super) children: Vec<MenuTree<'a, Message, Renderer>>,
     /// The width of the menu tree
@@ -31,7 +31,7 @@ where
     Renderer: renderer::Renderer,
 {
     /// Create a new menu tree from a widget
-    pub fn new(item: impl Into<Element<'a, Message, Renderer>>) -> Self {
+    pub fn new(item: impl Into<Element<'a, Message, crate::Theme, Renderer>>) -> Self {
         Self {
             index: 0,
             item: item.into(),
@@ -43,7 +43,7 @@ where
 
     /// Create a menu tree from a widget and a vector of sub trees
     pub fn with_children(
-        item: impl Into<Element<'a, Message, Renderer>>,
+        item: impl Into<Element<'a, Message, crate::Theme, Renderer>>,
         children: Vec<impl Into<MenuTree<'a, Message, Renderer>>>,
     ) -> Self {
         Self {
@@ -120,11 +120,12 @@ where
     }
 }
 
-impl<'a, Message, Renderer> From<Element<'a, Message, Renderer>> for MenuTree<'a, Message, Renderer>
+impl<'a, Message, Renderer> From<Element<'a, Message, crate::Theme, Renderer>>
+    for MenuTree<'a, Message, Renderer>
 where
     Renderer: renderer::Renderer,
 {
-    fn from(value: Element<'a, Message, Renderer>) -> Self {
+    fn from(value: Element<'a, Message, crate::Theme, Renderer>) -> Self {
         Self::new(value)
     }
 }

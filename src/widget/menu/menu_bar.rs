@@ -9,13 +9,14 @@ use super::{
 };
 use crate::style::menu_bar::StyleSheet;
 
+use iced_core::Border;
 use iced_widget::core::{
     event,
     layout::{Limits, Node},
     mouse::{self, Cursor},
     overlay, renderer, touch,
     widget::{tree, Tree},
-    Alignment, Clipboard, Color, Element, Layout, Length, Padding, Rectangle, Shell, Widget,
+    Alignment, Clipboard, Element, Layout, Length, Padding, Rectangle, Shell, Widget,
 };
 
 pub(super) struct MenuBarState {
@@ -61,7 +62,6 @@ impl Default for MenuBarState {
 pub struct MenuBar<'a, Message, Renderer = crate::Renderer>
 where
     Renderer: renderer::Renderer,
-    Renderer::Theme: StyleSheet,
 {
     width: Length,
     height: Length,
@@ -75,13 +75,12 @@ where
     item_height: ItemHeight,
     path_highlight: Option<PathHighlight>,
     menu_roots: Vec<MenuTree<'a, Message, Renderer>>,
-    style: <Renderer::Theme as StyleSheet>::Style,
+    style: <crate::Theme as StyleSheet>::Style,
 }
 
 impl<'a, Message, Renderer> MenuBar<'a, Message, Renderer>
 where
     Renderer: renderer::Renderer,
-    Renderer::Theme: StyleSheet,
 {
     /// Creates a new [`MenuBar`] with the given menu roots
     #[must_use]
@@ -106,7 +105,7 @@ where
             item_height: ItemHeight::Uniform(30),
             path_highlight: Some(PathHighlight::MenuActive),
             menu_roots,
-            style: <Renderer::Theme as StyleSheet>::Style::default(),
+            style: <crate::Theme as StyleSheet>::Style::default(),
         }
     }
 
@@ -186,7 +185,7 @@ where
 
     /// Sets the style of the menu bar and its menus
     #[must_use]
-    pub fn style(mut self, style: impl Into<<Renderer::Theme as StyleSheet>::Style>) -> Self {
+    pub fn style(mut self, style: impl Into<<crate::Theme as StyleSheet>::Style>) -> Self {
         self.style = style.into();
         self
     }
@@ -198,17 +197,13 @@ where
         self
     }
 }
-impl<'a, Message, Renderer> Widget<Message, Renderer> for MenuBar<'a, Message, Renderer>
+impl<'a, Message, Renderer> Widget<Message, crate::Theme, Renderer>
+    for MenuBar<'a, Message, Renderer>
 where
     Renderer: renderer::Renderer,
-    Renderer::Theme: StyleSheet,
 {
-    fn width(&self) -> Length {
-        self.width
-    }
-
-    fn height(&self) -> Length {
-        self.height
+    fn size(&self) -> iced_core::Size<Length> {
+        iced_core::Size::new(self.width, self.height)
     }
 
     #[allow(invalid_reference_casting)]
@@ -226,8 +221,10 @@ where
                     .iter()
                     .map(|mt| {
                         let widget = mt.item.as_widget();
-                        let widget_ptr = widget as *const dyn Widget<Message, Renderer>;
-                        let widget_ptr_mut = widget_ptr as *mut dyn Widget<Message, Renderer>;
+                        let widget_ptr =
+                            widget as *const dyn Widget<Message, crate::Theme, Renderer>;
+                        let widget_ptr_mut =
+                            widget_ptr as *mut dyn Widget<Message, crate::Theme, Renderer>;
                         //TODO: find a way to diff_children without unsafe code
                         unsafe { &mut *widget_ptr_mut }
                     })
@@ -356,7 +353,7 @@ where
         &self,
         tree: &Tree,
         renderer: &mut Renderer,
-        theme: &<Renderer as renderer::Renderer>::Theme,
+        theme: &crate::Theme,
         style: &renderer::Style,
         layout: Layout<'_>,
         view_cursor: Cursor,
@@ -381,9 +378,11 @@ where
                     .bounds();
                 let path_quad = renderer::Quad {
                     bounds: active_bounds,
-                    border_radius: styling.bar_border_radius.into(),
-                    border_width: 0.0,
-                    border_color: Color::TRANSPARENT,
+                    border: Border {
+                        radius: styling.bar_border_radius.into(),
+                        ..Default::default()
+                    },
+                    shadow: Default::default(),
                 };
                 let path_color = styling.path;
                 renderer.fill_quad(path_quad, path_color);
@@ -412,7 +411,7 @@ where
         tree: &'b mut Tree,
         layout: Layout<'_>,
         _renderer: &Renderer,
-    ) -> Option<overlay::Element<'b, Message, Renderer>> {
+    ) -> Option<overlay::Element<'b, Message, crate::Theme, Renderer>> {
         let state = tree.state.downcast_ref::<MenuBarState>();
         if !state.open {
             return None;
@@ -437,11 +436,11 @@ where
         )
     }
 }
-impl<'a, Message, Renderer> From<MenuBar<'a, Message, Renderer>> for Element<'a, Message, Renderer>
+impl<'a, Message, Renderer> From<MenuBar<'a, Message, Renderer>>
+    for Element<'a, Message, crate::Theme, Renderer>
 where
     Message: 'a,
     Renderer: 'a + renderer::Renderer,
-    Renderer::Theme: StyleSheet,
 {
     fn from(value: MenuBar<'a, Message, Renderer>) -> Self {
         Self::new(value)

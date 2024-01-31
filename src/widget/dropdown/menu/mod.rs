@@ -13,8 +13,8 @@ use iced_core::layout::{self, Layout};
 use iced_core::text::{self, Text};
 use iced_core::widget::Tree;
 use iced_core::{
-    alignment, mouse, overlay, renderer, svg, touch, Clipboard, Color, Element, Length, Padding,
-    Pixels, Point, Rectangle, Renderer, Shell, Size, Vector, Widget,
+    alignment, mouse, overlay, renderer, svg, touch, Border, Clipboard, Element, Length, Padding,
+    Pixels, Point, Rectangle, Renderer, Shadow, Shell, Size, Vector, Widget,
 };
 use iced_widget::scrollable::Scrollable;
 
@@ -98,7 +98,7 @@ impl<'a, S: AsRef<str>, Message: 'a> Menu<'a, S, Message> {
         self,
         position: Point,
         target_height: f32,
-    ) -> overlay::Element<'a, Message, crate::Renderer> {
+    ) -> overlay::Element<'a, Message, crate::Theme, crate::Renderer> {
         overlay::Element::new(position, Box::new(Overlay::new(self, target_height)))
     }
 }
@@ -127,7 +127,7 @@ impl Default for State {
 
 struct Overlay<'a, Message> {
     state: &'a mut Tree,
-    container: Container<'a, Message, crate::Renderer>,
+    container: Container<'a, Message, crate::Theme, crate::Renderer>,
     width: f32,
     target_height: f32,
     style: (),
@@ -174,7 +174,7 @@ impl<'a, Message: 'a> Overlay<'a, Message> {
             .padding(padding)
             .style(crate::style::Container::Dropdown);
 
-        state.tree.diff(&mut container as &mut dyn Widget<_, _>);
+        state.tree.diff(&mut container as &mut dyn Widget<_, _, _>);
 
         Self {
             state: &mut state.tree,
@@ -186,7 +186,9 @@ impl<'a, Message: 'a> Overlay<'a, Message> {
     }
 }
 
-impl<'a, Message> iced_core::Overlay<Message, crate::Renderer> for Overlay<'a, Message> {
+impl<'a, Message> iced_core::Overlay<Message, crate::Theme, crate::Renderer>
+    for Overlay<'a, Message>
+{
     fn layout(
         &mut self,
         renderer: &crate::Renderer,
@@ -210,15 +212,13 @@ impl<'a, Message> iced_core::Overlay<Message, crate::Renderer> for Overlay<'a, M
         )
         .width(self.width);
 
-        let mut node = self.container.layout(self.state, renderer, &limits);
+        let node = self.container.layout(self.state, renderer, &limits);
 
-        node.move_to(if space_below > space_above {
+        node.clone().move_to(if space_below > space_above {
             position + Vector::new(0.0, self.target_height)
         } else {
             position - Vector::new(0.0, node.size().height)
-        });
-
-        node
+        })
     }
 
     fn on_event(
@@ -262,9 +262,12 @@ impl<'a, Message> iced_core::Overlay<Message, crate::Renderer> for Overlay<'a, M
         renderer.fill_quad(
             renderer::Quad {
                 bounds,
-                border_color: appearance.border_color,
-                border_width: appearance.border_width,
-                border_radius: appearance.border_radius,
+                border: Border {
+                    width: appearance.border_width,
+                    color: appearance.border_color,
+                    radius: appearance.border_radius,
+                },
+                shadow: Shadow::default(),
             },
             appearance.background,
         );
@@ -286,13 +289,11 @@ struct List<'a, S: AsRef<str>, Message> {
     selected_icon: Option<svg::Handle>,
 }
 
-impl<'a, S: AsRef<str>, Message> Widget<Message, crate::Renderer> for List<'a, S, Message> {
-    fn width(&self) -> Length {
-        Length::Fill
-    }
-
-    fn height(&self) -> Length {
-        Length::Shrink
+impl<'a, S: AsRef<str>, Message> Widget<Message, crate::Theme, crate::Renderer>
+    for List<'a, S, Message>
+{
+    fn size(&self) -> Size<Length> {
+        Size::new(Length::Fill, Length::Shrink)
     }
 
     fn layout(
@@ -316,7 +317,7 @@ impl<'a, S: AsRef<str>, Message> Widget<Message, crate::Renderer> for List<'a, S
                 (f32::from(text_line_height) + self.padding.vertical()) * self.options.len() as f32,
             );
 
-            limits.resolve(intrinsic)
+            limits.resolve(Length::Fill, Length::Shrink, intrinsic)
         };
 
         layout::Node::new(size)
@@ -450,9 +451,11 @@ impl<'a, S: AsRef<str>, Message> Widget<Message, crate::Renderer> for List<'a, S
                             width: item_width,
                             ..bounds
                         },
-                        border_color: Color::TRANSPARENT,
-                        border_width: 0.0,
-                        border_radius: appearance.border_radius,
+                        border: Border {
+                            radius: appearance.border_radius,
+                            ..Default::default()
+                        },
+                        shadow: Shadow::default(),
                     },
                     appearance.selected_background,
                 );
@@ -483,9 +486,11 @@ impl<'a, S: AsRef<str>, Message> Widget<Message, crate::Renderer> for List<'a, S
                             width: item_width,
                             ..bounds
                         },
-                        border_color: Color::TRANSPARENT,
-                        border_width: 0.0,
-                        border_radius: appearance.border_radius,
+                        border: Border {
+                            radius: appearance.border_radius,
+                            ..Default::default()
+                        },
+                        shadow: Shadow::default(),
                     },
                     appearance.hovered_background,
                 );
@@ -522,7 +527,7 @@ impl<'a, S: AsRef<str>, Message> Widget<Message, crate::Renderer> for List<'a, S
 }
 
 impl<'a, S: AsRef<str>, Message: 'a> From<List<'a, S, Message>>
-    for Element<'a, Message, crate::Renderer>
+    for Element<'a, Message, crate::Theme, crate::Renderer>
 {
     fn from(list: List<'a, S, Message>) -> Self {
         Element::new(list)

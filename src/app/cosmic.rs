@@ -22,7 +22,6 @@ use iced::window;
 #[cfg(not(any(feature = "multi-window", feature = "wayland")))]
 use iced::Application as IcedApplication;
 use iced_futures::event::listen_raw;
-use iced_futures::futures::executor::block_on;
 #[cfg(not(feature = "wayland"))]
 use iced_runtime::command::Action;
 #[cfg(not(feature = "wayland"))]
@@ -86,6 +85,7 @@ where
     fn new((mut core, flags): Self::Flags) -> (Self, iced::Command<Self::Message>) {
         #[cfg(feature = "dbus-config")]
         {
+            use iced_futures::futures::executor::block_on;
             core.settings_daemon = block_on(cosmic_config::dbus::settings_daemon_proxy()).ok();
         }
 

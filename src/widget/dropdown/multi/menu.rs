@@ -9,8 +9,8 @@ use iced_core::layout::{self, Layout};
 use iced_core::text::{self, Text};
 use iced_core::widget::Tree;
 use iced_core::{
-    alignment, mouse, overlay, renderer, svg, touch, Clipboard, Color, Element, Length, Padding,
-    Pixels, Point, Rectangle, Renderer, Shell, Size, Vector, Widget,
+    alignment, mouse, overlay, renderer, svg, touch, Border, Clipboard, Element, Length, Padding,
+    Pixels, Point, Rectangle, Renderer, Shadow, Shell, Size, Vector, Widget,
 };
 use iced_widget::scrollable::Scrollable;
 
@@ -98,7 +98,7 @@ where
         self,
         position: Point,
         target_height: f32,
-    ) -> overlay::Element<'a, Message, crate::Renderer> {
+    ) -> overlay::Element<'a, Message, crate::Theme, crate::Renderer> {
         overlay::Element::new(position, Box::new(Overlay::new(self, target_height)))
     }
 }
@@ -127,7 +127,7 @@ impl Default for State {
 
 struct Overlay<'a, Message> {
     state: &'a mut Tree,
-    container: Container<'a, Message, crate::Renderer>,
+    container: Container<'a, Message, crate::Theme, crate::Renderer>,
     width: f32,
     target_height: f32,
     style: (),
@@ -177,7 +177,7 @@ impl<'a, Message: 'a> Overlay<'a, Message> {
             .padding(padding)
             .style(crate::style::Container::Dropdown);
 
-        state.tree.diff(&mut container as &mut dyn Widget<_, _>);
+        state.tree.diff(&mut container as &mut dyn Widget<_, _, _>);
 
         Self {
             state: &mut state.tree,
@@ -189,7 +189,9 @@ impl<'a, Message: 'a> Overlay<'a, Message> {
     }
 }
 
-impl<'a, Message> iced_core::Overlay<Message, crate::Renderer> for Overlay<'a, Message> {
+impl<'a, Message> iced_core::Overlay<Message, crate::Theme, crate::Renderer>
+    for Overlay<'a, Message>
+{
     fn layout(
         &mut self,
         renderer: &crate::Renderer,
@@ -215,7 +217,7 @@ impl<'a, Message> iced_core::Overlay<Message, crate::Renderer> for Overlay<'a, M
 
         let mut node = self.container.layout(self.state, renderer, &limits);
 
-        node.move_to(if space_below > space_above {
+        node = node.clone().move_to(if space_below > space_above {
             position + Vector::new(0.0, self.target_height)
         } else {
             position - Vector::new(0.0, node.size().height)
@@ -265,9 +267,12 @@ impl<'a, Message> iced_core::Overlay<Message, crate::Renderer> for Overlay<'a, M
         renderer.fill_quad(
             renderer::Quad {
                 bounds,
-                border_color: appearance.border_color,
-                border_width: appearance.border_width,
-                border_radius: appearance.border_radius,
+                border: Border {
+                    width: appearance.border_width,
+                    color: appearance.border_color,
+                    radius: appearance.border_radius,
+                },
+                shadow: Shadow::default(),
             },
             appearance.background,
         );
@@ -289,17 +294,14 @@ struct InnerList<'a, S, Item, Message> {
     selected_icon: Option<svg::Handle>,
 }
 
-impl<'a, S, Item, Message> Widget<Message, crate::Renderer> for InnerList<'a, S, Item, Message>
+impl<'a, S, Item, Message> Widget<Message, crate::Theme, crate::Renderer>
+    for InnerList<'a, S, Item, Message>
 where
     S: AsRef<str>,
     Item: Clone + PartialEq,
 {
-    fn width(&self) -> Length {
-        Length::Fill
-    }
-
-    fn height(&self) -> Length {
-        Length::Shrink
+    fn size(&self) -> Size<Length> {
+        Size::new(Length::Fill, Length::Shrink)
     }
 
     fn layout(
@@ -338,7 +340,7 @@ where
                 separators + descriptions + options
             });
 
-            limits.resolve(intrinsic)
+            limits.resolve(Length::Fill, Length::Shrink, intrinsic)
         };
 
         layout::Node::new(size)
@@ -539,9 +541,11 @@ where
                         renderer.fill_quad(
                             renderer::Quad {
                                 bounds,
-                                border_color: Color::TRANSPARENT,
-                                border_width: 0.0,
-                                border_radius: appearance.border_radius,
+                                border: Border {
+                                    radius: appearance.border_radius,
+                                    ..Default::default()
+                                },
+                                shadow: Shadow::default(),
                             },
                             appearance.selected_background,
                         );
@@ -574,9 +578,11 @@ where
                         renderer.fill_quad(
                             renderer::Quad {
                                 bounds,
-                                border_color: Color::TRANSPARENT,
-                                border_width: 0.0,
-                                border_radius: appearance.border_radius,
+                                border: Border {
+                                    radius: appearance.border_radius,
+                                    ..Default::default()
+                                },
+                                shadow: Shadow::default(),
                             },
                             appearance.hovered_background,
                         );
@@ -614,18 +620,17 @@ where
                 OptionElement::Separator => {
                     let divider = crate::widget::divider::horizontal::light().height(1.0);
 
-                    let mut layout_node = layout::Node::new(Size {
+                    let layout_node = layout::Node::new(Size {
                         width: bounds.width,
                         height: 1.0,
-                    });
-
-                    layout_node.move_to(Point {
+                    })
+                    .move_to(Point {
                         x: bounds.x,
                         y: bounds.y + (self.padding.vertical() / 2.0) - 4.0,
                     });
 
-                    Widget::<Message, crate::Renderer>::draw(
-                        &crate::Element::<Message>::from(divider),
+                    Widget::<Message, crate::Theme, crate::Renderer>::draw(
+                        crate::Element::<Message>::from(divider).as_widget(),
                         &Tree::empty(),
                         renderer,
                         theme,
@@ -665,7 +670,7 @@ where
 }
 
 impl<'a, S, Item, Message: 'a> From<InnerList<'a, S, Item, Message>>
-    for Element<'a, Message, crate::Renderer>
+    for Element<'a, Message, crate::Theme, crate::Renderer>
 where
     S: AsRef<str>,
     Item: Clone + PartialEq,

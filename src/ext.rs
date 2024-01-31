@@ -20,7 +20,8 @@ impl<'a, Message: 'static> ElementExt for crate::Element<'a, Message> {
 }
 
 /// Additional methods for the [`Column`] and [`Row`] widgets.
-pub trait CollectionWidget<'a, Message: 'a>: Widget<Message, crate::Renderer>
+pub trait CollectionWidget<'a, Message: 'a>:
+    Widget<Message, crate::Theme, crate::Renderer>
 where
     Self: Sized,
 {

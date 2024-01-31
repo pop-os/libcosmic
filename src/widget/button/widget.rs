@@ -10,13 +10,13 @@ use iced_runtime::core::widget::Id;
 use iced_runtime::{keyboard, Command};
 
 use iced_core::event::{self, Event};
-use iced_core::mouse;
-use iced_core::overlay;
 use iced_core::renderer::{self, Quad};
 use iced_core::touch;
 use iced_core::widget::tree::{self, Tree};
 use iced_core::widget::Operation;
 use iced_core::{layout, svg};
+use iced_core::{mouse, Border};
+use iced_core::{overlay, Shadow};
 use iced_core::{
     Background, Clipboard, Color, Element, Layout, Length, Padding, Point, Rectangle, Shell,
     Vector, Widget,
@@ -43,7 +43,6 @@ enum Variant<Message> {
 pub struct Button<'a, Message, Renderer>
 where
     Renderer: iced_core::Renderer,
-    Renderer::Theme: StyleSheet,
 {
     id: Id,
     #[cfg(feature = "a11y")]
@@ -52,23 +51,22 @@ where
     description: Option<iced_accessibility::Description<'a>>,
     #[cfg(feature = "a11y")]
     label: Option<Vec<iced_accessibility::accesskit::NodeId>>,
-    content: Element<'a, Message, Renderer>,
+    content: Element<'a, Message, crate::Theme, Renderer>,
     on_press: Option<Message>,
     width: Length,
     height: Length,
     padding: Padding,
     selected: bool,
-    style: <Renderer::Theme as StyleSheet>::Style,
+    style: <crate::Theme as StyleSheet>::Style,
     variant: Variant<Message>,
 }
 
 impl<'a, Message, Renderer> Button<'a, Message, Renderer>
 where
     Renderer: iced_core::Renderer,
-    Renderer::Theme: StyleSheet,
 {
     /// Creates a new [`Button`] with the given content.
-    pub fn new(content: impl Into<Element<'a, Message, Renderer>>) -> Self {
+    pub fn new(content: impl Into<Element<'a, Message, crate::Theme, Renderer>>) -> Self {
         Self {
             id: Id::unique(),
             #[cfg(feature = "a11y")]
@@ -83,13 +81,13 @@ where
             height: Length::Shrink,
             padding: Padding::new(5.0),
             selected: false,
-            style: <Renderer::Theme as StyleSheet>::Style::default(),
+            style: <crate::Theme as StyleSheet>::Style::default(),
             variant: Variant::Normal,
         }
     }
 
     pub fn new_image(
-        content: impl Into<Element<'a, Message, Renderer>>,
+        content: impl Into<Element<'a, Message, crate::Theme, Renderer>>,
         on_remove: Option<Message>,
     ) -> Self {
         Self {
@@ -106,7 +104,7 @@ where
             height: Length::Shrink,
             padding: Padding::new(5.0),
             selected: false,
-            style: <Renderer::Theme as StyleSheet>::Style::default(),
+            style: <crate::Theme as StyleSheet>::Style::default(),
             variant: Variant::Image {
                 on_remove,
                 close_icon: crate::widget::icon::from_name("window-close-symbolic")
@@ -180,7 +178,7 @@ where
     }
 
     /// Sets the style variant of this [`Button`].
-    pub fn style(mut self, style: <Renderer::Theme as StyleSheet>::Style) -> Self {
+    pub fn style(mut self, style: <crate::Theme as StyleSheet>::Style) -> Self {
         self.style = style;
         self
     }
@@ -216,11 +214,11 @@ where
     }
 }
 
-impl<'a, Message, Renderer> Widget<Message, Renderer> for Button<'a, Message, Renderer>
+impl<'a, Message, Renderer> Widget<Message, crate::Theme, Renderer>
+    for Button<'a, Message, Renderer>
 where
     Message: 'a + Clone,
     Renderer: 'a + iced_core::Renderer + svg::Renderer,
-    Renderer::Theme: StyleSheet,
 {
     fn tag(&self) -> tree::Tag {
         tree::Tag::of::<State>()
@@ -238,12 +236,8 @@ where
         tree.diff_children(std::slice::from_mut(&mut self.content));
     }
 
-    fn width(&self) -> Length {
-        self.width
-    }
-
-    fn height(&self) -> Length {
-        self.height
+    fn size(&self) -> iced_core::Size<Length> {
+        iced_core::Size::new(self.width, self.height)
     }
 
     fn layout(
@@ -346,7 +340,7 @@ where
         &self,
         tree: &Tree,
         renderer: &mut Renderer,
-        theme: &Renderer::Theme,
+        theme: &crate::Theme,
         renderer_style: &renderer::Style,
         layout: Layout<'_>,
         cursor: mouse::Cursor,
@@ -400,15 +394,17 @@ where
                             x: bounds.x + styling.border_width,
                             y: bounds.y + (bounds.height - 20.0 - styling.border_width),
                         },
-                        border_radius: [
-                            c_rad.radius_0[0],
-                            c_rad.radius_s[1],
-                            c_rad.radius_0[2],
-                            c_rad.radius_s[3],
-                        ]
-                        .into(),
-                        border_width: 0.0,
-                        border_color: Color::TRANSPARENT,
+                        border: Border {
+                            radius: [
+                                c_rad.radius_0[0],
+                                c_rad.radius_s[1],
+                                c_rad.radius_0[2],
+                                c_rad.radius_s[3],
+                            ]
+                            .into(),
+                            ..Default::default()
+                        },
+                        shadow: Default::default(),
                     },
                     selection_background,
                 );
@@ -433,9 +429,11 @@ where
                         renderer.fill_quad(
                             renderer::Quad {
                                 bounds,
-                                border_radius: c_rad.radius_m.into(),
-                                border_width: 0.0,
-                                border_color: Color::TRANSPARENT,
+                                shadow: Default::default(),
+                                border: Border {
+                                    radius: c_rad.radius_m.into(),
+                                    ..Default::default()
+                                },
                             },
                             selection_background,
                         );
@@ -473,7 +471,7 @@ where
         tree: &'b mut Tree,
         layout: Layout<'_>,
         renderer: &Renderer,
-    ) -> Option<overlay::Element<'b, Message, Renderer>> {
+    ) -> Option<overlay::Element<'b, Message, crate::Theme, Renderer>> {
         self.content.as_widget_mut().overlay(
             &mut tree.children[0],
             layout.children().next().unwrap(),
@@ -556,11 +554,11 @@ where
     }
 }
 
-impl<'a, Message, Renderer> From<Button<'a, Message, Renderer>> for Element<'a, Message, Renderer>
+impl<'a, Message, Renderer> From<Button<'a, Message, Renderer>>
+    for Element<'a, Message, crate::Theme, Renderer>
 where
     Message: Clone + 'a,
     Renderer: iced_core::Renderer + svg::Renderer + 'a,
-    Renderer::Theme: StyleSheet,
 {
     fn from(button: Button<'a, Message, Renderer>) -> Self {
         Self::new(button)
@@ -660,10 +658,10 @@ pub fn update<'a, Message: Clone>(
             }
             return event::Status::Captured;
         }
-        Event::Keyboard(keyboard::Event::KeyPressed { key_code, .. }) => {
+        Event::Keyboard(keyboard::Event::KeyPressed { key, .. }) => {
             if let Some(on_press) = on_press.clone() {
                 let state = state();
-                if state.is_focused && key_code == keyboard::KeyCode::Enter {
+                if state.is_focused && key == keyboard::Key::Named(keyboard::key::Named::Enter) {
                     state.is_pressed = true;
                     shell.publish(on_press);
                     return event::Status::Captured;
@@ -688,13 +686,12 @@ pub fn draw<'a, Renderer: iced_core::Renderer>(
     cursor: mouse::Cursor,
     is_enabled: bool,
     is_selected: bool,
-    style_sheet: &dyn StyleSheet<Style = <Renderer::Theme as StyleSheet>::Style>,
-    style: &<Renderer::Theme as StyleSheet>::Style,
+    style_sheet: &dyn StyleSheet<Style = <crate::Theme as StyleSheet>::Style>,
+    style: &<crate::Theme as StyleSheet>::Style,
     state: impl FnOnce() -> &'a State,
     draw_contents: impl FnOnce(&mut Renderer, Appearance),
 ) -> Appearance
 where
-    Renderer::Theme: StyleSheet,
 {
     let is_mouse_over = cursor.position().is_some_and(|p| bounds.contains(p));
 
@@ -724,9 +721,12 @@ where
                     width: bounds.width + doubled_border_width + doubled_outline_width,
                     height: bounds.height + doubled_border_width + doubled_outline_width,
                 },
-                border_radius: styling.border_radius,
-                border_width: styling.outline_width,
-                border_color: styling.outline_color,
+                border: Border {
+                    width: styling.outline_width,
+                    color: styling.outline_color,
+                    radius: styling.border_radius,
+                },
+                shadow: Default::default(),
             },
             Color::TRANSPARENT,
         );
@@ -743,9 +743,11 @@ where
                         width: bounds.width,
                         height: bounds.height,
                     },
-                    border_radius: styling.border_radius,
-                    border_width: 0.0,
-                    border_color: Color::TRANSPARENT,
+                    border: Border {
+                        radius: styling.border_radius,
+                        ..Default::default()
+                    },
+                    shadow: Shadow::default(),
                 },
                 Background::Color([0.0, 0.0, 0.0, 0.5].into()),
             );
@@ -756,9 +758,11 @@ where
             renderer.fill_quad(
                 renderer::Quad {
                     bounds,
-                    border_radius: styling.border_radius,
-                    border_width: 0.0,
-                    border_color: Color::TRANSPARENT,
+                    border: Border {
+                        radius: styling.border_radius,
+                        ..Default::default()
+                    },
+                    shadow: Default::default(),
                 },
                 background,
             );
@@ -771,9 +775,12 @@ where
         renderer.fill_quad(
             renderer::Quad {
                 bounds,
-                border_radius: styling.border_radius,
-                border_width: styling.border_width,
-                border_color: styling.border_color,
+                border: Border {
+                    width: styling.border_width,
+                    color: styling.border_color,
+                    radius: styling.border_radius,
+                },
+                shadow: Default::default(),
             },
             Color::TRANSPARENT,
         );
@@ -795,11 +802,14 @@ pub fn layout<Renderer>(
 ) -> layout::Node {
     let limits = limits.width(width).height(height);
 
-    let mut content = layout_content(renderer, &limits.pad(padding));
+    let mut content = layout_content(renderer, &limits.shrink(padding));
     let padding = padding.fit(content.size(), limits.max());
-    let size = limits.pad(padding).resolve(content.size()).pad(padding);
+    let size = limits
+        .shrink(padding)
+        .resolve(width, height, content.size())
+        .expand(padding);
 
-    content.move_to(Point::new(padding.left, padding.top));
+    content = content.move_to(Point::new(padding.left, padding.top));
 
     layout::Node::with_children(size, vec![content])
 }

@@ -8,7 +8,6 @@ use iced::advanced::widget::{self, Operation, OperationOutputWrapper};
 use iced::advanced::{overlay, renderer};
 use iced::advanced::{Clipboard, Shell};
 use iced::{event, mouse, Event, Point, Rectangle, Size};
-use iced_core::Widget;
 
 pub(super) struct Overlay<'a, 'b, Message> {
     pub(super) content: &'b mut Element<'a, Message>,
@@ -16,7 +15,8 @@ pub(super) struct Overlay<'a, 'b, Message> {
     pub(super) width: f32,
 }
 
-impl<'a, 'b, Message> overlay::Overlay<Message, crate::Renderer> for Overlay<'a, 'b, Message>
+impl<'a, 'b, Message> overlay::Overlay<Message, crate::Theme, crate::Renderer>
+    for Overlay<'a, 'b, Message>
 where
     Message: Clone,
 {
@@ -31,13 +31,13 @@ where
             .width(self.width)
             .height(bounds.height - 8.0 - position.y);
 
-        let mut node = self
+        let node = self
             .content
             .as_widget()
             .layout(self.tree, renderer, &limits);
         let node_size = node.size();
 
-        node.move_to(Point {
+        node.clone().move_to(Point {
             x: if bounds.width > node_size.width - 8.0 {
                 bounds.width - node_size.width - 8.0
             } else {
@@ -48,9 +48,7 @@ where
             } else {
                 0.0
             },
-        });
-
-        node
+        })
     }
 
     fn on_event(
@@ -82,7 +80,7 @@ where
         layout: Layout<'_>,
         cursor: mouse::Cursor,
     ) {
-        self.content.draw(
+        self.content.as_widget().draw(
             self.tree,
             renderer,
             theme,
@@ -120,7 +118,7 @@ where
         &'c mut self,
         layout: Layout<'_>,
         renderer: &crate::Renderer,
-    ) -> Option<overlay::Element<'c, Message, crate::Renderer>> {
+    ) -> Option<overlay::Element<'c, Message, crate::Theme, crate::Renderer>> {
         self.content
             .as_widget_mut()
             .overlay(self.tree, layout, renderer)

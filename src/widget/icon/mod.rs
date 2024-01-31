@@ -12,7 +12,7 @@ pub use named::{IconFallback, Named};
 mod handle;
 pub use handle::{from_path, from_raster_bytes, from_raster_pixels, from_svg_bytes, Data, Handle};
 
-use crate::{Element, Renderer};
+use crate::Element;
 use derive_setters::Setters;
 use iced::widget::{Image, Svg};
 use iced::{ContentFit, Length};
@@ -85,7 +85,7 @@ impl Icon {
         };
 
         let from_svg = |handle| {
-            Svg::<Renderer>::new(handle)
+            Svg::<crate::Theme>::new(handle)
                 .style(self.style.clone())
                 .width(
                     self.width
