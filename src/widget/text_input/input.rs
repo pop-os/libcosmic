@@ -227,7 +227,7 @@ where
             padding: [spacing, spacing, spacing, spacing].into(),
             size: None,
             helper_size: 10.0,
-            helper_line_height: text::LineHeight::from(14.0),
+            helper_line_height: text::LineHeight::Absolute(14.0.into()),
             on_input: None,
             on_paste: None,
             on_submit: None,
@@ -907,7 +907,7 @@ pub fn layout<Message>(
     let mut nodes = Vec::with_capacity(3);
 
     let text_pos = if let Some(label) = label {
-        let text_bounds = limits.resolve(Length::Shrink, Length::Shrink, Size::ZERO);
+        let text_bounds = limits.resolve(width, Length::Shrink, Size::INFINITY);
         let state = tree.state.downcast_mut::<State>();
         let label_paragraph = &mut state.label;
         label_paragraph.update(Text {
@@ -929,7 +929,7 @@ pub fn layout<Message>(
     };
 
     let text_size = size.unwrap_or_else(|| renderer.default_size().0);
-    let mut text_input_height = text_size * 1.2;
+    let mut text_input_height = line_height.to_absolute(text_size.into()).0;
     let padding = padding.fit(Size::ZERO, limits.max());
 
     let helper_pos = if leading_icon.is_some() || trailing_icon.is_some() {
@@ -968,16 +968,20 @@ pub fn layout<Message>(
             } else {
                 (0.0, None)
             };
-        let text_limits = limits.width(width).height(text_size * 1.2);
+        let text_limits = limits
+            .width(width)
+            .height(line_height.to_absolute(text_size.into()));
 
-        let text_bounds = text_limits.resolve(Length::Shrink, Length::Shrink, Size::ZERO);
+        let text_bounds = text_limits.resolve(width, Length::Shrink, Size::INFINITY);
 
         let text_node = layout::Node::new(
             text_bounds - Size::new(leading_icon_width + trailing_icon_width, 0.0),
         )
         .move_to(Point::new(
             padding.left + leading_icon_width,
-            padding.top + (text_size.mul_add(-1.2, text_input_height) / 2.0).max(0.0),
+            padding.top
+                + ((text_input_height - line_height.to_absolute(text_size.into()).0) / 2.0)
+                    .max(0.0),
         ));
         let mut node_list: Vec<_> = Vec::with_capacity(3);
 
@@ -991,20 +995,17 @@ pub fn layout<Message>(
             )));
         }
         if let Some(trailing_icon) = trailing_icon.take() {
-            node_list.push(trailing_icon.clone().move_to(Point::new(
+            let trailing_icon = trailing_icon.clone().move_to(Point::new(
                 text_node_bounds.x + text_node_bounds.width + f32::from(spacing),
                 padding.top + ((text_input_height - trailing_icon.bounds().height) / 2.0).max(0.0),
-            )));
+            ));
+            node_list.push(trailing_icon);
         }
 
         let text_input_size = Size::new(
             text_node_bounds.x + text_node_bounds.width + trailing_icon_width,
             text_input_height,
         )
-        .expand(Size {
-            height: -padding.top - padding.bottom,
-            width: -padding.left - padding.right,
-        })
         .expand(padding);
 
         let input_limits = limits_copy
@@ -1026,13 +1027,14 @@ pub fn layout<Message>(
             .width(width)
             .height(text_input_height + padding.vertical())
             .shrink(padding);
-        let text_bounds = limits.resolve(Length::Shrink, Length::Shrink, Size::ZERO);
+        let text_bounds = limits.resolve(width, Length::Shrink, Size::INFINITY);
 
         let text = layout::Node::new(text_bounds).move_to(Point::new(padding.left, padding.top));
 
         let node = layout::Node::with_children(text_bounds.expand(padding), vec![text])
             .translate(text_pos);
         let y_pos = node.bounds().y + node.bounds().height + f32::from(spacing);
+
         nodes.push(node);
 
         Vector::new(0.0, y_pos)
@@ -1042,15 +1044,15 @@ pub fn layout<Message>(
         let limits = limits
             .width(width)
             .shrink(padding)
-            .height(helper_text_size * 1.2);
-        let text_bounds = limits.resolve(Length::Shrink, Length::Shrink, Size::ZERO);
-
+            .height(helper_text_line_height.to_absolute(helper_text_size.into()));
+        let text_bounds = limits.resolve(width, Length::Shrink, Size::INFINITY);
+        dbg!(text_bounds);
         let state = tree.state.downcast_mut::<State>();
-        let helper_text_paragraph = &mut state.label;
+        let helper_text_paragraph = &mut state.helper_text;
         helper_text_paragraph.update(Text {
             content: helper_text,
             font,
-            bounds: text_bounds,
+            bounds: Size::INFINITY,
             size: iced::Pixels(helper_text_size),
             horizontal_alignment: alignment::Horizontal::Left,
             vertical_alignment: alignment::Vertical::Center,
@@ -1058,8 +1060,9 @@ pub fn layout<Message>(
             shaping: text::Shaping::Advanced,
         });
         let helper_text_size = helper_text_paragraph.min_bounds();
-
-        nodes.push(layout::Node::new(helper_text_size).translate(helper_pos));
+        let helper_text_node = layout::Node::new(helper_text_size).translate(helper_pos);
+        dbg!(helper_text_node.bounds());
+        nodes.push(helper_text_node);
     };
 
     let mut size = nodes.iter().fold(Size::ZERO, |size, node| {
@@ -1310,43 +1313,6 @@ where
                 return event::Status::Captured;
             }
         }
-        Event::Keyboard(keyboard::Event::KeyReleased {
-            key: keyboard::Key::Character(c),
-            modifiers,
-            ..
-        }) => {
-            let state = state();
-
-            if let Some(focus) = &mut state.is_focused {
-                let Some(on_input) = on_input else {
-                    return event::Status::Ignored;
-                };
-
-                if state.is_pasting.is_none()
-                    && !state.keyboard_modifiers.command()
-                    && !modifiers.control()
-                {
-                    let mut editor = Editor::new(unsecured_value, &mut state.cursor);
-
-                    editor.insert(c.chars().next().unwrap_or_default());
-                    let contents = editor.contents();
-                    let unsecured_value = Value::new(&contents);
-                    let message = (on_input)(contents);
-                    shell.publish(message);
-
-                    focus.updated_at = Instant::now();
-
-                    let value = if is_secure {
-                        unsecured_value.secure()
-                    } else {
-                        unsecured_value
-                    };
-                    update_cache(state, &value);
-
-                    return event::Status::Captured;
-                }
-            }
-        }
         Event::Keyboard(keyboard::Event::KeyPressed { key, .. }) => {
             let state = state();
 
@@ -1486,46 +1452,44 @@ where
                             shell.publish(message);
                         }
                     }
-                    keyboard::Key::Character(c) if "v" == c => {
-                        if state.keyboard_modifiers.command() {
-                            let content = if let Some(content) = state.is_pasting.take() {
-                                content
-                            } else {
-                                let content: String = clipboard
-                                    .read()
-                                    .unwrap_or_default()
-                                    .chars()
-                                    .filter(|c| !c.is_control())
-                                    .collect();
-
-                                Value::new(&content)
-                            };
-
-                            let mut editor = Editor::new(unsecured_value, &mut state.cursor);
-
-                            editor.paste(content.clone());
-
-                            let contents = editor.contents();
-                            let unsecured_value = Value::new(&contents);
-                            let message = if let Some(paste) = &on_paste {
-                                (paste)(contents)
-                            } else {
-                                (on_input)(contents)
-                            };
-                            shell.publish(message);
-
-                            state.is_pasting = Some(content);
-
-                            let value = if is_secure {
-                                unsecured_value.secure()
-                            } else {
-                                unsecured_value
-                            };
-
-                            update_cache(state, &value);
+                    keyboard::Key::Character(c)
+                        if "v" == c && state.keyboard_modifiers.command() =>
+                    {
+                        let content = if let Some(content) = state.is_pasting.take() {
+                            content
                         } else {
-                            state.is_pasting = None;
-                        }
+                            let content: String = clipboard
+                                .read()
+                                .unwrap_or_default()
+                                .chars()
+                                .filter(|c| !c.is_control())
+                                .collect();
+
+                            Value::new(&content)
+                        };
+
+                        let mut editor = Editor::new(unsecured_value, &mut state.cursor);
+
+                        editor.paste(content.clone());
+
+                        let contents = editor.contents();
+                        let unsecured_value = Value::new(&contents);
+                        let message = if let Some(paste) = &on_paste {
+                            (paste)(contents)
+                        } else {
+                            (on_input)(contents)
+                        };
+                        shell.publish(message);
+
+                        state.is_pasting = Some(content);
+
+                        let value = if is_secure {
+                            unsecured_value.secure()
+                        } else {
+                            unsecured_value
+                        };
+
+                        update_cache(state, &value);
                     }
                     keyboard::Key::Character(c)
                         if "a" == c && state.keyboard_modifiers.command() =>
@@ -1543,6 +1507,31 @@ where
                     | keyboard::Key::Named(keyboard::key::Named::ArrowUp)
                     | keyboard::Key::Named(keyboard::key::Named::ArrowDown) => {
                         return event::Status::Ignored;
+                    }
+                    keyboard::Key::Character(c) => {
+                        if state.is_pasting.is_none()
+                            && !state.keyboard_modifiers.command()
+                            && !modifiers.control()
+                        {
+                            let mut editor = Editor::new(unsecured_value, &mut state.cursor);
+
+                            editor.insert(c.chars().next().unwrap_or_default());
+                            let contents = editor.contents();
+                            let unsecured_value = Value::new(&contents);
+                            let message = (on_input)(contents);
+                            shell.publish(message);
+
+                            focus.updated_at = Instant::now();
+
+                            let value = if is_secure {
+                                unsecured_value.secure()
+                            } else {
+                                unsecured_value
+                            };
+                            update_cache(state, &value);
+
+                            return event::Status::Captured;
+                        }
                     }
                     _ => {}
                 }
@@ -1926,8 +1915,7 @@ pub fn draw<'a, Message>(
                 bounds,
                 border: Border {
                     width: appearance.border_width,
-                    color: appearance.border_color,
-                    radius: appearance.border_radius,
+                    ..Default::default()
                 },
                 shadow: Shadow {
                     offset: Vector::new(0.0, 1.0),
@@ -2256,6 +2244,7 @@ pub struct State {
     pub value: crate::Paragraph,
     pub placeholder: crate::Paragraph,
     pub label: crate::Paragraph,
+    pub helper_text: crate::Paragraph,
     pub dirty: bool,
     pub is_secure: bool,
     is_focused: Option<Focus>,
@@ -2315,6 +2304,7 @@ impl State {
             value: crate::Paragraph::new(),
             placeholder: crate::Paragraph::new(),
             label: crate::Paragraph::new(),
+            helper_text: crate::Paragraph::new(),
 
             is_focused: None,
             dragging_state: None,

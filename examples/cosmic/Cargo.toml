@@ -8,7 +8,7 @@ publish = false
 [dependencies]
 apply = "0.3.0"
 fraction = "0.14.0"
-libcosmic = { path = "../..", features = ["debug", "winit", "tokio", "single-instance", "dbus-config", "wgpu"] }
+libcosmic = { path = "../..", features = ["debug", "winit", "tokio", "single-instance", "dbus-config", ] }
 once_cell = "1.18"
 slotmap = "1.0.6"
 env_logger = "0.10"
@@ -17,5 +17,5 @@ log = "0.4.17"
 [dependencies.cosmic-time]
 git = "https://github.com/pop-os/cosmic-time"
 default-features = false
-branch = "update-0.12"
+branch = "wip-iced-update"
 features = ["libcosmic", "once_cell"]

@@ -135,6 +135,7 @@ impl State {
                 .spacing(16)
                 .into(),
             ])
+            .width(Length::Fill)
             .into(),
             Some(DesktopPage::DesktopOptions) => self.view_desktop_options(window),
             Some(DesktopPage::Wallpaper) => self.view_desktop_wallpaper(window),

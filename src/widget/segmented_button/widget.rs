@@ -756,7 +756,7 @@ where
                             height: bounds.height,
                         },
                         border: Border {
-                            radius: appearance.focus.first.border_radius,
+                            radius: theme.cosmic().radius_s().into(),
                             ..Default::default()
                         },
                         shadow: Shadow::default(),
@@ -808,7 +808,7 @@ where
                             height: bounds.height,
                         },
                         border: Border {
-                            radius: appearance.focus.last.border_radius,
+                            radius: theme.cosmic().radius_s().into(),
                             ..Default::default()
                         },
                         shadow: Shadow::default(),
