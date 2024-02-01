@@ -3,7 +3,7 @@ use std::{cell::RefCell, rc::Rc};
 use apply::Apply;
 use cosmic::{
     cosmic_theme,
-    iced::widget::{checkbox, column, progress_bar, radio, slider, text, text_input},
+    iced::widget::{checkbox, column, progress_bar, radio, slider, text},
     iced::{Alignment, Length},
     iced_core::id,
     theme::ThemeType,
@@ -488,6 +488,7 @@ impl State {
             .into(),
             cosmic::widget::text_input("", &self.entry_value)
                 .label("Test Input")
+                .helper_text("test helper text")
                 .on_input(Message::InputChanged)
                 .size(20)
                 .id(INPUT_ID.clone())

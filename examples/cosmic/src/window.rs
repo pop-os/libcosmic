@@ -288,6 +288,7 @@ impl Window {
             )
             .padding([20, 24]),
         )
+        .width(Length::Fill)
         .padding(0)
         .style(theme::iced::Button::Transparent)
         .on_press(Message::from(sub_page.into_page()))
@@ -565,11 +566,11 @@ impl Application for Window {
             };
 
             widgets.push(
-                scrollable(row![
-                    horizontal_space(Length::Fill),
-                    content.debug(self.debug),
-                    horizontal_space(Length::Fill),
-                ])
+                scrollable(
+                    container(content.debug(self.debug))
+                        .align_x(iced::alignment::Horizontal::Center),
+                )
+                .width(Length::Fill)
                 .into(),
             );
         }

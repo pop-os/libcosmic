@@ -14,7 +14,14 @@ pub fn main() -> cosmic::iced::Result {
 
     env_logger::init_from_env(env);
     cosmic::icon_theme::set_default("Pop");
-    let mut settings = Settings::default();
-    settings.window.min_size = Some(cosmic::iced::Size::new(600., 300.));
+    #[allow(clippy::field_reassign_with_default)]
+    let settings = Settings {
+        default_font: cosmic::font::FONT,
+        window: cosmic::iced::window::Settings {
+            min_size: Some(cosmic::iced::Size::new(600., 300.)),
+            ..cosmic::iced::window::Settings::default()
+        },
+        ..Settings::default()
+    };
     Window::run(settings)
 }
