@@ -38,15 +38,13 @@ impl<'a, Message: Clone + 'static> ContextDrawer<'a, Message> {
         Drawer: Into<Element<'a, Message>>,
     {
         let header = row::with_capacity(3)
-            .height(Length::Fixed(80.0))
-            .width(Length::Fixed(480.0))
             .padding(Padding {
                 top: 0.0,
                 bottom: 0.0,
                 left: 32.0,
                 right: 32.0,
             })
-            .push(Space::new(Length::FillPortion(1), Length::Shrink))
+            .push(Space::new(Length::FillPortion(1), Length::Fixed(0.0)))
             .push(
                 text::heading(header)
                     .width(Length::FillPortion(1))
@@ -63,39 +61,53 @@ impl<'a, Message: Clone + 'static> ContextDrawer<'a, Message> {
                     .height(Length::Fill)
                     .align_x(alignment::Horizontal::Right)
                     .center_y(),
-            );
+            )
+            // XXX must be done after pushing elements or it may be overwritten by size hints from contents
+            .height(Length::Fixed(80.0))
+            .width(Length::Fixed(480.0));
 
-        let pane = column::with_capacity(2).push(header).push(scrollable(
-            container(drawer.into()).padding(Padding {
-                top: 0.0,
-                left: 32.0,
-                right: 32.0,
-                bottom: 32.0,
-            }),
-        ));
+        let pane = column::with_capacity(2)
+            .push(header.height(Length::Fixed(80.)))
+            .push(
+                scrollable(container(drawer.into()).padding(Padding {
+                    top: 0.0,
+                    left: 32.0,
+                    right: 32.0,
+                    bottom: 32.0,
+                }))
+                .height(Length::Fill)
+                .width(Length::Shrink),
+            );
 
         ContextDrawer {
             content: content.into(),
-            drawer: LayerContainer::new(pane)
-                .style(crate::style::Container::custom(move |theme| {
-                    let palette = theme.cosmic();
+            // XXX new limits do not exactly handle the max width well for containers
+            // XXX this is a hack to get around that
+            drawer: container(
+                LayerContainer::new(pane)
+                    .style(crate::style::Container::custom(move |theme| {
+                        let palette = theme.cosmic();
 
-                    container::Appearance {
-                        icon_color: Some(Color::from(palette.primary.on)),
-                        text_color: Some(Color::from(palette.primary.on)),
-                        background: Some(iced::Background::Color(palette.primary.base.into())),
-                        border: Border {
-                            radius: palette.corner_radii.radius_s.into(),
+                        container::Appearance {
+                            icon_color: Some(Color::from(palette.primary.on)),
+                            text_color: Some(Color::from(palette.primary.on)),
+                            background: Some(iced::Background::Color(palette.primary.base.into())),
+                            border: Border {
+                                radius: palette.corner_radii.radius_s.into(),
+                                ..Default::default()
+                            },
                             ..Default::default()
-                        },
-                        ..Default::default()
-                    }
-                }))
-                .layer(cosmic_theme::Layer::Primary)
-                .width(Length::Fill)
-                .height(Length::Fill)
-                .max_width(480.0)
-                .into(),
+                        }
+                    }))
+                    .layer(cosmic_theme::Layer::Primary)
+                    .width(Length::Fill)
+                    .height(Length::Fill)
+                    .max_width(480.0),
+            )
+            .width(Length::Fill)
+            .height(Length::Fill)
+            .align_x(alignment::Horizontal::Right)
+            .into(),
             on_close: None,
         }
     }
