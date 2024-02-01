@@ -35,6 +35,7 @@ where
         .spacing(8)
         .style(crate::theme::SegmentedButton::ViewSwitcher)
         .apply(scrollable)
+        .height(Length::Fill)
         .apply(container)
         .height(Length::Fill)
         .padding(11)

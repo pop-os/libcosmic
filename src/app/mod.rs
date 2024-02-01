@@ -449,7 +449,10 @@ where
             nav = nav.max_width(300);
         }
 
-        Some(Element::from(nav))
+        Some(Element::from(
+            // XXX both must be shrink to avoid flex layout from ignoring it
+            nav.width(iced::Length::Shrink).height(iced::Length::Shrink),
+        ))
     }
 
     /// Allows COSMIC to integrate with your application's [`nav_bar::Model`].
