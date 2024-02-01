@@ -645,7 +645,7 @@ impl<App: Application> ApplicationExt for App {
                 .padding([0, 8, 8, 8])
                 .width(iced::Length::Fill)
                 .height(iced::Length::Fill)
-                .style(crate::theme::Container::Background)
+                .style(crate::theme::Container::WindowBackground)
                 .into()
         } else {
             content_row.into()
