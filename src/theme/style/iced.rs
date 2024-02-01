@@ -5,8 +5,8 @@
 
 use crate::theme::{CosmicComponent, Theme, TRANSPARENT_COMPONENT};
 use cosmic_theme::composite::over;
-use iced_core::Border;
 use iced_core::{Background, Color};
+use iced_core::{Border, Shadow};
 use iced_style::application;
 use iced_style::button as iced_button;
 use iced_style::checkbox;
@@ -359,6 +359,7 @@ impl checkbox::StyleSheet for Theme {
  */
 #[derive(Default)]
 pub enum Container {
+    WindowBackground,
     Background,
     Card,
     Custom(Box<dyn Fn(&Theme) -> container::Appearance>),
@@ -386,6 +387,22 @@ impl container::StyleSheet for Theme {
         match style {
             Container::Transparent => container::Appearance::default(),
             Container::Custom(f) => f(self),
+            Container::WindowBackground => container::Appearance {
+                icon_color: Some(Color::from(cosmic.background.on)),
+                text_color: Some(Color::from(cosmic.background.on)),
+                background: Some(iced::Background::Color(cosmic.background.base.into())),
+                border: Border {
+                    radius: [
+                        cosmic.corner_radii.radius_0[0],
+                        cosmic.corner_radii.radius_0[1],
+                        cosmic.corner_radii.radius_xs[2],
+                        cosmic.corner_radii.radius_xs[3],
+                    ]
+                    .into(),
+                    ..Default::default()
+                },
+                shadow: Shadow::default(),
+            },
             Container::Background => container::Appearance {
                 icon_color: Some(Color::from(cosmic.background.on)),
                 text_color: Some(Color::from(cosmic.background.on)),
@@ -394,7 +411,7 @@ impl container::StyleSheet for Theme {
                     radius: cosmic.corner_radii.radius_xs.into(),
                     ..Default::default()
                 },
-                shadow: Default::default(),
+                shadow: Shadow::default(),
             },
             Container::HeaderBar => {
                 let header_top = cosmic.background.base;
@@ -404,10 +421,16 @@ impl container::StyleSheet for Theme {
                     text_color: Some(Color::from(cosmic.background.on)),
                     background: Some(iced::Background::Color(header_top.into())),
                     border: Border {
-                        radius: cosmic.corner_radii.radius_xs.into(),
+                        radius: [
+                            cosmic.corner_radii.radius_xs[0],
+                            cosmic.corner_radii.radius_xs[1],
+                            cosmic.corner_radii.radius_0[2],
+                            cosmic.corner_radii.radius_0[3],
+                        ]
+                        .into(),
                         ..Default::default()
                     },
-                    shadow: Default::default(),
+                    shadow: Shadow::default(),
                 }
             }
             Container::Primary => container::Appearance {
@@ -418,7 +441,7 @@ impl container::StyleSheet for Theme {
                     radius: cosmic.corner_radii.radius_xs.into(),
                     ..Default::default()
                 },
-                shadow: Default::default(),
+                shadow: Shadow::default(),
             },
             Container::Secondary => container::Appearance {
                 icon_color: Some(Color::from(cosmic.secondary.on)),
@@ -428,7 +451,7 @@ impl container::StyleSheet for Theme {
                     radius: cosmic.corner_radii.radius_xs.into(),
                     ..Default::default()
                 },
-                shadow: Default::default(),
+                shadow: Shadow::default(),
             },
             Container::Dropdown => {
                 let theme = self.cosmic();
@@ -441,7 +464,7 @@ impl container::StyleSheet for Theme {
                         radius: cosmic.corner_radii.radius_xs.into(),
                         ..Default::default()
                     },
-                    shadow: Default::default(),
+                    shadow: Shadow::default(),
                 }
             }
             Container::Tooltip => container::Appearance {
@@ -452,7 +475,7 @@ impl container::StyleSheet for Theme {
                     radius: cosmic.corner_radii.radius_l.into(),
                     ..Default::default()
                 },
-                shadow: Default::default(),
+                shadow: Shadow::default(),
             },
 
             Container::Card => {
@@ -469,7 +492,7 @@ impl container::StyleSheet for Theme {
                             radius: cosmic.corner_radii.radius_s.into(),
                             ..Default::default()
                         },
-                        shadow: Default::default(),
+                        shadow: Shadow::default(),
                     },
                     cosmic_theme::Layer::Primary => container::Appearance {
                         icon_color: Some(Color::from(cosmic.primary.component.on)),
@@ -481,7 +504,7 @@ impl container::StyleSheet for Theme {
                             radius: cosmic.corner_radii.radius_s.into(),
                             ..Default::default()
                         },
-                        shadow: Default::default(),
+                        shadow: Shadow::default(),
                     },
                     cosmic_theme::Layer::Secondary => container::Appearance {
                         icon_color: Some(Color::from(cosmic.secondary.component.on)),
@@ -493,7 +516,7 @@ impl container::StyleSheet for Theme {
                             radius: cosmic.corner_radii.radius_s.into(),
                             ..Default::default()
                         },
-                        shadow: Default::default(),
+                        shadow: Shadow::default(),
                     },
                 }
             }
