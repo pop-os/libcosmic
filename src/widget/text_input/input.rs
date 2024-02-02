@@ -1241,7 +1241,16 @@ where
                                 state.dragging_state = Some(DraggingState::Selection);
                             }
                         } else {
-                            state.dragging_state = None;
+                            // existing logic for setting the selection
+                            let position = if target > 0.0 {
+                                update_cache(state, value);
+                                find_cursor_position(text_layout.bounds(), value, state, target)
+                            } else {
+                                None
+                            };
+
+                            state.cursor.move_to(position.unwrap_or(0));
+                            state.dragging_state = Some(DraggingState::Selection);
                         }
                     }
                     (None, click::Kind::Single, _) => {
