@@ -113,6 +113,10 @@ impl iced_button::StyleSheet for Theme {
                 Button::Card => corner_radii.radius_xs.into(),
                 _ => corner_radii.radius_xl.into(),
             },
+            border: Border {
+                radius: corner_radii.radius_xl.into(),
+                ..Default::default()
+            },
             background: match style {
                 Button::Link | Button::Text => None,
                 Button::LinkActive => Some(Background::Color(component.divider.into())),
