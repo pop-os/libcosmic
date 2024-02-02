@@ -1046,13 +1046,12 @@ pub fn layout<Message>(
             .shrink(padding)
             .height(helper_text_line_height.to_absolute(helper_text_size.into()));
         let text_bounds = limits.resolve(width, Length::Shrink, Size::INFINITY);
-        dbg!(text_bounds);
         let state = tree.state.downcast_mut::<State>();
         let helper_text_paragraph = &mut state.helper_text;
         helper_text_paragraph.update(Text {
             content: helper_text,
             font,
-            bounds: Size::INFINITY,
+            bounds: text_bounds,
             size: iced::Pixels(helper_text_size),
             horizontal_alignment: alignment::Horizontal::Left,
             vertical_alignment: alignment::Vertical::Center,
@@ -1061,7 +1060,6 @@ pub fn layout<Message>(
         });
         let helper_text_size = helper_text_paragraph.min_bounds();
         let helper_text_node = layout::Node::new(helper_text_size).translate(helper_pos);
-        dbg!(helper_text_node.bounds());
         nodes.push(helper_text_node);
     };
 
