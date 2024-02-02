@@ -151,8 +151,8 @@ impl ColorPickerModel {
                 self.active = false;
             }
             ColorPickerUpdate::ActivateSegmented(e) => {
-                self.input_color = color_to_string(self.active_color, self.is_hex());
                 self.segmented_model.activate(e);
+                self.input_color = color_to_string(self.active_color, self.is_hex());
                 self.copied_at = None;
             }
             ColorPickerUpdate::Copied(t) => {
