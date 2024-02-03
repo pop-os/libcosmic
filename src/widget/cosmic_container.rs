@@ -10,11 +10,13 @@ use iced_core::widget::Tree;
 use iced_core::{Clipboard, Element, Layout, Length, Padding, Rectangle, Shell, Widget};
 pub use iced_style::container::{Appearance, StyleSheet};
 
-pub fn container<'a, Message: 'static, T>(
-    content: T,
-) -> LayerContainer<'a, Message, crate::Renderer>
+pub fn container<'a, Message: 'static, Theme, E>(
+    content: E,
+) -> LayerContainer<'a, Message, Theme, crate::Renderer>
 where
-    T: Into<Element<'a, Message, crate::Theme, crate::Renderer>>,
+    E: Into<Element<'a, Message, Theme, crate::Renderer>>,
+    Theme: iced_style::container::StyleSheet + LayeredTheme,
+    <Theme as iced_widget::container::StyleSheet>::Style: From<crate::theme::Container>,
 {
     LayerContainer::new(content)
 }
@@ -23,22 +25,25 @@ where
 ///
 /// It is normally used for alignment purposes.
 #[allow(missing_debug_implementations)]
-pub struct LayerContainer<'a, Message, Renderer>
+pub struct LayerContainer<'a, Message, Theme, Renderer>
 where
     Renderer: iced_core::Renderer,
+    Theme: iced_style::container::StyleSheet + LayeredTheme,
 {
     layer: Option<cosmic_theme::Layer>,
-    container: Container<'a, Message, crate::Theme, Renderer>,
+    container: Container<'a, Message, Theme, Renderer>,
 }
 
-impl<'a, Message, Renderer> LayerContainer<'a, Message, Renderer>
+impl<'a, Message, Theme, Renderer> LayerContainer<'a, Message, Theme, Renderer>
 where
     Renderer: iced_core::Renderer,
+    Theme: iced_style::container::StyleSheet + LayeredTheme,
+    <Theme as iced_style::container::StyleSheet>::Style: From<crate::theme::Container>,
 {
     /// Creates an empty [`Container`].
     pub(crate) fn new<T>(content: T) -> Self
     where
-        T: Into<Element<'a, Message, crate::Theme, Renderer>>,
+        T: Into<Element<'a, Message, Theme, Renderer>>,
     {
         LayerContainer {
             layer: None,
@@ -122,16 +127,17 @@ where
 
     /// Sets the style of the [`LayerContainer`].
     #[must_use]
-    pub fn style(mut self, style: impl Into<<crate::Theme as StyleSheet>::Style>) -> Self {
+    pub fn style(mut self, style: impl Into<<Theme as StyleSheet>::Style>) -> Self {
         self.container = self.container.style(style);
         self
     }
 }
 
-impl<'a, Message, Renderer> Widget<Message, crate::Theme, Renderer>
-    for LayerContainer<'a, Message, Renderer>
+impl<'a, Message, Theme, Renderer> Widget<Message, Theme, Renderer>
+    for LayerContainer<'a, Message, Theme, Renderer>
 where
     Renderer: iced_core::Renderer,
+    Theme: iced_style::container::StyleSheet + LayeredTheme + Clone,
 {
     fn children(&self) -> Vec<Tree> {
         self.container.children()
@@ -213,7 +219,7 @@ where
         &self,
         tree: &Tree,
         renderer: &mut Renderer,
-        theme: &crate::Theme,
+        theme: &Theme,
         renderer_style: &renderer::Style,
         layout: Layout<'_>,
         cursor_position: mouse::Cursor,
@@ -242,20 +248,21 @@ where
         tree: &'b mut Tree,
         layout: Layout<'_>,
         renderer: &Renderer,
-    ) -> Option<overlay::Element<'b, Message, crate::Theme, Renderer>> {
+    ) -> Option<overlay::Element<'b, Message, Theme, Renderer>> {
         self.container.overlay(tree, layout, renderer)
     }
 }
 
-impl<'a, Message, Renderer> From<LayerContainer<'a, Message, Renderer>>
-    for Element<'a, Message, crate::Theme, Renderer>
+impl<'a, Message, Theme, Renderer> From<LayerContainer<'a, Message, Theme, Renderer>>
+    for Element<'a, Message, Theme, Renderer>
 where
     Message: 'a,
     Renderer: 'a + iced_core::Renderer,
+    Theme: iced_style::container::StyleSheet + LayeredTheme + 'a + Clone,
 {
     fn from(
-        column: LayerContainer<'a, Message, Renderer>,
-    ) -> Element<'a, Message, crate::Theme, Renderer> {
+        column: LayerContainer<'a, Message, Theme, Renderer>,
+    ) -> Element<'a, Message, Theme, Renderer> {
         Element::new(column)
     }
 }
