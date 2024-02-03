@@ -154,27 +154,6 @@ pub type DnDCommand =
 pub type DnDCommand = ();
 
 /// A field that can be filled with text.
-///
-/// # Example
-/// ```no_run
-/// # pub type TextInput<'a, Message> =
-/// #     iced_widget::TextInput<'a, Message, iced_widget::renderer::Renderer<iced_widget::style::Theme>>;
-/// #
-/// #[derive(Debug, Clone)]
-/// enum Message {
-///     TextInputChanged(String),
-/// }
-///
-/// let value = "Some text";
-///
-/// let input = TextInput::new(
-///     "This is the placeholder...",
-///     value,
-/// )
-/// .on_input(Message::TextInputChanged)
-/// .padding(10);
-/// ```
-/// ![Text input drawn by `iced_wgpu`](https://github.com/iced-rs/iced/blob/7760618fb112074bc40b148944521f312152012a/docs/images/text_input.png?raw=true)
 #[allow(missing_debug_implementations)]
 #[must_use]
 pub struct TextInput<'a, Message> {
