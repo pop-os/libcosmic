@@ -117,7 +117,7 @@ impl Context {
     pub fn icon_button<'a, Message: 'static>(
         &self,
         icon_name: &'a str,
-    ) -> crate::widget::Button<'a, Message, Renderer> {
+    ) -> crate::widget::Button<'a, Message, crate::Theme, Renderer> {
         let suggested = self.suggested_size();
         crate::widget::button(
             widget::icon(
@@ -302,7 +302,7 @@ pub fn style() -> <crate::Theme as iced_style::application::StyleSheet>::Style {
 
 pub fn menu_button<'a, Message>(
     content: impl Into<Element<'a, Message>>,
-) -> crate::widget::Button<'a, Message, crate::Renderer> {
+) -> crate::widget::Button<'a, Message, crate::Theme, crate::Renderer> {
     crate::widget::Button::new(content)
         .style(Button::AppletMenu)
         .padding(menu_control_padding())
