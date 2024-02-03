@@ -40,9 +40,10 @@ enum Variant<Message> {
 /// A generic button which emits a message when pressed.
 #[allow(missing_debug_implementations)]
 #[must_use]
-pub struct Button<'a, Message, Renderer>
+pub struct Button<'a, Message, Theme, Renderer>
 where
     Renderer: iced_core::Renderer,
+    Theme: super::style::StyleSheet,
 {
     id: Id,
     #[cfg(feature = "a11y")]
@@ -51,22 +52,23 @@ where
     description: Option<iced_accessibility::Description<'a>>,
     #[cfg(feature = "a11y")]
     label: Option<Vec<iced_accessibility::accesskit::NodeId>>,
-    content: Element<'a, Message, crate::Theme, Renderer>,
+    content: Element<'a, Message, Theme, Renderer>,
     on_press: Option<Message>,
     width: Length,
     height: Length,
     padding: Padding,
     selected: bool,
-    style: <crate::Theme as StyleSheet>::Style,
+    style: <Theme as StyleSheet>::Style,
     variant: Variant<Message>,
 }
 
-impl<'a, Message, Renderer> Button<'a, Message, Renderer>
+impl<'a, Message, Theme, Renderer> Button<'a, Message, Theme, Renderer>
 where
     Renderer: iced_core::Renderer,
+    Theme: super::style::StyleSheet,
 {
     /// Creates a new [`Button`] with the given content.
-    pub fn new(content: impl Into<Element<'a, Message, crate::Theme, Renderer>>) -> Self {
+    pub fn new(content: impl Into<Element<'a, Message, Theme, Renderer>>) -> Self {
         Self {
             id: Id::unique(),
             #[cfg(feature = "a11y")]
@@ -81,13 +83,13 @@ where
             height: Length::Shrink,
             padding: Padding::new(5.0),
             selected: false,
-            style: <crate::Theme as StyleSheet>::Style::default(),
+            style: <Theme as StyleSheet>::Style::default(),
             variant: Variant::Normal,
         }
     }
 
     pub fn new_image(
-        content: impl Into<Element<'a, Message, crate::Theme, Renderer>>,
+        content: impl Into<Element<'a, Message, Theme, Renderer>>,
         on_remove: Option<Message>,
     ) -> Self {
         Self {
@@ -104,7 +106,7 @@ where
             height: Length::Shrink,
             padding: Padding::new(5.0),
             selected: false,
-            style: <crate::Theme as StyleSheet>::Style::default(),
+            style: <Theme as StyleSheet>::Style::default(),
             variant: Variant::Image {
                 on_remove,
                 close_icon: crate::widget::icon::from_name("window-close-symbolic")
@@ -178,7 +180,7 @@ where
     }
 
     /// Sets the style variant of this [`Button`].
-    pub fn style(mut self, style: <crate::Theme as StyleSheet>::Style) -> Self {
+    pub fn style(mut self, style: <Theme as StyleSheet>::Style) -> Self {
         self.style = style;
         self
     }
@@ -214,11 +216,12 @@ where
     }
 }
 
-impl<'a, Message, Renderer> Widget<Message, crate::Theme, Renderer>
-    for Button<'a, Message, Renderer>
+impl<'a, Message, Theme, Renderer> Widget<Message, Theme, Renderer>
+    for Button<'a, Message, Theme, Renderer>
 where
     Message: 'a + Clone,
     Renderer: 'a + iced_core::Renderer + svg::Renderer,
+    Theme: super::style::StyleSheet,
 {
     fn tag(&self) -> tree::Tag {
         tree::Tag::of::<State>()
@@ -340,7 +343,7 @@ where
         &self,
         tree: &Tree,
         renderer: &mut Renderer,
-        theme: &crate::Theme,
+        theme: &Theme,
         renderer_style: &renderer::Style,
         layout: Layout<'_>,
         cursor: mouse::Cursor,
@@ -349,7 +352,7 @@ where
         let bounds = layout.bounds();
         let content_layout = layout.children().next().unwrap();
 
-        let styling = draw(
+        let styling = draw::<_, Theme>(
             renderer,
             bounds,
             cursor,
@@ -471,7 +474,7 @@ where
         tree: &'b mut Tree,
         layout: Layout<'_>,
         renderer: &Renderer,
-    ) -> Option<overlay::Element<'b, Message, crate::Theme, Renderer>> {
+    ) -> Option<overlay::Element<'b, Message, Theme, Renderer>> {
         self.content.as_widget_mut().overlay(
             &mut tree.children[0],
             layout.children().next().unwrap(),
@@ -554,13 +557,14 @@ where
     }
 }
 
-impl<'a, Message, Renderer> From<Button<'a, Message, Renderer>>
-    for Element<'a, Message, crate::Theme, Renderer>
+impl<'a, Message, Theme, Renderer> From<Button<'a, Message, Theme, Renderer>>
+    for Element<'a, Message, Theme, Renderer>
 where
     Message: Clone + 'a,
     Renderer: iced_core::Renderer + svg::Renderer + 'a,
+    Theme: super::style::StyleSheet + 'a,
 {
-    fn from(button: Button<'a, Message, Renderer>) -> Self {
+    fn from(button: Button<'a, Message, Theme, Renderer>) -> Self {
         Self::new(button)
     }
 }
@@ -680,18 +684,19 @@ pub fn update<'a, Message: Clone>(
 }
 
 #[allow(clippy::too_many_arguments)]
-pub fn draw<'a, Renderer: iced_core::Renderer>(
+pub fn draw<'a, Renderer: iced_core::Renderer, Theme>(
     renderer: &mut Renderer,
     bounds: Rectangle,
     cursor: mouse::Cursor,
     is_enabled: bool,
     is_selected: bool,
-    style_sheet: &dyn StyleSheet<Style = <crate::Theme as StyleSheet>::Style>,
-    style: &<crate::Theme as StyleSheet>::Style,
+    style_sheet: &dyn StyleSheet<Style = <Theme as StyleSheet>::Style>,
+    style: &<Theme as StyleSheet>::Style,
     state: impl FnOnce() -> &'a State,
     draw_contents: impl FnOnce(&mut Renderer, Appearance),
 ) -> Appearance
 where
+    Theme: super::style::StyleSheet,
 {
     let is_mouse_over = cursor.position().is_some_and(|p| bounds.contains(p));
 
