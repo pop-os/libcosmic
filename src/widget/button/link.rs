@@ -58,32 +58,33 @@ pub fn icon() -> Handle {
 
 impl<'a, Message: Clone + 'static> From<Button<'a, Message>> for Element<'a, Message> {
     fn from(mut builder: Button<'a, Message>) -> Element<'a, Message> {
-        let button: super::Button<'a, Message, crate::Renderer> = row::with_capacity(2)
-            .push({
-                let mut font = crate::font::DEFAULT;
-                font.weight = builder.font_weight;
+        let button: super::Button<'a, Message, crate::Theme, crate::Renderer> =
+            row::with_capacity(2)
+                .push({
+                    let mut font = crate::font::DEFAULT;
+                    font.weight = builder.font_weight;
 
-                // TODO: Avoid allocation
-                crate::widget::text(builder.label.to_string())
-                    .size(builder.font_size)
-                    .line_height(LineHeight::Absolute(builder.line_height.into()))
-                    .font(font)
-            })
-            .push_maybe(if builder.variant.trailing_icon {
-                Some(icon().icon().size(builder.icon_size))
-            } else {
-                None
-            })
-            .padding(builder.padding)
-            .width(builder.width)
-            .height(builder.height)
-            .spacing(builder.spacing)
-            .align_items(Alignment::Center)
-            .apply(button)
-            .padding(0)
-            .id(builder.id)
-            .on_press_maybe(builder.on_press.take())
-            .style(builder.style);
+                    // TODO: Avoid allocation
+                    crate::widget::text(builder.label.to_string())
+                        .size(builder.font_size)
+                        .line_height(LineHeight::Absolute(builder.line_height.into()))
+                        .font(font)
+                })
+                .push_maybe(if builder.variant.trailing_icon {
+                    Some(icon().icon().size(builder.icon_size))
+                } else {
+                    None
+                })
+                .padding(builder.padding)
+                .width(builder.width)
+                .height(builder.height)
+                .spacing(builder.spacing)
+                .align_items(Alignment::Center)
+                .apply(button)
+                .padding(0)
+                .id(builder.id)
+                .on_press_maybe(builder.on_press.take())
+                .style(builder.style);
 
         if builder.tooltip.is_empty() {
             button.into()
