@@ -64,6 +64,8 @@ pub enum Message {
     /// Capabilities the window manager supports
     #[cfg(feature = "wayland")]
     WmCapabilities(window::Id, WindowManagerCapabilities),
+    /// Notifies that a surface was closed.
+    /// Any data relating to the surface should be cleaned up.
     SurfaceClosed(window::Id),
     /// Activate the application
     Activate(String),
