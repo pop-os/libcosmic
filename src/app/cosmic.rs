@@ -21,7 +21,7 @@ use iced::wayland::Application as IcedApplication;
 use iced::window;
 #[cfg(not(any(feature = "multi-window", feature = "wayland")))]
 use iced::Application as IcedApplication;
-use iced_futures::event::listen_raw;
+use iced_futures::event::{listen_raw, listen_with};
 #[cfg(not(feature = "wayland"))]
 use iced_runtime::command::Action;
 #[cfg(not(feature = "wayland"))]
@@ -64,6 +64,7 @@ pub enum Message {
     /// Capabilities the window manager supports
     #[cfg(feature = "wayland")]
     WmCapabilities(window::Id, WindowManagerCapabilities),
+    SurfaceClosed(window::Id),
     /// Activate the application
     Activate(String),
 }
@@ -139,18 +140,19 @@ where
     }
 
     fn subscription(&self) -> Subscription<Self::Message> {
-        let window_events = listen_raw(|event, _| {
+        let window_events = listen_with(|event, _| {
             match event {
                 iced::Event::Window(id, window::Event::Resized { width, height }) => {
                     return Some(Message::WindowResize(id, width, height));
                 }
-
+                iced::Event::Window(id, window::Event::Closed) => {
+                    return Some(Message::SurfaceClosed(id))
+                }
                 #[cfg(feature = "wayland")]
                 iced::Event::PlatformSpecific(PlatformSpecific::Wayland(event)) => match event {
                     wayland::Event::Window(WindowEvent::State(state), _surface, id) => {
                         return Some(Message::WindowState(id, state));
                     }
-
                     wayland::Event::Window(
                         WindowEvent::WmCapabilities(capabilities),
                         _surface,
@@ -158,7 +160,10 @@ where
                     ) => {
                         return Some(Message::WmCapabilities(id, capabilities));
                     }
-
+                    wayland::Event::Popup(wayland::PopupEvent::Done, _, id)
+                    | wayland::Event::Layer(wayland::LayerEvent::Done, _, id) => {
+                        return Some(Message::SurfaceClosed(id));
+                    }
                     _ => (),
                 },
                 _ => (),
@@ -395,6 +400,11 @@ impl<T: Application> Cosmic<T> {
                     #[allow(clippy::used_underscore_binding)]
                     _token,
                 );
+            }
+            Message::SurfaceClosed(id) => {
+                if let Some(msg) = self.app.on_close_requested(id) {
+                    return self.app.update(msg);
+                }
             }
         }
 
