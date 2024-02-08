@@ -176,8 +176,8 @@ where
             let total_width = (state.buttons_visible as f32) * (width + spacing);
 
             size = limits.height(Length::Fixed(height)).resolve(
-                total_width,
-                height,
+                self.width,
+                self.height,
                 Size::new(total_width, height),
             );
 
