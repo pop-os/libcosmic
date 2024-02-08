@@ -114,7 +114,11 @@ impl iced_button::StyleSheet for Theme {
                 _ => corner_radii.radius_xl.into(),
             },
             border: Border {
-                radius: corner_radii.radius_xl.into(),
+                radius: match style {
+                    Button::Link => corner_radii.radius_0.into(),
+                    Button::Card => corner_radii.radius_xs.into(),
+                    _ => corner_radii.radius_xl.into(),
+                },
                 ..Default::default()
             },
             background: match style {
