@@ -69,6 +69,7 @@ pub enum Message {
     SurfaceClosed(window::Id),
     /// Activate the application
     Activate(String),
+    ShowWindowMenu,
 }
 
 #[derive(Default)]
@@ -407,6 +408,10 @@ impl<T: Application> Cosmic<T> {
                 if let Some(msg) = self.app.on_close_requested(id) {
                     return self.app.update(msg);
                 }
+            }
+            Message::ShowWindowMenu => {
+                #[cfg(not(feature = "wayland"))]
+                return window::show_window_menu(window::Id::MAIN);
             }
         }
 
