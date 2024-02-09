@@ -1299,7 +1299,7 @@ where
                 return event::Status::Captured;
             }
         }
-        Event::Keyboard(keyboard::Event::KeyPressed { key, .. }) => {
+        Event::Keyboard(keyboard::Event::KeyPressed { key, text, .. }) => {
             let state = state();
 
             if let Some(focus) = &mut state.is_focused {
@@ -1489,19 +1489,24 @@ where
 
                         state.keyboard_modifiers = keyboard::Modifiers::default();
                     }
-                    keyboard::Key::Named(keyboard::key::Named::Tab)
-                    | keyboard::Key::Named(keyboard::key::Named::ArrowUp)
-                    | keyboard::Key::Named(keyboard::key::Named::ArrowDown) => {
+                    keyboard::Key::Named(
+                        keyboard::key::Named::Tab
+                        | keyboard::key::Named::ArrowUp
+                        | keyboard::key::Named::ArrowDown,
+                    ) => {
                         return event::Status::Ignored;
                     }
-                    keyboard::Key::Character(c) => {
+                    keyboard::Key::Character(_)
+                    | keyboard::Key::Named(keyboard::key::Named::Space) => {
                         if state.is_pasting.is_none()
                             && !state.keyboard_modifiers.command()
                             && !modifiers.control()
                         {
                             let mut editor = Editor::new(unsecured_value, &mut state.cursor);
 
-                            editor.insert(c.chars().next().unwrap_or_default());
+                            editor.insert(
+                                text.unwrap_or_default().chars().next().unwrap_or_default(),
+                            );
                             let contents = editor.contents();
                             let unsecured_value = Value::new(&contents);
                             let message = (on_input)(contents);
