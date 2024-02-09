@@ -14,7 +14,7 @@ use iced_core::mouse::ScrollDelta;
 use iced_core::text::{LineHeight, Paragraph, Renderer as TextRenderer, Shaping};
 use iced_core::widget::{self, operation, tree};
 use iced_core::{layout, renderer, widget::Tree, Clipboard, Layout, Shell, Widget};
-use iced_core::{Border, Point, Renderer as IcedRenderer, Shadow, Text};
+use iced_core::{Border, Gradient, Point, Renderer as IcedRenderer, Shadow, Text};
 use slotmap::{Key, SecondaryMap};
 use std::marker::PhantomData;
 use std::time::{Duration, Instant};
@@ -686,6 +686,9 @@ where
         _viewport: &iced::Rectangle,
         _renderer: &Renderer,
     ) -> iced_core::mouse::Interaction {
+        if self.on_activate.is_none() {
+            return iced_core::mouse::Interaction::default();
+        }
         let state = tree.state.downcast_ref::<LocalState>();
         let bounds = layout.bounds();
 
@@ -719,7 +722,31 @@ where
         let appearance = Self::variant_appearance(theme, &self.style);
         let bounds = layout.bounds();
         let button_amount = self.model.items.len();
-
+        let apply_alpha = |mut c: Color| {
+            if self.on_activate.is_some() {
+                c
+            } else {
+                c.a /= 2.0;
+                c
+            }
+        };
+        let bg_with_alpha = |mut b| {
+            match &mut b {
+                Background::Color(c) => {
+                    *c = apply_alpha(*c);
+                }
+                Background::Gradient(g) => {
+                    let Gradient::Linear(mut l) = g;
+                    for c in &mut l.stops {
+                        let Some(stop) = c else {
+                            continue;
+                        };
+                        stop.color = apply_alpha(stop.color);
+                    }
+                }
+            }
+            b
+        };
         // Draw the background, if a background was defined.
         if let Some(background) = appearance.background {
             renderer.fill_quad(
@@ -731,20 +758,21 @@ where
                     },
                     shadow: Shadow::default(),
                 },
-                background,
+                bg_with_alpha(background),
             );
         }
 
         // Draw previous and next tab buttons if there is a need to paginate tabs.
         if state.collapsed {
             // Previous tab button
-            let mut background_appearance = if Item::PrevButton == state.focused_item {
-                Some(appearance.focus)
-            } else if Item::PrevButton == state.hovered {
-                Some(appearance.hover)
-            } else {
-                None
-            };
+            let mut background_appearance =
+                if self.on_activate.is_some() && Item::PrevButton == state.focused_item {
+                    Some(appearance.focus)
+                } else if self.on_activate.is_some() && Item::PrevButton == state.hovered {
+                    Some(appearance.hover)
+                } else {
+                    None
+                };
 
             if let Some(background_appearance) = background_appearance.take() {
                 renderer.fill_quad(
@@ -763,7 +791,7 @@ where
                     },
                     background_appearance
                         .background
-                        .unwrap_or(Background::Color(Color::TRANSPARENT)),
+                        .map_or(Background::Color(Color::TRANSPARENT), bg_with_alpha),
                 );
             }
 
@@ -773,13 +801,13 @@ where
                 style,
                 cursor,
                 viewport,
-                if state.buttons_offset == 0 {
+                apply_alpha(if state.buttons_offset == 0 {
                     appearance.inactive.text_color
                 } else if let Item::PrevButton = state.focused_item {
                     appearance.focus.text_color
                 } else {
                     appearance.active.text_color
-                },
+                }),
                 Rectangle {
                     x: bounds.x + f32::from(self.button_height) / 4.0,
                     y: bounds.y + f32::from(self.button_height) / 4.0,
@@ -790,13 +818,14 @@ where
             );
 
             // Next tab button
-            background_appearance = if Item::NextButton == state.focused_item {
-                Some(appearance.focus)
-            } else if Item::NextButton == state.hovered {
-                Some(appearance.hover)
-            } else {
-                None
-            };
+            background_appearance =
+                if self.on_activate.is_some() && Item::NextButton == state.focused_item {
+                    Some(appearance.focus)
+                } else if self.on_activate.is_some() && Item::NextButton == state.hovered {
+                    Some(appearance.hover)
+                } else {
+                    None
+                };
 
             if let Some(background_appearance) = background_appearance {
                 renderer.fill_quad(
@@ -825,13 +854,13 @@ where
                 style,
                 cursor,
                 viewport,
-                if self.next_tab_sensitive(state) {
+                apply_alpha(if self.next_tab_sensitive(state) {
                     appearance.active.text_color
                 } else if let Item::NextButton = state.focused_item {
                     appearance.focus.text_color
                 } else {
                     appearance.inactive.text_color
-                },
+                }),
                 Rectangle {
                     x: bounds.x + bounds.width - f32::from(self.button_height)
                         + f32::from(self.button_height) / 4.0,
@@ -846,17 +875,18 @@ where
         // Draw each of the items in the widget.
         for (nth, (key, mut bounds)) in self.variant_button_bounds(state, bounds).enumerate() {
             let key_is_active = self.model.is_active(key);
-            let key_is_hovered = state.hovered == Item::Tab(key);
+            let key_is_hovered = self.on_activate.is_some() && state.hovered == Item::Tab(key);
 
-            let (status_appearance, font) = if Item::Tab(key) == state.focused_item {
-                (appearance.focus, &self.font_active)
-            } else if key_is_active {
-                (appearance.active, &self.font_active)
-            } else if key_is_hovered {
-                (appearance.hover, &self.font_hovered)
-            } else {
-                (appearance.inactive, &self.font_inactive)
-            };
+            let (status_appearance, font) =
+                if self.on_activate.is_some() && Item::Tab(key) == state.focused_item {
+                    (appearance.focus, &self.font_active)
+                } else if key_is_active {
+                    (appearance.active, &self.font_active)
+                } else if key_is_hovered {
+                    (appearance.hover, &self.font_hovered)
+                } else {
+                    (appearance.inactive, &self.font_inactive)
+                };
             let font = font.unwrap_or_else(|| renderer.default_font());
 
             let button_appearance = if nth == 0 {
@@ -880,7 +910,7 @@ where
                     },
                     status_appearance
                         .background
-                        .unwrap_or(Background::Color(Color::TRANSPARENT)),
+                        .map_or(Background::Color(Color::TRANSPARENT), bg_with_alpha),
                 );
             }
 
@@ -900,7 +930,7 @@ where
                         },
                         shadow: Shadow::default(),
                     },
-                    background,
+                    bg_with_alpha(background.into()),
                 );
             }
 
@@ -931,7 +961,7 @@ where
                     style,
                     cursor,
                     viewport,
-                    status_appearance.text_color,
+                    apply_alpha(status_appearance.text_color),
                     Rectangle {
                         width,
                         height: width,
@@ -977,7 +1007,7 @@ where
                         line_height: self.line_height,
                     },
                     bounds.position(),
-                    status_appearance.text_color,
+                    apply_alpha(status_appearance.text_color),
                     Rectangle {
                         width: {
                             let width = bounds.width - close_icon_width;
@@ -1004,7 +1034,7 @@ where
                     style,
                     cursor,
                     viewport,
-                    status_appearance.text_color,
+                    apply_alpha(status_appearance.text_color),
                     close_button_bounds,
                     self.close_icon.clone(),
                 );

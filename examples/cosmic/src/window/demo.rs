@@ -330,15 +330,25 @@ impl State {
                         .spacing(8)
                         .on_activate(Message::Selection)
                         .into(),
+                    text("Disabled Horizontal With Spacing").into(),
+                    segmented_selection::horizontal(&self.selection)
+                        .spacing(8)
+                        .into(),
                     text("Horizontal Multi-Select").into(),
                     segmented_selection::horizontal(&self.multi_selection)
                         .spacing(8)
                         .on_activate(Message::MultiSelection)
                         .into(),
+                    text("Disabled Horizontal Multi-Select").into(),
+                    segmented_selection::horizontal(&self.multi_selection)
+                        .spacing(8)
+                        .into(),
                     text("Vertical").into(),
                     segmented_selection::vertical(&self.selection)
                         .on_activate(Message::Selection)
                         .into(),
+                    text("Disabled Vertical").into(),
+                    segmented_selection::vertical(&self.selection).into(),
                     text("Vertical Multi-Select Shrunk").into(),
                     segmented_selection::vertical(&self.multi_selection)
                         .width(Length::Shrink)
