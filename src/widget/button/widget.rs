@@ -47,7 +47,7 @@ where
 {
     id: Id,
     #[cfg(feature = "a11y")]
-    name: Option<Cow<'a, str>>,
+    name: Option<std::borrow::Cow<'a, str>>,
     #[cfg(feature = "a11y")]
     description: Option<iced_accessibility::Description<'a>>,
     #[cfg(feature = "a11y")]
@@ -187,7 +187,7 @@ where
 
     #[cfg(feature = "a11y")]
     /// Sets the name of the [`Button`].
-    pub fn name(mut self, name: impl Into<Cow<'a, str>>) -> Self {
+    pub fn name(mut self, name: impl Into<std::borrow::Cow<'a, str>>) -> Self {
         self.name = Some(name.into());
         self
     }
@@ -203,7 +203,7 @@ where
 
     #[cfg(feature = "a11y")]
     /// Sets the description of the [`Button`].
-    pub fn description(mut self, description: impl Into<Cow<'a, str>>) -> Self {
+    pub fn description(mut self, description: impl Into<std::borrow::Cow<'a, str>>) -> Self {
         self.description = Some(iced_accessibility::Description::Text(description.into()));
         self
     }
@@ -653,7 +653,7 @@ pub fn update<'a, Message: Clone>(
         #[cfg(feature = "a11y")]
         Event::A11y(event_id, iced_accessibility::accesskit::ActionRequest { action, .. }) => {
             let state = state();
-            if let Some(Some(on_press)) = (id == event_id
+            if let Some(Some(on_press)) = (event_id == event_id
                 && matches!(action, iced_accessibility::accesskit::Action::Default))
             .then(|| on_press.clone())
             {
