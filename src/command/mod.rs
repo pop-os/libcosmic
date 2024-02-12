@@ -42,16 +42,16 @@ pub fn drag<M>(id: Option<window::Id>) -> Command<M> {
     iced_runtime::window::drag(id.unwrap_or(window::Id::MAIN))
 }
 
-/// Fullscreens the window.
+/// Maximizes the window.
 #[cfg(feature = "wayland")]
-pub fn fullscreen<M>(id: Option<window::Id>) -> Command<M> {
-    iced_sctk::commands::window::set_mode_window(id.unwrap_or(window::Id::MAIN), Mode::Fullscreen)
+pub fn maximize<M>(id: Option<window::Id>, maximized: bool) -> Command<M> {
+    iced_sctk::commands::window::maximize(id.unwrap_or(window::Id::MAIN), maximized)
 }
 
-/// Fullscreens the window.
+/// Maximizes the window.
 #[cfg(not(feature = "wayland"))]
-pub fn fullscreen<M>(id: Option<window::Id>) -> Command<M> {
-    iced_runtime::window::change_mode(id.unwrap_or(window::Id::MAIN), Mode::Fullscreen)
+pub fn maximize<M>(id: Option<window::Id>, maximized: bool) -> Command<M> {
+    iced_runtime::window::maximize(id.unwrap_or(window::Id::MAIN), maximized)
 }
 
 /// Minimizes the window.
@@ -94,17 +94,15 @@ pub fn set_windowed<M>(id: Option<window::Id>) -> Command<M> {
     iced_runtime::window::change_mode(id.unwrap_or(window::Id::MAIN), Mode::Windowed)
 }
 
-/// Toggles the windows' maximization state.
+/// Toggles the windows' maximize state.
 #[cfg(feature = "wayland")]
-pub fn toggle_fullscreen<M>(id: Option<window::Id>) -> Command<M> {
-    window_action(WindowAction::ToggleFullscreen {
-        id: id.unwrap_or(window::Id::MAIN),
-    })
+pub fn toggle_maximize<M>(id: Option<window::Id>) -> Command<M> {
+    iced_sctk::commands::window::toggle_maximize(id.unwrap_or(window::Id::MAIN))
 }
 
-/// Toggles the windows' maximization state.
+/// Toggles the windows' maximize state.
 #[cfg(not(feature = "wayland"))]
-pub fn toggle_fullscreen<M>(id: Option<window::Id>) -> Command<M> {
+pub fn toggle_maximize<M>(id: Option<window::Id>) -> Command<M> {
     iced_runtime::window::toggle_maximize(id.unwrap_or(window::Id::MAIN))
 }
 

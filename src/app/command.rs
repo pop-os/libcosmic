@@ -33,8 +33,11 @@ pub fn drag<M: Send + 'static>(id: Option<window::Id>) -> iced::Command<Message<
     crate::command::drag(id).map(Message::Cosmic)
 }
 
-pub fn fullscreen<M: Send + 'static>(id: Option<window::Id>) -> iced::Command<Message<M>> {
-    crate::command::fullscreen(id).map(Message::Cosmic)
+pub fn maximize<M: Send + 'static>(
+    id: Option<window::Id>,
+    maximized: bool,
+) -> iced::Command<Message<M>> {
+    crate::command::maximize(id, maximized).map(Message::Cosmic)
 }
 
 pub fn minimize<M: Send + 'static>(id: Option<window::Id>) -> iced::Command<Message<M>> {
@@ -60,6 +63,6 @@ pub fn set_windowed<M: Send + 'static>(id: Option<window::Id>) -> iced::Command<
     crate::command::set_windowed(id).map(Message::Cosmic)
 }
 
-pub fn toggle_fullscreen<M: Send + 'static>(id: Option<window::Id>) -> iced::Command<Message<M>> {
-    crate::command::toggle_fullscreen(id).map(Message::Cosmic)
+pub fn toggle_maximize<M: Send + 'static>(id: Option<window::Id>) -> iced::Command<Message<M>> {
+    crate::command::toggle_maximize(id).map(Message::Cosmic)
 }

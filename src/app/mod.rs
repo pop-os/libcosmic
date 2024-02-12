@@ -529,8 +529,8 @@ pub trait ApplicationExt: Application {
     /// Initiates a window drag.
     fn drag(&mut self) -> iced::Command<Message<Self::Message>>;
 
-    /// Fullscreens the window.
-    fn fullscreen(&mut self) -> iced::Command<Message<Self::Message>>;
+    /// Maximizes the window.
+    fn maximize(&mut self) -> iced::Command<Message<Self::Message>>;
 
     /// Minimizes the window.
     fn minimize(&mut self) -> iced::Command<Message<Self::Message>>;
@@ -574,8 +574,8 @@ impl<App: Application> ApplicationExt for App {
         command::drag(Some(window::Id::MAIN))
     }
 
-    fn fullscreen(&mut self) -> iced::Command<Message<Self::Message>> {
-        command::fullscreen(Some(window::Id::MAIN))
+    fn maximize(&mut self) -> iced::Command<Message<Self::Message>> {
+        command::maximize(Some(window::Id::MAIN), true)
     }
 
     fn minimize(&mut self) -> iced::Command<Message<Self::Message>> {
