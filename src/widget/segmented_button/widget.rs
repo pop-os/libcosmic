@@ -63,6 +63,8 @@ where
     pub(super) id: Option<Id>,
     /// The icon used for the close button.
     pub(super) close_icon: Icon,
+    /// Scrolling switches focus between tabs.
+    pub(super) scrollable_focus: bool,
     /// Show the close icon only when item is hovered.
     pub(super) show_close_icon_on_hover: bool,
     /// Padding around a button.
@@ -115,6 +117,7 @@ where
             model,
             id: None,
             close_icon: icon::from_name("window-close-symbolic").size(16).icon(),
+            scrollable_focus: false,
             show_close_icon_on_hover: false,
             button_padding: [4, 4, 4, 4],
             button_height: 32,
@@ -541,58 +544,60 @@ where
                 }
             }
 
-            if let Some(on_activate) = self.on_activate.as_ref() {
-                if let Event::Mouse(mouse::Event::WheelScrolled { delta }) = event {
-                    let current = Instant::now();
+            if self.scrollable_focus {
+                if let Some(on_activate) = self.on_activate.as_ref() {
+                    if let Event::Mouse(mouse::Event::WheelScrolled { delta }) = event {
+                        let current = Instant::now();
 
-                    // Permit successive scroll wheel events only after a given delay.
-                    if state.wheel_timestamp.map_or(true, |previous| {
-                        current.duration_since(previous) > Duration::from_millis(250)
-                    }) {
-                        state.wheel_timestamp = Some(current);
+                        // Permit successive scroll wheel events only after a given delay.
+                        if state.wheel_timestamp.map_or(true, |previous| {
+                            current.duration_since(previous) > Duration::from_millis(250)
+                        }) {
+                            state.wheel_timestamp = Some(current);
 
-                        match delta {
-                            ScrollDelta::Lines { y, .. } | ScrollDelta::Pixels { y, .. } => {
-                                let mut activate_key = None;
+                            match delta {
+                                ScrollDelta::Lines { y, .. } | ScrollDelta::Pixels { y, .. } => {
+                                    let mut activate_key = None;
 
-                                if y < 0.0 {
-                                    let mut prev_key = Entity::null();
+                                    if y < 0.0 {
+                                        let mut prev_key = Entity::null();
 
-                                    for key in self.model.order.iter().copied() {
-                                        if self.model.is_active(key) && !prev_key.is_null() {
-                                            activate_key = Some(prev_key);
-                                        }
-
-                                        if self.model.is_enabled(key) {
-                                            prev_key = key;
-                                        }
-                                    }
-                                } else if y > 0.0 {
-                                    let mut buttons = self.model.order.iter().copied();
-                                    while let Some(key) = buttons.next() {
-                                        if self.model.is_active(key) {
-                                            for key in buttons {
-                                                if self.model.is_enabled(key) {
-                                                    activate_key = Some(key);
-                                                    break;
-                                                }
+                                        for key in self.model.order.iter().copied() {
+                                            if self.model.is_active(key) && !prev_key.is_null() {
+                                                activate_key = Some(prev_key);
                                             }
-                                            break;
+
+                                            if self.model.is_enabled(key) {
+                                                prev_key = key;
+                                            }
+                                        }
+                                    } else if y > 0.0 {
+                                        let mut buttons = self.model.order.iter().copied();
+                                        while let Some(key) = buttons.next() {
+                                            if self.model.is_active(key) {
+                                                for key in buttons {
+                                                    if self.model.is_enabled(key) {
+                                                        activate_key = Some(key);
+                                                        break;
+                                                    }
+                                                }
+                                                break;
+                                            }
                                         }
                                     }
-                                }
 
-                                if let Some(key) = activate_key {
-                                    shell.publish(on_activate(key));
-                                    return event::Status::Captured;
+                                    if let Some(key) = activate_key {
+                                        shell.publish(on_activate(key));
+                                        return event::Status::Captured;
+                                    }
                                 }
                             }
                         }
                     }
                 }
+            } else {
+                state.hovered = Item::None;
             }
-        } else {
-            state.hovered = Item::None;
         }
 
         if state.focused {
