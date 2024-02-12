@@ -56,6 +56,8 @@ pub enum Message {
     SystemThemeChange(Theme),
     /// Notification of system theme mode changes.
     SystemThemeModeChange(ThemeMode),
+    /// Updates the window maximized state
+    WindowMaximized(window::Id, bool),
     /// Updates the tracked window geometry.
     WindowResize(window::Id, u32, u32),
     /// Tracks updates to window state.
@@ -257,6 +259,12 @@ impl<T: Application> Cosmic<T> {
     #[allow(clippy::too_many_lines)]
     fn cosmic_update(&mut self, message: Message) -> iced::Command<super::Message<T::Message>> {
         match message {
+            Message::WindowMaximized(id, maximized) => {
+                if window::Id::MAIN == id {
+                    self.app.core_mut().window.sharp_corners = maximized;
+                }
+            }
+
             Message::WindowResize(id, width, height) => {
                 if window::Id::MAIN == id {
                     self.app.core_mut().set_window_width(width);
@@ -264,6 +272,12 @@ impl<T: Application> Cosmic<T> {
                 }
 
                 self.app.on_window_resize(id, width, height);
+
+                //TODO: more efficient test of maximized (winit has no event for maximize if set by the OS)
+                #[cfg(not(feature = "wayland"))]
+                return iced::window::fetch_maximized(id, move |maximized| {
+                    super::Message::Cosmic(Message::WindowMaximized(id, maximized))
+                });
             }
 
             #[cfg(feature = "wayland")]
@@ -284,8 +298,6 @@ impl<T: Application> Cosmic<T> {
             #[cfg(feature = "wayland")]
             Message::WmCapabilities(id, capabilities) => {
                 if window::Id::MAIN == id {
-                    self.app.core_mut().window.can_fullscreen =
-                        capabilities.contains(WindowManagerCapabilities::FULLSCREEN);
                     self.app.core_mut().window.show_maximize =
                         capabilities.contains(WindowManagerCapabilities::MAXIMIZE);
                     self.app.core_mut().window.show_minimize =
@@ -308,7 +320,7 @@ impl<T: Application> Cosmic<T> {
                 keyboard_nav::Message::Escape => return self.app.on_escape(),
                 keyboard_nav::Message::Search => return self.app.on_search(),
 
-                keyboard_nav::Message::Fullscreen => return command::toggle_fullscreen(None),
+                keyboard_nav::Message::Fullscreen => return command::toggle_maximize(None),
             },
 
             Message::ContextDrawer(show) => {
@@ -320,15 +332,7 @@ impl<T: Application> Cosmic<T> {
 
             Message::Minimize => return command::minimize(None),
 
-            Message::Maximize => {
-                if self.app.core().window.sharp_corners {
-                    self.app.core_mut().window.sharp_corners = false;
-                    return command::set_windowed(None);
-                }
-
-                self.app.core_mut().window.sharp_corners = true;
-                return command::fullscreen(None);
-            }
+            Message::Maximize => return command::toggle_maximize(None),
 
             Message::NavBar(key) => {
                 self.app.core_mut().nav_bar_set_toggled_condensed(false);
