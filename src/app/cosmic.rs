@@ -253,7 +253,9 @@ impl<T: Application> Cosmic<T> {
     #[cfg(not(feature = "wayland"))]
     #[allow(clippy::unused_self)]
     pub fn close(&mut self) -> iced::Command<super::Message<T::Message>> {
-        iced::Command::single(Action::Window(WindowAction::Close(self.app.main_window_id())))
+        iced::Command::single(Action::Window(WindowAction::Close(
+            self.app.main_window_id(),
+        )))
     }
 
     #[allow(clippy::too_many_lines)]
@@ -320,7 +322,9 @@ impl<T: Application> Cosmic<T> {
                 keyboard_nav::Message::Escape => return self.app.on_escape(),
                 keyboard_nav::Message::Search => return self.app.on_search(),
 
-                keyboard_nav::Message::Fullscreen => return command::toggle_maximize(Some(self.app.main_window_id())),
+                keyboard_nav::Message::Fullscreen => {
+                    return command::toggle_maximize(Some(self.app.main_window_id()))
+                }
             },
 
             Message::ContextDrawer(show) => {
