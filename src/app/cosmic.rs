@@ -75,8 +75,8 @@ pub enum Message {
 }
 
 #[derive(Default)]
-pub(crate) struct Cosmic<App> {
-    pub(crate) app: App,
+pub struct Cosmic<App> {
+    pub app: App,
 }
 
 impl<T: Application> IcedApplication for Cosmic<T>
@@ -228,7 +228,7 @@ where
 
     #[cfg(any(feature = "multi-window", feature = "wayland"))]
     fn view(&self, id: window::Id) -> Element<Self::Message> {
-        if id != window::Id::MAIN {
+        if id != self.app.main_window_id() {
             return self.app.view_window(id).map(super::Message::App);
         }
 
@@ -248,26 +248,26 @@ where
 impl<T: Application> Cosmic<T> {
     #[cfg(feature = "wayland")]
     pub fn close(&mut self) -> iced::Command<super::Message<T::Message>> {
-        iced_sctk::commands::window::close_window(window::Id::MAIN)
+        iced_sctk::commands::window::close_window(self.app.main_window_id())
     }
 
     #[cfg(not(feature = "wayland"))]
     #[allow(clippy::unused_self)]
     pub fn close(&mut self) -> iced::Command<super::Message<T::Message>> {
-        iced::Command::single(Action::Window(WindowAction::Close(window::Id::MAIN)))
+        iced::Command::single(Action::Window(WindowAction::Close(self.app.main_window_id())))
     }
 
     #[allow(clippy::too_many_lines)]
     fn cosmic_update(&mut self, message: Message) -> iced::Command<super::Message<T::Message>> {
         match message {
             Message::WindowMaximized(id, maximized) => {
-                if window::Id::MAIN == id {
+                if self.app.main_window_id() == id {
                     self.app.core_mut().window.sharp_corners = maximized;
                 }
             }
 
             Message::WindowResize(id, width, height) => {
-                if window::Id::MAIN == id {
+                if self.app.main_window_id() == id {
                     self.app.core_mut().set_window_width(width);
                     self.app.core_mut().set_window_height(height);
                 }
@@ -283,7 +283,7 @@ impl<T: Application> Cosmic<T> {
 
             #[cfg(feature = "wayland")]
             Message::WindowState(id, state) => {
-                if window::Id::MAIN == id {
+                if self.app.main_window_id() == id {
                     self.app.core_mut().window.sharp_corners = state.intersects(
                         WindowState::MAXIMIZED
                             | WindowState::FULLSCREEN
@@ -298,7 +298,7 @@ impl<T: Application> Cosmic<T> {
 
             #[cfg(feature = "wayland")]
             Message::WmCapabilities(id, capabilities) => {
-                if window::Id::MAIN == id {
+                if self.app.main_window_id() == id {
                     self.app.core_mut().window.show_maximize =
                         capabilities.contains(WindowManagerCapabilities::MAXIMIZE);
                     self.app.core_mut().window.show_minimize =
@@ -321,7 +321,7 @@ impl<T: Application> Cosmic<T> {
                 keyboard_nav::Message::Escape => return self.app.on_escape(),
                 keyboard_nav::Message::Search => return self.app.on_search(),
 
-                keyboard_nav::Message::Fullscreen => return command::toggle_maximize(None),
+                keyboard_nav::Message::Fullscreen => return command::toggle_maximize(Some(self.app.main_window_id())),
             },
 
             Message::ContextDrawer(show) => {
@@ -329,11 +329,11 @@ impl<T: Application> Cosmic<T> {
                 return self.app.on_context_drawer();
             }
 
-            Message::Drag => return command::drag(None),
+            Message::Drag => return command::drag(Some(self.app.main_window_id())),
 
-            Message::Minimize => return command::minimize(None),
+            Message::Minimize => return command::minimize(Some(self.app.main_window_id())),
 
-            Message::Maximize => return command::toggle_maximize(None),
+            Message::Maximize => return command::toggle_maximize(Some(self.app.main_window_id())),
 
             Message::NavBar(key) => {
                 self.app.core_mut().nav_bar_set_toggled_condensed(false);
@@ -403,7 +403,7 @@ impl<T: Application> Cosmic<T> {
             Message::Activate(_token) => {
                 #[cfg(feature = "wayland")]
                 return iced_sctk::commands::activation::activate(
-                    iced::window::Id::MAIN,
+                    self.app.main_window_id(),
                     #[allow(clippy::used_underscore_binding)]
                     _token,
                 );
