@@ -433,6 +433,11 @@ where
         Vec::new()
     }
 
+    /// Get the main [`window::Id`], which is [`window::Id::MAIN`] by default
+    fn main_window_id(&self) -> window::Id {
+        window::Id::MAIN
+    }
+
     /// Allows overriding the default nav bar widget
     fn nav_bar(&self) -> Option<Element<Message<Self::Message>>> {
         if !self.core().nav_bar_active() {
@@ -571,15 +576,15 @@ pub trait ApplicationExt: Application {
 
 impl<App: Application> ApplicationExt for App {
     fn drag(&mut self) -> iced::Command<Message<Self::Message>> {
-        command::drag(Some(window::Id::MAIN))
+        command::drag(Some(self.main_window_id()))
     }
 
     fn maximize(&mut self) -> iced::Command<Message<Self::Message>> {
-        command::maximize(Some(window::Id::MAIN), true)
+        command::maximize(Some(self.main_window_id()), true)
     }
 
     fn minimize(&mut self) -> iced::Command<Message<Self::Message>> {
-        command::minimize(Some(window::Id::MAIN))
+        command::minimize(Some(self.main_window_id()))
     }
 
     #[cfg(any(feature = "multi-window", feature = "wayland"))]
@@ -606,7 +611,7 @@ impl<App: Application> ApplicationExt for App {
     fn set_window_title(&mut self, title: String) -> iced::Command<Message<Self::Message>> {
         self.core_mut()
             .title
-            .insert(window::Id::MAIN, title.clone());
+            .insert(self.main_window_id(), title.clone());
         iced::Command::none()
     }
 
@@ -658,7 +663,7 @@ impl<App: Application> ApplicationExt for App {
             .push_maybe(if core.window.show_headerbar {
                 Some({
                     let mut header = crate::widget::header_bar()
-                        .window_id(window::Id::MAIN)
+                        .window_id(self.main_window_id())
                         .title(&core.window.header_title)
                         .on_drag(Message::Cosmic(cosmic::Message::Drag))
                         .on_close(Message::Cosmic(cosmic::Message::Close));
