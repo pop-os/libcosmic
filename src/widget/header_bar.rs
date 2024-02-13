@@ -16,6 +16,7 @@ pub fn header_bar<'a, Message>() -> HeaderBar<'a, Message> {
         on_drag: None,
         on_maximize: None,
         on_minimize: None,
+        on_right_click: None,
         start: Vec::new(),
         center: Vec::new(),
         end: Vec::new(),
@@ -44,6 +45,10 @@ pub struct HeaderBar<'a, Message> {
     /// A message emitted when the minimize button is pressed.
     #[setters(strip_option)]
     on_minimize: Option<Message>,
+
+    /// A message emitted when the header is right clicked.
+    #[setters(strip_option)]
+    on_right_click: Option<Message>,
 
     /// The window id for the headerbar.
     #[setters(strip_option)]
@@ -335,6 +340,10 @@ impl<'a, Message: Clone + 'static> HeaderBar<'a, Message> {
         // Assigns a message to emit when the headerbar is double-clicked.
         if let Some(message) = self.on_maximize.clone() {
             widget = widget.on_release(message);
+        }
+
+        if let Some(message) = self.on_right_click.clone() {
+            widget = widget.on_right_press(message);
         }
 
         widget.into()
