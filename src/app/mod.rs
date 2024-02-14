@@ -609,9 +609,9 @@ impl<App: Application> ApplicationExt for App {
 
     #[cfg(not(any(feature = "multi-window", feature = "wayland")))]
     fn set_window_title(&mut self, title: String) -> iced::Command<Message<Self::Message>> {
-        self.core_mut()
-            .title
-            .insert(self.main_window_id(), title.clone());
+        let id = self.main_window_id();
+
+        self.core_mut().title.insert(id, title.clone());
         iced::Command::none()
     }
 

@@ -21,7 +21,7 @@ use iced::wayland::Application as IcedApplication;
 use iced::window;
 #[cfg(not(any(feature = "multi-window", feature = "wayland")))]
 use iced::Application as IcedApplication;
-use iced_futures::event::{listen_raw, listen_with};
+use iced_futures::event::listen_with;
 #[cfg(not(feature = "wayland"))]
 use iced_runtime::command::Action;
 #[cfg(not(feature = "wayland"))]
