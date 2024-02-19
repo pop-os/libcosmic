@@ -1,6 +1,6 @@
-use crate::{composite::over, Component, Theme};
-use palette::{rgb::Rgba, Srgba};
-use std::{fs::File, io::prelude::*};
+use crate::{composite::over, steps::steps, Component, Theme};
+use palette::{rgb::Rgba, Darken, IntoColor, Lighten, Srgba};
+use std::{fs::File, io::prelude::*, num::NonZeroUsize};
 use thiserror::Error;
 
 #[derive(Error, Debug)]
@@ -22,6 +22,7 @@ impl Theme {
             destructive,
             warning,
             success,
+            palette,
             ..
         } = self;
 
@@ -132,7 +133,7 @@ impl Theme {
 
 @define-color shade_color #{shade};
 @define-color scrollbar_outline_color #{scrollbar_outline};
-        "#};
+"#};
 
         css.push_str(&component_gtk4_css("accent", accent));
         css.push_str(&component_gtk4_css("destructive", destructive));
@@ -141,6 +142,19 @@ impl Theme {
         css.push_str(&component_gtk4_css("accent", accent));
         css.push_str(&component_gtk4_css("error", destructive));
 
+        css.push_str(&color_css("blue", palette.blue));
+        css.push_str(&color_css("green", palette.green));
+        css.push_str(&color_css("yellow", palette.yellow));
+        css.push_str(&color_css("red", palette.red));
+        css.push_str(&color_css("orange", palette.ext_orange));
+        css.push_str(&color_css("purple", palette.ext_purple));
+        let neutral_steps = steps(palette.neutral_5, NonZeroUsize::new(10).unwrap());
+        for (i, c) in neutral_steps[..5].iter().enumerate() {
+            css.push_str(&format!("@define-color light_{i} {};\n", to_hex(*c)));
+        }
+        for (i, c) in neutral_steps[5..].iter().enumerate() {
+            css.push_str(&format!("@define-color dark_{i} {};\n", to_hex(*c)));
+        }
         css
     }
 
@@ -197,4 +211,25 @@ fn component_gtk4_css(prefix: &str, c: &Component) -> String {
 fn to_hex(c: Srgba) -> String {
     let c_u8: Rgba<palette::encoding::Srgb, u8> = c.into_format();
     format!("{:02x}{:02x}{:02x}", c_u8.red, c_u8.green, c_u8.blue)
+}
+
+fn color_css(prefix: &str, c_3: Srgba) -> String {
+    let oklch: palette::Oklch = c_3.into_color();
+    let c_2: Srgba = oklch.lighten(0.1).into_color();
+    let c_1: Srgba = oklch.lighten(0.2).into_color();
+    let c_4: Srgba = oklch.darken(0.1).into_color();
+    let c_5: Srgba = oklch.darken(0.2).into_color();
+    let c_1 = to_hex(c_1);
+    let c_2 = to_hex(c_2);
+    let c_3 = to_hex(c_3);
+    let c_4 = to_hex(c_4);
+    let c_5 = to_hex(c_5);
+
+    format! {r#"
+@define-color {prefix}_1 #{c_1};
+@define-color {prefix}_2 #{c_2};
+@define-color {prefix}_3 #{c_3};
+@define-color {prefix}_4 #{c_4};
+@define-color {prefix}_5 #{c_5};
+"#}
 }
