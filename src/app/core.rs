@@ -6,6 +6,7 @@ use std::collections::HashMap;
 use cosmic_config::CosmicConfigEntry;
 use cosmic_theme::ThemeMode;
 use iced_core::window::Id;
+use palette::Srgba;
 
 use crate::Theme;
 
@@ -59,8 +60,14 @@ pub struct Core {
     /// Last known system theme
     pub(super) system_theme: Theme,
 
-    /// Theme mode
+    /// Configured theme mode
     pub(super) system_theme_mode: ThemeMode,
+
+    pub(super) portal_is_dark: Option<bool>,
+
+    pub(super) portal_accent: Option<Srgba>,
+
+    pub(super) portal_is_high_contrast: Option<bool>,
 
     pub(super) title: HashMap<Id, String>,
 
@@ -121,6 +128,9 @@ impl Default for Core {
             single_instance: false,
             #[cfg(feature = "dbus-config")]
             settings_daemon: None,
+            portal_is_dark: None,
+            portal_accent: None,
+            portal_is_high_contrast: None,
         }
     }
 }
@@ -259,5 +269,12 @@ impl Core {
             std::borrow::Cow::Borrowed(state_id),
             T::VERSION,
         )
+    }
+
+    /// Whether the application should use a dark theme, according to the system
+    #[must_use]
+    pub fn system_is_dark(&self) -> bool {
+        self.portal_is_dark
+            .unwrap_or(self.system_theme_mode.is_dark)
     }
 }

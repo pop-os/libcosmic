@@ -26,6 +26,7 @@ use iced_futures::event::listen_with;
 use iced_runtime::command::Action;
 #[cfg(not(feature = "wayland"))]
 use iced_runtime::window::Action as WindowAction;
+use palette::color_difference::EuclideanDistance;
 
 /// A message managed internally by COSMIC.
 #[derive(Clone, Debug)]
@@ -72,6 +73,8 @@ pub enum Message {
     /// Activate the application
     Activate(String),
     ShowWindowMenu,
+    #[cfg(feature = "xdg-portal")]
+    DesktopSettings(crate::theme::portal::Desktop),
 }
 
 #[derive(Default)]
@@ -210,6 +213,10 @@ where
                 .single_instance
                 .then(|| super::single_instance_subscription::<T>())
                 .unwrap_or_else(Subscription::none),
+            #[cfg(feature = "xdg-portal")]
+            crate::theme::portal::desktop_settings()
+                .map(|e| Message::DesktopSettings(e))
+                .map(super::Message::Cosmic),
         ];
 
         if self.app.core().keyboard_nav {
@@ -363,7 +370,15 @@ impl<T: Application> Cosmic<T> {
                 // Apply last-known system theme if the system theme is preferred.
                 if let ThemeType::System(_) = theme.theme_type {
                     self.app.core_mut().theme_sub_counter += 1;
+
                     theme = self.app.core().system_theme.clone();
+                    let portal_accent = self.app.core().portal_accent;
+                    if let Some(a) = portal_accent {
+                        let t_inner = theme.cosmic();
+                        if a.distance_squared(*t_inner.accent_color()) > 0.00001 {
+                            theme = Theme::system(Arc::new(t_inner.with_accent(a)));
+                        }
+                    };
                 }
 
                 THEME.with(move |t| {
@@ -375,12 +390,23 @@ impl<T: Application> Cosmic<T> {
             Message::SystemThemeChange(theme) => {
                 // Record the last-known system theme in event that the current theme is custom.
                 self.app.core_mut().system_theme = theme.clone();
+                let portal_accent = self.app.core().portal_accent;
                 THEME.with(move |t| {
                     let mut cosmic_theme = t.borrow_mut();
 
                     // Only apply update if the theme is set to load a system theme
                     if let ThemeType::System(_) = cosmic_theme.theme_type {
-                        cosmic_theme.set_theme(theme.theme_type);
+                        let new_theme = if let Some(a) = portal_accent {
+                            let t_inner = theme.cosmic();
+                            if a.distance_squared(*t_inner.accent_color()) > 0.00001 {
+                                Theme::system(Arc::new(t_inner.with_accent(a)))
+                            } else {
+                                theme
+                            }
+                        } else {
+                            theme
+                        };
+                        cosmic_theme.set_theme(new_theme.theme_type);
                     }
                 });
             }
@@ -395,11 +421,29 @@ impl<T: Application> Cosmic<T> {
             }
             Message::SystemThemeModeChange(mode) => {
                 let core = self.app.core_mut();
-                let changed = core.system_theme_mode.is_dark != mode.is_dark;
+                let prev_is_dark = core.system_is_dark();
                 core.system_theme_mode = mode;
-                core.theme_sub_counter += 1;
+                let is_dark = core.system_is_dark();
+                let changed = prev_is_dark != is_dark;
                 if changed {
-                    let new_theme = crate::theme::system_preference();
+                    core.theme_sub_counter += 1;
+                    let mut new_theme = if is_dark {
+                        crate::theme::system_dark()
+                    } else {
+                        crate::theme::system_light()
+                    };
+
+                    new_theme = if let Some(a) = core.portal_accent {
+                        let t_inner = new_theme.cosmic();
+                        if a.distance_squared(*t_inner.accent_color()) > 0.00001 {
+                            Theme::system(Arc::new(t_inner.with_accent(a)))
+                        } else {
+                            new_theme
+                        }
+                    } else {
+                        new_theme
+                    };
+
                     core.system_theme = new_theme.clone();
                     THEME.with(move |t| {
                         let mut cosmic_theme = t.borrow_mut();
@@ -427,6 +471,64 @@ impl<T: Application> Cosmic<T> {
             Message::ShowWindowMenu => {
                 #[cfg(not(feature = "wayland"))]
                 return window::show_window_menu(window::Id::MAIN);
+            }
+            #[cfg(feature = "xdg-portal")]
+            Message::DesktopSettings(crate::theme::portal::Desktop::ColorScheme(s)) => {
+                use ashpd::desktop::settings::ColorScheme;
+                let is_dark = match s {
+                    ColorScheme::NoPreference => None,
+                    ColorScheme::PreferDark => Some(true),
+                    ColorScheme::PreferLight => Some(false),
+                };
+                let core = self.app.core_mut();
+                let prev_is_dark = core.system_is_dark();
+                core.portal_is_dark = is_dark;
+                let is_dark = core.system_is_dark();
+                let changed = prev_is_dark != is_dark;
+                if changed {
+                    core.theme_sub_counter += 1;
+                    let new_theme = if is_dark {
+                        crate::theme::system_dark()
+                    } else {
+                        crate::theme::system_light()
+                    };
+                    core.system_theme = new_theme.clone();
+                    THEME.with(move |t| {
+                        let mut cosmic_theme = t.borrow_mut();
+
+                        // Only apply update if the theme is set to load a system theme
+                        if let ThemeType::System(_) = cosmic_theme.theme_type {
+                            cosmic_theme.set_theme(new_theme.theme_type);
+                        }
+                    });
+                }
+            }
+            #[cfg(feature = "xdg-portal")]
+            Message::DesktopSettings(crate::theme::portal::Desktop::Accent(c)) => {
+                use palette::{IntoColor, Oklch, Oklcha, Srgb, Srgba};
+
+                let c = Srgba::new(c.red() as f32, c.green() as f32, c.blue() as f32, 1.0);
+                let core = self.app.core_mut();
+                core.portal_accent = Some(c);
+                let cur_accent = core.system_theme.cosmic().accent_color();
+
+                if cur_accent.distance_squared(*c) < 0.00001 {
+                    // skip calculations if we already have the same color
+                    return iced::Command::none();
+                }
+
+                THEME.with(move |t| {
+                    let mut cosmic_theme = t.borrow_mut();
+
+                    // Only apply update if the theme is set to load a system theme
+                    if let ThemeType::System(t) = cosmic_theme.theme_type.clone() {
+                        cosmic_theme.set_theme(ThemeType::System(Arc::new(t.with_accent(c))));
+                    }
+                });
+            }
+            #[cfg(feature = "xdg-portal")]
+            Message::DesktopSettings(crate::theme::portal::Desktop::Contrast(_)) => {
+                // TODO when high contrast is integrated in settings and all custom themes
             }
         }
 

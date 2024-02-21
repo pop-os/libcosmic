@@ -5,7 +5,7 @@ use crate::{
     DARK_PALETTE, LIGHT_PALETTE, NAME,
 };
 use cosmic_config::{Config, CosmicConfigEntry};
-use palette::{IntoColor, Srgb, Srgba};
+use palette::{IntoColor, Oklcha, Srgb, Srgba};
 use serde::{Deserialize, Serialize};
 use std::num::NonZeroUsize;
 
@@ -494,6 +494,31 @@ impl Theme {
         }
         .map_err(|e| (vec![e], Self::default()))?;
         Self::get_entry(&config)
+    }
+
+    #[must_use]
+    /// Rebuild the current theme with the provided accent
+    pub fn with_accent(&self, c: Srgba) -> Self {
+        let mut oklcha: Oklcha = c.into_color();
+        let cur_oklcha: Oklcha = self.accent_color().into_color();
+        oklcha.l = cur_oklcha.l;
+        let adjusted_c: Srgb = oklcha.into_color();
+
+        let is_dark = self.is_dark;
+
+        let mut builder = if is_dark {
+            ThemeBuilder::dark_config()
+                .ok()
+                .and_then(|h| ThemeBuilder::get_entry(&h).ok())
+                .unwrap_or_else(ThemeBuilder::dark)
+        } else {
+            ThemeBuilder::light_config()
+                .ok()
+                .and_then(|h| ThemeBuilder::get_entry(&h).ok())
+                .unwrap_or_else(ThemeBuilder::light)
+        };
+        builder = builder.accent(adjusted_c);
+        builder.build()
     }
 }
 
