@@ -303,7 +303,7 @@ where
             .style(Slider::Custom {
                 active: Rc::new(|t| {
                     let cosmic = t.cosmic();
-                    let mut a = iced_style::slider::StyleSheet::active(t, &Slider::default());
+                    let mut a = slider::StyleSheet::active(t, &Slider::default());
                     a.rail.colors = RailBackground::Gradient {
                         gradient: Linear::new(Radians(0.0)).add_stops(HSV_RAINBOW.clone()),
                         auto_angle: true,
@@ -317,7 +317,7 @@ where
                 }),
                 hovered: Rc::new(|t| {
                     let cosmic = t.cosmic();
-                    let mut a = iced_style::slider::StyleSheet::active(t, &Slider::default());
+                    let mut a = slider::StyleSheet::active(t, &Slider::default());
                     a.rail.colors = RailBackground::Gradient {
                         gradient: Linear::new(Radians(0.0)).add_stops(HSV_RAINBOW.clone()),
                         auto_angle: true,
@@ -331,7 +331,7 @@ where
                 }),
                 dragging: Rc::new(|t| {
                     let cosmic = t.cosmic();
-                    let mut a = iced_style::slider::StyleSheet::active(t, &Slider::default());
+                    let mut a = slider::StyleSheet::active(t, &Slider::default());
                     a.rail.colors = RailBackground::Gradient {
                         gradient: Linear::new(Radians(0.0)).add_stops(HSV_RAINBOW.clone()),
                         auto_angle: true,
