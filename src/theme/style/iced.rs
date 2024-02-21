@@ -560,8 +560,7 @@ impl slider::StyleSheet for Theme {
                     rail: Rail {
                         colors: slider::RailBackground::Pair(
                             cosmic.accent.base.into(),
-                            //TODO: no way to set color before/after slider
-                            Color::TRANSPARENT,
+                            cosmic.palette.neutral_6.into(),
                         ),
                         width: 4.0,
                         border_radius: cosmic.corner_radii.radius_xs.into(),
@@ -572,6 +571,10 @@ impl slider::StyleSheet for Theme {
                         color: cosmic.accent.base.into(),
                         border_color: Color::TRANSPARENT,
                         border_width: 0.0,
+                    },
+
+                    breakpoint: slider::Breakpoint {
+                        color: cosmic.on_bg_color().into(),
                     },
                 }
             }
