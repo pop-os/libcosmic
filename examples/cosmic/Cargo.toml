@@ -8,7 +8,7 @@ publish = false
 [dependencies]
 apply = "0.3.0"
 fraction = "0.14.0"
-libcosmic = { path = "../..", features = ["debug", "winit", "tokio", "single-instance", "dbus-config", "a11y", "wgpu" ] }
+libcosmic = { path = "../..", features = ["debug", "winit", "tokio", "single-instance", "dbus-config", "a11y", "wgpu", "xdg-portal"] }
 once_cell = "1.18"
 slotmap = "1.0.6"
 env_logger = "0.10"

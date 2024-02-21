@@ -3,6 +3,8 @@
 
 //! Contains the [`Theme`] type and its widget stylesheet implementations.
 
+#[cfg(feature = "xdg-portal")]
+pub mod portal;
 pub mod style;
 use cosmic_theme::ThemeMode;
 pub use style::*;
@@ -94,23 +96,8 @@ pub fn subscription(is_dark: bool) -> Subscription<crate::theme::Theme> {
     })
 }
 
-/// Loads the preferred system theme from `cosmic-config`.
-pub fn system_preference() -> Theme {
-    let Ok(mode_config) = ThemeMode::config() else {
-        return Theme::dark();
-    };
-
-    let Ok(is_dark) = ThemeMode::is_dark(&mode_config) else {
-        return Theme::dark();
-    };
-
-    let helper = if is_dark {
-        crate::cosmic_theme::Theme::dark_config()
-    } else {
-        crate::cosmic_theme::Theme::light_config()
-    };
-
-    let Ok(helper) = helper else {
+pub fn system_dark() -> Theme {
+    let Ok(helper) = crate::cosmic_theme::Theme::dark_config() else {
         return Theme::dark();
     };
 
@@ -122,6 +109,37 @@ pub fn system_preference() -> Theme {
     });
 
     Theme::system(Arc::new(t))
+}
+
+pub fn system_light() -> Theme {
+    let Ok(helper) = crate::cosmic_theme::Theme::dark_config() else {
+        return Theme::dark();
+    };
+
+    let t = crate::cosmic_theme::Theme::get_entry(&helper).unwrap_or_else(|(errors, theme)| {
+        for err in errors {
+            tracing::error!("{:?}", err);
+        }
+        theme
+    });
+
+    Theme::system(Arc::new(t))
+}
+
+/// Loads the preferred system theme from `cosmic-config`.
+pub fn system_preference() -> Theme {
+    let Ok(mode_config) = ThemeMode::config() else {
+        return Theme::dark();
+    };
+
+    let Ok(is_dark) = ThemeMode::is_dark(&mode_config) else {
+        return Theme::dark();
+    };
+    if is_dark {
+        system_dark()
+    } else {
+        system_light()
+    }
 }
 
 #[must_use]
