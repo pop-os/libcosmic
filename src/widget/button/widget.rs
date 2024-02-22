@@ -32,7 +32,6 @@ enum Variant<Message> {
     Normal,
     Image {
         close_icon: svg::Handle,
-        selection_icon: svg::Handle,
         on_remove: Option<Message>,
     },
 }
@@ -111,14 +110,6 @@ where
                 on_remove,
                 close_icon: crate::widget::icon::from_name("window-close-symbolic")
                     .size(8)
-                    .icon()
-                    .into_svg_handle()
-                    .unwrap_or_else(|| {
-                        let bytes: &'static [u8] = &[];
-                        iced_core::svg::Handle::from_memory(bytes)
-                    }),
-                selection_icon: crate::widget::icon::from_name("object-select-symbolic")
-                    .size(16)
                     .icon()
                     .into_svg_handle()
                     .unwrap_or_else(|| {
@@ -380,7 +371,6 @@ where
 
         if let Variant::Image {
             close_icon,
-            selection_icon,
             on_remove,
         } = &self.variant
         {
@@ -407,14 +397,14 @@ where
                             .into(),
                             ..Default::default()
                         },
-                        shadow: Default::default(),
+                        shadow: Shadow::default(),
                     },
                     selection_background,
                 );
 
                 iced_core::svg::Renderer::draw(
                     renderer,
-                    selection_icon.clone(),
+                    crate::widget::common::object_select().clone(),
                     styling.icon_color,
                     Rectangle {
                         width: 16.0,
@@ -432,7 +422,7 @@ where
                         renderer.fill_quad(
                             renderer::Quad {
                                 bounds,
-                                shadow: Default::default(),
+                                shadow: Shadow::default(),
                                 border: Border {
                                     radius: c_rad.radius_m.into(),
                                     ..Default::default()
@@ -731,7 +721,7 @@ where
                     color: styling.outline_color,
                     radius: styling.border_radius,
                 },
-                shadow: Default::default(),
+                shadow: Shadow::default(),
             },
             Color::TRANSPARENT,
         );
@@ -767,7 +757,7 @@ where
                         radius: styling.border_radius,
                         ..Default::default()
                     },
-                    shadow: Default::default(),
+                    shadow: Shadow::default(),
                 },
                 background,
             );
@@ -785,7 +775,7 @@ where
                     color: styling.border_color,
                     radius: styling.border_radius,
                 },
-                shadow: Default::default(),
+                shadow: Shadow::default(),
             },
             Color::TRANSPARENT,
         );

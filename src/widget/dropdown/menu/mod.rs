@@ -5,9 +5,7 @@
 mod appearance;
 pub use appearance::{Appearance, StyleSheet};
 
-use std::ffi::OsStr;
-
-use crate::widget::{icon, Container};
+use crate::widget::Container;
 use iced_core::event::{self, Event};
 use iced_core::layout::{self, Layout};
 use iced_core::text::{self, Text};
@@ -149,8 +147,6 @@ impl<'a, Message: 'a> Overlay<'a, Message> {
             style,
         } = menu;
 
-        let selected_icon = icon::from_name("object-select-symbolic").size(16).handle();
-
         let mut container = Container::new(Scrollable::new(List {
             options,
             hovered_option,
@@ -160,14 +156,6 @@ impl<'a, Message: 'a> Overlay<'a, Message> {
             text_size,
             text_line_height,
             padding,
-            selected_icon: match selected_icon.data {
-                icon::Data::Name(named) => named
-                    .path()
-                    .filter(|path| path.extension().is_some_and(|ext| ext == OsStr::new("svg")))
-                    .map(iced_core::svg::Handle::from_path),
-                icon::Data::Svg(handle) => Some(handle),
-                icon::Data::Image(_) => None,
-            },
         }));
 
         container = container
@@ -286,7 +274,6 @@ struct List<'a, S: AsRef<str>, Message> {
     padding: Padding,
     text_size: Option<f32>,
     text_line_height: text::LineHeight,
-    selected_icon: Option<svg::Handle>,
 }
 
 impl<'a, S: AsRef<str>, Message> Widget<Message, crate::Theme, crate::Renderer>
@@ -460,19 +447,17 @@ impl<'a, S: AsRef<str>, Message> Widget<Message, crate::Theme, crate::Renderer>
                     appearance.selected_background,
                 );
 
-                if let Some(handle) = self.selected_icon.clone() {
-                    svg::Renderer::draw(
-                        renderer,
-                        handle,
-                        Some(appearance.selected_text_color),
-                        Rectangle {
-                            x: item_x + item_width - 16.0 - 8.0,
-                            y: bounds.y + (bounds.height / 2.0 - 8.0),
-                            width: 16.0,
-                            height: 16.0,
-                        },
-                    );
-                }
+                svg::Renderer::draw(
+                    renderer,
+                    crate::widget::common::object_select().clone(),
+                    Some(appearance.selected_text_color),
+                    Rectangle {
+                        x: item_x + item_width - 16.0 - 8.0,
+                        y: bounds.y + (bounds.height / 2.0 - 8.0),
+                        width: 16.0,
+                        height: 16.0,
+                    },
+                );
 
                 (appearance.selected_text_color, crate::font::FONT_SEMIBOLD)
             } else if *self.hovered_option == Some(i) {
