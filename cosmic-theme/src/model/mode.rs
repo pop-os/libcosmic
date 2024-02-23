@@ -1,4 +1,4 @@
-use cosmic_config::{Config, ConfigGet, ConfigSet, CosmicConfigEntry};
+use cosmic_config::{Config, ConfigGet, CosmicConfigEntry};
 
 /// ID for the ThemeMode config
 pub const THEME_MODE_ID: &str = "com.system76.CosmicTheme.Mode";

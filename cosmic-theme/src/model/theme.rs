@@ -157,17 +157,30 @@ impl Theme {
     pub fn accent_color(&self) -> Srgba {
         self.accent.base.clone()
     }
+
     /// get @success_color
     pub fn success_color(&self) -> Srgba {
         self.success.base.clone()
     }
+
     /// get @destructive_color
     pub fn destructive_color(&self) -> Srgba {
         self.destructive.base.clone()
     }
+
     /// get @warning_color
     pub fn warning_color(&self) -> Srgba {
         self.warning.base.clone()
+    }
+
+    /// get @small_container_widget
+    pub fn small_container_widget(&self) -> Srgba {
+        self.palette.gray_2.clone()
+    }
+
+    /// get @small_widget_divider
+    pub fn small_widget_divider(&self) -> Srgba {
+        self.palette.neutral_9.clone()
     }
 
     // Containers
