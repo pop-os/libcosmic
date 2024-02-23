@@ -64,7 +64,7 @@ impl StyleSheet for Theme {
                 Appearance {
                     border_radius: cosmic.corner_radii.radius_0.into(),
                     inactive: ItemStatusAppearance {
-                        background: Some(Background::Color(neutral_5.into())),
+                        background: Some(Background::Color(cosmic.small_container_widget().into())),
                         first: ItemAppearance {
                             border_radius: Radius::from([rad_m[0], rad_0[1], rad_0[2], rad_m[3]]),
                             ..Default::default()

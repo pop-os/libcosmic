@@ -5,9 +5,9 @@
 
 use super::model::{Entity, Model, Selectable};
 use super::style::StyleSheet;
-use super::widget::{LocalState, SegmentedButton, SegmentedVariant};
+use super::widget::{ItemBounds, LocalState, SegmentedButton, SegmentedVariant};
 
-use iced::{Length, Rectangle, Size};
+use iced::{Alignment, Length, Rectangle, Size};
 use iced_core::layout;
 
 /// A type marker defining the vertical variant of a [`SegmentedButton`].
@@ -45,11 +45,11 @@ where
     }
 
     #[allow(clippy::cast_precision_loss)]
-    fn variant_button_bounds<'b>(
+    fn variant_bounds<'b>(
         &'b self,
         state: &'b LocalState,
         mut bounds: Rectangle,
-    ) -> Box<dyn Iterator<Item = (Entity, Rectangle)> + 'b> {
+    ) -> Box<dyn Iterator<Item = ItemBounds> + 'b> {
         let spacing = f32::from(self.spacing);
 
         Box::new(
@@ -58,11 +58,16 @@ where
                 .iter()
                 .copied()
                 .enumerate()
-                .map(move |(_nth, key)| {
-                    let mut this_bounds = bounds;
-                    this_bounds.height = state.internal_layout[0].height;
-                    bounds.y += this_bounds.height + spacing;
-                    (key, this_bounds)
+                .map(move |(nth, key)| {
+                    let mut layout_bounds = bounds;
+
+                    let layout_size = state.internal_layout[nth].0;
+
+                    layout_bounds.height = layout_size.height;
+
+                    bounds.y += layout_bounds.height + spacing;
+
+                    ItemBounds::Button(key, layout_bounds)
                 }),
         )
     }
@@ -75,11 +80,16 @@ where
         state: &mut LocalState,
         renderer: &crate::Renderer,
         limits: &layout::Limits,
-    ) -> layout::Node {
+    ) -> Size {
         state.internal_layout.clear();
         let limits = limits.width(self.width);
-        let (width, mut height) = self.max_button_dimensions(state, renderer, limits.max());
-        state.internal_layout.push(Size::new(width, height));
+
+        let (width, mut height) = self.max_button_dimensions(state, renderer);
+
+        for (size, actual) in &mut state.internal_layout {
+            size.width = width;
+            actual.width = height;
+        }
 
         let num = self.model.items.len();
         let spacing = f32::from(self.spacing);
@@ -87,12 +97,11 @@ where
         if num != 0 {
             height = (num as f32 * height) + (num as f32 * spacing) - spacing;
         }
-        let size = limits.height(Length::Fixed(height)).resolve(
+
+        limits.height(Length::Fixed(height)).resolve(
             self.width,
             self.height,
             Size::new(width, height),
-        );
-
-        layout::Node::new(size)
+        )
     }
 }

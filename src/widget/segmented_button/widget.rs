@@ -7,8 +7,8 @@ use crate::widget::{icon, Icon};
 use crate::{Element, Renderer};
 use derive_setters::Setters;
 use iced::{
-    alignment, event, keyboard, mouse, touch, Background, Color, Command, Event, Length, Rectangle,
-    Size,
+    alignment, event, keyboard, mouse, touch, Alignment, Background, Color, Command, Event, Length,
+    Padding, Rectangle, Size,
 };
 use iced_core::mouse::ScrollDelta;
 use iced_core::text::{LineHeight, Paragraph, Renderer as TextRenderer, Shaping};
@@ -24,6 +24,11 @@ pub fn focus<Message: 'static>(id: Id) -> Command<Message> {
     Command::widget(operation::focusable::focus(id.0))
 }
 
+pub(super) enum ItemBounds {
+    Button(Entity, Rectangle),
+    Divider(Rectangle),
+}
+
 /// Isolates variant-specific behaviors from [`SegmentedButton`].
 pub trait SegmentedVariant {
     /// Get the appearance for this variant of the widget.
@@ -33,11 +38,11 @@ pub trait SegmentedVariant {
     ) -> super::Appearance;
 
     /// Calculates the bounds for visible buttons.
-    fn variant_button_bounds<'b>(
+    fn variant_bounds<'b>(
         &'b self,
         state: &'b LocalState,
         bounds: Rectangle,
-    ) -> Box<dyn Iterator<Item = (Entity, Rectangle)> + 'b>;
+    ) -> Box<dyn Iterator<Item = ItemBounds> + 'b>;
 
     /// Calculates the layout of this variant.
     fn variant_layout(
@@ -45,7 +50,7 @@ pub trait SegmentedVariant {
         state: &mut LocalState,
         renderer: &crate::Renderer,
         limits: &layout::Limits,
-    ) -> layout::Node;
+    ) -> Size;
 }
 
 /// A conjoined group of items that function together as a button.
@@ -67,6 +72,13 @@ where
     pub(super) scrollable_focus: bool,
     /// Show the close icon only when item is hovered.
     pub(super) show_close_icon_on_hover: bool,
+    /// Padding of the whole widget.
+    #[setters(into)]
+    pub(super) padding: Padding,
+    /// Whether to place dividers between buttons.
+    pub(super) dividers: bool,
+    /// Alignment of button contents.
+    pub(super) button_alignment: Alignment,
     /// Padding around a button.
     pub(super) button_padding: [u16; 4],
     /// Desired height of a button.
@@ -119,9 +131,12 @@ where
             close_icon: icon::from_name("window-close-symbolic").size(16).icon(),
             scrollable_focus: false,
             show_close_icon_on_hover: false,
-            button_padding: [4, 4, 4, 4],
+            button_alignment: Alignment::Start,
+            padding: Padding::from(0.0),
+            dividers: false,
+            button_padding: [0, 0, 0, 0],
             button_height: 32,
-            button_spacing: 4,
+            button_spacing: 0,
             minimum_button_width: 150,
             indent_spacing: 16,
             font_active: None,
@@ -338,14 +353,17 @@ where
 
         // Add icon to measurement if icon was given.
         if let Some(icon) = self.model.icon(button) {
-            height = height.max(f32::from(icon.size));
             width += f32::from(icon.size) + f32::from(self.button_spacing);
+        } else if self.model.is_active(button) {
+            // Add selection icon measurements when widget is a selection widget.
+            if let crate::theme::SegmentedButton::Selection = self.style {
+                width += 16.0 + f32::from(self.button_spacing);
+            }
         }
 
         // Add close button to measurement if found.
         if self.model.is_closable(button) {
-            height = height.max(f32::from(self.close_icon.size));
-            width += f32::from(self.close_icon.size) + f32::from(self.button_spacing) + 8.0;
+            width += f32::from(self.close_icon.size) + f32::from(self.button_spacing);
         }
 
         // Add button padding to the max size found
@@ -360,7 +378,6 @@ where
         &self,
         state: &mut LocalState,
         renderer: &Renderer,
-        _bounds: Size,
     ) -> (f32, f32) {
         let mut width = 0.0f32;
         let mut height = 0.0f32;
@@ -369,8 +386,23 @@ where
         for key in self.model.order.iter().copied() {
             let (button_width, button_height) = self.button_dimensions(state, font, key);
 
+            state.internal_layout.push((
+                Size::new(button_width, button_height),
+                Size::new(
+                    button_width
+                        - f32::from(self.button_padding[0])
+                        - f32::from(self.button_padding[2]),
+                    button_height,
+                ),
+            ));
+
             height = height.max(button_height);
             width = width.max(button_width);
+        }
+
+        for (size, actual) in &mut state.internal_layout {
+            size.height = height;
+            actual.height = height;
         }
 
         (width, height)
@@ -436,7 +468,12 @@ where
         renderer: &Renderer,
         limits: &layout::Limits,
     ) -> layout::Node {
-        self.variant_layout(tree.state.downcast_mut::<LocalState>(), renderer, limits)
+        let state = tree.state.downcast_mut::<LocalState>();
+        let limits = limits.shrink(self.padding);
+        let size = self
+            .variant_layout(state, renderer, &limits)
+            .expand(self.padding);
+        layout::Node::new(size)
     }
 
     #[allow(clippy::too_many_lines)]
@@ -453,17 +490,14 @@ where
     ) -> event::Status {
         let bounds = layout.bounds();
         let state = tree.state.downcast_mut::<LocalState>();
+        state.hovered = Item::None;
 
         if cursor_position.is_over(bounds) {
             // Check for clicks on the previous and next tab buttons, when tabs are collapsed.
             if state.collapsed {
                 // Check if the prev tab button was clicked.
-                if cursor_position.is_over(Rectangle {
-                    x: bounds.x,
-                    y: bounds.y,
-                    width: f32::from(self.button_height),
-                    height: f32::from(self.button_height),
-                }) && self.prev_tab_sensitive(state)
+                if cursor_position.is_over(prev_tab_bounds(&bounds, f32::from(self.button_height)))
+                    && self.prev_tab_sensitive(state)
                 {
                     state.hovered = Item::PrevButton;
                     if let Event::Mouse(mouse::Event::ButtonReleased(mouse::Button::Left))
@@ -473,12 +507,9 @@ where
                     }
                 } else {
                     // Check if the next tab button was clicked.
-                    if cursor_position.is_over(Rectangle {
-                        x: bounds.x + bounds.width - f32::from(self.button_height),
-                        y: bounds.y,
-                        width: f32::from(self.button_height),
-                        height: f32::from(self.button_height),
-                    }) && self.next_tab_sensitive(state)
+                    if cursor_position
+                        .is_over(next_tab_bounds(&bounds, f32::from(self.button_height)))
+                        && self.next_tab_sensitive(state)
                     {
                         state.hovered = Item::NextButton;
 
@@ -492,7 +523,11 @@ where
             }
 
             for (key, bounds) in self
-                .variant_button_bounds(state, bounds)
+                .variant_bounds(state, bounds)
+                .filter_map(|item| match item {
+                    ItemBounds::Button(entity, bounds) => Some((entity, bounds)),
+                    _ => None,
+                })
                 .collect::<Vec<_>>()
             {
                 if cursor_position.is_over(bounds) {
@@ -504,11 +539,9 @@ where
                         if self.model.items[key].closable {
                             // Emit close message if the close button is pressed.
                             if let Some(on_close) = self.on_close.as_ref() {
-                                if cursor_position.is_over(close_bounds(
-                                    bounds,
-                                    f32::from(self.close_icon.size),
-                                    self.button_padding,
-                                )) {
+                                if cursor_position
+                                    .is_over(close_bounds(bounds, f32::from(self.close_icon.size)))
+                                {
                                     if let Event::Mouse(mouse::Event::ButtonReleased(
                                         mouse::Button::Left,
                                     ))
@@ -595,8 +628,6 @@ where
                         }
                     }
                 }
-            } else {
-                state.hovered = Item::None;
             }
         }
 
@@ -698,14 +729,20 @@ where
         let bounds = layout.bounds();
 
         if cursor_position.is_over(bounds) {
-            for (key, bounds) in self.variant_button_bounds(state, bounds) {
-                if cursor_position.is_over(bounds) {
-                    return if self.model.items[key].enabled {
-                        iced_core::mouse::Interaction::Pointer
-                    } else {
-                        iced_core::mouse::Interaction::Idle
-                    };
-                }
+            let hovered_button = self
+                .variant_bounds(state, bounds)
+                .filter_map(|item| match item {
+                    ItemBounds::Button(entity, bounds) => Some((entity, bounds)),
+                    _ => None,
+                })
+                .find(|(_key, bounds)| cursor_position.is_over(*bounds));
+
+            if let Some((key, _bounds)) = hovered_button {
+                return if self.model.items[key].enabled {
+                    iced_core::mouse::Interaction::Pointer
+                } else {
+                    iced_core::mouse::Interaction::Idle
+                };
             }
         }
 
@@ -725,21 +762,25 @@ where
     ) {
         let state = tree.state.downcast_ref::<LocalState>();
         let appearance = Self::variant_appearance(theme, &self.style);
-        let bounds = layout.bounds();
+        let bounds: Rectangle = layout.bounds();
         let button_amount = self.model.items.len();
+
+        // Modifies alpha color when `on_activate` is unset.
         let apply_alpha = |mut c: Color| {
-            if self.on_activate.is_some() {
-                c
-            } else {
+            if self.on_activate.is_none() {
                 c.a /= 2.0;
-                c
             }
+
+            c
         };
+
+        // Maps `apply_alpha` to background color.
         let bg_with_alpha = |mut b| {
             match &mut b {
                 Background::Color(c) => {
                     *c = apply_alpha(*c);
                 }
+
                 Background::Gradient(g) => {
                     let Gradient::Linear(mut l) = g;
                     for c in &mut l.stops {
@@ -752,6 +793,7 @@ where
             }
             b
         };
+
         // Draw the background, if a background was defined.
         if let Some(background) = appearance.background {
             renderer.fill_quad(
@@ -759,7 +801,7 @@ where
                     bounds,
                     border: Border {
                         radius: appearance.border_radius,
-                        ..Default::default()
+                        ..Border::default()
                     },
                     shadow: Shadow::default(),
                 },
@@ -769,6 +811,8 @@ where
 
         // Draw previous and next tab buttons if there is a need to paginate tabs.
         if state.collapsed {
+            let mut tab_bounds = prev_tab_bounds(&bounds, f32::from(self.button_height));
+
             // Previous tab button
             let mut background_appearance =
                 if self.on_activate.is_some() && Item::PrevButton == state.focused_item {
@@ -782,12 +826,7 @@ where
             if let Some(background_appearance) = background_appearance.take() {
                 renderer.fill_quad(
                     renderer::Quad {
-                        bounds: Rectangle {
-                            x: bounds.x,
-                            y: bounds.y,
-                            width: f32::from(self.button_height),
-                            height: bounds.height,
-                        },
+                        bounds: tab_bounds,
                         border: Border {
                             radius: theme.cosmic().radius_s().into(),
                             ..Default::default()
@@ -814,13 +853,15 @@ where
                     appearance.active.text_color
                 }),
                 Rectangle {
-                    x: bounds.x + f32::from(self.button_height) / 4.0,
-                    y: bounds.y + f32::from(self.button_height) / 4.0,
+                    x: tab_bounds.x + 8.0,
+                    y: tab_bounds.y + f32::from(self.button_height) / 4.0,
                     width: 16.0,
                     height: 16.0,
                 },
                 icon::from_name("go-previous-symbolic").size(16).icon(),
             );
+
+            tab_bounds = next_tab_bounds(&bounds, f32::from(self.button_height));
 
             // Next tab button
             background_appearance =
@@ -835,12 +876,7 @@ where
             if let Some(background_appearance) = background_appearance {
                 renderer.fill_quad(
                     renderer::Quad {
-                        bounds: Rectangle {
-                            x: bounds.x + bounds.width - f32::from(self.button_height),
-                            y: bounds.y,
-                            width: f32::from(self.button_height),
-                            height: bounds.height,
-                        },
+                        bounds: tab_bounds,
                         border: Border {
                             radius: theme.cosmic().radius_s().into(),
                             ..Default::default()
@@ -866,10 +902,16 @@ where
                 } else {
                     appearance.inactive.text_color
                 }),
+                // Rectangle {
+                //     x: bounds.x + bounds.width - f32::from(self.button_height)
+                //         + f32::from(self.button_height) / 4.0,
+                //     y: f32::from(self.button_height) / 2.0 - f32::from(self.button_height) / 2.0,
+                //     width: 16.0,
+                //     height: 16.0,
+                // },
                 Rectangle {
-                    x: bounds.x + bounds.width - f32::from(self.button_height)
-                        + f32::from(self.button_height) / 4.0,
-                    y: bounds.y + f32::from(self.button_height) / 4.0,
+                    x: tab_bounds.x + 8.0,
+                    y: tab_bounds.y + f32::from(self.button_height) / 4.0,
                     width: 16.0,
                     height: 16.0,
                 },
@@ -878,10 +920,34 @@ where
         }
 
         // Draw each of the items in the widget.
-        for (nth, (key, mut bounds)) in self.variant_button_bounds(state, bounds).enumerate() {
+        let mut nth = 0;
+        self.variant_bounds(state, bounds).for_each(move |item| {
+            let (key, mut bounds) = match item {
+                // Draw a button
+                ItemBounds::Button(entity, bounds) => (entity, bounds),
+
+                // Draw a divider between buttons
+                ItemBounds::Divider(bounds) => {
+                    renderer.fill_quad(
+                        renderer::Quad {
+                            bounds,
+                            border: Border::default(),
+                            shadow: Shadow::default(),
+                        },
+                        {
+                            let theme = crate::theme::active();
+                            Background::Color(theme.cosmic().small_widget_divider().into())
+                        },
+                    );
+
+                    return;
+                }
+            };
+
+            let center_y = bounds.center_y();
+
             let key_is_active = self.model.is_active(key);
             let key_is_hovered = self.on_activate.is_some() && state.hovered == Item::Tab(key);
-
             let (status_appearance, font) =
                 if self.on_activate.is_some() && Item::Tab(key) == state.focused_item {
                     (appearance.focus, &self.font_active)
@@ -892,6 +958,7 @@ where
                 } else {
                     (appearance.inactive, &self.font_inactive)
                 };
+
             let font = font.unwrap_or_else(|| renderer.default_font());
 
             let button_appearance = if nth == 0 {
@@ -941,7 +1008,8 @@ where
 
             let original_bounds = bounds;
 
-            let y = bounds.center_y();
+            bounds.x += f32::from(self.button_padding[0]);
+            bounds.width -= f32::from(self.button_padding[0]) - f32::from(self.button_padding[2]);
 
             // Adjust bounds by indent
             if let Some(indent) = self.model.indent(key) {
@@ -950,15 +1018,28 @@ where
                 bounds.width -= adjustment;
             }
 
-            // Draw the image beside the text.
-            let horizontal_alignment = if let Some(icon) = self.model.icon(key) {
-                bounds.x += f32::from(self.button_padding[0]);
+            // Align contents of the button to the requested `button_alignment`.
+            {
+                let actual_width = state.internal_layout[nth].1.width;
 
+                let offset = match self.button_alignment {
+                    Alignment::Start => None,
+                    Alignment::Center => Some((bounds.width - actual_width) / 2.0),
+                    Alignment::End => Some(bounds.width - actual_width),
+                };
+
+                if let Some(offset) = offset {
+                    bounds.x += offset - f32::from(self.button_padding[0]);
+                    bounds.width = actual_width;
+                }
+            }
+
+            // Draw the image beside the text.
+            if let Some(icon) = self.model.icon(key) {
                 let mut image_bounds = bounds;
                 let width = f32::from(icon.size);
                 let offset = width + f32::from(self.button_spacing);
-                image_bounds.y += f32::from(self.button_padding[1]);
-                image_bounds.y = y - width / 2.0;
+                image_bounds.y = center_y - width / 2.0;
 
                 draw_icon::<Message>(
                     renderer,
@@ -977,12 +1058,44 @@ where
 
                 bounds.x += offset;
                 bounds.width -= offset;
-
-                alignment::Horizontal::Left
             } else {
-                bounds.x = bounds.center_x();
-                alignment::Horizontal::Center
-            };
+                // Draw the selection indicator if widget is a segmented selection, and the item is selected.
+                if key_is_active {
+                    if let crate::theme::SegmentedButton::Selection = self.style {
+                        let mut image_bounds = bounds;
+                        image_bounds.y = center_y - 16.0 / 2.0;
+
+                        draw_icon::<Message>(
+                            renderer,
+                            theme,
+                            style,
+                            cursor,
+                            viewport,
+                            apply_alpha(status_appearance.text_color),
+                            Rectangle {
+                                width: 16.0,
+                                height: 16.0,
+                                ..image_bounds
+                            },
+                            crate::widget::icon(
+                                match crate::widget::common::object_select().data() {
+                                    crate::iced_core::svg::Data::Bytes(bytes) => {
+                                        crate::widget::icon::from_svg_bytes(bytes.as_ref())
+                                    }
+                                    crate::iced_core::svg::Data::Path(path) => {
+                                        crate::widget::icon::from_path(path.clone())
+                                    }
+                                },
+                            ),
+                        );
+
+                        let offset = 16.0 + f32::from(self.button_spacing);
+
+                        bounds.x += offset;
+                        bounds.width -= offset;
+                    }
+                }
+            }
 
             // Whether to show the close button on this tab.
             let show_close_button =
@@ -997,7 +1110,7 @@ where
             };
 
             if let Some(text) = self.model.text(key) {
-                bounds.y = y;
+                bounds.y = center_y;
 
                 // Draw the text for this segmented button or tab.
                 renderer.fill_text(
@@ -1006,7 +1119,7 @@ where
                         size: iced::Pixels(self.font_size),
                         bounds: bounds.size(),
                         font,
-                        horizontal_alignment,
+                        horizontal_alignment: alignment::Horizontal::Left,
                         vertical_alignment: alignment::Vertical::Center,
                         shaping: Shaping::Advanced,
                         line_height: self.line_height,
@@ -1014,15 +1127,7 @@ where
                     bounds.position(),
                     apply_alpha(status_appearance.text_color),
                     Rectangle {
-                        width: {
-                            let width = bounds.width - close_icon_width;
-                            // TODO: determine cause of differences here.
-                            if self.model.icon(key).is_some() {
-                                width - f32::from(self.button_spacing)
-                            } else {
-                                width - 12.0
-                            }
-                        },
+                        width: bounds.width - close_icon_width,
                         ..original_bounds
                     },
                 );
@@ -1030,8 +1135,7 @@ where
 
             // Draw a close button if set.
             if show_close_button {
-                let close_button_bounds =
-                    close_bounds(original_bounds, close_icon_width, self.button_padding);
+                let close_button_bounds = close_bounds(original_bounds, close_icon_width);
 
                 draw_icon::<Message>(
                     renderer,
@@ -1044,7 +1148,9 @@ where
                     self.close_icon.clone(),
                 );
             }
-        }
+
+            nth += 1;
+        });
     }
 
     fn overlay<'b>(
@@ -1093,14 +1199,14 @@ pub struct LocalState {
     /// Last known length of the model.
     pub(super) known_length: usize,
     /// Dimensions of internal buttons when shrinking
-    pub(super) internal_layout: Vec<Size>,
+    pub(super) internal_layout: Vec<(Size, Size)>,
     /// The paragraphs for each text.
     paragraphs: SecondaryMap<Entity, crate::Paragraph>,
     /// Time since last tab activation from wheel movements.
     wheel_timestamp: Option<Instant>,
 }
 
-#[derive(Default, PartialEq)]
+#[derive(Debug, Default, PartialEq)]
 enum Item {
     NextButton,
     #[default]
@@ -1152,14 +1258,32 @@ impl From<Id> for widget::Id {
 }
 
 /// Calculates the bounds of the close button within the area of an item.
-fn close_bounds(area: Rectangle<f32>, icon_size: f32, button_padding: [u16; 4]) -> Rectangle<f32> {
-    let unpadded_height = area.height - f32::from(button_padding[1]) - f32::from(button_padding[3]);
-
+fn close_bounds(area: Rectangle<f32>, icon_size: f32) -> Rectangle<f32> {
     Rectangle {
         x: area.x + area.width - icon_size - 8.0,
-        y: area.y + (unpadded_height / 2.0) - (icon_size / 2.0),
+        y: area.center_y() - (icon_size / 2.0),
         width: icon_size,
         height: icon_size,
+    }
+}
+
+/// Calculate the bounds of the `next_tab` button.
+fn next_tab_bounds(bounds: &Rectangle, button_height: f32) -> Rectangle {
+    Rectangle {
+        x: bounds.x + bounds.width - button_height,
+        y: bounds.y + button_height / 4.0,
+        width: button_height,
+        height: button_height,
+    }
+}
+
+/// Calculate the bounds of the `prev_tab` button.
+fn prev_tab_bounds(bounds: &Rectangle, button_height: f32) -> Rectangle {
+    Rectangle {
+        x: bounds.x,
+        y: bounds.y + button_height / 4.0,
+        width: button_height,
+        height: button_height,
     }
 }
 

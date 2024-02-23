@@ -3,9 +3,9 @@
 
 //! Implementation details for the horizontal layout of a segmented button.
 
-use super::model::{Entity, Model, Selectable};
+use super::model::{Model, Selectable};
 use super::style::StyleSheet;
-use super::widget::{LocalState, SegmentedButton, SegmentedVariant};
+use super::widget::{ItemBounds, LocalState, SegmentedButton, SegmentedVariant};
 
 use iced::{Length, Rectangle, Size};
 use iced_core::layout;
@@ -21,7 +21,6 @@ pub struct Horizontal;
 /// Horizontal implementation of the [`SegmentedButton`].
 ///
 /// For details on the model, see the [`segmented_button`](super) module for more details.
-#[must_use]
 pub fn horizontal<SelectionMode: Default, Message>(
     model: &Model<SelectionMode>,
 ) -> SegmentedButton<Horizontal, SelectionMode, Message>
@@ -45,11 +44,11 @@ where
     }
 
     #[allow(clippy::cast_precision_loss)]
-    fn variant_button_bounds<'b>(
+    fn variant_bounds<'b>(
         &'b self,
         state: &'b LocalState,
         mut bounds: Rectangle,
-    ) -> Box<dyn Iterator<Item = (Entity, Rectangle)> + 'b> {
+    ) -> Box<dyn Iterator<Item = ItemBounds> + 'b> {
         let num = state.buttons_visible;
         let spacing = f32::from(self.spacing);
         let mut homogenous_width = 0.0;
@@ -66,6 +65,8 @@ where
                 / num as f32;
         }
 
+        let segmented_selection = matches!(self.style, crate::theme::SegmentedButton::Selection);
+
         Box::new(
             self.model
                 .order
@@ -74,17 +75,32 @@ where
                 .enumerate()
                 .skip(state.buttons_offset)
                 .take(state.buttons_visible)
-                .map(move |(nth, key)| {
-                    let mut this_bounds = bounds;
+                .flat_map(move |(nth, key)| {
+                    let mut layout_bounds = bounds;
+
+                    let layout_size = &state.internal_layout[nth].0;
 
                     if !state.collapsed && Length::Shrink == self.width {
-                        this_bounds.width = state.internal_layout[nth].width;
+                        layout_bounds.width = layout_size.width;
                     } else {
-                        this_bounds.width = homogenous_width;
+                        layout_bounds.width = homogenous_width;
                     }
 
-                    bounds.x += this_bounds.width + spacing;
-                    (key, this_bounds)
+                    bounds.x += layout_bounds.width + spacing;
+
+                    let button_bounds = ItemBounds::Button(key, layout_bounds);
+                    let mut divider = None;
+
+                    if self.dividers && segmented_selection && nth + 1 < num {
+                        divider = Some(ItemBounds::Divider(Rectangle {
+                            width: 1.0,
+                            ..bounds
+                        }));
+
+                        bounds.x += 1.0;
+                    }
+
+                    std::iter::once(button_bounds).chain(divider)
                 }),
         )
     }
@@ -97,9 +113,9 @@ where
         state: &mut LocalState,
         renderer: &crate::Renderer,
         limits: &layout::Limits,
-    ) -> layout::Node {
+    ) -> Size {
+        state.internal_layout.clear();
         let num = self.model.order.len();
-        let mut total_width = 0.0;
         let spacing = f32::from(self.spacing);
         let limits = limits.width(self.width);
         let mut size;
@@ -116,31 +132,20 @@ where
 
         if let Length::Shrink = self.width {
             // Buttons will be rendered at their smallest widths possible.
-            state.internal_layout.clear();
-
-            let font = renderer.default_font();
-            let mut total_height = 0.0f32;
-
-            for &button in &self.model.order {
-                let (mut width, height) = self.button_dimensions(state, font, button);
-                width = f32::from(self.minimum_button_width).max(width);
-                total_width += width + spacing;
-                total_height = total_height.max(height);
-
-                state.internal_layout.push(Size::new(width, height));
-            }
+            let max_height = self.max_button_dimensions(state, renderer).1;
 
             // Get the max available width for placing buttons into.
-            let max_size = limits.height(Length::Fixed(total_height)).resolve(
+            let max_size = limits.height(Length::Fixed(max_height)).resolve(
                 Length::Fill,
-                total_height,
-                Size::new(f32::MAX, total_height),
+                max_height,
+                Size::new(f32::MAX, max_height),
             );
 
-            let mut visible_width = f32::from(self.button_height) * 2.0;
+            // let mut visible_width = f32::from(self.button_height) * 2.0;
+            let mut visible_width = 0.0;
             state.buttons_visible = 0;
 
-            for button_size in &state.internal_layout {
+            for (button_size, _actual_size) in &state.internal_layout {
                 visible_width += button_size.width;
 
                 if max_size.width >= visible_width {
@@ -152,27 +157,48 @@ where
                 visible_width += spacing;
             }
 
+            visible_width -= spacing;
+
             state.collapsed = num > 1 && state.buttons_visible != num;
 
             // If collapsed, use the maximum width available.
-            visible_width = if state.collapsed {
-                max_size.width
-            } else {
-                total_width
-            };
+            if state.collapsed {
+                visible_width = max_size.width;
+            }
 
             size = limits
                 .width(Length::Fixed(visible_width))
-                .height(Length::Fixed(total_height))
+                .height(Length::Fixed(max_height))
                 .resolve(
                     visible_width,
-                    total_height,
-                    Size::new(visible_width, total_height),
+                    max_height,
+                    Size::new(visible_width, max_height),
                 );
         } else {
             // Buttons will be rendered with equal widths.
             state.buttons_visible = self.model.items.len();
-            let (width, height) = self.max_button_dimensions(state, renderer, limits.max());
+
+            let mut width = 0.0f32;
+            let mut height = 0.0f32;
+            let font = renderer.default_font();
+
+            for key in self.model.order.iter().copied() {
+                let (button_width, button_height) = self.button_dimensions(state, font, key);
+
+                state.internal_layout.push((
+                    Size::new(button_width, button_height),
+                    Size::new(
+                        button_width
+                            - f32::from(self.button_padding[0])
+                            - f32::from(self.button_padding[2]),
+                        button_height,
+                    ),
+                ));
+
+                height = height.max(button_height);
+                width = width.max(button_width);
+            }
+
             let total_width = (state.buttons_visible as f32) * (width + spacing);
 
             size = limits.height(Length::Fixed(height)).resolve(
@@ -201,6 +227,6 @@ where
             state.buttons_offset = 0;
         }
 
-        layout::Node::new(size)
+        size
     }
 }

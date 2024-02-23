@@ -14,16 +14,22 @@ use super::segmented_button::{
 /// The data for the widget comes from a model that is maintained the application.
 ///
 /// For details on the model, see the [`segmented_button`] module for more details.
-#[must_use]
 pub fn horizontal<SelectionMode: Default, Message>(
     model: &Model<SelectionMode>,
 ) -> HorizontalSegmentedButton<SelectionMode, Message>
 where
     Model<SelectionMode>: Selectable,
 {
+    let theme = crate::theme::active();
+    let space_s = theme.cosmic().space_s();
+    let space_xxs = theme.cosmic().space_xxs();
+
     segmented_button::horizontal(model)
-        .button_padding([16, 0, 16, 0])
+        .button_alignment(iced::Alignment::Center)
+        .dividers(true)
         .button_height(32)
+        .button_padding([space_s, 0, space_s, 0])
+        .button_spacing(space_xxs)
         .style(crate::theme::SegmentedButton::Selection)
         .font_active(Some(crate::font::FONT_SEMIBOLD))
 }
@@ -33,7 +39,6 @@ where
 /// The data for the widget comes from a model that is maintained the application.
 ///
 /// For details on the model, see the [`segmented_button`] module for more details.
-#[must_use]
 pub fn vertical<SelectionMode, Message>(
     model: &Model<SelectionMode>,
 ) -> VerticalSegmentedButton<SelectionMode, Message>
@@ -41,9 +46,16 @@ where
     Model<SelectionMode>: Selectable,
     SelectionMode: Default,
 {
+    let theme = crate::theme::active();
+    let space_s = theme.cosmic().space_s();
+    let space_xxs = theme.cosmic().space_xxs();
+
     segmented_button::vertical(model)
-        .button_padding([16, 0, 16, 0])
+        .button_alignment(iced::Alignment::Center)
+        .dividers(true)
         .button_height(32)
+        .button_padding([space_s, 0, space_s, 0])
+        .button_spacing(space_xxs)
         .style(crate::theme::SegmentedButton::Selection)
         .font_active(Some(crate::font::FONT_SEMIBOLD))
 }

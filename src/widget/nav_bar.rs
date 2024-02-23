@@ -27,18 +27,23 @@ pub fn nav_bar<Message>(
 where
     Message: Clone + 'static,
 {
+    let theme = crate::theme::active();
+    let space_s = theme.cosmic().space_s();
+    let space_xs = theme.cosmic().space_xs();
+    let space_xxs = theme.cosmic().space_xxs();
+
     segmented_button::vertical(model)
         .button_height(32)
-        .button_padding([16, 10, 16, 10])
-        .button_spacing(8)
+        .button_padding([space_s, space_xs, space_s, space_xs])
+        .button_spacing(space_xxs)
+        .spacing(space_xxs)
         .on_activate(on_activate)
-        .spacing(8)
         .style(crate::theme::SegmentedButton::ViewSwitcher)
         .apply(scrollable)
         .height(Length::Fill)
         .apply(container)
+        .padding(space_xxs)
         .height(Length::Fill)
-        .padding(11)
         .style(theme::Container::custom(nav_bar_style))
 }
 
