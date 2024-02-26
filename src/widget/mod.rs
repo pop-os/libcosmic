@@ -173,6 +173,8 @@ pub mod settings;
 pub mod spin_button;
 pub use spin_button::{spin_button, SpinButton};
 
+pub mod tab_bar;
+
 pub mod text;
 pub use text::{text, Text};
 
@@ -205,10 +207,6 @@ pub mod tooltip {
             .gap(1)
     }
 }
-
-pub mod view_switcher;
-pub use view_switcher::horizontal as horiontal_view_switcher;
-pub use view_switcher::vertical as vertical_view_switcher;
 
 pub mod warning;
 pub use warning::*;

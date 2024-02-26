@@ -27,7 +27,7 @@ where
     segmented_button::horizontal(model)
         .button_height(44)
         .button_padding([space_s, space_xs, space_s, space_xs])
-        .style(crate::theme::SegmentedButton::ViewSwitcher)
+        .style(crate::theme::SegmentedButton::TabBar)
         .font_active(Some(crate::font::FONT_SEMIBOLD))
 }
 
@@ -49,6 +49,6 @@ where
     SegmentedButton::new(model)
         .button_height(44)
         .button_padding([space_s, space_xs, space_s, space_xs])
-        .style(crate::theme::SegmentedButton::ViewSwitcher)
+        .style(crate::theme::SegmentedButton::TabBar)
         .font_active(Some(crate::font::FONT_SEMIBOLD))
 }

@@ -11,7 +11,7 @@ use iced_core::{border::Radius, Background};
 pub enum SegmentedButton {
     /// A tabbed widget for switching between views in an interface.
     #[default]
-    ViewSwitcher,
+    TabBar,
     /// A widget for multiple choice selection.
     Control,
     /// Or implement any custom theme of your liking.
@@ -24,9 +24,9 @@ impl StyleSheet for Theme {
     #[allow(clippy::too_many_lines)]
     fn horizontal(&self, style: &Self::Style) -> Appearance {
         match style {
-            SegmentedButton::ViewSwitcher => {
+            SegmentedButton::TabBar => {
                 let cosmic = self.cosmic();
-                let active = horizontal::view_switcher_active(cosmic);
+                let active = horizontal::tab_bar_active(cosmic);
                 Appearance {
                     border_radius: cosmic.corner_radii.radius_0.into(),
                     inactive: ItemStatusAppearance {
@@ -95,8 +95,8 @@ impl StyleSheet for Theme {
         let rad_m = cosmic.corner_radii.radius_m;
         let rad_0 = cosmic.corner_radii.radius_0;
         match style {
-            SegmentedButton::ViewSwitcher => {
-                let active = vertical::view_switcher_active(cosmic);
+            SegmentedButton::TabBar => {
+                let active = vertical::tab_bar_active(cosmic);
                 Appearance {
                     border_radius: cosmic.corner_radii.radius_0.into(),
                     inactive: ItemStatusAppearance {
@@ -170,7 +170,7 @@ mod horizontal {
         }
     }
 
-    pub fn view_switcher_active(cosmic: &cosmic_theme::Theme) -> ItemStatusAppearance {
+    pub fn tab_bar_active(cosmic: &cosmic_theme::Theme) -> ItemStatusAppearance {
         let mut neutral_5 = cosmic.palette.neutral_5;
         neutral_5.alpha = 0.2;
         let rad_s = cosmic.corner_radii.radius_s;
@@ -246,7 +246,7 @@ mod vertical {
         }
     }
 
-    pub fn view_switcher_active(cosmic: &cosmic_theme::Theme) -> ItemStatusAppearance {
+    pub fn tab_bar_active(cosmic: &cosmic_theme::Theme) -> ItemStatusAppearance {
         let mut neutral_5 = cosmic.palette.neutral_5;
         neutral_5.alpha = 0.2;
         ItemStatusAppearance {
