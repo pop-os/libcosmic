@@ -176,7 +176,10 @@ where
             None => {
                 // Set position to center
                 (
-                    Point::new(bounds.x + bounds.width / 2.0, bounds.y + bounds.height / 2.0),
+                    Point::new(
+                        bounds.x + bounds.width / 2.0,
+                        bounds.y + bounds.height / 2.0,
+                    ),
                     true,
                 )
             }
