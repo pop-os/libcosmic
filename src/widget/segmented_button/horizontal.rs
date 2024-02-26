@@ -65,7 +65,7 @@ where
                 / num as f32;
         }
 
-        let segmented_selection = matches!(self.style, crate::theme::SegmentedButton::Selection);
+        let segmented_selection = matches!(self.style, crate::theme::SegmentedButton::Control);
 
         Box::new(
             self.model

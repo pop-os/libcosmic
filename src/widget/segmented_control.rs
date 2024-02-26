@@ -30,7 +30,7 @@ where
         .button_height(32)
         .button_padding([space_s, 0, space_s, 0])
         .button_spacing(space_xxs)
-        .style(crate::theme::SegmentedButton::Selection)
+        .style(crate::theme::SegmentedButton::Control)
         .font_active(Some(crate::font::FONT_SEMIBOLD))
 }
 
@@ -56,6 +56,6 @@ where
         .button_height(32)
         .button_padding([space_s, 0, space_s, 0])
         .button_spacing(space_xxs)
-        .style(crate::theme::SegmentedButton::Selection)
+        .style(crate::theme::SegmentedButton::Control)
         .font_active(Some(crate::font::FONT_SEMIBOLD))
 }

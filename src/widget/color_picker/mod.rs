@@ -30,7 +30,7 @@ use super::button::StyleSheet;
 use super::divider::horizontal;
 use super::icon::{self, from_name};
 use super::segmented_button::{self, Model, SingleSelect};
-use super::{button, segmented_selection, text, text_input, tooltip, Icon};
+use super::{button, segmented_control, text, text_input, tooltip, Icon};
 
 // TODO is this going to look correct enough?
 lazy_static! {
@@ -281,7 +281,7 @@ where
         let spacing = THEME.with(|t| t.borrow().cosmic().spacing);
         let mut inner = column![
             // segmented buttons
-            segmented_selection::horizontal(self.model)
+            segmented_control::horizontal(self.model)
                 .on_activate(Box::new(move |e| on_update(
                     ColorPickerUpdate::ActivateSegmented(e)
                 )))
