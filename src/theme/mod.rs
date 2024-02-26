@@ -83,7 +83,7 @@ pub fn subscription(is_dark: bool) -> Subscription<crate::theme::Theme> {
             cosmic_theme::LIGHT_THEME_ID
         }
         .into(),
-        crate::cosmic_theme::Theme::version(),
+        crate::cosmic_theme::Theme::VERSION,
     )
     .map(|res| {
         for err in res.errors {
@@ -166,7 +166,6 @@ pub struct Theme {
 }
 
 impl Theme {
-    #[must_use]
     pub fn cosmic(&self) -> &cosmic_theme::Theme {
         match self.theme_type {
             ThemeType::Dark => &COSMIC_DARK,
