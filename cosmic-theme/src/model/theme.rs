@@ -92,6 +92,8 @@ pub struct Theme {
     pub window_hint: Option<Srgb>,
     /// enables blurred transparency
     pub is_frosted: bool,
+    /// shade color for dialogs
+    pub shade: Srgba,
 }
 
 impl Default for Theme {
@@ -370,6 +372,11 @@ impl Theme {
     /// get @radius_xl
     pub fn radius_xl(&self) -> [f32; 4] {
         self.corner_radii.radius_xl
+    }
+
+    /// get @shade_color
+    pub fn shade_color(&self) -> Srgba {
+        self.shade
     }
 
     /// get the active theme
@@ -738,6 +745,11 @@ impl ThemeBuilder {
 
         let mut theme: Theme = Theme {
             name: palette.name().to_string(),
+            shade: if palette.is_dark() {
+                Srgba::new(0., 0., 0., 0.32)
+            } else {
+                Srgba::new(0., 0., 0., 0.08)
+            },
             primary: Container::new(
                 primary_component,
                 primary_container_bg,
