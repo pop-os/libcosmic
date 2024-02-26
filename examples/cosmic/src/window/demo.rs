@@ -9,7 +9,7 @@ use cosmic::{
     theme::ThemeType,
     widget::{
         button, color_picker::ColorPickerUpdate, cosmic_container::container, dropdown, icon,
-        segmented_button, segmented_selection, settings, spin_button, toggler, view_switcher,
+        segmented_button, segmented_control, settings, spin_button, tab_bar, toggler,
         ColorPickerModel,
     },
     Element,
@@ -110,7 +110,7 @@ pub struct State {
     pub slider_value: f32,
     pub spin_button: spin_button::Model<i32>,
     pub toggler_value: bool,
-    pub view_switcher: segmented_button::SingleSelectModel,
+    pub tab_bar: segmented_button::SingleSelectModel,
     pub entry_value: String,
     pub cards_value: bool,
     cards: Vec<String>,
@@ -149,7 +149,7 @@ impl Default for State {
                 .insert(|b| b.text("Option D").data(MultiOption::OptionD))
                 .insert(|b| b.text("Option E").data(MultiOption::OptionE))
                 .build(),
-            view_switcher: segmented_button::Model::builder()
+            tab_bar: segmented_button::Model::builder()
                 .insert(|b| b.text("Controls").data(DemoView::TabA).activate())
                 .insert(|b| b.text("Segmented Button").data(DemoView::TabB))
                 .insert(|b| b.text("Tab C").data(DemoView::TabC))
@@ -190,7 +190,7 @@ impl State {
             Message::ThemeChanged(theme) => return Some(Output::ThemeChanged(theme)),
             Message::ToggleWarning => return Some(Output::ToggleWarning),
             Message::TogglerToggled(value) => self.toggler_value = value,
-            Message::ViewSwitcher(key) => self.view_switcher.activate(key),
+            Message::ViewSwitcher(key) => self.tab_bar.activate(key),
             Message::IconTheme(key) => {
                 self.icon_themes.activate(key);
                 if let Some(theme) = self.icon_themes.text(key) {
@@ -248,14 +248,14 @@ impl State {
         );
 
         let choose_icon_theme =
-            segmented_selection::horizontal(&self.icon_themes).on_activate(Message::IconTheme);
+            segmented_control::horizontal(&self.icon_themes).on_activate(Message::IconTheme);
         let timeline = self.timeline.borrow();
         settings::view_column(vec![
             window.page_title(Page::Demo),
-            view_switcher::horizontal(&self.view_switcher)
+            tab_bar::horizontal(&self.tab_bar)
                 .on_activate(Message::ViewSwitcher)
                 .into(),
-            match self.view_switcher.active_data() {
+            match self.tab_bar.active_data() {
                 None => panic!("no tab is active"),
                 Some(DemoView::TabA) => settings::view_column(vec![
                     settings::view_section("Debug")
@@ -322,35 +322,35 @@ impl State {
                 Some(DemoView::TabB) => settings::view_column(vec![
                     text("Selection").font(cosmic::font::FONT_SEMIBOLD).into(),
                     text("Horizontal").into(),
-                    segmented_selection::horizontal(&self.selection)
+                    segmented_control::horizontal(&self.selection)
                         .on_activate(Message::Selection)
                         .into(),
                     text("Horizontal With Spacing").into(),
-                    segmented_selection::horizontal(&self.selection)
+                    segmented_control::horizontal(&self.selection)
                         .spacing(8)
                         .on_activate(Message::Selection)
                         .into(),
                     text("Disabled Horizontal With Spacing").into(),
-                    segmented_selection::horizontal(&self.selection)
+                    segmented_control::horizontal(&self.selection)
                         .spacing(8)
                         .into(),
                     text("Horizontal Multi-Select").into(),
-                    segmented_selection::horizontal(&self.multi_selection)
+                    segmented_control::horizontal(&self.multi_selection)
                         .spacing(8)
                         .on_activate(Message::MultiSelection)
                         .into(),
                     text("Disabled Horizontal Multi-Select").into(),
-                    segmented_selection::horizontal(&self.multi_selection)
+                    segmented_control::horizontal(&self.multi_selection)
                         .spacing(8)
                         .into(),
                     text("Vertical").into(),
-                    segmented_selection::vertical(&self.selection)
+                    segmented_control::vertical(&self.selection)
                         .on_activate(Message::Selection)
                         .into(),
                     text("Disabled Vertical").into(),
-                    segmented_selection::vertical(&self.selection).into(),
+                    segmented_control::vertical(&self.selection).into(),
                     text("Vertical Multi-Select Shrunk").into(),
-                    segmented_selection::vertical(&self.multi_selection)
+                    segmented_control::vertical(&self.multi_selection)
                         .width(Length::Shrink)
                         .on_activate(Message::MultiSelection)
                         .apply(container)
@@ -359,17 +359,17 @@ impl State {
                         .into(),
                     text("Vertical With Spacing").into(),
                     cosmic::iced::widget::row(vec![
-                        segmented_selection::vertical(&self.selection)
+                        segmented_control::vertical(&self.selection)
                             .spacing(8)
                             .on_activate(Message::Selection)
                             .width(Length::FillPortion(1))
                             .into(),
-                        segmented_selection::vertical(&self.selection)
+                        segmented_control::vertical(&self.selection)
                             .spacing(8)
                             .on_activate(Message::Selection)
                             .width(Length::FillPortion(1))
                             .into(),
-                        segmented_selection::vertical(&self.selection)
+                        segmented_control::vertical(&self.selection)
                             .spacing(8)
                             .on_activate(Message::Selection)
                             .width(Length::FillPortion(1))
@@ -382,39 +382,39 @@ impl State {
                         .font(cosmic::font::FONT_SEMIBOLD)
                         .into(),
                     text("Horizontal").into(),
-                    view_switcher::horizontal(&self.selection)
+                    tab_bar::horizontal(&self.selection)
                         .on_activate(Message::Selection)
                         .into(),
                     text("Horizontal Multi-Select").into(),
-                    view_switcher::horizontal(&self.multi_selection)
+                    tab_bar::horizontal(&self.multi_selection)
                         .on_activate(Message::MultiSelection)
                         .into(),
                     text("Horizontal With Spacing").into(),
-                    view_switcher::horizontal(&self.selection)
+                    tab_bar::horizontal(&self.selection)
                         .spacing(8)
                         .on_activate(Message::Selection)
                         .into(),
                     text("Vertical").into(),
-                    view_switcher::vertical(&self.selection)
+                    tab_bar::vertical(&self.selection)
                         .on_activate(Message::Selection)
                         .into(),
                     text("Vertical Multi-Select").into(),
-                    view_switcher::vertical(&self.multi_selection)
+                    tab_bar::vertical(&self.multi_selection)
                         .on_activate(Message::MultiSelection)
                         .into(),
                     text("Vertical With Spacing").into(),
                     cosmic::iced::widget::row(vec![
-                        view_switcher::vertical(&self.selection)
+                        tab_bar::vertical(&self.selection)
                             .spacing(8)
                             .on_activate(Message::Selection)
                             .width(Length::FillPortion(1))
                             .into(),
-                        view_switcher::vertical(&self.selection)
+                        tab_bar::vertical(&self.selection)
                             .spacing(8)
                             .on_activate(Message::Selection)
                             .width(Length::FillPortion(1))
                             .into(),
-                        view_switcher::vertical(&self.selection)
+                        tab_bar::vertical(&self.selection)
                             .spacing(8)
                             .on_activate(Message::Selection)
                             .width(Length::FillPortion(1))
