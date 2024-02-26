@@ -38,7 +38,7 @@ where
         .button_spacing(space_xxs)
         .spacing(space_xxs)
         .on_activate(on_activate)
-        .style(crate::theme::SegmentedButton::ViewSwitcher)
+        .style(crate::theme::SegmentedButton::TabBar)
         .apply(scrollable)
         .height(Length::Fill)
         .apply(container)

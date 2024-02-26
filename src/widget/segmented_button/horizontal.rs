@@ -65,7 +65,7 @@ where
                 / num as f32;
         }
 
-        let segmented_selection = matches!(self.style, crate::theme::SegmentedButton::Control);
+        let segmetned_control = matches!(self.style, crate::theme::SegmentedButton::Control);
 
         Box::new(
             self.model
@@ -91,7 +91,7 @@ where
                     let button_bounds = ItemBounds::Button(key, layout_bounds);
                     let mut divider = None;
 
-                    if self.dividers && segmented_selection && nth + 1 < num {
+                    if self.dividers && segmetned_control && nth + 1 < num {
                         divider = Some(ItemBounds::Divider(Rectangle {
                             width: 1.0,
                             ..bounds
