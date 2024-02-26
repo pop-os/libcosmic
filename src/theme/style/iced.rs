@@ -5,8 +5,7 @@
 
 use crate::theme::{CosmicComponent, Theme, TRANSPARENT_COMPONENT};
 use cosmic_theme::composite::over;
-use iced_core::{Background, Color};
-use iced_core::{Border, Shadow};
+use iced_core::{Background, Border, Color, Shadow, Vector};
 use iced_style::application;
 use iced_style::button as iced_button;
 use iced_style::checkbox;
@@ -160,7 +159,7 @@ impl iced_button::StyleSheet for Theme {
         }
 
         iced_button::Appearance {
-            shadow_offset: iced_core::Vector::default(),
+            shadow_offset: Vector::default(),
             background: active.background.map(|background| match background {
                 Background::Color(color) => Background::Color(Color {
                     a: color.a * 0.5,
@@ -371,6 +370,7 @@ pub enum Container {
     Background,
     Card,
     Custom(Box<dyn Fn(&Theme) -> container::Appearance>),
+    Dialog,
     Dropdown,
     HeaderBar,
     Primary,
@@ -528,6 +528,24 @@ impl container::StyleSheet for Theme {
                     },
                 }
             }
+
+            Container::Dialog => container::Appearance {
+                icon_color: Some(Color::from(cosmic.primary.component.on)),
+                text_color: Some(Color::from(cosmic.primary.component.on)),
+                background: Some(iced::Background::Color(
+                    cosmic.primary.component.base.into(),
+                )),
+                border: Border {
+                    color: cosmic.primary.divider.into(),
+                    width: 1.0,
+                    radius: cosmic.corner_radii.radius_m.into(),
+                },
+                shadow: Shadow {
+                    color: cosmic.shade.into(),
+                    offset: Vector::new(0.0, 4.0),
+                    blur_radius: 16.0,
+                },
+            },
         }
     }
 }
