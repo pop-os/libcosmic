@@ -1,19 +1,21 @@
 use crate::{
-    composite::over, steps::*, Component, Container, CornerRadii, CosmicPalette,
-    CosmicPaletteInner, Spacing, ThemeMode, DARK_PALETTE, LIGHT_PALETTE, NAME,
+    composite::over,
+    steps::{color_index, get_surface_color, get_text, steps},
+    Component, Container, CornerRadii, CosmicPalette, CosmicPaletteInner, Spacing, ThemeMode,
+    DARK_PALETTE, LIGHT_PALETTE, NAME,
 };
 use cosmic_config::{Config, CosmicConfigEntry};
 use palette::{IntoColor, Srgb, Srgba};
 use serde::{Deserialize, Serialize};
 use std::num::NonZeroUsize;
 
-/// ID for the current dark ThemeBuilder config
+/// ID for the current dark `ThemeBuilder` config
 pub const DARK_THEME_BUILDER_ID: &str = "com.system76.CosmicTheme.Dark.Builder";
 
 /// ID for the current dark Theme config
 pub const DARK_THEME_ID: &str = "com.system76.CosmicTheme.Dark";
 
-/// ID for the current light ThemeBuilder config
+/// ID for the current light `ThemeBuilder`` config
 pub const LIGHT_THEME_BUILDER_ID: &str = "com.system76.CosmicTheme.Light.Builder";
 
 /// ID for the current light Theme config
@@ -31,6 +33,7 @@ pub enum Layer {
     Secondary,
 }
 
+#[must_use]
 /// Cosmic Theme data structure with all colors and its name
 #[derive(
     Clone,
@@ -109,11 +112,7 @@ pub trait LayeredTheme {
 }
 
 impl Theme {
-    /// version of the theme
-    pub fn version() -> u64 {
-        1
-    }
-
+    #[must_use]
     /// id of the theme
     pub fn id() -> &'static str {
         NAME
@@ -121,12 +120,12 @@ impl Theme {
 
     /// Get the config for the current dark theme
     pub fn dark_config() -> Result<Config, cosmic_config::Error> {
-        Config::new(DARK_THEME_ID, Self::version())
+        Config::new(DARK_THEME_ID, Self::VERSION)
     }
 
     /// Get the config for the current light theme
     pub fn light_config() -> Result<Config, cosmic_config::Error> {
-        Config::new(LIGHT_THEME_ID, Self::version())
+        Config::new(LIGHT_THEME_ID, Self::VERSION)
     }
 
     /// get the built in light theme
@@ -155,225 +154,329 @@ impl Theme {
     }
 
     // TODO convenient getter functions for each named color variable
+    #[must_use]
+    #[allow(clippy::doc_markdown)]
     /// get @accent_color
     pub fn accent_color(&self) -> Srgba {
-        self.accent.base.clone()
+        self.accent.base
     }
 
+    #[must_use]
+    #[allow(clippy::doc_markdown)]
     /// get @success_color
     pub fn success_color(&self) -> Srgba {
-        self.success.base.clone()
+        self.success.base
     }
 
+    #[must_use]
+    #[allow(clippy::doc_markdown)]
     /// get @destructive_color
     pub fn destructive_color(&self) -> Srgba {
-        self.destructive.base.clone()
+        self.destructive.base
     }
 
+    #[must_use]
+    #[allow(clippy::doc_markdown)]
     /// get @warning_color
     pub fn warning_color(&self) -> Srgba {
-        self.warning.base.clone()
+        self.warning.base
     }
 
+    #[must_use]
+    #[allow(clippy::doc_markdown)]
     /// get @small_container_widget
     pub fn small_container_widget(&self) -> Srgba {
-        self.palette.gray_2.clone()
+        self.palette.gray_2
     }
 
+    #[must_use]
+    #[allow(clippy::doc_markdown)]
     /// get @small_widget_divider
     pub fn small_widget_divider(&self) -> Srgba {
-        self.palette.neutral_9.clone()
+        self.palette.neutral_9
     }
 
     // Containers
+    #[must_use]
+    #[allow(clippy::doc_markdown)]
     /// get @bg_color
     pub fn bg_color(&self) -> Srgba {
-        self.background.base.clone()
+        self.background.base
     }
+    #[must_use]
+    #[allow(clippy::doc_markdown)]
     /// get @bg_component_color
     pub fn bg_component_color(&self) -> Srgba {
-        self.background.component.base.clone()
+        self.background.component.base
     }
+    #[must_use]
+    #[allow(clippy::doc_markdown)]
     /// get @primary_container_color
     pub fn primary_container_color(&self) -> Srgba {
-        self.primary.base.clone()
+        self.primary.base
     }
+    #[must_use]
+    #[allow(clippy::doc_markdown)]
     /// get @primary_component_color
     pub fn primary_component_color(&self) -> Srgba {
-        self.primary.component.base.clone()
+        self.primary.component.base
     }
+    #[must_use]
+    #[allow(clippy::doc_markdown)]
     /// get @secondary_container_color
     pub fn secondary_container_color(&self) -> Srgba {
-        self.secondary.base.clone()
+        self.secondary.base
     }
+    #[must_use]
+    #[allow(clippy::doc_markdown)]
     /// get @secondary_component_color
     pub fn secondary_component_color(&self) -> Srgba {
-        self.secondary.component.base.clone()
+        self.secondary.component.base
     }
+    #[must_use]
+    #[allow(clippy::doc_markdown)]
     /// get @button_bg_color
     pub fn button_bg_color(&self) -> Srgba {
-        self.button.base.clone()
+        self.button.base
     }
 
     // Text
+    #[must_use]
+    #[allow(clippy::doc_markdown)]
     /// get @on_bg_color
     pub fn on_bg_color(&self) -> Srgba {
-        self.background.on.clone()
+        self.background.on
     }
+    #[must_use]
+    #[allow(clippy::doc_markdown)]
     /// get @on_bg_component_color
     pub fn on_bg_component_color(&self) -> Srgba {
-        self.background.component.on.clone()
+        self.background.component.on
     }
+    #[must_use]
+    #[allow(clippy::doc_markdown)]
     /// get @on_primary_color
     pub fn on_primary_container_color(&self) -> Srgba {
-        self.primary.on.clone()
+        self.primary.on
     }
+    #[must_use]
+    #[allow(clippy::doc_markdown)]
     /// get @on_primary_component_color
     pub fn on_primary_component_color(&self) -> Srgba {
-        self.primary.component.on.clone()
+        self.primary.component.on
     }
+    #[must_use]
+    #[allow(clippy::doc_markdown)]
     /// get @on_secondary_color
     pub fn on_secondary_container_color(&self) -> Srgba {
-        self.secondary.on.clone()
+        self.secondary.on
     }
+    #[must_use]
+    #[allow(clippy::doc_markdown)]
     /// get @on_secondary_component_color
     pub fn on_secondary_component_color(&self) -> Srgba {
-        self.secondary.component.on.clone()
+        self.secondary.component.on
     }
+    #[must_use]
+    #[allow(clippy::doc_markdown)]
     /// get @accent_text_color
     pub fn accent_text_color(&self) -> Srgba {
-        self.accent.base.clone()
+        self.accent.base
     }
+    #[must_use]
+    #[allow(clippy::doc_markdown)]
     /// get @success_text_color
     pub fn success_text_color(&self) -> Srgba {
-        self.success.base.clone()
+        self.success.base
     }
+    #[must_use]
+    #[allow(clippy::doc_markdown)]
     /// get @warning_text_color
     pub fn warning_text_color(&self) -> Srgba {
-        self.warning.base.clone()
+        self.warning.base
     }
+    #[must_use]
+    #[allow(clippy::doc_markdown)]
     /// get @destructive_text_color
     pub fn destructive_text_color(&self) -> Srgba {
-        self.destructive.base.clone()
+        self.destructive.base
     }
+    #[must_use]
+    #[allow(clippy::doc_markdown)]
     /// get @on_accent_color
     pub fn on_accent_color(&self) -> Srgba {
-        self.accent.on.clone()
+        self.accent.on
     }
+    #[must_use]
+    #[allow(clippy::doc_markdown)]
     /// get @on_success_color
     pub fn on_success_color(&self) -> Srgba {
-        self.success.on.clone()
+        self.success.on
     }
-    /// get @oon_warning_color
+    #[must_use]
+    #[allow(clippy::doc_markdown)]
+    /// get @on_warning_color
     pub fn on_warning_color(&self) -> Srgba {
-        self.warning.on.clone()
+        self.warning.on
     }
+    #[must_use]
+    #[allow(clippy::doc_markdown)]
     /// get @on_destructive_color
     pub fn on_destructive_color(&self) -> Srgba {
-        self.destructive.on.clone()
+        self.destructive.on
     }
+    #[must_use]
+    #[allow(clippy::doc_markdown)]
     /// get @button_color
     pub fn button_color(&self) -> Srgba {
-        self.button.on.clone()
+        self.button.on
     }
 
     // Borders and Dividers
+    #[must_use]
+    #[allow(clippy::doc_markdown)]
     /// get @bg_divider
     pub fn bg_divider(&self) -> Srgba {
-        self.background.divider.clone()
+        self.background.divider
     }
+    #[must_use]
+    #[allow(clippy::doc_markdown)]
     /// get @bg_component_divider
     pub fn bg_component_divider(&self) -> Srgba {
-        self.background.component.divider.clone()
+        self.background.component.divider
     }
+    #[must_use]
+    #[allow(clippy::doc_markdown)]
     /// get @primary_container_divider
     pub fn primary_container_divider(&self) -> Srgba {
-        self.primary.divider.clone()
+        self.primary.divider
     }
+    #[must_use]
+    #[allow(clippy::doc_markdown)]
     /// get @primary_component_divider
     pub fn primary_component_divider(&self) -> Srgba {
-        self.primary.component.divider.clone()
+        self.primary.component.divider
     }
+    #[must_use]
+    #[allow(clippy::doc_markdown)]
     /// get @secondary_container_divider
     pub fn secondary_container_divider(&self) -> Srgba {
-        self.secondary.divider.clone()
+        self.secondary.divider
     }
+    #[must_use]
+    #[allow(clippy::doc_markdown)]
     /// get @button_divider
     pub fn button_divider(&self) -> Srgba {
-        self.button.divider.clone()
+        self.button.divider
     }
 
+    #[must_use]
+    #[allow(clippy::doc_markdown)]
     /// get @window_header_bg
     pub fn window_header_bg(&self) -> Srgba {
-        self.background.base.clone()
+        self.background.base
     }
 
+    #[must_use]
+    #[allow(clippy::doc_markdown)]
     /// get @space_none
     pub fn space_none(&self) -> u16 {
         self.spacing.space_none
     }
+    #[must_use]
+    #[allow(clippy::doc_markdown)]
     /// get @space_xxxs
     pub fn space_xxxs(&self) -> u16 {
         self.spacing.space_xxxs
     }
+    #[must_use]
+    #[allow(clippy::doc_markdown)]
     /// get @space_xxs
     pub fn space_xxs(&self) -> u16 {
         self.spacing.space_xxs
     }
+    #[must_use]
+    #[allow(clippy::doc_markdown)]
     /// get @space_xs
     pub fn space_xs(&self) -> u16 {
         self.spacing.space_xs
     }
+    #[must_use]
+    #[allow(clippy::doc_markdown)]
     /// get @space_s
     pub fn space_s(&self) -> u16 {
         self.spacing.space_s
     }
+    #[must_use]
+    #[allow(clippy::doc_markdown)]
     /// get @space_m
     pub fn space_m(&self) -> u16 {
         self.spacing.space_m
     }
+    #[must_use]
+    #[allow(clippy::doc_markdown)]
     /// get @space_l
     pub fn space_l(&self) -> u16 {
         self.spacing.space_l
     }
+    #[must_use]
+    #[allow(clippy::doc_markdown)]
     /// get @space_xl
     pub fn space_xl(&self) -> u16 {
         self.spacing.space_xl
     }
+    #[must_use]
+    #[allow(clippy::doc_markdown)]
     /// get @space_xxl
     pub fn space_xxl(&self) -> u16 {
         self.spacing.space_xxl
     }
+    #[must_use]
+    #[allow(clippy::doc_markdown)]
     /// get @space_xxxl
     pub fn space_xxxl(&self) -> u16 {
         self.spacing.space_xxxl
     }
 
+    #[must_use]
+    #[allow(clippy::doc_markdown)]
     /// get @radius_0
     pub fn radius_0(&self) -> [f32; 4] {
         self.corner_radii.radius_0
     }
+    #[must_use]
+    #[allow(clippy::doc_markdown)]
     /// get @radius_xs
     pub fn radius_xs(&self) -> [f32; 4] {
         self.corner_radii.radius_xs
     }
+    #[must_use]
+    #[allow(clippy::doc_markdown)]
     /// get @radius_s
     pub fn radius_s(&self) -> [f32; 4] {
         self.corner_radii.radius_s
     }
+    #[must_use]
+    #[allow(clippy::doc_markdown)]
     /// get @radius_m
     pub fn radius_m(&self) -> [f32; 4] {
         self.corner_radii.radius_m
     }
+    #[must_use]
+    #[allow(clippy::doc_markdown)]
     /// get @radius_l
     pub fn radius_l(&self) -> [f32; 4] {
         self.corner_radii.radius_l
     }
+    #[must_use]
+    #[allow(clippy::doc_markdown)]
     /// get @radius_xl
     pub fn radius_xl(&self) -> [f32; 4] {
         self.corner_radii.radius_xl
     }
 
+    #[must_use]
+    #[allow(clippy::doc_markdown)]
     /// get @shade_color
     pub fn shade_color(&self) -> Srgba {
         self.shade
@@ -382,7 +485,7 @@ impl Theme {
     /// get the active theme
     pub fn get_active() -> Result<Self, (Vec<cosmic_config::Error>, Self)> {
         let config =
-            Config::new(Self::id(), Self::version()).map_err(|e| (vec![e], Self::default()))?;
+            Config::new(Self::id(), Self::VERSION).map_err(|e| (vec![e], Self::default()))?;
         let is_dark = ThemeMode::is_dark(&config).map_err(|e| (vec![e], Self::default()))?;
         let config = if is_dark {
             Self::dark_config()
@@ -400,6 +503,7 @@ impl From<CosmicPalette> for Theme {
     }
 }
 
+#[must_use]
 /// Helper for building customized themes
 #[derive(
     Clone,
@@ -473,7 +577,7 @@ impl ThemeBuilder {
     /// Get a builder that is initialized with the default dark theme
     pub fn dark() -> Self {
         Self {
-            palette: DARK_PALETTE.to_owned().into(),
+            palette: DARK_PALETTE.to_owned(),
             ..Default::default()
         }
     }
@@ -481,14 +585,14 @@ impl ThemeBuilder {
     /// Get a builder that is initialized with the default light theme
     pub fn light() -> Self {
         Self {
-            palette: LIGHT_PALETTE.to_owned().into(),
+            palette: LIGHT_PALETTE.to_owned(),
             ..Default::default()
         }
     }
 
     /// Get a builder that is initialized with the default dark high contrast theme
     pub fn dark_high_contrast() -> Self {
-        let palette: CosmicPalette = DARK_PALETTE.to_owned().into();
+        let palette: CosmicPalette = DARK_PALETTE.to_owned();
         Self {
             palette: CosmicPalette::HighContrastDark(palette.inner()),
             ..Default::default()
@@ -497,7 +601,7 @@ impl ThemeBuilder {
 
     /// Get a builder that is initialized with the default light high contrast theme
     pub fn light_high_contrast() -> Self {
-        let palette: CosmicPalette = LIGHT_PALETTE.to_owned().into();
+        let palette: CosmicPalette = LIGHT_PALETTE.to_owned();
         Self {
             palette: CosmicPalette::HighContrastLight(palette.inner()),
             ..Default::default()
@@ -518,7 +622,7 @@ impl ThemeBuilder {
         self
     }
 
-    /// set the corner_radii of the builder
+    /// set the corner radii of the builder
     pub fn corner_radii(mut self, corner_radii: CornerRadii) -> Self {
         self.corner_radii = corner_radii;
         self
@@ -572,6 +676,7 @@ impl ThemeBuilder {
         self
     }
 
+    #[allow(clippy::too_many_lines)]
     /// build the theme
     pub fn build(self) -> Theme {
         let Self {
@@ -599,25 +704,25 @@ impl ThemeBuilder {
         let accent = if let Some(accent) = accent {
             accent.into_color()
         } else {
-            palette.as_ref().blue.to_owned()
+            palette.as_ref().blue
         };
 
         let success = if let Some(success) = success {
             success.into_color()
         } else {
-            palette.as_ref().green.to_owned()
+            palette.as_ref().green
         };
 
         let warning = if let Some(warning) = warning {
             warning.into_color()
         } else {
-            palette.as_ref().yellow.to_owned()
+            palette.as_ref().yellow
         };
 
         let destructive = if let Some(destructive) = destructive {
             destructive.into_color()
         } else {
-            palette.as_ref().red.to_owned()
+            palette.as_ref().red
         };
 
         let text_steps_array = text_tint.map(|c| steps(c, NonZeroUsize::new(100).unwrap()));
@@ -647,7 +752,7 @@ impl ThemeBuilder {
         let bg = if let Some(bg_color) = bg_color {
             bg_color
         } else {
-            p_ref.gray_1.clone()
+            p_ref.gray_1
         };
 
         let step_array = steps(bg, NonZeroUsize::new(100).unwrap());
@@ -674,10 +779,10 @@ impl ThemeBuilder {
             text_steps_array.as_ref(),
         );
 
-        let mut component_hovered_overlay = p_ref.neutral_0.clone();
+        let mut component_hovered_overlay = p_ref.neutral_0;
         component_hovered_overlay.alpha = 0.1;
 
-        let mut component_pressed_overlay = p_ref.neutral_0.clone();
+        let mut component_pressed_overlay = p_ref.neutral_0;
         component_pressed_overlay.alpha = 0.2;
 
         let bg_component = Component::component(
@@ -733,7 +838,7 @@ impl ThemeBuilder {
 
         // Standard button background is neutral 7 with 25% opacity
         let button_bg = {
-            let mut color = neutral_7.clone();
+            let mut color = neutral_7;
             color.alpha = 0.25;
             color
         };
@@ -842,7 +947,7 @@ impl ThemeBuilder {
                     p_ref.neutral_8,
                 );
 
-                let mut on_50 = component.on.clone();
+                let mut on_50 = component.on;
                 on_50.alpha = 0.5;
 
                 component.on_disabled = over(on_50, component.base);
@@ -904,16 +1009,11 @@ impl ThemeBuilder {
 
     /// Get the builder for the dark config
     pub fn dark_config() -> Result<Config, cosmic_config::Error> {
-        Config::new(DARK_THEME_BUILDER_ID, Self::version())
+        Config::new(DARK_THEME_BUILDER_ID, Self::VERSION)
     }
 
     /// Get the builder for the light config
     pub fn light_config() -> Result<Config, cosmic_config::Error> {
-        Config::new(LIGHT_THEME_BUILDER_ID, Self::version())
-    }
-
-    /// version of the theme builder
-    pub fn version() -> u64 {
-        1
+        Config::new(LIGHT_THEME_BUILDER_ID, Self::VERSION)
     }
 }
