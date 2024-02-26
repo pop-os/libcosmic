@@ -13,7 +13,7 @@ pub enum SegmentedButton {
     #[default]
     ViewSwitcher,
     /// A widget for multiple choice selection.
-    Selection,
+    Control,
     /// Or implement any custom theme of your liking.
     Custom(Box<dyn Fn(&Theme) -> Appearance>),
 }
@@ -54,7 +54,7 @@ impl StyleSheet for Theme {
                     ..Default::default()
                 }
             }
-            SegmentedButton::Selection => {
+            SegmentedButton::Control => {
                 let cosmic = self.cosmic();
                 let active = horizontal::selection_active(cosmic);
                 let mut neutral_5 = cosmic.palette.neutral_5;
@@ -110,7 +110,7 @@ impl StyleSheet for Theme {
                     ..Default::default()
                 }
             }
-            SegmentedButton::Selection => {
+            SegmentedButton::Control => {
                 let active = vertical::selection_active(cosmic);
                 let mut neutral_5 = cosmic.palette.neutral_5;
                 neutral_5.alpha = 0.2;

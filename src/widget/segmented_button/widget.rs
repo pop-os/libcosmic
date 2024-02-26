@@ -356,7 +356,7 @@ where
             width += f32::from(icon.size) + f32::from(self.button_spacing);
         } else if self.model.is_active(button) {
             // Add selection icon measurements when widget is a selection widget.
-            if let crate::theme::SegmentedButton::Selection = self.style {
+            if let crate::theme::SegmentedButton::Control = self.style {
                 width += 16.0 + f32::from(self.button_spacing);
             }
         }
@@ -1061,7 +1061,7 @@ where
             } else {
                 // Draw the selection indicator if widget is a segmented selection, and the item is selected.
                 if key_is_active {
-                    if let crate::theme::SegmentedButton::Selection = self.style {
+                    if let crate::theme::SegmentedButton::Control = self.style {
                         let mut image_bounds = bounds;
                         image_bounds.y = center_y - 16.0 / 2.0;
 

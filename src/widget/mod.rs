@@ -166,7 +166,7 @@ mod scrollable;
 pub use scrollable::*;
 
 pub mod segmented_button;
-pub mod segmented_selection;
+pub mod segmented_control;
 
 pub mod settings;
 
