@@ -174,9 +174,9 @@ where
                 false,
             ),
             None => {
-                // Set position to center of bottom edge
+                // Set position to center
                 (
-                    Point::new(bounds.x + bounds.width / 2.0, bounds.y + bounds.height),
+                    Point::new(bounds.x + bounds.width / 2.0, bounds.y + bounds.height / 2.0),
                     true,
                 )
             }
@@ -232,7 +232,9 @@ where
         if self.centered {
             // Position is set to the center bottom of the lower widget
             let width = node.size().width;
+            let height = node.size().height;
             position.x = (position.x - width / 2.0).clamp(0.0, bounds.width - width);
+            position.y = (position.y - height / 2.0).clamp(0.0, bounds.height - height);
         } else {
             // Position is using context menu logic
             let size = node.size();
