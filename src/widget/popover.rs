@@ -163,7 +163,7 @@ where
         &'b mut self,
         tree: &'b mut Tree,
         layout: Layout<'_>,
-        _renderer: &Renderer,
+        renderer: &Renderer,
     ) -> Option<overlay::Element<'b, Message, crate::Theme, Renderer>> {
         if let Some(popup) = &self.popup {
             let bounds = layout.bounds();
@@ -194,7 +194,11 @@ where
                 }),
             ))
         } else {
-            None
+            self.content.as_widget_mut().overlay(
+                &mut tree.children[0],
+                layout,
+                renderer
+            )
         }
     }
 }
