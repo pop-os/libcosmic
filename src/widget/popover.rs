@@ -18,39 +18,33 @@ pub use iced_style::container::{Appearance, StyleSheet};
 
 pub fn popover<'a, Message, Renderer>(
     content: impl Into<Element<'a, Message, crate::Theme, Renderer>>,
-    popup: impl Into<Element<'a, Message, crate::Theme, Renderer>>,
 ) -> Popover<'a, Message, Renderer> {
-    Popover::new(content, popup)
+    Popover::new(content)
 }
 
 pub struct Popover<'a, Message, Renderer> {
     content: Element<'a, Message, crate::Theme, Renderer>,
     // XXX Avoid refcell; improve iced overlay API?
-    popup: RefCell<Element<'a, Message, crate::Theme, Renderer>>,
+    popup: Option<RefCell<Element<'a, Message, crate::Theme, Renderer>>>,
     position: Option<Point>,
-    show_popup: bool,
 }
 
 impl<'a, Message, Renderer> Popover<'a, Message, Renderer> {
-    pub fn new(
-        content: impl Into<Element<'a, Message, crate::Theme, Renderer>>,
-        popup: impl Into<Element<'a, Message, crate::Theme, Renderer>>,
-    ) -> Self {
+    pub fn new(content: impl Into<Element<'a, Message, crate::Theme, Renderer>>) -> Self {
         Self {
             content: content.into(),
-            popup: RefCell::new(popup.into()),
+            popup: None,
             position: None,
-            show_popup: true,
         }
+    }
+
+    pub fn popup(mut self, popup: impl Into<Element<'a, Message, crate::Theme, Renderer>>) -> Self {
+        self.popup = Some(RefCell::new(popup.into()));
+        self
     }
 
     pub fn position(mut self, position: Point) -> Self {
         self.position = Some(position);
-        self
-    }
-
-    pub fn show_popup(mut self, show_popup: bool) -> Self {
-        self.show_popup = show_popup;
         self
     }
 
@@ -63,11 +57,19 @@ where
     Renderer: iced_core::Renderer,
 {
     fn children(&self) -> Vec<Tree> {
-        vec![Tree::new(&self.content), Tree::new(&*self.popup.borrow())]
+        if let Some(popup) = &self.popup {
+            vec![Tree::new(&self.content), Tree::new(&*popup.borrow())]
+        } else {
+            vec![Tree::new(&self.content)]
+        }
     }
 
     fn diff(&mut self, tree: &mut Tree) {
-        tree.diff_children(&mut [&mut self.content, &mut self.popup.borrow_mut()]);
+        if let Some(popup) = &mut self.popup {
+            tree.diff_children(&mut [&mut self.content, &mut popup.borrow_mut()]);
+        } else {
+            tree.diff_children(&mut [&mut self.content]);
+        }
     }
 
     fn size(&self) -> Size<Length> {
@@ -163,37 +165,37 @@ where
         layout: Layout<'_>,
         _renderer: &Renderer,
     ) -> Option<overlay::Element<'b, Message, crate::Theme, Renderer>> {
-        if !self.show_popup {
-            return None;
+        if let Some(popup) = &self.popup {
+            let bounds = layout.bounds();
+            let (position, centered) = match self.position {
+                Some(relative) => (
+                    bounds.position() + Vector::new(relative.x, relative.y),
+                    false,
+                ),
+                None => {
+                    // Set position to center
+                    (
+                        Point::new(
+                            bounds.x + bounds.width / 2.0,
+                            bounds.y + bounds.height / 2.0,
+                        ),
+                        true,
+                    )
+                }
+            };
+
+            // XXX needed to use RefCell to get &mut for popup element
+            Some(overlay::Element::new(
+                position,
+                Box::new(Overlay {
+                    tree: &mut tree.children[1],
+                    content: popup,
+                    centered,
+                }),
+            ))
+        } else {
+            None
         }
-
-        let bounds = layout.bounds();
-        let (position, centered) = match self.position {
-            Some(relative) => (
-                bounds.position() + Vector::new(relative.x, relative.y),
-                false,
-            ),
-            None => {
-                // Set position to center
-                (
-                    Point::new(
-                        bounds.x + bounds.width / 2.0,
-                        bounds.y + bounds.height / 2.0,
-                    ),
-                    true,
-                )
-            }
-        };
-
-        // XXX needed to use RefCell to get &mut for popup element
-        Some(overlay::Element::new(
-            position,
-            Box::new(Overlay {
-                tree: &mut tree.children[1],
-                content: &self.popup,
-                centered,
-            }),
-        ))
     }
 }
 

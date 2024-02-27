@@ -58,6 +58,9 @@ pub mod column {
 pub mod cosmic_container;
 pub use cosmic_container::LayerContainer;
 
+pub mod dialog;
+pub use dialog::{dialog, Dialog};
+
 /// An element to distinguish a boundary between two elements.
 pub mod divider {
     /// Horizontal variant of a divider.
