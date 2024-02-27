@@ -45,8 +45,6 @@ wayland = [
 ]
 # multi-window support
 multi-window = ["iced/multi-window"]
-# Enable web-colors in iced
-web-colors = ["iced/web-colors"]
 # Render with wgpu
 wgpu = ["iced/wgpu", "iced_wgpu"]
 # X11 window support via winit
@@ -92,7 +90,7 @@ path = "cosmic-theme"
 [dependencies.iced]
 path = "./iced"
 default-features = false
-features = ["advanced", "image", "lazy", "svg"]
+features = ["advanced", "image", "lazy", "svg", "web-colors"]
 
 [dependencies.iced_runtime]
 path = "./iced/runtime"
