@@ -182,10 +182,9 @@ where
                     bounds.x + bounds.width / 2.0,
                     bounds.y + bounds.height / 2.0,
                 ),
-                Position::Bottom => Point::new(
-                    bounds.x + bounds.width / 2.0,
-                    bounds.y + bounds.height,
-                ),
+                Position::Bottom => {
+                    Point::new(bounds.x + bounds.width / 2.0, bounds.y + bounds.height)
+                }
                 Position::Point(relative) => {
                     bounds.position() + Vector::new(relative.x, relative.y)
                 }

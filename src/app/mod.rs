@@ -117,8 +117,8 @@ pub(crate) fn iced_settings<App: Application>(
 
     #[cfg(not(feature = "wayland"))]
     {
-        if let Some(_border_size) = settings.resizable {
-            // iced.window.border_size = border_size as u32;
+        if let Some(border_size) = settings.resizable {
+            iced.window.resize_border = border_size as u32;
             iced.window.resizable = true;
         }
         iced.window.decorations = !settings.client_decorations;
