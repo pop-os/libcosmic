@@ -3,11 +3,11 @@
 
 //! Implementation details for the vertical layout of a segmented button.
 
-use super::model::{Entity, Model, Selectable};
+use super::model::{Model, Selectable};
 use super::style::StyleSheet;
 use super::widget::{ItemBounds, LocalState, SegmentedButton, SegmentedVariant};
 
-use iced::{Alignment, Length, Rectangle, Size};
+use iced::{Length, Rectangle, Size};
 use iced_core::layout;
 
 /// A type marker defining the vertical variant of a [`SegmentedButton`].
@@ -20,7 +20,6 @@ pub type VerticalSegmentedButton<'a, SelectionMode, Message> =
 /// Vertical implementation of the [`SegmentedButton`].
 ///
 /// For details on the model, see the [`segmented_button`](super) module for more details.
-#[must_use]
 pub fn vertical<SelectionMode, Message>(
     model: &Model<SelectionMode>,
 ) -> SegmentedButton<Vertical, SelectionMode, Message>

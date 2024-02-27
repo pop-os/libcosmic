@@ -24,7 +24,7 @@ pub fn focus<Message: 'static>(id: Id) -> Command<Message> {
     Command::widget(operation::focusable::focus(id.0))
 }
 
-pub(super) enum ItemBounds {
+pub enum ItemBounds {
     Button(Entity, Rectangle),
     Divider(Rectangle),
 }
