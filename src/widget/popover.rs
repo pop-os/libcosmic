@@ -178,9 +178,13 @@ where
 
             // Calculate overlay position from relative position
             let mut overlay_position = match self.position {
-                Position::Center | Position::Bottom => Point::new(
+                Position::Center => Point::new(
                     bounds.x + bounds.width / 2.0,
                     bounds.y + bounds.height / 2.0,
+                ),
+                Position::Bottom => Point::new(
+                    bounds.x + bounds.width / 2.0,
+                    bounds.y + bounds.height,
                 ),
                 Position::Point(relative) => {
                     bounds.position() + Vector::new(relative.x, relative.y)
