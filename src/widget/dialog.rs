@@ -10,9 +10,9 @@ pub struct Dialog<'a, Message> {
     icon: Option<Element<'a, Message>>,
     body: Option<Cow<'a, str>>,
     controls: Vec<Element<'a, Message>>,
-    primary_action: Option<(Cow<'a, str>, Message, bool)>,
-    secondary_action: Option<(Cow<'a, str>, Message)>,
-    tertiary_action: Option<(Cow<'a, str>, Message)>,
+    primary_action: Option<Element<'a, Message>>,
+    secondary_action: Option<Element<'a, Message>>,
+    tertiary_action: Option<Element<'a, Message>>,
 }
 
 impl<'a, Message> Dialog<'a, Message> {
@@ -43,27 +43,18 @@ impl<'a, Message> Dialog<'a, Message> {
         self
     }
 
-    pub fn primary_action(mut self, name: impl Into<Cow<'a, str>>, message: Message) -> Self {
-        self.primary_action = Some((name.into(), message, false));
+    pub fn primary_action(mut self, button: impl Into<Element<'a, Message>>) -> Self {
+        self.primary_action = Some(button.into());
         self
     }
 
-    pub fn primary_action_destructive(
-        mut self,
-        name: impl Into<Cow<'a, str>>,
-        message: Message,
-    ) -> Self {
-        self.primary_action = Some((name.into(), message, true));
+    pub fn secondary_action(mut self, button: impl Into<Element<'a, Message>>) -> Self {
+        self.secondary_action = Some(button.into());
         self
     }
 
-    pub fn secondary_action(mut self, name: impl Into<Cow<'a, str>>, message: Message) -> Self {
-        self.secondary_action = Some((name.into(), message));
-        self
-    }
-
-    pub fn tertiary_action(mut self, name: impl Into<Cow<'a, str>>, message: Message) -> Self {
-        self.tertiary_action = Some((name.into(), message));
+    pub fn tertiary_action(mut self, button: impl Into<Element<'a, Message>>) -> Self {
+        self.tertiary_action = Some(button.into());
         self
     }
 }
@@ -100,19 +91,15 @@ impl<'a, Message: Clone + 'static> From<Dialog<'a, Message>> for Element<'a, Mes
         content_row = content_row.push(content_col);
 
         let mut button_row = widget::row::with_capacity(4).spacing(space_xxs);
-        if let Some((name, message)) = dialog.tertiary_action {
-            button_row = button_row.push(widget::button::text(name).on_press(message));
+        if let Some(button) = dialog.tertiary_action {
+            button_row = button_row.push(button);
         }
         button_row = button_row.push(widget::horizontal_space(Length::Fill));
-        if let Some((name, message)) = dialog.secondary_action {
-            button_row = button_row.push(widget::button::standard(name).on_press(message));
+        if let Some(button) = dialog.secondary_action {
+            button_row = button_row.push(button);
         }
-        if let Some((name, message, destructive)) = dialog.primary_action {
-            if destructive {
-                button_row = button_row.push(widget::button::destructive(name).on_press(message));
-            } else {
-                button_row = button_row.push(widget::button::suggested(name).on_press(message));
-            }
+        if let Some(button) = dialog.primary_action {
+            button_row = button_row.push(button);
         }
 
         Element::from(
