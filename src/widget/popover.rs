@@ -22,11 +22,19 @@ pub fn popover<'a, Message, Renderer>(
     Popover::new(content)
 }
 
+#[derive(Clone, Copy, Debug, Default)]
+pub enum Position {
+    #[default]
+    Center,
+    Bottom,
+    Point(Point),
+}
+
 pub struct Popover<'a, Message, Renderer> {
     content: Element<'a, Message, crate::Theme, Renderer>,
     // XXX Avoid refcell; improve iced overlay API?
     popup: Option<RefCell<Element<'a, Message, crate::Theme, Renderer>>>,
-    position: Option<Point>,
+    position: Position,
 }
 
 impl<'a, Message, Renderer> Popover<'a, Message, Renderer> {
@@ -34,7 +42,7 @@ impl<'a, Message, Renderer> Popover<'a, Message, Renderer> {
         Self {
             content: content.into(),
             popup: None,
-            position: None,
+            position: Position::Center,
         }
     }
 
@@ -43,8 +51,8 @@ impl<'a, Message, Renderer> Popover<'a, Message, Renderer> {
         self
     }
 
-    pub fn position(mut self, position: Point) -> Self {
-        self.position = Some(position);
+    pub fn position(mut self, position: Position) -> Self {
+        self.position = position;
         self
     }
 
@@ -167,38 +175,35 @@ where
     ) -> Option<overlay::Element<'b, Message, crate::Theme, Renderer>> {
         if let Some(popup) = &self.popup {
             let bounds = layout.bounds();
-            let (position, centered) = match self.position {
-                Some(relative) => (
-                    bounds.position() + Vector::new(relative.x, relative.y),
-                    false,
+
+            // Calculate overlay position from relative position
+            let mut overlay_position = match self.position {
+                Position::Center | Position::Bottom => Point::new(
+                    bounds.x + bounds.width / 2.0,
+                    bounds.y + bounds.height / 2.0,
                 ),
-                None => {
-                    // Set position to center
-                    (
-                        Point::new(
-                            bounds.x + bounds.width / 2.0,
-                            bounds.y + bounds.height / 2.0,
-                        ),
-                        true,
-                    )
+                Position::Point(relative) => {
+                    bounds.position() + Vector::new(relative.x, relative.y)
                 }
             };
 
+            // Round position to prevent rendering issues
+            overlay_position.x = overlay_position.x.round();
+            overlay_position.y = overlay_position.y.round();
+
             // XXX needed to use RefCell to get &mut for popup element
             Some(overlay::Element::new(
-                position,
+                overlay_position,
                 Box::new(Overlay {
                     tree: &mut tree.children[1],
                     content: popup,
-                    centered,
+                    position: self.position,
                 }),
             ))
         } else {
-            self.content.as_widget_mut().overlay(
-                &mut tree.children[0],
-                layout,
-                renderer
-            )
+            self.content
+                .as_widget_mut()
+                .overlay(&mut tree.children[0], layout, renderer)
         }
     }
 }
@@ -217,7 +222,7 @@ where
 pub struct Overlay<'a, 'b, Message, Renderer> {
     tree: &'a mut Tree,
     content: &'a RefCell<Element<'b, Message, crate::Theme, Renderer>>,
-    centered: bool,
+    position: Position,
 }
 
 impl<'a, 'b, Message, Renderer> overlay::Overlay<Message, crate::Theme, Renderer>
@@ -238,20 +243,33 @@ where
             .borrow()
             .as_widget()
             .layout(self.tree, renderer, &limits);
-        if self.centered {
-            // Position is set to the center bottom of the lower widget
-            let width = node.size().width;
-            let height = node.size().height;
-            position.x = (position.x - width / 2.0).clamp(0.0, bounds.width - width);
-            position.y = (position.y - height / 2.0).clamp(0.0, bounds.height - height);
-        } else {
-            // Position is using context menu logic
-            let size = node.size();
-            position.x = position.x.clamp(0.0, bounds.width - size.width);
-            if position.y + size.height > bounds.height {
-                position.y = (position.y - size.height).clamp(0.0, bounds.height - size.height);
+        match self.position {
+            Position::Center => {
+                // Position is set to the center of the widget
+                let width = node.size().width;
+                let height = node.size().height;
+                position.x = (position.x - width / 2.0).clamp(0.0, bounds.width - width);
+                position.y = (position.y - height / 2.0).clamp(0.0, bounds.height - height);
+            }
+            Position::Bottom => {
+                // Position is set to the center bottom of the widget
+                let width = node.size().width;
+                position.x = (position.x - width / 2.0).clamp(0.0, bounds.width - width);
+            }
+            Position::Point(_) => {
+                // Position is using context menu logic
+                let size = node.size();
+                position.x = position.x.clamp(0.0, bounds.width - size.width);
+                if position.y + size.height > bounds.height {
+                    position.y = (position.y - size.height).clamp(0.0, bounds.height - size.height);
+                }
             }
         }
+
+        // Round position to prevent rendering issues
+        position.x = position.x.round();
+        position.y = position.y.round();
+
         node.move_to(position)
     }
 
