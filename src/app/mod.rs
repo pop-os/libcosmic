@@ -44,7 +44,7 @@ pub use self::core::Core;
 pub use self::settings::Settings;
 use crate::prelude::*;
 use crate::theme::THEME;
-use crate::widget::{context_drawer, nav_bar};
+use crate::widget::{context_drawer, nav_bar, popover};
 use apply::Apply;
 use iced::Subscription;
 #[cfg(all(feature = "winit", feature = "multi-window"))]
@@ -418,6 +418,11 @@ where
         None
     }
 
+    /// Displays a dialog in the center of the application window when `Some`.
+    fn dialog(&self) -> Option<Element<Self::Message>> {
+        None
+    }
+
     /// Attaches elements to the start section of the header.
     fn header_start(&self) -> Vec<Element<Self::Message>> {
         Vec::new()
@@ -659,7 +664,7 @@ impl<App: Application> ApplicationExt for App {
             content_row.into()
         };
 
-        let view_element: Element<_> = crate::widget::column::with_capacity(2)
+        let view_column = crate::widget::column::with_capacity(2)
             .push_maybe(if core.window.show_headerbar {
                 Some({
                     let mut header = crate::widget::header_bar()
@@ -707,8 +712,16 @@ impl<App: Application> ApplicationExt for App {
                 None
             })
             // The content element contains every element beneath the header.
-            .push(content)
-            .into();
+            .push(content);
+
+        // Show any current dialog on top and centered over the view content
+        // We have to use a popover even without a dialog to keep the tree from changing
+        let mut popover = popover(view_column);
+        if let Some(dialog) = self.dialog() {
+            popover = popover.popup(dialog.map(Message::App));
+        }
+
+        let view_element: Element<_> = popover.into();
         view_element.debug(core.debug)
     }
 }

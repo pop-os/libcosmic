@@ -530,11 +530,9 @@ impl container::StyleSheet for Theme {
             }
 
             Container::Dialog => container::Appearance {
-                icon_color: Some(Color::from(cosmic.primary.component.on)),
-                text_color: Some(Color::from(cosmic.primary.component.on)),
-                background: Some(iced::Background::Color(
-                    cosmic.primary.component.base.into(),
-                )),
+                icon_color: Some(Color::from(cosmic.primary.on)),
+                text_color: Some(Color::from(cosmic.primary.on)),
+                background: Some(iced::Background::Color(cosmic.primary.base.into())),
                 border: Border {
                     color: cosmic.primary.divider.into(),
                     width: 1.0,
