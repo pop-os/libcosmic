@@ -73,16 +73,16 @@ impl<'a, Message: 'static> Item<'a, Message> {
                 .spacing(2)
                 .push(text(self.title))
                 .push(text(description).size(10))
-                .width(Length::FillPortion(12));
+                .width(Length::Fill);
 
             contents.push(column.into());
         } else {
-            contents.push(text(self.title).into());
+            contents.push(text(self.title).width(Length::Fill).into());
         }
 
         contents.push(
             container(widget.into())
-                .width(Length::FillPortion(4))
+                .width(Length::Shrink)
                 .align_x(iced_core::alignment::Horizontal::Right)
                 .into(),
         );
