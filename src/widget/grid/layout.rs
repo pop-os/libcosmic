@@ -95,8 +95,8 @@ pub fn resolve<Message>(
             display: Display::Grid,
 
             gap: taffy::geometry::Size {
-                width: length(row_spacing),
-                height: length(column_spacing),
+                width: length(column_spacing),
+                height: length(row_spacing),
             },
 
             justify_items: Some(match height {
