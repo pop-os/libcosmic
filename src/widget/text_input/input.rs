@@ -472,7 +472,32 @@ where
             state.dragging_state = None;
         }
 
-        if state.is_secure != self.is_secure {
+        if state.is_secure != self.is_secure
+            || state
+                .value
+                .buffer()
+                .lines
+                .iter()
+                .map(|l| l.text())
+                .collect::<String>()
+                != self.value.to_string()
+            || state
+                .label
+                .buffer()
+                .lines
+                .iter()
+                .map(|l| l.text())
+                .collect::<String>()
+                != self.label.unwrap_or_default()
+            || state
+                .helper_text
+                .buffer()
+                .lines
+                .iter()
+                .map(|l| l.text())
+                .collect::<String>()
+                != self.helper_text.unwrap_or_default()
+        {
             state.is_secure = self.is_secure;
             state.dirty = true;
         }
