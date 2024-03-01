@@ -80,12 +80,7 @@ impl<'a, Message: 'static> Item<'a, Message> {
             contents.push(text(self.title).width(Length::Fill).into());
         }
 
-        contents.push(
-            container(widget.into())
-                .width(Length::Shrink)
-                .align_x(iced_core::alignment::Horizontal::Right)
-                .into(),
-        );
+        contents.push(widget.into().into());
 
         item_row(contents)
     }
