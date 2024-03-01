@@ -26,7 +26,7 @@ process = ["dep:nix"]
 # Use rfd for file dialogs
 rfd = ["dep:rfd"]
 # Enables desktop files helpers
-desktop = ["process", "dep:freedesktop-desktop-entry", "dep:shlex"]
+desktop = ["process", "dep:freedesktop-desktop-entry", "dep:mime", "dep:shlex"]
 # Enables keycode serialization
 serde-keycode = ["iced_core/serde"]
 # Prevents multiple separate process instances.
@@ -67,6 +67,7 @@ derive_setters = "0.1.5"
 fraction = "0.14.0"
 image = { version = "0.24.6", optional = true }
 lazy_static = "1.4.0"
+mime = { version = "0.3.17", optional = true }
 nix = { version = "0.27", features = ["process"], optional = true }
 palette = "0.7.3"
 rfd = { version = "0.13.0", optional = true }

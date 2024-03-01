@@ -1,4 +1,5 @@
 pub use freedesktop_desktop_entry::DesktopEntry;
+pub use mime::Mime;
 use std::{
     borrow::Cow,
     ffi::OsStr,
@@ -57,6 +58,7 @@ pub struct DesktopEntryData {
     pub path: Option<PathBuf>,
     pub categories: String,
     pub desktop_actions: Vec<DesktopAction>,
+    pub mime_types: Vec<Mime>,
     pub prefers_dgpu: bool,
 }
 
@@ -179,6 +181,15 @@ impl DesktopEntryData {
                                 None
                             }
                         })
+                        .collect::<Vec<_>>()
+                })
+                .unwrap_or_default(),
+            mime_types: de
+                .mime_type()
+                .map(|mime_types| {
+                    mime_types
+                        .split_terminator(';')
+                        .filter_map(|mime_type| mime_type.parse::<Mime>().ok())
                         .collect::<Vec<_>>()
                 })
                 .unwrap_or_default(),
