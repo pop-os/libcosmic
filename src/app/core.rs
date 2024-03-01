@@ -46,6 +46,9 @@ pub struct Core {
     /// Whether the window is too small for the nav bar + main content.
     is_condensed: bool,
 
+    /// Enables built in keyboard navigation
+    pub(super) keyboard_nav: bool,
+
     /// Current status of the nav bar panel.
     nav_bar: NavBar,
 
@@ -78,6 +81,7 @@ impl Default for Core {
         Self {
             debug: false,
             is_condensed: false,
+            keyboard_nav: true,
             nav_bar: NavBar {
                 active: true,
                 toggled: true,
@@ -132,6 +136,17 @@ impl Core {
     #[must_use]
     pub fn scale_factor(&self) -> f32 {
         self.scale_factor
+    }
+
+    /// Enable or disable keyboard navigation
+    pub fn set_keyboard_nav(&mut self, enabled: bool) {
+        self.keyboard_nav = enabled;
+    }
+
+    #[must_use]
+    /// Enable or disable keyboard navigation
+    pub fn keyboard_nav(&self) -> bool {
+        self.keyboard_nav
     }
 
     /// Changes the scaling factor used by the application.
