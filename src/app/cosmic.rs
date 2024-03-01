@@ -177,11 +177,8 @@ where
             None
         });
 
-        Subscription::batch(vec![
+        let mut subscriptions = vec![
             self.app.subscription().map(super::Message::App),
-            keyboard_nav::subscription()
-                .map(Message::KeyboardNav)
-                .map(super::Message::Cosmic),
             self.app
                 .core()
                 .watch_config::<cosmic_theme::Theme>(if self.app.core().system_theme_mode.is_dark {
@@ -213,7 +210,17 @@ where
                 .single_instance
                 .then(|| super::single_instance_subscription::<T>())
                 .unwrap_or_else(Subscription::none),
-        ])
+        ];
+
+        if self.app.core().keyboard_nav {
+            subscriptions.push(
+                keyboard_nav::subscription()
+                    .map(Message::KeyboardNav)
+                    .map(super::Message::Cosmic),
+            );
+        }
+
+        Subscription::batch(subscriptions)
     }
 
     #[cfg(not(any(feature = "multi-window", feature = "wayland")))]
