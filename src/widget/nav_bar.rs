@@ -29,12 +29,11 @@ where
 {
     let theme = crate::theme::active();
     let space_s = theme.cosmic().space_s();
-    let space_xs = theme.cosmic().space_xs();
     let space_xxs = theme.cosmic().space_xxs();
 
     segmented_button::vertical(model)
         .button_height(32)
-        .button_padding([space_s, space_xs, space_s, space_xs])
+        .button_padding([space_s, space_xxs, space_s, space_xxs])
         .button_spacing(space_xxs)
         .spacing(space_xxs)
         .on_activate(on_activate)
