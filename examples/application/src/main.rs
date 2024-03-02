@@ -30,6 +30,9 @@ impl Page {
 /// Runs application with these settings
 #[rustfmt::skip]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
+    tracing_subscriber::fmt::init();
+    let _ = tracing_log::LogTracer::init();
+ 
     let input = vec![
         (Page::Page1, "🖖 Hello from libcosmic.".into()),
         (Page::Page2, "🌟 This is an example application.".into()),
@@ -44,8 +47,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .default_icon_theme("Pop")
         .default_text_size(16.0)
         .scale_factor(1.0)
-        .size(Size::new(1024., 768.))
-        .theme(cosmic::Theme::dark());
+        .size(Size::new(1024., 768.));
 
     cosmic::app::run::<App>(settings, input)?;
 
