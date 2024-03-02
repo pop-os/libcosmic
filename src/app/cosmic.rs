@@ -18,9 +18,9 @@ use iced::event::PlatformSpecific;
 use iced::multi_window::Application as IcedApplication;
 #[cfg(feature = "wayland")]
 use iced::wayland::Application as IcedApplication;
-use iced::window;
 #[cfg(not(any(feature = "multi-window", feature = "wayland")))]
 use iced::Application as IcedApplication;
+use iced::{window, Command};
 use iced_futures::event::listen_with;
 #[cfg(not(feature = "wayland"))]
 use iced_runtime::command::Action;
@@ -54,9 +54,9 @@ pub enum Message {
     /// Toggles the condensed status of the nav bar.
     ToggleNavBarCondensed,
     /// Notification of system theme changes.
-    SystemThemeChange(Theme),
+    SystemThemeChange(Vec<&'static str>, Theme),
     /// Notification of system theme mode changes.
-    SystemThemeModeChange(ThemeMode),
+    SystemThemeModeChange(Vec<&'static str>, ThemeMode),
     /// Updates the window maximized state
     WindowMaximized(window::Id, bool),
     /// Updates the tracked window geometry.
@@ -193,7 +193,10 @@ where
                     for e in update.errors {
                         tracing::error!("{e}");
                     }
-                    Message::SystemThemeChange(crate::theme::Theme::system(Arc::new(update.config)))
+                    Message::SystemThemeChange(
+                        update.keys,
+                        crate::theme::Theme::system(Arc::new(update.config)),
+                    )
                 })
                 .map(super::Message::Cosmic),
             self.app
@@ -203,7 +206,7 @@ where
                     for e in update.errors {
                         tracing::error!("{e}");
                     }
-                    Message::SystemThemeModeChange(update.config)
+                    Message::SystemThemeModeChange(update.keys, update.config)
                 })
                 .map(super::Message::Cosmic),
             window_events.map(super::Message::Cosmic),
@@ -215,7 +218,7 @@ where
                 .unwrap_or_else(Subscription::none),
             #[cfg(feature = "xdg-portal")]
             crate::theme::portal::desktop_settings()
-                .map(|e| Message::DesktopSettings(e))
+                .map(Message::DesktopSettings)
                 .map(super::Message::Cosmic),
         ];
 
@@ -387,7 +390,8 @@ impl<T: Application> Cosmic<T> {
                 });
             }
 
-            Message::SystemThemeChange(theme) => {
+            Message::SystemThemeChange(keys, theme) => {
+                let cmd = self.app.system_theme_update(&keys, theme.cosmic());
                 // Record the last-known system theme in event that the current theme is custom.
                 self.app.core_mut().system_theme = theme.clone();
                 let portal_accent = self.app.core().portal_accent;
@@ -409,6 +413,8 @@ impl<T: Application> Cosmic<T> {
                         cosmic_theme.set_theme(new_theme.theme_type);
                     }
                 });
+
+                return cmd;
             }
 
             Message::ScaleFactor(factor) => {
@@ -419,7 +425,9 @@ impl<T: Application> Cosmic<T> {
                 self.app.on_app_exit();
                 return self.close();
             }
-            Message::SystemThemeModeChange(mode) => {
+            Message::SystemThemeModeChange(keys, mode) => {
+                let mut cmds = vec![self.app.system_theme_mode_update(&keys, &mode)];
+
                 let core = self.app.core_mut();
                 let prev_is_dark = core.system_is_dark();
                 core.system_theme_mode = mode;
@@ -432,7 +440,9 @@ impl<T: Application> Cosmic<T> {
                     } else {
                         crate::theme::system_light()
                     };
+                    cmds.push(self.app.system_theme_update(&[], new_theme.cosmic()));
 
+                    let core = self.app.core_mut();
                     new_theme = if let Some(a) = core.portal_accent {
                         let t_inner = new_theme.cosmic();
                         if a.distance_squared(*t_inner.accent_color()) > 0.00001 {
@@ -454,6 +464,7 @@ impl<T: Application> Cosmic<T> {
                         }
                     });
                 }
+                return Command::batch(cmds);
             }
             Message::Activate(_token) => {
                 #[cfg(feature = "wayland")]
@@ -505,7 +516,7 @@ impl<T: Application> Cosmic<T> {
             }
             #[cfg(feature = "xdg-portal")]
             Message::DesktopSettings(crate::theme::portal::Desktop::Accent(c)) => {
-                use palette::{IntoColor, Oklch, Oklcha, Srgb, Srgba};
+                use palette::Srgba;
 
                 let c = Srgba::new(c.red() as f32, c.green() as f32, c.blue() as f32, 1.0);
                 let core = self.app.core_mut();

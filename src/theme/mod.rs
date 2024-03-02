@@ -112,8 +112,8 @@ pub fn system_dark() -> Theme {
 }
 
 pub fn system_light() -> Theme {
-    let Ok(helper) = crate::cosmic_theme::Theme::dark_config() else {
-        return Theme::dark();
+    let Ok(helper) = crate::cosmic_theme::Theme::light_config() else {
+        return Theme::light();
     };
 
     let t = crate::cosmic_theme::Theme::get_entry(&helper).unwrap_or_else(|(errors, theme)| {

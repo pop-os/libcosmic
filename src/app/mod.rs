@@ -511,6 +511,24 @@ where
         iced::Command::none()
     }
 
+    /// Respond to a system theme change
+    fn system_theme_update(
+        &mut self,
+        keys: &[&'static str],
+        new_theme: &cosmic_theme::Theme,
+    ) -> iced::Command<Message<Self::Message>> {
+        iced::Command::none()
+    }
+
+    /// Respond to a system theme mode change
+    fn system_theme_mode_update(
+        &mut self,
+        keys: &[&'static str],
+        new_theme: &cosmic_theme::ThemeMode,
+    ) -> iced::Command<Message<Self::Message>> {
+        iced::Command::none()
+    }
+
     /// Constructs the view for the main window.
     fn view(&self) -> Element<Self::Message>;
 
