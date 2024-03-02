@@ -210,12 +210,6 @@ where
                 })
                 .map(super::Message::Cosmic),
             window_events.map(super::Message::Cosmic),
-            #[cfg(feature = "single-instance")]
-            self.app
-                .core()
-                .single_instance
-                .then(|| super::single_instance_subscription::<T>())
-                .unwrap_or_else(Subscription::none),
             #[cfg(feature = "xdg-portal")]
             crate::theme::portal::desktop_settings()
                 .map(Message::DesktopSettings)
@@ -228,6 +222,11 @@ where
                     .map(Message::KeyboardNav)
                     .map(super::Message::Cosmic),
             );
+        }
+
+        #[cfg(feature = "single-instance")]
+        if self.app.core().single_instance {
+            subscriptions.push(super::single_instance_subscription::<T>());
         }
 
         Subscription::batch(subscriptions)
