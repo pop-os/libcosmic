@@ -56,7 +56,7 @@ pub struct DesktopEntryData {
     pub exec: Option<String>,
     pub icon: IconSource,
     pub path: Option<PathBuf>,
-    pub categories: String,
+    pub categories: Vec<String>,
     pub desktop_actions: Vec<DesktopAction>,
     pub mime_types: Vec<Mime>,
     pub prefers_dgpu: bool,
@@ -163,7 +163,12 @@ impl DesktopEntryData {
             name,
             icon,
             path: path.into(),
-            categories: de.categories().unwrap_or_default().to_string(),
+            categories: de
+                .categories()
+                .unwrap_or_default()
+                .split_terminator(';')
+                .map(|x| x.to_string())
+                .collect(),
             desktop_actions: de
                 .actions()
                 .map(|actions| {
