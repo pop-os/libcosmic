@@ -783,17 +783,23 @@ impl ThemeBuilder {
         let step_array = steps(bg, NonZeroUsize::new(100).unwrap());
         let bg_index = color_index(bg, step_array.len());
 
-        let primary_container_bg = if let Some(primary_container_bg_color) = primary_container_bg {
-            primary_container_bg_color
-        } else {
-            get_surface_color(bg_index, 5, &step_array, is_dark, &p_ref.neutral_1)
+        let mut component_hovered_overlay = p_ref.neutral_0;
+        component_hovered_overlay.alpha = 0.1;
+
+        let mut component_pressed_overlay = p_ref.neutral_0;
+        component_pressed_overlay.alpha = 0.2;
+
+        // Standard button background is neutral 7 with 25% opacity
+        let button_bg = {
+            let mut color = p_ref.neutral_7;
+            color.alpha = 0.25;
+            color
         };
 
-        let secondary_container_bg = if let Some(secondary_container_bg) = secondary_container_bg {
-            secondary_container_bg
-        } else {
-            get_surface_color(bg_index, 10, &step_array, is_dark, &p_ref.neutral_2)
-        };
+        let (mut button_hovered_overlay, mut button_pressed_overlay) =
+            (p_ref.neutral_5, p_ref.neutral_2);
+        button_hovered_overlay.alpha = 0.2;
+        button_pressed_overlay.alpha = 0.5;
 
         let bg_component = get_surface_color(bg_index, 8, &step_array, is_dark, &p_ref.neutral_2);
         let on_bg_component = get_text(
@@ -804,75 +810,6 @@ impl ThemeBuilder {
             text_steps_array.as_ref(),
         );
 
-        let mut component_hovered_overlay = p_ref.neutral_0;
-        component_hovered_overlay.alpha = 0.1;
-
-        let mut component_pressed_overlay = p_ref.neutral_0;
-        component_pressed_overlay.alpha = 0.2;
-
-        let bg_component = Component::component(
-            bg_component,
-            accent,
-            on_bg_component,
-            component_hovered_overlay,
-            component_pressed_overlay,
-            is_high_contrast,
-            p_ref.neutral_8,
-        );
-
-        let primary_index = color_index(primary_container_bg, step_array.len());
-        let primary_component =
-            get_surface_color(primary_index, 6, &step_array, is_dark, &p_ref.neutral_3);
-        let on_primary_component = get_text(
-            color_index(primary_component, step_array.len()),
-            &step_array,
-            is_dark,
-            &p_ref.neutral_8,
-            text_steps_array.as_ref(),
-        );
-        let primary_component = Component::component(
-            primary_component,
-            accent,
-            on_primary_component,
-            component_hovered_overlay,
-            component_pressed_overlay,
-            is_high_contrast,
-            p_ref.neutral_8,
-        );
-
-        let secondary_index = color_index(secondary_container_bg, step_array.len());
-        let secondary_component =
-            get_surface_color(secondary_index, 3, &step_array, is_dark, &p_ref.neutral_4);
-        let on_secondary_component = get_text(
-            color_index(secondary_component, step_array.len()),
-            &step_array,
-            is_dark,
-            &p_ref.neutral_8,
-            text_steps_array.as_ref(),
-        );
-        let secondary_component = Component::component(
-            secondary_component,
-            accent,
-            on_secondary_component,
-            component_hovered_overlay,
-            component_pressed_overlay,
-            is_high_contrast,
-            p_ref.neutral_8,
-        );
-        let neutral_7 = p_ref.neutral_7;
-
-        // Standard button background is neutral 7 with 25% opacity
-        let button_bg = {
-            let mut color = neutral_7;
-            color.alpha = 0.25;
-            color
-        };
-
-        let (mut button_hovered_overlay, mut button_pressed_overlay) =
-            (p_ref.neutral_5, p_ref.neutral_2);
-        button_hovered_overlay.alpha = 0.2;
-        button_pressed_overlay.alpha = 0.5;
-
         let mut theme: Theme = Theme {
             name: palette.name().to_string(),
             shade: if palette.is_dark() {
@@ -880,28 +817,101 @@ impl ThemeBuilder {
             } else {
                 Srgba::new(0., 0., 0., 0.08)
             },
-            primary: Container::new(
-                primary_component,
-                primary_container_bg,
+            background: Container::new(
+                Component::component(
+                    bg_component,
+                    accent,
+                    on_bg_component,
+                    component_hovered_overlay,
+                    component_pressed_overlay,
+                    is_high_contrast,
+                    p_ref.neutral_8,
+                ),
+                bg,
                 get_text(
-                    primary_index,
+                    bg_index,
                     &step_array,
                     is_dark,
                     &p_ref.neutral_8,
                     text_steps_array.as_ref(),
                 ),
             ),
-            secondary: Container::new(
-                secondary_component,
-                secondary_container_bg,
-                get_text(
-                    secondary_index,
-                    &step_array,
-                    is_dark,
-                    &p_ref.neutral_8,
-                    text_steps_array.as_ref(),
-                ),
-            ),
+            primary: {
+                let container_bg = if let Some(primary_container_bg_color) = primary_container_bg {
+                    primary_container_bg_color
+                } else {
+                    get_surface_color(bg_index, 5, &step_array, is_dark, &p_ref.neutral_1)
+                };
+
+                let base_index = color_index(container_bg, step_array.len());
+                let component_base =
+                    get_surface_color(base_index, 6, &step_array, is_dark, &p_ref.neutral_3);
+
+                let container = Container::new(
+                    Component::component(
+                        component_base,
+                        accent,
+                        get_text(
+                            color_index(component_base, step_array.len()),
+                            &step_array,
+                            is_dark,
+                            &p_ref.neutral_8,
+                            text_steps_array.as_ref(),
+                        ),
+                        component_hovered_overlay,
+                        component_pressed_overlay,
+                        is_high_contrast,
+                        p_ref.neutral_8,
+                    ),
+                    container_bg,
+                    get_text(
+                        base_index,
+                        &step_array,
+                        is_dark,
+                        &p_ref.neutral_8,
+                        text_steps_array.as_ref(),
+                    ),
+                );
+
+                container
+            },
+            secondary: {
+                let container_bg = if let Some(secondary_container_bg) = secondary_container_bg {
+                    secondary_container_bg
+                } else {
+                    get_surface_color(bg_index, 10, &step_array, is_dark, &p_ref.neutral_2)
+                };
+
+                let base_index = color_index(container_bg, step_array.len());
+                let secondary_component =
+                    get_surface_color(base_index, 3, &step_array, is_dark, &p_ref.neutral_4);
+
+                Container::new(
+                    Component::component(
+                        secondary_component,
+                        accent,
+                        get_text(
+                            color_index(secondary_component, step_array.len()),
+                            &step_array,
+                            is_dark,
+                            &p_ref.neutral_8,
+                            text_steps_array.as_ref(),
+                        ),
+                        component_hovered_overlay,
+                        component_pressed_overlay,
+                        is_high_contrast,
+                        p_ref.neutral_8,
+                    ),
+                    container_bg,
+                    get_text(
+                        base_index,
+                        &step_array,
+                        is_dark,
+                        &p_ref.neutral_8,
+                        text_steps_array.as_ref(),
+                    ),
+                )
+            },
             accent: Component::colored_component(
                 accent,
                 p_ref.neutral_0,
@@ -916,17 +926,6 @@ impl ThemeBuilder {
                 accent,
                 button_hovered_overlay,
                 button_pressed_overlay,
-            ),
-            background: Container::new(
-                bg_component,
-                bg,
-                get_text(
-                    bg_index,
-                    &step_array,
-                    is_dark,
-                    &p_ref.neutral_8,
-                    text_steps_array.as_ref(),
-                ),
             ),
             button: Component::component(
                 button_bg,
