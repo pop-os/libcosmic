@@ -459,7 +459,12 @@ impl container::StyleSheet for Theme {
             },
 
             Container::List => {
-                let component = &self.current_container().component;
+                // TODO: The primary component has the wrong color on the light theme.
+                let component = if cosmic.is_dark {
+                    &self.current_container().component
+                } else {
+                    &cosmic.background.component
+                };
 
                 container::Appearance {
                     icon_color: Some(component.on.into()),
