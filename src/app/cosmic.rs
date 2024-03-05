@@ -4,6 +4,7 @@
 use std::sync::Arc;
 
 use super::{command, Application, ApplicationExt, Core, Subscription};
+use crate::config::CosmicTk;
 use crate::theme::{self, Theme, ThemeType, THEME};
 use crate::widget::nav_bar;
 use crate::{keyboard_nav, Element};
@@ -49,14 +50,16 @@ pub enum Message {
     NavBar(nav_bar::Id),
     /// Set scaling factor
     ScaleFactor(f32),
-    /// Toggles visibility of the nav bar.
-    ToggleNavBar,
-    /// Toggles the condensed status of the nav bar.
-    ToggleNavBarCondensed,
     /// Notification of system theme changes.
     SystemThemeChange(Vec<&'static str>, Theme),
     /// Notification of system theme mode changes.
     SystemThemeModeChange(Vec<&'static str>, ThemeMode),
+    /// Toggles visibility of the nav bar.
+    ToggleNavBar,
+    /// Toggles the condensed status of the nav bar.
+    ToggleNavBarCondensed,
+    /// Toolkit configuration update
+    ToolkitConfig(CosmicTk),
     /// Updates the window maximized state
     WindowMaximized(window::Id, bool),
     /// Updates the tracked window geometry.
@@ -184,14 +187,24 @@ where
             self.app.subscription().map(super::Message::App),
             self.app
                 .core()
+                .watch_config::<crate::config::CosmicTk>(crate::config::toolkit::ID)
+                .map(|update| {
+                    for why in update.errors {
+                        tracing::error!(?why, "cosmic toolkit config update error");
+                    }
+
+                    super::Message::Cosmic(Message::ToolkitConfig(update.config))
+                }),
+            self.app
+                .core()
                 .watch_config::<cosmic_theme::Theme>(if self.app.core().system_theme_mode.is_dark {
                     cosmic_theme::DARK_THEME_ID
                 } else {
                     cosmic_theme::LIGHT_THEME_ID
                 })
                 .map(|update| {
-                    for e in update.errors {
-                        tracing::error!("{e}");
+                    for why in update.errors {
+                        tracing::error!(?why, "cosmic theme config update error");
                     }
                     Message::SystemThemeChange(
                         update.keys,
@@ -539,6 +552,10 @@ impl<T: Application> Cosmic<T> {
             #[cfg(feature = "xdg-portal")]
             Message::DesktopSettings(crate::theme::portal::Desktop::Contrast(_)) => {
                 // TODO when high contrast is integrated in settings and all custom themes
+            }
+
+            Message::ToolkitConfig(config) => {
+                self.app.core_mut().toolkit_config = config;
             }
         }
 

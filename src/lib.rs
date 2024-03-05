@@ -4,7 +4,7 @@
 #![allow(clippy::module_name_repetitions)]
 
 #[cfg(all(feature = "wayland", feature = "winit"))]
-compile_error!("cannot use `wayland` feature with `winit");
+compile_error!("cannot use `wayland` feature with `winit`");
 
 /// Recommended default imports.
 pub mod prelude {
@@ -26,6 +26,9 @@ pub mod applet;
 
 pub use iced::Command;
 pub mod command;
+
+pub mod config;
+
 pub use cosmic_config;
 pub use cosmic_theme;
 
