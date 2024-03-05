@@ -1,4 +1,7 @@
 {
     "rust-analyzer.check.overrideCommand": ["just", "check-json"],
-    "git-blame.gitWebUrl": ""
+    "git-blame.gitWebUrl": "",
+    "rust-analyzer.linkedProjects": [
+        "./Cargo.toml"
+    ]
 }
