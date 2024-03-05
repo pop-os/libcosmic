@@ -369,6 +369,7 @@ pub enum Container {
     WindowBackground,
     Background,
     Card,
+    ContextDrawer,
     Custom(Box<dyn Fn(&Theme) -> container::Appearance>),
     Dialog,
     Dropdown,
@@ -384,6 +385,48 @@ impl Container {
     pub fn custom<F: Fn(&Theme) -> container::Appearance + 'static>(f: F) -> Self {
         Self::Custom(Box::new(f))
     }
+
+    #[must_use]
+    pub fn background(theme: &cosmic_theme::Theme) -> container::Appearance {
+        container::Appearance {
+            icon_color: Some(Color::from(theme.background.on)),
+            text_color: Some(Color::from(theme.background.on)),
+            background: Some(iced::Background::Color(theme.background.base.into())),
+            border: Border {
+                radius: theme.corner_radii.radius_xs.into(),
+                ..Default::default()
+            },
+            shadow: Shadow::default(),
+        }
+    }
+
+    #[must_use]
+    pub fn primary(theme: &cosmic_theme::Theme) -> container::Appearance {
+        container::Appearance {
+            icon_color: Some(Color::from(theme.primary.on)),
+            text_color: Some(Color::from(theme.primary.on)),
+            background: Some(iced::Background::Color(theme.primary.base.into())),
+            border: Border {
+                radius: theme.corner_radii.radius_xs.into(),
+                ..Default::default()
+            },
+            shadow: Shadow::default(),
+        }
+    }
+
+    #[must_use]
+    pub fn secondary(theme: &cosmic_theme::Theme) -> container::Appearance {
+        container::Appearance {
+            icon_color: Some(Color::from(theme.secondary.on)),
+            text_color: Some(Color::from(theme.secondary.on)),
+            background: Some(iced::Background::Color(theme.secondary.base.into())),
+            border: Border {
+                radius: theme.corner_radii.radius_xs.into(),
+                ..Default::default()
+            },
+            shadow: Shadow::default(),
+        }
+    }
 }
 
 impl container::StyleSheet for Theme {
@@ -394,7 +437,9 @@ impl container::StyleSheet for Theme {
         let cosmic = self.cosmic();
         match style {
             Container::Transparent => container::Appearance::default(),
+
             Container::Custom(f) => f(self),
+
             Container::WindowBackground => container::Appearance {
                 icon_color: Some(Color::from(cosmic.background.on)),
                 text_color: Some(Color::from(cosmic.background.on)),
@@ -411,56 +456,48 @@ impl container::StyleSheet for Theme {
                 },
                 shadow: Shadow::default(),
             },
-            Container::Background => container::Appearance {
-                icon_color: Some(Color::from(cosmic.background.on)),
+
+            Container::HeaderBar => container::Appearance {
+                icon_color: Some(Color::from(cosmic.accent.base)),
                 text_color: Some(Color::from(cosmic.background.on)),
                 background: Some(iced::Background::Color(cosmic.background.base.into())),
                 border: Border {
-                    radius: cosmic.corner_radii.radius_xs.into(),
+                    radius: [
+                        cosmic.corner_radii.radius_xs[0],
+                        cosmic.corner_radii.radius_xs[1],
+                        cosmic.corner_radii.radius_0[2],
+                        cosmic.corner_radii.radius_0[3],
+                    ]
+                    .into(),
                     ..Default::default()
                 },
                 shadow: Shadow::default(),
             },
-            Container::HeaderBar => {
-                let header_top = cosmic.background.base;
 
-                container::Appearance {
-                    icon_color: Some(Color::from(cosmic.accent.base)),
-                    text_color: Some(Color::from(cosmic.background.on)),
-                    background: Some(iced::Background::Color(header_top.into())),
-                    border: Border {
-                        radius: [
-                            cosmic.corner_radii.radius_xs[0],
-                            cosmic.corner_radii.radius_xs[1],
-                            cosmic.corner_radii.radius_0[2],
-                            cosmic.corner_radii.radius_0[3],
-                        ]
-                        .into(),
-                        ..Default::default()
-                    },
-                    shadow: Shadow::default(),
-                }
+            Container::ContextDrawer => {
+                let mut appearance = crate::style::Container::primary(cosmic);
+
+                appearance.border = Border {
+                    color: cosmic.primary.divider.into(),
+                    width: 1.0,
+                    radius: cosmic.corner_radii.radius_s.into(),
+                };
+
+                appearance.shadow = Shadow {
+                    color: cosmic.shade.into(),
+                    offset: Vector::new(0.0, 0.0),
+                    blur_radius: 16.0,
+                };
+
+                appearance
             }
-            Container::Primary => container::Appearance {
-                icon_color: Some(Color::from(cosmic.primary.on)),
-                text_color: Some(Color::from(cosmic.primary.on)),
-                background: Some(iced::Background::Color(cosmic.primary.base.into())),
-                border: Border {
-                    radius: cosmic.corner_radii.radius_xs.into(),
-                    ..Default::default()
-                },
-                shadow: Shadow::default(),
-            },
-            Container::Secondary => container::Appearance {
-                icon_color: Some(Color::from(cosmic.secondary.on)),
-                text_color: Some(Color::from(cosmic.secondary.on)),
-                background: Some(iced::Background::Color(cosmic.secondary.base.into())),
-                border: Border {
-                    radius: cosmic.corner_radii.radius_xs.into(),
-                    ..Default::default()
-                },
-                shadow: Shadow::default(),
-            },
+
+            Container::Background => Container::background(cosmic),
+
+            Container::Primary => Container::primary(cosmic),
+
+            Container::Secondary => Container::secondary(cosmic),
+
             Container::Dropdown => {
                 let theme = self.cosmic();
 
@@ -475,6 +512,7 @@ impl container::StyleSheet for Theme {
                     shadow: Shadow::default(),
                 }
             }
+
             Container::Tooltip => container::Appearance {
                 icon_color: None,
                 text_color: None,
