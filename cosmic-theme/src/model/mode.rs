@@ -30,13 +30,12 @@ impl ThemeMode {
         config.get::<bool>("is_dark")
     }
 
-    /// version of the theme
-    pub fn version() -> u64 {
-        1
+    pub const fn version() -> u64 {
+        Self::VERSION
     }
 
     /// Get the config for the theme mode
     pub fn config() -> Result<Config, cosmic_config::Error> {
-        Config::new(THEME_MODE_ID, Self::version())
+        Config::new(THEME_MODE_ID, Self::VERSION)
     }
 }
