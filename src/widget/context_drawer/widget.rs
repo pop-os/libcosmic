@@ -8,9 +8,9 @@ use crate::{Apply, Element, Renderer, Theme};
 
 use super::overlay::Overlay;
 
+use iced_core::alignment;
 use iced_core::event::{self, Event};
 use iced_core::widget::{Operation, Tree};
-use iced_core::{alignment, Border};
 use iced_core::{
     layout, mouse, overlay as iced_overlay, renderer, Clipboard, Color, Layout, Length, Padding,
     Rectangle, Shell, Widget,
@@ -85,20 +85,7 @@ impl<'a, Message: Clone + 'static> ContextDrawer<'a, Message> {
             // XXX this is a hack to get around that
             drawer: container(
                 LayerContainer::new(pane)
-                    .style(crate::style::Container::custom(move |theme| {
-                        let palette = theme.cosmic();
-
-                        container::Appearance {
-                            icon_color: Some(Color::from(palette.primary.on)),
-                            text_color: Some(Color::from(palette.primary.on)),
-                            background: Some(iced::Background::Color(palette.primary.base.into())),
-                            border: Border {
-                                radius: palette.corner_radii.radius_s.into(),
-                                ..Default::default()
-                            },
-                            ..Default::default()
-                        }
-                    }))
+                    .style(crate::style::Container::ContextDrawer)
                     .layer(cosmic_theme::Layer::Primary)
                     .width(Length::Fill)
                     .height(Length::Fill)

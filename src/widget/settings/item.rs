@@ -9,7 +9,6 @@ use crate::{
 };
 use derive_setters::Setters;
 use iced_core::Length;
-use iced_widget::container;
 
 /// A settings item aligned in a row
 #[must_use]
@@ -80,7 +79,7 @@ impl<'a, Message: 'static> Item<'a, Message> {
             contents.push(text(self.title).width(Length::Fill).into());
         }
 
-        contents.push(widget.into().into());
+        contents.push(widget.into());
 
         item_row(contents)
     }

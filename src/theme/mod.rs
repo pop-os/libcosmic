@@ -238,7 +238,6 @@ impl Theme {
 
     /// get current container
     /// can be used in a component that is intended to be a child of a `CosmicContainer`
-    #[must_use]
     pub fn current_container(&self) -> &cosmic_theme::Container {
         match self.layer {
             cosmic_theme::Layer::Background => &self.cosmic().background,
