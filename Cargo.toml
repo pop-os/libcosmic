@@ -8,6 +8,7 @@ rust-version = "1.71"
 name = "cosmic"
 
 [features]
+default = ["iced_sctk?/clipboard"]
 # Accessibility support
 a11y = ["iced/a11y", "iced_accessibility"]
 # Builds support for animated images
