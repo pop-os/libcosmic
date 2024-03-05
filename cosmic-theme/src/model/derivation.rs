@@ -5,6 +5,7 @@ use crate::composite::over;
 
 /// Theme Container colors of a theme, can be a theme background container, primary container, or secondary container
 #[derive(Clone, Debug, Default, Deserialize, Serialize, PartialEq)]
+#[must_use]
 pub struct Container {
     /// the color of the container
     pub base: Srgba,
@@ -17,32 +18,22 @@ pub struct Container {
 }
 
 impl Container {
-    /// convert to srgba
-    pub fn into_srgba(self) -> Container {
-        Container {
-            base: self.base.into(),
-            component: self.component.into_srgba(),
-            divider: self.divider.into(),
-            on: self.on.into(),
-        }
-    }
-
-    pub(crate) fn new(component: Component, bg: Srgba, on_bg: Srgba) -> Self {
-        let mut divider_c: Srgba = on_bg.clone().into();
+    pub(crate) fn new(component: Component, base: Srgba, on: Srgba) -> Self {
+        let mut divider_c = base;
         divider_c.alpha = 0.2;
 
-        let divider = over(divider_c.clone(), bg.clone());
         Self {
-            base: bg,
+            base,
             component,
-            divider: divider.into(),
-            on: on_bg,
+            divider: over(divider_c, base),
+            on,
         }
     }
 }
 
 /// The colors for a widget of the Cosmic theme
 #[derive(Clone, PartialEq, Debug, Default, Deserialize, Serialize)]
+#[must_use]
 pub struct Component {
     /// The base color of the widget
     pub base: Srgba,
@@ -72,43 +63,32 @@ pub struct Component {
     pub disabled_border: Srgba,
 }
 
+#[allow(clippy::must_use_candidate)]
+#[allow(clippy::doc_markdown)]
 impl Component {
     /// get @hover_state_color
     pub fn hover_state_color(&self) -> Srgba {
-        self.hover.clone().into()
+        self.hover
     }
+
     /// get @pressed_state_color
     pub fn pressed_state_color(&self) -> Srgba {
-        self.pressed.clone().into()
+        self.pressed
     }
+
     /// get @selected_state_color
     pub fn selected_state_color(&self) -> Srgba {
-        self.selected.clone().into()
+        self.selected
     }
+
     /// get @selected_state_text_color
     pub fn selected_state_text_color(&self) -> Srgba {
-        self.selected_text.clone().into()
+        self.selected_text
     }
+
     /// get @focus_color
     pub fn focus_color(&self) -> Srgba {
-        self.focus.clone().into()
-    }
-    /// convert to srgba
-    pub fn into_srgba(self) -> Component {
-        Component {
-            base: self.base.into(),
-            hover: self.hover.into(),
-            pressed: self.pressed.into(),
-            selected: self.selected.into(),
-            selected_text: self.selected_text.into(),
-            focus: self.focus.into(),
-            divider: self.divider.into(),
-            on: self.on.into(),
-            disabled: self.disabled.into(),
-            on_disabled: self.on_disabled.into(),
-            border: self.border.into(),
-            disabled_border: self.disabled_border.into(),
-        }
+        self.focus
     }
 
     /// helper for producing a component from a base color a neutral and an accent
@@ -119,27 +99,27 @@ impl Component {
         hovered: Srgba,
         pressed: Srgba,
     ) -> Self {
-        let base: Srgba = base.into();
-        let mut base_50 = base.clone();
+        let base: Srgba = base;
+        let mut base_50 = base;
         base_50.alpha *= 0.5;
 
-        let on_20 = neutral.clone();
-        let mut on_50: Srgba = on_20.clone().into();
+        let on_20 = neutral;
+        let mut on_50: Srgba = on_20;
         on_50.alpha = 0.5;
 
         Component {
-            base: base.clone().into(),
-            hover: over(hovered.clone(), base).into(),
-            pressed: over(pressed, base).into(),
-            selected: over(hovered, base).into(),
-            selected_text: accent.clone(),
+            base,
+            hover: over(hovered, base),
+            pressed: over(pressed, base),
+            selected: over(hovered, base),
+            selected_text: accent,
             divider: on_20,
             on: neutral,
-            disabled: over(base_50, base).into(),
-            on_disabled: over(on_50, base).into(),
+            disabled: over(base_50, base),
+            on_disabled: over(on_50, base),
             focus: accent,
-            border: base.into(),
-            disabled_border: base_50.into(),
+            border: base,
+            disabled_border: base_50,
         }
     }
 
@@ -153,7 +133,7 @@ impl Component {
         pressed: Srgba,
     ) -> Self {
         let mut component = Component::colored_component(base, overlay, accent, hovered, pressed);
-        component.on = on_button.clone();
+        component.on = on_button;
 
         let mut on_disabled = on_button;
         on_disabled.alpha = 0.5;
@@ -163,6 +143,7 @@ impl Component {
     }
 
     /// helper for producing a component color theme
+    #[allow(clippy::self_named_constructors)]
     pub fn component(
         base: Srgba,
         accent: Srgba,
@@ -172,11 +153,11 @@ impl Component {
         is_high_contrast: bool,
         border: Srgba,
     ) -> Self {
-        let mut base_50 = base.clone();
+        let mut base_50 = base;
         base_50.alpha *= 0.5;
 
-        let mut on_20 = on_component.clone();
-        let mut on_50 = on_20.clone();
+        let mut on_20 = on_component;
+        let mut on_50 = on_20;
 
         on_20.alpha = 0.2;
         on_50.alpha = 0.5;
@@ -185,34 +166,30 @@ impl Component {
         disabled_border.alpha *= 0.5;
 
         Component {
-            base: base.clone().into(),
+            base,
             hover: if base.alpha < 0.001 {
-                hovered.clone()
+                hovered
             } else {
-                over(hovered.clone(), base).into()
+                over(hovered, base)
             },
             pressed: if base.alpha < 0.001 {
-                pressed.clone()
+                pressed
             } else {
-                over(pressed.clone(), base).into()
+                over(pressed, base)
             },
             selected: if base.alpha < 0.001 {
-                hovered.clone()
+                hovered
             } else {
-                over(hovered.clone(), base).into()
+                over(hovered, base)
             },
-            selected_text: accent.clone(),
-            focus: accent.clone(),
-            divider: if is_high_contrast {
-                on_50.clone().into()
-            } else {
-                on_20.into()
-            },
-            on: on_component.clone(),
-            disabled: over(base_50, base).into(),
-            on_disabled: over(on_50, base).into(),
-            border: border.into(),
-            disabled_border: disabled_border.into(),
+            selected_text: accent,
+            focus: accent,
+            divider: if is_high_contrast { on_50 } else { on_20 },
+            on: on_component,
+            disabled: over(base_50, base),
+            on_disabled: over(on_50, base),
+            border,
+            disabled_border,
         }
     }
 }
