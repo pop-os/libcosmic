@@ -9,30 +9,12 @@ pub use self::column::{list_column, ListColumn};
 
 use crate::widget::Container;
 use crate::Element;
-use iced::Background;
-use iced_core::Shadow;
 
 pub fn container<'a, Message>(
     content: impl Into<Element<'a, Message>>,
 ) -> Container<'a, Message, crate::Theme, crate::Renderer> {
     super::container(content)
         .padding([16, 6])
-        .style(crate::theme::Container::custom(style))
+        .style(crate::theme::Container::List)
         .width(iced::Length::Fill)
-}
-
-#[must_use]
-#[allow(clippy::trivially_copy_pass_by_ref)]
-pub fn style(theme: &crate::Theme) -> crate::widget::container::Appearance {
-    let container = &theme.current_container().component;
-    crate::widget::container::Appearance {
-        icon_color: Some(container.on.into()),
-        text_color: Some(container.on.into()),
-        background: Some(Background::Color(container.base.into())),
-        border: iced::Border {
-            radius: theme.cosmic().corner_radii.radius_s.into(),
-            ..Default::default()
-        },
-        shadow: Shadow::default(),
-    }
 }

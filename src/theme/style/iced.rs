@@ -374,6 +374,7 @@ pub enum Container {
     Dialog,
     Dropdown,
     HeaderBar,
+    List,
     Primary,
     Secondary,
     Tooltip,
@@ -456,6 +457,21 @@ impl container::StyleSheet for Theme {
                 },
                 shadow: Shadow::default(),
             },
+
+            Container::List => {
+                let component = &self.current_container().component;
+
+                container::Appearance {
+                    icon_color: Some(component.on.into()),
+                    text_color: Some(component.on.into()),
+                    background: Some(Background::Color(component.base.into())),
+                    border: iced::Border {
+                        radius: cosmic.corner_radii.radius_s.into(),
+                        ..Default::default()
+                    },
+                    shadow: Shadow::default(),
+                }
+            }
 
             Container::HeaderBar => container::Appearance {
                 icon_color: Some(Color::from(cosmic.accent.base)),
