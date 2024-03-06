@@ -188,7 +188,11 @@ impl ColorPickerModel {
             }
             ColorPickerUpdate::ActionFinished => {
                 let srgb = palette::Srgb::from_color(self.active_color);
-
+                if let Some(applied_color) = self.applied_color.take() {
+                    self.recent_colors.push(applied_color);
+                }
+                self.applied_color = Some(Color::from(srgb));
+                self.active = false;
                 self.save_next = Some(Color::from(srgb));
             }
             ColorPickerUpdate::ToggleColorPicker => {
