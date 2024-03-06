@@ -417,6 +417,7 @@ where
                                 })
                                 .collect::<Vec<_>>(),
                         )
+                        .padding([0.0, 0.0, f32::from(spacing.space_m), 0.0])
                         .spacing(spacing.space_xxs),
                     )
                     .width(self.width)
