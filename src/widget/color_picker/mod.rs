@@ -285,6 +285,7 @@ where
                 .on_activate(Box::new(move |e| on_update(
                     ColorPickerUpdate::ActivateSegmented(e)
                 )))
+                .minimum_button_width(0)
                 .width(self.width),
             // canvas with gradient for the current color
             // still needs the canvas and the handle to be drawn on it
