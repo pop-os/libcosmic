@@ -16,6 +16,8 @@ use iced_core::widget::{self, operation, tree};
 use iced_core::{layout, renderer, widget::Tree, Clipboard, Layout, Shell, Widget};
 use iced_core::{Border, Gradient, Point, Renderer as IcedRenderer, Shadow, Text};
 use slotmap::{Key, SecondaryMap};
+use std::collections::hash_map::DefaultHasher;
+use std::hash::{Hash, Hasher};
 use std::marker::PhantomData;
 use std::time::{Duration, Instant};
 
@@ -407,6 +409,14 @@ where
 
         (width, height)
     }
+
+    fn button_is_focused(&self, state: &LocalState, key: Entity) -> bool {
+        self.on_activate.is_some() && Item::Tab(key) == state.focused_item
+    }
+
+    fn button_is_hovered(&self, state: &LocalState, key: Entity) -> bool {
+        self.on_activate.is_some() && state.hovered == Item::Tab(key)
+    }
 }
 
 impl<'a, Variant, SelectionMode, Message> Widget<Message, crate::Theme, Renderer>
@@ -424,35 +434,52 @@ where
     fn state(&self) -> tree::State {
         tree::State::new(LocalState {
             paragraphs: SecondaryMap::new(),
+            text_hashes: SecondaryMap::new(),
             ..LocalState::default()
         })
     }
 
     fn diff(&mut self, tree: &mut Tree) {
-        for e in self.model.order.iter().copied() {
-            if let Some(text) = self.model.text.get(e) {
+        let state = tree.state.downcast_mut::<LocalState>();
+        for key in self.model.order.iter().copied() {
+            if let Some(text) = self.model.text.get(key) {
+                let (font, button_state) =
+                    if self.model.is_active(key) || self.button_is_focused(state, key) {
+                        (self.font_active, 0)
+                    } else if self.button_is_hovered(state, key) {
+                        (self.font_hovered, 1)
+                    } else {
+                        (self.font_inactive, 2)
+                    };
+
+                let mut hasher = DefaultHasher::new();
+                text.hash(&mut hasher);
+                button_state.hash(&mut hasher);
+                let text_hash = hasher.finish();
+
+                if let Some(prev_hash) = state.text_hashes.insert(key, text_hash) {
+                    if prev_hash == text_hash {
+                        continue;
+                    }
+                }
+
                 let text = Text {
                     content: text,
                     size: iced::Pixels(self.font_size),
                     bounds: Size::INFINITY,
-                    font: self.font_active.unwrap_or(crate::font::FONT),
+                    font: font.unwrap_or(crate::font::FONT),
                     horizontal_alignment: alignment::Horizontal::Left,
                     vertical_alignment: alignment::Vertical::Center,
                     shaping: Shaping::Advanced,
                     line_height: self.line_height,
                 };
-                if let Some(paragraph) = tree
-                    .state
-                    .downcast_mut::<LocalState>()
-                    .paragraphs
-                    .get_mut(e)
-                {
+
+                if let Some(paragraph) = state.paragraphs.get_mut(key) {
                     paragraph.update(text);
                 } else {
-                    tree.state
-                        .downcast_mut::<LocalState>()
+                    state
                         .paragraphs
-                        .insert(e, crate::Paragraph::with_text(text));
+                        .insert(key, crate::Paragraph::with_text(text));
                 }
             }
         }
@@ -902,13 +929,6 @@ where
                 } else {
                     appearance.inactive.text_color
                 }),
-                // Rectangle {
-                //     x: bounds.x + bounds.width - f32::from(self.button_height)
-                //         + f32::from(self.button_height) / 4.0,
-                //     y: f32::from(self.button_height) / 2.0 - f32::from(self.button_height) / 2.0,
-                //     width: 16.0,
-                //     height: 16.0,
-                // },
                 Rectangle {
                     x: tab_bounds.x + 8.0,
                     y: tab_bounds.y + f32::from(self.button_height) / 4.0,
@@ -947,19 +967,16 @@ where
             let center_y = bounds.center_y();
 
             let key_is_active = self.model.is_active(key);
-            let key_is_hovered = self.on_activate.is_some() && state.hovered == Item::Tab(key);
-            let (status_appearance, font) =
-                if self.on_activate.is_some() && Item::Tab(key) == state.focused_item {
-                    (appearance.focus, &self.font_active)
-                } else if key_is_active {
-                    (appearance.active, &self.font_active)
-                } else if key_is_hovered {
-                    (appearance.hover, &self.font_hovered)
-                } else {
-                    (appearance.inactive, &self.font_inactive)
-                };
-
-            let font = font.unwrap_or_else(|| renderer.default_font());
+            let key_is_hovered = self.button_is_hovered(state, key);
+            let status_appearance = if self.button_is_focused(state, key) {
+                appearance.focus
+            } else if key_is_active {
+                appearance.active
+            } else if key_is_hovered {
+                appearance.hover
+            } else {
+                appearance.inactive
+            };
 
             let button_appearance = if nth == 0 {
                 status_appearance.first
@@ -1109,21 +1126,12 @@ where
                 0.0
             };
 
-            if let Some(text) = self.model.text(key) {
+            if self.model.text(key).is_some() {
                 bounds.y = center_y;
 
                 // Draw the text for this segmented button or tab.
-                renderer.fill_text(
-                    iced_core::text::Text {
-                        content: text,
-                        size: iced::Pixels(self.font_size),
-                        bounds: bounds.size(),
-                        font,
-                        horizontal_alignment: alignment::Horizontal::Left,
-                        vertical_alignment: alignment::Vertical::Center,
-                        shaping: Shaping::Advanced,
-                        line_height: self.line_height,
-                    },
+                renderer.fill_paragraph(
+                    &state.paragraphs[key],
                     bounds.position(),
                     apply_alpha(status_appearance.text_color),
                     Rectangle {
@@ -1202,6 +1210,8 @@ pub struct LocalState {
     pub(super) internal_layout: Vec<(Size, Size)>,
     /// The paragraphs for each text.
     paragraphs: SecondaryMap<Entity, crate::Paragraph>,
+    /// Used to detect changes in text.
+    text_hashes: SecondaryMap<Entity, u64>,
     /// Time since last tab activation from wheel movements.
     wheel_timestamp: Option<Instant>,
 }
