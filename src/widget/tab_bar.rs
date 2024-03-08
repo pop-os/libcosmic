@@ -47,6 +47,8 @@ where
     let space_xs = theme.cosmic().space_xs();
 
     SegmentedButton::new(model)
+        .minimum_button_width(76)
+        .maximum_button_width(250)
         .button_height(44)
         .button_padding([space_s, space_xs, space_s, space_xs])
         .style(crate::theme::SegmentedButton::TabBar)
