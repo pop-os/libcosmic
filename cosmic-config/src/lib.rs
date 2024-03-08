@@ -95,7 +95,7 @@ pub trait ConfigSet {
 #[derive(Clone, Debug)]
 pub struct Config {
     system_path: Option<PathBuf>,
-    user_path: PathBuf,
+    user_path: Option<PathBuf>,
 }
 
 /// Check that the name is relative and doesn't contain . or ..
@@ -115,6 +115,25 @@ impl Config {
     /// Get the config for the libcosmic toolkit
     pub fn libcosmic() -> Result<Self, Error> {
         Self::new("com.system76.libcosmic", 1)
+    }
+
+    /// Get a system config for the given name and config version
+    pub fn system(name: &str, version: u64) -> Result<Self, Error> {
+        let path = sanitize_name(name)?.join(format!("v{version}"));
+        #[cfg(unix)]
+        let system_path = xdg::BaseDirectories::with_prefix("cosmic")
+            .map_err(std::io::Error::from)?
+            .find_data_file(path);
+
+        #[cfg(windows)]
+        let system_path =
+            known_folders::get_known_folder_path(known_folders::KnownFolder::ProgramFilesCommon)
+                .map(|x| x.join("COSMIC").join(&path));
+
+        Ok(Self {
+            system_path,
+            user_path: None,
+        })
     }
 
     /// Get config for the given application name and config version
@@ -147,7 +166,7 @@ impl Config {
         // Return Config
         Ok(Self {
             system_path,
-            user_path,
+            user_path: Some(user_path),
         })
     }
 
@@ -171,7 +190,7 @@ impl Config {
 
         Ok(Self {
             system_path: None,
-            user_path,
+            user_path: Some(user_path),
         })
     }
 
@@ -194,9 +213,12 @@ impl Config {
         F: Fn(&Self, &[String]) + Send + Sync + 'static,
     {
         let watch_config = self.clone();
+        let Some(user_path) = self.user_path.as_ref() else {
+            return Err(Error::NoConfigDirectory);
+        };
+        let user_path_clone = user_path.clone();
         let mut watcher =
             notify::recommended_watcher(move |event_res: Result<notify::Event, notify::Error>| {
-                // println!("{:#?}", event_res);
                 match &event_res {
                     Ok(event) => {
                         match &event.kind {
@@ -208,20 +230,17 @@ impl Config {
                         }
 
                         let mut keys = Vec::new();
-                        for path in event.paths.iter() {
-                            match path.strip_prefix(&watch_config.user_path) {
-                                Ok(key_path) => match key_path.to_str() {
-                                    Some(key) => {
+                        for path in &event.paths {
+                            match path.strip_prefix(&user_path_clone) {
+                                Ok(key_path) => {
+                                    if let Some(key) = key_path.to_str() {
                                         // Skip any .atomicwrite temporary files
                                         if key.starts_with(".atomicwrite") {
                                             continue;
                                         }
                                         keys.push(key.to_string());
                                     }
-                                    None => {
-                                        //TODO: handle errors
-                                    }
-                                },
+                                }
                                 Err(_err) => {
                                     //TODO: handle errors
                                 }
@@ -236,7 +255,7 @@ impl Config {
                     }
                 }
             })?;
-        watcher.watch(&self.user_path, notify::RecursiveMode::NonRecursive)?;
+        watcher.watch(user_path, notify::RecursiveMode::NonRecursive)?;
         Ok(watcher)
     }
 
@@ -249,7 +268,10 @@ impl Config {
     }
 
     fn key_path(&self, key: &str) -> Result<PathBuf, Error> {
-        Ok(self.user_path.join(sanitize_name(key)?))
+        let Some(user_path) = self.user_path.as_ref() else {
+            return Err(Error::NoConfigDirectory);
+        };
+        Ok(user_path.join(sanitize_name(key)?))
     }
 }
 
