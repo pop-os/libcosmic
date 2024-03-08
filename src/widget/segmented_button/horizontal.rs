@@ -119,11 +119,12 @@ where
         let spacing = f32::from(self.spacing);
         let size;
 
+        let mut reduce_button_offset = false;
         if state.known_length != num {
             if state.known_length > num {
                 state.buttons_offset -= state.buttons_offset.min(state.known_length - num);
             } else {
-                state.buttons_offset += num - state.known_length;
+                reduce_button_offset = true;
             }
 
             state.known_length = num;
@@ -203,6 +204,8 @@ where
 
         if !state.collapsed {
             state.buttons_offset = 0;
+        } else if reduce_button_offset {
+            state.buttons_offset = num - state.buttons_visible;
         }
 
         size
