@@ -87,6 +87,8 @@ where
     pub(super) button_height: u16,
     /// Spacing between icon and text in button.
     pub(super) button_spacing: u16,
+    /// Maximum width of a button.
+    pub(super) maximum_button_width: u16,
     /// Minimum width of a button.
     pub(super) minimum_button_width: u16,
     /// Spacing for each indent.
@@ -139,7 +141,8 @@ where
             button_padding: [0, 0, 0, 0],
             button_height: 32,
             button_spacing: 0,
-            minimum_button_width: 150,
+            minimum_button_width: u16::MIN,
+            maximum_button_width: u16::MAX,
             indent_spacing: 16,
             font_active: None,
             font_hovered: None,
@@ -368,6 +371,7 @@ where
 
         // Add button padding to the max size found
         width += f32::from(self.button_padding[0]) + f32::from(self.button_padding[2]);
+        width = width.min(f32::from(self.maximum_button_width));
 
         (width, f32::from(self.button_height))
     }
