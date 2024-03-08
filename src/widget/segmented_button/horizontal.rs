@@ -150,7 +150,7 @@ where
                 if max_size.width >= visible_width {
                     state.buttons_visible += 1;
                 } else {
-                    visible_width -= button_size.width - (max_height * 2.0);
+                    visible_width = max_size.width - max_height;
                     break;
                 }
 
