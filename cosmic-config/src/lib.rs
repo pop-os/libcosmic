@@ -280,14 +280,18 @@ impl ConfigGet for Config {
     //TODO: check for transaction
     fn get<T: DeserializeOwned>(&self, key: &str) -> Result<T, Error> {
         // If key path exists
-        let key_path = self.key_path(key)?;
-        let data = if key_path.is_file() {
-            // Load user override
-            fs::read_to_string(key_path).map_err(|err| Error::GetKey(key.to_string(), err))?
-        } else {
-            // Load system default
-            let default_path = self.default_path(key)?;
-            fs::read_to_string(default_path).map_err(|err| Error::GetKey(key.to_string(), err))?
+        let key_path = self.key_path(key);
+        let data = match key_path {
+            Ok(key_path) if key_path.is_file() => {
+                // Load user override
+                fs::read_to_string(key_path).map_err(|err| Error::GetKey(key.to_string(), err))?
+            }
+            _ => {
+                // Load system default
+                let default_path = self.default_path(key)?;
+                fs::read_to_string(default_path)
+                    .map_err(|err| Error::GetKey(key.to_string(), err))?
+            }
         };
         let t = ron::from_str(&data)?;
         Ok(t)
