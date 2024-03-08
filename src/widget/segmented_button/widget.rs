@@ -321,7 +321,6 @@ where
         button: Entity,
     ) -> (f32, f32) {
         let mut width = 0.0f32;
-        let mut height = 0.0f32;
 
         // Add text to measurement if text was given.
         if let Some((text, entry)) = self
@@ -345,7 +344,6 @@ where
 
             let size = paragraph.min_bounds();
             width += size.width;
-            height += size.height;
         }
 
         // Add indent to measurement if found.
@@ -370,10 +368,8 @@ where
 
         // Add button padding to the max size found
         width += f32::from(self.button_padding[0]) + f32::from(self.button_padding[2]);
-        height += f32::from(self.button_padding[1]) + f32::from(self.button_padding[3]);
-        height = height.max(f32::from(self.button_height));
 
-        (width, height)
+        (width, f32::from(self.button_height))
     }
 
     pub(super) fn max_button_dimensions(
@@ -1074,7 +1070,6 @@ where
                 );
 
                 bounds.x += offset;
-                bounds.width -= offset;
             } else {
                 // Draw the selection indicator if widget is a segmented selection, and the item is selected.
                 if key_is_active {
@@ -1109,7 +1104,6 @@ where
                         let offset = 16.0 + f32::from(self.button_spacing);
 
                         bounds.x += offset;
-                        bounds.width -= offset;
                     }
                 }
             }
@@ -1126,6 +1120,11 @@ where
                 0.0
             };
 
+            bounds.width = original_bounds.width
+                - (bounds.x - original_bounds.x)
+                - close_icon_width
+                - f32::from(self.button_padding[2]);
+
             if self.model.text(key).is_some() {
                 bounds.y = center_y;
 
@@ -1135,7 +1134,8 @@ where
                     bounds.position(),
                     apply_alpha(status_appearance.text_color),
                     Rectangle {
-                        width: bounds.width - close_icon_width,
+                        x: bounds.x,
+                        width: bounds.width,
                         ..original_bounds
                     },
                 );
@@ -1281,7 +1281,7 @@ fn close_bounds(area: Rectangle<f32>, icon_size: f32) -> Rectangle<f32> {
 fn next_tab_bounds(bounds: &Rectangle, button_height: f32) -> Rectangle {
     Rectangle {
         x: bounds.x + bounds.width - button_height,
-        y: bounds.y + button_height / 4.0,
+        y: bounds.y,
         width: button_height,
         height: button_height,
     }
@@ -1291,7 +1291,7 @@ fn next_tab_bounds(bounds: &Rectangle, button_height: f32) -> Rectangle {
 fn prev_tab_bounds(bounds: &Rectangle, button_height: f32) -> Rectangle {
     Rectangle {
         x: bounds.x,
-        y: bounds.y + button_height / 4.0,
+        y: bounds.y,
         width: button_height,
         height: button_height,
     }

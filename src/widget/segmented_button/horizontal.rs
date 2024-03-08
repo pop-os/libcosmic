@@ -117,8 +117,7 @@ where
         state.internal_layout.clear();
         let num = self.model.order.len();
         let spacing = f32::from(self.spacing);
-        let limits = limits.width(self.width);
-        let mut size;
+        let size;
 
         if state.known_length != num {
             if state.known_length > num {
@@ -141,7 +140,6 @@ where
                 Size::new(f32::MAX, max_height),
             );
 
-            // let mut visible_width = f32::from(self.button_height) * 2.0;
             let mut visible_width = 0.0;
             state.buttons_visible = 0;
 
@@ -151,6 +149,7 @@ where
                 if max_size.width >= visible_width {
                     state.buttons_visible += 1;
                 } else {
+                    visible_width -= button_size.width - (max_height * 2.0);
                     break;
                 }
 
@@ -161,25 +160,15 @@ where
 
             state.collapsed = num > 1 && state.buttons_visible != num;
 
-            // If collapsed, use the maximum width available.
-            if state.collapsed {
-                visible_width = max_size.width;
-            }
-
             size = limits
-                .width(Length::Fixed(visible_width))
                 .height(Length::Fixed(max_height))
-                .resolve(
-                    visible_width,
-                    max_height,
-                    Size::new(visible_width, max_height),
-                );
+                .min_width(visible_width)
+                .min();
         } else {
             // Buttons will be rendered with equal widths.
             state.buttons_visible = self.model.items.len();
 
             let mut width = 0.0f32;
-            let mut height = 0.0f32;
             let font = renderer.default_font();
 
             for key in self.model.order.iter().copied() {
@@ -195,29 +184,18 @@ where
                     ),
                 ));
 
-                height = height.max(button_height);
                 width = width.max(button_width);
             }
 
-            let total_width = (state.buttons_visible as f32) * (width + spacing);
+            let height = f32::from(self.button_height);
 
-            size = limits.height(Length::Fixed(height)).resolve(
-                self.width,
-                self.height,
-                Size::new(total_width, height),
-            );
+            size = limits.height(Length::Fixed(height)).max();
 
             let actual_width = size.width as usize;
             let minimum_width = state.buttons_visible * self.minimum_button_width as usize;
             state.collapsed = actual_width < minimum_width;
 
             if state.collapsed {
-                size = limits.height(Length::Fixed(height)).resolve(
-                    Length::Fill,
-                    height,
-                    Size::new(f32::MAX, height),
-                );
-
                 state.buttons_visible =
                     (actual_width / self.minimum_button_width as usize).min(state.buttons_visible);
             }
