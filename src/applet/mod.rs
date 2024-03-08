@@ -26,8 +26,6 @@ use std::rc::Rc;
 
 use crate::app::cosmic;
 
-const APPLET_PADDING: u32 = 8;
-
 #[derive(Debug, Clone)]
 pub struct Context {
     pub size: Size,
@@ -69,14 +67,19 @@ impl Context {
     #[must_use]
     pub fn suggested_size(&self) -> (u16, u16) {
         match &self.size {
-            Size::PanelSize(size) => match size {
-                PanelSize::XL => (64, 64),
-                PanelSize::L => (36, 36),
-                PanelSize::M => (24, 24),
-                PanelSize::S => (16, 16),
-                PanelSize::XS => (12, 12),
-            },
+            Size::PanelSize(ref size) => {
+                let s = size.get_applet_icon_size() as u16;
+                (s, s)
+            }
             Size::Hardcoded((width, height)) => (*width, *height),
+        }
+    }
+
+    #[must_use]
+    pub fn suggested_padding(&self) -> u16 {
+        match &self.size {
+            Size::PanelSize(ref size) => size.get_applet_padding(),
+            Size::Hardcoded((width, height)) => 8,
         }
     }
 
@@ -91,17 +94,18 @@ impl Context {
         let (width, height) = self.suggested_size();
         let width = f32::from(width);
         let height = f32::from(height);
+        let applet_padding = self.suggested_padding();
         let mut settings = crate::app::Settings::default()
             .size(iced_core::Size::new(
-                width + APPLET_PADDING as f32 * 2.,
-                height + APPLET_PADDING as f32 * 2.,
+                width + applet_padding as f32 * 2.,
+                height + applet_padding as f32 * 2.,
             ))
             .size_limits(
                 Limits::NONE
-                    .min_height(height as f32 + APPLET_PADDING as f32 * 2.0)
-                    .max_height(height as f32 + APPLET_PADDING as f32 * 2.0)
-                    .min_width(width as f32 + APPLET_PADDING as f32 * 2.0)
-                    .max_width(width as f32 + APPLET_PADDING as f32 * 2.0),
+                    .min_height(height as f32 + applet_padding as f32 * 2.0)
+                    .max_height(height as f32 + applet_padding as f32 * 2.0)
+                    .min_width(width as f32 + applet_padding as f32 * 2.0)
+                    .max_width(width as f32 + applet_padding as f32 * 2.0),
             )
             .resizable(None)
             .default_text_size(18.0)
@@ -119,6 +123,7 @@ impl Context {
         icon_name: &'a str,
     ) -> crate::widget::Button<'a, Message, crate::Theme, Renderer> {
         let suggested = self.suggested_size();
+        let applet_padding = self.suggested_padding();
         crate::widget::button(
             widget::icon(
                 widget::icon::from_name(icon_name)
@@ -134,7 +139,7 @@ impl Context {
             .width(Length::Fixed(suggested.0 as f32))
             .height(Length::Fixed(suggested.1 as f32)),
         )
-        .padding(APPLET_PADDING as u16)
+        .padding(applet_padding)
         .style(Button::AppletIcon)
     }
 
@@ -186,6 +191,7 @@ impl Context {
         height_padding: Option<i32>,
     ) -> SctkPopupSettings {
         let (width, height) = self.suggested_size();
+        let applet_padding = self.suggested_padding();
         let pixel_offset = 8;
         let (offset, anchor, gravity) = match self.anchor {
             PanelAnchor::Left => ((pixel_offset, 0), Anchor::Right, Gravity::Right),
@@ -204,8 +210,8 @@ impl Context {
                 anchor_rect: Rectangle {
                     x: 0,
                     y: 0,
-                    width: width_padding.unwrap_or(APPLET_PADDING as i32) * 2 + i32::from(width),
-                    height: height_padding.unwrap_or(APPLET_PADDING as i32) * 2 + i32::from(height),
+                    width: width_padding.unwrap_or(applet_padding as i32) * 2 + i32::from(width),
+                    height: height_padding.unwrap_or(applet_padding as i32) * 2 + i32::from(height),
                 },
                 reactive: true,
                 constraint_adjustment: 15, // slide_y, slide_x, flip_x, flip_y
