@@ -591,8 +591,8 @@ impl Default for ThemeBuilder {
             destructive: Default::default(),
             is_frosted: false,
             // cosmic-comp theme settings
-            gaps: (0, 4),
-            active_hint: 4,
+            gaps: (0, 8),
+            active_hint: 3,
             window_hint: None,
         }
     }
