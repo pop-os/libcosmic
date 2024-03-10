@@ -76,9 +76,19 @@ pub fn load_applications_for_app_ids<'a, 'b>(
 ) -> Vec<DesktopEntryData> {
     let mut app_ids = app_ids.collect::<Vec<_>>();
     let mut applications = load_applications_filtered(locale, |de| {
-        if let Some(i) = app_ids
+        // If appid matches, or startup_wm_class matches...
+        if let Some(i) = app_ids.iter().position(|id| {
+            id == &de.appid
+                || id
+                    .to_lowercase()
+                    .eq(&de.startup_wm_class().unwrap_or_default().to_lowercase())
+        }) {
+            app_ids.remove(i);
+            true
+        // Fallback: If the name matches...
+        } else if let Some(i) = app_ids
             .iter()
-            .position(|id| id == &de.appid || id.eq(&de.startup_wm_class().unwrap_or_default()))
+            .position(|id| id.to_lowercase().eq(&de.name().to_lowercase()))
         {
             app_ids.remove(i);
             true
