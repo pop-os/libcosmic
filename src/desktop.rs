@@ -86,10 +86,11 @@ pub fn load_applications_for_app_ids<'a, 'b>(
             app_ids.remove(i);
             true
         // Fallback: If the name matches...
-        } else if let Some(i) = app_ids
-            .iter()
-            .position(|id| id.to_lowercase().eq(&de.name().to_lowercase()))
-        {
+        } else if let Some(i) = app_ids.iter().position(|id| {
+            de.name(None)
+                .map(|n| n.to_lowercase() == id.to_lowercase())
+                .unwrap_or_default()
+        }) {
             app_ids.remove(i);
             true
         } else {
@@ -177,7 +178,7 @@ impl DesktopEntryData {
                 .categories()
                 .unwrap_or_default()
                 .split_terminator(';')
-                .map(|x| x.to_string())
+                .map(std::string::ToString::to_string)
                 .collect(),
             desktop_actions: de
                 .actions()
@@ -235,5 +236,5 @@ where
 
     cmd.envs(env_vars);
 
-    crate::process::spawn(cmd)
+    crate::process::spawn(cmd);
 }
