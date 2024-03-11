@@ -73,9 +73,13 @@ pub fn load_applications_for_app_ids<'a, 'b>(
     locale: impl Into<Option<&'a str>>,
     app_ids: impl Iterator<Item = &'b str>,
     fill_missing_ones: bool,
+    include_no_display: bool,
 ) -> Vec<DesktopEntryData> {
     let mut app_ids = app_ids.collect::<Vec<_>>();
     let mut applications = load_applications_filtered(locale, |de| {
+        if !include_no_display && de.no_display() {
+            return false;
+        }
         // If appid matches, or startup_wm_class matches...
         if let Some(i) = app_ids.iter().position(|id| {
             id == &de.appid
