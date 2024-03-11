@@ -6,6 +6,7 @@ use std::collections::HashMap;
 use crate::config::CosmicTk;
 use cosmic_config::CosmicConfigEntry;
 use cosmic_theme::ThemeMode;
+use iced::window;
 use iced_core::window::Id;
 use palette::Srgba;
 
@@ -56,6 +57,9 @@ pub struct Core {
 
     /// Scaling factor used by the application
     scale_factor: f32,
+
+    /// Window focus state
+    pub(super) focused_window: Option<window::Id>,
 
     pub(super) theme_sub_counter: u64,
     /// Last known system theme
@@ -136,6 +140,7 @@ impl Default for Core {
                 height: 0,
                 width: 0,
             },
+            focused_window: None,
             #[cfg(feature = "applet")]
             applet: crate::applet::Context::default(),
             #[cfg(feature = "single-instance")]
@@ -283,6 +288,12 @@ impl Core {
             std::borrow::Cow::Borrowed(state_id),
             T::VERSION,
         )
+    }
+
+    /// Get the current focused window if it exists
+    #[must_use]
+    pub fn focused_window(&self) -> Option<window::Id> {
+        self.focused_window.clone()
     }
 
     /// Whether the application should use a dark theme, according to the system

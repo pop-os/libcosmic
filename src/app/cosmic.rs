@@ -78,6 +78,10 @@ pub enum Message {
     ShowWindowMenu,
     #[cfg(feature = "xdg-portal")]
     DesktopSettings(crate::theme::portal::Desktop),
+    /// Window focus changed
+    Focus(window::Id),
+    /// Window focus lost
+    Unfocus(window::Id),
 }
 
 #[derive(Default)]
@@ -158,6 +162,10 @@ where
                 }
                 iced::Event::Window(id, window::Event::Closed) => {
                     return Some(Message::SurfaceClosed(id))
+                }
+                iced::Event::Window(id, window::Event::Focused) => return Some(Message::Focus(id)),
+                iced::Event::Window(id, window::Event::Unfocused) => {
+                    return Some(Message::Unfocus(id))
                 }
                 #[cfg(feature = "wayland")]
                 iced::Event::PlatformSpecific(PlatformSpecific::Wayland(event)) => match event {
@@ -556,6 +564,22 @@ impl<T: Application> Cosmic<T> {
 
             Message::ToolkitConfig(config) => {
                 self.app.core_mut().toolkit_config = config;
+            }
+
+            Message::Focus(f) => {
+                self.app.core_mut().focused_window = Some(f);
+            }
+
+            Message::Unfocus(id) => {
+                let core = self.app.core_mut();
+                if core
+                    .focused_window
+                    .as_ref()
+                    .map(|cur| *cur == id)
+                    .unwrap_or_default()
+                {
+                    core.focused_window = None;
+                }
             }
         }
 

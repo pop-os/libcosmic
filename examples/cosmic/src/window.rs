@@ -469,7 +469,6 @@ impl Application for Window {
         };
 
         let mut header = header_bar()
-            .window_id(window::Id::MAIN)
             .title("COSMIC Design System - Iced")
             .on_close(Message::Close)
             .on_drag(Message::Drag)
