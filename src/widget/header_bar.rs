@@ -5,7 +5,7 @@ use crate::{ext::CollectionWidget, widget, Element};
 use apply::Apply;
 use derive_setters::Setters;
 use iced::{window, Length};
-use iced_core::{renderer::Quad, widget::tree, Background, Renderer, Widget};
+use iced_core::{widget::tree, Widget};
 use std::borrow::Cow;
 
 #[must_use]
@@ -20,7 +20,7 @@ pub fn header_bar<'a, Message>() -> HeaderBar<'a, Message> {
         start: Vec::new(),
         center: Vec::new(),
         end: Vec::new(),
-        window_id: None,
+        focused: false,
     }
 }
 
@@ -50,9 +50,8 @@ pub struct HeaderBar<'a, Message> {
     #[setters(strip_option)]
     on_right_click: Option<Message>,
 
-    /// The window id for the headerbar.
-    #[setters(strip_option)]
-    window_id: Option<iced::window::Id>,
+    /// Focused state of the window
+    focused: bool,
 
     /// Elements packed at the start of the headerbar.
     #[setters(skip)]
@@ -100,7 +99,6 @@ impl<'a, Message: Clone + 'static> HeaderBar<'a, Message> {
     #[must_use]
     pub fn build(self) -> HeaderBarWidget<'a, Message> {
         HeaderBarWidget {
-            window_id: self.window_id,
             header_bar_inner: self.into_element(),
         }
     }
@@ -108,7 +106,6 @@ impl<'a, Message: Clone + 'static> HeaderBar<'a, Message> {
 
 pub struct HeaderBarWidget<'a, Message> {
     header_bar_inner: Element<'a, Message>,
-    window_id: Option<iced::window::Id>,
 }
 
 impl<'a, Message: Clone + 'static> Widget<Message, crate::Theme, crate::Renderer>
@@ -120,23 +117,6 @@ impl<'a, Message: Clone + 'static> Widget<Message, crate::Theme, crate::Renderer
 
     fn size(&self) -> iced_core::Size<Length> {
         self.header_bar_inner.as_widget().size()
-    }
-
-    fn tag(&self) -> tree::Tag {
-        tree::Tag::of::<MyState>()
-    }
-
-    fn diff(&mut self, tree: &mut tree::Tree) {
-        tree.diff_children(&mut [&mut self.header_bar_inner]);
-        let prev = tree.state.downcast_mut::<MyState>();
-        if prev.window_id != self.window_id {
-            *prev = MyState::new(self.window_id);
-        }
-    }
-
-    fn state(&self) -> tree::State {
-        let state = MyState::new(self.window_id);
-        tree::State::new(state)
     }
 
     fn layout(
@@ -174,28 +154,6 @@ impl<'a, Message: Clone + 'static> Widget<Message, crate::Theme, crate::Renderer
             cursor,
             viewport,
         );
-
-        let state = tree.state.downcast_ref::<MyState>();
-        if !state.window_has_focus {
-            let header_bar_appearance =
-                <crate::Theme as crate::iced_style::container::StyleSheet>::appearance(
-                    theme,
-                    &crate::theme::Container::HeaderBar,
-                );
-            let cosmic = theme.cosmic();
-            let mut neutral_0 = cosmic.palette.neutral_0;
-            neutral_0.alpha = 0.3;
-
-            // draw overlay rectangle
-            renderer.fill_quad(
-                Quad {
-                    bounds: layout.bounds(),
-                    border: header_bar_appearance.border,
-                    shadow: header_bar_appearance.shadow,
-                },
-                Background::Color(neutral_0.into()),
-            );
-        }
     }
 
     fn on_event(
@@ -209,14 +167,6 @@ impl<'a, Message: Clone + 'static> Widget<Message, crate::Theme, crate::Renderer
         shell: &mut iced_core::Shell<'_, Message>,
         viewport: &iced_core::Rectangle,
     ) -> iced_core::event::Status {
-        if let iced_core::Event::Window(id, iced_core::window::Event::Focused) = event {
-            let state = state.state.downcast_mut::<MyState>();
-            state.focus_window(id);
-        } else if let iced_core::Event::Window(id, iced_core::window::Event::Unfocused) = event {
-            let state = state.state.downcast_mut::<MyState>();
-            state.unfocus_window(id);
-        }
-
         let child_state = &mut state.children[0];
         let child_layout = layout.children().next().unwrap();
         self.header_bar_inner.as_widget_mut().on_event(
@@ -370,6 +320,8 @@ impl<'a, Message: Clone + 'static> HeaderBar<'a, Message> {
             widget::icon::from_svg_bytes(icon_bytes)
                 .symbolic(true)
                 .apply(widget::button::icon)
+                .style(crate::theme::Button::HeaderBar)
+                .selected(self.focused)
                 .icon_size(size)
                 .on_press(on_press)
         };
@@ -413,33 +365,5 @@ impl<'a, Message: Clone + 'static> From<HeaderBar<'a, Message>> for Element<'a, 
 impl<'a, Message: Clone + 'static> From<HeaderBarWidget<'a, Message>> for Element<'a, Message> {
     fn from(headerbar: HeaderBarWidget<'a, Message>) -> Self {
         Element::new(headerbar)
-    }
-}
-
-pub struct MyState {
-    pub window_id: Option<window::Id>,
-    pub window_has_focus: bool,
-}
-
-impl MyState {
-    pub fn new(id: Option<window::Id>) -> Self {
-        Self {
-            window_id: id,
-            window_has_focus: id.is_none(),
-        }
-    }
-
-    pub fn focus_window(&mut self, id: window::Id) {
-        if self.window_id != Some(id) {
-            return;
-        }
-        self.window_has_focus = true;
-    }
-
-    pub fn unfocus_window(&mut self, id: window::Id) {
-        if self.window_id != Some(id) {
-            return;
-        }
-        self.window_has_focus = false;
     }
 }

@@ -22,6 +22,7 @@ pub enum Button {
     Destructive,
     Link,
     Icon,
+    HeaderBar,
     IconVertical,
     Image,
     #[default]
@@ -66,7 +67,7 @@ pub fn appearance(
             appearance.icon_color = icon;
         }
 
-        Button::Icon | Button::IconVertical => {
+        Button::Icon | Button::IconVertical | Button::HeaderBar => {
             if matches!(style, Button::IconVertical) {
                 corner_radii = &cosmic.corner_radii.radius_m;
             }
@@ -146,14 +147,23 @@ pub fn appearance(
 impl StyleSheet for crate::Theme {
     type Style = Button;
 
-    fn active(&self, focused: bool, style: &Self::Style) -> Appearance {
+    fn active(&self, focused: bool, selected: bool, style: &Self::Style) -> Appearance {
         if let Button::Custom { active, .. } = style {
             return active(focused, self);
         }
+        let accent = self.cosmic().accent_color();
 
         appearance(self, focused, style, |component| {
-            let text_color = if let Button::Icon | Button::IconVertical = style {
-                None
+            let text_color = if matches!(
+                style,
+                Button::Icon | Button::IconVertical | Button::HeaderBar
+            ) && selected
+            {
+                Some(accent.into())
+            } else if matches!(style, Button::HeaderBar) && !selected {
+                let mut c = Color::from(component.on);
+                c.a = 0.8;
+                Some(c)
             } else {
                 Some(component.on.into())
             };
@@ -179,39 +189,61 @@ impl StyleSheet for crate::Theme {
     }
 
     fn drop_target(&self, style: &Self::Style) -> Appearance {
-        self.active(false, style)
+        self.active(false, false, style)
     }
 
-    fn hovered(&self, focused: bool, style: &Self::Style) -> Appearance {
+    fn hovered(&self, focused: bool, selected: bool, style: &Self::Style) -> Appearance {
         if let Button::Custom { hovered, .. } = style {
             return hovered(focused, self);
         }
+        let accent = self.cosmic().accent_button.hover;
 
         appearance(
             self,
             focused || matches!(style, Button::Image),
             style,
             |component| {
-                (
-                    component.hover.into(),
-                    Some(component.on.into()),
-                    Some(component.on.into()),
-                )
+                let text_color = if matches!(
+                    style,
+                    Button::Icon | Button::IconVertical | Button::HeaderBar
+                ) && selected
+                {
+                    Some(accent.into())
+                } else if matches!(style, Button::HeaderBar) && !selected {
+                    let mut c = Color::from(component.on);
+                    c.a = 0.8;
+                    Some(c)
+                } else {
+                    Some(component.on.into())
+                };
+
+                (component.hover.into(), text_color, text_color)
             },
         )
     }
 
-    fn pressed(&self, focused: bool, style: &Self::Style) -> Appearance {
+    fn pressed(&self, focused: bool, selected: bool, style: &Self::Style) -> Appearance {
         if let Button::Custom { pressed, .. } = style {
             return pressed(focused, self);
         }
+        let accent = self.cosmic().accent_button.pressed;
 
         appearance(self, focused, style, |component| {
-            (
-                component.pressed.into(),
-                Some(component.on.into()),
-                Some(component.on.into()),
-            )
+            let text_color = if matches!(
+                style,
+                Button::Icon | Button::IconVertical | Button::HeaderBar
+            ) && selected
+            {
+                Some(accent.into())
+            } else if matches!(style, Button::HeaderBar) && !selected {
+                let mut c = Color::from(component.on);
+                c.a = 0.8;
+                Some(c)
+            } else {
+                Some(component.on.into())
+            };
+
+            (component.pressed.into(), text_color, text_color)
         })
     }
 

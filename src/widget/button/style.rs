@@ -68,21 +68,21 @@ pub trait StyleSheet {
     type Style: Default;
 
     /// Produces the active [`Appearance`] of a button.
-    fn active(&self, focused: bool, style: &Self::Style) -> Appearance;
+    fn active(&self, focused: bool, selected: bool, style: &Self::Style) -> Appearance;
 
     /// Produces the disabled [`Appearance`] of a button.
     fn disabled(&self, style: &Self::Style) -> Appearance;
 
     /// [`Appearance`] when the button is the target of a DND operation.
     fn drop_target(&self, style: &Self::Style) -> Appearance {
-        self.hovered(false, style)
+        self.hovered(false, false, style)
     }
 
     /// Produces the hovered [`Appearance`] of a button.
-    fn hovered(&self, focused: bool, style: &Self::Style) -> Appearance;
+    fn hovered(&self, focused: bool, selected: bool, style: &Self::Style) -> Appearance;
 
     /// Produces the pressed [`Appearance`] of a button.
-    fn pressed(&self, focused: bool, style: &Self::Style) -> Appearance;
+    fn pressed(&self, focused: bool, selected: bool, style: &Self::Style) -> Appearance;
 
     /// Background color of the selection indicator
     fn selection_background(&self) -> Background;

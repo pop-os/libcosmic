@@ -16,12 +16,14 @@ pub type Button<'a, Message> = Builder<'a, Message, Icon>;
 pub struct Icon {
     handle: Handle,
     vertical: bool,
+    selected: bool,
 }
 
 pub fn icon<'a, Message>(handle: impl Into<Handle>) -> Button<'a, Message> {
     Button::new(Icon {
         handle: handle.into(),
         vertical: false,
+        selected: false,
     })
 }
 
@@ -124,6 +126,11 @@ impl<'a, Message> Button<'a, Message> {
         self
     }
 
+    pub fn selected(mut self, selected: bool) -> Self {
+        self.variant.selected = selected;
+        self
+    }
+
     pub fn vertical(mut self, vertical: bool) -> Self {
         self.variant.vertical = vertical;
         self.style = Style::IconVertical;
@@ -179,6 +186,7 @@ impl<'a, Message: Clone + 'static> From<Button<'a, Message>> for Element<'a, Mes
             .padding(0)
             .id(builder.id)
             .on_press_maybe(builder.on_press)
+            .selected(builder.variant.selected)
             .style(builder.style);
 
         if builder.tooltip.is_empty() {

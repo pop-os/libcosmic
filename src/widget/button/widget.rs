@@ -528,10 +528,10 @@ where
         }
 
         if self.on_press.is_none() {
-            node.set_disabled()
+            node.set_disabled();
         }
         if is_hovered {
-            node.set_hovered()
+            node.set_hovered();
         }
         node.set_default_action_verb(DefaultActionVerb::Click);
 
@@ -696,12 +696,12 @@ where
         style_sheet.disabled(style)
     } else if is_mouse_over {
         if state.is_pressed {
-            style_sheet.pressed(state.is_focused || is_selected, style)
+            style_sheet.pressed(state.is_focused, is_selected, style)
         } else {
-            style_sheet.hovered(state.is_focused || is_selected, style)
+            style_sheet.hovered(state.is_focused, is_selected, style)
         }
     } else {
-        style_sheet.active(state.is_focused || is_selected, style)
+        style_sheet.active(state.is_focused, is_selected, style)
     };
 
     let doubled_border_width = styling.border_width * 2.0;

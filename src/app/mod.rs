@@ -642,6 +642,10 @@ impl<App: Application> ApplicationExt for App {
     fn view_main(&self) -> Element<Message<Self::Message>> {
         let core = self.core();
         let is_condensed = core.is_condensed();
+        let focused = core
+            .focused_window()
+            .map(|i| i == self.main_window_id())
+            .unwrap_or_default();
 
         let content_row = crate::widget::row::with_children({
             let mut widgets = Vec::with_capacity(2);
@@ -686,7 +690,7 @@ impl<App: Application> ApplicationExt for App {
             .push_maybe(if core.window.show_headerbar {
                 Some({
                     let mut header = crate::widget::header_bar()
-                        .window_id(self.main_window_id())
+                        .focused(focused)
                         .title(&core.window.header_title)
                         .on_drag(Message::Cosmic(cosmic::Message::Drag))
                         .on_close(Message::Cosmic(cosmic::Message::Close))

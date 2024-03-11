@@ -131,7 +131,11 @@ impl cosmic::Application for MultiWindow {
         let input = text_input("something", &w.input_value)
             .on_input(move |msg| Message::Input(input_id.clone(), msg))
             .id(w.input_id.clone());
-
+        let focused = self
+            .core()
+            .focused_window()
+            .map(|i| i == id)
+            .unwrap_or_default();
         let new_window_button = button(text("New Window")).on_press(Message::NewWindow);
 
         let content = scrollable(
@@ -151,7 +155,7 @@ impl cosmic::Application for MultiWindow {
         if id == window::Id::MAIN {
             window_content.into()
         } else {
-            column![header_bar().window_id(id), window_content].into()
+            column![header_bar().focused(focused), window_content].into()
         }
     }
 
