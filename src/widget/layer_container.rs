@@ -10,7 +10,7 @@ use iced_core::widget::Tree;
 use iced_core::{Clipboard, Element, Layout, Length, Padding, Rectangle, Shell, Widget};
 pub use iced_style::container::{Appearance, StyleSheet};
 
-pub fn container<'a, Message: 'static, Theme, E>(
+pub fn layer_container<'a, Message: 'static, Theme, E>(
     content: E,
 ) -> LayerContainer<'a, Message, Theme, crate::Renderer>
 where

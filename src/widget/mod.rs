@@ -55,8 +55,8 @@ pub mod column {
     }
 }
 
-pub mod cosmic_container;
-pub use cosmic_container::LayerContainer;
+pub mod layer_container;
+pub use layer_container::{layer_container, LayerContainer};
 
 pub mod dialog;
 pub use dialog::{dialog, Dialog};
