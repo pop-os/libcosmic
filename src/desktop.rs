@@ -69,6 +69,17 @@ pub fn load_applications<'a>(
     load_applications_filtered(locale, |de| include_no_display || !de.no_display())
 }
 
+pub fn app_id_or_fallback_matches(app_id: &str, entry: &DesktopEntryData) -> bool {
+    let lowercase_wm_class = match entry.wm_class.as_ref() {
+        Some(s) => Some(s.to_lowercase()),
+        None => None,
+    };
+
+    app_id == entry.id
+        || Some(app_id.to_lowercase()) == lowercase_wm_class
+        || app_id.to_lowercase() == entry.name.to_lowercase()
+}
+
 pub fn load_applications_for_app_ids<'a, 'b>(
     locale: impl Into<Option<&'a str>>,
     app_ids: impl Iterator<Item = &'b str>,
