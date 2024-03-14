@@ -3,7 +3,7 @@
 
 //! Calendar widget example
 
-use chrono::{Datelike, Days, Local, Months, NaiveDate};
+use chrono::{Local, NaiveDate};
 use cosmic::app::{Command, Core, Settings};
 use cosmic::{executor, iced, ApplicationExt, Element};
 
@@ -69,33 +69,13 @@ impl cosmic::Application for App {
     fn update(&mut self, message: Self::Message) -> Command<Self::Message> {
         match message {
             Message::DaySelected(day) => {
-                let current = self.date_selected.day();
-
-                let new_date = if current < day {
-                    self.date_selected
-                        .checked_add_days(Days::new((day - current) as u64))
-                } else if current > day {
-                    self.date_selected
-                        .checked_sub_days(Days::new((current - day) as u64))
-                } else {
-                    None
-                };
-
-                if let Some(new) = new_date {
-                    self.date_selected = new;
-                }
+                cosmic::widget::calendar::set_day(&mut self.date_selected, day);
             }
             Message::PrevMonth => {
-                self.date_selected = self
-                    .date_selected
-                    .checked_sub_months(Months::new(1))
-                    .expect("valid naivedate");
+                cosmic::widget::calendar::set_prev_month(&mut self.date_selected);
             }
             Message::NextMonth => {
-                self.date_selected = self
-                    .date_selected
-                    .checked_add_months(Months::new(1))
-                    .expect("valid naivedate");
+                cosmic::widget::calendar::set_next_month(&mut self.date_selected);
             }
         }
 
@@ -113,7 +93,7 @@ impl cosmic::Application for App {
             |day| Message::DaySelected(day),
         );
 
-        content = content.push(cosmic::widget::container(calendar).width(350));
+        content = content.push(calendar);
 
         let centered = cosmic::widget::container(content)
             .width(iced::Length::Fill)
