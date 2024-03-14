@@ -1,9 +1,11 @@
 // Copyright 2024 System76 <info@system76.com>
 // SPDX-License-Identifier: MPL-2.0
 
+use std::cmp;
+
 use crate::iced_core::{Length, Padding};
 use crate::widget::{button, column, grid, icon, row, text, Grid};
-use chrono::{Datelike, Days, NaiveDate, Weekday};
+use chrono::{Datelike, Days, Months, NaiveDate, Weekday};
 use iced::alignment::{Horizontal, Vertical};
 
 pub fn calendar<M>(
@@ -18,6 +20,34 @@ pub fn calendar<M>(
         on_next_month,
         on_select: Box::new(on_select),
     }
+}
+
+pub fn set_day(date_selected: &mut NaiveDate, day: u32) {
+    let current = date_selected.day();
+
+    let new_date = match current.cmp(&day) {
+        cmp::Ordering::Less => date_selected.checked_add_days(Days::new((day - current) as u64)),
+
+        cmp::Ordering::Greater => date_selected.checked_sub_days(Days::new((current - day) as u64)),
+
+        _ => None,
+    };
+
+    if let Some(new) = new_date {
+        *date_selected = new;
+    }
+}
+
+pub fn set_prev_month(date_selected: &mut NaiveDate) {
+    *date_selected = date_selected
+        .checked_sub_months(Months::new(1))
+        .expect("valid naivedate");
+}
+
+pub fn set_next_month(date_selected: &mut NaiveDate) {
+    *date_selected = date_selected
+        .checked_add_months(Months::new(1))
+        .expect("valid naivedate");
 }
 
 pub struct Calendar<'a, M> {
@@ -95,6 +125,7 @@ where
             calendar_grid.into(),
             padded_control(crate::widget::divider::horizontal::default()).into(),
         ])
+        .width(315)
         .padding([8, 0]);
 
         Self::new(content_list)
