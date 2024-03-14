@@ -37,13 +37,7 @@ smol = ["iced/smol", "zbus?/async-io"]
 # Tokio async runtime
 tokio = ["dep:tokio", "ashpd?/tokio", "iced/tokio", "rfd?/tokio", "zbus?/tokio"]
 # Wayland window support
-wayland = [
-  "ashpd?/wayland",
-  "iced_runtime/wayland",
-  "iced/wayland",
-  "iced_sctk",
-  "cctk",
-]
+wayland = ["ashpd?/wayland", "iced_runtime/wayland", "iced/wayland", "iced_sctk", "cctk"]
 # multi-window support
 multi-window = ["iced/multi-window"]
 # Render with wgpu
@@ -61,6 +55,7 @@ apply = "0.3.0"
 ashpd = { version = "0.7.0", default-features = false, optional = true }
 async-fs = { version = "2.1", optional = true }
 cctk = { git = "https://github.com/pop-os/cosmic-protocols", package = "cosmic-client-toolkit", rev = "e65fa5e", optional = true }
+chrono = "0.4.35"
 cosmic-config = { path = "cosmic-config" }
 cosmic-settings-daemon = { git = "https://github.com/pop-os/dbus-settings-bindings", branch = "cosmic-settings-daemon", optional = true }
 css-color = "0.2.5"

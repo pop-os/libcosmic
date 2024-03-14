@@ -32,7 +32,7 @@ impl Page {
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     tracing_subscriber::fmt::init();
     let _ = tracing_log::LogTracer::init();
- 
+
     let input = vec![
         (Page::Page1, "🖖 Hello from libcosmic.".into()),
         (Page::Page2, "🌟 This is an example application.".into()),
@@ -124,8 +124,7 @@ impl cosmic::Application for App {
         let page_content = self
             .nav_model
             .active_data::<String>()
-            .map(String::as_str)
-            .unwrap_or("No page selected");
+            .map_or("No page selected", String::as_str);
 
         let text = cosmic::widget::text(page_content);
 
