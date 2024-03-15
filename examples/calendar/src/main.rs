@@ -80,10 +80,8 @@ impl cosmic::Application for App {
     fn view(&self) -> Element<Self::Message> {
         let mut content = cosmic::widget::column().spacing(12);
 
-        let calendar = cosmic::widget::calendar(
-            &self.date_selected,
-            |date| Message::DateSelected(date),
-        );
+        let calendar =
+            cosmic::widget::calendar(&self.date_selected, |date| Message::DateSelected(date));
 
         content = content.push(calendar);
 
