@@ -40,7 +40,7 @@ impl<'a, Message> Button<'a, Message> {
                 tooltip: Cow::Borrowed(""),
                 on_press: None,
                 width: Length::Shrink,
-                height: Length::Fixed(46.0),
+                height: Length::Shrink,
                 padding: Padding::from(padding),
                 spacing: theme.space_xxxs(),
                 icon_size: if icon.handle.symbolic { 16 } else { 24 },
@@ -63,7 +63,6 @@ impl<'a, Message> Button<'a, Message> {
             self.font_weight = Weight::Normal;
             self.icon_size = 16;
             self.line_height = 20;
-            self.height = Length::Fixed(36.0);
             self.padding = Padding::from(theme.space_xxs());
             self.spacing = theme.space_xxxs();
         });
@@ -81,7 +80,6 @@ impl<'a, Message> Button<'a, Message> {
             self.font_weight = Weight::Normal;
             self.icon_size = 32;
             self.line_height = 32;
-            self.height = Length::Fixed(56.0);
             self.padding = Padding::from(theme.space_xs());
             self.spacing = theme.space_xxs();
         });
@@ -99,7 +97,6 @@ impl<'a, Message> Button<'a, Message> {
             self.font_weight = Weight::Normal;
             self.icon_size = 40;
             self.line_height = 36;
-            self.height = Length::Fixed(64.0);
             self.padding = Padding::from(theme.space_xs());
             self.spacing = theme.space_xxs();
         });
@@ -118,7 +115,6 @@ impl<'a, Message> Button<'a, Message> {
             self.font_weight = Weight::Light;
             self.icon_size = 56;
             self.line_height = 44;
-            self.height = Length::Fixed(80.0);
             self.padding = Padding::from(padding);
             self.spacing = theme.space_xxs();
         });
