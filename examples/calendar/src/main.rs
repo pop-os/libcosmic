@@ -18,8 +18,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 /// Messages that are used specifically by our [`App`].
 #[derive(Clone, Debug)]
 pub enum Message {
-    PrevMonth(NaiveDate),
-    NextMonth(NaiveDate),
     DateSelected(NaiveDate),
 }
 
@@ -71,12 +69,6 @@ impl cosmic::Application for App {
             Message::DateSelected(date) => {
                 self.date_selected = date;
             }
-            Message::PrevMonth(date) => {
-                self.date_selected = date;
-            }
-            Message::NextMonth(date) => {
-                self.date_selected = date;
-            }
         }
 
         println!("Date selected: {:?}", self.date_selected);
@@ -90,8 +82,6 @@ impl cosmic::Application for App {
 
         let calendar = cosmic::widget::calendar(
             &self.date_selected,
-            |date| Message::PrevMonth(date),
-            |date| Message::NextMonth(date),
             |date| Message::DateSelected(date),
         );
 

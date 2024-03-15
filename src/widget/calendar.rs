@@ -10,14 +10,10 @@ use iced::alignment::{Horizontal, Vertical};
 
 pub fn calendar<M>(
     selected: &NaiveDate,
-    on_prev_month: impl Fn(NaiveDate) -> M + 'static,
-    on_next_month: impl Fn(NaiveDate) -> M + 'static,
     on_select: impl Fn(NaiveDate) -> M + 'static,
 ) -> Calendar<M> {
     Calendar {
         selected,
-        on_prev_month: Box::new(on_prev_month),
-        on_next_month: Box::new(on_next_month),
         on_select: Box::new(on_select),
     }
 }
@@ -54,8 +50,6 @@ pub fn set_next_month(date_selected: NaiveDate) -> NaiveDate {
 
 pub struct Calendar<'a, M> {
     selected: &'a NaiveDate,
-    on_prev_month: Box<dyn Fn(NaiveDate) -> M>,
-    on_next_month: Box<dyn Fn(NaiveDate) -> M>,
     on_select: Box<dyn Fn(NaiveDate) -> M>,
 }
 
@@ -71,12 +65,12 @@ where
             .push(
                 button::icon(icon::from_name("go-previous-symbolic"))
                     .padding([0, 12])
-                    .on_press((this.on_prev_month)(set_prev_month(this.selected.clone()))),
+                    .on_press((this.on_select)(set_prev_month(this.selected.clone()))),
             )
             .push(
                 button::icon(icon::from_name("go-next-symbolic"))
                     .padding([0, 12])
-                    .on_press((this.on_next_month)(set_next_month(this.selected.clone()))),
+                    .on_press((this.on_select)(set_next_month(this.selected.clone()))),
             );
 
         // Calender
