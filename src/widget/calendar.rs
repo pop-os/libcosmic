@@ -10,19 +10,15 @@ use iced::alignment::{Horizontal, Vertical};
 
 pub fn calendar<M>(
     selected: &NaiveDate,
-    on_prev_month: M,
-    on_next_month: M,
-    on_select: impl Fn(u32) -> M + 'static,
+    on_select: impl Fn(NaiveDate) -> M + 'static,
 ) -> Calendar<M> {
     Calendar {
         selected,
-        on_prev_month,
-        on_next_month,
         on_select: Box::new(on_select),
     }
 }
 
-pub fn set_day(date_selected: &mut NaiveDate, day: u32) {
+pub fn set_day(date_selected: NaiveDate, day: u32) -> NaiveDate {
     let current = date_selected.day();
 
     let new_date = match current.cmp(&day) {
@@ -34,27 +30,27 @@ pub fn set_day(date_selected: &mut NaiveDate, day: u32) {
     };
 
     if let Some(new) = new_date {
-        *date_selected = new;
+        new
+    } else {
+        date_selected
     }
 }
 
-pub fn set_prev_month(date_selected: &mut NaiveDate) {
-    *date_selected = date_selected
+pub fn set_prev_month(date_selected: NaiveDate) -> NaiveDate {
+    date_selected
         .checked_sub_months(Months::new(1))
-        .expect("valid naivedate");
+        .expect("valid naivedate")
 }
 
-pub fn set_next_month(date_selected: &mut NaiveDate) {
-    *date_selected = date_selected
+pub fn set_next_month(date_selected: NaiveDate) -> NaiveDate {
+    date_selected
         .checked_add_months(Months::new(1))
-        .expect("valid naivedate");
+        .expect("valid naivedate")
 }
 
 pub struct Calendar<'a, M> {
     selected: &'a NaiveDate,
-    on_prev_month: M,
-    on_next_month: M,
-    on_select: Box<dyn Fn(u32) -> M>,
+    on_select: Box<dyn Fn(NaiveDate) -> M>,
 }
 
 impl<'a, Message> From<Calendar<'a, Message>> for crate::Element<'a, Message>
@@ -69,12 +65,12 @@ where
             .push(
                 button::icon(icon::from_name("go-previous-symbolic"))
                     .padding([0, 12])
-                    .on_press(this.on_prev_month),
+                    .on_press((this.on_select)(set_prev_month(this.selected.clone()))),
             )
             .push(
                 button::icon(icon::from_name("go-next-symbolic"))
                     .padding([0, 12])
-                    .on_press(this.on_next_month),
+                    .on_press((this.on_select)(set_next_month(this.selected.clone()))),
             );
 
         // Calender
@@ -111,7 +107,7 @@ where
             let is_day = date.day() == this.selected.day() && is_month;
 
             calendar_grid =
-                calendar_grid.push(date_button(date.day(), is_month, is_day, &this.on_select));
+                calendar_grid.push(date_button(date, is_month, is_day, &this.on_select));
         }
 
         let content_list = column::with_children(vec![
@@ -133,19 +129,19 @@ where
 }
 
 fn date_button<Message>(
-    day: u32,
+    date: NaiveDate,
     is_month: bool,
     is_day: bool,
-    on_select: &dyn Fn(u32) -> Message,
+    on_select: &dyn Fn(NaiveDate) -> Message,
 ) -> crate::widget::Button<'static, Message, crate::Theme, crate::Renderer> {
     let style = if is_day {
-        crate::widget::button::Style::Suggested
+        button::Style::Suggested
     } else {
-        crate::widget::button::Style::Text
+        button::Style::Text
     };
 
     let button = button(
-        text(format!("{day}"))
+        text(format!("{}", date.day()))
             .horizontal_alignment(Horizontal::Center)
             .vertical_alignment(Vertical::Center),
     )
@@ -154,7 +150,7 @@ fn date_button<Message>(
     .width(Length::Fixed(36.0));
 
     if is_month {
-        button.on_press((on_select)(day))
+        button.on_press((on_select)(set_day(date, date.day())))
     } else {
         button
     }

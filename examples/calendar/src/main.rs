@@ -18,9 +18,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 /// Messages that are used specifically by our [`App`].
 #[derive(Clone, Debug)]
 pub enum Message {
-    PrevMonth,
-    NextMonth,
-    DaySelected(u32),
+    DateSelected(NaiveDate),
 }
 
 /// The [`App`] stores application-specific state.
@@ -68,16 +66,12 @@ impl cosmic::Application for App {
     /// Handle application events here.
     fn update(&mut self, message: Self::Message) -> Command<Self::Message> {
         match message {
-            Message::DaySelected(day) => {
-                cosmic::widget::calendar::set_day(&mut self.date_selected, day);
-            }
-            Message::PrevMonth => {
-                cosmic::widget::calendar::set_prev_month(&mut self.date_selected);
-            }
-            Message::NextMonth => {
-                cosmic::widget::calendar::set_next_month(&mut self.date_selected);
+            Message::DateSelected(date) => {
+                self.date_selected = date;
             }
         }
+
+        println!("Date selected: {:?}", self.date_selected);
 
         Command::none()
     }
@@ -86,12 +80,8 @@ impl cosmic::Application for App {
     fn view(&self) -> Element<Self::Message> {
         let mut content = cosmic::widget::column().spacing(12);
 
-        let calendar = cosmic::widget::calendar(
-            &self.date_selected,
-            Message::PrevMonth,
-            Message::NextMonth,
-            |day| Message::DaySelected(day),
-        );
+        let calendar =
+            cosmic::widget::calendar(&self.date_selected, |date| Message::DateSelected(date));
 
         content = content.push(calendar);
 
