@@ -1,6 +1,13 @@
 use iced_core::keyboard::{Key, Modifiers};
 use std::fmt;
 
+/// Represents the modifier keys on a keyboard.
+///
+/// It has four variants:
+/// * `Super`: Represents the Super key (also known as the Windows key on Windows, Command key on macOS).
+/// * `Ctrl`: Represents the Control key.
+/// * `Alt`: Represents the Alt key.
+/// * `Shift`: Represents the Shift key.
 #[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub enum Modifier {
     Super,
@@ -9,13 +16,27 @@ pub enum Modifier {
     Shift,
 }
 
+/// Represents a combination of a key and modifiers.
+/// It is used to define keyboard shortcuts.
 #[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub struct KeyBind {
+    /// A vector of modifiers for the key binding.
     pub modifiers: Vec<Modifier>,
+    /// The key for the key binding.
     pub key: Key,
 }
 
 impl KeyBind {
+    /// Checks if the given key and modifiers match the `KeyBind`.
+    ///
+    /// # Arguments
+    ///
+    /// * `modifiers` - A `Modifiers` instance representing the current active modifiers.
+    /// * `key` - A reference to the `Key` that is being checked.
+    ///
+    /// # Returns
+    ///
+    /// * `bool` - `true` if the key and modifiers match the `KeyBind`, `false` otherwise.
     pub fn matches(&self, modifiers: Modifiers, key: &Key) -> bool {
         key == &self.key
             && modifiers.logo() == self.modifiers.contains(&Modifier::Super)
