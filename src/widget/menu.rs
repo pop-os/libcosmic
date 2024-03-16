@@ -54,7 +54,9 @@
 //! ```
 //!
 
+pub mod action;
 mod flex;
+pub mod key_bind;
 pub mod menu_bar;
 mod menu_inner;
 pub mod menu_tree;

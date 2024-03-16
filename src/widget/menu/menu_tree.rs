@@ -2,7 +2,14 @@
 
 //! A tree structure for constructing a hierarchical menu
 
+use crate::widget::menu::action::MenuAction;
+use crate::widget::menu::key_bind::KeyBind;
+use crate::{theme, widget};
 use iced_widget::core::{renderer, Element};
+use iced_widget::horizontal_rule;
+use std::borrow::Cow;
+use std::collections::HashMap;
+
 /// Nested menu is essentially a tree of items, a menu is a collection of items
 /// a menu itself can also be an item of another menu.
 ///
@@ -128,4 +135,103 @@ where
     fn from(value: Element<'a, Message, crate::Theme, Renderer>) -> Self {
         Self::new(value)
     }
+}
+
+macro_rules! menu_button {
+    ($($x:expr),+ $(,)?) => (
+        widget::button(
+            widget::Row::with_children(
+                vec![$(Element::from($x)),+]
+            )
+            .align_items(Alignment::Center)
+            .height(Length::Fill)
+            .width(Length::Fill)
+        )
+        .height(Length::Fixed(36.0))
+        .padding([4, 16])
+        .width(Length::Fill)
+        .style(theme::Button::MenuItem)
+    );
+}
+
+pub enum MenuItem<A: MenuAction, L: Into<Cow<'static, str>>> {
+    Action(L, A),
+    Separator,
+}
+
+pub fn menu_root<'a, Message, Renderer: renderer::Renderer>(
+    label: impl Into<Cow<'a, str>> + 'a,
+) -> iced::Element<'a, Message, crate::Theme, Renderer>
+where
+    Element<'a, Message, crate::Theme, Renderer>:
+        From<widget::button::Button<'a, Message, crate::Theme, iced::Renderer>>,
+{
+    widget::button(widget::text(label))
+        .padding([4, 12])
+        .style(theme::Button::MenuRoot)
+        .into()
+}
+
+pub fn menu_items<
+    'a,
+    A: MenuAction<Message = Message>,
+    L: Into<Cow<'static, str>> + 'static,
+    Message: 'a,
+    Renderer: renderer::Renderer + 'a,
+>(
+    key_binds: &HashMap<KeyBind, A>,
+    children: Vec<MenuItem<A, L>>,
+) -> Vec<MenuTree<'a, Message, Renderer>>
+where
+    Element<'a, Message, crate::Theme, Renderer>:
+        From<widget::button::Button<'a, Message, crate::Theme, iced::Renderer>>,
+{
+    fn find_key<A: MenuAction>(action: &A, key_binds: &HashMap<KeyBind, A>) -> String {
+        for (key_bind, key_action) in key_binds.iter() {
+            if action == key_action {
+                return key_bind.to_string();
+            }
+        }
+        String::new()
+    }
+
+    let size = children.len();
+
+    children
+        .into_iter()
+        .enumerate()
+        .flat_map(|(i, item)| {
+            let mut trees = vec![];
+            match item {
+                MenuItem::Action(label, action) => {
+                    let key = find_key(&action, key_binds);
+                    let menu_button: iced::Element<'a, Message, crate::Theme, Renderer> =
+                        widget::button::<Message, crate::Theme>(
+                            widget::Row::with_children(vec![
+                                widget::text(label).into(),
+                                widget::horizontal_space(iced_core::Length::Fill).into(),
+                                widget::text(key).into(),
+                            ])
+                            .align_items(iced_core::Alignment::Center)
+                            .height(iced_core::Length::Fill)
+                            .width(iced_core::Length::Fill),
+                        )
+                        .on_press(action.message(None))
+                        .height(iced_core::Length::Fixed(36.0))
+                        .padding([4, 16])
+                        .width(iced_core::Length::Fill)
+                        .style(theme::Button::MenuItem)
+                        .into();
+
+                    trees.push(MenuTree::<Message, Renderer>::new(menu_button));
+                }
+                MenuItem::Separator => {
+                    if i != size - 1 {
+                        trees.push(MenuTree::<Message, Renderer>::new(horizontal_rule(1)));
+                    }
+                }
+            }
+            trees
+        })
+        .collect()
 }
