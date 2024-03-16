@@ -137,6 +137,7 @@ where
     }
 }
 
+/// This macro creates a button for a MenuTree.
 macro_rules! menu_button {
     ($($x:expr),+ $(,)?) => (
         widget::button(
@@ -154,11 +155,26 @@ macro_rules! menu_button {
     );
 }
 
+/// Represents a menu item that performs an action when selected or a separator between menu items.
+///
+/// - `Action` - Represents a menu item that performs an action when selected.
+///     - `L` - The label of the menu item.
+///     - `A` - The action to perform when the menu item is selected, the action must implement the `MenuAction` trait.
+/// - `Separator` - Represents a separator between menu items.
 pub enum MenuItem<A: MenuAction, L: Into<Cow<'static, str>>> {
+    /// Represents a menu item that performs an action when selected.
     Action(L, A),
+    /// Represents a separator between menu items.
     Separator,
 }
 
+/// Create a root menu item.
+///
+/// # Arguments
+/// - `label` - The label of the menu item.
+///
+/// # Returns
+/// - A button for the root menu item.
 pub fn menu_root<'a, Message, Renderer: renderer::Renderer>(
     label: impl Into<Cow<'a, str>> + 'a,
 ) -> iced::Element<'a, Message, crate::Theme, Renderer>
@@ -172,6 +188,16 @@ where
         .into()
 }
 
+/// Create a list of menu items from a vector of `MenuItem`.
+///
+/// The `MenuItem` can be either an action or a separator.
+///
+/// # Arguments
+/// - `key_binds` - A reference to a `HashMap` that maps `KeyBind` to `A`.
+/// - `children` - A vector of `MenuItem`.
+///
+/// # Returns
+/// - A vector of `MenuTree`.
 pub fn menu_items<
     'a,
     A: MenuAction<Message = Message>,
