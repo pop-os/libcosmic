@@ -42,6 +42,7 @@ pub mod message {
 pub use self::command::Command;
 pub use self::core::Core;
 pub use self::settings::Settings;
+use crate::config::CosmicTk;
 use crate::prelude::*;
 use crate::theme::THEME;
 use crate::widget::{context_drawer, nav_bar, popover};
@@ -66,15 +67,18 @@ pub(crate) fn iced_settings<App: Application>(
     settings: Settings,
     flags: App::Flags,
 ) -> iced::Settings<(Core, App::Flags)> {
-    if let Some(icon_theme) = settings.default_icon_theme {
-        crate::icon_theme::set_default(icon_theme);
-    }
-
     let mut core = Core::default();
     core.debug = settings.debug;
+    core.icon_theme_override = settings.default_icon_theme.is_some();
     core.set_scale_factor(settings.scale_factor);
     core.set_window_width(settings.size.width as u32);
     core.set_window_height(settings.size.height as u32);
+
+    if let Some(icon_theme) = settings.default_icon_theme {
+        crate::icon_theme::set_default(icon_theme);
+    } else {
+        crate::icon_theme::set_default(core.toolkit_config.icon_theme.clone());
+    }
 
     THEME.with(move |t| {
         let mut cosmic_theme = t.borrow_mut();
