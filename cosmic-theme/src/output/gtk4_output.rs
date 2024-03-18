@@ -1,6 +1,10 @@
 use crate::{composite::over, steps::steps, Component, Theme};
 use palette::{rgb::Rgba, Darken, IntoColor, Lighten, Srgba};
-use std::{fs::File, io::prelude::*, num::NonZeroUsize};
+use std::{
+    fs::{self, File},
+    io::Write,
+    num::NonZeroUsize,
+};
 use thiserror::Error;
 
 #[derive(Error, Debug)]
@@ -12,6 +16,7 @@ pub enum OutputError {
 }
 
 impl Theme {
+    #[must_use]
     /// turn the theme into css
     pub fn as_gtk4(&self) -> String {
         let Self {
@@ -169,12 +174,57 @@ impl Theme {
 
         Ok(())
     }
-}
 
-/// Trait for converting theme data into gtk4 CSS
-pub trait AsGtk4Css {
-    /// function for converting theme data into gtk4 CSS
-    fn as_css(&self) -> String;
+    /// Apply gtk color variable settings
+    pub fn apply_gtk(&self) -> Result<(), OutputError> {
+        let Some(config_dir) = dirs::config_dir() else {
+            return Err(OutputError::MissingConfigDir);
+        };
+
+        let gtk4 = config_dir.join("gtk-4.0");
+        let gtk3 = config_dir.join("gtk-3.0");
+
+        fs::create_dir_all(&gtk4).map_err(OutputError::Io)?;
+        fs::create_dir_all(&gtk3).map_err(OutputError::Io)?;
+
+        let gtk4_dest = gtk4.join("gtk.css");
+
+        fs::rename(&gtk4_dest, gtk4.join("gtk.css.bak")).map_err(OutputError::Io)?;
+
+        fs::copy(
+            gtk4.join("cosmic").join(if self.is_dark {
+                "dark.css"
+            } else {
+                "light.css"
+            }),
+            &gtk4_dest,
+        )
+        .map_err(OutputError::Io)?;
+
+        #[cfg(target_family = "unix")]
+        {
+            use std::fs::metadata;
+            use std::os::unix::fs::symlink;
+
+            let gtk3_dest = gtk3.join("gtk.css");
+            let gtk3_dest_bak = gtk3.join("gtk.css.bak");
+
+            if gtk3_dest.exists() {
+                if metadata(&gtk3_dest)
+                    .map_err(OutputError::Io)?
+                    .file_type()
+                    .is_symlink()
+                {
+                    fs::remove_file(&gtk3_dest).map_err(OutputError::Io)?;
+                } else {
+                    fs::rename(&gtk3_dest, gtk3_dest_bak).map_err(OutputError::Io)?;
+                }
+            }
+
+            symlink(gtk4_dest, gtk3_dest).map_err(OutputError::Io)?;
+        }
+        Ok(())
+    }
 }
 
 fn component_gtk4_css(prefix: &str, c: &Component) -> String {
