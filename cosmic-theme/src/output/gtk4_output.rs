@@ -176,7 +176,7 @@ impl Theme {
     }
 
     /// Apply gtk color variable settings
-    pub fn apply_gtk(&self) -> Result<(), OutputError> {
+    pub fn apply_gtk(is_dark: bool) -> Result<(), OutputError> {
         let Some(config_dir) = dirs::config_dir() else {
             return Err(OutputError::MissingConfigDir);
         };
@@ -187,43 +187,52 @@ impl Theme {
         fs::create_dir_all(&gtk4).map_err(OutputError::Io)?;
         fs::create_dir_all(&gtk3).map_err(OutputError::Io)?;
 
+        let cosmic_css = gtk4
+            .join("cosmic")
+            .join(if is_dark { "dark.css" } else { "light.css" });
+
         let gtk4_dest = gtk4.join("gtk.css");
-
-        fs::rename(&gtk4_dest, gtk4.join("gtk.css.bak")).map_err(OutputError::Io)?;
-
-        fs::copy(
-            gtk4.join("cosmic").join(if self.is_dark {
-                "dark.css"
-            } else {
-                "light.css"
-            }),
-            &gtk4_dest,
-        )
-        .map_err(OutputError::Io)?;
+        let gtk3_dest = gtk3.join("gtk.css");
 
         #[cfg(target_family = "unix")]
-        {
+        for gtk_dest in [&gtk4_dest, &gtk3_dest] {
             use std::fs::metadata;
             use std::os::unix::fs::symlink;
 
-            let gtk3_dest = gtk3.join("gtk.css");
-            let gtk3_dest_bak = gtk3.join("gtk.css.bak");
+            let mut gtk_dest_bak = gtk_dest.clone();
+            gtk_dest_bak.set_extension("css.bak");
 
-            if gtk3_dest.exists() {
-                if metadata(&gtk3_dest)
+            if gtk_dest.exists() {
+                if metadata(&gtk_dest)
                     .map_err(OutputError::Io)?
                     .file_type()
                     .is_symlink()
                 {
-                    fs::remove_file(&gtk3_dest).map_err(OutputError::Io)?;
+                    fs::remove_file(&gtk_dest).map_err(OutputError::Io)?;
                 } else {
-                    fs::rename(&gtk3_dest, gtk3_dest_bak).map_err(OutputError::Io)?;
+                    fs::rename(&gtk_dest, gtk_dest_bak).map_err(OutputError::Io)?;
                 }
             }
 
-            symlink(gtk4_dest, gtk3_dest).map_err(OutputError::Io)?;
+            symlink(&cosmic_css, gtk_dest).map_err(OutputError::Io)?;
         }
         Ok(())
+    }
+
+    /// Reset the applied gtk css
+    pub fn reset_gtk() -> Result<(), OutputError> {
+        let Some(config_dir) = dirs::config_dir() else {
+            return Err(OutputError::MissingConfigDir);
+        };
+
+        let gtk4 = config_dir.join("gtk-4.0");
+        let gtk3 = config_dir.join("gtk-3.0");
+        let gtk4_dest = gtk4.join("gtk.css");
+        let gtk3_dest = gtk3.join("gtk.css");
+
+        let res = fs::remove_file(gtk3_dest);
+        fs::remove_file(gtk4_dest).map_err(OutputError::Io)?;
+        Ok(res.map_err(OutputError::Io)?)
     }
 }
 
