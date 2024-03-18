@@ -18,8 +18,11 @@ pub struct CosmicTk {
     /// Show maximize button in window header.
     pub show_maximize: bool,
 
-    /// Preferred icon theme
+    /// Preferred icon theme.
     pub icon_theme: String,
+
+    /// Apply the theme to other toolkits.
+    pub apply_theme_global: bool,
 }
 
 impl Default for CosmicTk {
@@ -28,6 +31,7 @@ impl Default for CosmicTk {
             show_minimize: true,
             show_maximize: true,
             icon_theme: String::from("Cosmic"),
+            apply_theme_global: false,
         }
     }
 }
