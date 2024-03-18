@@ -82,7 +82,7 @@ impl Default for Settings {
             client_decorations: true,
             debug: false,
             default_font: font::FONT,
-            default_icon_theme: Some(String::from("Cosmic")),
+            default_icon_theme: None,
             default_text_size: 14.0,
             resizable: Some(8.0),
             scale_factor: std::env::var("COSMIC_SCALE")

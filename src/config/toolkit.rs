@@ -17,6 +17,9 @@ pub struct CosmicTk {
 
     /// Show maximize button in window header.
     pub show_maximize: bool,
+
+    /// Preferred icon theme
+    pub icon_theme: String,
 }
 
 impl Default for CosmicTk {
@@ -24,6 +27,7 @@ impl Default for CosmicTk {
         Self {
             show_minimize: true,
             show_maximize: true,
+            icon_theme: String::from("Cosmic"),
         }
     }
 }

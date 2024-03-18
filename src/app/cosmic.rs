@@ -563,6 +563,13 @@ impl<T: Application> Cosmic<T> {
             }
 
             Message::ToolkitConfig(config) => {
+                // Change the icon theme if not defined by the application.
+                if !self.app.core().icon_theme_override
+                    && crate::icon_theme::default() != config.icon_theme
+                {
+                    crate::icon_theme::set_default(config.icon_theme.clone());
+                }
+
                 self.app.core_mut().toolkit_config = config;
             }
 
