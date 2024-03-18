@@ -3,21 +3,21 @@
 
 //! Application API example
 
-use std::{env, process};
 use std::collections::HashMap;
+use std::{env, process};
 
-use cosmic::{Element, executor};
 use cosmic::app::{Command, Core, Settings};
 use cosmic::iced::window;
-use cosmic::iced_core::{Length, Size};
 use cosmic::iced_core::alignment::{Horizontal, Vertical};
 use cosmic::iced_core::keyboard::Key;
-use cosmic::widget::menu::{ItemHeight, ItemWidth, MenuBar, MenuTree};
+use cosmic::iced_core::{Length, Size};
 use cosmic::widget::menu::action::MenuAction;
 use cosmic::widget::menu::key_bind::KeyBind;
 use cosmic::widget::menu::key_bind::Modifier;
 use cosmic::widget::menu::menu_tree::{menu_items, menu_root, MenuItem};
+use cosmic::widget::menu::{ItemHeight, ItemWidth, MenuBar, MenuTree};
 use cosmic::widget::segmented_button::Entity;
+use cosmic::{executor, Element};
 
 /// Runs application with these settings
 #[rustfmt::skip]
@@ -102,7 +102,9 @@ impl cosmic::Application for App {
     fn init(core: Core, _input: Self::Flags) -> (Self, Command<Self::Message>) {
         let app = App {
             core,
-            config: Config { hide_content: false },
+            config: Config {
+                hide_content: false,
+            },
             key_binds: key_binds(),
         };
 
@@ -163,23 +165,21 @@ pub fn menu_bar<'a>(config: &Config, key_binds: &HashMap<KeyBind, Action>) -> El
                 MenuItem::Divider,
                 MenuItem::Folder(
                     "View",
-                    vec![
-                        MenuItem::CheckBox(
-                            "Hide content",
-                            config.hide_content,
-                            Action::ToggleHideContent,
-                        ),
-                    ],
+                    vec![MenuItem::CheckBox(
+                        "Hide content",
+                        config.hide_content,
+                        Action::ToggleHideContent,
+                    )],
                 ),
                 MenuItem::Divider,
                 MenuItem::Button("Quit", Action::WindowClose),
             ],
         ),
     )])
-        .item_height(ItemHeight::Dynamic(40))
-        .item_width(ItemWidth::Uniform(240))
-        .spacing(4.0)
-        .into()
+    .item_height(ItemHeight::Dynamic(40))
+    .item_width(ItemWidth::Uniform(240))
+    .spacing(4.0)
+    .into()
 }
 
 pub fn key_binds() -> HashMap<KeyBind, Action> {
