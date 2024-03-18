@@ -2,13 +2,16 @@
 
 //! A tree structure for constructing a hierarchical menu
 
+use std::borrow::Cow;
+use std::collections::HashMap;
+
+use iced_widget::core::{renderer, Element};
+use iced_widget::horizontal_rule;
+
+use crate::iced_core::{Alignment, Length};
 use crate::widget::menu::action::MenuAction;
 use crate::widget::menu::key_bind::KeyBind;
 use crate::{theme, widget};
-use iced_widget::core::{renderer, Element};
-use iced_widget::horizontal_rule;
-use std::borrow::Cow;
-use std::collections::HashMap;
 
 /// Nested menu is essentially a tree of items, a menu is a collection of items
 /// a menu itself can also be an item of another menu.
@@ -33,6 +36,7 @@ pub struct MenuTree<'a, Message, Renderer = crate::Renderer> {
     /// The height of the menu tree
     pub(super) height: Option<u16>,
 }
+
 impl<'a, Message, Renderer> MenuTree<'a, Message, Renderer>
 where
     Renderer: renderer::Renderer,
@@ -138,15 +142,14 @@ where
 }
 
 /// This macro creates a button for a MenuTree.
+#[macro_export]
 macro_rules! menu_button {
     ($($x:expr),+ $(,)?) => (
         widget::button(
-            widget::Row::with_children(
-                vec![$(Element::from($x)),+]
-            )
+            widget::Row::with_children(vec![$($x.into()),+])
             .align_items(Alignment::Center)
             .height(Length::Fill)
-            .width(Length::Fill)
+            .width(Length::Fill),
         )
         .height(Length::Fixed(36.0))
         .padding([4, 16])
@@ -160,12 +163,23 @@ macro_rules! menu_button {
 /// - `Action` - Represents a menu item that performs an action when selected.
 ///     - `L` - The label of the menu item.
 ///     - `A` - The action to perform when the menu item is selected, the action must implement the `MenuAction` trait.
-/// - `Separator` - Represents a separator between menu items.
+/// - `CheckBox` - Represents a checkbox menu item.
+///     - `L` - The label of the menu item.
+///     - `bool` - The state of the checkbox.
+///     - `A` - The action to perform when the menu item is selected, the action must implement the `MenuAction` trait.
+/// - `Folder` - Represents a folder menu item.
+///     - `L` - The label of the menu item.
+///     - `Vec<MenuItem<A, L>>` - A vector of menu items.
+/// - `Divider` - Represents a divider between menu items.
 pub enum MenuItem<A: MenuAction, L: Into<Cow<'static, str>>> {
-    /// Represents a menu item that performs an action when selected.
-    Action(L, A),
-    /// Represents a separator between menu items.
-    Separator,
+    /// Represents a button menu item.
+    Button(L, A),
+    /// Represents a checkbox menu item.
+    CheckBox(L, bool, A),
+    /// Represents a folder menu item.
+    Folder(L, Vec<MenuItem<A, L>>),
+    /// Represents a divider between menu items.
+    Divider,
 }
 
 /// Create a root menu item.
@@ -229,29 +243,47 @@ where
         .flat_map(|(i, item)| {
             let mut trees = vec![];
             match item {
-                MenuItem::Action(label, action) => {
+                MenuItem::Button(label, action) => {
                     let key = find_key(&action, key_binds);
-                    let menu_button: iced::Element<'a, Message, crate::Theme, Renderer> =
-                        widget::button::<Message, crate::Theme>(
-                            widget::Row::with_children(vec![
-                                widget::text(label).into(),
-                                widget::horizontal_space(iced_core::Length::Fill).into(),
-                                widget::text(key).into(),
-                            ])
-                            .align_items(iced_core::Alignment::Center)
-                            .height(iced_core::Length::Fill)
-                            .width(iced_core::Length::Fill),
-                        )
-                        .on_press(action.message(None))
-                        .height(iced_core::Length::Fixed(36.0))
-                        .padding([4, 16])
-                        .width(iced_core::Length::Fill)
-                        .style(theme::Button::MenuItem)
-                        .into();
+                    let menu_button = menu_button!(
+                        widget::text(label),
+                        widget::horizontal_space(Length::Fill),
+                        widget::text(key),
+                    )
+                    .on_press(action.message(None));
 
                     trees.push(MenuTree::<Message, Renderer>::new(menu_button));
                 }
-                MenuItem::Separator => {
+                MenuItem::CheckBox(label, value, action) => {
+                    let key = find_key(&action, &key_binds);
+                    trees.push(MenuTree::new(
+                        menu_button!(
+                            if value {
+                                // TODO: add a object-select-symbolic icon, `Message: 'static` is required when using an icon widget.
+                                widget::container(widget::text("✓"))
+                            } else {
+                                widget::container(widget::Space::with_width(Length::Fixed(16.0)))
+                            },
+                            widget::Space::with_width(Length::Fixed(8.0)),
+                            widget::text(label),
+                            widget::horizontal_space(Length::Fill),
+                            widget::text(key)
+                        )
+                        .on_press(action.message(None)),
+                    ));
+                }
+                MenuItem::Folder(label, children) => {
+                    trees.push(MenuTree::<Message, Renderer>::with_children(
+                        menu_button!(
+                            widget::text(label),
+                            widget::horizontal_space(Length::Fill),
+                            // TODO: add a pan-end-symbolic icon, `Message: 'static` is required when using an icon widget.
+                            widget::text("▶"),
+                        ),
+                        menu_items(key_binds, children),
+                    ));
+                }
+                MenuItem::Divider => {
                     if i != size - 1 {
                         trees.push(MenuTree::<Message, Renderer>::new(horizontal_rule(1)));
                     }
