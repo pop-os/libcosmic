@@ -221,6 +221,11 @@ impl Core {
         self.nav_bar_set_toggled_condensed(!self.nav_bar.toggled_condensed);
     }
 
+    pub fn nav_bar_set_toggled(&mut self, toggled: bool) {
+        self.nav_bar.toggled = toggled;
+        self.nav_bar_set_toggled_condensed(self.nav_bar.toggled);
+    }
+
     pub(crate) fn nav_bar_set_toggled_condensed(&mut self, toggled: bool) {
         self.nav_bar.toggled_condensed = toggled;
         self.nav_bar_update();
