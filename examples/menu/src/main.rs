@@ -3,20 +3,21 @@
 
 //! Application API example
 
+use std::{env, process};
+use std::collections::HashMap;
+
+use cosmic::{Element, executor};
 use cosmic::app::{Command, Core, Settings};
 use cosmic::iced::window;
+use cosmic::iced_core::{Length, Size};
 use cosmic::iced_core::alignment::{Horizontal, Vertical};
 use cosmic::iced_core::keyboard::Key;
-use cosmic::iced_core::{Length, Size};
+use cosmic::widget::menu::{ItemHeight, ItemWidth, MenuBar, MenuTree};
 use cosmic::widget::menu::action::MenuAction;
 use cosmic::widget::menu::key_bind::KeyBind;
 use cosmic::widget::menu::key_bind::Modifier;
 use cosmic::widget::menu::menu_tree::{menu_items, menu_root, MenuItem};
-use cosmic::widget::menu::{ItemHeight, ItemWidth, MenuBar, MenuTree};
 use cosmic::widget::segmented_button::Entity;
-use cosmic::{executor, Element};
-use std::collections::HashMap;
-use std::{env, process};
 
 /// Runs application with these settings
 #[rustfmt::skip]
@@ -43,17 +44,24 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 pub enum Message {
     WindowClose,
     WindowNew,
+    ToggleHideContent,
 }
 
 /// The [`App`] stores application-specific state.
 pub struct App {
     core: Core,
+    config: Config,
     key_binds: HashMap<KeyBind, Action>,
+}
+
+pub struct Config {
+    hide_content: bool,
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum Action {
     WindowClose,
+    ToggleHideContent,
     WindowNew,
 }
 
@@ -62,6 +70,7 @@ impl MenuAction for Action {
     fn message(&self, _entity_opt: Option<Entity>) -> Self::Message {
         match self {
             Action::WindowClose => Message::WindowClose,
+            Action::ToggleHideContent => Message::ToggleHideContent,
             Action::WindowNew => Message::WindowNew,
         }
     }
@@ -93,6 +102,7 @@ impl cosmic::Application for App {
     fn init(core: Core, _input: Self::Flags) -> (Self, Command<Self::Message>) {
         let app = App {
             core,
+            config: Config { hide_content: false },
             key_binds: key_binds(),
         };
 
@@ -100,7 +110,7 @@ impl cosmic::Application for App {
     }
 
     fn header_start(&self) -> Vec<Element<Self::Message>> {
-        vec![menu_bar(&self.key_binds)]
+        vec![menu_bar(&self.config, &self.key_binds)]
     }
 
     /// Handle application events here.
@@ -120,13 +130,18 @@ impl cosmic::Application for App {
                     eprintln!("failed to get current executable path: {}", err);
                 }
             },
+            Message::ToggleHideContent => self.config.hide_content = !self.config.hide_content,
         }
         Command::none()
     }
 
     /// Creates a view after each update.
     fn view(&self) -> Element<Self::Message> {
-        let text = cosmic::widget::text("Menu Example");
+        let text = if self.config.hide_content {
+            cosmic::widget::text("")
+        } else {
+            cosmic::widget::text("Menu Example")
+        };
 
         let centered = cosmic::widget::container(text)
             .width(Length::Fill)
@@ -138,7 +153,7 @@ impl cosmic::Application for App {
     }
 }
 
-pub fn menu_bar<'a>(key_binds: &HashMap<KeyBind, Action>) -> Element<'a, Message> {
+pub fn menu_bar<'a>(config: &Config, key_binds: &HashMap<KeyBind, Action>) -> Element<'a, Message> {
     MenuBar::new(vec![MenuTree::with_children(
         menu_root("File"),
         menu_items(
@@ -146,14 +161,25 @@ pub fn menu_bar<'a>(key_binds: &HashMap<KeyBind, Action>) -> Element<'a, Message
             vec![
                 MenuItem::Button("New window", Action::WindowNew),
                 MenuItem::Divider,
+                MenuItem::Folder(
+                    "View",
+                    vec![
+                        MenuItem::CheckBox(
+                            "Hide content",
+                            config.hide_content,
+                            Action::ToggleHideContent,
+                        ),
+                    ],
+                ),
+                MenuItem::Divider,
                 MenuItem::Button("Quit", Action::WindowClose),
             ],
         ),
     )])
-    .item_height(ItemHeight::Dynamic(40))
-    .item_width(ItemWidth::Uniform(240))
-    .spacing(4.0)
-    .into()
+        .item_height(ItemHeight::Dynamic(40))
+        .item_width(ItemWidth::Uniform(240))
+        .spacing(4.0)
+        .into()
 }
 
 pub fn key_binds() -> HashMap<KeyBind, Action> {
