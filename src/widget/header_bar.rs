@@ -111,6 +111,10 @@ pub struct HeaderBarWidget<'a, Message> {
 impl<'a, Message: Clone + 'static> Widget<Message, crate::Theme, crate::Renderer>
     for HeaderBarWidget<'a, Message>
 {
+    fn diff(&mut self, tree: &mut tree::Tree) {
+        tree.diff_children(&mut [&mut self.header_bar_inner]);
+    }
+
     fn children(&self) -> Vec<tree::Tree> {
         vec![tree::Tree::new(&self.header_bar_inner)]
     }
