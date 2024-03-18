@@ -144,9 +144,9 @@ pub fn menu_bar<'a>(key_binds: &HashMap<KeyBind, Action>) -> Element<'a, Message
         menu_items(
             key_binds,
             vec![
-                MenuItem::Action("New window", Action::WindowNew),
-                MenuItem::Separator,
-                MenuItem::Action("Quit", Action::WindowClose),
+                MenuItem::Button("New window", Action::WindowNew),
+                MenuItem::Divider,
+                MenuItem::Button("Quit", Action::WindowClose),
             ],
         ),
     )])
