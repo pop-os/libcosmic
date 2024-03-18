@@ -35,11 +35,7 @@ impl Theme {
         let headerbar_bg = to_hex(background.base);
         let headerbar_fg = to_hex(background.on);
         let headerbar_border_color = to_hex(background.divider);
-        // TODO undefined
-        // headerbar_darker_shade_color
-        // headerbar_shade_color
 
-        // TODO confirm with design
         let sidebar_bg = to_hex(primary.base);
         let sidebar_fg = to_hex(primary.on);
         let sidebar_shade = to_hex(if self.is_dark {
@@ -59,17 +55,11 @@ impl Theme {
         });
         let secondary_sidebar_backdrop = to_hex(over(backdrop_overlay, secondary.base));
 
-        // TODO undefined
         let headerbar_backdrop = to_hex(background.base);
-        // TODO undefined
-        // let headerbar_shade = to_hex(background.base);
 
         let card_bg = to_hex(background.component.base);
         let card_fg = to_hex(background.component.on);
-        // TODO undefined
-        // let card_shade = to_hex(background.component.base);
 
-        // TODO undefined
         let thumbnail_bg = to_hex(background.component.base);
         let thumbnail_fg = to_hex(background.component.on);
 
@@ -85,17 +75,9 @@ impl Theme {
             Rgba::new(0.0, 0.0, 0.0, 0.08)
         });
 
-        // TODO undefined
         let mut inverted_bg_divider = background.base;
         inverted_bg_divider.alpha = 0.5;
         let scrollbar_outline = to_hex(inverted_bg_divider);
-
-        // TODO define currentColor
-        // let borders = to_hex(if self.is_high_contrast {
-        //     Rgba::new(0.0, 0.0, 0.0, 0.2)
-        // } else {
-        //     Rgba::new(0.0, 0.0, 0.0, 0.5)
-        // });
 
         let mut css = format! {r#"
 @define-color window_bg_color #{window_bg};
