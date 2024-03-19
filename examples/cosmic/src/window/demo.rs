@@ -8,7 +8,7 @@ use cosmic::{
     iced_core::id,
     theme::ThemeType,
     widget::{
-        button, color_picker::ColorPickerUpdate, cosmic_container::container, dropdown, icon,
+        button, color_picker::ColorPickerUpdate, dropdown, icon, layer_container as container,
         segmented_button, segmented_control, settings, spin_button, tab_bar, toggler,
         ColorPickerModel,
     },

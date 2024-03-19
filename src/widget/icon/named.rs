@@ -56,43 +56,48 @@ impl Named {
     pub fn path(self) -> Option<PathBuf> {
         let name = &*self.name;
         let fallback = &self.fallback;
+        let locate = |theme: &str, name| {
+            let mut lookup = freedesktop_icons::lookup(name)
+                .with_theme(theme.as_ref())
+                .with_cache();
+
+            if let Some(scale) = self.scale {
+                lookup = lookup.with_scale(scale);
+            }
+
+            if let Some(size) = self.size {
+                lookup = lookup.with_size(size);
+            }
+
+            if self.prefer_svg {
+                lookup = lookup.force_svg();
+            }
+            lookup.find()
+        };
+
         crate::icon_theme::DEFAULT.with(|theme| {
             let theme = theme.borrow();
 
-            let locate = |name| {
-                let mut lookup = freedesktop_icons::lookup(name)
-                    .with_theme(theme.as_ref())
-                    .with_cache();
-
-                if let Some(scale) = self.scale {
-                    lookup = lookup.with_scale(scale);
-                }
-
-                if let Some(size) = self.size {
-                    lookup = lookup.with_size(size);
-                }
-
-                if self.prefer_svg {
-                    lookup = lookup.force_svg();
-                }
-
-                lookup.find()
+            let themes = if theme.as_ref() == crate::icon_theme::COSMIC {
+                vec![theme.as_ref()]
+            } else {
+                vec![theme.as_ref(), crate::icon_theme::COSMIC]
             };
 
-            let mut result = locate(name);
+            let mut result = themes.iter().find_map(|t| locate(t, name));
 
             // On failure, attempt to locate fallback icon.
             if result.is_none() {
                 if matches!(fallback, Some(IconFallback::Default)) {
                     for new_name in name.rmatch_indices('-').map(|(pos, _)| &name[..pos]) {
-                        result = locate(new_name);
+                        result = themes.iter().find_map(|t| locate(t, new_name));
                         if result.is_some() {
                             break;
                         }
                     }
                 } else if let Some(IconFallback::Names(fallbacks)) = fallback {
                     for fallback in fallbacks {
-                        result = locate(fallback);
+                        result = themes.iter().find_map(|t| locate(t, fallback));
                         if result.is_some() {
                             break;
                         }

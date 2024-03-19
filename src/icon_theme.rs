@@ -6,6 +6,8 @@
 use std::borrow::Cow;
 use std::cell::RefCell;
 
+pub const COSMIC: &str = "Cosmic";
+
 thread_local! {
     /// The fallback icon theme to search if no icon theme was specified.
     pub(crate) static DEFAULT: RefCell<Cow<'static, str>> = RefCell::new("Cosmic".into());
