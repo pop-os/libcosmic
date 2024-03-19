@@ -10,7 +10,7 @@ pub const COSMIC: &str = "Cosmic";
 
 thread_local! {
     /// The fallback icon theme to search if no icon theme was specified.
-    pub(crate) static DEFAULT: RefCell<Cow<'static, str>> = RefCell::new("Cosmic".into());
+    pub(crate) static DEFAULT: RefCell<Cow<'static, str>> = RefCell::new(COSMIC.into());
 }
 
 /// The fallback icon theme to search if no icon theme was specified.
