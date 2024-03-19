@@ -621,7 +621,10 @@ impl<App: Application> ApplicationExt for App {
 
     #[cfg(not(any(feature = "multi-window", feature = "wayland")))]
     fn title(&self) -> &str {
-        &self.core().window.header_title
+        self.core()
+            .title
+            .get(&self.main_window_id())
+            .map_or("", |s| s.as_str())
     }
 
     #[cfg(any(feature = "multi-window", feature = "wayland"))]
