@@ -137,10 +137,10 @@ impl Theme {
         css.push_str(&color_css("purple", palette.ext_purple));
         let neutral_steps = steps(palette.neutral_5, NonZeroUsize::new(10).unwrap());
         for (i, c) in neutral_steps[..5].iter().enumerate() {
-            css.push_str(&format!("@define-color light_{i} {};\n", to_hex(*c)));
+            css.push_str(&format!("@define-color light_{i} #{};\n", to_hex(*c)));
         }
         for (i, c) in neutral_steps[5..].iter().enumerate() {
-            css.push_str(&format!("@define-color dark_{i} {};\n", to_hex(*c)));
+            css.push_str(&format!("@define-color dark_{i} #{};\n", to_hex(*c)));
         }
         css
     }
