@@ -39,6 +39,7 @@ pub enum Button {
 pub fn appearance(
     theme: &crate::Theme,
     focused: bool,
+    selected: bool,
     style: &Button,
     color: impl Fn(&Component) -> (Color, Option<Color>, Option<Color>),
 ) -> Appearance {
@@ -86,7 +87,7 @@ pub fn appearance(
             corner_radii = &cosmic.corner_radii.radius_s;
             appearance.border_radius = (*corner_radii).into();
 
-            if focused {
+            if focused || selected {
                 appearance.border_width = 2.0;
                 appearance.border_color = cosmic.accent.base.into();
             }
@@ -153,7 +154,7 @@ impl StyleSheet for crate::Theme {
         }
         let accent = self.cosmic().accent_color();
 
-        appearance(self, focused, style, |component| {
+        appearance(self, focused, selected, style, |component| {
             let text_color = if matches!(
                 style,
                 Button::Icon | Button::IconVertical | Button::HeaderBar
@@ -177,7 +178,7 @@ impl StyleSheet for crate::Theme {
             return disabled(self);
         }
 
-        appearance(self, false, style, |component| {
+        appearance(self, false, false, style, |component| {
             let mut background = Color::from(component.base);
             background.a *= 0.5;
             (
@@ -201,6 +202,7 @@ impl StyleSheet for crate::Theme {
         appearance(
             self,
             focused || matches!(style, Button::Image),
+            selected,
             style,
             |component| {
                 let text_color = if matches!(
@@ -228,7 +230,7 @@ impl StyleSheet for crate::Theme {
         }
         let accent = self.cosmic().accent_button.pressed;
 
-        appearance(self, focused, style, |component| {
+        appearance(self, focused, selected, style, |component| {
             let text_color = if matches!(
                 style,
                 Button::Icon | Button::IconVertical | Button::HeaderBar
