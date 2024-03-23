@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: MPL-2.0
 
 use iced_core::Padding;
+use iced_style::container::StyleSheet;
 
 use crate::{widget::divider, Apply, Element};
 
@@ -13,6 +14,7 @@ pub fn list_column<'a, Message: 'static>() -> ListColumn<'a, Message> {
 pub struct ListColumn<'a, Message> {
     spacing: u16,
     padding: Padding,
+    style: <crate::Theme as StyleSheet>::Style,
     children: Vec<Element<'a, Message>>,
 }
 
@@ -21,6 +23,7 @@ impl<'a, Message: 'static> Default for ListColumn<'a, Message> {
         Self {
             spacing: 12,
             padding: Padding::from(0),
+            style: <crate::Theme as StyleSheet>::Style::default(),
             children: Vec::with_capacity(4),
         }
     }
@@ -46,6 +49,12 @@ impl<'a, Message: 'static> ListColumn<'a, Message> {
         self
     }
 
+    /// Sets the style variant of this [`Circular`].
+    pub fn style(mut self, style: <crate::Theme as StyleSheet>::Style) -> Self {
+        self.style = style;
+        self
+    }
+
     pub fn padding(mut self, padding: impl Into<Padding>) -> Self {
         self.padding = padding.into();
         self
@@ -57,6 +66,7 @@ impl<'a, Message: 'static> ListColumn<'a, Message> {
             .spacing(self.spacing)
             .padding(self.padding)
             .apply(super::container)
+            .style(self.style)
             .into()
     }
 }
