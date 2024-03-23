@@ -23,7 +23,7 @@ impl<'a, Message: 'static> Default for ListColumn<'a, Message> {
         Self {
             spacing: 12,
             padding: Padding::from(0),
-            style: <crate::Theme as StyleSheet>::Style::default(),
+            style: <crate::Theme as StyleSheet>::Style::List,
             children: Vec::with_capacity(4),
         }
     }
