@@ -11,6 +11,7 @@ use iced_core::Color;
 pub enum TextInput {
     #[default]
     Default,
+    EditableText,
     ExpandableSearch,
     Search,
     Inline,
@@ -42,6 +43,22 @@ impl StyleSheet for crate::Theme {
                 border_width: 1.0,
                 border_offset: None,
                 border_color: container.component.divider.into(),
+                icon_color: container.on.into(),
+                text_color: container.on.into(),
+                placeholder_color: {
+                    let color: Color = container.on.into();
+                    color.blend_alpha(background, 0.7)
+                },
+                selected_text_color: palette.on_accent_color().into(),
+                selected_fill: palette.accent_color().into(),
+                label_color: label_color.into(),
+            },
+            TextInput::EditableText => Appearance {
+                background: Color::TRANSPARENT.into(),
+                border_radius: corner.radius_0.into(),
+                border_width: 0.0,
+                border_offset: None,
+                border_color: Color::TRANSPARENT,
                 icon_color: container.on.into(),
                 text_color: container.on.into(),
                 placeholder_color: {
@@ -147,7 +164,7 @@ impl StyleSheet for crate::Theme {
                 selected_fill: palette.accent_color().into(),
                 label_color: label_color.into(),
             },
-            TextInput::Inline => Appearance {
+            TextInput::EditableText | TextInput::Inline => Appearance {
                 background: Color::TRANSPARENT.into(),
                 border_radius: corner.radius_0.into(),
                 border_width: 0.0,
@@ -226,6 +243,22 @@ impl StyleSheet for crate::Theme {
                 selected_fill: palette.accent_color().into(),
                 label_color: label_color.into(),
             },
+            TextInput::EditableText => Appearance {
+                background: Color::TRANSPARENT.into(),
+                border_radius: corner.radius_0.into(),
+                border_width: 0.0,
+                border_offset: None,
+                border_color: Color::TRANSPARENT,
+                icon_color: container.on.into(),
+                text_color: container.on.into(),
+                placeholder_color: {
+                    let color: Color = container.on.into();
+                    color.blend_alpha(background, 0.7)
+                },
+                selected_text_color: palette.on_accent_color().into(),
+                selected_fill: palette.accent_color().into(),
+                label_color: label_color.into(),
+            },
             TextInput::Inline => Appearance {
                 background: Color::from(container.component.hover).into(),
                 border_radius: corner.radius_0.into(),
@@ -280,6 +313,24 @@ impl StyleSheet for crate::Theme {
                 border_offset: Some(2.0),
                 border_color: palette.accent.base.into(),
                 icon_color: container.on.into(),
+                text_color: container.on.into(),
+                placeholder_color: {
+                    let color: Color = container.on.into();
+                    color.blend_alpha(background, 0.7)
+                },
+                selected_text_color: palette.on_accent_color().into(),
+                selected_fill: palette.accent_color().into(),
+                label_color: label_color.into(),
+            },
+            TextInput::EditableText => Appearance {
+                background: Color::TRANSPARENT.into(),
+                border_radius: corner.radius_0.into(),
+                border_width: 0.0,
+                border_offset: None,
+                border_color: Color::TRANSPARENT,
+                icon_color: container.on.into(),
+                // TODO use regular text color here after text rendering handles multiple colors
+                // in this case, for selected and unselected text
                 text_color: container.on.into(),
                 placeholder_color: {
                     let color: Color = container.on.into();
