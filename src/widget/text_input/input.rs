@@ -60,6 +60,27 @@ where
     TextInput::new(placeholder, value)
 }
 
+/// A text label whiich can transform into a text input on activation.
+pub fn editable_input<'a, Message: Clone + 'static>(
+    placeholder: impl Into<Cow<'a, str>>,
+    text: impl Into<Cow<'a, str>>,
+    editing: bool,
+    on_toggle_edit: impl Fn(bool) -> Message + 'a,
+) -> TextInput<'a, Message> {
+    let icon = crate::widget::icon::from_name(if editing {
+        "edit-clear-symbolic"
+    } else {
+        "edit-symbolic"
+    });
+
+    TextInput::new(placeholder, text)
+        .style(crate::theme::TextInput::EditableText)
+        .editable()
+        .editing(editing)
+        .on_toggle_edit(on_toggle_edit)
+        .trailing_icon(icon.size(16).into())
+}
+
 /// Creates a new search [`TextInput`].
 ///
 /// [`TextInput`]: widget::TextInput
@@ -161,6 +182,8 @@ pub struct TextInput<'a, Message> {
     placeholder: Cow<'a, str>,
     value: Value,
     is_secure: bool,
+    is_editable: bool,
+    is_read_only: bool,
     font: Option<<crate::Renderer as iced_core::text::Renderer>::Font>,
     width: Length,
     padding: Padding,
@@ -172,6 +195,7 @@ pub struct TextInput<'a, Message> {
     on_input: Option<Box<dyn Fn(String) -> Message + 'a>>,
     on_paste: Option<Box<dyn Fn(String) -> Message + 'a>>,
     on_submit: Option<Message>,
+    on_toggle_edit: Option<Box<dyn Fn(bool) -> Message + 'a>>,
     leading_icon: Option<Element<'a, Message, crate::Theme, crate::Renderer>>,
     trailing_icon: Option<Element<'a, Message, crate::Theme, crate::Renderer>>,
     style: <crate::Theme as StyleSheet>::Style,
@@ -201,6 +225,8 @@ where
             placeholder: placeholder.into(),
             value: Value::new(v.as_ref()),
             is_secure: false,
+            is_editable: false,
+            is_read_only: false,
             font: None,
             width: Length::Fill,
             padding: [spacing, spacing, spacing, spacing].into(),
@@ -210,6 +236,7 @@ where
             on_input: None,
             on_paste: None,
             on_submit: None,
+            on_toggle_edit: None,
             leading_icon: None,
             trailing_icon: None,
             error: None,
@@ -260,6 +287,16 @@ where
         self
     }
 
+    fn editable(mut self) -> Self {
+        self.is_editable = true;
+        self
+    }
+
+    fn editing(mut self, enable: bool) -> Self {
+        self.is_read_only = !enable;
+        self
+    }
+
     /// Sets the message that should be produced when some text is typed into
     /// the [`TextInput`].
     ///
@@ -282,6 +319,14 @@ where
     /// focused and the enter key is pressed.
     pub fn on_submit_maybe(mut self, message: Option<Message>) -> Self {
         self.on_submit = message;
+        self
+    }
+
+    pub fn on_toggle_edit<F>(mut self, callback: F) -> Self
+    where
+        F: 'a + Fn(bool) -> Message,
+    {
+        self.on_toggle_edit = Some(Box::new(callback));
         self
     }
 
@@ -458,14 +503,14 @@ where
     }
 
     fn state(&self) -> tree::State {
-        tree::State::new(State::new(self.is_secure))
+        tree::State::new(State::new(self.is_secure, self.is_read_only))
     }
 
     fn diff(&mut self, tree: &mut Tree) {
         let state = tree.state.downcast_mut::<State>();
 
         // Unfocus text input if it becomes disabled
-        if self.on_input.is_none() {
+        if self.on_input.is_none() || state.is_read_only {
             state.last_click = None;
             state.is_focused = None;
             state.is_pasting = None;
@@ -500,6 +545,10 @@ where
         {
             state.is_secure = self.is_secure;
             state.dirty = true;
+        }
+
+        if state.is_read_only != self.is_read_only {
+            self.is_read_only = state.is_read_only;
         }
 
         let mut children: Vec<_> = self
@@ -664,68 +713,36 @@ where
         viewport: &Rectangle,
     ) -> event::Status {
         let text_layout = self.text_layout(layout);
-        let mut index = 0;
+        let mut trailing_icon_layout = None;
         let font = self.font.unwrap_or_else(|| renderer.default_font());
         let size = self.size.unwrap_or_else(|| renderer.default_size().0);
         let line_height = self.line_height;
 
-        if let (Some(leading_icon), Some(tree)) =
-            (self.leading_icon.as_mut(), tree.children.get_mut(index))
-        {
-            let mut children = text_layout.children();
-            children.next();
-            let leading_icon_layout = children.next().unwrap();
-
-            if cursor_position.is_over(leading_icon_layout.bounds())
-                || matches!(
-                    event,
-                    Event::Mouse(mouse::Event::CursorMoved { .. } | mouse::Event::CursorLeft)
-                )
+        if self.is_editable {
+            let index = tree.children.len() - 1;
+            if let (Some(trailing_icon), Some(tree)) =
+                (self.trailing_icon.as_mut(), tree.children.get_mut(index))
             {
-                let res = leading_icon.as_widget_mut().on_event(
-                    tree,
-                    event.clone(),
-                    leading_icon_layout,
-                    cursor_position,
-                    renderer,
-                    clipboard,
-                    shell,
-                    viewport,
-                );
-                if res == event::Status::Captured {
-                    return res;
-                }
-            }
-            index += 1;
-        }
-        if let (Some(trailing_icon), Some(tree)) =
-            (self.trailing_icon.as_mut(), tree.children.get_mut(index))
-        {
-            let mut children = text_layout.children();
-            children.next();
-            if self.leading_icon.is_some() {
-                children.next();
-            }
-            let trailing_icon_layout = children.next().unwrap();
+                let children = text_layout.children();
+                trailing_icon_layout = Some(children.last().unwrap());
 
-            if cursor_position.is_over(trailing_icon_layout.bounds())
-                | matches!(
-                    event,
-                    Event::Mouse(mouse::Event::CursorMoved { .. } | mouse::Event::CursorLeft)
-                )
-            {
-                let res = trailing_icon.as_widget_mut().on_event(
-                    tree,
-                    event.clone(),
-                    trailing_icon_layout,
-                    cursor_position,
-                    renderer,
-                    clipboard,
-                    shell,
-                    viewport,
-                );
-                if res == event::Status::Captured {
-                    return res;
+                if let Some(trailing_layout) = trailing_icon_layout {
+                    if cursor_position.is_over(trailing_layout.bounds()) {
+                        let res = trailing_icon.as_widget_mut().on_event(
+                            tree,
+                            event.clone(),
+                            trailing_layout,
+                            cursor_position,
+                            renderer,
+                            clipboard,
+                            shell,
+                            viewport,
+                        );
+
+                        if res == event::Status::Captured {
+                            return res;
+                        }
+                    }
                 }
             }
         }
@@ -733,6 +750,7 @@ where
         update(
             event,
             text_layout.children().next().unwrap(),
+            trailing_icon_layout,
             cursor_position,
             clipboard,
             shell,
@@ -740,9 +758,11 @@ where
             size,
             font,
             self.is_secure,
+            self.is_editable,
             self.on_input.as_deref(),
             self.on_paste.as_deref(),
             &self.on_submit,
+            self.on_toggle_edit.as_deref(),
             || tree.state.downcast_mut::<State>(),
             self.on_create_dnd_source.as_deref(),
             self.dnd_icon,
@@ -1093,6 +1113,7 @@ pub fn layout<Message>(
 pub fn update<'a, Message>(
     event: Event,
     text_layout: Layout<'_>,
+    trailing_icon_layout: Option<Layout<'_>>,
     cursor_position: mouse::Cursor,
     clipboard: &mut dyn Clipboard,
     shell: &mut Shell<'_, Message>,
@@ -1100,9 +1121,11 @@ pub fn update<'a, Message>(
     size: f32,
     font: <crate::Renderer as iced_core::text::Renderer>::Font,
     is_secure: bool,
+    is_editable: bool,
     on_input: Option<&dyn Fn(String) -> Message>,
     on_paste: Option<&dyn Fn(String) -> Message>,
     on_submit: &Option<Message>,
+    on_toggle_edit: Option<&dyn Fn(bool) -> Message>,
     state: impl FnOnce() -> &'a mut State,
     #[allow(unused_variables)] on_start_dnd_source: Option<&dyn Fn(State) -> Message>,
     #[allow(unused_variables)] dnd_icon: bool,
@@ -1132,7 +1155,7 @@ where
             let state = state();
             let is_clicked = cursor_position.is_over(text_layout.bounds()) && on_input.is_some();
 
-            state.is_focused = if is_clicked {
+            state.is_focused = if is_clicked && !state.is_read_only {
                 state.is_focused.or_else(|| {
                     let now = Instant::now();
                     Some(Focus {
@@ -1300,6 +1323,47 @@ where
 
                 return event::Status::Captured;
             }
+
+            if is_editable {
+                if let Some(trailing_layout) = trailing_icon_layout {
+                    let is_trailing_clicked = cursor_position.is_over(trailing_layout.bounds())
+                        && on_toggle_edit.is_some();
+
+                    if is_trailing_clicked {
+                        let Some(pos) = cursor_position.position() else {
+                            return event::Status::Ignored;
+                        };
+
+                        let click = mouse::Click::new(pos, state.last_click);
+
+                        match (
+                            &state.dragging_state,
+                            click.kind(),
+                            state.cursor().state(value),
+                        ) {
+                            (None, click::Kind::Single, _) => {
+                                state.is_read_only = !state.is_read_only;
+                                if let Some(on_toggle_edit) = on_toggle_edit {
+                                    let message = (on_toggle_edit)(!state.is_read_only);
+                                    shell.publish(message);
+
+                                    let now = Instant::now();
+                                    state.is_focused = Some(Focus {
+                                        updated_at: now,
+                                        now,
+                                    });
+
+                                    state.move_cursor_to_end();
+                                    return event::Status::Captured;
+                                }
+                            }
+                            _ => {
+                                state.dragging_state = None;
+                            }
+                        }
+                    }
+                }
+            }
         }
         Event::Mouse(mouse::Event::ButtonReleased(mouse::Button::Left))
         | Event::Touch(touch::Event::FingerLifted { .. } | touch::Event::FingerLost { .. }) => {
@@ -1331,6 +1395,10 @@ where
                 let Some(on_input) = on_input else {
                     return event::Status::Ignored;
                 };
+
+                if state.is_read_only {
+                    return event::Status::Ignored;
+                }
 
                 let modifiers = state.keyboard_modifiers;
                 focus.updated_at = Instant::now();
@@ -2263,6 +2331,7 @@ pub struct State {
     pub helper_text: crate::Paragraph,
     pub dirty: bool,
     pub is_secure: bool,
+    pub is_read_only: bool,
     is_focused: Option<Focus>,
     dragging_state: Option<DraggingState>,
     #[cfg(feature = "wayland")]
@@ -2282,9 +2351,10 @@ struct Focus {
 
 impl State {
     /// Creates a new [`State`], representing an unfocused [`TextInput`].
-    pub fn new(is_secure: bool) -> Self {
+    pub fn new(is_secure: bool, is_read_only: bool) -> Self {
         Self {
             is_secure,
+            is_read_only,
             ..Self::default()
         }
     }
@@ -2314,14 +2384,14 @@ impl State {
     }
 
     /// Creates a new [`State`], representing a focused [`TextInput`].
-    pub fn focused(is_secure: bool) -> Self {
+    pub fn focused(is_secure: bool, is_read_only: bool) -> Self {
         Self {
             is_secure,
             value: crate::Paragraph::new(),
             placeholder: crate::Paragraph::new(),
             label: crate::Paragraph::new(),
             helper_text: crate::Paragraph::new(),
-
+            is_read_only,
             is_focused: None,
             dragging_state: None,
             #[cfg(feature = "wayland")]
