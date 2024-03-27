@@ -118,29 +118,37 @@ impl Context {
     }
 
     #[must_use]
-    pub fn icon_button<'a, Message: 'static>(
+    pub fn icon_button_from_handle<'a, Message: 'static>(
         &self,
-        icon_name: &'a str,
+        icon: widget::icon::Handle,
     ) -> crate::widget::Button<'a, Message, crate::Theme, Renderer> {
         let suggested = self.suggested_size();
         let applet_padding = self.suggested_padding();
         crate::widget::button(
-            widget::icon(
-                widget::icon::from_name(icon_name)
-                    .symbolic(true)
-                    .size(self.suggested_size().0)
-                    .into(),
-            )
-            .style(theme::Svg::Custom(Rc::new(|theme| {
-                crate::iced_style::svg::Appearance {
-                    color: Some(theme.cosmic().background.on.into()),
-                }
-            })))
-            .width(Length::Fixed(suggested.0 as f32))
-            .height(Length::Fixed(suggested.1 as f32)),
+            widget::icon(icon)
+                .style(theme::Svg::Custom(Rc::new(|theme| {
+                    crate::iced_style::svg::Appearance {
+                        color: Some(theme.cosmic().background.on.into()),
+                    }
+                })))
+                .width(Length::Fixed(suggested.0 as f32))
+                .height(Length::Fixed(suggested.1 as f32)),
         )
         .padding(applet_padding)
         .style(Button::AppletIcon)
+    }
+
+    #[must_use]
+    pub fn icon_button<'a, Message: 'static>(
+        &self,
+        icon_name: &'a str,
+    ) -> crate::widget::Button<'a, Message, crate::Theme, Renderer> {
+        self.icon_button_from_handle(
+            widget::icon::from_name(icon_name)
+                .symbolic(true)
+                .size(self.suggested_size().0)
+                .into(),
+        )
     }
 
     // TODO popup container which tracks the size of itself and requests the popup to resize to match
