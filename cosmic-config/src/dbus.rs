@@ -28,7 +28,7 @@ impl Watcher {
         version: u64,
     ) -> zbus::Result<Self> {
         let (path, name) = settings_daemon_proxy.watch_config(id, version).await?;
-        ConfigProxy::builder(settings_daemon_proxy.connection())
+        ConfigProxy::builder(settings_daemon_proxy.inner().connection())
             .path(path)?
             .destination(name)?
             .build()
@@ -42,7 +42,7 @@ impl Watcher {
         version: u64,
     ) -> zbus::Result<Self> {
         let (path, name) = settings_daemon_proxy.watch_state(id, version).await?;
-        ConfigProxy::builder(settings_daemon_proxy.connection())
+        ConfigProxy::builder(settings_daemon_proxy.inner().connection())
             .path(path)?
             .destination(name)?
             .build()
