@@ -401,7 +401,7 @@ where
     type Flags;
 
     /// Message type specific to our app.
-    type Message: Clone + std::fmt::Debug + Send + 'static;
+    type Message: Clone + std::fmt::Debug + Send + Sync + 'static;
 
     /// An ID that uniquely identifies the application.
     /// The standard is to pick an ID based on a reverse-domain name notation.
