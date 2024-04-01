@@ -4,7 +4,7 @@
 use crate::{ext::CollectionWidget, widget, Element};
 use apply::Apply;
 use derive_setters::Setters;
-use iced::{window, Length};
+use iced::Length;
 use iced_core::{widget::tree, Widget};
 use std::borrow::Cow;
 
@@ -231,6 +231,23 @@ impl<'a, Message: Clone + 'static> Widget<Message, crate::Theme, crate::Renderer
         self.header_bar_inner
             .as_widget_mut()
             .overlay(child_tree, child_layout, renderer)
+    }
+
+    fn drag_destinations(
+        &self,
+        state: &tree::Tree,
+        layout: iced_core::Layout<'_>,
+        dnd_rectangles: &mut iced_style::core::clipboard::DndDestinationRectangles,
+    ) {
+        if let Some((child_tree, child_layout)) =
+            state.children.iter().zip(layout.children()).next()
+        {
+            self.header_bar_inner.as_widget().drag_destinations(
+                child_tree,
+                child_layout,
+                dnd_rectangles,
+            );
+        }
     }
 }
 
