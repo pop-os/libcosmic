@@ -291,6 +291,16 @@ where
     ) -> Option<overlay::Element<'b, Message, crate::Theme, Renderer>> {
         self.container.overlay(tree, layout, renderer)
     }
+
+    fn drag_destinations(
+        &self,
+        state: &Tree,
+        layout: Layout<'_>,
+        dnd_rectangles: &mut iced_style::core::clipboard::DndDestinationRectangles,
+    ) {
+        self.container
+            .drag_destinations(state, layout, dnd_rectangles);
+    }
 }
 
 impl<'a, Message, Renderer, I> From<RectangleTrackingContainer<'a, Message, Renderer, I>>

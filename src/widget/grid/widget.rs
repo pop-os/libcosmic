@@ -263,6 +263,23 @@ impl<'a, Message: 'static + Clone> Widget<Message, crate::Theme, Renderer> for G
                 .map(|((c, c_layout), state)| c.as_widget().a11y_nodes(c_layout, state, p)),
         )
     }
+
+    fn drag_destinations(
+        &self,
+        state: &Tree,
+        layout: Layout<'_>,
+        dnd_rectangles: &mut iced_style::core::clipboard::DndDestinationRectangles,
+    ) {
+        for ((e, layout), state) in self
+            .children
+            .iter()
+            .zip(layout.children())
+            .zip(state.children.iter())
+        {
+            e.as_widget()
+                .drag_destinations(state, layout, dnd_rectangles);
+        }
+    }
 }
 
 impl<'a, Message: 'static + Clone> From<Grid<'a, Message>> for Element<'a, Message> {
