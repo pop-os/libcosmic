@@ -209,6 +209,17 @@ where
                 .overlay(&mut tree.children[0], layout, renderer)
         }
     }
+
+    fn drag_destinations(
+        &self,
+        tree: &Tree,
+        layout: Layout<'_>,
+        dnd_rectangles: &mut iced_core::clipboard::DndDestinationRectangles,
+    ) {
+        self.content
+            .as_widget()
+            .drag_destinations(&tree.children[0], layout, dnd_rectangles);
+    }
 }
 
 impl<'a, Message, Renderer> From<Popover<'a, Message, Renderer>>
