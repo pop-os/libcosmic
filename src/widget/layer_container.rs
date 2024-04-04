@@ -261,6 +261,14 @@ where
         self.container
             .drag_destinations(state, layout, dnd_rectangles);
     }
+
+    fn id(&self) -> Option<crate::widget::Id> {
+        Widget::id(&self.container)
+    }
+
+    fn set_id(&mut self, id: crate::widget::Id) {
+        self.container.set_id(id);
+    }
 }
 
 impl<'a, Message, Theme, Renderer> From<LayerContainer<'a, Message, Theme, Renderer>>

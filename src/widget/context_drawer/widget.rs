@@ -12,7 +12,7 @@ use iced_core::alignment;
 use iced_core::event::{self, Event};
 use iced_core::widget::{Operation, Tree};
 use iced_core::{
-    layout, mouse, overlay as iced_overlay, renderer, Clipboard, Color, Layout, Length, Padding,
+    layout, mouse, overlay as iced_overlay, renderer, Clipboard, Layout, Length, Padding,
     Rectangle, Shell, Widget,
 };
 
@@ -20,6 +20,7 @@ use iced_renderer::core::widget::OperationOutputWrapper;
 
 #[must_use]
 pub struct ContextDrawer<'a, Message> {
+    id: Option<iced_core::widget::Id>,
     content: Element<'a, Message>,
     drawer: Element<'a, Message>,
     on_close: Option<Message>,
@@ -80,6 +81,7 @@ impl<'a, Message: Clone + 'static> ContextDrawer<'a, Message> {
             );
 
         ContextDrawer {
+            id: None,
             content: content.into(),
             // XXX new limits do not exactly handle the max width well for containers
             // XXX this is a hack to get around that
@@ -97,6 +99,12 @@ impl<'a, Message: Clone + 'static> ContextDrawer<'a, Message> {
             .into(),
             on_close: None,
         }
+    }
+
+    /// Sets the [`Id`] of the [`ContextDrawer`].
+    pub fn id(mut self, id: iced_core::widget::Id) -> Self {
+        self.id = Some(id);
+        self
     }
 
     // Optionally assigns message to `on_close` event.
@@ -232,6 +240,25 @@ impl<'a, Message: Clone> Widget<Message, crate::Theme, Renderer> for ContextDraw
         let c_layout = layout.children().next().unwrap();
         let c_state = &state.children[0];
         self.content.as_widget().a11y_nodes(c_layout, c_state, p)
+    }
+
+    fn drag_destinations(
+        &self,
+        state: &Tree,
+        layout: Layout<'_>,
+        dnd_rectangles: &mut iced_core::clipboard::DndDestinationRectangles,
+    ) {
+        self.content
+            .as_widget()
+            .drag_destinations(&state.children[0], layout, dnd_rectangles);
+    }
+
+    fn id(&self) -> Option<iced_core::widget::Id> {
+        self.id.clone()
+    }
+
+    fn set_id(&mut self, id: iced_core::widget::Id) {
+        self.id = Some(id);
     }
 }
 
