@@ -12,7 +12,7 @@ use crate::{
     },
     iced_style, iced_widget,
     theme::{self, Button, THEME},
-    widget, Application, Element, Renderer,
+    widget::{self, icon::Handle}, Application, Element, Renderer,
 };
 pub use cosmic_panel_config;
 use cosmic_panel_config::{CosmicPanelBackground, PanelAnchor, PanelSize};
@@ -130,6 +130,29 @@ impl Context {
                     .symbolic(true)
                     .size(self.suggested_size().0)
                     .into(),
+            )
+            .style(theme::Svg::Custom(Rc::new(|theme| {
+                crate::iced_style::svg::Appearance {
+                    color: Some(theme.cosmic().background.on.into()),
+                }
+            })))
+            .width(Length::Fixed(suggested.0 as f32))
+            .height(Length::Fixed(suggested.1 as f32)),
+        )
+        .padding(applet_padding)
+        .style(Button::AppletIcon)
+    }
+
+    #[must_use]
+    pub fn icon_button_with_handle<'a, Message: 'static>(
+        &self,
+        handle: Handle,
+    ) -> crate::widget::Button<'a, Message, crate::Theme, Renderer> {
+        let suggested = self.suggested_size();
+        let applet_padding = self.suggested_padding();
+        crate::widget::button(
+            widget::icon(
+                    handle,
             )
             .style(theme::Svg::Custom(Rc::new(|theme| {
                 crate::iced_style::svg::Appearance {
