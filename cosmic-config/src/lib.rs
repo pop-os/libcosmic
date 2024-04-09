@@ -12,6 +12,7 @@ use std::{
 
 #[cfg(feature = "subscription")]
 mod subscription;
+#[cfg(feature = "subscription")]
 pub use subscription::*;
 
 #[cfg(all(feature = "dbus", feature = "subscription"))]
@@ -166,6 +167,24 @@ impl Config {
         // Return Config
         Ok(Self {
             system_path,
+            user_path: Some(user_path),
+        })
+    }
+
+    /// Get config for the given application name and config version and custom path.
+    pub fn with_custom_path(name: &str, version: u64, custom_path: PathBuf) -> Result<Self, Error> {
+        // Look for [name]/v[version]
+        let path = sanitize_name(name)?.join(format!("v{version}"));
+
+        let cosmic_user_path = custom_path.join("cosmic");
+
+        let user_path = cosmic_user_path.join(path);
+        // Create new configuration directory if not found.
+        fs::create_dir_all(&user_path)?;
+
+        // Return Config
+        Ok(Self {
+            system_path: None,
             user_path: Some(user_path),
         })
     }
