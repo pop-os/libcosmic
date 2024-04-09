@@ -372,6 +372,7 @@ where
         button: Entity,
     ) -> (f32, f32) {
         let mut width = 0.0f32;
+        let mut icon_spacing = 0.0f32;
 
         // Add text to measurement if text was given.
         if let Some((text, entry)) = self
@@ -380,21 +381,24 @@ where
             .get(button)
             .zip(state.paragraphs.entry(button))
         {
-            let paragraph = entry.or_insert_with(|| {
-                crate::Paragraph::with_text(Text {
-                    content: text,
-                    size: iced::Pixels(self.font_size),
-                    bounds: Size::INFINITY,
-                    font,
-                    horizontal_alignment: alignment::Horizontal::Left,
-                    vertical_alignment: alignment::Vertical::Center,
-                    shaping: Shaping::Advanced,
-                    line_height: self.line_height,
-                })
-            });
+            if !text.is_empty() {
+                icon_spacing = f32::from(self.button_spacing);
+                let paragraph = entry.or_insert_with(|| {
+                    crate::Paragraph::with_text(Text {
+                        content: text,
+                        size: iced::Pixels(self.font_size),
+                        bounds: Size::INFINITY,
+                        font,
+                        horizontal_alignment: alignment::Horizontal::Left,
+                        vertical_alignment: alignment::Vertical::Center,
+                        shaping: Shaping::Advanced,
+                        line_height: self.line_height,
+                    })
+                });
 
-            let size = paragraph.min_bounds();
-            width += size.width;
+                let size = paragraph.min_bounds();
+                width += size.width;
+            }
         }
 
         // Add indent to measurement if found.
@@ -404,11 +408,11 @@ where
 
         // Add icon to measurement if icon was given.
         if let Some(icon) = self.model.icon(button) {
-            width += f32::from(icon.size) + f32::from(self.button_spacing);
+            width += f32::from(icon.size) + icon_spacing;
         } else if self.model.is_active(button) {
             // Add selection icon measurements when widget is a selection widget.
             if let crate::theme::SegmentedButton::Control = self.style {
-                width += 16.0 + f32::from(self.button_spacing);
+                width += 16.0 + icon_spacing;
             }
         }
 
@@ -1313,9 +1317,9 @@ where
                 - close_icon_width
                 - f32::from(self.button_padding[2]);
 
-            if self.model.text(key).is_some() {
-                bounds.y = center_y;
+            bounds.y = center_y;
 
+            if self.model.text(key).is_some_and(|text| !text.is_empty()) {
                 // Draw the text for this segmented button or tab.
                 renderer.fill_paragraph(
                     &state.paragraphs[key],
