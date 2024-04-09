@@ -2136,6 +2136,7 @@ pub fn draw<'a, Message>(
         } else {
             appearance.text_color
         };
+
         renderer.fill_text(
             Text {
                 content: if text.is_empty() { placeholder } else { &text },
@@ -2153,13 +2154,9 @@ pub fn draw<'a, Message>(
         );
     };
 
-    if text_width > text_bounds.width {
-        renderer.with_layer(text_bounds, |renderer| {
-            renderer.with_translation(Vector::new(-offset, 0.0), render);
-        });
-    } else {
-        render(renderer);
-    }
+    renderer.with_layer(text_bounds, |renderer| {
+        renderer.with_translation(Vector::new(-offset, 0.0), render);
+    });
 
     let trailing_icon_tree = children.get(child_index);
 
