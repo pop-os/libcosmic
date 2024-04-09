@@ -1,0 +1,644 @@
+use std::borrow::Cow;
+
+use crate::{
+    iced::{
+        clipboard::{
+            dnd::{self, DndAction, DndDestinationRectangle, DndEvent, OfferEvent},
+            mime::AllowedMimeTypes,
+        },
+        event,
+        id::Internal,
+        mouse, overlay, Event, Length, Rectangle,
+    },
+    iced_core::{
+        self, layout,
+        widget::{tree, Tree},
+        Clipboard, Shell,
+    },
+    widget::{Id, Widget},
+    Element,
+};
+
+pub fn dnd_destination<'a, Message: 'static>(
+    child: impl Into<Element<'a, Message>>,
+    mimes: Vec<Cow<'static, str>>,
+) -> DndDestination<'a, Message> {
+    DndDestination::new(child, mimes)
+}
+
+pub fn dnd_destination_for_data<T: AllowedMimeTypes, Message: 'static>(
+    child: impl Into<Element<'static, Message>>,
+    on_finish: impl Fn(Option<T>, DndAction) -> Message + 'static,
+) -> DndDestination<'static, Message> {
+    DndDestination::for_data(child, on_finish)
+}
+
+pub struct DndDestination<'a, Message> {
+    id: Id,
+    drag_id: Option<u64>,
+    preferred_action: DndAction,
+    action: DndAction,
+    container: Element<'a, Message>,
+    mime_types: Vec<Cow<'static, str>>,
+    forward_drag_as_cursor: bool,
+    on_hold: Option<Box<dyn Fn(f64, f64) -> Message>>,
+    on_drop: Option<Box<dyn Fn(f64, f64) -> Message>>,
+    on_enter: Option<Box<dyn Fn(f64, f64, Vec<String>) -> Message>>,
+    on_leave: Option<Box<dyn Fn() -> Message>>,
+    on_motion: Option<Box<dyn Fn(f64, f64) -> Message>>,
+    on_action_selected: Option<Box<dyn Fn(DndAction) -> Message>>,
+    on_data_received: Option<Box<dyn Fn(String, Vec<u8>) -> Message>>,
+    on_finish: Option<Box<dyn Fn(String, Vec<u8>, DndAction, f64, f64) -> Message>>,
+}
+
+impl<'a, Message: 'static> DndDestination<'a, Message> {
+    pub fn new(child: impl Into<Element<'a, Message>>, mimes: Vec<Cow<'static, str>>) -> Self {
+        Self {
+            id: Id::unique(),
+            drag_id: None,
+            mime_types: mimes,
+            preferred_action: DndAction::Move,
+            action: DndAction::Copy | DndAction::Move,
+            container: child.into(),
+            forward_drag_as_cursor: false,
+            on_hold: None,
+            on_drop: None,
+            on_enter: None,
+            on_leave: None,
+            on_motion: None,
+            on_action_selected: None,
+            on_data_received: None,
+            on_finish: None,
+        }
+    }
+
+    pub fn for_data<T: AllowedMimeTypes>(
+        child: impl Into<Element<'a, Message>>,
+        on_finish: impl Fn(Option<T>, DndAction) -> Message + 'static,
+    ) -> Self {
+        Self {
+            id: Id::unique(),
+            drag_id: None,
+            mime_types: T::allowed().iter().cloned().map(Cow::Owned).collect(),
+            preferred_action: DndAction::Move,
+            action: DndAction::Copy | DndAction::Move,
+            container: child.into(),
+            forward_drag_as_cursor: false,
+            on_hold: None,
+            on_drop: None,
+            on_enter: None,
+            on_leave: None,
+            on_motion: None,
+            on_action_selected: None,
+            on_data_received: None,
+            on_finish: Some(Box::new(move |mime, data, action, _, _| {
+                on_finish(T::try_from((data, mime)).ok(), action)
+            })),
+        }
+    }
+
+    #[must_use]
+    pub fn data_received_for<T: AllowedMimeTypes>(
+        mut self,
+        f: impl Fn(Option<T>) -> Message + 'static,
+    ) -> Self {
+        self.on_data_received = Some(Box::new(
+            move |mime, data| f(T::try_from((data, mime)).ok()),
+        ));
+        self
+    }
+
+    pub fn with_id(
+        child: impl Into<Element<'a, Message>>,
+        id: Id,
+        mimes: Vec<Cow<'static, str>>,
+    ) -> Self {
+        Self {
+            id,
+            drag_id: None,
+            mime_types: mimes,
+            preferred_action: DndAction::Move,
+            action: DndAction::Copy | DndAction::Move,
+            container: child.into(),
+            forward_drag_as_cursor: false,
+            on_hold: None,
+            on_drop: None,
+            on_enter: None,
+            on_leave: None,
+            on_motion: None,
+            on_action_selected: None,
+            on_data_received: None,
+            on_finish: None,
+        }
+    }
+
+    #[must_use]
+    pub fn drag_id(mut self, id: u64) -> Self {
+        self.drag_id = Some(id);
+        self
+    }
+
+    #[must_use]
+    pub fn action(mut self, action: DndAction) -> Self {
+        self.action = action;
+        self
+    }
+
+    #[must_use]
+    pub fn preferred_action(mut self, action: DndAction) -> Self {
+        self.preferred_action = action;
+        self
+    }
+
+    #[must_use]
+    pub fn forward_drag_as_cursor(mut self, forward: bool) -> Self {
+        self.forward_drag_as_cursor = forward;
+        self
+    }
+
+    #[must_use]
+    pub fn on_hold(mut self, f: impl Fn(f64, f64) -> Message + 'static) -> Self {
+        self.on_hold = Some(Box::new(f));
+        self
+    }
+
+    #[must_use]
+    pub fn on_drop(mut self, f: impl Fn(f64, f64) -> Message + 'static) -> Self {
+        self.on_drop = Some(Box::new(f));
+        self
+    }
+
+    #[must_use]
+    pub fn on_enter(mut self, f: impl Fn(f64, f64, Vec<String>) -> Message + 'static) -> Self {
+        self.on_enter = Some(Box::new(f));
+        self
+    }
+
+    #[must_use]
+    pub fn on_leave(mut self, m: impl Fn() -> Message + 'static) -> Self {
+        self.on_leave = Some(Box::new(m));
+        self
+    }
+
+    #[must_use]
+    pub fn on_finish(
+        mut self,
+        f: impl Fn(String, Vec<u8>, DndAction, f64, f64) -> Message + 'static,
+    ) -> Self {
+        self.on_finish = Some(Box::new(f));
+        self
+    }
+
+    #[must_use]
+    pub fn on_motion(mut self, f: impl Fn(f64, f64) -> Message + 'static) -> Self {
+        self.on_motion = Some(Box::new(f));
+        self
+    }
+
+    #[must_use]
+    pub fn on_action_selected(mut self, f: impl Fn(DndAction) -> Message + 'static) -> Self {
+        self.on_action_selected = Some(Box::new(f));
+        self
+    }
+
+    #[must_use]
+    pub fn on_data_received(mut self, f: impl Fn(String, Vec<u8>) -> Message + 'static) -> Self {
+        self.on_data_received = Some(Box::new(f));
+        self
+    }
+
+    /// Returns the drag id of the destination.
+    ///
+    /// # Panics
+    /// Panics if the destination has been assigned a Set id, which is invalid.
+    #[must_use]
+    pub fn get_drag_id(&self) -> u128 {
+        u128::from(self.drag_id.unwrap_or_else(|| match &self.id.0 {
+            Internal::Unique(id) | Internal::Custom(id, _) => *id,
+            Internal::Set(_) => panic!("Invalid Id assigned to dnd destination."),
+        }))
+    }
+}
+
+impl<'a, Message: 'static> Widget<Message, crate::Theme, crate::Renderer>
+    for DndDestination<'a, Message>
+{
+    fn children(&self) -> Vec<Tree> {
+        vec![Tree::new(&self.container)]
+    }
+
+    fn tag(&self) -> iced_core::widget::tree::Tag {
+        tree::Tag::of::<State>()
+    }
+
+    fn diff(&mut self, tree: &mut Tree) {
+        self.container.as_widget_mut().diff(&mut tree.children[0]);
+    }
+
+    fn state(&self) -> iced_core::widget::tree::State {
+        tree::State::new(State::new())
+    }
+
+    fn size(&self) -> iced_core::Size<Length> {
+        self.container.as_widget().size()
+    }
+
+    fn layout(
+        &self,
+        tree: &mut Tree,
+        renderer: &crate::Renderer,
+        limits: &layout::Limits,
+    ) -> layout::Node {
+        self.container
+            .as_widget()
+            .layout(&mut tree.children[0], renderer, limits)
+    }
+
+    fn operate(
+        &self,
+        tree: &mut Tree,
+        layout: layout::Layout<'_>,
+        renderer: &crate::Renderer,
+        operation: &mut dyn iced_core::widget::Operation<
+            iced_core::widget::OperationOutputWrapper<Message>,
+        >,
+    ) {
+        self.container
+            .as_widget()
+            .operate(&mut tree.children[0], layout, renderer, operation);
+    }
+
+    #[allow(clippy::too_many_lines)]
+    fn on_event(
+        &mut self,
+        tree: &mut Tree,
+        event: Event,
+        layout: layout::Layout<'_>,
+        cursor: mouse::Cursor,
+        renderer: &crate::Renderer,
+        clipboard: &mut dyn Clipboard,
+        shell: &mut Shell<'_, Message>,
+        viewport: &Rectangle,
+    ) -> event::Status {
+        let s = self.container.as_widget_mut().on_event(
+            &mut tree.children[0],
+            event.clone(),
+            layout,
+            cursor,
+            renderer,
+            clipboard,
+            shell,
+            viewport,
+        );
+        if matches!(s, event::Status::Captured) {
+            return event::Status::Captured;
+        }
+
+        let state = tree.state.downcast_mut::<State>();
+
+        let my_id = self.get_drag_id();
+
+        match event {
+            Event::Dnd(DndEvent::Offer(
+                id,
+                OfferEvent::Enter {
+                    x, y, mime_types, ..
+                },
+            )) if id == Some(my_id) => {
+                if let Some(msg) = state.on_enter(
+                    x,
+                    y,
+                    mime_types,
+                    self.on_enter.as_ref().map(std::convert::AsRef::as_ref),
+                ) {
+                    shell.publish(msg);
+                }
+                if self.forward_drag_as_cursor {
+                    #[allow(clippy::cast_possible_truncation)]
+                    let drag_cursor = mouse::Cursor::Available((x as f32, y as f32).into());
+                    let event = Event::Mouse(mouse::Event::CursorMoved {
+                        position: drag_cursor.position().unwrap(),
+                    });
+                    self.container.as_widget_mut().on_event(
+                        &mut tree.children[0],
+                        event,
+                        layout,
+                        drag_cursor,
+                        renderer,
+                        clipboard,
+                        shell,
+                        viewport,
+                    );
+                }
+                return event::Status::Captured;
+            }
+            Event::Dnd(DndEvent::Offer(id, OfferEvent::Leave)) if id == Some(my_id) => {
+                state.on_leave(self.on_leave.as_ref().map(std::convert::AsRef::as_ref));
+
+                if self.forward_drag_as_cursor {
+                    let drag_cursor = mouse::Cursor::Unavailable;
+                    let event = Event::Mouse(mouse::Event::CursorLeft);
+                    self.container.as_widget_mut().on_event(
+                        &mut tree.children[0],
+                        event,
+                        layout,
+                        drag_cursor,
+                        renderer,
+                        clipboard,
+                        shell,
+                        viewport,
+                    );
+                }
+                return event::Status::Captured;
+            }
+            Event::Dnd(DndEvent::Offer(id, OfferEvent::Motion { x, y })) if id == Some(my_id) => {
+                if let Some(msg) = state.on_motion(
+                    x,
+                    y,
+                    self.on_motion.as_ref().map(std::convert::AsRef::as_ref),
+                    self.on_enter.as_ref().map(std::convert::AsRef::as_ref),
+                ) {
+                    shell.publish(msg);
+                }
+
+                if self.forward_drag_as_cursor {
+                    #[allow(clippy::cast_possible_truncation)]
+                    let drag_cursor = mouse::Cursor::Available((x as f32, y as f32).into());
+                    let event = Event::Mouse(mouse::Event::CursorMoved {
+                        position: drag_cursor.position().unwrap(),
+                    });
+                    self.container.as_widget_mut().on_event(
+                        &mut tree.children[0],
+                        event,
+                        layout,
+                        drag_cursor,
+                        renderer,
+                        clipboard,
+                        shell,
+                        viewport,
+                    );
+                }
+                return event::Status::Captured;
+            }
+            Event::Dnd(DndEvent::Offer(id, OfferEvent::LeaveDestination)) if id == Some(my_id) => {
+                if let Some(msg) =
+                    state.on_leave(self.on_leave.as_ref().map(std::convert::AsRef::as_ref))
+                {
+                    shell.publish(msg);
+                }
+                return event::Status::Captured;
+            }
+            Event::Dnd(DndEvent::Offer(id, OfferEvent::Drop)) if id == Some(my_id) => {
+                if let Some(msg) =
+                    state.on_drop(self.on_drop.as_ref().map(std::convert::AsRef::as_ref))
+                {
+                    shell.publish(msg);
+                }
+                return event::Status::Captured;
+            }
+            Event::Dnd(DndEvent::Offer(id, OfferEvent::SelectedAction(action)))
+                if id == Some(my_id) =>
+            {
+                if let Some(msg) = state.on_action_selected(
+                    action,
+                    self.on_action_selected
+                        .as_ref()
+                        .map(std::convert::AsRef::as_ref),
+                ) {
+                    shell.publish(msg);
+                }
+                return event::Status::Captured;
+            }
+            Event::Dnd(DndEvent::Offer(id, OfferEvent::Data { data, mime_type }))
+                if id == Some(my_id) =>
+            {
+                if let (Some(msg), ret) = state.on_data_received(
+                    mime_type,
+                    data,
+                    self.on_data_received
+                        .as_ref()
+                        .map(std::convert::AsRef::as_ref),
+                    self.on_finish.as_ref().map(std::convert::AsRef::as_ref),
+                ) {
+                    shell.publish(msg);
+                    return ret;
+                }
+                return event::Status::Captured;
+            }
+            _ => {}
+        }
+        event::Status::Ignored
+    }
+
+    fn mouse_interaction(
+        &self,
+        tree: &Tree,
+        layout: layout::Layout<'_>,
+        cursor_position: mouse::Cursor,
+        viewport: &Rectangle,
+        renderer: &crate::Renderer,
+    ) -> mouse::Interaction {
+        self.container.as_widget().mouse_interaction(
+            &tree.children[0],
+            layout,
+            cursor_position,
+            viewport,
+            renderer,
+        )
+    }
+
+    fn draw(
+        &self,
+        tree: &Tree,
+        renderer: &mut crate::Renderer,
+        theme: &crate::Theme,
+        renderer_style: &iced_core::renderer::Style,
+        layout: layout::Layout<'_>,
+        cursor_position: mouse::Cursor,
+        viewport: &Rectangle,
+    ) {
+        self.container.as_widget().draw(
+            &tree.children[0],
+            renderer,
+            theme,
+            renderer_style,
+            layout,
+            cursor_position,
+            viewport,
+        );
+    }
+
+    fn overlay<'b>(
+        &'b mut self,
+        tree: &'b mut Tree,
+        layout: layout::Layout<'_>,
+        renderer: &crate::Renderer,
+    ) -> Option<overlay::Element<'b, Message, crate::Theme, crate::Renderer>> {
+        self.container
+            .as_widget_mut()
+            .overlay(&mut tree.children[0], layout, renderer)
+    }
+
+    fn drag_destinations(
+        &self,
+        state: &Tree,
+        layout: layout::Layout<'_>,
+        dnd_rectangles: &mut iced_core::clipboard::DndDestinationRectangles,
+    ) {
+        let bounds = layout.bounds();
+        let my_id = self.get_drag_id();
+        let my_dest = DndDestinationRectangle {
+            id: my_id,
+            rectangle: dnd::Rectangle {
+                x: f64::from(bounds.x),
+                y: f64::from(bounds.y),
+                width: f64::from(bounds.width),
+                height: f64::from(bounds.height),
+            },
+            mime_types: self.mime_types.clone(),
+            actions: self.action,
+            preferred: self.preferred_action,
+        };
+        dnd_rectangles.push(my_dest);
+
+        self.container
+            .as_widget()
+            .drag_destinations(&state.children[0], layout, dnd_rectangles);
+    }
+
+    fn id(&self) -> Option<Id> {
+        Some(self.id.clone())
+    }
+
+    fn set_id(&mut self, id: Id) {
+        self.id = id;
+    }
+}
+
+#[derive(Default)]
+pub struct State {
+    pub drag_offer: Option<DragOffer>,
+}
+
+pub struct DragOffer {
+    pub x: f64,
+    pub y: f64,
+    pub dropped: bool,
+    pub selected_action: DndAction,
+}
+
+impl State {
+    #[must_use]
+    pub fn new() -> Self {
+        Self { drag_offer: None }
+    }
+
+    pub fn on_enter<Message>(
+        &mut self,
+        x: f64,
+        y: f64,
+        mime_types: Vec<String>,
+        on_enter: Option<&dyn Fn(f64, f64, Vec<String>) -> Message>,
+    ) -> Option<Message> {
+        self.drag_offer = Some(DragOffer {
+            x,
+            y,
+            dropped: false,
+            selected_action: DndAction::empty(),
+        });
+        on_enter.map(|f| f(x, y, mime_types))
+    }
+
+    pub fn on_leave<Message>(&mut self, on_leave: Option<&dyn Fn() -> Message>) -> Option<Message> {
+        if self.drag_offer.as_ref().is_some_and(|d| !d.dropped) {
+            self.drag_offer = None;
+            on_leave.map(|f| f())
+        } else {
+            None
+        }
+    }
+
+    pub fn on_motion<Message>(
+        &mut self,
+        x: f64,
+        y: f64,
+        on_motion: Option<&dyn Fn(f64, f64) -> Message>,
+        on_enter: Option<&dyn Fn(f64, f64, Vec<String>) -> Message>,
+    ) -> Option<Message> {
+        if let Some(s) = self.drag_offer.as_mut() {
+            s.x = x;
+            s.y = y;
+        } else {
+            self.drag_offer = Some(DragOffer {
+                x,
+                y,
+                dropped: false,
+                selected_action: DndAction::empty(),
+            });
+            if let Some(f) = on_enter {
+                return Some(f(x, y, vec![]));
+            }
+        }
+        on_motion.map(|f| f(x, y))
+    }
+
+    pub fn on_drop<Message>(
+        &mut self,
+        on_drop: Option<&dyn Fn(f64, f64) -> Message>,
+    ) -> Option<Message> {
+        if let Some(offer) = self.drag_offer.as_mut() {
+            offer.dropped = true;
+            if let Some(f) = on_drop {
+                return Some(f(offer.x, offer.y));
+            }
+        }
+        None
+    }
+
+    pub fn on_action_selected<Message>(
+        &mut self,
+        action: DndAction,
+        on_action_selected: Option<&dyn Fn(DndAction) -> Message>,
+    ) -> Option<Message> {
+        if let Some(s) = self.drag_offer.as_mut() {
+            s.selected_action = action;
+        }
+        if let Some(f) = on_action_selected {
+            f(action).into()
+        } else {
+            None
+        }
+    }
+
+    pub fn on_data_received<Message>(
+        &mut self,
+        mime: String,
+        data: Vec<u8>,
+        on_data_received: Option<&dyn Fn(String, Vec<u8>) -> Message>,
+        on_finish: Option<&dyn Fn(String, Vec<u8>, DndAction, f64, f64) -> Message>,
+    ) -> (Option<Message>, event::Status) {
+        let Some(dnd) = self.drag_offer.as_ref() else {
+            self.drag_offer = None;
+            return (None, event::Status::Ignored);
+        };
+
+        if dnd.dropped {
+            let ret = (
+                on_finish.map(|f| f(mime, data, dnd.selected_action, dnd.x, dnd.y)),
+                event::Status::Captured,
+            );
+            self.drag_offer = None;
+            ret
+        } else if let Some(f) = on_data_received {
+            (Some(f(mime, data)), event::Status::Captured)
+        } else {
+            (None, event::Status::Ignored)
+        }
+    }
+}
+
+impl<'a, Message: 'static> From<DndDestination<'a, Message>> for Element<'a, Message> {
+    fn from(wrapper: DndDestination<'a, Message>) -> Self {
+        Element::new(wrapper)
+    }
+}
