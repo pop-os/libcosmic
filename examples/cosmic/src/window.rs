@@ -491,7 +491,7 @@ impl Application for Window {
         let mut widgets = Vec::with_capacity(2);
 
         if nav_bar_toggled {
-            let mut nav_bar = nav_bar(&self.nav_bar, Message::NavBar);
+            let mut nav_bar = nav_bar(&self.nav_bar, Message::NavBar).into_container();
 
             if !self.is_condensed() {
                 nav_bar = nav_bar.max_width(300);

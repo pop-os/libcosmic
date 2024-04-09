@@ -3,12 +3,13 @@
 
 use std::collections::HashMap;
 
-use crate::config::CosmicTk;
+use crate::{config::CosmicTk, widget::nav_bar};
 use cosmic_config::CosmicConfigEntry;
 use cosmic_theme::ThemeMode;
 use iced::window;
 use iced_core::window::Id;
 use palette::Srgba;
+use slotmap::Key;
 
 use crate::Theme;
 
@@ -16,6 +17,7 @@ use crate::Theme;
 #[derive(Clone)]
 pub struct NavBar {
     active: bool,
+    context_id: crate::widget::nav_bar::Id,
     toggled: bool,
     toggled_condensed: bool,
 }
@@ -103,6 +105,7 @@ impl Default for Core {
             keyboard_nav: true,
             nav_bar: NavBar {
                 active: true,
+                context_id: crate::widget::nav_bar::Id::null(),
                 toggled: true,
                 toggled_condensed: true,
             },
@@ -223,6 +226,14 @@ impl Core {
 
     pub fn nav_bar_toggle_condensed(&mut self) {
         self.nav_bar_set_toggled_condensed(!self.nav_bar.toggled_condensed);
+    }
+
+    pub(crate) fn nav_bar_context(&self) -> nav_bar::Id {
+        self.nav_bar.context_id
+    }
+
+    pub(crate) fn nav_bar_set_context(&mut self, id: nav_bar::Id) {
+        self.nav_bar.context_id = id;
     }
 
     pub fn nav_bar_set_toggled(&mut self, toggled: bool) {

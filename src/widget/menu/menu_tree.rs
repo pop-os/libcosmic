@@ -25,16 +25,16 @@ use crate::{theme, widget};
 pub struct MenuTree<'a, Message, Renderer = crate::Renderer> {
     /// The menu tree will be flatten into a vector to build a linear widget tree,
     /// the `index` field is the index of the item in that vector
-    pub(super) index: usize,
+    pub(crate) index: usize,
 
     /// The item of the menu tree
-    pub(super) item: Element<'a, Message, crate::Theme, Renderer>,
+    pub(crate) item: Element<'a, Message, crate::Theme, Renderer>,
     /// The children of the menu tree
-    pub(super) children: Vec<MenuTree<'a, Message, Renderer>>,
+    pub(crate) children: Vec<MenuTree<'a, Message, Renderer>>,
     /// The width of the menu tree
-    pub(super) width: Option<u16>,
+    pub(crate) width: Option<u16>,
     /// The height of the menu tree
-    pub(super) height: Option<u16>,
+    pub(crate) height: Option<u16>,
 }
 
 impl<'a, Message, Renderer> MenuTree<'a, Message, Renderer>
@@ -89,7 +89,7 @@ where
     /* Keep `set_index()` and `flattern()` recurse in the same order */
 
     /// Set the index of each item
-    pub(super) fn set_index(&mut self) {
+    pub(crate) fn set_index(&mut self) {
         /// inner counting function.
         fn rec<Message, Renderer>(mt: &mut MenuTree<'_, Message, Renderer>, count: &mut usize) {
             // keep items under the same menu line up
@@ -108,7 +108,7 @@ where
     }
 
     /// Flatten the menu tree
-    pub(super) fn flattern(&'a self) -> Vec<&Self> {
+    pub(crate) fn flattern(&'a self) -> Vec<&Self> {
         /// Inner flattening function
         fn rec<'a, Message, Renderer>(
             mt: &'a MenuTree<'a, Message, Renderer>,

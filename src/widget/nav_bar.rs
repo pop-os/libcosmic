@@ -13,6 +13,7 @@ use iced::{
 };
 use iced_core::{Border, Color, Shadow};
 
+use crate::widget::Container;
 use crate::{theme, widget::segmented_button, Theme};
 
 use super::dnd_destination::DragId;
@@ -23,30 +24,13 @@ pub type Model = segmented_button::SingleSelectModel;
 /// Navigation side panel for switching between views.
 ///
 /// For details on the model, see the [`segmented_button`] module for more details.
-pub fn nav_bar<Message>(
+pub fn nav_bar<Message: Clone + 'static>(
     model: &segmented_button::SingleSelectModel,
     on_activate: fn(segmented_button::Entity) -> Message,
-) -> iced::widget::Container<Message, crate::Theme, crate::Renderer>
-where
-    Message: Clone + 'static,
-{
-    let theme = crate::theme::active();
-    let space_s = theme.cosmic().space_s();
-    let space_xxs = theme.cosmic().space_xxs();
-
-    segmented_button::vertical(model)
-        .button_height(32)
-        .button_padding([space_s, space_xxs, space_s, space_xxs])
-        .button_spacing(space_xxs)
-        .spacing(space_xxs)
-        .on_activate(on_activate)
-        .style(crate::theme::SegmentedButton::TabBar)
-        .apply(scrollable)
-        .height(Length::Fill)
-        .apply(container)
-        .padding(space_xxs)
-        .height(Length::Fill)
-        .style(theme::Container::custom(nav_bar_style))
+) -> NavBar<Message> {
+    NavBar {
+        segmented_button: segmented_button::vertical(model).on_activate(on_activate),
+    }
 }
 
 /// Navigation side panel for switching between views.
@@ -58,33 +42,104 @@ pub fn nav_bar_dnd<Message, D: AllowedMimeTypes>(
     on_dnd_leave: impl Fn(segmented_button::Entity) -> Message + 'static,
     on_dnd_drop: impl Fn(segmented_button::Entity, Option<D>, DndAction) -> Message + 'static,
     id: DragId,
-) -> iced::widget::Container<Message, crate::Theme, crate::Renderer>
+) -> NavBar<Message>
 where
     Message: Clone + 'static,
 {
-    let theme = crate::theme::active();
-    let space_s = theme.cosmic().space_s();
-    let space_xxs = theme.cosmic().space_xxs();
+    NavBar {
+        segmented_button: segmented_button::vertical(model)
+            .on_activate(on_activate)
+            .on_dnd_enter(on_dnd_enter)
+            .on_dnd_leave(on_dnd_leave)
+            .on_dnd_drop(on_dnd_drop)
+            .drag_id(id),
+    }
+}
 
-    let nav_buttons = segmented_button::vertical(model)
-        .button_height(32)
-        .button_padding([space_s, space_xxs, space_s, space_xxs])
-        .button_spacing(space_xxs)
-        .spacing(space_xxs)
-        .on_activate(on_activate)
-        .style(crate::theme::SegmentedButton::TabBar)
-        .on_dnd_enter(on_dnd_enter)
-        .on_dnd_leave(on_dnd_leave)
-        .on_dnd_drop(on_dnd_drop)
-        .drag_id(id);
+#[must_use]
+pub struct NavBar<'a, Message> {
+    segmented_button:
+        segmented_button::VerticalSegmentedButton<'a, segmented_button::SingleSelect, Message>,
+}
 
-    nav_buttons
-        .apply(scrollable)
-        .height(Length::Fill)
-        .apply(container)
-        .padding(space_xxs)
-        .height(Length::Fill)
-        .style(theme::Container::custom(nav_bar_style))
+impl<'a, Message: Clone + 'static> NavBar<'a, Message> {
+    pub fn context_menu(
+        mut self,
+        context_menu: Option<Vec<crate::widget::menu::MenuTree<'a, Message, crate::Renderer>>>,
+    ) -> Self {
+        self.segmented_button = self.segmented_button.context_menu(context_menu);
+        self
+    }
+
+    pub fn drag_id(mut self, id: DragId) -> Self {
+        self.segmented_button = self.segmented_button.drag_id(id);
+        self
+    }
+
+    /// Pre-convert this widget into the [`Container`] widget that it becomes.
+    #[must_use]
+    pub fn into_container(self) -> Container<'a, Message, crate::Theme, crate::Renderer> {
+        Container::from(self)
+    }
+
+    /// Emitted when a button is right-clicked.
+    pub fn on_context<T>(mut self, on_context: T) -> Self
+    where
+        T: Fn(Id) -> Message + 'static,
+    {
+        self.segmented_button = self.segmented_button.on_context(on_context);
+        self
+    }
+
+    /// Handle the dnd drop event.
+    pub fn on_dnd_drop<D: AllowedMimeTypes>(
+        mut self,
+        handler: impl Fn(Id, Option<D>, DndAction) -> Message + 'static,
+    ) -> Self {
+        self.segmented_button = self.segmented_button.on_dnd_drop(handler);
+        self
+    }
+
+    /// Handle the dnd enter event.
+    pub fn on_dnd_enter(mut self, handler: impl Fn(Id, Vec<String>) -> Message + 'static) -> Self {
+        self.segmented_button = self.segmented_button.on_dnd_enter(handler);
+        self
+    }
+
+    /// Handle the dnd leave event.
+    pub fn on_dnd_leave(mut self, handler: impl Fn(Id) -> Message + 'static) -> Self {
+        self.segmented_button = self.segmented_button.on_dnd_leave(handler);
+        self
+    }
+}
+
+impl<'a, Message: Clone + 'static> From<NavBar<'a, Message>>
+    for Container<'a, Message, crate::Theme, crate::Renderer>
+{
+    fn from(this: NavBar<'a, Message>) -> Self {
+        let theme = crate::theme::active();
+        let space_s = theme.cosmic().space_s();
+        let space_xxs = theme.cosmic().space_xxs();
+
+        this.segmented_button
+            .button_height(32)
+            .button_padding([space_s, space_xxs, space_s, space_xxs])
+            .button_spacing(space_xxs)
+            .spacing(space_xxs)
+            .style(crate::theme::SegmentedButton::TabBar)
+            .apply(scrollable)
+            .height(Length::Fill)
+            .apply(container)
+            .padding(space_xxs)
+            .height(Length::Fill)
+            .style(theme::Container::custom(nav_bar_style))
+    }
+}
+
+impl<'a, Message: Clone + 'static> From<NavBar<'a, Message>> for crate::Element<'a, Message> {
+    fn from(this: NavBar<'a, Message>) -> Self {
+        Container::from(this).into()
+    }
 }
 
 #[must_use]
