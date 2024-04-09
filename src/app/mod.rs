@@ -52,6 +52,7 @@ use iced::Subscription;
 use iced::{multi_window::Application as IcedApplication, window};
 #[cfg(any(not(feature = "winit"), not(feature = "multi-window")))]
 use iced::{window, Application as IcedApplication};
+use iced_core::mouse;
 pub use message::Message;
 use url::Url;
 #[cfg(feature = "single-instance")]
@@ -447,7 +448,7 @@ where
         window::Id::MAIN
     }
 
-    /// Allows overriding the default nav bar widget
+    /// Allows overriding the default nav bar widget.
     fn nav_bar(&self) -> Option<Element<Message<Self::Message>>> {
         if !self.core().nav_bar_active() {
             return None;
@@ -455,18 +456,28 @@ where
 
         let nav_model = self.nav_model()?;
 
-        let mut nav = crate::widget::nav_bar(nav_model, |entity| {
-            Message::Cosmic(cosmic::Message::NavBar(entity))
-        });
+        let mut nav =
+            crate::widget::nav_bar(nav_model, |id| Message::Cosmic(cosmic::Message::NavBar(id)))
+                .on_context(|id| Message::Cosmic(cosmic::Message::NavBarContext(id)))
+                .context_menu(self.nav_context_menu(self.core().nav_bar_context()))
+                .into_container()
+                // XXX both must be shrink to avoid flex layout from ignoring it
+                .width(iced::Length::Shrink)
+                .height(iced::Length::Shrink);
 
         if !self.core().is_condensed() {
             nav = nav.max_width(280);
         }
 
-        Some(Element::from(
-            // XXX both must be shrink to avoid flex layout from ignoring it
-            nav.width(iced::Length::Shrink).height(iced::Length::Shrink),
-        ))
+        Some(Element::from(nav))
+    }
+
+    /// Shows a context menu for the active nav bar item.
+    fn nav_context_menu(
+        &self,
+        id: nav_bar::Id,
+    ) -> Option<Vec<crate::widget::menu::MenuTree<Message<Self::Message>, crate::Renderer>>> {
+        None
     }
 
     /// Allows COSMIC to integrate with your application's [`nav_bar::Model`].
@@ -482,11 +493,6 @@ where
         None
     }
 
-    // Called when context drawer is toggled
-    fn on_context_drawer(&mut self) -> iced::Command<Message<Self::Message>> {
-        iced::Command::none()
-    }
-
     /// Called when the escape key is pressed.
     fn on_escape(&mut self) -> iced::Command<Message<Self::Message>> {
         iced::Command::none()
@@ -494,6 +500,11 @@ where
 
     /// Called when a navigation item is selected.
     fn on_nav_select(&mut self, id: nav_bar::Id) -> iced::Command<Message<Self::Message>> {
+        iced::Command::none()
+    }
+
+    /// Called when a context menu is requested for a navigation item.
+    fn on_nav_context(&mut self, id: nav_bar::Id) -> iced::Command<Message<Self::Message>> {
         iced::Command::none()
     }
 

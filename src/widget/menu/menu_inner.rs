@@ -221,11 +221,11 @@ impl Aod {
 /// only items inside the viewport will be displayed,
 /// when scrolling happens, this should be updated
 #[derive(Debug, Clone, Copy)]
-struct MenuSlice {
-    start_index: usize,
-    end_index: usize,
-    lower_bound_rel: f32,
-    upper_bound_rel: f32,
+pub(super) struct MenuSlice {
+    pub(super) start_index: usize,
+    pub(super) end_index: usize,
+    pub(super) lower_bound_rel: f32,
+    pub(super) upper_bound_rel: f32,
 }
 
 /// Menu bounds in overlay space
@@ -295,7 +295,7 @@ pub(super) struct MenuState {
     menu_bounds: MenuBounds,
 }
 impl MenuState {
-    fn layout<Message, Renderer>(
+    pub(super) fn layout<Message, Renderer>(
         &self,
         overlay_offset: Vector,
         slice: MenuSlice,
@@ -373,7 +373,7 @@ impl MenuState {
         ))
     }
 
-    fn slice(
+    pub(super) fn slice(
         &self,
         viewport_size: Size,
         overlay_offset: Vector,
@@ -427,28 +427,30 @@ impl MenuState {
     }
 }
 
-pub(super) struct Menu<'a, 'b, Message, Renderer>
+pub(crate) struct Menu<'a, 'b, Message, Renderer>
 where
     Renderer: renderer::Renderer,
 {
-    pub(super) tree: &'b mut Tree,
-    pub(super) menu_roots: &'b mut Vec<MenuTree<'a, Message, Renderer>>,
-    pub(super) bounds_expand: u16,
-    pub(super) close_condition: CloseCondition,
-    pub(super) item_width: ItemWidth,
-    pub(super) item_height: ItemHeight,
-    pub(super) bar_bounds: Rectangle,
-    pub(super) main_offset: i32,
-    pub(super) cross_offset: i32,
-    pub(super) root_bounds_list: Vec<Rectangle>,
-    pub(super) path_highlight: Option<PathHighlight>,
-    pub(super) style: &'b <crate::Theme as StyleSheet>::Style,
+    pub(crate) tree: &'b mut Tree,
+    pub(crate) menu_roots: &'b mut Vec<MenuTree<'a, Message, Renderer>>,
+    pub(crate) bounds_expand: u16,
+    /// Allows menu overlay items to overlap the parent
+    pub(crate) menu_overlays_parent: bool,
+    pub(crate) close_condition: CloseCondition,
+    pub(crate) item_width: ItemWidth,
+    pub(crate) item_height: ItemHeight,
+    pub(crate) bar_bounds: Rectangle,
+    pub(crate) main_offset: i32,
+    pub(crate) cross_offset: i32,
+    pub(crate) root_bounds_list: Vec<Rectangle>,
+    pub(crate) path_highlight: Option<PathHighlight>,
+    pub(crate) style: &'b <crate::Theme as StyleSheet>::Style,
 }
 impl<'a, 'b, Message, Renderer> Menu<'a, 'b, Message, Renderer>
 where
     Renderer: renderer::Renderer,
 {
-    pub(super) fn overlay(self) -> overlay::Element<'b, Message, crate::Theme, Renderer> {
+    pub(crate) fn overlay(self) -> overlay::Element<'b, Message, crate::Theme, Renderer> {
         overlay::Element::new(Point::ORIGIN, Box::new(self))
     }
 }
@@ -746,7 +748,7 @@ fn pad_rectangle(rect: Rectangle, padding: Padding) -> Rectangle {
     }
 }
 
-fn init_root_menu<Message, Renderer>(
+pub(super) fn init_root_menu<Message, Renderer>(
     menu: &mut Menu<'_, '_, Message, Renderer>,
     renderer: &Renderer,
     shell: &mut Shell<'_, Message>,
@@ -986,7 +988,7 @@ where
     let last_parent_bounds = last_menu_bounds.parent_bounds;
     let last_children_bounds = last_menu_bounds.children_bounds;
 
-    if last_parent_bounds.contains(overlay_cursor)
+    if (!menu.menu_overlays_parent && last_parent_bounds.contains(overlay_cursor))
     // cursor is in the parent part
     || !last_children_bounds.contains(overlay_cursor)
     // cursor is outside

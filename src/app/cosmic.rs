@@ -48,6 +48,8 @@ pub enum Message {
     Minimize,
     /// Activates a navigation element from the nav bar.
     NavBar(nav_bar::Id),
+    /// Activates a context menu for an item from the nav bar.
+    NavBarContext(nav_bar::Id),
     /// Set scaling factor
     ScaleFactor(f32),
     /// Notification of system theme changes.
@@ -367,7 +369,6 @@ impl<T: Application> Cosmic<T> {
 
             Message::ContextDrawer(show) => {
                 self.app.core_mut().window.show_context = show;
-                return self.app.on_context_drawer();
             }
 
             Message::Drag => return command::drag(Some(self.app.main_window_id())),
@@ -379,6 +380,11 @@ impl<T: Application> Cosmic<T> {
             Message::NavBar(key) => {
                 self.app.core_mut().nav_bar_set_toggled_condensed(false);
                 return self.app.on_nav_select(key);
+            }
+
+            Message::NavBarContext(key) => {
+                self.app.core_mut().nav_bar_set_context(key);
+                return self.app.on_nav_context(key);
             }
 
             Message::ToggleNavBar => {

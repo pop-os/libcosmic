@@ -19,14 +19,14 @@ use iced_widget::core::{
     Alignment, Clipboard, Element, Layout, Length, Padding, Rectangle, Shell, Widget,
 };
 
-pub(super) struct MenuBarState {
-    pub(super) pressed: bool,
-    pub(super) view_cursor: Cursor,
-    pub(super) open: bool,
-    pub(super) active_root: Option<usize>,
-    pub(super) horizontal_direction: Direction,
-    pub(super) vertical_direction: Direction,
-    pub(super) menu_states: Vec<MenuState>,
+pub(crate) struct MenuBarState {
+    pub(crate) pressed: bool,
+    pub(crate) view_cursor: Cursor,
+    pub(crate) open: bool,
+    pub(crate) active_root: Option<usize>,
+    pub(crate) horizontal_direction: Direction,
+    pub(crate) vertical_direction: Direction,
+    pub(crate) menu_states: Vec<MenuState>,
 }
 impl MenuBarState {
     pub(super) fn get_trimmed_indices(&self) -> impl Iterator<Item = usize> + '_ {
@@ -422,6 +422,7 @@ where
                 tree,
                 menu_roots: &mut self.menu_roots,
                 bounds_expand: self.bounds_expand,
+                menu_overlays_parent: false,
                 close_condition: self.close_condition,
                 item_width: self.item_width,
                 item_height: self.item_height,

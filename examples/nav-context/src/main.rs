@@ -3,8 +3,12 @@
 
 //! Application API example
 
+use std::collections::HashMap;
+
 use cosmic::app::{Command, Core, Settings};
 use cosmic::iced_core::Size;
+use cosmic::widget::menu::action::MenuAction;
+use cosmic::widget::menu::menu_tree::{menu_items, MenuItem, MenuTree};
 use cosmic::widget::nav_bar;
 use cosmic::{executor, iced, ApplicationExt, Element};
 
@@ -41,6 +45,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     ];
 
     let settings = Settings::default()
+        .antialiasing(true)
+        .client_decorations(true)
+        .debug(false)
+        .default_icon_theme("Pop")
+        .default_text_size(16.0)
+        .scale_factor(1.0)
         .size(Size::new(1024., 768.));
 
     cosmic::app::run::<App>(settings, input)?;
@@ -50,7 +60,24 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 /// Messages that are used specifically by our [`App`].
 #[derive(Clone, Debug)]
-pub enum Message {}
+pub enum Message {
+    NavMenuAction(NavMenuAction),
+}
+
+#[derive(Copy, Clone, Debug, Eq, PartialEq)]
+pub enum NavMenuAction {
+    MoveUp(nav_bar::Id),
+    MoveDown(nav_bar::Id),
+    Delete(nav_bar::Id),
+}
+
+impl MenuAction for NavMenuAction {
+    type Message = cosmic::app::Message<Message>;
+
+    fn message(&self, _entity: Option<cosmic::widget::segmented_button::Entity>) -> Self::Message {
+        cosmic::app::Message::App(Message::NavMenuAction(*self))
+    }
+}
 
 /// The [`App`] stores application-specific state.
 pub struct App {
@@ -102,6 +129,21 @@ impl cosmic::Application for App {
         Some(&self.nav_model)
     }
 
+    /// The context menu to display for the given nav bar item ID.
+    fn nav_context_menu(
+        &self,
+        id: nav_bar::Id,
+    ) -> Option<Vec<MenuTree<cosmic::app::Message<Self::Message>, cosmic::Renderer>>> {
+        Some(menu_items(
+            &HashMap::new(),
+            vec![
+                MenuItem::Button("Move Up", NavMenuAction::MoveUp(id)),
+                MenuItem::Button("Move Down", NavMenuAction::MoveDown(id)),
+                MenuItem::Button("Delete", NavMenuAction::Delete(id)),
+            ],
+        ))
+    }
+
     /// Called when a navigation item is selected.
     fn on_nav_select(&mut self, id: nav_bar::Id) -> Command<Self::Message> {
         self.nav_model.activate(id);
@@ -109,7 +151,25 @@ impl cosmic::Application for App {
     }
 
     /// Handle application events here.
-    fn update(&mut self, _message: Self::Message) -> Command<Self::Message> {
+    fn update(&mut self, message: Self::Message) -> Command<Self::Message> {
+        match message {
+            Message::NavMenuAction(message) => match message {
+                NavMenuAction::Delete(id) => self.nav_model.remove(id),
+                NavMenuAction::MoveUp(id) => {
+                    if let Some(pos) = self.nav_model.position(id) {
+                        if pos != 0 {
+                            self.nav_model.position_set(id, pos - 1);
+                        }
+                    }
+                }
+                NavMenuAction::MoveDown(id) => {
+                    if let Some(pos) = self.nav_model.position(id) {
+                        self.nav_model.position_set(id, pos + 1);
+                    }
+                }
+            },
+        }
+
         Command::none()
     }
 
