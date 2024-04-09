@@ -2,10 +2,14 @@
 // SPDX-License-Identifier: MPL-2.0
 
 use super::model::{Entity, Model, Selectable};
+use crate::iced_core::id::Internal;
 use crate::theme::{SegmentedButton as Style, THEME};
+use crate::widget::dnd_destination::DragId;
 use crate::widget::{icon, Icon};
 use crate::{Element, Renderer};
 use derive_setters::Setters;
+use iced::clipboard::dnd::{self, DndAction, DndDestinationRectangle, DndEvent, OfferEvent};
+use iced::clipboard::mime::AllowedMimeTypes;
 use iced::{
     alignment, event, keyboard, mouse, touch, Alignment, Background, Color, Command, Event, Length,
     Padding, Rectangle, Size,
@@ -16,9 +20,11 @@ use iced_core::widget::{self, operation, tree};
 use iced_core::{layout, renderer, widget::Tree, Clipboard, Layout, Shell, Widget};
 use iced_core::{Border, Gradient, Point, Renderer as IcedRenderer, Shadow, Text};
 use slotmap::{Key, SecondaryMap};
+use std::borrow::Cow;
 use std::collections::hash_map::DefaultHasher;
 use std::hash::{Hash, Hasher};
 use std::marker::PhantomData;
+use std::mem;
 use std::time::{Duration, Instant};
 
 /// A command that focuses a segmented item stored in a widget.
@@ -67,7 +73,7 @@ where
     #[setters(skip)]
     pub(super) model: &'a Model<SelectionMode>,
     /// iced widget ID
-    pub(super) id: Option<Id>,
+    pub(super) id: Id,
     /// The icon used for the close button.
     pub(super) close_icon: Icon,
     /// Scrolling switches focus between tabs.
@@ -118,6 +124,16 @@ where
     #[setters(skip)]
     pub(super) on_close: Option<Box<dyn Fn(Entity) -> Message + 'static>>,
     #[setters(skip)]
+    pub(super) on_dnd_drop:
+        Option<Box<dyn Fn(Entity, Vec<u8>, String, DndAction) -> Message + 'static>>,
+    pub(super) mimes: Vec<String>,
+    #[setters(skip)]
+    pub(super) on_dnd_enter: Option<Box<dyn Fn(Entity, Vec<String>) -> Message + 'static>>,
+    #[setters(skip)]
+    pub(super) on_dnd_leave: Option<Box<dyn Fn(Entity) -> Message + 'static>>,
+    #[setters(strip_option)]
+    pub(super) drag_id: Option<DragId>,
+    #[setters(skip)]
     /// Defines the implementation of this struct
     variant: PhantomData<Variant>,
 }
@@ -131,7 +147,7 @@ where
     pub fn new(model: &'a Model<SelectionMode>) -> Self {
         Self {
             model,
-            id: None,
+            id: Id::unique(),
             close_icon: icon::from_name("window-close-symbolic").size(16).icon(),
             scrollable_focus: false,
             show_close_icon_on_hover: false,
@@ -155,7 +171,12 @@ where
             style: Style::default(),
             on_activate: None,
             on_close: None,
+            on_dnd_drop: None,
+            on_dnd_enter: None,
+            on_dnd_leave: None,
+            mimes: Vec::new(),
             variant: PhantomData,
+            drag_id: None,
         }
     }
 
@@ -180,6 +201,33 @@ where
     /// Check if an item is enabled.
     fn is_enabled(&self, key: Entity) -> bool {
         self.model.items.get(key).map_or(false, |item| item.enabled)
+    }
+
+    /// Handle the dnd drop event.
+    pub fn on_dnd_drop<D: AllowedMimeTypes>(
+        mut self,
+        dnd_drop_handler: impl Fn(Entity, Option<D>, DndAction) -> Message + 'static,
+    ) -> Self {
+        self.on_dnd_drop = Some(Box::new(move |entity, data, mime, action| {
+            dnd_drop_handler(entity, D::try_from((data, mime)).ok(), action)
+        }));
+        self.mimes = D::allowed().iter().map(|mime| mime.to_string()).collect();
+        self
+    }
+
+    /// Handle the dnd enter event.
+    pub fn on_dnd_enter(
+        mut self,
+        dnd_enter_handler: impl Fn(Entity, Vec<String>) -> Message + 'static,
+    ) -> Self {
+        self.on_dnd_enter = Some(Box::new(dnd_enter_handler));
+        self
+    }
+
+    /// Handle the dnd leave event.
+    pub fn on_dnd_leave(mut self, dnd_leave_handler: impl Fn(Entity) -> Message + 'static) -> Self {
+        self.on_dnd_leave = Some(Box::new(dnd_leave_handler));
+        self
     }
 
     /// Item the previous item in the widget.
@@ -416,6 +464,28 @@ where
 
     fn button_is_hovered(&self, state: &LocalState, key: Entity) -> bool {
         self.on_activate.is_some() && state.hovered == Item::Tab(key)
+            || state
+                .dnd_state
+                .drag_offer
+                .as_ref()
+                .is_some_and(|id| id.data == key)
+    }
+
+    /// Returns the drag id of the destination.
+    ///
+    /// # Panics
+    /// Panics if the destination has been assigned a Set id, which is invalid.
+    #[must_use]
+    pub fn get_drag_id(&self) -> u128 {
+        self.drag_id.map_or_else(
+            || {
+                u128::from(match &self.id.0 .0 {
+                    Internal::Unique(id) | Internal::Custom(id, _) => *id,
+                    Internal::Set(_) => panic!("Invalid Id assigned to dnd destination."),
+                })
+            },
+            |id| id.0,
+        )
     }
 }
 
@@ -507,7 +577,7 @@ where
     fn on_event(
         &mut self,
         tree: &mut Tree,
-        event: Event,
+        mut event: Event,
         layout: Layout<'_>,
         cursor_position: mouse::Cursor,
         _renderer: &Renderer,
@@ -518,6 +588,120 @@ where
         let bounds = layout.bounds();
         let state = tree.state.downcast_mut::<LocalState>();
         state.hovered = Item::None;
+
+        let my_id = self.get_drag_id();
+
+        if let Event::Dnd(e) = &mut event {
+            let entity = state
+                .dnd_state
+                .drag_offer
+                .as_ref()
+                .map(|dnd_state| dnd_state.data);
+            match e {
+                DndEvent::Offer(
+                    id,
+                    OfferEvent::Enter {
+                        x, y, mime_types, ..
+                    },
+                ) if Some(my_id) == *id => {
+                    let entity = self
+                        .variant_bounds(state, bounds)
+                        .filter_map(|item| match item {
+                            ItemBounds::Button(entity, bounds) => Some((entity, bounds)),
+                            _ => None,
+                        })
+                        .find(|(_key, bounds)| bounds.contains(Point::new(*x as f32, *y as f32)))
+                        .map(|(key, _)| key);
+                    if let Some(entity) = entity {
+                        let on_dnd_enter = self
+                            .on_dnd_enter
+                            .as_ref()
+                            .map(|on_enter| |_, _, mime_types| on_enter(entity, mime_types));
+
+                        _ = state.dnd_state.on_enter::<Message>(
+                            *x,
+                            *y,
+                            mime_types.clone(),
+                            on_dnd_enter,
+                            entity,
+                        );
+                    }
+                }
+                DndEvent::Offer(id, OfferEvent::Leave | OfferEvent::LeaveDestination)
+                    if Some(my_id) == *id =>
+                {
+                    if let Some(entity) = entity {
+                        if let Some(on_dnd_leave) = self.on_dnd_leave.as_ref() {
+                            shell.publish(on_dnd_leave(entity));
+                        }
+                    }
+                    _ = state.dnd_state.on_leave::<Message>(None);
+                }
+                DndEvent::Offer(id, OfferEvent::Motion { x, y }) if Some(my_id) == *id => {
+                    let new = self
+                        .variant_bounds(state, bounds)
+                        .filter_map(|item| match item {
+                            ItemBounds::Button(entity, bounds) => Some((entity, bounds)),
+                            _ => None,
+                        })
+                        .find(|(_key, bounds)| bounds.contains(Point::new(*x as f32, *y as f32)))
+                        .map(|(key, _)| key);
+                    if let Some(new_entity) = new {
+                        state.dnd_state.on_motion::<Message>(
+                            *x,
+                            *y,
+                            None::<fn(_, _) -> Message>,
+                            None::<fn(_, _, _) -> Message>,
+                            new_entity,
+                        );
+                        if Some(new_entity) != entity {
+                            if let Some(on_dnd_enter) = self.on_dnd_enter.as_ref() {
+                                shell.publish(on_dnd_enter(new_entity, Vec::new()));
+                            }
+                            if let Some(dnd) = state.dnd_state.drag_offer.as_mut() {
+                                dnd.data = new_entity;
+                            }
+                        }
+                    } else if entity.is_some() {
+                        state.dnd_state.drag_offer = None;
+                        if let Some(on_dnd_leave) = self.on_dnd_leave.as_ref() {
+                            shell.publish(on_dnd_leave(entity.unwrap()));
+                        }
+                    }
+                }
+                DndEvent::Offer(id, OfferEvent::Drop) if Some(my_id) == *id => {
+                    _ = state
+                        .dnd_state
+                        .on_drop::<Message>(None::<fn(_, _) -> Message>);
+                }
+                DndEvent::Offer(id, OfferEvent::SelectedAction(action)) if Some(my_id) == *id => {
+                    if let Some(entity) = entity {
+                        _ = state
+                            .dnd_state
+                            .on_action_selected::<Message>(*action, None::<fn(_) -> Message>);
+                    }
+                }
+                DndEvent::Offer(id, OfferEvent::Data { data, mime_type }) if Some(my_id) == *id => {
+                    if let Some(entity) = entity {
+                        let on_drop = self.on_dnd_drop.as_ref();
+                        let on_drop = on_drop.map(|on_drop| {
+                            |mime, data, action, _, _| on_drop(entity, data, mime, action)
+                        });
+
+                        if let (Some(msg), ret) = state.dnd_state.on_data_received(
+                            mem::take(mime_type),
+                            mem::take(data),
+                            None::<fn(_, _) -> Message>,
+                            on_drop,
+                        ) {
+                            shell.publish(msg);
+                            return ret;
+                        }
+                    }
+                }
+                _ => {}
+            }
+        }
 
         if cursor_position.is_over(bounds) {
             // Check for clicks on the previous and next tab buttons, when tabs are collapsed.
@@ -730,7 +914,7 @@ where
         >,
     ) {
         let state = tree.state.downcast_mut::<LocalState>();
-        operation.focusable(state, self.id.as_ref().map(|id| &id.0));
+        operation.focusable(state, Some(&self.id.0));
 
         if let Item::Set = state.focused_item {
             if self.prev_tab_sensitive(state) {
@@ -1173,6 +1357,30 @@ where
     ) -> Option<iced_core::overlay::Element<'b, Message, crate::Theme, Renderer>> {
         None
     }
+
+    fn drag_destinations(
+        &self,
+        _state: &Tree,
+        layout: Layout<'_>,
+        dnd_rectangles: &mut iced_core::clipboard::DndDestinationRectangles,
+    ) {
+        let bounds = layout.bounds();
+
+        let my_id = self.get_drag_id();
+        let dnd_rect = DndDestinationRectangle {
+            id: my_id,
+            rectangle: dnd::Rectangle {
+                x: f64::from(bounds.x),
+                y: f64::from(bounds.y),
+                width: f64::from(bounds.width),
+                height: f64::from(bounds.height),
+            },
+            mime_types: self.mimes.clone().into_iter().map(Cow::Owned).collect(),
+            actions: DndAction::Copy | DndAction::Move,
+            preferred: DndAction::Move,
+        };
+        dnd_rectangles.push(dnd_rect);
+    }
 }
 
 impl<'a, Variant, SelectionMode, Message> From<SegmentedButton<'a, Variant, SelectionMode, Message>>
@@ -1218,6 +1426,8 @@ pub struct LocalState {
     text_hashes: SecondaryMap<Entity, u64>,
     /// Time since last tab activation from wheel movements.
     wheel_timestamp: Option<Instant>,
+    /// Dnd state
+    pub dnd_state: crate::widget::dnd_destination::State<Entity>,
 }
 
 #[derive(Debug, Default, PartialEq)]

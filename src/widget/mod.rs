@@ -113,6 +113,12 @@ pub mod divider {
     }
 }
 
+pub mod dnd_destination;
+pub use dnd_destination::{dnd_destination, DndDestination};
+
+pub mod dnd_source;
+pub use dnd_source::{dnd_source, DndSource};
+
 pub mod dropdown;
 pub use dropdown::{dropdown, Dropdown};
 
@@ -137,7 +143,7 @@ pub use list::*;
 pub mod menu;
 
 pub mod nav_bar;
-pub use nav_bar::nav_bar;
+pub use nav_bar::{nav_bar, nav_bar_dnd};
 
 pub mod nav_bar_toggle;
 pub use nav_bar_toggle::{nav_bar_toggle, NavBarToggle};
