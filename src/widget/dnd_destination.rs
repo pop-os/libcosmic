@@ -1,4 +1,7 @@
-use std::borrow::Cow;
+use std::{
+    borrow::Cow,
+    sync::atomic::{AtomicU64, Ordering},
+};
 
 use crate::{
     iced::{
@@ -31,6 +34,24 @@ pub fn dnd_destination_for_data<T: AllowedMimeTypes, Message: 'static>(
     on_finish: impl Fn(Option<T>, DndAction) -> Message + 'static,
 ) -> DndDestination<'static, Message> {
     DndDestination::for_data(child, on_finish)
+}
+
+static DRAG_ID_COUNTER: AtomicU64 = AtomicU64::new(0);
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct DragId(pub u128);
+
+impl DragId {
+    pub fn new() -> Self {
+        DragId(u128::from(u64::MAX) + u128::from(DRAG_ID_COUNTER.fetch_add(1, Ordering::Relaxed)))
+    }
+}
+
+#[allow(clippy::new_without_default)]
+impl Default for DragId {
+    fn default() -> Self {
+        DragId::new()
+    }
 }
 
 pub struct DndDestination<'a, Message> {
@@ -228,7 +249,7 @@ impl<'a, Message: 'static> Widget<Message, crate::Theme, crate::Renderer>
     }
 
     fn tag(&self) -> iced_core::widget::tree::Tag {
-        tree::Tag::of::<State>()
+        tree::Tag::of::<State<()>>()
     }
 
     fn diff(&mut self, tree: &mut Tree) {
@@ -236,7 +257,7 @@ impl<'a, Message: 'static> Widget<Message, crate::Theme, crate::Renderer>
     }
 
     fn state(&self) -> iced_core::widget::tree::State {
-        tree::State::new(State::new())
+        tree::State::new(State::<()>::new())
     }
 
     fn size(&self) -> iced_core::Size<Length> {
@@ -294,7 +315,7 @@ impl<'a, Message: 'static> Widget<Message, crate::Theme, crate::Renderer>
             return event::Status::Captured;
         }
 
-        let state = tree.state.downcast_mut::<State>();
+        let state = tree.state.downcast_mut::<State<()>>();
 
         let my_id = self.get_drag_id();
 
@@ -310,6 +331,7 @@ impl<'a, Message: 'static> Widget<Message, crate::Theme, crate::Renderer>
                     y,
                     mime_types,
                     self.on_enter.as_ref().map(std::convert::AsRef::as_ref),
+                    (),
                 ) {
                     shell.publish(msg);
                 }
@@ -357,6 +379,7 @@ impl<'a, Message: 'static> Widget<Message, crate::Theme, crate::Renderer>
                     y,
                     self.on_motion.as_ref().map(std::convert::AsRef::as_ref),
                     self.on_enter.as_ref().map(std::convert::AsRef::as_ref),
+                    (),
                 ) {
                     shell.publish(msg);
                 }
@@ -516,18 +539,19 @@ impl<'a, Message: 'static> Widget<Message, crate::Theme, crate::Renderer>
 }
 
 #[derive(Default)]
-pub struct State {
-    pub drag_offer: Option<DragOffer>,
+pub struct State<T> {
+    pub drag_offer: Option<DragOffer<T>>,
 }
 
-pub struct DragOffer {
+pub struct DragOffer<T> {
     pub x: f64,
     pub y: f64,
     pub dropped: bool,
     pub selected_action: DndAction,
+    pub data: T,
 }
 
-impl State {
+impl<T> State<T> {
     #[must_use]
     pub fn new() -> Self {
         Self { drag_offer: None }
@@ -538,13 +562,15 @@ impl State {
         x: f64,
         y: f64,
         mime_types: Vec<String>,
-        on_enter: Option<&dyn Fn(f64, f64, Vec<String>) -> Message>,
+        on_enter: Option<impl Fn(f64, f64, Vec<String>) -> Message>,
+        data: T,
     ) -> Option<Message> {
         self.drag_offer = Some(DragOffer {
             x,
             y,
             dropped: false,
             selected_action: DndAction::empty(),
+            data,
         });
         on_enter.map(|f| f(x, y, mime_types))
     }
@@ -562,8 +588,9 @@ impl State {
         &mut self,
         x: f64,
         y: f64,
-        on_motion: Option<&dyn Fn(f64, f64) -> Message>,
-        on_enter: Option<&dyn Fn(f64, f64, Vec<String>) -> Message>,
+        on_motion: Option<impl Fn(f64, f64) -> Message>,
+        on_enter: Option<impl Fn(f64, f64, Vec<String>) -> Message>,
+        data: T,
     ) -> Option<Message> {
         if let Some(s) = self.drag_offer.as_mut() {
             s.x = x;
@@ -574,6 +601,7 @@ impl State {
                 y,
                 dropped: false,
                 selected_action: DndAction::empty(),
+                data,
             });
             if let Some(f) = on_enter {
                 return Some(f(x, y, vec![]));
@@ -584,7 +612,7 @@ impl State {
 
     pub fn on_drop<Message>(
         &mut self,
-        on_drop: Option<&dyn Fn(f64, f64) -> Message>,
+        on_drop: Option<impl Fn(f64, f64) -> Message>,
     ) -> Option<Message> {
         if let Some(offer) = self.drag_offer.as_mut() {
             offer.dropped = true;
@@ -598,7 +626,7 @@ impl State {
     pub fn on_action_selected<Message>(
         &mut self,
         action: DndAction,
-        on_action_selected: Option<&dyn Fn(DndAction) -> Message>,
+        on_action_selected: Option<impl Fn(DndAction) -> Message>,
     ) -> Option<Message> {
         if let Some(s) = self.drag_offer.as_mut() {
             s.selected_action = action;
@@ -614,8 +642,8 @@ impl State {
         &mut self,
         mime: String,
         data: Vec<u8>,
-        on_data_received: Option<&dyn Fn(String, Vec<u8>) -> Message>,
-        on_finish: Option<&dyn Fn(String, Vec<u8>, DndAction, f64, f64) -> Message>,
+        on_data_received: Option<impl Fn(String, Vec<u8>) -> Message>,
+        on_finish: Option<impl Fn(String, Vec<u8>, DndAction, f64, f64) -> Message>,
     ) -> (Option<Message>, event::Status) {
         let Some(dnd) = self.drag_offer.as_ref() else {
             self.drag_offer = None;
