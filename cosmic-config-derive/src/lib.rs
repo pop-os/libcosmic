@@ -89,11 +89,25 @@ fn impl_cosmic_config_entry_macro(ast: &syn::DeriveInput) -> TokenStream {
         Some(quote! {
             #[doc = #doc]
             ///
-            /// Returns `Ok(true)` when the field's value has changed and was written to disk
-            pub fn #setter_name(&mut self, config: &cosmic_config::Config, value: #field_type) -> Result<bool, cosmic_config::Error> {
+            /// Returns `Ok(true)` when the field's value has changed and was written to disk.
+            /// Log error in case of faillure
+            pub fn #setter_name(&mut self, config: &Option<cosmic_config::Config>, value: #field_type) -> Result<bool, cosmic_config::Error> {
                 if self.#field_name != value {
                     self.#field_name = value;
-                    cosmic_config::ConfigSet::set(config, stringify!(#field_name), &self.#field_name)?;
+                    match config {
+                        Some(config) => {
+                            if let Err(err) = cosmic_config::ConfigSet::set(config, stringify!(#field_name), &self.#field_name) {
+                                tracing::error!("failed to save config {:?}: {}", stringify!(#field_name), err);
+                                return Err(err);
+                            }
+                        }
+                        None => {
+                            tracing::error!(
+                                "failed to save config {}: no config handler",
+                                stringify!(#field_name),
+                            );
+                        }
+                    }
                     Ok(true)
                 } else {
                     Ok(false)

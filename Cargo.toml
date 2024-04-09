@@ -71,7 +71,7 @@ serde = { version = "1.0.180", optional = true }
 slotmap = "1.0.6"
 thiserror = "1.0.44"
 tokio = { version = "1.24.2", optional = true }
-tracing = "0.1"
+tracing.workspace = true
 unicode-segmentation = "1.6"
 url = "2.4.0"
 zbus = {version = "3.14.1", default-features = false, optional = true}
@@ -152,6 +152,7 @@ exclude = ["examples/design-demo", "iced"]
 
 [workspace.dependencies]
 dirs = "5.0.1"
+tracing = "0.1"
 
 
 [patch."https://github.com/pop-os/libcosmic"]

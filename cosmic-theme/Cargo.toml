@@ -27,3 +27,4 @@ csscolorparser = {version = "0.6.2", features = ["serde"]}
 cosmic-config = { path = "../cosmic-config/", default-features = false, features = ["subscription", "macro"] }
 dirs.workspace = true
 thiserror = "1.0.5"
+tracing.workspace = true
