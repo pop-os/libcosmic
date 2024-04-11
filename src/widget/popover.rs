@@ -8,7 +8,8 @@ use iced_core::layout;
 use iced_core::mouse;
 use iced_core::overlay;
 use iced_core::renderer;
-use iced_core::widget::{Operation, OperationOutputWrapper, Tree};
+use iced_core::touch;
+use iced_core::widget::{tree, Operation, OperationOutputWrapper, Tree};
 use iced_core::{
     Clipboard, Element, Layout, Length, Point, Rectangle, Shell, Size, Vector, Widget,
 };
@@ -30,6 +31,7 @@ pub enum Position {
     Point(Point),
 }
 
+#[must_use]
 pub struct Popover<'a, Message, Renderer> {
     content: Element<'a, Message, crate::Theme, Renderer>,
     // XXX Avoid refcell; improve iced overlay API?
@@ -64,6 +66,14 @@ impl<'a, Message, Renderer> Widget<Message, crate::Theme, Renderer>
 where
     Renderer: iced_core::Renderer,
 {
+    fn tag(&self) -> tree::Tag {
+        tree::Tag::of::<State>()
+    }
+
+    fn state(&self) -> tree::State {
+        tree::State::new(State { is_open: true })
+    }
+
     fn children(&self) -> Vec<Tree> {
         if let Some(popup) = &self.popup {
             vec![Tree::new(&self.content), Tree::new(&*popup.borrow())]
@@ -117,6 +127,15 @@ where
         shell: &mut Shell<'_, Message>,
         viewport: &Rectangle,
     ) -> event::Status {
+        if matches!(
+            event,
+            Event::Mouse(mouse::Event::ButtonPressed(_))
+                | Event::Touch(touch::Event::FingerPressed { .. })
+        ) {
+            let state = tree.state.downcast_mut::<State>();
+            state.is_open = cursor_position.is_over(layout.bounds());
+        }
+
         self.content.as_widget_mut().on_event(
             &mut tree.children[0],
             event,
@@ -173,6 +192,10 @@ where
         layout: Layout<'_>,
         renderer: &Renderer,
     ) -> Option<overlay::Element<'b, Message, crate::Theme, Renderer>> {
+        if !tree.state.downcast_mut::<State>().is_open {
+            return None;
+        }
+
         if let Some(popup) = &self.popup {
             let bounds = layout.bounds();
 
@@ -355,4 +378,10 @@ where
             &bounds,
         );
     }
+}
+
+/// The local state of a [`Popover`].
+#[derive(Debug, Default)]
+struct State {
+    is_open: bool,
 }
