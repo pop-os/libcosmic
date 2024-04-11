@@ -719,6 +719,14 @@ where
         let line_height = self.line_height;
 
         if self.is_editable {
+            if let Some(ref on_edit) = self.on_toggle_edit {
+                let state = tree.state.downcast_mut::<State>();
+                if !state.is_read_only && state.is_focused.is_none() {
+                    state.is_read_only = true;
+                    shell.publish((on_edit)(false));
+                }
+            }
+
             let index = tree.children.len() - 1;
             if let (Some(trailing_icon), Some(tree)) =
                 (self.trailing_icon.as_mut(), tree.children.get_mut(index))
