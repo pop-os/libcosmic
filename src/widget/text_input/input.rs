@@ -1155,7 +1155,7 @@ where
             let state = state();
             let is_clicked = cursor_position.is_over(text_layout.bounds()) && on_input.is_some();
 
-            state.is_focused = if is_clicked && !state.is_read_only {
+            state.is_focused = if is_clicked {
                 state.is_focused.or_else(|| {
                     let now = Instant::now();
                     Some(Focus {
@@ -1171,6 +1171,7 @@ where
                 let Some(pos) = cursor_position.position() else {
                     return event::Status::Ignored;
                 };
+
                 let target = pos.x - text_layout.bounds().x;
 
                 let click = mouse::Click::new(pos, state.last_click);
@@ -1319,6 +1320,27 @@ where
                     }
                 }
 
+                // Enable write mode when an editable input label is clicked
+                if is_editable
+                    && state.is_read_only
+                    && matches!(state.dragging_state, None | Some(DraggingState::Selection))
+                {
+                    state.is_read_only = false;
+                    if let Some(on_toggle_edit) = on_toggle_edit {
+                        let message = (on_toggle_edit)(!state.is_read_only);
+                        shell.publish(message);
+
+                        let now = Instant::now();
+                        state.is_focused = Some(Focus {
+                            updated_at: now,
+                            now,
+                        });
+
+                        state.move_cursor_to_end();
+                        return event::Status::Captured;
+                    }
+                }
+
                 state.last_click = Some(click);
 
                 return event::Status::Captured;
@@ -1354,6 +1376,7 @@ where
                                     });
 
                                     state.move_cursor_to_end();
+
                                     return event::Status::Captured;
                                 }
                             }
