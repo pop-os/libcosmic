@@ -745,7 +745,7 @@ impl<App: Application> ApplicationExt for App {
 
         // Show any current dialog on top and centered over the view content
         // We have to use a popover even without a dialog to keep the tree from changing
-        let mut popover = popover(view_column);
+        let mut popover = popover(view_column).modal(true);
         if let Some(dialog) = self.dialog() {
             popover = popover.popup(dialog.map(Message::App));
         }

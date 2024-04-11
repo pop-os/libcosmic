@@ -34,6 +34,7 @@ pub enum Position {
 #[must_use]
 pub struct Popover<'a, Message, Renderer> {
     content: Element<'a, Message, crate::Theme, Renderer>,
+    modal: bool,
     // XXX Avoid refcell; improve iced overlay API?
     popup: Option<RefCell<Element<'a, Message, crate::Theme, Renderer>>>,
     position: Position,
@@ -43,9 +44,16 @@ impl<'a, Message, Renderer> Popover<'a, Message, Renderer> {
     pub fn new(content: impl Into<Element<'a, Message, crate::Theme, Renderer>>) -> Self {
         Self {
             content: content.into(),
+            modal: false,
             popup: None,
             position: Position::Center,
         }
+    }
+
+    /// A modal popup interrupts user inputs and demands action.
+    pub fn modal(mut self, modal: bool) -> Self {
+        self.modal = modal;
+        self
     }
 
     pub fn popup(mut self, popup: impl Into<Element<'a, Message, crate::Theme, Renderer>>) -> Self {
@@ -127,11 +135,13 @@ where
         shell: &mut Shell<'_, Message>,
         viewport: &Rectangle,
     ) -> event::Status {
-        if matches!(
-            event,
-            Event::Mouse(mouse::Event::ButtonPressed(_))
-                | Event::Touch(touch::Event::FingerPressed { .. })
-        ) {
+        if !self.modal
+            && matches!(
+                event,
+                Event::Mouse(mouse::Event::ButtonPressed(_))
+                    | Event::Touch(touch::Event::FingerPressed { .. })
+            )
+        {
             let state = tree.state.downcast_mut::<State>();
             state.is_open = cursor_position.is_over(layout.bounds());
         }
