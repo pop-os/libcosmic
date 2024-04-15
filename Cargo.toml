@@ -37,7 +37,13 @@ smol = ["iced/smol", "zbus?/async-io"]
 # Tokio async runtime
 tokio = ["dep:tokio", "ashpd?/tokio", "iced/tokio", "rfd?/tokio", "zbus?/tokio"]
 # Wayland window support
-wayland = ["ashpd?/wayland", "iced_runtime/wayland", "iced/wayland", "iced_sctk", "cctk"]
+wayland = [
+    "ashpd?/wayland",
+    "iced_runtime/wayland",
+    "iced/wayland",
+    "iced_sctk",
+    "cctk",
+]
 # multi-window support
 multi-window = ["iced/multi-window"]
 # Render with wgpu
@@ -74,7 +80,7 @@ tokio = { version = "1.24.2", optional = true }
 tracing = "0.1"
 unicode-segmentation = "1.6"
 url = "2.4.0"
-zbus = {version = "3.14.1", default-features = false, optional = true}
+zbus = { version = "3.14.1", default-features = false, optional = true }
 
 [target.'cfg(unix)'.dependencies]
 freedesktop-icons = "0.2.5"
@@ -143,10 +149,10 @@ features = ["grid"]
 
 [workspace]
 members = [
-  "cosmic-config",
-  "cosmic-config-derive",
-  "cosmic-theme",
-  "examples/*",
+    "cosmic-config",
+    "cosmic-config-derive",
+    "cosmic-theme",
+    "examples/*",
 ]
 exclude = ["examples/design-demo", "iced"]
 
@@ -156,4 +162,3 @@ dirs = "5.0.1"
 
 [patch."https://github.com/pop-os/libcosmic"]
 libcosmic = { path = "./" }
-
