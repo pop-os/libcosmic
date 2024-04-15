@@ -642,7 +642,11 @@ impl slider::StyleSheet for Theme {
                     },
 
                     handle: slider::Handle {
-                        shape: slider::HandleShape::Circle { radius: 10.0 },
+                        shape: slider::HandleShape::Rectangle {
+                            height: 20,
+                            width: 20,
+                            border_radius: cosmic.corner_radii.radius_m.into(),
+                        },
                         color: cosmic.accent.base.into(),
                         border_color: Color::TRANSPARENT,
                         border_width: 0.0,
@@ -660,9 +664,15 @@ impl slider::StyleSheet for Theme {
     fn hovered(&self, style: &Self::Style) -> slider::Appearance {
         match style {
             Slider::Standard => {
+                let cosmic: &cosmic_theme::Theme = self.cosmic();
+
                 let mut style = self.active(style);
-                style.handle.shape = slider::HandleShape::Circle { radius: 16.0 };
-                style.handle.border_width = 6.0;
+                style.handle.shape = slider::HandleShape::Rectangle {
+                    height: 26,
+                    width: 26,
+                    border_radius: cosmic.corner_radii.radius_m.into(),
+                };
+                style.handle.border_width = 3.0;
                 let mut border_color = self.cosmic().palette.neutral_10;
                 border_color.alpha = 0.1;
                 style.handle.border_color = border_color.into();
@@ -811,6 +821,9 @@ impl toggler::StyleSheet for Theme {
             background_border: None,
             foreground: theme.palette.neutral_2.into(),
             foreground_border: None,
+            border_radius: theme.radius_xl().into(),
+            handle_radius: theme.radius_xl().into(),
+            handle_margin: 2.0,
         }
     }
 
