@@ -65,10 +65,10 @@ impl Default for Context {
 
 impl Context {
     #[must_use]
-    pub fn suggested_size(&self) -> (u16, u16) {
+    pub fn suggested_size(&self, is_symbolic: bool) -> (u16, u16) {
         match &self.size {
             Size::PanelSize(ref size) => {
-                let s = size.get_applet_icon_size() as u16;
+                let s = size.get_applet_icon_size(is_symbolic) as u16;
                 (s, s)
             }
             Size::Hardcoded((width, height)) => (*width, *height),
@@ -76,10 +76,10 @@ impl Context {
     }
 
     #[must_use]
-    pub fn suggested_padding(&self) -> u16 {
+    pub fn suggested_padding(&self, is_symbolic: bool) -> u16 {
         match &self.size {
-            Size::PanelSize(ref size) => size.get_applet_padding(),
-            Size::Hardcoded((width, height)) => 8,
+            Size::PanelSize(ref size) => size.get_applet_padding(is_symbolic),
+            Size::Hardcoded(_) => 8,
         }
     }
 
@@ -91,10 +91,10 @@ impl Context {
     #[must_use]
     #[allow(clippy::cast_precision_loss)]
     pub fn window_settings(&self) -> crate::app::Settings {
-        let (width, height) = self.suggested_size();
+        let (width, height) = self.suggested_size(true);
         let width = f32::from(width);
         let height = f32::from(height);
-        let applet_padding = self.suggested_padding();
+        let applet_padding = self.suggested_padding(true);
         let mut settings = crate::app::Settings::default()
             .size(iced_core::Size::new(
                 width + applet_padding as f32 * 2.,
@@ -122,8 +122,8 @@ impl Context {
         &self,
         icon: widget::icon::Handle,
     ) -> crate::widget::Button<'a, Message, crate::Theme, Renderer> {
-        let suggested = self.suggested_size();
-        let applet_padding = self.suggested_padding();
+        let suggested = self.suggested_size(icon.symbolic);
+        let applet_padding = self.suggested_padding(icon.symbolic);
         crate::widget::button(
             widget::icon(icon)
                 .style(theme::Svg::Custom(Rc::new(|theme| {
@@ -146,7 +146,7 @@ impl Context {
         self.icon_button_from_handle(
             widget::icon::from_name(icon_name)
                 .symbolic(true)
-                .size(self.suggested_size().0)
+                .size(self.suggested_size(true).0)
                 .into(),
         )
     }
@@ -198,8 +198,8 @@ impl Context {
         width_padding: Option<i32>,
         height_padding: Option<i32>,
     ) -> SctkPopupSettings {
-        let (width, height) = self.suggested_size();
-        let applet_padding = self.suggested_padding();
+        let (width, height) = self.suggested_size(true);
+        let applet_padding = self.suggested_padding(true);
         let pixel_offset = 8;
         let (offset, anchor, gravity) = match self.anchor {
             PanelAnchor::Left => ((pixel_offset, 0), Anchor::Right, Gravity::Right),
