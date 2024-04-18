@@ -19,7 +19,7 @@ pub struct Container {
 
 impl Container {
     pub(crate) fn new(component: Component, base: Srgba, on: Srgba) -> Self {
-        let mut divider_c = base;
+        let mut divider_c = on;
         divider_c.alpha = 0.2;
 
         Self {
