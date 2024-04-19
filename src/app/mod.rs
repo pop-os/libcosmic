@@ -45,7 +45,7 @@ pub use self::settings::Settings;
 use crate::config::CosmicTk;
 use crate::prelude::*;
 use crate::theme::THEME;
-use crate::widget::{context_drawer, nav_bar, popover};
+use crate::widget::{context_drawer, menu, nav_bar, popover};
 use apply::Apply;
 use iced::Subscription;
 #[cfg(all(feature = "winit", feature = "multi-window"))]
@@ -473,10 +473,7 @@ where
     }
 
     /// Shows a context menu for the active nav bar item.
-    fn nav_context_menu(
-        &self,
-        id: nav_bar::Id,
-    ) -> Option<Vec<crate::widget::menu::MenuTree<Message<Self::Message>, crate::Renderer>>> {
+    fn nav_context_menu(&self, id: nav_bar::Id) -> Option<Vec<menu::Tree<Message<Self::Message>>>> {
         None
     }
 

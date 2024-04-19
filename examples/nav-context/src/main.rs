@@ -7,9 +7,7 @@ use std::collections::HashMap;
 
 use cosmic::app::{Command, Core, Settings};
 use cosmic::iced_core::Size;
-use cosmic::widget::menu::action::MenuAction;
-use cosmic::widget::menu::menu_tree::{menu_items, MenuItem, MenuTree};
-use cosmic::widget::nav_bar;
+use cosmic::widget::{menu, nav_bar};
 use cosmic::{executor, iced, ApplicationExt, Element};
 
 #[derive(Clone, Copy)]
@@ -71,7 +69,7 @@ pub enum NavMenuAction {
     Delete(nav_bar::Id),
 }
 
-impl MenuAction for NavMenuAction {
+impl menu::Action for NavMenuAction {
     type Message = cosmic::app::Message<Message>;
 
     fn message(&self, _entity: Option<cosmic::widget::segmented_button::Entity>) -> Self::Message {
@@ -133,13 +131,13 @@ impl cosmic::Application for App {
     fn nav_context_menu(
         &self,
         id: nav_bar::Id,
-    ) -> Option<Vec<MenuTree<cosmic::app::Message<Self::Message>, cosmic::Renderer>>> {
-        Some(menu_items(
+    ) -> Option<Vec<menu::Tree<cosmic::app::Message<Self::Message>>>> {
+        Some(menu::items(
             &HashMap::new(),
             vec![
-                MenuItem::Button("Move Up", NavMenuAction::MoveUp(id)),
-                MenuItem::Button("Move Down", NavMenuAction::MoveDown(id)),
-                MenuItem::Button("Delete", NavMenuAction::Delete(id)),
+                menu::Item::Button("Move Up", NavMenuAction::MoveUp(id)),
+                menu::Item::Button("Move Down", NavMenuAction::MoveDown(id)),
+                menu::Item::Button("Delete", NavMenuAction::Delete(id)),
             ],
         ))
     }
