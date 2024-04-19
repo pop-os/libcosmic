@@ -883,23 +883,25 @@ where
                         }
 
                         // Present a context menu on a right click event.
-                        if let Some(on_context) = self.on_context.as_ref() {
-                            if right_button_released(&event)
-                                || (touch_lifted(&event) && fingers_pressed == 2)
-                            {
-                                state.show_context = Some(key);
-                                state.context_cursor =
-                                    cursor_position.position().unwrap_or_default();
-                                state.focused = true;
-                                state.focused_item = Item::Tab(key);
+                        if self.context_menu.is_some() {
+                            if let Some(on_context) = self.on_context.as_ref() {
+                                if right_button_released(&event)
+                                    || (touch_lifted(&event) && fingers_pressed == 2)
+                                {
+                                    state.show_context = Some(key);
+                                    state.context_cursor =
+                                        cursor_position.position().unwrap_or_default();
+                                    state.focused = true;
+                                    state.focused_item = Item::Tab(key);
 
-                                let menu_state =
-                                    tree.children[0].state.downcast_mut::<MenuBarState>();
-                                menu_state.open = true;
-                                menu_state.view_cursor = cursor_position;
+                                    let menu_state =
+                                        tree.children[0].state.downcast_mut::<MenuBarState>();
+                                    menu_state.open = true;
+                                    menu_state.view_cursor = cursor_position;
 
-                                shell.publish(on_context(key));
-                                return event::Status::Captured;
+                                    shell.publish(on_context(key));
+                                    return event::Status::Captured;
+                                }
                             }
                         }
                     }
