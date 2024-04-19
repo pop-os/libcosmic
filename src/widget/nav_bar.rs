@@ -8,13 +8,12 @@
 use apply::Apply;
 use iced::{
     clipboard::{dnd::DndAction, mime::AllowedMimeTypes},
-    widget::{container, scrollable},
     Background, Length,
 };
 use iced_core::{Border, Color, Shadow};
 
-use crate::widget::Container;
-use crate::{theme, widget::segmented_button, Theme};
+use crate::widget::{container, menu, scrollable, segmented_button, Container};
+use crate::{theme, Theme};
 
 use super::dnd_destination::DragId;
 
@@ -63,10 +62,7 @@ pub struct NavBar<'a, Message> {
 }
 
 impl<'a, Message: Clone + 'static> NavBar<'a, Message> {
-    pub fn context_menu(
-        mut self,
-        context_menu: Option<Vec<crate::widget::menu::MenuTree<'a, Message, crate::Renderer>>>,
-    ) -> Self {
+    pub fn context_menu(mut self, context_menu: Option<Vec<menu::Tree<'a, Message>>>) -> Self {
         self.segmented_button = self.segmented_button.context_menu(context_menu);
         self
     }

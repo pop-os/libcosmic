@@ -55,16 +55,19 @@
 //!
 
 pub mod action;
+pub use action::MenuAction as Action;
+
 mod flex;
 pub mod key_bind;
-pub mod menu_bar;
+
+mod menu_bar;
+pub use menu_bar::MenuBar;
+pub(crate) use menu_bar::MenuBarState;
+
 mod menu_inner;
-pub mod menu_tree;
+mod menu_tree;
+pub use menu_tree::{menu_items as items, menu_root as root, MenuItem as Item, MenuTree as Tree};
 
 pub use crate::style::menu_bar::{Appearance, StyleSheet};
-/// A `MenuBar` collects `MenuTree`s and handles
-pub type MenuBar<'a, Message, Renderer> = menu_bar::MenuBar<'a, Message, Renderer>;
 pub(crate) use menu_inner::Menu;
 pub use menu_inner::{CloseCondition, ItemHeight, ItemWidth, PathHighlight};
-/// Nested menu is essentially a tree of items, a menu is a collection of items
-pub type MenuTree<'a, Message, Renderer> = menu_tree::MenuTree<'a, Message, Renderer>;

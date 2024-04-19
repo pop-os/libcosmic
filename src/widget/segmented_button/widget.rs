@@ -5,8 +5,9 @@ use super::model::{Entity, Model, Selectable};
 use crate::iced_core::id::Internal;
 use crate::theme::{SegmentedButton as Style, THEME};
 use crate::widget::dnd_destination::DragId;
-use crate::widget::menu::menu_bar::{MenuBar, MenuBarState};
-use crate::widget::menu::{CloseCondition, ItemHeight, ItemWidth, MenuTree, PathHighlight};
+use crate::widget::menu::{
+    self, CloseCondition, ItemHeight, ItemWidth, MenuBarState, PathHighlight,
+};
 use crate::widget::{icon, Icon};
 use crate::{Element, Renderer};
 use derive_setters::Setters;
@@ -124,8 +125,7 @@ where
     pub(super) style: Style,
     /// The context menu to display when a context is activated
     #[setters(skip)]
-    pub(super) context_menu:
-        Option<Vec<crate::widget::menu::MenuTree<'a, Message, crate::Renderer>>>,
+    pub(super) context_menu: Option<Vec<menu::Tree<'a, Message, crate::Renderer>>>,
     /// Emits the ID of the item that was activated.
     #[setters(skip)]
     pub(super) on_activate: Option<Box<dyn Fn(Entity) -> Message + 'static>>,
@@ -192,22 +192,19 @@ where
         }
     }
 
-    pub fn context_menu(
-        mut self,
-        context_menu: Option<Vec<MenuTree<'a, Message, crate::Renderer>>>,
-    ) -> Self
+    pub fn context_menu(mut self, context_menu: Option<Vec<menu::Tree<'a, Message>>>) -> Self
     where
         Message: 'static,
     {
         self.context_menu = context_menu.map(|menus| {
-            vec![MenuTree::with_children(
+            vec![menu::Tree::with_children(
                 crate::widget::row::<'static, Message>(),
                 menus,
             )]
         });
 
         if let Some(ref mut context_menu) = self.context_menu {
-            context_menu.iter_mut().for_each(MenuTree::set_index);
+            context_menu.iter_mut().for_each(menu::Tree::set_index);
         }
 
         self
