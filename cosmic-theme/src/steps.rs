@@ -40,9 +40,9 @@ pub fn get_surface_color(
     fallback: &Srgba,
 ) -> Srgba {
     assert!(step_array.len() == 100);
-    if !is_dark && base_index >= 88 {
-        is_dark = true;
-    }
+
+    is_dark = !is_dark && base_index < 88;
+
     get_index(base_index, steps, step_array.len(), is_dark)
         .and_then(|i| step_array.get(i).cloned())
         .unwrap_or_else(|| fallback.to_owned())
