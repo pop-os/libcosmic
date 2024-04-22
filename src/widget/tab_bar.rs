@@ -15,10 +15,10 @@ use super::segmented_button::{
 ///
 /// For details on the model, see the [`segmented_button`] module for more details.
 pub fn horizontal<SelectionMode: Default, Message>(
-    model: &Model<SelectionMode>,
+    model: &Model<SelectionMode, Message>,
 ) -> HorizontalSegmentedButton<SelectionMode, Message>
 where
-    Model<SelectionMode>: Selectable,
+    Model<SelectionMode, Message>: Selectable,
 {
     let theme = crate::theme::active();
     let space_s = theme.cosmic().space_s();
@@ -38,10 +38,10 @@ where
 /// The data for the widget comes from a model that is maintained the application.
 /// For details on the model, see the [`segmented_button`] module for more details.
 pub fn vertical<SelectionMode, Message>(
-    model: &Model<SelectionMode>,
+    model: &Model<SelectionMode, Message>,
 ) -> VerticalSegmentedButton<SelectionMode, Message>
 where
-    Model<SelectionMode>: Selectable,
+    Model<SelectionMode, Message>: Selectable,
     SelectionMode: Default,
 {
     let theme = crate::theme::active();

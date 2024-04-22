@@ -62,9 +62,9 @@ pub enum ColorPickerUpdate {
 }
 
 #[derive(Setters)]
-pub struct ColorPickerModel {
+pub struct ColorPickerModel<Message> {
     #[setters(skip)]
-    segmented_model: Model<SingleSelect>,
+    segmented_model: Model<SingleSelect, Message>,
     #[setters(skip)]
     active_color: palette::Hsv,
     #[setters(skip)]
@@ -86,7 +86,7 @@ pub struct ColorPickerModel {
     copied_at: Option<Instant>,
 }
 
-impl ColorPickerModel {
+impl<Message> ColorPickerModel<Message> {
     #[must_use]
     pub fn new(
         hex: impl Into<Cow<'static, str>> + Clone,
@@ -118,7 +118,7 @@ impl ColorPickerModel {
 
     /// Get a color picker button that displays the applied color
     ///
-    pub fn picker_button<'a, Message: 'static, T: Fn(ColorPickerUpdate) -> Message>(
+    pub fn picker_button<'a, T: Fn(ColorPickerUpdate) -> Message>(
         &self,
         f: T,
         icon_portion: Option<u16>,
@@ -130,7 +130,7 @@ impl ColorPickerModel {
         )
     }
 
-    pub fn update<Message>(&mut self, update: ColorPickerUpdate) -> Command<Message> {
+    pub fn update(&mut self, update: ColorPickerUpdate) -> Command<Message> {
         match update {
             ColorPickerUpdate::ActiveColor(c) => {
                 self.must_clear_cache.store(true, Ordering::SeqCst);
@@ -222,7 +222,7 @@ impl ColorPickerModel {
     }
 
     #[must_use]
-    pub fn builder<Message>(
+    pub fn builder(
         &self,
         on_update: fn(ColorPickerUpdate) -> Message,
     ) -> ColorPickerBuilder<Message> {
@@ -246,7 +246,7 @@ impl ColorPickerModel {
 #[derive(Setters, Clone)]
 pub struct ColorPickerBuilder<'a, Message> {
     #[setters(skip)]
-    model: &'a Model<SingleSelect>,
+    model: &'a Model<SingleSelect, Message>,
     #[setters(skip)]
     active_color: palette::Hsv,
     #[setters(skip)]
