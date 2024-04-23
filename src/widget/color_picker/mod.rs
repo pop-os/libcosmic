@@ -122,7 +122,7 @@ impl<Message> ColorPickerModel<Message> {
         &self,
         f: T,
         icon_portion: Option<u16>,
-    ) -> crate::widget::Button<'a, Message, crate::Theme, crate::Renderer> {
+    ) -> crate::widget::Button<'a, Message, crate::Theme, crate::Renderer> where Message: 'static {
         color_button(
             Some(f(ColorPickerUpdate::ToggleColorPicker)),
             self.applied_color,

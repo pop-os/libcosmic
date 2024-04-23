@@ -53,7 +53,6 @@ pub type MultiSelectEntityMut<'a, Message> = EntityMut<'a, MultiSelect, Message>
 pub(super) struct Storage(HashMap<TypeId, SecondaryMap<Entity, Box<dyn Any>>>);
 
 /// The model held by the application, containing the unique IDs and data of each inserted item.
-#[derive(Default)]
 pub struct Model<SelectionMode: Default, Message> {
     /// The content used for drawing segmented items.
     pub(super) items: SlotMap<Entity, Settings>,
@@ -78,6 +77,22 @@ pub struct Model<SelectionMode: Default, Message> {
 
     /// Data managed by the application.
     pub(super) storage: Storage,
+}
+
+//TODO: Default derive ends up requiring Message to implement Default
+impl<SelectionMode: Default, Message> Default for Model<SelectionMode, Message> {
+    fn default() -> Self {
+        Self {
+            items: SlotMap::default(),
+            elements: SecondaryMap::default(),
+            icons: SecondaryMap::default(),
+            indents: SecondaryMap::default(),
+            text: SecondaryMap::default(),
+            order: VecDeque::default(),
+            selection: SelectionMode::default(),
+            storage: Storage::default(),
+        }
+    }
 }
 
 impl<SelectionMode: Default, Message> Model<SelectionMode, Message>

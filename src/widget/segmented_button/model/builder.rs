@@ -8,8 +8,14 @@ use crate::widget::icon::Icon;
 use std::borrow::Cow;
 
 /// A builder for a [`Model`].
-#[derive(Default)]
 pub struct ModelBuilder<SelectionMode: Default, Message>(Model<SelectionMode, Message>);
+
+//TODO: Default derive ends up requiring Message to implement Default
+impl<SelectionMode: Default, Message> Default for ModelBuilder<SelectionMode, Message> {
+    fn default() -> Self {
+        Self(Model::default())
+    }
+}
 
 /// Constructs a new item for the [`ModelBuilder`].
 pub struct BuilderEntity<SelectionMode: Default, Message> {
