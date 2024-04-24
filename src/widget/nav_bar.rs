@@ -12,7 +12,7 @@ use iced::{
 };
 use iced_core::{Border, Color, Shadow};
 
-use crate::widget::{container, menu, scrollable, segmented_button, Container};
+use crate::widget::{container, menu, scrollable, segmented_button, Container, Icon};
 use crate::{theme, Theme};
 
 use super::dnd_destination::DragId;
@@ -62,6 +62,11 @@ pub struct NavBar<'a, Message> {
 }
 
 impl<'a, Message: Clone + 'static> NavBar<'a, Message> {
+    pub fn close_icon(mut self, close_icon: Icon) -> Self {
+        self.segmented_button = self.segmented_button.close_icon(close_icon);
+        self
+    }
+
     pub fn context_menu(mut self, context_menu: Option<Vec<menu::Tree<'a, Message>>>) -> Self {
         self.segmented_button = self.segmented_button.context_menu(context_menu);
         self
@@ -76,6 +81,15 @@ impl<'a, Message: Clone + 'static> NavBar<'a, Message> {
     #[must_use]
     pub fn into_container(self) -> Container<'a, Message, crate::Theme, crate::Renderer> {
         Container::from(self)
+    }
+
+    /// Emitted when a tab close button is pressed.
+    pub fn on_close<T>(mut self, on_close: T) -> Self
+    where
+        T: Fn(Id) -> Message + 'static,
+    {
+        self.segmented_button = self.segmented_button.on_close(on_close);
+        self
     }
 
     /// Emitted when a button is right-clicked.
