@@ -5,7 +5,7 @@ use crate::{
     DARK_PALETTE, LIGHT_PALETTE, NAME,
 };
 use cosmic_config::{Config, CosmicConfigEntry};
-use palette::{IntoColor, Oklcha, Srgb, Srgba};
+use palette::{rgb::Rgb, IntoColor, Oklcha, Srgb, Srgba};
 use serde::{Deserialize, Serialize};
 use std::num::NonZeroUsize;
 
@@ -180,13 +180,6 @@ impl Theme {
     /// get @warning_color
     pub fn warning_color(&self) -> Srgba {
         self.warning.base
-    }
-
-    #[must_use]
-    #[allow(clippy::doc_markdown)]
-    /// get @small_container_widget
-    pub fn small_container_widget(&self) -> Srgba {
-        self.palette.gray_2
     }
 
     #[must_use]
@@ -774,6 +767,11 @@ impl ThemeBuilder {
 
         let p_ref = palette.as_ref();
 
+        let neutral_steps = steps(
+            neutral_tint.unwrap_or(Rgb::new(0.0, 0.0, 0.0)),
+            NonZeroUsize::new(100).unwrap(),
+        );
+
         let bg = if let Some(bg_color) = bg_color {
             bg_color
         } else {
@@ -783,10 +781,14 @@ impl ThemeBuilder {
         let step_array = steps(bg, NonZeroUsize::new(100).unwrap());
         let bg_index = color_index(bg, step_array.len());
 
-        let mut component_hovered_overlay = p_ref.neutral_0;
+        let mut component_hovered_overlay = if bg_index < 91 {
+            p_ref.neutral_10
+        } else {
+            p_ref.neutral_0
+        };
         component_hovered_overlay.alpha = 0.1;
 
-        let mut component_pressed_overlay = p_ref.neutral_0;
+        let mut component_pressed_overlay = component_hovered_overlay;
         component_pressed_overlay.alpha = 0.2;
 
         // Standard button background is neutral 7 with 25% opacity
@@ -805,7 +807,6 @@ impl ThemeBuilder {
         let on_bg_component = get_text(
             color_index(bg_component, step_array.len()),
             &step_array,
-            is_dark,
             &p_ref.neutral_8,
             text_steps_array.as_ref(),
         );
@@ -831,9 +832,15 @@ impl ThemeBuilder {
                 get_text(
                     bg_index,
                     &step_array,
-                    is_dark,
                     &p_ref.neutral_8,
                     text_steps_array.as_ref(),
+                ),
+                get_surface_color(
+                    bg_index,
+                    5,
+                    &neutral_steps,
+                    bg_index <= 65,
+                    &p_ref.neutral_6,
                 ),
             ),
             primary: {
@@ -843,9 +850,19 @@ impl ThemeBuilder {
                     get_surface_color(bg_index, 5, &step_array, is_dark, &p_ref.neutral_1)
                 };
 
-                let base_index = color_index(container_bg, step_array.len());
+                let base_index: usize = color_index(container_bg, step_array.len());
                 let component_base =
                     get_surface_color(base_index, 6, &step_array, is_dark, &p_ref.neutral_3);
+
+                component_hovered_overlay = if base_index < 91 {
+                    p_ref.neutral_10
+                } else {
+                    p_ref.neutral_0
+                };
+                component_hovered_overlay.alpha = 0.1;
+
+                component_pressed_overlay = component_hovered_overlay;
+                component_pressed_overlay.alpha = 0.2;
 
                 let container = Container::new(
                     Component::component(
@@ -854,7 +871,6 @@ impl ThemeBuilder {
                         get_text(
                             color_index(component_base, step_array.len()),
                             &step_array,
-                            is_dark,
                             &p_ref.neutral_8,
                             text_steps_array.as_ref(),
                         ),
@@ -867,9 +883,15 @@ impl ThemeBuilder {
                     get_text(
                         base_index,
                         &step_array,
-                        is_dark,
                         &p_ref.neutral_8,
                         text_steps_array.as_ref(),
+                    ),
+                    get_surface_color(
+                        base_index,
+                        5,
+                        &neutral_steps,
+                        base_index <= 65,
+                        &p_ref.neutral_6,
                     ),
                 );
 
@@ -886,6 +908,16 @@ impl ThemeBuilder {
                 let secondary_component =
                     get_surface_color(base_index, 3, &step_array, is_dark, &p_ref.neutral_4);
 
+                component_hovered_overlay = if base_index < 91 {
+                    p_ref.neutral_10
+                } else {
+                    p_ref.neutral_0
+                };
+                component_hovered_overlay.alpha = 0.1;
+
+                component_pressed_overlay = component_hovered_overlay;
+                component_pressed_overlay.alpha = 0.2;
+
                 Container::new(
                     Component::component(
                         secondary_component,
@@ -893,7 +925,6 @@ impl ThemeBuilder {
                         get_text(
                             color_index(secondary_component, step_array.len()),
                             &step_array,
-                            is_dark,
                             &p_ref.neutral_8,
                             text_steps_array.as_ref(),
                         ),
@@ -906,9 +937,15 @@ impl ThemeBuilder {
                     get_text(
                         base_index,
                         &step_array,
-                        is_dark,
                         &p_ref.neutral_8,
                         text_steps_array.as_ref(),
+                    ),
+                    get_surface_color(
+                        base_index,
+                        5,
+                        &neutral_steps,
+                        base_index <= 65,
+                        &p_ref.neutral_6,
                     ),
                 )
             },

@@ -15,18 +15,28 @@ pub struct Container {
     pub divider: Srgba,
     /// the color of text in the container
     pub on: Srgba,
+    /// the color of @small_widget_container
+    pub small_widget: Srgba,
 }
 
 impl Container {
-    pub(crate) fn new(component: Component, base: Srgba, on: Srgba) -> Self {
+    pub(crate) fn new(
+        component: Component,
+        base: Srgba,
+        on: Srgba,
+        mut small_widget: Srgba,
+    ) -> Self {
         let mut divider_c = on;
         divider_c.alpha = 0.2;
+
+        small_widget.alpha = 0.25;
 
         Self {
             base,
             component,
             divider: over(divider_c, base),
             on,
+            small_widget,
         }
     }
 }
