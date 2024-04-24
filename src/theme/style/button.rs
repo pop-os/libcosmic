@@ -64,8 +64,10 @@ pub fn appearance(
 
             let (background, text, icon) = color(style_component);
             appearance.background = Some(Background::Color(background));
-            appearance.text_color = text;
-            appearance.icon_color = icon;
+            if !matches!(style, Button::Standard | Button::Text) {
+                appearance.text_color = text;
+                appearance.icon_color = icon;
+            }
         }
 
         Button::Icon | Button::IconVertical | Button::HeaderBar => {
@@ -152,15 +154,14 @@ impl StyleSheet for crate::Theme {
         if let Button::Custom { active, .. } = style {
             return active(focused, self);
         }
-        let accent = self.cosmic().accent_color();
 
-        appearance(self, focused, selected, style, |component| {
+        appearance(self, focused, selected, style, move |component| {
             let text_color = if matches!(
                 style,
                 Button::Icon | Button::IconVertical | Button::HeaderBar
             ) && selected
             {
-                Some(accent.into())
+                Some(self.cosmic().accent_color().into())
             } else if matches!(style, Button::HeaderBar) && !selected {
                 let mut c = Color::from(component.on);
                 c.a = 0.8;
@@ -197,7 +198,6 @@ impl StyleSheet for crate::Theme {
         if let Button::Custom { hovered, .. } = style {
             return hovered(focused, self);
         }
-        let accent = self.cosmic().accent_button.hover;
 
         appearance(
             self,
@@ -210,7 +210,7 @@ impl StyleSheet for crate::Theme {
                     Button::Icon | Button::IconVertical | Button::HeaderBar
                 ) && selected
                 {
-                    Some(accent.into())
+                    Some(self.cosmic().accent_color().into())
                 } else if matches!(style, Button::HeaderBar) && !selected {
                     let mut c = Color::from(component.on);
                     c.a = 0.8;
@@ -228,7 +228,6 @@ impl StyleSheet for crate::Theme {
         if let Button::Custom { pressed, .. } = style {
             return pressed(focused, self);
         }
-        let accent = self.cosmic().accent_button.pressed;
 
         appearance(self, focused, selected, style, |component| {
             let text_color = if matches!(
@@ -236,7 +235,7 @@ impl StyleSheet for crate::Theme {
                 Button::Icon | Button::IconVertical | Button::HeaderBar
             ) && selected
             {
-                Some(accent.into())
+                Some(self.cosmic().accent_color().into())
             } else if matches!(style, Button::HeaderBar) && !selected {
                 let mut c = Color::from(component.on);
                 c.a = 0.8;

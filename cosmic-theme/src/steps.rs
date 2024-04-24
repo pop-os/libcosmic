@@ -43,16 +43,15 @@ pub fn get_surface_color(
 
     is_dark = is_dark || base_index < 91;
 
-    get_index(base_index, steps, step_array.len(), is_dark)
-        .and_then(|i| step_array.get(i).cloned())
-        .unwrap_or_else(|| fallback.to_owned())
+    *get_index(base_index, steps, step_array.len(), is_dark)
+        .and_then(|i| step_array.get(i))
+        .unwrap_or(fallback)
 }
 
 /// get text color given a base background color
 pub fn get_text(
     base_index: usize,
     step_array: &Vec<Srgba>,
-    is_dark: bool,
     fallback: &Srgba,
     tint_array: Option<&Vec<Srgba>>,
 ) -> Srgba {
@@ -63,16 +62,14 @@ pub fn get_text(
     } else {
         step_array
     };
-    let Some(index) = get_index(base_index, 70, step_array.len(), is_dark)
-        .or_else(|| get_index(base_index, 50, step_array.len(), is_dark))
-    else {
-        return fallback.to_owned();
-    };
 
-    step_array
-        .get(index)
-        .cloned()
-        .unwrap_or_else(|| fallback.to_owned())
+    let is_dark = base_index < 60;
+
+    let index = get_index(base_index, 70, step_array.len(), is_dark)
+        .or_else(|| get_index(base_index, 50, step_array.len(), is_dark))
+        .unwrap_or_else(|| if is_dark { 99 } else { 0 });
+
+    *step_array.get(index).unwrap_or(fallback)
 }
 
 /// get the index into the steps array for a given color

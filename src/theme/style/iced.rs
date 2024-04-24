@@ -436,6 +436,7 @@ impl container::StyleSheet for Theme {
     #[allow(clippy::too_many_lines)]
     fn appearance(&self, style: &Self::Style) -> container::Appearance {
         let cosmic = self.cosmic();
+
         match style {
             Container::Transparent => container::Appearance::default(),
 
@@ -459,13 +460,7 @@ impl container::StyleSheet for Theme {
             },
 
             Container::List => {
-                // TODO: The primary component has the wrong color on the light theme.
-                let component = if cosmic.is_dark {
-                    &self.current_container().component
-                } else {
-                    &cosmic.background.component
-                };
-
+                let component = &self.current_container().component;
                 container::Appearance {
                     icon_color: Some(component.on.into()),
                     text_color: Some(component.on.into()),
@@ -479,7 +474,7 @@ impl container::StyleSheet for Theme {
             }
 
             Container::HeaderBar => container::Appearance {
-                icon_color: Some(Color::from(cosmic.accent.base)),
+                icon_color: Some(Color::from(cosmic.background.on)),
                 text_color: Some(Color::from(cosmic.background.on)),
                 background: Some(iced::Background::Color(cosmic.background.base.into())),
                 border: Border {

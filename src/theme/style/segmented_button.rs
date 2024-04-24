@@ -5,6 +5,7 @@
 
 use crate::widget::segmented_button::{Appearance, ItemAppearance, StyleSheet};
 use crate::{theme::Theme, widget::segmented_button::ItemStatusAppearance};
+use cosmic_theme::{Component, Container};
 use iced_core::{border::Radius, Background};
 
 #[derive(Default)]
@@ -23,6 +24,8 @@ impl StyleSheet for Theme {
 
     #[allow(clippy::too_many_lines)]
     fn horizontal(&self, style: &Self::Style) -> Appearance {
+        let container = &self.current_container();
+
         match style {
             SegmentedButton::TabBar => {
                 let cosmic = self.cosmic();
@@ -46,25 +49,24 @@ impl StyleSheet for Theme {
                             border_bottom: Some((1.0, cosmic.accent.base.into())),
                             ..Default::default()
                         },
-                        text_color: cosmic.on_bg_color().into(),
+                        text_color: container.component.on.into(),
                     },
-                    hover: hover(cosmic, &active),
-                    focus: focus(cosmic, &active),
+                    hover: hover(cosmic, &container.component, &active),
+                    focus: focus(cosmic, container, &active),
                     active,
                     ..Default::default()
                 }
             }
             SegmentedButton::Control => {
                 let cosmic = self.cosmic();
-                let active = horizontal::selection_active(cosmic);
-                let mut neutral_5 = cosmic.palette.neutral_5;
-                neutral_5.alpha = 0.2;
+                let active = horizontal::selection_active(cosmic, &container.component);
                 let rad_m = cosmic.corner_radii.radius_m;
                 let rad_0 = cosmic.corner_radii.radius_0;
                 Appearance {
-                    border_radius: cosmic.corner_radii.radius_0.into(),
+                    background: Some(Background::Color(container.small_widget.into())),
+                    border_radius: rad_m.into(),
                     inactive: ItemStatusAppearance {
-                        background: Some(Background::Color(cosmic.small_container_widget().into())),
+                        background: None,
                         first: ItemAppearance {
                             border_radius: Radius::from([rad_m[0], rad_0[1], rad_0[2], rad_m[3]]),
                             ..Default::default()
@@ -77,10 +79,10 @@ impl StyleSheet for Theme {
                             border_radius: Radius::from([rad_0[0], rad_m[1], rad_m[2], rad_0[3]]),
                             ..Default::default()
                         },
-                        text_color: cosmic.on_bg_color().into(),
+                        text_color: container.component.on.into(),
                     },
-                    hover: hover(cosmic, &active),
-                    focus: focus(cosmic, &active),
+                    hover: hover(cosmic, &container.component, &active),
+                    focus: focus(cosmic, container, &active),
                     active,
                     ..Default::default()
                 }
@@ -96,28 +98,29 @@ impl StyleSheet for Theme {
         let rad_0 = cosmic.corner_radii.radius_0;
         match style {
             SegmentedButton::TabBar => {
+                let container = &self.cosmic().primary;
                 let active = vertical::tab_bar_active(cosmic);
                 Appearance {
                     border_radius: cosmic.corner_radii.radius_0.into(),
                     inactive: ItemStatusAppearance {
                         background: None,
-                        text_color: cosmic.on_bg_color().into(),
+                        text_color: container.component.on.into(),
                         ..active
                     },
-                    hover: hover(cosmic, &active),
-                    focus: focus(cosmic, &active),
+                    hover: hover(cosmic, &container.component, &active),
+                    focus: focus(cosmic, container, &active),
                     active,
                     ..Default::default()
                 }
             }
             SegmentedButton::Control => {
-                let active = vertical::selection_active(cosmic);
-                let mut neutral_5 = cosmic.palette.neutral_5;
-                neutral_5.alpha = 0.2;
+                let container = self.current_container();
+                let active = vertical::selection_active(cosmic, &container.component);
                 Appearance {
-                    border_radius: cosmic.corner_radii.radius_0.into(),
+                    background: Some(Background::Color(container.small_widget.into())),
+                    border_radius: rad_m.into(),
                     inactive: ItemStatusAppearance {
-                        background: Some(Background::Color(neutral_5.into())),
+                        background: None,
                         first: ItemAppearance {
                             border_radius: Radius::from([rad_m[0], rad_m[1], rad_0[0], rad_0[0]]),
                             ..Default::default()
@@ -130,10 +133,10 @@ impl StyleSheet for Theme {
                             border_radius: Radius::from([rad_0[0], rad_0[1], rad_m[2], rad_m[3]]),
                             ..Default::default()
                         },
-                        text_color: cosmic.on_bg_color().into(),
+                        text_color: container.component.on.into(),
                     },
-                    hover: hover(cosmic, &active),
-                    focus: focus(cosmic, &active),
+                    hover: hover(cosmic, &container.component, &active),
+                    focus: focus(cosmic, container, &active),
                     active,
                     ..Default::default()
                 }
@@ -145,15 +148,21 @@ impl StyleSheet for Theme {
 
 mod horizontal {
     use crate::widget::segmented_button::{ItemAppearance, ItemStatusAppearance};
+    use cosmic_theme::Component;
     use iced_core::{border::Radius, Background};
 
-    pub fn selection_active(cosmic: &cosmic_theme::Theme) -> ItemStatusAppearance {
-        let mut neutral_5 = cosmic.palette.neutral_5;
-        neutral_5.alpha = 0.2;
+    pub fn selection_active(
+        cosmic: &cosmic_theme::Theme,
+        component: &Component,
+    ) -> ItemStatusAppearance {
+        let mut color = cosmic.palette.neutral_5;
+        color.alpha = 0.2;
+
         let rad_m = cosmic.corner_radii.radius_m;
         let rad_0 = cosmic.corner_radii.radius_0;
+
         ItemStatusAppearance {
-            background: Some(Background::Color(neutral_5.into())),
+            background: Some(Background::Color(color.into())),
             first: ItemAppearance {
                 border_radius: Radius::from([rad_m[0], rad_0[1], rad_0[2], rad_m[3]]),
                 ..Default::default()
@@ -197,23 +206,28 @@ mod horizontal {
     }
 }
 
-pub fn focus(cosmic: &cosmic_theme::Theme, default: &ItemStatusAppearance) -> ItemStatusAppearance {
-    // TODO: This is a hack to make the hover color lighter than the selected color
-    // I'm not sure why the alpha is being applied differently here than in figma
-    let mut neutral_5 = cosmic.palette.neutral_5;
-    neutral_5.alpha = 0.2;
+pub fn focus(
+    cosmic: &cosmic_theme::Theme,
+    container: &Container,
+    default: &ItemStatusAppearance,
+) -> ItemStatusAppearance {
+    let color = container.small_widget;
     ItemStatusAppearance {
-        background: Some(Background::Color(neutral_5.into())),
+        background: Some(Background::Color(color.into())),
         text_color: cosmic.accent.base.into(),
         ..*default
     }
 }
 
-pub fn hover(cosmic: &cosmic_theme::Theme, default: &ItemStatusAppearance) -> ItemStatusAppearance {
-    let mut neutral_10 = cosmic.palette.neutral_10;
-    neutral_10.alpha = 0.1;
+pub fn hover(
+    cosmic: &cosmic_theme::Theme,
+    component: &Component,
+    default: &ItemStatusAppearance,
+) -> ItemStatusAppearance {
+    let mut color = cosmic.palette.neutral_8;
+    color.alpha = 0.2;
     ItemStatusAppearance {
-        background: Some(Background::Color(neutral_10.into())),
+        background: Some(Background::Color(color.into())),
         text_color: cosmic.accent.base.into(),
         ..*default
     }
@@ -221,15 +235,21 @@ pub fn hover(cosmic: &cosmic_theme::Theme, default: &ItemStatusAppearance) -> It
 
 mod vertical {
     use crate::widget::segmented_button::{ItemAppearance, ItemStatusAppearance};
+    use cosmic_theme::Component;
     use iced_core::{border::Radius, Background};
 
-    pub fn selection_active(cosmic: &cosmic_theme::Theme) -> ItemStatusAppearance {
-        let mut neutral_5 = cosmic.palette.neutral_5;
-        neutral_5.alpha = 0.2;
+    pub fn selection_active(
+        cosmic: &cosmic_theme::Theme,
+        component: &Component,
+    ) -> ItemStatusAppearance {
+        let mut color = component.selected_state_color();
+        color.alpha = 0.3;
+
         let rad_0 = cosmic.corner_radii.radius_0;
         let rad_m = cosmic.corner_radii.radius_m;
+
         ItemStatusAppearance {
-            background: Some(Background::Color(neutral_5.into())),
+            background: Some(Background::Color(color.into())),
             first: ItemAppearance {
                 border_radius: Radius::from([rad_m[0], rad_m[1], rad_0[2], rad_0[3]]),
                 ..Default::default()
