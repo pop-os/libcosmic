@@ -75,10 +75,8 @@ pub fn appearance(
                 corner_radii = &cosmic.corner_radii.radius_m;
             }
 
-            let (background, text, icon) = color(&cosmic.icon_button);
+            let (background, _text, _icon) = color(&cosmic.icon_button);
             appearance.background = Some(Background::Color(background));
-            appearance.text_color = text;
-            appearance.icon_color = icon;
         }
 
         Button::Image => {
