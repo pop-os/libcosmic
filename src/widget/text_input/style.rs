@@ -19,16 +19,16 @@ pub struct Appearance {
     pub border_width: f32,
     /// The border [`Color`] of the text input.
     pub border_color: Color,
-    /// The [`Color`] of symbolic icons.
-    pub icon_color: Color,
     /// The label [`Color`] of the text input.
     pub label_color: Color,
     /// The placeholder text [`Color`].
     pub placeholder_color: Color,
     /// The text [`Color`] of the text input.
     pub selected_text_color: Color,
+    /// The icon [`Color`] of the text input.
+    pub icon_color: Option<Color>,
     /// The text [`Color`] of the text input.
-    pub text_color: Color,
+    pub text_color: Option<Color>,
     /// The selected fill [`Color`] of the text input.
     pub selected_fill: Color,
 }

@@ -43,8 +43,8 @@ impl StyleSheet for crate::Theme {
                 border_width: 1.0,
                 border_offset: None,
                 border_color: container.component.divider.into(),
-                icon_color: container.on.into(),
-                text_color: container.on.into(),
+                icon_color: None,
+                text_color: None,
                 placeholder_color: {
                     let color: Color = container.on.into();
                     color.blend_alpha(background, 0.7)
@@ -59,8 +59,8 @@ impl StyleSheet for crate::Theme {
                 border_width: 0.0,
                 border_offset: None,
                 border_color: Color::TRANSPARENT,
-                icon_color: container.on.into(),
-                text_color: container.on.into(),
+                icon_color: None,
+                text_color: None,
                 placeholder_color: {
                     let color: Color = container.on.into();
                     color.blend_alpha(background, 0.7)
@@ -75,8 +75,8 @@ impl StyleSheet for crate::Theme {
                 border_width: 0.0,
                 border_offset: None,
                 border_color: Color::TRANSPARENT,
-                icon_color: container.on.into(),
-                text_color: container.on.into(),
+                icon_color: None,
+                text_color: None,
                 placeholder_color: {
                     let color: Color = container.on.into();
                     color.blend_alpha(background, 0.7)
@@ -91,8 +91,8 @@ impl StyleSheet for crate::Theme {
                 border_width: 1.0,
                 border_offset: None,
                 border_color: container.component.divider.into(),
-                icon_color: container.on.into(),
-                text_color: container.on.into(),
+                icon_color: None,
+                text_color: None,
                 placeholder_color: {
                     let color: Color = container.on.into();
                     color.blend_alpha(background, 0.7)
@@ -107,8 +107,8 @@ impl StyleSheet for crate::Theme {
                 border_width: 0.0,
                 border_offset: None,
                 border_color: Color::TRANSPARENT,
-                icon_color: container.on.into(),
-                text_color: container.on.into(),
+                icon_color: None,
+                text_color: None,
                 placeholder_color: {
                     let color: Color = container.on.into();
                     color.blend_alpha(background, 0.7)
@@ -138,8 +138,8 @@ impl StyleSheet for crate::Theme {
                 border_width: 1.0,
                 border_offset: Some(2.0),
                 border_color: Color::from(palette.destructive_color()),
-                icon_color: container.on.into(),
-                text_color: container.on.into(),
+                icon_color: None,
+                text_color: None,
                 placeholder_color: {
                     let color: Color = container.on.into();
                     color.blend_alpha(background, 0.7)
@@ -154,8 +154,8 @@ impl StyleSheet for crate::Theme {
                 border_width: 0.0,
                 border_offset: None,
                 border_color: Color::TRANSPARENT,
-                icon_color: container.on.into(),
-                text_color: container.on.into(),
+                icon_color: None,
+                text_color: None,
                 placeholder_color: {
                     let color: Color = container.on.into();
                     color.blend_alpha(background, 0.7)
@@ -170,8 +170,8 @@ impl StyleSheet for crate::Theme {
                 border_width: 0.0,
                 border_offset: None,
                 border_color: Color::TRANSPARENT,
-                icon_color: container.on.into(),
-                text_color: container.on.into(),
+                icon_color: None,
+                text_color: None,
                 placeholder_color: {
                     let color: Color = container.on.into();
                     color.blend_alpha(background, 0.7)
@@ -201,8 +201,8 @@ impl StyleSheet for crate::Theme {
                 border_width: 1.0,
                 border_offset: None,
                 border_color: palette.accent.base.into(),
-                icon_color: container.on.into(),
-                text_color: container.on.into(),
+                icon_color: None,
+                text_color: None,
                 placeholder_color: {
                     let color: Color = container.on.into();
                     color.blend_alpha(background, 0.7)
@@ -217,8 +217,8 @@ impl StyleSheet for crate::Theme {
                 border_offset: None,
                 border_width: 1.0,
                 border_color: palette.accent.base.into(),
-                icon_color: container.on.into(),
-                text_color: container.on.into(),
+                icon_color: None,
+                text_color: None,
                 placeholder_color: {
                     let color: Color = container.on.into();
                     color.blend_alpha(background, 0.7)
@@ -233,8 +233,8 @@ impl StyleSheet for crate::Theme {
                 border_offset: None,
                 border_width: 0.0,
                 border_color: Color::TRANSPARENT,
-                icon_color: container.on.into(),
-                text_color: container.on.into(),
+                icon_color: None,
+                text_color: None,
                 placeholder_color: {
                     let color: Color = container.on.into();
                     color.blend_alpha(background, 0.7)
@@ -249,8 +249,8 @@ impl StyleSheet for crate::Theme {
                 border_width: 0.0,
                 border_offset: None,
                 border_color: Color::TRANSPARENT,
-                icon_color: container.on.into(),
-                text_color: container.on.into(),
+                icon_color: None,
+                text_color: None,
                 placeholder_color: {
                     let color: Color = container.on.into();
                     color.blend_alpha(background, 0.7)
@@ -265,8 +265,8 @@ impl StyleSheet for crate::Theme {
                 border_width: 0.0,
                 border_offset: None,
                 border_color: Color::TRANSPARENT,
-                icon_color: container.on.into(),
-                text_color: container.on.into(),
+                icon_color: None,
+                text_color: None,
                 placeholder_color: {
                     let color: Color = container.on.into();
                     color.blend_alpha(background, 0.7)
@@ -296,8 +296,8 @@ impl StyleSheet for crate::Theme {
                 border_width: 1.0,
                 border_offset: Some(2.0),
                 border_color: palette.accent.base.into(),
-                icon_color: container.on.into(),
-                text_color: container.on.into(),
+                icon_color: None,
+                text_color: None,
                 placeholder_color: {
                     let color: Color = container.on.into();
                     color.blend_alpha(background, 0.7)
@@ -312,8 +312,8 @@ impl StyleSheet for crate::Theme {
                 border_width: 1.0,
                 border_offset: Some(2.0),
                 border_color: palette.accent.base.into(),
-                icon_color: container.on.into(),
-                text_color: container.on.into(),
+                icon_color: None,
+                text_color: None,
                 placeholder_color: {
                     let color: Color = container.on.into();
                     color.blend_alpha(background, 0.7)
@@ -328,10 +328,10 @@ impl StyleSheet for crate::Theme {
                 border_width: 0.0,
                 border_offset: None,
                 border_color: Color::TRANSPARENT,
-                icon_color: container.on.into(),
                 // TODO use regular text color here after text rendering handles multiple colors
                 // in this case, for selected and unselected text
-                text_color: container.on.into(),
+                icon_color: None,
+                text_color: None,
                 placeholder_color: {
                     let color: Color = container.on.into();
                     color.blend_alpha(background, 0.7)
@@ -346,10 +346,10 @@ impl StyleSheet for crate::Theme {
                 border_width: 0.0,
                 border_offset: None,
                 border_color: Color::TRANSPARENT,
-                icon_color: container.on.into(),
+                icon_color: Some(palette.on_accent_color().into()),
                 // TODO use regular text color here after text rendering handles multiple colors
                 // in this case, for selected and unselected text
-                text_color: palette.on_accent_color().into(),
+                text_color: Some(palette.on_accent_color().into()),
                 placeholder_color: {
                     let color: Color = container.on.into();
                     color.blend_alpha(background, 0.7)
@@ -367,13 +367,6 @@ impl StyleSheet for crate::Theme {
             return disabled(self);
         }
 
-        let mut appearance = self.active(style);
-
-        // TODO: iced will not render alpha itself on text or icon colors.
-        let background: Color = self.current_container().component.base.into();
-        appearance.text_color = appearance.text_color.blend_alpha(background, 0.5);
-        appearance.icon_color = appearance.icon_color.blend_alpha(background, 0.5);
-
-        appearance
+        self.active(style)
     }
 }

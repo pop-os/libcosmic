@@ -7,6 +7,7 @@
 //! A [`TextInput`] has some local [`State`].
 use std::borrow::Cow;
 
+use crate::ext::ColorExt;
 use crate::theme::THEME;
 
 use super::cursor;
@@ -2017,6 +2018,16 @@ pub fn draw<'a, Message>(
         theme.active(style)
     };
 
+    let mut icon_color = appearance.icon_color.unwrap_or(renderer_style.icon_color);
+    let mut text_color = appearance.text_color.unwrap_or(renderer_style.text_color);
+
+    // TODO: iced will not render alpha itself on text or icon colors.
+    if is_disabled {
+        let background = theme.current_container().component.base.into();
+        icon_color = icon_color.blend_alpha(background, 0.5);
+        text_color = text_color.blend_alpha(background, 0.5);
+    }
+
     // draw background and its border
     if let Some(border_offset) = appearance.border_offset {
         let offset_bounds = Rectangle {
@@ -2104,8 +2115,8 @@ pub fn draw<'a, Message>(
             renderer,
             theme,
             &renderer::Style {
-                icon_color: appearance.icon_color,
-                text_color: appearance.text_color,
+                icon_color,
+                text_color,
                 scale_factor: renderer_style.scale_factor,
             },
             icon_layout,
@@ -2156,7 +2167,7 @@ pub fn draw<'a, Message>(
                                         blur_radius: 0.0,
                                     },
                                 },
-                                appearance.text_color,
+                                text_color,
                             )),
                             offset,
                         )
@@ -2233,7 +2244,7 @@ pub fn draw<'a, Message>(
         let color = if text.is_empty() {
             appearance.placeholder_color
         } else {
-            appearance.text_color
+            text_color
         };
 
         renderer.fill_text(
@@ -2268,8 +2279,8 @@ pub fn draw<'a, Message>(
             renderer,
             theme,
             &renderer::Style {
-                icon_color: renderer_style.icon_color,
-                text_color: appearance.text_color,
+                icon_color,
+                text_color,
                 scale_factor: renderer_style.scale_factor,
             },
             icon_layout,
@@ -2292,7 +2303,7 @@ pub fn draw<'a, Message>(
                 shaping: text::Shaping::Advanced,
             },
             helper_text_layout.bounds().position(),
-            appearance.text_color,
+            text_color,
             *viewport,
         );
     }
