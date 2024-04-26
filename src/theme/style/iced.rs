@@ -474,7 +474,7 @@ impl container::StyleSheet for Theme {
             }
 
             Container::HeaderBar => container::Appearance {
-                icon_color: Some(Color::from(cosmic.background.on)),
+                icon_color: Some(Color::from(cosmic.accent.base)),
                 text_color: Some(Color::from(cosmic.background.on)),
                 background: Some(iced::Background::Color(cosmic.background.base.into())),
                 border: Border {
