@@ -101,7 +101,7 @@ pub struct Theme {
 
 impl Default for Theme {
     fn default() -> Self {
-        Self::dark_default()
+        Self::preferred_theme()
     }
 }
 
@@ -512,6 +512,40 @@ impl Theme {
         };
         builder = builder.accent(adjusted_c);
         builder.build()
+    }
+
+    /// choose default color palette based on preferred GTK color scheme
+    pub fn gtk_prefer_colorscheme() -> Self {
+        let gsettings = "/usr/bin/gsettings";
+
+        let cmd = std::process::Command::new(gsettings)
+            .arg("get")
+            .arg("org.gnome.desktop.interface")
+            .arg("color-scheme")
+            .output();
+
+        if let Ok(cmd) = cmd {
+            let color_scheme = String::from_utf8_lossy(&cmd.stdout);
+
+            if color_scheme.trim().contains("light") {
+                return Self::light_default();
+            }
+        };
+
+        Self::dark_default()
+    }
+
+    /// check current desktop environment and preferred color scheme and set it as default
+    pub fn preferred_theme() -> Self {
+        let current_desktop = std::env::var("XDG_CURRENT_DESKTOP");
+
+        if let Ok(desktop) = current_desktop {
+            if desktop.trim().to_lowercase().contains("gnome") {
+                return Self::gtk_prefer_colorscheme();
+            }
+        }
+
+        Self::dark_default()
     }
 }
 
