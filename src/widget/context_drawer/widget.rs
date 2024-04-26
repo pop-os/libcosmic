@@ -57,6 +57,7 @@ impl<'a, Message: Clone + 'static> ContextDrawer<'a, Message> {
                 button::text("Close")
                     .trailing_icon(icon::from_name("go-next-symbolic"))
                     .on_press(on_close)
+                    .style(crate::theme::Button::Link)
                     .apply(container)
                     .width(Length::FillPortion(1))
                     .height(Length::Fill)
