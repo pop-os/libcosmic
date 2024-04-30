@@ -1256,10 +1256,10 @@ where
                                             .collect(),
                                         actions: DndAction::Move,
                                         origin_id: window_id,
-                                        icon_id: Some(DndIcon::Widget(
+                                        icon_id: Some((DndIcon::Widget(
                                             icon_id,
                                             Box::new(state_clone.clone()),
-                                        )),
+                                        ), iced::Vector::ZERO)),
                                         data: Box::new(TextInputString(text.clone())),
                                     }
                                 })));
