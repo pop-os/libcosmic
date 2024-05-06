@@ -32,6 +32,7 @@ pub struct Context {
     pub anchor: PanelAnchor,
     pub background: CosmicPanelBackground,
     pub output_name: String,
+    pub panel_type: PanelType,
 }
 
 #[derive(Clone, Debug)]
@@ -39,6 +40,23 @@ pub enum Size {
     PanelSize(PanelSize),
     // (width, height)
     Hardcoded((u16, u16)),
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub enum PanelType {
+    Panel,
+    Dock,
+    Other(String),
+}
+
+impl From<String> for PanelType {
+    fn from(value: String) -> Self {
+        match value.as_str() {
+            "Panel" => PanelType::Panel,
+            "Dock" => PanelType::Dock,
+            other => PanelType::Other(other.to_string()),
+        }
+    }
 }
 
 impl Default for Context {
@@ -59,6 +77,7 @@ impl Default for Context {
                 .and_then(|size| ron::from_str(size.as_str()).ok())
                 .unwrap_or(CosmicPanelBackground::ThemeDefault),
             output_name: std::env::var("COSMIC_PANEL_OUTPUT").unwrap_or_default(),
+            panel_type: PanelType::from(std::env::var("COSMIC_PANEL_NAME").unwrap_or_default()),
         }
     }
 }
