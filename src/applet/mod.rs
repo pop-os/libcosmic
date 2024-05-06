@@ -151,15 +151,18 @@ impl Context {
         &self,
         icon: widget::icon::Handle,
     ) -> crate::widget::Button<'a, Message, crate::Theme, Renderer> {
-        let suggested = self.suggested_size(icon.symbolic);
-        let applet_padding = self.suggested_padding(icon.symbolic);
+        let symbolic = icon.symbolic;
+        let suggested = self.suggested_size(symbolic);
+        let applet_padding = self.suggested_padding(symbolic);
         crate::widget::button(
             widget::icon(icon)
-                .style(theme::Svg::Custom(Rc::new(|theme| {
-                    crate::iced_style::svg::Appearance {
+                .style(if symbolic {
+                    theme::Svg::Custom(Rc::new(|theme| crate::iced_style::svg::Appearance {
                         color: Some(theme.cosmic().background.on.into()),
-                    }
-                })))
+                    }))
+                } else {
+                    theme::Svg::default()
+                })
                 .width(Length::Fixed(suggested.0 as f32))
                 .height(Length::Fixed(suggested.1 as f32)),
         )
