@@ -49,6 +49,16 @@ pub enum PanelType {
     Other(String),
 }
 
+impl ToString for PanelType {
+    fn to_string(&self) -> String {
+        match self {
+            Self::Panel => "Panel".to_string(),
+            Self::Dock => "Dock".to_string(),
+            Self::Other(other) => other.clone(),
+        }
+    }
+}
+
 impl From<String> for PanelType {
     fn from(value: String) -> Self {
         match value.as_str() {
