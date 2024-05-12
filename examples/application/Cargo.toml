@@ -11,4 +11,4 @@ tracing-log = "0.2.0"
 [dependencies.libcosmic]
 path = "../../"
 default-features = false
-features = ["debug", "winit", "tokio", "xdg-portal"]
+features = ["debug", "winit", "tokio", "xdg-portal", "dbus-config"]

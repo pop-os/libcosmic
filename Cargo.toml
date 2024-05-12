@@ -34,8 +34,15 @@ serde-keycode = ["iced_core/serde"]
 single-instance = ["dep:zbus", "serde", "ron"]
 # smol async runtime
 smol = ["iced/smol", "zbus?/async-io"]
+tokio = [
+    "dep:tokio",
+    "ashpd?/tokio",
+    "iced/tokio",
+    "rfd?/tokio",
+    "zbus?/tokio",
+    "cosmic-config/tokio",
+]
 # Tokio async runtime
-tokio = ["dep:tokio", "ashpd?/tokio", "iced/tokio", "rfd?/tokio", "zbus?/tokio"]
 # Wayland window support
 wayland = [
     "ashpd?/wayland",

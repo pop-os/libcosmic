@@ -1,9 +1,10 @@
 use std::ops::Deref;
 
 use crate::{CosmicConfigEntry, Update};
-use cosmic_settings_daemon::{ConfigProxy, CosmicSettingsDaemonProxy};
+use cosmic_settings_daemon::{Changed, ConfigProxy, CosmicSettingsDaemonProxy};
 use futures_util::SinkExt;
-use iced_futures::futures::{future::pending, StreamExt};
+use iced_futures::futures::{self, future::pending, StreamExt};
+
 pub async fn settings_daemon_proxy() -> zbus::Result<CosmicSettingsDaemonProxy<'static>> {
     let conn = zbus::Connection::session().await?;
     CosmicSettingsDaemonProxy::new(&conn).await
@@ -51,11 +52,17 @@ impl Watcher {
     }
 }
 
+#[allow(clippy::too_many_lines)]
 pub fn watcher_subscription<T: CosmicConfigEntry + Send + Sync + Default + 'static + Clone>(
     settings_daemon: CosmicSettingsDaemonProxy<'static>,
     config_id: &'static str,
     is_state: bool,
 ) -> iced_futures::Subscription<Update<T>> {
+    enum Change {
+        Changes(Changed),
+        OwnerChanged(bool),
+    }
+
     let id = std::any::TypeId::of::<T>();
     iced_futures::subscription::channel((is_state, config_id, id), 5, move |mut tx| async move {
         let version = T::VERSION;
@@ -68,6 +75,7 @@ pub fn watcher_subscription<T: CosmicConfigEntry + Send + Sync + Default + 'stat
             pending::<()>().await;
             unreachable!();
         };
+
         let mut config = match T::get_entry(&cosmic_config) {
             Ok(config) => config,
             Err((errors, default)) => {
@@ -77,6 +85,7 @@ pub fn watcher_subscription<T: CosmicConfigEntry + Send + Sync + Default + 'stat
                 default
             }
         };
+
         if let Err(err) = tx
             .send(Update {
                 errors: Vec::new(),
@@ -88,24 +97,93 @@ pub fn watcher_subscription<T: CosmicConfigEntry + Send + Sync + Default + 'stat
             eprintln!("Failed to send config: {err}");
         }
 
-        let watcher = if is_state {
-            Watcher::new_state(&settings_daemon, config_id, version).await
-        } else {
-            Watcher::new_config(&settings_daemon, config_id, version).await
-        };
-        let Ok(watcher) = watcher else {
-            pending::<()>().await;
-            unreachable!();
-        };
+        let mut attempts = 0;
 
         loop {
-            let Ok(mut changes) = watcher.receive_changed().await else {
-                pending::<()>().await;
-                unreachable!();
+            let watcher = if is_state {
+                Watcher::new_state(&settings_daemon, config_id, version).await
+            } else {
+                Watcher::new_config(&settings_daemon, config_id, version).await
             };
-            while let Some(change) = changes.next().await {
+            let Ok(watcher) = watcher else {
+                tracing::error!("Failed to create watcher for {config_id}");
+
+                #[cfg(feature = "tokio")]
+                ::tokio::time::sleep(::tokio::time::Duration::from_secs(2_u64.pow(attempts))).await;
+                #[cfg(feature = "async-std")]
+                async_std::task::sleep(std::time::Duration::from_secs(2_u64.pow(attempts))).await;
+                #[cfg(not(any(feature = "tokio", feature = "async-std")))]
+                {
+                    pending::<()>().await;
+                    unreachable!();
+                }
+                attempts += 1;
+                // The settings daemon has exited
+                continue;
+            };
+            let Ok(changes) = watcher.receive_changed().await else {
+                tracing::error!("Failed to listen for changes for {config_id}");
+
+                #[cfg(feature = "tokio")]
+                ::tokio::time::sleep(::tokio::time::Duration::from_secs(2_u64.pow(attempts))).await;
+                #[cfg(feature = "async-std")]
+                async_std::task::sleep(std::time::Duration::from_secs(2_u64.pow(attempts))).await;
+                #[cfg(not(any(feature = "tokio", feature = "async-std")))]
+                {
+                    pending::<()>().await;
+                    unreachable!();
+                }
+                attempts += 1;
+                // The settings daemon has exited
+                continue;
+            };
+
+            let mut changes = changes.map(Change::Changes).fuse();
+
+            let Ok(owner_changed) = watcher.receive_owner_changed().await else {
+                tracing::error!("Failed to listen for owner changes for {config_id}");
+                #[cfg(feature = "tokio")]
+                ::tokio::time::sleep(::tokio::time::Duration::from_secs(2_u64.pow(attempts))).await;
+                #[cfg(feature = "async-std")]
+                async_std::task::sleep(std::time::Duration::from_secs(2_u64.pow(attempts))).await;
+                #[cfg(not(any(feature = "tokio", feature = "async-std")))]
+                {
+                    pending::<()>().await;
+                    unreachable!();
+                }
+                attempts += 1;
+                // The settings daemon has exited
+                continue;
+            };
+            let mut owner_changed = owner_changed
+                .map(|c| Change::OwnerChanged(c.is_some()))
+                .fuse();
+            loop {
+                let change: Changed = futures::select! {
+                    c = changes.next() => {
+                        let Some(Change::Changes(c)) = c else {
+                            break;
+                        };
+                        c
+                    }
+                    c = owner_changed.next() => {
+                        let Some(Change::OwnerChanged(cont)) = c else {
+                            break;
+                        };
+                        if cont {
+                            continue;
+                        } else {
+                            // The settings daemon has exited
+                            break;
+                        }
+                    },
+                };
+
+                // Reset the attempts counter if we received a change
+                attempts = 0;
                 let Ok(args) = change.args() else {
-                    continue;
+                    // The settings daemon has exited
+                    break;
                 };
                 let (errors, keys) = config.update_keys(&cosmic_config, &[args.key]);
                 if !keys.is_empty() {
