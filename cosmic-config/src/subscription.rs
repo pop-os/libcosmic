@@ -71,20 +71,18 @@ async fn start_listening<
     match state {
         ConfigState::Init(config_id, version, is_state) => {
             let (tx, rx) = mpsc::channel(100);
-            let config = match if is_state {
+            let Ok(config) = (if is_state {
                 Config::new_state(&config_id, version)
             } else {
                 Config::new(&config_id, version)
-            } {
-                Ok(c) => c,
-                Err(_) => return ConfigState::Failed,
+            }) else {
+                return ConfigState::Failed;
             };
-            let watcher = match config.watch(move |_helper, keys| {
+            let Ok(watcher) = config.watch(move |_helper, keys| {
                 let mut tx = tx.clone();
                 let _ = tx.try_send(keys.to_vec());
-            }) {
-                Ok(w) => w,
-                Err(_) => return ConfigState::Failed,
+            }) else {
+                return ConfigState::Failed;
             };
 
             match T::get_entry(&config) {
@@ -115,7 +113,7 @@ async fn start_listening<
                 if !changed.is_empty() {
                     _ = output
                         .send(crate::Update {
-                            errors: errors,
+                            errors,
                             keys: changed,
                             config: conf_data.clone(),
                         })
