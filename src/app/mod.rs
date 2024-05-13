@@ -494,8 +494,10 @@ where
         None
     }
 
-    /// Called before closing the application.
-    fn on_app_exit(&mut self) {}
+    /// Called before closing the application. Returning a message will override closing windows.
+    fn on_app_exit(&mut self) -> Option<Self::Message> {
+        None
+    }
 
     /// Called when a window requests to be closed.
     fn on_close_requested(&self, id: window::Id) -> Option<Self::Message> {
