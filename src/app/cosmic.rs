@@ -449,8 +449,10 @@ impl<T: Application> Cosmic<T> {
             }
 
             Message::Close => {
-                self.app.on_app_exit();
-                return self.close();
+                return match self.app.on_app_exit() {
+                    Some(message) => self.app.update(message),
+                    None => self.close(),
+                };
             }
             Message::SystemThemeModeChange(keys, mode) => {
                 let mut cmds = vec![self.app.system_theme_mode_update(&keys, &mode)];
