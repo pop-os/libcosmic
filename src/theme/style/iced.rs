@@ -495,7 +495,7 @@ impl container::StyleSheet for Theme {
 
                 appearance.border = Border {
                     color: cosmic.primary.divider.into(),
-                    width: 1.0,
+                    width: 0.0,
                     radius: cosmic.corner_radii.radius_s.into(),
                 };
 

@@ -88,8 +88,8 @@ impl<'a, Message: Clone + 'static> ContextDrawer<'a, Message> {
             // XXX this is a hack to get around that
             drawer: container(
                 LayerContainer::new(pane)
-                    .style(crate::style::Container::ContextDrawer)
                     .layer(cosmic_theme::Layer::Primary)
+                    .style(crate::style::Container::ContextDrawer)
                     .width(Length::Fill)
                     .height(Length::Fill)
                     .max_width(480.0),
