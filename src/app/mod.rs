@@ -676,8 +676,7 @@ impl<App: Application> ApplicationExt for App {
         let is_condensed = core.is_condensed();
         let focused = core
             .focused_window()
-            .map(|i| i == self.main_window_id())
-            .unwrap_or_default();
+            .is_some_and(|i| i == self.main_window_id());
 
         let content_row = crate::widget::row::with_children({
             let mut widgets = Vec::with_capacity(2);
@@ -731,11 +730,13 @@ impl<App: Application> ApplicationExt for App {
                     if self.nav_model().is_some() {
                         let toggle = crate::widget::nav_bar_toggle()
                             .active(core.nav_bar_active())
+                            .selected(focused)
                             .on_toggle(if is_condensed {
                                 Message::Cosmic(cosmic::Message::ToggleNavBarCondensed)
                             } else {
                                 Message::Cosmic(cosmic::Message::ToggleNavBar)
-                            });
+                            })
+                            .style(crate::theme::Button::HeaderBar);
 
                         header = header.start(toggle);
                     }

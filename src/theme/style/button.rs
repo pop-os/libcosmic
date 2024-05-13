@@ -75,7 +75,9 @@ pub fn appearance(
                 corner_radii = &cosmic.corner_radii.radius_m;
             }
 
-            let (background, _text, _icon) = color(&cosmic.icon_button);
+            let (background, text, icon) = color(&cosmic.icon_button);
+            appearance.text_color = text;
+            appearance.icon_color = icon;
             appearance.background = Some(Background::Color(background));
         }
 
@@ -161,8 +163,8 @@ impl StyleSheet for crate::Theme {
             {
                 Some(self.cosmic().accent_color().into())
             } else if matches!(style, Button::HeaderBar) && !selected {
-                let mut c = Color::from(component.on);
-                c.a = 0.8;
+                let mut c = Color::from(self.cosmic().background.on);
+                c.a = 0.75;
                 Some(c)
             } else {
                 Some(component.on.into())
