@@ -5,15 +5,8 @@ use std::{
     io::Write,
     num::NonZeroUsize,
 };
-use thiserror::Error;
 
-#[derive(Error, Debug)]
-pub enum OutputError {
-    #[error("IO Error: {0}")]
-    Io(std::io::Error),
-    #[error("Missing config directory")]
-    MissingConfigDir,
-}
+use super::{to_hex, OutputError};
 
 impl Theme {
     #[must_use]
@@ -247,11 +240,6 @@ fn component_gtk4_css(prefix: &str, c: &Component) -> String {
         to_hex(c.base),
         to_hex(c.on),
     )
-}
-
-fn to_hex(c: Srgba) -> String {
-    let c_u8: Rgba<palette::encoding::Srgb, u8> = c.into_format();
-    format!("{:02x}{:02x}{:02x}", c_u8.red, c_u8.green, c_u8.blue)
 }
 
 fn color_css(prefix: &str, c_3: Srgba) -> String {

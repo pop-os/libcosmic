@@ -10,20 +10,23 @@ features = ["test_all_features"]
 rustdoc-args = ["--cfg", "docsrs"]
 
 [features]
-default = []
-gtk4-output = []
+default = ["export"]
+export = ["serde_json"]
 no-default = []
-theme-from-image = ["kmeans_colors", "image"]
 
 [dependencies]
-palette = {version = "0.7.3", features = ["serializing"] }
+palette = { version = "0.7.3", features = ["serializing"] }
 almost = "0.2"
-kmeans_colors = { version = "0.5", features = ["palette_color"], default-features = false, optional = true }
-image = {version = "0.24.1", optional = true }
 serde = { version = "1.0.129", features = ["derive"] }
+serde_json = { version = "1.0.64", optional = true, features = [
+    "preserve_order",
+] }
 ron = "0.8"
 lazy_static = "1.4.0"
-csscolorparser = {version = "0.6.2", features = ["serde"]}
-cosmic-config = { path = "../cosmic-config/", default-features = false, features = ["subscription", "macro"] }
+csscolorparser = { version = "0.6.2", features = ["serde"] }
+cosmic-config = { path = "../cosmic-config/", default-features = false, features = [
+    "subscription",
+    "macro",
+] }
 dirs.workspace = true
 thiserror = "1.0.5"
