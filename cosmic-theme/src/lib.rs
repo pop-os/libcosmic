@@ -9,6 +9,8 @@
 pub use model::*;
 
 mod model;
+
+#[cfg(feature = "export")]
 mod output;
 
 /// composite colors in srgb
