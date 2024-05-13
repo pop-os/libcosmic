@@ -279,6 +279,7 @@ impl Theme {
         let settings = std::fs::read_to_string(&settings_file).unwrap_or_default();
         let mut settings: serde_json::Value = serde_json::from_str(&settings).unwrap_or_default();
         settings["workbench.colorCustomizations"] = serde_json::to_value(vs_theme).unwrap();
+        settings["window.autoDetectColorScheme"] = serde_json::Value::Bool(true);
         std::fs::write(
             &settings_file,
             serde_json::to_string_pretty(&settings).unwrap(),
@@ -296,6 +297,7 @@ impl Theme {
         let settings = std::fs::read_to_string(&settings_file).unwrap_or_default();
         let mut settings: serde_json::Value = serde_json::from_str(&settings).unwrap_or_default();
         settings["workbench.colorCustomizations"] = serde_json::Value::Null;
+
         std::fs::write(
             &settings_file,
             serde_json::to_string_pretty(&settings).unwrap(),
