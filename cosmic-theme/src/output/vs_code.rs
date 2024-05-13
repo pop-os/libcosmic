@@ -160,7 +160,6 @@ pub struct VsTheme {
     #[serde(rename = "statusBarItem.remoteBackground")]
     status_bar_item_remote_background: String,
 
-
     // accent fg colors
     #[serde(rename = "activityBarBadge.foreground")]
     activity_bar_badge_foreground: String,
@@ -190,11 +189,7 @@ impl From<Theme> for VsTheme {
             title_bar_active_background: format!("#{}", to_hex(theme.background.component.base)),
             title_bar_inactive_background: format!(
                 "#{}",
-                to_hex(
-                    theme
-                        .background
-                        .component.disabled
-                )
+                to_hex(theme.background.component.disabled)
             ),
             status_bar_background: format!("#{}", to_hex(theme.background.base)),
             status_bar_no_folder_background: format!("#{}", to_hex(theme.background.base)),
@@ -203,15 +198,7 @@ impl From<Theme> for VsTheme {
             tab_active_border: format!("#{}", to_hex(theme.accent.base)),
             tab_active_border_top: format!("#{}", to_hex(theme.accent.base)),
             tab_hover_background: format!("#{}", to_hex(theme.primary.component.hover)),
-            tab_inactive_background: format!(
-                "#{}",
-                to_hex(
-                    theme
-                        .primary
-                        .component
-                        .base
-                )
-            ),
+            tab_inactive_background: format!("#{}", to_hex(theme.primary.component.base)),
             quick_input_background: format!("#{}", to_hex(theme.primary.base)),
             side_bar_section_header_background: format!("#{}", to_hex(theme.primary.base)),
             banner_background: format!("#{}", to_hex(theme.primary.base)),
