@@ -151,7 +151,10 @@ pub enum ThemeType {
     HighContrastDark,
     HighContrastLight,
     Custom(Arc<CosmicTheme>),
-    System(Arc<CosmicTheme>),
+    System {
+        prefer_dark: Option<bool>,
+        theme: Arc<CosmicTheme>,
+    },
 }
 
 impl ThemeType {
@@ -161,7 +164,7 @@ impl ThemeType {
         match self {
             Self::Dark | Self::HighContrastDark => true,
             Self::Light | Self::HighContrastLight => false,
-            Self::Custom(theme) | Self::System(theme) => theme.is_dark,
+            Self::Custom(theme) | Self::System { theme, .. } => theme.is_dark,
         }
     }
 
@@ -171,7 +174,15 @@ impl ThemeType {
         match self {
             Self::Dark | Self::Light => false,
             Self::HighContrastDark | Self::HighContrastLight => true,
-            Self::Custom(theme) | Self::System(theme) => theme.is_high_contrast,
+            Self::Custom(theme) | Self::System { theme, .. } => theme.is_high_contrast,
+        }
+    }
+
+    /// Prefer dark or light theme.
+    /// If `None`, the system preference is used.
+    pub fn prefer_dark(&mut self, new_prefer_dark: Option<bool>) {
+        if let Self::System { prefer_dark, .. } = self {
+            *prefer_dark = new_prefer_dark;
         }
     }
 }
@@ -190,7 +201,7 @@ impl Theme {
             ThemeType::Light => &COSMIC_LIGHT,
             ThemeType::HighContrastDark => &COSMIC_HC_DARK,
             ThemeType::HighContrastLight => &COSMIC_HC_LIGHT,
-            ThemeType::Custom(ref t) | ThemeType::System(ref t) => t.as_ref(),
+            ThemeType::Custom(ref t) | ThemeType::System { theme: ref t, .. } => t.as_ref(),
         }
     }
 
@@ -231,7 +242,10 @@ impl Theme {
 
     pub fn system(theme: Arc<CosmicTheme>) -> Self {
         Self {
-            theme_type: ThemeType::System(theme),
+            theme_type: ThemeType::System {
+                theme,
+                prefer_dark: None,
+            },
             ..Default::default()
         }
     }
