@@ -207,11 +207,22 @@ where
                 }),
             self.app
                 .core()
-                .watch_config::<cosmic_theme::Theme>(if self.app.core().system_theme_mode.is_dark {
-                    cosmic_theme::DARK_THEME_ID
-                } else {
-                    cosmic_theme::LIGHT_THEME_ID
-                })
+                .watch_config::<cosmic_theme::Theme>(
+                    if THEME
+                        .with(|t| {
+                            if let ThemeType::System { prefer_dark, .. } = t.borrow().theme_type {
+                                prefer_dark
+                            } else {
+                                None
+                            }
+                        })
+                        .unwrap_or_else(|| self.app.core().system_theme_mode.is_dark)
+                    {
+                        cosmic_theme::DARK_THEME_ID
+                    } else {
+                        cosmic_theme::LIGHT_THEME_ID
+                    },
+                )
                 .map(|update| {
                     for why in update.errors {
                         tracing::error!(?why, "cosmic theme config update error");
@@ -398,7 +409,7 @@ impl<T: Application> Cosmic<T> {
 
             Message::AppThemeChange(mut theme) => {
                 // Apply last-known system theme if the system theme is preferred.
-                if let ThemeType::System(_) = theme.theme_type {
+                if let ThemeType::System { theme: _, .. } = theme.theme_type {
                     self.app.core_mut().theme_sub_counter += 1;
 
                     theme = self.app.core().system_theme.clone();
@@ -426,8 +437,12 @@ impl<T: Application> Cosmic<T> {
                     let mut cosmic_theme = t.borrow_mut();
 
                     // Only apply update if the theme is set to load a system theme
-                    if let ThemeType::System(_) = cosmic_theme.theme_type {
-                        let new_theme = if let Some(a) = portal_accent {
+                    if let ThemeType::System {
+                        theme: _,
+                        prefer_dark,
+                    } = cosmic_theme.theme_type
+                    {
+                        let mut new_theme = if let Some(a) = portal_accent {
                             let t_inner = theme.cosmic();
                             if a.distance_squared(*t_inner.accent_color()) > 0.00001 {
                                 Theme::system(Arc::new(t_inner.with_accent(a)))
@@ -437,6 +452,8 @@ impl<T: Application> Cosmic<T> {
                         } else {
                             theme
                         };
+                        new_theme.theme_type.prefer_dark(prefer_dark);
+
                         cosmic_theme.set_theme(new_theme.theme_type);
                     }
                 });
@@ -455,6 +472,15 @@ impl<T: Application> Cosmic<T> {
                 };
             }
             Message::SystemThemeModeChange(keys, mode) => {
+                if THEME.with(|t| match t.borrow().theme_type {
+                    ThemeType::System {
+                        theme: _,
+                        prefer_dark,
+                    } => prefer_dark.is_some(),
+                    _ => false,
+                }) {
+                    return iced::Command::none();
+                }
                 let mut cmds = vec![self.app.system_theme_mode_update(&keys, &mode)];
 
                 let core = self.app.core_mut();
@@ -486,9 +512,8 @@ impl<T: Application> Cosmic<T> {
                     core.system_theme = new_theme.clone();
                     THEME.with(move |t| {
                         let mut cosmic_theme = t.borrow_mut();
-
                         // Only apply update if the theme is set to load a system theme
-                        if let ThemeType::System(_) = cosmic_theme.theme_type {
+                        if let ThemeType::System { theme: _, .. } = cosmic_theme.theme_type {
                             cosmic_theme.set_theme(new_theme.theme_type);
                         }
                     });
@@ -515,6 +540,15 @@ impl<T: Application> Cosmic<T> {
             #[cfg(feature = "xdg-portal")]
             Message::DesktopSettings(crate::theme::portal::Desktop::ColorScheme(s)) => {
                 use ashpd::desktop::settings::ColorScheme;
+                if THEME.with(|t| match t.borrow().theme_type {
+                    ThemeType::System {
+                        theme: _,
+                        prefer_dark,
+                    } => prefer_dark.is_some(),
+                    _ => false,
+                }) {
+                    return iced::Command::none();
+                }
                 let is_dark = match s {
                     ColorScheme::NoPreference => None,
                     ColorScheme::PreferDark => Some(true),
@@ -537,7 +571,7 @@ impl<T: Application> Cosmic<T> {
                         let mut cosmic_theme = t.borrow_mut();
 
                         // Only apply update if the theme is set to load a system theme
-                        if let ThemeType::System(_) = cosmic_theme.theme_type {
+                        if let ThemeType::System { theme: _, .. } = cosmic_theme.theme_type {
                             cosmic_theme.set_theme(new_theme.theme_type);
                         }
                     });
@@ -546,7 +580,6 @@ impl<T: Application> Cosmic<T> {
             #[cfg(feature = "xdg-portal")]
             Message::DesktopSettings(crate::theme::portal::Desktop::Accent(c)) => {
                 use palette::Srgba;
-
                 let c = Srgba::new(c.red() as f32, c.green() as f32, c.blue() as f32, 1.0);
                 let core = self.app.core_mut();
                 core.portal_accent = Some(c);
@@ -561,8 +594,15 @@ impl<T: Application> Cosmic<T> {
                     let mut cosmic_theme = t.borrow_mut();
 
                     // Only apply update if the theme is set to load a system theme
-                    if let ThemeType::System(t) = cosmic_theme.theme_type.clone() {
-                        cosmic_theme.set_theme(ThemeType::System(Arc::new(t.with_accent(c))));
+                    if let ThemeType::System {
+                        theme: t,
+                        prefer_dark,
+                    } = cosmic_theme.theme_type.clone()
+                    {
+                        cosmic_theme.set_theme(ThemeType::System {
+                            theme: Arc::new(t.with_accent(c)),
+                            prefer_dark,
+                        });
                     }
                 });
             }
@@ -588,12 +628,7 @@ impl<T: Application> Cosmic<T> {
 
             Message::Unfocus(id) => {
                 let core = self.app.core_mut();
-                if core
-                    .focused_window
-                    .as_ref()
-                    .map(|cur| *cur == id)
-                    .unwrap_or_default()
-                {
+                if core.focused_window.as_ref().is_some_and(|cur| *cur == id) {
                     core.focused_window = None;
                 }
             }

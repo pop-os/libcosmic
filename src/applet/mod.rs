@@ -11,7 +11,7 @@ use crate::{
         window, Color, Length, Limits, Rectangle,
     },
     iced_style, iced_widget,
-    theme::{self, Button, THEME},
+    theme::{self, system_dark, system_light, Button, THEME},
     widget, Application, Element, Renderer,
 };
 pub use cosmic_panel_config;
@@ -265,8 +265,16 @@ impl Context {
     #[must_use]
     pub fn theme(&self) -> Option<theme::Theme> {
         match self.background {
-            CosmicPanelBackground::Dark => Some(theme::Theme::dark()),
-            CosmicPanelBackground::Light => Some(theme::Theme::light()),
+            CosmicPanelBackground::Dark => {
+                let mut theme = system_dark();
+                theme.theme_type.prefer_dark(Some(true));
+                Some(theme)
+            }
+            CosmicPanelBackground::Light => {
+                let mut theme = system_light();
+                theme.theme_type.prefer_dark(Some(false));
+                Some(theme)
+            }
             _ => Some(theme::system_preference()),
         }
     }
