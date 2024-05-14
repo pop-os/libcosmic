@@ -22,10 +22,10 @@ pub struct Horizontal;
 ///
 /// For details on the model, see the [`segmented_button`](super) module for more details.
 pub fn horizontal<SelectionMode: Default, Message>(
-    model: &Model<SelectionMode>,
+    model: &Model<SelectionMode, Message>,
 ) -> SegmentedButton<Horizontal, SelectionMode, Message>
 where
-    Model<SelectionMode>: Selectable,
+    Model<SelectionMode, Message>: Selectable,
 {
     SegmentedButton::new(model)
 }
@@ -33,7 +33,7 @@ where
 impl<'a, SelectionMode, Message> SegmentedVariant
     for SegmentedButton<'a, Horizontal, SelectionMode, Message>
 where
-    Model<SelectionMode>: Selectable,
+    Model<SelectionMode, Message>: Selectable,
     SelectionMode: Default,
 {
     fn variant_appearance(

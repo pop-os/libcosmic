@@ -8,38 +8,44 @@ use crate::widget::icon::Icon;
 use std::borrow::Cow;
 
 /// A builder for a [`Model`].
-#[derive(Default)]
-pub struct ModelBuilder<SelectionMode: Default>(Model<SelectionMode>);
+pub struct ModelBuilder<SelectionMode: Default, Message>(Model<SelectionMode, Message>);
+
+//TODO: Default derive ends up requiring Message to implement Default
+impl<SelectionMode: Default, Message> Default for ModelBuilder<SelectionMode, Message> {
+    fn default() -> Self {
+        Self(Model::default())
+    }
+}
 
 /// Constructs a new item for the [`ModelBuilder`].
-pub struct BuilderEntity<SelectionMode: Default> {
-    model: ModelBuilder<SelectionMode>,
+pub struct BuilderEntity<SelectionMode: Default, Message> {
+    model: ModelBuilder<SelectionMode, Message>,
     id: Entity,
 }
 
-impl<SelectionMode: Default> ModelBuilder<SelectionMode>
+impl<SelectionMode: Default, Message> ModelBuilder<SelectionMode, Message>
 where
-    Model<SelectionMode>: Selectable,
+    Model<SelectionMode, Message>: Selectable,
 {
     /// Inserts a new item and its associated data into the model.
     #[must_use]
     pub fn insert(
         mut self,
-        builder: impl Fn(BuilderEntity<SelectionMode>) -> BuilderEntity<SelectionMode>,
+        builder: impl Fn(BuilderEntity<SelectionMode, Message>) -> BuilderEntity<SelectionMode, Message>,
     ) -> Self {
         let id = self.0.insert().id();
         builder(BuilderEntity { model: self, id }).model
     }
 
     /// Consumes the builder and returns the model.
-    pub fn build(self) -> Model<SelectionMode> {
+    pub fn build(self) -> Model<SelectionMode, Message> {
         self.0
     }
 }
 
-impl<SelectionMode: Default> BuilderEntity<SelectionMode>
+impl<SelectionMode: Default, Message> BuilderEntity<SelectionMode, Message>
 where
-    Model<SelectionMode>: Selectable,
+    Model<SelectionMode, Message>: Selectable,
 {
     /// Activates the newly-inserted item.
     #[allow(clippy::must_use_candidate, clippy::return_self_not_must_use)]

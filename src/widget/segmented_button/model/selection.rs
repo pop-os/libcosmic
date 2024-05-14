@@ -24,7 +24,7 @@ pub struct SingleSelect {
     pub active: Entity,
 }
 
-impl Selectable for Model<SingleSelect> {
+impl<Message> Selectable for Model<SingleSelect, Message> {
     fn activate(&mut self, id: Entity) {
         if !self.items.contains_key(id) {
             return;
@@ -44,7 +44,7 @@ impl Selectable for Model<SingleSelect> {
     }
 }
 
-impl Model<SingleSelect> {
+impl<Message> Model<SingleSelect, Message> {
     /// Get an immutable reference to the data associated with the active item.
     #[must_use]
     pub fn active_data<Data: 'static>(&self) -> Option<&Data> {
@@ -75,7 +75,7 @@ pub struct MultiSelect {
     pub active: HashSet<Entity>,
 }
 
-impl Selectable for Model<MultiSelect> {
+impl<Message> Selectable for Model<MultiSelect, Message> {
     fn activate(&mut self, id: Entity) {
         if !self.items.contains_key(id) {
             return;
@@ -95,7 +95,7 @@ impl Selectable for Model<MultiSelect> {
     }
 }
 
-impl Model<MultiSelect> {
+impl<Message> Model<MultiSelect, Message> {
     /// Deactivates the item in the model.
     pub fn deactivate(&mut self, id: Entity) {
         Selectable::deactivate(self, id);

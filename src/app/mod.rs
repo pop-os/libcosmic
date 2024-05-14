@@ -490,7 +490,7 @@ where
     }
 
     /// Allows COSMIC to integrate with your application's [`nav_bar::Model`].
-    fn nav_model(&self) -> Option<&nav_bar::Model> {
+    fn nav_model(&self) -> Option<&nav_bar::Model<Message<Self::Message>>> {
         None
     }
 

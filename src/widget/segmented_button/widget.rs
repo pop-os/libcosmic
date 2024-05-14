@@ -71,12 +71,12 @@ pub trait SegmentedVariant {
 #[must_use]
 pub struct SegmentedButton<'a, Variant, SelectionMode, Message>
 where
-    Model<SelectionMode>: Selectable,
+    Model<SelectionMode, Message>: Selectable,
     SelectionMode: Default,
 {
     /// The model borrowed from the application create this widget.
     #[setters(skip)]
-    pub(super) model: &'a Model<SelectionMode>,
+    pub(super) model: &'a Model<SelectionMode, Message>,
     /// iced widget ID
     pub(super) id: Id,
     /// The icon used for the close button.
@@ -151,10 +151,10 @@ where
 impl<'a, Variant, SelectionMode, Message> SegmentedButton<'a, Variant, SelectionMode, Message>
 where
     Self: SegmentedVariant,
-    Model<SelectionMode>: Selectable,
+    Model<SelectionMode, Message>: Selectable,
     SelectionMode: Default,
 {
-    pub fn new(model: &'a Model<SelectionMode>) -> Self {
+    pub fn new(model: &'a Model<SelectionMode, Message>) -> Self {
         Self {
             model,
             id: Id::unique(),
@@ -536,7 +536,7 @@ impl<'a, Variant, SelectionMode, Message> Widget<Message, crate::Theme, Renderer
     for SegmentedButton<'a, Variant, SelectionMode, Message>
 where
     Self: SegmentedVariant,
-    Model<SelectionMode>: Selectable,
+    Model<SelectionMode, Message>: Selectable,
     SelectionMode: Default,
     Message: 'static + Clone,
 {
@@ -1555,7 +1555,7 @@ impl<'a, Variant, SelectionMode, Message> From<SegmentedButton<'a, Variant, Sele
 where
     SegmentedButton<'a, Variant, SelectionMode, Message>: SegmentedVariant,
     Variant: 'static,
-    Model<SelectionMode>: Selectable,
+    Model<SelectionMode, Message>: Selectable,
     SelectionMode: Default,
     Message: 'static + Clone,
 {

@@ -10,14 +10,14 @@ use crate::widget::Icon;
 use super::{Entity, Model, Selectable};
 
 /// A newly-inserted item which may have additional actions applied to it.
-pub struct EntityMut<'a, SelectionMode: Default> {
+pub struct EntityMut<'a, SelectionMode: Default, Message> {
     pub(super) id: Entity,
-    pub(super) model: &'a mut Model<SelectionMode>,
+    pub(super) model: &'a mut Model<SelectionMode, Message>,
 }
 
-impl<'a, SelectionMode: Default> EntityMut<'a, SelectionMode>
+impl<'a, SelectionMode: Default, Message> EntityMut<'a, SelectionMode, Message>
 where
-    Model<SelectionMode>: Selectable,
+    Model<SelectionMode, Message>: Selectable,
 {
     /// Activates the newly-inserted item.
     ///

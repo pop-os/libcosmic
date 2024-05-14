@@ -10,7 +10,7 @@ pub use self::entity::EntityMut;
 mod selection;
 pub use self::selection::{MultiSelect, Selectable, SingleSelect};
 
-use crate::widget::Icon;
+use crate::{Element, widget::Icon};
 use slotmap::{SecondaryMap, SlotMap};
 use std::any::{Any, TypeId};
 use std::borrow::Cow;
@@ -37,26 +37,28 @@ impl Default for Settings {
 }
 
 /// A model for single-select button selection.
-pub type SingleSelectModel = Model<SingleSelect>;
+pub type SingleSelectModel<Message> = Model<SingleSelect, Message>;
 
 /// Single-select variant of an [`EntityMut`].
-pub type SingleSelectEntityMut<'a> = EntityMut<'a, SingleSelect>;
+pub type SingleSelectEntityMut<'a, Message> = EntityMut<'a, SingleSelect, Message>;
 
 /// A model for multi-select button selection.
-pub type MultiSelectModel = Model<MultiSelect>;
+pub type MultiSelectModel<Message> = Model<MultiSelect, Message>;
 
 /// Multi-select variant of an [`EntityMut`].
-pub type MultiSelectEntityMut<'a> = EntityMut<'a, MultiSelect>;
+pub type MultiSelectEntityMut<'a, Message> = EntityMut<'a, MultiSelect, Message>;
 
 /// The portion of the model used only by the application.
 #[derive(Debug, Default)]
 pub(super) struct Storage(HashMap<TypeId, SecondaryMap<Entity, Box<dyn Any>>>);
 
 /// The model held by the application, containing the unique IDs and data of each inserted item.
-#[derive(Default)]
-pub struct Model<SelectionMode: Default> {
+pub struct Model<SelectionMode: Default, Message> {
     /// The content used for drawing segmented items.
     pub(super) items: SlotMap<Entity, Settings>,
+
+    /// Elements optionally-defined for each item.
+    pub(super) elements: SecondaryMap<Entity, Element<'static, Message>>,
 
     /// Icons optionally-defined for each item.
     pub(super) icons: SecondaryMap<Entity, Icon>,
@@ -77,7 +79,23 @@ pub struct Model<SelectionMode: Default> {
     pub(super) storage: Storage,
 }
 
-impl<SelectionMode: Default> Model<SelectionMode>
+//TODO: Default derive ends up requiring Message to implement Default
+impl<SelectionMode: Default, Message> Default for Model<SelectionMode, Message> {
+    fn default() -> Self {
+        Self {
+            items: SlotMap::default(),
+            elements: SecondaryMap::default(),
+            icons: SecondaryMap::default(),
+            indents: SecondaryMap::default(),
+            text: SecondaryMap::default(),
+            order: VecDeque::default(),
+            selection: SelectionMode::default(),
+            storage: Storage::default(),
+        }
+    }
+}
+
+impl<SelectionMode: Default, Message> Model<SelectionMode, Message>
 where
     Self: Selectable,
 {
@@ -110,7 +128,7 @@ where
     ///     .build();
     /// ```
     #[must_use]
-    pub fn builder() -> ModelBuilder<SelectionMode> {
+    pub fn builder() -> ModelBuilder<SelectionMode, Message> {
         ModelBuilder::default()
     }
 
@@ -259,7 +277,7 @@ where
     /// let id = model.insert().text("Item A").icon("custom-icon").id();
     /// ```
     #[must_use]
-    pub fn insert(&mut self) -> EntityMut<SelectionMode> {
+    pub fn insert(&mut self) -> EntityMut<SelectionMode, Message> {
         let id = self.items.insert(Settings::default());
         self.order.push_back(id);
         EntityMut { model: self, id }

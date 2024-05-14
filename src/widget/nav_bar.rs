@@ -18,13 +18,13 @@ use crate::{theme, Theme};
 use super::dnd_destination::DragId;
 
 pub type Id = segmented_button::Entity;
-pub type Model = segmented_button::SingleSelectModel;
+pub type Model<Message> = segmented_button::SingleSelectModel<Message>;
 
 /// Navigation side panel for switching between views.
 ///
 /// For details on the model, see the [`segmented_button`] module for more details.
 pub fn nav_bar<Message: Clone + 'static>(
-    model: &segmented_button::SingleSelectModel,
+    model: &Model<Message>,
     on_activate: fn(segmented_button::Entity) -> Message,
 ) -> NavBar<Message> {
     NavBar {
@@ -35,7 +35,7 @@ pub fn nav_bar<Message: Clone + 'static>(
 /// Navigation side panel for switching between views.
 /// Can receive drag and drop events.
 pub fn nav_bar_dnd<Message, D: AllowedMimeTypes>(
-    model: &segmented_button::SingleSelectModel,
+    model: &Model<Message>,
     on_activate: fn(segmented_button::Entity) -> Message,
     on_dnd_enter: impl Fn(segmented_button::Entity, Vec<String>) -> Message + 'static,
     on_dnd_leave: impl Fn(segmented_button::Entity) -> Message + 'static,
