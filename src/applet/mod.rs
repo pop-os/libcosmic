@@ -291,11 +291,7 @@ impl Context {
             Size::PanelSize(PanelSize::XS) => crate::widget::text::body,
             Size::Hardcoded(_) => crate::widget::text,
         };
-        t(msg)
-            .style(crate::theme::Text::Color(Color::from(
-                THEME.with(|t| t.borrow().cosmic().on_bg_color()),
-            )))
-            .font(crate::font::FONT)
+        t(msg).font(crate::font::FONT)
     }
 }
 
