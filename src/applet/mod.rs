@@ -289,7 +289,7 @@ impl Context {
             Size::PanelSize(PanelSize::M) => crate::widget::text::title3,
             Size::PanelSize(PanelSize::S) => crate::widget::text::title4,
             Size::PanelSize(PanelSize::XS) => crate::widget::text::body,
-            Size::Hardcoded(_) => todo!(),
+            Size::Hardcoded(_) => crate::widget::text,
         };
         t(msg)
             .style(crate::theme::Text::Color(Color::from(
