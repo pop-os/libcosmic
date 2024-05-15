@@ -16,13 +16,15 @@ use crate::{
 };
 pub use cosmic_panel_config;
 use cosmic_panel_config::{CosmicPanelBackground, PanelAnchor, PanelSize};
+use cosmic_theme::Theme;
+use iced::Pixels;
 use iced_core::{Padding, Shadow};
 use iced_style::container::Appearance;
 use iced_widget::runtime::command::platform_specific::wayland::popup::{
     SctkPopupSettings, SctkPositioner,
 };
 use sctk::reexports::protocols::xdg::shell::client::xdg_positioner::{Anchor, Gravity};
-use std::rc::Rc;
+use std::{borrow::Cow, rc::Rc};
 
 use crate::app::cosmic;
 
@@ -277,6 +279,23 @@ impl Context {
             }
             _ => Some(theme::system_preference()),
         }
+    }
+
+    pub fn text<'a>(&self, msg: impl Into<Cow<'a, str>>) -> crate::widget::Text<'a, crate::Theme> {
+        let msg = msg.into();
+        let t = match self.size {
+            Size::PanelSize(PanelSize::XL) => crate::widget::text::title1,
+            Size::PanelSize(PanelSize::L) => crate::widget::text::title2,
+            Size::PanelSize(PanelSize::M) => crate::widget::text::title3,
+            Size::PanelSize(PanelSize::S) => crate::widget::text::title4,
+            Size::PanelSize(PanelSize::XS) => crate::widget::text::body,
+            Size::Hardcoded(_) => todo!(),
+        };
+        t(msg)
+            .style(crate::theme::Text::Color(Color::from(
+                THEME.with(|t| t.borrow().cosmic().on_bg_color()),
+            )))
+            .font(crate::font::FONT)
     }
 }
 
