@@ -40,7 +40,7 @@ impl From<&ThemeType> for ThemeVariant {
             ThemeType::HighContrastDark => ThemeVariant::HighContrastDark,
             ThemeType::HighContrastLight => ThemeVariant::HighContrastLight,
             ThemeType::Custom(_) => ThemeVariant::Custom,
-            ThemeType::System(_) => ThemeVariant::System,
+            ThemeType::System { .. } => ThemeVariant::System,
         }
     }
 }
