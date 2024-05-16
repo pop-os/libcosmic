@@ -29,7 +29,7 @@ impl Watcher {
         version: u64,
     ) -> zbus::Result<Self> {
         let (path, name) = settings_daemon_proxy.watch_config(id, version).await?;
-        ConfigProxy::builder(settings_daemon_proxy.connection())
+        ConfigProxy::builder(settings_daemon_proxy.inner().connection())
             .path(path)?
             .destination(name)?
             .build()
@@ -43,7 +43,7 @@ impl Watcher {
         version: u64,
     ) -> zbus::Result<Self> {
         let (path, name) = settings_daemon_proxy.watch_state(id, version).await?;
-        ConfigProxy::builder(settings_daemon_proxy.connection())
+        ConfigProxy::builder(settings_daemon_proxy.inner().connection())
             .path(path)?
             .destination(name)?
             .build()
@@ -140,7 +140,7 @@ pub fn watcher_subscription<T: CosmicConfigEntry + Send + Sync + Default + 'stat
 
             let mut changes = changes.map(Change::Changes).fuse();
 
-            let Ok(owner_changed) = watcher.receive_owner_changed().await else {
+            let Ok(owner_changed) = watcher.inner().receive_owner_changed().await else {
                 tracing::error!("Failed to listen for owner changes for {config_id}");
                 #[cfg(feature = "tokio")]
                 ::tokio::time::sleep(::tokio::time::Duration::from_secs(2_u64.pow(attempts))).await;
