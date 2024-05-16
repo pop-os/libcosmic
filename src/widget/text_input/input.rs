@@ -2041,8 +2041,7 @@ pub fn draw<'a, Message>(
 
     if is_validated.is_some() {
         if !is_validated.unwrap_or_default() {
-            border_color =
-                Color::from(palette::Srgb::new(0.890, 0.145, 0.420));
+            border_color = Color::from(palette::Srgb::new(0.890, 0.145, 0.420));
         }
     }
 
