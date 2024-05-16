@@ -160,20 +160,6 @@ where
         .padding([spacing, spacing, spacing, spacing])
 }
 
-/// Creates a new validate input [`TextInput`].
-///
-/// [`TextInput`]: widget::TextInput
-pub fn validate_input<'a, Message>(
-    placeholder: impl Into<Cow<'a, str>>,
-    value: impl Into<Cow<'a, str>>,
-    validate_condition: bool,
-) -> TextInput<'a, Message>
-where
-    Message: Clone + 'static,
-{
-    TextInput::new(placeholder, value).validation_condition(validate_condition)
-}
-
 #[cfg(feature = "wayland")]
 pub(crate) const SUPPORTED_TEXT_MIME_TYPES: &[&str; 6] = &[
     "text/plain;charset=utf-8",
@@ -314,7 +300,7 @@ where
         self
     }
 
-    fn validation_condition(mut self, validation_condition: bool) -> Self {
+    pub fn validation_condition(mut self, validation_condition: bool) -> Self {
         self.is_validated = Some(validation_condition);
         self
     }
@@ -2054,8 +2040,9 @@ pub fn draw<'a, Message>(
     }
 
     if is_validated.is_some() {
-        if !is_validated.unwrap() {
-            border_color = Color::from_rgb(0.95, 0.30, 0.30);
+        if !is_validated.unwrap_or_default() {
+            border_color =
+                Color::from(palette::Srgb::new(0.890, 0.145, 0.420));
         }
     }
 

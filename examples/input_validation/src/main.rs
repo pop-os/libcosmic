@@ -1,8 +1,7 @@
 use cosmic::app::{Application, Command, Core, Settings};
-use cosmic::iced;
 use cosmic::iced::executor;
 use cosmic::iced_core::Size;
-use cosmic::widget::{column, text_input, validate_input};
+use cosmic::widget::{column, text_input};
 use cosmic::Element;
 use regex::Regex;
 
@@ -43,10 +42,7 @@ impl Application for Window {
         )
     }
 
-    fn update(
-        &mut self,
-        message: Self::Message,
-    ) -> iced::Command<cosmic::app::Message<Self::Message>> {
+    fn update(&mut self, message: Self::Message) -> Command<Self::Message> {
         match message {
             Message::InputName(name) => self.name = name,
             Message::InputEmail(email) => self.email = email,
@@ -59,7 +55,8 @@ impl Application for Window {
         let validation_condition = emailregex.is_match(&self.email);
 
         let name_input = text_input("Name", &self.name).on_input(Message::InputName);
-        let email_input = validate_input("E-mail", &self.email, validation_condition)
+        let email_input = text_input("E-mail", &self.email)
+            .validation_condition(validation_condition)
             .on_input(Message::InputEmail);
 
         column()
