@@ -2151,7 +2151,7 @@ pub fn draw<'a, Message>(
                             Some((
                                 renderer::Quad {
                                     bounds: Rectangle {
-                                        x: text_bounds.x + text_value_width,
+                                        x: text_bounds.x + text_value_width - offset,
                                         y: text_bounds.y,
                                         width: 1.0,
                                         height: text_bounds.height,
@@ -2173,7 +2173,7 @@ pub fn draw<'a, Message>(
                         )
                     }
                 } else {
-                    (None, 0.0)
+                    (None, offset)
                 }
             }
             cursor::State::Selection { start, end } => {
@@ -2237,6 +2237,7 @@ pub fn draw<'a, Message>(
         }
 
         let bounds = Rectangle {
+            x: text_bounds.x - offset,
             y: text_bounds.center_y(),
             width: f32::INFINITY,
             ..text_bounds
@@ -2264,9 +2265,7 @@ pub fn draw<'a, Message>(
         );
     };
 
-    renderer.with_layer(text_bounds, |renderer| {
-        renderer.with_translation(Vector::new(-offset, 0.0), render);
-    });
+    renderer.with_layer(text_bounds, render);
 
     let trailing_icon_tree = children.get(child_index);
 
