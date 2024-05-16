@@ -2055,11 +2055,7 @@ pub fn draw<'a, Message>(
 
     if is_validated.is_some() {
         if !is_validated.unwrap() {
-            border_color = Color::from_rgb(
-                0.95,
-                0.30,
-                0.30
-            );
+            border_color = Color::from_rgb(0.95, 0.30, 0.30);
         }
     }
 
