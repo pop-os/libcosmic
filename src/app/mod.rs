@@ -61,7 +61,7 @@ use {
     iced_futures::futures::SinkExt,
     std::any::TypeId,
     std::collections::HashMap,
-    zbus::{dbus_interface, dbus_proxy, zvariant::Value},
+    zbus::{interface, proxy, zvariant::Value},
 };
 
 pub(crate) fn iced_settings<App: Application>(
@@ -221,7 +221,7 @@ impl DbusActivation {
 }
 
 #[cfg(feature = "single-instance")]
-#[dbus_proxy(interface = "org.freedesktop.DbusActivation", assume_defaults = true)]
+#[proxy(interface = "org.freedesktop.DbusActivation", assume_defaults = true)]
 pub trait DbusActivationInterface {
     /// Activate the application.
     fn activate(&mut self, platform_data: HashMap<&str, Value<'_>>) -> zbus::Result<()>;
@@ -243,7 +243,7 @@ pub trait DbusActivationInterface {
 }
 
 #[cfg(feature = "single-instance")]
-#[dbus_interface(name = "org.freedesktop.DbusActivation")]
+#[interface(name = "org.freedesktop.DbusActivation")]
 impl DbusActivation {
     async fn activate(&mut self, platform_data: HashMap<&str, Value<'_>>) {
         if let Some(tx) = &mut self.0 {
