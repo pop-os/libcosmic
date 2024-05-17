@@ -284,10 +284,10 @@ impl Context {
     pub fn text<'a>(&self, msg: impl Into<Cow<'a, str>>) -> crate::widget::Text<'a, crate::Theme> {
         let msg = msg.into();
         let t = match self.size {
-            Size::PanelSize(PanelSize::XL) => crate::widget::text::title1,
-            Size::PanelSize(PanelSize::L) => crate::widget::text::title2,
-            Size::PanelSize(PanelSize::M) => crate::widget::text::title3,
-            Size::PanelSize(PanelSize::S) => crate::widget::text::title4,
+            Size::PanelSize(PanelSize::XL) => crate::widget::text::title2,
+            Size::PanelSize(PanelSize::L) => crate::widget::text::title3,
+            Size::PanelSize(PanelSize::M) => crate::widget::text::title4,
+            Size::PanelSize(PanelSize::S) => crate::widget::text::body,
             Size::PanelSize(PanelSize::XS) => crate::widget::text::body,
             Size::Hardcoded(_) => crate::widget::text,
         };
