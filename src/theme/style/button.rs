@@ -13,27 +13,27 @@ use crate::{
 
 #[derive(Default)]
 pub enum Button {
+    AppletIcon,
     Custom {
         active: Box<dyn Fn(bool, &crate::Theme) -> Appearance>,
         disabled: Box<dyn Fn(&crate::Theme) -> Appearance>,
         hovered: Box<dyn Fn(bool, &crate::Theme) -> Appearance>,
         pressed: Box<dyn Fn(bool, &crate::Theme) -> Appearance>,
     },
+    AppletMenu,
     Destructive,
-    Link,
-    Icon,
     HeaderBar,
+    Icon,
     IconVertical,
     Image,
+    Link,
+    MenuItem,
+    MenuRoot,
     #[default]
     Standard,
     Suggested,
     Text,
     Transparent,
-    AppletMenu,
-    AppletIcon,
-    MenuRoot,
-    MenuItem,
 }
 
 pub fn appearance(
@@ -76,8 +76,6 @@ pub fn appearance(
             }
 
             let (background, text, icon) = color(&cosmic.icon_button);
-            appearance.text_color = text;
-            appearance.icon_color = icon;
             appearance.background = Some(Background::Color(background));
         }
 
@@ -162,10 +160,6 @@ impl StyleSheet for crate::Theme {
             ) && selected
             {
                 Some(self.cosmic().accent_color().into())
-            } else if matches!(style, Button::HeaderBar) && !selected {
-                let mut c = Color::from(self.cosmic().background.on);
-                c.a = 0.75;
-                Some(c)
             } else {
                 Some(component.on.into())
             };
@@ -211,10 +205,6 @@ impl StyleSheet for crate::Theme {
                 ) && selected
                 {
                     Some(self.cosmic().accent_color().into())
-                } else if matches!(style, Button::HeaderBar) && !selected {
-                    let mut c = Color::from(component.on);
-                    c.a = 0.8;
-                    Some(c)
                 } else {
                     Some(component.on.into())
                 };
@@ -236,10 +226,6 @@ impl StyleSheet for crate::Theme {
             ) && selected
             {
                 Some(self.cosmic().accent_color().into())
-            } else if matches!(style, Button::HeaderBar) && !selected {
-                let mut c = Color::from(component.on);
-                c.a = 0.8;
-                Some(c)
             } else {
                 Some(component.on.into())
             };
