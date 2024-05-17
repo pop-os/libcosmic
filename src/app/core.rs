@@ -147,7 +147,7 @@ impl Default for Core {
                 height: 0,
                 width: 0,
             },
-            focused_window: None,
+            focused_window: Some(window::Id::MAIN),
             #[cfg(feature = "applet")]
             applet: crate::applet::Context::default(),
             #[cfg(feature = "single-instance")]
