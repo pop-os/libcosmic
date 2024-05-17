@@ -727,30 +727,30 @@ where
                     shell.publish((on_edit)(false));
                 }
             }
+        }
 
-            let index = tree.children.len() - 1;
-            if let (Some(trailing_icon), Some(tree)) =
-                (self.trailing_icon.as_mut(), tree.children.get_mut(index))
-            {
-                let children = text_layout.children();
-                trailing_icon_layout = Some(children.last().unwrap());
+        let index = tree.children.len() - 1;
+        if let (Some(trailing_icon), Some(tree)) =
+            (self.trailing_icon.as_mut(), tree.children.get_mut(index))
+        {
+            let children = text_layout.children();
+            trailing_icon_layout = Some(children.last().unwrap());
 
-                if let Some(trailing_layout) = trailing_icon_layout {
-                    if cursor_position.is_over(trailing_layout.bounds()) {
-                        let res = trailing_icon.as_widget_mut().on_event(
-                            tree,
-                            event.clone(),
-                            trailing_layout,
-                            cursor_position,
-                            renderer,
-                            clipboard,
-                            shell,
-                            viewport,
-                        );
+            if let Some(trailing_layout) = trailing_icon_layout {
+                if cursor_position.is_over(trailing_layout.bounds()) {
+                    let res = trailing_icon.as_widget_mut().on_event(
+                        tree,
+                        event.clone(),
+                        trailing_layout,
+                        cursor_position,
+                        renderer,
+                        clipboard,
+                        shell,
+                        viewport,
+                    );
 
-                        if res == event::Status::Captured {
-                            return res;
-                        }
+                    if res == event::Status::Captured {
+                        return res;
                     }
                 }
             }
