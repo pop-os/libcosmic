@@ -299,7 +299,9 @@ impl<'a, Message: Clone + 'static> HeaderBar<'a, Message> {
             .padding(8)
             .spacing(8)
             .apply(widget::container)
-            .style(crate::theme::Container::HeaderBar)
+            .style(crate::theme::Container::HeaderBar {
+                focused: self.focused,
+            })
             .center_y()
             .apply(widget::mouse_area);
 
