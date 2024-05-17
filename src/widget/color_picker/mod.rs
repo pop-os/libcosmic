@@ -122,7 +122,7 @@ impl ColorPickerModel {
         &self,
         f: T,
         icon_portion: Option<u16>,
-    ) -> crate::widget::Button<'a, Message, crate::Theme, crate::Renderer> {
+    ) -> crate::widget::Button<'a, Message> {
         color_button(
             Some(f(ColorPickerUpdate::ToggleColorPicker)),
             self.applied_color,
@@ -761,7 +761,7 @@ pub fn color_button<'a, Message: 'static>(
     on_press: Option<Message>,
     color: Option<Color>,
     icon_portion: Length,
-) -> crate::widget::Button<'a, Message, crate::Theme, crate::Renderer> {
+) -> crate::widget::Button<'a, Message> {
     let spacing = THEME.with(|t| t.borrow().cosmic().spacing);
 
     button(if color.is_some() {

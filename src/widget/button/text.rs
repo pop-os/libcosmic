@@ -109,24 +109,23 @@ impl<'a, Message: Clone + 'static> From<Button<'a, Message>> for Element<'a, Mes
                 .into()
         });
 
-        let button: super::Button<'a, Message, crate::Theme, crate::Renderer> =
-            row::with_capacity(3)
-                // Optional icon to place before label.
-                .push_maybe(leading_icon)
-                // Optional label between icons.
-                .push_maybe(label)
-                // Optional icon to place behind the label.
-                .push_maybe(trailing_icon)
-                .padding(builder.padding)
-                .width(builder.width)
-                .height(builder.height)
-                .spacing(builder.spacing)
-                .align_items(Alignment::Center)
-                .apply(button)
-                .padding(0)
-                .id(builder.id)
-                .on_press_maybe(builder.on_press.take())
-                .style(builder.style);
+        let button: super::Button<'a, Message> = row::with_capacity(3)
+            // Optional icon to place before label.
+            .push_maybe(leading_icon)
+            // Optional label between icons.
+            .push_maybe(label)
+            // Optional icon to place behind the label.
+            .push_maybe(trailing_icon)
+            .padding(builder.padding)
+            .width(builder.width)
+            .height(builder.height)
+            .spacing(builder.spacing)
+            .align_items(Alignment::Center)
+            .apply(button)
+            .padding(0)
+            .id(builder.id)
+            .on_press_maybe(builder.on_press.take())
+            .style(builder.style);
 
         if builder.tooltip.is_empty() {
             button.into()
