@@ -26,28 +26,19 @@ pub use text::{destructive, standard, suggested, text};
 mod widget;
 pub use widget::{draw, focus, layout, mouse_interaction, Button};
 
-use crate::iced::Element;
 use iced_core::font::Weight;
 use iced_core::widget::Id;
 use iced_core::{Length, Padding};
 use std::borrow::Cow;
 
-pub fn button<'a, Message, Theme>(
-    content: impl Into<Element<'a, Message, Theme, crate::Renderer>>,
-) -> Button<'a, Message, Theme, crate::Renderer>
-where
-    Theme: style::StyleSheet,
-{
+pub fn button<'a, Message>(content: impl Into<crate::Element<'a, Message>>) -> Button<'a, Message> {
     Button::new(content)
 }
 
-pub fn custom_image_button<'a, Message, Theme>(
-    content: impl Into<Element<'a, Message, Theme, crate::Renderer>>,
+pub fn custom_image_button<'a, Message>(
+    content: impl Into<crate::Element<'a, Message>>,
     on_remove: Option<Message>,
-) -> Button<'a, Message, Theme, crate::Renderer>
-where
-    Theme: style::StyleSheet,
-{
+) -> Button<'a, Message> {
     Button::new_image(content, on_remove)
 }
 

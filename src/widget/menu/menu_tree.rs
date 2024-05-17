@@ -193,8 +193,7 @@ pub fn menu_root<'a, Message, Renderer: renderer::Renderer>(
     label: impl Into<Cow<'a, str>> + 'a,
 ) -> iced::Element<'a, Message, crate::Theme, Renderer>
 where
-    Element<'a, Message, crate::Theme, Renderer>:
-        From<widget::button::Button<'a, Message, crate::Theme, iced::Renderer>>,
+    Element<'a, Message, crate::Theme, Renderer>: From<widget::Button<'a, Message>>,
 {
     widget::button(widget::text(label))
         .padding([4, 12])
@@ -223,8 +222,7 @@ pub fn menu_items<
     children: Vec<MenuItem<A, L>>,
 ) -> Vec<MenuTree<'a, Message, Renderer>>
 where
-    Element<'a, Message, crate::Theme, Renderer>:
-        From<widget::button::Button<'a, Message, crate::Theme, iced::Renderer>>,
+    Element<'a, Message, crate::Theme, Renderer>: From<widget::button::Button<'a, Message>>,
 {
     fn find_key<A: MenuAction>(action: &A, key_binds: &HashMap<KeyBind, A>) -> String {
         for (key_bind, key_action) in key_binds.iter() {

@@ -10,7 +10,7 @@ use iced_runtime::core::widget::Id;
 use iced_runtime::{keyboard, Command};
 
 use iced_core::event::{self, Event};
-use iced_core::renderer::{self, Quad};
+use iced_core::renderer::{self, Quad, Renderer};
 use iced_core::touch;
 use iced_core::widget::tree::{self, Tree};
 use iced_core::widget::Operation;
@@ -18,8 +18,7 @@ use iced_core::{layout, svg};
 use iced_core::{mouse, Border};
 use iced_core::{overlay, Shadow};
 use iced_core::{
-    Background, Clipboard, Color, Element, Layout, Length, Padding, Point, Rectangle, Shell,
-    Vector, Widget,
+    Background, Clipboard, Color, Layout, Length, Padding, Point, Rectangle, Shell, Vector, Widget,
 };
 use iced_renderer::core::widget::{operation, OperationOutputWrapper};
 
@@ -39,11 +38,7 @@ enum Variant<Message> {
 /// A generic button which emits a message when pressed.
 #[allow(missing_debug_implementations)]
 #[must_use]
-pub struct Button<'a, Message, Theme, Renderer>
-where
-    Renderer: iced_core::Renderer,
-    Theme: super::style::StyleSheet,
-{
+pub struct Button<'a, Message> {
     id: Id,
     #[cfg(feature = "a11y")]
     name: Option<std::borrow::Cow<'a, str>>,
@@ -51,23 +46,19 @@ where
     description: Option<iced_accessibility::Description<'a>>,
     #[cfg(feature = "a11y")]
     label: Option<Vec<iced_accessibility::accesskit::NodeId>>,
-    content: Element<'a, Message, Theme, Renderer>,
+    content: crate::Element<'a, Message>,
     on_press: Option<Message>,
     width: Length,
     height: Length,
     padding: Padding,
     selected: bool,
-    style: <Theme as StyleSheet>::Style,
+    style: crate::theme::Button,
     variant: Variant<Message>,
 }
 
-impl<'a, Message, Theme, Renderer> Button<'a, Message, Theme, Renderer>
-where
-    Renderer: iced_core::Renderer,
-    Theme: super::style::StyleSheet,
-{
+impl<'a, Message> Button<'a, Message> {
     /// Creates a new [`Button`] with the given content.
-    pub fn new(content: impl Into<Element<'a, Message, Theme, Renderer>>) -> Self {
+    pub fn new(content: impl Into<crate::Element<'a, Message>>) -> Self {
         Self {
             id: Id::unique(),
             #[cfg(feature = "a11y")]
@@ -82,13 +73,13 @@ where
             height: Length::Shrink,
             padding: Padding::new(5.0),
             selected: false,
-            style: <Theme as StyleSheet>::Style::default(),
+            style: crate::theme::Button::default(),
             variant: Variant::Normal,
         }
     }
 
     pub fn new_image(
-        content: impl Into<Element<'a, Message, Theme, Renderer>>,
+        content: impl Into<crate::Element<'a, Message>>,
         on_remove: Option<Message>,
     ) -> Self {
         Self {
@@ -105,7 +96,7 @@ where
             height: Length::Shrink,
             padding: Padding::new(5.0),
             selected: false,
-            style: <Theme as StyleSheet>::Style::default(),
+            style: crate::theme::Button::default(),
             variant: Variant::Image {
                 on_remove,
                 close_icon: crate::widget::icon::from_name("window-close-symbolic")
@@ -171,7 +162,7 @@ where
     }
 
     /// Sets the style variant of this [`Button`].
-    pub fn style(mut self, style: <Theme as StyleSheet>::Style) -> Self {
+    pub fn style(mut self, style: crate::theme::Button) -> Self {
         self.style = style;
         self
     }
@@ -207,12 +198,8 @@ where
     }
 }
 
-impl<'a, Message, Theme, Renderer> Widget<Message, Theme, Renderer>
-    for Button<'a, Message, Theme, Renderer>
-where
-    Message: 'a + Clone,
-    Renderer: 'a + iced_core::Renderer + svg::Renderer,
-    Theme: super::style::StyleSheet,
+impl<'a, Message: 'a + Clone> Widget<Message, crate::Theme, crate::Renderer>
+    for Button<'a, Message>
 {
     fn tag(&self) -> tree::Tag {
         tree::Tag::of::<State>()
@@ -237,7 +224,7 @@ where
     fn layout(
         &self,
         tree: &mut Tree,
-        renderer: &Renderer,
+        renderer: &crate::Renderer,
         limits: &layout::Limits,
     ) -> layout::Node {
         layout(
@@ -258,7 +245,7 @@ where
         &self,
         tree: &mut Tree,
         layout: Layout<'_>,
-        renderer: &Renderer,
+        renderer: &crate::Renderer,
         operation: &mut dyn Operation<OperationOutputWrapper<Message>>,
     ) {
         operation.container(None, layout.bounds(), &mut |operation| {
@@ -279,7 +266,7 @@ where
         event: Event,
         layout: Layout<'_>,
         cursor: mouse::Cursor,
-        renderer: &Renderer,
+        renderer: &crate::Renderer,
         clipboard: &mut dyn Clipboard,
         shell: &mut Shell<'_, Message>,
         viewport: &Rectangle,
@@ -330,11 +317,12 @@ where
         )
     }
 
+    #[allow(clippy::too_many_lines)]
     fn draw(
         &self,
         tree: &Tree,
-        renderer: &mut Renderer,
-        theme: &Theme,
+        renderer: &mut crate::Renderer,
+        theme: &crate::Theme,
         renderer_style: &renderer::Style,
         layout: Layout<'_>,
         cursor: mouse::Cursor,
@@ -343,31 +331,60 @@ where
         let bounds = layout.bounds();
         let content_layout = layout.children().next().unwrap();
 
-        let styling = draw::<_, Theme>(
-            renderer,
-            bounds,
-            cursor,
-            self.on_press.is_some(),
-            self.selected,
-            theme,
-            &self.style,
-            || tree.state.downcast_ref::<State>(),
-            |renderer, styling| {
-                self.content.as_widget().draw(
-                    &tree.children[0],
-                    renderer,
-                    theme,
-                    &renderer::Style {
-                        icon_color: styling.icon_color.unwrap_or(renderer_style.icon_color),
-                        text_color: styling.text_color.unwrap_or(renderer_style.icon_color),
-                        scale_factor: renderer_style.scale_factor,
-                    },
-                    content_layout,
-                    cursor,
-                    &bounds,
-                );
-            },
-        );
+        let mut headerbar_alpha = None;
+
+        let is_enabled = self.on_press.is_some();
+        let is_mouse_over = cursor.position().is_some_and(|p| bounds.contains(p));
+
+        let state = tree.state.downcast_ref::<State>();
+
+        let styling = if !is_enabled {
+            theme.disabled(&self.style)
+        } else if is_mouse_over {
+            if state.is_pressed {
+                if !self.selected && matches!(self.style, crate::theme::Button::HeaderBar) {
+                    headerbar_alpha = Some(0.8);
+                }
+
+                theme.pressed(state.is_focused, self.selected, &self.style)
+            } else {
+                if !self.selected && matches!(self.style, crate::theme::Button::HeaderBar) {
+                    headerbar_alpha = Some(0.8);
+                }
+
+                theme.hovered(state.is_focused, self.selected, &self.style)
+            }
+        } else {
+            if !self.selected && matches!(self.style, crate::theme::Button::HeaderBar) {
+                headerbar_alpha = Some(0.75);
+            }
+
+            theme.active(state.is_focused, self.selected, &self.style)
+        };
+
+        let mut icon_color = styling.icon_color.unwrap_or(renderer_style.icon_color);
+        let mut text_color = styling.text_color.unwrap_or(renderer_style.text_color);
+
+        if let Some(alpha) = headerbar_alpha {
+            icon_color.a = alpha;
+            text_color.a = alpha;
+        }
+
+        draw::<_, crate::Theme>(renderer, bounds, &styling, |renderer, _styling| {
+            self.content.as_widget().draw(
+                &tree.children[0],
+                renderer,
+                theme,
+                &renderer::Style {
+                    icon_color,
+                    text_color,
+                    scale_factor: renderer_style.scale_factor,
+                },
+                content_layout,
+                cursor,
+                &bounds,
+            );
+        });
 
         if let Variant::Image {
             close_icon,
@@ -405,7 +422,7 @@ where
                 iced_core::svg::Renderer::draw(
                     renderer,
                     crate::widget::common::object_select().clone(),
-                    styling.icon_color,
+                    Some(icon_color),
                     Rectangle {
                         width: 16.0,
                         height: 16.0,
@@ -434,7 +451,7 @@ where
                         iced_core::svg::Renderer::draw(
                             renderer,
                             close_icon.clone(),
-                            styling.icon_color,
+                            Some(icon_color),
                             Rectangle {
                                 width: 16.0,
                                 height: 16.0,
@@ -454,7 +471,7 @@ where
         layout: Layout<'_>,
         cursor: mouse::Cursor,
         _viewport: &Rectangle,
-        _renderer: &Renderer,
+        _renderer: &crate::Renderer,
     ) -> mouse::Interaction {
         mouse_interaction(layout, cursor, self.on_press.is_some())
     }
@@ -463,8 +480,8 @@ where
         &'b mut self,
         tree: &'b mut Tree,
         layout: Layout<'_>,
-        renderer: &Renderer,
-    ) -> Option<overlay::Element<'b, Message, Theme, Renderer>> {
+        renderer: &crate::Renderer,
+    ) -> Option<overlay::Element<'b, Message, crate::Theme, crate::Renderer>> {
         self.content.as_widget_mut().overlay(
             &mut tree.children[0],
             layout.children().next().unwrap(),
@@ -547,14 +564,8 @@ where
     }
 }
 
-impl<'a, Message, Theme, Renderer> From<Button<'a, Message, Theme, Renderer>>
-    for Element<'a, Message, Theme, Renderer>
-where
-    Message: Clone + 'a,
-    Renderer: iced_core::Renderer + svg::Renderer + 'a,
-    Theme: super::style::StyleSheet + 'a,
-{
-    fn from(button: Button<'a, Message, Theme, Renderer>) -> Self {
+impl<'a, Message: Clone + 'a> From<Button<'a, Message>> for crate::Element<'a, Message> {
+    fn from(button: Button<'a, Message>) -> Self {
         Self::new(button)
     }
 }
@@ -674,36 +685,14 @@ pub fn update<'a, Message: Clone>(
 }
 
 #[allow(clippy::too_many_arguments)]
-pub fn draw<'a, Renderer: iced_core::Renderer, Theme>(
+pub fn draw<Renderer: iced_core::Renderer, Theme>(
     renderer: &mut Renderer,
     bounds: Rectangle,
-    cursor: mouse::Cursor,
-    is_enabled: bool,
-    is_selected: bool,
-    style_sheet: &dyn StyleSheet<Style = <Theme as StyleSheet>::Style>,
-    style: &<Theme as StyleSheet>::Style,
-    state: impl FnOnce() -> &'a State,
-    draw_contents: impl FnOnce(&mut Renderer, Appearance),
-) -> Appearance
-where
+    styling: &super::style::Appearance,
+    draw_contents: impl FnOnce(&mut Renderer, &Appearance),
+) where
     Theme: super::style::StyleSheet,
 {
-    let is_mouse_over = cursor.position().is_some_and(|p| bounds.contains(p));
-
-    let state: &State = state();
-
-    let styling = if !is_enabled {
-        style_sheet.disabled(style)
-    } else if is_mouse_over {
-        if state.is_pressed {
-            style_sheet.pressed(state.is_focused, is_selected, style)
-        } else {
-            style_sheet.hovered(state.is_focused, is_selected, style)
-        }
-    } else {
-        style_sheet.active(state.is_focused, is_selected, style)
-    };
-
     let doubled_border_width = styling.border_width * 2.0;
     let doubled_outline_width = styling.outline_width * 2.0;
 
@@ -782,8 +771,6 @@ where
     } else {
         draw_contents(renderer, styling);
     }
-
-    styling
 }
 
 /// Computes the layout of a [`Button`].

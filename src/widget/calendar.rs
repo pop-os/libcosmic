@@ -133,7 +133,7 @@ fn date_button<Message>(
     is_month: bool,
     is_day: bool,
     on_select: &dyn Fn(NaiveDate) -> Message,
-) -> crate::widget::Button<'static, Message, crate::Theme, crate::Renderer> {
+) -> crate::widget::Button<'static, Message> {
     let style = if is_day {
         button::Style::Suggested
     } else {
