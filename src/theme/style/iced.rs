@@ -373,7 +373,9 @@ pub enum Container {
     Custom(Box<dyn Fn(&Theme) -> container::Appearance>),
     Dialog,
     Dropdown,
-    HeaderBar,
+    HeaderBar {
+        focused: bool,
+    },
     List,
     Primary,
     Secondary,
@@ -473,22 +475,36 @@ impl container::StyleSheet for Theme {
                 }
             }
 
-            Container::HeaderBar => container::Appearance {
-                icon_color: Some(Color::from(cosmic.accent.base)),
-                text_color: Some(Color::from(cosmic.background.on)),
-                background: Some(iced::Background::Color(cosmic.background.base.into())),
-                border: Border {
-                    radius: [
-                        cosmic.corner_radii.radius_xs[0],
-                        cosmic.corner_radii.radius_xs[1],
-                        cosmic.corner_radii.radius_0[2],
-                        cosmic.corner_radii.radius_0[3],
-                    ]
-                    .into(),
-                    ..Default::default()
-                },
-                shadow: Shadow::default(),
-            },
+            Container::HeaderBar { focused } => {
+                let (icon_color, text_color) = if *focused {
+                    (
+                        Color::from(cosmic.accent.base),
+                        Color::from(cosmic.background.on),
+                    )
+                } else {
+                    use crate::ext::ColorExt;
+                    let unfocused_color = Color::from(cosmic.background.component.on)
+                        .blend_alpha(cosmic.background.base.into(), 0.75);
+                    (unfocused_color, unfocused_color)
+                };
+
+                container::Appearance {
+                    icon_color: Some(icon_color),
+                    text_color: Some(text_color),
+                    background: Some(iced::Background::Color(cosmic.background.base.into())),
+                    border: Border {
+                        radius: [
+                            cosmic.corner_radii.radius_xs[0],
+                            cosmic.corner_radii.radius_xs[1],
+                            cosmic.corner_radii.radius_0[2],
+                            cosmic.corner_radii.radius_0[3],
+                        ]
+                        .into(),
+                        ..Default::default()
+                    },
+                    shadow: Shadow::default(),
+                }
+            }
 
             Container::ContextDrawer => {
                 let mut appearance = crate::style::Container::primary(cosmic);
