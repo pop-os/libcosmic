@@ -48,6 +48,7 @@ pub struct Button<'a, Message> {
     label: Option<Vec<iced_accessibility::accesskit::NodeId>>,
     content: crate::Element<'a, Message>,
     on_press: Option<Message>,
+    on_press_down: Option<Message>,
     width: Length,
     height: Length,
     padding: Padding,
@@ -69,6 +70,7 @@ impl<'a, Message> Button<'a, Message> {
             label: None,
             content: content.into(),
             on_press: None,
+            on_press_down: None,
             width: Length::Shrink,
             height: Length::Shrink,
             padding: Padding::new(5.0),
@@ -92,6 +94,7 @@ impl<'a, Message> Button<'a, Message> {
             label: None,
             content: content.into(),
             on_press: None,
+            on_press_down: None,
             width: Length::Shrink,
             height: Length::Shrink,
             padding: Padding::new(5.0),
@@ -135,11 +138,19 @@ impl<'a, Message> Button<'a, Message> {
         self
     }
 
-    /// Sets the message that will be produced when the [`Button`] is pressed.
+    /// Sets the message that will be produced when the [`Button`] is pressed and released.
     ///
-    /// Unless `on_press` is called, the [`Button`] will be disabled.
+    /// Unless `on_press` or `on_press_down` is called, the [`Button`] will be disabled.
     pub fn on_press(mut self, on_press: Message) -> Self {
         self.on_press = Some(on_press);
+        self
+    }
+
+    /// Sets the message that will be produced when the [`Button`] is pressed,
+    ///
+    /// Unless `on_press` or `on_press_down` is called, the [`Button`] will be disabled.
+    pub fn on_press_down(mut self, on_press: Message) -> Self {
+        self.on_press_down = Some(on_press);
         self
     }
 
@@ -313,6 +324,7 @@ impl<'a, Message: 'a + Clone> Widget<Message, crate::Theme, crate::Renderer>
             cursor,
             shell,
             &self.on_press,
+            &self.on_press_down,
             || tree.state.downcast_mut::<State>(),
         )
     }
@@ -333,7 +345,7 @@ impl<'a, Message: 'a + Clone> Widget<Message, crate::Theme, crate::Renderer>
 
         let mut headerbar_alpha = None;
 
-        let is_enabled = self.on_press.is_some();
+        let is_enabled = self.on_press.is_some() || self.on_press_down.is_some();
         let is_mouse_over = cursor.position().is_some_and(|p| bounds.contains(p));
 
         let state = tree.state.downcast_ref::<State>();
@@ -616,18 +628,23 @@ pub fn update<'a, Message: Clone>(
     cursor: mouse::Cursor,
     shell: &mut Shell<'_, Message>,
     on_press: &Option<Message>,
+    on_press_down: &Option<Message>,
     state: impl FnOnce() -> &'a mut State,
 ) -> event::Status {
     match event {
         Event::Mouse(mouse::Event::ButtonPressed(mouse::Button::Left))
         | Event::Touch(touch::Event::FingerPressed { .. }) => {
-            if on_press.is_some() {
+            if on_press.is_some() || on_press_down.is_some() {
                 let bounds = layout.bounds();
 
                 if cursor.is_over(bounds) {
                     let state = state();
 
                     state.is_pressed = true;
+
+                    if let Some(on_press_down) = on_press_down {
+                        shell.publish(on_press_down.clone());
+                    }
 
                     return event::Status::Captured;
                 }
@@ -649,6 +666,9 @@ pub fn update<'a, Message: Clone>(
 
                     return event::Status::Captured;
                 }
+            } else if on_press_down.is_some() {
+                let state = state();
+                state.is_pressed = false;
             }
         }
         #[cfg(feature = "a11y")]
