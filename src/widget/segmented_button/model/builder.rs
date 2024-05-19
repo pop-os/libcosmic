@@ -103,8 +103,8 @@ where
     ///     .build()
     /// ```
     #[allow(clippy::must_use_candidate, clippy::return_self_not_must_use)]
-    pub fn icon(mut self, icon: Icon) -> Self {
-        self.model.0.icon_set(self.id, icon);
+    pub fn icon(mut self, icon: impl Into<Icon>) -> Self {
+        self.model.0.icon_set(self.id, icon.into());
         self
     }
 
