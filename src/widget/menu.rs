@@ -59,10 +59,11 @@ pub use action::MenuAction as Action;
 
 mod flex;
 pub mod key_bind;
+pub use key_bind::KeyBind;
 
 mod menu_bar;
-pub use menu_bar::MenuBar;
 pub(crate) use menu_bar::MenuBarState;
+pub use menu_bar::{menu_bar as bar, MenuBar};
 
 mod menu_inner;
 mod menu_tree;

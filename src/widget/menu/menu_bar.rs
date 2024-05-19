@@ -19,6 +19,13 @@ use iced_widget::core::{
     Alignment, Clipboard, Element, Layout, Length, Padding, Rectangle, Shell, Widget,
 };
 
+/// A `MenuBar` collects `MenuTree`s and handles all the layout, event processing, and drawing.
+pub fn menu_bar<Message, Renderer: iced_core::Renderer>(
+    menu_roots: Vec<MenuTree<Message, Renderer>>,
+) -> MenuBar<Message, Renderer> {
+    MenuBar::new(menu_roots)
+}
+
 pub(crate) struct MenuBarState {
     pub(crate) pressed: bool,
     pub(crate) view_cursor: Cursor,
@@ -56,8 +63,7 @@ impl Default for MenuBarState {
     }
 }
 
-/// A `MenuBar` collects `MenuTree`s and handles
-/// all the layout, event processing and drawing
+/// A `MenuBar` collects `MenuTree`s and handles all the layout, event processing, and drawing.
 #[allow(missing_debug_implementations)]
 pub struct MenuBar<'a, Message, Renderer = crate::Renderer>
 where
