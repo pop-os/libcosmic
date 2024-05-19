@@ -225,7 +225,7 @@ where
     Element<'a, Message, crate::Theme, Renderer>: From<widget::button::Button<'a, Message>>,
 {
     fn find_key<A: MenuAction>(action: &A, key_binds: &HashMap<KeyBind, A>) -> String {
-        for (key_bind, key_action) in key_binds.iter() {
+        for (key_bind, key_action) in key_binds {
             if action == key_action {
                 return key_bind.to_string();
             }
@@ -248,12 +248,12 @@ where
                         widget::horizontal_space(Length::Fill),
                         widget::text(key),
                     )
-                    .on_press(action.message(None));
+                    .on_press(action.message());
 
                     trees.push(MenuTree::<Message, Renderer>::new(menu_button));
                 }
                 MenuItem::CheckBox(label, value, action) => {
-                    let key = find_key(&action, &key_binds);
+                    let key = find_key(&action, key_binds);
                     trees.push(MenuTree::new(
                         menu_button!(
                             if value {
@@ -267,7 +267,7 @@ where
                             widget::horizontal_space(Length::Fill),
                             widget::text(key)
                         )
-                        .on_press(action.message(None)),
+                        .on_press(action.message()),
                     ));
                 }
                 MenuItem::Folder(label, children) => {
