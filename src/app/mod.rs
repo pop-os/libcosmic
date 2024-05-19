@@ -429,7 +429,7 @@ where
     fn core_mut(&mut self) -> &mut Core;
 
     /// Creates the application, and optionally emits command on initialize.
-    fn init(core: Core, flags: Self::Flags) -> (Self, iced::Command<Message<Self::Message>>);
+    fn init(core: Core, flags: Self::Flags) -> (Self, Command<Self::Message>);
 
     /// Displays a context drawer on the side of the application window when `Some`.
     fn context_drawer(&self) -> Option<Element<Self::Message>> {
@@ -506,28 +506,28 @@ where
     }
 
     // Called when context drawer is toggled
-    fn on_context_drawer(&mut self) -> iced::Command<Message<Self::Message>> {
-        iced::Command::none()
+    fn on_context_drawer(&mut self) -> Command<Self::Message> {
+        Command::none()
     }
 
     /// Called when the escape key is pressed.
-    fn on_escape(&mut self) -> iced::Command<Message<Self::Message>> {
-        iced::Command::none()
+    fn on_escape(&mut self) -> Command<Self::Message> {
+        Command::none()
     }
 
     /// Called when a navigation item is selected.
-    fn on_nav_select(&mut self, id: nav_bar::Id) -> iced::Command<Message<Self::Message>> {
-        iced::Command::none()
+    fn on_nav_select(&mut self, id: nav_bar::Id) -> Command<Self::Message> {
+        Command::none()
     }
 
     /// Called when a context menu is requested for a navigation item.
-    fn on_nav_context(&mut self, id: nav_bar::Id) -> iced::Command<Message<Self::Message>> {
-        iced::Command::none()
+    fn on_nav_context(&mut self, id: nav_bar::Id) -> Command<Self::Message> {
+        Command::none()
     }
 
     /// Called when the search function is requested.
-    fn on_search(&mut self) -> iced::Command<Message<Self::Message>> {
-        iced::Command::none()
+    fn on_search(&mut self) -> Command<Self::Message> {
+        Command::none()
     }
 
     /// Called when a window is resized.
@@ -539,8 +539,8 @@ where
     }
 
     /// Respond to an application-specific message.
-    fn update(&mut self, message: Self::Message) -> iced::Command<Message<Self::Message>> {
-        iced::Command::none()
+    fn update(&mut self, message: Self::Message) -> Command<Self::Message> {
+        Command::none()
     }
 
     /// Respond to a system theme change
@@ -548,8 +548,8 @@ where
         &mut self,
         keys: &[&'static str],
         new_theme: &cosmic_theme::Theme,
-    ) -> iced::Command<Message<Self::Message>> {
-        iced::Command::none()
+    ) -> Command<Self::Message> {
+        Command::none()
     }
 
     /// Respond to a system theme mode change
@@ -557,8 +557,8 @@ where
         &mut self,
         keys: &[&'static str],
         new_theme: &cosmic_theme::ThemeMode,
-    ) -> iced::Command<Message<Self::Message>> {
-        iced::Command::none()
+    ) -> Command<Self::Message> {
+        Command::none()
     }
 
     /// Constructs the view for the main window.
@@ -576,24 +576,21 @@ where
 
     /// Handles dbus activation messages
     #[cfg(feature = "single-instance")]
-    fn dbus_activation(
-        &mut self,
-        msg: DbusActivationMessage,
-    ) -> iced::Command<Message<Self::Message>> {
-        iced::Command::none()
+    fn dbus_activation(&mut self, msg: DbusActivationMessage) -> Command<Self::Message> {
+        Command::none()
     }
 }
 
 /// Methods automatically derived for all types implementing [`Application`].
 pub trait ApplicationExt: Application {
     /// Initiates a window drag.
-    fn drag(&mut self) -> iced::Command<Message<Self::Message>>;
+    fn drag(&mut self) -> Command<Self::Message>;
 
     /// Maximizes the window.
-    fn maximize(&mut self) -> iced::Command<Message<Self::Message>>;
+    fn maximize(&mut self) -> Command<Self::Message>;
 
     /// Minimizes the window.
-    fn minimize(&mut self) -> iced::Command<Message<Self::Message>>;
+    fn minimize(&mut self) -> Command<Self::Message>;
     /// Get the title of the main window.
 
     #[cfg(not(any(feature = "multi-window", feature = "wayland")))]
@@ -615,30 +612,26 @@ pub trait ApplicationExt: Application {
 
     #[cfg(not(any(feature = "multi-window", feature = "wayland")))]
     /// Set the title of the main window.
-    fn set_window_title(&mut self, title: String) -> iced::Command<Message<Self::Message>>;
+    fn set_window_title(&mut self, title: String) -> Command<Self::Message>;
 
     #[cfg(any(feature = "multi-window", feature = "wayland"))]
     /// Set the title of a window.
-    fn set_window_title(
-        &mut self,
-        title: String,
-        id: window::Id,
-    ) -> iced::Command<Message<Self::Message>>;
+    fn set_window_title(&mut self, title: String, id: window::Id) -> Command<Self::Message>;
 
     /// View template for the main window.
     fn view_main(&self) -> Element<Message<Self::Message>>;
 }
 
 impl<App: Application> ApplicationExt for App {
-    fn drag(&mut self) -> iced::Command<Message<Self::Message>> {
+    fn drag(&mut self) -> Command<Self::Message> {
         command::drag(Some(self.main_window_id()))
     }
 
-    fn maximize(&mut self) -> iced::Command<Message<Self::Message>> {
+    fn maximize(&mut self) -> Command<Self::Message> {
         command::maximize(Some(self.main_window_id()), true)
     }
 
-    fn minimize(&mut self) -> iced::Command<Message<Self::Message>> {
+    fn minimize(&mut self) -> Command<Self::Message> {
         command::minimize(Some(self.main_window_id()))
     }
 
@@ -656,21 +649,17 @@ impl<App: Application> ApplicationExt for App {
     }
 
     #[cfg(any(feature = "multi-window", feature = "wayland"))]
-    fn set_window_title(
-        &mut self,
-        title: String,
-        id: window::Id,
-    ) -> iced::Command<Message<Self::Message>> {
+    fn set_window_title(&mut self, title: String, id: window::Id) -> Command<Self::Message> {
         self.core_mut().title.insert(id, title.clone());
         command::set_title(Some(id), title)
     }
 
     #[cfg(not(any(feature = "multi-window", feature = "wayland")))]
-    fn set_window_title(&mut self, title: String) -> iced::Command<Message<Self::Message>> {
+    fn set_window_title(&mut self, title: String) -> Command<Self::Message> {
         let id = self.main_window_id();
 
         self.core_mut().title.insert(id, title.clone());
-        iced::Command::none()
+        Command::none()
     }
 
     /// Creates the view for the main window.
