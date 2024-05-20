@@ -140,7 +140,7 @@ impl cosmic::Application for App {
                     // Send this back to the application.
                     Message::FileRead(url, contents)
                 })
-                .map(cosmic::app::message::app);
+                .map(Into::into);
             }
 
             // Creates a new open dialog.

@@ -37,6 +37,12 @@ pub mod message {
     pub const fn none<M>() -> Message<M> {
         Message::None
     }
+
+    impl<M> From<M> for Message<M> {
+        fn from(value: M) -> Self {
+            Self::App(value)
+        }
+    }
 }
 
 pub use self::command::Command;
