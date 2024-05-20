@@ -9,18 +9,27 @@ pub use self::button::Button;
 mod dropdown;
 
 pub mod iced;
+#[doc(inline)]
 pub use self::iced::Application;
+#[doc(inline)]
 pub use self::iced::Checkbox;
+#[doc(inline)]
 pub use self::iced::Container;
+#[doc(inline)]
 pub use self::iced::ProgressBar;
+#[doc(inline)]
 pub use self::iced::Rule;
+#[doc(inline)]
 pub use self::iced::Svg;
+#[doc(inline)]
 pub use self::iced::Text;
 
 pub mod menu_bar;
 
 mod segmented_button;
+#[doc(inline)]
 pub use self::segmented_button::SegmentedButton;
 
 mod text_input;
+#[doc(inline)]
 pub use self::text_input::TextInput;

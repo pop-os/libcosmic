@@ -29,7 +29,10 @@ pub mod command;
 
 pub mod config;
 
+#[doc(inline)]
 pub use cosmic_config;
+
+#[doc(inline)]
 pub use cosmic_theme;
 
 #[cfg(any(feature = "xdg-portal", feature = "rfd"))]
@@ -43,15 +46,31 @@ mod ext;
 
 pub mod font;
 
+#[doc(inline)]
 pub use iced;
+
+#[doc(inline)]
 pub use iced_core;
+
+#[doc(inline)]
 pub use iced_futures;
+
+#[doc(inline)]
 pub use iced_renderer;
+
+#[doc(inline)]
 pub use iced_runtime;
+
 #[cfg(feature = "wayland")]
 pub use iced_sctk;
+
+#[doc(inline)]
 pub use iced_style;
+
+#[doc(inline)]
 pub use iced_widget;
+
+#[doc(inline)]
 #[cfg(feature = "winit")]
 pub use iced_winit;
 
@@ -67,6 +86,8 @@ pub mod process;
 pub use cctk;
 
 pub mod theme;
+
+#[doc(inline)]
 pub use theme::{style, Theme};
 
 pub mod widget;

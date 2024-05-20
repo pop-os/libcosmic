@@ -4,4 +4,5 @@
 //! Configurations available to libcosmic applications.
 
 pub mod toolkit;
+#[doc(inline)]
 pub use toolkit::CosmicTk;

@@ -4,40 +4,73 @@
 //! Cosmic-themed widget implementations.
 
 // Re-exports from Iced
+#[doc(inline)]
 pub use iced::widget::{checkbox, Checkbox};
+
+#[doc(inline)]
 pub use iced::widget::{combo_box, ComboBox};
+
+#[doc(inline)]
 pub use iced::widget::{container, Container};
+
+#[doc(inline)]
 pub use iced::widget::{horizontal_space, space, vertical_space, Space};
+
+#[doc(inline)]
 pub use iced::widget::{image, Image};
+
+#[doc(inline)]
 pub use iced::widget::{lazy, Lazy};
+
+#[doc(inline)]
 pub use iced::widget::{mouse_area, MouseArea};
+
+#[doc(inline)]
 pub use iced::widget::{pane_grid, PaneGrid};
+
+#[doc(inline)]
 pub use iced::widget::{progress_bar, ProgressBar};
+
+#[doc(inline)]
 pub use iced::widget::{radio, Radio};
+
+#[doc(inline)]
 pub use iced::widget::{responsive, Responsive};
+
+#[doc(inline)]
 pub use iced::widget::{slider, vertical_slider, Slider, VerticalSlider};
+
+#[doc(inline)]
 pub use iced::widget::{svg, Svg};
+
+#[doc(inline)]
 pub use iced_core::widget::{Id, Operation, Widget};
 
 pub mod aspect_ratio;
 
 pub mod button;
+#[doc(inline)]
 pub use button::{button, Button, IconButton, LinkButton, TextButton};
 
 pub(crate) mod common;
 
 pub mod calendar;
+#[doc(inline)]
 pub use calendar::{calendar, Calendar};
 
 pub mod card;
+#[doc(inline)]
 pub use card::*;
 
 pub mod color_picker;
+#[doc(inline)]
 pub use color_picker::{ColorPicker, ColorPickerModel};
 
 pub mod context_drawer;
+#[doc(inline)]
 pub use context_drawer::{context_drawer, ContextDrawer};
 
+#[doc(inline)]
 pub use column::{column, Column};
 pub mod column {
     pub type Column<'a, Message> = iced::widget::Column<'a, Message, crate::Theme, crate::Renderer>;
@@ -59,12 +92,15 @@ pub mod column {
 }
 
 pub mod layer_container;
+#[doc(inline)]
 pub use layer_container::{layer_container, LayerContainer};
 
 pub mod context_menu;
+#[doc(inline)]
 pub use context_menu::{context_menu, ContextMenu};
 
 pub mod dialog;
+#[doc(inline)]
 pub use dialog::{dialog, Dialog};
 
 /// An element to distinguish a boundary between two elements.
@@ -117,46 +153,59 @@ pub mod divider {
 }
 
 pub mod dnd_destination;
+#[doc(inline)]
 pub use dnd_destination::{dnd_destination, DndDestination};
 
 pub mod dnd_source;
+#[doc(inline)]
 pub use dnd_source::{dnd_source, DndSource};
 
 pub mod dropdown;
+#[doc(inline)]
 pub use dropdown::{dropdown, Dropdown};
 
 pub mod flex_row;
+#[doc(inline)]
 pub use flex_row::{flex_row, FlexRow};
 
 pub mod grid;
+#[doc(inline)]
 pub use grid::{grid, Grid};
 
 mod header_bar;
+#[doc(inline)]
 pub use header_bar::{header_bar, HeaderBar};
 
 pub mod icon;
+#[doc(inline)]
 pub use icon::{icon, Icon};
 
 #[cfg(feature = "animated-image")]
 pub mod frames;
 
 pub mod list;
-pub use list::*;
+#[doc(inline)]
+pub use list::{list_column, ListColumn};
 
 pub mod menu;
 
 pub mod nav_bar;
+#[doc(inline)]
 pub use nav_bar::{nav_bar, nav_bar_dnd};
 
 pub mod nav_bar_toggle;
+#[doc(inline)]
 pub use nav_bar_toggle::{nav_bar_toggle, NavBarToggle};
 
 pub mod popover;
+#[doc(inline)]
 pub use popover::{popover, Popover};
 
 pub mod rectangle_tracker;
+#[doc(inline)]
 pub use rectangle_tracker::{rectangle_tracker, RectangleTracker};
 
+#[doc(inline)]
 pub use row::{row, Row};
 pub mod row {
     pub type Row<'a, Message> = iced::widget::Row<'a, Message, crate::Theme, crate::Renderer>;
@@ -178,6 +227,7 @@ pub mod row {
 }
 
 mod scrollable;
+#[doc(inline)]
 pub use scrollable::*;
 
 pub mod segmented_button;
@@ -186,19 +236,26 @@ pub mod segmented_control;
 pub mod settings;
 
 pub mod spin_button;
+#[doc(inline)]
 pub use spin_button::{spin_button, SpinButton};
 
 pub mod tab_bar;
 
 pub mod text;
+#[doc(inline)]
 pub use text::{text, Text};
 
 pub mod text_input;
-pub use text_input::*;
+#[doc(inline)]
+pub use text_input::{
+    editable_input, inline_input, search_input, secure_input, text_input, TextInput,
+};
 
 mod toggler;
+#[doc(inline)]
 pub use toggler::toggler;
 
+#[doc(inline)]
 pub use tooltip::{tooltip, Tooltip};
 pub mod tooltip {
     use crate::Element;
@@ -224,4 +281,5 @@ pub mod tooltip {
 }
 
 pub mod warning;
+#[doc(inline)]
 pub use warning::*;

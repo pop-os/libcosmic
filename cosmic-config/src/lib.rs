@@ -1,3 +1,5 @@
+//! Integrations for cosmic-config — the cosmic configuration system.
+
 use notify::{
     event::{EventKind, ModifyKind},
     Watcher,
