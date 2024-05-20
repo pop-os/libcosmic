@@ -10,26 +10,31 @@ use std::borrow::Cow;
 
 pub type Button<'a, Message> = Builder<'a, Message, Text>;
 
+/// A text button with the destructive style
 pub fn destructive<'a, Message>(label: impl Into<Cow<'a, str>>) -> Button<'a, Message> {
     Button::new(Text::new())
         .label(label)
         .style(Style::Destructive)
 }
 
+/// A text button with the suggested style
 pub fn suggested<'a, Message>(label: impl Into<Cow<'a, str>>) -> Button<'a, Message> {
     Button::new(Text::new())
         .label(label)
         .style(Style::Suggested)
 }
 
+/// A text button with the standard style
 pub fn standard<'a, Message>(label: impl Into<Cow<'a, str>>) -> Button<'a, Message> {
     Button::new(Text::new()).label(label)
 }
 
+/// A text button with the text style
 pub fn text<'a, Message>(label: impl Into<Cow<'a, str>>) -> Button<'a, Message> {
     Button::new(Text::new()).label(label).style(Style::Text)
 }
 
+/// The text variant of a button.
 pub struct Text {
     pub(super) leading_icon: Option<icon::Handle>,
     pub(super) trailing_icon: Option<icon::Handle>,

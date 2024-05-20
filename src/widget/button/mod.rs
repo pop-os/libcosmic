@@ -1,29 +1,41 @@
 // Copyright 2023 System76 <info@system76.com>
 // SPDX-License-Identifier: MPL-2.0
 
+//! Button widgets for COSMIC applications.
+
 pub use crate::theme::Button as Style;
 
 pub mod link;
 use derive_setters::Setters;
+#[doc(inline)]
 pub use link::link;
+#[doc(inline)]
 pub use link::Button as LinkButton;
 
 mod icon;
+#[doc(inline)]
 pub use icon::icon;
+#[doc(inline)]
 pub use icon::Button as IconButton;
 
 mod image;
+#[doc(inline)]
 pub use image::image;
+#[doc(inline)]
 pub use image::Button as ImageButton;
 
 mod style;
+#[doc(inline)]
 pub use style::{Appearance, StyleSheet};
 
 mod text;
+#[doc(inline)]
 pub use text::Button as TextButton;
+#[doc(inline)]
 pub use text::{destructive, standard, suggested, text};
 
 mod widget;
+#[doc(inline)]
 pub use widget::{draw, focus, layout, mouse_interaction, Button};
 
 use iced_core::font::Weight;
@@ -31,10 +43,12 @@ use iced_core::widget::Id;
 use iced_core::{Length, Padding};
 use std::borrow::Cow;
 
+/// A button with the default style, which may contain any widget as its content.
 pub fn button<'a, Message>(content: impl Into<crate::Element<'a, Message>>) -> Button<'a, Message> {
     Button::new(content)
 }
 
+/// An image button which may contain any widget as its content.
 pub fn custom_image_button<'a, Message>(
     content: impl Into<crate::Element<'a, Message>>,
     on_remove: Option<Message>,
@@ -42,6 +56,7 @@ pub fn custom_image_button<'a, Message>(
     Button::new_image(content, on_remove)
 }
 
+/// A builder for constructing a custom [`Button`].
 #[must_use]
 #[derive(Setters)]
 pub struct Builder<'a, Message, Variant> {

@@ -1,6 +1,8 @@
 // Copyright 2024 System76 <info@system76.com>
 // SPDX-License-Identifier: MPL-2.0
 
+//! A widget that displays an interactive calendar.
+
 use std::cmp;
 
 use crate::iced_core::{Length, Padding};
@@ -8,6 +10,7 @@ use crate::widget::{button, column, grid, icon, row, text, Grid};
 use chrono::{Datelike, Days, Months, NaiveDate, Weekday};
 use iced::alignment::{Horizontal, Vertical};
 
+/// A widget that displays an interactive calendar.
 pub fn calendar<M>(
     selected: &NaiveDate,
     on_select: impl Fn(NaiveDate) -> M + 'static,

@@ -59,7 +59,7 @@ pub struct Button<'a, Message> {
 
 impl<'a, Message> Button<'a, Message> {
     /// Creates a new [`Button`] with the given content.
-    pub fn new(content: impl Into<crate::Element<'a, Message>>) -> Self {
+    pub(super) fn new(content: impl Into<crate::Element<'a, Message>>) -> Self {
         Self {
             id: Id::unique(),
             #[cfg(feature = "a11y")]

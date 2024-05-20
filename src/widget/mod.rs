@@ -1,7 +1,50 @@
 // Copyright 2022 System76 <info@system76.com>
 // SPDX-License-Identifier: MPL-2.0
 
-//! Cosmic-themed widget implementations.
+//! The COSMIC widget library
+//!
+//! This module contains a wide variety of widgets used throughout the COSMIC app ecosystem.
+//!
+//! # Overview
+//!
+//! Add widgets to your application view by calling the modules and functions below.
+//! Widgets are constructed by chaining their property methods using a functional paradigm.
+//! Modules may contain additional functions for constructing different variations of a widget.
+//! Each module will typically have one widget with the same name as the module, which will be re-exported here.
+//!
+//! ```no_run
+//! use cosmic::prelude::*;
+//! use cosmic::{cosmic_theme, theme, widget};
+//!
+//! const REPOSITORY: &str = "https://github.com/pop-os/libcosmic";
+//!
+//! let cosmic_theme::Spacing { space_xxs, .. } = theme::active().cosmic().spacing;
+//!
+//! let link = widget::button::link(REPOSITORY)
+//!     .on_press(Message::LaunchUrl(REPOSITORY))
+//!     .padding(0);
+//!
+//! let content = widget::column()
+//!     .push(widget::icon::from_name("my-app-icon"))
+//!     .push(widget::text::title3("My App Name"))
+//!     .push(link)
+//!     .align_items(Alignment::Center)
+//!     .spacing(space_xxs);
+//! ```
+//!
+//! Widgets may borrow data from your application struct, and should do so to avoid allocating.
+//!
+//! ```no_run
+//! let text = widget::text::body(&self.cached_text);
+//! ```
+//!
+//! Use the [`cosmic::Apply`](crate::Apply) trait to embed widgets into other widgets which accept them.
+//!
+//! ```no_run
+//! let button = widget::icon::from_name("printer-symbolic")
+//!     .apply(widget::button::icon)
+//!     .on_press(Message::Print);
+//! ```
 
 // Re-exports from Iced
 #[doc(inline)]
@@ -73,19 +116,24 @@ pub use context_drawer::{context_drawer, ContextDrawer};
 #[doc(inline)]
 pub use column::{column, Column};
 pub mod column {
+    //! A container which aligns its children in a column.
+
     pub type Column<'a, Message> = iced::widget::Column<'a, Message, crate::Theme, crate::Renderer>;
 
     #[must_use]
+    /// A container which aligns its children in a column.
     pub fn column<'a, Message>() -> Column<'a, Message> {
         Column::new()
     }
 
     #[must_use]
+    /// A pre-allocated [`column`].
     pub fn with_capacity<'a, Message>(capacity: usize) -> Column<'a, Message> {
         Column::with_children(Vec::with_capacity(capacity))
     }
 
     #[must_use]
+    /// A [`column`] that will be assigned a [`Vec`] of children.
     pub fn with_children<Message>(children: Vec<crate::Element<Message>>) -> Column<Message> {
         Column::with_children(children)
     }
@@ -207,20 +255,26 @@ pub use rectangle_tracker::{rectangle_tracker, RectangleTracker};
 
 #[doc(inline)]
 pub use row::{row, Row};
+
 pub mod row {
+    //! A container which aligns its children in a row.
+
     pub type Row<'a, Message> = iced::widget::Row<'a, Message, crate::Theme, crate::Renderer>;
 
     #[must_use]
+    /// A container which aligns its children in a row.
     pub fn row<'a, Message>() -> Row<'a, Message> {
         Row::new()
     }
 
     #[must_use]
+    /// A pre-allocated [`row`].
     pub fn with_capacity<'a, Message>(capacity: usize) -> Row<'a, Message> {
         Row::with_children(Vec::with_capacity(capacity))
     }
 
     #[must_use]
+    /// A [`row`] that will be assigned a [`Vec`] of children.
     pub fn with_children<Message>(children: Vec<crate::Element<Message>>) -> Row<Message> {
         Row::with_children(children)
     }

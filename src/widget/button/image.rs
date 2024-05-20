@@ -11,6 +11,7 @@ use std::borrow::Cow;
 
 pub type Button<'a, Message> = Builder<'a, Message, Image<'a, Handle, Message>>;
 
+/// A button constructed from an image handle, using image button styling.
 pub fn image<'a, Message>(handle: impl Into<Handle> + 'a) -> Button<'a, Message> {
     Button::new(Image {
         image: widget::image(handle).border_radius([9.0; 4]),
@@ -19,6 +20,7 @@ pub fn image<'a, Message>(handle: impl Into<Handle> + 'a) -> Button<'a, Message>
     })
 }
 
+/// The image variant of a button.
 pub struct Image<'a, Handle, Message> {
     image: widget::Image<'a, Handle>,
     selected: bool,

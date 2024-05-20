@@ -1,6 +1,8 @@
 // Copyright 2023 System76 <info@system76.com>
 // SPDX-License-Identifier: MPL-2.0
 
+//! Widgets for selecting colors with a color picker.
+
 use std::borrow::Cow;
 use std::rc::Rc;
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -29,8 +31,11 @@ use palette::{FromColor, RgbHue};
 use super::button::StyleSheet;
 use super::divider::horizontal;
 use super::icon::{self, from_name};
-use super::segmented_button::{self, Model, SingleSelect};
+use super::segmented_button::{self, SingleSelect};
 use super::{button, segmented_control, text, text_input, tooltip, Icon};
+
+#[doc(inline)]
+pub use ColorPickerModel as Model;
 
 // TODO is this going to look correct enough?
 lazy_static! {
@@ -64,7 +69,7 @@ pub enum ColorPickerUpdate {
 #[derive(Setters)]
 pub struct ColorPickerModel {
     #[setters(skip)]
-    segmented_model: Model<SingleSelect>,
+    segmented_model: segmented_button::Model<SingleSelect>,
     #[setters(skip)]
     active_color: palette::Hsv,
     #[setters(skip)]
@@ -246,7 +251,7 @@ impl ColorPickerModel {
 #[derive(Setters, Clone)]
 pub struct ColorPickerBuilder<'a, Message> {
     #[setters(skip)]
-    model: &'a Model<SingleSelect>,
+    model: &'a segmented_button::Model<SingleSelect>,
     #[setters(skip)]
     active_color: palette::Hsv,
     #[setters(skip)]
@@ -757,6 +762,7 @@ fn color_to_string(c: palette::Hsv, is_hex: bool) -> String {
     }
 }
 
+/// A button for selecting a color from a color picker.
 pub fn color_button<'a, Message: 'static>(
     on_press: Option<Message>,
     color: Option<Color>,
