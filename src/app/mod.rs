@@ -155,38 +155,9 @@ pub(crate) fn iced_settings<App: Application>(
 ///
 /// Returns error on application failure.
 pub fn run<App: Application>(settings: Settings, flags: App::Flags) -> iced::Result {
-    #[cfg(feature = "wgpu")]
-    wgpu_power_pref();
-
     let settings = iced_settings::<App>(settings, flags);
 
     cosmic::Cosmic::<App>::run(settings)
-}
-
-/// Default to rendering the application with the low power GPU preference.
-#[cfg(feature = "wgpu")]
-fn wgpu_power_pref() {
-    fn is_desktop() -> bool {
-        let chassis = std::fs::read_to_string("/sys/class/dmi/id/chassis_type").unwrap_or_default();
-
-        chassis.trim() == "3"
-    }
-
-    // Ignore if the system is a desktop.
-    if is_desktop() {
-        return;
-    }
-
-    // Ignore if requested to run on NVIDIA GPU
-    if std::env::var("__NV_PRIME_RENDER_OFFLOAD").ok().as_deref() == Some("1") {
-        return;
-    }
-
-    #[allow(clippy::items_after_statements)]
-    const VAR: &str = "WGPU_POWER_PREF";
-    if std::env::var(VAR).is_err() {
-        std::env::set_var(VAR, "low");
-    }
 }
 
 #[cfg(feature = "single-instance")]
