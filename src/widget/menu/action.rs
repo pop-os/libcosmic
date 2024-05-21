@@ -1,5 +1,3 @@
-use crate::widget::segmented_button::Entity;
-
 /// `MenuAction` is a trait that represents an action in a menu.
 ///
 /// It is used to define the behavior of menu items when they are activated.

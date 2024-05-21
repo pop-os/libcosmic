@@ -168,7 +168,7 @@ impl cosmic::Application for App {
                         Err(why) => Message::OpenError(Arc::new(why)),
                     }
                 })
-                .map(cosmic::app::Message::App);
+                .map(Into::into);
             }
 
             // Displays an error in the application's warning bar.

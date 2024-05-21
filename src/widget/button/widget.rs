@@ -375,7 +375,13 @@ impl<'a, Message: 'a + Clone> Widget<Message, crate::Theme, crate::Renderer>
         };
 
         let mut icon_color = styling.icon_color.unwrap_or(renderer_style.icon_color);
-        let mut text_color = styling.text_color.unwrap_or(renderer_style.text_color);
+
+        // Menu roots should share the accent color that icons get in the header.
+        let mut text_color = if matches!(self.style, crate::theme::Button::MenuRoot) {
+            icon_color
+        } else {
+            styling.text_color.unwrap_or(renderer_style.text_color)
+        };
 
         if let Some(alpha) = headerbar_alpha {
             icon_color.a = alpha;

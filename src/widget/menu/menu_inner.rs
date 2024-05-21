@@ -709,8 +709,8 @@ where
                             },
                             shadow: Shadow::default(),
                         };
-                        let path_color = styling.path;
-                        r.fill_quad(path_quad, path_color);
+
+                        r.fill_quad(path_quad, styling.path);
                     }
 
                     // draw item

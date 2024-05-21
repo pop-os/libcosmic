@@ -390,8 +390,8 @@ where
                     },
                     shadow: Default::default(),
                 };
-                let path_color = styling.path;
-                renderer.fill_quad(path_quad, path_color);
+
+                renderer.fill_quad(path_quad, styling.path);
             }
         }
 
