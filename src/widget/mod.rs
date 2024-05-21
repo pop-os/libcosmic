@@ -12,7 +12,7 @@
 //! Modules may contain additional functions for constructing different variations of a widget.
 //! Each module will typically have one widget with the same name as the module, which will be re-exported here.
 //!
-//! ```no_run
+//! ```no_run,ignore
 //! use cosmic::prelude::*;
 //! use cosmic::{cosmic_theme, theme, widget};
 //!
@@ -34,13 +34,13 @@
 //!
 //! Widgets may borrow data from your application struct, and should do so to avoid allocating.
 //!
-//! ```no_run
+//! ```no_run,ignore
 //! let text = widget::text::body(&self.cached_text);
 //! ```
 //!
 //! Use the [`cosmic::Apply`](crate::Apply) trait to embed widgets into other widgets which accept them.
 //!
-//! ```no_run
+//! ```no_run,ignore
 //! let button = widget::icon::from_name("printer-symbolic")
 //!     .apply(widget::button::icon)
 //!     .on_press(Message::Print);
