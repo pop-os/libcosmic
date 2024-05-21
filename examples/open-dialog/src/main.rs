@@ -139,8 +139,7 @@ impl cosmic::Application for App {
 
                     // Send this back to the application.
                     Message::FileRead(url, contents)
-                })
-                .map(Into::into);
+                });
             }
 
             // Creates a new open dialog.
@@ -167,8 +166,7 @@ impl cosmic::Application for App {
 
                         Err(why) => Message::OpenError(Arc::new(why)),
                     }
-                })
-                .map(Into::into);
+                });
             }
 
             // Displays an error in the application's warning bar.
