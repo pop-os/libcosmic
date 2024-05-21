@@ -452,8 +452,8 @@ impl container::StyleSheet for Theme {
                     radius: [
                         cosmic.corner_radii.radius_0[0],
                         cosmic.corner_radii.radius_0[1],
-                        cosmic.corner_radii.radius_xs[2],
-                        cosmic.corner_radii.radius_xs[3],
+                        cosmic.corner_radii.radius_s[2],
+                        cosmic.corner_radii.radius_s[3],
                     ]
                     .into(),
                     ..Default::default()
@@ -494,8 +494,8 @@ impl container::StyleSheet for Theme {
                     background: Some(iced::Background::Color(cosmic.background.base.into())),
                     border: Border {
                         radius: [
-                            cosmic.corner_radii.radius_xs[0],
-                            cosmic.corner_radii.radius_xs[1],
+                            cosmic.corner_radii.radius_s[0],
+                            cosmic.corner_radii.radius_s[1],
                             cosmic.corner_radii.radius_0[2],
                             cosmic.corner_radii.radius_0[3],
                         ]
