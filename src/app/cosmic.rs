@@ -156,6 +156,7 @@ where
         }
     }
 
+    #[allow(clippy::too_many_lines)]
     fn subscription(&self) -> Subscription<Self::Message> {
         let window_events = listen_with(|event, _| {
             match event {
@@ -429,6 +430,11 @@ impl<T: Application> Cosmic<T> {
             }
 
             Message::SystemThemeChange(keys, theme) => {
+                let cur_is_dark = THEME.with(|t| t.borrow().theme_type.is_dark());
+                // Ignore updates if the current theme mode does not match.
+                if cur_is_dark != theme.cosmic().is_dark {
+                    return iced::Command::none();
+                }
                 let cmd = self.app.system_theme_update(&keys, theme.cosmic());
                 // Record the last-known system theme in event that the current theme is custom.
                 self.app.core_mut().system_theme = theme.clone();
@@ -472,6 +478,9 @@ impl<T: Application> Cosmic<T> {
                 };
             }
             Message::SystemThemeModeChange(keys, mode) => {
+                if !keys.contains(&"is_dark") {
+                    return iced::Command::none();
+                }
                 if THEME.with(|t| match t.borrow().theme_type {
                     ThemeType::System {
                         theme: _,
