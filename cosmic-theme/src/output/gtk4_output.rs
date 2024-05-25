@@ -122,6 +122,7 @@ impl Theme {
 
 .close, .maximize, .minimize {{
 	background: transparent;
+	transition: 0;
 }}
 .close:not(:hover) > image,
 .maximize:not(:hover) > image,
