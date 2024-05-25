@@ -145,6 +145,9 @@ impl Theme {
 .minimize:hover > image {{
 	background: {window_control_hover_bg};
 }}
+.image-button {{
+	transition: 0;
+}}
 .image-button > image,
 .image-button > box {{
 	color: @accent_bg_color;
