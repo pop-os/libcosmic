@@ -73,6 +73,12 @@ impl Theme {
             Rgba::new(0.0, 0.0, 0.0, 0.08)
         });
 
+        let window_control_hover_bg = to_rgba(if self.is_dark {
+            Rgba::new(255.0, 255.0, 255.0, 0.12)
+        } else {
+            Rgba::new(0.0, 0.0, 0.0, 0.12)
+        });
+
         let mut inverted_bg_divider = background.base;
         inverted_bg_divider.alpha = 0.5;
         let scrollbar_outline = to_rgba(inverted_bg_divider);
@@ -113,6 +119,26 @@ impl Theme {
 
 @define-color shade_color {shade};
 @define-color scrollbar_outline_color {scrollbar_outline};
+
+.close, .maximize, .minimize {{
+	background: transparent;
+}}
+.close:not(:hover) > image,
+.maximize:not(:hover) > image,
+.minimize:not(:hover) > image {{
+	background: transparent;
+}}
+.close > image, 
+.maximize > image, 
+.minimize > image {{
+	color: @accent_bg_color;
+	border-radius: 100%;
+}}
+.close:hover > image, 
+.maximize:hover > image, 
+.minimize:hover > image {{
+	background: {window_control_hover_bg};
+}}
 "#};
 
         css.push_str(&component_gtk4_css("accent", accent));
