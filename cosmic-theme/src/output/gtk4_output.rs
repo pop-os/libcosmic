@@ -122,7 +122,6 @@ impl Theme {
 
 .close, .maximize, .minimize {{
 	background: transparent;
-	transition: 0;
 }}
 .close:not(:hover) > image,
 .maximize:not(:hover) > image,
@@ -132,6 +131,7 @@ impl Theme {
 .close > image, 
 .maximize > image, 
 .minimize > image {{
+	transition: 0;
 	color: @accent_bg_color;
 	border-radius: 100%;
 }}
