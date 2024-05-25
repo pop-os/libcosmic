@@ -147,8 +147,11 @@ impl Theme {
 }}
 .image-button > image,
 .image-button > box {{
-	transition: 0;
 	color: @accent_bg_color;
+}}
+.image-button:backdrop > image, 
+.image-button:backdrop > box {{
+	filter: grayscale(1) brightness(1.7);
 }}
 "#};
 
