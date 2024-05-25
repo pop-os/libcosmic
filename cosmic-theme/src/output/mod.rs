@@ -47,3 +47,11 @@ pub fn to_hex(c: Srgba) -> String {
         c_u8.red, c_u8.green, c_u8.blue, c_u8.alpha
     )
 }
+
+pub fn to_rgba(c: Srgba) -> String {
+    let c_u8: Rgba<palette::encoding::Srgb, u8> = c.into_format();
+    format!(
+        "rgba({}, {}, {}, {:1.2})",
+        c_u8.red, c_u8.green, c_u8.blue, c.alpha
+    )
+}
