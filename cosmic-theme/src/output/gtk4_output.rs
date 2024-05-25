@@ -145,6 +145,11 @@ impl Theme {
 .minimize:hover > image {{
 	background: {window_control_hover_bg};
 }}
+.image-button > image,
+.image-button > box {
+	transition: 0;
+	color: @accent_bg_color;
+}
 "#};
 
         css.push_str(&component_gtk4_css("accent", accent));
