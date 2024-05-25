@@ -135,6 +135,11 @@ impl Theme {
 	color: @accent_bg_color;
 	border-radius: 100%;
 }}
+.close:backdrop > image, 
+.maximize:backdrop > image, 
+.minimize:backdrop > image {
+	filter: grayscale(1) brightness(1.7);
+}
 .close:hover > image, 
 .maximize:hover > image, 
 .minimize:hover > image {{
