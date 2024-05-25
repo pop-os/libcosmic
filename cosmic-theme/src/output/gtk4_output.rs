@@ -137,9 +137,9 @@ impl Theme {
 }}
 .close:backdrop > image, 
 .maximize:backdrop > image, 
-.minimize:backdrop > image {
+.minimize:backdrop > image {{
 	filter: grayscale(1) brightness(1.7);
-}
+}}
 .close:hover > image, 
 .maximize:hover > image, 
 .minimize:hover > image {{
