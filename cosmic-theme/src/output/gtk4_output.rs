@@ -149,8 +149,14 @@ impl Theme {
 	transition: 0;
 }}
 .image-button > image,
-.image-button > box {{
+.image-button > box,
+.popup > image {{
 	color: @accent_bg_color;
+}}
+.image-button:insensitive > image, 
+.image-button:insensitive > box,
+.popup:insensitive > image {{
+	opacity: 0.5;
 }}
 .image-button:backdrop > image, 
 .image-button:backdrop > box {{
