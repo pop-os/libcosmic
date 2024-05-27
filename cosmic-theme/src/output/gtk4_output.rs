@@ -156,7 +156,7 @@ impl Theme {
 .toggle > box > contents > image,
 button > image,
 button > widget > box > image,
-stack > box > image,
+stack > box > image
 {{
 	color: @accent_bg_color;
 }}
