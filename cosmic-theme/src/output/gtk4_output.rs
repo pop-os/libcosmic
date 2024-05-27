@@ -152,6 +152,7 @@ impl Theme {
 .image-button > box,
 .popup > image,
 .toggle > image,
+.toggle > arrow,
 button > image,
 button > widget > box > image,
 stack > box > image
@@ -166,10 +167,19 @@ button:insensitive > image,
 button:insensitive > widget > box > image {{
 	opacity: 0.5;
 }}
-.image-button:backdrop > image, 
-.image-button:backdrop > box {{
+.image-button:backdrop > image,
+.image-button:backdrop > box,
+.popup:backdrop > image,
+.toggle:backdrop > image,
+.toggle:backdrop > arrow,
+button:backdrop > image,
+button:backdrop > widget > box > image,
+stack:backdrop > box > image {{
 	filter: grayscale(1) brightness(1.7);
 }}
+window {
+	border-radius: 6px;
+}
 "#};
 
         css.push_str(&component_gtk4_css("accent", accent));
