@@ -4,7 +4,7 @@
 use crate::{ext::CollectionWidget, widget, Element};
 use apply::Apply;
 use derive_setters::Setters;
-use iced::Length;
+use iced::{Length, Padding};
 use iced_core::{widget::tree, Widget};
 use std::borrow::Cow;
 
@@ -99,7 +99,7 @@ impl<'a, Message: Clone + 'static> HeaderBar<'a, Message> {
     #[must_use]
     pub fn build(self) -> HeaderBarWidget<'a, Message> {
         HeaderBarWidget {
-            header_bar_inner: self.into_element(),
+            header_bar_inner: self.view(),
         }
     }
 }
@@ -253,7 +253,7 @@ impl<'a, Message: Clone + 'static> Widget<Message, crate::Theme, crate::Renderer
 
 impl<'a, Message: Clone + 'static> HeaderBar<'a, Message> {
     /// Converts the headerbar builder into an Iced element.
-    pub fn into_element(mut self) -> Element<'a, Message> {
+    pub fn view(mut self) -> Element<'a, Message> {
         // Take ownership of the regions to be packed.
         let start = std::mem::take(&mut self.start);
         let center = std::mem::take(&mut self.center);
@@ -262,6 +262,11 @@ impl<'a, Message: Clone + 'static> HeaderBar<'a, Message> {
         // Also packs the window controls at the very end.
         end.push(widget::horizontal_space(Length::Fixed(12.0)).into());
         end.push(self.window_controls());
+
+        let (height, padding) = match crate::config::header_size() {
+            crate::config::Density::Compact => (36.0, 2.0),
+            crate::config::Density::Standard => (48.0, 8.0),
+        };
 
         // Creates the headerbar widget.
         let mut widget = widget::row::with_capacity(4)
@@ -295,9 +300,9 @@ impl<'a, Message: Clone + 'static> HeaderBar<'a, Message> {
                     .width(Length::Shrink),
             )
             .align_items(iced::Alignment::Center)
-            .height(Length::Fixed(50.0))
-            .padding(8)
-            .spacing(8)
+            .height(Length::Fixed(height))
+            .padding(padding)
+            .spacing(padding)
             .apply(widget::container)
             .style(crate::theme::Container::HeaderBar {
                 focused: self.focused,
@@ -326,9 +331,7 @@ impl<'a, Message: Clone + 'static> HeaderBar<'a, Message> {
         let mut title = Cow::default();
         std::mem::swap(&mut title, &mut self.title);
 
-        widget::text(title)
-            .size(16)
-            .font(crate::font::FONT_SEMIBOLD)
+        widget::text::heading(title)
             .apply(widget::container)
             .center_x()
             .center_y()

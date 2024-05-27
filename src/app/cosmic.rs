@@ -197,7 +197,7 @@ where
             self.app.subscription().map(super::Message::App),
             self.app
                 .core()
-                .watch_config::<crate::config::CosmicTk>(crate::config::toolkit::ID)
+                .watch_config::<crate::config::CosmicTk>(crate::config::ID)
                 .map(|update| {
                     for why in update.errors {
                         tracing::error!(?why, "cosmic toolkit config update error");
@@ -619,7 +619,7 @@ impl<T: Application> Cosmic<T> {
                     crate::icon_theme::set_default(config.icon_theme.clone());
                 }
 
-                self.app.core_mut().toolkit_config = config;
+                crate::config::COSMIC_TK.with(|tk| *tk.borrow_mut() = config);
             }
 
             Message::Focus(f) => {

@@ -84,7 +84,7 @@ pub(crate) fn iced_settings<App: Application>(
     if let Some(icon_theme) = settings.default_icon_theme {
         crate::icon_theme::set_default(icon_theme);
     } else {
-        crate::icon_theme::set_default(core.toolkit_config.icon_theme.clone());
+        crate::icon_theme::set_default(crate::config::icon_theme());
     }
 
     THEME.with(move |t| {
@@ -710,11 +710,11 @@ impl<App: Application> ApplicationExt for App {
                         header = header.start(toggle);
                     }
 
-                    if core.window.show_maximize && core.toolkit_config.show_maximize {
+                    if core.window.show_maximize && crate::config::show_maximize() {
                         header = header.on_maximize(Message::Cosmic(cosmic::Message::Maximize));
                     }
 
-                    if core.window.show_minimize && core.toolkit_config.show_minimize {
+                    if core.window.show_minimize && crate::config::show_minimize() {
                         header = header.on_minimize(Message::Cosmic(cosmic::Message::Minimize));
                     }
 
