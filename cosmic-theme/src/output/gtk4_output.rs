@@ -153,9 +153,10 @@ impl Theme {
 .popup > image,
 .toggle > image,
 .toggle > arrow,
+.toggle > box > contents > image,
 button > image,
 button > widget > box > image,
-stack > box > image
+stack > box > image,
 {{
 	color: @accent_bg_color;
 }}
@@ -163,8 +164,10 @@ stack > box > image
 .image-button:insensitive > box,
 .popup:insensitive > image,
 .toggle:insensitive > image,
+.toggle:insensitive > box > contents > image,
 button:insensitive > image,
-button:insensitive > widget > box > image {{
+button:insensitive > widget > box > image,
+stack:insensitive > box > image {{
 	opacity: 0.5;
 }}
 .image-button:backdrop > image,
@@ -174,7 +177,8 @@ button:insensitive > widget > box > image {{
 .toggle:backdrop > arrow,
 button:backdrop > image,
 button:backdrop > widget > box > image,
-stack:backdrop > box > image {{
+stack:backdrop > box > image,
+.toggle:backdrop > box > contents > image {{
 	filter: grayscale(1) brightness(1.7);
 }}
 window {
