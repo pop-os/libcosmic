@@ -73,9 +73,6 @@ pub struct Core {
     /// Configured theme mode
     pub(super) system_theme_mode: ThemeMode,
 
-    /// Libcosmic toolkit configuration.
-    pub(super) toolkit_config: CosmicTk,
-
     pub(super) portal_is_dark: Option<bool>,
 
     pub(super) portal_accent: Option<Srgba>,
@@ -118,16 +115,6 @@ impl Default for Core {
                     ThemeMode::get_entry(&c).unwrap_or_else(|(errors, mode)| {
                         for why in errors {
                             tracing::error!(?why, "ThemeMode config entry error");
-                        }
-                        mode
-                    })
-                })
-                .unwrap_or_default(),
-            toolkit_config: CosmicTk::config()
-                .map(|c| {
-                    CosmicTk::get_entry(&c).unwrap_or_else(|(errors, mode)| {
-                        for why in errors {
-                            tracing::error!(?why, "CosmicTk config entry error");
                         }
                         mode
                     })
