@@ -181,9 +181,9 @@ stack:backdrop > box > image,
 .toggle:backdrop > box > contents > image {{
 	filter: grayscale(1) brightness(1.7);
 }}
-window {
+window {{
 	border-radius: 6px;
-}
+}}
 "#};
 
         css.push_str(&component_gtk4_css("accent", accent));
