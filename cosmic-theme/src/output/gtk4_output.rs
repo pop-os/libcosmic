@@ -150,12 +150,19 @@ impl Theme {
 }}
 .image-button > image,
 .image-button > box,
-.popup > image {{
+.popup > image,
+.toggle > image,
+button > image,
+button > widget > box > image
+{{
 	color: @accent_bg_color;
 }}
 .image-button:insensitive > image, 
 .image-button:insensitive > box,
-.popup:insensitive > image {{
+.popup:insensitive > image,
+.toggle:insensitive > image,
+button:insensitive > image,
+button:insensitive > widget > box > image {{
 	opacity: 0.5;
 }}
 .image-button:backdrop > image, 
