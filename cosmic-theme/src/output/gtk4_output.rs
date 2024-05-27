@@ -153,8 +153,7 @@ impl Theme {
 .popup > image,
 .toggle > image,
 button > image,
-button > widget > box > image,
-stack > box > image,
+button > widget > box > image
 {{
 	color: @accent_bg_color;
 }}
