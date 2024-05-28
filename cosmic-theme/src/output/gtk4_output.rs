@@ -186,7 +186,7 @@ window:not(.maximized) {{
 	border-radius: 6px;
 }}
 
-window, .view {{ background: @window_bg_color }}
+window, scrolledwindow .view {{ background: @window_bg_color }}
 "#};
 
         css.push_str(&component_gtk4_css("accent", accent));
