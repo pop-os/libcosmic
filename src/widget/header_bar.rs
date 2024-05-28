@@ -1,6 +1,7 @@
 // Copyright 2022 System76 <info@system76.com>
 // SPDX-License-Identifier: MPL-2.0
 
+use crate::config::Density;
 use crate::{ext::CollectionWidget, widget, Element};
 use apply::Apply;
 use derive_setters::Setters;
@@ -20,6 +21,7 @@ pub fn header_bar<'a, Message>() -> HeaderBar<'a, Message> {
         start: Vec::new(),
         center: Vec::new(),
         end: Vec::new(),
+        density: None,
         focused: false,
     }
 }
@@ -50,9 +52,6 @@ pub struct HeaderBar<'a, Message> {
     #[setters(strip_option)]
     on_right_click: Option<Message>,
 
-    /// Focused state of the window
-    focused: bool,
-
     /// Elements packed at the start of the headerbar.
     #[setters(skip)]
     start: Vec<Element<'a, Message>>,
@@ -64,6 +63,13 @@ pub struct HeaderBar<'a, Message> {
     /// Elements packed at the end of the headerbar.
     #[setters(skip)]
     end: Vec<Element<'a, Message>>,
+
+    /// Controls the density of the headerbar.
+    #[setters(strip_option)]
+    density: Option<Density>,
+
+    /// Focused state of the window
+    focused: bool,
 }
 
 impl<'a, Message: Clone + 'static> HeaderBar<'a, Message> {
@@ -263,7 +269,7 @@ impl<'a, Message: Clone + 'static> HeaderBar<'a, Message> {
         end.push(widget::horizontal_space(Length::Fixed(12.0)).into());
         end.push(self.window_controls());
 
-        let (height, padding) = match crate::config::header_size() {
+        let (height, padding) = match self.density.unwrap_or_else(|| crate::config::header_size()) {
             crate::config::Density::Compact => (36.0, 2.0),
             crate::config::Density::Standard => (48.0, 8.0),
         };
