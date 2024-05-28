@@ -186,8 +186,7 @@ window:not(.maximized) {{
 	border-radius: 6px;
 }}
 
-// Nautilus specific styling - this app handles colors not exactly the same as others
-.view {{ background: red }}
+window, .view {{ background: @window_bg_color }}
 "#};
 
         css.push_str(&component_gtk4_css("accent", accent));
