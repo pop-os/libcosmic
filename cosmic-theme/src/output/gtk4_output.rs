@@ -187,7 +187,7 @@ window:not(.maximized) {{
 }}
 
 // Nautilus specific styling - this app handles colors not exactly the same as others
-window, .nautilus-grid-view > overlay scrolledwindow {{ background: @window_bg_color; }}
+window, .view {{ background: @window_bg_color; }}
 "#};
 
         css.push_str(&component_gtk4_css("accent", accent));
