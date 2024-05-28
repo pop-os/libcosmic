@@ -78,7 +78,7 @@ impl Theme {
         } else {
             Rgba::new(0.0, 0.0, 0.0, 0.12)
         });
-
+        let corner_radius = self.corner_radii.radius_s[0];
         let mut inverted_bg_divider = background.base;
         inverted_bg_divider.alpha = 0.5;
         let scrollbar_outline = to_rgba(inverted_bg_divider);
@@ -183,7 +183,7 @@ stack:backdrop > box > image,
 }}
 window {{ background: @window_bg_color }}
 window:not(.maximized) {{
-	border-radius: 6px;
+	border-radius: {corner_radius:.0}px;
 }}
 
 window, statuspage.view {{ background: @window_bg_color }}
