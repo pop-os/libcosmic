@@ -409,77 +409,105 @@ impl<'a, Message: 'a + Clone> Widget<Message, crate::Theme, crate::Renderer>
             on_remove,
         } = &self.variant
         {
-            let selection_background = theme.selection_background();
+            let mut parent_bounds = bounds;
+            parent_bounds.y -= 8.0;
+            parent_bounds.width += 16.0;
+            parent_bounds.height += 16.0;
 
-            let c_rad = THEME.with(|t| t.borrow().cosmic().corner_radii);
+            renderer.with_layer(parent_bounds, |renderer| {
+                let selection_background = theme.selection_background();
 
-            if self.selected {
-                renderer.fill_quad(
-                    Quad {
-                        bounds: Rectangle {
-                            width: 24.0,
-                            height: 20.0,
-                            x: bounds.x + styling.border_width,
-                            y: bounds.y + (bounds.height - 20.0 - styling.border_width),
+                let c_rad = THEME.with(|t| t.borrow().cosmic().corner_radii);
+
+                // NOTE: Workaround to round the border of the unselected, unhovered image.
+                if !self.selected && !is_mouse_over {
+                    let mut bounds = bounds;
+                    bounds.x -= 2.0;
+                    bounds.y -= 2.0;
+                    bounds.width += 4.0;
+                    bounds.height += 4.0;
+                    renderer.fill_quad(
+                        renderer::Quad {
+                            bounds,
+                            border: Border {
+                                width: 2.0,
+                                color: crate::theme::active().current_container().base.into(),
+                                radius: 9.0.into(),
+                            },
+                            shadow: Shadow::default(),
                         },
-                        border: Border {
-                            radius: [
-                                c_rad.radius_0[0],
-                                c_rad.radius_s[1],
-                                c_rad.radius_0[2],
-                                c_rad.radius_s[3],
-                            ]
-                            .into(),
-                            ..Default::default()
+                        Color::TRANSPARENT,
+                    );
+                }
+
+                if self.selected {
+                    renderer.fill_quad(
+                        Quad {
+                            bounds: Rectangle {
+                                width: 24.0,
+                                height: 20.0,
+                                x: bounds.x + styling.border_width,
+                                y: bounds.y + (bounds.height - 20.0 - styling.border_width),
+                            },
+                            border: Border {
+                                radius: [
+                                    c_rad.radius_0[0],
+                                    c_rad.radius_s[1],
+                                    c_rad.radius_0[2],
+                                    c_rad.radius_s[3],
+                                ]
+                                .into(),
+                                ..Default::default()
+                            },
+                            shadow: Shadow::default(),
                         },
-                        shadow: Shadow::default(),
-                    },
-                    selection_background,
-                );
+                        selection_background,
+                    );
 
-                iced_core::svg::Renderer::draw(
-                    renderer,
-                    crate::widget::common::object_select().clone(),
-                    Some(icon_color),
-                    Rectangle {
-                        width: 16.0,
-                        height: 16.0,
-                        x: bounds.x + 5.0 + styling.border_width,
-                        y: bounds.y + (bounds.height - 18.0 - styling.border_width),
-                    },
-                );
-            }
+                    iced_core::svg::Renderer::draw(
+                        renderer,
+                        crate::widget::common::object_select().clone(),
+                        Some(icon_color),
+                        Rectangle {
+                            width: 16.0,
+                            height: 16.0,
+                            x: bounds.x + 5.0 + styling.border_width,
+                            y: bounds.y + (bounds.height - 18.0 - styling.border_width),
+                        },
+                    );
+                }
 
-            if on_remove.is_some() {
-                if let Some(position) = cursor.position() {
-                    if bounds.contains(position) {
-                        let bounds = removal_bounds(layout.bounds(), 4.0);
-                        renderer.fill_quad(
-                            renderer::Quad {
-                                bounds,
-                                shadow: Shadow::default(),
-                                border: Border {
-                                    radius: c_rad.radius_m.into(),
-                                    ..Default::default()
+                if on_remove.is_some() {
+                    if let Some(position) = cursor.position() {
+                        if bounds.contains(position) {
+                            let bounds = removal_bounds(layout.bounds(), 4.0);
+                            renderer.fill_quad(
+                                renderer::Quad {
+                                    bounds,
+                                    shadow: Shadow::default(),
+                                    border: Border {
+                                        radius: c_rad.radius_m.into(),
+                                        ..Default::default()
+                                    },
                                 },
-                            },
-                            selection_background,
-                        );
+                                selection_background,
+                            );
 
-                        iced_core::svg::Renderer::draw(
-                            renderer,
-                            close_icon.clone(),
-                            Some(icon_color),
-                            Rectangle {
-                                width: 16.0,
-                                height: 16.0,
-                                x: bounds.x + 4.0,
-                                y: bounds.y + 4.0,
-                            },
-                        );
+                            iced_core::svg::Renderer::draw(
+                                renderer,
+                                close_icon.clone(),
+                                Some(icon_color),
+                                Rectangle {
+                                    width: 16.0,
+                                    height: 16.0,
+                                    x: bounds.x + 4.0,
+                                    y: bounds.y + 4.0,
+                                },
+                            );
+                        }
                     }
                 }
-            }
+            });
         }
     }
 
@@ -525,7 +553,7 @@ impl<'a, Message: 'a + Clone> Widget<Message, crate::Theme, crate::Renderer>
         let child_tree = self
             .content
             .as_widget()
-            .a11y_nodes(child_layout, &child_tree, p);
+            .a11y_nodes(child_layout, child_tree, p);
 
         let Rectangle {
             x,
@@ -781,19 +809,38 @@ pub fn draw<Renderer: iced_core::Renderer, Theme>(
         // Then draw the button contents onto the background.
         draw_contents(renderer, styling);
 
-        // Finish by drawing the border above the contents.
-        renderer.fill_quad(
-            renderer::Quad {
-                bounds,
-                border: Border {
-                    width: styling.border_width,
-                    color: styling.border_color,
-                    radius: styling.border_radius,
+        let mut clipped_bounds = bounds;
+        clipped_bounds.height += styling.border_width;
+
+        renderer.with_layer(clipped_bounds, |renderer| {
+            // NOTE: Workaround to round the border of the hovered/selected image.
+            renderer.fill_quad(
+                renderer::Quad {
+                    bounds,
+                    border: Border {
+                        width: styling.border_width,
+                        color: crate::theme::active().current_container().base.into(),
+                        radius: 0.0.into(),
+                    },
+                    shadow: Shadow::default(),
                 },
-                shadow: Shadow::default(),
-            },
-            Color::TRANSPARENT,
-        );
+                Color::TRANSPARENT,
+            );
+
+            // Finish by drawing the border above the contents.
+            renderer.fill_quad(
+                renderer::Quad {
+                    bounds,
+                    border: Border {
+                        width: styling.border_width,
+                        color: styling.border_color,
+                        radius: styling.border_radius,
+                    },
+                    shadow: Shadow::default(),
+                },
+                Color::TRANSPARENT,
+            );
+        });
     } else {
         draw_contents(renderer, styling);
     }
