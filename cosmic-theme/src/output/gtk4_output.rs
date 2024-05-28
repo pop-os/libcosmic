@@ -181,9 +181,13 @@ stack:backdrop > box > image,
 .toggle:backdrop > box > contents > image {{
 	filter: grayscale(1) brightness(1.7);
 }}
-window {{
+window {{ background: @window_bg_color }}
+window:not(.maximized) {{
 	border-radius: 6px;
 }}
+
+// Nautilus specific styling - this app handles colors not exactly the same as others
+window, .nautilus-grid-view > overlay scrolledwindow {{ background: @window_bg_color; }}
 "#};
 
         css.push_str(&component_gtk4_css("accent", accent));
