@@ -21,7 +21,6 @@ use iced_core::{
     Background, Clipboard, Color, Layout, Length, Padding, Point, Rectangle, Shell, Vector, Widget,
 };
 use iced_renderer::core::widget::{operation, OperationOutputWrapper};
-use iced_wgpu::graphics::Mesh;
 
 use crate::theme::THEME;
 
