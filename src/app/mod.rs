@@ -98,7 +98,11 @@ pub(crate) fn iced_settings<App: Application>(
     iced.default_font = settings.default_font;
     iced.default_text_size = iced::Pixels(settings.default_text_size);
     iced.exit_on_close_request = settings.exit_on_close;
-    iced.window.exit_on_close_request = settings.exit_on_close;
+    #[cfg(not(feature = "wayland"))]
+    {
+        let exit_on_close = settings.exit_on_close;
+        iced.window.exit_on_close_request = exit_on_close;
+    }
     iced.id = Some(App::APP_ID.to_owned());
     #[cfg(all(not(feature = "wayland"), target_os = "linux"))]
     {
