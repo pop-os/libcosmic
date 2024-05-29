@@ -48,6 +48,9 @@
 
 // Re-exports from Iced
 #[doc(inline)]
+pub use iced::widget::{canvas, Canvas};
+
+#[doc(inline)]
 pub use iced::widget::{checkbox, Checkbox};
 
 #[doc(inline)]
