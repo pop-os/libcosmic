@@ -90,6 +90,9 @@ pub use iced::widget::{slider, vertical_slider, Slider, VerticalSlider};
 pub use iced::widget::{svg, Svg};
 
 #[doc(inline)]
+pub use iced::widget::{text_editor, TextEditor};
+
+#[doc(inline)]
 pub use iced_core::widget::{Id, Operation, Widget};
 
 pub mod aspect_ratio;
