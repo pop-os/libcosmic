@@ -75,7 +75,7 @@ pub fn resolve<Message>(
         match leaf {
             Ok(leaf) => leafs.push(leaf),
             Err(why) => {
-                tracing::error!(%why, "cannot add leaf node to grid");
+                tracing::error!(?why, "cannot add leaf node to grid");
                 continue;
             }
         }
@@ -134,7 +134,7 @@ pub fn resolve<Message>(
     let root = match root {
         Ok(root) => root,
         Err(why) => {
-            tracing::error!(%why, "grid root style invalid");
+            tracing::error!(?why, "grid root style invalid");
             return Node::new(Size::ZERO);
         }
     };
@@ -146,14 +146,14 @@ pub fn resolve<Message>(
             height: length(max_size.height),
         },
     ) {
-        tracing::error!(%why, "grid layout did not compute");
+        tracing::error!(?why, "grid layout did not compute");
         return Node::new(Size::ZERO);
     }
 
     let grid_layout = match taffy.layout(root) {
         Ok(layout) => layout,
         Err(why) => {
-            tracing::error!(%why, "cannot get layout of grid");
+            tracing::error!(?why, "cannot get layout of grid");
             return Node::new(Size::ZERO);
         }
     };
@@ -183,8 +183,8 @@ pub fn resolve<Message>(
     }
 
     let grid_size = Size {
-        width: grid_layout.size.width,
-        height: grid_layout.size.height,
+        width: grid_layout.content_size.width,
+        height: grid_layout.content_size.height,
     };
 
     Node::with_children(grid_size.expand(padding), nodes)
