@@ -17,6 +17,7 @@ pub struct FlexRow<'a, Message> {
     #[setters(skip)]
     children: Vec<Element<'a, Message>>,
     /// Sets the padding around the widget.
+    #[setters(into)]
     padding: Padding,
     /// Sets the space between each column of items.
     column_spacing: u16,
@@ -29,7 +30,7 @@ pub struct FlexRow<'a, Message> {
 }
 
 impl<'a, Message> FlexRow<'a, Message> {
-    pub const fn new(children: Vec<Element<'a, Message>>) -> Self {
+    pub(crate) const fn new(children: Vec<Element<'a, Message>>) -> Self {
         Self {
             children,
             padding: Padding::ZERO,
@@ -38,6 +39,13 @@ impl<'a, Message> FlexRow<'a, Message> {
             width: Length::Shrink,
             max_width: f32::INFINITY,
         }
+    }
+
+    /// Sets the space between each column and row.
+    pub const fn spacing(mut self, spacing: u16) -> Self {
+        self.column_spacing = spacing;
+        self.row_spacing = spacing;
+        self
     }
 }
 
