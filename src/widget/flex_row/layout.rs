@@ -8,7 +8,7 @@ use iced_core::{Length, Padding, Point, Size};
 use taffy::geometry::Rect;
 use taffy::style::{AlignItems, Dimension, Display, Style};
 use taffy::style_helpers::length;
-use taffy::TaffyTree;
+use taffy::{AlignContent, TaffyTree};
 
 #[allow(clippy::too_many_lines)]
 pub fn resolve<Message>(
@@ -18,6 +18,7 @@ pub fn resolve<Message>(
     padding: Padding,
     column_spacing: f32,
     row_spacing: f32,
+    justify_content: Option<AlignContent>,
     tree: &mut [Tree],
 ) -> Node {
     let limits = limits.shrink(padding);
@@ -42,6 +43,8 @@ pub fn resolve<Message>(
             width: length(max_size.width),
             height: Dimension::Auto,
         },
+
+        justify_content,
 
         padding: Rect {
             left: length(padding.left),

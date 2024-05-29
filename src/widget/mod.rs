@@ -231,6 +231,8 @@ pub use icon::{icon, Icon};
 #[cfg(feature = "animated-image")]
 pub mod frames;
 
+pub use taffy::JustifyContent;
+
 pub mod list;
 #[doc(inline)]
 pub use list::{list_column, ListColumn};
