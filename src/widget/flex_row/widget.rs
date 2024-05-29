@@ -27,6 +27,9 @@ pub struct FlexRow<'a, Message> {
     width: Length,
     /// Sets the max width
     max_width: f32,
+    /// Defines how the content will be justified.
+    #[setters(into)]
+    justify_content: Option<crate::widget::JustifyContent>,
 }
 
 impl<'a, Message> FlexRow<'a, Message> {
@@ -38,6 +41,7 @@ impl<'a, Message> FlexRow<'a, Message> {
             row_spacing: 4,
             width: Length::Shrink,
             max_width: f32::INFINITY,
+            justify_content: None,
         }
     }
 
@@ -83,6 +87,7 @@ impl<'a, Message: 'static + Clone> Widget<Message, crate::Theme, Renderer>
             self.padding,
             f32::from(self.column_spacing),
             f32::from(self.row_spacing),
+            self.justify_content,
             &mut tree.children,
         )
     }
