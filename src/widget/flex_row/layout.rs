@@ -4,8 +4,13 @@
 use crate::{Element, Renderer};
 use iced_core::layout::{Limits, Node};
 use iced_core::widget::Tree;
-use iced_core::{Padding, Point, Size};
+use iced_core::{Length, Padding, Point, Size};
+use taffy::geometry::Rect;
+use taffy::style::{AlignItems, Dimension, Display, Style};
+use taffy::style_helpers::length;
+use taffy::TaffyTree;
 
+#[allow(clippy::too_many_lines)]
 pub fn resolve<Message>(
     renderer: &Renderer,
     limits: &Limits,
@@ -16,76 +21,130 @@ pub fn resolve<Message>(
     tree: &mut [Tree],
 ) -> Node {
     let limits = limits.shrink(padding);
+    let max_size = limits.max();
 
+    let mut leafs = Vec::with_capacity(items.len());
     let mut nodes = Vec::with_capacity(items.len());
 
-    let max_flex_width = limits.max().width;
-    let mut flex_width = 0.0f32;
-    let mut flex_height = 0.0f32;
+    let mut taffy_tree = TaffyTree::<()>::with_capacity(items.len() + 1);
 
-    let mut current_row_width = 0.0f32;
-    let mut current_row_height = 0.0f32;
+    let style = taffy::Style {
+        display: Display::Flex,
+        flex_direction: taffy::FlexDirection::Row,
+        flex_wrap: taffy::FlexWrap::Wrap,
 
-    let mut row_buffer = Vec::<Node>::with_capacity(8);
+        gap: taffy::geometry::Size {
+            width: length(column_spacing),
+            height: length(row_spacing),
+        },
+
+        min_size: taffy::geometry::Size {
+            width: length(max_size.width),
+            height: Dimension::Auto,
+        },
+
+        padding: Rect {
+            left: length(padding.left),
+            right: length(padding.right),
+            top: length(padding.top),
+            bottom: length(padding.bottom),
+        },
+
+        ..taffy::Style::default()
+    };
 
     for (child, tree) in items.iter().zip(tree.iter_mut()) {
         // Calculate the dimensions of the item.
-        let child_node = child.as_widget().layout(tree, renderer, &limits);
+        let child_widget = child.as_widget();
+        let child_node = child_widget.layout(tree, renderer, &limits);
         let size = child_node.size();
 
-        // Calculate the required additional width to fit the item into the current row.
-        let mut required_width = size.width
-            + if row_buffer.is_empty() {
-                0.0
-            } else {
-                row_spacing
+        nodes.push(child_node);
+
+        let c_size = child_widget.size();
+        let (width, justify_self) = match c_size.width {
+            Length::Fill | Length::FillPortion(_) => (Dimension::Auto, Some(AlignItems::Stretch)),
+            _ => (length(size.width), None),
+        };
+
+        let child_style = Style {
+            size: taffy::geometry::Size {
+                width,
+                height: match c_size.height {
+                    Length::Fill | Length::FillPortion(_) => Dimension::Auto,
+                    _ => length(size.height),
+                },
+            },
+            justify_self,
+            ..Style::default()
+        };
+
+        leafs.push(match taffy_tree.new_leaf(child_style) {
+            Ok(leaf) => leaf,
+            Err(why) => {
+                tracing::error!(?why, "failed to add child element to flex row");
+                continue;
+            }
+        });
+    }
+
+    let root = match taffy_tree.new_with_children(style, &leafs) {
+        Ok(root) => root,
+        Err(why) => {
+            tracing::error!(?why, "flex row style is invalid");
+            return Node::new(Size::ZERO);
+        }
+    };
+
+    if let Err(why) = taffy_tree.compute_layout(
+        root,
+        taffy::geometry::Size {
+            width: length(max_size.width),
+            height: length(max_size.height),
+        },
+    ) {
+        tracing::error!(?why, "flex row layout invalid");
+        return Node::new(Size::ZERO);
+    }
+
+    let flex_layout = match taffy_tree.layout(root) {
+        Ok(layout) => layout,
+        Err(why) => {
+            tracing::error!(?why, "cannot get flex row layout");
+            return Node::new(Size::ZERO);
+        }
+    };
+
+    leafs
+        .into_iter()
+        .zip(items.iter())
+        .zip(nodes.iter_mut())
+        .zip(tree)
+        .for_each(|(((leaf, child), node), tree)| {
+            let Ok(leaf_layout) = taffy_tree.layout(leaf) else {
+                return;
             };
 
-        // If it fits, add it to the current row, or create a new one.
-        if current_row_width + required_width > max_flex_width {
-            if flex_height != 0.0f32 {
-                flex_height += column_spacing;
+            let child_widget = child.as_widget();
+            let c_size = child_widget.size();
+            match c_size.width {
+                Length::Fill | Length::FillPortion(_) => {
+                    *node =
+                        child_widget.layout(tree, renderer, &limits.width(leaf_layout.size.width));
+                }
+                _ => (),
             }
 
-            let mut pos_x = 0.0f32;
-            let pos_y = flex_height;
+            *node = node.clone().move_to(Point {
+                x: leaf_layout.location.x,
+                y: leaf_layout.location.y,
+            });
+        });
 
-            for mut child_node in row_buffer.drain(..) {
-                child_node = child_node.move_to(Point::new(pos_x, pos_y));
-                pos_x += row_spacing + child_node.size().width;
-                nodes.push(child_node);
-            }
+    let size = Size {
+        width: flex_layout.content_size.width,
+        height: flex_layout.content_size.height,
+    };
 
-            flex_height += current_row_height;
-            flex_width = flex_width.max(current_row_width);
-            required_width -= row_spacing;
-            current_row_width = 0.0;
-        }
-
-        current_row_width += required_width;
-        current_row_height = current_row_height.max(size.height);
-
-        row_buffer.push(child_node);
-    }
-
-    if !row_buffer.is_empty() {
-        if flex_height != 0.0f32 {
-            flex_height += column_spacing;
-        }
-
-        let mut pos_x = 0.0f32;
-        let pos_y = flex_height;
-
-        for mut child_node in row_buffer.drain(..) {
-            child_node = child_node.move_to(Point::new(pos_x, pos_y));
-            pos_x += row_spacing + child_node.size().width;
-            nodes.push(child_node);
-        }
-
-        flex_height += current_row_height;
-        flex_width = flex_width.max(current_row_width);
-    }
-
-    let flex_size = limits.resolve(flex_width, flex_height, Size::new(flex_width, flex_height));
-    Node::with_children(flex_size.expand(padding), nodes)
+    Node::with_children(size.expand(padding), nodes)
 }
