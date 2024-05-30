@@ -82,118 +82,16 @@ pub fn app_id_or_fallback_matches(app_id: &str, entry: &DesktopEntryData) -> boo
 
 
 
-pub fn lcs(s1: &str, s2: &str) -> usize {
-
-    let mut mat: Vec<Vec<i32>> = vec![vec![0; s1.len() + 1]; s2.len() + 1];
-
-    for (i, u) in s1.char_indices() {
-        for (j, v) in s2.char_indices() {
-            if i == 0 || j == 0 {
-                mat[i][j] = 0;
-            } else if u == v {
-                mat[i][j] = mat[i - 1][j - 1] + 1;
-            } else {
-                mat[i][j] = max(mat[i - 1][j], mat[i][j - 1]);
-            }
-        }
-    }
-
-    let mut s1_iter = s1.char_indices().rev().peekable();
-    let mut s2_iter = s1.char_indices().rev().peekable();
-
-    let mut res = 0;
-
-    dbg!(&mat);
-    
-    while let (Some((i, u)), Some((j, v))) = (s1_iter.peek(), s2_iter.peek()) {
-        if u == v {
-            res += 1;
-            s1_iter.next();
-            s2_iter.next();
-        } else if mat[i - 1][*j] > mat[*i][j - 1] {
-            s1_iter.next();
-        } else {
-            s2_iter.next();
-        }
-    }
-
-    println!("res = {res}");
-    res
-}
 
 
 /// lower is better
 fn match_entry(id: &str, de: &DesktopEntry) -> f32 {
 
-    /**
-     * `levenshtein-rs` - levenshtein
-     *
-     * MIT licensed.
-     *
-     * Copyright (c) 2016 Titus Wormer <tituswormer@gmail.com>
-     */
-    #[must_use]
-    pub fn levenshtein(a: &str, b: &str) -> usize {
-        let mut result = 0;
-
-        /* Shortcut optimizations / degenerate cases. */
-        if a == b {
-            return result;
-        }
-
-        let length_a = a.chars().count();
-        let length_b = b.chars().count();
-
-        if length_a == 0 {
-            return length_b;
-        }
-
-        if length_b == 0 {
-            return length_a;
-        }
-
-        /* Initialize the vector.
-         *
-         * This is why it’s fast, normally a matrix is used,
-         * here we use a single vector. */
-        let mut cache: Vec<usize> = (1..).take(length_a).collect();
-        let mut distance_a;
-        let mut distance_b;
-
-        /* Loop. */
-        for (index_b, code_b) in b.chars().enumerate() {
-            result = index_b;
-            distance_a = index_b;
-
-            for (index_a, code_a) in a.chars().enumerate() {
-                distance_b = if code_a == code_b {
-                    distance_a
-                } else {
-                    distance_a + 1
-                };
-
-                distance_a = cache[index_a];
-
-                result = if distance_a > result {
-                    if distance_b > result {
-                        result + 1
-                    } else {
-                        distance_b
-                    }
-                } else if distance_b > distance_a {
-                    distance_a + 1
-                } else {
-                    distance_b
-                };
-
-                cache[index_a] = result;
-            }
-        }
-
-        result
-    }
+   
 
     let cmp = |id, de| {
+
+        let dist = textdistance::str::lcsstr(id, de);
         let score = levenshtein(id, de);
         let max_len = ((id.len() as i32 - de.len()  as i32)).abs();
         score as f32 / max_len as f32

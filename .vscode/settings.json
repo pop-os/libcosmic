@@ -1,4 +1,7 @@
 {
     "rust-analyzer.check.overrideCommand": ["just", "check-json"],
     "git-blame.gitWebUrl": "",
+    "rust-analyzer.cargo.features": [
+        "desktop"
+    ],
 }
