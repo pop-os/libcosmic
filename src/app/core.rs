@@ -104,7 +104,7 @@ impl Default for Core {
                 active: true,
                 context_id: crate::widget::nav_bar::Id::null(),
                 toggled: true,
-                toggled_condensed: true,
+                toggled_condensed: false,
             },
             scale_factor: 1.0,
             title: HashMap::new(),
