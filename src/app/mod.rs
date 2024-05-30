@@ -51,7 +51,7 @@ pub use self::settings::Settings;
 use crate::config::CosmicTk;
 use crate::prelude::*;
 use crate::theme::THEME;
-use crate::widget::{context_drawer, menu, nav_bar, popover};
+use crate::widget::{context_drawer, id_container, menu, nav_bar, popover};
 use apply::Apply;
 use iced::Subscription;
 #[cfg(all(feature = "winit", feature = "multi-window"))]
@@ -643,6 +643,7 @@ impl<App: Application> ApplicationExt for App {
         Command::none()
     }
 
+    #[allow(clippy::too_many_lines)]
     /// Creates the view for the main window.
     fn view_main(&self) -> Element<Message<Self::Message>> {
         let core = self.core();
@@ -655,8 +656,11 @@ impl<App: Application> ApplicationExt for App {
             let mut widgets = Vec::with_capacity(2);
 
             // Insert nav bar onto the left side of the window.
-            if let Some(nav) = self.nav_bar() {
-                widgets.push(nav);
+            if let Some(nav) = self
+                .nav_bar()
+                .map(|nav| id_container(nav, iced_core::id::Id::new("COSMIC_nav_bar")))
+            {
+                widgets.push(nav.into());
             }
 
             if self.nav_model().is_none() || core.show_content() {
@@ -669,7 +673,12 @@ impl<App: Application> ApplicationExt for App {
                         main_content,
                         context.map(Message::App),
                     )
-                    .into()
+                    .apply(|drawer| {
+                        Element::from(id_container(
+                            drawer,
+                            iced_core::id::Id::new("COSMIC_context_drawer"),
+                        ))
+                    })
                 } else {
                     main_content
                 });
@@ -685,6 +694,7 @@ impl<App: Application> ApplicationExt for App {
                 .width(iced::Length::Fill)
                 .height(iced::Length::Fill)
                 .style(crate::theme::Container::WindowBackground)
+                .apply(|w| id_container(w, iced_core::id::Id::new("COSMIC_content_container")))
                 .into()
         } else {
             content_row.into()
@@ -734,7 +744,7 @@ impl<App: Application> ApplicationExt for App {
                         header = header.end(element.map(Message::App));
                     }
 
-                    header
+                    header.apply(|w| id_container(w, iced_core::id::Id::new("COSMIC_header")))
                 })
             } else {
                 None
@@ -745,7 +755,10 @@ impl<App: Application> ApplicationExt for App {
         // Show any current dialog on top and centered over the view content
         // We have to use a popover even without a dialog to keep the tree from changing
         let mut popover = popover(view_column).modal(true);
-        if let Some(dialog) = self.dialog() {
+        if let Some(dialog) = self
+            .dialog()
+            .map(|w| Element::from(id_container(w, iced_core::id::Id::new("COSMIC_dialog"))))
+        {
             popover = popover.popup(dialog.map(Message::App));
         }
 
