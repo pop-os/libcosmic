@@ -16,7 +16,7 @@ jobs:
       with:
         submodules: recursive
     - name: Build documentation
-      run: cargo doc --verbose --features a11y,tokio,winit
+      run: cargo doc --verbose --features tokio,winit
     - name: Deploy documentation
       uses: peaceiris/actions-gh-pages@v3
       with:
