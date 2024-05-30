@@ -269,7 +269,7 @@ impl<'a, Message: Clone + 'static> HeaderBar<'a, Message> {
         end.push(widget::horizontal_space(Length::Fixed(12.0)).into());
         end.push(self.window_controls());
 
-        let (height, padding) = match self.density.unwrap_or_else(|| crate::config::header_size()) {
+        let (height, padding) = match self.density.unwrap_or_else(crate::config::header_size) {
             crate::config::Density::Compact => (36.0, 2.0),
             crate::config::Density::Standard => (48.0, 8.0),
         };
@@ -358,6 +358,13 @@ impl<'a, Message: Clone + 'static> HeaderBar<'a, Message> {
                 .on_press(on_press)
         };
 
+        let density = self.density.unwrap_or_else(crate::config::header_size);
+        let spacing = if matches!(density, Density::Compact) {
+            2
+        } else {
+            8
+        };
+
         widget::row::with_capacity(3)
             .push_maybe(self.on_minimize.take().map(|m| {
                 icon(
@@ -380,7 +387,7 @@ impl<'a, Message: Clone + 'static> HeaderBar<'a, Message> {
                     m,
                 )
             }))
-            .spacing(8)
+            .spacing(spacing)
             .apply(widget::container)
             .height(Length::Fill)
             .center_y()
