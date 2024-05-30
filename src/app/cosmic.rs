@@ -409,11 +409,9 @@ impl<T: Application> Cosmic<T> {
             }
 
             Message::AppThemeChange(mut theme) => {
-                // Apply last-known system theme if the system theme is preferred.
                 if let ThemeType::System { theme: _, .. } = theme.theme_type {
                     self.app.core_mut().theme_sub_counter += 1;
 
-                    theme = self.app.core().system_theme.clone();
                     let portal_accent = self.app.core().portal_accent;
                     if let Some(a) = portal_accent {
                         let t_inner = theme.cosmic();
