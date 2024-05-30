@@ -234,6 +234,10 @@ pub mod icon;
 #[doc(inline)]
 pub use icon::{icon, Icon};
 
+pub mod id_container;
+#[doc(inline)]
+pub use id_container::{id_container, IdContainer};
+
 #[cfg(feature = "animated-image")]
 pub mod frames;
 
