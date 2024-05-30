@@ -141,21 +141,19 @@ where
     }
 }
 
-/// This macro creates a button for a MenuTree.
-#[macro_export]
-macro_rules! menu_button {
-    ($($x:expr),+ $(,)?) => (
-        widget::button(
-            widget::Row::with_children(vec![$($x.into()),+])
+pub fn menu_button<'a, Message: 'a>(
+    children: Vec<crate::Element<'a, Message>>,
+) -> crate::widget::Button<'a, Message> {
+    widget::button(
+        widget::Row::with_children(children)
             .align_items(Alignment::Center)
             .height(Length::Fill)
             .width(Length::Fill),
-        )
-        .height(Length::Fixed(36.0))
-        .padding([4, 16])
-        .width(Length::Fill)
-        .style(theme::Button::MenuItem)
-    );
+    )
+    .height(Length::Fixed(36.0))
+    .padding([4, 16])
+    .width(Length::Fill)
+    .style(theme::Button::MenuItem)
 }
 
 /// Represents a menu item that performs an action when selected or a separator between menu items.
@@ -243,11 +241,11 @@ where
             match item {
                 MenuItem::Button(label, action) => {
                     let key = find_key(&action, key_binds);
-                    let menu_button = menu_button!(
-                        widget::text(label),
-                        widget::horizontal_space(Length::Fill),
-                        widget::text(key),
-                    )
+                    let menu_button = menu_button(vec![
+                        widget::text(label).into(),
+                        widget::horizontal_space(Length::Fill).into(),
+                        widget::text(key).into(),
+                    ])
                     .on_press(action.message());
 
                     trees.push(MenuTree::<Message, Renderer>::new(menu_button));
@@ -255,29 +253,36 @@ where
                 MenuItem::CheckBox(label, value, action) => {
                     let key = find_key(&action, key_binds);
                     trees.push(MenuTree::new(
-                        menu_button!(
+                        menu_button(vec![
                             if value {
-                                // TODO: add a object-select-symbolic icon, `Message: 'static` is required when using an icon widget.
-                                widget::container(widget::text("✓"))
+                                widget::icon::from_name("object-select-symbolic")
+                                    .size(16)
+                                    .icon()
+                                    .width(Length::Fixed(16.0))
+                                    .into()
                             } else {
-                                widget::container(widget::Space::with_width(Length::Fixed(16.0)))
+                                widget::Space::with_width(Length::Fixed(17.0)).into()
                             },
-                            widget::Space::with_width(Length::Fixed(8.0)),
-                            widget::text(label),
-                            widget::horizontal_space(Length::Fill),
-                            widget::text(key)
-                        )
+                            widget::Space::with_width(Length::Fixed(8.0)).into(),
+                            widget::text(label)
+                                .horizontal_alignment(iced::alignment::Horizontal::Left)
+                                .into(),
+                            widget::horizontal_space(Length::Fill).into(),
+                            widget::text(key).into(),
+                        ])
                         .on_press(action.message()),
                     ));
                 }
                 MenuItem::Folder(label, children) => {
                     trees.push(MenuTree::<Message, Renderer>::with_children(
-                        menu_button!(
-                            widget::text(label),
-                            widget::horizontal_space(Length::Fill),
-                            // TODO: add a pan-end-symbolic icon, `Message: 'static` is required when using an icon widget.
-                            widget::text("▶"),
-                        ),
+                        menu_button(vec![
+                            widget::text(label).into(),
+                            widget::horizontal_space(Length::Fill).into(),
+                            widget::icon::from_name("pan-end-symbolic")
+                                .size(16)
+                                .icon()
+                                .into(),
+                        ]),
                         menu_items(key_binds, children),
                     ));
                 }
