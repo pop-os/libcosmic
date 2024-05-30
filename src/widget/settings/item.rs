@@ -4,11 +4,13 @@
 use std::borrow::Cow;
 
 use crate::{
-    widget::{column, horizontal_space, row, text, Row},
+    widget::{column, container, flex_row, horizontal_space, row, text, FlexRow, Row},
     Element,
 };
 use derive_setters::Setters;
+use iced::alignment::Horizontal;
 use iced_core::Length;
+use taffy::AlignContent;
 
 /// A settings item aligned in a row
 #[must_use]
@@ -29,9 +31,33 @@ pub fn item<'a, Message: 'static>(
 #[allow(clippy::module_name_repetitions)]
 pub fn item_row<Message>(children: Vec<Element<Message>>) -> Row<Message> {
     row::with_children(children)
+        .spacing(12)
         .align_items(iced::Alignment::Center)
         .padding([0, 18])
+}
+
+/// A settings item aligned in a flex row
+#[allow(clippy::module_name_repetitions)]
+pub fn flex_item<'a, Message: 'static>(
+    title: impl Into<Cow<'a, str>> + 'a,
+    widget: impl Into<Element<'a, Message>> + 'a,
+) -> FlexRow<'a, Message> {
+    flex_item_row(vec![
+        text(title).width(Length::Fill).into(),
+        container(widget).into(),
+    ])
+}
+
+/// A settings item aligned in a flex row
+#[allow(clippy::module_name_repetitions)]
+pub fn flex_item_row<Message>(children: Vec<Element<Message>>) -> FlexRow<Message> {
+    flex_row(children)
+        .padding([0, 18])
         .spacing(12)
+        .min_item_width(200.0)
+        .justify_items(iced::Alignment::Center)
+        .justify_content(AlignContent::SpaceBetween)
+        .width(Length::Fill)
 }
 
 /// Creates a builder for an item, beginning with the title.
@@ -61,6 +87,15 @@ pub struct Item<'a, Message> {
 impl<'a, Message: 'static> Item<'a, Message> {
     /// Assigns a control to the item.
     pub fn control(self, widget: impl Into<Element<'a, Message>>) -> Row<'a, Message> {
+        item_row(self.control_(widget))
+    }
+
+    /// Assigns a control which flexes.
+    pub fn flex_control(self, widget: impl Into<Element<'a, Message>>) -> FlexRow<'a, Message> {
+        flex_item_row(self.control_(widget))
+    }
+
+    fn control_(self, widget: impl Into<Element<'a, Message>>) -> Vec<Element<'a, Message>> {
         let mut contents = Vec::with_capacity(4);
 
         if let Some(icon) = self.icon {
@@ -80,15 +115,14 @@ impl<'a, Message: 'static> Item<'a, Message> {
         }
 
         contents.push(widget.into());
-
-        item_row(contents)
+        contents
     }
 
     pub fn toggler(
         self,
         is_checked: bool,
         message: impl Fn(bool) -> Message + 'static,
-    ) -> Row<'a, Message> {
-        self.control(crate::widget::toggler(None, is_checked, message))
+    ) -> FlexRow<'a, Message> {
+        self.flex_control(crate::widget::toggler(None, is_checked, message))
     }
 }
