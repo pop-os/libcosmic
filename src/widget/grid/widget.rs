@@ -26,6 +26,9 @@ pub struct Grid<'a, Message> {
     column_alignment: Alignment,
     /// Alignment across rows
     row_alignment: Alignment,
+    /// Defines how the content will be justified.
+    #[setters(into, strip_option)]
+    justify_content: Option<crate::widget::JustifyContent>,
     /// Sets the space between each column of items.
     column_spacing: u16,
     /// Sets the space between each item in a row.
@@ -50,6 +53,7 @@ impl<'a, Message> Grid<'a, Message> {
             padding: Padding::ZERO,
             column_alignment: Alignment::Start,
             row_alignment: Alignment::Start,
+            justify_content: None,
             column_spacing: 4,
             row_spacing: 4,
             width: Length::Shrink,
@@ -138,6 +142,7 @@ impl<'a, Message: 'static + Clone> Widget<Message, crate::Theme, Renderer> for G
             self.padding,
             self.column_alignment,
             self.row_alignment,
+            self.justify_content,
             f32::from(self.column_spacing),
             f32::from(self.row_spacing),
             &mut tree.children,

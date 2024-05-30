@@ -10,8 +10,9 @@ use iced_core::{Alignment, Length, Padding, Point, Size};
 use taffy::geometry::{Line, Rect};
 use taffy::style::{AlignItems, Dimension, Display, GridPlacement, Style};
 use taffy::style_helpers::{auto, length};
-use taffy::TaffyTree;
+use taffy::{AlignContent, TaffyTree};
 
+#[allow(clippy::too_many_arguments)]
 #[allow(clippy::too_many_lines)]
 pub fn resolve<Message>(
     renderer: &Renderer,
@@ -23,6 +24,7 @@ pub fn resolve<Message>(
     padding: Padding,
     column_alignment: Alignment,
     row_alignment: Alignment,
+    justify_content: Option<AlignContent>,
     column_spacing: f32,
     row_spacing: f32,
     tree: &mut [Tree],
@@ -44,23 +46,29 @@ pub fn resolve<Message>(
         nodes.push(child_node);
 
         let c_size = child_widget.size();
-        let (width, justify_self) = match c_size.width {
-            Length::Fill | Length::FillPortion(_) => (Dimension::Auto, Some(AlignItems::Stretch)),
-            _ => (length(size.width), None),
+        let (width, flex_grow, justify_self) = match c_size.width {
+            Length::Fill | Length::FillPortion(_) => {
+                (Dimension::Auto, 1.0, Some(AlignItems::Stretch))
+            }
+            _ => (length(size.width), 0.0, None),
         };
 
         // Attach widget as leaf to be later assigned to grid.
         let leaf = taffy.new_leaf(Style {
+            flex_grow,
+
             grid_column: Line {
                 start: GridPlacement::Line((assignment.column as i16).into()),
                 end: GridPlacement::Line(
                     (assignment.column as i16 + assignment.width as i16).into(),
                 ),
             },
+
             grid_row: Line {
                 start: GridPlacement::Line((assignment.row as i16).into()),
                 end: GridPlacement::Line((assignment.row as i16 + assignment.height as i16).into()),
             },
+
             size: taffy::geometry::Size {
                 width,
                 height: match c_size.height {
@@ -68,7 +76,9 @@ pub fn resolve<Message>(
                     _ => length(size.height),
                 },
             },
+
             justify_self,
+
             ..Style::default()
         });
 
@@ -107,6 +117,8 @@ pub fn resolve<Message>(
                     Alignment::End => AlignItems::End,
                 },
             }),
+
+            justify_content,
 
             padding: Rect {
                 left: length(padding.left),
@@ -187,5 +199,5 @@ pub fn resolve<Message>(
         height: grid_layout.content_size.height,
     };
 
-    Node::with_children(grid_size.expand(padding), nodes)
+    Node::with_children(grid_size, nodes)
 }
