@@ -91,7 +91,7 @@ impl<'a, Message: Clone> Widget<Message, crate::Theme, crate::Renderer>
     }
 
     fn diff(&mut self, tree: &mut Tree) {
-        self.content.as_widget_mut().diff(&mut tree.children[0]);
+        tree.children[0].diff(self.content.as_widget_mut());
 
         // if let Some(ref mut context_menus) = self.context_menu {
         //     for (menu, tree) in context_menus
