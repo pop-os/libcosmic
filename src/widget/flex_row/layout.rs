@@ -10,6 +10,7 @@ use taffy::style::{AlignItems, Dimension, Display, Style};
 use taffy::style_helpers::length;
 use taffy::{AlignContent, TaffyTree};
 
+#[allow(clippy::too_many_arguments)]
 #[allow(clippy::too_many_lines)]
 pub fn resolve<Message>(
     renderer: &Renderer,
@@ -18,10 +19,12 @@ pub fn resolve<Message>(
     padding: Padding,
     column_spacing: f32,
     row_spacing: f32,
+    min_item_width: Option<f32>,
+    justify_items: Option<AlignItems>,
+    align_items: Option<AlignItems>,
     justify_content: Option<AlignContent>,
     tree: &mut [Tree],
 ) -> Node {
-    let limits = limits.shrink(padding);
     let max_size = limits.max();
 
     let mut leafs = Vec::with_capacity(items.len());
@@ -44,6 +47,8 @@ pub fn resolve<Message>(
             height: Dimension::Auto,
         },
 
+        align_items,
+        justify_items,
         justify_content,
 
         padding: Rect {
@@ -57,20 +62,31 @@ pub fn resolve<Message>(
     };
 
     for (child, tree) in items.iter().zip(tree.iter_mut()) {
-        // Calculate the dimensions of the item.
         let child_widget = child.as_widget();
-        let child_node = child_widget.layout(tree, renderer, &limits);
+        let child_node = child_widget.layout(tree, renderer, limits);
         let size = child_node.size();
 
         nodes.push(child_node);
 
         let c_size = child_widget.size();
-        let (width, justify_self) = match c_size.width {
-            Length::Fill | Length::FillPortion(_) => (Dimension::Auto, Some(AlignItems::Stretch)),
-            _ => (length(size.width), None),
+        let (width, flex_grow, justify_self) = match c_size.width {
+            Length::Fill | Length::FillPortion(_) => {
+                (Dimension::Auto, 1.0, Some(AlignItems::Stretch))
+            }
+            _ => (length(size.width), 0.0, None),
         };
 
         let child_style = Style {
+            flex_grow,
+
+            min_size: taffy::geometry::Size {
+                width: match min_item_width {
+                    Some(width) => length(size.width.min(width)),
+                    None => Dimension::Auto,
+                },
+                height: Dimension::Auto,
+            },
+
             size: taffy::geometry::Size {
                 width,
                 height: match c_size.height {
@@ -78,7 +94,9 @@ pub fn resolve<Message>(
                     _ => length(size.height),
                 },
             },
+
             justify_self,
+
             ..Style::default()
         };
 
@@ -149,5 +167,5 @@ pub fn resolve<Message>(
         height: flex_layout.content_size.height,
     };
 
-    Node::with_children(size.expand(padding), nodes)
+    Node::with_children(size, nodes)
 }
