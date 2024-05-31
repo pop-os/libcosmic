@@ -10,8 +10,9 @@ use iced_core::{Alignment, Length, Padding, Point, Size};
 use taffy::geometry::{Line, Rect};
 use taffy::style::{AlignItems, Dimension, Display, GridPlacement, Style};
 use taffy::style_helpers::{auto, length};
-use taffy::TaffyTree;
+use taffy::{AlignContent, TaffyTree};
 
+#[allow(clippy::too_many_arguments)]
 #[allow(clippy::too_many_lines)]
 pub fn resolve<Message>(
     renderer: &Renderer,
@@ -23,6 +24,7 @@ pub fn resolve<Message>(
     padding: Padding,
     column_alignment: Alignment,
     row_alignment: Alignment,
+    justify_content: Option<AlignContent>,
     column_spacing: f32,
     row_spacing: f32,
     tree: &mut [Tree],
@@ -44,23 +46,29 @@ pub fn resolve<Message>(
         nodes.push(child_node);
 
         let c_size = child_widget.size();
-        let (width, justify_self) = match c_size.width {
-            Length::Fill | Length::FillPortion(_) => (Dimension::Auto, Some(AlignItems::Stretch)),
-            _ => (length(size.width), None),
+        let (width, flex_grow, justify_self) = match c_size.width {
+            Length::Fill | Length::FillPortion(_) => {
+                (Dimension::Auto, 1.0, Some(AlignItems::Stretch))
+            }
+            _ => (length(size.width), 0.0, None),
         };
 
         // Attach widget as leaf to be later assigned to grid.
         let leaf = taffy.new_leaf(Style {
+            flex_grow,
+
             grid_column: Line {
                 start: GridPlacement::Line((assignment.column as i16).into()),
                 end: GridPlacement::Line(
                     (assignment.column as i16 + assignment.width as i16).into(),
                 ),
             },
+
             grid_row: Line {
                 start: GridPlacement::Line((assignment.row as i16).into()),
                 end: GridPlacement::Line((assignment.row as i16 + assignment.height as i16).into()),
             },
+
             size: taffy::geometry::Size {
                 width,
                 height: match c_size.height {
@@ -68,14 +76,16 @@ pub fn resolve<Message>(
                     _ => length(size.height),
                 },
             },
+
             justify_self,
+
             ..Style::default()
         });
 
         match leaf {
             Ok(leaf) => leafs.push(leaf),
             Err(why) => {
-                tracing::error!(%why, "cannot add leaf node to grid");
+                tracing::error!(?why, "cannot add leaf node to grid");
                 continue;
             }
         }
@@ -108,6 +118,8 @@ pub fn resolve<Message>(
                 },
             }),
 
+            justify_content,
+
             padding: Rect {
                 left: length(padding.left),
                 right: length(padding.right),
@@ -134,7 +146,7 @@ pub fn resolve<Message>(
     let root = match root {
         Ok(root) => root,
         Err(why) => {
-            tracing::error!(%why, "grid root style invalid");
+            tracing::error!(?why, "grid root style invalid");
             return Node::new(Size::ZERO);
         }
     };
@@ -146,14 +158,14 @@ pub fn resolve<Message>(
             height: length(max_size.height),
         },
     ) {
-        tracing::error!(%why, "grid layout did not compute");
+        tracing::error!(?why, "grid layout did not compute");
         return Node::new(Size::ZERO);
     }
 
     let grid_layout = match taffy.layout(root) {
         Ok(layout) => layout,
         Err(why) => {
-            tracing::error!(%why, "cannot get layout of grid");
+            tracing::error!(?why, "cannot get layout of grid");
             return Node::new(Size::ZERO);
         }
     };
@@ -183,9 +195,9 @@ pub fn resolve<Message>(
     }
 
     let grid_size = Size {
-        width: grid_layout.size.width,
-        height: grid_layout.size.height,
+        width: grid_layout.content_size.width,
+        height: grid_layout.content_size.height,
     };
 
-    Node::with_children(grid_size.expand(padding), nodes)
+    Node::with_children(grid_size, nodes)
 }

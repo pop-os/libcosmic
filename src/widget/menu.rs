@@ -59,14 +59,17 @@ pub use action::MenuAction as Action;
 
 mod flex;
 pub mod key_bind;
+pub use key_bind::KeyBind;
 
 mod menu_bar;
-pub use menu_bar::MenuBar;
 pub(crate) use menu_bar::MenuBarState;
+pub use menu_bar::{menu_bar as bar, MenuBar};
 
 mod menu_inner;
 mod menu_tree;
-pub use menu_tree::{menu_items as items, menu_root as root, MenuItem as Item, MenuTree as Tree};
+pub use menu_tree::{
+    menu_button, menu_items as items, menu_root as root, MenuItem as Item, MenuTree as Tree,
+};
 
 pub use crate::style::menu_bar::{Appearance, StyleSheet};
 pub(crate) use menu_inner::Menu;

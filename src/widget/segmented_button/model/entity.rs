@@ -89,8 +89,8 @@ where
     /// model.insert().text("Item A").icon(IconSource::from("icon-a"));
     /// ```
     #[allow(clippy::must_use_candidate, clippy::return_self_not_must_use)]
-    pub fn icon(self, icon: Icon) -> Self {
-        self.model.icon_set(self.id, icon);
+    pub fn icon(self, icon: impl Into<Icon>) -> Self {
+        self.model.icon_set(self.id, icon.into());
         self
     }
 

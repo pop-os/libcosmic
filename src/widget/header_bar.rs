@@ -1,10 +1,11 @@
 // Copyright 2022 System76 <info@system76.com>
 // SPDX-License-Identifier: MPL-2.0
 
+use crate::config::Density;
 use crate::{ext::CollectionWidget, widget, Element};
 use apply::Apply;
 use derive_setters::Setters;
-use iced::Length;
+use iced::{Length, Padding};
 use iced_core::{widget::tree, Widget};
 use std::borrow::Cow;
 
@@ -20,6 +21,7 @@ pub fn header_bar<'a, Message>() -> HeaderBar<'a, Message> {
         start: Vec::new(),
         center: Vec::new(),
         end: Vec::new(),
+        density: None,
         focused: false,
     }
 }
@@ -50,9 +52,6 @@ pub struct HeaderBar<'a, Message> {
     #[setters(strip_option)]
     on_right_click: Option<Message>,
 
-    /// Focused state of the window
-    focused: bool,
-
     /// Elements packed at the start of the headerbar.
     #[setters(skip)]
     start: Vec<Element<'a, Message>>,
@@ -64,6 +63,13 @@ pub struct HeaderBar<'a, Message> {
     /// Elements packed at the end of the headerbar.
     #[setters(skip)]
     end: Vec<Element<'a, Message>>,
+
+    /// Controls the density of the headerbar.
+    #[setters(strip_option)]
+    density: Option<Density>,
+
+    /// Focused state of the window
+    focused: bool,
 }
 
 impl<'a, Message: Clone + 'static> HeaderBar<'a, Message> {
@@ -99,7 +105,7 @@ impl<'a, Message: Clone + 'static> HeaderBar<'a, Message> {
     #[must_use]
     pub fn build(self) -> HeaderBarWidget<'a, Message> {
         HeaderBarWidget {
-            header_bar_inner: self.into_element(),
+            header_bar_inner: self.view(),
         }
     }
 }
@@ -253,7 +259,7 @@ impl<'a, Message: Clone + 'static> Widget<Message, crate::Theme, crate::Renderer
 
 impl<'a, Message: Clone + 'static> HeaderBar<'a, Message> {
     /// Converts the headerbar builder into an Iced element.
-    pub fn into_element(mut self) -> Element<'a, Message> {
+    pub fn view(mut self) -> Element<'a, Message> {
         // Take ownership of the regions to be packed.
         let start = std::mem::take(&mut self.start);
         let center = std::mem::take(&mut self.center);
@@ -262,6 +268,11 @@ impl<'a, Message: Clone + 'static> HeaderBar<'a, Message> {
         // Also packs the window controls at the very end.
         end.push(widget::horizontal_space(Length::Fixed(12.0)).into());
         end.push(self.window_controls());
+
+        let (height, padding) = match self.density.unwrap_or_else(crate::config::header_size) {
+            crate::config::Density::Compact => (36.0, 2.0),
+            crate::config::Density::Standard => (48.0, 8.0),
+        };
 
         // Creates the headerbar widget.
         let mut widget = widget::row::with_capacity(4)
@@ -295,9 +306,9 @@ impl<'a, Message: Clone + 'static> HeaderBar<'a, Message> {
                     .width(Length::Shrink),
             )
             .align_items(iced::Alignment::Center)
-            .height(Length::Fixed(50.0))
-            .padding(8)
-            .spacing(8)
+            .height(Length::Fixed(height))
+            .padding(padding)
+            .spacing(padding)
             .apply(widget::container)
             .style(crate::theme::Container::HeaderBar {
                 focused: self.focused,
@@ -326,9 +337,7 @@ impl<'a, Message: Clone + 'static> HeaderBar<'a, Message> {
         let mut title = Cow::default();
         std::mem::swap(&mut title, &mut self.title);
 
-        widget::text(title)
-            .size(16)
-            .font(crate::font::FONT_SEMIBOLD)
+        widget::text::heading(title)
             .apply(widget::container)
             .center_x()
             .center_y()
@@ -347,6 +356,13 @@ impl<'a, Message: Clone + 'static> HeaderBar<'a, Message> {
                 .selected(self.focused)
                 .icon_size(size)
                 .on_press(on_press)
+        };
+
+        let density = self.density.unwrap_or_else(crate::config::header_size);
+        let spacing = if matches!(density, Density::Compact) {
+            2
+        } else {
+            8
         };
 
         widget::row::with_capacity(3)
@@ -371,7 +387,7 @@ impl<'a, Message: Clone + 'static> HeaderBar<'a, Message> {
                     m,
                 )
             }))
-            .spacing(8)
+            .spacing(spacing)
             .apply(widget::container)
             .height(Length::Fill)
             .center_y()

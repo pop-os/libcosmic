@@ -120,8 +120,8 @@ pub fn appearance(
         }
         Button::MenuRoot => {
             appearance.background = None;
-            appearance.icon_color = Some(cosmic.accent.base.into());
-            appearance.text_color = Some(cosmic.accent.base.into());
+            appearance.icon_color = None;
+            appearance.text_color = None;
         }
         Button::MenuItem => {
             let (background, _, _) = color(&cosmic.background.component);

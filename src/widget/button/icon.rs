@@ -13,12 +13,14 @@ use std::borrow::Cow;
 
 pub type Button<'a, Message> = Builder<'a, Message, Icon>;
 
+/// The icon variant of a button.
 pub struct Icon {
     handle: Handle,
     vertical: bool,
     selected: bool,
 }
 
+/// A button constructed from an icon handle, using icon button styling.
 pub fn icon<'a, Message>(handle: impl Into<Handle>) -> Button<'a, Message> {
     Button::new(Icon {
         handle: handle.into(),

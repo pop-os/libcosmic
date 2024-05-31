@@ -6,7 +6,7 @@ use std::{
     num::NonZeroUsize,
 };
 
-use super::{to_hex, OutputError};
+use super::{to_rgba, OutputError};
 
 impl Theme {
     #[must_use]
@@ -24,95 +24,169 @@ impl Theme {
             ..
         } = self;
 
-        let window_bg = to_hex(background.base);
-        let window_fg = to_hex(background.on);
+        let window_bg = to_rgba(background.base);
+        let window_fg = to_rgba(background.on);
 
-        let view_bg = to_hex(primary.base);
-        let view_fg = to_hex(primary.on);
+        let view_bg = to_rgba(primary.base);
+        let view_fg = to_rgba(primary.on);
 
-        let headerbar_bg = to_hex(background.base);
-        let headerbar_fg = to_hex(background.on);
-        let headerbar_border_color = to_hex(background.divider);
+        let headerbar_bg = to_rgba(background.base);
+        let headerbar_fg = to_rgba(background.on);
+        let headerbar_border_color = to_rgba(background.divider);
 
-        let sidebar_bg = to_hex(primary.base);
-        let sidebar_fg = to_hex(primary.on);
-        let sidebar_shade = to_hex(if self.is_dark {
+        let sidebar_bg = to_rgba(primary.base);
+        let sidebar_fg = to_rgba(primary.on);
+        let sidebar_shade = to_rgba(if self.is_dark {
             Rgba::new(0.0, 0.0, 0.0, 0.08)
         } else {
             Rgba::new(0.0, 0.0, 0.0, 0.32)
         });
         let backdrop_overlay = Srgba::new(1.0, 1.0, 1.0, if self.is_dark { 0.08 } else { 0.32 });
-        let sidebar_backdrop = to_hex(over(backdrop_overlay, primary.base));
+        let sidebar_backdrop = to_rgba(over(backdrop_overlay, primary.base));
 
-        let secondary_sidebar_bg = to_hex(secondary.base);
-        let secondary_sidebar_fg = to_hex(secondary.on);
-        let secondary_sidebar_shade = to_hex(if self.is_dark {
+        let secondary_sidebar_bg = to_rgba(secondary.base);
+        let secondary_sidebar_fg = to_rgba(secondary.on);
+        let secondary_sidebar_shade = to_rgba(if self.is_dark {
             Rgba::new(0.0, 0.0, 0.0, 0.08)
         } else {
             Rgba::new(0.0, 0.0, 0.0, 0.32)
         });
-        let secondary_sidebar_backdrop = to_hex(over(backdrop_overlay, secondary.base));
+        let secondary_sidebar_backdrop = to_rgba(over(backdrop_overlay, secondary.base));
 
-        let headerbar_backdrop = to_hex(background.base);
+        let headerbar_backdrop = to_rgba(background.base);
 
-        let card_bg = to_hex(background.component.base);
-        let card_fg = to_hex(background.component.on);
+        let card_bg = to_rgba(background.component.base);
+        let card_fg = to_rgba(background.component.on);
 
-        let thumbnail_bg = to_hex(background.component.base);
-        let thumbnail_fg = to_hex(background.component.on);
+        let thumbnail_bg = to_rgba(background.component.base);
+        let thumbnail_fg = to_rgba(background.component.on);
 
-        let dialog_bg = to_hex(primary.base);
-        let dialog_fg = to_hex(primary.on);
+        let dialog_bg = to_rgba(primary.base);
+        let dialog_fg = to_rgba(primary.on);
 
-        let popover_bg = to_hex(background.component.base);
-        let popover_fg = to_hex(background.component.on);
+        let popover_bg = to_rgba(background.component.base);
+        let popover_fg = to_rgba(background.component.on);
 
-        let shade = to_hex(if self.is_dark {
+        let shade = to_rgba(if self.is_dark {
             Rgba::new(0.0, 0.0, 0.0, 0.32)
         } else {
             Rgba::new(0.0, 0.0, 0.0, 0.08)
         });
 
+        let window_control_hover_bg = to_rgba(if self.is_dark {
+            Rgba::new(255.0, 255.0, 255.0, 0.12)
+        } else {
+            Rgba::new(0.0, 0.0, 0.0, 0.12)
+        });
+        let corner_radius = self.corner_radii.radius_s[0];
         let mut inverted_bg_divider = background.base;
         inverted_bg_divider.alpha = 0.5;
-        let scrollbar_outline = to_hex(inverted_bg_divider);
+        let scrollbar_outline = to_rgba(inverted_bg_divider);
 
         let mut css = format! {r#"
-@define-color window_bg_color #{window_bg};
-@define-color window_fg_color #{window_fg};
+@define-color window_bg_color {window_bg};
+@define-color window_fg_color {window_fg};
 
-@define-color view_bg_color #{view_bg};
-@define-color view_fg_color #{view_fg};
+@define-color view_bg_color {view_bg};
+@define-color view_fg_color {view_fg};
 
-@define-color headerbar_bg_color #{headerbar_bg};
-@define-color headerbar_fg_color #{headerbar_fg};
-@define-color headerbar_border_color_color #{headerbar_border_color};
-@define-color headerbar_backdrop_color #{headerbar_backdrop};
+@define-color headerbar_bg_color {headerbar_bg};
+@define-color headerbar_fg_color {headerbar_fg};
+@define-color headerbar_border_color_color {headerbar_border_color};
+@define-color headerbar_backdrop_color {headerbar_backdrop};
 
-@define-color sidebar_bg_color #{sidebar_bg};
-@define-color sidebar_fg_color #{sidebar_fg};
-@define-color sidebar_shade_color #{sidebar_shade};
-@define-color sidebar_backdrop_color #{sidebar_backdrop};
+@define-color sidebar_bg_color {sidebar_bg};
+@define-color sidebar_fg_color {sidebar_fg};
+@define-color sidebar_shade_color {sidebar_shade};
+@define-color sidebar_backdrop_color {sidebar_backdrop};
 
-@define-color secondary_sidebar_bg_color #{secondary_sidebar_bg};
-@define-color secondary_sidebar_fg_color #{secondary_sidebar_fg};
-@define-color secondary_sidebar_shade_color #{secondary_sidebar_shade};
-@define-color secondary_sidebar_backdrop_color #{secondary_sidebar_backdrop};
+@define-color secondary_sidebar_bg_color {secondary_sidebar_bg};
+@define-color secondary_sidebar_fg_color {secondary_sidebar_fg};
+@define-color secondary_sidebar_shade_color {secondary_sidebar_shade};
+@define-color secondary_sidebar_backdrop_color {secondary_sidebar_backdrop};
 
-@define-color card_bg_color #{card_bg};
-@define-color card_fg_color #{card_fg};
+@define-color card_bg_color {card_bg};
+@define-color card_fg_color {card_fg};
 
-@define-color thumbnail_bg_color #{thumbnail_bg};
-@define-color thumbnail_fg_color #{thumbnail_fg};
+@define-color thumbnail_bg_color {thumbnail_bg};
+@define-color thumbnail_fg_color {thumbnail_fg};
 
-@define-color dialog_bg_color #{dialog_bg};
-@define-color dialog_fg_color #{dialog_fg};
+@define-color dialog_bg_color {dialog_bg};
+@define-color dialog_fg_color {dialog_fg};
 
-@define-color popover_bg_color #{popover_bg};
-@define-color popover_fg_color #{popover_fg};
+@define-color popover_bg_color {popover_bg};
+@define-color popover_fg_color {popover_fg};
 
-@define-color shade_color #{shade};
-@define-color scrollbar_outline_color #{scrollbar_outline};
+@define-color shade_color {shade};
+@define-color scrollbar_outline_color {scrollbar_outline};
+
+.close, .maximize, .minimize {{
+	background: transparent;
+}}
+.close:not(:hover) > image,
+.maximize:not(:hover) > image,
+.minimize:not(:hover) > image {{
+	background: transparent;
+}}
+.close > image, 
+.maximize > image, 
+.minimize > image {{
+	transition: 0;
+	color: @accent_bg_color;
+	border-radius: 100%;
+}}
+.close:backdrop > image, 
+.maximize:backdrop > image, 
+.minimize:backdrop > image {{
+	filter: grayscale(1) brightness(1.7);
+}}
+.close:hover > image, 
+.maximize:hover > image, 
+.minimize:hover > image {{
+	background: {window_control_hover_bg};
+}}
+.image-button {{
+	transition: 0;
+}}
+.image-button > image,
+.image-button > box,
+.popup > image,
+.toggle > image,
+.toggle > arrow,
+.toggle > box > contents > image,
+button > image,
+button > widget > box > image,
+stack > box > image
+{{
+	color: @accent_bg_color;
+}}
+.image-button:insensitive > image, 
+.image-button:insensitive > box,
+.popup:insensitive > image,
+.toggle:insensitive > image,
+.toggle:insensitive > box > contents > image,
+button:insensitive > image,
+button:insensitive > widget > box > image,
+stack:insensitive > box > image {{
+	opacity: 0.5;
+}}
+.image-button:backdrop > image,
+.image-button:backdrop > box,
+.popup:backdrop > image,
+.toggle:backdrop > image,
+.toggle:backdrop > arrow,
+button:backdrop > image,
+button:backdrop > widget > box > image,
+stack:backdrop > box > image,
+.toggle:backdrop > box > contents > image {{
+	filter: grayscale(1) brightness(1.7);
+}}
+window {{ background: @window_bg_color }}
+window:not(.maximized) {{
+	border-radius: {corner_radius:.0}px;
+}}
+
+window, statuspage.view {{ background: @window_bg_color }}
 "#};
 
         css.push_str(&component_gtk4_css("accent", accent));
@@ -130,10 +204,10 @@ impl Theme {
         css.push_str(&color_css("purple", palette.ext_purple));
         let neutral_steps = steps(palette.neutral_5, NonZeroUsize::new(10).unwrap());
         for (i, c) in neutral_steps[..5].iter().enumerate() {
-            css.push_str(&format!("@define-color light_{i} #{};\n", to_hex(*c)));
+            css.push_str(&format!("@define-color light_{i} {};\n", to_rgba(*c)));
         }
         for (i, c) in neutral_steps[5..].iter().enumerate() {
-            css.push_str(&format!("@define-color dark_{i} #{};\n", to_hex(*c)));
+            css.push_str(&format!("@define-color dark_{i} {};\n", to_rgba(*c)));
         }
         css
     }
@@ -232,13 +306,13 @@ impl Theme {
 fn component_gtk4_css(prefix: &str, c: &Component) -> String {
     format!(
         r#"
-@define-color {prefix}_color #{};
-@define-color {prefix}_bg_color #{};
-@define-color {prefix}_fg_color #{};
+@define-color {prefix}_color {};
+@define-color {prefix}_bg_color {};
+@define-color {prefix}_fg_color {};
 "#,
-        to_hex(c.base),
-        to_hex(c.base),
-        to_hex(c.on),
+        to_rgba(c.base),
+        to_rgba(c.base),
+        to_rgba(c.on),
     )
 }
 
@@ -248,17 +322,17 @@ fn color_css(prefix: &str, c_3: Srgba) -> String {
     let c_1: Srgba = oklch.lighten(0.2).into_color();
     let c_4: Srgba = oklch.darken(0.1).into_color();
     let c_5: Srgba = oklch.darken(0.2).into_color();
-    let c_1 = to_hex(c_1);
-    let c_2 = to_hex(c_2);
-    let c_3 = to_hex(c_3);
-    let c_4 = to_hex(c_4);
-    let c_5 = to_hex(c_5);
+    let c_1 = to_rgba(c_1);
+    let c_2 = to_rgba(c_2);
+    let c_3 = to_rgba(c_3);
+    let c_4 = to_rgba(c_4);
+    let c_5 = to_rgba(c_5);
 
     format! {r#"
-@define-color {prefix}_1 #{c_1};
-@define-color {prefix}_2 #{c_2};
-@define-color {prefix}_3 #{c_3};
-@define-color {prefix}_4 #{c_4};
-@define-color {prefix}_5 #{c_5};
+@define-color {prefix}_1 {c_1};
+@define-color {prefix}_2 {c_2};
+@define-color {prefix}_3 {c_3};
+@define-color {prefix}_4 {c_4};
+@define-color {prefix}_5 {c_5};
 "#}
 }

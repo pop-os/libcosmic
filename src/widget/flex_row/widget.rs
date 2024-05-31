@@ -17,6 +17,7 @@ pub struct FlexRow<'a, Message> {
     #[setters(skip)]
     children: Vec<Element<'a, Message>>,
     /// Sets the padding around the widget.
+    #[setters(into)]
     padding: Padding,
     /// Sets the space between each column of items.
     column_spacing: u16,
@@ -24,20 +25,63 @@ pub struct FlexRow<'a, Message> {
     row_spacing: u16,
     /// Sets the width.
     width: Length,
+    /// Sets minimum width of items that grow.
+    #[setters(into)]
+    min_item_width: Option<f32>,
     /// Sets the max width
     max_width: f32,
+    /// Defines how content will be aligned horizontally.
+    #[setters(skip)]
+    align_items: Option<taffy::AlignItems>,
+    /// Defines how content will be aligned vertically.
+    #[setters(skip)]
+    justify_items: Option<taffy::AlignItems>,
+    /// Defines how the content will be justified.
+    #[setters(into)]
+    justify_content: Option<crate::widget::JustifyContent>,
 }
 
 impl<'a, Message> FlexRow<'a, Message> {
-    pub const fn new(children: Vec<Element<'a, Message>>) -> Self {
+    pub(crate) const fn new(children: Vec<Element<'a, Message>>) -> Self {
         Self {
             children,
             padding: Padding::ZERO,
             column_spacing: 4,
             row_spacing: 4,
             width: Length::Shrink,
+            min_item_width: None,
             max_width: f32::INFINITY,
+            align_items: None,
+            justify_items: None,
+            justify_content: None,
         }
+    }
+
+    /// Defines how content will be aligned horizontally.
+    pub fn align_items(mut self, alignment: iced::Alignment) -> Self {
+        self.align_items = Some(match alignment {
+            iced::Alignment::Center => taffy::AlignItems::Center,
+            iced::Alignment::Start => taffy::AlignItems::Start,
+            iced::Alignment::End => taffy::AlignItems::End,
+        });
+        self
+    }
+
+    /// Defines how content will be aligned vertically.
+    pub fn justify_items(mut self, alignment: iced::Alignment) -> Self {
+        self.justify_items = Some(match alignment {
+            iced::Alignment::Center => taffy::AlignItems::Center,
+            iced::Alignment::Start => taffy::AlignItems::Start,
+            iced::Alignment::End => taffy::AlignItems::End,
+        });
+        self
+    }
+
+    /// Sets the space between each column and row.
+    pub const fn spacing(mut self, spacing: u16) -> Self {
+        self.column_spacing = spacing;
+        self.row_spacing = spacing;
+        self
     }
 }
 
@@ -75,6 +119,10 @@ impl<'a, Message: 'static + Clone> Widget<Message, crate::Theme, Renderer>
             self.padding,
             f32::from(self.column_spacing),
             f32::from(self.row_spacing),
+            self.min_item_width,
+            self.align_items,
+            self.justify_items,
+            self.justify_content,
             &mut tree.children,
         )
     }

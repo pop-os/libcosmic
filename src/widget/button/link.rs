@@ -1,6 +1,8 @@
 // Copyright 2023 System76 <info@system76.com>
 // SPDX-License-Identifier: MPL-2.0
 
+//! Hyperlink button widget
+
 use super::Builder;
 use super::Style;
 use crate::prelude::*;
@@ -17,6 +19,7 @@ pub struct Hyperlink {
     trailing_icon: bool,
 }
 
+/// A hyperlink button.
 pub fn link<'a, Message>(label: impl Into<Cow<'a, str>> + 'static) -> Button<'a, Message> {
     Button::new(
         label,

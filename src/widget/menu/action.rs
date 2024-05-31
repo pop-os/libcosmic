@@ -1,5 +1,3 @@
-use crate::widget::segmented_button::Entity;
-
 /// `MenuAction` is a trait that represents an action in a menu.
 ///
 /// It is used to define the behavior of menu items when they are activated.
@@ -31,7 +29,7 @@ use crate::widget::segmented_button::Entity;
 /// impl MenuAction for MyAction {
 ///     type Message = MyMessage;
 ///
-///     fn message(&self, entity: Option<Entity>) -> Self::Message {
+///     fn message(&self) -> Self::Message {
 ///         match self {
 ///             MyAction::Open => MyMessage::Open,
 ///             MyAction::Save => MyMessage::Save,
@@ -46,12 +44,8 @@ pub trait MenuAction: Clone + Copy + Eq + PartialEq {
 
     /// Returns a message of type `Self::Message` when the action is triggered.
     ///
-    /// # Arguments
-    ///
-    /// * `entity` - An optional `Entity` that may be associated with the action.
-    ///
     /// # Returns
     ///
     /// * `Self::Message` - The message that is produced when the action is triggered.
-    fn message(&self, entity: Option<Entity>) -> Self::Message;
+    fn message(&self) -> Self::Message;
 }

@@ -19,7 +19,7 @@ pub struct Appearance {
     pub border_color: Color,
     /// The expand value of the menus' background
     pub background_expand: [u16; 4],
-    /// The highlighted path [`Color`] of the the menu bar and its menus.
+    // /// The highlighted path [`Color`] of the the menu bar and its menus.
     pub path: Color,
 }
 

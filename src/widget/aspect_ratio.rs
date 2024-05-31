@@ -1,3 +1,5 @@
+//! A container which constraints itself to a specific aspect ratio.
+
 use iced::widget::Container;
 use iced::Size;
 use iced_core::alignment;
@@ -21,9 +23,7 @@ where
     AspectRatio::new(content, ratio)
 }
 
-/// An element decorating some content.
-///
-/// It is normally used for alignment purposes.
+/// A container which constraints itself to a specific aspect ratio.
 #[allow(missing_debug_implementations)]
 pub struct AspectRatio<'a, Message, Renderer>
 where

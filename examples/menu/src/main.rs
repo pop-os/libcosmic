@@ -14,9 +14,7 @@ use cosmic::iced_core::{Length, Size};
 use cosmic::widget::menu::action::MenuAction;
 use cosmic::widget::menu::key_bind::KeyBind;
 use cosmic::widget::menu::key_bind::Modifier;
-use cosmic::widget::menu::menu_tree::{menu_items, menu_root, MenuItem};
-use cosmic::widget::menu::{ItemHeight, ItemWidth, MenuBar, MenuTree};
-use cosmic::widget::segmented_button::Entity;
+use cosmic::widget::menu::{self, ItemHeight, ItemWidth};
 use cosmic::{executor, Element};
 
 /// Runs application with these settings
@@ -67,7 +65,7 @@ pub enum Action {
 
 impl MenuAction for Action {
     type Message = Message;
-    fn message(&self, _entity_opt: Option<Entity>) -> Self::Message {
+    fn message(&self) -> Self::Message {
         match self {
             Action::WindowClose => Message::WindowClose,
             Action::ToggleHideContent => Message::ToggleHideContent,
@@ -156,23 +154,23 @@ impl cosmic::Application for App {
 }
 
 pub fn menu_bar<'a>(config: &Config, key_binds: &HashMap<KeyBind, Action>) -> Element<'a, Message> {
-    MenuBar::new(vec![MenuTree::with_children(
-        menu_root("File"),
-        menu_items(
+    menu::bar(vec![menu::Tree::with_children(
+        menu::root("File"),
+        menu::items(
             key_binds,
             vec![
-                MenuItem::Button("New window", Action::WindowNew),
-                MenuItem::Divider,
-                MenuItem::Folder(
+                menu::Item::Button("New window", Action::WindowNew),
+                menu::Item::Divider,
+                menu::Item::Folder(
                     "View",
-                    vec![MenuItem::CheckBox(
+                    vec![menu::Item::CheckBox(
                         "Hide content",
                         config.hide_content,
                         Action::ToggleHideContent,
                     )],
                 ),
-                MenuItem::Divider,
-                MenuItem::Button("Quit", Action::WindowClose),
+                menu::Item::Divider,
+                menu::Item::Button("Quit", Action::WindowClose),
             ],
         ),
     )])

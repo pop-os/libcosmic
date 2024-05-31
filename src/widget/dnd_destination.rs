@@ -253,7 +253,7 @@ impl<'a, Message: 'static> Widget<Message, crate::Theme, crate::Renderer>
     }
 
     fn diff(&mut self, tree: &mut Tree) {
-        self.container.as_widget_mut().diff(&mut tree.children[0]);
+        tree.children[0].diff(self.container.as_widget_mut());
     }
 
     fn state(&self) -> iced_core::widget::tree::State {

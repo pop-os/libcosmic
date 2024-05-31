@@ -42,5 +42,16 @@ impl Theme {
 
 pub fn to_hex(c: Srgba) -> String {
     let c_u8: Rgba<palette::encoding::Srgb, u8> = c.into_format();
-    format!("{:02x}{:02x}{:02x}", c_u8.red, c_u8.green, c_u8.blue)
+    format!(
+        "{:02x}{:02x}{:02x}{:02x}",
+        c_u8.red, c_u8.green, c_u8.blue, c_u8.alpha
+    )
+}
+
+pub fn to_rgba(c: Srgba) -> String {
+    let c_u8: Rgba<palette::encoding::Srgb, u8> = c.into_format();
+    format!(
+        "rgba({}, {}, {}, {:1.2})",
+        c_u8.red, c_u8.green, c_u8.blue, c.alpha
+    )
 }

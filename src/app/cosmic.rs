@@ -156,6 +156,7 @@ where
         }
     }
 
+    #[allow(clippy::too_many_lines)]
     fn subscription(&self) -> Subscription<Self::Message> {
         let window_events = listen_with(|event, _| {
             match event {
@@ -197,7 +198,7 @@ where
             self.app.subscription().map(super::Message::App),
             self.app
                 .core()
-                .watch_config::<crate::config::CosmicTk>(crate::config::toolkit::ID)
+                .watch_config::<crate::config::CosmicTk>(crate::config::ID)
                 .map(|update| {
                     for why in update.errors {
                         tracing::error!(?why, "cosmic toolkit config update error");
@@ -408,11 +409,9 @@ impl<T: Application> Cosmic<T> {
             }
 
             Message::AppThemeChange(mut theme) => {
-                // Apply last-known system theme if the system theme is preferred.
                 if let ThemeType::System { theme: _, .. } = theme.theme_type {
                     self.app.core_mut().theme_sub_counter += 1;
 
-                    theme = self.app.core().system_theme.clone();
                     let portal_accent = self.app.core().portal_accent;
                     if let Some(a) = portal_accent {
                         let t_inner = theme.cosmic();
@@ -429,6 +428,11 @@ impl<T: Application> Cosmic<T> {
             }
 
             Message::SystemThemeChange(keys, theme) => {
+                let cur_is_dark = THEME.with(|t| t.borrow().theme_type.is_dark());
+                // Ignore updates if the current theme mode does not match.
+                if cur_is_dark != theme.cosmic().is_dark {
+                    return iced::Command::none();
+                }
                 let cmd = self.app.system_theme_update(&keys, theme.cosmic());
                 // Record the last-known system theme in event that the current theme is custom.
                 self.app.core_mut().system_theme = theme.clone();
@@ -472,6 +476,9 @@ impl<T: Application> Cosmic<T> {
                 };
             }
             Message::SystemThemeModeChange(keys, mode) => {
+                if !keys.contains(&"is_dark") {
+                    return iced::Command::none();
+                }
                 if THEME.with(|t| match t.borrow().theme_type {
                     ThemeType::System {
                         theme: _,
@@ -619,7 +626,7 @@ impl<T: Application> Cosmic<T> {
                     crate::icon_theme::set_default(config.icon_theme.clone());
                 }
 
-                self.app.core_mut().toolkit_config = config;
+                crate::config::COSMIC_TK.with(|tk| *tk.borrow_mut() = config);
             }
 
             Message::Focus(f) => {

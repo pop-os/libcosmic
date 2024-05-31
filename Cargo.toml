@@ -31,7 +31,7 @@ desktop = ["process", "dep:freedesktop-desktop-entry", "dep:mime", "dep:shlex"]
 # Enables keycode serialization
 serde-keycode = ["iced_core/serde"]
 # Prevents multiple separate process instances.
-single-instance = ["dep:zbus", "serde", "ron"]
+single-instance = ["dep:zbus", "ron"]
 # smol async runtime
 smol = ["iced/smol", "zbus?/async-io"]
 tokio = [
@@ -80,7 +80,7 @@ mime = { version = "0.3.17", optional = true }
 nix = { version = "0.27", features = ["process"], optional = true }
 palette = "0.7.3"
 rfd = { version = "0.14.0", optional = true }
-serde = { version = "1.0.180", optional = true }
+serde = { version = "1.0.180", features = ["derive"]}
 slotmap = "1.0.6"
 textdistance = "1.0.2"
 thiserror = "1.0.44"

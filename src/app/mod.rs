@@ -37,6 +37,12 @@ pub mod message {
     pub const fn none<M>() -> Message<M> {
         Message::None
     }
+
+    impl<M> From<M> for Message<M> {
+        fn from(value: M) -> Self {
+            Self::App(value)
+        }
+    }
 }
 
 pub use self::command::Command;
@@ -45,7 +51,7 @@ pub use self::settings::Settings;
 use crate::config::CosmicTk;
 use crate::prelude::*;
 use crate::theme::THEME;
-use crate::widget::{context_drawer, menu, nav_bar, popover};
+use crate::widget::{context_drawer, id_container, menu, nav_bar, popover};
 use apply::Apply;
 use iced::Subscription;
 #[cfg(all(feature = "winit", feature = "multi-window"))]
@@ -78,7 +84,7 @@ pub(crate) fn iced_settings<App: Application>(
     if let Some(icon_theme) = settings.default_icon_theme {
         crate::icon_theme::set_default(icon_theme);
     } else {
-        crate::icon_theme::set_default(core.toolkit_config.icon_theme.clone());
+        crate::icon_theme::set_default(crate::config::icon_theme());
     }
 
     THEME.with(move |t| {
@@ -92,7 +98,11 @@ pub(crate) fn iced_settings<App: Application>(
     iced.default_font = settings.default_font;
     iced.default_text_size = iced::Pixels(settings.default_text_size);
     iced.exit_on_close_request = settings.exit_on_close;
-    // iced.window.exit_on_close_request = settings.exit_on_close;
+    #[cfg(not(feature = "wayland"))]
+    {
+        let exit_on_close = settings.exit_on_close;
+        iced.window.exit_on_close_request = exit_on_close;
+    }
     iced.id = Some(App::APP_ID.to_owned());
     #[cfg(all(not(feature = "wayland"), target_os = "linux"))]
     {
@@ -149,38 +159,9 @@ pub(crate) fn iced_settings<App: Application>(
 ///
 /// Returns error on application failure.
 pub fn run<App: Application>(settings: Settings, flags: App::Flags) -> iced::Result {
-    #[cfg(feature = "wgpu")]
-    wgpu_power_pref();
-
     let settings = iced_settings::<App>(settings, flags);
 
     cosmic::Cosmic::<App>::run(settings)
-}
-
-/// Default to rendering the application with the low power GPU preference.
-#[cfg(feature = "wgpu")]
-fn wgpu_power_pref() {
-    fn is_desktop() -> bool {
-        let chassis = std::fs::read_to_string("/sys/class/dmi/id/chassis_type").unwrap_or_default();
-
-        chassis.trim() == "3"
-    }
-
-    // Ignore if the system is a desktop.
-    if is_desktop() {
-        return;
-    }
-
-    // Ignore if requested to run on NVIDIA GPU
-    if std::env::var("__NV_PRIME_RENDER_OFFLOAD").ok().as_deref() == Some("1") {
-        return;
-    }
-
-    #[allow(clippy::items_after_statements)]
-    const VAR: &str = "WGPU_POWER_PREF";
-    if std::env::var(VAR).is_err() {
-        std::env::set_var(VAR, "low");
-    }
 }
 
 #[cfg(feature = "single-instance")]
@@ -429,7 +410,7 @@ where
     fn core_mut(&mut self) -> &mut Core;
 
     /// Creates the application, and optionally emits command on initialize.
-    fn init(core: Core, flags: Self::Flags) -> (Self, iced::Command<Message<Self::Message>>);
+    fn init(core: Core, flags: Self::Flags) -> (Self, Command<Self::Message>);
 
     /// Displays a context drawer on the side of the application window when `Some`.
     fn context_drawer(&self) -> Option<Element<Self::Message>> {
@@ -506,28 +487,28 @@ where
     }
 
     // Called when context drawer is toggled
-    fn on_context_drawer(&mut self) -> iced::Command<Message<Self::Message>> {
-        iced::Command::none()
+    fn on_context_drawer(&mut self) -> Command<Self::Message> {
+        Command::none()
     }
 
     /// Called when the escape key is pressed.
-    fn on_escape(&mut self) -> iced::Command<Message<Self::Message>> {
-        iced::Command::none()
+    fn on_escape(&mut self) -> Command<Self::Message> {
+        Command::none()
     }
 
     /// Called when a navigation item is selected.
-    fn on_nav_select(&mut self, id: nav_bar::Id) -> iced::Command<Message<Self::Message>> {
-        iced::Command::none()
+    fn on_nav_select(&mut self, id: nav_bar::Id) -> Command<Self::Message> {
+        Command::none()
     }
 
     /// Called when a context menu is requested for a navigation item.
-    fn on_nav_context(&mut self, id: nav_bar::Id) -> iced::Command<Message<Self::Message>> {
-        iced::Command::none()
+    fn on_nav_context(&mut self, id: nav_bar::Id) -> Command<Self::Message> {
+        Command::none()
     }
 
     /// Called when the search function is requested.
-    fn on_search(&mut self) -> iced::Command<Message<Self::Message>> {
-        iced::Command::none()
+    fn on_search(&mut self) -> Command<Self::Message> {
+        Command::none()
     }
 
     /// Called when a window is resized.
@@ -539,8 +520,8 @@ where
     }
 
     /// Respond to an application-specific message.
-    fn update(&mut self, message: Self::Message) -> iced::Command<Message<Self::Message>> {
-        iced::Command::none()
+    fn update(&mut self, message: Self::Message) -> Command<Self::Message> {
+        Command::none()
     }
 
     /// Respond to a system theme change
@@ -548,8 +529,8 @@ where
         &mut self,
         keys: &[&'static str],
         new_theme: &cosmic_theme::Theme,
-    ) -> iced::Command<Message<Self::Message>> {
-        iced::Command::none()
+    ) -> Command<Self::Message> {
+        Command::none()
     }
 
     /// Respond to a system theme mode change
@@ -557,8 +538,8 @@ where
         &mut self,
         keys: &[&'static str],
         new_theme: &cosmic_theme::ThemeMode,
-    ) -> iced::Command<Message<Self::Message>> {
-        iced::Command::none()
+    ) -> Command<Self::Message> {
+        Command::none()
     }
 
     /// Constructs the view for the main window.
@@ -576,24 +557,21 @@ where
 
     /// Handles dbus activation messages
     #[cfg(feature = "single-instance")]
-    fn dbus_activation(
-        &mut self,
-        msg: DbusActivationMessage,
-    ) -> iced::Command<Message<Self::Message>> {
-        iced::Command::none()
+    fn dbus_activation(&mut self, msg: DbusActivationMessage) -> Command<Self::Message> {
+        Command::none()
     }
 }
 
 /// Methods automatically derived for all types implementing [`Application`].
 pub trait ApplicationExt: Application {
     /// Initiates a window drag.
-    fn drag(&mut self) -> iced::Command<Message<Self::Message>>;
+    fn drag(&mut self) -> Command<Self::Message>;
 
     /// Maximizes the window.
-    fn maximize(&mut self) -> iced::Command<Message<Self::Message>>;
+    fn maximize(&mut self) -> Command<Self::Message>;
 
     /// Minimizes the window.
-    fn minimize(&mut self) -> iced::Command<Message<Self::Message>>;
+    fn minimize(&mut self) -> Command<Self::Message>;
     /// Get the title of the main window.
 
     #[cfg(not(any(feature = "multi-window", feature = "wayland")))]
@@ -615,30 +593,26 @@ pub trait ApplicationExt: Application {
 
     #[cfg(not(any(feature = "multi-window", feature = "wayland")))]
     /// Set the title of the main window.
-    fn set_window_title(&mut self, title: String) -> iced::Command<Message<Self::Message>>;
+    fn set_window_title(&mut self, title: String) -> Command<Self::Message>;
 
     #[cfg(any(feature = "multi-window", feature = "wayland"))]
     /// Set the title of a window.
-    fn set_window_title(
-        &mut self,
-        title: String,
-        id: window::Id,
-    ) -> iced::Command<Message<Self::Message>>;
+    fn set_window_title(&mut self, title: String, id: window::Id) -> Command<Self::Message>;
 
     /// View template for the main window.
     fn view_main(&self) -> Element<Message<Self::Message>>;
 }
 
 impl<App: Application> ApplicationExt for App {
-    fn drag(&mut self) -> iced::Command<Message<Self::Message>> {
+    fn drag(&mut self) -> Command<Self::Message> {
         command::drag(Some(self.main_window_id()))
     }
 
-    fn maximize(&mut self) -> iced::Command<Message<Self::Message>> {
+    fn maximize(&mut self) -> Command<Self::Message> {
         command::maximize(Some(self.main_window_id()), true)
     }
 
-    fn minimize(&mut self) -> iced::Command<Message<Self::Message>> {
+    fn minimize(&mut self) -> Command<Self::Message> {
         command::minimize(Some(self.main_window_id()))
     }
 
@@ -656,23 +630,20 @@ impl<App: Application> ApplicationExt for App {
     }
 
     #[cfg(any(feature = "multi-window", feature = "wayland"))]
-    fn set_window_title(
-        &mut self,
-        title: String,
-        id: window::Id,
-    ) -> iced::Command<Message<Self::Message>> {
+    fn set_window_title(&mut self, title: String, id: window::Id) -> Command<Self::Message> {
         self.core_mut().title.insert(id, title.clone());
         command::set_title(Some(id), title)
     }
 
     #[cfg(not(any(feature = "multi-window", feature = "wayland")))]
-    fn set_window_title(&mut self, title: String) -> iced::Command<Message<Self::Message>> {
+    fn set_window_title(&mut self, title: String) -> Command<Self::Message> {
         let id = self.main_window_id();
 
         self.core_mut().title.insert(id, title.clone());
-        iced::Command::none()
+        Command::none()
     }
 
+    #[allow(clippy::too_many_lines)]
     /// Creates the view for the main window.
     fn view_main(&self) -> Element<Message<Self::Message>> {
         let core = self.core();
@@ -685,8 +656,11 @@ impl<App: Application> ApplicationExt for App {
             let mut widgets = Vec::with_capacity(2);
 
             // Insert nav bar onto the left side of the window.
-            if let Some(nav) = self.nav_bar() {
-                widgets.push(nav);
+            if let Some(nav) = self
+                .nav_bar()
+                .map(|nav| id_container(nav, iced_core::id::Id::new("COSMIC_nav_bar")))
+            {
+                widgets.push(nav.into());
             }
 
             if self.nav_model().is_none() || core.show_content() {
@@ -699,7 +673,12 @@ impl<App: Application> ApplicationExt for App {
                         main_content,
                         context.map(Message::App),
                     )
-                    .into()
+                    .apply(|drawer| {
+                        Element::from(id_container(
+                            drawer,
+                            iced_core::id::Id::new("COSMIC_context_drawer"),
+                        ))
+                    })
                 } else {
                     main_content
                 });
@@ -715,6 +694,7 @@ impl<App: Application> ApplicationExt for App {
                 .width(iced::Length::Fill)
                 .height(iced::Length::Fill)
                 .style(crate::theme::Container::WindowBackground)
+                .apply(|w| id_container(w, iced_core::id::Id::new("COSMIC_content_container")))
                 .into()
         } else {
             content_row.into()
@@ -744,11 +724,11 @@ impl<App: Application> ApplicationExt for App {
                         header = header.start(toggle);
                     }
 
-                    if core.window.show_maximize && core.toolkit_config.show_maximize {
+                    if core.window.show_maximize && crate::config::show_maximize() {
                         header = header.on_maximize(Message::Cosmic(cosmic::Message::Maximize));
                     }
 
-                    if core.window.show_minimize && core.toolkit_config.show_minimize {
+                    if core.window.show_minimize && crate::config::show_minimize() {
                         header = header.on_minimize(Message::Cosmic(cosmic::Message::Minimize));
                     }
 
@@ -764,7 +744,7 @@ impl<App: Application> ApplicationExt for App {
                         header = header.end(element.map(Message::App));
                     }
 
-                    header
+                    header.apply(|w| id_container(w, iced_core::id::Id::new("COSMIC_header")))
                 })
             } else {
                 None
@@ -775,7 +755,10 @@ impl<App: Application> ApplicationExt for App {
         // Show any current dialog on top and centered over the view content
         // We have to use a popover even without a dialog to keep the tree from changing
         let mut popover = popover(view_column).modal(true);
-        if let Some(dialog) = self.dialog() {
+        if let Some(dialog) = self
+            .dialog()
+            .map(|w| Element::from(id_container(w, iced_core::id::Id::new("COSMIC_dialog"))))
+        {
             popover = popover.popup(dialog.map(Message::App));
         }
 

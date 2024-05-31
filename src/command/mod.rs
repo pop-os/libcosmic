@@ -16,18 +16,20 @@ use iced_runtime::command::Action;
 use std::future::Future;
 
 /// Yields a command which contains a batch of commands.
-pub fn batch<M>(commands: impl IntoIterator<Item = Command<M>>) -> Command<M> {
-    Command::batch(commands)
+pub fn batch<X: 'static + Into<Y>, Y: 'static>(
+    commands: impl IntoIterator<Item = Command<X>>,
+) -> Command<Y> {
+    Command::batch(commands).map(Into::into)
 }
 
 /// Yields a command which will run the future on the runtime executor.
-pub fn future<M>(future: impl Future<Output = M> + Send + 'static) -> Command<M> {
-    Command::single(Action::Future(Box::pin(future)))
+pub fn future<X: Into<Y>, Y>(future: impl Future<Output = X> + Send + 'static) -> Command<Y> {
+    Command::single(Action::Future(Box::pin(async move { future.await.into() })))
 }
 
 /// Yields a command which will return a message.
-pub fn message<M: Send + 'static>(message: M) -> Command<M> {
-    future(async move { message })
+pub fn message<X: Send + 'static + Into<Y>, Y>(message: X) -> Command<Y> {
+    future(async move { message.into() })
 }
 
 /// Initiates a window drag.

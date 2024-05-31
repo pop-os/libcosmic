@@ -69,7 +69,7 @@ impl Icon {
     }
 
     #[must_use]
-    fn into_element<Message: 'static>(self) -> Element<'static, Message> {
+    fn view<'a, Message: 'a>(self) -> Element<'a, Message> {
         let from_image = |handle| {
             Image::new(handle)
                 .width(
@@ -120,8 +120,8 @@ impl Icon {
     }
 }
 
-impl<Message: 'static> From<Icon> for Element<'static, Message> {
+impl<'a, Message: 'a> From<Icon> for Element<'a, Message> {
     fn from(icon: Icon) -> Self {
-        icon.into_element::<Message>()
+        icon.view::<Message>()
     }
 }

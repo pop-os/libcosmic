@@ -372,7 +372,7 @@ pub fn style() -> <crate::Theme as iced_style::application::StyleSheet>::Style {
 pub fn menu_button<'a, Message>(
     content: impl Into<Element<'a, Message>>,
 ) -> crate::widget::Button<'a, Message> {
-    crate::widget::Button::new(content)
+    crate::widget::button(content)
         .style(Button::AppletMenu)
         .padding(menu_control_padding())
         .width(Length::Fill)

@@ -1,6 +1,8 @@
 // Copyright 2022 System76 <info@system76.com>
 // SPDX-License-Identifier: MPL-2.0
 
+//! A control for incremental adjustments of a value.
+
 mod model;
 use std::borrow::Cow;
 
@@ -20,6 +22,7 @@ pub struct SpinButton<'a, Message> {
     on_change: Box<dyn Fn(model::Message) -> Message + 'static>,
 }
 
+/// A control for incremental adjustments of a value.
 pub fn spin_button<'a, Message: 'static>(
     label: impl Into<Cow<'a, str>>,
     on_change: impl Fn(model::Message) -> Message + 'static,
