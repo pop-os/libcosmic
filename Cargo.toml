@@ -27,7 +27,13 @@ process = ["dep:nix"]
 # Use rfd for file dialogs
 rfd = ["dep:rfd"]
 # Enables desktop files helpers
-desktop = ["process", "dep:freedesktop-desktop-entry", "dep:mime", "dep:shlex"]
+desktop = [
+    "process",
+    "dep:freedesktop-desktop-entry",
+    "dep:mime",
+    "dep:shlex",
+    "dep:textdistance",
+]
 # Enables keycode serialization
 serde-keycode = ["iced_core/serde"]
 # Prevents multiple separate process instances.
@@ -80,9 +86,9 @@ mime = { version = "0.3.17", optional = true }
 nix = { version = "0.27", features = ["process"], optional = true }
 palette = "0.7.3"
 rfd = { version = "0.14.0", optional = true }
-serde = { version = "1.0.180", features = ["derive"]}
+serde = { version = "1.0.180", features = ["derive"] }
 slotmap = "1.0.6"
-textdistance = "1.0.2"
+textdistance = { version = "1.0.2", optional = true }
 thiserror = "1.0.44"
 tokio = { version = "1.24.2", optional = true }
 tracing = "0.1"
