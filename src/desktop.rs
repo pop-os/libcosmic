@@ -1,7 +1,9 @@
 pub use freedesktop_desktop_entry::DesktopEntry;
+use iced_widget::canvas::path::lyon_path::geom::euclid::approxord::min;
 pub use mime::Mime;
 use std::{
     borrow::Cow,
+    cmp::max,
     ffi::OsStr,
     path::{Path, PathBuf},
 };
@@ -80,46 +82,121 @@ pub fn app_id_or_fallback_matches(app_id: &str, entry: &DesktopEntryData) -> boo
         || app_id.to_lowercase() == entry.name.to_lowercase()
 }
 
+/// From 0 to 1.
+/// 1 is a perfect match.
+fn match_entry(id: &str, de: &DesktopEntry) -> f32 {
+    let cmp = |id, de| {
+        let lcsstr = textdistance::str::lcsstr(id, de);
+        lcsstr as f32 / (max(id.len(), de.len())) as f32
+    };
+
+    fn max_f32(a: f32, b: f32) -> f32 {
+        if a > b {
+            return a;
+        } else {
+            b
+        }
+    }
+
+    let id = id.to_lowercase();
+    let de_id = de.appid.to_lowercase();
+    let de_wm_class = de.startup_wm_class().unwrap_or_default().to_lowercase();
+    let de_name = de.name(None).unwrap_or_default().to_lowercase();
+
+    return max_f32(
+        cmp(&id, &de_id),
+        max_f32(cmp(&id, &de_wm_class), cmp(&id, &de_name)),
+    );
+}
+
 pub fn load_applications_for_app_ids<'a, 'b>(
     locale: impl Into<Option<&'a str>>,
     app_ids: impl Iterator<Item = &'b str>,
     fill_missing_ones: bool,
     include_no_display: bool,
 ) -> Vec<DesktopEntryData> {
-    let mut app_ids = app_ids.collect::<Vec<_>>();
-    let mut applications = load_applications_filtered(locale, |de| {
-        if !include_no_display && de.no_display() {
-            return false;
+    // need to be owned
+    let all_desktop_entries_string =
+        freedesktop_desktop_entry::Iter::new(freedesktop_desktop_entry::default_paths())
+            .filter_map(|path| {
+                std::fs::read_to_string(&path)
+                    .ok()
+                    .map(|content| (path, content))
+            })
+            .collect::<Vec<_>>();
+
+    let all_desktop_entries = all_desktop_entries_string
+        .iter()
+        .filter_map(|(path, content)| DesktopEntry::decode(&path, &content).ok())
+        .collect::<Vec<_>>();
+
+    let mut applications = Vec::new();
+    let mut missing = Vec::new();
+
+    let locale = locale.into();
+
+    for id in app_ids {
+        let mut max_score = None;
+        let mut second_max_score = 0.;
+
+        for de in &all_desktop_entries {
+            if !include_no_display && de.no_display() {
+                continue;
+            }
+
+            let score = match_entry(id, de);
+
+            match max_score {
+                Some((prev_max_score, _)) => {
+                    if prev_max_score < score {
+                        second_max_score = prev_max_score;
+                        max_score = Some((score, de));
+                    }
+                }
+                None => {
+                    max_score = Some((score, de));
+                }
+            }
+
+            if score > 0.99 {
+                break;
+            }
         }
-        // If appid matches, or startup_wm_class matches...
-        if let Some(i) = app_ids.iter().position(|id| {
-            id == &de.appid
-                || id
-                    .to_lowercase()
-                    .eq(&de.startup_wm_class().unwrap_or_default().to_lowercase())
-        }) {
-            app_ids.remove(i);
-            true
-        // Fallback: If the name matches...
-        } else if let Some(i) = app_ids.iter().position(|id| {
-            de.name(None)
-                .map(|n| n.to_lowercase() == id.to_lowercase())
-                .unwrap_or_default()
-        }) {
-            app_ids.remove(i);
-            true
-        } else {
-            false
+
+        let mut add_missing = false;
+        match max_score {
+            Some((max_score, de)) => {
+                let entropy = max_score - second_max_score;
+
+                if max_score > 0.7 || entropy > 0.2 && max_score > 0.2 {
+                    applications.push(DesktopEntryData::from_desktop_entry(
+                        locale,
+                        Some(de.path.to_path_buf()),
+                        de,
+                    ));
+                } else {
+                    add_missing = true;
+                }
+            }
+            None => {
+                add_missing = true;
+            }
         }
-    });
+
+        if fill_missing_ones && add_missing {
+            missing.push(id);
+        }
+    }
+
     if fill_missing_ones {
-        applications.extend(app_ids.into_iter().map(|app_id| DesktopEntryData {
+        applications.extend(missing.into_iter().map(|app_id| DesktopEntryData {
             id: app_id.to_string(),
             name: app_id.to_string(),
             icon: IconSource::default(),
             ..Default::default()
         }));
     }
+
     applications
 }
 
@@ -140,7 +217,7 @@ pub fn load_applications_filtered<'a, F: FnMut(&DesktopEntry) -> bool>(
                     Some(DesktopEntryData::from_desktop_entry(
                         locale,
                         path.clone(),
-                        de,
+                        &de,
                     ))
                 })
             })
@@ -156,7 +233,7 @@ pub fn load_desktop_file<'a>(
     std::fs::read_to_string(path).ok().and_then(|input| {
         DesktopEntry::decode(path, &input)
             .ok()
-            .map(|de| DesktopEntryData::from_desktop_entry(locale, PathBuf::from(path), de))
+            .map(|de| DesktopEntryData::from_desktop_entry(locale, PathBuf::from(path), &de))
     })
 }
 
@@ -164,7 +241,7 @@ impl DesktopEntryData {
     fn from_desktop_entry<'a>(
         locale: impl Into<Option<&'a str>>,
         path: impl Into<Option<PathBuf>>,
-        de: DesktopEntry,
+        de: &DesktopEntry,
     ) -> DesktopEntryData {
         let locale = locale.into();
 
