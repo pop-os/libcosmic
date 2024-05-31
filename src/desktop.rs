@@ -2,7 +2,10 @@ pub use freedesktop_desktop_entry::DesktopEntry;
 use iced_widget::canvas::path::lyon_path::geom::euclid::approxord::min;
 pub use mime::Mime;
 use std::{
-    borrow::Cow, cmp::max, ffi::OsStr, path::{Path, PathBuf}
+    borrow::Cow,
+    cmp::max,
+    ffi::OsStr,
+    path::{Path, PathBuf},
 };
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -79,29 +82,12 @@ pub fn app_id_or_fallback_matches(app_id: &str, entry: &DesktopEntryData) -> boo
         || app_id.to_lowercase() == entry.name.to_lowercase()
 }
 
-
-
-
-
-
-/// 0..1 1 is better
+/// From 0 to 1.
+/// 1 is a perfect match.
 fn match_entry(id: &str, de: &DesktopEntry) -> f32 {
-
     let cmp = |id, de| {
         let lcsstr = textdistance::str::lcsstr(id, de);
-
-        let ratio = lcsstr as f32 / (max(id.len(), de.len())) as f32;
-        ratio
-
-        // let ratio2 =
-        // i have this metric ration, to know if 2 string share a lot of 
-
-        // let d = (id.len() as f32 - de.len() as f32).abs();
-
-        // let d = d / 1000 as f32;
-
-        // ratio * d
-
+        lcsstr as f32 / (max(id.len(), de.len())) as f32
     };
 
     fn max_f32(a: f32, b: f32) -> f32 {
@@ -117,13 +103,13 @@ fn match_entry(id: &str, de: &DesktopEntry) -> f32 {
     let de_wm_class = de.startup_wm_class().unwrap_or_default().to_lowercase();
     let de_name = de.name(None).unwrap_or_default().to_lowercase();
 
-    
-    return max_f32(cmp(&id, &de_id), max_f32(cmp(&id, &de_wm_class), cmp(&id, &de_name)));
-
-    // return max as f32 / id.len() as f32;
+    return max_f32(
+        cmp(&id, &de_id),
+        max_f32(cmp(&id, &de_wm_class), cmp(&id, &de_name)),
+    );
 }
 
-pub fn load_applications_for_app_ids2<'a, 'b>(
+pub fn load_applications_for_app_ids<'a, 'b>(
     locale: impl Into<Option<&'a str>>,
     app_ids: impl Iterator<Item = &'b str>,
     fill_missing_ones: bool,
@@ -163,7 +149,6 @@ pub fn load_applications_for_app_ids2<'a, 'b>(
             match max_score {
                 Some((prev_max_score, _)) => {
                     if prev_max_score < score {
-                        // println!("in if: prev {} new {} id {} de {}", prev_max_score, score, id, de.appid);
                         second_max_score = prev_max_score;
                         max_score = Some((score, de));
                     }
@@ -180,20 +165,15 @@ pub fn load_applications_for_app_ids2<'a, 'b>(
 
         let mut add_missing = false;
         match max_score {
-            Some((score, de)) => {
+            Some((max_score, de)) => {
+                let entropy = max_score - second_max_score;
 
-                let entropy = score - second_max_score;
-
-                // println!("score: {} {} {}", score, id, entropy);
-
-                if score > 0.7 || entropy > 0.2 && score > 0.2 {
-                    let d = DesktopEntryData::from_desktop_entry(
+                if max_score > 0.7 || entropy > 0.2 && max_score > 0.2 {
+                    applications.push( DesktopEntryData::from_desktop_entry(
                         locale,
                         Some(de.path.to_path_buf()),
                         de,
-                    );
-
-                    applications.push(d);
+                    ));
                 } else {
                     add_missing = true;
                 }
@@ -217,53 +197,6 @@ pub fn load_applications_for_app_ids2<'a, 'b>(
         }));
     }
 
-    applications
-}
-
-pub fn load_applications_for_app_ids<'a, 'b>(
-    locale: impl Into<Option<&'a str>>,
-    app_ids: impl Iterator<Item = &'b str>,
-    fill_missing_ones: bool,
-    include_no_display: bool,
-) -> Vec<DesktopEntryData> {
-    let mut app_ids = app_ids.collect::<Vec<_>>();
-
-    dbg!(&app_ids);
-
-    let mut applications = load_applications_filtered(locale, |de| {
-        if !include_no_display && de.no_display() {
-            return false;
-        }
-
-        // If appid matches, or startup_wm_class matches...
-        if let Some(i) = app_ids.iter().position(|id| {
-            id == &de.appid
-                || id
-                    .to_lowercase()
-                    .eq(&de.startup_wm_class().unwrap_or_default().to_lowercase())
-        }) {
-            app_ids.remove(i);
-            true
-        // Fallback: If the name matches...
-        } else if let Some(i) = app_ids.iter().position(|id| {
-            de.name(None)
-                .map(|n| n.to_lowercase() == id.to_lowercase())
-                .unwrap_or_default()
-        }) {
-            app_ids.remove(i);
-            true
-        } else {
-            false
-        }
-    });
-    if fill_missing_ones {
-        applications.extend(app_ids.into_iter().map(|app_id| DesktopEntryData {
-            id: app_id.to_string(),
-            name: app_id.to_string(),
-            icon: IconSource::default(),
-            ..Default::default()
-        }));
-    }
     applications
 }
 
