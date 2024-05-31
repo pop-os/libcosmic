@@ -84,18 +84,33 @@ pub fn app_id_or_fallback_matches(app_id: &str, entry: &DesktopEntryData) -> boo
 
 
 
-/// lower is better
+/// 0..1 1 is better
 fn match_entry(id: &str, de: &DesktopEntry) -> f32 {
 
-   
-
     let cmp = |id, de| {
+        let lcsstr = textdistance::str::lcsstr(id, de);
 
-        let dist = textdistance::str::lcsstr(id, de);
-        let score = levenshtein(id, de);
-        let max_len = ((id.len() as i32 - de.len()  as i32)).abs();
-        score as f32 / max_len as f32
+        let ratio = lcsstr as f32 / (max(id.len(), de.len())) as f32;
+        ratio
+
+        // let ratio2 =
+        // i have this metric ration, to know if 2 string share a lot of 
+
+        // let d = (id.len() as f32 - de.len() as f32).abs();
+
+        // let d = d / 1000 as f32;
+
+        // ratio * d
+
     };
+
+    fn max_f32(a: f32, b: f32) -> f32 {
+        if a > b {
+            return a;
+        } else {
+            b
+        }
+    }
 
     let id = id.to_lowercase();
     let de_id = de.appid.to_lowercase();
@@ -103,33 +118,9 @@ fn match_entry(id: &str, de: &DesktopEntry) -> f32 {
     let de_name = de.name(None).unwrap_or_default().to_lowercase();
 
     
-    return min(cmp(&id, &de_id), min(cmp(&id, &de_wm_class), cmp(&id, &de_name)));
+    return max_f32(cmp(&id, &de_id), max_f32(cmp(&id, &de_wm_class), cmp(&id, &de_name)));
 
-    // let score = levenshtein(&id, &de_id);
-
-    // if score == 0 -> return 0
-    // if len == 0 -> return +inf
-    // if len is big, we want to lighten the weight of a high score
-    // return score as f32 / id.len()  as f32;
-    
-    
-    // if id == de.appid
-    //     || id
-    //         .to_lowercase()
-    //         .eq(&de.startup_wm_class().unwrap_or_default().to_lowercase())
-    // {
-    //     return 100;
-    // }
-
-    // if de
-    //     .name(None)
-    //     .map(|n| n.to_lowercase() == id.to_lowercase())
-    //     .unwrap_or_default()
-    // {
-    //     return 100;
-    // }
-
-    // return 0;
+    // return max as f32 / id.len() as f32;
 }
 
 pub fn load_applications_for_app_ids2<'a, 'b>(
@@ -160,6 +151,7 @@ pub fn load_applications_for_app_ids2<'a, 'b>(
 
     for id in app_ids {
         let mut max_score = None;
+        let mut second_max_score = 0.;
 
         for de in &all_desktop_entries {
             if !include_no_display && de.no_display() {
@@ -171,6 +163,8 @@ pub fn load_applications_for_app_ids2<'a, 'b>(
             match max_score {
                 Some((prev_max_score, _)) => {
                     if prev_max_score < score {
+                        // println!("in if: prev {} new {} id {} de {}", prev_max_score, score, id, de.appid);
+                        second_max_score = prev_max_score;
                         max_score = Some((score, de));
                     }
                 }
@@ -179,7 +173,7 @@ pub fn load_applications_for_app_ids2<'a, 'b>(
                 }
             }
 
-            if score == 0.0 {
+            if score > 0.99 {
                 break;
             }
         }
@@ -187,7 +181,12 @@ pub fn load_applications_for_app_ids2<'a, 'b>(
         let mut add_missing = false;
         match max_score {
             Some((score, de)) => {
-                if score > 0.3 {
+
+                let entropy = score - second_max_score;
+
+                // println!("score: {} {} {}", score, id, entropy);
+
+                if score > 0.7 || entropy > 0.2 && score > 0.2 {
                     let d = DesktopEntryData::from_desktop_entry(
                         locale,
                         Some(de.path.to_path_buf()),
