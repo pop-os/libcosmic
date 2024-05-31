@@ -169,7 +169,7 @@ pub fn load_applications_for_app_ids<'a, 'b>(
                 let entropy = max_score - second_max_score;
 
                 if max_score > 0.7 || entropy > 0.2 && max_score > 0.2 {
-                    applications.push( DesktopEntryData::from_desktop_entry(
+                    applications.push(DesktopEntryData::from_desktop_entry(
                         locale,
                         Some(de.path.to_path_buf()),
                         de,
