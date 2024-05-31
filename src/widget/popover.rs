@@ -247,11 +247,15 @@ where
         &self,
         tree: &Tree,
         layout: Layout<'_>,
+        renderer: &Renderer,
         dnd_rectangles: &mut iced_core::clipboard::DndDestinationRectangles,
     ) {
-        self.content
-            .as_widget()
-            .drag_destinations(&tree.children[0], layout, dnd_rectangles);
+        self.content.as_widget().drag_destinations(
+            &tree.children[0],
+            layout,
+            renderer,
+            dnd_rectangles,
+        );
     }
 }
 

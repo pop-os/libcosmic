@@ -251,6 +251,7 @@ impl<'a, Message: 'static + Clone> Widget<Message, crate::Theme, Renderer>
         &self,
         state: &Tree,
         layout: Layout<'_>,
+        renderer: &Renderer,
         dnd_rectangles: &mut iced_style::core::clipboard::DndDestinationRectangles,
     ) {
         for ((e, layout), state) in self
@@ -260,7 +261,7 @@ impl<'a, Message: 'static + Clone> Widget<Message, crate::Theme, Renderer>
             .zip(state.children.iter())
         {
             e.as_widget()
-                .drag_destinations(state, layout, dnd_rectangles);
+                .drag_destinations(state, layout, renderer, dnd_rectangles);
         }
     }
 }

@@ -243,6 +243,7 @@ impl<'a, Message: Clone + 'static> Widget<Message, crate::Theme, crate::Renderer
         &self,
         state: &tree::Tree,
         layout: iced_core::Layout<'_>,
+        renderer: &crate::Renderer,
         dnd_rectangles: &mut iced_style::core::clipboard::DndDestinationRectangles,
     ) {
         if let Some((child_tree, child_layout)) =
@@ -251,6 +252,7 @@ impl<'a, Message: Clone + 'static> Widget<Message, crate::Theme, crate::Renderer
             self.header_bar_inner.as_widget().drag_destinations(
                 child_tree,
                 child_layout,
+                renderer,
                 dnd_rectangles,
             );
         }

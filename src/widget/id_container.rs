@@ -87,12 +87,14 @@ where
             iced_core::widget::OperationOutputWrapper<Message>,
         >,
     ) {
-        self.content.as_widget().operate(
-            &mut tree.children[0],
-            layout.children().next().unwrap(),
-            renderer,
-            operation,
-        );
+        operation.container(Some(&self.id), layout.bounds(), &mut |operation| {
+            self.content.as_widget().operate(
+                &mut tree.children[0],
+                layout.children().next().unwrap(),
+                renderer,
+                operation,
+            );
+        });
     }
 
     fn on_event(
@@ -175,12 +177,14 @@ where
         &self,
         state: &Tree,
         layout: Layout<'_>,
+        renderer: &Renderer,
         dnd_rectangles: &mut iced_style::core::clipboard::DndDestinationRectangles,
     ) {
         let content_layout = layout.children().next().unwrap();
         self.content.as_widget().drag_destinations(
             &state.children[0],
             content_layout,
+            renderer,
             dnd_rectangles,
         );
     }
