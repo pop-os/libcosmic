@@ -506,6 +506,7 @@ impl<'a, Message: 'static> Widget<Message, crate::Theme, crate::Renderer>
         &self,
         state: &Tree,
         layout: layout::Layout<'_>,
+        renderer: &crate::Renderer,
         dnd_rectangles: &mut iced_core::clipboard::DndDestinationRectangles,
     ) {
         let bounds = layout.bounds();
@@ -524,9 +525,12 @@ impl<'a, Message: 'static> Widget<Message, crate::Theme, crate::Renderer>
         };
         dnd_rectangles.push(my_dest);
 
-        self.container
-            .as_widget()
-            .drag_destinations(&state.children[0], layout, dnd_rectangles);
+        self.container.as_widget().drag_destinations(
+            &state.children[0],
+            layout,
+            renderer,
+            dnd_rectangles,
+        );
     }
 
     fn id(&self) -> Option<Id> {

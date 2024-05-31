@@ -1529,6 +1529,7 @@ where
         &self,
         _state: &Tree,
         layout: Layout<'_>,
+        _renderer: &Renderer,
         dnd_rectangles: &mut iced_core::clipboard::DndDestinationRectangles,
     ) {
         let bounds = layout.bounds();

@@ -1,3 +1,5 @@
+use std::any::Any;
+
 use crate::{
     iced::{
         clipboard::dnd::{DndAction, DndEvent, SourceEvent},
@@ -167,9 +169,12 @@ impl<
             iced_core::widget::OperationOutputWrapper<Message>,
         >,
     ) {
-        self.container
-            .as_widget()
-            .operate(&mut tree.children[0], layout, renderer, operation);
+        operation.custom((&mut tree.state) as &mut dyn Any, Some(&self.id));
+        operation.container(Some(&self.id), layout.bounds(), &mut |operation| {
+            self.container
+                .as_widget()
+                .operate(&mut tree.children[0], layout, renderer, operation)
+        });
     }
 
     fn on_event(
@@ -205,6 +210,7 @@ impl<
                         }
 
                         state.left_pressed_position = Some(position);
+                        // dbg!(&state, &self.id);
                         return event::Status::Captured;
                     }
                 }
@@ -223,6 +229,7 @@ impl<
                                 return ret;
                             }
                             if let Some(left_pressed_position) = state.left_pressed_position {
+                                // dbg!(&state);
                                 if position.distance(left_pressed_position) > self.drag_threshold {
                                     self.start_dnd(clipboard, state.cached_bounds);
                                     state.is_dragging = true;
@@ -311,11 +318,15 @@ impl<
         &self,
         state: &Tree,
         layout: layout::Layout<'_>,
+        renderer: &crate::Renderer,
         dnd_rectangles: &mut iced_style::core::clipboard::DndDestinationRectangles,
     ) {
-        self.container
-            .as_widget()
-            .drag_destinations(&state.children[0], layout, dnd_rectangles);
+        self.container.as_widget().drag_destinations(
+            &state.children[0],
+            layout,
+            renderer,
+            dnd_rectangles,
+        );
     }
 
     fn id(&self) -> Option<Id> {
@@ -340,7 +351,7 @@ impl<
 }
 
 /// Local state of the [`MouseListener`].
-#[derive(Default)]
+#[derive(Debug, Default)]
 struct State {
     hovered: bool,
     left_pressed_position: Option<Point>,

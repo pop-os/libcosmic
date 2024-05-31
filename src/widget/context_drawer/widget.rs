@@ -247,11 +247,15 @@ impl<'a, Message: Clone> Widget<Message, crate::Theme, Renderer> for ContextDraw
         &self,
         state: &Tree,
         layout: Layout<'_>,
+        renderer: &Renderer,
         dnd_rectangles: &mut iced_core::clipboard::DndDestinationRectangles,
     ) {
-        self.content
-            .as_widget()
-            .drag_destinations(&state.children[0], layout, dnd_rectangles);
+        self.content.as_widget().drag_destinations(
+            &state.children[0],
+            layout,
+            renderer,
+            dnd_rectangles,
+        );
     }
 
     fn id(&self) -> Option<iced_core::widget::Id> {

@@ -256,10 +256,11 @@ where
         &self,
         state: &Tree,
         layout: Layout<'_>,
+        renderer: &Renderer,
         dnd_rectangles: &mut iced_style::core::clipboard::DndDestinationRectangles,
     ) {
         self.container
-            .drag_destinations(state, layout, dnd_rectangles);
+            .drag_destinations(state, layout, renderer, dnd_rectangles);
     }
 
     fn id(&self) -> Option<crate::widget::Id> {
