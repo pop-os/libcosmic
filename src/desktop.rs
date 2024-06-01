@@ -109,9 +109,10 @@ fn match_entry(id: &str, de: &DesktopEntry) -> f32 {
     );
 }
 
-pub fn load_applications_for_app_ids<'a, 'b>(
+/// The result will be in the same order of `app_ids`
+pub fn load_applications_for_app_ids<'a, I: AsRef<str>>(
     locale: impl Into<Option<&'a str>>,
-    app_ids: impl Iterator<Item = &'b str>,
+    app_ids: impl Iterator<Item = I>,
     fill_missing_ones: bool,
     include_no_display: bool,
 ) -> Vec<DesktopEntryData> {
@@ -131,7 +132,6 @@ pub fn load_applications_for_app_ids<'a, 'b>(
         .collect::<Vec<_>>();
 
     let mut applications = Vec::new();
-    let mut missing = Vec::new();
 
     let locale = locale.into();
 
@@ -144,7 +144,7 @@ pub fn load_applications_for_app_ids<'a, 'b>(
                 continue;
             }
 
-            let score = match_entry(id, de);
+            let score = match_entry(id.as_ref(), de);
 
             match max_score {
                 Some((prev_max_score, _)) => {
@@ -163,38 +163,30 @@ pub fn load_applications_for_app_ids<'a, 'b>(
             }
         }
 
-        let mut add_missing = false;
-        match max_score {
-            Some((max_score, de)) => {
-                let entropy = max_score - second_max_score;
+        let mut has_matched = false;
+        if let Some((max_score, de)) = max_score {
+            let entropy = max_score - second_max_score;
 
-                if max_score > 0.7 || entropy > 0.2 && max_score > 0.2 {
-                    applications.push(DesktopEntryData::from_desktop_entry(
-                        locale,
-                        Some(de.path.to_path_buf()),
-                        de,
-                    ));
-                } else {
-                    add_missing = true;
-                }
-            }
-            None => {
-                add_missing = true;
+            // println!("{id}: {max_score}:{entropy}: {}", de.appid);
+
+            if max_score > 0.7 || entropy > 0.15 && max_score > 0.2 {
+                applications.push(DesktopEntryData::from_desktop_entry(
+                    locale,
+                    Some(de.path.to_path_buf()),
+                    de,
+                ));
+                has_matched = true;
             }
         }
 
-        if fill_missing_ones && add_missing {
-            missing.push(id);
+        if fill_missing_ones && !has_matched {
+            applications.push(DesktopEntryData {
+                id: id.as_ref().to_string(),
+                name: id.as_ref().to_string(),
+                icon: IconSource::default(),
+                ..Default::default()
+            });
         }
-    }
-
-    if fill_missing_ones {
-        applications.extend(missing.into_iter().map(|app_id| DesktopEntryData {
-            id: app_id.to_string(),
-            name: app_id.to_string(),
-            icon: IconSource::default(),
-            ..Default::default()
-        }));
     }
 
     applications
