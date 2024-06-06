@@ -139,7 +139,7 @@ impl Context {
                     .max_width(width as f32 + applet_padding as f32 * 2.0),
             )
             .resizable(None)
-            .default_text_size(18.0)
+            .default_text_size(14.0)
             .default_font(crate::font::FONT)
             .transparent(true);
         if let Some(theme) = self.theme() {
