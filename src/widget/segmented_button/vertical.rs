@@ -81,6 +81,7 @@ where
         limits: &layout::Limits,
     ) -> Size {
         state.internal_layout.clear();
+        state.buttons_visible = self.model.order.len();
         let limits = limits.width(self.width);
 
         let (width, mut height) = self.max_button_dimensions(state, renderer);
