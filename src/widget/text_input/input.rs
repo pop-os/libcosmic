@@ -185,6 +185,7 @@ pub struct TextInput<'a, Message> {
     is_secure: bool,
     is_editable: bool,
     is_read_only: bool,
+    is_validated: Option<bool>,
     font: Option<<crate::Renderer as iced_core::text::Renderer>::Font>,
     width: Length,
     padding: Padding,
@@ -228,6 +229,7 @@ where
             is_secure: false,
             is_editable: false,
             is_read_only: false,
+            is_validated: None,
             font: None,
             width: Length::Fill,
             padding: [spacing, spacing, spacing, spacing].into(),
@@ -295,6 +297,11 @@ where
 
     fn editing(mut self, enable: bool) -> Self {
         self.is_read_only = !enable;
+        self
+    }
+
+    pub fn validation_condition(mut self, validation_condition: bool) -> Self {
+        self.is_validated = Some(validation_condition);
         self
     }
 
@@ -415,6 +422,7 @@ where
             self.font,
             self.on_input.is_none(),
             self.is_secure,
+            self.is_validated,
             self.leading_icon.as_ref(),
             self.trailing_icon.as_ref(),
             &self.style,
@@ -806,6 +814,7 @@ where
             self.font,
             self.on_input.is_none(),
             self.is_secure,
+            self.is_validated,
             self.leading_icon.as_ref(),
             self.trailing_icon.as_ref(),
             &self.style,
@@ -1961,6 +1970,7 @@ pub fn draw<'a, Message>(
     font: Option<<crate::Renderer as iced_core::text::Renderer>::Font>,
     is_disabled: bool,
     is_secure: bool,
+    is_validated: Option<bool>,
     icon: Option<&Element<'a, Message, crate::Theme, crate::Renderer>>,
     trailing_icon: Option<&Element<'a, Message, crate::Theme, crate::Renderer>>,
     style: &<crate::Theme as StyleSheet>::Style,
@@ -2022,12 +2032,19 @@ pub fn draw<'a, Message>(
 
     let mut icon_color = appearance.icon_color.unwrap_or(renderer_style.icon_color);
     let mut text_color = appearance.text_color.unwrap_or(renderer_style.text_color);
+    let mut border_color = appearance.border_color;
 
     // TODO: iced will not render alpha itself on text or icon colors.
     if is_disabled {
         let background = theme.current_container().component.base.into();
         icon_color = icon_color.blend_alpha(background, 0.5);
         text_color = text_color.blend_alpha(background, 0.5);
+    }
+
+    if is_validated.is_some() {
+        if !is_validated.unwrap_or_default() {
+            border_color = Color::from(palette::Srgb::new(0.890, 0.145, 0.420));
+        }
     }
 
     // draw background and its border
@@ -2058,7 +2075,7 @@ pub fn draw<'a, Message>(
                 bounds: offset_bounds,
                 border: Border {
                     width: appearance.border_width,
-                    color: appearance.border_color,
+                    color: border_color,
                     radius: appearance.border_radius,
                 },
                 shadow: Shadow {
