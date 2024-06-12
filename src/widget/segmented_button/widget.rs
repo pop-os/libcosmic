@@ -698,20 +698,22 @@ where
                         })
                         .find(|(_key, bounds)| bounds.contains(Point::new(*x as f32, *y as f32)))
                         .map(|(key, _)| key);
-                    if let Some(entity) = entity {
-                        let on_dnd_enter = self
-                            .on_dnd_enter
-                            .as_ref()
-                            .map(|on_enter| |_, _, mime_types| on_enter(entity, mime_types));
 
-                        _ = state.dnd_state.on_enter::<Message>(
-                            *x,
-                            *y,
-                            mime_types.clone(),
-                            on_dnd_enter,
-                            Some(entity),
-                        );
-                    }
+                    let on_dnd_enter =
+                        self.on_dnd_enter
+                            .as_ref()
+                            .zip(entity.clone())
+                            .map(|(on_enter, entity)| {
+                                move |_, _, mime_types| on_enter(entity, mime_types)
+                            });
+
+                    _ = state.dnd_state.on_enter::<Message>(
+                        *x,
+                        *y,
+                        mime_types.clone(),
+                        on_dnd_enter,
+                        entity,
+                    );
                 }
                 DndEvent::Offer(id, OfferEvent::Leave | OfferEvent::LeaveDestination)
                     if Some(my_id) == *id =>
@@ -741,11 +743,19 @@ where
                             Some(new_entity),
                         );
                         if Some(Some(new_entity)) != entity {
+                            let prev_action = state
+                                .dnd_state
+                                .drag_offer
+                                .as_ref()
+                                .map(|dnd| dnd.selected_action);
                             if let Some(on_dnd_enter) = self.on_dnd_enter.as_ref() {
                                 shell.publish(on_dnd_enter(new_entity, Vec::new()));
                             }
                             if let Some(dnd) = state.dnd_state.drag_offer.as_mut() {
                                 dnd.data = Some(new_entity);
+                                if let Some(prev_action) = prev_action {
+                                    dnd.selected_action = prev_action;
+                                }
                             }
                         }
                     } else if entity.is_some() {
@@ -769,7 +779,7 @@ where
                         .on_drop::<Message>(None::<fn(_, _) -> Message>);
                 }
                 DndEvent::Offer(id, OfferEvent::SelectedAction(action)) if Some(my_id) == *id => {
-                    if entity.is_some() {
+                    if state.dnd_state.drag_offer.is_some() {
                         _ = state
                             .dnd_state
                             .on_action_selected::<Message>(*action, None::<fn(_) -> Message>);
