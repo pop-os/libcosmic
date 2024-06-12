@@ -40,7 +40,7 @@ impl StyleSheet for crate::Theme {
             TextInput::Default => Appearance {
                 background: background.into(),
                 border_radius: corner.radius_s.into(),
-                border_width: 1.0,
+                border_width: 2.0,
                 border_offset: None,
                 border_color: container.component.divider.into(),
                 icon_color: None,
@@ -88,7 +88,7 @@ impl StyleSheet for crate::Theme {
             TextInput::Search => Appearance {
                 background: background.into(),
                 border_radius: corner.radius_xl.into(),
-                border_width: 1.0,
+                border_width: 2.0,
                 border_offset: None,
                 border_color: container.component.divider.into(),
                 icon_color: None,
@@ -135,7 +135,7 @@ impl StyleSheet for crate::Theme {
             TextInput::Default => Appearance {
                 background: background.into(),
                 border_radius: corner.radius_s.into(),
-                border_width: 1.0,
+                border_width: 2.0,
                 border_offset: Some(2.0),
                 border_color: Color::from(palette.destructive_color()),
                 icon_color: None,
@@ -198,7 +198,7 @@ impl StyleSheet for crate::Theme {
             TextInput::Default => Appearance {
                 background: background.into(),
                 border_radius: corner.radius_s.into(),
-                border_width: 1.0,
+                border_width: 2.0,
                 border_offset: None,
                 border_color: palette.accent.base.into(),
                 icon_color: None,
@@ -215,7 +215,7 @@ impl StyleSheet for crate::Theme {
                 background: background.into(),
                 border_radius: corner.radius_xl.into(),
                 border_offset: None,
-                border_width: 1.0,
+                border_width: 2.0,
                 border_color: palette.accent.base.into(),
                 icon_color: None,
                 text_color: None,
@@ -293,7 +293,7 @@ impl StyleSheet for crate::Theme {
             TextInput::Default => Appearance {
                 background: background.into(),
                 border_radius: corner.radius_s.into(),
-                border_width: 1.0,
+                border_width: 2.0,
                 border_offset: Some(2.0),
                 border_color: palette.accent.base.into(),
                 icon_color: None,
@@ -309,7 +309,7 @@ impl StyleSheet for crate::Theme {
             TextInput::Search | TextInput::ExpandableSearch => Appearance {
                 background: background.into(),
                 border_radius: corner.radius_xl.into(),
-                border_width: 1.0,
+                border_width: 2.0,
                 border_offset: Some(2.0),
                 border_color: palette.accent.base.into(),
                 icon_color: None,
