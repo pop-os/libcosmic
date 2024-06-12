@@ -511,7 +511,7 @@ where
                 .dnd_state
                 .drag_offer
                 .as_ref()
-                .is_some_and(|id| id.data == key)
+                .is_some_and(|id| id.data.is_some_and(|d| d == key))
     }
 
     /// Returns the drag id of the destination.
@@ -709,14 +709,14 @@ where
                             *y,
                             mime_types.clone(),
                             on_dnd_enter,
-                            entity,
+                            Some(entity),
                         );
                     }
                 }
                 DndEvent::Offer(id, OfferEvent::Leave | OfferEvent::LeaveDestination)
                     if Some(my_id) == *id =>
                 {
-                    if let Some(entity) = entity {
+                    if let Some(Some(entity)) = entity {
                         if let Some(on_dnd_leave) = self.on_dnd_leave.as_ref() {
                             shell.publish(on_dnd_leave(entity));
                         }
@@ -738,20 +738,28 @@ where
                             *y,
                             None::<fn(_, _) -> Message>,
                             None::<fn(_, _, _) -> Message>,
-                            new_entity,
+                            Some(new_entity),
                         );
-                        if Some(new_entity) != entity {
+                        if Some(Some(new_entity)) != entity {
                             if let Some(on_dnd_enter) = self.on_dnd_enter.as_ref() {
                                 shell.publish(on_dnd_enter(new_entity, Vec::new()));
                             }
                             if let Some(dnd) = state.dnd_state.drag_offer.as_mut() {
-                                dnd.data = new_entity;
+                                dnd.data = Some(new_entity);
                             }
                         }
                     } else if entity.is_some() {
-                        state.dnd_state.drag_offer = None;
+                        state.dnd_state.on_motion::<Message>(
+                            *x,
+                            *y,
+                            None::<fn(_, _) -> Message>,
+                            None::<fn(_, _, _) -> Message>,
+                            None,
+                        );
                         if let Some(on_dnd_leave) = self.on_dnd_leave.as_ref() {
-                            shell.publish(on_dnd_leave(entity.unwrap()));
+                            if let Some(Some(entity)) = entity {
+                                shell.publish(on_dnd_leave(entity));
+                            }
                         }
                     }
                 }
@@ -761,14 +769,14 @@ where
                         .on_drop::<Message>(None::<fn(_, _) -> Message>);
                 }
                 DndEvent::Offer(id, OfferEvent::SelectedAction(action)) if Some(my_id) == *id => {
-                    if let Some(entity) = entity {
+                    if entity.is_some() {
                         _ = state
                             .dnd_state
                             .on_action_selected::<Message>(*action, None::<fn(_) -> Message>);
                     }
                 }
                 DndEvent::Offer(id, OfferEvent::Data { data, mime_type }) if Some(my_id) == *id => {
-                    if let Some(entity) = entity {
+                    if let Some(Some(entity)) = entity {
                         let on_drop = self.on_dnd_drop.as_ref();
                         let on_drop = on_drop.map(|on_drop| {
                             |mime, data, action, _, _| on_drop(entity, data, mime, action)
@@ -1598,7 +1606,7 @@ pub struct LocalState {
     /// Time since last tab activation from wheel movements.
     wheel_timestamp: Option<Instant>,
     /// Dnd state
-    pub dnd_state: crate::widget::dnd_destination::State<Entity>,
+    pub dnd_state: crate::widget::dnd_destination::State<Option<Entity>>,
     /// Tracks multi-touch events
     fingers_pressed: HashSet<Finger>,
 }
