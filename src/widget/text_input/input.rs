@@ -206,6 +206,7 @@ pub struct TextInput<'a, Message> {
     dnd_icon: bool,
     line_height: text::LineHeight,
     helper_line_height: text::LineHeight,
+    always_active: bool,
 }
 
 impl<'a, Message> TextInput<'a, Message>
@@ -249,7 +250,15 @@ where
             line_height: text::LineHeight::default(),
             label: None,
             helper_text: None,
+            always_active: false,
         }
+    }
+
+    /// Sets the input to be always active.
+    /// This makes it behave as if it was always focused.
+    pub fn always_active(mut self) -> Self {
+        self.always_active = true;
+        self
     }
 
     /// Sets the text of the [`TextInput`].
@@ -504,7 +513,11 @@ where
     }
 
     fn state(&self) -> tree::State {
-        tree::State::new(State::new(self.is_secure, self.is_read_only))
+        tree::State::new(State::new(
+            self.is_secure,
+            self.is_read_only,
+            self.always_active,
+        ))
     }
 
     fn diff(&mut self, tree: &mut Tree) {
@@ -550,6 +563,14 @@ where
 
         if state.is_read_only != self.is_read_only {
             self.is_read_only = state.is_read_only;
+        }
+
+        if self.always_active && state.is_focused.is_none() {
+            let now = Instant::now();
+            state.is_focused = Some(Focus {
+                updated_at: now,
+                now,
+            });
         }
 
         let mut children: Vec<_> = self
@@ -874,6 +895,14 @@ where
         let mut children = layout.children();
         let layout = children.next().unwrap();
         mouse_interaction(layout, cursor_position, self.on_input.is_none())
+    }
+
+    fn id(&self) -> Option<Id> {
+        self.id.clone()
+    }
+
+    fn set_id(&mut self, id: Id) {
+        self.id = Some(id);
     }
 }
 
@@ -2391,10 +2420,17 @@ struct Focus {
 
 impl State {
     /// Creates a new [`State`], representing an unfocused [`TextInput`].
-    pub fn new(is_secure: bool, is_read_only: bool) -> Self {
+    pub fn new(is_secure: bool, is_read_only: bool, always_active: bool) -> Self {
         Self {
             is_secure,
             is_read_only,
+            is_focused: always_active.then(|| {
+                let now = Instant::now();
+                Focus {
+                    updated_at: now,
+                    now,
+                }
+            }),
             ..Self::default()
         }
     }
