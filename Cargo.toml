@@ -8,7 +8,7 @@ rust-version = "1.71"
 name = "cosmic"
 
 [features]
-default = ["iced_sctk?/clipboard"]
+default = ["clipboard"]
 # Accessibility support
 a11y = ["iced/a11y", "iced_accessibility"]
 # Builds support for animated images
@@ -16,6 +16,7 @@ animated-image = ["image", "dep:async-fs", "tokio?/io-util", "tokio?/fs"]
 # XXX Use "a11y"; which is causing a panic currently
 applet = ["wayland", "tokio", "cosmic-panel-config", "ron"]
 applet-token = []
+clipboard = ["iced_sctk?/clipboard"]
 # Use the cosmic-settings-daemon for config handling
 dbus-config = ["cosmic-config/dbus", "dep:zbus", "cosmic-settings-daemon"]
 # Debug features
