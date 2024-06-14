@@ -73,12 +73,6 @@ impl Theme {
             Rgba::new(0.0, 0.0, 0.0, 0.08)
         });
 
-        let window_control_hover_bg = to_rgba(if self.is_dark {
-            Rgba::new(255.0, 255.0, 255.0, 0.12)
-        } else {
-            Rgba::new(0.0, 0.0, 0.0, 0.12)
-        });
-        let corner_radius = self.corner_radii.radius_s[0];
         let mut inverted_bg_divider = background.base;
         inverted_bg_divider.alpha = 0.5;
         let scrollbar_outline = to_rgba(inverted_bg_divider);
@@ -119,74 +113,6 @@ impl Theme {
 
 @define-color shade_color {shade};
 @define-color scrollbar_outline_color {scrollbar_outline};
-
-.close, .maximize, .minimize {{
-	background: transparent;
-}}
-.close:not(:hover) > image,
-.maximize:not(:hover) > image,
-.minimize:not(:hover) > image {{
-	background: transparent;
-}}
-.close > image, 
-.maximize > image, 
-.minimize > image {{
-	transition: 0;
-	color: @accent_bg_color;
-	border-radius: 100%;
-}}
-.close:backdrop > image, 
-.maximize:backdrop > image, 
-.minimize:backdrop > image {{
-	filter: grayscale(1) brightness(1.7);
-}}
-.close:hover > image, 
-.maximize:hover > image, 
-.minimize:hover > image {{
-	background: {window_control_hover_bg};
-}}
-.image-button {{
-	transition: 0;
-}}
-.image-button > image,
-.image-button > box,
-.popup > image,
-.toggle > image,
-.toggle > arrow,
-.toggle > box > contents > image,
-button > image,
-button > widget > box > image,
-stack > box > image
-{{
-	color: @accent_bg_color;
-}}
-.image-button:insensitive > image, 
-.image-button:insensitive > box,
-.popup:insensitive > image,
-.toggle:insensitive > image,
-.toggle:insensitive > box > contents > image,
-button:insensitive > image,
-button:insensitive > widget > box > image,
-stack:insensitive > box > image {{
-	opacity: 0.5;
-}}
-.image-button:backdrop > image,
-.image-button:backdrop > box,
-.popup:backdrop > image,
-.toggle:backdrop > image,
-.toggle:backdrop > arrow,
-button:backdrop > image,
-button:backdrop > widget > box > image,
-stack:backdrop > box > image,
-.toggle:backdrop > box > contents > image {{
-	filter: grayscale(1) brightness(1.7);
-}}
-window {{ background: @window_bg_color }}
-window:not(.maximized) {{
-	border-radius: {corner_radius:.0}px;
-}}
-
-window, statuspage.view {{ background: @window_bg_color }}
 "#};
 
         css.push_str(&component_gtk4_css("accent", accent));
