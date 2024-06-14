@@ -484,7 +484,7 @@ impl container::StyleSheet for Theme {
                 } else {
                     use crate::ext::ColorExt;
                     let unfocused_color = Color::from(cosmic.background.component.on)
-                        .blend_alpha(cosmic.background.base.into(), 0.75);
+                        .blend_alpha(cosmic.background.base.into(), 0.5);
                     (unfocused_color, unfocused_color)
                 };
 
