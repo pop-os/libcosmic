@@ -2071,6 +2071,7 @@ pub fn draw<'a, Message>(
             renderer::Quad {
                 bounds,
                 border: Border {
+                    radius: appearance.border_radius,
                     width: appearance.border_width,
                     ..Default::default()
                 },

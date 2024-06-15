@@ -388,21 +388,27 @@ impl<'a, Message: 'a + Clone> Widget<Message, crate::Theme, crate::Renderer>
             text_color.a = alpha;
         }
 
-        draw::<_, crate::Theme>(renderer, bounds, &styling, |renderer, _styling| {
-            self.content.as_widget().draw(
-                &tree.children[0],
-                renderer,
-                theme,
-                &renderer::Style {
-                    icon_color,
-                    text_color,
-                    scale_factor: renderer_style.scale_factor,
-                },
-                content_layout,
-                cursor,
-                &bounds,
-            );
-        });
+        draw::<_, crate::Theme>(
+            renderer,
+            bounds,
+            &styling,
+            |renderer, _styling| {
+                self.content.as_widget().draw(
+                    &tree.children[0],
+                    renderer,
+                    theme,
+                    &renderer::Style {
+                        icon_color,
+                        text_color,
+                        scale_factor: renderer_style.scale_factor,
+                    },
+                    content_layout,
+                    cursor,
+                    &bounds,
+                );
+            },
+            matches!(self.variant, Variant::Image { .. }),
+        );
 
         if let Variant::Image {
             close_icon,
@@ -744,6 +750,7 @@ pub fn draw<Renderer: iced_core::Renderer, Theme>(
     bounds: Rectangle,
     styling: &super::style::Appearance,
     draw_contents: impl FnOnce(&mut Renderer, &Appearance),
+    is_image: bool,
 ) where
     Theme: super::style::StyleSheet,
 {
@@ -814,18 +821,20 @@ pub fn draw<Renderer: iced_core::Renderer, Theme>(
 
         renderer.with_layer(clipped_bounds, |renderer| {
             // NOTE: Workaround to round the border of the hovered/selected image.
-            renderer.fill_quad(
-                renderer::Quad {
-                    bounds,
-                    border: Border {
-                        width: styling.border_width,
-                        color: crate::theme::active().current_container().base.into(),
-                        radius: 0.0.into(),
+            if is_image {
+                renderer.fill_quad(
+                    renderer::Quad {
+                        bounds,
+                        border: Border {
+                            width: styling.border_width,
+                            color: crate::theme::active().current_container().base.into(),
+                            radius: 0.0.into(),
+                        },
+                        shadow: Shadow::default(),
                     },
-                    shadow: Shadow::default(),
-                },
-                Color::TRANSPARENT,
-            );
+                    Color::TRANSPARENT,
+                );
+            }
 
             // Finish by drawing the border above the contents.
             renderer.fill_quad(
