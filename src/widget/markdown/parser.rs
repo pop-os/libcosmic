@@ -13,187 +13,194 @@ use syntect::{
 
 use super::metrics;
 
-pub fn markdown_to_string<'a, 'b>(content: &'a str, attrs: Attrs<'b>) -> Vec<(&'a str, Attrs<'b>)>
-where
-    'b: 'a,
-{
-    let mut result: Vec<(&'a str, Attrs)> = Vec::new();
-
-    for block in tokenize(content) {
-        result.extend(parse_block(block, attrs));
-        result.push(("\n", attrs));
-    }
-
-    result
+pub struct Parser<'a, 'b> {
+    spans: Vec<(&'a str, Attrs<'b>)>,
 }
 
-fn parse_block<'a, 'b>(block: Block, attrs: Attrs<'b>) -> Vec<(&'a str, Attrs<'b>)>
+impl<'a, 'b> Parser<'a, 'b>
 where
     'b: 'a,
 {
-    let mut result: Vec<(&'a str, Attrs)> = Vec::new();
+    pub fn new() -> Self {
+        Self { spans: Vec::new() }
+    }
 
-    match block {
-        Block::Header(span, level) => {
-            for item in span {
-                match level {
-                    1 => {
-                        let attrs = attrs.metrics(metrics(24.0));
-                        attrs.weight(Weight::BOLD);
-                        result.extend(parse_span(item, attrs));
+    pub fn get_spans(self) -> Vec<(&'a str, Attrs<'b>)> {
+        self.spans
+    }
+
+    pub fn run<'block>(&mut self, block: &'block Vec<Block>)
+    where
+        'block: 'b,
+    {
+        for block in block {
+            self.parse_block(block, Attrs::new());
+            self.spans.push(("\n", Attrs::new()));
+        }
+    }
+
+    fn parse_block<'block>(&mut self, block: &'block Block, attrs: Attrs<'block>)
+    where
+        'block: 'b,
+    {
+        match block {
+            Block::Header(span, level) => {
+                for item in span {
+                    match level {
+                        1 => {
+                            let attrs = attrs.metrics(metrics(24.0));
+                            attrs.weight(Weight::BOLD);
+                            self.parse_span(item, attrs);
+                        }
+                        2 => {
+                            let attrs = attrs.metrics(metrics(22.0));
+                            attrs.weight(Weight::BOLD);
+                            self.parse_span(item, attrs);
+                        }
+                        3 => {
+                            let attrs = attrs.metrics(metrics(20.0));
+                            attrs.weight(Weight::BOLD);
+                            self.parse_span(item, attrs);
+                        }
+                        4 => {
+                            let attrs = attrs.metrics(metrics(18.0));
+                            attrs.weight(Weight::BOLD);
+                            self.parse_span(item, attrs);
+                        }
+                        5 => {
+                            let attrs = attrs.metrics(metrics(16.0));
+                            attrs.weight(Weight::BOLD);
+                            self.parse_span(item, attrs);
+                        }
+                        6 => {
+                            let attrs = attrs.metrics(metrics(14.0));
+                            attrs.weight(Weight::BOLD);
+                            self.parse_span(item, attrs);
+                        }
+                        _ => self.parse_span(item, Attrs::new()),
                     }
-                    2 => {
-                        let attrs = attrs.metrics(metrics(22.0));
-                        attrs.weight(Weight::BOLD);
-                        result.extend(parse_span(item, attrs));
-                    }
-                    3 => {
-                        let attrs = attrs.metrics(metrics(20.0));
-                        attrs.weight(Weight::BOLD);
-                        result.extend(parse_span(item, attrs));
-                    }
-                    4 => {
-                        let attrs = attrs.metrics(metrics(18.0));
-                        attrs.weight(Weight::BOLD);
-                        result.extend(parse_span(item, attrs));
-                    }
-                    5 => {
-                        let attrs = attrs.metrics(metrics(16.0));
-                        attrs.weight(Weight::BOLD);
-                        result.extend(parse_span(item, attrs));
-                    }
-                    6 => {
-                        let attrs = attrs.metrics(metrics(14.0));
-                        attrs.weight(Weight::BOLD);
-                        result.extend(parse_span(item, attrs));
-                    }
-                    _ => result.extend(parse_span(item, attrs)),
+                }
+                self.spans.push(("\n", Attrs::new()));
+            }
+            Block::Paragraph(span) => {
+                for item in span {
+                    self.parse_span(item, attrs);
+                }
+                self.spans.push(("\n", Attrs::new()));
+            }
+            Block::Blockquote(blockquote) => {
+                for item in blockquote {
+                    let attrs = attrs.family(Family::Monospace);
+                    self.parse_block(item, attrs);
+                }
+                self.spans.push(("\n", Attrs::new()));
+            }
+            Block::CodeBlock(lang, code) => {
+                let extension = if let Some(lang) = lang {
+                    language_to_extension(lang)
+                } else {
+                    "txt"
+                };
+
+                let attrs = attrs.family(Family::Monospace);
+                let code_block = highlight_code(code, extension, attrs);
+
+                self.spans.extend(code_block);
+                self.spans.push(("\n", attrs));
+            }
+            Block::OrderedList(listitem, _type) => {
+                for (num, item) in listitem.iter().enumerate() {
+                    let attrs = attrs.family(Family::Serif);
+                    self.spans
+                        .push((Box::leak(Box::new(format!("{}.  ", num + 1))), attrs));
+                    self.parse_listitem(item);
+                    self.spans.push(("\n", attrs));
+                }
+                self.spans.push(("\n", Attrs::new()));
+            }
+            Block::UnorderedList(listitem) => {
+                for item in listitem {
+                    let attrs = attrs.family(Family::Serif);
+                    self.spans.push((" - ", attrs));
+                    self.parse_listitem(item);
+                    self.spans.push(("\n", attrs));
+                }
+                self.spans.push(("\n", Attrs::new()));
+            }
+            Block::Raw(raw_text) => {
+                self.spans.push((raw_text, Attrs::new()));
+                self.spans.push(("\n", Attrs::new()));
+            }
+            Block::Hr => self.spans.push(("\n", Attrs::new())),
+        }
+    }
+
+    fn parse_span<'c>(&mut self, span: &'c Span, attrs: Attrs<'c>)
+    where
+        'c: 'b,
+    {
+        match span {
+            Span::Break => self.spans.push(("\n", attrs)),
+            Span::Text(text) => self.spans.push((text, attrs)),
+            Span::Code(code) => {
+                let attrs = attrs.family(Family::Monospace);
+                self.spans.push((code, attrs));
+            }
+            Span::Link(name, url, _title) => {
+                let color = Attrs::new().color(link_color());
+                let spans: &[(&str, Attrs)] = &[
+                    (Box::leak(format!("{}: ", name).into_boxed_str()), attrs),
+                    (url, color),
+                ];
+                self.spans.extend_from_slice(spans);
+            }
+            Span::Image(alt, url, title) => {
+                let color = Attrs::new().color(link_color());
+                let spans: &[(&str, Attrs)] = if let Some(title) = title {
+                    &[
+                        (Box::leak(format!("{}: ", title).into_boxed_str()), attrs),
+                        (url, color),
+                    ]
+                } else {
+                    &[
+                        (Box::leak(format!("{}: ", alt).into_boxed_str()), attrs),
+                        (url, color),
+                    ]
+                };
+                self.spans.extend_from_slice(spans);
+            }
+            Span::Emphasis(emphasis) => {
+                for item in emphasis {
+                    let attrs = attrs.family(Family::Cursive);
+                    self.parse_span(item, attrs);
                 }
             }
-            result.push(("\n", attrs));
-        }
-        Block::Paragraph(span) => {
-            for item in span {
-                result.extend(parse_span(item, attrs));
-            }
-            result.push(("\n", attrs));
-        }
-        Block::Blockquote(blockquote) => {
-            for item in blockquote {
-                let attrs = attrs.family(Family::Monospace);
-                result.extend(parse_block(item, attrs));
-            }
-            result.push(("\n", attrs));
-        }
-        Block::CodeBlock(lang, code) => {
-            if let Some(lang) = lang {
-                let code_block = highlight_code(
-                    Box::leak(code.into_boxed_str()),
-                    language_to_extension(lang),
-                    attrs,
-                );
-
-                result.extend(code_block);
-            } else {
-                result.push((Box::leak(code.into_boxed_str()), attrs));
-            };
-
-            result.push(("\n", attrs));
-        }
-        Block::OrderedList(listitem, _type) => {
-            for (num, item) in listitem.iter().enumerate() {
-                let attrs = attrs.family(Family::Serif);
-                result.push((Box::leak(format!("{}. ", num + 1).into_boxed_str()), attrs));
-                result.extend(parse_listitem(item.to_owned(), attrs));
-                result.push(("\n", attrs));
-            }
-            result.push(("\n", attrs));
-        }
-        Block::UnorderedList(listitem) => {
-            for item in listitem {
-                let attrs = attrs.family(Family::Serif);
-                result.push((" - ", attrs));
-                result.extend(parse_listitem(item.to_owned(), attrs));
-                result.push(("\n", attrs));
-            }
-            result.push(("\n", attrs));
-        }
-        Block::Raw(raw_text) => {
-            result.push((Box::leak(raw_text.into_boxed_str()), attrs));
-
-            result.push(("\n", attrs));
-        }
-        Block::Hr => result.push(("\n", attrs)),
-    }
-
-    result
-}
-
-fn parse_span<'a>(span: Span, attrs: Attrs<'a>) -> Vec<(&'a str, Attrs)> {
-    let mut result: Vec<(&'a str, Attrs)> = Vec::new();
-
-    match span {
-        Span::Break => result.push(("\n", attrs)),
-        Span::Text(text) => result.push((Box::leak(text.into_boxed_str()), attrs)),
-        Span::Code(code) => {
-            attrs.family(Family::Monospace);
-            result.push((Box::leak(code.into_boxed_str()), attrs));
-        }
-        Span::Link(name, url, _title) => {
-            let spans: &[(&str, Attrs)] = &[
-                (Box::leak(format!("{}: ", name).into_boxed_str()), attrs),
-                (Box::leak(url.into_boxed_str()), attrs.color(link_color())),
-            ];
-            result.extend_from_slice(spans);
-        }
-        Span::Image(alt, url, title) => {
-            let spans: &[(&str, Attrs)] = if let Some(title) = title {
-                &[
-                    (Box::leak(format!("{}: ", title).into_boxed_str()), attrs),
-                    (Box::leak(url.into_boxed_str()), attrs.color(link_color())),
-                ]
-            } else {
-                &[
-                    (Box::leak(format!("{}: ", alt).into_boxed_str()), attrs),
-                    (Box::leak(url.into_boxed_str()), attrs.color(link_color())),
-                ]
-            };
-            result.extend_from_slice(spans);
-        }
-        Span::Emphasis(emphasis) => {
-            for item in emphasis {
-                let attrs = attrs.family(Family::Cursive);
-                result.extend(parse_span(item, attrs));
-            }
-        }
-        Span::Strong(strong) => {
-            for item in strong {
-                let attrs = attrs.weight(Weight::BOLD);
-                result.extend(parse_span(item, attrs));
+            Span::Strong(strong) => {
+                for item in strong {
+                    let attrs = attrs.weight(Weight::BOLD);
+                    self.parse_span(item, attrs);
+                }
             }
         }
     }
 
-    result
-}
-
-fn parse_listitem<'a>(item: ListItem, attrs: Attrs<'a>) -> Vec<(&'a str, Attrs)> {
-    let mut result: Vec<(&'a str, Attrs)> = Vec::new();
-
-    match item {
-        ListItem::Simple(simple) => {
-            for item in simple {
-                result.extend(parse_span(item, attrs));
+    fn parse_listitem<'d>(&mut self, item: &'d ListItem)
+    where
+        'd: 'b,
+    {
+        match item {
+            ListItem::Simple(simple) => {
+                for item in simple {
+                    self.parse_span(item, Attrs::new());
+                }
             }
-        }
-        ListItem::Paragraph(block) => {
-            for item in block {
-                result.extend(parse_block(item, attrs));
+            ListItem::Paragraph(block) => {
+                for item in block {
+                    self.parse_block(item, Attrs::new());
+                }
             }
         }
     }
-
-    result
 }
 
 fn highlight_code<'a>(
@@ -276,8 +283,8 @@ fn cosmic_syntax() -> ThemeSet {
     theme_set
 }
 
-fn language_to_extension(lang: String) -> &'static str {
-    match lang.as_str() {
+fn language_to_extension(lang: &str) -> &'static str {
+    match lang {
         "python" => "py",
         "javascript" => "js",
         "java" => "java",

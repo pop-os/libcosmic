@@ -38,7 +38,7 @@ impl Application for Window {
     }
 
     fn view(&self) -> cosmic::prelude::Element<Self::Message> {
-        let md = widget::text::markdown(self.markdown_text.clone());
+        let md = widget::text::markdown(&self.markdown_text);
 
         widget::row().push(widget::scrollable(md)).into()
     }

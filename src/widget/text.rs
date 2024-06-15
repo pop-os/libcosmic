@@ -93,7 +93,7 @@ pub fn monotext<'a>(text: impl Into<Cow<'a, str>> + 'a) -> Text<'a, crate::Theme
 
 #[cfg(feature = "markdown")]
 /// [`Markdown`] widget with md text parser
-pub fn markdown(content: String) -> crate::widget::markdown::Markdown {
+pub fn markdown(content: &str) -> crate::widget::markdown::Markdown {
     use crate::widget::markdown;
 
     markdown::Markdown::new(content)

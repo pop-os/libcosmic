@@ -2,6 +2,7 @@ pub mod parser;
 
 use std::sync::{Mutex, OnceLock};
 
+use crate::{Element, Renderer};
 use cosmic_text::{
     Attrs, Buffer, Color, Edit, Editor, Family, FontSystem, Metrics, Shaping, SwashCache, Weight,
 };
@@ -11,8 +12,7 @@ use iced_core::{
     widget::{self, tree},
     Widget,
 };
-
-use crate::{Element, Renderer};
+use markdown::tokenize;
 
 static FONT_SYSTEM: OnceLock<Mutex<FontSystem>> = OnceLock::new();
 
@@ -23,15 +23,25 @@ pub struct Markdown {
 }
 
 impl Markdown {
-    pub fn new(content: String) -> Self {
+    pub fn new(content: &str) -> Self {
         FONT_SYSTEM.get_or_init(|| Mutex::new(FontSystem::new()));
 
         let metrics = metrics(14.0);
         let buffer = Buffer::new_empty(metrics);
 
         let mut editor = Editor::new(buffer);
+        let mut parser = parser::Parser::new();
+        let blocks = tokenize(content);
 
-        editor.with_buffer_mut(|buffer| set_buffer_text(&content, buffer));
+        parser.run(Box::leak(Box::new(blocks)));
+
+        editor.with_buffer_mut(|buffer| {
+            set_buffer_text(
+                &mut FONT_SYSTEM.get().unwrap().lock().unwrap(),
+                &mut parser.get_spans(),
+                buffer,
+            )
+        });
 
         Self {
             syntax_editor: Mutex::new(editor),
@@ -326,15 +336,17 @@ fn metrics(font_size: f32) -> Metrics {
     Metrics::new(font_size, line_height)
 }
 
-fn set_buffer_text<'a>(text: &'a str, buffer: &mut Buffer) {
+fn set_buffer_text(
+    font_system: &mut FontSystem,
+    collect_spans: &mut [(&'static str, Attrs)],
+    buffer: &mut Buffer,
+) {
     let attrs = Attrs::new();
     attrs.family(Family::SansSerif);
 
-    let spans: Vec<(&'a str, Attrs)> = parser::markdown_to_string(text, attrs);
-
     buffer.set_rich_text(
-        &mut FONT_SYSTEM.get().unwrap().lock().unwrap(),
-        spans.iter().copied(),
+        font_system,
+        collect_spans.iter().copied(),
         attrs,
         Shaping::Advanced,
     )
