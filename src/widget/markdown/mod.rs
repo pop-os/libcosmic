@@ -14,14 +14,6 @@ use iced_core::{
 
 use crate::{Element, Renderer};
 
-// fn syntax_theme() -> &'static str {
-//     if cosmic::theme::is_dark() {
-//         return "COSMIC Dark";
-//     }
-
-//     "COSMIC Light"
-// }
-
 static FONT_SYSTEM: OnceLock<Mutex<FontSystem>> = OnceLock::new();
 
 pub struct Markdown {
