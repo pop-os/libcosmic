@@ -1,0 +1,11 @@
+[package]
+name = "markdown-widget"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+
+[dependencies.libcosmic]
+path = "../../"
+default-features = false
+features = ["winit", "wgpu", "markdown"]

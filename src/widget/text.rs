@@ -90,3 +90,11 @@ pub fn monotext<'a>(text: impl Into<Cow<'a, str>> + 'a) -> Text<'a, crate::Theme
         .line_height(LineHeight::Absolute(20.0.into()))
         .font(crate::font::FONT_MONO_REGULAR)
 }
+
+#[cfg(feature = "markdown")]
+/// [`Markdown`] widget with md text parser
+pub fn markdown(content: String) -> crate::widget::markdown::Markdown {
+    use crate::widget::markdown;
+
+    markdown::Markdown::new(content)
+}
