@@ -20,6 +20,14 @@ Here are some basic Markdown syntax elements:
 - **Italic**: Use `*` or `_` for italic text. Example: `*italic text*`
 - **Lists**: Use `-` or `*` for unordered lists and numbers for ordered lists.
 
+### Links
+
+My favorite search engine is [Duck Duck Go](https://duckduckgo.com "The best search engine for privacy") privacy search engine.
+
+### Images
+
+![The San Juan Mountains are beautiful!](/assets/images/san-juan-mountains.jpg "San Juan Mountains")
+
 ## Example
 
 # Heading One

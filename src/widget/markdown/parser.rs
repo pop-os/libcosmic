@@ -139,8 +139,27 @@ fn parse_span<'a>(span: Span, attrs: Attrs<'a>) -> Vec<(&'a str, Attrs)> {
             attrs.family(Family::Monospace);
             result.push((Box::leak(code.into_boxed_str()), attrs));
         }
-        Span::Link(_, _, _) => {}
-        Span::Image(_, _, _) => {}
+        Span::Link(name, url, _title) => {
+            let spans: &[(&str, Attrs)] = &[
+                (Box::leak(format!("{}: ", name).into_boxed_str()), attrs),
+                (Box::leak(url.into_boxed_str()), attrs.color(link_color())),
+            ];
+            result.extend_from_slice(spans);
+        }
+        Span::Image(alt, url, title) => {
+            let spans: &[(&str, Attrs)] = if let Some(title) = title {
+                &[
+                    (Box::leak(format!("{}: ", title).into_boxed_str()), attrs),
+                    (Box::leak(url.into_boxed_str()), attrs.color(link_color())),
+                ]
+            } else {
+                &[
+                    (Box::leak(format!("{}: ", alt).into_boxed_str()), attrs),
+                    (Box::leak(url.into_boxed_str()), attrs.color(link_color())),
+                ]
+            };
+            result.extend_from_slice(spans);
+        }
         Span::Emphasis(emphasis) => {
             for item in emphasis {
                 let attrs = attrs.family(Family::Cursive);
@@ -202,6 +221,14 @@ fn highlight_code<'a>(
     }
 
     result
+}
+
+fn link_color() -> Color {
+    if !crate::theme::is_dark() {
+        return Color::rgb(5, 200, 95);
+    }
+
+    Color::rgb(125, 206, 243)
 }
 
 fn syntax_theme() -> Theme {
