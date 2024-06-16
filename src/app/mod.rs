@@ -308,7 +308,7 @@ impl DbusActivation {
 /// Returns error on application failure.
 pub fn run_single_instance<App: Application>(settings: Settings, flags: App::Flags) -> iced::Result
 where
-    App::Flags: CosmicFlags + Clone,
+    App::Flags: CosmicFlags,
     App::Message: Clone + std::fmt::Debug + Send + 'static,
 {
     let activation_token = std::env::var("XDG_ACTIVATION_TOKEN").ok();
