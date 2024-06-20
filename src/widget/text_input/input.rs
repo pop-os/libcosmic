@@ -149,13 +149,13 @@ where
 /// Creates a new inline [`TextInput`].
 ///
 /// [`TextInput`]: widget::TextInput
-pub fn inline_input<'a, Message>(value: impl Into<Cow<'a, str>>) -> TextInput<'a, Message>
+pub fn inline_input<'a, Message>(placeholder: impl Into<Cow<'a, str>>, value: impl Into<Cow<'a, str>>) -> TextInput<'a, Message>
 where
     Message: Clone + 'static,
 {
     let spacing = THEME.with(|t| t.borrow().cosmic().space_xxs());
 
-    TextInput::new("", value)
+    TextInput::new(placeholder, value)
         .style(crate::theme::TextInput::Inline)
         .padding([spacing, spacing, spacing, spacing])
 }

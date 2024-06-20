@@ -97,7 +97,7 @@ impl cosmic::Application for App {
         .on_input(Message::Input)
         .id(self.search_id.clone());
 
-        let inline = cosmic::widget::inline_input(&self.input).on_input(Message::Input);
+        let inline = cosmic::widget::inline_input("", &self.input).on_input(Message::Input);
 
         let column = cosmic::widget::column().push(editable).push(inline);
 
