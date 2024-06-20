@@ -149,7 +149,10 @@ where
 /// Creates a new inline [`TextInput`].
 ///
 /// [`TextInput`]: widget::TextInput
-pub fn inline_input<'a, Message>(placeholder: impl Into<Cow<'a, str>>, value: impl Into<Cow<'a, str>>) -> TextInput<'a, Message>
+pub fn inline_input<'a, Message>(
+    placeholder: impl Into<Cow<'a, str>>,
+    value: impl Into<Cow<'a, str>>,
+) -> TextInput<'a, Message>
 where
     Message: Clone + 'static,
 {

@@ -328,8 +328,6 @@ impl StyleSheet for crate::Theme {
                 border_width: 0.0,
                 border_offset: None,
                 border_color: Color::TRANSPARENT,
-                // TODO use regular text color here after text rendering handles multiple colors
-                // in this case, for selected and unselected text
                 icon_color: None,
                 text_color: None,
                 placeholder_color: {
@@ -341,15 +339,13 @@ impl StyleSheet for crate::Theme {
                 label_color: label_color.into(),
             },
             TextInput::Inline => Appearance {
-                background: Color::from(palette.accent.base).into(),
+                background: Color::TRANSPARENT.into(),
                 border_radius: corner.radius_0.into(),
                 border_width: 0.0,
                 border_offset: None,
                 border_color: Color::TRANSPARENT,
-                icon_color: Some(palette.on_accent_color().into()),
-                // TODO use regular text color here after text rendering handles multiple colors
-                // in this case, for selected and unselected text
-                text_color: Some(palette.on_accent_color().into()),
+                icon_color: None,
+                text_color: None,
                 placeholder_color: {
                     let color: Color = container.on.into();
                     color.blend_alpha(background, 0.7)
