@@ -72,7 +72,7 @@ pub enum PathHighlight {
 
 /// X+ goes right and Y+ goes down
 #[derive(Debug, Clone, Copy)]
-pub(super) enum Direction {
+pub(crate) enum Direction {
     Positive,
     Negative,
 }
@@ -289,7 +289,7 @@ impl MenuBounds {
     }
 }
 
-pub(super) struct MenuState {
+pub(crate) struct MenuState {
     pub(super) index: Option<usize>,
     scroll_offset: f32,
     menu_bounds: MenuBounds,
