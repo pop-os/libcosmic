@@ -349,3 +349,7 @@ pub mod tooltip {
 pub mod warning;
 #[doc(inline)]
 pub use warning::*;
+
+mod toaster;
+#[doc(inline)]
+pub use toaster::toaster;
