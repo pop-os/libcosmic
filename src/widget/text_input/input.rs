@@ -188,6 +188,7 @@ pub struct TextInput<'a, Message> {
     is_secure: bool,
     is_editable: bool,
     is_read_only: bool,
+    select_on_focus: bool,
     font: Option<<crate::Renderer as iced_core::text::Renderer>::Font>,
     width: Length,
     padding: Padding,
@@ -232,6 +233,7 @@ where
             is_secure: false,
             is_editable: false,
             is_read_only: false,
+            select_on_focus: false,
             font: None,
             width: Length::Fill,
             padding: [spacing, spacing, spacing, spacing].into(),
@@ -300,13 +302,19 @@ where
         self
     }
 
-    fn editable(mut self) -> Self {
+    pub fn editable(mut self) -> Self {
         self.is_editable = true;
         self
     }
 
-    fn editing(mut self, enable: bool) -> Self {
+    pub fn editing(mut self, enable: bool) -> Self {
         self.is_read_only = !enable;
+        self
+    }
+
+    /// Selects all text when the text input is focused
+    pub fn select_on_focus(mut self, select_on_focus: bool) -> Self {
+        self.select_on_focus = select_on_focus;
         self
     }
 
@@ -520,6 +528,7 @@ where
             self.is_secure,
             self.is_read_only,
             self.always_active,
+            self.select_on_focus,
         ))
     }
 
@@ -527,7 +536,7 @@ where
         let state = tree.state.downcast_mut::<State>();
 
         // Unfocus text input if it becomes disabled
-        if self.on_input.is_none() || state.is_read_only {
+        if self.on_input.is_none() {
             state.last_click = None;
             state.is_focused = None;
             state.is_pasting = None;
@@ -2405,6 +2414,7 @@ pub struct State {
     pub dirty: bool,
     pub is_secure: bool,
     pub is_read_only: bool,
+    select_on_focus: bool,
     is_focused: Option<Focus>,
     dragging_state: Option<DraggingState>,
     #[cfg(feature = "wayland")]
@@ -2424,7 +2434,7 @@ struct Focus {
 
 impl State {
     /// Creates a new [`State`], representing an unfocused [`TextInput`].
-    pub fn new(is_secure: bool, is_read_only: bool, always_active: bool) -> Self {
+    pub fn new(is_secure: bool, is_read_only: bool, always_active: bool, select_on_focus: bool) -> Self {
         Self {
             is_secure,
             is_read_only,
@@ -2435,6 +2445,7 @@ impl State {
                     now,
                 }
             }),
+            select_on_focus,
             ..Self::default()
         }
     }
@@ -2473,6 +2484,7 @@ impl State {
             helper_text: crate::Paragraph::new(),
             is_read_only,
             is_focused: None,
+            select_on_focus: false,
             dragging_state: None,
             #[cfg(feature = "wayland")]
             dnd_offer: DndOfferState::default(),
@@ -2505,7 +2517,11 @@ impl State {
             now,
         });
 
-        self.move_cursor_to_end();
+        if self.select_on_focus {
+            self.select_all()
+        } else {
+            self.move_cursor_to_end();
+        }
     }
 
     /// Unfocuses the [`TextInput`].
