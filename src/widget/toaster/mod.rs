@@ -3,47 +3,39 @@
 
 use std::time::Duration;
 
-use iced::{Command, Length};
-use iced_core::{Element};
 use crate::widget::container;
 use crate::widget::Column;
+use iced::{Command, Length};
+use iced_core::Element;
 use widget::Toaster;
 
 use crate::ext::CollectionWidget;
 
 use super::{button, row, text};
 
-
 mod widget;
 
-pub fn toaster<'a, Message: Clone + 'a, Theme, Renderer>(
+pub fn toaster<'a, Message>(
     toasts: &'a Toasts<Message>,
-    content: impl Into<Element<'a, Message, Theme, Renderer>>,
-) -> Element<'a, Message, Theme, Renderer>
+    content: impl Into<Element<'a, Message, crate::Theme, iced::Renderer>>,
+) -> Element<'a, Message, crate::Theme, iced::Renderer>
 where
-    Renderer: iced_core::Renderer,
+    Message: Clone + 'a,
 {
+    let make_toast = |toast: &'a Toast<Message>| {
+        let row = row().push(text(&toast.message)).push_maybe(
+            toast
+                .action
+                .as_ref()
+                .map(|t| button(text(t.0.clone())).on_press(t.1.clone())),
+        );
 
-
-    let make_toast = |toast: &Toast<Message>| {
-
-        let row = row()
-            .push(text(toast.message))
-            .push_maybe(toast.action.map(|t| button(text(t.0)).on_press(t.1)));
-
-        container(row)
-            .into()
-
+        container(row).into()
     };
 
+    let col = Column::with_children(toasts.toasts.iter().map(make_toast));
 
-    let col = Column::with_children(toasts.toasts.iter().map(|t| {
-        make_toast(t)
-    }));
-
-
-
-    Toaster::new(col.into(), content.into()).into()
+    Toaster::new(col.into(), content.into(), toasts.toasts.is_empty()).into()
 }
 
 pub enum ToastDuration {
