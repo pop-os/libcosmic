@@ -350,6 +350,4 @@ pub mod warning;
 #[doc(inline)]
 pub use warning::*;
 
-mod toaster;
-#[doc(inline)]
-pub use toaster::toaster;
+pub mod toaster;

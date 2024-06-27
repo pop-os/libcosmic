@@ -3,22 +3,18 @@
 
 use iced::{Limits, Size};
 use iced_core::layout::Node;
-use iced_runtime::core::widget::Id;
-use iced_runtime::{keyboard, Command};
 
 use iced_core::event::{self, Event};
-use iced_core::renderer::{self, Quad, Renderer};
-use iced_core::widget::tree::{self, Tree};
+use iced_core::layout;
+use iced_core::mouse;
+use iced_core::overlay;
+use iced_core::renderer::{self};
+use iced_core::widget::tree::Tree;
 use iced_core::widget::Operation;
 use iced_core::Element;
-use iced_core::{layout, svg};
-use iced_core::{mouse, Border};
-use iced_core::{overlay, Shadow};
-use iced_core::{touch, Overlay};
-use iced_core::{
-    Background, Clipboard, Color, Layout, Length, Padding, Point, Rectangle, Shell, Vector, Widget,
-};
-use iced_renderer::core::widget::{operation, OperationOutputWrapper};
+use iced_core::Overlay;
+use iced_core::{Clipboard, Layout, Length, Point, Rectangle, Shell, Vector, Widget};
+use iced_renderer::core::widget::OperationOutputWrapper;
 
 pub struct Toaster<'a, Message, Theme, Renderer> {
     toasts: Element<'a, Message, Theme, Renderer>,
@@ -145,7 +141,7 @@ where
         &'b mut self,
         state: &'b mut Tree,
         layout: Layout<'_>,
-        renderer: &Renderer,
+        _renderer: &Renderer,
     ) -> Option<overlay::Element<'b, Message, Theme, Renderer>> {
         if self.is_empty {
             None
@@ -189,7 +185,23 @@ where
         position: Point,
         _translation: Vector,
     ) -> Node {
-        todo!()
+        let limits = Limits::new(Size::ZERO, bounds);
+
+        let mut node = self
+            .element
+            .as_widget()
+            .layout(self.state, renderer, &limits);
+
+        let offset = 15.;
+
+        let position = Point::new(
+            (bounds.width / 2.) - (node.size().width / 2.),
+            bounds.height - (node.size().height + offset),
+        );
+
+        node.move_to_mut(position);
+
+        node
     }
 
     fn draw(
