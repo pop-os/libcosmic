@@ -2512,6 +2512,7 @@ impl State {
     pub fn focus(&mut self) {
         let now = Instant::now();
 
+        self.is_read_only = false;
         self.is_focused = Some(Focus {
             updated_at: now,
             now,
