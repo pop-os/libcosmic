@@ -2434,7 +2434,12 @@ struct Focus {
 
 impl State {
     /// Creates a new [`State`], representing an unfocused [`TextInput`].
-    pub fn new(is_secure: bool, is_read_only: bool, always_active: bool, select_on_focus: bool) -> Self {
+    pub fn new(
+        is_secure: bool,
+        is_read_only: bool,
+        always_active: bool,
+        select_on_focus: bool,
+    ) -> Self {
         Self {
             is_secure,
             is_read_only,
