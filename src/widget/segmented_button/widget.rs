@@ -583,6 +583,7 @@ where
             focused_item: Default::default(),
             hovered: Default::default(),
             known_length: Default::default(),
+            middle_clicked: Default::default(),
             internal_layout: Default::default(),
             context_cursor: Point::default(),
             show_context: Default::default(),
@@ -877,13 +878,24 @@ where
                                     return event::Status::Captured;
                                 }
 
+                                if let Event::Mouse(mouse::Event::ButtonPressed(
+                                    mouse::Button::Middle,
+                                )) = event
+                                {
+                                    state.middle_clicked = Some(Item::Tab(key));
+                                }
+
                                 // Emit close message if the tab is middle clicked.
                                 if let Event::Mouse(mouse::Event::ButtonReleased(
                                     mouse::Button::Middle,
                                 )) = event
                                 {
-                                    shell.publish(on_close(key));
-                                    return event::Status::Captured;
+                                    if state.middle_clicked == Some(Item::Tab(key)) {
+                                        shell.publish(on_close(key));
+                                        return event::Status::Captured;
+                                    }
+
+                                    state.middle_clicked = None;
                                 }
                             }
                         }
@@ -1601,6 +1613,8 @@ pub struct LocalState {
     focused_item: Item,
     /// The ID of the button that is being hovered. Defaults to null.
     hovered: Item,
+    /// The ID of the button that was middle-clicked, but not yet released.
+    middle_clicked: Option<Item>,
     /// Last known length of the model.
     pub(super) known_length: usize,
     /// Dimensions of internal buttons when shrinking
