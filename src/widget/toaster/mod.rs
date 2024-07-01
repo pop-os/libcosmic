@@ -6,9 +6,9 @@
 use std::collections::VecDeque;
 use std::time::Duration;
 
+use crate::app::Command;
 use crate::widget::container;
 use crate::widget::Column;
-use iced::Command;
 use iced_core::Element;
 use widget::Toaster;
 
@@ -24,15 +24,15 @@ pub fn toaster<'a, Message>(
     content: impl Into<Element<'a, Message, crate::Theme, iced::Renderer>>,
 ) -> Element<'a, Message, crate::Theme, iced::Renderer>
 where
-    Message: From<ToastMessage> + Clone + 'a,
+    Message: From<ToastMessage> + Clone + 'static,
 {
     let make_toast = |toast: &'a Toast<Message>| {
         let row = row()
             .push(text(&toast.message))
             .push_maybe(toast.action.as_ref().map(|action| {
-                button(text(action.description.clone())).on_press(action.message.clone())
+                button::standard(&action.description).on_press(action.message.clone())
             }))
-            .push(button("close").on_press(ToastMessage(toast.id).into()))
+            .push(button::standard("close").on_press(ToastMessage(toast.id).into()))
             .align_items(iced::Alignment::Center);
 
         container(row)
@@ -157,12 +157,10 @@ impl<Message> Toasts<Message> {
 
         self.toasts.push_back(toast);
 
-        Command::perform(
-            async move {
-                tokio::time::sleep(duration).await;
-            },
-            |_| crate::app::Message::App(message.into()),
-        )
+        crate::command::future(async move {
+            tokio::time::sleep(duration).await;
+            crate::app::Message::App(Message::from(message))
+        })
     }
 
     /// Handle the [`ToastMessage`]
