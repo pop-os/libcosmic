@@ -134,6 +134,8 @@ where
     #[setters(skip)]
     pub(super) on_context: Option<Box<dyn Fn(Entity) -> Message + 'static>>,
     #[setters(skip)]
+    pub(super) on_middle_press: Option<Box<dyn Fn(Entity) -> Message + 'static>>,
+    #[setters(skip)]
     pub(super) on_dnd_drop:
         Option<Box<dyn Fn(Entity, Vec<u8>, String, DndAction) -> Message + 'static>>,
     pub(super) mimes: Vec<String>,
@@ -183,6 +185,7 @@ where
             on_activate: None,
             on_close: None,
             on_context: None,
+            on_middle_press: None,
             on_dnd_drop: None,
             on_dnd_enter: None,
             on_dnd_leave: None,
@@ -234,6 +237,15 @@ where
         T: Fn(Entity) -> Message + 'static,
     {
         self.on_context = Some(Box::new(on_context));
+        self
+    }
+
+    /// Emitted when the middle mouse button is pressed on a button.
+    pub fn on_middle_press<T>(mut self, on_middle_press: T) -> Self
+    where
+        T: Fn(Entity) -> Message + 'static,
+    {
+        self.on_middle_press = Some(Box::new(on_middle_press));
         self
     }
 
@@ -878,24 +890,19 @@ where
                                     return event::Status::Captured;
                                 }
 
-                                if let Event::Mouse(mouse::Event::ButtonPressed(
-                                    mouse::Button::Middle,
-                                )) = event
-                                {
-                                    state.middle_clicked = Some(Item::Tab(key));
-                                }
+                                if self.on_middle_press.is_none() {
+                                    // Emit close message if the tab is middle clicked.
+                                    if let Event::Mouse(mouse::Event::ButtonReleased(
+                                        mouse::Button::Middle,
+                                    )) = event
+                                    {
+                                        if state.middle_clicked == Some(Item::Tab(key)) {
+                                            shell.publish(on_close(key));
+                                            return event::Status::Captured;
+                                        }
 
-                                // Emit close message if the tab is middle clicked.
-                                if let Event::Mouse(mouse::Event::ButtonReleased(
-                                    mouse::Button::Middle,
-                                )) = event
-                                {
-                                    if state.middle_clicked == Some(Item::Tab(key)) {
-                                        shell.publish(on_close(key));
-                                        return event::Status::Captured;
+                                        state.middle_clicked = None;
                                     }
-
-                                    state.middle_clicked = None;
                                 }
                             }
                         }
@@ -929,6 +936,16 @@ where
                                     shell.publish(on_context(key));
                                     return event::Status::Captured;
                                 }
+                            }
+                        }
+
+                        if let Event::Mouse(mouse::Event::ButtonPressed(mouse::Button::Middle)) =
+                            event
+                        {
+                            state.middle_clicked = Some(Item::Tab(key));
+                            if let Some(on_middle_press) = self.on_middle_press.as_ref() {
+                                shell.publish(on_middle_press(key));
+                                return event::Status::Captured;
                             }
                         }
                     }
