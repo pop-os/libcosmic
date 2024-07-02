@@ -101,6 +101,15 @@ impl<'a, Message: Clone + 'static> NavBar<'a, Message> {
         self
     }
 
+    /// Emitted when the middle mouse button is pressed on a button.
+    pub fn on_middle_press<T>(mut self, on_middle_press: T) -> Self
+    where
+        T: Fn(Id) -> Message + 'static,
+    {
+        self.segmented_button = self.segmented_button.on_middle_press(on_middle_press);
+        self
+    }
+
     /// Handle the dnd drop event.
     pub fn on_dnd_drop<D: AllowedMimeTypes>(
         mut self,
