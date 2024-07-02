@@ -147,7 +147,7 @@ impl<Message> Toasts<Message> {
     pub fn push(
         &mut self,
         mut toast: Toast<Message>,
-    ) -> Command<crate::app::message::Message<Message>>
+    ) -> Command<Message>
     where
         Message: From<ToastMessage>,
     {
