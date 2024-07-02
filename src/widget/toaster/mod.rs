@@ -1,7 +1,7 @@
 // Copyright 2024 wiiznokes
 // SPDX-License-Identifier: MIT
 
-//! A widget that display toats.
+//! A widget that displays toasts.
 
 use std::collections::VecDeque;
 use std::time::Duration;
@@ -36,7 +36,7 @@ where
             .align_items(iced::Alignment::Center);
 
         container(row)
-            .padding(10)
+            .padding(crate::theme::active().cosmic().space_xs())
             .style(crate::style::Container::Card)
     };
 
