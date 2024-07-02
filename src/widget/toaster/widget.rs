@@ -270,8 +270,8 @@ where
     Message: 'a,
 {
     fn from(
-        toggler: Toaster<'a, Message, Theme, Renderer>,
+        toaster: Toaster<'a, Message, Theme, Renderer>,
     ) -> Element<'a, Message, Theme, Renderer> {
-        Element::new(toggler)
+        Element::new(toaster)
     }
 }
