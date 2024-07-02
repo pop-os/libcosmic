@@ -1,5 +1,5 @@
 // Copyright 2024 wiiznokes
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: MPL-2.0
 
 //! A widget that displays toasts.
 
@@ -14,6 +14,7 @@ use widget::Toaster;
 
 use crate::ext::CollectionWidget;
 
+use super::column;
 use super::{button, row, text};
 
 mod widget;
@@ -40,8 +41,13 @@ where
             .style(crate::style::Container::Card)
     };
 
-    let col =
-        Column::with_children(toasts.toasts.iter().rev().map(|t| make_toast(t).into())).spacing(5);
+    let col = toasts
+        .toasts
+        .iter()
+        .rev()
+        .map(make_toast)
+        .fold(column::with_capacity(toasts.toasts.len()), Column::push)
+        .spacing(crate::theme::active().cosmic().space_xxxs());
 
     Toaster::new(col.into(), content.into(), toasts.toasts.is_empty()).into()
 }

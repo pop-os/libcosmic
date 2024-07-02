@@ -1,5 +1,5 @@
 // Copyright 2024 wiiznokes
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: MPL-2.0
 
 use iced::{Limits, Size};
 use iced_core::layout::Node;
