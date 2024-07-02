@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["Data","IconFallback"],"fn":["from_name","from_path","from_raster_bytes","from_raster_pixels","from_svg_bytes","icon"],"struct":["Handle","Icon","Named"]};

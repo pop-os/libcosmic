@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["Style"],"mod":["fill","path","stroke"],"struct":["Text"],"trait":["Renderer"]};

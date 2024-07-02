@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["cursor_position","fullscreen","icon","key","mode","modifiers","mouse_button","mouse_interaction","position","touch_event","user_attention","visible","window_event","window_level","window_settings"]};

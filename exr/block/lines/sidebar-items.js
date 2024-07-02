@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"struct":["LineIndex","LineSlice"],"type":["LineRef","LineRefMut"]};

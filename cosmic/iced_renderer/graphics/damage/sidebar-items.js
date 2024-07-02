@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["group","list"],"trait":["Damage"]};

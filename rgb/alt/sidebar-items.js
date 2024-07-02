@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"struct":["BGR","BGRA","Gray","GrayAlpha"],"type":["BGR16","BGR8","BGRA16","BGRA8","GRAY16","GRAY8","GRAYA16","GRAYA8"]};

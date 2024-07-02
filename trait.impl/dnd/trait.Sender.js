@@ -1,0 +1,4 @@
+(function() {var implementors = {
+"cosmic":[],
+"iced_winit":[["impl&lt;M&gt; <a class=\"trait\" href=\"dnd/trait.Sender.html\" title=\"trait dnd::Sender\">Sender</a>&lt;<a class=\"struct\" href=\"dnd/struct.DndSurface.html\" title=\"struct dnd::DndSurface\">DndSurface</a>&gt; for <a class=\"struct\" href=\"iced_winit/struct.Proxy.html\" title=\"struct iced_winit::Proxy\">Proxy</a>&lt;<a class=\"enum\" href=\"iced_winit/application/enum.UserEventWrapper.html\" title=\"enum iced_winit::application::UserEventWrapper\">UserEventWrapper</a>&lt;M&gt;&gt;"]]
+};if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

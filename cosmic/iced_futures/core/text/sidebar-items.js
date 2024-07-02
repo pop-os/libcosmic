@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["Difference","Hit","LineHeight","Shaping"],"mod":["editor","highlighter"],"struct":["Text"],"trait":["Editor","Highlighter","Paragraph","Renderer"]};
