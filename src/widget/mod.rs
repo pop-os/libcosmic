@@ -350,4 +350,5 @@ pub mod warning;
 #[doc(inline)]
 pub use warning::*;
 
+#[cfg(any(feature = "winit", feature = "wayland"))]
 pub mod toaster;

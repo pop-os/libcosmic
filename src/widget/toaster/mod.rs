@@ -144,10 +144,7 @@ pub struct ToastMessage(u32);
 
 impl<Message> Toasts<Message> {
     /// Add a new [`Toast`]
-    pub fn push(
-        &mut self,
-        mut toast: Toast<Message>,
-    ) -> Command<Message>
+    pub fn push(&mut self, mut toast: Toast<Message>) -> Command<Message>
     where
         Message: From<ToastMessage>,
     {
@@ -164,6 +161,7 @@ impl<Message> Toasts<Message> {
         self.toasts.push_back(toast);
 
         crate::command::future(async move {
+            #[cfg(feature = "tokio")]
             tokio::time::sleep(duration).await;
             crate::app::Message::App(Message::from(message))
         })
