@@ -44,6 +44,15 @@ default-features = false
 features = ["wayland", "tokio"]
 ```
 
+Alternatively, to create a new package after running `cargo new {{name_of_project}}`,
+edit the `Cargo.toml` within, and edit the dependencies section to look like this.
+
+```toml
+[dependencies]
+libcosmic = { git = "https://github.com/pop-os/libcosmic", default-features = false,
+                features = ["wayland", "tokio"] }
+```
+
 ### Cargo Features
 
 Available cargo features to choose from:
@@ -76,7 +85,7 @@ Available cargo features to choose from:
 
 ## Documentation
 
-Documentation can be found [here](https://pop-os.github.io/docs/).
+Documentation can be found [here](https://pop-os.github.io/libcosmic/cosmic/).
 
 ## Licence
 
