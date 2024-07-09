@@ -541,7 +541,6 @@ impl<T: Application> Cosmic<T> {
                 }
             }
             Message::ShowWindowMenu => {
-                #[cfg(not(feature = "wayland"))]
                 return window::show_window_menu(window::Id::MAIN);
             }
             #[cfg(feature = "xdg-portal")]
