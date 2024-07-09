@@ -502,6 +502,7 @@ impl<'a, S: AsRef<str>, Message> Widget<Message, crate::Theme, crate::Renderer>
                     horizontal_alignment: alignment::Horizontal::Left,
                     vertical_alignment: alignment::Vertical::Center,
                     shaping: text::Shaping::Advanced,
+                    wrap: text::Wrap::default(),
                 },
                 bounds.position(),
                 color,
