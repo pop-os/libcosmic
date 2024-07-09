@@ -639,6 +639,7 @@ where
                 vertical_alignment: alignment::Vertical::Center,
                 line_height: text::LineHeight::default(),
                 shaping: text::Shaping::Advanced,
+                wrap: text::Wrap::default(),
             });
 
             let Size { width, height } =
@@ -995,6 +996,7 @@ pub fn layout<Message>(
             vertical_alignment: alignment::Vertical::Center,
             line_height,
             shaping: text::Shaping::Advanced,
+            wrap: text::Wrap::default(),
         });
         let label_size = label_paragraph.min_bounds();
 
@@ -1133,6 +1135,7 @@ pub fn layout<Message>(
             vertical_alignment: alignment::Vertical::Center,
             line_height: helper_text_line_height,
             shaping: text::Shaping::Advanced,
+            wrap: text::Wrap::default(),
         });
         let helper_text_size = helper_text_paragraph.min_bounds();
         let helper_text_node = layout::Node::new(helper_text_size).translate(helper_pos);
@@ -2142,6 +2145,7 @@ pub fn draw<'a, Message>(
                 vertical_alignment: alignment::Vertical::Top,
                 line_height,
                 shaping: text::Shaping::Advanced,
+                wrap: text::Wrap::default(),
             },
             label_layout.bounds().position(),
             appearance.label_color,
@@ -2302,6 +2306,7 @@ pub fn draw<'a, Message>(
                 vertical_alignment: alignment::Vertical::Center,
                 line_height: text::LineHeight::default(),
                 shaping: text::Shaping::Advanced,
+                wrap: text::Wrap::default(),
             },
             bounds.position(),
             color,
@@ -2344,6 +2349,7 @@ pub fn draw<'a, Message>(
                 vertical_alignment: alignment::Vertical::Top,
                 line_height: helper_line_height,
                 shaping: text::Shaping::Advanced,
+                wrap: text::Wrap::default(),
             },
             helper_text_layout.bounds().position(),
             text_color,
@@ -2647,6 +2653,7 @@ fn replace_paragraph(
         horizontal_alignment: alignment::Horizontal::Left,
         vertical_alignment: alignment::Vertical::Top,
         shaping: text::Shaping::Advanced,
+        wrap: text::Wrap::default(),
     });
 }
 

@@ -19,7 +19,7 @@ use iced::{
     Padding, Rectangle, Size,
 };
 use iced_core::mouse::ScrollDelta;
-use iced_core::text::{LineHeight, Paragraph, Renderer as TextRenderer, Shaping};
+use iced_core::text::{LineHeight, Paragraph, Renderer as TextRenderer, Shaping, Wrap};
 use iced_core::widget::{self, operation, tree};
 use iced_core::{layout, renderer, widget::Tree, Clipboard, Layout, Shell, Widget};
 use iced_core::{Border, Gradient, Point, Renderer as IcedRenderer, Shadow, Text};
@@ -443,6 +443,7 @@ where
                         horizontal_alignment: alignment::Horizontal::Left,
                         vertical_alignment: alignment::Vertical::Center,
                         shaping: Shaping::Advanced,
+                        wrap: Wrap::default(),
                         line_height: self.line_height,
                     })
                 });
@@ -638,6 +639,7 @@ where
                     horizontal_alignment: alignment::Horizontal::Left,
                     vertical_alignment: alignment::Vertical::Center,
                     shaping: Shaping::Advanced,
+                    wrap: Wrap::default(),
                     line_height: self.line_height,
                 };
 

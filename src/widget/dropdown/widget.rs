@@ -80,6 +80,7 @@ impl<'a, S: AsRef<str>, Message> Dropdown<'a, S, Message> {
                 horizontal_alignment: alignment::Horizontal::Left,
                 vertical_alignment: alignment::Vertical::Top,
                 shaping: text::Shaping::Advanced,
+                wrap: text::Wrap::default(),
             });
         }
     }
@@ -116,6 +117,7 @@ impl<'a, S: AsRef<str>, Message: 'a> Widget<Message, crate::Theme, crate::Render
                 horizontal_alignment: alignment::Horizontal::Left,
                 vertical_alignment: alignment::Vertical::Top,
                 shaping: text::Shaping::Advanced,
+                wrap: text::Wrap::default(),
             });
         }
     }
@@ -310,6 +312,7 @@ pub fn layout(
                     horizontal_alignment: alignment::Horizontal::Left,
                     vertical_alignment: alignment::Vertical::Top,
                     shaping: text::Shaping::Advanced,
+                    wrap: text::Wrap::default(),
                 });
                 paragraph.min_width().round()
             };
@@ -536,6 +539,7 @@ pub fn draw<'a, S>(
                 horizontal_alignment: alignment::Horizontal::Left,
                 vertical_alignment: alignment::Vertical::Center,
                 shaping: text::Shaping::Advanced,
+                wrap: text::Wrap::default(),
             },
             bounds.position(),
             style.text_color,
