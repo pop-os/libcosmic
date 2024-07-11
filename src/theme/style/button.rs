@@ -64,7 +64,7 @@ pub fn appearance(
 
             let (background, text, icon) = color(style_component);
             appearance.background = Some(Background::Color(background));
-            if !matches!(style, Button::Standard | Button::Text) {
+            if !matches!(style, Button::Standard) {
                 appearance.text_color = text;
                 appearance.icon_color = icon;
             }
