@@ -9,7 +9,7 @@ use crate::{
 };
 use derive_setters::Setters;
 use iced::alignment::Horizontal;
-use iced_core::Length;
+use iced_core::{text::Wrap, Length};
 use taffy::AlignContent;
 
 /// A settings item aligned in a row
@@ -20,7 +20,7 @@ pub fn item<'a, Message: 'static>(
     widget: impl Into<Element<'a, Message>> + 'a,
 ) -> Row<'a, Message> {
     item_row(vec![
-        text(title).into(),
+        text(title).wrap(Wrap::Word).into(),
         horizontal_space(iced::Length::Fill).into(),
         widget.into(),
     ])
@@ -43,7 +43,7 @@ pub fn flex_item<'a, Message: 'static>(
     widget: impl Into<Element<'a, Message>> + 'a,
 ) -> FlexRow<'a, Message> {
     flex_item_row(vec![
-        text(title).width(Length::Fill).into(),
+        text(title).wrap(Wrap::Word).width(Length::Fill).into(),
         container(widget).into(),
     ])
 }
@@ -105,8 +105,8 @@ impl<'a, Message: 'static> Item<'a, Message> {
         if let Some(description) = self.description {
             let column = column::with_capacity(2)
                 .spacing(2)
-                .push(text(self.title))
-                .push(text(description).size(10))
+                .push(text(self.title).wrap(Wrap::Word))
+                .push(text(description).wrap(Wrap::Word).size(10))
                 .width(Length::Fill);
 
             contents.push(column.into());
@@ -122,7 +122,7 @@ impl<'a, Message: 'static> Item<'a, Message> {
         self,
         is_checked: bool,
         message: impl Fn(bool) -> Message + 'static,
-    ) -> FlexRow<'a, Message> {
-        self.flex_control(crate::widget::toggler(None, is_checked, message))
+    ) -> Row<'a, Message> {
+        self.control(crate::widget::toggler(None, is_checked, message))
     }
 }
