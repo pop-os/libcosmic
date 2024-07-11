@@ -15,7 +15,7 @@ use widget::Toaster;
 use crate::ext::CollectionWidget;
 
 use super::column;
-use super::{button, row, text};
+use super::{button, icon, row, text};
 
 mod widget;
 
@@ -27,18 +27,44 @@ pub fn toaster<'a, Message>(
 where
     Message: From<ToastMessage> + Clone + 'static,
 {
+    let theme = crate::theme::active();
+    let cosmic_theme::Spacing {
+        space_xxxs,
+        space_xxs,
+        space_xs,
+        space_s,
+        space_m,
+        ..
+    } = theme.cosmic().spacing;
+
     let make_toast = |toast: &'a Toast<Message>| {
         let row = row()
             .push(text(&toast.message))
-            .push_maybe(toast.action.as_ref().map(|action| {
-                button::standard(&action.description).on_press(action.message.clone())
-            }))
-            .push(button::standard("close").on_press(ToastMessage(toast.id).into()))
-            .align_items(iced::Alignment::Center);
+            .push(
+                row()
+                    .push_maybe(toast.action.as_ref().map(|action| {
+                        button::text(&action.description).on_press(action.message.clone())
+                    }))
+                    .push(
+                        button::icon(
+                            //TODO: include this in one place
+                            icon::from_svg_bytes(
+                                &include_bytes!("../../../res/icons/window-close-symbolic.svg")[..],
+                            )
+                            .symbolic(true),
+                        )
+                        .icon_size(16)
+                        .on_press(ToastMessage(toast.id).into()),
+                    )
+                    .align_items(iced::Alignment::Center)
+                    .spacing(space_xxs),
+            )
+            .align_items(iced::Alignment::Center)
+            .spacing(space_s);
 
         container(row)
-            .padding(crate::theme::active().cosmic().space_xs())
-            .style(crate::style::Container::Card)
+            .padding([space_xxs, space_s, space_xxs, space_m])
+            .style(crate::style::Container::Tooltip)
     };
 
     let col = toasts
@@ -47,7 +73,7 @@ where
         .rev()
         .map(make_toast)
         .fold(column::with_capacity(toasts.toasts.len()), Column::push)
-        .spacing(crate::theme::active().cosmic().space_xxxs());
+        .spacing(space_xxxs);
 
     Toaster::new(col.into(), content.into(), toasts.toasts.is_empty()).into()
 }

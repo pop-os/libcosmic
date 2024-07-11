@@ -141,10 +141,13 @@ where
         &'b mut self,
         state: &'b mut Tree,
         layout: Layout<'_>,
-        _renderer: &Renderer,
+        renderer: &Renderer,
     ) -> Option<overlay::Element<'b, Message, Theme, Renderer>> {
+        //TODO: this hides the overlay of the content during the toast
         if self.is_empty {
-            None
+            self.content
+                .as_widget_mut()
+                .overlay(&mut state.children[0], layout, renderer)
         } else {
             let bounds = layout.bounds();
 
