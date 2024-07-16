@@ -84,6 +84,9 @@ pub enum Message {
     Focus(window::Id),
     /// Window focus lost
     Unfocus(window::Id),
+    /// Tracks updates to window suggested size.
+    #[cfg(feature = "applet")]
+    Configure(cctk::sctk::shell::xdg::window::WindowConfigure),
 }
 
 #[derive(Default)]
@@ -185,6 +188,12 @@ where
                     wayland::Event::Popup(wayland::PopupEvent::Done, _, id)
                     | wayland::Event::Layer(wayland::LayerEvent::Done, _, id) => {
                         return Some(Message::SurfaceClosed(id));
+                    }
+                    #[cfg(feature = "applet")]
+                    wayland::Event::Window(WindowEvent::Configure(conf), _surface, id)
+                        if id == window::Id::MAIN =>
+                    {
+                        return Some(Message::Configure(conf));
                     }
                     _ => (),
                 },
@@ -637,6 +646,16 @@ impl<T: Application> Cosmic<T> {
                 if core.focused_window.as_ref().is_some_and(|cur| *cur == id) {
                     core.focused_window = None;
                 }
+            }
+            #[cfg(feature = "applet")]
+            Message::Configure(configure) => {
+                if let Some(w) = configure.new_size.0 {
+                    self.app.core_mut().set_window_width(w.get());
+                }
+                if let Some(h) = configure.new_size.1 {
+                    self.app.core_mut().set_window_height(h.get());
+                }
+                self.app.core_mut().applet.configure = Some(configure);
             }
         }
 
