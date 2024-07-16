@@ -12,8 +12,10 @@ use crate::{
     },
     iced_style, iced_widget,
     theme::{self, system_dark, system_light, Button, THEME},
-    widget, Application, Element, Renderer,
+    widget::{self, layer_container},
+    Application, Element, Renderer,
 };
+use cctk::sctk::shell::xdg::window::WindowConfigure;
 pub use cosmic_panel_config;
 use cosmic_panel_config::{CosmicPanelBackground, PanelAnchor, PanelSize};
 use cosmic_theme::Theme;
@@ -24,7 +26,7 @@ use iced_widget::runtime::command::platform_specific::wayland::popup::{
     SctkPopupSettings, SctkPositioner,
 };
 use sctk::reexports::protocols::xdg::shell::client::xdg_positioner::{Anchor, Gravity};
-use std::{borrow::Cow, rc::Rc};
+use std::{borrow::Cow, num::NonZeroU32, rc::Rc};
 
 use crate::app::cosmic;
 
@@ -35,15 +37,17 @@ pub struct Context {
     pub background: CosmicPanelBackground,
     pub output_name: String,
     pub panel_type: PanelType,
+    /// Includes the suggested size of the window.
+    /// This can be used by apples to handle overflow themselves.
+    pub configure: Option<WindowConfigure>,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Size {
-    PanelSize(PanelSize),
     // (width, height)
     Hardcoded((u16, u16)),
+    PanelSize(PanelSize),
 }
-
 #[derive(Clone, Debug, PartialEq)]
 pub enum PanelType {
     Panel,
@@ -90,6 +94,7 @@ impl Default for Context {
                 .unwrap_or(CosmicPanelBackground::ThemeDefault),
             output_name: std::env::var("COSMIC_PANEL_OUTPUT").unwrap_or_default(),
             panel_type: PanelType::from(std::env::var("COSMIC_PANEL_NAME").unwrap_or_default()),
+            configure: None,
         }
     }
 }
@@ -104,6 +109,27 @@ impl Context {
             }
             Size::Hardcoded((width, height)) => (*width, *height),
         }
+    }
+
+    #[must_use]
+    pub fn suggested_window_size(&self) -> (NonZeroU32, NonZeroU32) {
+        let suggested = self.suggested_size(true);
+        let applet_padding = self.suggested_padding(true);
+        let configured_width = self
+            .configure
+            .as_ref()
+            .and_then(|c| c.new_size.0.map(|w| w))
+            .unwrap_or_else(|| {
+                NonZeroU32::new(suggested.0 as u32 + applet_padding as u32 * 2).unwrap()
+            });
+        let configured_height = self
+            .configure
+            .as_ref()
+            .and_then(|c| c.new_size.1.map(|h| h))
+            .unwrap_or_else(|| {
+                NonZeroU32::new(suggested.1 as u32 + applet_padding as u32 * 2).unwrap()
+            });
+        (configured_width, configured_height)
     }
 
     #[must_use]
@@ -134,9 +160,7 @@ impl Context {
             .size_limits(
                 Limits::NONE
                     .min_height(height as f32 + applet_padding as f32 * 2.0)
-                    .max_height(height as f32 + applet_padding as f32 * 2.0)
-                    .min_width(width as f32 + applet_padding as f32 * 2.0)
-                    .max_width(width as f32 + applet_padding as f32 * 2.0),
+                    .min_width(width as f32 + applet_padding as f32 * 2.0),
             )
             .resizable(None)
             .default_text_size(14.0)
@@ -149,26 +173,50 @@ impl Context {
     }
 
     #[must_use]
+    pub fn is_horizontal(&self) -> bool {
+        matches!(self.anchor, PanelAnchor::Top | PanelAnchor::Bottom)
+    }
+
+    #[must_use]
     pub fn icon_button_from_handle<'a, Message: 'static>(
         &self,
         icon: widget::icon::Handle,
     ) -> crate::widget::Button<'a, Message> {
+        let suggested = self.suggested_size(icon.symbolic);
+        let applet_padding = self.suggested_padding(icon.symbolic);
+        let (mut configured_width, mut configured_height) = self.suggested_window_size();
+
+        // Adjust the width to include padding and force the crosswise dim to match the window size
+        let is_horizontal = self.is_horizontal();
+        if is_horizontal {
+            configured_width =
+                NonZeroU32::new(suggested.0 as u32 + applet_padding as u32 * 2).unwrap();
+        } else {
+            configured_height =
+                NonZeroU32::new(suggested.1 as u32 + applet_padding as u32 * 2).unwrap();
+        }
         let symbolic = icon.symbolic;
-        let suggested = self.suggested_size(symbolic);
-        let applet_padding = self.suggested_padding(symbolic);
+
         crate::widget::button(
-            widget::icon(icon)
-                .style(if symbolic {
-                    theme::Svg::Custom(Rc::new(|theme| crate::iced_style::svg::Appearance {
-                        color: Some(theme.cosmic().background.on.into()),
-                    }))
-                } else {
-                    theme::Svg::default()
-                })
-                .width(Length::Fixed(suggested.0 as f32))
-                .height(Length::Fixed(suggested.1 as f32)),
+            layer_container(
+                widget::icon(icon)
+                    .style(if symbolic {
+                        theme::Svg::Custom(Rc::new(|theme| crate::iced_style::svg::Appearance {
+                            color: Some(theme.cosmic().background.on.into()),
+                        }))
+                    } else {
+                        theme::Svg::default()
+                    })
+                    .width(Length::Fixed(suggested.0 as f32))
+                    .height(Length::Fixed(suggested.1 as f32)),
+            )
+            .align_x(Horizontal::Center)
+            .align_y(Vertical::Center)
+            .width(Length::Fill)
+            .height(Length::Fill),
         )
-        .padding(applet_padding)
+        .width(Length::Fixed(configured_width.get() as f32))
+        .height(Length::Fixed(configured_height.get() as f32))
         .style(Button::AppletIcon)
     }
 
