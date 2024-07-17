@@ -772,6 +772,7 @@ fn color_to_string(c: palette::Hsv, is_hex: bool) -> String {
     }
 }
 
+#[allow(clippy::too_many_lines)]
 /// A button for selecting a color from a color picker.
 pub fn color_button<'a, Message: 'static>(
     on_press: Option<Message>,
@@ -826,6 +827,7 @@ pub fn color_button<'a, Message: 'static>(
                 outline_color,
                 icon_color: None,
                 text_color: None,
+                overlay: None,
             }
         }),
         disabled: Box::new(move |theme| {
@@ -842,6 +844,7 @@ pub fn color_button<'a, Message: 'static>(
                 outline_color: Color::TRANSPARENT,
                 icon_color: None,
                 text_color: None,
+                overlay: None,
             }
         }),
         hovered: Box::new(move |focused, theme| {
@@ -864,6 +867,7 @@ pub fn color_button<'a, Message: 'static>(
                 outline_color,
                 icon_color: None,
                 text_color: None,
+                overlay: None,
             }
         }),
         pressed: Box::new(move |focused, theme| {
@@ -886,6 +890,7 @@ pub fn color_button<'a, Message: 'static>(
                 outline_color,
                 icon_color: None,
                 text_color: None,
+                overlay: None,
             }
         }),
     })

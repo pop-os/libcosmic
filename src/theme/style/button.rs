@@ -73,9 +73,14 @@ pub fn appearance(
         Button::Icon | Button::IconVertical | Button::HeaderBar => {
             if matches!(style, Button::IconVertical) {
                 corner_radii = &cosmic.corner_radii.radius_m;
+                if selected {
+                    appearance.overlay = Some(Background::Color(Color::from(
+                        cosmic.icon_button.selected_state_color(),
+                    )));
+                }
             }
 
-            let (background, text, icon) = color(&cosmic.icon_button);
+            let (background, _text, _icon) = color(&cosmic.icon_button);
             appearance.background = Some(Background::Color(background));
         }
 
