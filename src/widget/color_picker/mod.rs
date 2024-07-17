@@ -606,39 +606,49 @@ where
             (1.0 - self.active_color.value).mul_add(bounds.height, bounds.position().y)
                 - handle_radius,
         );
-        renderer.fill_quad(
-            Quad {
-                bounds: Rectangle {
-                    x,
-                    y,
-                    width: handle_radius.mul_add(2.0, 1.0),
-                    height: handle_radius.mul_add(2.0, 1.0),
-                },
-                border: Border {
-                    width: 1.0,
-                    color: t.palette.neutral_5.into(),
-                    radius: (1.0 + handle_radius).into(),
-                },
-                shadow: Shadow::default(),
+        renderer.with_layer(
+            Rectangle {
+                x,
+                y,
+                width: handle_radius.mul_add(2.0, 1.0),
+                height: handle_radius.mul_add(2.0, 1.0),
             },
-            Color::TRANSPARENT,
-        );
-        renderer.fill_quad(
-            Quad {
-                bounds: Rectangle {
-                    x,
-                    y,
-                    width: handle_radius * 2.0,
-                    height: handle_radius * 2.0,
-                },
-                border: Border {
-                    width: 1.0,
-                    color: t.palette.neutral_10.into(),
-                    radius: handle_radius.into(),
-                },
-                shadow: Shadow::default(),
+            |renderer| {
+                renderer.fill_quad(
+                    Quad {
+                        bounds: Rectangle {
+                            x,
+                            y,
+                            width: handle_radius.mul_add(2.0, 1.0),
+                            height: handle_radius.mul_add(2.0, 1.0),
+                        },
+                        border: Border {
+                            width: 1.0,
+                            color: t.palette.neutral_5.into(),
+                            radius: (1.0 + handle_radius).into(),
+                        },
+                        shadow: Shadow::default(),
+                    },
+                    Color::TRANSPARENT,
+                );
+                renderer.fill_quad(
+                    Quad {
+                        bounds: Rectangle {
+                            x,
+                            y,
+                            width: handle_radius * 2.0,
+                            height: handle_radius * 2.0,
+                        },
+                        border: Border {
+                            width: 1.0,
+                            color: t.palette.neutral_10.into(),
+                            radius: handle_radius.into(),
+                        },
+                        shadow: Shadow::default(),
+                    },
+                    Color::TRANSPARENT,
+                );
             },
-            Color::TRANSPARENT,
         );
     }
 
