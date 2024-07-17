@@ -16,6 +16,9 @@ pub struct Appearance {
     /// The [`Background`] of the button.
     pub background: Option<Background>,
 
+    /// The [`Background`] overlay of the button.
+    pub overlay: Option<Background>,
+
     /// The border radius of the button.
     pub border_radius: Radius,
 
@@ -52,6 +55,7 @@ impl Appearance {
             outline_color: Color::TRANSPARENT,
             icon_color: None,
             text_color: None,
+            overlay: None,
         }
     }
 }

@@ -813,6 +813,21 @@ pub fn draw<Renderer: iced_core::Renderer, Theme>(
             );
         }
 
+        // Then button overlay if any.
+        if let Some(overlay) = styling.overlay {
+            renderer.fill_quad(
+                renderer::Quad {
+                    bounds,
+                    border: Border {
+                        radius: styling.border_radius,
+                        ..Default::default()
+                    },
+                    shadow: Shadow::default(),
+                },
+                overlay,
+            );
+        }
+
         // Then draw the button contents onto the background.
         draw_contents(renderer, styling);
 
