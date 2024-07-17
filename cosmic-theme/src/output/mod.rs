@@ -14,6 +14,8 @@ pub enum OutputError {
     Io(std::io::Error),
     #[error("Missing config directory")]
     MissingConfigDir,
+    #[error("Serde Error: {0}")]
+    Serde(#[from] serde_json::Error),
 }
 
 impl Theme {

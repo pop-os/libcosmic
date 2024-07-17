@@ -277,7 +277,7 @@ impl Theme {
         // just add the json entry for workbench.colorCustomizations
         let settings_file = vs_code_dir.join("settings.json");
         let settings = std::fs::read_to_string(&settings_file).unwrap_or_default();
-        let mut settings: serde_json::Value = serde_json::from_str(&settings).unwrap_or_default();
+        let mut settings: serde_json::Value = serde_json::from_str(&settings)?;
         settings["workbench.colorCustomizations"] = serde_json::to_value(vs_theme).unwrap();
         settings["window.autoDetectColorScheme"] = serde_json::Value::Bool(true);
         std::fs::write(
