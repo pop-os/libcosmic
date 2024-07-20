@@ -17,7 +17,6 @@ pub enum Message {
     FocusNext,
     FocusPrevious,
     Fullscreen,
-    Unfocus,
     Search,
 }
 
@@ -59,42 +58,9 @@ pub fn subscription() -> Subscription<Message> {
                 return Some(Message::Search);
             }
 
-            Event::Mouse(mouse::Event::ButtonPressed { .. }) => {
-                return Some(Message::Unfocus);
-            }
-
             _ => (),
         }
 
         None
     })
-}
-
-/// Unfocuses any actively-focused widget.
-pub fn unfocus<Message: 'static>() -> Command<Message> {
-    Command::<Message>::widget(unfocus_operation())
-}
-
-#[must_use]
-fn unfocus_operation<T>() -> impl Operation<T> {
-    struct Unfocus {}
-
-    impl<T> Operation<T> for Unfocus {
-        fn focusable(&mut self, state: &mut dyn operation::Focusable, _id: Option<&Id>) {
-            if state.is_focused() {
-                state.unfocus();
-            }
-        }
-
-        fn container(
-            &mut self,
-            _id: Option<&Id>,
-            _bounds: Rectangle,
-            operate_on_children: &mut dyn FnMut(&mut dyn Operation<T>),
-        ) {
-            operate_on_children(self);
-        }
-    }
-
-    Unfocus {}
 }
