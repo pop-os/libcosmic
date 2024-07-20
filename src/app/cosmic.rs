@@ -371,9 +371,6 @@ impl<T: Application> Cosmic<T> {
             }
 
             Message::KeyboardNav(message) => match message {
-                keyboard_nav::Message::Unfocus => {
-                    return keyboard_nav::unfocus().map(super::Message::Cosmic)
-                }
                 keyboard_nav::Message::FocusNext => {
                     return iced::widget::focus_next().map(super::Message::Cosmic)
                 }

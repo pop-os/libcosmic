@@ -1210,19 +1210,15 @@ where
             let state = state();
             let is_clicked = cursor_position.is_over(text_layout.bounds()) && on_input.is_some();
 
-            state.is_focused = if is_clicked {
-                state.is_focused.or_else(|| {
+            if is_clicked {
+                state.is_focused = state.is_focused.or_else(|| {
                     let now = Instant::now();
                     Some(Focus {
                         updated_at: now,
                         now,
                     })
-                })
-            } else {
-                None
-            };
+                });
 
-            if is_clicked {
                 let Some(pos) = cursor_position.position() else {
                     return event::Status::Ignored;
                 };
