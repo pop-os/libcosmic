@@ -4,6 +4,7 @@
 //! A widget that displays toasts.
 
 use std::collections::VecDeque;
+use std::rc::Rc;
 
 use crate::widget::container;
 use crate::widget::Column;
@@ -95,10 +96,18 @@ impl From<std::time::Duration> for Duration {
 /// Action that can be triggered by the user.
 ///
 /// Example: `undo`
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct Action<Message> {
     pub description: String,
-    pub message: fn(usize) -> Message,
+    pub message: Rc<dyn Fn(usize) -> Message>,
+}
+
+impl<Message> std::fmt::Debug for Action<Message> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Action")
+            .field("description", &self.description)
+            .finish()
+    }
 }
 
 /// Represent the data used to display a [`Toast`]
@@ -121,8 +130,15 @@ impl<Message> Toast<Message> {
 
     /// Set the [`Action`] of this [`Toast`]
     #[must_use]
-    pub fn action(mut self, action: Action<Message>) -> Self {
-        self.action.replace(action);
+    pub fn action(
+        mut self,
+        description: String,
+        message: impl Fn(usize) -> Message + 'static,
+    ) -> Self {
+        self.action.replace(Action {
+            description,
+            message: Rc::new(message),
+        });
         self
     }
 
