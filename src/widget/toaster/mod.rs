@@ -4,11 +4,10 @@
 //! A widget that displays toasts.
 
 use std::collections::VecDeque;
-use std::time::Duration;
 
-use crate::app::Command;
 use crate::widget::container;
 use crate::widget::Column;
+use crate::Command;
 use iced_core::Element;
 use widget::Toaster;
 
@@ -20,34 +19,30 @@ use super::{button, icon, row, text};
 mod widget;
 
 /// Create a new Toaster widget.
-pub fn toaster<'a, Message>(
+pub fn toaster<'a, Message: Clone + 'static>(
     toasts: &'a Toasts<Message>,
     content: impl Into<Element<'a, Message, crate::Theme, iced::Renderer>>,
-) -> Element<'a, Message, crate::Theme, iced::Renderer>
-where
-    Message: From<ToastMessage> + Clone + 'static,
-{
+) -> Element<'a, Message, crate::Theme, iced::Renderer> {
     let theme = crate::theme::active();
     let cosmic_theme::Spacing {
         space_xxxs,
         space_xxs,
-        space_xs,
         space_s,
         space_m,
         ..
     } = theme.cosmic().spacing;
 
-    let make_toast = |toast: &'a Toast<Message>| {
+    let make_toast = move |(id, toast): (usize, &'a Toast<Message>)| {
         let row = row()
             .push(text(&toast.message))
             .push(
                 row()
                     .push_maybe(toast.action.as_ref().map(|action| {
-                        button::text(&action.description).on_press(action.message.clone())
+                        button::text(&action.description).on_press((action.message)(id))
                     }))
                     .push(
                         button::icon(icon::from_name("window-close-symbolic"))
-                            .on_press(ToastMessage(toast.id).into()),
+                            .on_press((toasts.on_close)(id)),
                     )
                     .align_items(iced::Alignment::Center)
                     .spacing(space_xxs),
@@ -63,6 +58,7 @@ where
     let col = toasts
         .toasts
         .iter()
+        .enumerate()
         .rev()
         .map(make_toast)
         .fold(column::with_capacity(toasts.toasts.len()), Column::push)
@@ -73,25 +69,25 @@ where
 
 /// Duration for the [`Toast`]
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Default)]
-pub enum ToastDuration {
+pub enum Duration {
     #[default]
     Short,
     Long,
-    Custom(Duration),
+    Custom(std::time::Duration),
 }
 
-impl ToastDuration {
-    fn duration(&self) -> Duration {
+impl Duration {
+    fn duration(&self) -> std::time::Duration {
         match self {
-            ToastDuration::Short => Duration::from_millis(2000),
-            ToastDuration::Long => Duration::from_millis(3500),
-            ToastDuration::Custom(duration) => *duration,
+            Duration::Short => std::time::Duration::from_millis(5000),
+            Duration::Long => std::time::Duration::from_millis(15000),
+            Duration::Custom(duration) => *duration,
         }
     }
 }
 
-impl From<Duration> for ToastDuration {
-    fn from(value: Duration) -> Self {
+impl From<std::time::Duration> for Duration {
+    fn from(value: std::time::Duration) -> Self {
         Self::Custom(value)
     }
 }
@@ -100,18 +96,17 @@ impl From<Duration> for ToastDuration {
 ///
 /// Example: `undo`
 #[derive(Debug, Clone)]
-pub struct ToastAction<Message> {
+pub struct Action<Message> {
     pub description: String,
-    pub message: Message,
+    pub message: fn(usize) -> Message,
 }
 
 /// Represent the data used to display a [`Toast`]
 #[derive(Debug, Clone)]
 pub struct Toast<Message> {
     message: String,
-    action: Option<ToastAction<Message>>,
-    duration: ToastDuration,
-    id: u32,
+    action: Option<Action<Message>>,
+    duration: Duration,
 }
 
 impl<Message> Toast<Message> {
@@ -120,21 +115,20 @@ impl<Message> Toast<Message> {
         Self {
             message: message.into(),
             action: None,
-            duration: ToastDuration::default(),
-            id: 0,
+            duration: Duration::default(),
         }
     }
 
-    /// Set the [`ToastAction`] of this [`Toast`]
+    /// Set the [`Action`] of this [`Toast`]
     #[must_use]
-    pub fn action(mut self, action: ToastAction<Message>) -> Self {
+    pub fn action(mut self, action: Action<Message>) -> Self {
         self.action.replace(action);
         self
     }
 
-    /// Set the [`ToastDuration`] of this [`Toast`]
+    /// Set the [`Duration`] of this [`Toast`]
     #[must_use]
-    pub fn duration(mut self, duration: impl Into<ToastDuration>) -> Self {
+    pub fn duration(mut self, duration: impl Into<Duration>) -> Self {
         self.duration = duration.into();
         self
     }
@@ -142,55 +136,41 @@ impl<Message> Toast<Message> {
 
 #[derive(Debug, Clone)]
 pub struct Toasts<Message> {
-    id_count: u32,
     toasts: VecDeque<Toast<Message>>,
+    on_close: fn(usize) -> Message,
     limit: usize,
 }
 
-// need custom impl to not require Message: Clone
-impl<M> Default for Toasts<M> {
-    fn default() -> Self {
+impl<Message: Clone + Send + 'static> Toasts<Message> {
+    pub fn new(on_close: fn(usize) -> Message) -> Self {
         Self {
-            id_count: 0,
             toasts: VecDeque::new(),
+            on_close,
             limit: 5,
         }
     }
-}
 
-#[derive(Debug, Clone)]
-pub struct ToastMessage(u32);
-
-impl<Message> Toasts<Message> {
     /// Add a new [`Toast`]
-    pub fn push(&mut self, mut toast: Toast<Message>) -> Command<Message>
-    where
-        Message: From<ToastMessage>,
-    {
+    pub fn push(&mut self, toast: Toast<Message>) -> Command<Message> {
         while self.toasts.len() >= self.limit {
             self.toasts.pop_front();
         }
 
-        toast.id = self.id_count;
-        self.id_count += 1;
-
-        let message = ToastMessage(toast.id);
         let duration = toast.duration.duration();
 
+        let id = self.toasts.len();
         self.toasts.push_back(toast);
+        let on_close = self.on_close;
 
         crate::command::future(async move {
             #[cfg(feature = "tokio")]
             tokio::time::sleep(duration).await;
-            crate::app::Message::App(Message::from(message))
+            on_close(id)
         })
     }
 
-    /// Handle the [`ToastMessage`]
-    pub fn handle_message(&mut self, message: &ToastMessage) {
-        self.toasts
-            .iter()
-            .position(|e| e.id == message.0)
-            .map(|index| self.toasts.remove(index));
+    /// Remove a [`Toast`]
+    pub fn remove(&mut self, id: usize) {
+        self.toasts.remove(id);
     }
 }

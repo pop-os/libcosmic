@@ -317,6 +317,10 @@ pub use text_input::{
     editable_input, inline_input, search_input, secure_input, text_input, TextInput,
 };
 
+pub mod toaster;
+#[doc(inline)]
+pub use toaster::{toaster, Toast, Toasts};
+
 mod toggler;
 #[doc(inline)]
 pub use toggler::toggler;
@@ -349,6 +353,3 @@ pub mod tooltip {
 pub mod warning;
 #[doc(inline)]
 pub use warning::*;
-
-#[cfg(any(feature = "winit", feature = "wayland"))]
-pub mod toaster;
