@@ -8,6 +8,7 @@ use iced::advanced::widget::{self, Operation, OperationOutputWrapper};
 use iced::advanced::{overlay, renderer};
 use iced::advanced::{Clipboard, Shell};
 use iced::{event, mouse, Event, Point, Rectangle, Size};
+use iced_core::Renderer;
 
 pub(super) struct Overlay<'a, 'b, Message> {
     pub(super) content: &'b mut Element<'a, Message>,
@@ -80,15 +81,17 @@ where
         layout: Layout<'_>,
         cursor: mouse::Cursor,
     ) {
-        self.content.as_widget().draw(
-            self.tree,
-            renderer,
-            theme,
-            style,
-            layout,
-            cursor,
-            &layout.bounds(),
-        );
+        renderer.with_layer(layout.bounds(), |renderer| {
+            self.content.as_widget().draw(
+                self.tree,
+                renderer,
+                theme,
+                style,
+                layout,
+                cursor,
+                &layout.bounds(),
+            );
+        })
     }
 
     fn operate(

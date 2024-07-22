@@ -350,8 +350,8 @@ impl<'a, Message: Clone + 'static> HeaderBar<'a, Message> {
 
     /// Creates the widget for window controls.
     fn window_controls(&mut self) -> Element<'a, Message> {
-        let icon = |icon_bytes, size, on_press| {
-            widget::icon::from_svg_bytes(icon_bytes)
+        let icon = |name, size, on_press| {
+            widget::icon::from_name(name)
                 .symbolic(true)
                 .apply(widget::button::icon)
                 .style(crate::theme::Button::HeaderBar)
@@ -368,27 +368,21 @@ impl<'a, Message: Clone + 'static> HeaderBar<'a, Message> {
         };
 
         widget::row::with_capacity(3)
-            .push_maybe(self.on_minimize.take().map(|m| {
-                icon(
-                    &include_bytes!("../../res/icons/window-minimize-symbolic.svg")[..],
-                    16,
-                    m,
-                )
-            }))
-            .push_maybe(self.on_maximize.take().map(|m| {
-                icon(
-                    &include_bytes!("../../res/icons/window-maximize-symbolic.svg")[..],
-                    16,
-                    m,
-                )
-            }))
-            .push_maybe(self.on_close.take().map(|m| {
-                icon(
-                    &include_bytes!("../../res/icons/window-close-symbolic.svg")[..],
-                    16,
-                    m,
-                )
-            }))
+            .push_maybe(
+                self.on_minimize
+                    .take()
+                    .map(|m| icon("window-minimize-symbolic", 16, m)),
+            )
+            .push_maybe(
+                self.on_maximize
+                    .take()
+                    .map(|m| icon("window-maximize-symbolic", 16, m)),
+            )
+            .push_maybe(
+                self.on_close
+                    .take()
+                    .map(|m| icon("window-close-symbolic", 16, m)),
+            )
             .spacing(spacing)
             .apply(widget::container)
             .height(Length::Fill)

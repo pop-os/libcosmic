@@ -46,15 +46,8 @@ where
                         button::text(&action.description).on_press(action.message.clone())
                     }))
                     .push(
-                        button::icon(
-                            //TODO: include this in one place
-                            icon::from_svg_bytes(
-                                &include_bytes!("../../../res/icons/window-close-symbolic.svg")[..],
-                            )
-                            .symbolic(true),
-                        )
-                        .icon_size(16)
-                        .on_press(ToastMessage(toast.id).into()),
+                        button::icon(icon::from_name("window-close-symbolic"))
+                            .on_press(ToastMessage(toast.id).into()),
                     )
                     .align_items(iced::Alignment::Center)
                     .spacing(space_xxs),
