@@ -708,7 +708,8 @@ impl<App: Application> ApplicationExt for App {
                         .title(&core.window.header_title)
                         .on_drag(Message::Cosmic(cosmic::Message::Drag))
                         .on_close(Message::Cosmic(cosmic::Message::Close))
-                        .on_right_click(Message::Cosmic(cosmic::Message::ShowWindowMenu));
+                        .on_right_click(Message::Cosmic(cosmic::Message::ShowWindowMenu))
+                        .on_double_click(Message::Cosmic(cosmic::Message::Maximize));
 
                     if self.nav_model().is_some() {
                         let toggle = crate::widget::nav_bar_toggle()
