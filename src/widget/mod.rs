@@ -247,6 +247,9 @@ pub mod list;
 #[doc(inline)]
 pub use list::{list_column, ListColumn};
 
+#[cfg(feature = "markdown")]
+pub mod markdown;
+
 pub mod menu;
 
 pub mod nav_bar;

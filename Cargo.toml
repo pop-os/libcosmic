@@ -21,6 +21,14 @@ clipboard = ["iced_sctk?/clipboard"]
 dbus-config = ["cosmic-config/dbus", "dep:zbus", "cosmic-settings-daemon"]
 # Debug features
 debug = ["iced/debug"]
+# Enables markdown widget
+markdown = [
+    "dep:cosmic-text",
+    "dep:markdown",
+    "dep:syntect",
+    "dep:two-face",
+    "dep:cosmic-syntax-theme"
+]
 # Enables pipewire support in ashpd, if ashpd is enabled
 pipewire = ["ashpd?/pipewire"]
 # Enables process spawning helper
@@ -83,16 +91,19 @@ derive_setters = "0.1.5"
 fraction = "0.14.0"
 image = { version = "0.25.1", optional = true }
 lazy_static = "1.4.0"
+markdown = { version = "0.3.0", optional = true }
 mime = { version = "0.3.17", optional = true }
 nix = { version = "0.27", features = ["process"], optional = true }
 palette = "0.7.3"
 rfd = { version = "0.14.0", optional = true }
 serde = { version = "1.0.180", features = ["derive"] }
 slotmap = "1.0.6"
+syntect = { version = "5.2.0", optional = true }
 textdistance = { version = "1.0.2", optional = true }
 thiserror = "1.0.44"
 tokio = { version = "1.24.2", optional = true }
 tracing = "0.1"
+two-face = { version = "0.4.0", optional = true }
 unicode-segmentation = "1.6"
 url = "2.4.0"
 zbus = { version = "4.2.1", default-features = false, optional = true }
@@ -101,6 +112,11 @@ zbus = { version = "4.2.1", default-features = false, optional = true }
 freedesktop-icons = "0.2.5"
 freedesktop-desktop-entry = { version = "0.5.1", optional = true }
 shlex = { version = "1.3.0", optional = true }
+
+[dependencies.cosmic-text]
+git = "https://github.com/pop-os/cosmic-text"
+default-features = false
+optional = true
 
 [dependencies.cosmic-theme]
 path = "cosmic-theme"
@@ -155,6 +171,10 @@ optional = true
 
 [dependencies.ron]
 version = "0.8"
+optional = true
+
+[dependencies.cosmic-syntax-theme]
+git = "https://github.com/pop-os/cosmic-syntax-theme.git"
 optional = true
 
 [dependencies.taffy]
