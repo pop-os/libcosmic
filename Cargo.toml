@@ -33,7 +33,9 @@ desktop = [
     "dep:freedesktop-desktop-entry",
     "dep:mime",
     "dep:shlex",
+    "dep:tokio",
     "dep:textdistance",
+    "dep:zbus",
 ]
 # Enables keycode serialization
 serde-keycode = ["iced_core/serde"]
@@ -96,7 +98,7 @@ tokio = { version = "1.24.2", optional = true }
 tracing = "0.1"
 unicode-segmentation = "1.6"
 url = "2.4.0"
-zbus = { version = "4.2.1", default-features = false, optional = true }
+zbus = { version = "4.2.1", default-features = false, features = ["tokio"], optional = true }
 
 [target.'cfg(unix)'.dependencies]
 freedesktop-icons = "0.2.5"

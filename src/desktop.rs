@@ -7,6 +7,7 @@ use std::{
     ffi::OsStr,
     path::{Path, PathBuf},
 };
+use zbus::zvariant;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum IconSource {
@@ -306,7 +307,7 @@ impl DesktopEntryData {
     }
 }
 
-pub fn spawn_desktop_exec<S, I, K, V>(exec: S, env_vars: I)
+pub async fn spawn_desktop_exec<S, I, K, V>(exec: S, env_vars: I, app_id: Option<&str>)
 where
     S: AsRef<str>,
     I: IntoIterator<Item = (K, V)>,
@@ -314,10 +315,13 @@ where
     V: AsRef<OsStr>,
 {
     let mut exec = shlex::Shlex::new(exec.as_ref());
-    let mut cmd = match exec.next() {
-        Some(cmd) if !cmd.contains('=') => std::process::Command::new(cmd),
+
+    let executable = match exec.next() {
+        Some(executable) if !executable.contains('=') => executable,
         _ => return,
     };
+
+    let mut cmd = std::process::Command::new(&executable);
 
     for arg in exec {
         // TODO handle "%" args here if necessary?
@@ -328,5 +332,53 @@ where
 
     cmd.envs(env_vars);
 
-    crate::process::spawn(cmd);
+    // https://systemd.io/DESKTOP_ENVIRONMENTS
+    //
+    // Similar to what Gnome sets, for now.
+    if let Ok(Some(pid)) = tokio::task::spawn_blocking(|| crate::process::spawn(cmd)).await {
+        if let Ok(session) = zbus::Connection::session().await {
+            if let Ok(systemd_manager) = SystemdMangerProxy::new(&session).await {
+                let _ = systemd_manager
+                    .start_transient_unit(
+                        &format!("app-cosmic-{}-{}.scope", app_id.unwrap_or(&executable), pid),
+                        "fail",
+                        &[
+                            (
+                                "Description".to_string(),
+                                zvariant::Value::from("Application launched by COSMIC")
+                                    .try_to_owned()
+                                    .unwrap(),
+                            ),
+                            (
+                                "PIDs".to_string(),
+                                zvariant::Value::from(vec![pid]).try_to_owned().unwrap(),
+                            ),
+                            (
+                                "CollectMode".to_string(),
+                                zvariant::Value::from("inactive-or-failed")
+                                    .try_to_owned()
+                                    .unwrap(),
+                            ),
+                        ],
+                        &[],
+                    )
+                    .await;
+            }
+        }
+    }
+}
+
+#[zbus::proxy(
+    interface = "org.freedesktop.systemd1.Manager",
+    default_service = "org.freedesktop.systemd1",
+    default_path = "/org/freedesktop/systemd1"
+)]
+trait SystemdManger {
+    async fn start_transient_unit(
+        &self,
+        name: &str,
+        mode: &str,
+        properties: &[(String, zvariant::OwnedValue)],
+        aux: &[(String, Vec<(String, zvariant::OwnedValue)>)],
+    ) -> zbus::Result<zvariant::OwnedObjectPath>;
 }
