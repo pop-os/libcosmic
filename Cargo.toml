@@ -24,7 +24,7 @@ debug = ["iced/debug"]
 # Enables pipewire support in ashpd, if ashpd is enabled
 pipewire = ["ashpd?/pipewire"]
 # Enables process spawning helper
-process = ["dep:nix"]
+process = ["dep:libc", "dep:rustix"]
 # Use rfd for file dialogs
 rfd = ["dep:rfd"]
 # Enables desktop files helpers
@@ -83,10 +83,11 @@ derive_setters = "0.1.5"
 fraction = "0.14.0"
 image = { version = "0.25.1", optional = true }
 lazy_static = "1.4.0"
+libc = { version = "0.2.155", optional  = true }
 mime = { version = "0.3.17", optional = true }
-nix = { version = "0.27", features = ["process"], optional = true }
 palette = "0.7.3"
 rfd = { version = "0.14.0", optional = true }
+rustix = { version = "0.38.34", features = ["pipe", "process"], optional = true }
 serde = { version = "1.0.180", features = ["derive"] }
 slotmap = "1.0.6"
 textdistance = { version = "1.0.2", optional = true }
