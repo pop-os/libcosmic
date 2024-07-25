@@ -74,7 +74,7 @@ xdg-portal = ["ashpd"]
 
 [dependencies]
 apply = "0.3.0"
-ashpd = { version = "0.8.1", default-features = false, optional = true }
+ashpd = { version = "0.9.1", default-features = false, optional = true }
 async-fs = { version = "2.1", optional = true }
 cctk = { git = "https://github.com/pop-os/cosmic-protocols", package = "cosmic-client-toolkit", rev = "c8d3a1c", optional = true }
 chrono = "0.4.35"
@@ -82,7 +82,7 @@ cosmic-config = { path = "cosmic-config" }
 cosmic-settings-daemon = { git = "https://github.com/pop-os/dbus-settings-bindings", optional = true }
 css-color = "0.2.5"
 derive_setters = "0.1.5"
-fraction = "0.14.0"
+fraction = "0.15.3"
 image = { version = "0.25.1", optional = true }
 lazy_static = "1.4.0"
 libc = { version = "0.2.155", optional  = true }
