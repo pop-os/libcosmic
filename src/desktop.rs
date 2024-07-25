@@ -335,7 +335,7 @@ where
     // https://systemd.io/DESKTOP_ENVIRONMENTS
     //
     // Similar to what Gnome sets, for now.
-    if let Ok(Some(pid)) = tokio::task::spawn_blocking(|| crate::process::spawn(cmd)).await {
+    if let Some(pid) = crate::process::spawn(cmd).await {
         if let Ok(session) = zbus::Connection::session().await {
             if let Ok(systemd_manager) = SystemdMangerProxy::new(&session).await {
                 let _ = systemd_manager
