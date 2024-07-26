@@ -41,7 +41,8 @@ jobs:
         - winit_wgpu
         - wayland
         - applet
-        - desktop
+        - desktop,smol
+        - desktop,tokio
     runs-on: ubuntu-22.04
     steps:
       - name: Checkout sources
