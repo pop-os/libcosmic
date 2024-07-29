@@ -1,18 +1,25 @@
 # LIBCOSMIC
 
-A platform toolkit based on iced which provides the building blocks for developing the
-future COSMIC desktop environment. Applications and applets alike are equally supported
-targets of Libcosmic. Applets integrate directly with COSMIC's interface as shell
-components, which was made possible by the Layer Shell protocol of Wayland.
+A platform toolkit based on iced for creating applets and applications for the COSMIC™ desktop.
 
-## Building
+## Documentation
 
-Libcosmic is written entirely in Rust, with minimal dependence on system libraries. On
-Pop!_OS, the following dependencies are all that's necessary compile the cosmic library:
+- [API Documentation](https://pop-os.github.io/libcosmic/cosmic/): Automatically generated from this repository via `cargo doc`
+- [libcosmic Book](https://pop-os.github.io/libcosmic-book/): A reference for learning libcosmic
+
+## Templates
+
+- https://github.com/pop-os/cosmic-app-template: Application project template
+
+## Dependencies
+
+While libcosmic is written entirely in Rust, some of its dependencies may require shared system library headers to be installed. On Pop!_OS, the following dependencies are all that's necessary compile a typical COSMIC project:
 
 ```sh
-sudo apt install cargo cmake just libexpat1-dev libfontconfig-dev libfreetype-dev pkg-config
+sudo apt install cargo cmake just libexpat1-dev libfontconfig-dev libfreetype-dev libxkbcommon-dev pkgconf
 ```
+
+## Examples
 
 Some examples are included in the [examples](./examples) directory to to kickstart your
 COSMIC adventure. To run them, you need to clone the repository with the following commands:
@@ -20,7 +27,6 @@ COSMIC adventure. To run them, you need to clone the repository with the followi
 ```sh
 git clone https://github.com/pop-os/libcosmic
 cd libcosmic
-git submodule update --init --recursive
 ```
 
 If you have already cloned the repository, run these to sync with the latest updates:
@@ -29,31 +35,11 @@ If you have already cloned the repository, run these to sync with the latest upd
 git fetch origin
 git checkout master
 git reset --hard origin/master
-git submodule update --init --recursive
 ```
 
-The examples may then be run by their cargo project names, such as `just run cosmic-design-demo`.
+The examples may then be run by their cargo project names, such as `just run application`.
 
-To create a new COSMIC project, use `cargo new {{name_of_project}}` to create a new
-project workspace, edit the `Cargo.toml` contained within, and add this to begin.
-
-```toml
-[workspace.dependencies.libcosmic]
-git = "https://github.com/pop-os/libcosmic"
-default-features = false
-features = ["wayland", "tokio"]
-```
-
-Alternatively, to create a new package after running `cargo new {{name_of_project}}`,
-edit the `Cargo.toml` within, and edit the dependencies section to look like this.
-
-```toml
-[dependencies]
-libcosmic = { git = "https://github.com/pop-os/libcosmic", default-features = false,
-                features = ["wayland", "tokio"] }
-```
-
-### Cargo Features
+## Cargo Features
 
 Available cargo features to choose from:
 
@@ -82,10 +68,6 @@ Available cargo features to choose from:
 - [COSMIC Panel](https://github.com/pop-os/cosmic-panel)
 - [COSMIC Text Editor](https://github.com/pop-os/cosmic-text-editor)
 - [COSMIC Settings](https://github.com/pop-os/cosmic-settings)
-
-## Documentation
-
-Documentation can be found [here](https://pop-os.github.io/libcosmic/cosmic/).
 
 ## Licence
 
