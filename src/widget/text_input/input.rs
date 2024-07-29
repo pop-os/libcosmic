@@ -542,16 +542,15 @@ where
             state.is_pasting = None;
             state.dragging_state = None;
         }
-
+        let old_value = state
+            .value
+            .buffer()
+            .lines
+            .iter()
+            .map(|l| l.text())
+            .collect::<String>();
         if state.is_secure != self.is_secure
-            || state
-                .value
-                .buffer()
-                .lines
-                .iter()
-                .map(|l| l.text())
-                .collect::<String>()
-                != self.value.to_string()
+            || old_value != self.value.to_string()
             || state
                 .label
                 .buffer()
@@ -583,6 +582,19 @@ where
                 updated_at: now,
                 now,
             });
+        }
+
+        // if the previous state was at the end of the text, keep it there
+        let old_value = Value::new(&old_value);
+        if state.is_focused.is_some() {
+            match state.cursor.state(&old_value) {
+                cursor::State::Index(index) => {
+                    if index == old_value.len() {
+                        state.cursor.move_to(self.value.len());
+                    }
+                }
+                _ => {}
+            };
         }
 
         let mut children: Vec<_> = self
