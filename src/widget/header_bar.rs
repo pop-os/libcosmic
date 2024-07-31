@@ -361,22 +361,22 @@ impl<'a, Message: Clone + 'static> HeaderBar<'a, Message> {
         macro_rules! icon {
             ($name:expr, $size:expr, $on_press:expr) => {{
                 #[cfg(target_os = "linux")]
-                {
-                    widget::icon::from_name($name).apply(widget::button::icon)
-                }
+                let icon = { widget::icon::from_name($name).apply(widget::button::icon) };
+
                 #[cfg(not(target_os = "linux"))]
-                {
+                let icon = {
                     widget::icon::from_svg_bytes(include_bytes!(concat!(
                         "../../res/icons/",
                         $name,
                         ".svg"
                     )))
                     .apply(widget::button::icon)
-                }
-                .style(crate::theme::Button::HeaderBar)
-                .selected(self.focused)
-                .icon_size($size)
-                .on_press($on_press)
+                };
+
+                icon.style(crate::theme::Button::HeaderBar)
+                    .selected(self.focused)
+                    .icon_size($size)
+                    .on_press($on_press)
             }};
         }
 
@@ -391,7 +391,7 @@ impl<'a, Message: Clone + 'static> HeaderBar<'a, Message> {
             .push_maybe(
                 self.on_minimize
                     .take()
-                    .map(|m| icon!("window-minimize-symbolic", 16, m)),
+                    .map(|m: Message| icon!("window-minimize-symbolic", 16, m)),
             )
             .push_maybe(
                 self.on_maximize
