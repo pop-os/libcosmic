@@ -375,10 +375,7 @@ pub fn run<App: Application>(autosize: bool, flags: App::Flags) -> iced::Result 
     core.set_window_width(width);
     core.set_window_height(height);
 
-    THEME.with(move |t| {
-        let mut cosmic_theme = t.borrow_mut();
-        cosmic_theme.set_theme(settings.theme.theme_type);
-    });
+    THEME.lock().unwrap().set_theme(settings.theme.theme_type);
 
     let mut iced = iced::Settings::with_flags((core, flags));
 
@@ -435,11 +432,7 @@ pub fn padded_control<'a, Message>(
 }
 
 pub fn menu_control_padding() -> Padding {
-    THEME
-        .with(|t| {
-            let t = t.borrow();
-            let cosmic = t.cosmic();
-            [cosmic.space_xxs(), cosmic.space_m()]
-        })
-        .into()
+    let guard = THEME.lock().unwrap();
+    let cosmic = guard.cosmic();
+    [cosmic.space_xxs(), cosmic.space_m()].into()
 }

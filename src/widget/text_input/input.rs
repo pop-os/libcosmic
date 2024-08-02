@@ -92,7 +92,7 @@ pub fn search_input<'a, Message>(
 where
     Message: Clone + 'static,
 {
-    let spacing = THEME.with(|t| t.borrow().cosmic().space_xxs());
+    let spacing = THEME.lock().unwrap().cosmic().space_xxs();
 
     TextInput::new(placeholder, value)
         .padding([0, spacing, 0, spacing])
@@ -117,7 +117,7 @@ pub fn secure_input<'a, Message>(
 where
     Message: Clone + 'static,
 {
-    let spacing = THEME.with(|t| t.borrow().cosmic().space_xxs());
+    let spacing = THEME.lock().unwrap().cosmic().space_xxs();
     let mut input = TextInput::new(placeholder, value)
         .padding([0, spacing, 0, spacing])
         .style(crate::theme::TextInput::Default)
@@ -156,7 +156,7 @@ pub fn inline_input<'a, Message>(
 where
     Message: Clone + 'static,
 {
-    let spacing = THEME.with(|t| t.borrow().cosmic().space_xxs());
+    let spacing = THEME.lock().unwrap().cosmic().space_xxs();
 
     TextInput::new(placeholder, value)
         .style(crate::theme::TextInput::Inline)
@@ -223,7 +223,7 @@ where
     /// - a placeholder,
     /// - the current value
     pub fn new(placeholder: impl Into<Cow<'a, str>>, value: impl Into<Cow<'a, str>>) -> Self {
-        let spacing = THEME.with(|t| t.borrow().cosmic().space_xxs());
+        let spacing = THEME.lock().unwrap().cosmic().space_xxs();
 
         let v: Cow<'a, str> = value.into();
         TextInput {
@@ -486,7 +486,7 @@ where
     }
 
     pub fn on_clear(self, on_clear: Message) -> Self {
-        let spacing = THEME.with(|t| t.borrow().cosmic().space_xxs());
+        let spacing = THEME.lock().unwrap().cosmic().space_xxs();
 
         self.trailing_icon(
             crate::widget::icon::from_name("edit-clear-symbolic")
@@ -992,7 +992,7 @@ pub fn layout<Message>(
     tree: &mut Tree,
 ) -> layout::Node {
     let limits = limits.width(width);
-    let spacing = THEME.with(|t| t.borrow().cosmic().space_xxs());
+    let spacing = THEME.lock().unwrap().cosmic().space_xxs();
     let mut nodes = Vec::with_capacity(3);
 
     let text_pos = if let Some(label) = label {
@@ -2186,9 +2186,7 @@ pub fn draw<'a, Message>(
     let font = font.unwrap_or_else(|| renderer.default_font());
     let size = size.unwrap_or_else(|| renderer.default_size().0);
 
-    let radius_0 = THEME
-        .with(|t| t.borrow().cosmic().corner_radii.radius_0)
-        .into();
+    let radius_0 = THEME.lock().unwrap().cosmic().corner_radii.radius_0.into();
     let (cursor, offset) = if let Some(focus) = &state.is_focused {
         match state.cursor.state(value) {
             cursor::State::Index(position) => {

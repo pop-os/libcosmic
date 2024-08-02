@@ -4,22 +4,21 @@
 //! Select the preferred icon theme.
 
 use std::borrow::Cow;
-use std::cell::RefCell;
+use std::sync::Mutex;
 
 pub const COSMIC: &str = "Cosmic";
 
-thread_local! {
-    /// The fallback icon theme to search if no icon theme was specified.
-    pub(crate) static DEFAULT: RefCell<Cow<'static, str>> = RefCell::new(COSMIC.into());
-}
+pub(crate) static DEFAULT: Mutex<Cow<'static, str>> = Mutex::new(Cow::Borrowed(COSMIC));
 
 /// The fallback icon theme to search if no icon theme was specified.
 #[must_use]
+#[allow(clippy::missing_panics_doc)]
 pub fn default() -> String {
-    DEFAULT.with(|theme| theme.borrow().to_string())
+    DEFAULT.lock().unwrap().to_string()
 }
 
 /// Set the fallback icon theme to search when loading system icons.
+#[allow(clippy::missing_panics_doc)]
 pub fn set_default(name: impl Into<Cow<'static, str>>) {
-    DEFAULT.with(|theme| *theme.borrow_mut() = name.into());
+    *DEFAULT.lock().unwrap() = name.into();
 }

@@ -6,53 +6,60 @@
 use cosmic_config::cosmic_config_derive::CosmicConfigEntry;
 use cosmic_config::{Config, CosmicConfigEntry};
 use serde::{Deserialize, Serialize};
-use std::cell::RefCell;
-use std::rc::Rc;
+use std::sync::{LazyLock, Mutex};
 
 /// ID for the `CosmicTk` config.
 pub const ID: &str = "com.system76.CosmicTk";
 
-thread_local! {
-    pub static COSMIC_TK: RefCell<CosmicTk> = RefCell::new(CosmicTk::config()
-    .map(|c| {
-        CosmicTk::get_entry(&c).unwrap_or_else(|(errors, mode)| {
-            for why in errors {
-                tracing::error!(?why, "CosmicTk config entry error");
-            }
-            mode
-        })
-    })
-    .unwrap_or_default())
-}
+pub static COSMIC_TK: LazyLock<Mutex<CosmicTk>> = LazyLock::new(|| {
+    Mutex::new(
+        CosmicTk::config()
+            .map(|c| {
+                CosmicTk::get_entry(&c).unwrap_or_else(|(errors, mode)| {
+                    for why in errors {
+                        tracing::error!(?why, "CosmicTk config entry error");
+                    }
+                    mode
+                })
+            })
+            .unwrap_or_default(),
+    )
+});
 
 /// Apply the theme to other toolkits.
+#[allow(clippy::missing_panics_doc)]
 pub fn apply_theme_global() -> bool {
-    COSMIC_TK.with(|tk| tk.borrow().apply_theme_global)
+    COSMIC_TK.lock().unwrap().apply_theme_global
 }
 
 /// Show minimize button in window header.
+#[allow(clippy::missing_panics_doc)]
 pub fn show_minimize() -> bool {
-    COSMIC_TK.with(|tk| tk.borrow().show_minimize)
+    COSMIC_TK.lock().unwrap().show_minimize
 }
 
 /// Show maximize button in window header.
+#[allow(clippy::missing_panics_doc)]
 pub fn show_maximize() -> bool {
-    COSMIC_TK.with(|tk| tk.borrow().show_maximize)
+    COSMIC_TK.lock().unwrap().show_maximize
 }
 
 /// Preferred icon theme.
+#[allow(clippy::missing_panics_doc)]
 pub fn icon_theme() -> String {
-    COSMIC_TK.with(|tk| tk.borrow().icon_theme.clone())
+    COSMIC_TK.lock().unwrap().icon_theme.clone()
 }
 
 /// Density of CSD/SSD header bars.
+#[allow(clippy::missing_panics_doc)]
 pub fn header_size() -> Density {
-    COSMIC_TK.with(|tk| tk.borrow().header_size)
+    COSMIC_TK.lock().unwrap().header_size
 }
 
 /// Interface density.
+#[allow(clippy::missing_panics_doc)]
 pub fn interface_density() -> Density {
-    COSMIC_TK.with(|tk| tk.borrow().interface_density)
+    COSMIC_TK.lock().unwrap().interface_density
 }
 
 #[derive(Clone, CosmicConfigEntry, Debug, Eq, PartialEq)]

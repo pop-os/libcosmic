@@ -44,7 +44,7 @@ pub struct Appearance {
 impl Appearance {
     // TODO: `Radius` is not `const fn` compatible.
     pub fn new() -> Self {
-        let rad_0 = THEME.with(|t| t.borrow().cosmic().corner_radii.radius_0);
+        let rad_0 = THEME.lock().unwrap().cosmic().corner_radii.radius_0;
         Self {
             shadow_offset: Vector::new(0.0, 0.0),
             background: None,

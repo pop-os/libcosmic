@@ -1361,7 +1361,7 @@ where
                 bounds.y = bounds.y + bounds.height - width;
                 bounds.height = width;
 
-                let rad_0 = THEME.with(|t| t.borrow().cosmic().corner_radii.radius_0);
+                let rad_0 = THEME.lock().unwrap().cosmic().corner_radii.radius_0;
                 renderer.fill_quad(
                     renderer::Quad {
                         bounds,

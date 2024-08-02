@@ -423,7 +423,7 @@ impl<'a, Message: 'a + Clone> Widget<Message, crate::Theme, crate::Renderer>
             renderer.with_layer(parent_bounds, |renderer| {
                 let selection_background = theme.selection_background();
 
-                let c_rad = THEME.with(|t| t.borrow().cosmic().corner_radii);
+                let c_rad = THEME.lock().unwrap().cosmic().corner_radii;
 
                 // NOTE: Workaround to round the border of the unselected, unhovered image.
                 if !self.selected && !is_mouse_over {
