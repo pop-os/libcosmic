@@ -15,8 +15,7 @@ use cosmic_theme::Component;
 use cosmic_theme::LayeredTheme;
 use iced_futures::Subscription;
 
-use std::cell::RefCell;
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 
 #[cfg(feature = "dbus-config")]
 use cosmic_config::dbus;
@@ -46,18 +45,21 @@ lazy_static::lazy_static! {
     };
 }
 
-thread_local! {
-    pub(crate) static THEME: RefCell<Theme> = RefCell::new(Theme { theme_type: ThemeType::Dark, layer: cosmic_theme::Layer::Background });
-}
+pub(crate) static THEME: Mutex<Theme> = Mutex::new(Theme {
+    theme_type: ThemeType::Dark,
+    layer: cosmic_theme::Layer::Background,
+});
 
 /// Currently-defined theme.
+#[allow(clippy::missing_panics_doc)]
 pub fn active() -> Theme {
-    THEME.with(|theme| theme.borrow().clone())
+    THEME.lock().unwrap().clone()
 }
 
 /// Currently-defined theme type.
+#[allow(clippy::missing_panics_doc)]
 pub fn active_type() -> ThemeType {
-    THEME.with(|theme| theme.borrow().theme_type.clone())
+    THEME.lock().unwrap().theme_type.clone()
 }
 
 /// Whether the active theme has a dark preference.

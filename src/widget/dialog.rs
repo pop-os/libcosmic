@@ -67,11 +67,7 @@ impl<'a, Message: Clone + 'static> From<Dialog<'a, Message>> for Element<'a, Mes
             space_s,
             space_xxs,
             ..
-        } = theme::THEME.with(|theme_cell| {
-            let theme = theme_cell.borrow();
-            let theme = theme.cosmic();
-            theme.spacing
-        });
+        } = theme::THEME.lock().unwrap().cosmic().spacing;
 
         let mut content_col = widget::column::with_capacity(3 + dialog.controls.len() * 2);
         content_col = content_col.push(widget::text::title3(dialog.title));

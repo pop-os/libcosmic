@@ -51,26 +51,24 @@ impl Text {
 
 impl<'a, Message> Button<'a, Message> {
     pub fn new(text: Text) -> Self {
-        crate::theme::THEME.with(|theme_cell| {
-            let theme = theme_cell.borrow();
-            let theme = theme.cosmic();
-            Self {
-                id: Id::unique(),
-                label: Cow::Borrowed(""),
-                tooltip: Cow::Borrowed(""),
-                on_press: None,
-                width: Length::Shrink,
-                height: Length::Fixed(theme.space_l().into()),
-                padding: Padding::from([0, theme.space_s()]),
-                spacing: theme.space_xxxs(),
-                icon_size: 16,
-                line_height: 20,
-                font_size: 14,
-                font_weight: Weight::Normal,
-                style: Style::Standard,
-                variant: text,
-            }
-        })
+        let guard = crate::theme::THEME.lock().unwrap();
+        let theme = guard.cosmic();
+        Self {
+            id: Id::unique(),
+            label: Cow::Borrowed(""),
+            tooltip: Cow::Borrowed(""),
+            on_press: None,
+            width: Length::Shrink,
+            height: Length::Fixed(theme.space_l().into()),
+            padding: Padding::from([0, theme.space_s()]),
+            spacing: theme.space_xxxs(),
+            icon_size: 16,
+            line_height: 20,
+            font_size: 14,
+            font_weight: Weight::Normal,
+            style: Style::Standard,
+            variant: text,
+        }
     }
 
     pub fn leading_icon(mut self, icon: impl Into<icon::Handle>) -> Self {

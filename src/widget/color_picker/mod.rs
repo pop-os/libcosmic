@@ -287,7 +287,7 @@ where
         copied_to_clipboard_label: T,
     ) -> ColorPicker<'a, Message> {
         let on_update = self.on_update;
-        let spacing = THEME.with(|t| t.borrow().cosmic().spacing);
+        let spacing = THEME.lock().unwrap().cosmic().spacing;
         let mut inner = column![
             // segmented buttons
             segmented_control::horizontal(self.model)
@@ -595,7 +595,7 @@ where
         let bounds = canvas_layout.bounds();
         // Draw the handle on the saturation value canvas
 
-        let t = THEME.with(|t| t.borrow().clone());
+        let t = THEME.lock().unwrap().clone();
         let t = t.cosmic();
         let handle_radius = f32::from(t.space_xs()) / 2.0;
         let (x, y) = (
@@ -779,7 +779,7 @@ pub fn color_button<'a, Message: 'static>(
     color: Option<Color>,
     icon_portion: Length,
 ) -> crate::widget::Button<'a, Message> {
-    let spacing = THEME.with(|t| t.borrow().cosmic().spacing);
+    let spacing = THEME.lock().unwrap().cosmic().spacing;
 
     button(if color.is_some() {
         Element::from(vertical_space(Length::Fixed(f32::from(spacing.space_s))))

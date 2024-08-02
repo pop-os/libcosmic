@@ -75,38 +75,35 @@ impl Named {
             lookup.find()
         };
 
-        crate::icon_theme::DEFAULT.with(|theme| {
-            let theme = theme.borrow();
+        let theme = crate::icon_theme::DEFAULT.lock().unwrap();
+        let themes = if theme.as_ref() == crate::icon_theme::COSMIC {
+            vec![theme.as_ref()]
+        } else {
+            vec![theme.as_ref(), crate::icon_theme::COSMIC]
+        };
 
-            let themes = if theme.as_ref() == crate::icon_theme::COSMIC {
-                vec![theme.as_ref()]
-            } else {
-                vec![theme.as_ref(), crate::icon_theme::COSMIC]
-            };
+        let mut result = themes.iter().find_map(|t| locate(t, name));
 
-            let mut result = themes.iter().find_map(|t| locate(t, name));
-
-            // On failure, attempt to locate fallback icon.
-            if result.is_none() {
-                if matches!(fallback, Some(IconFallback::Default)) {
-                    for new_name in name.rmatch_indices('-').map(|(pos, _)| &name[..pos]) {
-                        result = themes.iter().find_map(|t| locate(t, new_name));
-                        if result.is_some() {
-                            break;
-                        }
+        // On failure, attempt to locate fallback icon.
+        if result.is_none() {
+            if matches!(fallback, Some(IconFallback::Default)) {
+                for new_name in name.rmatch_indices('-').map(|(pos, _)| &name[..pos]) {
+                    result = themes.iter().find_map(|t| locate(t, new_name));
+                    if result.is_some() {
+                        break;
                     }
-                } else if let Some(IconFallback::Names(fallbacks)) = fallback {
-                    for fallback in fallbacks {
-                        result = themes.iter().find_map(|t| locate(t, fallback));
-                        if result.is_some() {
-                            break;
-                        }
+                }
+            } else if let Some(IconFallback::Names(fallbacks)) = fallback {
+                for fallback in fallbacks {
+                    result = themes.iter().find_map(|t| locate(t, fallback));
+                    if result.is_some() {
+                        break;
                     }
                 }
             }
+        }
 
-            result
-        })
+        result
     }
 
     #[cfg(windows)]

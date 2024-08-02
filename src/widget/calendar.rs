@@ -177,11 +177,7 @@ fn padded_control<'a, Message>(
 }
 
 fn menu_control_padding() -> Padding {
-    crate::theme::THEME
-        .with(|t| {
-            let t = t.borrow();
-            let cosmic = t.cosmic();
-            [cosmic.space_xxs(), cosmic.space_m()]
-        })
-        .into()
+    let guard = crate::theme::THEME.lock().unwrap();
+    let cosmic = guard.cosmic();
+    [cosmic.space_xxs(), cosmic.space_m()].into()
 }

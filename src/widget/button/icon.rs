@@ -31,95 +31,85 @@ pub fn icon<'a, Message>(handle: impl Into<Handle>) -> Button<'a, Message> {
 
 impl<'a, Message> Button<'a, Message> {
     pub fn new(icon: Icon) -> Self {
-        crate::theme::THEME.with(|theme_cell| {
-            let theme = theme_cell.borrow();
-            let theme = theme.cosmic();
-            let padding = theme.space_xxs();
+        let guard = crate::theme::THEME.lock().unwrap();
+        let theme = guard.cosmic();
+        let padding = theme.space_xxs();
 
-            Self {
-                id: Id::unique(),
-                label: Cow::Borrowed(""),
-                tooltip: Cow::Borrowed(""),
-                on_press: None,
-                width: Length::Shrink,
-                height: Length::Shrink,
-                padding: Padding::from(padding),
-                spacing: theme.space_xxxs(),
-                icon_size: if icon.handle.symbolic { 16 } else { 24 },
-                line_height: 20,
-                font_size: 14,
-                font_weight: Weight::Normal,
-                style: Style::Icon,
-                variant: icon,
-            }
-        })
+        Self {
+            id: Id::unique(),
+            label: Cow::Borrowed(""),
+            tooltip: Cow::Borrowed(""),
+            on_press: None,
+            width: Length::Shrink,
+            height: Length::Shrink,
+            padding: Padding::from(padding),
+            spacing: theme.space_xxxs(),
+            icon_size: if icon.handle.symbolic { 16 } else { 24 },
+            line_height: 20,
+            font_size: 14,
+            font_weight: Weight::Normal,
+            style: Style::Icon,
+            variant: icon,
+        }
     }
 
     /// Applies the **Extra Small** button size preset.
     pub fn extra_small(mut self) -> Self {
-        crate::theme::THEME.with(|theme_cell| {
-            let theme = theme_cell.borrow();
-            let theme = theme.cosmic();
+        let guard = crate::theme::THEME.lock().unwrap();
+        let theme = guard.cosmic();
 
-            self.font_size = 14;
-            self.font_weight = Weight::Normal;
-            self.icon_size = 16;
-            self.line_height = 20;
-            self.padding = Padding::from(theme.space_xxs());
-            self.spacing = theme.space_xxxs();
-        });
+        self.font_size = 14;
+        self.font_weight = Weight::Normal;
+        self.icon_size = 16;
+        self.line_height = 20;
+        self.padding = Padding::from(theme.space_xxs());
+        self.spacing = theme.space_xxxs();
 
         self
     }
 
     /// Applies the **Medium** button size preset.
     pub fn medium(mut self) -> Self {
-        crate::theme::THEME.with(|theme_cell| {
-            let theme = theme_cell.borrow();
-            let theme = theme.cosmic();
+        let guard = crate::theme::THEME.lock().unwrap();
+        let theme = guard.cosmic();
 
-            self.font_size = 24;
-            self.font_weight = Weight::Normal;
-            self.icon_size = 32;
-            self.line_height = 32;
-            self.padding = Padding::from(theme.space_xs());
-            self.spacing = theme.space_xxs();
-        });
+        self.font_size = 24;
+        self.font_weight = Weight::Normal;
+        self.icon_size = 32;
+        self.line_height = 32;
+        self.padding = Padding::from(theme.space_xs());
+        self.spacing = theme.space_xxs();
 
         self
     }
 
     /// Applies the **Large** button size preset.
     pub fn large(mut self) -> Self {
-        crate::theme::THEME.with(|theme_cell| {
-            let theme = theme_cell.borrow();
-            let theme = theme.cosmic();
+        let guard = crate::theme::THEME.lock().unwrap();
+        let theme = guard.cosmic();
 
-            self.font_size = 28;
-            self.font_weight = Weight::Normal;
-            self.icon_size = 40;
-            self.line_height = 36;
-            self.padding = Padding::from(theme.space_xs());
-            self.spacing = theme.space_xxs();
-        });
+        self.font_size = 28;
+        self.font_weight = Weight::Normal;
+        self.icon_size = 40;
+        self.line_height = 36;
+        self.padding = Padding::from(theme.space_xs());
+        self.spacing = theme.space_xxs();
 
         self
     }
 
     /// Applies the **Extra Large** button size preset.
     pub fn extra_large(mut self) -> Self {
-        crate::theme::THEME.with(|theme_cell| {
-            let theme = theme_cell.borrow();
-            let theme = theme.cosmic();
-            let padding = theme.space_xs();
+        let guard = crate::theme::THEME.lock().unwrap();
+        let theme = guard.cosmic();
+        let padding = theme.space_xs();
 
-            self.font_size = 32;
-            self.font_weight = Weight::Light;
-            self.icon_size = 56;
-            self.line_height = 44;
-            self.padding = Padding::from(padding);
-            self.spacing = theme.space_xxs();
-        });
+        self.font_size = 32;
+        self.font_weight = Weight::Light;
+        self.icon_size = 56;
+        self.line_height = 44;
+        self.padding = Padding::from(padding);
+        self.spacing = theme.space_xxs();
 
         self
     }

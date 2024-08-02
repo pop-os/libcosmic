@@ -218,15 +218,14 @@ where
             self.app
                 .core()
                 .watch_config::<cosmic_theme::Theme>(
-                    if THEME
-                        .with(|t| {
-                            if let ThemeType::System { prefer_dark, .. } = t.borrow().theme_type {
-                                prefer_dark
-                            } else {
-                                None
-                            }
-                        })
-                        .unwrap_or_else(|| self.app.core().system_theme_mode.is_dark)
+                    if if let ThemeType::System { prefer_dark, .. } =
+                        THEME.lock().unwrap().theme_type
+                    {
+                        prefer_dark
+                    } else {
+                        None
+                    }
+                    .unwrap_or_else(|| self.app.core().system_theme_mode.is_dark)
                     {
                         cosmic_theme::DARK_THEME_ID
                     } else {
@@ -427,14 +426,11 @@ impl<T: Application> Cosmic<T> {
                     };
                 }
 
-                THEME.with(move |t| {
-                    let mut cosmic_theme = t.borrow_mut();
-                    cosmic_theme.set_theme(theme.theme_type);
-                });
+                THEME.lock().unwrap().set_theme(theme.theme_type);
             }
 
             Message::SystemThemeChange(keys, theme) => {
-                let cur_is_dark = THEME.with(|t| t.borrow().theme_type.is_dark());
+                let cur_is_dark = THEME.lock().unwrap().theme_type.is_dark();
                 // Ignore updates if the current theme mode does not match.
                 if cur_is_dark != theme.cosmic().is_dark {
                     return iced::Command::none();
@@ -443,8 +439,8 @@ impl<T: Application> Cosmic<T> {
                 // Record the last-known system theme in event that the current theme is custom.
                 self.app.core_mut().system_theme = theme.clone();
                 let portal_accent = self.app.core().portal_accent;
-                THEME.with(move |t| {
-                    let mut cosmic_theme = t.borrow_mut();
+                {
+                    let mut cosmic_theme = THEME.lock().unwrap();
 
                     // Only apply update if the theme is set to load a system theme
                     if let ThemeType::System {
@@ -466,7 +462,7 @@ impl<T: Application> Cosmic<T> {
 
                         cosmic_theme.set_theme(new_theme.theme_type);
                     }
-                });
+                }
 
                 return cmd;
             }
@@ -485,13 +481,13 @@ impl<T: Application> Cosmic<T> {
                 if !keys.contains(&"is_dark") {
                     return iced::Command::none();
                 }
-                if THEME.with(|t| match t.borrow().theme_type {
+                if match THEME.lock().unwrap().theme_type {
                     ThemeType::System {
                         theme: _,
                         prefer_dark,
                     } => prefer_dark.is_some(),
                     _ => false,
-                }) {
+                } {
                     return iced::Command::none();
                 }
                 let mut cmds = vec![self.app.system_theme_mode_update(&keys, &mode)];
@@ -523,13 +519,13 @@ impl<T: Application> Cosmic<T> {
                     };
 
                     core.system_theme = new_theme.clone();
-                    THEME.with(move |t| {
-                        let mut cosmic_theme = t.borrow_mut();
+                    {
+                        let mut cosmic_theme = THEME.lock().unwrap();
                         // Only apply update if the theme is set to load a system theme
                         if let ThemeType::System { theme: _, .. } = cosmic_theme.theme_type {
                             cosmic_theme.set_theme(new_theme.theme_type);
                         }
-                    });
+                    }
                 }
                 return Command::batch(cmds);
             }
@@ -552,13 +548,13 @@ impl<T: Application> Cosmic<T> {
             #[cfg(feature = "xdg-portal")]
             Message::DesktopSettings(crate::theme::portal::Desktop::ColorScheme(s)) => {
                 use ashpd::desktop::settings::ColorScheme;
-                if THEME.with(|t| match t.borrow().theme_type {
+                if match THEME.lock().unwrap().theme_type {
                     ThemeType::System {
                         theme: _,
                         prefer_dark,
                     } => prefer_dark.is_some(),
                     _ => false,
-                }) {
+                } {
                     return iced::Command::none();
                 }
                 let is_dark = match s {
@@ -579,14 +575,14 @@ impl<T: Application> Cosmic<T> {
                         crate::theme::system_light()
                     };
                     core.system_theme = new_theme.clone();
-                    THEME.with(move |t| {
-                        let mut cosmic_theme = t.borrow_mut();
+                    {
+                        let mut cosmic_theme = THEME.lock().unwrap();
 
                         // Only apply update if the theme is set to load a system theme
                         if let ThemeType::System { theme: _, .. } = cosmic_theme.theme_type {
                             cosmic_theme.set_theme(new_theme.theme_type);
                         }
-                    });
+                    }
                 }
             }
             #[cfg(feature = "xdg-portal")]
@@ -602,8 +598,8 @@ impl<T: Application> Cosmic<T> {
                     return iced::Command::none();
                 }
 
-                THEME.with(move |t| {
-                    let mut cosmic_theme = t.borrow_mut();
+                {
+                    let mut cosmic_theme = THEME.lock().unwrap();
 
                     // Only apply update if the theme is set to load a system theme
                     if let ThemeType::System {
@@ -616,7 +612,7 @@ impl<T: Application> Cosmic<T> {
                             prefer_dark,
                         });
                     }
-                });
+                }
             }
             #[cfg(feature = "xdg-portal")]
             Message::DesktopSettings(crate::theme::portal::Desktop::Contrast(_)) => {
@@ -631,7 +627,7 @@ impl<T: Application> Cosmic<T> {
                     crate::icon_theme::set_default(config.icon_theme.clone());
                 }
 
-                crate::config::COSMIC_TK.with(|tk| *tk.borrow_mut() = config);
+                *crate::config::COSMIC_TK.lock().unwrap() = config;
             }
 
             Message::Focus(f) => {
