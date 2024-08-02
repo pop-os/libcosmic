@@ -54,15 +54,20 @@ impl<'a, Message: Clone + 'static> ContextDrawer<'a, Message> {
                     .vertical_alignment(alignment::Vertical::Center),
             )
             .push(
-                button::text("Close")
-                    .trailing_icon(icon::from_name("go-next-symbolic"))
-                    .on_press(on_close)
-                    .style(crate::theme::Button::Link)
-                    .apply(container)
-                    .width(Length::FillPortion(1))
-                    .height(Length::Fill)
-                    .align_x(alignment::Horizontal::Right)
-                    .center_y(),
+                button::text(
+                    #[cfg(feature = "localization")]
+                    fl!("close"),
+                    #[cfg(not(feature = "localization"))]
+                    "Close",
+                )
+                .trailing_icon(icon::from_name("go-next-symbolic"))
+                .on_press(on_close)
+                .style(crate::theme::Button::Link)
+                .apply(container)
+                .width(Length::FillPortion(1))
+                .height(Length::Fill)
+                .align_x(alignment::Horizontal::Right)
+                .center_y(),
             )
             // XXX must be done after pushing elements or it may be overwritten by size hints from contents
             .height(Length::Fixed(80.0))

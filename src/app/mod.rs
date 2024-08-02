@@ -161,6 +161,9 @@ pub(crate) fn iced_settings<App: Application>(
 pub fn run<App: Application>(settings: Settings, flags: App::Flags) -> iced::Result {
     let settings = iced_settings::<App>(settings, flags);
 
+    #[cfg(feature = "localization")]
+    crate::localize::localize();
+
     cosmic::Cosmic::<App>::run(settings)
 }
 
