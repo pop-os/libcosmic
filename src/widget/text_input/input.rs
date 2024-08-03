@@ -6,6 +6,7 @@
 //!
 //! A [`TextInput`] has some local [`State`].
 use std::borrow::Cow;
+use std::cell::{Cell, LazyCell};
 
 use crate::ext::ColorExt;
 use crate::theme::THEME;
@@ -47,6 +48,11 @@ use iced_runtime::Command;
 use cctk::sctk::reexports::client::protocol::wl_data_device_manager::DndAction;
 #[cfg(feature = "wayland")]
 use iced_runtime::command::platform_specific::wayland::data_device::{DataFromMimeType, DndIcon};
+
+thread_local! {
+    // Prevents two inputs from being focused at the same time.
+    static LAST_FOCUS_UPDATE: LazyCell<Cell<Instant>> = LazyCell::new(|| Cell::new(Instant::now()));
+}
 
 /// Creates a new [`TextInput`].
 ///
@@ -572,12 +578,11 @@ where
             state.dirty = true;
         }
 
-        if state.is_read_only != self.is_read_only {
-            self.is_read_only = state.is_read_only;
-        }
+        self.is_read_only = state.is_read_only;
 
         if self.always_active && state.is_focused.is_none() {
             let now = Instant::now();
+            LAST_FOCUS_UPDATE.with(|x| x.set(now));
             state.is_focused = Some(Focus {
                 updated_at: now,
                 now,
@@ -595,6 +600,12 @@ where
                 }
                 _ => {}
             };
+        }
+
+        if !state.is_focused.as_ref().map_or(false, |f| {
+            f.updated_at == LAST_FOCUS_UPDATE.with(|f| f.get())
+        }) {
+            state.is_focused = None;
         }
 
         let mut children: Vec<_> = self
@@ -1181,7 +1192,7 @@ pub fn update<'a, Message>(
     event: Event,
     text_layout: Layout<'_>,
     trailing_icon_layout: Option<Layout<'_>>,
-    cursor_position: mouse::Cursor,
+    cursor: mouse::Cursor,
     clipboard: &mut dyn Clipboard,
     shell: &mut Shell<'_, Message>,
     value: &mut Value,
@@ -1220,24 +1231,29 @@ where
         Event::Mouse(mouse::Event::ButtonPressed(mouse::Button::Left))
         | Event::Touch(touch::Event::FingerPressed { .. }) => {
             let state = state();
-            let is_clicked = cursor_position.is_over(text_layout.bounds()) && on_input.is_some();
 
-            if is_clicked {
+            let click_position = if on_input.is_some() {
+                cursor.position_over(layout.bounds())
+            } else {
+                None
+            };
+
+            if click_position.is_some() {
                 state.is_focused = state.is_focused.or_else(|| {
                     let now = Instant::now();
+                    LAST_FOCUS_UPDATE.with(|x| x.set(now));
                     Some(Focus {
                         updated_at: now,
                         now,
                     })
                 });
+            }
 
-                let Some(pos) = cursor_position.position() else {
-                    return event::Status::Ignored;
-                };
+            if let Some(cursor_position) = click_position {
+                let text_layout = layout.children().next().unwrap();
+                let target = cursor_position.x - text_layout.bounds().x;
 
-                let target = pos.x - text_layout.bounds().x;
-
-                let click = mouse::Click::new(pos, state.last_click);
+                let click = mouse::Click::new(cursor_position, state.last_click);
 
                 match (
                     &state.dragging_state,
@@ -1284,7 +1300,7 @@ where
                                 height: text_layout.bounds().height,
                             };
 
-                            if cursor_position.is_over(selection_bounds) {
+                            if cursor.is_over(selection_bounds) {
                                 // XXX never start a dnd if the input is secure
                                 if is_secure {
                                     return event::Status::Ignored;
@@ -1394,6 +1410,7 @@ where
                         shell.publish(message);
 
                         let now = Instant::now();
+                        LAST_FOCUS_UPDATE.with(|x| x.set(now));
                         state.is_focused = Some(Focus {
                             updated_at: now,
                             now,
@@ -1411,11 +1428,11 @@ where
 
             if is_editable {
                 if let Some(trailing_layout) = trailing_icon_layout {
-                    let is_trailing_clicked = cursor_position.is_over(trailing_layout.bounds())
-                        && on_toggle_edit.is_some();
+                    let is_trailing_clicked =
+                        cursor.is_over(trailing_layout.bounds()) && on_toggle_edit.is_some();
 
                     if is_trailing_clicked {
-                        let Some(pos) = cursor_position.position() else {
+                        let Some(pos) = cursor.position() else {
                             return event::Status::Ignored;
                         };
 
@@ -1433,6 +1450,7 @@ where
                                     shell.publish(message);
 
                                     let now = Instant::now();
+                                    LAST_FOCUS_UPDATE.with(|x| x.set(now));
                                     state.is_focused = Some(Focus {
                                         updated_at: now,
                                         now,
@@ -1488,6 +1506,7 @@ where
 
                 let modifiers = state.keyboard_modifiers;
                 focus.updated_at = Instant::now();
+                LAST_FOCUS_UPDATE.with(|x| x.set(focus.updated_at));
 
                 match key {
                     keyboard::Key::Named(keyboard::key::Named::Enter) => {
@@ -1692,6 +1711,7 @@ where
                             shell.publish(message);
 
                             focus.updated_at = Instant::now();
+                            LAST_FOCUS_UPDATE.with(|x| x.set(focus.updated_at));
 
                             let value = if is_secure {
                                 unsecured_value.secure()
@@ -2528,7 +2548,7 @@ impl State {
     /// Focuses the [`TextInput`].
     pub fn focus(&mut self) {
         let now = Instant::now();
-
+        LAST_FOCUS_UPDATE.with(|x| x.set(now));
         self.is_read_only = false;
         self.is_focused = Some(Focus {
             updated_at: now,
