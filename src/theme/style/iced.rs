@@ -823,6 +823,7 @@ impl toggler::StyleSheet for Theme {
 
     fn active(&self, _style: &Self::Style, is_active: bool) -> toggler::Appearance {
         let theme = self.cosmic();
+        const HANDLE_MARGIN: f32 = 2.0;
         toggler::Appearance {
             background: if is_active {
                 theme.accent.base.into()
@@ -833,8 +834,11 @@ impl toggler::StyleSheet for Theme {
             foreground: theme.palette.neutral_2.into(),
             foreground_border: None,
             border_radius: theme.radius_xl().into(),
-            handle_radius: theme.radius_xl().into(),
-            handle_margin: 2.0,
+            handle_radius: theme
+                .radius_xl()
+                .map(|x| (x - HANDLE_MARGIN).max(0.0))
+                .into(),
+            handle_margin: HANDLE_MARGIN,
         }
     }
 
