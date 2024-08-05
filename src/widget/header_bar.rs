@@ -370,6 +370,7 @@ impl<'a, Message: Clone + 'static> HeaderBar<'a, Message> {
                         $name,
                         ".svg"
                     )))
+                    .symbolic(true)
                     .apply(widget::button::icon)
                 };
 
