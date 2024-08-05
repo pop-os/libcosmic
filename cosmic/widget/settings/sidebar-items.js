@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["view_column","view_section"],"mod":["item"],"struct":["Section"]};

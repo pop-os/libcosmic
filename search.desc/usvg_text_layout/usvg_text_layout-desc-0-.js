@@ -1,0 +1,1 @@
+searchState.loadedDescShard("usvg_text_layout", 0, "An SVG text layout implementation on top of usvg crate.\nA <code>usvg::Tree</code> extension trait.\nConverts text nodes into paths.")

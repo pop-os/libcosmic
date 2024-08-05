@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"mod":["app","command","config","cosmic_config","cosmic_theme","executor","font","iced","iced_core","iced_futures","iced_renderer","iced_runtime","iced_style","iced_widget","iced_winit","icon_theme","keyboard_nav","prelude","style","theme","widget"],"struct":["Command","Theme"],"trait":["Also","Apply"],"type":["Element","Renderer"]};

@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["font_system","measure","to_attributes","to_color","to_shaping","to_wrap"],"mod":["cache","cosmic_text","editor","paragraph"],"struct":["Cache","Editor","FontSystem","Paragraph","Raw","Version"]};

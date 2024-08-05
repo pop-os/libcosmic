@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["Internal"],"fn":["window_node_id"],"struct":["Id"],"trait":["IdEq"]};

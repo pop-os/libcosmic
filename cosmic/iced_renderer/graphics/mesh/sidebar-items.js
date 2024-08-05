@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["Mesh"],"struct":["GradientVertex2D","Indexed","SolidVertex2D"]};

@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["EulerRot"],"mod":["bool","f32","f64","i32","i64","swizzles","u32","u64"]};
