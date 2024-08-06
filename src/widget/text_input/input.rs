@@ -111,7 +111,7 @@ where
                 .into(),
         )
 }
-/// Creates a new search [`TextInput`].
+/// Creates a new secure [`TextInput`].
 ///
 /// [`TextInput`]: widget::TextInput
 pub fn secure_input<'a, Message>(
@@ -139,13 +139,17 @@ where
     }
     if let Some(msg) = on_visible_toggle {
         input.trailing_icon(
-            crate::widget::icon::from_name("document-properties-symbolic")
-                .size(16)
-                .apply(crate::widget::button)
-                .style(crate::theme::Button::Icon)
-                .on_press(msg)
-                .padding([spacing, spacing, spacing, spacing])
-                .into(),
+            crate::widget::icon::from_name(if hidden {
+                "document-properties-symbolic"
+            } else {
+                "image-red-eye-symbolic"
+            })
+            .size(16)
+            .apply(crate::widget::button)
+            .style(crate::theme::Button::Icon)
+            .on_press(msg)
+            .padding([spacing, spacing, spacing, spacing])
+            .into(),
         )
     } else {
         input
