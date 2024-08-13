@@ -33,7 +33,6 @@ desktop = [
     "dep:freedesktop-desktop-entry",
     "dep:mime",
     "dep:shlex",
-    "dep:textdistance",
     "dep:zbus",
 ]
 # Enables keycode serialization
@@ -92,7 +91,6 @@ rustix = { version = "0.38.34", features = ["pipe", "process"], optional = true 
 serde = { version = "1.0.180", features = ["derive"] }
 slotmap = "1.0.6"
 smol = { version = "2.0.0", optional = true }
-textdistance = { version = "1.0.2", optional = true }
 thiserror = "1.0.44"
 tokio = { version = "1.24.2", optional = true }
 tracing = "0.1"
