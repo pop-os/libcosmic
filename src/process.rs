@@ -37,7 +37,10 @@ pub async fn spawn(mut command: Command) -> Option<u32> {
         1.. => {
             // Drop copy of write end, then read PID from pipe
             drop(write);
-            read_from_pipe(read).await
+            let pid = read_from_pipe(read).await;
+            // wait to prevent zombie
+            _ = rustix::process::wait(rustix::process::WaitOptions::empty());
+            pid
         }
 
         // Child process
