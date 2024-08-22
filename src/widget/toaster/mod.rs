@@ -176,13 +176,19 @@ impl<Message: Clone + Send + 'static> Toasts<Message> {
 
         let id = self.toasts.len();
         self.toasts.push_back(toast);
-        let on_close = self.on_close;
 
-        crate::command::future(async move {
-            #[cfg(feature = "tokio")]
-            tokio::time::sleep(duration).await;
-            on_close(id)
-        })
+        #[cfg(feature = "tokio")]
+        {
+            let on_close = self.on_close;
+            crate::command::future(async move {
+                tokio::time::sleep(duration).await;
+                on_close(id)
+            })
+        }
+        #[cfg(not(feature = "tokio"))]
+        {
+            Command::none()
+        }
     }
 
     /// Remove a [`Toast`]
