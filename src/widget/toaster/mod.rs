@@ -157,7 +157,6 @@ new_key_type! { pub struct ToastId; }
 #[derive(Debug, Clone)]
 pub struct Toasts<Message> {
     toasts: SlotMap<ToastId, Toast<Message>>,
-    // Note: can ghost keys left from calling `self.remove`
     queue: VecDeque<ToastId>,
     on_close: fn(ToastId) -> Message,
     limit: usize,
@@ -205,5 +204,8 @@ impl<Message: Clone + Send + 'static> Toasts<Message> {
     /// Remove a [`Toast`]
     pub fn remove(&mut self, id: ToastId) {
         self.toasts.remove(id);
+        if let Some(pos) = self.queue.iter().position(|key| *key == id) {
+            self.queue.remove(pos);
+        }
     }
 }
