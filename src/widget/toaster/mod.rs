@@ -10,6 +10,8 @@ use crate::widget::container;
 use crate::widget::Column;
 use crate::Command;
 use iced_core::Element;
+use slotmap::new_key_type;
+use slotmap::SlotMap;
 use widget::Toaster;
 
 use crate::ext::CollectionWidget;
@@ -33,7 +35,7 @@ pub fn toaster<'a, Message: Clone + 'static>(
         ..
     } = theme.cosmic().spacing;
 
-    let make_toast = move |(id, toast): (usize, &'a Toast<Message>)| {
+    let make_toast = move |(id, toast): (ToastId, &'a Toast<Message>)| {
         let row = row()
             .push(text(&toast.message))
             .push(
@@ -57,9 +59,9 @@ pub fn toaster<'a, Message: Clone + 'static>(
     };
 
     let col = toasts
-        .toasts
+        .queue
         .iter()
-        .enumerate()
+        .filter_map(|id| Some((*id, toasts.toasts.get(*id)?)))
         .rev()
         .map(make_toast)
         .fold(column::with_capacity(toasts.toasts.len()), Column::push)
@@ -99,7 +101,7 @@ impl From<std::time::Duration> for Duration {
 #[derive(Clone)]
 pub struct Action<Message> {
     pub description: String,
-    pub message: Rc<dyn Fn(usize) -> Message>,
+    pub message: Rc<dyn Fn(ToastId) -> Message>,
 }
 
 impl<Message> std::fmt::Debug for Action<Message> {
@@ -133,7 +135,7 @@ impl<Message> Toast<Message> {
     pub fn action(
         mut self,
         description: String,
-        message: impl Fn(usize) -> Message + 'static,
+        message: impl Fn(ToastId) -> Message + 'static,
     ) -> Self {
         self.action.replace(Action {
             description,
@@ -150,43 +152,60 @@ impl<Message> Toast<Message> {
     }
 }
 
+new_key_type! { pub struct ToastId; }
+
 #[derive(Debug, Clone)]
 pub struct Toasts<Message> {
-    toasts: VecDeque<Toast<Message>>,
-    on_close: fn(usize) -> Message,
+    toasts: SlotMap<ToastId, Toast<Message>>,
+    queue: VecDeque<ToastId>,
+    on_close: fn(ToastId) -> Message,
     limit: usize,
 }
 
 impl<Message: Clone + Send + 'static> Toasts<Message> {
-    pub fn new(on_close: fn(usize) -> Message) -> Self {
+    pub fn new(on_close: fn(ToastId) -> Message) -> Self {
+        let limit = 5;
         Self {
-            toasts: VecDeque::new(),
+            toasts: SlotMap::with_capacity_and_key(limit),
+            queue: VecDeque::new(),
             on_close,
-            limit: 5,
+            limit,
         }
     }
 
     /// Add a new [`Toast`]
     pub fn push(&mut self, toast: Toast<Message>) -> Command<Message> {
         while self.toasts.len() >= self.limit {
-            self.toasts.pop_front();
+            self.toasts.remove(
+                self.queue
+                    .pop_front()
+                    .expect("Queue must contain all toast ids"),
+            );
         }
 
         let duration = toast.duration.duration();
+        let id = self.toasts.insert(toast);
+        self.queue.push_back(id);
 
-        let id = self.toasts.len();
-        self.toasts.push_back(toast);
-        let on_close = self.on_close;
-
-        crate::command::future(async move {
-            #[cfg(feature = "tokio")]
-            tokio::time::sleep(duration).await;
-            on_close(id)
-        })
+        #[cfg(feature = "tokio")]
+        {
+            let on_close = self.on_close;
+            crate::command::future(async move {
+                tokio::time::sleep(duration).await;
+                on_close(id)
+            })
+        }
+        #[cfg(not(feature = "tokio"))]
+        {
+            Command::none()
+        }
     }
 
     /// Remove a [`Toast`]
-    pub fn remove(&mut self, id: usize) {
+    pub fn remove(&mut self, id: ToastId) {
         self.toasts.remove(id);
+        if let Some(pos) = self.queue.iter().position(|key| *key == id) {
+            self.queue.remove(pos);
+        }
     }
 }
