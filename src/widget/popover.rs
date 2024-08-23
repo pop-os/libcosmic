@@ -38,6 +38,7 @@ pub struct Popover<'a, Message, Renderer> {
     // XXX Avoid refcell; improve iced overlay API?
     popup: Option<RefCell<Element<'a, Message, crate::Theme, Renderer>>>,
     position: Position,
+    on_close: Option<Message>,
 }
 
 impl<'a, Message, Renderer> Popover<'a, Message, Renderer> {
@@ -47,12 +48,19 @@ impl<'a, Message, Renderer> Popover<'a, Message, Renderer> {
             modal: false,
             popup: None,
             position: Position::Center,
+            on_close: None,
         }
     }
 
     /// A modal popup interrupts user inputs and demands action.
     pub fn modal(mut self, modal: bool) -> Self {
         self.modal = modal;
+        self
+    }
+
+    /// Emitted when the popup is closed.
+    pub fn on_close(mut self, on_close: Message) -> Self {
+        self.on_close = Some(on_close);
         self
     }
 
@@ -69,7 +77,7 @@ impl<'a, Message, Renderer> Popover<'a, Message, Renderer> {
     // TODO More options for positioning similar to GdkPopup, xdg_popup
 }
 
-impl<'a, Message, Renderer> Widget<Message, crate::Theme, Renderer>
+impl<'a, Message: Clone, Renderer> Widget<Message, crate::Theme, Renderer>
     for Popover<'a, Message, Renderer>
 where
     Renderer: iced_core::Renderer,
@@ -143,7 +151,14 @@ where
             )
         {
             let state = tree.state.downcast_mut::<State>();
+            let was_open = state.is_open;
             state.is_open = cursor_position.is_over(layout.bounds());
+
+            if let Some(on_close) = self.on_close.clone() {
+                if was_open && !state.is_open {
+                    shell.publish(on_close);
+                }
+            }
         }
 
         self.content.as_widget_mut().on_event(
@@ -262,7 +277,7 @@ where
 impl<'a, Message, Renderer> From<Popover<'a, Message, Renderer>>
     for Element<'a, Message, crate::Theme, Renderer>
 where
-    Message: 'static,
+    Message: 'static + Clone,
     Renderer: iced_core::Renderer + 'static,
 {
     fn from(popover: Popover<'a, Message, Renderer>) -> Self {
@@ -279,6 +294,7 @@ pub struct Overlay<'a, 'b, Message, Renderer> {
 impl<'a, 'b, Message, Renderer> overlay::Overlay<Message, crate::Theme, Renderer>
     for Overlay<'a, 'b, Message, Renderer>
 where
+    Message: Clone,
     Renderer: iced_core::Renderer,
 {
     fn layout(
