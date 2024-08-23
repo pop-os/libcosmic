@@ -114,17 +114,20 @@ impl cosmic::Application for App {
                 return cosmic::command::future(async move {
                     // Check if its a valid local file path.
                     let path = match url.scheme() {
-                        "file" => url.path(),
+                        "file" => url.to_file_path().unwrap(),
                         other => {
                             return Message::Error(format!("{url} has unknown scheme: {other}"));
                         }
                     };
 
                     // Open the file by its path.
-                    let mut file = match tokio::fs::File::open(path).await {
+                    let mut file = match tokio::fs::File::open(&path).await {
                         Ok(file) => file,
                         Err(why) => {
-                            return Message::Error(format!("failed to open {path}: {why}"));
+                            return Message::Error(format!(
+                                "failed to open {}: {why}",
+                                path.display()
+                            ));
                         }
                     };
 
@@ -132,7 +135,7 @@ impl cosmic::Application for App {
                     contents.clear();
 
                     if let Err(why) = file.read_to_string(&mut contents).await {
-                        return Message::Error(format!("failed to read {path}: {why}"));
+                        return Message::Error(format!("failed to read {}: {why}", path.display()));
                     }
 
                     contents.shrink_to_fit();
