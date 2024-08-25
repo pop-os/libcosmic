@@ -527,7 +527,7 @@ impl Theme {
         if let Ok(cmd) = cmd {
             let color_scheme = String::from_utf8_lossy(&cmd.stdout);
 
-            if color_scheme.trim().contains("light") {
+            if color_scheme.trim().contains("default") || color_scheme.trim().contains("light") {
                 return Self::light_default();
             }
         };
