@@ -702,7 +702,6 @@ impl<App: Application> ApplicationExt for App {
                         .focused(focused)
                         .title(&core.window.header_title)
                         .on_drag(Message::Cosmic(cosmic::Message::Drag))
-                        .on_close(Message::Cosmic(cosmic::Message::Close))
                         .on_right_click(Message::Cosmic(cosmic::Message::ShowWindowMenu))
                         .on_double_click(Message::Cosmic(cosmic::Message::Maximize));
 
@@ -718,6 +717,10 @@ impl<App: Application> ApplicationExt for App {
                             .style(crate::theme::Button::HeaderBar);
 
                         header = header.start(toggle);
+                    }
+
+                    if core.window.show_close {
+                        header = header.on_close(Message::Cosmic(cosmic::Message::Close));
                     }
 
                     if core.window.show_maximize && crate::config::show_maximize() {
