@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: MPL-2.0
 
 #![allow(clippy::module_name_repetitions)]
+#![cfg_attr(target_os = "redox", feature(lazy_cell))]
 
 #[cfg(all(feature = "wayland", feature = "winit"))]
 compile_error!("cannot use `wayland` feature with `winit`");
