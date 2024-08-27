@@ -92,6 +92,10 @@ pub use cctk;
 
 pub mod theme;
 
+#[cfg(feature = "localization")]
+#[macro_use]
+pub mod localize;
+
 #[doc(inline)]
 pub use theme::{style, Theme};
 
