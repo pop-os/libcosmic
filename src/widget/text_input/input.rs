@@ -1429,13 +1429,12 @@ where
 
                 return event::Status::Captured;
             }
-
+            let mut is_trailing_clicked = false;
             if is_editable {
                 if let Some(trailing_layout) = trailing_icon_layout {
-                    let is_trailing_clicked =
-                        cursor.is_over(trailing_layout.bounds()) && on_toggle_edit.is_some();
+                    is_trailing_clicked = cursor.is_over(trailing_layout.bounds());
 
-                    if is_trailing_clicked {
+                    if is_trailing_clicked && on_toggle_edit.is_some() {
                         let Some(pos) = cursor.position() else {
                             return event::Status::Ignored;
                         };
@@ -1471,6 +1470,14 @@ where
                         }
                     }
                 }
+            }
+
+            if !is_trailing_clicked && click_position.is_none() {
+                state.is_focused = None;
+                state.dragging_state = None;
+                state.is_pasting = None;
+
+                state.keyboard_modifiers = keyboard::Modifiers::default();
             }
         }
         Event::Mouse(mouse::Event::ButtonReleased(mouse::Button::Left))
