@@ -69,6 +69,7 @@ winit_tokio = ["winit", "tokio"]
 winit_wgpu = ["winit", "wgpu"]
 # Enables XDG portal integrations
 xdg-portal = ["ashpd"]
+qr_code = ["iced/qr_code"]
 
 [dependencies]
 apply = "0.3.0"
