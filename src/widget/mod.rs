@@ -78,9 +78,6 @@ pub use iced::widget::{pane_grid, PaneGrid};
 pub use iced::widget::{progress_bar, ProgressBar};
 
 #[doc(inline)]
-pub use iced::widget::{radio, Radio};
-
-#[doc(inline)]
 pub use iced::widget::{responsive, Responsive};
 
 #[doc(inline)]
@@ -260,6 +257,10 @@ pub use nav_bar_toggle::{nav_bar_toggle, NavBarToggle};
 pub mod popover;
 #[doc(inline)]
 pub use popover::{popover, Popover};
+
+pub mod radio;
+#[doc(inline)]
+pub use radio::{radio, Radio};
 
 pub mod rectangle_tracker;
 #[doc(inline)]
