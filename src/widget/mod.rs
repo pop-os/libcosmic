@@ -112,6 +112,10 @@ pub mod color_picker;
 #[doc(inline)]
 pub use color_picker::{ColorPicker, ColorPickerModel};
 
+#[cfg(feature = "qr_code")]
+#[doc(inline)]
+pub use iced::widget::qr_code;
+
 pub mod context_drawer;
 #[doc(inline)]
 pub use context_drawer::{context_drawer, ContextDrawer};
