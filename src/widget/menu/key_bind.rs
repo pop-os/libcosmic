@@ -38,7 +38,12 @@ impl KeyBind {
     ///
     /// * `bool` - `true` if the key and modifiers match the `KeyBind`, `false` otherwise.
     pub fn matches(&self, modifiers: Modifiers, key: &Key) -> bool {
-        key == &self.key
+        let key_eq = match (key, &self.key) {
+            // CapsLock and Shift change the case of Key::Character, so we compare these in a case insensitive way
+            (Key::Character(a), Key::Character(b)) => a.eq_ignore_ascii_case(&b),
+            (a, b) => a.eq(b),
+        };
+        key_eq
             && modifiers.logo() == self.modifiers.contains(&Modifier::Super)
             && modifiers.control() == self.modifiers.contains(&Modifier::Ctrl)
             && modifiers.alt() == self.modifiers.contains(&Modifier::Alt)
