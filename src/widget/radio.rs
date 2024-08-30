@@ -104,10 +104,10 @@ where
     Renderer: iced_core::Renderer,
 {
     /// The default size of a [`Radio`] button.
-    pub const DEFAULT_SIZE: f32 = 28.0;
+    pub const DEFAULT_SIZE: f32 = 16.0;
 
     /// The default spacing of a [`Radio`] button.
-    pub const DEFAULT_SPACING: f32 = 15.0;
+    pub const DEFAULT_SPACING: f32 = 8.0;
 
     /// Creates a new [`Radio`] button.
     ///
@@ -129,7 +129,7 @@ where
             label: label.into(),
             width: Length::Shrink,
             size: Self::DEFAULT_SIZE,
-            spacing: Self::DEFAULT_SPACING, //15
+            spacing: Self::DEFAULT_SPACING,
             style: Default::default(),
         }
     }
@@ -312,7 +312,7 @@ where
             let bounds = layout.bounds();
 
             let size = bounds.width;
-            let dot_size = size / 2.0;
+            let dot_size = 6.0;
 
             renderer.fill_quad(
                 renderer::Quad {
@@ -331,10 +331,10 @@ where
                 renderer.fill_quad(
                     renderer::Quad {
                         bounds: Rectangle {
-                            x: bounds.x + dot_size / 2.0,
-                            y: bounds.y + dot_size / 2.0,
-                            width: bounds.width - dot_size,
-                            height: bounds.height - dot_size,
+                            x: bounds.x + (size - dot_size) / 2.0,
+                            y: bounds.y + (size - dot_size) / 2.0,
+                            width: dot_size,
+                            height: dot_size,
                         },
                         border: Border::with_radius(dot_size / 2.0),
                         ..renderer::Quad::default()
