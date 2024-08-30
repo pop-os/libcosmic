@@ -129,7 +129,7 @@ where
             label: label.into(),
             width: Length::Shrink,
             size: Self::DEFAULT_SIZE,
-            spacing: Self::DEFAULT_SPACING, //15
+            spacing: Self::DEFAULT_SPACING,
             style: Default::default(),
         }
     }
