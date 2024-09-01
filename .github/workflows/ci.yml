@@ -79,6 +79,8 @@ jobs:
         examples:
           - "application"
           - "open-dialog"
+          - "context-menu"
+          - "nav-context"
     runs-on: ubuntu-22.04
     steps:
       - name: Checkout sources
