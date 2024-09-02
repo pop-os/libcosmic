@@ -66,6 +66,7 @@ impl<'a, Message: 'static> ListColumn<'a, Message> {
             .spacing(self.spacing)
             .padding(self.padding)
             .apply(super::container)
+            .padding([self.spacing, 0])
             .style(self.style)
             .into()
     }
