@@ -72,7 +72,7 @@ pub enum NavMenuAction {
 impl menu::Action for NavMenuAction {
     type Message = cosmic::app::Message<Message>;
 
-    fn message(&self, _entity: Option<cosmic::widget::segmented_button::Entity>) -> Self::Message {
+    fn message(&self) -> Self::Message {
         cosmic::app::Message::App(Message::NavMenuAction(*self))
     }
 }

@@ -134,7 +134,7 @@ pub enum ContextMenuAction {
 
 impl menu::Action for ContextMenuAction {
     type Message = Message;
-    fn message(&self, _entity_opt: Option<segmented_button::Entity>) -> Self::Message {
+    fn message(&self) -> Self::Message {
         match self {
             ContextMenuAction::WindowClose => Message::WindowClose,
             ContextMenuAction::ToggleHideContent => Message::ToggleHideContent,
