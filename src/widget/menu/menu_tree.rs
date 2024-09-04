@@ -6,10 +6,8 @@ use std::borrow::Cow;
 use std::collections::HashMap;
 
 use iced_widget::core::{renderer, Element};
-use iced_widget::horizontal_rule;
 
 use crate::iced_core::{Alignment, Length};
-use crate::widget::container;
 use crate::widget::menu::action::MenuAction;
 use crate::widget::menu::key_bind::KeyBind;
 use crate::{theme, widget};
@@ -290,7 +288,7 @@ where
                 MenuItem::Divider => {
                     if i != size - 1 {
                         trees.push(MenuTree::<Message, Renderer>::new(
-                            container(horizontal_rule(1)).padding([0, 8]),
+                            widget::divider::horizontal::light(),
                         ));
                     }
                 }

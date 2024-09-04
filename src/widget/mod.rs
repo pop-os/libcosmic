@@ -173,13 +173,13 @@ pub mod divider {
         /// Horizontal divider with light thickness
         #[must_use]
         pub fn light() -> Rule<crate::Theme> {
-            horizontal_rule(4).style(crate::theme::Rule::LightDivider)
+            horizontal_rule(1).style(crate::theme::Rule::LightDivider)
         }
 
         /// Horizontal divider with heavy thickness.
         #[must_use]
         pub fn heavy() -> Rule<crate::Theme> {
-            horizontal_rule(10).style(crate::theme::Rule::HeavyDivider)
+            horizontal_rule(4).style(crate::theme::Rule::HeavyDivider)
         }
     }
 
