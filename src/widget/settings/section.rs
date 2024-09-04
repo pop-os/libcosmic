@@ -7,7 +7,6 @@ use crate::Element;
 use std::borrow::Cow;
 
 /// A section within a settings view column.
-#[must_use]
 pub fn view_section<'a, Message: 'static>(title: impl Into<Cow<'a, str>>) -> Section<'a, Message> {
     Section {
         title: title.into(),
@@ -15,16 +14,33 @@ pub fn view_section<'a, Message: 'static>(title: impl Into<Cow<'a, str>>) -> Sec
     }
 }
 
+/// A section with a pre-defined list column.
+pub fn with_column<'a, Message: 'static>(
+    children: ListColumn<'a, Message>,
+) -> Section<'a, Message> {
+    Section {
+        title: Cow::Borrowed(""),
+        children,
+    }
+}
+
+#[must_use]
 pub struct Section<'a, Message> {
     title: Cow<'a, str>,
     children: ListColumn<'a, Message>,
 }
 
 impl<'a, Message: 'static> Section<'a, Message> {
-    #[must_use]
+    /// Add a child element to the section's list column.
     #[allow(clippy::should_implement_trait)]
     pub fn add(mut self, item: impl Into<Element<'a, Message>>) -> Self {
         self.children = self.children.add(item.into());
+        self
+    }
+
+    /// Define an optional title for the section.
+    pub fn title(mut self, title: impl Into<Cow<'a, str>>) -> Self {
+        self.title = title.into();
         self
     }
 }
