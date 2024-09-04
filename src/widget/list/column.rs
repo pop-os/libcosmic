@@ -21,7 +21,7 @@ pub struct ListColumn<'a, Message> {
 impl<'a, Message: 'static> Default for ListColumn<'a, Message> {
     fn default() -> Self {
         Self {
-            spacing: 12,
+            spacing: 8,
             padding: Padding::from(0),
             style: <crate::Theme as StyleSheet>::Style::List,
             children: Vec::with_capacity(4),
@@ -66,7 +66,7 @@ impl<'a, Message: 'static> ListColumn<'a, Message> {
             .spacing(self.spacing)
             .padding(self.padding)
             .apply(super::container)
-            .padding([self.spacing, 0])
+            .padding([self.spacing, 8])
             .style(self.style)
             .into()
     }
