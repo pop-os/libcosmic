@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: MPL-2.0
 
 pub mod item;
-mod section;
+pub mod section;
 
 pub use self::item::{flex_item, flex_item_row, item, item_row};
 pub use self::section::{view_section, Section};
