@@ -123,6 +123,6 @@ impl<'a, Message: 'static> Item<'a, Message> {
         is_checked: bool,
         message: impl Fn(bool) -> Message + 'static,
     ) -> Row<'a, Message> {
-        self.control(crate::widget::toggler(None, is_checked, message))
+        self.control(crate::widget::toggler(None, is_checked, Some(message)))
     }
 }
