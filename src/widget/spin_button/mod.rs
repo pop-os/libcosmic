@@ -47,7 +47,7 @@ impl<'a, Message: 'static> SpinButton<'a, Message> {
         container(
             row::with_children(vec![
                 icon::from_name("list-remove-symbolic")
-                    .size(24)
+                    .size(16)
                     .apply(container)
                     .width(Length::Fixed(32.0))
                     .height(Length::Fixed(32.0))
@@ -59,14 +59,15 @@ impl<'a, Message: 'static> SpinButton<'a, Message> {
                     .style(theme::Button::Text)
                     .on_press(model::Message::Decrement)
                     .into(),
-                text(label)
+                text::title4(label)
                     .vertical_alignment(Vertical::Center)
                     .apply(container)
+                    .width(Length::Fixed(48.0))
                     .align_x(Horizontal::Center)
                     .align_y(Vertical::Center)
                     .into(),
                 icon::from_name("list-add-symbolic")
-                    .size(24)
+                    .size(16)
                     .apply(container)
                     .width(Length::Fixed(32.0))
                     .height(Length::Fixed(32.0))
@@ -81,7 +82,6 @@ impl<'a, Message: 'static> SpinButton<'a, Message> {
             ])
             .width(Length::Shrink)
             .height(Length::Fixed(32.0))
-            .spacing(4.0)
             .align_items(Alignment::Center),
         )
         .align_y(Vertical::Center)

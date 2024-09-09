@@ -33,7 +33,7 @@ pub fn item_row<Message>(children: Vec<Element<Message>>) -> Row<Message> {
     row::with_children(children)
         .spacing(12)
         .align_items(iced::Alignment::Center)
-        .padding([0, 18])
+        .padding([0, 16])
 }
 
 /// A settings item aligned in a flex row
@@ -52,7 +52,7 @@ pub fn flex_item<'a, Message: 'static>(
 #[allow(clippy::module_name_repetitions)]
 pub fn flex_item_row<Message>(children: Vec<Element<Message>>) -> FlexRow<Message> {
     flex_row(children)
-        .padding([0, 18])
+        .padding([0, 16])
         .spacing(12)
         .min_item_width(200.0)
         .justify_items(iced::Alignment::Center)
