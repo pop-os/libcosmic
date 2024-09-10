@@ -280,6 +280,7 @@ impl<'a, Message: Clone + 'static> HeaderBar<'a, Message> {
         let (height, padding) = match self.density.unwrap_or_else(crate::config::header_size) {
             crate::config::Density::Compact => (36.0, 2.0),
             crate::config::Density::Standard => (48.0, 8.0),
+            crate::config::Density::Spacious => (48.0, 8.0),
         };
 
         // Creates the headerbar widget.
