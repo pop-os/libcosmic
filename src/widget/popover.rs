@@ -13,7 +13,6 @@ use iced_core::widget::{tree, Operation, OperationOutputWrapper, Tree};
 use iced_core::{
     Clipboard, Element, Layout, Length, Point, Rectangle, Shell, Size, Vector, Widget,
 };
-use std::cell::RefCell;
 
 pub use iced_style::container::{Appearance, StyleSheet};
 
@@ -35,8 +34,7 @@ pub enum Position {
 pub struct Popover<'a, Message, Renderer> {
     content: Element<'a, Message, crate::Theme, Renderer>,
     modal: bool,
-    // XXX Avoid refcell; improve iced overlay API?
-    popup: Option<RefCell<Element<'a, Message, crate::Theme, Renderer>>>,
+    popup: Option<Element<'a, Message, crate::Theme, Renderer>>,
     position: Position,
     on_close: Option<Message>,
 }
@@ -65,7 +63,7 @@ impl<'a, Message, Renderer> Popover<'a, Message, Renderer> {
     }
 
     pub fn popup(mut self, popup: impl Into<Element<'a, Message, crate::Theme, Renderer>>) -> Self {
-        self.popup = Some(RefCell::new(popup.into()));
+        self.popup = Some(popup.into());
         self
     }
 
@@ -92,7 +90,7 @@ where
 
     fn children(&self) -> Vec<Tree> {
         if let Some(popup) = &self.popup {
-            vec![Tree::new(&self.content), Tree::new(&*popup.borrow())]
+            vec![Tree::new(&self.content), Tree::new(popup)]
         } else {
             vec![Tree::new(&self.content)]
         }
@@ -100,7 +98,7 @@ where
 
     fn diff(&mut self, tree: &mut Tree) {
         if let Some(popup) = &mut self.popup {
-            tree.diff_children(&mut [&mut self.content, &mut popup.borrow_mut()]);
+            tree.diff_children(&mut [&mut self.content, popup]);
         } else {
             tree.diff_children(&mut [&mut self.content]);
         }
@@ -221,7 +219,7 @@ where
             return None;
         }
 
-        if let Some(popup) = &self.popup {
+        if let Some(popup) = &mut self.popup {
             let bounds = layout.bounds();
 
             // Calculate overlay position from relative position
@@ -242,7 +240,6 @@ where
             overlay_position.x = overlay_position.x.round();
             overlay_position.y = overlay_position.y.round();
 
-            // XXX needed to use RefCell to get &mut for popup element
             Some(overlay::Element::new(
                 overlay_position,
                 Box::new(Overlay {
@@ -287,7 +284,7 @@ where
 
 pub struct Overlay<'a, 'b, Message, Renderer> {
     tree: &'a mut Tree,
-    content: &'a RefCell<Element<'b, Message, crate::Theme, Renderer>>,
+    content: &'a mut Element<'b, Message, crate::Theme, Renderer>,
     position: Position,
 }
 
@@ -307,7 +304,6 @@ where
         let limits = layout::Limits::new(Size::UNIT, bounds);
         let node = self
             .content
-            .borrow()
             .as_widget()
             .layout(self.tree, renderer, &limits);
         match self.position {
@@ -347,7 +343,6 @@ where
         operation: &mut dyn Operation<OperationOutputWrapper<Message>>,
     ) {
         self.content
-            .borrow()
             .as_widget()
             .operate(self.tree, layout, renderer, operation);
     }
@@ -361,7 +356,7 @@ where
         clipboard: &mut dyn Clipboard,
         shell: &mut Shell<'_, Message>,
     ) -> event::Status {
-        self.content.borrow_mut().as_widget_mut().on_event(
+        self.content.as_widget_mut().on_event(
             self.tree,
             event,
             layout,
@@ -380,7 +375,7 @@ where
         viewport: &Rectangle,
         renderer: &Renderer,
     ) -> mouse::Interaction {
-        self.content.borrow().as_widget().mouse_interaction(
+        self.content.as_widget().mouse_interaction(
             self.tree,
             layout,
             cursor_position,
@@ -398,7 +393,7 @@ where
         cursor_position: mouse::Cursor,
     ) {
         let bounds = layout.bounds();
-        self.content.borrow().as_widget().draw(
+        self.content.as_widget().draw(
             self.tree,
             renderer,
             theme,
@@ -407,6 +402,16 @@ where
             cursor_position,
             &bounds,
         );
+    }
+
+    fn overlay<'c>(
+        &'c mut self,
+        layout: Layout<'_>,
+        renderer: &Renderer,
+    ) -> Option<overlay::Element<'c, Message, crate::Theme, Renderer>> {
+        self.content
+            .as_widget_mut()
+            .overlay(&mut self.tree, layout, renderer)
     }
 }
 
