@@ -3,6 +3,7 @@
 
 //! Configurations available to libcosmic applications.
 
+use crate::cosmic_theme::Spacing;
 use cosmic_config::cosmic_config_derive::CosmicConfigEntry;
 use cosmic_config::{Config, CosmicConfigEntry};
 use serde::{Deserialize, Serialize};
@@ -87,8 +88,64 @@ pub struct CosmicTk {
 #[derive(Copy, Clone, Debug, Default, Eq, PartialEq, Serialize, Deserialize)]
 pub enum Density {
     Compact,
+    Spacious,
     #[default]
     Standard,
+}
+
+impl From<Density> for Spacing {
+    fn from(value: Density) -> Self {
+        match value {
+            Density::Compact => Spacing {
+                space_none: 0,
+                space_xxxs: 2,
+                space_xxs: 4,
+                space_xs: 8,
+                space_s: 12,
+                space_m: 16,
+                space_l: 24,
+                space_xl: 32,
+                space_xxl: 48,
+                space_xxxl: 72,
+            },
+            Density::Spacious => Spacing {
+                space_none: 0,
+                space_xxxs: 4,
+                space_xxs: 8,
+                space_xs: 16,
+                space_s: 20,
+                space_m: 32,
+                space_l: 40,
+                space_xl: 56,
+                space_xxl: 72,
+                space_xxxl: 144,
+            },
+            Density::Standard => Spacing {
+                space_none: 0,
+                space_xxxs: 4,
+                space_xxs: 8,
+                space_xs: 12,
+                space_s: 16,
+                space_m: 24,
+                space_l: 32,
+                space_xl: 48,
+                space_xxl: 64,
+                space_xxxl: 128,
+            },
+        }
+    }
+}
+
+impl From<Spacing> for Density {
+    fn from(value: Spacing) -> Self {
+        if (value.space_m - 16) < 1 {
+            Self::Compact
+        } else if (value.space_m - 24) < 1 {
+            Self::Standard
+        } else {
+            Self::Spacious
+        }
+    }
 }
 
 impl Default for CosmicTk {
