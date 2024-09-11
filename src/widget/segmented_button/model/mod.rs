@@ -58,6 +58,9 @@ pub struct Model<SelectionMode: Default> {
     /// The content used for drawing segmented items.
     pub(super) items: SlotMap<Entity, Settings>,
 
+    /// Divider optionally-defined for each item.
+    pub(super) divider_aboves: SecondaryMap<Entity, bool>,
+
     /// Icons optionally-defined for each item.
     pub(super) icons: SecondaryMap<Entity, Icon>,
 
@@ -198,6 +201,22 @@ where
             .0
             .get_mut(&TypeId::of::<Data>())
             .and_then(|storage| storage.remove(id));
+    }
+
+    pub fn divider_above(&self, id: Entity) -> Option<bool> {
+        self.divider_aboves.get(id).copied()
+    }
+
+    pub fn divider_above_set(&mut self, id: Entity, divider_above: bool) -> Option<bool> {
+        if !self.contains_item(id) {
+            return None;
+        }
+
+        self.divider_aboves.insert(id, divider_above)
+    }
+
+    pub fn divider_above_remove(&mut self, id: Entity) -> Option<bool> {
+        self.divider_aboves.remove(id)
     }
 
     /// Enable or disable an item.

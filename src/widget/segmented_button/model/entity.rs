@@ -83,6 +83,12 @@ where
         self
     }
 
+    #[allow(clippy::must_use_candidate, clippy::return_self_not_must_use)]
+    pub fn divider_above(self, divider_above: bool) -> Self {
+        self.model.divider_above_set(self.id, divider_above);
+        self
+    }
+
     /// Define an icon for the item.
     ///
     /// ```ignore

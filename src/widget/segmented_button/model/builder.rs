@@ -95,6 +95,11 @@ where
         self
     }
 
+    pub fn divider_above(mut self) -> Self {
+        self.model.0.divider_above_set(self.id, true);
+        self
+    }
+
     /// Defines an icon for the item.
     ///
     /// ```ignore

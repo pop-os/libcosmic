@@ -57,7 +57,19 @@ where
                 .iter()
                 .copied()
                 .enumerate()
-                .map(move |(nth, key)| {
+                .flat_map(move |(nth, key)| {
+                    let mut divider = None;
+                    if self.model.divider_above(key).unwrap_or(false) && nth > 0 {
+                        let mut divider_bounds = bounds;
+                        divider_bounds.height = 1.0;
+                        divider_bounds.x += f32::from(self.button_padding[0]);
+                        divider_bounds.width -= f32::from(self.button_padding[0]);
+                        divider_bounds.width -= f32::from(self.button_padding[2]);
+                        divider = Some(ItemBounds::Divider(divider_bounds));
+
+                        bounds.y += divider_bounds.height + spacing;
+                    }
+
                     let mut layout_bounds = bounds;
 
                     let layout_size = state.internal_layout[nth].0;
@@ -66,7 +78,7 @@ where
 
                     bounds.y += layout_bounds.height + spacing;
 
-                    ItemBounds::Button(key, layout_bounds)
+                    std::iter::once(ItemBounds::Button(key, layout_bounds)).chain(divider)
                 }),
         )
     }
