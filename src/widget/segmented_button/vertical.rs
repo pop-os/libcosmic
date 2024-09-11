@@ -65,7 +65,7 @@ where
                         divider_bounds.x += f32::from(self.button_padding[0]);
                         divider_bounds.width -= f32::from(self.button_padding[0]);
                         divider_bounds.width -= f32::from(self.button_padding[2]);
-                        divider = Some(ItemBounds::Divider(divider_bounds));
+                        divider = Some(ItemBounds::Divider(divider_bounds, false));
 
                         bounds.y += divider_bounds.height + spacing;
                     }

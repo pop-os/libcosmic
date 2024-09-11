@@ -92,10 +92,13 @@ where
                     let mut divider = None;
 
                     if self.dividers && segmetned_control && nth + 1 < num {
-                        divider = Some(ItemBounds::Divider(Rectangle {
-                            width: 1.0,
-                            ..bounds
-                        }));
+                        divider = Some(ItemBounds::Divider(
+                            Rectangle {
+                                width: 1.0,
+                                ..bounds
+                            },
+                            true,
+                        ));
 
                         bounds.x += 1.0;
                     }

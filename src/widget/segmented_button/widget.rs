@@ -39,7 +39,7 @@ pub fn focus<Message: 'static>(id: Id) -> Command<Message> {
 
 pub enum ItemBounds {
     Button(Entity, Rectangle),
-    Divider(Rectangle),
+    Divider(Rectangle, bool),
 }
 
 /// Isolates variant-specific behaviors from [`SegmentedButton`].
@@ -1299,7 +1299,7 @@ where
                 ItemBounds::Button(entity, bounds) => (entity, bounds),
 
                 // Draw a divider between buttons
-                ItemBounds::Divider(bounds) => {
+                ItemBounds::Divider(bounds, accented) => {
                     renderer.fill_quad(
                         renderer::Quad {
                             bounds,
@@ -1308,7 +1308,11 @@ where
                         },
                         {
                             let theme = crate::theme::active();
-                            Background::Color(theme.cosmic().small_widget_divider().into())
+                            if accented {
+                                Background::Color(theme.cosmic().small_widget_divider().into())
+                            } else {
+                                Background::Color(theme.cosmic().primary_container_divider().into())
+                            }
                         },
                     );
 
