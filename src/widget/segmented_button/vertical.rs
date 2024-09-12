@@ -96,18 +96,23 @@ where
         state.buttons_visible = self.model.order.len();
         let limits = limits.width(self.width);
 
-        let (width, mut height) = self.max_button_dimensions(state, renderer);
+        let (width, item_height) = self.max_button_dimensions(state, renderer);
 
         for (size, actual) in &mut state.internal_layout {
             size.width = width;
-            actual.width = height;
+            actual.width = item_height;
         }
 
-        let num = self.model.items.len();
         let spacing = f32::from(self.spacing);
-
-        if num != 0 {
-            height = (num as f32 * height) + (num as f32 * spacing) - spacing;
+        let mut height = 0.0;
+        for (nth, key) in self.model.order.iter().copied().enumerate() {
+            if nth > 0 {
+                height += spacing;
+                if self.model.divider_above(key).unwrap_or(false) {
+                    height += 1.0 + spacing;
+                }
+            }
+            height += item_height;
         }
 
         limits.height(Length::Fixed(height)).resolve(
