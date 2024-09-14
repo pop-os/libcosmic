@@ -4,7 +4,7 @@
 use iced_core::Padding;
 use iced_style::container::StyleSheet;
 
-use crate::{widget::divider, Apply, Element};
+use crate::{theme, widget::divider, Apply, Element};
 
 pub fn list_column<'a, Message: 'static>() -> ListColumn<'a, Message> {
     ListColumn::default()
@@ -21,7 +21,7 @@ pub struct ListColumn<'a, Message> {
 impl<'a, Message: 'static> Default for ListColumn<'a, Message> {
     fn default() -> Self {
         Self {
-            spacing: 8,
+            spacing: theme::THEME.lock().unwrap().cosmic().spacing.space_xxs,
             padding: Padding::from(0),
             style: <crate::Theme as StyleSheet>::Style::List,
             children: Vec::with_capacity(4),
