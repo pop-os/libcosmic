@@ -197,7 +197,7 @@ impl Context {
         }
         let symbolic = icon.symbolic;
 
-        crate::widget::button(
+        crate::widget::button::custom(
             layer_container(
                 widget::icon(icon)
                     .style(if symbolic {
@@ -417,7 +417,7 @@ pub fn style() -> <crate::Theme as iced_style::application::StyleSheet>::Style {
 pub fn menu_button<'a, Message>(
     content: impl Into<Element<'a, Message>>,
 ) -> crate::widget::Button<'a, Message> {
-    crate::widget::button(content)
+    crate::widget::button::custom(content)
         .style(Button::AppletMenu)
         .padding(menu_control_padding())
         .width(Length::Fill)

@@ -369,7 +369,7 @@ where
                 )
                 // TODO copy paste input contents
                 .trailing_icon({
-                    let button = button(crate::widget::icon(
+                    let button = button::custom(crate::widget::icon(
                         from_name("edit-copy-symbolic").size(spacing.space_s).into(),
                     ))
                     .on_press(on_update(ColorPickerUpdate::Copied(Instant::now())))
@@ -442,7 +442,7 @@ where
             inner = inner.push(
                 column![
                     horizontal::light().width(self.width),
-                    button(
+                    button::custom(
                         text(reset_to_default)
                             .width(self.width)
                             .horizontal_alignment(iced_core::alignment::Horizontal::Center)
@@ -458,14 +458,14 @@ where
             inner = inner.push(
                 column![
                     horizontal::light().width(self.width),
-                    button(
+                    button::custom(
                         text(cancel)
                             .width(self.width)
                             .horizontal_alignment(iced_core::alignment::Horizontal::Center)
                     )
                     .width(self.width)
                     .on_press(on_update(ColorPickerUpdate::Cancel)),
-                    button(
+                    button::custom(
                         text(save)
                             .width(self.width)
                             .horizontal_alignment(iced_core::alignment::Horizontal::Center)
@@ -781,7 +781,7 @@ pub fn color_button<'a, Message: 'static>(
 ) -> crate::widget::Button<'a, Message> {
     let spacing = THEME.lock().unwrap().cosmic().spacing;
 
-    button(if color.is_some() {
+    button::custom(if color.is_some() {
         Element::from(vertical_space(Length::Fixed(f32::from(spacing.space_s))))
     } else {
         Element::from(column![

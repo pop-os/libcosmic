@@ -96,7 +96,7 @@ pub mod aspect_ratio;
 
 pub mod button;
 #[doc(inline)]
-pub use button::{button, Button, IconButton, LinkButton, TextButton};
+pub use button::{Button, IconButton, LinkButton, TextButton};
 
 pub(crate) mod common;
 

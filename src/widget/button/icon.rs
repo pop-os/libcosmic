@@ -1,7 +1,7 @@
 // Copyright 2023 System76 <info@system76.com>
 // SPDX-License-Identifier: MPL-2.0
 
-use super::{button, Builder, Style};
+use super::{Builder, Style};
 use crate::widget::{
     icon::{self, Handle},
     tooltip,
@@ -159,7 +159,7 @@ impl<'a, Message: Clone + 'static> From<Button<'a, Message>> for Element<'a, Mes
                 .padding(builder.padding)
                 .spacing(builder.spacing)
                 .align_items(Alignment::Center)
-                .apply(button)
+                .apply(super::custom)
         } else {
             crate::widget::row::with_children(content)
                 .padding(builder.padding)
@@ -167,7 +167,7 @@ impl<'a, Message: Clone + 'static> From<Button<'a, Message>> for Element<'a, Mes
                 .height(builder.height)
                 .spacing(builder.spacing)
                 .align_items(Alignment::Center)
-                .apply(button)
+                .apply(super::custom)
         };
 
         let button = button

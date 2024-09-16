@@ -43,8 +43,8 @@ use iced_core::widget::Id;
 use iced_core::{Length, Padding};
 use std::borrow::Cow;
 
-/// A button with the default style, which may contain any widget as its content.
-pub fn button<'a, Message>(content: impl Into<crate::Element<'a, Message>>) -> Button<'a, Message> {
+/// A button with a custom element for its content.
+pub fn custom<'a, Message>(content: impl Into<crate::Element<'a, Message>>) -> Button<'a, Message> {
     Button::new(content)
 }
 

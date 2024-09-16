@@ -8,7 +8,6 @@ use crate::{
     Element,
 };
 use derive_setters::Setters;
-use iced::alignment::Horizontal;
 use iced_core::{text::Wrap, Length};
 use taffy::AlignContent;
 

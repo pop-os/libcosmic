@@ -143,7 +143,7 @@ fn date_button<Message>(
         button::Style::Text
     };
 
-    let button = button(
+    let button = button::custom(
         text(format!("{}", date.day()))
             .horizontal_alignment(Horizontal::Center)
             .vertical_alignment(Vertical::Center),

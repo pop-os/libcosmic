@@ -143,7 +143,7 @@ where
 pub fn menu_button<'a, Message: 'a>(
     children: Vec<crate::Element<'a, Message>>,
 ) -> crate::widget::Button<'a, Message> {
-    widget::button(
+    widget::button::custom(
         widget::Row::with_children(children)
             .align_items(Alignment::Center)
             .height(Length::Fill)
@@ -192,7 +192,7 @@ pub fn menu_root<'a, Message, Renderer: renderer::Renderer>(
 where
     Element<'a, Message, crate::Theme, Renderer>: From<widget::Button<'a, Message>>,
 {
-    widget::button(widget::text(label))
+    widget::button::custom(widget::text(label))
         .padding([4, 12])
         .style(theme::Button::MenuRoot)
         .into()

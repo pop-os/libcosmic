@@ -80,6 +80,7 @@ pub enum Duration {
 }
 
 impl Duration {
+    #[cfg(feature = "tokio")]
     fn duration(&self) -> std::time::Duration {
         match self {
             Duration::Short => std::time::Duration::from_millis(5000),
@@ -183,7 +184,9 @@ impl<Message: Clone + Send + 'static> Toasts<Message> {
             );
         }
 
+        #[cfg(feature = "tokio")]
         let duration = toast.duration.duration();
+
         let id = self.toasts.insert(toast);
         self.queue.push_back(id);
 
