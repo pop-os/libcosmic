@@ -4,9 +4,7 @@
 //! A button for toggling the navigation side panel.
 
 use crate::{widget, Element};
-use apply::Apply;
 use derive_setters::Setters;
-use iced::Length;
 
 #[derive(Setters)]
 pub struct NavBarToggle<Message> {

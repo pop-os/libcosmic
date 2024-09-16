@@ -3,12 +3,8 @@
 
 //! Subscribe to common application keyboard shortcuts.
 
-use iced::{event, keyboard, mouse, Command, Event, Subscription};
-use iced_core::{
-    keyboard::key::Named,
-    widget::{operation, Id, Operation},
-    Rectangle,
-};
+use iced::{event, keyboard, Event, Subscription};
+use iced_core::keyboard::key::Named;
 use iced_futures::event::listen_raw;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]

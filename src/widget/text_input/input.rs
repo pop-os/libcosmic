@@ -145,7 +145,7 @@ where
                 "image-red-eye-symbolic"
             })
             .size(16)
-            .apply(crate::widget::button)
+            .apply(crate::widget::button::custom)
             .style(crate::theme::Button::Icon)
             .on_press(msg)
             .padding([spacing, spacing, spacing, spacing])
@@ -501,7 +501,7 @@ where
         self.trailing_icon(
             crate::widget::icon::from_name("edit-clear-symbolic")
                 .size(16)
-                .apply(crate::widget::button)
+                .apply(crate::widget::button::custom)
                 .style(crate::theme::Button::Icon)
                 .width(32)
                 .height(32)

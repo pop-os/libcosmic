@@ -82,7 +82,7 @@ impl<'a, Message: Clone + 'static> From<Button<'a, Message>> for Element<'a, Mes
             .height(builder.height)
             .spacing(builder.spacing)
             .align_items(Alignment::Center)
-            .apply(button)
+            .apply(button::custom)
             .padding(0)
             .id(builder.id)
             .on_press_maybe(builder.on_press.take())
