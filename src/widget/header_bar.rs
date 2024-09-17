@@ -362,7 +362,11 @@ impl<'a, Message: Clone + 'static> HeaderBar<'a, Message> {
         macro_rules! icon {
             ($name:expr, $size:expr, $on_press:expr) => {{
                 #[cfg(target_os = "linux")]
-                let icon = { widget::icon::from_name($name).apply(widget::button::icon) };
+                let icon = {
+                    widget::icon::from_name($name)
+                        .apply(widget::button::icon)
+                        .padding(8)
+                };
 
                 #[cfg(not(target_os = "linux"))]
                 let icon = {
@@ -373,6 +377,7 @@ impl<'a, Message: Clone + 'static> HeaderBar<'a, Message> {
                     )))
                     .symbolic(true)
                     .apply(widget::button::icon)
+                    .padding(8)
                 };
 
                 icon.style(crate::theme::Button::HeaderBar)
