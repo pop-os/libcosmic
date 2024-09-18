@@ -1,7 +1,7 @@
 // Copyright 2022 System76 <info@system76.com>
 // SPDX-License-Identifier: MPL-2.0
 
-use crate::config::Density;
+use crate::cosmic_theme::Density;
 use crate::{ext::CollectionWidget, widget, Element};
 use apply::Apply;
 use derive_setters::Setters;
@@ -278,9 +278,9 @@ impl<'a, Message: Clone + 'static> HeaderBar<'a, Message> {
         end.push(self.window_controls());
 
         let (height, padding) = match self.density.unwrap_or_else(crate::config::header_size) {
-            crate::config::Density::Compact => (36.0, 2.0),
-            crate::config::Density::Standard => (48.0, 8.0),
-            crate::config::Density::Spacious => (48.0, 8.0),
+            Density::Compact => (36.0, 2.0),
+            Density::Spacious => (48.0, 8.0),
+            Density::Standard => (48.0, 8.0),
         };
 
         // Creates the headerbar widget.
