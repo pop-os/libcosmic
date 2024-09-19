@@ -4,6 +4,7 @@
 
 use std::borrow::Cow;
 use std::collections::HashMap;
+use std::rc::Rc;
 
 use iced_widget::core::{renderer, Element};
 
@@ -257,10 +258,15 @@ where
                                 widget::icon::from_name("object-select-symbolic")
                                     .size(16)
                                     .icon()
+                                    .style(theme::Svg::Custom(Rc::new(|theme| {
+                                        crate::iced_style::svg::Appearance {
+                                            color: Some(theme.cosmic().accent_color().into()),
+                                        }
+                                    })))
                                     .width(Length::Fixed(16.0))
                                     .into()
                             } else {
-                                widget::Space::with_width(Length::Fixed(17.0)).into()
+                                widget::Space::with_width(Length::Fixed(16.0)).into()
                             },
                             widget::Space::with_width(Length::Fixed(8.0)).into(),
                             widget::text(label)
