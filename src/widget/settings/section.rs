@@ -7,11 +7,17 @@ use crate::Element;
 use std::borrow::Cow;
 
 /// A section within a settings view column.
+#[deprecated(note = "use `settings::section().title()` instead")]
 pub fn view_section<'a, Message: 'static>(title: impl Into<Cow<'a, str>>) -> Section<'a, Message> {
     Section {
         title: title.into(),
         children: ListColumn::default(),
     }
+}
+
+/// A section within a settings view column.
+pub fn section<'a, Message: 'static>() -> Section<'a, Message> {
+    with_column(ListColumn::default())
 }
 
 /// A section with a pre-defined list column.
