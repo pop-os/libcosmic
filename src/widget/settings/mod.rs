@@ -5,7 +5,7 @@ pub mod item;
 pub mod section;
 
 pub use self::item::{flex_item, flex_item_row, item, item_row};
-pub use self::section::{view_section, Section};
+pub use self::section::{section, view_section, Section};
 
 use crate::widget::{column, Column};
 use crate::Element;
