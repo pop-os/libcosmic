@@ -5,6 +5,7 @@
 
 use crate::theme::{CosmicComponent, Theme, TRANSPARENT_COMPONENT};
 use cosmic_theme::composite::over;
+use iced::color;
 use iced_core::{Background, Border, Color, Shadow, Vector};
 use iced_style::application;
 use iced_style::button as iced_button;
@@ -856,6 +857,29 @@ impl toggler::StyleSheet for Theme {
             }
             .into(),
             ..self.active(style, is_active)
+        }
+    }
+
+    fn disabled(&self, style: &Self::Style, is_active: bool) -> toggler::Appearance {
+        let theme = self.cosmic();
+        const HANDLE_MARGIN: f32 = 2.0;
+        let background: Color = if is_active {
+            theme.accent.base.into()
+        } else {
+            theme.palette.neutral_5.into()
+        };
+        let foreground: Color = theme.palette.neutral_2.into();
+        toggler::Appearance {
+            background: Color::from_rgba(background.r, background.g, background.b, 0.5),
+            background_border: None,
+            foreground: Color::from_rgba(foreground.r, foreground.g, foreground.b, 0.5),
+            foreground_border: None,
+            border_radius: theme.radius_xl().into(),
+            handle_radius: theme
+                .radius_xl()
+                .map(|x| (x - HANDLE_MARGIN).max(0.0))
+                .into(),
+            handle_margin: HANDLE_MARGIN,
         }
     }
 }
