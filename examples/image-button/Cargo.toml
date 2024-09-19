@@ -1,5 +1,5 @@
 [package]
-name = "cosmic-image-button"
+name = "image-button"
 version = "0.1.0"
 edition = "2021"
 
@@ -10,4 +10,4 @@ tracing-subscriber = "0.3.17"
 [dependencies.libcosmic]
 path = "../../"
 default-features = false
-features = ["debug", "wayland", "tokio"]
+features = ["debug", "winit", "tokio"]
