@@ -32,6 +32,7 @@ pub struct Window {
     pub header_title: String,
     pub use_template: bool,
     pub content_container: bool,
+    pub context_is_overlay: bool,
     pub sharp_corners: bool,
     pub show_context: bool,
     pub show_headerbar: bool,
@@ -126,6 +127,7 @@ impl Default for Core {
                 header_title: String::new(),
                 use_template: true,
                 content_container: true,
+                context_is_overlay: true,
                 sharp_corners: false,
                 show_context: false,
                 show_headerbar: true,
@@ -198,8 +200,32 @@ impl Core {
     /// Call this whenever the scaling factor or window width has changed.
     #[allow(clippy::cast_precision_loss)]
     fn is_condensed_update(&mut self) {
-        self.is_condensed = (600.0 * self.scale_factor) > self.window.width as f32;
+        //TODO: the app may return None from the context_drawer function even if show_context is true
+        let breakpoint = if self.window.show_context && !self.window.context_is_overlay {
+            1136.0
+        } else {
+            648.0
+        };
+        self.is_condensed = (breakpoint * self.scale_factor) > self.window.width as f32;
         self.nav_bar_update();
+    }
+
+    fn condensed_conflict(&self) -> bool {
+        // There is a conflict if the view is condensed and both the nav bar and context drawer are open on the same layer
+        self.is_condensed
+            && self.nav_bar.toggled_condensed
+            && self.window.show_context
+            && !self.window.context_is_overlay
+    }
+
+    pub fn set_show_context(&mut self, show: bool) {
+        self.window.show_context = show;
+        self.is_condensed_update();
+        // Ensure nav bar is closed if condensed view and context drawer is opened
+        if self.condensed_conflict() {
+            self.nav_bar.toggled_condensed = false;
+            self.is_condensed_update();
+        }
     }
 
     /// Whether the nav panel is visible or not
@@ -233,6 +259,16 @@ impl Core {
     pub(crate) fn nav_bar_set_toggled_condensed(&mut self, toggled: bool) {
         self.nav_bar.toggled_condensed = toggled;
         self.nav_bar_update();
+        // Ensure context drawer is closed if condensed view and nav bar is opened
+        if self.condensed_conflict() {
+            self.window.show_context = false;
+            self.is_condensed_update();
+            // Sync nav bar state if the view is no longer condensed after closing the context drawer
+            if !self.is_condensed {
+                self.nav_bar.toggled = toggled;
+                self.nav_bar_update();
+            }
+        }
     }
 
     pub(crate) fn nav_bar_update(&mut self) {

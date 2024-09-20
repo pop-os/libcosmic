@@ -50,13 +50,13 @@ pub use self::core::Core;
 pub use self::settings::Settings;
 use crate::prelude::*;
 use crate::theme::THEME;
-use crate::widget::{context_drawer, id_container, menu, nav_bar, popover};
+use crate::widget::{context_drawer, horizontal_space, id_container, menu, nav_bar, popover};
 use apply::Apply;
-use iced::Subscription;
 #[cfg(all(feature = "winit", feature = "multi-window"))]
 use iced::{multi_window::Application as IcedApplication, window};
 #[cfg(any(not(feature = "winit"), not(feature = "multi-window")))]
 use iced::{window, Application as IcedApplication};
+use iced::{Length, Subscription};
 pub use message::Message;
 use url::Url;
 #[cfg(feature = "single-instance")]
@@ -581,6 +581,11 @@ pub trait ApplicationExt: Application {
         self.core_mut().set_context_title(title);
     }
 
+    /// Set the context drawer visibility.
+    fn set_show_context(&mut self, show: bool) {
+        self.core_mut().set_show_context(show);
+    }
+
     /// Set the header bar title.
     fn set_header_title(&mut self, title: String) {
         self.core_mut().set_header_title(title);
@@ -648,7 +653,7 @@ impl<App: Application> ApplicationExt for App {
             .is_some_and(|i| i == self.main_window_id());
 
         let content_row = crate::widget::row::with_children({
-            let mut widgets = Vec::with_capacity(2);
+            let mut widgets = Vec::with_capacity(3);
 
             // Insert nav bar onto the left side of the window.
             if let Some(nav) = self
@@ -659,24 +664,33 @@ impl<App: Application> ApplicationExt for App {
             }
 
             if self.nav_model().is_none() || core.show_content() {
-                let main_content = self.view().map(Message::App);
+                widgets.push(self.view().map(Message::App));
 
-                widgets.push(if let Some(context) = self.context_drawer() {
-                    context_drawer(
-                        &core.window.context_title,
-                        Message::Cosmic(cosmic::Message::ContextDrawer(false)),
-                        main_content,
-                        context.map(Message::App),
-                    )
-                    .apply(|drawer| {
-                        Element::from(id_container(
-                            drawer,
-                            iced_core::id::Id::new("COSMIC_context_drawer"),
-                        ))
-                    })
+                if let Some(context) = self.context_drawer() {
+                    widgets.push(
+                        context_drawer(
+                            &core.window.context_title,
+                            Message::Cosmic(cosmic::Message::ContextDrawer(false)),
+                            //TODO: this is a hack to allow toggling overlay
+                            horizontal_space(if core.window.context_is_overlay {
+                                Length::Shrink
+                            } else {
+                                //TODO: this width must be synced with the context drawer width
+                                Length::Fixed(480.0)
+                            }),
+                            context.map(Message::App),
+                        )
+                        .apply(|drawer| {
+                            Element::from(id_container(
+                                drawer,
+                                iced_core::id::Id::new("COSMIC_context_drawer"),
+                            ))
+                        }),
+                    );
                 } else {
-                    main_content
-                });
+                    //TODO: this element is added to prevent state issues
+                    widgets.push(horizontal_space(Length::Shrink).into());
+                }
             }
 
             widgets
