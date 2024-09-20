@@ -653,7 +653,7 @@ impl<App: Application> ApplicationExt for App {
             .is_some_and(|i| i == self.main_window_id());
 
         let content_row = crate::widget::row::with_children({
-            let mut widgets = Vec::with_capacity(3);
+            let mut widgets = Vec::with_capacity(4);
 
             // Insert nav bar onto the left side of the window.
             if let Some(nav) = self
@@ -664,6 +664,11 @@ impl<App: Application> ApplicationExt for App {
             }
 
             if self.nav_model().is_none() || core.show_content() {
+                // Manual spacing must be used due to state workarounds below
+                if !widgets.is_empty() {
+                    widgets.push(horizontal_space(Length::Fixed(8.0)).into());
+                }
+
                 widgets.push(self.view().map(Message::App));
 
                 if let Some(context) = self.context_drawer() {
@@ -676,7 +681,8 @@ impl<App: Application> ApplicationExt for App {
                                 Length::Shrink
                             } else {
                                 //TODO: this width must be synced with the context drawer width
-                                Length::Fixed(480.0)
+                                // Manual spacing must be used due to state workarounds below
+                                Length::Fixed(480.0 + 8.0)
                             }),
                             context.map(Message::App),
                         )
@@ -688,14 +694,13 @@ impl<App: Application> ApplicationExt for App {
                         }),
                     );
                 } else {
-                    //TODO: this element is added to prevent state issues
+                    //TODO: this element is added to workaround state issues
                     widgets.push(horizontal_space(Length::Shrink).into());
                 }
             }
 
             widgets
-        })
-        .spacing(8);
+        });
         let content: Element<_> = if core.window.content_container {
             content_row
                 .apply(crate::widget::container)
