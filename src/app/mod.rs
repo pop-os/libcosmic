@@ -669,33 +669,54 @@ impl<App: Application> ApplicationExt for App {
                     widgets.push(horizontal_space(Length::Fixed(8.0)).into());
                 }
 
-                widgets.push(self.view().map(Message::App));
+                let main_content = self.view().map(Message::App);
 
-                if let Some(context) = self.context_drawer() {
-                    widgets.push(
-                        context_drawer(
-                            &core.window.context_title,
-                            Message::Cosmic(cosmic::Message::ContextDrawer(false)),
-                            //TODO: this is a hack to allow toggling overlay
-                            horizontal_space(if core.window.context_is_overlay {
-                                Length::Shrink
-                            } else {
-                                //TODO: this width must be synced with the context drawer width
-                                // Manual spacing must be used due to state workarounds below
-                                Length::Fixed(480.0 + 8.0)
+                //TODO: reduce duplication
+                if core.window.context_is_overlay {
+                    if let Some(context) = self.context_drawer() {
+                        widgets.push(
+                            context_drawer(
+                                &core.window.context_title,
+                                Message::Cosmic(cosmic::Message::ContextDrawer(false)),
+                                main_content,
+                                context.map(Message::App),
+                            )
+                            .apply(|drawer| {
+                                Element::from(id_container(
+                                    drawer,
+                                    iced_core::id::Id::new("COSMIC_context_drawer"),
+                                ))
                             }),
-                            context.map(Message::App),
-                        )
-                        .apply(|drawer| {
-                            Element::from(id_container(
-                                drawer,
-                                iced_core::id::Id::new("COSMIC_context_drawer"),
-                            ))
-                        }),
-                    );
+                        );
+                    } else {
+                        widgets.push(main_content);
+                    }
                 } else {
-                    //TODO: this element is added to workaround state issues
-                    widgets.push(horizontal_space(Length::Shrink).into());
+                    widgets.push(main_content);
+                    if let Some(context) = self.context_drawer() {
+                        widgets.push(
+                            context_drawer(
+                                &core.window.context_title,
+                                Message::Cosmic(cosmic::Message::ContextDrawer(false)),
+                                //TODO: this is a hack to allow toggling overlay
+                                horizontal_space(
+                                    //TODO: this width must be synced with the context drawer width
+                                    // Manual spacing must be used due to state workarounds below
+                                    Length::Fixed(480.0 + 8.0),
+                                ),
+                                context.map(Message::App),
+                            )
+                            .apply(|drawer| {
+                                Element::from(id_container(
+                                    drawer,
+                                    iced_core::id::Id::new("COSMIC_context_drawer"),
+                                ))
+                            }),
+                        );
+                    } else {
+                        //TODO: this element is added to workaround state issues
+                        widgets.push(horizontal_space(Length::Shrink).into());
+                    }
                 }
             }
 
