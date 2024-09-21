@@ -107,7 +107,7 @@ where
             crate::widget::icon::from_name("system-search-symbolic")
                 .size(16)
                 .apply(crate::widget::container)
-                .padding([spacing, spacing, spacing, spacing])
+                .padding(8)
                 .into(),
         )
 }
@@ -131,7 +131,7 @@ where
             crate::widget::icon::from_name("system-lock-screen-symbolic")
                 .size(16)
                 .apply(crate::widget::container)
-                .padding([spacing, spacing, spacing, spacing])
+                .padding(8)
                 .into(),
         );
     if hidden {
@@ -148,7 +148,7 @@ where
             .apply(crate::widget::button::custom)
             .style(crate::theme::Button::Icon)
             .on_press(msg)
-            .padding([spacing, spacing, spacing, spacing])
+            .padding(8)
             .into(),
         )
     } else {
@@ -496,17 +496,13 @@ where
     }
 
     pub fn on_clear(self, on_clear: Message) -> Self {
-        let spacing = THEME.lock().unwrap().cosmic().space_xxs();
-
         self.trailing_icon(
             crate::widget::icon::from_name("edit-clear-symbolic")
                 .size(16)
                 .apply(crate::widget::button::custom)
                 .style(crate::theme::Button::Icon)
-                .width(32)
-                .height(32)
                 .on_press(on_clear)
-                .padding([spacing, spacing, spacing, spacing])
+                .padding(8)
                 .into(),
         )
     }
