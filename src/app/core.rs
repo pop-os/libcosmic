@@ -200,11 +200,12 @@ impl Core {
     /// Call this whenever the scaling factor or window width has changed.
     #[allow(clippy::cast_precision_loss)]
     fn is_condensed_update(&mut self) {
+        // Nav bar (280px) + padding (8px) + content (360px)
+        let mut breakpoint = 280.0 + 8.0 + 360.0;
         //TODO: the app may return None from the context_drawer function even if show_context is true
-        let breakpoint = if self.window.show_context && !self.window.context_is_overlay {
-            1136.0
-        } else {
-            648.0
+        if self.window.show_context && !self.window.context_is_overlay {
+            // Context drawer min width (344px) + padding (8px)
+            breakpoint += 344.0 + 8.0;
         };
         self.is_condensed = (breakpoint * self.scale_factor) > self.window.width as f32;
         self.nav_bar_update();
@@ -216,6 +217,22 @@ impl Core {
             && self.nav_bar.toggled_condensed
             && self.window.show_context
             && !self.window.context_is_overlay
+    }
+
+    pub(crate) fn context_width(&self, has_nav: bool) -> f32 {
+        let window_width = (self.window.width as f32) / self.scale_factor;
+
+        // Content width (360px) + padding (8px)
+        let mut reserved_width = 360.0 + 8.0;
+        if has_nav {
+            // Navbar width (280px) + padding (8px)
+            reserved_width += 280.0 + 8.0;
+        }
+
+        // This logic is to ensure the context drawer does not take up too much of the content's space
+        // The minimum width is 344px and the maximum with is 480px
+        // We want to keep the content at least 360px until going down to the minimum width
+        (window_width - reserved_width).min(480.0).max(344.0)
     }
 
     pub fn set_show_context(&mut self, show: bool) {

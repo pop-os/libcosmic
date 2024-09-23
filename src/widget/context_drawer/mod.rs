@@ -16,10 +16,11 @@ pub fn context_drawer<'a, Message: Clone + 'static, Content, Drawer>(
     on_close: Message,
     content: Content,
     drawer: Drawer,
+    max_width: f32,
 ) -> ContextDrawer<'a, Message>
 where
     Content: Into<Element<'a, Message>>,
     Drawer: Into<Element<'a, Message>>,
 {
-    ContextDrawer::new(header, content, drawer, on_close)
+    ContextDrawer::new(header, content, drawer, on_close, max_width)
 }

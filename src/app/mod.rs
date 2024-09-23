@@ -656,22 +656,26 @@ impl<App: Application> ApplicationExt for App {
             let mut widgets = Vec::with_capacity(4);
 
             // Insert nav bar onto the left side of the window.
-            if let Some(nav) = self
+            let has_nav = if let Some(nav) = self
                 .nav_bar()
                 .map(|nav| id_container(nav, iced_core::id::Id::new("COSMIC_nav_bar")))
             {
                 widgets.push(nav.into());
-            }
+                true
+            } else {
+                false
+            };
 
             if self.nav_model().is_none() || core.show_content() {
                 // Manual spacing must be used due to state workarounds below
-                if !widgets.is_empty() {
+                if has_nav {
                     widgets.push(horizontal_space(Length::Fixed(8.0)).into());
                 }
 
                 let main_content = self.view().map(Message::App);
 
                 //TODO: reduce duplication
+                let context_width = core.context_width(has_nav);
                 if core.window.context_is_overlay {
                     if let Some(context) = self.context_drawer() {
                         widgets.push(
@@ -680,6 +684,7 @@ impl<App: Application> ApplicationExt for App {
                                 Message::Cosmic(cosmic::Message::ContextDrawer(false)),
                                 main_content,
                                 context.map(Message::App),
+                                context_width,
                             )
                             .apply(|drawer| {
                                 Element::from(id_container(
@@ -692,6 +697,7 @@ impl<App: Application> ApplicationExt for App {
                         widgets.push(main_content);
                     }
                 } else {
+                    //TODO: hide content when out of space
                     widgets.push(main_content);
                     if let Some(context) = self.context_drawer() {
                         widgets.push(
@@ -702,9 +708,10 @@ impl<App: Application> ApplicationExt for App {
                                 horizontal_space(
                                     //TODO: this width must be synced with the context drawer width
                                     // Manual spacing must be used due to state workarounds below
-                                    Length::Fixed(480.0 + 8.0),
+                                    Length::Fixed(context_width + 8.0),
                                 ),
                                 context.map(Message::App),
+                                context_width,
                             )
                             .apply(|drawer| {
                                 Element::from(id_container(

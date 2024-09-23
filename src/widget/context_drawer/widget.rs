@@ -33,6 +33,7 @@ impl<'a, Message: Clone + 'static> ContextDrawer<'a, Message> {
         content: Content,
         drawer: Drawer,
         on_close: Message,
+        max_width: f32,
     ) -> Self
     where
         Content: Into<Element<'a, Message>>,
@@ -92,7 +93,7 @@ impl<'a, Message: Clone + 'static> ContextDrawer<'a, Message> {
                     .style(crate::style::Container::ContextDrawer)
                     .width(Length::Fill)
                     .height(Length::Fill)
-                    .max_width(480.0),
+                    .max_width(max_width),
             )
             .width(Length::Fill)
             .height(Length::Fill)
