@@ -4,6 +4,7 @@
 use std::borrow::Cow;
 
 use crate::{
+    theme,
     widget::{column, container, flex_row, horizontal_space, row, text, FlexRow, Row},
     Element,
 };
@@ -29,10 +30,13 @@ pub fn item<'a, Message: 'static>(
 #[must_use]
 #[allow(clippy::module_name_repetitions)]
 pub fn item_row<Message>(children: Vec<Element<Message>>) -> Row<Message> {
+    let cosmic_theme::Spacing {
+        space_s, space_xs, ..
+    } = theme::THEME.lock().unwrap().cosmic().spacing;
     row::with_children(children)
-        .spacing(12)
+        .spacing(space_xs)
         .align_items(iced::Alignment::Center)
-        .padding([0, 16])
+        .padding([0, space_s])
 }
 
 /// A settings item aligned in a flex row
@@ -50,9 +54,12 @@ pub fn flex_item<'a, Message: 'static>(
 /// A settings item aligned in a flex row
 #[allow(clippy::module_name_repetitions)]
 pub fn flex_item_row<Message>(children: Vec<Element<Message>>) -> FlexRow<Message> {
+    let cosmic_theme::Spacing {
+        space_s, space_xs, ..
+    } = theme::THEME.lock().unwrap().cosmic().spacing;
     flex_row(children)
-        .padding([0, 16])
-        .spacing(12)
+        .padding([0, space_s])
+        .spacing(space_xs)
         .min_item_width(200.0)
         .justify_items(iced::Alignment::Center)
         .justify_content(AlignContent::SpaceBetween)

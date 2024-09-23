@@ -3,6 +3,7 @@
 
 //! Configurations available to libcosmic applications.
 
+use crate::cosmic_theme::Density;
 use cosmic_config::cosmic_config_derive::CosmicConfigEntry;
 use cosmic_config::{Config, CosmicConfigEntry};
 use serde::{Deserialize, Serialize};
@@ -82,13 +83,6 @@ pub struct CosmicTk {
 
     /// Interface density.
     pub interface_density: Density,
-}
-
-#[derive(Copy, Clone, Debug, Default, Eq, PartialEq, Serialize, Deserialize)]
-pub enum Density {
-    Compact,
-    #[default]
-    Standard,
 }
 
 impl Default for CosmicTk {
