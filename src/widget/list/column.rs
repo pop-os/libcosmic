@@ -40,7 +40,12 @@ impl<'a, Message: 'static> ListColumn<'a, Message> {
             self.children.push(divider::horizontal::light().into());
         }
 
-        self.children.push(item.into());
+        // Ensure a minimum height of 32.
+        let container = crate::widget::container(item)
+            .min_height(32)
+            .align_y(iced::alignment::Vertical::Center);
+
+        self.children.push(container.into());
         self
     }
 
