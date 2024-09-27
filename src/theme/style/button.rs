@@ -80,8 +80,10 @@ pub fn appearance(
                 }
             }
 
-            let (background, _text, _icon) = color(&cosmic.icon_button);
+            let (background, text, icon) = color(&cosmic.icon_button);
             appearance.background = Some(Background::Color(background));
+            appearance.text_color = text;
+            appearance.icon_color = icon;
         }
 
         Button::Image => {
@@ -129,11 +131,10 @@ pub fn appearance(
             appearance.text_color = None;
         }
         Button::MenuItem => {
-            let (background, _, _) = color(&cosmic.background.component);
+            let (background, text, icon) = color(&cosmic.background.component);
             appearance.background = Some(Background::Color(background));
-
-            appearance.icon_color = Some(cosmic.background.on.into());
-            appearance.text_color = Some(cosmic.background.on.into());
+            appearance.icon_color = icon;
+            appearance.text_color = text;
             corner_radii = &cosmic.corner_radii.radius_s;
         }
     }
