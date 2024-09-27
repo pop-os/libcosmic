@@ -172,6 +172,8 @@ pub fn menu_button<'a, Message: 'a>(
 pub enum MenuItem<A: MenuAction, L: Into<Cow<'static, str>>> {
     /// Represents a button menu item.
     Button(L, A),
+    /// Represents a button menu item that is disabled.
+    ButtonDisabled(L, A),
     /// Represents a checkbox menu item.
     CheckBox(L, bool, A),
     /// Represents a folder menu item.
@@ -247,6 +249,16 @@ where
                         widget::text(key).into(),
                     ])
                     .on_press(action.message());
+
+                    trees.push(MenuTree::<Message, Renderer>::new(menu_button));
+                }
+                MenuItem::ButtonDisabled(label, action) => {
+                    let key = find_key(&action, key_binds);
+                    let menu_button = menu_button(vec![
+                        widget::text(label).into(),
+                        widget::horizontal_space(Length::Fill).into(),
+                        widget::text(key).into(),
+                    ]);
 
                     trees.push(MenuTree::<Message, Renderer>::new(menu_button));
                 }
