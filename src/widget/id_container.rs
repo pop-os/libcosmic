@@ -4,8 +4,8 @@ use iced_core::mouse;
 use iced_core::overlay;
 use iced_core::renderer;
 use iced_core::widget::{Id, Tree};
-use iced_core::{Clipboard, Element, Layout, Length, Rectangle, Shell, Widget};
-pub use iced_style::container::{Appearance, StyleSheet};
+use iced_core::{Clipboard, Element, Layout, Length, Rectangle, Shell, Vector, Widget};
+pub use iced_widget::container::{Catalog, Style};
 
 pub fn id_container<'a, Message: 'static, Theme, E>(
     content: E,
@@ -13,8 +13,8 @@ pub fn id_container<'a, Message: 'static, Theme, E>(
 ) -> IdContainer<'a, Message, Theme, crate::Renderer>
 where
     E: Into<Element<'a, Message, Theme, crate::Renderer>>,
-    Theme: iced_style::container::StyleSheet,
-    <Theme as iced_widget::container::StyleSheet>::Style: From<crate::theme::Container>,
+    Theme: iced_widget::container::Catalog,
+    <Theme as iced_widget::container::Catalog>::Class<'a>: From<crate::theme::Container>,
 {
     IdContainer::new(content, id)
 }
@@ -83,9 +83,7 @@ where
         tree: &mut Tree,
         layout: Layout<'_>,
         renderer: &Renderer,
-        operation: &mut dyn iced_core::widget::Operation<
-            iced_core::widget::OperationOutputWrapper<Message>,
-        >,
+        operation: &mut dyn iced_core::widget::Operation<()>,
     ) {
         operation.container(Some(&self.id), layout.bounds(), &mut |operation| {
             self.content.as_widget().operate(
@@ -165,11 +163,13 @@ where
         tree: &'b mut Tree,
         layout: Layout<'_>,
         renderer: &Renderer,
+        translation: Vector,
     ) -> Option<overlay::Element<'b, Message, Theme, Renderer>> {
         self.content.as_widget_mut().overlay(
             &mut tree.children[0],
             layout.children().next().unwrap(),
             renderer,
+            translation,
         )
     }
 
@@ -178,7 +178,7 @@ where
         state: &Tree,
         layout: Layout<'_>,
         renderer: &Renderer,
-        dnd_rectangles: &mut iced_style::core::clipboard::DndDestinationRectangles,
+        dnd_rectangles: &mut iced_core::clipboard::DndDestinationRectangles,
     ) {
         let content_layout = layout.children().next().unwrap();
         self.content.as_widget().drag_destinations(

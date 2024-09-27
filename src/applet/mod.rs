@@ -2,7 +2,7 @@
 pub mod token;
 
 use crate::{
-    app::Core,
+    app::{iced_settings, Core},
     cctk::sctk,
     iced::{
         self,
@@ -10,7 +10,7 @@ use crate::{
         widget::Container,
         window, Color, Length, Limits, Rectangle,
     },
-    iced_style, iced_widget,
+    iced_widget,
     theme::{self, system_dark, system_light, Button, THEME},
     widget::{self, layer_container},
     Application, Element, Renderer,
@@ -21,10 +21,8 @@ use cosmic_panel_config::{CosmicPanelBackground, PanelAnchor, PanelSize};
 use cosmic_theme::Theme;
 use iced::Pixels;
 use iced_core::{Padding, Shadow};
-use iced_style::container::Appearance;
-use iced_widget::runtime::command::platform_specific::wayland::popup::{
-    SctkPopupSettings, SctkPositioner,
-};
+use iced_widget::container::Style;
+use iced_widget::runtime::platform_specific::wayland::popup::{SctkPopupSettings, SctkPositioner};
 use sctk::reexports::protocols::xdg::shell::client::xdg_positioner::{Anchor, Gravity};
 use std::{borrow::Cow, num::NonZeroU32, rc::Rc};
 
@@ -200,8 +198,8 @@ impl Context {
         crate::widget::button::custom(
             layer_container(
                 widget::icon(icon)
-                    .style(if symbolic {
-                        theme::Svg::Custom(Rc::new(|theme| crate::iced_style::svg::Appearance {
+                    .class(if symbolic {
+                        theme::Svg::Custom(Rc::new(|theme| crate::iced_widget::svg::Style {
                             color: Some(theme.cosmic().background.on.into()),
                         }))
                     } else {
@@ -217,7 +215,7 @@ impl Context {
         )
         .width(Length::Fixed(configured_width.get() as f32))
         .height(Length::Fixed(configured_height.get() as f32))
-        .style(Button::AppletIcon)
+        .class(Button::AppletIcon)
     }
 
     #[must_use]
@@ -246,23 +244,21 @@ impl Context {
         };
 
         Container::<Message, _, Renderer>::new(
-            Container::<Message, _, Renderer>::new(content).style(theme::Container::custom(
-                |theme| {
-                    let cosmic = theme.cosmic();
-                    let corners = cosmic.corner_radii.clone();
-                    Appearance {
-                        text_color: Some(cosmic.background.on.into()),
-                        background: Some(Color::from(cosmic.background.base).into()),
-                        border: iced::Border {
-                            radius: corners.radius_m.into(),
-                            width: 1.0,
-                            color: cosmic.background.divider.into(),
-                        },
-                        shadow: Shadow::default(),
-                        icon_color: Some(cosmic.background.on.into()),
-                    }
-                },
-            )),
+            Container::<Message, _, Renderer>::new(content).style(|theme| {
+                let cosmic = theme.cosmic();
+                let corners = cosmic.corner_radii.clone();
+                iced_widget::container::Style {
+                    text_color: Some(cosmic.background.on.into()),
+                    background: Some(Color::from(cosmic.background.base).into()),
+                    border: iced::Border {
+                        radius: corners.radius_m.into(),
+                        width: 1.0,
+                        color: cosmic.background.divider.into(),
+                    },
+                    shadow: Shadow::default(),
+                    icon_color: Some(cosmic.background.on.into()),
+                }
+            }),
         )
         .width(Length::Shrink)
         .height(Length::Shrink)
@@ -356,69 +352,79 @@ pub fn run<App: Application>(autosize: bool, flags: App::Flags) -> iced::Result 
         settings.size_limits = Limits::NONE;
     }
 
-    if let Some(icon_theme) = settings.default_icon_theme {
+    if let Some(icon_theme) = settings.default_icon_theme.clone() {
         crate::icon_theme::set_default(icon_theme);
     }
 
-    let (width, height) = (settings.size.width as u32, settings.size.height as u32);
+    let (width, height) = (settings.size.width, settings.size.height);
 
-    let mut core = Core::default();
-    core.window.show_window_menu = false;
+    THEME
+        .lock()
+        .unwrap()
+        .set_theme(settings.theme.theme_type.clone());
+
+    let (iced_settings, window_settings, (mut core, flags)) = iced_settings::<App>(settings, flags);
     core.window.show_headerbar = false;
     core.window.sharp_corners = true;
     core.window.show_maximize = false;
     core.window.show_minimize = false;
     core.window.use_template = false;
 
-    core.debug = settings.debug;
-    core.set_scale_factor(settings.scale_factor);
+    // core.debug = settings.debug;
+    // core.set_scale_factor(settings.scale_factor);
     core.set_window_width(width);
     core.set_window_height(height);
 
-    THEME.lock().unwrap().set_theme(settings.theme.theme_type);
+    // window_settings.antialiasing = settings.antialiasing;
+    // window_settings.default_font = settings.default_font;
+    // window_settings.default_text_size = settings.default_text_size.into();
+    // window_settings.id = Some(App::APP_ID.to_owned());
 
-    let mut iced = iced::Settings::with_flags((core, flags));
+    // {
+    //     use iced::wayland::actions::window::SctkWindowSettings;
+    //     use iced_sctk::settings::InitialSurface;
+    //     iced.initial_surface = InitialSurface::XdgWindow(SctkWindowSettings {
+    //         app_id: Some(App::APP_ID.to_owned()),
+    //         autosize: settings.autosize,
+    //         client_decorations: settings.client_decorations,
+    //         resizable: settings.resizable,
+    //         size: (width, height),
+    //         size_limits: settings.size_limits,
+    //         title: None,
+    //         transparent: settings.transparent,
+    //         ..SctkWindowSettings::default()
+    //     });
+    // }
 
-    iced.antialiasing = settings.antialiasing;
-    iced.default_font = settings.default_font;
-    iced.default_text_size = settings.default_text_size.into();
-    iced.id = Some(App::APP_ID.to_owned());
-
-    {
-        use iced::wayland::actions::window::SctkWindowSettings;
-        use iced_sctk::settings::InitialSurface;
-        iced.initial_surface = InitialSurface::XdgWindow(SctkWindowSettings {
-            app_id: Some(App::APP_ID.to_owned()),
-            autosize: settings.autosize,
-            client_decorations: settings.client_decorations,
-            resizable: settings.resizable,
-            size: (width, height),
-            size_limits: settings.size_limits,
-            title: None,
-            transparent: settings.transparent,
-            ..SctkWindowSettings::default()
-        });
-    }
-
-    <cosmic::Cosmic<App> as iced::Application>::run(iced)
+    iced::application(
+        cosmic::Cosmic::title,
+        cosmic::Cosmic::update,
+        cosmic::Cosmic::view,
+    )
+    .subscription(cosmic::Cosmic::subscription)
+    .style(cosmic::Cosmic::style)
+    .theme(cosmic::Cosmic::theme)
+    .window_size((width, height))
+    .window(window_settings)
+    .settings(iced_settings)
+    .run_with(move || cosmic::Cosmic::<App>::init((core, flags)))
 }
 
 #[must_use]
-pub fn style() -> <crate::Theme as iced_style::application::StyleSheet>::Style {
-    <crate::Theme as iced_style::application::StyleSheet>::Style::Custom(Box::new(|theme| {
-        iced_style::application::Appearance {
-            background_color: Color::from_rgba(0.0, 0.0, 0.0, 0.0),
-            text_color: theme.cosmic().on_bg_color().into(),
-            icon_color: theme.cosmic().on_bg_color().into(),
-        }
-    }))
+pub fn style() -> iced_runtime::Appearance {
+    let theme = crate::theme::THEME.lock().unwrap();
+    iced_runtime::Appearance {
+        background_color: Color::from_rgba(0.0, 0.0, 0.0, 0.0),
+        text_color: theme.cosmic().on_bg_color().into(),
+        icon_color: theme.cosmic().on_bg_color().into(),
+    }
 }
 
 pub fn menu_button<'a, Message>(
     content: impl Into<Element<'a, Message>>,
 ) -> crate::widget::Button<'a, Message> {
     crate::widget::button::custom(content)
-        .style(Button::AppletMenu)
+        .class(Button::AppletMenu)
         .padding(menu_control_padding())
         .width(Length::Fill)
 }

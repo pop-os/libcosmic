@@ -6,7 +6,7 @@
 pub use iced::Font;
 use iced::{
     font::{load, Error},
-    Command,
+    Task,
 };
 use iced_core::font::Family;
 
@@ -57,8 +57,8 @@ pub const FONT_MONO_REGULAR: Font = Font {
 
 pub const FONT_MONO_REGULAR_DATA: &[u8] = include_bytes!("../res/Fira/FiraMono-Regular.otf");
 
-pub fn load_fonts() -> Command<Result<(), Error>> {
-    Command::batch(vec![
+pub fn load_fonts() -> Task<Result<(), Error>> {
+    Task::batch(vec![
         load(FONT_DATA),
         load(FONT_LIGHT_DATA),
         load(FONT_SEMIBOLD_DATA),

@@ -10,8 +10,6 @@ mod dropdown;
 
 pub mod iced;
 #[doc(inline)]
-pub use self::iced::Application;
-#[doc(inline)]
 pub use self::iced::Checkbox;
 #[doc(inline)]
 pub use self::iced::Container;

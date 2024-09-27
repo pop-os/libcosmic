@@ -389,7 +389,7 @@ impl Application for Window {
         ])
     }
 
-    fn update(&mut self, message: Message) -> iced::Command<Self::Message> {
+    fn update(&mut self, message: Message) -> iced::Task<Self::Message> {
         let mut ret = Command::none();
         match message {
             Message::NavBar(key) => {

@@ -77,7 +77,7 @@ impl cosmic::Application for MultiWindow {
     fn update(
         &mut self,
         message: Self::Message,
-    ) -> iced::Command<cosmic::app::Message<Self::Message>> {
+    ) -> iced::Task<cosmic::app::Message<Self::Message>> {
         match message {
             Message::CloseWindow(id) => window::close(id),
             Message::WindowClosed(id) => {

@@ -15,14 +15,15 @@ use iced::clipboard::dnd::{self, DndAction, DndDestinationRectangle, DndEvent, O
 use iced::clipboard::mime::AllowedMimeTypes;
 use iced::touch::Finger;
 use iced::{
-    alignment, event, keyboard, mouse, touch, Alignment, Background, Color, Command, Event, Length,
-    Padding, Rectangle, Size,
+    alignment, event, keyboard, mouse, touch, Alignment, Background, Color, Event, Length, Padding,
+    Rectangle, Size, Task, Vector,
 };
 use iced_core::mouse::ScrollDelta;
-use iced_core::text::{LineHeight, Paragraph, Renderer as TextRenderer, Shaping, Wrap};
+use iced_core::text::{LineHeight, Paragraph, Renderer as TextRenderer, Shaping, Wrapping};
 use iced_core::widget::{self, operation, tree};
 use iced_core::{layout, renderer, widget::Tree, Clipboard, Layout, Shell, Widget};
 use iced_core::{Border, Gradient, Point, Renderer as IcedRenderer, Shadow, Text};
+use iced_runtime::{task, Action};
 use slotmap::{Key, SecondaryMap};
 use std::borrow::Cow;
 use std::collections::hash_map::DefaultHasher;
@@ -33,8 +34,8 @@ use std::mem;
 use std::time::{Duration, Instant};
 
 /// A command that focuses a segmented item stored in a widget.
-pub fn focus<Message: 'static>(id: Id) -> Command<Message> {
-    Command::widget(operation::focusable::focus(id.0))
+pub fn focus<Message: 'static>(id: Id) -> Task<Message> {
+    task::effect(Action::Widget(Box::new(operation::focusable::focus(id.0))))
 }
 
 pub enum ItemBounds {
@@ -435,15 +436,15 @@ where
             if !text.is_empty() {
                 icon_spacing = f32::from(self.button_spacing);
                 let paragraph = entry.or_insert_with(|| {
-                    crate::Paragraph::with_text(Text {
-                        content: text,
+                    crate::Plain::new(Text {
+                        content: text.as_ref(),
                         size: iced::Pixels(self.font_size),
                         bounds: Size::INFINITY,
                         font,
                         horizontal_alignment: alignment::Horizontal::Left,
                         vertical_alignment: alignment::Vertical::Center,
                         shaping: Shaping::Advanced,
-                        wrap: Wrap::default(),
+                        wrapping: Wrapping::default(),
                         line_height: self.line_height,
                     })
                 });
@@ -632,23 +633,21 @@ where
                 }
 
                 let text = Text {
-                    content: text,
+                    content: text.as_ref(),
                     size: iced::Pixels(self.font_size),
                     bounds: Size::INFINITY,
                     font: font.unwrap_or(crate::font::FONT),
                     horizontal_alignment: alignment::Horizontal::Left,
                     vertical_alignment: alignment::Vertical::Center,
                     shaping: Shaping::Advanced,
-                    wrap: Wrap::default(),
+                    wrapping: Wrapping::default(),
                     line_height: self.line_height,
                 };
 
                 if let Some(paragraph) = state.paragraphs.get_mut(key) {
                     paragraph.update(text);
                 } else {
-                    state
-                        .paragraphs
-                        .insert(key, crate::Paragraph::with_text(text));
+                    state.paragraphs.insert(key, crate::Plain::new(text));
                 }
             }
         }
@@ -1077,9 +1076,7 @@ where
         tree: &mut Tree,
         _layout: Layout<'_>,
         _renderer: &Renderer,
-        operation: &mut dyn iced_core::widget::Operation<
-            iced_core::widget::OperationOutputWrapper<Message>,
-        >,
+        operation: &mut dyn iced_core::widget::Operation<()>,
     ) {
         let state = tree.state.downcast_mut::<LocalState>();
         operation.focusable(state, Some(&self.id.0));
@@ -1490,7 +1487,7 @@ where
             if self.model.text(key).is_some_and(|text| !text.is_empty()) {
                 // Draw the text for this segmented button or tab.
                 renderer.fill_paragraph(
-                    &state.paragraphs[key],
+                    state.paragraphs[key].raw(),
                     bounds.position(),
                     apply_alpha(status_appearance.text_color),
                     Rectangle {
@@ -1526,6 +1523,7 @@ where
         tree: &'b mut Tree,
         layout: iced_core::Layout<'_>,
         _renderer: &Renderer,
+        translation: Vector,
     ) -> Option<iced_core::overlay::Element<'b, Message, crate::Theme, Renderer>> {
         let state = tree.state.downcast_ref::<LocalState>();
 
@@ -1573,6 +1571,7 @@ where
                 root_bounds_list: vec![bounds],
                 path_highlight: Some(PathHighlight::MenuActive),
                 style: &crate::theme::menu_bar::MenuBarStyle::Default,
+                position: Point::new(translation.x, translation.y),
             }
             .overlay(),
         )
@@ -1643,7 +1642,7 @@ pub struct LocalState {
     /// Dimensions of internal buttons when shrinking
     pub(super) internal_layout: Vec<(Size, Size)>,
     /// The paragraphs for each text.
-    paragraphs: SecondaryMap<Entity, crate::Paragraph>,
+    paragraphs: SecondaryMap<Entity, crate::Plain>,
     /// Used to detect changes in text.
     text_hashes: SecondaryMap<Entity, u64>,
     /// Location of cursor when context menu was opened.

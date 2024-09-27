@@ -8,7 +8,6 @@ rust-version = "1.80"
 name = "cosmic"
 
 [features]
-default = ["clipboard"]
 # Accessibility support
 a11y = ["iced/a11y", "iced_accessibility"]
 # Builds support for animated images
@@ -16,7 +15,6 @@ animated-image = ["image", "dep:async-fs", "tokio?/io-util", "tokio?/fs"]
 # XXX Use "a11y"; which is causing a panic currently
 applet = ["wayland", "tokio", "cosmic-panel-config", "ron"]
 applet-token = []
-clipboard = ["iced_sctk?/clipboard"]
 # Use the cosmic-settings-daemon for config handling
 dbus-config = ["cosmic-config/dbus", "dep:zbus", "cosmic-settings-daemon"]
 # Debug features
@@ -55,7 +53,7 @@ wayland = [
     "ashpd?/wayland",
     "iced_runtime/wayland",
     "iced/wayland",
-    "iced_sctk",
+    "iced_winit/wayland",
     "cctk",
 ]
 # multi-window support
@@ -84,11 +82,14 @@ derive_setters = "0.1.5"
 fraction = "0.15.3"
 image = { version = "0.25.1", optional = true }
 lazy_static = "1.4.0"
-libc = { version = "0.2.155", optional  = true }
+libc = { version = "0.2.155", optional = true }
 mime = { version = "0.3.17", optional = true }
 palette = "0.7.3"
 rfd = { version = "0.14.0", optional = true }
-rustix = { version = "0.38.34", features = ["pipe", "process"], optional = true }
+rustix = { version = "0.38.34", features = [
+    "pipe",
+    "process",
+], optional = true }
 serde = { version = "1.0.180", features = ["derive"] }
 slotmap = "1.0.6"
 smol = { version = "2.0.0", optional = true }
@@ -110,7 +111,7 @@ path = "cosmic-theme"
 [dependencies.iced]
 path = "./iced"
 default-features = false
-features = ["advanced", "image", "lazy", "svg", "web-colors"]
+features = ["advanced", "image", "lazy", "svg", "web-colors", "tiny-skia"]
 
 [dependencies.iced_runtime]
 path = "./iced/runtime"
@@ -135,13 +136,6 @@ optional = true
 
 [dependencies.iced_tiny_skia]
 path = "./iced/tiny_skia"
-
-[dependencies.iced_style]
-path = "./iced/style"
-
-[dependencies.iced_sctk]
-path = "./iced/sctk"
-optional = true
 
 [dependencies.iced_winit]
 path = "./iced/winit"
@@ -179,3 +173,8 @@ dirs = "5.0.1"
 
 [patch."https://github.com/pop-os/libcosmic"]
 libcosmic = { path = "./" }
+
+# FIXME update winit deps where necessary to use this
+# [patch.crates-io]
+# winit = { git = "https://github.com/rust-windowing/winit.git", rev = "241b7a80bba96c91fa3901729cd5dec66abb9be4" }
+# winit = { path = "../../winit" }

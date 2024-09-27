@@ -39,15 +39,14 @@ use iced_core::{
 };
 #[cfg(feature = "wayland")]
 use iced_renderer::core::event::{wayland, PlatformSpecific};
-use iced_renderer::core::widget::OperationOutputWrapper;
 #[cfg(feature = "wayland")]
-use iced_runtime::command::platform_specific;
-use iced_runtime::Command;
+use iced_runtime::platform_specific;
+use iced_runtime::{task, Action, Task};
 
 #[cfg(feature = "wayland")]
 use cctk::sctk::reexports::client::protocol::wl_data_device_manager::DndAction;
 #[cfg(feature = "wayland")]
-use iced_runtime::command::platform_specific::wayland::data_device::{DataFromMimeType, DndIcon};
+use iced_runtime::platform_specific::wayland::data_device::{DataFromMimeType, DndIcon};
 
 thread_local! {
     // Prevents two inputs from being focused at the same time.
@@ -146,7 +145,7 @@ where
             })
             .size(16)
             .apply(crate::widget::button::custom)
-            .style(crate::theme::Button::Icon)
+            .class(crate::theme::Button::Icon)
             .on_press(msg)
             .padding([spacing, spacing, spacing, spacing])
             .into(),
@@ -502,7 +501,7 @@ where
             crate::widget::icon::from_name("edit-clear-symbolic")
                 .size(16)
                 .apply(crate::widget::button::custom)
-                .style(crate::theme::Button::Icon)
+                .class(crate::theme::Button::Icon)
                 .width(32)
                 .height(32)
                 .on_press(on_clear)
@@ -554,6 +553,7 @@ where
         }
         let old_value = state
             .value
+            .raw()
             .buffer()
             .lines
             .iter()
@@ -563,6 +563,7 @@ where
             || old_value != self.value.to_string()
             || state
                 .label
+                .raw()
                 .buffer()
                 .lines
                 .iter()
@@ -571,6 +572,7 @@ where
                 != self.label.unwrap_or_default()
             || state
                 .helper_text
+                .raw()
                 .buffer()
                 .lines
                 .iter()
@@ -655,7 +657,7 @@ where
             let v = self.value.to_string();
             value_paragraph.update(Text {
                 content: if self.value.is_empty() {
-                    &self.placeholder
+                    self.placeholder.as_ref()
                 } else {
                     &v
                 },
@@ -666,7 +668,7 @@ where
                 vertical_alignment: alignment::Vertical::Center,
                 line_height: text::LineHeight::default(),
                 shaping: text::Shaping::Advanced,
-                wrap: text::Wrap::default(),
+                wrapping: text::Wrapping::default(),
             });
 
             let Size { width, height } =
@@ -721,7 +723,7 @@ where
         tree: &mut Tree,
         _layout: Layout<'_>,
         _renderer: &crate::Renderer,
-        operation: &mut dyn Operation<OperationOutputWrapper<Message>>,
+        operation: &mut dyn Operation<()>,
     ) {
         let state = tree.state.downcast_mut::<State>();
 
@@ -734,6 +736,7 @@ where
         tree: &'b mut Tree,
         layout: Layout<'_>,
         renderer: &crate::Renderer,
+        translation: Vector,
     ) -> Option<overlay::Element<'b, Message, crate::Theme, crate::Renderer>> {
         let mut layout_ = Vec::with_capacity(2);
         if self.leading_icon.is_some() {
@@ -756,7 +759,9 @@ where
             .zip(&mut tree.children)
             .zip(layout_)
             .filter_map(|((child, state), layout)| {
-                child.as_widget_mut().overlay(state, layout, renderer)
+                child
+                    .as_widget_mut()
+                    .overlay(state, layout, renderer, translation)
             })
             .collect::<Vec<_>>();
 
@@ -958,32 +963,38 @@ where
     }
 }
 
-/// Produces a [`Command`] that focuses the [`TextInput`] with the given [`Id`].
-pub fn focus<Message: 'static>(id: Id) -> Command<Message> {
-    Command::widget(operation::focusable::focus(id))
+/// Produces a [`Task`] that focuses the [`TextInput`] with the given [`Id`].
+pub fn focus<Message: 'static>(id: Id) -> Task<Message> {
+    task::effect(Action::widget(operation::focusable::focus(id)))
 }
 
-/// Produces a [`Command`] that moves the cursor of the [`TextInput`] with the given [`Id`] to the
+/// Produces a [`Task`] that moves the cursor of the [`TextInput`] with the given [`Id`] to the
 /// end.
-pub fn move_cursor_to_end<Message: 'static>(id: Id) -> Command<Message> {
-    Command::widget(operation::text_input::move_cursor_to_end(id))
+pub fn move_cursor_to_end<Message: 'static>(id: Id) -> Task<Message> {
+    task::effect(Action::widget(operation::text_input::move_cursor_to_end(
+        id,
+    )))
 }
 
-/// Produces a [`Command`] that moves the cursor of the [`TextInput`] with the given [`Id`] to the
+/// Produces a [`Task`] that moves the cursor of the [`TextInput`] with the given [`Id`] to the
 /// front.
-pub fn move_cursor_to_front<Message: 'static>(id: Id) -> Command<Message> {
-    Command::widget(operation::text_input::move_cursor_to_front(id))
+pub fn move_cursor_to_front<Message: 'static>(id: Id) -> Task<Message> {
+    task::effect(Action::widget(operation::text_input::move_cursor_to_front(
+        id,
+    )))
 }
 
-/// Produces a [`Command`] that moves the cursor of the [`TextInput`] with the given [`Id`] to the
+/// Produces a [`Task`] that moves the cursor of the [`TextInput`] with the given [`Id`] to the
 /// provided position.
-pub fn move_cursor_to<Message: 'static>(id: Id, position: usize) -> Command<Message> {
-    Command::widget(operation::text_input::move_cursor_to(id, position))
+pub fn move_cursor_to<Message: 'static>(id: Id, position: usize) -> Task<Message> {
+    task::effect(Action::widget(operation::text_input::move_cursor_to(
+        id, position,
+    )))
 }
 
-/// Produces a [`Command`] that selects all the content of the [`TextInput`] with the given [`Id`].
-pub fn select_all<Message: 'static>(id: Id) -> Command<Message> {
-    Command::widget(operation::text_input::select_all(id))
+/// Produces a [`Task`] that selects all the content of the [`TextInput`] with the given [`Id`].
+pub fn select_all<Message: 'static>(id: Id) -> Task<Message> {
+    task::effect(Action::widget(operation::text_input::select_all(id)))
 }
 
 /// Computes the layout of a [`TextInput`].
@@ -1023,7 +1034,7 @@ pub fn layout<Message>(
             vertical_alignment: alignment::Vertical::Center,
             line_height,
             shaping: text::Shaping::Advanced,
-            wrap: text::Wrap::default(),
+            wrapping: text::Wrapping::default(),
         });
         let label_size = label_paragraph.min_bounds();
 
@@ -1162,7 +1173,7 @@ pub fn layout<Message>(
             vertical_alignment: alignment::Vertical::Center,
             line_height: helper_text_line_height,
             shaping: text::Shaping::Advanced,
-            wrap: text::Wrap::default(),
+            wrapping: text::Wrapping::default(),
         });
         let helper_text_size = helper_text_paragraph.min_bounds();
         let helper_text_node = layout::Node::new(helper_text_size).translate(helper_pos);
@@ -1257,7 +1268,8 @@ where
                 let text_layout = layout.children().next().unwrap();
                 let target = cursor_position.x - text_layout.bounds().x;
 
-                let click = mouse::Click::new(cursor_position, state.last_click);
+                let click =
+                    mouse::Click::new(cursor_position, mouse::Button::Left, state.last_click);
 
                 match (
                     &state.dragging_state,
@@ -1285,13 +1297,13 @@ where
                             let right = end.max(start);
 
                             let (left_position, _left_offset) = measure_cursor_and_scroll_offset(
-                                &state.value,
+                                state.value.raw(),
                                 text_layout.bounds(),
                                 left,
                             );
 
                             let (right_position, _right_offset) = measure_cursor_and_scroll_offset(
-                                &state.value,
+                                state.value.raw(),
                                 text_layout.bounds(),
                                 right,
                             );
@@ -1439,7 +1451,7 @@ where
                             return event::Status::Ignored;
                         };
 
-                        let click = mouse::Click::new(pos, state.last_click);
+                        let click = mouse::Click::new(pos, mouse::Button::Left, state.last_click);
 
                         match (
                             &state.dragging_state,
@@ -1625,7 +1637,10 @@ where
                     {
                         if !is_secure {
                             if let Some((start, end)) = state.cursor.selection(value) {
-                                clipboard.write(value.select(start, end).to_string());
+                                clipboard.write(
+                                    iced_core::clipboard::Kind::Primary,
+                                    value.select(start, end).to_string(),
+                                );
                             }
                         }
                     }
@@ -1636,7 +1651,10 @@ where
                     {
                         if !is_secure {
                             if let Some((start, end)) = state.cursor.selection(value) {
-                                clipboard.write(value.select(start, end).to_string());
+                                clipboard.write(
+                                    iced_core::clipboard::Kind::Primary,
+                                    value.select(start, end).to_string(),
+                                );
                             }
 
                             let mut editor = Editor::new(value, &mut state.cursor);
@@ -1654,7 +1672,7 @@ where
                             content
                         } else {
                             let content: String = clipboard
-                                .read()
+                                .read(iced_core::clipboard::Kind::Primary)
                                 .unwrap_or_default()
                                 .chars()
                                 .filter(|c| !c.is_control())
@@ -1764,7 +1782,7 @@ where
 
             state.keyboard_modifiers = modifiers;
         }
-        Event::Window(_, window::Event::RedrawRequested(now)) => {
+        Event::Window(window::Event::RedrawRequested(now)) => {
             let state = state();
 
             if let Some(focus) = &mut state.is_focused {
@@ -2176,7 +2194,7 @@ pub fn draw<'a, Message>(
     if let (Some(label_layout), Some(label)) = (label_layout, label) {
         renderer.fill_text(
             Text {
-                content: label,
+                content: label.to_string(),
                 size: iced::Pixels(size.unwrap_or_else(|| renderer.default_size().0)),
                 font: font.unwrap_or_else(|| renderer.default_font()),
                 bounds: label_layout.bounds().size(),
@@ -2184,7 +2202,7 @@ pub fn draw<'a, Message>(
                 vertical_alignment: alignment::Vertical::Top,
                 line_height,
                 shaping: text::Shaping::Advanced,
-                wrap: text::Wrap::default(),
+                wrapping: text::Wrapping::default(),
             },
             label_layout.bounds().position(),
             appearance.label_color,
@@ -2222,7 +2240,7 @@ pub fn draw<'a, Message>(
         match state.cursor.state(value) {
             cursor::State::Index(position) => {
                 let (text_value_width, offset) =
-                    measure_cursor_and_scroll_offset(&state.value, text_bounds, position);
+                    measure_cursor_and_scroll_offset(state.value.raw(), text_bounds, position);
 
                 let is_cursor_visible =
                     ((focus.now - focus.updated_at).as_millis() / CURSOR_BLINK_INTERVAL_MILLIS) % 2
@@ -2267,10 +2285,10 @@ pub fn draw<'a, Message>(
 
                 let value_paragraph = &state.value;
                 let (left_position, left_offset) =
-                    measure_cursor_and_scroll_offset(value_paragraph, text_bounds, left);
+                    measure_cursor_and_scroll_offset(value_paragraph.raw(), text_bounds, left);
 
                 let (right_position, right_offset) =
-                    measure_cursor_and_scroll_offset(value_paragraph, text_bounds, right);
+                    measure_cursor_and_scroll_offset(value_paragraph.raw(), text_bounds, right);
 
                 let width = right_position - left_position;
 
@@ -2335,7 +2353,11 @@ pub fn draw<'a, Message>(
 
         renderer.fill_text(
             Text {
-                content: if text.is_empty() { placeholder } else { &text },
+                content: if text.is_empty() {
+                    placeholder.to_string()
+                } else {
+                    text.clone()
+                },
                 font,
                 bounds: bounds.size(),
                 size: iced::Pixels(size),
@@ -2343,7 +2365,7 @@ pub fn draw<'a, Message>(
                 vertical_alignment: alignment::Vertical::Center,
                 line_height: text::LineHeight::default(),
                 shaping: text::Shaping::Advanced,
-                wrap: text::Wrap::default(),
+                wrapping: text::Wrapping::default(),
             },
             bounds.position(),
             color,
@@ -2378,7 +2400,7 @@ pub fn draw<'a, Message>(
     if let (Some(helper_text_layout), Some(helper_text)) = (helper_text_layout, helper_text) {
         renderer.fill_text(
             Text {
-                content: helper_text,
+                content: helper_text.to_string(), // TODO remove to_string?
                 size: iced::Pixels(helper_text_size),
                 font,
                 bounds: helper_text_layout.bounds().size(),
@@ -2386,7 +2408,7 @@ pub fn draw<'a, Message>(
                 vertical_alignment: alignment::Vertical::Top,
                 line_height: helper_line_height,
                 shaping: text::Shaping::Advanced,
-                wrap: text::Wrap::default(),
+                wrapping: text::Wrapping::default(),
             },
             helper_text_layout.bounds().position(),
             text_color,
@@ -2450,10 +2472,10 @@ pub(crate) struct DndOfferState;
 #[derive(Debug, Default, Clone)]
 #[must_use]
 pub struct State {
-    pub value: crate::Paragraph,
-    pub placeholder: crate::Paragraph,
-    pub label: crate::Paragraph,
-    pub helper_text: crate::Paragraph,
+    pub value: crate::Plain,
+    pub placeholder: crate::Plain,
+    pub label: crate::Plain,
+    pub helper_text: crate::Plain,
     pub dirty: bool,
     pub is_secure: bool,
     pub is_read_only: bool,
@@ -2526,10 +2548,10 @@ impl State {
     pub fn focused(is_secure: bool, is_read_only: bool) -> Self {
         Self {
             is_secure,
-            value: crate::Paragraph::new(),
-            placeholder: crate::Paragraph::new(),
-            label: crate::Paragraph::new(),
-            helper_text: crate::Paragraph::new(),
+            value: crate::Plain::default(),
+            placeholder: crate::Plain::default(),
+            label: crate::Plain::default(),
+            helper_text: crate::Plain::default(),
             is_read_only,
             is_focused: None,
             select_on_focus: false,
@@ -2658,6 +2680,7 @@ fn find_cursor_position(
 
     let char_offset = state
         .value
+        .raw()
         .hit_test(Point::new(x + offset, text_bounds.height / 2.0))
         .map(text::Hit::cursor)?;
 
@@ -2681,7 +2704,7 @@ fn replace_paragraph(
     let mut children_layout = layout.children();
     let text_bounds = children_layout.next().unwrap().bounds();
 
-    state.value = crate::Paragraph::with_text(Text {
+    state.value = crate::Plain::new(Text {
         font,
         line_height,
         content: &value.to_string(),
@@ -2690,7 +2713,7 @@ fn replace_paragraph(
         horizontal_alignment: alignment::Horizontal::Left,
         vertical_alignment: alignment::Vertical::Top,
         shaping: text::Shaping::Advanced,
-        wrap: text::Wrap::default(),
+        wrapping: text::Wrapping::default(),
     });
 }
 
@@ -2718,7 +2741,7 @@ fn offset(text_bounds: Rectangle, value: &Value, state: &State) -> f32 {
         };
 
         let (_, offset) =
-            measure_cursor_and_scroll_offset(&state.value, text_bounds, focus_position);
+            measure_cursor_and_scroll_offset(state.value.raw(), text_bounds, focus_position);
 
         offset
     } else {

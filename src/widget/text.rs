@@ -7,7 +7,7 @@ use std::borrow::Cow;
 ///
 /// [`Text`]: widget::Text
 pub fn text<'a>(text: impl Into<Cow<'a, str>> + 'a) -> Text<'a, crate::Theme, Renderer> {
-    Text::new(text)
+    Text::new(text.into())
 }
 
 /// Available presets for text typography
@@ -26,7 +26,7 @@ pub enum Typography {
 
 /// [`Text`] widget with the Title 1 typography preset.
 pub fn title1<'a>(text: impl Into<Cow<'a, str>> + 'a) -> Text<'a, crate::Theme, Renderer> {
-    Text::new(text)
+    Text::new(text.into())
         .size(32.0)
         .line_height(LineHeight::Absolute(44.0.into()))
         .font(crate::font::FONT_LIGHT)
@@ -34,28 +34,28 @@ pub fn title1<'a>(text: impl Into<Cow<'a, str>> + 'a) -> Text<'a, crate::Theme, 
 
 /// [`Text`] widget with the Title 2 typography preset.
 pub fn title2<'a>(text: impl Into<Cow<'a, str>> + 'a) -> Text<'a, crate::Theme, Renderer> {
-    Text::new(text)
+    Text::new(text.into())
         .size(28.0)
         .line_height(LineHeight::Absolute(36.0.into()))
 }
 
 /// [`Text`] widget with the Title 3 typography preset.
 pub fn title3<'a>(text: impl Into<Cow<'a, str>> + 'a) -> Text<'a, crate::Theme, Renderer> {
-    Text::new(text)
+    Text::new(text.into())
         .size(24.0)
         .line_height(LineHeight::Absolute(32.0.into()))
 }
 
 /// [`Text`] widget with the Title 4 typography preset.
 pub fn title4<'a>(text: impl Into<Cow<'a, str>> + 'a) -> Text<'a, crate::Theme, Renderer> {
-    Text::new(text)
+    Text::new(text.into())
         .size(20.0)
         .line_height(LineHeight::Absolute(28.0.into()))
 }
 
 /// [`Text`] widget with the Heading typography preset.
 pub fn heading<'a>(text: impl Into<Cow<'a, str>> + 'a) -> Text<'a, crate::Theme, Renderer> {
-    Text::new(text)
+    Text::new(text.into())
         .size(14.0)
         .line_height(LineHeight::Absolute(iced::Pixels(20.0)))
         .font(crate::font::FONT_SEMIBOLD)
@@ -63,7 +63,7 @@ pub fn heading<'a>(text: impl Into<Cow<'a, str>> + 'a) -> Text<'a, crate::Theme,
 
 /// [`Text`] widget with the Caption Heading typography preset.
 pub fn caption_heading<'a>(text: impl Into<Cow<'a, str>> + 'a) -> Text<'a, crate::Theme, Renderer> {
-    Text::new(text)
+    Text::new(text.into())
         .size(10.0)
         .line_height(LineHeight::Absolute(iced::Pixels(14.0)))
         .font(crate::font::FONT_SEMIBOLD)
@@ -71,21 +71,21 @@ pub fn caption_heading<'a>(text: impl Into<Cow<'a, str>> + 'a) -> Text<'a, crate
 
 /// [`Text`] widget with the Body typography preset.
 pub fn body<'a>(text: impl Into<Cow<'a, str>> + 'a) -> Text<'a, crate::Theme, Renderer> {
-    Text::new(text)
+    Text::new(text.into())
         .size(14.0)
         .line_height(LineHeight::Absolute(20.0.into()))
 }
 
 /// [`Text`] widget with the Caption typography preset.
 pub fn caption<'a>(text: impl Into<Cow<'a, str>> + 'a) -> Text<'a, crate::Theme, Renderer> {
-    Text::new(text)
+    Text::new(text.into())
         .size(10.0)
         .line_height(LineHeight::Absolute(14.0.into()))
 }
 
 /// [`Text`] widget with the Monotext typography preset.
 pub fn monotext<'a>(text: impl Into<Cow<'a, str>> + 'a) -> Text<'a, crate::Theme, Renderer> {
-    Text::new(text)
+    Text::new(text.into())
         .size(14.0)
         .line_height(LineHeight::Absolute(20.0.into()))
         .font(crate::font::FONT_MONO_REGULAR)

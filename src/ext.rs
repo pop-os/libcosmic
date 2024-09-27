@@ -64,7 +64,7 @@ impl<'a, Message: 'a> CollectionWidget<'a, Message> for crate::widget::Column<'a
     where
         E: Into<crate::Element<'a, Message>>,
     {
-        self.extend(other.drain(..))
+        self.extend(other.drain(..).map(Into::into))
     }
 
     fn push(self, element: impl Into<crate::Element<'a, Message>>) -> Self {
@@ -77,7 +77,7 @@ impl<'a, Message: 'a> CollectionWidget<'a, Message> for crate::widget::Row<'a, M
     where
         E: Into<crate::Element<'a, Message>>,
     {
-        self.extend(other.drain(..))
+        self.extend(other.drain(..).map(Into::into))
     }
 
     fn push(self, element: impl Into<crate::Element<'a, Message>>) -> Self {

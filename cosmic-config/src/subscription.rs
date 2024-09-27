@@ -1,5 +1,5 @@
-use iced_futures::futures::SinkExt;
-use iced_futures::{futures::channel::mpsc, subscription};
+use iced_futures::futures::{SinkExt, Stream};
+use iced_futures::{futures::channel::mpsc, stream};
 use notify::RecommendedWatcher;
 use std::{borrow::Cow, hash::Hash};
 
@@ -24,17 +24,7 @@ pub fn config_subscription<
     config_id: Cow<'static, str>,
     config_version: u64,
 ) -> iced_futures::Subscription<crate::Update<T>> {
-    subscription::channel(id, 100, move |mut output| {
-        let config_id = config_id.clone();
-        async move {
-            let config_id = config_id.clone();
-            let mut state = ConfigState::Init(config_id, config_version, false);
-
-            loop {
-                state = start_listening(state, &mut output, id).await;
-            }
-        }
-    })
+    iced_futures::Subscription::run_with_id(id, watcher_stream(config_id, config_version, false))
 }
 
 pub fn config_state_subscription<
@@ -45,26 +35,30 @@ pub fn config_state_subscription<
     config_id: Cow<'static, str>,
     config_version: u64,
 ) -> iced_futures::Subscription<crate::Update<T>> {
-    subscription::channel(id, 100, move |mut output| {
+    iced_futures::Subscription::run_with_id(id, watcher_stream(config_id, config_version, true))
+}
+
+fn watcher_stream<T: 'static + Send + Sync + PartialEq + Clone + CosmicConfigEntry>(
+    config_id: Cow<'static, str>,
+    config_version: u64,
+    is_state: bool,
+) -> impl Stream<Item = crate::Update<T>> {
+    stream::channel(100, move |mut output| {
         let config_id = config_id.clone();
         async move {
             let config_id = config_id.clone();
-            let mut state = ConfigState::Init(config_id, config_version, true);
+            let mut state = ConfigState::Init(config_id, config_version, is_state);
 
             loop {
-                state = start_listening(state, &mut output, id).await;
+                state = start_listening::<T>(state, &mut output).await;
             }
         }
     })
 }
 
-async fn start_listening<
-    I: Copy,
-    T: 'static + Send + Sync + PartialEq + Clone + CosmicConfigEntry,
->(
+async fn start_listening<T: 'static + Send + Sync + PartialEq + Clone + CosmicConfigEntry>(
     state: ConfigState<T>,
     output: &mut mpsc::Sender<crate::Update<T>>,
-    id: I,
 ) -> ConfigState<T> {
     use iced_futures::futures::{future::pending, StreamExt};
 

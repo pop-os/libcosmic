@@ -5,14 +5,16 @@
 use super::menu::{self, Menu};
 use crate::widget::icon;
 use derive_setters::Setters;
+use iced::Radians;
 use iced_core::event::{self, Event};
 use iced_core::text::{self, Paragraph, Text};
 use iced_core::widget::tree::{self, Tree};
 use iced_core::{alignment, keyboard, layout, mouse, overlay, renderer, svg, touch, Shadow};
-use iced_core::{Clipboard, Layout, Length, Padding, Pixels, Rectangle, Shell, Size, Widget};
+use iced_core::{
+    Clipboard, Layout, Length, Padding, Pixels, Rectangle, Shell, Size, Vector, Widget,
+};
+use iced_widget::pick_list::{self, Catalog};
 use std::ffi::OsStr;
-
-pub use iced_widget::style::pick_list::{Appearance, StyleSheet};
 
 /// A widget for selecting a single value from a list of selections.
 #[derive(Setters)]
@@ -67,7 +69,7 @@ impl<'a, S: AsRef<str>, Message> Dropdown<'a, S, Message> {
 
         state
             .selections
-            .resize_with(self.selections.len(), crate::Paragraph::new);
+            .resize_with(self.selections.len(), crate::Plain::default);
         for (i, selection) in self.selections.iter().enumerate() {
             state.selections[i].update(Text {
                 content: selection.as_ref(),
@@ -80,7 +82,7 @@ impl<'a, S: AsRef<str>, Message> Dropdown<'a, S, Message> {
                 horizontal_alignment: alignment::Horizontal::Left,
                 vertical_alignment: alignment::Vertical::Top,
                 shaping: text::Shaping::Advanced,
-                wrap: text::Wrap::default(),
+                wrapping: text::Wrapping::default(),
             });
         }
     }
@@ -104,7 +106,7 @@ impl<'a, S: AsRef<str>, Message: 'a> Widget<Message, crate::Theme, crate::Render
 
         state
             .selections
-            .resize_with(self.selections.len(), crate::Paragraph::new);
+            .resize_with(self.selections.len(), crate::Plain::default);
         for (i, selection) in self.selections.iter().enumerate() {
             state.selections[i].update(Text {
                 content: selection.as_ref(),
@@ -117,7 +119,7 @@ impl<'a, S: AsRef<str>, Message: 'a> Widget<Message, crate::Theme, crate::Render
                 horizontal_alignment: alignment::Horizontal::Left,
                 vertical_alignment: alignment::Vertical::Top,
                 shaping: text::Shaping::Advanced,
-                wrap: text::Wrap::default(),
+                wrapping: text::Wrapping::default(),
             });
         }
     }
@@ -218,6 +220,7 @@ impl<'a, S: AsRef<str>, Message: 'a> Widget<Message, crate::Theme, crate::Render
         tree: &'b mut Tree,
         layout: Layout<'_>,
         renderer: &crate::Renderer,
+        translation: Vector,
     ) -> Option<overlay::Element<'b, Message, crate::Theme, crate::Renderer>> {
         let state = tree.state.downcast_mut::<State>();
 
@@ -253,7 +256,7 @@ pub struct State {
     keyboard_modifiers: keyboard::Modifiers,
     is_open: bool,
     hovered_option: Option<usize>,
-    selections: Vec<crate::Paragraph>,
+    selections: Vec<crate::Plain>,
 }
 
 impl State {
@@ -294,7 +297,7 @@ pub fn layout(
     text_size: f32,
     text_line_height: text::LineHeight,
     font: Option<crate::font::Font>,
-    selection: Option<(&str, &mut crate::Paragraph)>,
+    selection: Option<(&str, &mut crate::Plain)>,
 ) -> layout::Node {
     use std::f32;
 
@@ -302,7 +305,7 @@ pub fn layout(
 
     let max_width = match width {
         Length::Shrink => {
-            let measure = move |(label, paragraph): (_, &mut crate::Paragraph)| -> f32 {
+            let measure = move |(label, paragraph): (_, &mut crate::Plain)| -> f32 {
                 paragraph.update(Text {
                     content: label,
                     bounds: Size::new(f32::MAX, f32::MAX),
@@ -312,7 +315,7 @@ pub fn layout(
                     horizontal_alignment: alignment::Horizontal::Left,
                     vertical_alignment: alignment::Vertical::Top,
                     shaping: text::Shaping::Advanced,
-                    wrap: text::Wrap::default(),
+                    wrapping: text::Wrapping::default(),
                 });
                 paragraph.min_width().round()
             };
@@ -444,14 +447,14 @@ pub fn overlay<'a, S: AsRef<str>, Message: 'a>(
             None,
         )
         .width({
-            let measure = |_label: &str, selection_paragraph: &mut crate::Paragraph| -> f32 {
+            let measure = |_label: &str, selection_paragraph: &crate::Paragraph| -> f32 {
                 selection_paragraph.min_width().round()
             };
 
             selections
                 .iter()
                 .zip(state.selections.iter_mut())
-                .map(|(label, selection)| measure(label.as_ref(), selection))
+                .map(|(label, selection)| measure(label.as_ref(), selection.raw()))
                 .fold(0.0, |next, current| current.max(next))
                 + gap
                 + 16.0
@@ -491,9 +494,9 @@ pub fn draw<'a, S>(
     let is_mouse_over = cursor.is_over(bounds);
 
     let style = if is_mouse_over {
-        theme.hovered(&())
+        theme.style(&(), pick_list::Status::Hovered)
     } else {
-        theme.active(&())
+        theme.style(&(), pick_list::Status::Active)
     };
 
     iced_core::Renderer::fill_quad(
@@ -507,10 +510,11 @@ pub fn draw<'a, S>(
     );
 
     if let Some(handle) = state.icon.clone() {
-        svg::Renderer::draw(
+        let svg_handle = svg::Svg::new(handle).color(style.text_color);
+
+        svg::Renderer::draw_svg(
             renderer,
-            handle,
-            Some(style.text_color),
+            svg_handle,
             Rectangle {
                 x: bounds.x + bounds.width - gap - 16.0,
                 y: bounds.center_y() - 8.0,
@@ -531,7 +535,7 @@ pub fn draw<'a, S>(
         text::Renderer::fill_text(
             renderer,
             Text {
-                content,
+                content: content.to_string(),
                 size: iced::Pixels(text_size),
                 line_height: text_line_height,
                 font,
@@ -539,7 +543,7 @@ pub fn draw<'a, S>(
                 horizontal_alignment: alignment::Horizontal::Left,
                 vertical_alignment: alignment::Vertical::Center,
                 shaping: text::Shaping::Advanced,
-                wrap: text::Wrap::default(),
+                wrapping: text::Wrapping::default(),
             },
             bounds.position(),
             style.text_color,

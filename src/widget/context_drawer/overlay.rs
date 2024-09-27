@@ -4,13 +4,14 @@
 use crate::Element;
 
 use iced::advanced::layout::{self, Layout};
-use iced::advanced::widget::{self, Operation, OperationOutputWrapper};
+use iced::advanced::widget::{self, Operation};
 use iced::advanced::{overlay, renderer};
 use iced::advanced::{Clipboard, Shell};
 use iced::{event, mouse, Event, Point, Rectangle, Size};
 use iced_core::Renderer;
 
 pub(super) struct Overlay<'a, 'b, Message> {
+    pub(crate) position: Point,
     pub(super) content: &'b mut Element<'a, Message>,
     pub(super) tree: &'b mut widget::Tree,
     pub(super) width: f32,
@@ -21,13 +22,8 @@ impl<'a, 'b, Message> overlay::Overlay<Message, crate::Theme, crate::Renderer>
 where
     Message: Clone,
 {
-    fn layout(
-        &mut self,
-        renderer: &crate::Renderer,
-        bounds: Size,
-        position: Point,
-        _translation: iced::Vector,
-    ) -> layout::Node {
+    fn layout(&mut self, renderer: &crate::Renderer, bounds: Size) -> layout::Node {
+        let position = self.position;
         let limits = layout::Limits::new(Size::ZERO, bounds)
             .width(self.width)
             .height(bounds.height - 8.0 - position.y);
@@ -98,7 +94,7 @@ where
         &mut self,
         layout: Layout<'_>,
         renderer: &crate::Renderer,
-        operation: &mut dyn Operation<OperationOutputWrapper<Message>>,
+        operation: &mut dyn Operation<()>,
     ) {
         self.content
             .as_widget_mut()
@@ -122,8 +118,9 @@ where
         layout: Layout<'_>,
         renderer: &crate::Renderer,
     ) -> Option<overlay::Element<'c, Message, crate::Theme, crate::Renderer>> {
+        let translation = iced::Vector::new(self.position.x, self.position.y);
         self.content
             .as_widget_mut()
-            .overlay(self.tree, layout, renderer)
+            .overlay(self.tree, layout, renderer, translation)
     }
 }

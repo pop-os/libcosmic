@@ -3,14 +3,13 @@ use std::any::Any;
 use crate::{
     iced::{
         clipboard::dnd::{DndAction, DndEvent, SourceEvent},
-        event, mouse, overlay, Event, Length, Point, Rectangle,
+        event, mouse, overlay, Event, Length, Point, Rectangle, Vector,
     },
     iced_core::{
         self, layout, renderer,
         widget::{tree, Tree},
         Clipboard, Shell,
     },
-    iced_style,
     widget::{container, Id, Widget},
     Element,
 };
@@ -165,9 +164,7 @@ impl<
         tree: &mut Tree,
         layout: layout::Layout<'_>,
         renderer: &crate::Renderer,
-        operation: &mut dyn iced_core::widget::Operation<
-            iced_core::widget::OperationOutputWrapper<Message>,
-        >,
+        operation: &mut dyn iced_core::widget::Operation<()>,
     ) {
         operation.custom((&mut tree.state) as &mut dyn Any, Some(&self.id));
         operation.container(Some(&self.id), layout.bounds(), &mut |operation| {
@@ -308,10 +305,11 @@ impl<
         tree: &'b mut Tree,
         layout: layout::Layout<'_>,
         renderer: &crate::Renderer,
+        translation: Vector,
     ) -> Option<overlay::Element<'b, Message, crate::Theme, crate::Renderer>> {
         self.container
             .as_widget_mut()
-            .overlay(&mut tree.children[0], layout, renderer)
+            .overlay(&mut tree.children[0], layout, renderer, translation)
     }
 
     fn drag_destinations(
@@ -319,7 +317,7 @@ impl<
         state: &Tree,
         layout: layout::Layout<'_>,
         renderer: &crate::Renderer,
-        dnd_rectangles: &mut iced_style::core::clipboard::DndDestinationRectangles,
+        dnd_rectangles: &mut iced_core::clipboard::DndDestinationRectangles,
     ) {
         self.container.as_widget().drag_destinations(
             &state.children[0],

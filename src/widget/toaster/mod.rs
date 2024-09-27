@@ -8,7 +8,7 @@ use std::rc::Rc;
 
 use crate::widget::container;
 use crate::widget::Column;
-use crate::Command;
+use iced::{Padding, Task};
 use iced_core::Element;
 use slotmap::new_key_type;
 use slotmap::SlotMap;
@@ -47,15 +47,15 @@ pub fn toaster<'a, Message: Clone + 'static>(
                         button::icon(icon::from_name("window-close-symbolic"))
                             .on_press((toasts.on_close)(id)),
                     )
-                    .align_items(iced::Alignment::Center)
+                    .align_y(iced::Alignment::Center)
                     .spacing(space_xxs),
             )
-            .align_items(iced::Alignment::Center)
+            .align_y(iced::Alignment::Center)
             .spacing(space_s);
 
         container(row)
             .padding([space_xxs, space_s, space_xxs, space_m])
-            .style(crate::style::Container::Tooltip)
+            .class(crate::style::Container::Tooltip)
     };
 
     let col = toasts
@@ -175,7 +175,7 @@ impl<Message: Clone + Send + 'static> Toasts<Message> {
     }
 
     /// Add a new [`Toast`]
-    pub fn push(&mut self, toast: Toast<Message>) -> Command<Message> {
+    pub fn push(&mut self, toast: Toast<Message>) -> Task<Message> {
         while self.toasts.len() >= self.limit {
             self.toasts.remove(
                 self.queue
@@ -200,7 +200,7 @@ impl<Message: Clone + Send + 'static> Toasts<Message> {
         }
         #[cfg(not(feature = "tokio"))]
         {
-            Command::none()
+            Task::none()
         }
     }
 

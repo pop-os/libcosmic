@@ -3,6 +3,8 @@ use std::{
     sync::atomic::{AtomicU64, Ordering},
 };
 
+use iced::Vector;
+
 use crate::{
     iced::{
         clipboard::{
@@ -280,9 +282,7 @@ impl<'a, Message: 'static> Widget<Message, crate::Theme, crate::Renderer>
         tree: &mut Tree,
         layout: layout::Layout<'_>,
         renderer: &crate::Renderer,
-        operation: &mut dyn iced_core::widget::Operation<
-            iced_core::widget::OperationOutputWrapper<Message>,
-        >,
+        operation: &mut dyn iced_core::widget::Operation<()>,
     ) {
         self.container
             .as_widget()
@@ -496,10 +496,11 @@ impl<'a, Message: 'static> Widget<Message, crate::Theme, crate::Renderer>
         tree: &'b mut Tree,
         layout: layout::Layout<'_>,
         renderer: &crate::Renderer,
+        translation: Vector,
     ) -> Option<overlay::Element<'b, Message, crate::Theme, crate::Renderer>> {
         self.container
             .as_widget_mut()
-            .overlay(&mut tree.children[0], layout, renderer)
+            .overlay(&mut tree.children[0], layout, renderer, translation)
     }
 
     fn drag_destinations(

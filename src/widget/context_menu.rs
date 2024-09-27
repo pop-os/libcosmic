@@ -8,7 +8,7 @@ use crate::widget::menu::{
 };
 use derive_setters::Setters;
 use iced::touch::Finger;
-use iced::Event;
+use iced::{Event, Vector};
 use iced_core::widget::{tree, Tree, Widget};
 use iced_core::{event, mouse, touch, Length, Point, Size};
 use std::collections::HashSet;
@@ -144,9 +144,7 @@ impl<'a, Message: Clone> Widget<Message, crate::Theme, crate::Renderer>
         tree: &mut Tree,
         layout: iced_core::Layout<'_>,
         renderer: &crate::Renderer,
-        operation: &mut dyn iced_core::widget::Operation<
-            iced_core::widget::OperationOutputWrapper<Message>,
-        >,
+        operation: &mut dyn iced_core::widget::Operation<()>,
     ) {
         self.content
             .as_widget()
@@ -213,6 +211,7 @@ impl<'a, Message: Clone> Widget<Message, crate::Theme, crate::Renderer>
         tree: &'b mut Tree,
         layout: iced_core::Layout<'_>,
         _renderer: &crate::Renderer,
+        translation: Vector,
     ) -> Option<iced_core::overlay::Element<'b, Message, crate::Theme, crate::Renderer>> {
         let state = tree.state.downcast_ref::<LocalState>();
 
@@ -247,6 +246,7 @@ impl<'a, Message: Clone> Widget<Message, crate::Theme, crate::Renderer>
                 root_bounds_list: vec![bounds],
                 path_highlight: Some(PathHighlight::MenuActive),
                 style: &crate::theme::menu_bar::MenuBarStyle::Default,
+                position: Point::new(translation.x, translation.y),
             }
             .overlay(),
         )

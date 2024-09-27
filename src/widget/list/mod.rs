@@ -15,6 +15,6 @@ pub fn container<'a, Message>(
 ) -> Container<'a, Message, crate::Theme, crate::Renderer> {
     super::container(content)
         .padding([16, 6])
-        .style(crate::theme::Container::List)
+        .class(crate::theme::Container::List)
         .width(iced::Length::Fill)
 }
