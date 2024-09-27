@@ -41,6 +41,7 @@ pub fn appearance(
     theme: &crate::Theme,
     focused: bool,
     selected: bool,
+    disabled: bool,
     style: &Button,
     color: impl Fn(&Component) -> (Color, Option<Color>, Option<Color>),
 ) -> Appearance {
@@ -83,8 +84,9 @@ pub fn appearance(
 
             let (background, text, icon) = color(&cosmic.icon_button);
             appearance.background = Some(Background::Color(background));
-            appearance.text_color = text;
-            appearance.icon_color = icon;
+            // Only override icon button colors when it is disabled
+            appearance.icon_color = if disabled { icon } else { None };
+            appearance.text_color = if disabled { text } else { None };
         }
 
         Button::Image => {
@@ -169,7 +171,7 @@ impl StyleSheet for crate::Theme {
             return active(focused, self);
         }
 
-        appearance(self, focused, selected, style, move |component| {
+        appearance(self, focused, selected, false, style, move |component| {
             let text_color = if matches!(
                 style,
                 Button::Icon | Button::IconVertical | Button::HeaderBar
@@ -189,7 +191,7 @@ impl StyleSheet for crate::Theme {
             return disabled(self);
         }
 
-        appearance(self, false, false, style, |component| {
+        appearance(self, false, false, true, style, |component| {
             let mut background = Color::from(component.base);
             background.a *= 0.5;
             (
@@ -213,6 +215,7 @@ impl StyleSheet for crate::Theme {
             self,
             focused || matches!(style, Button::Image),
             selected,
+            false,
             style,
             |component| {
                 let text_color = if matches!(
@@ -235,7 +238,7 @@ impl StyleSheet for crate::Theme {
             return pressed(focused, self);
         }
 
-        appearance(self, focused, selected, style, |component| {
+        appearance(self, focused, selected, false, style, |component| {
             let text_color = if matches!(
                 style,
                 Button::Icon | Button::IconVertical | Button::HeaderBar
