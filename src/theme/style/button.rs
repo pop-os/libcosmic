@@ -27,6 +27,7 @@ pub enum Button {
     IconVertical,
     Image,
     Link,
+    MenuFolder,
     MenuItem,
     MenuRoot,
     #[default]
@@ -125,10 +126,14 @@ pub fn appearance(
             appearance.icon_color = Some(cosmic.background.on.into());
             appearance.text_color = Some(cosmic.background.on.into());
         }
-        Button::MenuRoot => {
-            appearance.background = None;
-            appearance.icon_color = None;
-            appearance.text_color = None;
+        Button::MenuFolder => {
+            // Menu folders cannot be disabled, ignore customized icon and text color
+            let component = &cosmic.background.component;
+            let (background, _, _) = color(component);
+            appearance.background = Some(Background::Color(background));
+            appearance.icon_color = Some(component.on.into());
+            appearance.text_color = Some(component.on.into());
+            corner_radii = &cosmic.corner_radii.radius_s;
         }
         Button::MenuItem => {
             let (background, text, icon) = color(&cosmic.background.component);
@@ -136,6 +141,11 @@ pub fn appearance(
             appearance.icon_color = icon;
             appearance.text_color = text;
             corner_radii = &cosmic.corner_radii.radius_s;
+        }
+        Button::MenuRoot => {
+            appearance.background = None;
+            appearance.icon_color = None;
+            appearance.text_color = None;
         }
     }
 

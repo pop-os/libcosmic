@@ -299,7 +299,17 @@ where
                                 .size(16)
                                 .icon()
                                 .into(),
-                        ]),
+                        ])
+                        .style(
+                            // Menu folders have no on_press so they take on the disabled style by default
+                            if children.is_empty() {
+                                // This will make the folder use the disabled style if it has no children
+                                theme::Button::MenuItem
+                            } else {
+                                // This will make the folder use the enabled style if it has children
+                                theme::Button::MenuFolder
+                            },
+                        ),
                         menu_items(key_binds, children),
                     ));
                 }
