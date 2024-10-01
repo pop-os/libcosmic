@@ -3,7 +3,7 @@
 
 use std::collections::HashMap;
 
-use crate::{config::CosmicTk, widget::nav_bar};
+use crate::widget::nav_bar;
 use cosmic_config::CosmicConfigEntry;
 use cosmic_theme::ThemeMode;
 use iced::window;

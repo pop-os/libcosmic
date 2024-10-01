@@ -277,10 +277,10 @@ impl<'a, Message: Clone + 'static> HeaderBar<'a, Message> {
         end.push(widget::horizontal_space(Length::Fixed(12.0)).into());
         end.push(self.window_controls());
 
-        let (height, padding) = match self.density.unwrap_or_else(crate::config::header_size) {
-            Density::Compact => (36.0, 2.0),
-            Density::Spacious => (48.0, 8.0),
-            Density::Standard => (48.0, 8.0),
+        let height = match self.density.unwrap_or_else(crate::config::header_size) {
+            Density::Compact => 40.0,
+            Density::Spacious => 48.0,
+            Density::Standard => 48.0,
         };
 
         // Creates the headerbar widget.
@@ -316,8 +316,8 @@ impl<'a, Message: Clone + 'static> HeaderBar<'a, Message> {
             )
             .align_items(iced::Alignment::Center)
             .height(Length::Fixed(height))
-            .padding(padding)
-            .spacing(padding)
+            .padding([0, 8])
+            .spacing(8)
             .apply(widget::container)
             .style(crate::theme::Container::HeaderBar {
                 focused: self.focused,
@@ -387,13 +387,6 @@ impl<'a, Message: Clone + 'static> HeaderBar<'a, Message> {
             }};
         }
 
-        let density = self.density.unwrap_or_else(crate::config::header_size);
-        let spacing = if matches!(density, Density::Compact) {
-            2
-        } else {
-            8
-        };
-
         widget::row::with_capacity(3)
             .push_maybe(
                 self.on_minimize
@@ -410,7 +403,7 @@ impl<'a, Message: Clone + 'static> HeaderBar<'a, Message> {
                     .take()
                     .map(|m| icon!("window-close-symbolic", 16, m)),
             )
-            .spacing(spacing)
+            .spacing(8)
             .apply(widget::container)
             .height(Length::Fill)
             .center_y()

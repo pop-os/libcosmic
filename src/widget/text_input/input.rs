@@ -101,7 +101,7 @@ where
     let spacing = THEME.lock().unwrap().cosmic().space_xxs();
 
     TextInput::new(placeholder, value)
-        .padding([0, spacing, 0, spacing])
+        .padding([0, spacing])
         .style(crate::theme::TextInput::Search)
         .leading_icon(
             crate::widget::icon::from_name("system-search-symbolic")
@@ -125,7 +125,7 @@ where
 {
     let spacing = THEME.lock().unwrap().cosmic().space_xxs();
     let mut input = TextInput::new(placeholder, value)
-        .padding([0, spacing, 0, spacing])
+        .padding([0, spacing])
         .style(crate::theme::TextInput::Default)
         .leading_icon(
             crate::widget::icon::from_name("system-lock-screen-symbolic")
@@ -170,7 +170,7 @@ where
 
     TextInput::new(placeholder, value)
         .style(crate::theme::TextInput::Inline)
-        .padding([spacing, spacing, spacing, spacing])
+        .padding(spacing)
 }
 
 #[cfg(feature = "wayland")]
@@ -246,7 +246,7 @@ where
             select_on_focus: false,
             font: None,
             width: Length::Fill,
-            padding: [spacing, spacing, spacing, spacing].into(),
+            padding: spacing.into(),
             size: None,
             helper_size: 10.0,
             helper_line_height: text::LineHeight::Absolute(14.0.into()),

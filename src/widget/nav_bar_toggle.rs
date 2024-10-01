@@ -29,12 +29,12 @@ impl<'a, Message: 'static + Clone> From<NavBarToggle<Message>> for Element<'a, M
     fn from(nav_bar_toggle: NavBarToggle<Message>) -> Self {
         let icon = if nav_bar_toggle.active {
             widget::icon::from_svg_bytes(
-                &include_bytes!("../../res/icons/close-menu-symbolic.svg")[..],
+                &include_bytes!("../../res/icons/navbar-open-symbolic.svg")[..],
             )
             .symbolic(true)
         } else {
             widget::icon::from_svg_bytes(
-                &include_bytes!("../../res/icons/open-menu-symbolic.svg")[..],
+                &include_bytes!("../../res/icons/navbar-closed-symbolic.svg")[..],
             )
             .symbolic(true)
         };
