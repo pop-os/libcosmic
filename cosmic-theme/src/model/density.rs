@@ -1,10 +1,14 @@
 use crate::Spacing;
 use serde::{Deserialize, Serialize};
 
+/// Density options for the Cosmic theme
 #[derive(Copy, Clone, Debug, Default, Eq, PartialEq, Serialize, Deserialize)]
 pub enum Density {
+    /// Lower padding/spacing of elements
     Compact,
+    /// Higher padding/spacing of elements
     Spacious,
+    /// Standard padding/spacing of elements
     #[default]
     Standard,
 }

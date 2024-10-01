@@ -48,8 +48,6 @@ pub mod message {
 pub use self::command::Command;
 pub use self::core::Core;
 pub use self::settings::Settings;
-use crate::config::interface_density;
-use crate::cosmic_theme::Density;
 use crate::prelude::*;
 use crate::theme::THEME;
 use crate::widget::{context_drawer, horizontal_space, id_container, menu, nav_bar, popover};
@@ -654,11 +652,6 @@ impl<App: Application> ApplicationExt for App {
             .focused_window()
             .is_some_and(|i| i == self.main_window_id());
 
-        let padding = match interface_density() {
-            Density::Compact => 2,
-            _ => 8,
-        };
-
         let content_row = crate::widget::row::with_children({
             let mut widgets = Vec::with_capacity(4);
 
@@ -739,7 +732,7 @@ impl<App: Application> ApplicationExt for App {
         let content: Element<_> = if core.window.content_container {
             content_row
                 .apply(crate::widget::container)
-                .padding([0, padding, padding, padding])
+                .padding([0, 8, 8, 8])
                 .width(iced::Length::Fill)
                 .height(iced::Length::Fill)
                 .style(crate::theme::Container::WindowBackground)
