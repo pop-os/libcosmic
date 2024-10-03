@@ -16,7 +16,7 @@ pub fn main() -> cosmic::iced::Result {
     cosmic::icon_theme::set_default("Pop");
     #[allow(clippy::field_reassign_with_default)]
     let settings = Settings {
-        default_font: cosmic::font::FONT,
+        default_font: cosmic::font::default(),
         window: cosmic::iced::window::Settings {
             min_size: Some(cosmic::iced::Size::new(600., 300.)),
             ..cosmic::iced::window::Settings::default()

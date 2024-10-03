@@ -31,7 +31,7 @@ where
         .button_padding([space_s, 0, space_s, 0])
         .button_spacing(space_xxs)
         .style(crate::theme::SegmentedButton::Control)
-        .font_active(Some(crate::font::FONT_SEMIBOLD))
+        .font_active(Some(crate::font::semibold()))
 }
 
 /// A selection of multiple choices appearing as a conjoined button.
@@ -57,5 +57,5 @@ where
         .button_padding([space_s, 0, space_s, 0])
         .button_spacing(space_xxs)
         .style(crate::theme::SegmentedButton::Control)
-        .font_active(Some(crate::font::FONT_SEMIBOLD))
+        .font_active(Some(crate::font::semibold()))
 }

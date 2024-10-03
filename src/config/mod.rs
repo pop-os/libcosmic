@@ -6,14 +6,16 @@
 use crate::cosmic_theme::Density;
 use cosmic_config::cosmic_config_derive::CosmicConfigEntry;
 use cosmic_config::{Config, CosmicConfigEntry};
+use iced::font::Family;
 use serde::{Deserialize, Serialize};
-use std::sync::{LazyLock, Mutex};
+use std::sync::{LazyLock, RwLock};
+use ustr::Ustr;
 
 /// ID for the `CosmicTk` config.
 pub const ID: &str = "com.system76.CosmicTk";
 
-pub static COSMIC_TK: LazyLock<Mutex<CosmicTk>> = LazyLock::new(|| {
-    Mutex::new(
+pub static COSMIC_TK: LazyLock<RwLock<CosmicTk>> = LazyLock::new(|| {
+    RwLock::new(
         CosmicTk::config()
             .map(|c| {
                 CosmicTk::get_entry(&c).unwrap_or_else(|(errors, mode)| {
@@ -30,37 +32,47 @@ pub static COSMIC_TK: LazyLock<Mutex<CosmicTk>> = LazyLock::new(|| {
 /// Apply the theme to other toolkits.
 #[allow(clippy::missing_panics_doc)]
 pub fn apply_theme_global() -> bool {
-    COSMIC_TK.lock().unwrap().apply_theme_global
+    COSMIC_TK.read().unwrap().apply_theme_global
 }
 
 /// Show minimize button in window header.
 #[allow(clippy::missing_panics_doc)]
 pub fn show_minimize() -> bool {
-    COSMIC_TK.lock().unwrap().show_minimize
+    COSMIC_TK.read().unwrap().show_minimize
 }
 
 /// Show maximize button in window header.
 #[allow(clippy::missing_panics_doc)]
 pub fn show_maximize() -> bool {
-    COSMIC_TK.lock().unwrap().show_maximize
+    COSMIC_TK.read().unwrap().show_maximize
 }
 
 /// Preferred icon theme.
 #[allow(clippy::missing_panics_doc)]
 pub fn icon_theme() -> String {
-    COSMIC_TK.lock().unwrap().icon_theme.clone()
+    COSMIC_TK.read().unwrap().icon_theme.clone()
 }
 
 /// Density of CSD/SSD header bars.
 #[allow(clippy::missing_panics_doc)]
 pub fn header_size() -> Density {
-    COSMIC_TK.lock().unwrap().header_size
+    COSMIC_TK.read().unwrap().header_size
 }
 
 /// Interface density.
 #[allow(clippy::missing_panics_doc)]
 pub fn interface_density() -> Density {
-    COSMIC_TK.lock().unwrap().interface_density
+    COSMIC_TK.read().unwrap().interface_density
+}
+
+#[allow(clippy::missing_panics_doc)]
+pub fn interface_font() -> FontConfig {
+    COSMIC_TK.read().unwrap().interface_font
+}
+
+#[allow(clippy::missing_panics_doc)]
+pub fn monospace_font() -> FontConfig {
+    COSMIC_TK.read().unwrap().monospace_font
 }
 
 #[derive(Clone, CosmicConfigEntry, Debug, Eq, PartialEq)]
@@ -83,6 +95,12 @@ pub struct CosmicTk {
 
     /// Interface density.
     pub interface_density: Density,
+
+    /// Interface font family
+    pub interface_font: FontConfig,
+
+    /// Mono font family
+    pub monospace_font: FontConfig,
 }
 
 impl Default for CosmicTk {
@@ -94,6 +112,18 @@ impl Default for CosmicTk {
             icon_theme: String::from("Cosmic"),
             header_size: Density::Standard,
             interface_density: Density::Standard,
+            interface_font: FontConfig {
+                family: Ustr::from("Fira Sans"),
+                weight: iced::font::Weight::Normal,
+                stretch: iced::font::Stretch::Normal,
+                style: iced::font::Style::Normal,
+            },
+            monospace_font: FontConfig {
+                family: Ustr::from("Fira Mono"),
+                weight: iced::font::Weight::Normal,
+                stretch: iced::font::Stretch::Normal,
+                style: iced::font::Style::Normal,
+            },
         }
     }
 }
@@ -101,5 +131,24 @@ impl Default for CosmicTk {
 impl CosmicTk {
     pub fn config() -> Result<Config, cosmic_config::Error> {
         Config::new(ID, Self::VERSION)
+    }
+}
+
+#[derive(Copy, Clone, Debug, Eq, PartialEq, Deserialize, Serialize)]
+pub struct FontConfig {
+    pub family: Ustr,
+    pub weight: iced::font::Weight,
+    pub stretch: iced::font::Stretch,
+    pub style: iced::font::Style,
+}
+
+impl From<FontConfig> for iced::Font {
+    fn from(font: FontConfig) -> Self {
+        Self {
+            family: iced::font::Family::Name(font.family.as_str()),
+            weight: font.weight,
+            stretch: font.stretch,
+            style: font.style,
+        }
     }
 }

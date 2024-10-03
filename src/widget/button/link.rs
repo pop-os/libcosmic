@@ -63,14 +63,14 @@ impl<'a, Message: Clone + 'static> From<Button<'a, Message>> for Element<'a, Mes
     fn from(mut builder: Button<'a, Message>) -> Element<'a, Message> {
         let button: super::Button<'a, Message> = row::with_capacity(2)
             .push({
-                let mut font = crate::font::DEFAULT;
-                font.weight = builder.font_weight;
-
                 // TODO: Avoid allocation
                 crate::widget::text(builder.label.to_string())
                     .size(builder.font_size)
                     .line_height(LineHeight::Absolute(builder.line_height.into()))
-                    .font(font)
+                    .font(crate::font::Font {
+                        weight: builder.font_weight,
+                        ..crate::font::default()
+                    })
             })
             .push_maybe(if builder.variant.trailing_icon {
                 Some(icon().icon().size(builder.icon_size))
@@ -93,10 +93,9 @@ impl<'a, Message: Clone + 'static> From<Button<'a, Message>> for Element<'a, Mes
         } else {
             tooltip(button, builder.tooltip, tooltip::Position::Top)
                 .size(builder.font_size)
-                .font({
-                    let mut font = crate::font::DEFAULT;
-                    font.weight = builder.font_weight;
-                    font
+                .font(crate::font::Font {
+                    weight: builder.font_weight,
+                    ..crate::font::default()
                 })
                 .into()
         }
