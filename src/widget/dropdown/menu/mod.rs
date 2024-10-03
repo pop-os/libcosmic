@@ -459,7 +459,7 @@ impl<'a, S: AsRef<str>, Message> Widget<Message, crate::Theme, crate::Renderer>
                     },
                 );
 
-                (appearance.selected_text_color, crate::font::FONT_SEMIBOLD)
+                (appearance.selected_text_color, crate::font::semibold())
             } else if *self.hovered_option == Some(i) {
                 let item_x = bounds.x + appearance.border_width;
                 let item_width = appearance.border_width.mul_add(-2.0, bounds.width);
@@ -480,9 +480,9 @@ impl<'a, S: AsRef<str>, Message> Widget<Message, crate::Theme, crate::Renderer>
                     appearance.hovered_background,
                 );
 
-                (appearance.hovered_text_color, crate::font::FONT)
+                (appearance.hovered_text_color, crate::font::default())
             } else {
-                (appearance.text_color, crate::font::FONT)
+                (appearance.text_color, crate::font::default())
             };
 
             let bounds = Rectangle {

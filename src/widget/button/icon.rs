@@ -145,10 +145,9 @@ impl<'a, Message: Clone + 'static> From<Button<'a, Message>> for Element<'a, Mes
                 crate::widget::text(builder.label)
                     .size(builder.font_size)
                     .line_height(LineHeight::Absolute(builder.line_height.into()))
-                    .font({
-                        let mut font = crate::font::DEFAULT;
-                        font.weight = builder.font_weight;
-                        font
+                    .font(crate::font::Font {
+                        weight: builder.font_weight,
+                        ..crate::font::default()
                     })
                     .into(),
             );
@@ -182,10 +181,9 @@ impl<'a, Message: Clone + 'static> From<Button<'a, Message>> for Element<'a, Mes
         } else {
             tooltip(button, builder.tooltip, tooltip::Position::Top)
                 .size(builder.font_size)
-                .font({
-                    let mut font = crate::font::DEFAULT;
-                    font.weight = builder.font_weight;
-                    font
+                .font(crate::font::Font {
+                    weight: builder.font_weight,
+                    ..crate::font::default()
                 })
                 .into()
         }

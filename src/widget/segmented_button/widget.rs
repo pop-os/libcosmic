@@ -635,7 +635,7 @@ where
                     content: text,
                     size: iced::Pixels(self.font_size),
                     bounds: Size::INFINITY,
-                    font: font.unwrap_or(crate::font::FONT),
+                    font: font.unwrap_or_else(crate::font::default),
                     horizontal_alignment: alignment::Horizontal::Left,
                     vertical_alignment: alignment::Vertical::Center,
                     shaping: Shaping::Advanced,

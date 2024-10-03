@@ -7,7 +7,7 @@ use std::borrow::Cow;
 ///
 /// [`Text`]: widget::Text
 pub fn text<'a>(text: impl Into<Cow<'a, str>> + 'a) -> Text<'a, crate::Theme, Renderer> {
-    Text::new(text)
+    Text::new(text).font(crate::font::default())
 }
 
 /// Available presets for text typography
@@ -29,7 +29,7 @@ pub fn title1<'a>(text: impl Into<Cow<'a, str>> + 'a) -> Text<'a, crate::Theme, 
     Text::new(text)
         .size(32.0)
         .line_height(LineHeight::Absolute(44.0.into()))
-        .font(crate::font::FONT_LIGHT)
+        .font(crate::font::semibold())
 }
 
 /// [`Text`] widget with the Title 2 typography preset.
@@ -37,6 +37,7 @@ pub fn title2<'a>(text: impl Into<Cow<'a, str>> + 'a) -> Text<'a, crate::Theme, 
     Text::new(text)
         .size(28.0)
         .line_height(LineHeight::Absolute(36.0.into()))
+        .font(crate::font::default())
 }
 
 /// [`Text`] widget with the Title 3 typography preset.
@@ -44,6 +45,7 @@ pub fn title3<'a>(text: impl Into<Cow<'a, str>> + 'a) -> Text<'a, crate::Theme, 
     Text::new(text)
         .size(24.0)
         .line_height(LineHeight::Absolute(32.0.into()))
+        .font(crate::font::default())
 }
 
 /// [`Text`] widget with the Title 4 typography preset.
@@ -51,6 +53,7 @@ pub fn title4<'a>(text: impl Into<Cow<'a, str>> + 'a) -> Text<'a, crate::Theme, 
     Text::new(text)
         .size(20.0)
         .line_height(LineHeight::Absolute(28.0.into()))
+        .font(crate::font::default())
 }
 
 /// [`Text`] widget with the Heading typography preset.
@@ -58,7 +61,7 @@ pub fn heading<'a>(text: impl Into<Cow<'a, str>> + 'a) -> Text<'a, crate::Theme,
     Text::new(text)
         .size(14.0)
         .line_height(LineHeight::Absolute(iced::Pixels(20.0)))
-        .font(crate::font::FONT_SEMIBOLD)
+        .font(crate::font::semibold())
 }
 
 /// [`Text`] widget with the Caption Heading typography preset.
@@ -66,7 +69,7 @@ pub fn caption_heading<'a>(text: impl Into<Cow<'a, str>> + 'a) -> Text<'a, crate
     Text::new(text)
         .size(10.0)
         .line_height(LineHeight::Absolute(iced::Pixels(14.0)))
-        .font(crate::font::FONT_SEMIBOLD)
+        .font(crate::font::semibold())
 }
 
 /// [`Text`] widget with the Body typography preset.
@@ -74,6 +77,7 @@ pub fn body<'a>(text: impl Into<Cow<'a, str>> + 'a) -> Text<'a, crate::Theme, Re
     Text::new(text)
         .size(14.0)
         .line_height(LineHeight::Absolute(20.0.into()))
+        .font(crate::font::default())
 }
 
 /// [`Text`] widget with the Caption typography preset.
@@ -81,6 +85,7 @@ pub fn caption<'a>(text: impl Into<Cow<'a, str>> + 'a) -> Text<'a, crate::Theme,
     Text::new(text)
         .size(10.0)
         .line_height(LineHeight::Absolute(14.0.into()))
+        .font(crate::font::default())
 }
 
 /// [`Text`] widget with the Monotext typography preset.
@@ -88,5 +93,5 @@ pub fn monotext<'a>(text: impl Into<Cow<'a, str>> + 'a) -> Text<'a, crate::Theme
     Text::new(text)
         .size(14.0)
         .line_height(LineHeight::Absolute(20.0.into()))
-        .font(crate::font::FONT_MONO_REGULAR)
+        .font(crate::font::mono())
 }

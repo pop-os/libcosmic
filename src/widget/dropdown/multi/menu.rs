@@ -549,7 +549,7 @@ where
                             },
                         );
 
-                        (appearance.selected_text_color, crate::font::FONT_SEMIBOLD)
+                        (appearance.selected_text_color, crate::font::semibold())
                     } else if self.hovered_option.as_ref() == Some(item) {
                         let item_x = bounds.x + appearance.border_width;
                         let item_width = bounds.width - appearance.border_width * 2.0;
@@ -572,9 +572,9 @@ where
                             appearance.hovered_background,
                         );
 
-                        (appearance.hovered_text_color, crate::font::FONT)
+                        (appearance.hovered_text_color, crate::font::default())
                     } else {
-                        (appearance.text_color, crate::font::FONT)
+                        (appearance.text_color, crate::font::default())
                     };
 
                     let bounds = Rectangle {
@@ -640,7 +640,7 @@ where
                             bounds: bounds.size(),
                             size: iced::Pixels(text_size),
                             line_height: text::LineHeight::Absolute(Pixels(text_line_height + 4.0)),
-                            font: crate::font::FONT,
+                            font: crate::font::default(),
                             horizontal_alignment: alignment::Horizontal::Center,
                             vertical_alignment: alignment::Vertical::Center,
                             shaping: text::Shaping::Advanced,

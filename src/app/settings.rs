@@ -81,7 +81,7 @@ impl Default for Settings {
             no_main_window: false,
             client_decorations: true,
             debug: false,
-            default_font: font::FONT,
+            default_font: font::default(),
             default_icon_theme: None,
             default_text_size: 14.0,
             resizable: Some(8.0),

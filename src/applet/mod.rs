@@ -164,7 +164,7 @@ impl Context {
             )
             .resizable(None)
             .default_text_size(14.0)
-            .default_font(crate::font::FONT)
+            .default_font(crate::font::default())
             .transparent(true);
         if let Some(theme) = self.theme() {
             settings = settings.theme(theme);
@@ -339,7 +339,7 @@ impl Context {
             Size::PanelSize(PanelSize::XS) => crate::widget::text::body,
             Size::Hardcoded(_) => crate::widget::text,
         };
-        t(msg).font(crate::font::FONT)
+        t(msg).font(crate::font::default())
     }
 }
 

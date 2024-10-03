@@ -627,7 +627,7 @@ impl<T: Application> Cosmic<T> {
                     crate::icon_theme::set_default(config.icon_theme.clone());
                 }
 
-                *crate::config::COSMIC_TK.lock().unwrap() = config;
+                *crate::config::COSMIC_TK.write().unwrap() = config;
             }
 
             Message::Focus(f) => {

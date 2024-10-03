@@ -76,7 +76,7 @@ impl<'a, S: AsRef<str>, Message> Dropdown<'a, S, Message> {
                 size: iced::Pixels(self.text_size.unwrap_or(14.0)),
 
                 line_height: self.text_line_height,
-                font: self.font.unwrap_or(crate::font::FONT),
+                font: self.font.unwrap_or_else(crate::font::default),
                 horizontal_alignment: alignment::Horizontal::Left,
                 vertical_alignment: alignment::Vertical::Top,
                 shaping: text::Shaping::Advanced,
@@ -113,7 +113,7 @@ impl<'a, S: AsRef<str>, Message: 'a> Widget<Message, crate::Theme, crate::Render
                 size: iced::Pixels(self.text_size.unwrap_or(14.0)),
 
                 line_height: self.text_line_height,
-                font: self.font.unwrap_or(crate::font::FONT),
+                font: self.font.unwrap_or_else(crate::font::default),
                 horizontal_alignment: alignment::Horizontal::Left,
                 vertical_alignment: alignment::Vertical::Top,
                 shaping: text::Shaping::Advanced,
@@ -194,9 +194,7 @@ impl<'a, S: AsRef<str>, Message: 'a> Widget<Message, crate::Theme, crate::Render
         cursor: mouse::Cursor,
         viewport: &Rectangle,
     ) {
-        let font = self
-            .font
-            .unwrap_or_else(|| text::Renderer::default_font(renderer));
+        let font = self.font.unwrap_or_else(|| crate::font::default());
         draw(
             renderer,
             theme,
@@ -308,7 +306,7 @@ pub fn layout(
                     bounds: Size::new(f32::MAX, f32::MAX),
                     size: iced::Pixels(text_size),
                     line_height: text_line_height,
-                    font: font.unwrap_or_else(|| text::Renderer::default_font(renderer)),
+                    font: font.unwrap_or_else(|| crate::font::default()),
                     horizontal_alignment: alignment::Horizontal::Left,
                     vertical_alignment: alignment::Vertical::Top,
                     shaping: text::Shaping::Advanced,

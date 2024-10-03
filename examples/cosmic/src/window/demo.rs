@@ -320,7 +320,7 @@ impl State {
                 .padding(0)
                 .into(),
                 Some(DemoView::TabB) => settings::view_column(vec![
-                    text("Selection").font(cosmic::font::FONT_SEMIBOLD).into(),
+                    text("Selection").font(cosmic::font::semibold()).into(),
                     text("Horizontal").into(),
                     segmented_control::horizontal(&self.selection)
                         .on_activate(Message::Selection)
@@ -378,9 +378,7 @@ impl State {
                     .spacing(12)
                     .width(Length::Fill)
                     .into(),
-                    text("View Switcher")
-                        .font(cosmic::font::FONT_SEMIBOLD)
-                        .into(),
+                    text("View Switcher").font(cosmic::font::semibold()).into(),
                     text("Horizontal").into(),
                     tab_bar::horizontal(&self.selection)
                         .on_activate(Message::Selection)

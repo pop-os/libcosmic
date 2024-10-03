@@ -101,8 +101,10 @@ impl<'a, Message: Clone + 'static> From<Button<'a, Message>> for Element<'a, Mes
         });
 
         let label: Option<Element<'_, _>> = (!builder.label.is_empty()).then(|| {
-            let mut font = crate::font::DEFAULT;
-            font.weight = builder.font_weight;
+            let font = crate::font::Font {
+                weight: builder.font_weight,
+                ..crate::font::default()
+            };
 
             // TODO: Avoid allocation
             crate::widget::text(builder.label.to_string())
@@ -135,10 +137,9 @@ impl<'a, Message: Clone + 'static> From<Button<'a, Message>> for Element<'a, Mes
         } else {
             tooltip(button, builder.tooltip, tooltip::Position::Top)
                 .size(builder.font_size)
-                .font({
-                    let mut font = crate::font::DEFAULT;
-                    font.weight = builder.font_weight;
-                    font
+                .font(crate::font::Font {
+                    weight: builder.font_weight,
+                    ..crate::font::default()
                 })
                 .into()
         }
