@@ -4,11 +4,7 @@
 //! Select preferred fonts.
 
 pub use iced::Font;
-use iced::{
-    font::{load, Error},
-    Command,
-};
-use iced_core::font::Family;
+use iced_core::font::{Family, Weight};
 
 pub fn default() -> Font {
     Font::from(crate::config::interface_font())
@@ -16,21 +12,21 @@ pub fn default() -> Font {
 
 pub fn light() -> Font {
     Font {
-        weight: iced_core::font::Weight::Light,
+        weight: Weight::Light,
         ..default()
     }
 }
 
 pub fn semibold() -> Font {
     Font {
-        weight: iced_core::font::Weight::Semibold,
+        weight: Weight::Semibold,
         ..default()
     }
 }
 
 pub fn bold() -> Font {
     Font {
-        weight: iced_core::font::Weight::Bold,
+        weight: Weight::Bold,
         ..default()
     }
 }
