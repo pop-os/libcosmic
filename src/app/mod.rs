@@ -45,6 +45,8 @@ pub mod message {
     }
 }
 
+use std::borrow::Cow;
+
 pub use self::command::Command;
 pub use self::core::Core;
 pub use self::settings::Settings;
@@ -72,6 +74,8 @@ pub(crate) fn iced_settings<App: Application>(
     settings: Settings,
     flags: App::Flags,
 ) -> iced::Settings<(Core, App::Flags)> {
+    preload_fonts();
+
     let mut core = Core::default();
     core.debug = settings.debug;
     core.icon_theme_override = settings.default_icon_theme.is_some();
@@ -881,4 +885,22 @@ fn single_instance_subscription<App: ApplicationExt>() -> Subscription<Message<A
             }
         },
     )
+}
+
+const EMBEDDED_FONTS: &[&[u8]] = &[
+    include_bytes!("../../res/Fira/FiraSans-Light.otf"),
+    include_bytes!("../../res/Fira/FiraSans-Regular.otf"),
+    include_bytes!("../../res/Fira/FiraSans-SemiBold.otf"),
+    include_bytes!("../../res/Fira/FiraSans-Bold.otf"),
+    include_bytes!("../../res/Fira/FiraMono-Regular.otf"),
+];
+
+fn preload_fonts() {
+    let mut font_system = iced::advanced::graphics::text::font_system()
+        .write()
+        .unwrap();
+
+    EMBEDDED_FONTS
+        .into_iter()
+        .for_each(move |font| font_system.load_font(Cow::Borrowed(font)));
 }
