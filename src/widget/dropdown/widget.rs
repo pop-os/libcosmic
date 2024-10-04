@@ -11,6 +11,7 @@ use iced_core::widget::tree::{self, Tree};
 use iced_core::{alignment, keyboard, layout, mouse, overlay, renderer, svg, touch, Shadow};
 use iced_core::{Clipboard, Layout, Length, Padding, Pixels, Rectangle, Shell, Size, Widget};
 use std::ffi::OsStr;
+use std::hash::{DefaultHasher, Hash, Hasher};
 
 pub use iced_widget::style::pick_list::{Appearance, StyleSheet};
 
@@ -61,29 +62,6 @@ impl<'a, S: AsRef<str>, Message> Dropdown<'a, S, Message> {
             font: None,
         }
     }
-
-    fn update_paragraphs(&self, state: &mut tree::State) {
-        let state = state.downcast_mut::<State>();
-
-        state
-            .selections
-            .resize_with(self.selections.len(), crate::Paragraph::new);
-        for (i, selection) in self.selections.iter().enumerate() {
-            state.selections[i].update(Text {
-                content: selection.as_ref(),
-                bounds: Size::INFINITY,
-                // TODO use the renderer default size
-                size: iced::Pixels(self.text_size.unwrap_or(14.0)),
-
-                line_height: self.text_line_height,
-                font: self.font.unwrap_or_else(crate::font::default),
-                horizontal_alignment: alignment::Horizontal::Left,
-                vertical_alignment: alignment::Vertical::Top,
-                shaping: text::Shaping::Advanced,
-                wrap: text::Wrap::default(),
-            });
-        }
-    }
 }
 
 impl<'a, S: AsRef<str>, Message: 'a> Widget<Message, crate::Theme, crate::Renderer>
@@ -94,9 +72,7 @@ impl<'a, S: AsRef<str>, Message: 'a> Widget<Message, crate::Theme, crate::Render
     }
 
     fn state(&self) -> tree::State {
-        let mut tree = tree::State::new(State::new());
-        self.update_paragraphs(&mut tree);
-        tree
+        tree::State::new(State::new())
     }
 
     fn diff(&mut self, tree: &mut Tree) {
@@ -105,13 +81,23 @@ impl<'a, S: AsRef<str>, Message: 'a> Widget<Message, crate::Theme, crate::Render
         state
             .selections
             .resize_with(self.selections.len(), crate::Paragraph::new);
+        state.hashes.resize(self.selections.len(), 0);
+
         for (i, selection) in self.selections.iter().enumerate() {
+            let mut hasher = DefaultHasher::new();
+            selection.as_ref().hash(&mut hasher);
+            let text_hash = hasher.finish();
+
+            if state.hashes[i] == text_hash {
+                continue;
+            }
+
+            state.hashes[i] = text_hash;
             state.selections[i].update(Text {
                 content: selection.as_ref(),
                 bounds: Size::INFINITY,
                 // TODO use the renderer default size
                 size: iced::Pixels(self.text_size.unwrap_or(14.0)),
-
                 line_height: self.text_line_height,
                 font: self.font.unwrap_or_else(crate::font::default),
                 horizontal_alignment: alignment::Horizontal::Left,
@@ -252,6 +238,7 @@ pub struct State {
     is_open: bool,
     hovered_option: Option<usize>,
     selections: Vec<crate::Paragraph>,
+    hashes: Vec<u64>,
 }
 
 impl State {
@@ -271,6 +258,7 @@ impl State {
             is_open: false,
             hovered_option: None,
             selections: Vec::new(),
+            hashes: Vec::new(),
         }
     }
 }
