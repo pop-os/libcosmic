@@ -136,7 +136,7 @@ impl cosmic::Application for MultiWindow {
             .focused_window()
             .map(|i| i == id)
             .unwrap_or_default();
-        let new_window_button = button(text("New Window")).on_press(Message::NewWindow);
+        let new_window_button = button::custom(text("New Window")).on_press(Message::NewWindow);
 
         let content = scrollable(
             column![input, new_window_button]
