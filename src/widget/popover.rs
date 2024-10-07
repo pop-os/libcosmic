@@ -317,7 +317,9 @@ where
             Position::Bottom => {
                 // Position is set to the center bottom of the widget
                 let width = node.size().width;
+                let height = node.size().height;
                 position.x = (position.x - width / 2.0).clamp(0.0, bounds.width - width);
+                position.y = position.y.clamp(0.0, bounds.height - height);
             }
             Position::Point(_) => {
                 // Position is using context menu logic
