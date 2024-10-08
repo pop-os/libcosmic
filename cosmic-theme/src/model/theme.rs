@@ -186,7 +186,9 @@ impl Theme {
     #[allow(clippy::doc_markdown)]
     /// get @small_widget_divider
     pub fn small_widget_divider(&self) -> Srgba {
-        self.palette.neutral_9
+        let mut neutral_9 = self.palette.neutral_9;
+        neutral_9.alpha = 0.2;
+        neutral_9
     }
 
     // Containers
