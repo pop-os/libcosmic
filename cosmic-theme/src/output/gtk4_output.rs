@@ -122,10 +122,10 @@ impl Theme {
         css.push_str(&component_gtk4_css("accent", accent));
         css.push_str(&component_gtk4_css("error", destructive));
 
-        css.push_str(&color_css("blue", palette.blue));
-        css.push_str(&color_css("green", palette.green));
-        css.push_str(&color_css("yellow", palette.yellow));
-        css.push_str(&color_css("red", palette.red));
+        css.push_str(&color_css("blue", palette.accent_blue));
+        css.push_str(&color_css("green", palette.accent_green));
+        css.push_str(&color_css("yellow", palette.accent_yellow));
+        css.push_str(&color_css("red", palette.accent_red));
         css.push_str(&color_css("orange", palette.ext_orange));
         css.push_str(&color_css("purple", palette.ext_purple));
         let neutral_steps = steps(palette.neutral_5, NonZeroUsize::new(10).unwrap());
