@@ -758,25 +758,25 @@ impl ThemeBuilder {
         let accent = if let Some(accent) = accent {
             accent.into_color()
         } else {
-            palette.as_ref().blue
+            palette.as_ref().accent_blue
         };
 
         let success = if let Some(success) = success {
             success.into_color()
         } else {
-            palette.as_ref().green
+            palette.as_ref().accent_green
         };
 
         let warning = if let Some(warning) = warning {
             warning.into_color()
         } else {
-            palette.as_ref().yellow
+            palette.as_ref().accent_yellow
         };
 
         let destructive = if let Some(destructive) = destructive {
             destructive.into_color()
         } else {
-            palette.as_ref().red
+            palette.as_ref().accent_red
         };
 
         let text_steps_array = text_tint.map(|c| steps(c, NonZeroUsize::new(100).unwrap()));
