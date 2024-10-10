@@ -620,8 +620,10 @@ where
                         (self.font_inactive, 2)
                     };
 
+                let font = font.unwrap_or_else(crate::font::default);
                 let mut hasher = DefaultHasher::new();
                 text.hash(&mut hasher);
+                font.hash(&mut hasher);
                 button_state.hash(&mut hasher);
                 let text_hash = hasher.finish();
 
@@ -635,7 +637,7 @@ where
                     content: text,
                     size: iced::Pixels(self.font_size),
                     bounds: Size::INFINITY,
-                    font: font.unwrap_or_else(crate::font::default),
+                    font,
                     horizontal_alignment: alignment::Horizontal::Left,
                     vertical_alignment: alignment::Vertical::Center,
                     shaping: Shaping::Advanced,
