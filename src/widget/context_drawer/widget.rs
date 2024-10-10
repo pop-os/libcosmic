@@ -27,16 +27,13 @@ pub struct ContextDrawer<'a, Message> {
 }
 
 impl<'a, Message: Clone + 'static> ContextDrawer<'a, Message> {
-    /// Creates an empty [`ContextDrawer`].
-    pub fn new<Content, Drawer>(
+    pub fn new_inner<Drawer>(
         header: &'a str,
-        content: Content,
         drawer: Drawer,
         on_close: Message,
         max_width: f32,
-    ) -> Self
+    ) -> Element<'a, Message>
     where
-        Content: Into<Element<'a, Message>>,
         Drawer: Into<Element<'a, Message>>,
     {
         let header = row::with_capacity(3)
@@ -82,23 +79,40 @@ impl<'a, Message: Clone + 'static> ContextDrawer<'a, Message> {
                 .width(Length::Shrink),
             );
 
+        // XXX new limits do not exactly handle the max width well for containers
+        // XXX this is a hack to get around that
+        container(
+            LayerContainer::new(pane)
+                .layer(cosmic_theme::Layer::Primary)
+                .style(crate::style::Container::ContextDrawer)
+                .width(Length::Fill)
+                .height(Length::Fill)
+                .max_width(max_width),
+        )
+        .width(Length::Fill)
+        .height(Length::Fill)
+        .align_x(alignment::Horizontal::Right)
+        .into()
+    }
+
+    /// Creates an empty [`ContextDrawer`].
+    pub fn new<Content, Drawer>(
+        header: &'a str,
+        content: Content,
+        drawer: Drawer,
+        on_close: Message,
+        max_width: f32,
+    ) -> Self
+    where
+        Content: Into<Element<'a, Message>>,
+        Drawer: Into<Element<'a, Message>>,
+    {
+        let drawer = Self::new_inner(header, drawer, on_close, max_width);
+
         ContextDrawer {
             id: None,
             content: content.into(),
-            // XXX new limits do not exactly handle the max width well for containers
-            // XXX this is a hack to get around that
-            drawer: container(
-                LayerContainer::new(pane)
-                    .layer(cosmic_theme::Layer::Primary)
-                    .style(crate::style::Container::ContextDrawer)
-                    .width(Length::Fill)
-                    .height(Length::Fill)
-                    .max_width(max_width),
-            )
-            .width(Length::Fill)
-            .height(Length::Fill)
-            .align_x(alignment::Horizontal::Right)
-            .into(),
+            drawer,
             on_close: None,
         }
     }
