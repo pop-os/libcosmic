@@ -421,6 +421,11 @@ where
         None
     }
 
+    /// Displays a footer at the bottom of the application window when `Some`.
+    fn footer(&self) -> Option<Element<Self::Message>> {
+        None
+    }
+
     /// Attaches elements to the start section of the header.
     fn header_start(&self) -> Vec<Element<Self::Message>> {
         Vec::new()
@@ -705,16 +710,10 @@ impl<App: Application> ApplicationExt for App {
                     widgets.push(main_content);
                     if let Some(context) = self.context_drawer() {
                         widgets.push(
-                            context_drawer(
+                            crate::widget::ContextDrawer::new_inner(
                                 &core.window.context_title,
-                                Message::Cosmic(cosmic::Message::ContextDrawer(false)),
-                                //TODO: this is a hack to allow toggling overlay
-                                horizontal_space(
-                                    //TODO: this width must be synced with the context drawer width
-                                    // Manual spacing must be used due to state workarounds below
-                                    Length::Fixed(context_width + 8.0),
-                                ),
                                 context.map(Message::App),
+                                Message::Cosmic(cosmic::Message::ContextDrawer(false)),
                                 context_width,
                             )
                             .apply(|drawer| {
@@ -733,8 +732,12 @@ impl<App: Application> ApplicationExt for App {
 
             widgets
         });
+        let content_col = crate::widget::column::with_capacity(2)
+            .spacing(8)
+            .push(content_row)
+            .push_maybe(self.footer().map(|footer| footer.map(Message::App)));
         let content: Element<_> = if core.window.content_container {
-            content_row
+            content_col
                 .apply(crate::widget::container)
                 .padding([0, 8, 8, 8])
                 .width(iced::Length::Fill)
@@ -743,7 +746,7 @@ impl<App: Application> ApplicationExt for App {
                 .apply(|w| id_container(w, iced_core::id::Id::new("COSMIC_content_container")))
                 .into()
         } else {
-            content_row.into()
+            content_col.into()
         };
 
         let view_column = crate::widget::column::with_capacity(2)
