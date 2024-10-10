@@ -1,0 +1,49 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Portable interface to epoll, kqueue, event ports, and IOCP."><title>polling - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-46f98efaafac5295.ttf.woff2,FiraSans-Regular-018c141bf0843ffd.woff2,FiraSans-Medium-8f9a781e4970d388.woff2,SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2,SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../static.files/rustdoc-c5d6553a23f1e5a6.css"><meta name="rustdoc-vars" data-root-path="../" data-static-root-path="../static.files/" data-current-crate="polling" data-themes="" data-resource-suffix="" data-rustdoc-version="1.81.0 (eeb90cda1 2024-09-04)" data-channel="1.81.0" data-search-js="search-d234aafac6c221dd.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../static.files/storage-118b08c4c78b968e.js"></script><script defer src="../crates.js"></script><script defer src="../static.files/main-d2fab2bf619172d3.js"></script><noscript><link rel="stylesheet" href="../static.files/noscript-df360f571f6edeae.css"></noscript><link rel="icon" href="https://raw.githubusercontent.com/smol-rs/smol/master/assets/images/logo_fullsize_transparent.png"></head><body class="rustdoc mod crate"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle" title="show sidebar"></button><a class="logo-container" href="../polling/index.html"><img src="https://raw.githubusercontent.com/smol-rs/smol/master/assets/images/logo_fullsize_transparent.png" alt=""></a></nav><nav class="sidebar"><div class="sidebar-crate"><a class="logo-container" href="../polling/index.html"><img src="https://raw.githubusercontent.com/smol-rs/smol/master/assets/images/logo_fullsize_transparent.png" alt="logo"></a><h2><a href="../polling/index.html">polling</a><span class="version">3.7.3</span></h2></div><div class="sidebar-elems"><ul class="block"><li><a id="all-types" href="all.html">All Items</a></li></ul><section><ul class="block"><li><a href="#modules">Modules</a></li><li><a href="#structs">Structs</a></li><li><a href="#enums">Enums</a></li><li><a href="#traits">Traits</a></li></ul></section></div></nav><div class="sidebar-resizer"></div><main><div class="width-limiter"><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><h1>Crate <a class="mod" href="#">polling</a><button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><span class="out-of-band"><a class="src" href="../src/polling/lib.rs.html#1-1125">source</a> · <button id="toggle-all-docs" title="collapse all docs">[<span>&#x2212;</span>]</button></span></div><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Portable interface to epoll, kqueue, event ports, and IOCP.</p>
+<p>Supported platforms:</p>
+<ul>
+<li><a href="https://en.wikipedia.org/wiki/Epoll">epoll</a>: Linux, Android, RedoxOS</li>
+<li><a href="https://en.wikipedia.org/wiki/Kqueue">kqueue</a>: macOS, iOS, tvOS, watchOS, FreeBSD, NetBSD, OpenBSD,
+DragonFly BSD</li>
+<li><a href="https://illumos.org/man/port_create">event ports</a>: illumos, Solaris</li>
+<li><a href="https://en.wikipedia.org/wiki/Poll_(Unix)">poll</a>: VxWorks, Fuchsia, HermitOS, other Unix systems</li>
+<li><a href="https://learn.microsoft.com/en-us/windows/win32/fileio/i-o-completion-ports">IOCP</a>: Windows, Wine (version 7.13+)</li>
+</ul>
+<p>By default, polling is done in oneshot mode, which means interest in I/O events needs to
+be re-enabled after an event is delivered if we’re interested in the next event of the same
+kind. However, level and edge triggered modes are also available for certain operating
+systems. See the documentation of the <a href="enum.PollMode.html" title="enum polling::PollMode"><code>PollMode</code></a> type for more information.</p>
+<p>Only one thread can be waiting for I/O events at a time.</p>
+<h2 id="examples"><a class="doc-anchor" href="#examples">§</a>Examples</h2>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>polling::{Event, Events, Poller};
+<span class="kw">use </span>std::net::TcpListener;
+
+<span class="comment">// Create a TCP listener.
+</span><span class="kw">let </span>socket = TcpListener::bind(<span class="string">"127.0.0.1:8000"</span>)<span class="question-mark">?</span>;
+socket.set_nonblocking(<span class="bool-val">true</span>)<span class="question-mark">?</span>;
+<span class="kw">let </span>key = <span class="number">7</span>; <span class="comment">// Arbitrary key identifying the socket.
+
+// Create a poller and register interest in readability on the socket.
+</span><span class="kw">let </span>poller = Poller::new()<span class="question-mark">?</span>;
+<span class="kw">unsafe </span>{
+    poller.add(<span class="kw-2">&amp;</span>socket, Event::readable(key))<span class="question-mark">?</span>;
+}
+
+<span class="comment">// The event loop.
+</span><span class="kw">let </span><span class="kw-2">mut </span>events = Events::new();
+<span class="kw">loop </span>{
+    <span class="comment">// Wait for at least one I/O event.
+    </span>events.clear();
+    poller.wait(<span class="kw-2">&amp;mut </span>events, <span class="prelude-val">None</span>)<span class="question-mark">?</span>;
+
+    <span class="kw">for </span>ev <span class="kw">in </span>events.iter() {
+        <span class="kw">if </span>ev.key == key {
+            <span class="comment">// Perform a non-blocking accept operation.
+            </span>socket.accept()<span class="question-mark">?</span>;
+            <span class="comment">// Set interest in the next readability event.
+            </span>poller.modify(<span class="kw-2">&amp;</span>socket, Event::readable(key))<span class="question-mark">?</span>;
+        }
+    }
+}
+
+poller.delete(<span class="kw-2">&amp;</span>socket)<span class="question-mark">?</span>;</code></pre></div>
+</div></details><h2 id="modules" class="section-header">Modules<a href="#modules" class="anchor">§</a></h2><ul class="item-table"><li><div class="item-name"><a class="mod" href="os/index.html" title="mod polling::os">os</a></div><div class="desc docblock-short">Platform-specific functionality.</div></li></ul><h2 id="structs" class="section-header">Structs<a href="#structs" class="anchor">§</a></h2><ul class="item-table"><li><div class="item-name"><a class="struct" href="struct.Event.html" title="struct polling::Event">Event</a></div><div class="desc docblock-short">Indicates that a file descriptor or socket can read or write without blocking.</div></li><li><div class="item-name"><a class="struct" href="struct.Events.html" title="struct polling::Events">Events</a></div><div class="desc docblock-short">A container for I/O events.</div></li><li><div class="item-name"><a class="struct" href="struct.Poller.html" title="struct polling::Poller">Poller</a></div><div class="desc docblock-short">Waits for I/O events.</div></li></ul><h2 id="enums" class="section-header">Enums<a href="#enums" class="anchor">§</a></h2><ul class="item-table"><li><div class="item-name"><a class="enum" href="enum.PollMode.html" title="enum polling::PollMode">PollMode</a></div><div class="desc docblock-short">The mode in which the poller waits for I/O events.</div></li></ul><h2 id="traits" class="section-header">Traits<a href="#traits" class="anchor">§</a></h2><ul class="item-table"><li><div class="item-name"><a class="trait" href="trait.AsRawSource.html" title="trait polling::AsRawSource">AsRawSource</a></div><div class="desc docblock-short">A resource with a raw file descriptor.</div></li><li><div class="item-name"><a class="trait" href="trait.AsSource.html" title="trait polling::AsSource">AsSource</a></div><div class="desc docblock-short">A resource with a borrowed file descriptor.</div></li></ul></section></div></main></body></html>

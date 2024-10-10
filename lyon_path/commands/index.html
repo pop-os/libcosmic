@@ -1,0 +1,54 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="A generic representation for paths that allow more control over how endpoints and control points are stored."><title>lyon_path::commands - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-46f98efaafac5295.ttf.woff2,FiraSans-Regular-018c141bf0843ffd.woff2,FiraSans-Medium-8f9a781e4970d388.woff2,SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2,SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../static.files/rustdoc-c5d6553a23f1e5a6.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="lyon_path" data-themes="" data-resource-suffix="" data-rustdoc-version="1.81.0 (eeb90cda1 2024-09-04)" data-channel="1.81.0" data-search-js="search-d234aafac6c221dd.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../static.files/storage-118b08c4c78b968e.js"></script><script defer src="../sidebar-items.js"></script><script defer src="../../static.files/main-d2fab2bf619172d3.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-df360f571f6edeae.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc mod"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle" title="show sidebar"></button><a class="logo-container" href="../../lyon_path/index.html"><img src="https://nical.github.io/lyon-doc/lyon-logo.svg" alt=""></a></nav><nav class="sidebar"><div class="sidebar-crate"><a class="logo-container" href="../../lyon_path/index.html"><img src="https://nical.github.io/lyon-doc/lyon-logo.svg" alt="logo"></a><h2><a href="../../lyon_path/index.html">lyon_path</a><span class="version">1.0.5</span></h2></div><h2 class="location"><a href="#">Module commands</a></h2><div class="sidebar-elems"><section><ul class="block"><li><a href="#structs">Structs</a></li></ul></section><h2><a href="../index.html">In crate lyon_path</a></h2></div></nav><div class="sidebar-resizer"></div><main><div class="width-limiter"><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><h1>Module <a href="../index.html">lyon_path</a>::<wbr><a class="mod" href="#">commands</a><button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><span class="out-of-band"><a class="src" href="../../src/lyon_path/commands.rs.html#1-1118">source</a> · <button id="toggle-all-docs" title="collapse all docs">[<span>&#x2212;</span>]</button></span></div><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>A generic representation for paths that allow more control over how
+endpoints and control points are stored.</p>
+<h2 id="motivation"><a class="doc-anchor" href="#motivation">§</a>Motivation</h2>
+<p>The default <code>Path</code> data structure in this crate is works well for the
+most common use cases. Sometimes, however, it is useful to be able to
+specify exactly how endpoints and control points are stored instead of
+relying on implicitly following the order of the events.</p>
+<p>This module contains bricks to help with building custom path representations.
+The central piece is the <a href="struct.PathCommands.html"><code>PathCommands</code></a> buffer and
+its <a href="struct.PathCommandsBuilder.html"><code>PathCommandsBuilder</code></a>, providing a compact
+representation for path events with IDs instead of positions.</p>
+<h2 id="examples"><a class="doc-anchor" href="#examples">§</a>Examples</h2>
+<p>The following example shows how <code>PathCommands</code> can be used together with an
+external buffers for positions to implement features similar to the default
+Path type with a different data structure.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>lyon_path::{EndpointId, Event, IdEvent, commands::PathCommands};
+<span class="kw">let </span>points = <span class="kw-2">&amp;</span>[
+    [<span class="number">0.0</span>, <span class="number">0.0</span>],
+    [<span class="number">1.0</span>, <span class="number">1.0</span>],
+    [<span class="number">0.0</span>, <span class="number">2.0</span>],
+];
+
+<span class="kw">let </span><span class="kw-2">mut </span>cmds = PathCommands::builder();
+cmds.begin(EndpointId(<span class="number">0</span>));
+cmds.line_to(EndpointId(<span class="number">1</span>));
+cmds.line_to(EndpointId(<span class="number">2</span>));
+cmds.end(<span class="bool-val">true</span>);
+
+<span class="kw">let </span>cmds = cmds.build();
+
+<span class="kw">for </span>event <span class="kw">in </span><span class="kw-2">&amp;</span>cmds {
+    <span class="kw">match </span>event {
+        IdEvent::Begin { at } =&gt; { <span class="macro">println!</span>(<span class="string">"move to {:?}"</span>, points[at.to_usize()]); }
+        IdEvent::Line { to, .. } =&gt; { <span class="macro">println!</span>(<span class="string">"line to {:?}"</span>, points[to.to_usize()]); }
+        IdEvent::End { close: <span class="bool-val">true</span>, .. } =&gt; { <span class="macro">println!</span>(<span class="string">"close"</span>); }
+        <span class="kw">_ </span>=&gt; { <span class="macro">panic!</span>(<span class="string">"unexpected event!"</span>) }
+    }
+}
+
+<span class="comment">// Iterate over the points directly using CommandsPathSlice
+</span><span class="kw">for </span>event <span class="kw">in </span>cmds.path_slice(points, points).events() {
+    <span class="kw">match </span>event {
+        Event::Begin { at } =&gt; { <span class="macro">println!</span>(<span class="string">"move to {:?}"</span>, at); }
+        Event::Line { to, .. } =&gt; { <span class="macro">println!</span>(<span class="string">"line to {:?}"</span>, to); }
+        Event::End { close: <span class="bool-val">true</span>, .. } =&gt; { <span class="macro">println!</span>(<span class="string">"close"</span>); }
+        <span class="kw">_ </span>=&gt; { <span class="macro">panic!</span>(<span class="string">"unexpected event!"</span>) }
+    }
+}
+</code></pre></div>
+</div></details><h2 id="structs" class="section-header">Structs<a href="#structs" class="anchor">§</a></h2><ul class="item-table"><li><div class="item-name"><a class="struct" href="struct.CommandsPathSlice.html" title="struct lyon_path::commands::CommandsPathSlice">CommandsPathSlice</a></div><div class="desc docblock-short">A view on a <a href="struct.PathCommands.html"><code>PathCommands</code></a> buffer and
+two slices for endpoints and control points, providing similar
+functionalities as <code>PathSlice</code>.</div></li><li><div class="item-name"><a class="struct" href="struct.Events.html" title="struct lyon_path::commands::Events">Events</a></div><div class="desc docblock-short">An iterator of <code>Event&lt;&amp;Endpoint, &amp;ControlPoint&gt;</code>.</div></li><li><div class="item-name"><a class="struct" href="struct.Iter.html" title="struct lyon_path::commands::Iter">Iter</a></div><div class="desc docblock-short">An iterator of <code>Event&lt;&amp;Endpoint, &amp;ControlPoint&gt;</code>.</div></li><li><div class="item-name"><a class="struct" href="struct.PathCommands.html" title="struct lyon_path::commands::PathCommands">PathCommands</a></div><div class="desc docblock-short">The commands of a path encoded in a single array using IDs to refer
+to endpoints and control points externally.</div></li><li><div class="item-name"><a class="struct" href="struct.PathCommandsBuilder.html" title="struct lyon_path::commands::PathCommandsBuilder">PathCommandsBuilder</a></div><div class="desc docblock-short">Builds path commands.</div></li><li><div class="item-name"><a class="struct" href="struct.PathCommandsSlice.html" title="struct lyon_path::commands::PathCommandsSlice">PathCommandsSlice</a></div><div class="desc docblock-short">A view over <a href="struct.PathCommands.html"><code>PathCommands</code></a>.</div></li><li><div class="item-name"><a class="struct" href="struct.PointEvents.html" title="struct lyon_path::commands::PointEvents">PointEvents</a></div><div class="desc docblock-short">An iterator of <code>PathEvent</code>.</div></li></ul></section></div></main></body></html>

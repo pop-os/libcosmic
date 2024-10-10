@@ -1,0 +1,96 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Cross-platform file system notification library"><title>notify - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-46f98efaafac5295.ttf.woff2,FiraSans-Regular-018c141bf0843ffd.woff2,FiraSans-Medium-8f9a781e4970d388.woff2,SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2,SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../static.files/rustdoc-c5d6553a23f1e5a6.css"><meta name="rustdoc-vars" data-root-path="../" data-static-root-path="../static.files/" data-current-crate="notify" data-themes="" data-resource-suffix="" data-rustdoc-version="1.81.0 (eeb90cda1 2024-09-04)" data-channel="1.81.0" data-search-js="search-d234aafac6c221dd.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../static.files/storage-118b08c4c78b968e.js"></script><script defer src="../crates.js"></script><script defer src="../static.files/main-d2fab2bf619172d3.js"></script><noscript><link rel="stylesheet" href="../static.files/noscript-df360f571f6edeae.css"></noscript><link rel="alternate icon" type="image/png" href="../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc mod crate"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle" title="show sidebar"></button></nav><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../notify/index.html">notify</a><span class="version">6.1.1</span></h2></div><div class="sidebar-elems"><ul class="block"><li><a id="all-types" href="all.html">All Items</a></li></ul><section><ul class="block"><li><a href="#reexports">Re-exports</a></li><li><a href="#modules">Modules</a></li><li><a href="#structs">Structs</a></li><li><a href="#enums">Enums</a></li><li><a href="#traits">Traits</a></li><li><a href="#functions">Functions</a></li><li><a href="#types">Type Aliases</a></li></ul></section></div></nav><div class="sidebar-resizer"></div><main><div class="width-limiter"><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><h1>Crate <a class="mod" href="#">notify</a><button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><span class="out-of-band"><a class="src" href="../src/notify/lib.rs.html#1-451">source</a> · <button id="toggle-all-docs" title="collapse all docs">[<span>&#x2212;</span>]</button></span></div><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Cross-platform file system notification library</p>
+<h2 id="installation"><a class="doc-anchor" href="#installation">§</a>Installation</h2><div class="example-wrap"><pre class="language-toml"><code>[dependencies]
+notify = &quot;6.1.1&quot;
+</code></pre></div>
+<p>If you want debounced events (or don’t need them in-order), see <a href="https://docs.rs/notify-debouncer-mini/latest/notify_debouncer_mini/">notify-debouncer-mini</a>
+or <a href="https://docs.rs/notify-debouncer-full/latest/notify_debouncer_full/">notify-debouncer-full</a>.</p>
+<h3 id="features"><a class="doc-anchor" href="#features">§</a>Features</h3>
+<p>List of compilation features, see below for details</p>
+<ul>
+<li><code>serde</code> for serialization of events</li>
+<li><code>macos_fsevent</code> enabled by default, for fsevent backend on macos</li>
+<li><code>macos_kqueue</code> for kqueue backend on macos</li>
+<li><code>crossbeam-channel</code> enabled by default, see below</li>
+</ul>
+<h4 id="serde"><a class="doc-anchor" href="#serde">§</a>Serde</h4>
+<p>Events are serializable via <a href="https://serde.rs">serde</a> if the <code>serde</code> feature is enabled:</p>
+<div class="example-wrap"><pre class="language-toml"><code>notify = { version = &quot;6.1.1&quot;, features = [&quot;serde&quot;] }
+</code></pre></div><h4 id="crossbeam-channel--tokio"><a class="doc-anchor" href="#crossbeam-channel--tokio">§</a>Crossbeam-Channel &amp; Tokio</h4>
+<p>By default crossbeam-channel is used internally by notify. Which also allows the <a href="trait.Watcher.html" title="trait notify::Watcher">Watcher</a> to be sync.
+This can <a href="https://github.com/notify-rs/notify/issues/380">cause issues</a> when used inside tokio.</p>
+<p>You can disable crossbeam-channel, letting notify fallback to std channels via</p>
+<div class="example-wrap"><pre class="language-toml"><code>notify = { version = &quot;6.1.1&quot;, default-features = false, features = [&quot;macos_kqueue&quot;] }
+// Alternatively macos_fsevent instead of macos_kqueue
+</code></pre></div>
+<p>Note the <code>macos_kqueue</code> requirement here, otherwise no native backend is available on macos.</p>
+<h2 id="known-problems"><a class="doc-anchor" href="#known-problems">§</a>Known Problems</h2><h4 id="network-filesystems"><a class="doc-anchor" href="#network-filesystems">§</a>Network filesystems</h4>
+<p>Network mounted filesystems like NFS may not emit any events for notify to listen to.
+This applies especially to WSL programs watching windows paths (<a href="https://github.com/notify-rs/notify/issues/254">issue #254</a>).</p>
+<p>A workaround is the <a href="poll/struct.PollWatcher.html" title="struct notify::poll::PollWatcher">PollWatcher</a> backend.</p>
+<h4 id="docker-with-linux-on-macos-m1"><a class="doc-anchor" href="#docker-with-linux-on-macos-m1">§</a>Docker with Linux on MacOS M1</h4>
+<p>Docker on macos M1 <a href="https://github.com/notify-rs/notify/issues/423">throws</a> <code>Function not implemented (os error 38)</code>.
+You have to manually use the <a href="poll/struct.PollWatcher.html" title="struct notify::poll::PollWatcher">PollWatcher</a>, as the native backend isn’t available inside the emulation.</p>
+<h4 id="macos-fsevents-and-unowned-files"><a class="doc-anchor" href="#macos-fsevents-and-unowned-files">§</a>MacOS, FSEvents and unowned files</h4>
+<p>Due to the inner security model of FSEvents (see <a href="https://developer.apple.com/library/mac/documentation/Darwin/Conceptual/FSEvents_ProgGuide/FileSystemEventSecurity/FileSystemEventSecurity.html">FileSystemEventSecurity</a>),
+some events cannot be observed easily when trying to follow files that do not
+belong to you. In this case, reverting to the pollwatcher can fix the issue,
+with a slight performance cost.</p>
+<h4 id="editor-behaviour"><a class="doc-anchor" href="#editor-behaviour">§</a>Editor Behaviour</h4>
+<p>If you rely on precise events (Write/Delete/Create..), you will notice that the actual events
+can differ a lot between file editors. Some truncate the file on save, some create a new one and replace the old one.
+See also <a href="https://github.com/notify-rs/notify/issues/247">this</a> and <a href="https://github.com/notify-rs/notify/issues/113#issuecomment-281836995">this</a> issues for example.</p>
+<h4 id="parent-folder-deletion"><a class="doc-anchor" href="#parent-folder-deletion">§</a>Parent folder deletion</h4>
+<p>If you want to receive an event for a deletion of folder <code>b</code> for the path <code>/a/b/..</code>, you will have to watch its parent <code>/a</code>.
+See <a href="https://github.com/notify-rs/notify/issues/403">here</a> for more details.</p>
+<h4 id="pseudo-filesystems-like-proc-sys"><a class="doc-anchor" href="#pseudo-filesystems-like-proc-sys">§</a>Pseudo Filesystems like /proc, /sys</h4>
+<p>Some filesystems like <code>/proc</code> and <code>/sys</code> on *nix do not emit change events or use correct file change dates.
+To circumvent that problem you can use the <a href="poll/struct.PollWatcher.html" title="struct notify::poll::PollWatcher">PollWatcher</a> with the <code>compare_contents</code> option.</p>
+<h4 id="linux-bad-file-descriptor--no-space-left-on-device"><a class="doc-anchor" href="#linux-bad-file-descriptor--no-space-left-on-device">§</a>Linux: Bad File Descriptor / No space left on device</h4>
+<p>This may be the case of running into the max-files watched limits of your user or system.
+(Files also includes folders.) Note that for recursive watched folders each file and folder inside counts towards the limit.</p>
+<p>You may increase this limit in linux via</p>
+<div class="example-wrap"><pre class="language-sh"><code>sudo sysctl fs.inotify.max_user_instances=8192 # example number
+sudo sysctl fs.inotify.max_user_watches=524288 # example number
+sudo sysctl -p
+</code></pre></div>
+<p>Note that the <a href="poll/struct.PollWatcher.html" title="struct notify::poll::PollWatcher">PollWatcher</a> is not restricted by this limitation, so it may be an alternative if your users can’t increase the limit.</p>
+<h4 id="watching-large-directories"><a class="doc-anchor" href="#watching-large-directories">§</a>Watching large directories</h4>
+<p>When watching a very large amount of files, notify may fail to receive all events.
+For example the linux backend is documented to not be a 100% reliable source. See also issue <a href="https://github.com/notify-rs/notify/issues/412">#412</a>.</p>
+<h2 id="examples"><a class="doc-anchor" href="#examples">§</a>Examples</h2>
+<p>For more examples visit the <a href="https://github.com/notify-rs/notify/tree/main/examples">examples folder</a> in the repository.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>notify::{Watcher, RecommendedWatcher, RecursiveMode, <span class="prelude-ty">Result</span>};
+
+<span class="kw">fn </span>main() -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
+    <span class="comment">// Automatically select the best implementation for your platform.
+    </span><span class="kw">let </span><span class="kw-2">mut </span>watcher = notify::recommended_watcher(|res| {
+        <span class="kw">match </span>res {
+           <span class="prelude-val">Ok</span>(event) =&gt; <span class="macro">println!</span>(<span class="string">"event: {:?}"</span>, event),
+           <span class="prelude-val">Err</span>(e) =&gt; <span class="macro">println!</span>(<span class="string">"watch error: {:?}"</span>, e),
+        }
+    })<span class="question-mark">?</span>;
+
+    <span class="comment">// Add a path to be watched. All files and directories at that path and
+    // below will be monitored for changes.
+    </span>watcher.watch(Path::new(<span class="string">"."</span>), RecursiveMode::Recursive)<span class="question-mark">?</span>;
+
+    <span class="prelude-val">Ok</span>(())
+}</code></pre></div>
+<h3 id="with-different-configurations"><a class="doc-anchor" href="#with-different-configurations">§</a>With different configurations</h3>
+<p>It is possible to create several watchers with different configurations or implementations that
+all call the same event function. This can accommodate advanced behaviour or work around limits.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code>      <span class="kw">fn </span>event_fn(res: <span class="prelude-ty">Result</span>&lt;notify::Event&gt;) {
+          <span class="kw">match </span>res {
+             <span class="prelude-val">Ok</span>(event) =&gt; <span class="macro">println!</span>(<span class="string">"event: {:?}"</span>, event),
+             <span class="prelude-val">Err</span>(e) =&gt; <span class="macro">println!</span>(<span class="string">"watch error: {:?}"</span>, e),
+          }
+      }
+
+      <span class="kw">let </span><span class="kw-2">mut </span>watcher1 = notify::recommended_watcher(event_fn)<span class="question-mark">?</span>;
+      <span class="comment">// we will just use the same watcher kind again here
+      </span><span class="kw">let </span><span class="kw-2">mut </span>watcher2 = notify::recommended_watcher(event_fn)<span class="question-mark">?</span>;
+      <span class="comment">// dropping the watcher1/2 here (no loop etc) will end the program</span></code></pre></div>
+</div></details><h2 id="reexports" class="section-header">Re-exports<a href="#reexports" class="anchor">§</a></h2><ul class="item-table"><li><div class="item-name" id="reexport.Event"><code>pub use event::<a class="struct" href="event/struct.Event.html" title="struct notify::event::Event">Event</a>;</code></div></li><li><div class="item-name" id="reexport.EventKind"><code>pub use event::<a class="enum" href="event/enum.EventKind.html" title="enum notify::event::EventKind">EventKind</a>;</code></div></li><li><div class="item-name" id="reexport.INotifyWatcher"><code>pub use crate::inotify::<a class="struct" href="inotify/struct.INotifyWatcher.html" title="struct notify::inotify::INotifyWatcher">INotifyWatcher</a>;</code></div></li><li><div class="item-name" id="reexport.NullWatcher"><code>pub use null::<a class="struct" href="null/struct.NullWatcher.html" title="struct notify::null::NullWatcher">NullWatcher</a>;</code></div></li><li><div class="item-name" id="reexport.PollWatcher"><code>pub use poll::<a class="struct" href="poll/struct.PollWatcher.html" title="struct notify::poll::PollWatcher">PollWatcher</a>;</code></div></li></ul><h2 id="modules" class="section-header">Modules<a href="#modules" class="anchor">§</a></h2><ul class="item-table"><li><div class="item-name"><a class="mod" href="event/index.html" title="mod notify::event">event</a></div><div class="desc docblock-short">The <code>Event</code> type and the hierarchical <code>EventKind</code> descriptor.</div></li><li><div class="item-name"><a class="mod" href="inotify/index.html" title="mod notify::inotify">inotify</a></div><div class="desc docblock-short">Watcher implementation for the inotify Linux API</div></li><li><div class="item-name"><a class="mod" href="null/index.html" title="mod notify::null">null</a></div><div class="desc docblock-short">Stub Watcher implementation</div></li><li><div class="item-name"><a class="mod" href="poll/index.html" title="mod notify::poll">poll</a></div><div class="desc docblock-short">Generic Watcher implementation based on polling</div></li></ul><h2 id="structs" class="section-header">Structs<a href="#structs" class="anchor">§</a></h2><ul class="item-table"><li><div class="item-name"><a class="struct" href="struct.Config.html" title="struct notify::Config">Config</a></div><div class="desc docblock-short">Watcher Backend configuration</div></li><li><div class="item-name"><a class="struct" href="struct.Error.html" title="struct notify::Error">Error</a></div><div class="desc docblock-short">Notify error type.</div></li></ul><h2 id="enums" class="section-header">Enums<a href="#enums" class="anchor">§</a></h2><ul class="item-table"><li><div class="item-name"><a class="enum" href="enum.ErrorKind.html" title="enum notify::ErrorKind">ErrorKind</a></div><div class="desc docblock-short">Error kinds</div></li><li><div class="item-name"><a class="enum" href="enum.RecursiveMode.html" title="enum notify::RecursiveMode">RecursiveMode</a></div><div class="desc docblock-short">Indicates whether only the provided directory or its sub-directories as well should be watched</div></li><li><div class="item-name"><a class="enum" href="enum.WatcherKind.html" title="enum notify::WatcherKind">WatcherKind</a></div><div class="desc docblock-short">Watcher kind enumeration</div></li></ul><h2 id="traits" class="section-header">Traits<a href="#traits" class="anchor">§</a></h2><ul class="item-table"><li><div class="item-name"><a class="trait" href="trait.EventHandler.html" title="trait notify::EventHandler">EventHandler</a></div><div class="desc docblock-short">The set of requirements for watcher event handling functions.</div></li><li><div class="item-name"><a class="trait" href="trait.Watcher.html" title="trait notify::Watcher">Watcher</a></div><div class="desc docblock-short">Type that can deliver file activity notifications</div></li></ul><h2 id="functions" class="section-header">Functions<a href="#functions" class="anchor">§</a></h2><ul class="item-table"><li><div class="item-name"><a class="fn" href="fn.recommended_watcher.html" title="fn notify::recommended_watcher">recommended_watcher</a></div><div class="desc docblock-short">Convenience method for creating the <code>RecommendedWatcher</code> for the current platform in
+<em>immediate</em> mode.</div></li></ul><h2 id="types" class="section-header">Type Aliases<a href="#types" class="anchor">§</a></h2><ul class="item-table"><li><div class="item-name"><a class="type" href="type.RecommendedWatcher.html" title="type notify::RecommendedWatcher">RecommendedWatcher</a></div><div class="desc docblock-short">The recommended <code>Watcher</code> implementation for the current platform</div></li><li><div class="item-name"><a class="type" href="type.Result.html" title="type notify::Result">Result</a></div><div class="desc docblock-short">Type alias to use this library’s <code>Error</code> type in a Result</div></li></ul></section></div></main></body></html>

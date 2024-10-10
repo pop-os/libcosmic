@@ -1,0 +1,28 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Scoped thread-local storage"><title>scoped_tls - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-46f98efaafac5295.ttf.woff2,FiraSans-Regular-018c141bf0843ffd.woff2,FiraSans-Medium-8f9a781e4970d388.woff2,SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2,SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../static.files/rustdoc-c5d6553a23f1e5a6.css"><meta name="rustdoc-vars" data-root-path="../" data-static-root-path="../static.files/" data-current-crate="scoped_tls" data-themes="" data-resource-suffix="" data-rustdoc-version="1.81.0 (eeb90cda1 2024-09-04)" data-channel="1.81.0" data-search-js="search-d234aafac6c221dd.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../static.files/storage-118b08c4c78b968e.js"></script><script defer src="../crates.js"></script><script defer src="../static.files/main-d2fab2bf619172d3.js"></script><noscript><link rel="stylesheet" href="../static.files/noscript-df360f571f6edeae.css"></noscript><link rel="alternate icon" type="image/png" href="../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc mod crate"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle" title="show sidebar"></button></nav><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../scoped_tls/index.html">scoped_tls</a><span class="version">1.0.1</span></h2></div><div class="sidebar-elems"><ul class="block"><li><a id="all-types" href="all.html">All Items</a></li></ul><section><ul class="block"><li><a href="#macros">Macros</a></li><li><a href="#structs">Structs</a></li></ul></section></div></nav><div class="sidebar-resizer"></div><main><div class="width-limiter"><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><h1>Crate <a class="mod" href="#">scoped_tls</a><button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><span class="out-of-band"><a class="src" href="../src/scoped_tls/lib.rs.html#11-267">source</a> · <button id="toggle-all-docs" title="collapse all docs">[<span>&#x2212;</span>]</button></span></div><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Scoped thread-local storage</p>
+<p>This module provides the ability to generate <em>scoped</em> thread-local
+variables. In this sense, scoped indicates that thread local storage
+actually stores a reference to a value, and this reference is only placed
+in storage for a scoped amount of time.</p>
+<p>There are no restrictions on what types can be placed into a scoped
+variable, but all scoped variables are initialized to the equivalent of
+null. Scoped thread local storage is useful when a value is present for a known
+period of time and it is not required to relinquish ownership of the
+contents.</p>
+<h2 id="examples"><a class="doc-anchor" href="#examples">§</a>Examples</h2>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="attr">#[macro_use]
+</span><span class="kw">extern crate </span>scoped_tls;
+
+<span class="macro">scoped_thread_local!</span>(<span class="kw">static </span>FOO: u32);
+
+<span class="comment">// Initially each scoped slot is empty.
+</span><span class="macro">assert!</span>(!FOO.is_set());
+
+<span class="comment">// When inserting a value, the value is only in place for the duration
+// of the closure specified.
+</span>FOO.set(<span class="kw-2">&amp;</span><span class="number">1</span>, || {
+    FOO.with(|slot| {
+        <span class="macro">assert_eq!</span>(<span class="kw-2">*</span>slot, <span class="number">1</span>);
+    });
+});</code></pre></div>
+</div></details><h2 id="macros" class="section-header">Macros<a href="#macros" class="anchor">§</a></h2><ul class="item-table"><li><div class="item-name"><a class="macro" href="macro.scoped_thread_local.html" title="macro scoped_tls::scoped_thread_local">scoped_thread_local</a></div><div class="desc docblock-short">The macro. See the module level documentation for the description and examples.</div></li></ul><h2 id="structs" class="section-header">Structs<a href="#structs" class="anchor">§</a></h2><ul class="item-table"><li><div class="item-name"><a class="struct" href="struct.ScopedKey.html" title="struct scoped_tls::ScopedKey">ScopedKey</a></div><div class="desc docblock-short">Type representing a thread local storage key corresponding to a reference
+to the type parameter <code>T</code>.</div></li></ul></section></div></main></body></html>

@@ -1,0 +1,409 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `/home/runner/.cargo/registry/src/index.crates.io-6f17d22bba15001f/tiff-0.9.1/src/encoder/compression/packbits.rs`."><title>packbits.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-46f98efaafac5295.ttf.woff2,FiraSans-Regular-018c141bf0843ffd.woff2,FiraSans-Medium-8f9a781e4970d388.woff2,SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2,SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../../static.files/rustdoc-c5d6553a23f1e5a6.css"><meta name="rustdoc-vars" data-root-path="../../../../" data-static-root-path="../../../../static.files/" data-current-crate="tiff" data-themes="" data-resource-suffix="" data-rustdoc-version="1.81.0 (eeb90cda1 2024-09-04)" data-channel="1.81.0" data-search-js="search-d234aafac6c221dd.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../../../static.files/storage-118b08c4c78b968e.js"></script><script defer src="../../../../static.files/src-script-e66d777a5a92e9b2.js"></script><script defer src="../../../../src-files.js"></script><script defer src="../../../../static.files/main-d2fab2bf619172d3.js"></script><noscript><link rel="stylesheet" href="../../../../static.files/noscript-df360f571f6edeae.css"></noscript><link rel="alternate icon" type="image/png" href="../../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer"></div><main><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<a href="#2" id="2">2</a>
+<a href="#3" id="3">3</a>
+<a href="#4" id="4">4</a>
+<a href="#5" id="5">5</a>
+<a href="#6" id="6">6</a>
+<a href="#7" id="7">7</a>
+<a href="#8" id="8">8</a>
+<a href="#9" id="9">9</a>
+<a href="#10" id="10">10</a>
+<a href="#11" id="11">11</a>
+<a href="#12" id="12">12</a>
+<a href="#13" id="13">13</a>
+<a href="#14" id="14">14</a>
+<a href="#15" id="15">15</a>
+<a href="#16" id="16">16</a>
+<a href="#17" id="17">17</a>
+<a href="#18" id="18">18</a>
+<a href="#19" id="19">19</a>
+<a href="#20" id="20">20</a>
+<a href="#21" id="21">21</a>
+<a href="#22" id="22">22</a>
+<a href="#23" id="23">23</a>
+<a href="#24" id="24">24</a>
+<a href="#25" id="25">25</a>
+<a href="#26" id="26">26</a>
+<a href="#27" id="27">27</a>
+<a href="#28" id="28">28</a>
+<a href="#29" id="29">29</a>
+<a href="#30" id="30">30</a>
+<a href="#31" id="31">31</a>
+<a href="#32" id="32">32</a>
+<a href="#33" id="33">33</a>
+<a href="#34" id="34">34</a>
+<a href="#35" id="35">35</a>
+<a href="#36" id="36">36</a>
+<a href="#37" id="37">37</a>
+<a href="#38" id="38">38</a>
+<a href="#39" id="39">39</a>
+<a href="#40" id="40">40</a>
+<a href="#41" id="41">41</a>
+<a href="#42" id="42">42</a>
+<a href="#43" id="43">43</a>
+<a href="#44" id="44">44</a>
+<a href="#45" id="45">45</a>
+<a href="#46" id="46">46</a>
+<a href="#47" id="47">47</a>
+<a href="#48" id="48">48</a>
+<a href="#49" id="49">49</a>
+<a href="#50" id="50">50</a>
+<a href="#51" id="51">51</a>
+<a href="#52" id="52">52</a>
+<a href="#53" id="53">53</a>
+<a href="#54" id="54">54</a>
+<a href="#55" id="55">55</a>
+<a href="#56" id="56">56</a>
+<a href="#57" id="57">57</a>
+<a href="#58" id="58">58</a>
+<a href="#59" id="59">59</a>
+<a href="#60" id="60">60</a>
+<a href="#61" id="61">61</a>
+<a href="#62" id="62">62</a>
+<a href="#63" id="63">63</a>
+<a href="#64" id="64">64</a>
+<a href="#65" id="65">65</a>
+<a href="#66" id="66">66</a>
+<a href="#67" id="67">67</a>
+<a href="#68" id="68">68</a>
+<a href="#69" id="69">69</a>
+<a href="#70" id="70">70</a>
+<a href="#71" id="71">71</a>
+<a href="#72" id="72">72</a>
+<a href="#73" id="73">73</a>
+<a href="#74" id="74">74</a>
+<a href="#75" id="75">75</a>
+<a href="#76" id="76">76</a>
+<a href="#77" id="77">77</a>
+<a href="#78" id="78">78</a>
+<a href="#79" id="79">79</a>
+<a href="#80" id="80">80</a>
+<a href="#81" id="81">81</a>
+<a href="#82" id="82">82</a>
+<a href="#83" id="83">83</a>
+<a href="#84" id="84">84</a>
+<a href="#85" id="85">85</a>
+<a href="#86" id="86">86</a>
+<a href="#87" id="87">87</a>
+<a href="#88" id="88">88</a>
+<a href="#89" id="89">89</a>
+<a href="#90" id="90">90</a>
+<a href="#91" id="91">91</a>
+<a href="#92" id="92">92</a>
+<a href="#93" id="93">93</a>
+<a href="#94" id="94">94</a>
+<a href="#95" id="95">95</a>
+<a href="#96" id="96">96</a>
+<a href="#97" id="97">97</a>
+<a href="#98" id="98">98</a>
+<a href="#99" id="99">99</a>
+<a href="#100" id="100">100</a>
+<a href="#101" id="101">101</a>
+<a href="#102" id="102">102</a>
+<a href="#103" id="103">103</a>
+<a href="#104" id="104">104</a>
+<a href="#105" id="105">105</a>
+<a href="#106" id="106">106</a>
+<a href="#107" id="107">107</a>
+<a href="#108" id="108">108</a>
+<a href="#109" id="109">109</a>
+<a href="#110" id="110">110</a>
+<a href="#111" id="111">111</a>
+<a href="#112" id="112">112</a>
+<a href="#113" id="113">113</a>
+<a href="#114" id="114">114</a>
+<a href="#115" id="115">115</a>
+<a href="#116" id="116">116</a>
+<a href="#117" id="117">117</a>
+<a href="#118" id="118">118</a>
+<a href="#119" id="119">119</a>
+<a href="#120" id="120">120</a>
+<a href="#121" id="121">121</a>
+<a href="#122" id="122">122</a>
+<a href="#123" id="123">123</a>
+<a href="#124" id="124">124</a>
+<a href="#125" id="125">125</a>
+<a href="#126" id="126">126</a>
+<a href="#127" id="127">127</a>
+<a href="#128" id="128">128</a>
+<a href="#129" id="129">129</a>
+<a href="#130" id="130">130</a>
+<a href="#131" id="131">131</a>
+<a href="#132" id="132">132</a>
+<a href="#133" id="133">133</a>
+<a href="#134" id="134">134</a>
+<a href="#135" id="135">135</a>
+<a href="#136" id="136">136</a>
+<a href="#137" id="137">137</a>
+<a href="#138" id="138">138</a>
+<a href="#139" id="139">139</a>
+<a href="#140" id="140">140</a>
+<a href="#141" id="141">141</a>
+<a href="#142" id="142">142</a>
+<a href="#143" id="143">143</a>
+<a href="#144" id="144">144</a>
+<a href="#145" id="145">145</a>
+<a href="#146" id="146">146</a>
+<a href="#147" id="147">147</a>
+<a href="#148" id="148">148</a>
+<a href="#149" id="149">149</a>
+<a href="#150" id="150">150</a>
+<a href="#151" id="151">151</a>
+<a href="#152" id="152">152</a>
+<a href="#153" id="153">153</a>
+<a href="#154" id="154">154</a>
+<a href="#155" id="155">155</a>
+<a href="#156" id="156">156</a>
+<a href="#157" id="157">157</a>
+<a href="#158" id="158">158</a>
+<a href="#159" id="159">159</a>
+<a href="#160" id="160">160</a>
+<a href="#161" id="161">161</a>
+<a href="#162" id="162">162</a>
+<a href="#163" id="163">163</a>
+<a href="#164" id="164">164</a>
+<a href="#165" id="165">165</a>
+<a href="#166" id="166">166</a>
+<a href="#167" id="167">167</a>
+<a href="#168" id="168">168</a>
+<a href="#169" id="169">169</a>
+<a href="#170" id="170">170</a>
+<a href="#171" id="171">171</a>
+<a href="#172" id="172">172</a>
+<a href="#173" id="173">173</a>
+<a href="#174" id="174">174</a>
+<a href="#175" id="175">175</a>
+<a href="#176" id="176">176</a>
+<a href="#177" id="177">177</a>
+<a href="#178" id="178">178</a>
+<a href="#179" id="179">179</a>
+<a href="#180" id="180">180</a>
+<a href="#181" id="181">181</a>
+<a href="#182" id="182">182</a>
+<a href="#183" id="183">183</a>
+<a href="#184" id="184">184</a>
+<a href="#185" id="185">185</a>
+<a href="#186" id="186">186</a>
+<a href="#187" id="187">187</a>
+<a href="#188" id="188">188</a>
+<a href="#189" id="189">189</a>
+<a href="#190" id="190">190</a>
+<a href="#191" id="191">191</a>
+<a href="#192" id="192">192</a>
+<a href="#193" id="193">193</a>
+<a href="#194" id="194">194</a>
+<a href="#195" id="195">195</a>
+<a href="#196" id="196">196</a>
+<a href="#197" id="197">197</a>
+<a href="#198" id="198">198</a>
+<a href="#199" id="199">199</a>
+<a href="#200" id="200">200</a>
+<a href="#201" id="201">201</a>
+<a href="#202" id="202">202</a>
+<a href="#203" id="203">203</a>
+<a href="#204" id="204">204</a>
+</pre></div><pre class="rust"><code><span class="kw">use crate</span>::{encoder::compression::<span class="kw-2">*</span>, tags::CompressionMethod};
+<span class="kw">use </span>std::io::{BufWriter, Error, ErrorKind, Write};
+
+<span class="doccomment">/// Compressor that uses the Packbits[^note] algorithm to compress bytes.
+///
+/// [^note]: PackBits is often ineffective on continuous tone images,
+///          including many grayscale images. In such cases, it is better
+///          to leave the image uncompressed.
+</span><span class="attr">#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+</span><span class="kw">pub struct </span>Packbits;
+
+<span class="kw">impl </span>Compression <span class="kw">for </span>Packbits {
+    <span class="kw">const </span>COMPRESSION_METHOD: CompressionMethod = CompressionMethod::PackBits;
+
+    <span class="kw">fn </span>get_algorithm(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; Compressor {
+        Compressor::Packbits(<span class="kw-2">*</span><span class="self">self</span>)
+    }
+}
+
+<span class="kw">impl </span>CompressionAlgorithm <span class="kw">for </span>Packbits {
+    <span class="kw">fn </span>write_to&lt;W: Write&gt;(<span class="kw-2">&amp;mut </span><span class="self">self</span>, writer: <span class="kw-2">&amp;mut </span>W, bytes: <span class="kw-2">&amp;</span>[u8]) -&gt; <span class="prelude-ty">Result</span>&lt;u64, io::Error&gt; {
+        <span class="comment">// Inspired by https://github.com/skirridsystems/packbits
+
+        </span><span class="kw">const </span>MIN_REPT: u8 = <span class="number">3</span>; <span class="comment">// Minimum run to compress between differ blocks
+        </span><span class="kw">const </span>MAX_BYTES: u8 = <span class="number">128</span>; <span class="comment">// Maximum number of bytes that can be encoded in a header byte
+
+        // Encoding for header byte based on number of bytes represented.
+        </span><span class="kw">fn </span>encode_diff(n: u8) -&gt; u8 {
+            n - <span class="number">1
+        </span>}
+        <span class="kw">fn </span>encode_rept(n: u8) -&gt; u8 {
+            <span class="kw">let </span>var = <span class="number">256 </span>- (n - <span class="number">1</span>) <span class="kw">as </span>u16;
+            var <span class="kw">as </span>u8
+        }
+
+        <span class="kw">fn </span>write_u8&lt;W: Write&gt;(writer: <span class="kw-2">&amp;mut </span>W, byte: u8) -&gt; <span class="prelude-ty">Result</span>&lt;u64, Error&gt; {
+            writer.write(<span class="kw-2">&amp;</span>[byte]).map(|byte_count| byte_count <span class="kw">as </span>u64)
+        }
+
+        <span class="kw">let </span><span class="kw-2">mut </span>bufwriter = BufWriter::new(writer);
+        <span class="kw">let </span><span class="kw-2">mut </span>bytes_written = <span class="number">0u64</span>; <span class="comment">// The number of bytes written into the writer
+        </span><span class="kw">let </span><span class="kw-2">mut </span>offset: <span class="prelude-ty">Option</span>&lt;u64&gt; = <span class="prelude-val">None</span>; <span class="comment">// The index of the first byte written into the writer
+
+        </span><span class="kw">let </span><span class="kw-2">mut </span>src_index: usize = <span class="number">0</span>; <span class="comment">// Index of the current byte
+        </span><span class="kw">let </span><span class="kw-2">mut </span>src_count = bytes.len(); <span class="comment">//The number of bytes remaining to be compressed
+
+        </span><span class="kw">let </span><span class="kw-2">mut </span>in_run = <span class="bool-val">false</span>; <span class="comment">// Indication whether counting of similar bytes is performed
+        </span><span class="kw">let </span><span class="kw-2">mut </span>run_index = <span class="number">0u8</span>; <span class="comment">// Distance into pending bytes that a run starts
+
+        </span><span class="kw">let </span><span class="kw-2">mut </span>bytes_pending = <span class="number">0u8</span>; <span class="comment">// Bytes looked at but not yet output
+        </span><span class="kw">let </span><span class="kw-2">mut </span>pending_index = <span class="number">0usize</span>; <span class="comment">// Index of the first pending byte
+
+        </span><span class="kw">let </span><span class="kw-2">mut </span>curr_byte: u8; <span class="comment">// Byte currently being considered
+        </span><span class="kw">let </span><span class="kw-2">mut </span>last_byte: u8; <span class="comment">// Previous byte
+
+        // Need at least one byte to compress
+        </span><span class="kw">if </span>src_count == <span class="number">0 </span>{
+            <span class="kw">return </span><span class="prelude-val">Err</span>(Error::new(ErrorKind::WriteZero, <span class="string">"write zero"</span>));
+        }
+
+        <span class="comment">// Prime compressor with first character.
+        </span>last_byte = bytes[src_index];
+        src_index += <span class="number">1</span>;
+        bytes_pending += <span class="number">1</span>;
+
+        <span class="kw">while </span>src_count - <span class="number">1 </span>!= <span class="number">0 </span>{
+            src_count -= <span class="number">1</span>;
+            curr_byte = bytes[src_index];
+            src_index += <span class="number">1</span>;
+            bytes_pending += <span class="number">1</span>;
+
+            <span class="kw">if </span>in_run {
+                <span class="kw">if </span>(curr_byte != last_byte) || (bytes_pending &gt; MAX_BYTES) {
+                    offset.get_or_insert(write_u8(<span class="kw-2">&amp;mut </span>bufwriter, encode_rept(bytes_pending - <span class="number">1</span>))<span class="question-mark">?</span>);
+                    write_u8(<span class="kw-2">&amp;mut </span>bufwriter, last_byte)<span class="question-mark">?</span>;
+                    bytes_written += <span class="number">2</span>;
+
+                    bytes_pending = <span class="number">1</span>;
+                    pending_index = src_index - <span class="number">1</span>;
+                    run_index = <span class="number">0</span>;
+                    in_run = <span class="bool-val">false</span>;
+                }
+            } <span class="kw">else if </span>bytes_pending &gt; MAX_BYTES {
+                <span class="comment">// We have as much differing data as we can output in one chunk.
+                // Output MAX_BYTES leaving one byte.
+                </span>offset.get_or_insert(write_u8(<span class="kw-2">&amp;mut </span>bufwriter, encode_diff(MAX_BYTES))<span class="question-mark">?</span>);
+                bufwriter.write_all(<span class="kw-2">&amp;</span>bytes[pending_index..pending_index + MAX_BYTES <span class="kw">as </span>usize])<span class="question-mark">?</span>;
+                bytes_written += <span class="number">1 </span>+ MAX_BYTES <span class="kw">as </span>u64;
+
+                pending_index += MAX_BYTES <span class="kw">as </span>usize;
+                bytes_pending -= MAX_BYTES;
+                run_index = bytes_pending - <span class="number">1</span>; <span class="comment">// A run could start here
+            </span>} <span class="kw">else if </span>curr_byte == last_byte {
+                <span class="kw">if </span>(bytes_pending - run_index &gt;= MIN_REPT) || (run_index == <span class="number">0</span>) {
+                    <span class="comment">// This is a worthwhile run
+                    </span><span class="kw">if </span>run_index != <span class="number">0 </span>{
+                        <span class="comment">// Flush differing data out of input buffer
+                        </span>offset.get_or_insert(write_u8(<span class="kw-2">&amp;mut </span>bufwriter, encode_diff(run_index))<span class="question-mark">?</span>);
+                        bufwriter
+                            .write_all(<span class="kw-2">&amp;</span>bytes[pending_index..pending_index + run_index <span class="kw">as </span>usize])<span class="question-mark">?</span>;
+                        bytes_written += <span class="number">1 </span>+ run_index <span class="kw">as </span>u64;
+                    }
+                    bytes_pending -= run_index; <span class="comment">// Length of run
+                    </span>in_run = <span class="bool-val">true</span>;
+                }
+            } <span class="kw">else </span>{
+                run_index = bytes_pending - <span class="number">1</span>; <span class="comment">// A run could start here
+            </span>}
+            last_byte = curr_byte;
+        }
+
+        <span class="comment">// Output the remainder
+        </span><span class="kw">if </span>in_run {
+            bytes_written += <span class="number">2</span>;
+            offset.get_or_insert(write_u8(<span class="kw-2">&amp;mut </span>bufwriter, encode_rept(bytes_pending))<span class="question-mark">?</span>);
+            write_u8(<span class="kw-2">&amp;mut </span>bufwriter, last_byte)<span class="question-mark">?</span>;
+        } <span class="kw">else </span>{
+            bytes_written += <span class="number">1 </span>+ bytes_pending <span class="kw">as </span>u64;
+            offset.get_or_insert(write_u8(<span class="kw-2">&amp;mut </span>bufwriter, encode_diff(bytes_pending))<span class="question-mark">?</span>);
+            bufwriter.write_all(<span class="kw-2">&amp;</span>bytes[pending_index..pending_index + bytes_pending <span class="kw">as </span>usize])<span class="question-mark">?</span>;
+        }
+
+        bufwriter.flush()<span class="question-mark">?</span>;
+        <span class="prelude-val">Ok</span>(bytes_written)
+    }
+}
+
+<span class="attr">#[cfg(test)]
+</span><span class="kw">mod </span>tests {
+    <span class="kw">use super</span>::<span class="kw-2">*</span>;
+    <span class="kw">use </span><span class="kw">crate</span>::encoder::compression::tests::TEST_DATA;
+    <span class="kw">use </span>std::io::Cursor;
+
+    <span class="attr">#[test]
+    </span><span class="kw">fn </span>test_packbits_single_byte() {
+        <span class="comment">// compress single byte
+        </span><span class="kw">const </span>UNCOMPRESSED_DATA: [u8; <span class="number">1</span>] = [<span class="number">0x3F</span>];
+        <span class="kw">const </span>EXPECTED_COMPRESSED_DATA: [u8; <span class="number">2</span>] = [<span class="number">0x00</span>, <span class="number">0x3F</span>];
+
+        <span class="kw">let </span><span class="kw-2">mut </span>compressed_data = Vec::&lt;u8&gt;::new();
+        <span class="kw">let </span><span class="kw-2">mut </span>writer = Cursor::new(<span class="kw-2">&amp;mut </span>compressed_data);
+        Packbits.write_to(<span class="kw-2">&amp;mut </span>writer, <span class="kw-2">&amp;</span>UNCOMPRESSED_DATA).unwrap();
+        <span class="macro">assert_eq!</span>(compressed_data, EXPECTED_COMPRESSED_DATA);
+    }
+
+    <span class="attr">#[test]
+    </span><span class="kw">fn </span>test_packbits_rept() {
+        <span class="comment">// compress buffer with repetitive sequence
+        </span><span class="kw">const </span>UNCOMPRESSED_DATA: <span class="kw-2">&amp;</span>[u8] =
+            <span class="string">b"This strrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrring hangs."</span>;
+        <span class="kw">const </span>EXPECTED_COMPRESSED_DATA: <span class="kw-2">&amp;</span>[u8] = <span class="string">b"\x06This st\xD1r\x09ing hangs."</span>;
+
+        <span class="kw">let </span><span class="kw-2">mut </span>compressed_data = Vec::&lt;u8&gt;::new();
+        <span class="kw">let </span><span class="kw-2">mut </span>writer = Cursor::new(<span class="kw-2">&amp;mut </span>compressed_data);
+        Packbits.write_to(<span class="kw-2">&amp;mut </span>writer, UNCOMPRESSED_DATA).unwrap();
+        <span class="macro">assert_eq!</span>(compressed_data, EXPECTED_COMPRESSED_DATA);
+    }
+
+    <span class="attr">#[test]
+    </span><span class="kw">fn </span>test_packbits_large_rept_nonrept() {
+        <span class="comment">// compress buffer with large repetitive and non-repetitive sequence
+        </span><span class="kw">let </span><span class="kw-2">mut </span>data = <span class="string">b"This st"</span>.to_vec();
+        <span class="kw">for </span>_i <span class="kw">in </span><span class="number">0</span>..<span class="number">158 </span>{
+            data.push(<span class="string">b'r'</span>);
+        }
+        data.extend_from_slice(<span class="string">b"ing hangs."</span>);
+        <span class="kw">for </span>i <span class="kw">in </span><span class="number">0</span>..<span class="number">158 </span>{
+            data.push(i);
+        }
+
+        <span class="kw">const </span>EXPECTED_COMPRESSED_DATA: [u8; <span class="number">182</span>] = [
+            <span class="number">0x06</span>, <span class="number">0x54</span>, <span class="number">0x68</span>, <span class="number">0x69</span>, <span class="number">0x73</span>, <span class="number">0x20</span>, <span class="number">0x73</span>, <span class="number">0x74</span>, <span class="number">0x81</span>, <span class="number">0x72</span>, <span class="number">0xE3</span>, <span class="number">0x72</span>, <span class="number">0x7F</span>, <span class="number">0x69</span>,
+            <span class="number">0x6E</span>, <span class="number">0x67</span>, <span class="number">0x20</span>, <span class="number">0x68</span>, <span class="number">0x61</span>, <span class="number">0x6E</span>, <span class="number">0x67</span>, <span class="number">0x73</span>, <span class="number">0x2E</span>, <span class="number">0x00</span>, <span class="number">0x01</span>, <span class="number">0x02</span>, <span class="number">0x03</span>, <span class="number">0x04</span>,
+            <span class="number">0x05</span>, <span class="number">0x06</span>, <span class="number">0x07</span>, <span class="number">0x08</span>, <span class="number">0x09</span>, <span class="number">0x0A</span>, <span class="number">0x0B</span>, <span class="number">0x0C</span>, <span class="number">0x0D</span>, <span class="number">0x0E</span>, <span class="number">0x0F</span>, <span class="number">0x10</span>, <span class="number">0x11</span>, <span class="number">0x12</span>,
+            <span class="number">0x13</span>, <span class="number">0x14</span>, <span class="number">0x15</span>, <span class="number">0x16</span>, <span class="number">0x17</span>, <span class="number">0x18</span>, <span class="number">0x19</span>, <span class="number">0x1A</span>, <span class="number">0x1B</span>, <span class="number">0x1C</span>, <span class="number">0x1D</span>, <span class="number">0x1E</span>, <span class="number">0x1F</span>, <span class="number">0x20</span>,
+            <span class="number">0x21</span>, <span class="number">0x22</span>, <span class="number">0x23</span>, <span class="number">0x24</span>, <span class="number">0x25</span>, <span class="number">0x26</span>, <span class="number">0x27</span>, <span class="number">0x28</span>, <span class="number">0x29</span>, <span class="number">0x2A</span>, <span class="number">0x2B</span>, <span class="number">0x2C</span>, <span class="number">0x2D</span>, <span class="number">0x2E</span>,
+            <span class="number">0x2F</span>, <span class="number">0x30</span>, <span class="number">0x31</span>, <span class="number">0x32</span>, <span class="number">0x33</span>, <span class="number">0x34</span>, <span class="number">0x35</span>, <span class="number">0x36</span>, <span class="number">0x37</span>, <span class="number">0x38</span>, <span class="number">0x39</span>, <span class="number">0x3A</span>, <span class="number">0x3B</span>, <span class="number">0x3C</span>,
+            <span class="number">0x3D</span>, <span class="number">0x3E</span>, <span class="number">0x3F</span>, <span class="number">0x40</span>, <span class="number">0x41</span>, <span class="number">0x42</span>, <span class="number">0x43</span>, <span class="number">0x44</span>, <span class="number">0x45</span>, <span class="number">0x46</span>, <span class="number">0x47</span>, <span class="number">0x48</span>, <span class="number">0x49</span>, <span class="number">0x4A</span>,
+            <span class="number">0x4B</span>, <span class="number">0x4C</span>, <span class="number">0x4D</span>, <span class="number">0x4E</span>, <span class="number">0x4F</span>, <span class="number">0x50</span>, <span class="number">0x51</span>, <span class="number">0x52</span>, <span class="number">0x53</span>, <span class="number">0x54</span>, <span class="number">0x55</span>, <span class="number">0x56</span>, <span class="number">0x57</span>, <span class="number">0x58</span>,
+            <span class="number">0x59</span>, <span class="number">0x5A</span>, <span class="number">0x5B</span>, <span class="number">0x5C</span>, <span class="number">0x5D</span>, <span class="number">0x5E</span>, <span class="number">0x5F</span>, <span class="number">0x60</span>, <span class="number">0x61</span>, <span class="number">0x62</span>, <span class="number">0x63</span>, <span class="number">0x64</span>, <span class="number">0x65</span>, <span class="number">0x66</span>,
+            <span class="number">0x67</span>, <span class="number">0x68</span>, <span class="number">0x69</span>, <span class="number">0x6A</span>, <span class="number">0x6B</span>, <span class="number">0x6C</span>, <span class="number">0x6D</span>, <span class="number">0x6E</span>, <span class="number">0x6F</span>, <span class="number">0x70</span>, <span class="number">0x71</span>, <span class="number">0x72</span>, <span class="number">0x73</span>, <span class="number">0x74</span>,
+            <span class="number">0x75</span>, <span class="number">0x27</span>, <span class="number">0x76</span>, <span class="number">0x77</span>, <span class="number">0x78</span>, <span class="number">0x79</span>, <span class="number">0x7A</span>, <span class="number">0x7B</span>, <span class="number">0x7C</span>, <span class="number">0x7D</span>, <span class="number">0x7E</span>, <span class="number">0x7F</span>, <span class="number">0x80</span>, <span class="number">0x81</span>,
+            <span class="number">0x82</span>, <span class="number">0x83</span>, <span class="number">0x84</span>, <span class="number">0x85</span>, <span class="number">0x86</span>, <span class="number">0x87</span>, <span class="number">0x88</span>, <span class="number">0x89</span>, <span class="number">0x8A</span>, <span class="number">0x8B</span>, <span class="number">0x8C</span>, <span class="number">0x8D</span>, <span class="number">0x8E</span>, <span class="number">0x8F</span>,
+            <span class="number">0x90</span>, <span class="number">0x91</span>, <span class="number">0x92</span>, <span class="number">0x93</span>, <span class="number">0x94</span>, <span class="number">0x95</span>, <span class="number">0x96</span>, <span class="number">0x97</span>, <span class="number">0x98</span>, <span class="number">0x99</span>, <span class="number">0x9A</span>, <span class="number">0x9B</span>, <span class="number">0x9C</span>, <span class="number">0x9D</span>,
+        ];
+
+        <span class="kw">let </span><span class="kw-2">mut </span>compressed_data = Vec::&lt;u8&gt;::new();
+        <span class="kw">let </span><span class="kw-2">mut </span>writer = Cursor::new(<span class="kw-2">&amp;mut </span>compressed_data);
+        Packbits.write_to(<span class="kw-2">&amp;mut </span>writer, data.as_slice()).unwrap();
+        <span class="macro">assert_eq!</span>(compressed_data, EXPECTED_COMPRESSED_DATA);
+    }
+
+    <span class="attr">#[test]
+    </span><span class="kw">fn </span>test_packbits() {
+        <span class="comment">// compress teststring
+        </span><span class="kw">const </span>EXPECTED_COMPRESSED_DATA: <span class="kw-2">&amp;</span>[u8] =
+            <span class="string">b"\x3CThis is a string for checking various compression algorithms."</span>;
+
+        <span class="kw">let </span><span class="kw-2">mut </span>compressed_data = Vec::&lt;u8&gt;::new();
+        <span class="kw">let </span><span class="kw-2">mut </span>writer = Cursor::new(<span class="kw-2">&amp;mut </span>compressed_data);
+        Packbits.write_to(<span class="kw-2">&amp;mut </span>writer, TEST_DATA).unwrap();
+        <span class="macro">assert_eq!</span>(compressed_data, EXPECTED_COMPRESSED_DATA);
+    }
+}
+</code></pre></div></section></main></body></html>

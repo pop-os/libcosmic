@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["acquire_master","auth_magic_token","get_magic_token","release_master"]};

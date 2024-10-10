@@ -1,0 +1,67 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="A crate to test if floats are almost equal."><title>almost - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-46f98efaafac5295.ttf.woff2,FiraSans-Regular-018c141bf0843ffd.woff2,FiraSans-Medium-8f9a781e4970d388.woff2,SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2,SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../static.files/rustdoc-c5d6553a23f1e5a6.css"><meta name="rustdoc-vars" data-root-path="../" data-static-root-path="../static.files/" data-current-crate="almost" data-themes="" data-resource-suffix="" data-rustdoc-version="1.81.0 (eeb90cda1 2024-09-04)" data-channel="1.81.0" data-search-js="search-d234aafac6c221dd.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../static.files/storage-118b08c4c78b968e.js"></script><script defer src="../crates.js"></script><script defer src="../static.files/main-d2fab2bf619172d3.js"></script><noscript><link rel="stylesheet" href="../static.files/noscript-df360f571f6edeae.css"></noscript><link rel="alternate icon" type="image/png" href="../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc mod crate"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle" title="show sidebar"></button></nav><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../almost/index.html">almost</a><span class="version">0.2.0</span></h2></div><div class="sidebar-elems"><ul class="block"><li><a id="all-types" href="all.html">All Items</a></li></ul><section><ul class="block"><li><a href="#constants">Constants</a></li><li><a href="#traits">Traits</a></li><li><a href="#functions">Functions</a></li></ul></section></div></nav><div class="sidebar-resizer"></div><main><div class="width-limiter"><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><h1>Crate <a class="mod" href="#">almost</a><button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><span class="out-of-band"><a class="src" href="../src/almost/lib.rs.html#1-270">source</a> · <button id="toggle-all-docs" title="collapse all docs">[<span>&#x2212;</span>]</button></span></div><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>A crate to test if floats are almost equal.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="comment">// Compare two variables.
+</span><span class="kw">if </span>almost::equal(x, y) {
+   <span class="macro">println!</span>(<span class="string">"They're almost equal!"</span>);
+}
+<span class="comment">// Or, if you need need to compare with a constant zero:
+</span><span class="kw">if </span>almost::zero(z) {
+   <span class="macro">println!</span>(<span class="string">"It's almost zero!"</span>);
+}</code></pre></div>
+<h2 id="why-another-crate"><a class="doc-anchor" href="#why-another-crate">§</a>Why another crate?</h2>
+<p>There are a lot of crates for doing this already.</p>
+<p>The author crate has fairly strong opinions on how this should be done, and
+thinks most of the similar crates in the wild make dubious choices, make it
+easy for the user to misuse, or follow poor numerical robustness practices.</p>
+<p>Specific differences / benefits compared to other crates:</p>
+<ol>
+<li>
+<p>Better choice of default tolerances for unknown inputs. Often the value
+of the <code>EPSILON</code> is used as a value for tolerance, or its use is
+encouraged by the API).</p>
+<p>This is the wrong choice more often than it is right. The machine epsilon
+is a quite strict bound for comparison, and after just a few arithmetic
+operations you will no longer be within it.</p>
+<p>This library chooses a default tolerance value that is much more
+forgiving while still tight enough for it to be unlikely to cause false
+positives (specifically, it assumes roughly half of the bits have been
+lost to rounding, e.g. the <em>square root</em> of the machine epsilon).</p>
+</li>
+<li>
+<p>Relative comparison by default. Most of the crates in the wild seem to
+use a hybrid between relative and absolute comparison. This is bad for
+arbitrary numbers which may have any scale, and gives up a number of
+desirable properties of the floating point number system.</p>
+</li>
+<li>
+<p>Absolute comparison with zero. The only downside to using relative
+comparison by default is that it is essentially never useful to use
+relative comparison where one of the values is known in advance to be
+zero.</p>
+<p>As a result, this library provides <code>almost::zero(v)</code> as well, which uses
+absolute comparison.</p>
+</li>
+<li>
+<p>Properly handling both overflow and underflow.</p>
+<p>Because this library uses relative comparison, denormal numbers behave
+properly, as well as comparisons where one of the values has overflowed
+to infinity. The second might sound impossible, but we can just rescale
+both values, and compare with the same tolerance.</p>
+</li>
+<li>
+<p>Simple API. We don’t expose other ways of comparing numbers, most of
+which are either dubious choices for non-niche use cases.</p>
+</li>
+</ol>
+<p>That said, there’s no one size fits all here. Numerical robustness is full
+of tradeoffs, and while I believe the ones made by this library are good for
+most cases, they do not and cannot satisfy every possible case.</p>
+</div></details><h2 id="constants" class="section-header">Constants<a href="#constants" class="anchor">§</a></h2><ul class="item-table"><li><div class="item-name"><a class="constant" href="constant.F32_TOLERANCE.html" title="constant almost::F32_TOLERANCE">F32_TOLERANCE</a></div><div class="desc docblock-short">The default tolerance used for <code>f32</code>. Equivalent to <code>f32::EPSILON.sqrt()</code>
+(or <code>0.00034526698_f32</code>), as we assume that around half of the precision
+bits of any arbitrary value have been rounded away.</div></li><li><div class="item-name"><a class="constant" href="constant.F64_TOLERANCE.html" title="constant almost::F64_TOLERANCE">F64_TOLERANCE</a></div><div class="desc docblock-short">The default tolerance used for <code>f64</code>. Equivalent to <code>f64::EPSILON.sqrt()</code>
+(or <code>0.000000014901161193847656_f64</code>), as we assume that around half of the
+precision bits of any arbitrary value have been rounded away.</div></li></ul><h2 id="traits" class="section-header">Traits<a href="#traits" class="anchor">§</a></h2><ul class="item-table"><li><div class="item-name"><a class="trait" href="trait.AlmostEqual.html" title="trait almost::AlmostEqual">AlmostEqual</a></div><div class="desc docblock-short">A trait for comparing floating point numbers. Not broadly intended to be
+used by most code (instead, use the functions at the crate root), however it
+could be useful for generic code too.</div></li></ul><h2 id="functions" class="section-header">Functions<a href="#functions" class="anchor">§</a></h2><ul class="item-table"><li><div class="item-name"><a class="fn" href="fn.equal.html" title="fn almost::equal">equal</a></div><div class="desc docblock-short">Returns <code>true</code> if <code>lhs</code> and <code>rhs</code> are almost equal.</div></li><li><div class="item-name"><a class="fn" href="fn.equal_with.html" title="fn almost::equal_with">equal_with</a></div><div class="desc docblock-short">Returns <code>true</code> if <code>lhs</code> and <code>rhs</code> are almost equal using the provided
+relative tolerance.</div></li><li><div class="item-name"><a class="fn" href="fn.zero.html" title="fn almost::zero">zero</a></div><div class="desc docblock-short">Returns <code>true</code> if <code>a</code> is almost zero.</div></li><li><div class="item-name"><a class="fn" href="fn.zero_with.html" title="fn almost::zero_with">zero_with</a></div><div class="desc docblock-short">Returns <code>true</code> if <code>a</code> is almost zero, using the specified absolute
+tolerance.</div></li></ul></section></div></main></body></html>

@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["id_container"],"struct":["Appearance","IdContainer"],"trait":["StyleSheet"]};

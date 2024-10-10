@@ -1,0 +1,104 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Iced is a cross-platform GUI library focused on simplicity and type-safety. Inspired by Elm."><title>iced - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-46f98efaafac5295.ttf.woff2,FiraSans-Regular-018c141bf0843ffd.woff2,FiraSans-Medium-8f9a781e4970d388.woff2,SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2,SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../static.files/rustdoc-c5d6553a23f1e5a6.css"><meta name="rustdoc-vars" data-root-path="../" data-static-root-path="../static.files/" data-current-crate="iced" data-themes="" data-resource-suffix="" data-rustdoc-version="1.81.0 (eeb90cda1 2024-09-04)" data-channel="1.81.0" data-search-js="search-d234aafac6c221dd.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../static.files/storage-118b08c4c78b968e.js"></script><script defer src="../crates.js"></script><script defer src="../static.files/main-d2fab2bf619172d3.js"></script><noscript><link rel="stylesheet" href="../static.files/noscript-df360f571f6edeae.css"></noscript><link rel="alternate icon" type="image/png" href="../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc mod crate"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle" title="show sidebar"></button><a class="logo-container" href="../iced/index.html"><img src="https://raw.githubusercontent.com/iced-rs/iced/9ab6923e943f784985e9ef9ca28b10278297225d/docs/logo.svg" alt=""></a></nav><nav class="sidebar"><div class="sidebar-crate"><a class="logo-container" href="../iced/index.html"><img src="https://raw.githubusercontent.com/iced-rs/iced/9ab6923e943f784985e9ef9ca28b10278297225d/docs/logo.svg" alt="logo"></a><h2><a href="../iced/index.html">iced</a><span class="version">0.12.0</span></h2></div><div class="sidebar-elems"><ul class="block"><li><a id="all-types" href="all.html">All Items</a></li></ul><section><ul class="block"><li><a href="#reexports">Re-exports</a></li><li><a href="#modules">Modules</a></li><li><a href="#macros">Macros</a></li><li><a href="#structs">Structs</a></li><li><a href="#enums">Enums</a></li><li><a href="#traits">Traits</a></li><li><a href="#types">Type Aliases</a></li></ul></section></div></nav><div class="sidebar-resizer"></div><main><div class="width-limiter"><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><h1>Crate <a class="mod" href="#">iced</a><button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><span class="out-of-band"><a class="src" href="../src/iced/lib.rs.html#1-361">source</a> · <button id="toggle-all-docs" title="collapse all docs">[<span>&#x2212;</span>]</button></span></div><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Iced is a cross-platform GUI library focused on simplicity and type-safety.
+Inspired by <a href="https://elm-lang.org/">Elm</a>.</p>
+<h2 id="features"><a class="doc-anchor" href="#features">§</a>Features</h2>
+<ul>
+<li>Simple, easy-to-use, batteries-included API</li>
+<li>Type-safe, reactive programming model</li>
+<li><a href="https://github.com/iced-rs/iced/blob/master/docs/images/todos_desktop.jpg?raw=true">Cross-platform support</a> (Windows, macOS, Linux, and the Web)</li>
+<li>Responsive layout</li>
+<li>Built-in widgets (including <a href="https://iced.rs/examples/text_input.mp4">text inputs</a>, <a href="https://iced.rs/examples/scrollable.mp4">scrollables</a>, and more!)</li>
+<li>Custom widget support (create your own!)</li>
+<li><a href="https://iced.rs/examples/debug.mp4">Debug overlay with performance metrics</a></li>
+<li>First-class support for async actions (use futures!)</li>
+<li><a href="https://github.com/iced-rs/iced/blob/master/ECOSYSTEM.md">Modular ecosystem</a> split into reusable parts:
+<ul>
+<li>A <a href="https://github.com/iced-rs/iced/tree/0.10/runtime">renderer-agnostic native runtime</a> enabling integration with existing
+systems</li>
+<li>A <a href="https://github.com/iced-rs/iced/tree/0.10/wgpu">built-in renderer</a> supporting Vulkan, Metal, DX11, and DX12</li>
+<li>A <a href="https://github.com/iced-rs/iced/tree/0.10/winit">windowing shell</a></li>
+<li>A <a href="https://github.com/iced-rs/iced_web">web runtime</a> leveraging the DOM</li>
+</ul>
+</li>
+</ul>
+<p>Check out the <a href="https://github.com/iced-rs/iced">repository</a> and the <a href="https://github.com/iced-rs/iced/tree/0.10/examples">examples</a> for more details!</p>
+<h2 id="overview"><a class="doc-anchor" href="#overview">§</a>Overview</h2>
+<p>Inspired by <a href="https://guide.elm-lang.org/architecture/">The Elm Architecture</a>, Iced expects you to split user
+interfaces into four different concepts:</p>
+<ul>
+<li><strong>State</strong> — the state of your application</li>
+<li><strong>Messages</strong> — user interactions or meaningful events that you care
+about</li>
+<li><strong>View logic</strong> — a way to display your <strong>state</strong> as widgets that
+may produce <strong>messages</strong> on user interaction</li>
+<li><strong>Update logic</strong> — a way to react to <strong>messages</strong> and update your
+<strong>state</strong></li>
+</ul>
+<p>We can build something to see how this works! Let’s say we want a simple
+counter that can be incremented and decremented using two buttons.</p>
+<p>We start by modelling the <strong>state</strong> of our application:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">struct </span>Counter {
+    <span class="comment">// The counter value
+    </span>value: i32,
+}</code></pre></div>
+<p>Next, we need to define the possible user interactions of our counter:
+the button presses. These interactions are our <strong>messages</strong>:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="attr">#[derive(Debug, Clone, Copy)]
+</span><span class="kw">pub enum </span>Message {
+    IncrementPressed,
+    DecrementPressed,
+}</code></pre></div>
+<p>Now, let’s show the actual counter by putting it all together in our
+<strong>view logic</strong>:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>iced::widget::{button, column, text, Column};
+
+<span class="kw">impl </span>Counter {
+    <span class="kw">pub fn </span>view(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; Column&lt;Message&gt; {
+        <span class="comment">// We use a column: a simple vertical layout
+        </span><span class="macro">column!</span>[
+            <span class="comment">// The increment button. We tell it to produce an
+            // `IncrementPressed` message when pressed
+            </span>button(<span class="string">"+"</span>).on_press(Message::IncrementPressed),
+
+            <span class="comment">// We show the value of the counter here
+            </span>text(<span class="self">self</span>.value).size(<span class="number">50</span>),
+
+            <span class="comment">// The decrement button. We tell it to produce a
+            // `DecrementPressed` message when pressed
+            </span>button(<span class="string">"-"</span>).on_press(Message::DecrementPressed),
+        ]
+    }
+}</code></pre></div>
+<p>Finally, we need to be able to react to any produced <strong>messages</strong> and change
+our <strong>state</strong> accordingly in our <strong>update logic</strong>:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">impl </span>Counter {
+    <span class="comment">// ...
+
+    </span><span class="kw">pub fn </span>update(<span class="kw-2">&amp;mut </span><span class="self">self</span>, message: Message) {
+        <span class="kw">match </span>message {
+            Message::IncrementPressed =&gt; {
+                <span class="self">self</span>.value += <span class="number">1</span>;
+            }
+            Message::DecrementPressed =&gt; {
+                <span class="self">self</span>.value -= <span class="number">1</span>;
+            }
+        }
+    }
+}</code></pre></div>
+<p>And that’s everything! We just wrote a whole user interface. Iced is now
+able to:</p>
+<ol>
+<li>Take the result of our <strong>view logic</strong> and layout its widgets.</li>
+<li>Process events from our system and produce <strong>messages</strong> for our
+<strong>update logic</strong>.</li>
+<li>Draw the resulting user interface.</li>
+</ol>
+<h2 id="usage"><a class="doc-anchor" href="#usage">§</a>Usage</h2>
+<p>The <code>Application</code> trait should get you started quickly,
+streamlining all the process described above!</p>
+</div></details><h2 id="reexports" class="section-header">Re-exports<a href="#reexports" class="anchor">§</a></h2><ul class="item-table"><li><div class="item-name" id="reexport.Application"><code>pub use application::<a class="trait" href="application/trait.Application.html" title="trait iced::application::Application">Application</a>;</code></div></li><li><div class="item-name" id="reexport.Settings"><code>pub use settings::<a class="struct" href="settings/struct.Settings.html" title="struct iced::settings::Settings">Settings</a>;</code></div></li><li><div class="item-name" id="reexport.futures"><code>pub use iced_futures::<a class="mod" href="../futures/index.html" title="mod futures">futures</a>;</code></div></li></ul><h2 id="modules" class="section-header">Modules<a href="#modules" class="anchor">§</a></h2><ul class="item-table"><li><div class="item-name"><a class="mod" href="advanced/index.html" title="mod iced::advanced">advanced</a></div><div class="desc docblock-short">Leverage advanced concepts like custom widgets.</div></li><li><div class="item-name"><a class="mod" href="alignment/index.html" title="mod iced::alignment">alignment</a></div><div class="desc docblock-short">Align and position widgets.</div></li><li><div class="item-name"><a class="mod" href="application/index.html" title="mod iced::application">application</a></div><div class="desc docblock-short">Build interactive cross-platform applications.</div></li><li><div class="item-name"><a class="mod" href="border/index.html" title="mod iced::border">border</a></div><div class="desc docblock-short">Draw lines around containers.</div></li><li><div class="item-name"><a class="mod" href="clipboard/index.html" title="mod iced::clipboard">clipboard</a></div><div class="desc docblock-short">Access the clipboard.</div></li><li><div class="item-name"><a class="mod" href="command/index.html" title="mod iced::command">command</a></div><div class="desc docblock-short">Run asynchronous actions.</div></li><li><div class="item-name"><a class="mod" href="event/index.html" title="mod iced::event">event</a></div><div class="desc docblock-short">Handle events of a user interface.</div></li><li><div class="item-name"><a class="mod" href="executor/index.html" title="mod iced::executor">executor</a></div><div class="desc docblock-short">Choose your preferred executor to power your application.</div></li><li><div class="item-name"><a class="mod" href="font/index.html" title="mod iced::font">font</a></div><div class="desc docblock-short">Load and use fonts.</div></li><li><div class="item-name"><a class="mod" href="gradient/index.html" title="mod iced::gradient">gradient</a></div><div class="desc docblock-short">Colors that transition progressively.</div></li><li><div class="item-name"><a class="mod" href="id/index.html" title="mod iced::id">id</a></div><div class="desc docblock-short">Widget and Window IDs.</div></li><li><div class="item-name"><a class="mod" href="keyboard/index.html" title="mod iced::keyboard">keyboard</a></div><div class="desc docblock-short">Listen and react to keyboard events.</div></li><li><div class="item-name"><a class="mod" href="mouse/index.html" title="mod iced::mouse">mouse</a></div><div class="desc docblock-short">Listen and react to mouse events.</div></li><li><div class="item-name"><a class="mod" href="overlay/index.html" title="mod iced::overlay">overlay</a></div><div class="desc docblock-short">Display interactive elements on top of other widgets.</div></li><li><div class="item-name"><a class="mod" href="settings/index.html" title="mod iced::settings">settings</a></div><div class="desc docblock-short">Configure your application</div></li><li><div class="item-name"><a class="mod" href="subscription/index.html" title="mod iced::subscription">subscription</a></div><div class="desc docblock-short">Listen to external events in your application.</div></li><li><div class="item-name"><a class="mod" href="theme/index.html" title="mod iced::theme">theme</a></div><div class="desc docblock-short">Use the built-in theme and styles.</div></li><li><div class="item-name"><a class="mod" href="time/index.html" title="mod iced::time">time</a></div><div class="desc docblock-short">Listen and react to time.</div></li><li><div class="item-name"><a class="mod" href="touch/index.html" title="mod iced::touch">touch</a></div><div class="desc docblock-short">Listen and react to touch events.</div></li><li><div class="item-name"><a class="mod" href="widget/index.html" title="mod iced::widget">widget</a></div><div class="desc docblock-short">Use the built-in widgets or create your own.</div></li><li><div class="item-name"><a class="mod" href="window/index.html" title="mod iced::window">window</a></div><div class="desc docblock-short">Configure the window of your application in native platforms.</div></li></ul><h2 id="macros" class="section-header">Macros<a href="#macros" class="anchor">§</a></h2><ul class="item-table"><li><div class="item-name"><a class="macro" href="macro.color.html" title="macro iced::color">color</a></div><div class="desc docblock-short">Creates a <a href="struct.Color.html" title="struct iced::Color"><code>Color</code></a> with shorter and cleaner syntax.</div></li></ul><h2 id="structs" class="section-header">Structs<a href="#structs" class="anchor">§</a></h2><ul class="item-table"><li><div class="item-name"><a class="struct" href="struct.Border.html" title="struct iced::Border">Border</a></div><div class="desc docblock-short">A border.</div></li><li><div class="item-name"><a class="struct" href="struct.Color.html" title="struct iced::Color">Color</a></div><div class="desc docblock-short">A color in the <code>sRGB</code> color space.</div></li><li><div class="item-name"><a class="struct" href="struct.Command.html" title="struct iced::Command">Command</a></div><div class="desc docblock-short">A set of asynchronous actions to be performed by some runtime.</div></li><li><div class="item-name"><a class="struct" href="struct.Degrees.html" title="struct iced::Degrees">Degrees</a></div><div class="desc docblock-short">Degrees</div></li><li><div class="item-name"><a class="struct" href="struct.Font.html" title="struct iced::Font">Font</a></div><div class="desc docblock-short">A font.</div></li><li><div class="item-name"><a class="struct" href="struct.Limits.html" title="struct iced::Limits">Limits</a></div><div class="desc docblock-short">A set of size constraints for layouting.</div></li><li><div class="item-name"><a class="struct" href="struct.Padding.html" title="struct iced::Padding">Padding</a></div><div class="desc docblock-short">An amount of space to pad for each side of a box</div></li><li><div class="item-name"><a class="struct" href="struct.Pixels.html" title="struct iced::Pixels">Pixels</a></div><div class="desc docblock-short">An amount of logical pixels.</div></li><li><div class="item-name"><a class="struct" href="struct.Point.html" title="struct iced::Point">Point</a></div><div class="desc docblock-short">A 2D point.</div></li><li><div class="item-name"><a class="struct" href="struct.Radians.html" title="struct iced::Radians">Radians</a></div><div class="desc docblock-short">Radians</div></li><li><div class="item-name"><a class="struct" href="struct.Radius.html" title="struct iced::Radius">Radius</a></div><div class="desc docblock-short">The border radii for the corners of a graphics primitive in the order:
+top-left, top-right, bottom-right, bottom-left.</div></li><li><div class="item-name"><a class="struct" href="struct.Rectangle.html" title="struct iced::Rectangle">Rectangle</a></div><div class="desc docblock-short">A rectangle.</div></li><li><div class="item-name"><a class="struct" href="struct.Size.html" title="struct iced::Size">Size</a></div><div class="desc docblock-short">An amount of space in 2 dimensions.</div></li><li><div class="item-name"><a class="struct" href="struct.Subscription.html" title="struct iced::Subscription">Subscription</a></div><div class="desc docblock-short">A request to listen to external events.</div></li><li><div class="item-name"><a class="struct" href="struct.Vector.html" title="struct iced::Vector">Vector</a></div><div class="desc docblock-short">A 2D vector.</div></li></ul><h2 id="enums" class="section-header">Enums<a href="#enums" class="anchor">§</a></h2><ul class="item-table"><li><div class="item-name"><a class="enum" href="enum.Alignment.html" title="enum iced::Alignment">Alignment</a></div><div class="desc docblock-short">Alignment on the axis of a container.</div></li><li><div class="item-name"><a class="enum" href="enum.Background.html" title="enum iced::Background">Background</a></div><div class="desc docblock-short">The background of some element.</div></li><li><div class="item-name"><a class="enum" href="enum.ContentFit.html" title="enum iced::ContentFit">ContentFit</a></div><div class="desc docblock-short">The strategy used to fit the contents of a widget to its bounding box.</div></li><li><div class="item-name"><a class="enum" href="enum.Error.html" title="enum iced::Error">Error</a></div><div class="desc docblock-short">An error that occurred while running an application.</div></li><li><div class="item-name"><a class="enum" href="enum.Event.html" title="enum iced::Event">Event</a></div><div class="desc docblock-short">A user interface event.</div></li><li><div class="item-name"><a class="enum" href="enum.Gradient.html" title="enum iced::Gradient">Gradient</a></div><div class="desc docblock-short">A fill which transitions colors progressively along a direction, either linearly, radially (TBD),
+or conically (TBD).</div></li><li><div class="item-name"><a class="enum" href="enum.Length.html" title="enum iced::Length">Length</a></div><div class="desc docblock-short">The strategy used to fill space in a specific dimension.</div></li><li><div class="item-name"><a class="enum" href="enum.Renderer.html" title="enum iced::Renderer">Renderer</a></div><div class="desc docblock-short">The default graphics renderer for <a href="https://github.com/iced-rs/iced"><code>iced</code></a>.</div></li><li><div class="item-name"><a class="enum" href="enum.Theme.html" title="enum iced::Theme">Theme</a></div><div class="desc docblock-short">A built-in theme.</div></li></ul><h2 id="traits" class="section-header">Traits<a href="#traits" class="anchor">§</a></h2><ul class="item-table"><li><div class="item-name"><a class="trait" href="trait.Executor.html" title="trait iced::Executor">Executor</a></div><div class="desc docblock-short">A type that can run futures.</div></li><li><div class="item-name"><a class="trait" href="trait.Sandbox.html" title="trait iced::Sandbox">Sandbox</a></div><div class="desc docblock-short">A sandboxed <a href="application/trait.Application.html" title="trait iced::application::Application"><code>Application</code></a>.</div></li></ul><h2 id="types" class="section-header">Type Aliases<a href="#types" class="anchor">§</a></h2><ul class="item-table"><li><div class="item-name"><a class="type" href="type.Element.html" title="type iced::Element">Element</a></div><div class="desc docblock-short">A generic widget.</div></li><li><div class="item-name"><a class="type" href="type.Result.html" title="type iced::Result">Result</a></div><div class="desc docblock-short">The result of running an application.</div></li></ul></section></div></main></body></html>

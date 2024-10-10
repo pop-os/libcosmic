@@ -1,0 +1,52 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Converts linear f32 RGB component to an 8-bit sRGB value."><title>f32_to_srgb8 in fast_srgb8 - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-46f98efaafac5295.ttf.woff2,FiraSans-Regular-018c141bf0843ffd.woff2,FiraSans-Medium-8f9a781e4970d388.woff2,SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2,SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../static.files/rustdoc-c5d6553a23f1e5a6.css"><meta name="rustdoc-vars" data-root-path="../" data-static-root-path="../static.files/" data-current-crate="fast_srgb8" data-themes="" data-resource-suffix="" data-rustdoc-version="1.81.0 (eeb90cda1 2024-09-04)" data-channel="1.81.0" data-search-js="search-d234aafac6c221dd.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../static.files/storage-118b08c4c78b968e.js"></script><script defer src="sidebar-items.js"></script><script defer src="../static.files/main-d2fab2bf619172d3.js"></script><noscript><link rel="stylesheet" href="../static.files/noscript-df360f571f6edeae.css"></noscript><link rel="alternate icon" type="image/png" href="../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc fn"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle" title="show sidebar"></button></nav><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../fast_srgb8/index.html">fast_srgb8</a><span class="version">1.0.0</span></h2></div><div class="sidebar-elems"></div></nav><div class="sidebar-resizer"></div><main><div class="width-limiter"><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><h1>Function <a href="index.html">fast_srgb8</a>::<wbr><a class="fn" href="#">f32_to_srgb8</a><button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><span class="out-of-band"><a class="src" href="../src/fast_srgb8/lib.rs.html#116-167">source</a> · <button id="toggle-all-docs" title="collapse all docs">[<span>&#x2212;</span>]</button></span></div><pre class="rust item-decl"><code>pub fn f32_to_srgb8(f: <a class="primitive" href="https://doc.rust-lang.org/1.81.0/core/primitive.f32.html">f32</a>) -&gt; <a class="primitive" href="https://doc.rust-lang.org/1.81.0/core/primitive.u8.html">u8</a></code></pre><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Converts linear f32 RGB component to an 8-bit sRGB value.</p>
+<p>If you have to do this for many values simultaneously, use
+<a href="fn.f32x4_to_srgb8.html" title="fn fast_srgb8::f32x4_to_srgb8"><code>f32x4_to_srgb8</code></a>, which will compute 4 results at once (using SIMD
+instructions if available).</p>
+<p>Input less than 0.0, or greater than 1.0, is clamped to be inside that
+range. NaN input is treated as identical to 0.0.</p>
+<h2 id="details"><a class="doc-anchor" href="#details">§</a>Details</h2>
+<p>Conceptually, this is an optimized (and slightly approximated — see the
+“Approximation” section below) version of the following “reference
+implementation”, which more or less looks like:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="comment">// Conceptually equivalent (but see below)
+</span><span class="kw">fn </span>to_srgb_reference(f: f32) -&gt; u8 {
+    <span class="kw">let </span>v = <span class="kw">if </span>!(f &gt; <span class="number">0.0</span>) {
+        <span class="number">0.0
+    </span>} <span class="kw">else if </span>f &lt;= <span class="number">0.0031308 </span>{
+        <span class="number">12.92 </span>* f
+    } <span class="kw">else if </span>f &lt; <span class="number">1.0 </span>{
+        <span class="number">1.055 </span>* f.powf(<span class="number">1.0 </span>/ <span class="number">2.4</span>) - <span class="number">0.055
+    </span>} <span class="kw">else </span>{
+        <span class="number">1.0
+    </span>};
+    (v * <span class="number">255.0 </span>+ <span class="number">0.5</span>) <span class="kw">as </span>u8
+}</code></pre></div>
+<p>This crate’s implementation uses a small lookup table (a <code>[u32; 104]</code> –
+around 6.5 cache lines), and avoids needing to call <code>powf</code> (which, as an
+added bonus, means it works great in <code>no_std</code>), and in practice is many
+times faster than the alternative.</p>
+<p>Additional, it’s fairly amenable to implementing in SIMD (— everything is
+easily parallelized aside from the table lookup), and so a 4-wide
+implementation is also provided as <a href="fn.f32x4_to_srgb8.html" title="fn fast_srgb8::f32x4_to_srgb8"><code>f32x4_to_srgb8</code></a></p>
+<h3 id="approximation"><a class="doc-anchor" href="#approximation">§</a>Approximation</h3>
+<p>Note that this is <em>not</em> bitwise identical to the results of the
+<code>to_srgb_reference</code> function above, it’s just very close. The maximum error
+is 0.544403 for an input of 0.31152344, where error is computed as the
+absolute difference between the rounded integer and the “exact” value.</p>
+<p>This almost certainly meets requirements for graphics: <a href="https://microsoft.github.io/DirectX-Specs/d3d/archive/D3D11_3_FunctionalSpec.htm#FLOATtoSRGB">The DirectX
+spec</a>
+mandates that compliant implementations of this function have a maximum
+error of less than “0.6 ULP on the integer side” — Ours is ~0.54, which is
+within the requirement.</p>
+<p>This means function is probably at least as accurate as whatever your GPU
+driver and/or hardware does for sRGB framebuffers and such — very likely
+even if it isn’t using DirectX (it’s spec tends to be descriptive of what’s
+available commonly, especially in cases like this (most cases) where it’s
+the only one that bothers to put a requirement).</p>
+<p>Additionally, because this function converts the result <code>u8</code> — for the vast
+majority of inputs it will return an identical result to the reference impl.</p>
+<p>To be completely clear (since it was brought up as a concern): despite this
+approximation, this function and <a href="fn.srgb8_to_f32.html" title="fn fast_srgb8::srgb8_to_f32"><code>srgb8_to_f32</code></a> are inverses of eachother,
+and round trip appropriately.</p>
+</div></details></section></div></main></body></html>

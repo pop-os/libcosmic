@@ -1,0 +1,98 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="dlib is a small crate providing macros to make easy the use of external system libraries that can or cannot be optionally loaded at runtime, depending on whether a certain feature is enabled."><title>dlib - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-46f98efaafac5295.ttf.woff2,FiraSans-Regular-018c141bf0843ffd.woff2,FiraSans-Medium-8f9a781e4970d388.woff2,SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2,SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../static.files/rustdoc-c5d6553a23f1e5a6.css"><meta name="rustdoc-vars" data-root-path="../" data-static-root-path="../static.files/" data-current-crate="dlib" data-themes="" data-resource-suffix="" data-rustdoc-version="1.81.0 (eeb90cda1 2024-09-04)" data-channel="1.81.0" data-search-js="search-d234aafac6c221dd.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../static.files/storage-118b08c4c78b968e.js"></script><script defer src="../crates.js"></script><script defer src="../static.files/main-d2fab2bf619172d3.js"></script><noscript><link rel="stylesheet" href="../static.files/noscript-df360f571f6edeae.css"></noscript><link rel="alternate icon" type="image/png" href="../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc mod crate"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle" title="show sidebar"></button></nav><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../dlib/index.html">dlib</a><span class="version">0.5.2</span></h2></div><div class="sidebar-elems"><ul class="block"><li><a id="all-types" href="all.html">All Items</a></li></ul><section><ul class="block"><li><a href="#macros">Macros</a></li><li><a href="#enums">Enums</a></li></ul></section></div></nav><div class="sidebar-resizer"></div><main><div class="width-limiter"><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><h1>Crate <a class="mod" href="#">dlib</a><button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><span class="out-of-band"><a class="src" href="../src/dlib/lib.rs.html#1-386">source</a> · <button id="toggle-all-docs" title="collapse all docs">[<span>&#x2212;</span>]</button></span></div><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>dlib is a small crate providing macros to make easy the use of external system libraries that
+can or cannot be optionally loaded at runtime, depending on whether a certain feature is enabled.</p>
+<h3 id="usage"><a class="doc-anchor" href="#usage">§</a>Usage</h3>
+<p>dlib defines the <code>external_library!</code> macro, which can be invoked in this way:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="macro">external_library!</span>(feature=<span class="string">"dlopen-foo"</span>, Foo, <span class="string">"foo"</span>,
+    statics:
+        me: c_int,
+        you: c_float,
+    functions:
+        <span class="kw">fn </span>foo() -&gt; c_int,
+        <span class="kw">fn </span>bar(c_int, c_float) -&gt; (),
+        <span class="kw">fn </span>baz(<span class="kw-2">*const </span>c_int) -&gt; c_int,
+    varargs:
+        <span class="kw">fn </span>blah(c_int, c_int ...) -&gt; <span class="kw-2">*const </span>c_void,
+        <span class="kw">fn </span>bleh(c_int ...) -&gt; (),
+);</code></pre></div>
+<p>As you can see, it is required to separate static values from functions and from function
+having variadic arguments. Each of these 3 categories is optional, but the ones used must appear
+in this order. Return types of the functions must all be explicit (hence <code>-&gt; ()</code> for void functions).</p>
+<p>If the feature named by the <code>feature</code> argument (in this example, <code>dlopen-foo</code>) is absent on your crate,
+this macro will expand to an extern block defining each of the items, using the third argument
+of the macro as a link name:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="attr">#[link(name = <span class="string">"foo"</span>)]
+</span><span class="kw">extern </span><span class="string">"C" </span>{
+    <span class="kw">pub static </span>me: c_int;
+    <span class="kw">pub static </span>you: c_float;
+    <span class="kw">pub fn </span>foo() -&gt; c_int;
+    <span class="kw">pub fn </span>bar(<span class="kw">_</span>: c_int, <span class="kw">_</span>: c_float) -&gt; ();
+    <span class="kw">pub fn </span>baz(<span class="kw">_</span>: <span class="kw-2">*const </span>c_int) -&gt; c_int;
+    <span class="kw">pub fn </span>blah(<span class="kw">_</span>: c_int, <span class="kw">_</span>: c_int, ...) -&gt; <span class="kw-2">*const </span>c_void;
+    <span class="kw">pub fn </span>bleh(<span class="kw">_</span>: c_int, ...) -&gt; ();
+}
+</code></pre></div>
+<p>If the feature named by the <code>feature</code> argument is present on your crate, it will expand to a
+<code>struct</code> named by the second argument of the macro, with one field for each of the symbols defined;
+and a method <code>open</code>, which tries to load the library from the name or path given as an argument.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">pub struct </span>Foo {
+    <span class="kw">pub </span>me: <span class="kw-2">&amp;</span><span class="lifetime">'static </span>c_int,
+    <span class="kw">pub </span>you: <span class="kw-2">&amp;</span><span class="lifetime">'static </span>c_float,
+    <span class="kw">pub </span>foo: <span class="kw">unsafe extern </span><span class="string">"C" </span><span class="kw">fn</span>() -&gt; c_int,
+    <span class="kw">pub </span>bar: <span class="kw">unsafe extern </span><span class="string">"C" </span><span class="kw">fn</span>(c_int, c_float) -&gt; (),
+    <span class="kw">pub </span>baz: <span class="kw">unsafe extern </span><span class="string">"C" </span><span class="kw">fn</span>(<span class="kw-2">*const </span>c_int) -&gt; c_int,
+    <span class="kw">pub </span>blah: <span class="kw">unsafe extern </span><span class="string">"C" </span><span class="kw">fn</span>(c_int, c_int, ...) -&gt; <span class="kw-2">*const </span>c_void,
+    <span class="kw">pub </span>bleh: <span class="kw">unsafe extern </span><span class="string">"C" </span><span class="kw">fn</span>(c_int, ...) -&gt; (),
+}
+
+
+<span class="kw">impl </span>Foo {
+    <span class="kw">pub unsafe fn </span>open(name: <span class="kw-2">&amp;</span>str) -&gt; <span class="prelude-ty">Result</span>&lt;Foo, DlError&gt; { <span class="comment">/* ... */ </span>}
+}</code></pre></div>
+<p>This method returns <code>Ok(..)</code> if the loading was successful. It contains an instance of the defined struct
+with all of its fields pointing to the appropriate symbol.</p>
+<p>If the library specified by <code>name</code> could not be openened, it returns <code>Err(DlError::CantOpen(e))</code>, with
+<code>e</code> the error reported by <code>libloading</code> (see <a href="enum.LibLoadingError.html" title="enum dlib::LibLoadingError">LibLoadingError</a>);</p>
+<p>It will also fail on the first missing symbol, with <code>Err(DlError::MissingSymbol(symb))</code> where <code>symb</code>
+is a <code>&amp;str</code> containing the missing symbol name.</p>
+<p>Note that this method is unsafe, as loading (and unloading on drop) an external C library can run arbitrary
+code. As such, you need to ensure that the specific library you want to load is safe to load in the context
+you want to load it.</p>
+<h3 id="remaining-generic-in-your-crate"><a class="doc-anchor" href="#remaining-generic-in-your-crate">§</a>Remaining generic in your crate</h3>
+<p>If you want your crate to remain generic over dlopen vs. linking, simply add a feature to your <code>Cargo.toml</code>:</p>
+<div class="example-wrap"><pre class="language-toml"><code>[dependencies]
+dlib = &quot;0.5&quot;
+
+[features]
+dlopen-foo = []
+</code></pre></div>
+<p>Then give the name of that feature as the <code>feature</code> argument to dlib’s macros:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="macro">external_library!</span>(feature=<span class="string">"dlopen-foo"</span>, Foo, <span class="string">"foo"</span>,
+    functions:
+        <span class="kw">fn </span>foo() -&gt; c_int,
+);</code></pre></div>
+<p><code>dlib</code> provides helper macros to dispatch the access to foreign symbols:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="macro">ffi_dispatch!</span>(feature=<span class="string">"dlopen-foo"</span>, Foo, function, arg1, arg2);
+<span class="macro">ffi_dispatch_static!</span>(feature=<span class="string">"dlopen-foo"</span>, Foo, my_static_var);</code></pre></div>
+<p>These will expand to the appropriate value or function call depending on the presence or absence of the
+<code>dlopen-foo</code> feature on your crate.</p>
+<p>You must still ensure that the functions/statics or the wrapper struct <code>Foo</code> are in scope. For example,
+you could use the <a href="https://crates.io/crates/lazy_static"><code>lazy_static</code></a> crate to do the initialization,
+and store the wrapper struct in a static variable that you import wherever needed:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="attr">#[cfg(feature = <span class="string">"dlopen-foo"</span>)]
+</span><span class="macro">lazy_static::lazy_static!</span> {
+    <span class="kw">pub static </span><span class="kw-2">ref </span>FOO_STATIC: Foo =
+        Foo::open(<span class="string">"libfoo.so"</span>).ok().expect(<span class="string">"could not find libfoo"</span>);
+}</code></pre></div>
+<p>Then, it can become as simple as putting this on top of all modules using the FFI:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="attr">#[cfg(feature = <span class="string">"dlopen-foo"</span>)]
+</span><span class="kw">use </span>ffi::FOO_STATIC;
+<span class="attr">#[cfg(not(feature = <span class="string">"dlopen-foo"</span>))]
+</span><span class="kw">use </span>ffi::<span class="kw-2">*</span>;</code></pre></div>
+</div></details><h2 id="macros" class="section-header">Macros<a href="#macros" class="anchor">§</a></h2><ul class="item-table"><li><div class="item-name"><a class="macro" href="macro.external_library.html" title="macro dlib::external_library">external_library</a></div><div class="desc docblock-short">Main macro of this library, used to generate the the FFI bindings.</div></li><li><div class="item-name"><a class="macro" href="macro.ffi_dispatch.html" title="macro dlib::ffi_dispatch">ffi_dispatch</a></div><div class="desc docblock-short">Macro for generically invoking a FFI function</div></li><li><div class="item-name"><a class="macro" href="macro.ffi_dispatch_static.html" title="macro dlib::ffi_dispatch_static">ffi_dispatch_static</a></div><div class="desc docblock-short">Macro for generically accessing a FFI static</div></li></ul><h2 id="enums" class="section-header">Enums<a href="#enums" class="anchor">§</a></h2><ul class="item-table"><li><div class="item-name"><a class="enum" href="enum.DlError.html" title="enum dlib::DlError">DlError</a></div><div class="desc docblock-short">An error generated when failing to load a library</div></li><li><div class="item-name"><a class="enum" href="enum.LibLoadingError.html" title="enum dlib::LibLoadingError">LibLoadingError</a></div><div class="desc docblock-short">Errors.</div></li></ul></section></div></main></body></html>

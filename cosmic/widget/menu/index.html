@@ -1,0 +1,49 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="A `MenuBar` widget for displaying [`MenuTree`]s"><title>cosmic::widget::menu - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-46f98efaafac5295.ttf.woff2,FiraSans-Regular-018c141bf0843ffd.woff2,FiraSans-Medium-8f9a781e4970d388.woff2,SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2,SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-c5d6553a23f1e5a6.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="cosmic" data-themes="" data-resource-suffix="" data-rustdoc-version="1.81.0 (eeb90cda1 2024-09-04)" data-channel="1.81.0" data-search-js="search-d234aafac6c221dd.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../../static.files/storage-118b08c4c78b968e.js"></script><script defer src="../sidebar-items.js"></script><script defer src="../../../static.files/main-d2fab2bf619172d3.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-df360f571f6edeae.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc mod"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle" title="show sidebar"></button></nav><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../../../cosmic/index.html">cosmic</a><span class="version">0.1.0</span></h2></div><h2 class="location"><a href="#">Module menu</a></h2><div class="sidebar-elems"><section><ul class="block"><li><a href="#reexports">Re-exports</a></li><li><a href="#modules">Modules</a></li><li><a href="#structs">Structs</a></li><li><a href="#enums">Enums</a></li><li><a href="#functions">Functions</a></li></ul></section><h2><a href="../index.html">In cosmic::widget</a></h2></div></nav><div class="sidebar-resizer"></div><main><div class="width-limiter"><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><h1>Module <a href="../../index.html">cosmic</a>::<wbr><a href="../index.html">widget</a>::<wbr><a class="mod" href="#">menu</a><button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><span class="out-of-band"><a class="src" href="../../../src/cosmic/widget/menu.rs.html#3-76">source</a> · <button id="toggle-all-docs" title="collapse all docs">[<span>&#x2212;</span>]</button></span></div><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>A <a href="struct.MenuBar.html" title="struct cosmic::widget::menu::MenuBar"><code>MenuBar</code></a> widget for displaying [<code>MenuTree</code>]s</p>
+<p><em>This API requires the following crate features to be activated: <code>menu</code></em></p>
+<h2 id="example"><a class="doc-anchor" href="#example">§</a>Example</h2>
+<div class="example-wrap ignore"><a href="#" class="tooltip" title="This example is not tested">ⓘ</a><pre class="rust rust-example-rendered"><code><span class="kw">use </span>iced::widget::button;
+<span class="kw">use </span>iced_aw::menu::{MenuTree, MenuBar};
+
+<span class="kw">let </span>sub_2 = MenuTree::with_children(
+    button(<span class="string">"Sub Menu 2"</span>),
+    <span class="macro">vec!</span>[
+        MenuTree::new(button(<span class="string">"item_1"</span>)),
+        MenuTree::new(button(<span class="string">"item_2"</span>)),
+        MenuTree::new(button(<span class="string">"item_3"</span>)),
+    ]
+);
+
+<span class="kw">let </span>sub_1 = MenuTree::with_children(
+    button(<span class="string">"Sub Menu 1"</span>),
+    <span class="macro">vec!</span>[
+        MenuTree::new(button(<span class="string">"item_1"</span>)),
+        sub_2,
+        MenuTree::new(button(<span class="string">"item_2"</span>)),
+        MenuTree::new(button(<span class="string">"item_3"</span>)),
+    ]
+);
+
+
+<span class="kw">let </span>root_1 = MenuTree::with_children(
+    button(<span class="string">"Menu 1"</span>),
+    <span class="macro">vec!</span>[
+        MenuTree::new(button(<span class="string">"item_1"</span>)),
+        MenuTree::new(button(<span class="string">"item_2"</span>)),
+        sub_1,
+        MenuTree::new(button(<span class="string">"item_3"</span>)),
+    ]
+);
+
+<span class="kw">let </span>root_2 = MenuTree::with_children(
+    button(<span class="string">"Menu 2"</span>),
+    <span class="macro">vec!</span>[
+        MenuTree::new(button(<span class="string">"item_1"</span>)),
+        MenuTree::new(button(<span class="string">"item_2"</span>)),
+        MenuTree::new(button(<span class="string">"item_3"</span>)),
+    ]
+);
+
+<span class="kw">let </span>menu_bar = MenuBar::new(<span class="macro">vec!</span>[root_1, root_2]);
+</code></pre></div>
+</div></details><h2 id="reexports" class="section-header">Re-exports<a href="#reexports" class="anchor">§</a></h2><ul class="item-table"><li><div class="item-name" id="reexport.Action"><code>pub use action::<a class="trait" href="action/trait.MenuAction.html" title="trait cosmic::widget::menu::action::MenuAction">MenuAction</a> as Action;</code></div></li><li><div class="item-name" id="reexport.KeyBind"><code>pub use key_bind::<a class="struct" href="key_bind/struct.KeyBind.html" title="struct cosmic::widget::menu::key_bind::KeyBind">KeyBind</a>;</code></div></li><li><div class="item-name" id="reexport.Appearance"><code>pub use crate::style::menu_bar::<a class="struct" href="../../style/menu_bar/struct.Appearance.html" title="struct cosmic::style::menu_bar::Appearance">Appearance</a>;</code></div></li><li><div class="item-name" id="reexport.StyleSheet"><code>pub use crate::style::menu_bar::<a class="trait" href="../../style/menu_bar/trait.StyleSheet.html" title="trait cosmic::style::menu_bar::StyleSheet">StyleSheet</a>;</code></div></li></ul><h2 id="modules" class="section-header">Modules<a href="#modules" class="anchor">§</a></h2><ul class="item-table"><li><div class="item-name"><a class="mod" href="action/index.html" title="mod cosmic::widget::menu::action">action</a></div></li><li><div class="item-name"><a class="mod" href="key_bind/index.html" title="mod cosmic::widget::menu::key_bind">key_bind</a></div></li></ul><h2 id="structs" class="section-header">Structs<a href="#structs" class="anchor">§</a></h2><ul class="item-table"><li><div class="item-name"><a class="struct" href="struct.CloseCondition.html" title="struct cosmic::widget::menu::CloseCondition">CloseCondition</a></div><div class="desc docblock-short">The condition of when to close a menu</div></li><li><div class="item-name"><a class="struct" href="struct.MenuBar.html" title="struct cosmic::widget::menu::MenuBar">MenuBar</a></div><div class="desc docblock-short">A <code>MenuBar</code> collects <code>MenuTree</code>s and handles all the layout, event processing, and drawing.</div></li><li><div class="item-name"><a class="struct" href="struct.Tree.html" title="struct cosmic::widget::menu::Tree">Tree</a></div><div class="desc docblock-short">Nested menu is essentially a tree of items, a menu is a collection of items
+a menu itself can also be an item of another menu.</div></li></ul><h2 id="enums" class="section-header">Enums<a href="#enums" class="anchor">§</a></h2><ul class="item-table"><li><div class="item-name"><a class="enum" href="enum.Item.html" title="enum cosmic::widget::menu::Item">Item</a></div><div class="desc docblock-short">Represents a menu item that performs an action when selected or a separator between menu items.</div></li><li><div class="item-name"><a class="enum" href="enum.ItemHeight.html" title="enum cosmic::widget::menu::ItemHeight">ItemHeight</a></div><div class="desc docblock-short">The height of an item</div></li><li><div class="item-name"><a class="enum" href="enum.ItemWidth.html" title="enum cosmic::widget::menu::ItemWidth">ItemWidth</a></div><div class="desc docblock-short">The width of an item</div></li><li><div class="item-name"><a class="enum" href="enum.PathHighlight.html" title="enum cosmic::widget::menu::PathHighlight">PathHighlight</a></div><div class="desc docblock-short">Methods for drawing path highlight</div></li></ul><h2 id="functions" class="section-header">Functions<a href="#functions" class="anchor">§</a></h2><ul class="item-table"><li><div class="item-name"><a class="fn" href="fn.bar.html" title="fn cosmic::widget::menu::bar">bar</a></div><div class="desc docblock-short">A <code>MenuBar</code> collects <code>MenuTree</code>s and handles all the layout, event processing, and drawing.</div></li><li><div class="item-name"><a class="fn" href="fn.items.html" title="fn cosmic::widget::menu::items">items</a></div><div class="desc docblock-short">Create a list of menu items from a vector of <code>MenuItem</code>.</div></li><li><div class="item-name"><a class="fn" href="fn.menu_button.html" title="fn cosmic::widget::menu::menu_button">menu_button</a></div></li><li><div class="item-name"><a class="fn" href="fn.root.html" title="fn cosmic::widget::menu::root">root</a></div><div class="desc docblock-short">Create a root menu item.</div></li></ul></section></div></main></body></html>

@@ -1,0 +1,31 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Use widgets that can provide hints to ensure continuity."><title>cosmic::iced_widget::keyed - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-46f98efaafac5295.ttf.woff2,FiraSans-Regular-018c141bf0843ffd.woff2,FiraSans-Medium-8f9a781e4970d388.woff2,SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2,SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-c5d6553a23f1e5a6.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="cosmic" data-themes="" data-resource-suffix="" data-rustdoc-version="1.81.0 (eeb90cda1 2024-09-04)" data-channel="1.81.0" data-search-js="search-d234aafac6c221dd.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../../static.files/storage-118b08c4c78b968e.js"></script><script defer src="../sidebar-items.js"></script><script defer src="../../../static.files/main-d2fab2bf619172d3.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-df360f571f6edeae.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc mod"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle" title="show sidebar"></button></nav><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../../../cosmic/index.html">cosmic</a><span class="version">0.1.0</span></h2></div><h2 class="location"><a href="#">Module keyed</a></h2><div class="sidebar-elems"><section><ul class="block"><li><a href="#modules">Modules</a></li><li><a href="#structs">Structs</a></li></ul></section><h2><a href="../index.html">In cosmic::iced_widget</a></h2></div></nav><div class="sidebar-resizer"></div><main><div class="width-limiter"><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><h1>Module <a href="../../index.html">cosmic</a>::<wbr><a href="../index.html">iced_widget</a>::<wbr><a class="mod" href="#">keyed</a><button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><span class="out-of-band"><a class="src" href="../../../src/iced_widget/lib.rs.html#28">source</a> · <button id="toggle-all-docs" title="collapse all docs">[<span>&#x2212;</span>]</button></span></div><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Use widgets that can provide hints to ensure continuity.</p>
+<h2 id="what-is-continuity"><a class="doc-anchor" href="#what-is-continuity">§</a>What is continuity?</h2>
+<p>Continuity is the feeling of persistence of state.</p>
+<p>In a graphical user interface, users expect widgets to have a
+certain degree of continuous state. For instance, a text input
+that is focused should stay focused even if the widget tree
+changes slightly.</p>
+<p>Continuity is tricky in <code>iced</code> and the Elm Architecture because
+the whole widget tree is rebuilt during every <code>view</code> call. This is
+very convenient from a developer perspective because you can build
+extremely dynamic interfaces without worrying about changing state.</p>
+<p>However, the tradeoff is that determining what changed becomes hard
+for <code>iced</code>. If you have a list of things, adding an element at the
+top may cause a loss of continuity on every element on the list!</p>
+<h2 id="how-can-we-keep-continuity"><a class="doc-anchor" href="#how-can-we-keep-continuity">§</a>How can we keep continuity?</h2>
+<p>The good news is that user interfaces generally have a static widget
+structure. This structure can be relied on to ensure some degree of
+continuity. <code>iced</code> already does this.</p>
+<p>However, sometimes you have a certain part of your interface that is
+quite dynamic. For instance, a list of things where items may be added
+or removed at any place.</p>
+<p>There are different ways to mitigate this during the reconciliation
+stage, but they involve comparing trees at certain depths and
+backtracking… Quite computationally expensive.</p>
+<p>One approach that is cheaper consists in letting the user provide some hints
+about the identities of the different widgets so that they can be compared
+directly without going deeper.</p>
+<p>The widgets in this module will all ask for a “hint” of some sort. In order
+to help them keep continuity, you need to make sure the hint stays the same
+for the same items in your user interface between <code>view</code> calls.</p>
+</div></details><h2 id="modules" class="section-header">Modules<a href="#modules" class="anchor">§</a></h2><ul class="item-table"><li><div class="item-name"><a class="mod" href="column/index.html" title="mod cosmic::iced_widget::keyed::column">column</a></div><div class="desc docblock-short">Distribute content vertically.</div></li></ul><h2 id="structs" class="section-header">Structs<a href="#structs" class="anchor">§</a></h2><ul class="item-table"><li><div class="item-name"><a class="struct" href="struct.Column.html" title="struct cosmic::iced_widget::keyed::Column">Column</a></div><div class="desc docblock-short">A container that distributes its contents vertically.</div></li></ul></section></div></main></body></html>

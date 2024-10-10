@@ -1,0 +1,42 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Idiomatic inotify wrapper for the Rust programming language"><title>inotify - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-46f98efaafac5295.ttf.woff2,FiraSans-Regular-018c141bf0843ffd.woff2,FiraSans-Medium-8f9a781e4970d388.woff2,SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2,SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../static.files/rustdoc-c5d6553a23f1e5a6.css"><meta name="rustdoc-vars" data-root-path="../" data-static-root-path="../static.files/" data-current-crate="inotify" data-themes="" data-resource-suffix="" data-rustdoc-version="1.81.0 (eeb90cda1 2024-09-04)" data-channel="1.81.0" data-search-js="search-d234aafac6c221dd.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../static.files/storage-118b08c4c78b968e.js"></script><script defer src="../crates.js"></script><script defer src="../static.files/main-d2fab2bf619172d3.js"></script><noscript><link rel="stylesheet" href="../static.files/noscript-df360f571f6edeae.css"></noscript><link rel="alternate icon" type="image/png" href="../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc mod crate"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle" title="show sidebar"></button></nav><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../inotify/index.html">inotify</a><span class="version">0.9.6</span></h2></div><div class="sidebar-elems"><ul class="block"><li><a id="all-types" href="all.html">All Items</a></li></ul><section><ul class="block"><li><a href="#structs">Structs</a></li><li><a href="#functions">Functions</a></li><li><a href="#types">Type Aliases</a></li></ul></section></div></nav><div class="sidebar-resizer"></div><main><div class="width-limiter"><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><h1>Crate <a class="mod" href="#">inotify</a><button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><span class="out-of-band"><a class="src" href="../src/inotify/lib.rs.html#1-104">source</a> · <button id="toggle-all-docs" title="collapse all docs">[<span>&#x2212;</span>]</button></span></div><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Idiomatic inotify wrapper for the Rust programming language</p>
+<h2 id="about"><a class="doc-anchor" href="#about">§</a>About</h2>
+<p><a href="https://crates.io/crates/inotify">inotify-rs</a> is an idiomatic wrapper around the Linux kernel’s <a href="https://en.wikipedia.org/wiki/Inotify">inotify</a> API
+for the Rust programming language. It can be used for monitoring changes to
+files or directories.</p>
+<p>The <a href="struct.Inotify.html"><code>Inotify</code></a> struct is the main entry point into the API.</p>
+<h2 id="example"><a class="doc-anchor" href="#example">§</a>Example</h2>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>inotify::{
+    Inotify,
+    WatchMask,
+};
+
+<span class="kw">let </span><span class="kw-2">mut </span>inotify = Inotify::init()
+    .expect(<span class="string">"Error while initializing inotify instance"</span>);
+
+<span class="comment">// Watch for modify and close events.
+</span>inotify
+    .add_watch(
+        <span class="string">"/tmp/inotify-rs-test-file"</span>,
+        WatchMask::MODIFY | WatchMask::CLOSE,
+    )
+    .expect(<span class="string">"Failed to add file watch"</span>);
+
+<span class="comment">// Read events that were added with `add_watch` above.
+</span><span class="kw">let </span><span class="kw-2">mut </span>buffer = [<span class="number">0</span>; <span class="number">1024</span>];
+<span class="kw">let </span>events = inotify.read_events_blocking(<span class="kw-2">&amp;mut </span>buffer)
+    .expect(<span class="string">"Error while reading events"</span>);
+
+<span class="kw">for </span>event <span class="kw">in </span>events {
+    <span class="comment">// Handle event
+</span>}</code></pre></div>
+<h2 id="attention-inotify-gotchas"><a class="doc-anchor" href="#attention-inotify-gotchas">§</a>Attention: inotify gotchas</h2>
+<p>inotify (as in, the Linux API, not this wrapper) has many edge cases, making
+it hard to use correctly. This can lead to weird and hard to find bugs in
+applications that are based on it. inotify-rs does its best to fix these
+issues, but sometimes this would require an amount of runtime overhead that
+is just unacceptable for a low-level wrapper such as this.</p>
+<p>We’ve documented any issues that inotify-rs has inherited from inotify, as
+far as we are aware of them. Please watch out for any further warnings
+throughout this documentation. If you want to be on the safe side, in case
+we have missed something, please read the <a href="http://man7.org/linux/man-pages/man7/inotify.7.html">inotify man pages</a> carefully.</p>
+</div></details><h2 id="structs" class="section-header">Structs<a href="#structs" class="anchor">§</a></h2><ul class="item-table"><li><div class="item-name"><a class="struct" href="struct.Event.html" title="struct inotify::Event">Event</a></div><div class="desc docblock-short">An inotify event</div></li><li><div class="item-name"><a class="struct" href="struct.EventMask.html" title="struct inotify::EventMask">EventMask</a></div><div class="desc docblock-short">Indicates the type of an event</div></li><li><div class="item-name"><a class="struct" href="struct.Events.html" title="struct inotify::Events">Events</a></div><div class="desc docblock-short">Iterator over inotify events</div></li><li><div class="item-name"><a class="struct" href="struct.Inotify.html" title="struct inotify::Inotify">Inotify</a></div><div class="desc docblock-short">Idiomatic Rust wrapper around Linux’s inotify API</div></li><li><div class="item-name"><a class="struct" href="struct.WatchDescriptor.html" title="struct inotify::WatchDescriptor">WatchDescriptor</a></div><div class="desc docblock-short">Represents a watch on an inode</div></li><li><div class="item-name"><a class="struct" href="struct.WatchMask.html" title="struct inotify::WatchMask">WatchMask</a></div><div class="desc docblock-short">Describes a file system watch</div></li></ul><h2 id="functions" class="section-header">Functions<a href="#functions" class="anchor">§</a></h2><ul class="item-table"><li><div class="item-name"><a class="fn" href="fn.get_absolute_path_buffer_size.html" title="fn inotify::get_absolute_path_buffer_size">get_absolute_path_buffer_size</a></div><div class="desc docblock-short">Get the inotify event buffer size for an absolute path</div></li><li><div class="item-name"><a class="fn" href="fn.get_buffer_size.html" title="fn inotify::get_buffer_size">get_buffer_size</a></div><div class="desc docblock-short">Get the inotify event buffer size</div></li></ul><h2 id="types" class="section-header">Type Aliases<a href="#types" class="anchor">§</a></h2><ul class="item-table"><li><div class="item-name"><a class="type" href="type.EventOwned.html" title="type inotify::EventOwned">EventOwned</a></div><div class="desc docblock-short">An owned version of <code>Event</code></div></li></ul></section></div></main></body></html>

@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["RectangleUpdate","State"],"fn":["rectangle_tracker","rectangle_tracker_subscription","subscription"],"struct":["Appearance","RectangleTracker","RectangleTrackingContainer"],"trait":["StyleSheet"]};

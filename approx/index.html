@@ -1,0 +1,101 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="A crate that provides facilities for testing the approximate equality of floating-point based types, using either relative difference, or units in the last place (ULPs) comparisons."><title>approx - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-46f98efaafac5295.ttf.woff2,FiraSans-Regular-018c141bf0843ffd.woff2,FiraSans-Medium-8f9a781e4970d388.woff2,SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2,SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../static.files/rustdoc-c5d6553a23f1e5a6.css"><meta name="rustdoc-vars" data-root-path="../" data-static-root-path="../static.files/" data-current-crate="approx" data-themes="" data-resource-suffix="" data-rustdoc-version="1.81.0 (eeb90cda1 2024-09-04)" data-channel="1.81.0" data-search-js="search-d234aafac6c221dd.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../static.files/storage-118b08c4c78b968e.js"></script><script defer src="../crates.js"></script><script defer src="../static.files/main-d2fab2bf619172d3.js"></script><noscript><link rel="stylesheet" href="../static.files/noscript-df360f571f6edeae.css"></noscript><link rel="alternate icon" type="image/png" href="../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc mod crate"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle" title="show sidebar"></button></nav><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../approx/index.html">approx</a><span class="version">0.5.1</span></h2></div><div class="sidebar-elems"><ul class="block"><li><a id="all-types" href="all.html">All Items</a></li></ul><section><ul class="block"><li><a href="#macros">Macros</a></li><li><a href="#structs">Structs</a></li><li><a href="#traits">Traits</a></li></ul></section></div></nav><div class="sidebar-resizer"></div><main><div class="width-limiter"><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><h1>Crate <a class="mod" href="#">approx</a><button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><span class="out-of-band"><a class="src" href="../src/approx/lib.rs.html#15-388">source</a> · <button id="toggle-all-docs" title="collapse all docs">[<span>&#x2212;</span>]</button></span></div><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>A crate that provides facilities for testing the approximate equality of floating-point
+based types, using either relative difference, or units in the last place (ULPs)
+comparisons.</p>
+<p>You can also use the <code>*_{eq, ne}!</code> and <code>assert_*_{eq, ne}!</code> macros to test for equality using a
+more positional style:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="attr">#[macro_use]
+</span><span class="kw">extern crate </span>approx;
+
+<span class="kw">use </span>std::f64;
+
+<span class="macro">abs_diff_eq!</span>(<span class="number">1.0</span>, <span class="number">1.0</span>);
+<span class="macro">abs_diff_eq!</span>(<span class="number">1.0</span>, <span class="number">1.0</span>, epsilon = f64::EPSILON);
+
+<span class="macro">relative_eq!</span>(<span class="number">1.0</span>, <span class="number">1.0</span>);
+<span class="macro">relative_eq!</span>(<span class="number">1.0</span>, <span class="number">1.0</span>, epsilon = f64::EPSILON);
+<span class="macro">relative_eq!</span>(<span class="number">1.0</span>, <span class="number">1.0</span>, max_relative = <span class="number">1.0</span>);
+<span class="macro">relative_eq!</span>(<span class="number">1.0</span>, <span class="number">1.0</span>, epsilon = f64::EPSILON, max_relative = <span class="number">1.0</span>);
+<span class="macro">relative_eq!</span>(<span class="number">1.0</span>, <span class="number">1.0</span>, max_relative = <span class="number">1.0</span>, epsilon = f64::EPSILON);
+
+<span class="macro">ulps_eq!</span>(<span class="number">1.0</span>, <span class="number">1.0</span>);
+<span class="macro">ulps_eq!</span>(<span class="number">1.0</span>, <span class="number">1.0</span>, epsilon = f64::EPSILON);
+<span class="macro">ulps_eq!</span>(<span class="number">1.0</span>, <span class="number">1.0</span>, max_ulps = <span class="number">4</span>);
+<span class="macro">ulps_eq!</span>(<span class="number">1.0</span>, <span class="number">1.0</span>, epsilon = f64::EPSILON, max_ulps = <span class="number">4</span>);
+<span class="macro">ulps_eq!</span>(<span class="number">1.0</span>, <span class="number">1.0</span>, max_ulps = <span class="number">4</span>, epsilon = f64::EPSILON);</code></pre></div>
+<h2 id="implementing-approximate-equality-for-custom-types"><a class="doc-anchor" href="#implementing-approximate-equality-for-custom-types">§</a>Implementing approximate equality for custom types</h2>
+<p>The <code>*Eq</code> traits allow approximate equalities to be implemented on types, based on the
+fundamental floating point implementations.</p>
+<p>For example, we might want to be able to do approximate assertions on a complex number type:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="attr">#[macro_use]
+</span><span class="kw">extern crate </span>approx;
+
+<span class="attr">#[derive(Debug, PartialEq)]
+</span><span class="kw">struct </span>Complex&lt;T&gt; {
+    x: T,
+    i: T,
+}
+
+<span class="kw">let </span>x = Complex { x: <span class="number">1.2</span>, i: <span class="number">2.3 </span>};
+
+<span class="macro">assert_relative_eq!</span>(x, x);
+<span class="macro">assert_ulps_eq!</span>(x, x, max_ulps = <span class="number">4</span>);</code></pre></div>
+<p>To do this we can implement <a href="trait.AbsDiffEq.html" title="trait approx::AbsDiffEq"><code>AbsDiffEq</code></a>, <a href="trait.RelativeEq.html" title="trait approx::RelativeEq"><code>RelativeEq</code></a> and <a href="trait.UlpsEq.html" title="trait approx::UlpsEq"><code>UlpsEq</code></a> generically in terms
+of a type parameter that also implements <code>AbsDiffEq</code>, <code>RelativeEq</code> and <code>UlpsEq</code> respectively.
+This means that we can make comparisons for either <code>Complex&lt;f32&gt;</code> or <code>Complex&lt;f64&gt;</code>:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">impl</span>&lt;T: AbsDiffEq&gt; AbsDiffEq <span class="kw">for </span>Complex&lt;T&gt; <span class="kw">where
+    </span>T::Epsilon: Copy,
+{
+    <span class="kw">type </span>Epsilon = T::Epsilon;
+
+    <span class="kw">fn </span>default_epsilon() -&gt; T::Epsilon {
+        T::default_epsilon()
+    }
+
+    <span class="kw">fn </span>abs_diff_eq(<span class="kw-2">&amp;</span><span class="self">self</span>, other: <span class="kw-2">&amp;</span><span class="self">Self</span>, epsilon: T::Epsilon) -&gt; bool {
+        T::abs_diff_eq(<span class="kw-2">&amp;</span><span class="self">self</span>.x, <span class="kw-2">&amp;</span>other.x, epsilon) &amp;&amp;
+        T::abs_diff_eq(<span class="kw-2">&amp;</span><span class="self">self</span>.i, <span class="kw-2">&amp;</span>other.i, epsilon)
+    }
+}
+
+<span class="kw">impl</span>&lt;T: RelativeEq&gt; RelativeEq <span class="kw">for </span>Complex&lt;T&gt; <span class="kw">where
+    </span>T::Epsilon: Copy,
+{
+    <span class="kw">fn </span>default_max_relative() -&gt; T::Epsilon {
+        T::default_max_relative()
+    }
+
+    <span class="kw">fn </span>relative_eq(<span class="kw-2">&amp;</span><span class="self">self</span>, other: <span class="kw-2">&amp;</span><span class="self">Self</span>, epsilon: T::Epsilon, max_relative: T::Epsilon) -&gt; bool {
+        T::relative_eq(<span class="kw-2">&amp;</span><span class="self">self</span>.x, <span class="kw-2">&amp;</span>other.x, epsilon, max_relative) &amp;&amp;
+        T::relative_eq(<span class="kw-2">&amp;</span><span class="self">self</span>.i, <span class="kw-2">&amp;</span>other.i, epsilon, max_relative)
+    }
+}
+
+<span class="kw">impl</span>&lt;T: UlpsEq&gt; UlpsEq <span class="kw">for </span>Complex&lt;T&gt; <span class="kw">where
+    </span>T::Epsilon: Copy,
+{
+    <span class="kw">fn </span>default_max_ulps() -&gt; u32 {
+        T::default_max_ulps()
+    }
+
+    <span class="kw">fn </span>ulps_eq(<span class="kw-2">&amp;</span><span class="self">self</span>, other: <span class="kw-2">&amp;</span><span class="self">Self</span>, epsilon: T::Epsilon, max_ulps: u32) -&gt; bool {
+        T::ulps_eq(<span class="kw-2">&amp;</span><span class="self">self</span>.x, <span class="kw-2">&amp;</span>other.x, epsilon, max_ulps) &amp;&amp;
+        T::ulps_eq(<span class="kw-2">&amp;</span><span class="self">self</span>.i, <span class="kw-2">&amp;</span>other.i, epsilon, max_ulps)
+    }
+}</code></pre></div>
+<h2 id="references"><a class="doc-anchor" href="#references">§</a>References</h2>
+<p>Floating point is hard! Thanks goes to these links for helping to make things a <em>little</em>
+easier to understand:</p>
+<ul>
+<li><a href="https://randomascii.wordpress.com/2012/02/25/comparing-floating-point-numbers-2012-edition/">Comparing Floating Point Numbers, 2012 Edition</a></li>
+<li><a href="http://floating-point-gui.de/errors/comparison/">The Floating Point Guide - Comparison</a></li>
+<li><a href="https://docs.oracle.com/cd/E19957-01/806-3568/ncg_goldberg.html">What Every Computer Scientist Should Know About Floating-Point Arithmetic</a></li>
+</ul>
+</div></details><h2 id="macros" class="section-header">Macros<a href="#macros" class="anchor">§</a></h2><ul class="item-table"><li><div class="item-name"><a class="macro" href="macro.abs_diff_eq.html" title="macro approx::abs_diff_eq">abs_diff_eq</a></div><div class="desc docblock-short">Approximate equality of using the absolute difference.</div></li><li><div class="item-name"><a class="macro" href="macro.abs_diff_ne.html" title="macro approx::abs_diff_ne">abs_diff_ne</a></div><div class="desc docblock-short">Approximate inequality of using the absolute difference.</div></li><li><div class="item-name"><a class="macro" href="macro.assert_abs_diff_eq.html" title="macro approx::assert_abs_diff_eq">assert_abs_diff_eq</a></div><div class="desc docblock-short">An assertion that delegates to <a href="macro.abs_diff_eq.html" title="macro approx::abs_diff_eq"><code>abs_diff_eq!</code></a>, and panics with a helpful error on failure.</div></li><li><div class="item-name"><a class="macro" href="macro.assert_abs_diff_ne.html" title="macro approx::assert_abs_diff_ne">assert_abs_diff_ne</a></div><div class="desc docblock-short">An assertion that delegates to <a href="macro.abs_diff_ne.html" title="macro approx::abs_diff_ne"><code>abs_diff_ne!</code></a>, and panics with a helpful error on failure.</div></li><li><div class="item-name"><a class="macro" href="macro.assert_relative_eq.html" title="macro approx::assert_relative_eq">assert_relative_eq</a></div><div class="desc docblock-short">An assertion that delegates to <a href="macro.relative_eq.html" title="macro approx::relative_eq"><code>relative_eq!</code></a>, and panics with a helpful error on failure.</div></li><li><div class="item-name"><a class="macro" href="macro.assert_relative_ne.html" title="macro approx::assert_relative_ne">assert_relative_ne</a></div><div class="desc docblock-short">An assertion that delegates to <a href="macro.relative_ne.html" title="macro approx::relative_ne"><code>relative_ne!</code></a>, and panics with a helpful error on failure.</div></li><li><div class="item-name"><a class="macro" href="macro.assert_ulps_eq.html" title="macro approx::assert_ulps_eq">assert_ulps_eq</a></div><div class="desc docblock-short">An assertion that delegates to <a href="macro.ulps_eq.html" title="macro approx::ulps_eq"><code>ulps_eq!</code></a>, and panics with a helpful error on failure.</div></li><li><div class="item-name"><a class="macro" href="macro.assert_ulps_ne.html" title="macro approx::assert_ulps_ne">assert_ulps_ne</a></div><div class="desc docblock-short">An assertion that delegates to <a href="macro.ulps_ne.html" title="macro approx::ulps_ne"><code>ulps_ne!</code></a>, and panics with a helpful error on failure.</div></li><li><div class="item-name"><a class="macro" href="macro.relative_eq.html" title="macro approx::relative_eq">relative_eq</a></div><div class="desc docblock-short">Approximate equality using both the absolute difference and relative based comparisons.</div></li><li><div class="item-name"><a class="macro" href="macro.relative_ne.html" title="macro approx::relative_ne">relative_ne</a></div><div class="desc docblock-short">Approximate inequality using both the absolute difference and relative based comparisons.</div></li><li><div class="item-name"><a class="macro" href="macro.ulps_eq.html" title="macro approx::ulps_eq">ulps_eq</a></div><div class="desc docblock-short">Approximate equality using both the absolute difference and ULPs (Units in Last Place).</div></li><li><div class="item-name"><a class="macro" href="macro.ulps_ne.html" title="macro approx::ulps_ne">ulps_ne</a></div><div class="desc docblock-short">Approximate inequality using both the absolute difference and ULPs (Units in Last Place).</div></li></ul><h2 id="structs" class="section-header">Structs<a href="#structs" class="anchor">§</a></h2><ul class="item-table"><li><div class="item-name"><a class="struct" href="struct.AbsDiff.html" title="struct approx::AbsDiff">AbsDiff</a></div><div class="desc docblock-short">The requisite parameters for testing for approximate equality using a
+absolute difference based comparison.</div></li><li><div class="item-name"><a class="struct" href="struct.Relative.html" title="struct approx::Relative">Relative</a></div><div class="desc docblock-short">The requisite parameters for testing for approximate equality using a
+relative based comparison.</div></li><li><div class="item-name"><a class="struct" href="struct.Ulps.html" title="struct approx::Ulps">Ulps</a></div><div class="desc docblock-short">The requisite parameters for testing for approximate equality using an ULPs
+based comparison.</div></li></ul><h2 id="traits" class="section-header">Traits<a href="#traits" class="anchor">§</a></h2><ul class="item-table"><li><div class="item-name"><a class="trait" href="trait.AbsDiffEq.html" title="trait approx::AbsDiffEq">AbsDiffEq</a></div><div class="desc docblock-short">Equality that is defined using the absolute difference of two numbers.</div></li><li><div class="item-name"><a class="trait" href="trait.RelativeEq.html" title="trait approx::RelativeEq">RelativeEq</a></div><div class="desc docblock-short">Equality comparisons between two numbers using both the absolute difference and
+relative based comparisons.</div></li><li><div class="item-name"><a class="trait" href="trait.UlpsEq.html" title="trait approx::UlpsEq">UlpsEq</a></div><div class="desc docblock-short">Equality comparisons between two numbers using both the absolute difference and ULPs
+(Units in Last Place) based comparisons.</div></li></ul></section></div></main></body></html>
