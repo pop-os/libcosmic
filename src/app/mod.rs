@@ -716,6 +716,8 @@ impl<App: Application> ApplicationExt for App {
                                 Message::Cosmic(cosmic::Message::ContextDrawer(false)),
                                 context_width,
                             )
+                            .apply(crate::widget::container)
+                            .width(context_width)
                             .apply(|drawer| {
                                 Element::from(id_container(
                                     drawer,
