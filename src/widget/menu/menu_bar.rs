@@ -63,6 +63,82 @@ impl Default for MenuBarState {
     }
 }
 
+pub(crate) fn menu_roots_children<'a, Message, Renderer>(
+    menu_roots: &Vec<MenuTree<'a, Message, Renderer>>,
+) -> Vec<Tree>
+where
+    Renderer: renderer::Renderer,
+{
+    /*
+    menu bar
+        menu root 1 (stateless)
+            flat tree
+        menu root 2 (stateless)
+            flat tree
+        ...
+    */
+
+    menu_roots
+        .iter()
+        .map(|root| {
+            let mut tree = Tree::empty();
+            let flat = root
+                .flattern()
+                .iter()
+                .map(|mt| Tree::new(mt.item.as_widget()))
+                .collect();
+            tree.children = flat;
+            tree
+        })
+        .collect()
+}
+
+#[allow(invalid_reference_casting)]
+pub(crate) fn menu_roots_diff<'a, Message, Renderer>(
+    menu_roots: &mut Vec<MenuTree<'a, Message, Renderer>>,
+    tree: &mut Tree,
+) where
+    Renderer: renderer::Renderer,
+{
+    if tree.children.len() > menu_roots.len() {
+        tree.children.truncate(menu_roots.len());
+    }
+
+    tree.children
+        .iter_mut()
+        .zip(menu_roots.iter())
+        .for_each(|(t, root)| {
+            let mut flat = root
+                .flattern()
+                .iter()
+                .map(|mt| {
+                    let widget = mt.item.as_widget();
+                    let widget_ptr = widget as *const dyn Widget<Message, crate::Theme, Renderer>;
+                    let widget_ptr_mut =
+                        widget_ptr as *mut dyn Widget<Message, crate::Theme, Renderer>;
+                    //TODO: find a way to diff_children without unsafe code
+                    unsafe { &mut *widget_ptr_mut }
+                })
+                .collect::<Vec<_>>();
+
+            t.diff_children(flat.as_mut_slice());
+        });
+
+    if tree.children.len() < menu_roots.len() {
+        let extended = menu_roots[tree.children.len()..].iter().map(|root| {
+            let mut tree = Tree::empty();
+            let flat = root
+                .flattern()
+                .iter()
+                .map(|mt| Tree::new(mt.item.as_widget()))
+                .collect();
+            tree.children = flat;
+            tree
+        });
+        tree.children.extend(extended);
+    }
+}
+
 /// A `MenuBar` collects `MenuTree`s and handles all the layout, event processing, and drawing.
 #[allow(missing_debug_implementations)]
 pub struct MenuBar<'a, Message, Renderer = crate::Renderer>
@@ -212,46 +288,8 @@ where
         iced_core::Size::new(self.width, self.height)
     }
 
-    #[allow(invalid_reference_casting)]
     fn diff(&mut self, tree: &mut Tree) {
-        if tree.children.len() > self.menu_roots.len() {
-            tree.children.truncate(self.menu_roots.len());
-        }
-
-        tree.children
-            .iter_mut()
-            .zip(self.menu_roots.iter())
-            .for_each(|(t, root)| {
-                let mut flat = root
-                    .flattern()
-                    .iter()
-                    .map(|mt| {
-                        let widget = mt.item.as_widget();
-                        let widget_ptr =
-                            widget as *const dyn Widget<Message, crate::Theme, Renderer>;
-                        let widget_ptr_mut =
-                            widget_ptr as *mut dyn Widget<Message, crate::Theme, Renderer>;
-                        //TODO: find a way to diff_children without unsafe code
-                        unsafe { &mut *widget_ptr_mut }
-                    })
-                    .collect::<Vec<_>>();
-
-                t.diff_children(flat.as_mut_slice());
-            });
-
-        if tree.children.len() < self.menu_roots.len() {
-            let extended = self.menu_roots[tree.children.len()..].iter().map(|root| {
-                let mut tree = Tree::empty();
-                let flat = root
-                    .flattern()
-                    .iter()
-                    .map(|mt| Tree::new(mt.item.as_widget()))
-                    .collect();
-                tree.children = flat;
-                tree
-            });
-            tree.children.extend(extended);
-        }
+        menu_roots_diff(&mut self.menu_roots, tree);
     }
 
     fn tag(&self) -> tree::Tag {
@@ -263,28 +301,7 @@ where
     }
 
     fn children(&self) -> Vec<Tree> {
-        /*
-        menu bar
-            menu root 1 (stateless)
-                flat tree
-            menu root 2 (stateless)
-                flat tree
-            ...
-        */
-
-        self.menu_roots
-            .iter()
-            .map(|root| {
-                let mut tree = Tree::empty();
-                let flat = root
-                    .flattern()
-                    .iter()
-                    .map(|mt| Tree::new(mt.item.as_widget()))
-                    .collect();
-                tree.children = flat;
-                tree
-            })
-            .collect()
+        menu_roots_children(&self.menu_roots)
     }
 
     fn layout(&self, tree: &mut Tree, renderer: &Renderer, limits: &Limits) -> Node {

@@ -6,7 +6,8 @@ use crate::iced_core::id::Internal;
 use crate::theme::{SegmentedButton as Style, THEME};
 use crate::widget::dnd_destination::DragId;
 use crate::widget::menu::{
-    self, CloseCondition, ItemHeight, ItemWidth, MenuBarState, PathHighlight,
+    self, menu_roots_children, menu_roots_diff, CloseCondition, ItemHeight, ItemWidth,
+    MenuBarState, PathHighlight,
 };
 use crate::widget::{icon, Icon};
 use crate::{Element, Renderer};
@@ -560,20 +561,7 @@ where
         if let Some(ref context_menu) = self.context_menu {
             let mut tree = Tree::empty();
             tree.state = tree::State::new(MenuBarState::default());
-            tree.children = context_menu
-                .iter()
-                .map(|root| {
-                    let mut tree = Tree::empty();
-                    let flat = root
-                        .flattern()
-                        .iter()
-                        .map(|mt| Tree::new(mt.item.as_widget()))
-                        .collect();
-                    tree.children = flat;
-                    tree
-                })
-                .collect();
-
+            tree.children = menu_roots_children(&context_menu);
             children.push(tree);
         }
 
@@ -655,7 +643,19 @@ where
             }
         }
 
-        // TODO: diff the context menu
+        // Diff the context menu
+        if let Some(context_menu) = &mut self.context_menu {
+            if tree.children.is_empty() {
+                let mut child_tree = Tree::empty();
+                child_tree.state = tree::State::new(MenuBarState::default());
+                tree.children.push(child_tree);
+            } else {
+                tree.children.truncate(1);
+            }
+            menu_roots_diff(context_menu, &mut tree.children[0]);
+        } else {
+            tree.children.clear();
+        }
     }
 
     fn size(&self) -> Size<Length> {
