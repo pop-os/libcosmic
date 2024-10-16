@@ -1,0 +1,122 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="An interactive component that can be displayed on top of other widgets."><title>Overlay in cosmic::iced_core - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-46f98efaafac5295.ttf.woff2,FiraSans-Regular-018c141bf0843ffd.woff2,FiraSans-Medium-8f9a781e4970d388.woff2,SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2,SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../static.files/rustdoc-c5d6553a23f1e5a6.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="cosmic" data-themes="" data-resource-suffix="" data-rustdoc-version="1.81.0 (eeb90cda1 2024-09-04)" data-channel="1.81.0" data-search-js="search-d234aafac6c221dd.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../static.files/storage-118b08c4c78b968e.js"></script><script defer src="sidebar-items.js"></script><script defer src="../../static.files/main-d2fab2bf619172d3.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-df360f571f6edeae.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc trait"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle" title="show sidebar"></button></nav><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../../cosmic/index.html">cosmic</a><span class="version">0.1.0</span></h2></div><h2 class="location"><a href="#">Overlay</a></h2><div class="sidebar-elems"><section><h3><a href="#required-methods">Required Methods</a></h3><ul class="block"><li><a href="#tymethod.draw">draw</a></li><li><a href="#tymethod.layout">layout</a></li></ul><h3><a href="#provided-methods">Provided Methods</a></h3><ul class="block"><li><a href="#method.is_over">is_over</a></li><li><a href="#method.mouse_interaction">mouse_interaction</a></li><li><a href="#method.on_event">on_event</a></li><li><a href="#method.operate">operate</a></li><li><a href="#method.overlay">overlay</a></li></ul><h3><a href="#implementors">Implementors</a></h3></section><h2><a href="index.html">In cosmic::iced_core</a></h2></div></nav><div class="sidebar-resizer"></div><main><div class="width-limiter"><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><h1>Trait <a href="../index.html">cosmic</a>::<wbr><a href="index.html">iced_core</a>::<wbr><a class="trait" href="#">Overlay</a><button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><span class="out-of-band"><a class="src" href="../../src/iced_core/overlay.rs.html#17">source</a> · <button id="toggle-all-docs" title="collapse all docs">[<span>&#x2212;</span>]</button></span></div><pre class="rust item-decl"><code>pub trait Overlay&lt;Message, Theme, Renderer&gt;<div class="where">where
+    Renderer: <a class="trait" href="../iced_winit/graphics/core/trait.Renderer.html" title="trait cosmic::iced_winit::graphics::core::Renderer">Renderer</a>,</div>{
+    // Required methods
+    fn <a href="#tymethod.layout" class="fn">layout</a>(
+        &amp;mut self,
+        renderer: <a class="primitive" href="https://doc.rust-lang.org/1.81.0/std/primitive.reference.html">&amp;Renderer</a>,
+        bounds: <a class="struct" href="../iced_winit/graphics/core/struct.Size.html" title="struct cosmic::iced_winit::graphics::core::Size">Size</a>,
+        position: <a class="struct" href="../iced_winit/graphics/core/struct.Point.html" title="struct cosmic::iced_winit::graphics::core::Point">Point</a>,
+        translation: <a class="struct" href="../iced_winit/graphics/core/struct.Vector.html" title="struct cosmic::iced_winit::graphics::core::Vector">Vector</a>,
+    ) -&gt; <a class="struct" href="../iced_winit/graphics/core/layout/struct.Node.html" title="struct cosmic::iced_winit::graphics::core::layout::Node">Node</a>;
+<span class="item-spacer"></span>    fn <a href="#tymethod.draw" class="fn">draw</a>(
+        &amp;self,
+        renderer: <a class="primitive" href="https://doc.rust-lang.org/1.81.0/std/primitive.reference.html">&amp;mut Renderer</a>,
+        theme: <a class="primitive" href="https://doc.rust-lang.org/1.81.0/std/primitive.reference.html">&amp;Theme</a>,
+        style: &amp;<a class="struct" href="../iced_winit/graphics/core/renderer/struct.Style.html" title="struct cosmic::iced_winit::graphics::core::renderer::Style">Style</a>,
+        layout: <a class="struct" href="../iced_winit/graphics/core/struct.Layout.html" title="struct cosmic::iced_winit::graphics::core::Layout">Layout</a>&lt;'_&gt;,
+        cursor: <a class="enum" href="../iced_winit/graphics/core/mouse/enum.Cursor.html" title="enum cosmic::iced_winit::graphics::core::mouse::Cursor">Cursor</a>,
+    );
+
+    // Provided methods
+    fn <a href="#method.operate" class="fn">operate</a>(
+        &amp;mut self,
+        _layout: <a class="struct" href="../iced_winit/graphics/core/struct.Layout.html" title="struct cosmic::iced_winit::graphics::core::Layout">Layout</a>&lt;'_&gt;,
+        _renderer: <a class="primitive" href="https://doc.rust-lang.org/1.81.0/std/primitive.reference.html">&amp;Renderer</a>,
+        _operation: &amp;mut dyn <a class="trait" href="../iced_winit/graphics/core/widget/trait.Operation.html" title="trait cosmic::iced_winit::graphics::core::widget::Operation">Operation</a>&lt;<a class="enum" href="../iced_winit/graphics/core/widget/enum.OperationOutputWrapper.html" title="enum cosmic::iced_winit::graphics::core::widget::OperationOutputWrapper">OperationOutputWrapper</a>&lt;Message&gt;&gt;,
+    ) { ... }
+<span class="item-spacer"></span>    fn <a href="#method.on_event" class="fn">on_event</a>(
+        &amp;mut self,
+        _event: <a class="enum" href="../iced_winit/graphics/core/enum.Event.html" title="enum cosmic::iced_winit::graphics::core::Event">Event</a>,
+        _layout: <a class="struct" href="../iced_winit/graphics/core/struct.Layout.html" title="struct cosmic::iced_winit::graphics::core::Layout">Layout</a>&lt;'_&gt;,
+        _cursor: <a class="enum" href="../iced_winit/graphics/core/mouse/enum.Cursor.html" title="enum cosmic::iced_winit::graphics::core::mouse::Cursor">Cursor</a>,
+        _renderer: <a class="primitive" href="https://doc.rust-lang.org/1.81.0/std/primitive.reference.html">&amp;Renderer</a>,
+        _clipboard: &amp;mut dyn <a class="trait" href="../iced_winit/graphics/core/trait.Clipboard.html" title="trait cosmic::iced_winit::graphics::core::Clipboard">Clipboard</a>,
+        _shell: &amp;mut <a class="struct" href="../iced_winit/graphics/core/struct.Shell.html" title="struct cosmic::iced_winit::graphics::core::Shell">Shell</a>&lt;'_, Message&gt;,
+    ) -&gt; <a class="enum" href="../iced_winit/graphics/core/event/enum.Status.html" title="enum cosmic::iced_winit::graphics::core::event::Status">Status</a> { ... }
+<span class="item-spacer"></span>    fn <a href="#method.mouse_interaction" class="fn">mouse_interaction</a>(
+        &amp;self,
+        _layout: <a class="struct" href="../iced_winit/graphics/core/struct.Layout.html" title="struct cosmic::iced_winit::graphics::core::Layout">Layout</a>&lt;'_&gt;,
+        _cursor: <a class="enum" href="../iced_winit/graphics/core/mouse/enum.Cursor.html" title="enum cosmic::iced_winit::graphics::core::mouse::Cursor">Cursor</a>,
+        _viewport: &amp;<a class="struct" href="../iced_winit/graphics/core/struct.Rectangle.html" title="struct cosmic::iced_winit::graphics::core::Rectangle">Rectangle</a>,
+        _renderer: <a class="primitive" href="https://doc.rust-lang.org/1.81.0/std/primitive.reference.html">&amp;Renderer</a>,
+    ) -&gt; <a class="enum" href="../iced_winit/graphics/core/mouse/enum.Interaction.html" title="enum cosmic::iced_winit::graphics::core::mouse::Interaction">Interaction</a> { ... }
+<span class="item-spacer"></span>    fn <a href="#method.is_over" class="fn">is_over</a>(
+        &amp;self,
+        layout: <a class="struct" href="../iced_winit/graphics/core/struct.Layout.html" title="struct cosmic::iced_winit::graphics::core::Layout">Layout</a>&lt;'_&gt;,
+        _renderer: <a class="primitive" href="https://doc.rust-lang.org/1.81.0/std/primitive.reference.html">&amp;Renderer</a>,
+        cursor_position: <a class="struct" href="../iced_winit/graphics/core/struct.Point.html" title="struct cosmic::iced_winit::graphics::core::Point">Point</a>,
+    ) -&gt; <a class="primitive" href="https://doc.rust-lang.org/1.81.0/std/primitive.bool.html">bool</a> { ... }
+<span class="item-spacer"></span>    fn <a href="#method.overlay" class="fn">overlay</a>&lt;'a&gt;(
+        &amp;'a mut self,
+        _layout: <a class="struct" href="../iced_winit/graphics/core/struct.Layout.html" title="struct cosmic::iced_winit::graphics::core::Layout">Layout</a>&lt;'_&gt;,
+        _renderer: <a class="primitive" href="https://doc.rust-lang.org/1.81.0/std/primitive.reference.html">&amp;Renderer</a>,
+    ) -&gt; <a class="enum" href="https://doc.rust-lang.org/1.81.0/core/option/enum.Option.html" title="enum core::option::Option">Option</a>&lt;<a class="struct" href="../iced_winit/graphics/core/overlay/struct.Element.html" title="struct cosmic::iced_winit::graphics::core::overlay::Element">Element</a>&lt;'a, Message, Theme, Renderer&gt;&gt; { ... }
+}</code></pre><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>An interactive component that can be displayed on top of other widgets.</p>
+</div></details><h2 id="required-methods" class="section-header">Required Methods<a href="#required-methods" class="anchor">§</a></h2><div class="methods"><details class="toggle method-toggle" open><summary><section id="tymethod.layout" class="method"><a class="src rightside" href="../../src/iced_core/overlay.rs.html#27-33">source</a><h4 class="code-header">fn <a href="#tymethod.layout" class="fn">layout</a>(
+    &amp;mut self,
+    renderer: <a class="primitive" href="https://doc.rust-lang.org/1.81.0/std/primitive.reference.html">&amp;Renderer</a>,
+    bounds: <a class="struct" href="../iced_winit/graphics/core/struct.Size.html" title="struct cosmic::iced_winit::graphics::core::Size">Size</a>,
+    position: <a class="struct" href="../iced_winit/graphics/core/struct.Point.html" title="struct cosmic::iced_winit::graphics::core::Point">Point</a>,
+    translation: <a class="struct" href="../iced_winit/graphics/core/struct.Vector.html" title="struct cosmic::iced_winit::graphics::core::Vector">Vector</a>,
+) -&gt; <a class="struct" href="../iced_winit/graphics/core/layout/struct.Node.html" title="struct cosmic::iced_winit::graphics::core::layout::Node">Node</a></h4></section></summary><div class="docblock"><p>Returns the layout <a href="../iced_winit/graphics/core/layout/struct.Node.html" title="struct cosmic::iced_winit::graphics::core::layout::Node"><code>Node</code></a> of the <a href="../iced_winit/graphics/core/trait.Overlay.html" title="trait cosmic::iced_winit::graphics::core::Overlay"><code>Overlay</code></a>.</p>
+<p>This <a href="../iced_winit/graphics/core/layout/struct.Node.html" title="struct cosmic::iced_winit::graphics::core::layout::Node"><code>Node</code></a> is used by the runtime to compute the <a href="../iced_winit/graphics/core/struct.Layout.html" title="struct cosmic::iced_winit::graphics::core::Layout"><code>Layout</code></a> of the
+user interface.</p>
+</div></details><details class="toggle method-toggle" open><summary><section id="tymethod.draw" class="method"><a class="src rightside" href="../../src/iced_core/overlay.rs.html#36-43">source</a><h4 class="code-header">fn <a href="#tymethod.draw" class="fn">draw</a>(
+    &amp;self,
+    renderer: <a class="primitive" href="https://doc.rust-lang.org/1.81.0/std/primitive.reference.html">&amp;mut Renderer</a>,
+    theme: <a class="primitive" href="https://doc.rust-lang.org/1.81.0/std/primitive.reference.html">&amp;Theme</a>,
+    style: &amp;<a class="struct" href="../iced_winit/graphics/core/renderer/struct.Style.html" title="struct cosmic::iced_winit::graphics::core::renderer::Style">Style</a>,
+    layout: <a class="struct" href="../iced_winit/graphics/core/struct.Layout.html" title="struct cosmic::iced_winit::graphics::core::Layout">Layout</a>&lt;'_&gt;,
+    cursor: <a class="enum" href="../iced_winit/graphics/core/mouse/enum.Cursor.html" title="enum cosmic::iced_winit::graphics::core::mouse::Cursor">Cursor</a>,
+)</h4></section></summary><div class="docblock"><p>Draws the <a href="../iced_winit/graphics/core/trait.Overlay.html" title="trait cosmic::iced_winit::graphics::core::Overlay"><code>Overlay</code></a> using the associated <code>Renderer</code>.</p>
+</div></details></div><h2 id="provided-methods" class="section-header">Provided Methods<a href="#provided-methods" class="anchor">§</a></h2><div class="methods"><details class="toggle method-toggle" open><summary><section id="method.operate" class="method"><a class="src rightside" href="../../src/iced_core/overlay.rs.html#46-51">source</a><h4 class="code-header">fn <a href="#method.operate" class="fn">operate</a>(
+    &amp;mut self,
+    _layout: <a class="struct" href="../iced_winit/graphics/core/struct.Layout.html" title="struct cosmic::iced_winit::graphics::core::Layout">Layout</a>&lt;'_&gt;,
+    _renderer: <a class="primitive" href="https://doc.rust-lang.org/1.81.0/std/primitive.reference.html">&amp;Renderer</a>,
+    _operation: &amp;mut dyn <a class="trait" href="../iced_winit/graphics/core/widget/trait.Operation.html" title="trait cosmic::iced_winit::graphics::core::widget::Operation">Operation</a>&lt;<a class="enum" href="../iced_winit/graphics/core/widget/enum.OperationOutputWrapper.html" title="enum cosmic::iced_winit::graphics::core::widget::OperationOutputWrapper">OperationOutputWrapper</a>&lt;Message&gt;&gt;,
+)</h4></section></summary><div class="docblock"><p>Applies an <a href="../iced_winit/graphics/core/widget/trait.Operation.html" title="trait cosmic::iced_winit::graphics::core::widget::Operation"><code>Operation</code></a> to the <a href="../iced_winit/graphics/core/trait.Overlay.html" title="trait cosmic::iced_winit::graphics::core::Overlay"><code>Overlay</code></a>.</p>
+</div></details><details class="toggle method-toggle" open><summary><section id="method.on_event" class="method"><a class="src rightside" href="../../src/iced_core/overlay.rs.html#66-74">source</a><h4 class="code-header">fn <a href="#method.on_event" class="fn">on_event</a>(
+    &amp;mut self,
+    _event: <a class="enum" href="../iced_winit/graphics/core/enum.Event.html" title="enum cosmic::iced_winit::graphics::core::Event">Event</a>,
+    _layout: <a class="struct" href="../iced_winit/graphics/core/struct.Layout.html" title="struct cosmic::iced_winit::graphics::core::Layout">Layout</a>&lt;'_&gt;,
+    _cursor: <a class="enum" href="../iced_winit/graphics/core/mouse/enum.Cursor.html" title="enum cosmic::iced_winit::graphics::core::mouse::Cursor">Cursor</a>,
+    _renderer: <a class="primitive" href="https://doc.rust-lang.org/1.81.0/std/primitive.reference.html">&amp;Renderer</a>,
+    _clipboard: &amp;mut dyn <a class="trait" href="../iced_winit/graphics/core/trait.Clipboard.html" title="trait cosmic::iced_winit::graphics::core::Clipboard">Clipboard</a>,
+    _shell: &amp;mut <a class="struct" href="../iced_winit/graphics/core/struct.Shell.html" title="struct cosmic::iced_winit::graphics::core::Shell">Shell</a>&lt;'_, Message&gt;,
+) -&gt; <a class="enum" href="../iced_winit/graphics/core/event/enum.Status.html" title="enum cosmic::iced_winit::graphics::core::event::Status">Status</a></h4></section></summary><div class="docblock"><p>Processes a runtime <a href="../iced_winit/graphics/core/enum.Event.html" title="enum cosmic::iced_winit::graphics::core::Event"><code>Event</code></a>.</p>
+<p>It receives:</p>
+<ul>
+<li>an <a href="../iced_winit/graphics/core/enum.Event.html" title="enum cosmic::iced_winit::graphics::core::Event"><code>Event</code></a> describing user interaction</li>
+<li>the computed <a href="../iced_winit/graphics/core/struct.Layout.html" title="struct cosmic::iced_winit::graphics::core::Layout"><code>Layout</code></a> of the <a href="../iced_winit/graphics/core/trait.Overlay.html" title="trait cosmic::iced_winit::graphics::core::Overlay"><code>Overlay</code></a></li>
+<li>the current cursor position</li>
+<li>a mutable <code>Message</code> list, allowing the <a href="../iced_winit/graphics/core/trait.Overlay.html" title="trait cosmic::iced_winit::graphics::core::Overlay"><code>Overlay</code></a> to produce
+new messages based on user interaction.</li>
+<li>the <code>Renderer</code></li>
+<li>a <a href="../iced_winit/graphics/core/trait.Clipboard.html" title="trait cosmic::iced_winit::graphics::core::Clipboard"><code>Clipboard</code></a>, if available</li>
+</ul>
+<p>By default, it does nothing.</p>
+</div></details><details class="toggle method-toggle" open><summary><section id="method.mouse_interaction" class="method"><a class="src rightside" href="../../src/iced_core/overlay.rs.html#81-87">source</a><h4 class="code-header">fn <a href="#method.mouse_interaction" class="fn">mouse_interaction</a>(
+    &amp;self,
+    _layout: <a class="struct" href="../iced_winit/graphics/core/struct.Layout.html" title="struct cosmic::iced_winit::graphics::core::Layout">Layout</a>&lt;'_&gt;,
+    _cursor: <a class="enum" href="../iced_winit/graphics/core/mouse/enum.Cursor.html" title="enum cosmic::iced_winit::graphics::core::mouse::Cursor">Cursor</a>,
+    _viewport: &amp;<a class="struct" href="../iced_winit/graphics/core/struct.Rectangle.html" title="struct cosmic::iced_winit::graphics::core::Rectangle">Rectangle</a>,
+    _renderer: <a class="primitive" href="https://doc.rust-lang.org/1.81.0/std/primitive.reference.html">&amp;Renderer</a>,
+) -&gt; <a class="enum" href="../iced_winit/graphics/core/mouse/enum.Interaction.html" title="enum cosmic::iced_winit::graphics::core::mouse::Interaction">Interaction</a></h4></section></summary><div class="docblock"><p>Returns the current <a href="../iced_winit/graphics/core/mouse/enum.Interaction.html" title="enum cosmic::iced_winit::graphics::core::mouse::Interaction"><code>mouse::Interaction</code></a> of the <a href="../iced_winit/graphics/core/trait.Overlay.html" title="trait cosmic::iced_winit::graphics::core::Overlay"><code>Overlay</code></a>.</p>
+<p>By default, it returns <a href="../iced_winit/graphics/core/mouse/enum.Interaction.html#variant.Idle" title="variant cosmic::iced_winit::graphics::core::mouse::Interaction::Idle"><code>mouse::Interaction::Idle</code></a>.</p>
+</div></details><details class="toggle method-toggle" open><summary><section id="method.is_over" class="method"><a class="src rightside" href="../../src/iced_core/overlay.rs.html#95-100">source</a><h4 class="code-header">fn <a href="#method.is_over" class="fn">is_over</a>(
+    &amp;self,
+    layout: <a class="struct" href="../iced_winit/graphics/core/struct.Layout.html" title="struct cosmic::iced_winit::graphics::core::Layout">Layout</a>&lt;'_&gt;,
+    _renderer: <a class="primitive" href="https://doc.rust-lang.org/1.81.0/std/primitive.reference.html">&amp;Renderer</a>,
+    cursor_position: <a class="struct" href="../iced_winit/graphics/core/struct.Point.html" title="struct cosmic::iced_winit::graphics::core::Point">Point</a>,
+) -&gt; <a class="primitive" href="https://doc.rust-lang.org/1.81.0/std/primitive.bool.html">bool</a></h4></section></summary><div class="docblock"><p>Returns true if the cursor is over the <a href="../iced_winit/graphics/core/trait.Overlay.html" title="trait cosmic::iced_winit::graphics::core::Overlay"><code>Overlay</code></a>.</p>
+<p>By default, it returns true if the bounds of the <code>layout</code> contain
+the <code>cursor_position</code>.</p>
+</div></details><details class="toggle method-toggle" open><summary><section id="method.overlay" class="method"><a class="src rightside" href="../../src/iced_core/overlay.rs.html#105-109">source</a><h4 class="code-header">fn <a href="#method.overlay" class="fn">overlay</a>&lt;'a&gt;(
+    &amp;'a mut self,
+    _layout: <a class="struct" href="../iced_winit/graphics/core/struct.Layout.html" title="struct cosmic::iced_winit::graphics::core::Layout">Layout</a>&lt;'_&gt;,
+    _renderer: <a class="primitive" href="https://doc.rust-lang.org/1.81.0/std/primitive.reference.html">&amp;Renderer</a>,
+) -&gt; <a class="enum" href="https://doc.rust-lang.org/1.81.0/core/option/enum.Option.html" title="enum core::option::Option">Option</a>&lt;<a class="struct" href="../iced_winit/graphics/core/overlay/struct.Element.html" title="struct cosmic::iced_winit::graphics::core::overlay::Element">Element</a>&lt;'a, Message, Theme, Renderer&gt;&gt;</h4></section></summary><div class="docblock"><p>Returns the nested overlay of the <a href="../iced_winit/graphics/core/trait.Overlay.html" title="trait cosmic::iced_winit::graphics::core::Overlay"><code>Overlay</code></a>, if there is any.</p>
+</div></details></div><h2 id="implementors" class="section-header">Implementors<a href="#implementors" class="anchor">§</a></h2><div id="implementors-list"><section id="impl-Overlay%3CMessage,+Theme,+Renderer%3E-for-Overlay%3C'a,+'b,+Message,+Renderer%3E" class="impl"><a class="src rightside" href="../../src/cosmic/widget/popover.rs.html#291-418">source</a><a href="#impl-Overlay%3CMessage,+Theme,+Renderer%3E-for-Overlay%3C'a,+'b,+Message,+Renderer%3E" class="anchor">§</a><h3 class="code-header">impl&lt;'a, 'b, Message, Renderer&gt; <a class="trait" href="../iced_winit/graphics/core/trait.Overlay.html" title="trait cosmic::iced_winit::graphics::core::Overlay">Overlay</a>&lt;Message, <a class="struct" href="../struct.Theme.html" title="struct cosmic::Theme">Theme</a>, Renderer&gt; for <a class="struct" href="../widget/popover/struct.Overlay.html" title="struct cosmic::widget::popover::Overlay">Overlay</a>&lt;'a, 'b, Message, Renderer&gt;<div class="where">where
+    Message: <a class="trait" href="https://doc.rust-lang.org/1.81.0/core/clone/trait.Clone.html" title="trait core::clone::Clone">Clone</a>,
+    Renderer: <a class="trait" href="../iced_winit/graphics/core/trait.Renderer.html" title="trait cosmic::iced_winit::graphics::core::Renderer">Renderer</a>,</div></h3></section><section id="impl-Overlay%3CMessage,+Theme,+Renderer%3E-for-Group%3C'a,+Message,+Theme,+Renderer%3E" class="impl"><a class="src rightside" href="../../src/iced_core/overlay/group.rs.html#65-68">source</a><a href="#impl-Overlay%3CMessage,+Theme,+Renderer%3E-for-Group%3C'a,+Message,+Theme,+Renderer%3E" class="anchor">§</a><h3 class="code-header">impl&lt;'a, Message, Theme, Renderer&gt; <a class="trait" href="../iced_winit/graphics/core/trait.Overlay.html" title="trait cosmic::iced_winit::graphics::core::Overlay">Overlay</a>&lt;Message, Theme, Renderer&gt; for <a class="struct" href="../iced_winit/graphics/core/overlay/struct.Group.html" title="struct cosmic::iced_winit::graphics::core::overlay::Group">Group</a>&lt;'a, Message, Theme, Renderer&gt;<div class="where">where
+    Renderer: <a class="trait" href="../iced_winit/graphics/core/trait.Renderer.html" title="trait cosmic::iced_winit::graphics::core::Renderer">Renderer</a>,</div></h3></section></div><script src="../../trait.impl/iced_core/overlay/trait.Overlay.js" data-ignore-extern-crates="iced_core" async></script></section></div></main></body></html>

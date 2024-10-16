@@ -1,0 +1,701 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `/home/runner/.cargo/registry/src/index.crates.io-6f17d22bba15001f/lyon_geom-1.0.5/src/lib.rs`."><title>lib.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-46f98efaafac5295.ttf.woff2,FiraSans-Regular-018c141bf0843ffd.woff2,FiraSans-Medium-8f9a781e4970d388.woff2,SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2,SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../static.files/rustdoc-c5d6553a23f1e5a6.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="lyon_geom" data-themes="" data-resource-suffix="" data-rustdoc-version="1.81.0 (eeb90cda1 2024-09-04)" data-channel="1.81.0" data-search-js="search-d234aafac6c221dd.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../static.files/storage-118b08c4c78b968e.js"></script><script defer src="../../static.files/src-script-e66d777a5a92e9b2.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-d2fab2bf619172d3.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-df360f571f6edeae.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer"></div><main><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<a href="#2" id="2">2</a>
+<a href="#3" id="3">3</a>
+<a href="#4" id="4">4</a>
+<a href="#5" id="5">5</a>
+<a href="#6" id="6">6</a>
+<a href="#7" id="7">7</a>
+<a href="#8" id="8">8</a>
+<a href="#9" id="9">9</a>
+<a href="#10" id="10">10</a>
+<a href="#11" id="11">11</a>
+<a href="#12" id="12">12</a>
+<a href="#13" id="13">13</a>
+<a href="#14" id="14">14</a>
+<a href="#15" id="15">15</a>
+<a href="#16" id="16">16</a>
+<a href="#17" id="17">17</a>
+<a href="#18" id="18">18</a>
+<a href="#19" id="19">19</a>
+<a href="#20" id="20">20</a>
+<a href="#21" id="21">21</a>
+<a href="#22" id="22">22</a>
+<a href="#23" id="23">23</a>
+<a href="#24" id="24">24</a>
+<a href="#25" id="25">25</a>
+<a href="#26" id="26">26</a>
+<a href="#27" id="27">27</a>
+<a href="#28" id="28">28</a>
+<a href="#29" id="29">29</a>
+<a href="#30" id="30">30</a>
+<a href="#31" id="31">31</a>
+<a href="#32" id="32">32</a>
+<a href="#33" id="33">33</a>
+<a href="#34" id="34">34</a>
+<a href="#35" id="35">35</a>
+<a href="#36" id="36">36</a>
+<a href="#37" id="37">37</a>
+<a href="#38" id="38">38</a>
+<a href="#39" id="39">39</a>
+<a href="#40" id="40">40</a>
+<a href="#41" id="41">41</a>
+<a href="#42" id="42">42</a>
+<a href="#43" id="43">43</a>
+<a href="#44" id="44">44</a>
+<a href="#45" id="45">45</a>
+<a href="#46" id="46">46</a>
+<a href="#47" id="47">47</a>
+<a href="#48" id="48">48</a>
+<a href="#49" id="49">49</a>
+<a href="#50" id="50">50</a>
+<a href="#51" id="51">51</a>
+<a href="#52" id="52">52</a>
+<a href="#53" id="53">53</a>
+<a href="#54" id="54">54</a>
+<a href="#55" id="55">55</a>
+<a href="#56" id="56">56</a>
+<a href="#57" id="57">57</a>
+<a href="#58" id="58">58</a>
+<a href="#59" id="59">59</a>
+<a href="#60" id="60">60</a>
+<a href="#61" id="61">61</a>
+<a href="#62" id="62">62</a>
+<a href="#63" id="63">63</a>
+<a href="#64" id="64">64</a>
+<a href="#65" id="65">65</a>
+<a href="#66" id="66">66</a>
+<a href="#67" id="67">67</a>
+<a href="#68" id="68">68</a>
+<a href="#69" id="69">69</a>
+<a href="#70" id="70">70</a>
+<a href="#71" id="71">71</a>
+<a href="#72" id="72">72</a>
+<a href="#73" id="73">73</a>
+<a href="#74" id="74">74</a>
+<a href="#75" id="75">75</a>
+<a href="#76" id="76">76</a>
+<a href="#77" id="77">77</a>
+<a href="#78" id="78">78</a>
+<a href="#79" id="79">79</a>
+<a href="#80" id="80">80</a>
+<a href="#81" id="81">81</a>
+<a href="#82" id="82">82</a>
+<a href="#83" id="83">83</a>
+<a href="#84" id="84">84</a>
+<a href="#85" id="85">85</a>
+<a href="#86" id="86">86</a>
+<a href="#87" id="87">87</a>
+<a href="#88" id="88">88</a>
+<a href="#89" id="89">89</a>
+<a href="#90" id="90">90</a>
+<a href="#91" id="91">91</a>
+<a href="#92" id="92">92</a>
+<a href="#93" id="93">93</a>
+<a href="#94" id="94">94</a>
+<a href="#95" id="95">95</a>
+<a href="#96" id="96">96</a>
+<a href="#97" id="97">97</a>
+<a href="#98" id="98">98</a>
+<a href="#99" id="99">99</a>
+<a href="#100" id="100">100</a>
+<a href="#101" id="101">101</a>
+<a href="#102" id="102">102</a>
+<a href="#103" id="103">103</a>
+<a href="#104" id="104">104</a>
+<a href="#105" id="105">105</a>
+<a href="#106" id="106">106</a>
+<a href="#107" id="107">107</a>
+<a href="#108" id="108">108</a>
+<a href="#109" id="109">109</a>
+<a href="#110" id="110">110</a>
+<a href="#111" id="111">111</a>
+<a href="#112" id="112">112</a>
+<a href="#113" id="113">113</a>
+<a href="#114" id="114">114</a>
+<a href="#115" id="115">115</a>
+<a href="#116" id="116">116</a>
+<a href="#117" id="117">117</a>
+<a href="#118" id="118">118</a>
+<a href="#119" id="119">119</a>
+<a href="#120" id="120">120</a>
+<a href="#121" id="121">121</a>
+<a href="#122" id="122">122</a>
+<a href="#123" id="123">123</a>
+<a href="#124" id="124">124</a>
+<a href="#125" id="125">125</a>
+<a href="#126" id="126">126</a>
+<a href="#127" id="127">127</a>
+<a href="#128" id="128">128</a>
+<a href="#129" id="129">129</a>
+<a href="#130" id="130">130</a>
+<a href="#131" id="131">131</a>
+<a href="#132" id="132">132</a>
+<a href="#133" id="133">133</a>
+<a href="#134" id="134">134</a>
+<a href="#135" id="135">135</a>
+<a href="#136" id="136">136</a>
+<a href="#137" id="137">137</a>
+<a href="#138" id="138">138</a>
+<a href="#139" id="139">139</a>
+<a href="#140" id="140">140</a>
+<a href="#141" id="141">141</a>
+<a href="#142" id="142">142</a>
+<a href="#143" id="143">143</a>
+<a href="#144" id="144">144</a>
+<a href="#145" id="145">145</a>
+<a href="#146" id="146">146</a>
+<a href="#147" id="147">147</a>
+<a href="#148" id="148">148</a>
+<a href="#149" id="149">149</a>
+<a href="#150" id="150">150</a>
+<a href="#151" id="151">151</a>
+<a href="#152" id="152">152</a>
+<a href="#153" id="153">153</a>
+<a href="#154" id="154">154</a>
+<a href="#155" id="155">155</a>
+<a href="#156" id="156">156</a>
+<a href="#157" id="157">157</a>
+<a href="#158" id="158">158</a>
+<a href="#159" id="159">159</a>
+<a href="#160" id="160">160</a>
+<a href="#161" id="161">161</a>
+<a href="#162" id="162">162</a>
+<a href="#163" id="163">163</a>
+<a href="#164" id="164">164</a>
+<a href="#165" id="165">165</a>
+<a href="#166" id="166">166</a>
+<a href="#167" id="167">167</a>
+<a href="#168" id="168">168</a>
+<a href="#169" id="169">169</a>
+<a href="#170" id="170">170</a>
+<a href="#171" id="171">171</a>
+<a href="#172" id="172">172</a>
+<a href="#173" id="173">173</a>
+<a href="#174" id="174">174</a>
+<a href="#175" id="175">175</a>
+<a href="#176" id="176">176</a>
+<a href="#177" id="177">177</a>
+<a href="#178" id="178">178</a>
+<a href="#179" id="179">179</a>
+<a href="#180" id="180">180</a>
+<a href="#181" id="181">181</a>
+<a href="#182" id="182">182</a>
+<a href="#183" id="183">183</a>
+<a href="#184" id="184">184</a>
+<a href="#185" id="185">185</a>
+<a href="#186" id="186">186</a>
+<a href="#187" id="187">187</a>
+<a href="#188" id="188">188</a>
+<a href="#189" id="189">189</a>
+<a href="#190" id="190">190</a>
+<a href="#191" id="191">191</a>
+<a href="#192" id="192">192</a>
+<a href="#193" id="193">193</a>
+<a href="#194" id="194">194</a>
+<a href="#195" id="195">195</a>
+<a href="#196" id="196">196</a>
+<a href="#197" id="197">197</a>
+<a href="#198" id="198">198</a>
+<a href="#199" id="199">199</a>
+<a href="#200" id="200">200</a>
+<a href="#201" id="201">201</a>
+<a href="#202" id="202">202</a>
+<a href="#203" id="203">203</a>
+<a href="#204" id="204">204</a>
+<a href="#205" id="205">205</a>
+<a href="#206" id="206">206</a>
+<a href="#207" id="207">207</a>
+<a href="#208" id="208">208</a>
+<a href="#209" id="209">209</a>
+<a href="#210" id="210">210</a>
+<a href="#211" id="211">211</a>
+<a href="#212" id="212">212</a>
+<a href="#213" id="213">213</a>
+<a href="#214" id="214">214</a>
+<a href="#215" id="215">215</a>
+<a href="#216" id="216">216</a>
+<a href="#217" id="217">217</a>
+<a href="#218" id="218">218</a>
+<a href="#219" id="219">219</a>
+<a href="#220" id="220">220</a>
+<a href="#221" id="221">221</a>
+<a href="#222" id="222">222</a>
+<a href="#223" id="223">223</a>
+<a href="#224" id="224">224</a>
+<a href="#225" id="225">225</a>
+<a href="#226" id="226">226</a>
+<a href="#227" id="227">227</a>
+<a href="#228" id="228">228</a>
+<a href="#229" id="229">229</a>
+<a href="#230" id="230">230</a>
+<a href="#231" id="231">231</a>
+<a href="#232" id="232">232</a>
+<a href="#233" id="233">233</a>
+<a href="#234" id="234">234</a>
+<a href="#235" id="235">235</a>
+<a href="#236" id="236">236</a>
+<a href="#237" id="237">237</a>
+<a href="#238" id="238">238</a>
+<a href="#239" id="239">239</a>
+<a href="#240" id="240">240</a>
+<a href="#241" id="241">241</a>
+<a href="#242" id="242">242</a>
+<a href="#243" id="243">243</a>
+<a href="#244" id="244">244</a>
+<a href="#245" id="245">245</a>
+<a href="#246" id="246">246</a>
+<a href="#247" id="247">247</a>
+<a href="#248" id="248">248</a>
+<a href="#249" id="249">249</a>
+<a href="#250" id="250">250</a>
+<a href="#251" id="251">251</a>
+<a href="#252" id="252">252</a>
+<a href="#253" id="253">253</a>
+<a href="#254" id="254">254</a>
+<a href="#255" id="255">255</a>
+<a href="#256" id="256">256</a>
+<a href="#257" id="257">257</a>
+<a href="#258" id="258">258</a>
+<a href="#259" id="259">259</a>
+<a href="#260" id="260">260</a>
+<a href="#261" id="261">261</a>
+<a href="#262" id="262">262</a>
+<a href="#263" id="263">263</a>
+<a href="#264" id="264">264</a>
+<a href="#265" id="265">265</a>
+<a href="#266" id="266">266</a>
+<a href="#267" id="267">267</a>
+<a href="#268" id="268">268</a>
+<a href="#269" id="269">269</a>
+<a href="#270" id="270">270</a>
+<a href="#271" id="271">271</a>
+<a href="#272" id="272">272</a>
+<a href="#273" id="273">273</a>
+<a href="#274" id="274">274</a>
+<a href="#275" id="275">275</a>
+<a href="#276" id="276">276</a>
+<a href="#277" id="277">277</a>
+<a href="#278" id="278">278</a>
+<a href="#279" id="279">279</a>
+<a href="#280" id="280">280</a>
+<a href="#281" id="281">281</a>
+<a href="#282" id="282">282</a>
+<a href="#283" id="283">283</a>
+<a href="#284" id="284">284</a>
+<a href="#285" id="285">285</a>
+<a href="#286" id="286">286</a>
+<a href="#287" id="287">287</a>
+<a href="#288" id="288">288</a>
+<a href="#289" id="289">289</a>
+<a href="#290" id="290">290</a>
+<a href="#291" id="291">291</a>
+<a href="#292" id="292">292</a>
+<a href="#293" id="293">293</a>
+<a href="#294" id="294">294</a>
+<a href="#295" id="295">295</a>
+<a href="#296" id="296">296</a>
+<a href="#297" id="297">297</a>
+<a href="#298" id="298">298</a>
+<a href="#299" id="299">299</a>
+<a href="#300" id="300">300</a>
+<a href="#301" id="301">301</a>
+<a href="#302" id="302">302</a>
+<a href="#303" id="303">303</a>
+<a href="#304" id="304">304</a>
+<a href="#305" id="305">305</a>
+<a href="#306" id="306">306</a>
+<a href="#307" id="307">307</a>
+<a href="#308" id="308">308</a>
+<a href="#309" id="309">309</a>
+<a href="#310" id="310">310</a>
+<a href="#311" id="311">311</a>
+<a href="#312" id="312">312</a>
+<a href="#313" id="313">313</a>
+<a href="#314" id="314">314</a>
+<a href="#315" id="315">315</a>
+<a href="#316" id="316">316</a>
+<a href="#317" id="317">317</a>
+<a href="#318" id="318">318</a>
+<a href="#319" id="319">319</a>
+<a href="#320" id="320">320</a>
+<a href="#321" id="321">321</a>
+<a href="#322" id="322">322</a>
+<a href="#323" id="323">323</a>
+<a href="#324" id="324">324</a>
+<a href="#325" id="325">325</a>
+<a href="#326" id="326">326</a>
+<a href="#327" id="327">327</a>
+<a href="#328" id="328">328</a>
+<a href="#329" id="329">329</a>
+<a href="#330" id="330">330</a>
+<a href="#331" id="331">331</a>
+<a href="#332" id="332">332</a>
+<a href="#333" id="333">333</a>
+<a href="#334" id="334">334</a>
+<a href="#335" id="335">335</a>
+<a href="#336" id="336">336</a>
+<a href="#337" id="337">337</a>
+<a href="#338" id="338">338</a>
+<a href="#339" id="339">339</a>
+<a href="#340" id="340">340</a>
+<a href="#341" id="341">341</a>
+<a href="#342" id="342">342</a>
+<a href="#343" id="343">343</a>
+<a href="#344" id="344">344</a>
+<a href="#345" id="345">345</a>
+<a href="#346" id="346">346</a>
+<a href="#347" id="347">347</a>
+<a href="#348" id="348">348</a>
+<a href="#349" id="349">349</a>
+<a href="#350" id="350">350</a>
+</pre></div><pre class="rust"><code><span class="attr">#![doc(html_logo_url = <span class="string">"https://nical.github.io/lyon-doc/lyon-logo.svg"</span>)]
+#![deny(bare_trait_objects)]
+#![deny(unconditional_recursion)]
+#![allow(clippy::excessive_precision)]
+#![allow(clippy::let_and_return)]
+#![allow(clippy::many_single_char_names)]
+#![no_std]
+
+</span><span class="doccomment">//! Simple 2D geometric primitives on top of euclid.
+//!
+//! This crate is reexported in [lyon](https://docs.rs/lyon/).
+//!
+//! # Overview.
+//!
+//! This crate implements some of the maths to work with:
+//!
+//! - lines and line segments,
+//! - quadratic and cubic bézier curves,
+//! - elliptic arcs,
+//! - triangles.
+//!
+//! # Flattening
+//!
+//! Flattening is the action of approximating a curve with a succession of line segments.
+//!
+//! &lt;svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 30" height="30mm" width="120mm"&gt;
+//!   &lt;path d="M26.7 24.94l.82-11.15M44.46 5.1L33.8 7.34" fill="none" stroke="#55d400" stroke-width=".5"/&gt;
+//!   &lt;path d="M26.7 24.94c.97-11.13 7.17-17.6 17.76-19.84M75.27 24.94l1.13-5.5 2.67-5.48 4-4.42L88 6.7l5.02-1.6" fill="none" stroke="#000"/&gt;
+//!   &lt;path d="M77.57 19.37a1.1 1.1 0 0 1-1.08 1.08 1.1 1.1 0 0 1-1.1-1.08 1.1 1.1 0 0 1 1.08-1.1 1.1 1.1 0 0 1 1.1 1.1" color="#000" fill="none" stroke="#030303" stroke-linecap="round" stroke-opacity=".5"/&gt;
+//!   &lt;path d="M77.57 19.37a1.1 1.1 0 0 1-1.08 1.08 1.1 1.1 0 0 1-1.1-1.08 1.1 1.1 0 0 1 1.08-1.1 1.1 1.1 0 0 1 1.1 1.1" color="#000" fill="#fff"/&gt;
+//!   &lt;path d="M80.22 13.93a1.1 1.1 0 0 1-1.1 1.1 1.1 1.1 0 0 1-1.08-1.1 1.1 1.1 0 0 1 1.1-1.08 1.1 1.1 0 0 1 1.08 1.08" color="#000" fill="none" stroke="#030303" stroke-linecap="round" stroke-opacity=".5"/&gt;
+//!   &lt;path d="M80.22 13.93a1.1 1.1 0 0 1-1.1 1.1 1.1 1.1 0 0 1-1.08-1.1 1.1 1.1 0 0 1 1.1-1.08 1.1 1.1 0 0 1 1.08 1.08" color="#000" fill="#fff"/&gt;
+//!   &lt;path d="M84.08 9.55a1.1 1.1 0 0 1-1.08 1.1 1.1 1.1 0 0 1-1.1-1.1 1.1 1.1 0 0 1 1.1-1.1 1.1 1.1 0 0 1 1.08 1.1" color="#000" fill="none" stroke="#030303" stroke-linecap="round" stroke-opacity=".5"/&gt;
+//!   &lt;path d="M84.08 9.55a1.1 1.1 0 0 1-1.08 1.1 1.1 1.1 0 0 1-1.1-1.1 1.1 1.1 0 0 1 1.1-1.1 1.1 1.1 0 0 1 1.08 1.1" color="#000" fill="#fff"/&gt;
+//!   &lt;path d="M89.1 6.66a1.1 1.1 0 0 1-1.08 1.1 1.1 1.1 0 0 1-1.08-1.1 1.1 1.1 0 0 1 1.08-1.08 1.1 1.1 0 0 1 1.1 1.08" color="#000" fill="none" stroke="#030303" stroke-linecap="round" stroke-opacity=".5"/&gt;
+//!   &lt;path d="M89.1 6.66a1.1 1.1 0 0 1-1.08 1.1 1.1 1.1 0 0 1-1.08-1.1 1.1 1.1 0 0 1 1.08-1.08 1.1 1.1 0 0 1 1.1 1.08" color="#000" fill="#fff"/&gt;
+//!   &lt;path d="M94.4 5a1.1 1.1 0 0 1-1.1 1.1A1.1 1.1 0 0 1 92.23 5a1.1 1.1 0 0 1 1.08-1.08A1.1 1.1 0 0 1 94.4 5" color="#000" fill="none" stroke="#030303" stroke-linecap="round" stroke-opacity=".5"/&gt;
+//!   &lt;path d="M94.4 5a1.1 1.1 0 0 1-1.1 1.1A1.1 1.1 0 0 1 92.23 5a1.1 1.1 0 0 1 1.08-1.08A1.1 1.1 0 0 1 94.4 5" color="#000" fill="#fff"/&gt;
+//!   &lt;path d="M76.44 25.13a1.1 1.1 0 0 1-1.1 1.1 1.1 1.1 0 0 1-1.08-1.1 1.1 1.1 0 0 1 1.1-1.1 1.1 1.1 0 0 1 1.08 1.1" color="#000" fill="none" stroke="#030303" stroke-linecap="round" stroke-opacity=".5"/&gt;
+//!   &lt;path d="M76.44 25.13a1.1 1.1 0 0 1-1.1 1.1 1.1 1.1 0 0 1-1.08-1.1 1.1 1.1 0 0 1 1.1-1.1 1.1 1.1 0 0 1 1.08 1.1" color="#000" fill="#fff"/&gt;
+//!   &lt;path d="M27.78 24.9a1.1 1.1 0 0 1-1.08 1.08 1.1 1.1 0 0 1-1.1-1.08 1.1 1.1 0 0 1 1.1-1.1 1.1 1.1 0 0 1 1.08 1.1" color="#000" fill="none" stroke="#030303" stroke-linecap="round" stroke-opacity=".5"/&gt;
+//!   &lt;path d="M27.78 24.9a1.1 1.1 0 0 1-1.08 1.08 1.1 1.1 0 0 1-1.1-1.08 1.1 1.1 0 0 1 1.1-1.1 1.1 1.1 0 0 1 1.08 1.1" color="#000" fill="#fff"/&gt;
+//!   &lt;path d="M45.4 5.14a1.1 1.1 0 0 1-1.08 1.1 1.1 1.1 0 0 1-1.1-1.1 1.1 1.1 0 0 1 1.1-1.08 1.1 1.1 0 0 1 1.1 1.08" color="#000" fill="none" stroke="#030303" stroke-linecap="round" stroke-opacity=".5"/&gt;
+//!   &lt;path d="M45.4 5.14a1.1 1.1 0 0 1-1.08 1.1 1.1 1.1 0 0 1-1.1-1.1 1.1 1.1 0 0 1 1.1-1.08 1.1 1.1 0 0 1 1.1 1.08" color="#000" fill="#fff"/&gt;
+//!   &lt;path d="M28.67 13.8a1.1 1.1 0 0 1-1.1 1.08 1.1 1.1 0 0 1-1.08-1.08 1.1 1.1 0 0 1 1.08-1.1 1.1 1.1 0 0 1 1.1 1.1" color="#000" fill="none" stroke="#030303" stroke-linecap="round" stroke-opacity=".5"/&gt;
+//!   &lt;path d="M28.67 13.8a1.1 1.1 0 0 1-1.1 1.08 1.1 1.1 0 0 1-1.08-1.08 1.1 1.1 0 0 1 1.08-1.1 1.1 1.1 0 0 1 1.1 1.1" color="#000" fill="#fff"/&gt;
+//!   &lt;path d="M35 7.32a1.1 1.1 0 0 1-1.1 1.1 1.1 1.1 0 0 1-1.08-1.1 1.1 1.1 0 0 1 1.1-1.1A1.1 1.1 0 0 1 35 7.33" color="#000" fill="none" stroke="#030303" stroke-linecap="round" stroke-opacity=".5"/&gt;
+//!   &lt;path d="M35 7.32a1.1 1.1 0 0 1-1.1 1.1 1.1 1.1 0 0 1-1.08-1.1 1.1 1.1 0 0 1 1.1-1.1A1.1 1.1 0 0 1 35 7.33" color="#000" fill="#fff"/&gt;
+//!   &lt;text style="line-height:6.61458302px" x="35.74" y="284.49" font-size="5.29" font-family="Sans" letter-spacing="0" word-spacing="0" fill="#b3b3b3" stroke-width=".26" transform="translate(19.595 -267)"&gt;
+//!     &lt;tspan x="35.74" y="284.49" font-size="10.58"&gt;→&lt;/tspan&gt;
+//!   &lt;/text&gt;
+//! &lt;/svg&gt;
+//!
+//! The tolerance threshold taken as input by the flattening algorithms corresponds
+//! to the maximum distance between the curve and its linear approximation.
+//! The smaller the tolerance is, the more precise the approximation and the more segments
+//! are generated. This value is typically chosen in function of the zoom level.
+//!
+//! &lt;svg viewBox="0 0 47.5 13.2" height="100" width="350" xmlns="http://www.w3.org/2000/svg"&gt;
+//!   &lt;path d="M-2.44 9.53c16.27-8.5 39.68-7.93 52.13 1.9" fill="none" stroke="#dde9af" stroke-width="4.6"/&gt;
+//!   &lt;path d="M-1.97 9.3C14.28 1.03 37.36 1.7 49.7 11.4" fill="none" stroke="#00d400" stroke-width=".57" stroke-linecap="round" stroke-dasharray="4.6, 2.291434"/&gt;
+//!   &lt;path d="M-1.94 10.46L6.2 6.08l28.32-1.4 15.17 6.74" fill="none" stroke="#000" stroke-width=".6"/&gt;
+//!   &lt;path d="M6.83 6.57a.9.9 0 0 1-1.25.15.9.9 0 0 1-.15-1.25.9.9 0 0 1 1.25-.15.9.9 0 0 1 .15 1.25" color="#000" stroke="#000" stroke-width=".57" stroke-linecap="round" stroke-opacity=".5"/&gt;
+//!   &lt;path d="M35.35 5.3a.9.9 0 0 1-1.25.15.9.9 0 0 1-.15-1.25.9.9 0 0 1 1.25-.15.9.9 0 0 1 .15 1.24" color="#000" stroke="#000" stroke-width=".6" stroke-opacity=".5"/&gt;
+//!   &lt;g fill="none" stroke="#ff7f2a" stroke-width=".26"&gt;
+//!     &lt;path d="M20.4 3.8l.1 1.83M19.9 4.28l.48-.56.57.52M21.02 5.18l-.5.56-.6-.53" stroke-width=".2978872"/&gt;
+//!   &lt;/g&gt;
+//! &lt;/svg&gt;
+//!
+//! The figure above shows a close up on a curve (the dotted line) and its linear
+//! approximation (the black segments). The tolerance threshold is represented by
+//! the light green area and the orange arrow.
+//!
+
+</span><span class="comment">//#![allow(needless_return)] // clippy
+
+</span><span class="attr">#[cfg(any(test, feature = <span class="string">"std"</span>))]
+</span><span class="kw">extern crate </span>std;
+
+<span class="comment">// Reexport dependencies.
+</span><span class="kw">pub use </span>arrayvec;
+<span class="kw">pub use </span>euclid;
+
+<span class="attr">#[cfg(feature = <span class="string">"serialization"</span>)]
+#[macro_use]
+</span><span class="kw">pub extern crate </span>serde;
+
+<span class="attr">#[macro_use]
+</span><span class="kw">mod </span>segment;
+<span class="kw">pub mod </span>arc;
+<span class="kw">pub mod </span>cubic_bezier;
+<span class="kw">mod </span>cubic_bezier_intersections;
+<span class="kw">mod </span>line;
+<span class="kw">pub mod </span>quadratic_bezier;
+<span class="kw">mod </span>triangle;
+<span class="kw">pub mod </span>utils;
+
+<span class="attr">#[doc(inline)]
+</span><span class="kw">pub use </span><span class="kw">crate</span>::arc::{Arc, ArcFlags, SvgArc};
+<span class="attr">#[doc(inline)]
+</span><span class="kw">pub use </span><span class="kw">crate</span>::cubic_bezier::CubicBezierSegment;
+<span class="attr">#[doc(inline)]
+</span><span class="kw">pub use </span><span class="kw">crate</span>::line::{Line, LineEquation, LineSegment};
+<span class="attr">#[doc(inline)]
+</span><span class="kw">pub use </span><span class="kw">crate</span>::quadratic_bezier::QuadraticBezierSegment;
+<span class="attr">#[doc(inline)]
+</span><span class="kw">pub use </span><span class="kw">crate</span>::segment::Segment;
+<span class="attr">#[doc(inline)]
+</span><span class="kw">pub use </span><span class="kw">crate</span>::triangle::Triangle;
+
+<span class="kw">pub use </span><span class="kw">crate</span>::scalar::Scalar;
+
+<span class="kw">mod </span>scalar {
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">use </span>euclid::Trig;
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">use </span>num_traits::cast::cast;
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">use </span>num_traits::{Float, FloatConst, NumCast};
+
+    <span class="kw">use </span>core::fmt::{Debug, Display};
+    <span class="kw">use </span>core::ops::{AddAssign, DivAssign, MulAssign, SubAssign};
+
+    <span class="kw">pub trait </span>Scalar:
+        Float
+        + NumCast
+        + FloatConst
+        + Sized
+        + Display
+        + Debug
+        + Trig
+        + AddAssign
+        + SubAssign
+        + MulAssign
+        + DivAssign
+    {
+        <span class="kw">const </span>HALF: <span class="self">Self</span>;
+        <span class="kw">const </span>ZERO: <span class="self">Self</span>;
+        <span class="kw">const </span>ONE: <span class="self">Self</span>;
+        <span class="kw">const </span>TWO: <span class="self">Self</span>;
+        <span class="kw">const </span>THREE: <span class="self">Self</span>;
+        <span class="kw">const </span>FOUR: <span class="self">Self</span>;
+        <span class="kw">const </span>FIVE: <span class="self">Self</span>;
+        <span class="kw">const </span>SIX: <span class="self">Self</span>;
+        <span class="kw">const </span>SEVEN: <span class="self">Self</span>;
+        <span class="kw">const </span>EIGHT: <span class="self">Self</span>;
+        <span class="kw">const </span>NINE: <span class="self">Self</span>;
+        <span class="kw">const </span>TEN: <span class="self">Self</span>;
+
+        <span class="kw">const </span>MIN: <span class="self">Self</span>;
+        <span class="kw">const </span>MAX: <span class="self">Self</span>;
+
+        <span class="kw">const </span>EPSILON: <span class="self">Self</span>;
+        <span class="kw">const </span>DIV_EPSILON: <span class="self">Self </span>= <span class="self">Self</span>::EPSILON;
+
+        <span class="doccomment">/// Epsilon constants are usually not a good way to deal with float precision.
+        /// Float precision depends on the magnitude of the values and so should appropriate
+        /// epsilons.
+        </span><span class="kw">fn </span>epsilon_for(_reference: <span class="self">Self</span>) -&gt; <span class="self">Self </span>{
+            <span class="self">Self</span>::EPSILON
+        }
+
+        <span class="kw">fn </span>value(v: f32) -&gt; <span class="self">Self</span>;
+    }
+
+    <span class="kw">impl </span>Scalar <span class="kw">for </span>f32 {
+        <span class="kw">const </span>HALF: <span class="self">Self </span>= <span class="number">0.5</span>;
+        <span class="kw">const </span>ZERO: <span class="self">Self </span>= <span class="number">0.0</span>;
+        <span class="kw">const </span>ONE: <span class="self">Self </span>= <span class="number">1.0</span>;
+        <span class="kw">const </span>TWO: <span class="self">Self </span>= <span class="number">2.0</span>;
+        <span class="kw">const </span>THREE: <span class="self">Self </span>= <span class="number">3.0</span>;
+        <span class="kw">const </span>FOUR: <span class="self">Self </span>= <span class="number">4.0</span>;
+        <span class="kw">const </span>FIVE: <span class="self">Self </span>= <span class="number">5.0</span>;
+        <span class="kw">const </span>SIX: <span class="self">Self </span>= <span class="number">6.0</span>;
+        <span class="kw">const </span>SEVEN: <span class="self">Self </span>= <span class="number">7.0</span>;
+        <span class="kw">const </span>EIGHT: <span class="self">Self </span>= <span class="number">8.0</span>;
+        <span class="kw">const </span>NINE: <span class="self">Self </span>= <span class="number">9.0</span>;
+        <span class="kw">const </span>TEN: <span class="self">Self </span>= <span class="number">10.0</span>;
+
+        <span class="kw">const </span>MIN: <span class="self">Self </span>= f32::MIN;
+        <span class="kw">const </span>MAX: <span class="self">Self </span>= f32::MAX;
+
+        <span class="kw">const </span>EPSILON: <span class="self">Self </span>= <span class="number">1e-4</span>;
+
+        <span class="kw">fn </span>epsilon_for(reference: <span class="self">Self</span>) -&gt; <span class="self">Self </span>{
+            <span class="comment">// The thresholds are chosen by looking at the table at
+            // https://blog.demofox.org/2017/11/21/floating-point-precision/ plus a bit
+            // of trial and error. They might change in the future.
+            // TODO: instead of casting to an integer, could look at the exponent directly.
+            </span><span class="kw">let </span>magnitude = reference.abs() <span class="kw">as </span>i32;
+            <span class="kw">match </span>magnitude {
+                <span class="number">0</span>..=<span class="number">7 </span>=&gt; <span class="number">1e-5</span>,
+                <span class="number">8</span>..=<span class="number">1023 </span>=&gt; <span class="number">1e-3</span>,
+                <span class="number">1024</span>..=<span class="number">4095 </span>=&gt; <span class="number">1e-2</span>,
+                <span class="number">5096</span>..=<span class="number">65535 </span>=&gt; <span class="number">1e-1</span>,
+                <span class="number">65536</span>..=<span class="number">8_388_607 </span>=&gt; <span class="number">0.5</span>,
+                <span class="kw">_ </span>=&gt; <span class="number">1.0</span>,
+            }
+        }
+
+        <span class="attr">#[inline]
+        </span><span class="kw">fn </span>value(v: f32) -&gt; <span class="self">Self </span>{
+            v
+        }
+    }
+
+    <span class="comment">// Epsilon constants are usually not a good way to deal with float precision.
+    // Float precision depends on the magnitude of the values and so should appropriate
+    // epsilons. This function addresses this somewhat empirically.
+    </span><span class="kw">impl </span>Scalar <span class="kw">for </span>f64 {
+        <span class="kw">const </span>HALF: <span class="self">Self </span>= <span class="number">0.5</span>;
+        <span class="kw">const </span>ZERO: <span class="self">Self </span>= <span class="number">0.0</span>;
+        <span class="kw">const </span>ONE: <span class="self">Self </span>= <span class="number">1.0</span>;
+        <span class="kw">const </span>TWO: <span class="self">Self </span>= <span class="number">2.0</span>;
+        <span class="kw">const </span>THREE: <span class="self">Self </span>= <span class="number">3.0</span>;
+        <span class="kw">const </span>FOUR: <span class="self">Self </span>= <span class="number">4.0</span>;
+        <span class="kw">const </span>FIVE: <span class="self">Self </span>= <span class="number">5.0</span>;
+        <span class="kw">const </span>SIX: <span class="self">Self </span>= <span class="number">6.0</span>;
+        <span class="kw">const </span>SEVEN: <span class="self">Self </span>= <span class="number">7.0</span>;
+        <span class="kw">const </span>EIGHT: <span class="self">Self </span>= <span class="number">8.0</span>;
+        <span class="kw">const </span>NINE: <span class="self">Self </span>= <span class="number">9.0</span>;
+        <span class="kw">const </span>TEN: <span class="self">Self </span>= <span class="number">10.0</span>;
+
+        <span class="kw">const </span>MIN: <span class="self">Self </span>= f64::MIN;
+        <span class="kw">const </span>MAX: <span class="self">Self </span>= f64::MAX;
+
+        <span class="kw">const </span>EPSILON: <span class="self">Self </span>= <span class="number">1e-8</span>;
+
+        <span class="kw">fn </span>epsilon_for(reference: <span class="self">Self</span>) -&gt; <span class="self">Self </span>{
+            <span class="kw">let </span>magnitude = reference.abs() <span class="kw">as </span>i64;
+            <span class="kw">match </span>magnitude {
+                <span class="number">0</span>..=<span class="number">65_535 </span>=&gt; <span class="number">1e-8</span>,
+                <span class="number">65_536</span>..=<span class="number">8_388_607 </span>=&gt; <span class="number">1e-5</span>,
+                <span class="number">8_388_608</span>..=<span class="number">4_294_967_295 </span>=&gt; <span class="number">1e-3</span>,
+                <span class="kw">_ </span>=&gt; <span class="number">1e-1</span>,
+            }
+        }
+
+        <span class="attr">#[inline]
+        </span><span class="kw">fn </span>value(v: f32) -&gt; <span class="self">Self </span>{
+            v <span class="kw">as </span>f64
+        }
+    }
+}
+
+<span class="doccomment">/// Alias for `euclid::default::Point2D`.
+</span><span class="kw">pub use </span>euclid::default::Point2D <span class="kw">as </span>Point;
+
+<span class="doccomment">/// Alias for `euclid::default::Vector2D`.
+</span><span class="kw">pub use </span>euclid::default::Vector2D <span class="kw">as </span>Vector;
+
+<span class="doccomment">/// Alias for `euclid::default::Size2D`.
+</span><span class="kw">pub use </span>euclid::default::Size2D <span class="kw">as </span>Size;
+
+<span class="doccomment">/// Alias for `euclid::default::Box2D`
+</span><span class="kw">pub use </span>euclid::default::Box2D;
+
+<span class="doccomment">/// Alias for `euclid::default::Transform2D`
+</span><span class="kw">pub type </span>Transform&lt;S&gt; = euclid::default::Transform2D&lt;S&gt;;
+
+<span class="doccomment">/// Alias for `euclid::default::Rotation2D`
+</span><span class="kw">pub type </span>Rotation&lt;S&gt; = euclid::default::Rotation2D&lt;S&gt;;
+
+<span class="doccomment">/// Alias for `euclid::default::Translation2D`
+</span><span class="kw">pub type </span>Translation&lt;S&gt; = euclid::Translation2D&lt;S, euclid::UnknownUnit, euclid::UnknownUnit&gt;;
+
+<span class="doccomment">/// Alias for `euclid::default::Scale`
+</span><span class="kw">pub use </span>euclid::default::Scale;
+
+<span class="doccomment">/// An angle in radians.
+</span><span class="kw">pub use </span>euclid::Angle;
+
+<span class="doccomment">/// Shorthand for `Vector::new(x, y)`.
+</span><span class="attr">#[inline]
+</span><span class="kw">pub fn </span>vector&lt;S&gt;(x: S, y: S) -&gt; Vector&lt;S&gt; {
+    Vector::new(x, y)
+}
+
+<span class="doccomment">/// Shorthand for `Point::new(x, y)`.
+</span><span class="attr">#[inline]
+</span><span class="kw">pub fn </span>point&lt;S&gt;(x: S, y: S) -&gt; Point&lt;S&gt; {
+    Point::new(x, y)
+}
+
+<span class="doccomment">/// Shorthand for `Size::new(x, y)`.
+</span><span class="attr">#[inline]
+</span><span class="kw">pub fn </span>size&lt;S&gt;(w: S, h: S) -&gt; Size&lt;S&gt; {
+    Size::new(w, h)
+}
+
+<span class="kw">pub mod </span>traits {
+    <span class="kw">pub use </span><span class="kw">crate</span>::segment::Segment;
+
+    <span class="kw">use crate</span>::{Point, Rotation, Scalar, Scale, Transform, Translation, Vector};
+
+    <span class="kw">pub trait </span>Transformation&lt;S&gt; {
+        <span class="kw">fn </span>transform_point(<span class="kw-2">&amp;</span><span class="self">self</span>, p: Point&lt;S&gt;) -&gt; Point&lt;S&gt;;
+        <span class="kw">fn </span>transform_vector(<span class="kw-2">&amp;</span><span class="self">self</span>, v: Vector&lt;S&gt;) -&gt; Vector&lt;S&gt;;
+    }
+
+    <span class="kw">impl</span>&lt;S: Scalar&gt; Transformation&lt;S&gt; <span class="kw">for </span>Transform&lt;S&gt; {
+        <span class="kw">fn </span>transform_point(<span class="kw-2">&amp;</span><span class="self">self</span>, p: Point&lt;S&gt;) -&gt; Point&lt;S&gt; {
+            <span class="self">self</span>.transform_point(p)
+        }
+
+        <span class="kw">fn </span>transform_vector(<span class="kw-2">&amp;</span><span class="self">self</span>, v: Vector&lt;S&gt;) -&gt; Vector&lt;S&gt; {
+            <span class="self">self</span>.transform_vector(v)
+        }
+    }
+
+    <span class="kw">impl</span>&lt;S: Scalar&gt; Transformation&lt;S&gt; <span class="kw">for </span>Rotation&lt;S&gt; {
+        <span class="kw">fn </span>transform_point(<span class="kw-2">&amp;</span><span class="self">self</span>, p: Point&lt;S&gt;) -&gt; Point&lt;S&gt; {
+            <span class="self">self</span>.transform_point(p)
+        }
+
+        <span class="kw">fn </span>transform_vector(<span class="kw-2">&amp;</span><span class="self">self</span>, v: Vector&lt;S&gt;) -&gt; Vector&lt;S&gt; {
+            <span class="self">self</span>.transform_vector(v)
+        }
+    }
+
+    <span class="kw">impl</span>&lt;S: Scalar&gt; Transformation&lt;S&gt; <span class="kw">for </span>Translation&lt;S&gt; {
+        <span class="kw">fn </span>transform_point(<span class="kw-2">&amp;</span><span class="self">self</span>, p: Point&lt;S&gt;) -&gt; Point&lt;S&gt; {
+            <span class="self">self</span>.transform_point(p)
+        }
+
+        <span class="kw">fn </span>transform_vector(<span class="kw-2">&amp;</span><span class="self">self</span>, v: Vector&lt;S&gt;) -&gt; Vector&lt;S&gt; {
+            v
+        }
+    }
+
+    <span class="kw">impl</span>&lt;S: Scalar&gt; Transformation&lt;S&gt; <span class="kw">for </span>Scale&lt;S&gt; {
+        <span class="kw">fn </span>transform_point(<span class="kw-2">&amp;</span><span class="self">self</span>, p: Point&lt;S&gt;) -&gt; Point&lt;S&gt; {
+            (<span class="kw-2">*</span><span class="self">self</span>).transform_point(p)
+        }
+
+        <span class="kw">fn </span>transform_vector(<span class="kw-2">&amp;</span><span class="self">self</span>, v: Vector&lt;S&gt;) -&gt; Vector&lt;S&gt; {
+            (<span class="kw-2">*</span><span class="self">self</span>).transform_vector(v)
+        }
+    }
+
+    <span class="comment">// Automatically implement Transformation for all &amp;Transformation.
+    </span><span class="kw">impl</span>&lt;<span class="lifetime">'l</span>, S: Scalar, T: Transformation&lt;S&gt;&gt; Transformation&lt;S&gt; <span class="kw">for </span><span class="kw-2">&amp;</span><span class="lifetime">'l </span>T {
+        <span class="attr">#[inline]
+        </span><span class="kw">fn </span>transform_point(<span class="kw-2">&amp;</span><span class="self">self</span>, p: Point&lt;S&gt;) -&gt; Point&lt;S&gt; {
+            (<span class="kw-2">*</span><span class="self">self</span>).transform_point(p)
+        }
+
+        <span class="attr">#[inline]
+        </span><span class="kw">fn </span>transform_vector(<span class="kw-2">&amp;</span><span class="self">self</span>, v: Vector&lt;S&gt;) -&gt; Vector&lt;S&gt; {
+            (<span class="kw-2">*</span><span class="self">self</span>).transform_vector(v)
+        }
+    }
+}
+</code></pre></div></section></main></body></html>

@@ -1,0 +1,76 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Upgrade Guide"><title>exif::doc::upgrade - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-46f98efaafac5295.ttf.woff2,FiraSans-Regular-018c141bf0843ffd.woff2,FiraSans-Medium-8f9a781e4970d388.woff2,SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2,SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-c5d6553a23f1e5a6.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="exif" data-themes="" data-resource-suffix="" data-rustdoc-version="1.81.0 (eeb90cda1 2024-09-04)" data-channel="1.81.0" data-search-js="search-d234aafac6c221dd.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../../static.files/storage-118b08c4c78b968e.js"></script><script defer src="../sidebar-items.js"></script><script defer src="../../../static.files/main-d2fab2bf619172d3.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-df360f571f6edeae.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc mod"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle" title="show sidebar"></button></nav><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../../../exif/index.html">exif</a><span class="version">0.5.5</span></h2></div><h2 class="location"><a href="#">Module upgrade</a></h2><div class="sidebar-elems"><h2><a href="../index.html">In exif::doc</a></h2></div></nav><div class="sidebar-resizer"></div><main><div class="width-limiter"><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><h1>Module <a href="../../index.html">exif</a>::<wbr><a href="../index.html">doc</a>::<wbr><a class="mod" href="#">upgrade</a><button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><span class="out-of-band"><a class="src" href="../../../src/exif/doc.rs.html#164">source</a> · <button id="toggle-all-docs" title="collapse all docs">[<span>&#x2212;</span>]</button></span></div><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><h2 id="upgrade-guide"><a class="doc-anchor" href="#upgrade-guide">§</a>Upgrade Guide</h2><h3 id="upgrade-from-04x-to-05x"><a class="doc-anchor" href="#upgrade-from-04x-to-05x">§</a>Upgrade from 0.4.x to 0.5.x</h3><h4 id="api-compatibilities"><a class="doc-anchor" href="#api-compatibilities">§</a>API compatibilities</h4>
+<ul>
+<li>
+<p><code>Reader</code> has been split into two: <code>Reader</code> and <code>Exif</code>.
+<code>Reader</code> is now the builder for <code>Exif</code>, and <code>Exif</code> provides
+access to <code>Field</code>s via <code>get_field</code>, <code>fields</code>, and other methods.
+Old code <code>Reader::new(data)</code> should be changed to
+<code>Reader::new().read_raw(data)</code> or
+<code>Reader::new().read_from_container(data)</code>.</p>
+<p>The old code using 0.4.x:</p>
+
+<div class="example-wrap ignore"><a href="#" class="tooltip" title="This example is not tested">ⓘ</a><pre class="rust rust-example-rendered"><code><span class="kw">let </span>reader = Reader::new(<span class="kw-2">&amp;mut </span>bufreader).unwrap();
+<span class="kw">for </span>f <span class="kw">in </span>reader.fields() { <span class="comment">/* do something */ </span>}</code></pre></div>
+<p>The new code using 0.5.x:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">let </span>exif = Reader::new().read_from_container(<span class="kw-2">&amp;mut </span>bufreader).unwrap();
+<span class="kw">for </span>f <span class="kw">in </span>exif.fields() { <span class="comment">/* do something */ </span>}</code></pre></div>
+</li>
+</ul>
+<h4 id="other-new-features"><a class="doc-anchor" href="#other-new-features">§</a>Other new features</h4>
+<ul>
+<li>Support for parsing Exif in HEIF (HEIC/AVIF) has been added.</li>
+</ul>
+<h3 id="upgrade-from-03x-to-04x"><a class="doc-anchor" href="#upgrade-from-03x-to-04x">§</a>Upgrade from 0.3.x to 0.4.x</h3><h4 id="api-compatibilities-1"><a class="doc-anchor" href="#api-compatibilities-1">§</a>API compatibilities</h4>
+<ul>
+<li>Use struct <code>In</code> instead of <code>bool</code> to indicate primary/thumbnail images.
+<ul>
+<li>On <code>Reader::get_field</code>, the old code using 0.3.x:
+<div class="example-wrap ignore"><a href="#" class="tooltip" title="This example is not tested">ⓘ</a><pre class="rust rust-example-rendered"><code>reader.get_field(Tag::DateTime, <span class="bool-val">false</span>)</code></pre></div>
+The new code using 0.4.x:
+<div class="example-wrap ignore"><a href="#" class="tooltip" title="This example is not tested">ⓘ</a><pre class="rust rust-example-rendered"><code>reader.get_field(Tag::DateTime, In::PRIMARY)</code></pre></div>
+As an additional feature, access to the 2nd or further IFD,
+which some TIFF-based RAW formats may have, is also possible
+with 0.4.x:
+<div class="example-wrap ignore"><a href="#" class="tooltip" title="This example is not tested">ⓘ</a><pre class="rust rust-example-rendered"><code>reader.get_field(Tag::ImageWidth, In(<span class="number">2</span>))</code></pre></div>
+</li>
+<li>On <code>Field</code>, the old code using 0.3.x:
+<div class="example-wrap ignore"><a href="#" class="tooltip" title="This example is not tested">ⓘ</a><pre class="rust rust-example-rendered"><code><span class="kw">if </span>field.thumbnail {
+    <span class="comment">// for the thumbnail image
+</span>} <span class="kw">else </span>{
+    <span class="comment">// for the primary image
+</span>}</code></pre></div>
+The new code using 0.4.x:
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">match </span>field.ifd_num {
+    In::PRIMARY =&gt; {},   <span class="comment">// for the primary image
+    </span>In::THUMBNAIL =&gt; {}, <span class="comment">// for the thumbnail image
+    </span><span class="kw">_ </span>=&gt; {},
+}</code></pre></div>
+</li>
+</ul>
+</li>
+<li><code>Reader::fields</code> now returns an iterator instead of a slice.</li>
+<li>Enum variants of <code>Context</code> and <code>Error</code> are no longer exhaustive.
+You need a wildcard arm (<code>_</code>) in a match expression.</li>
+<li>The associated value of <code>Value::Undefined</code> and <code>Value::Ascii</code> has
+been changed from a slice to a <code>Vec</code>.</li>
+</ul>
+<h4 id="other-new-features-1"><a class="doc-anchor" href="#other-new-features-1">§</a>Other new features</h4>
+<ul>
+<li><code>Field::display_value</code> has been introduced.
+It is usually handier than <code>Value::display_as</code>.
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="macro">assert_eq!</span>(field.display_value().to_string(),
+           field.value.display_as(field.tag).to_string());</code></pre></div>
+</li>
+<li>Displaying a value with its unit is supported.
+<div class="example-wrap ignore"><a href="#" class="tooltip" title="This example is not tested">ⓘ</a><pre class="rust rust-example-rendered"><code><span class="comment">// Display the value only.
+</span><span class="macro">println!</span>(<span class="string">"{}"</span>, field.display_value());
+<span class="comment">// Display the value with its unit.  If the unit depends on another
+// field, it is taken from the reader.
+</span><span class="macro">println!</span>(<span class="string">"{}"</span>, field.display_value().with_unit(<span class="kw-2">&amp;</span>reader));</code></pre></div>
+</li>
+<li><code>Value</code> and <code>Field</code> are self-contained and no longer borrow the raw
+buffer or <code>Reader</code> (thanks to the change of <code>Value::Undefined</code>
+and <code>Value::Ascii</code> described above).</li>
+</ul>
+</div></details></section></div></main></body></html>

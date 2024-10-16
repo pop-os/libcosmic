@@ -1,0 +1,23 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Delegates the handling of `wl_registry`."><title>delegate_registry in smithay_client_toolkit - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-46f98efaafac5295.ttf.woff2,FiraSans-Regular-018c141bf0843ffd.woff2,FiraSans-Medium-8f9a781e4970d388.woff2,SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2,SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../static.files/rustdoc-c5d6553a23f1e5a6.css"><meta name="rustdoc-vars" data-root-path="../" data-static-root-path="../static.files/" data-current-crate="smithay_client_toolkit" data-themes="" data-resource-suffix="" data-rustdoc-version="1.81.0 (eeb90cda1 2024-09-04)" data-channel="1.81.0" data-search-js="search-d234aafac6c221dd.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../static.files/storage-118b08c4c78b968e.js"></script><script defer src="sidebar-items.js"></script><script defer src="../static.files/main-d2fab2bf619172d3.js"></script><noscript><link rel="stylesheet" href="../static.files/noscript-df360f571f6edeae.css"></noscript><link rel="alternate icon" type="image/png" href="../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc macro"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle" title="show sidebar"></button></nav><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../smithay_client_toolkit/index.html">smithay_client_toolkit</a><span class="version">0.19.2</span></h2></div><div class="sidebar-elems"></div></nav><div class="sidebar-resizer"></div><main><div class="width-limiter"><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><h1>Macro <a href="index.html">smithay_client_toolkit</a>::<wbr><a class="macro" href="#">delegate_registry</a><button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><span class="out-of-band"><a class="src" href="../src/smithay_client_toolkit/registry.rs.html#299-307">source</a> · <button id="toggle-all-docs" title="collapse all docs">[<span>&#x2212;</span>]</button></span></div><pre class="rust item-decl"><span class="macro">macro_rules!</span> delegate_registry {
+    ($(@&lt;$( <span class="macro-nonterminal">$lt</span>:tt $( : <span class="macro-nonterminal">$clt</span>:tt $(+ <span class="macro-nonterminal">$dlt</span>:tt )* )<span class="question-mark">? </span>),+&gt;)<span class="question-mark">? </span><span class="macro-nonterminal">$ty</span>: ty) =&gt; { ... };
+}</pre><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Delegates the handling of <a href="../wayland_client/protocol/wl_registry/index.html" title="mod wayland_client::protocol::wl_registry"><code>wl_registry</code></a>.</p>
+<p>Anything which implements <a href="registry/trait.RegistryHandler.html" title="trait smithay_client_toolkit::registry::RegistryHandler"><code>RegistryHandler</code></a> may be used in the delegate.</p>
+<h3 id="usage"><a class="doc-anchor" href="#usage">§</a>Usage</h3>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>smithay_client_toolkit::{
+    delegate_registry, delegate_shm, registry_handlers,
+    shm::{ShmHandler, Shm},
+};
+
+<span class="kw">struct </span>ExampleApp {
+    shm_state: Shm,
+}
+
+<span class="comment">// Here is the implementation of wl_shm to compile:
+</span><span class="macro">delegate_shm!</span>(ExampleApp);
+
+<span class="kw">impl </span>ShmHandler <span class="kw">for </span>ExampleApp {
+    <span class="kw">fn </span>shm_state(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;mut </span>Shm {
+        <span class="kw-2">&amp;mut </span><span class="self">self</span>.shm_state
+    }
+}</code></pre></div>
+</div></details></section></div></main></body></html>

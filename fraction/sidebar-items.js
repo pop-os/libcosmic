@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["GenericFraction","Sign"],"mod":["convert","display","division","dynaint","error","generic","prelude"],"struct":["BigInt","BigUint","ParseRatioError","Ratio"],"trait":["Bounded","CheckedAdd","CheckedDiv","CheckedMul","CheckedSub","ConstOne","ConstZero","FromPrimitive","Integer","Num","One","Signed","ToPrimitive","Zero"]};

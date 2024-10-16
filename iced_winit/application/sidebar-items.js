@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["UserEventWrapper"],"fn":["build_user_interface","requests_exit","run","run_command","subscription_map","update"],"struct":["State"],"trait":["Application"]};

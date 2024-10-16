@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["draw_background","layout","visible_bounds"],"struct":["Appearance","Container"],"trait":["StyleSheet"]};

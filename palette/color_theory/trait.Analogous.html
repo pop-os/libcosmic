@@ -1,0 +1,55 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Represents the analogous color scheme on a 12 color wheel."><title>Analogous in palette::color_theory - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-46f98efaafac5295.ttf.woff2,FiraSans-Regular-018c141bf0843ffd.woff2,FiraSans-Medium-8f9a781e4970d388.woff2,SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2,SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../static.files/rustdoc-c5d6553a23f1e5a6.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="palette" data-themes="" data-resource-suffix="" data-rustdoc-version="1.81.0 (eeb90cda1 2024-09-04)" data-channel="1.81.0" data-search-js="search-d234aafac6c221dd.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../static.files/storage-118b08c4c78b968e.js"></script><script defer src="sidebar-items.js"></script><script defer src="../../static.files/main-d2fab2bf619172d3.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-df360f571f6edeae.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc trait"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle" title="show sidebar"></button></nav><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../../palette/index.html">palette</a><span class="version">0.7.6</span></h2></div><h2 class="location"><a href="#">Analogous</a></h2><div class="sidebar-elems"><section><h3><a href="#required-methods">Required Methods</a></h3><ul class="block"><li><a href="#tymethod.analogous">analogous</a></li><li><a href="#tymethod.analogous_secondary">analogous_secondary</a></li></ul><h3><a href="#object-safety">Object Safety</a></h3><h3><a href="#implementors">Implementors</a></h3></section><h2><a href="index.html">In palette::color_theory</a></h2></div></nav><div class="sidebar-resizer"></div><main><div class="width-limiter"><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><h1>Trait <a href="../index.html">palette</a>::<wbr><a href="index.html">color_theory</a>::<wbr><a class="trait" href="#">Analogous</a><button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><span class="out-of-band"><a class="src" href="../../src/palette/color_theory.rs.html#112-173">source</a> · <button id="toggle-all-docs" title="collapse all docs">[<span>&#x2212;</span>]</button></span></div><pre class="rust item-decl"><code>pub trait Analogous: <a class="trait" href="https://doc.rust-lang.org/1.81.0/core/marker/trait.Sized.html" title="trait core::marker::Sized">Sized</a> {
+    // Required methods
+    fn <a href="#tymethod.analogous" class="fn">analogous</a>(self) -&gt; <a class="primitive" href="https://doc.rust-lang.org/1.81.0/std/primitive.tuple.html">(Self, Self)</a>;
+<span class="item-spacer"></span>    fn <a href="#tymethod.analogous_secondary" class="fn">analogous_secondary</a>(self) -&gt; <a class="primitive" href="https://doc.rust-lang.org/1.81.0/std/primitive.tuple.html">(Self, Self)</a>;
+}</code></pre><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Represents the analogous color scheme on a 12 color wheel.</p>
+<p>An analogous color scheme consists of three colors next to each other (30°
+apart) on the color wheel.</p>
+</div></details><h2 id="required-methods" class="section-header">Required Methods<a href="#required-methods" class="anchor">§</a></h2><div class="methods"><details class="toggle method-toggle" open><summary><section id="tymethod.analogous" class="method"><a class="src rightside" href="../../src/palette/color_theory.rs.html#139">source</a><h4 class="code-header">fn <a href="#tymethod.analogous" class="fn">analogous</a>(self) -&gt; <a class="primitive" href="https://doc.rust-lang.org/1.81.0/std/primitive.tuple.html">(Self, Self)</a></h4></section></summary><div class="docblock"><p>Return the two additional colors of an analogous color scheme.</p>
+<p>The colors are ordered by ascending hue difference, or <code>(hue-30°, hue+30°)</code>. Combined with the input color, these make up 3 adjacent
+colors.</p>
+<p>The following example makes a 3 color analogous scheme:</p>
+<div style="display: inline-block; width: 3em; height: 1em; border: 1px solid black; background: hsl(90deg, 80%, 50%);"></div>
+<div style="display: inline-block; width: 3em; height: 1em; border: 1px solid black; background: hsl(120deg, 80%, 50%);"></div>
+<div style="display: inline-block; width: 3em; height: 1em; border: 1px solid black; background: hsl(150deg, 80%, 50%);"></div>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>palette::{Hsl, color_theory::Analogous};
+
+<span class="kw">let </span>primary = Hsl::new_srgb(<span class="number">120.0f32</span>, <span class="number">0.8</span>, <span class="number">0.5</span>);
+<span class="kw">let </span>(analog_down, analog_up) = primary.analogous();
+
+<span class="kw">let </span>hues = (
+    analog_down.hue.into_positive_degrees(),
+    primary.hue.into_positive_degrees(),
+    analog_up.hue.into_positive_degrees(),
+);
+
+<span class="macro">assert_eq!</span>(hues, (<span class="number">90.0</span>, <span class="number">120.0</span>, <span class="number">150.0</span>));</code></pre></div>
+</div></details><details class="toggle method-toggle" open><summary><section id="tymethod.analogous_secondary" class="method"><a class="src rightside" href="../../src/palette/color_theory.rs.html#172">source</a><h4 class="code-header">fn <a href="#tymethod.analogous_secondary" class="fn">analogous_secondary</a>(self) -&gt; <a class="primitive" href="https://doc.rust-lang.org/1.81.0/std/primitive.tuple.html">(Self, Self)</a></h4></section></summary><div class="docblock"><p>Return the next two analogous colors, after the colors <code>analogous</code> returns.</p>
+<p>The colors are ordered by ascending hue difference, or <code>(hue-60°, hue+60°)</code>. Combined with the input color and the colors from
+<code>analogous</code>, these make up 5 adjacent colors.</p>
+<p>The following example makes a 5 color analogous scheme:</p>
+<div style="display: inline-block; width: 3em; height: 1em; border: 1px solid black; background: hsl(60deg, 80%, 50%);"></div>
+<div style="display: inline-block; width: 3em; height: 1em; border: 1px solid black; background: hsl(90deg, 80%, 50%);"></div>
+<div style="display: inline-block; width: 3em; height: 1em; border: 1px solid black; background: hsl(120deg, 80%, 50%);"></div>
+<div style="display: inline-block; width: 3em; height: 1em; border: 1px solid black; background: hsl(150deg, 80%, 50%);"></div>
+<div style="display: inline-block; width: 3em; height: 1em; border: 1px solid black; background: hsl(180deg, 80%, 50%);"></div>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>palette::{Hsl, color_theory::Analogous};
+
+<span class="kw">let </span>primary = Hsl::new_srgb(<span class="number">120.0f32</span>, <span class="number">0.8</span>, <span class="number">0.5</span>);
+<span class="kw">let </span>(analog_down1, analog_up1) = primary.analogous();
+<span class="kw">let </span>(analog_down2, analog_up2) = primary.analogous_secondary();
+
+<span class="kw">let </span>hues = (
+    analog_down2.hue.into_positive_degrees(),
+    analog_down1.hue.into_positive_degrees(),
+    primary.hue.into_positive_degrees(),
+    analog_up1.hue.into_positive_degrees(),
+    analog_up2.hue.into_positive_degrees(),
+);
+
+<span class="macro">assert_eq!</span>(hues, (<span class="number">60.0</span>, <span class="number">90.0</span>, <span class="number">120.0</span>, <span class="number">150.0</span>, <span class="number">180.0</span>));</code></pre></div>
+</div></details></div><h2 id="object-safety" class="section-header">Object Safety<a href="#object-safety" class="anchor">§</a></h2><div class="object-safety-info">This trait is <b>not</b> <a href="https://doc.rust-lang.org/1.81.0/reference/items/traits.html#object-safety">object safe</a>.</div><h2 id="implementors" class="section-header">Implementors<a href="#implementors" class="anchor">§</a></h2><div id="implementors-list"><section id="impl-Analogous-for-T" class="impl"><a class="src rightside" href="../../src/palette/color_theory.rs.html#175-193">source</a><a href="#impl-Analogous-for-T" class="anchor">§</a><h3 class="code-header">impl&lt;T&gt; <a class="trait" href="trait.Analogous.html" title="trait palette::color_theory::Analogous">Analogous</a> for T<div class="where">where
+    T: <a class="trait" href="../trait.ShiftHue.html" title="trait palette::ShiftHue">ShiftHue</a> + <a class="trait" href="https://doc.rust-lang.org/1.81.0/core/clone/trait.Clone.html" title="trait core::clone::Clone">Clone</a>,
+    T::<a class="associatedtype" href="../trait.ShiftHue.html#associatedtype.Scalar" title="type palette::ShiftHue::Scalar">Scalar</a>: <a class="trait" href="../num/trait.Real.html" title="trait palette::num::Real">Real</a>,</div></h3></section></div><script src="../../trait.impl/palette/color_theory/trait.Analogous.js" async></script></section></div></main></body></html>

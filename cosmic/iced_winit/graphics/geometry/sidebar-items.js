@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["Gradient","LineCap","LineJoin","Style"],"mod":["fill","path","stroke"],"struct":["Fill","LineDash","Path","Stroke","Text"],"trait":["Renderer"]};

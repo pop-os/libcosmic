@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["Message"],"fn":["spin_button"],"struct":["Model","SpinButton"]};

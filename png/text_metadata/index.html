@@ -1,0 +1,86 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Text chunks (tEXt/zTXt/iTXt) structs and functions"><title>png::text_metadata - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-46f98efaafac5295.ttf.woff2,FiraSans-Regular-018c141bf0843ffd.woff2,FiraSans-Medium-8f9a781e4970d388.woff2,SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2,SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../static.files/rustdoc-c5d6553a23f1e5a6.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="png" data-themes="" data-resource-suffix="" data-rustdoc-version="1.81.0 (eeb90cda1 2024-09-04)" data-channel="1.81.0" data-search-js="search-d234aafac6c221dd.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../static.files/storage-118b08c4c78b968e.js"></script><script defer src="../sidebar-items.js"></script><script defer src="../../static.files/main-d2fab2bf619172d3.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-df360f571f6edeae.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc mod"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle" title="show sidebar"></button></nav><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../../png/index.html">png</a><span class="version">0.17.14</span></h2></div><h2 class="location"><a href="#">Module text_metadata</a></h2><div class="sidebar-elems"><section><ul class="block"><li><a href="#structs">Structs</a></li><li><a href="#constants">Constants</a></li><li><a href="#traits">Traits</a></li></ul></section><h2><a href="../index.html">In crate png</a></h2></div></nav><div class="sidebar-resizer"></div><main><div class="width-limiter"><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><h1>Module <a href="../index.html">png</a>::<wbr><a class="mod" href="#">text_metadata</a><button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><span class="out-of-band"><a class="src" href="../../src/png/text_metadata.rs.html#1-586">source</a> · <button id="toggle-all-docs" title="collapse all docs">[<span>&#x2212;</span>]</button></span></div><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><h2 id="text-chunks-textztxtitxt-structs-and-functions"><a class="doc-anchor" href="#text-chunks-textztxtitxt-structs-and-functions">§</a>Text chunks (tEXt/zTXt/iTXt) structs and functions</h2>
+<p>The <a href="https://www.w3.org/TR/2003/REC-PNG-20031110/#11textinfo">PNG spec</a> optionally allows for
+embedded text chunks in the file. They may appear either before or after the image data
+chunks. There are three kinds of text chunks.</p>
+<ul>
+<li><code>tEXt</code>: This has a <code>keyword</code> and <code>text</code> field, and is ISO 8859-1 encoded.</li>
+<li><code>zTXt</code>: This is semantically the same as <code>tEXt</code>, i.e. it has the same fields and
+encoding, but the <code>text</code> field is compressed before being written into the PNG file.</li>
+<li><code>iTXt</code>: This chunk allows for its <code>text</code> field to be any valid UTF-8, and supports
+compression of the text field as well.</li>
+</ul>
+<p>The <code>ISO 8859-1</code> encoding technically doesn’t allow any control characters
+to be used, but in practice these values are encountered anyway. This can
+either be the extended <code>ISO-8859-1</code> encoding with control characters or the
+<code>Windows-1252</code> encoding. This crate assumes the <code>ISO-8859-1</code> encoding is
+used.</p>
+<h3 id="reading-text-chunks"><a class="doc-anchor" href="#reading-text-chunks">§</a>Reading text chunks</h3>
+<p>As a PNG is decoded, any text chunk encountered is appended the
+<a href="../struct.Info.html" title="struct png::Info"><code>Info</code></a> struct, in the <code>uncompressed_latin1_text</code>,
+<code>compressed_latin1_text</code>, and the <code>utf8_text</code> fields depending on whether the encountered
+chunk is <code>tEXt</code>, <code>zTXt</code>, or <code>iTXt</code>.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>std::fs::File;
+<span class="kw">use </span>std::iter::FromIterator;
+<span class="kw">use </span>std::path::PathBuf;
+
+<span class="comment">// Opening a png file that has a zTXt chunk
+</span><span class="kw">let </span>decoder = png::Decoder::new(
+    File::open(PathBuf::from_iter([
+        <span class="string">"tests"</span>,
+        <span class="string">"text_chunk_examples"</span>,
+        <span class="string">"ztxt_example.png"</span>,
+    ]))
+    .unwrap(),
+);
+<span class="kw">let </span><span class="kw-2">mut </span>reader = decoder.read_info().unwrap();
+<span class="comment">// If the text chunk is before the image data frames, `reader.info()` already contains the text.
+</span><span class="kw">for </span>text_chunk <span class="kw">in </span><span class="kw-2">&amp;</span>reader.info().compressed_latin1_text {
+    <span class="macro">println!</span>(<span class="string">"{:?}"</span>, text_chunk.keyword); <span class="comment">// Prints the keyword
+    </span><span class="macro">println!</span>(<span class="string">"{:#?}"</span>, text_chunk); <span class="comment">// Prints out the text chunk.
+    // To get the uncompressed text, use the `get_text` method.
+    </span><span class="macro">println!</span>(<span class="string">"{}"</span>, text_chunk.get_text().unwrap());
+}</code></pre></div>
+<h3 id="writing-text-chunks"><a class="doc-anchor" href="#writing-text-chunks">§</a>Writing text chunks</h3>
+<p>There are two ways to write text chunks: the first is to add the appropriate text structs directly to the encoder header before the header is written to file.
+To add a text chunk at any point in the stream, use the <code>write_text_chunk</code> method.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">let </span><span class="kw-2">mut </span>encoder = png::Encoder::new(w, <span class="number">2</span>, <span class="number">1</span>); <span class="comment">// Width is 2 pixels and height is 1.
+</span>encoder.set_color(png::ColorType::Rgba);
+encoder.set_depth(png::BitDepth::Eight);
+<span class="comment">// Adding text chunks to the header
+</span>encoder
+   .add_text_chunk(
+       <span class="string">"Testing tEXt"</span>.to_string(),
+       <span class="string">"This is a tEXt chunk that will appear before the IDAT chunks."</span>.to_string(),
+   )
+   .unwrap();
+encoder
+    .add_ztxt_chunk(
+        <span class="string">"Testing zTXt"</span>.to_string(),
+        <span class="string">"This is a zTXt chunk that is compressed in the png file."</span>.to_string(),
+    )
+    .unwrap();
+encoder
+    .add_itxt_chunk(
+        <span class="string">"Testing iTXt"</span>.to_string(),
+        <span class="string">"iTXt chunks support all of UTF8. Example: हिंदी."</span>.to_string(),
+    )
+    .unwrap();
+
+<span class="kw">let </span><span class="kw-2">mut </span>writer = encoder.write_header().unwrap();
+
+<span class="kw">let </span>data = [<span class="number">255</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">255</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">255</span>]; <span class="comment">// An array containing a RGBA sequence. First pixel is red and second pixel is black.
+</span>writer.write_image_data(<span class="kw-2">&amp;</span>data).unwrap(); <span class="comment">// Save
+
+// We can add a tEXt/zTXt/iTXt at any point before the encoder is dropped from scope. These chunks will be at the end of the png file.
+</span><span class="kw">let </span>tail_ztxt_chunk = ZTXtChunk::new(<span class="string">"Comment"</span>.to_string(), <span class="string">"A zTXt chunk after the image data."</span>.to_string());
+writer.write_text_chunk(<span class="kw-2">&amp;</span>tail_ztxt_chunk).unwrap();
+
+<span class="comment">// The fields of the text chunk are public, so they can be mutated before being written to the file.
+</span><span class="kw">let </span><span class="kw-2">mut </span>tail_itxt_chunk = ITXtChunk::new(<span class="string">"Author"</span>.to_string(), <span class="string">"सायंतन खान"</span>.to_string());
+tail_itxt_chunk.compressed = <span class="bool-val">true</span>;
+tail_itxt_chunk.language_tag = <span class="string">"hi"</span>.to_string();
+tail_itxt_chunk.translated_keyword = <span class="string">"लेखक"</span>.to_string();
+writer.write_text_chunk(<span class="kw-2">&amp;</span>tail_itxt_chunk).unwrap();</code></pre></div>
+</div></details><h2 id="structs" class="section-header">Structs<a href="#structs" class="anchor">§</a></h2><ul class="item-table"><li><div class="item-name"><a class="struct" href="struct.ITXtChunk.html" title="struct png::text_metadata::ITXtChunk">ITXtChunk</a></div><div class="desc docblock-short">Struct encoding an iTXt chunk</div></li><li><div class="item-name"><a class="struct" href="struct.TEXtChunk.html" title="struct png::text_metadata::TEXtChunk">TEXtChunk</a></div><div class="desc docblock-short">Struct representing a tEXt chunk</div></li><li><div class="item-name"><a class="struct" href="struct.ZTXtChunk.html" title="struct png::text_metadata::ZTXtChunk">ZTXtChunk</a></div><div class="desc docblock-short">Struct representing a zTXt chunk</div></li></ul><h2 id="constants" class="section-header">Constants<a href="#constants" class="anchor">§</a></h2><ul class="item-table"><li><div class="item-name"><a class="constant" href="constant.DECOMPRESSION_LIMIT.html" title="constant png::text_metadata::DECOMPRESSION_LIMIT">DECOMPRESSION_LIMIT</a></div><div class="desc docblock-short">Default decompression limit for compressed text chunks.</div></li></ul><h2 id="traits" class="section-header">Traits<a href="#traits" class="anchor">§</a></h2><ul class="item-table"><li><div class="item-name"><a class="trait" href="trait.EncodableTextChunk.html" title="trait png::text_metadata::EncodableTextChunk">EncodableTextChunk</a></div><div class="desc docblock-short">A generalized text chunk trait</div></li></ul></section></div></main></body></html>

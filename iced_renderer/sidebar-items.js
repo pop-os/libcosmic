@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["Renderer"],"mod":["compositor","geometry"],"struct":["Settings"]};

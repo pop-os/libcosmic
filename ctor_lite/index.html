@@ -1,0 +1,156 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="The `ctor` crate reimplemented using procedural macros."><title>ctor_lite - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-46f98efaafac5295.ttf.woff2,FiraSans-Regular-018c141bf0843ffd.woff2,FiraSans-Medium-8f9a781e4970d388.woff2,SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2,SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../static.files/rustdoc-c5d6553a23f1e5a6.css"><meta name="rustdoc-vars" data-root-path="../" data-static-root-path="../static.files/" data-current-crate="ctor_lite" data-themes="" data-resource-suffix="" data-rustdoc-version="1.81.0 (eeb90cda1 2024-09-04)" data-channel="1.81.0" data-search-js="search-d234aafac6c221dd.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../static.files/storage-118b08c4c78b968e.js"></script><script defer src="../crates.js"></script><script defer src="../static.files/main-d2fab2bf619172d3.js"></script><noscript><link rel="stylesheet" href="../static.files/noscript-df360f571f6edeae.css"></noscript><link rel="alternate icon" type="image/png" href="../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc mod crate"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle" title="show sidebar"></button></nav><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../ctor_lite/index.html">ctor_lite</a><span class="version">0.1.0</span></h2></div><div class="sidebar-elems"><ul class="block"><li><a id="all-types" href="all.html">All Items</a></li></ul><section><ul class="block"><li><a href="#macros">Macros</a></li></ul></section></div></nav><div class="sidebar-resizer"></div><main><div class="width-limiter"><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><h1>Crate <a class="mod" href="#">ctor_lite</a><button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><span class="out-of-band"><a class="src" href="../src/ctor_lite/lib.rs.html#1-420">source</a> · <button id="toggle-all-docs" title="collapse all docs">[<span>&#x2212;</span>]</button></span></div><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>The <a href="https://crates.io/crates/ctor"><code>ctor</code></a> crate reimplemented using procedural macros.</p>
+<p>In some cases it is necessary to run code at the very start or the very end
+of the program. This crate provides a macro that can be used to run code at
+the very beginning of program execution, along with some extra features.</p>
+<h3 id="advantages-over-ctor"><a class="doc-anchor" href="#advantages-over-ctor">§</a>Advantages over <a href="https://crates.io/crates/ctor"><code>ctor</code></a></h3>
+<ul>
+<li>Completely dependency free, thanks to relying on procedural macros instead
+of proc macros.</li>
+<li>Supports all of the same use cases as the <a href="https://crates.io/crates/ctor"><code>ctor</code></a> crate.</li>
+<li>Supports all of the same platforms as the <a href="https://crates.io/crates/ctor"><code>ctor</code></a> crate.</li>
+<li>Fixes a couple of warts in <a href="https://crates.io/crates/ctor"><code>ctor</code></a>’s API, such as:
+<ul>
+<li><code>unsafe</code> is required when it is used, see the “Safety” section below.</li>
+<li>Global variables are required to be <code>Sync</code>.</li>
+<li>Global variables use <code>MaybeUninit</code> instead of <code>Option</code>.</li>
+<li>Functions set up with the <code>ctor</code> or <code>dtor</code> macros cannot be called in
+other Rust code.</li>
+</ul>
+</li>
+</ul>
+<h3 id="disadvantages"><a class="doc-anchor" href="#disadvantages">§</a>Disadvantages</h3>
+<ul>
+<li>The API has a slightly different form factor that can be inconvenient in
+some cases.</li>
+<li>The MSRV has been raised to 1.36.0.</li>
+</ul>
+<h3 id="functional-usage"><a class="doc-anchor" href="#functional-usage">§</a>Functional Usage</h3>
+<p>The <code>ctor</code> macro can be used to run a function at program startup time.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>std::sync::atomic::{AtomicUsize, Ordering};
+
+<span class="kw">static </span>INITIALIZED: AtomicUsize = AtomicUsize::new(<span class="number">0</span>);
+
+<span class="macro">ctor_lite::ctor!</span> {
+    <span class="kw">unsafe fn </span>set_value() {
+        INITIALIZED.store(<span class="number">1</span>, Ordering::Relaxed);
+    }
+}
+
+<span class="macro">assert_eq!</span>(INITIALIZED.load(Ordering::Relaxed), <span class="number">1</span>);</code></pre></div>
+<p>Note that this macro is a procedural block rather than an attribute macro.
+If you prefer the old way of using the macro you can use the
+<a href="https://crates.io/crates/macro-rules-attribute"><code>macro-rules-attribute</code></a> crate.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>macro_rules_attribute::apply;
+<span class="kw">use </span>std::sync::atomic::{AtomicUsize, Ordering};
+
+<span class="kw">static </span>INITIALIZED: AtomicUsize = AtomicUsize::new(<span class="number">0</span>);
+
+<span class="attr">#[apply(<span class="macro">ctor_lite::ctor!</span>)]
+</span><span class="kw">unsafe fn </span>set_value() {
+    INITIALIZED.store(<span class="number">1</span>, Ordering::Relaxed);
+}
+
+<span class="macro">assert_eq!</span>(INITIALIZED.load(Ordering::Relaxed), <span class="number">1</span>);</code></pre></div>
+<h3 id="static-usage"><a class="doc-anchor" href="#static-usage">§</a>Static Usage</h3>
+<p>The <code>ctor</code> macro can be used to create a static variable initialized to a
+default value. At startup time, the function is used to initialize the
+static variable.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">fn </span>value() -&gt; i32 {
+    <span class="number">6
+</span>}
+
+<span class="macro">ctor_lite::ctor!</span> {
+    <span class="kw">unsafe static </span>VALUE: i32 = value();
+}
+
+<span class="macro">assert_eq!</span>(<span class="kw-2">*</span>VALUE, <span class="number">6</span>);</code></pre></div>
+<h3 id="destructor"><a class="doc-anchor" href="#destructor">§</a>Destructor</h3>
+<p>This crate can also be used to run a function at program exit as well. The
+<code>dtor</code> macro can be used to run a function when the program ends.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>macro_rules_attribute::apply;
+
+<span class="attr">#[apply(<span class="macro">ctor_lite::dtor!</span>)]
+</span><span class="kw">unsafe fn </span>run_at_exit() {
+    do_some_cleanup();
+}
+</code></pre></div>
+<h3 id="safety"><a class="doc-anchor" href="#safety">§</a>Safety</h3>
+<p>Macros from this crate must be used with care. In general Rust code is run
+with the assumption that no other code is run before program startup, and
+no other code is run after program shutdown. Specifically, <code>libstd</code> sets up
+some global variables before the <code>main</code> function and then assumes these
+variables are set throughout its runtime. Therefore, calling <code>libstd</code>
+functions that use these variables will lead to undefined behavior.</p>
+<p>Generally, functions from <code>core</code> or <code>alloc</code> are safe to call in these
+functions. In addition, functions from <a href="https://crates.io/crates/libc"><code>libc</code></a> should be able to be called
+freely, as well as most of the functions contained in <a href="https://crates.io/crates/rustix"><code>rustix</code></a>. Other
+crates should be used only when it is understood what other calls they
+contain.</p>
+<p>In addition, no ordering is guaranteed for functions ran in the <code>ctor</code> or
+<code>dtor</code> macros.</p>
+<h3 id="implementation"><a class="doc-anchor" href="#implementation">§</a>Implementation</h3>
+<p>The <code>ctor</code> macro works by creating a function with linker attributes that
+place it into a special section in the file. When the C runtime starts the
+program, it reads function pointers from this section and runs them.</p>
+<p>This function call…</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="macro">ctor_lite::ctor!</span> {
+    <span class="kw">unsafe fn </span>foo() { <span class="comment">/* ... */ </span>}
+}</code></pre></div>
+<p>…is translated to code that looks like this:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="attr">#[used]
+#[cfg_attr(any(target_os = <span class="string">"linux"</span>, target_os = <span class="string">"android"</span>), link_section = <span class="string">".init_array"</span>)]
+#[cfg_attr(target_os = <span class="string">"freebsd"</span>, link_section = <span class="string">".init_array"</span>)]
+#[cfg_attr(target_os = <span class="string">"netbsd"</span>, link_section = <span class="string">".init_array"</span>)]
+#[cfg_attr(target_os = <span class="string">"openbsd"</span>, link_section = <span class="string">".init_array"</span>)]
+#[cfg_attr(target_os = <span class="string">"illumos"</span>, link_section = <span class="string">".init_array"</span>)]
+#[cfg_attr(any(target_os = <span class="string">"macos"</span>, target_os = <span class="string">"ios"</span>, target_os = <span class="string">"tvos"</span>), link_section = <span class="string">"__DATA_CONST,__mod_init_func"</span>)]
+#[cfg_attr(target_os = <span class="string">"windows"</span>, link_section = <span class="string">".CRT$XCU"</span>)]
+</span><span class="kw">static </span>FOO: <span class="kw">extern fn</span>() = {
+  <span class="attr">#[cfg_attr(any(target_os = <span class="string">"linux"</span>, target_os = <span class="string">"android"</span>), link_section = <span class="string">".text.startup"</span>)]
+  </span><span class="kw">extern fn </span>foo() { <span class="comment">/* ... */ </span>};
+  foo
+};</code></pre></div>
+<p>When creating a global constant with the <code>ctor</code> macro it writes code that
+runs the function then writes the value into a global constant.</p>
+<p>This code…</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="macro">ctor_lite::ctor!</span> {
+    <span class="kw">unsafe static </span>FOO: i32 = foo();
+}</code></pre></div>
+<p>…is translated to code that looks like this, with modifications that allow
+for <code>FOO</code> to be used from safe code:</p>
+<div class="example-wrap"><pre class="language-no_compile"><code>static mut FOO: i32 = core::mem::uninitialized();
+ctor_lite::ctor! {
+    unsafe fn init_storage() {
+        FOO = foo();
+    }
+}
+# fn foo() -&gt; i32 { 1 }
+</code></pre></div>
+<p>When functions are put into <code>dtor</code>, it runs <code>ctor</code> with the <code>libc::atexit</code>
+function to ensure that the function is run at program exit.</p>
+<p>This code…</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="macro">ctor_lite::dtor!</span> {
+    <span class="kw">unsafe fn </span>foo() {
+        <span class="comment">/* ... */
+    </span>}
+}</code></pre></div>
+<p>…is translated to code that looks like this, with modifications that let
+us avoid a dependency on the <a href="https://crates.io/crates/libc"><code>libc</code></a> crate:</p>
+<div class="example-wrap"><pre class="language-no_compile"><code>unsafe fn foo() {
+    /* ... */
+}
+
+ctor_lite::ctor! {
+    unsafe fn run_dtor() {
+        libc::atexit(foo);
+    }
+}
+</code></pre></div></div></details><h2 id="macros" class="section-header">Macros<a href="#macros" class="anchor">§</a></h2><ul class="item-table"><li><div class="item-name"><a class="macro" href="macro.ctor.html" title="macro ctor_lite::ctor">ctor</a></div><div class="desc docblock-short">Run a function on program startup or initialize a constant.</div></li><li><div class="item-name"><a class="macro" href="macro.dtor.html" title="macro ctor_lite::dtor">dtor</a></div><div class="desc docblock-short">Run a function on program shutdown.</div></li></ul></section></div></main></body></html>

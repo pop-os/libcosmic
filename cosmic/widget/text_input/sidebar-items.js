@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["draw","editable_input","focus","inline_input","layout","mouse_interaction","move_cursor_to","move_cursor_to_end","move_cursor_to_front","search_input","secure_input","select_all","text_input","update"],"mod":["cursor","editor","value"],"struct":["Appearance","State","TextInput","TextInputString"],"trait":["StyleSheet"],"type":["DnDCommand"]};

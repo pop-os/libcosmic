@@ -1,0 +1,41 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Stack allocated, but dynamically growing into heap if necessary"><title>DynaFraction in fraction::prelude - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-46f98efaafac5295.ttf.woff2,FiraSans-Regular-018c141bf0843ffd.woff2,FiraSans-Medium-8f9a781e4970d388.woff2,SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2,SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../static.files/rustdoc-c5d6553a23f1e5a6.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="fraction" data-themes="" data-resource-suffix="" data-rustdoc-version="1.81.0 (eeb90cda1 2024-09-04)" data-channel="1.81.0" data-search-js="search-d234aafac6c221dd.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../static.files/storage-118b08c4c78b968e.js"></script><script defer src="sidebar-items.js"></script><script defer src="../../static.files/main-d2fab2bf619172d3.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-df360f571f6edeae.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc type"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle" title="show sidebar"></button></nav><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../../fraction/index.html">fraction</a><span class="version">0.15.3</span></h2></div><h2 class="location"><a href="#">DynaFraction</a></h2><div class="sidebar-elems"><section><h3><a href="#aliased-type">Aliased type</a></h3><h3><a href="#variants">Variants</a></h3><ul class="block variant"><li><a href="#variant.Infinity">Infinity</a></li><li><a href="#variant.NaN">NaN</a></li><li><a href="#variant.Rational">Rational</a></li></ul></section><h2><a href="index.html">In fraction::prelude</a></h2></div></nav><div class="sidebar-resizer"></div><main><div class="width-limiter"><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><h1>Type Alias <a href="../index.html">fraction</a>::<wbr><a href="index.html">prelude</a>::<wbr><a class="type" href="#">DynaFraction</a><button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><span class="out-of-band"><a class="src" href="../../src/fraction/prelude.rs.html#114">source</a> · <button id="toggle-all-docs" title="collapse all docs">[<span>&#x2212;</span>]</button></span></div><pre class="rust item-decl"><code>pub type DynaFraction&lt;T&gt; = <a class="enum" href="enum.GenericFraction.html" title="enum fraction::prelude::GenericFraction">GenericFraction</a>&lt;<a class="enum" href="../dynaint/enum.DynaInt.html" title="enum fraction::dynaint::DynaInt">DynaInt</a>&lt;T, <a class="struct" href="../struct.BigUint.html" title="struct fraction::BigUint">BigUint</a>&gt;&gt;;</code></pre><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Stack allocated, but dynamically growing into heap if necessary</p>
+<p>Fraction using T as the base type for numerator and denominator<br />
+Whenever possible keeps data in T, but on math overflows
+automatically casts values into BigUint, which allocates memory on heap.</p>
+<p>Allows to use fractions without memory allocations wherever possible.
+For unexpectedly big values performs on heap and doesn’t suffer from stack overflows.
+Automatically uses T if an operation on two BigUint numbers produces the result
+that may fit within T.</p>
+<h2 id="examples"><a class="doc-anchor" href="#examples">§</a>Examples</h2>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>fraction::{DynaFraction, BigUint};
+
+<span class="kw">type </span>D = DynaFraction&lt;u32&gt;;
+
+<span class="kw">let </span>max_u32 = u32::max_value();
+
+<span class="kw">let </span>one = D::from (<span class="number">1u32</span>);
+<span class="kw">let </span><span class="kw-2">mut </span>val = D::from (max_u32);
+
+<span class="macro">assert_eq!</span>(  <span class="comment">// check we still use u32 for the numerator
+    </span>max_u32,
+    val.numer().unwrap().clone().unpack().ok().unwrap()
+);
+
+
+val += <span class="kw-2">&amp;</span>one;
+<span class="macro">assert_eq!</span>(  <span class="comment">// BigUint allocated for the result instead of stack overflow on u32
+    </span>BigUint::from(max_u32) + BigUint::from(<span class="number">1u8</span>),
+    val.numer().unwrap().clone().unpack().err().unwrap()
+);
+
+
+val -= one;
+<span class="macro">assert_eq!</span>(  <span class="comment">// check we use u32 again
+    </span>max_u32,
+    val.numer().unwrap().clone().unpack().ok().unwrap()
+);</code></pre></div>
+</div></details><h2 id="aliased-type" class="section-header">Aliased Type<a href="#aliased-type" class="anchor">§</a></h2><pre class="rust item-decl"><code>enum DynaFraction&lt;T&gt; {
+    Rational(<a class="enum" href="../enum.Sign.html" title="enum fraction::Sign">Sign</a>, <a class="struct" href="../struct.Ratio.html" title="struct fraction::Ratio">Ratio</a>&lt;<a class="enum" href="../dynaint/enum.DynaInt.html" title="enum fraction::dynaint::DynaInt">DynaInt</a>&lt;T, <a class="struct" href="../struct.BigUint.html" title="struct fraction::BigUint">BigUint</a>&gt;&gt;),
+    Infinity(<a class="enum" href="../enum.Sign.html" title="enum fraction::Sign">Sign</a>),
+    NaN,
+}</code></pre><h2 id="variants" class="variants section-header">Variants<a href="#variants" class="anchor">§</a></h2><div class="variants"><section id="variant.Rational" class="variant"><a href="#variant.Rational" class="anchor">§</a><h3 class="code-header">Rational(<a class="enum" href="../enum.Sign.html" title="enum fraction::Sign">Sign</a>, <a class="struct" href="../struct.Ratio.html" title="struct fraction::Ratio">Ratio</a>&lt;<a class="enum" href="../dynaint/enum.DynaInt.html" title="enum fraction::dynaint::DynaInt">DynaInt</a>&lt;T, <a class="struct" href="../struct.BigUint.html" title="struct fraction::BigUint">BigUint</a>&gt;&gt;)</h3></section><section id="variant.Infinity" class="variant"><a href="#variant.Infinity" class="anchor">§</a><h3 class="code-header">Infinity(<a class="enum" href="../enum.Sign.html" title="enum fraction::Sign">Sign</a>)</h3></section><section id="variant.NaN" class="variant"><a href="#variant.NaN" class="anchor">§</a><h3 class="code-header">NaN</h3></section></div><script src="../../type.impl/fraction/prelude/enum.GenericFraction.js" data-self-path="fraction::prelude::DynaFraction" async></script></section></div></main></body></html>

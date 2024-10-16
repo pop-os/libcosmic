@@ -1,0 +1,1 @@
+searchState.loadedDescShard("resvg", 0, "resvg is an SVG rendering library.\nA render tree.\nContent area.\nReturns the argument unchanged.\nCreates a rendering tree from <code>usvg::Tree</code>.\nCreates a rendering tree from <code>usvg::Node</code>.\nCalls <code>U::from(self)</code>.\nRenders the tree onto the pixmap.\nImage size.\nSVG viewbox.")

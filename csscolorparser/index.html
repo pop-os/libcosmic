@@ -1,0 +1,79 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Overview"><title>csscolorparser - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-46f98efaafac5295.ttf.woff2,FiraSans-Regular-018c141bf0843ffd.woff2,FiraSans-Medium-8f9a781e4970d388.woff2,SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2,SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../static.files/rustdoc-c5d6553a23f1e5a6.css"><meta name="rustdoc-vars" data-root-path="../" data-static-root-path="../static.files/" data-current-crate="csscolorparser" data-themes="" data-resource-suffix="" data-rustdoc-version="1.81.0 (eeb90cda1 2024-09-04)" data-channel="1.81.0" data-search-js="search-d234aafac6c221dd.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../static.files/storage-118b08c4c78b968e.js"></script><script defer src="../crates.js"></script><script defer src="../static.files/main-d2fab2bf619172d3.js"></script><noscript><link rel="stylesheet" href="../static.files/noscript-df360f571f6edeae.css"></noscript><link rel="alternate icon" type="image/png" href="../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc mod crate"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle" title="show sidebar"></button></nav><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../csscolorparser/index.html">csscolorparser</a><span class="version">0.6.2</span></h2></div><div class="sidebar-elems"><ul class="block"><li><a id="all-types" href="all.html">All Items</a></li></ul><section><ul class="block"><li><a href="#structs">Structs</a></li><li><a href="#enums">Enums</a></li><li><a href="#functions">Functions</a></li></ul></section></div></nav><div class="sidebar-resizer"></div><main><div class="width-limiter"><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><h1>Crate <a class="mod" href="#">csscolorparser</a><button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><span class="out-of-band"><a class="src" href="../src/csscolorparser/lib.rs.html#1-106">source</a> · <button id="toggle-all-docs" title="collapse all docs">[<span>&#x2212;</span>]</button></span></div><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><h2 id="overview"><a class="doc-anchor" href="#overview">§</a>Overview</h2>
+<p>Rust library for parsing CSS color string as defined in the W3C’s <a href="https://www.w3.org/TR/css-color-4/">CSS Color Module Level 4</a>.</p>
+<h3 id="supported-color-format"><a class="doc-anchor" href="#supported-color-format">§</a>Supported Color Format</h3>
+<ul>
+<li><a href="https://www.w3.org/TR/css-color-4/#named-colors">Named colors</a></li>
+<li>RGB hexadecimal (with and without <code>#</code> prefix)
+<ul>
+<li>Short format <code>#rgb</code></li>
+<li>Short format with alpha <code>#rgba</code></li>
+<li>Long format <code>#rrggbb</code></li>
+<li>Long format with alpha <code>#rrggbbaa</code></li>
+</ul>
+</li>
+<li><code>rgb()</code> and <code>rgba()</code></li>
+<li><code>hsl()</code> and <code>hsla()</code></li>
+<li><code>hwb()</code></li>
+<li><code>lab()</code></li>
+<li><code>lch()</code></li>
+<li><code>hwba()</code>, <code>hsv()</code>, <code>hsva()</code> - not in CSS standard.</li>
+</ul>
+<h4 id="example-color-format"><a class="doc-anchor" href="#example-color-format">§</a>Example Color Format</h4><details>
+<summary>Click to expand!</summary>
+<div class="example-wrap"><pre class="language-text"><code>transparent
+gold
+rebeccapurple
+lime
+#0f0
+#0f0f
+#00ff00
+#00ff00ff
+rgb(0,255,0)
+rgb(0% 100% 0%)
+rgb(0 255 0 / 100%)
+rgba(0,255,0,1)
+hsl(120,100%,50%)
+hsl(120deg 100% 50%)
+hsl(-240 100% 50%)
+hsl(-240deg 100% 50%)
+hsl(0.3333turn 100% 50%)
+hsl(133.333grad 100% 50%)
+hsl(2.0944rad 100% 50%)
+hsla(120,100%,50%,100%)
+hwb(120 0% 0%)
+hwb(480deg 0% 0% / 100%)
+hsv(120,100%,100%)
+hsv(120deg 100% 100% / 100%)
+</code></pre></div></details>
+<h3 id="usage"><a class="doc-anchor" href="#usage">§</a>Usage</h3>
+<p>Add this to your <code>Cargo.toml</code></p>
+<div class="example-wrap"><pre class="language-toml"><code>csscolorparser = &quot;0.6.2&quot;
+</code></pre></div><h3 id="examples"><a class="doc-anchor" href="#examples">§</a>Examples</h3>
+<p>Using <a href="fn.parse.html"><code>csscolorparser::parse()</code></a> function.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">let </span>c = csscolorparser::parse(<span class="string">"rgb(100%,0%,0%)"</span>)<span class="question-mark">?</span>;
+
+<span class="macro">assert_eq!</span>(c.to_array(), [<span class="number">1.0</span>, <span class="number">0.0</span>, <span class="number">0.0</span>, <span class="number">1.0</span>]);
+<span class="macro">assert_eq!</span>(c.to_rgba8(), [<span class="number">255</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">255</span>]);
+<span class="macro">assert_eq!</span>(c.to_hex_string(), <span class="string">"#ff0000"</span>);
+<span class="macro">assert_eq!</span>(c.to_rgb_string(), <span class="string">"rgb(255,0,0)"</span>);</code></pre></div>
+<p>Using <code>parse()</code> method on <code>&amp;str</code>.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>csscolorparser::Color;
+
+<span class="kw">let </span>c = <span class="string">"#ff00007f"</span>.parse::&lt;Color&gt;()<span class="question-mark">?</span>;
+
+<span class="macro">assert_eq!</span>(c.to_rgba8(), [<span class="number">255</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">127</span>]);
+<span class="macro">assert_eq!</span>(c.to_hex_string(), <span class="string">"#ff00007f"</span>);</code></pre></div>
+<h3 id="default-feature"><a class="doc-anchor" href="#default-feature">§</a>Default Feature</h3>
+<ul>
+<li><code>named-colors</code>: Enables parsing from <a href="https://www.w3.org/TR/css-color-4/#named-colors">named colors</a>. Requires <a href="https://crates.io/crates/phf"><code>phf</code></a>.</li>
+</ul>
+<h3 id="optional-features"><a class="doc-anchor" href="#optional-features">§</a>Optional Features</h3>
+<ul>
+<li><code>lab</code>: Enables parsing <code>lab()</code> and <code>lch()</code> color format.</li>
+<li><code>rust-rgb</code>: Enables converting from <a href="https://crates.io/crates/rgb"><code>rgb</code></a> crate types into <code>Color</code>.</li>
+<li><code>cint</code>: Enables converting <a href="https://crates.io/crates/cint"><code>cint</code></a> crate types to and from <code>Color</code>.</li>
+<li><code>serde</code>: Enables serializing (into HEX string) and deserializing (from any supported string color format) using <a href="https://serde.rs/"><code>serde</code></a> framework.</li>
+</ul>
+</div></details><h2 id="structs" class="section-header">Structs<a href="#structs" class="anchor">§</a></h2><ul class="item-table"><li><div class="item-name"><a class="struct" href="struct.Color.html" title="struct csscolorparser::Color">Color</a></div><div class="desc docblock-short">The color</div></li></ul><h2 id="enums" class="section-header">Enums<a href="#enums" class="anchor">§</a></h2><ul class="item-table"><li><div class="item-name"><a class="enum" href="enum.ParseColorError.html" title="enum csscolorparser::ParseColorError">ParseColorError</a></div></li></ul><h2 id="functions" class="section-header">Functions<a href="#functions" class="anchor">§</a></h2><ul class="item-table"><li><div class="item-name"><a class="fn" href="fn.parse.html" title="fn csscolorparser::parse">parse</a></div><div class="desc docblock-short">Parse CSS color string</div></li></ul></section></div></main></body></html>

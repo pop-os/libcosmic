@@ -1,0 +1,69 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Release 0.7.0 (2021-02-06)"><title>libloading::changelog::r0_7_0 - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-46f98efaafac5295.ttf.woff2,FiraSans-Regular-018c141bf0843ffd.woff2,FiraSans-Medium-8f9a781e4970d388.woff2,SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2,SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-c5d6553a23f1e5a6.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="libloading" data-themes="" data-resource-suffix="" data-rustdoc-version="1.81.0 (eeb90cda1 2024-09-04)" data-channel="1.81.0" data-search-js="search-d234aafac6c221dd.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../../static.files/storage-118b08c4c78b968e.js"></script><script defer src="../sidebar-items.js"></script><script defer src="../../../static.files/main-d2fab2bf619172d3.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-df360f571f6edeae.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc mod"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle" title="show sidebar"></button></nav><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../../../libloading/index.html">libloading</a><span class="version">0.8.5</span></h2></div><h2 class="location"><a href="#">Module r0_7_0</a></h2><div class="sidebar-elems"><h2><a href="../index.html">In libloading::changelog</a></h2></div></nav><div class="sidebar-resizer"></div><main><div class="width-limiter"><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><h1>Module <a href="../../index.html">libloading</a>::<wbr><a href="../index.html">changelog</a>::<wbr><a class="mod" href="#">r0_7_0</a><button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><span class="out-of-band"><a class="src" href="../../../src/libloading/changelog.rs.html#200">source</a> · <button id="toggle-all-docs" title="collapse all docs">[<span>&#x2212;</span>]</button></span></div><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Release 0.7.0 (2021-02-06)</p>
+<h3 id="breaking-changes"><a class="doc-anchor" href="#breaking-changes">§</a>Breaking changes</h3><h4 id="loading-functions-are-now-unsafe"><a class="doc-anchor" href="#loading-functions-are-now-unsafe">§</a>Loading functions are now <code>unsafe</code></h4>
+<p>A number of associated methods involved in loading a library were changed to
+be <code>unsafe</code>. The affected functions are: <a href="../../struct.Library.html#method.new" title="associated function libloading::Library::new"><code>Library::new</code></a>, <a href="../../os/unix/struct.Library.html#method.new" title="associated function libloading::os::unix::Library::new"><code>os::unix::Library::new</code></a>,
+<a href="../../os/unix/struct.Library.html#method.new" title="associated function libloading::os::unix::Library::new"><code>os::unix::Library::open</code></a>, <a href="crate::os::windows::Library::new"><code>os::windows::Library::new</code></a>,
+<a href="crate::os::windows::Library::load_with_flags"><code>os::windows::Library::load_with_flags</code></a>. This is the most prominent breaking change in this
+release and affects majority of the users of <code>libloading</code>.</p>
+<p>In order to see why it was necessary, consider the following snippet of C++ code:</p>
+<div class="example-wrap"><pre class="language-c++"><code>#include &lt;vector&gt;
+#include &lt;iostream&gt;
+
+static std::vector&lt;unsigned int&gt; UNSHUU = { 1, 2, 3 };
+
+int main() {
+    std::cout &lt;&lt; UNSHUU[0] &lt;&lt; UNSHUU[1] &lt;&lt; UNSHUU[2] &lt;&lt; std::endl; // Prints 123
+    return 0;
+}
+</code></pre></div>
+<p>The <code>std::vector</code> type, much like in Rust’s <code>Vec</code>, stores its contents in a buffer allocated on
+the heap. In this example the vector object itself is stored and initialized as a static
+variable – a compile time construct. The heap, on the other hand, is a runtime construct. And
+yet the code works exactly as you’d expect – the vector contains numbers 1, 2 and 3 stored in
+a buffer on heap. So, <em>what</em> makes it work out, exactly?</p>
+<p>Various executable and shared library formats define conventions and machinery to execute
+arbitrary code when a program or a shared library is loaded. On systems using the PE format
+(e.g. Windows) this is available via the optional <code>DllMain</code> initializer. Various systems
+utilizing the ELF format take a slightly different approach of maintaining an array of function
+pointers in the <code>.init_array</code> section. A very similar mechanism exists on systems that utilize
+the Mach-O format.</p>
+<p>For the C++ program above, the object stored in the <code>UNSHUU</code> global variable is constructed
+by code run as part of such an initializer routine. This initializer is run before the entry
+point (the <code>main</code> function) is executed, allowing for this magical behaviour to be possible.
+Were the C++ code built as a shared library instead, the initialization routines would run as
+the resulting shared library is loaded. In case of <code>libloading</code> – during the call to
+<code>Library::new</code> and other methods affected by this change.</p>
+<p>These initialization (and very closely related termination) routines can be utilized outside of
+C++ too. Anybody can build a shared library in variety of different programming languages and
+set up the initializers to execute arbitrary code. Potentially code that does all sorts of
+wildly unsound stuff.</p>
+<p>The routines are executed by components that are an integral part of the operating system.
+Changing or controlling the operation of these components is infeasible. With that in
+mind, the initializer and termination routines are something anybody loading a library must
+carefully evaluate the libraries loaded for soundness.</p>
+<p>In practice, a vast majority of the libraries can be considered a good citizen and their
+initialization and termination routines, if they have any at all, can be trusted to be sound.</p>
+<p>Also see: <a href="https://github.com/nagisa/rust_libloading/issues/86">issue #86</a>.</p>
+<h4 id="better--more-consistent-default-behaviour-on-unix-systems"><a class="doc-anchor" href="#better--more-consistent-default-behaviour-on-unix-systems">§</a>Better &amp; more consistent default behaviour on UNIX systems</h4>
+<p>On UNIX systems the <a href="../../struct.Library.html#method.new" title="associated function libloading::Library::new"><code>Library::new</code></a>, <a href="../../os/unix/struct.Library.html#method.new" title="associated function libloading::os::unix::Library::new"><code>os::unix::Library::new</code></a> and
+<a href="../../os/unix/struct.Library.html#method.this" title="associated function libloading::os::unix::Library::this"><code>os::unix::Library::this</code></a> methods have been changed to use
+<code><a href="../../os/unix/constant.RTLD_LAZY.html" title="constant libloading::os::unix::RTLD_LAZY">RTLD_LAZY</a> | <a href="../../os/unix/constant.RTLD_LOCAL.html" title="constant libloading::os::unix::RTLD_LOCAL">RTLD_LOCAL</a></code> as the default set of loader options (previously:
+<a href="../../os/unix/constant.RTLD_NOW.html" title="constant libloading::os::unix::RTLD_NOW"><code>RTLD_NOW</code></a>). This has a couple benefits. Namely:</p>
+<ul>
+<li>Lazy binding is generally quicker to execute when only a subset of symbols from a library are
+used and is typically the default when neither <code>RTLD_LAZY</code> nor <code>RTLD_NOW</code> are specified when
+calling the underlying <code>dlopen</code> API;</li>
+<li>On most UNIX systems (macOS being a notable exception) <code>RTLD_LOCAL</code> is the default when
+neither <code>RTLD_LOCAL</code> nor <a href="../../os/unix/constant.RTLD_GLOBAL.html" title="constant libloading::os::unix::RTLD_GLOBAL"><code>RTLD_GLOBAL</code></a> are specified. The explicit setting of the
+<code>RTLD_LOCAL</code> flag makes this behaviour consistent across platforms.</li>
+</ul>
+<h4 id="dropped-support-for-windows-xpvista"><a class="doc-anchor" href="#dropped-support-for-windows-xpvista">§</a>Dropped support for Windows XP/Vista</h4>
+<p>The (broken) support for Windows XP and Windows Vista environments was removed. This was
+prompted primarily by a similar policy change in the <a href="https://github.com/rust-lang/compiler-team/issues/378">Rust
+project</a> but also as an acknowledgement
+to the fact that <code>libloading</code> never worked in these environments anyway.</p>
+<h4 id="more-accurate-error-variant-names"><a class="doc-anchor" href="#more-accurate-error-variant-names">§</a>More accurate error variant names</h4>
+<p>Finally, the <code>Error::LoadLibraryW</code> renamed to <a href="../../enum.Error.html#variant.LoadLibraryExW" title="variant libloading::Error::LoadLibraryExW"><code>Error::LoadLibraryExW</code></a> to more accurately
+represent the underlying API that’s failing. No functional changes as part of this rename
+intended.</p>
+</div></details></section></div></main></body></html>

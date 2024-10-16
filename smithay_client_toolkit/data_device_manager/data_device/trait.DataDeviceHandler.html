@@ -1,0 +1,78 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Handler trait for DataDevice events."><title>DataDeviceHandler in smithay_client_toolkit::data_device_manager::data_device - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-46f98efaafac5295.ttf.woff2,FiraSans-Regular-018c141bf0843ffd.woff2,FiraSans-Medium-8f9a781e4970d388.woff2,SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2,SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-c5d6553a23f1e5a6.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="smithay_client_toolkit" data-themes="" data-resource-suffix="" data-rustdoc-version="1.81.0 (eeb90cda1 2024-09-04)" data-channel="1.81.0" data-search-js="search-d234aafac6c221dd.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../../static.files/storage-118b08c4c78b968e.js"></script><script defer src="sidebar-items.js"></script><script defer src="../../../static.files/main-d2fab2bf619172d3.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-df360f571f6edeae.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc trait"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle" title="show sidebar"></button></nav><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../../../smithay_client_toolkit/index.html">smithay_client_toolkit</a><span class="version">0.19.2</span></h2></div><h2 class="location"><a href="#">DataDeviceHandler</a></h2><div class="sidebar-elems"><section><h3><a href="#required-methods">Required Methods</a></h3><ul class="block"><li><a href="#tymethod.drop_performed">drop_performed</a></li><li><a href="#tymethod.enter">enter</a></li><li><a href="#tymethod.leave">leave</a></li><li><a href="#tymethod.motion">motion</a></li><li><a href="#tymethod.selection">selection</a></li></ul><h3><a href="#object-safety">Object Safety</a></h3><h3><a href="#implementors">Implementors</a></h3></section><h2><a href="index.html">In smithay_client_toolkit::data_device_manager::data_device</a></h2></div></nav><div class="sidebar-resizer"></div><main><div class="width-limiter"><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><h1>Trait <a href="../../index.html">smithay_client_toolkit</a>::<wbr><a href="../index.html">data_device_manager</a>::<wbr><a href="index.html">data_device</a>::<wbr><a class="trait" href="#">DataDeviceHandler</a><button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><span class="out-of-band"><a class="src" href="../../../src/smithay_client_toolkit/data_device_manager/data_device.rs.html#29-78">source</a> · <button id="toggle-all-docs" title="collapse all docs">[<span>&#x2212;</span>]</button></span></div><pre class="rust item-decl"><code>pub trait DataDeviceHandler: <a class="trait" href="https://doc.rust-lang.org/1.81.0/core/marker/trait.Sized.html" title="trait core::marker::Sized">Sized</a> {
+    // Required methods
+    fn <a href="#tymethod.enter" class="fn">enter</a>(
+        &amp;mut self,
+        conn: &amp;<a class="struct" href="../../../wayland_client/conn/struct.Connection.html" title="struct wayland_client::conn::Connection">Connection</a>,
+        qh: &amp;<a class="struct" href="../../../wayland_client/event_queue/struct.QueueHandle.html" title="struct wayland_client::event_queue::QueueHandle">QueueHandle</a>&lt;Self&gt;,
+        data_device: &amp;<a class="struct" href="../../../wayland_client/protocol/wl_data_device/struct.WlDataDevice.html" title="struct wayland_client::protocol::wl_data_device::WlDataDevice">WlDataDevice</a>,
+        x: <a class="primitive" href="https://doc.rust-lang.org/1.81.0/std/primitive.f64.html">f64</a>,
+        y: <a class="primitive" href="https://doc.rust-lang.org/1.81.0/std/primitive.f64.html">f64</a>,
+        wl_surface: &amp;<a class="struct" href="../../../wayland_client/protocol/wl_surface/struct.WlSurface.html" title="struct wayland_client::protocol::wl_surface::WlSurface">WlSurface</a>,
+    );
+<span class="item-spacer"></span>    fn <a href="#tymethod.leave" class="fn">leave</a>(
+        &amp;mut self,
+        conn: &amp;<a class="struct" href="../../../wayland_client/conn/struct.Connection.html" title="struct wayland_client::conn::Connection">Connection</a>,
+        qh: &amp;<a class="struct" href="../../../wayland_client/event_queue/struct.QueueHandle.html" title="struct wayland_client::event_queue::QueueHandle">QueueHandle</a>&lt;Self&gt;,
+        data_device: &amp;<a class="struct" href="../../../wayland_client/protocol/wl_data_device/struct.WlDataDevice.html" title="struct wayland_client::protocol::wl_data_device::WlDataDevice">WlDataDevice</a>,
+    );
+<span class="item-spacer"></span>    fn <a href="#tymethod.motion" class="fn">motion</a>(
+        &amp;mut self,
+        conn: &amp;<a class="struct" href="../../../wayland_client/conn/struct.Connection.html" title="struct wayland_client::conn::Connection">Connection</a>,
+        qh: &amp;<a class="struct" href="../../../wayland_client/event_queue/struct.QueueHandle.html" title="struct wayland_client::event_queue::QueueHandle">QueueHandle</a>&lt;Self&gt;,
+        data_device: &amp;<a class="struct" href="../../../wayland_client/protocol/wl_data_device/struct.WlDataDevice.html" title="struct wayland_client::protocol::wl_data_device::WlDataDevice">WlDataDevice</a>,
+        x: <a class="primitive" href="https://doc.rust-lang.org/1.81.0/std/primitive.f64.html">f64</a>,
+        y: <a class="primitive" href="https://doc.rust-lang.org/1.81.0/std/primitive.f64.html">f64</a>,
+    );
+<span class="item-spacer"></span>    fn <a href="#tymethod.selection" class="fn">selection</a>(
+        &amp;mut self,
+        conn: &amp;<a class="struct" href="../../../wayland_client/conn/struct.Connection.html" title="struct wayland_client::conn::Connection">Connection</a>,
+        qh: &amp;<a class="struct" href="../../../wayland_client/event_queue/struct.QueueHandle.html" title="struct wayland_client::event_queue::QueueHandle">QueueHandle</a>&lt;Self&gt;,
+        data_device: &amp;<a class="struct" href="../../../wayland_client/protocol/wl_data_device/struct.WlDataDevice.html" title="struct wayland_client::protocol::wl_data_device::WlDataDevice">WlDataDevice</a>,
+    );
+<span class="item-spacer"></span>    fn <a href="#tymethod.drop_performed" class="fn">drop_performed</a>(
+        &amp;mut self,
+        conn: &amp;<a class="struct" href="../../../wayland_client/conn/struct.Connection.html" title="struct wayland_client::conn::Connection">Connection</a>,
+        qh: &amp;<a class="struct" href="../../../wayland_client/event_queue/struct.QueueHandle.html" title="struct wayland_client::event_queue::QueueHandle">QueueHandle</a>&lt;Self&gt;,
+        data_device: &amp;<a class="struct" href="../../../wayland_client/protocol/wl_data_device/struct.WlDataDevice.html" title="struct wayland_client::protocol::wl_data_device::WlDataDevice">WlDataDevice</a>,
+    );
+}</code></pre><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Handler trait for DataDevice events.</p>
+<p>The functions defined in this trait are called as DataDevice events are received from the compositor.</p>
+</div></details><h2 id="required-methods" class="section-header">Required Methods<a href="#required-methods" class="anchor">§</a></h2><div class="methods"><details class="toggle method-toggle" open><summary><section id="tymethod.enter" class="method"><a class="src rightside" href="../../../src/smithay_client_toolkit/data_device_manager/data_device.rs.html#42-50">source</a><h4 class="code-header">fn <a href="#tymethod.enter" class="fn">enter</a>(
+    &amp;mut self,
+    conn: &amp;<a class="struct" href="../../../wayland_client/conn/struct.Connection.html" title="struct wayland_client::conn::Connection">Connection</a>,
+    qh: &amp;<a class="struct" href="../../../wayland_client/event_queue/struct.QueueHandle.html" title="struct wayland_client::event_queue::QueueHandle">QueueHandle</a>&lt;Self&gt;,
+    data_device: &amp;<a class="struct" href="../../../wayland_client/protocol/wl_data_device/struct.WlDataDevice.html" title="struct wayland_client::protocol::wl_data_device::WlDataDevice">WlDataDevice</a>,
+    x: <a class="primitive" href="https://doc.rust-lang.org/1.81.0/std/primitive.f64.html">f64</a>,
+    y: <a class="primitive" href="https://doc.rust-lang.org/1.81.0/std/primitive.f64.html">f64</a>,
+    wl_surface: &amp;<a class="struct" href="../../../wayland_client/protocol/wl_surface/struct.WlSurface.html" title="struct wayland_client::protocol::wl_surface::WlSurface">WlSurface</a>,
+)</h4></section></summary><div class="docblock"><p>The data device pointer has entered a surface at the provided location</p>
+</div></details><details class="toggle method-toggle" open><summary><section id="tymethod.leave" class="method"><a class="src rightside" href="../../../src/smithay_client_toolkit/data_device_manager/data_device.rs.html#55">source</a><h4 class="code-header">fn <a href="#tymethod.leave" class="fn">leave</a>(
+    &amp;mut self,
+    conn: &amp;<a class="struct" href="../../../wayland_client/conn/struct.Connection.html" title="struct wayland_client::conn::Connection">Connection</a>,
+    qh: &amp;<a class="struct" href="../../../wayland_client/event_queue/struct.QueueHandle.html" title="struct wayland_client::event_queue::QueueHandle">QueueHandle</a>&lt;Self&gt;,
+    data_device: &amp;<a class="struct" href="../../../wayland_client/protocol/wl_data_device/struct.WlDataDevice.html" title="struct wayland_client::protocol::wl_data_device::WlDataDevice">WlDataDevice</a>,
+)</h4></section></summary><div class="docblock"><p>The drag and drop pointer has left the surface and the session ends.
+The offer will be destroyed unless it was previously dropped.
+In the case of a dropped offer, the client must destroy it manually after it is finished.</p>
+</div></details><details class="toggle method-toggle" open><summary><section id="tymethod.motion" class="method"><a class="src rightside" href="../../../src/smithay_client_toolkit/data_device_manager/data_device.rs.html#58-65">source</a><h4 class="code-header">fn <a href="#tymethod.motion" class="fn">motion</a>(
+    &amp;mut self,
+    conn: &amp;<a class="struct" href="../../../wayland_client/conn/struct.Connection.html" title="struct wayland_client::conn::Connection">Connection</a>,
+    qh: &amp;<a class="struct" href="../../../wayland_client/event_queue/struct.QueueHandle.html" title="struct wayland_client::event_queue::QueueHandle">QueueHandle</a>&lt;Self&gt;,
+    data_device: &amp;<a class="struct" href="../../../wayland_client/protocol/wl_data_device/struct.WlDataDevice.html" title="struct wayland_client::protocol::wl_data_device::WlDataDevice">WlDataDevice</a>,
+    x: <a class="primitive" href="https://doc.rust-lang.org/1.81.0/std/primitive.f64.html">f64</a>,
+    y: <a class="primitive" href="https://doc.rust-lang.org/1.81.0/std/primitive.f64.html">f64</a>,
+)</h4></section></summary><div class="docblock"><p>Drag and Drop motion.</p>
+</div></details><details class="toggle method-toggle" open><summary><section id="tymethod.selection" class="method"><a class="src rightside" href="../../../src/smithay_client_toolkit/data_device_manager/data_device.rs.html#68">source</a><h4 class="code-header">fn <a href="#tymethod.selection" class="fn">selection</a>(
+    &amp;mut self,
+    conn: &amp;<a class="struct" href="../../../wayland_client/conn/struct.Connection.html" title="struct wayland_client::conn::Connection">Connection</a>,
+    qh: &amp;<a class="struct" href="../../../wayland_client/event_queue/struct.QueueHandle.html" title="struct wayland_client::event_queue::QueueHandle">QueueHandle</a>&lt;Self&gt;,
+    data_device: &amp;<a class="struct" href="../../../wayland_client/protocol/wl_data_device/struct.WlDataDevice.html" title="struct wayland_client::protocol::wl_data_device::WlDataDevice">WlDataDevice</a>,
+)</h4></section></summary><div class="docblock"><p>Advertises a new selection.</p>
+</div></details><details class="toggle method-toggle" open><summary><section id="tymethod.drop_performed" class="method"><a class="src rightside" href="../../../src/smithay_client_toolkit/data_device_manager/data_device.rs.html#72-77">source</a><h4 class="code-header">fn <a href="#tymethod.drop_performed" class="fn">drop_performed</a>(
+    &amp;mut self,
+    conn: &amp;<a class="struct" href="../../../wayland_client/conn/struct.Connection.html" title="struct wayland_client::conn::Connection">Connection</a>,
+    qh: &amp;<a class="struct" href="../../../wayland_client/event_queue/struct.QueueHandle.html" title="struct wayland_client::event_queue::QueueHandle">QueueHandle</a>&lt;Self&gt;,
+    data_device: &amp;<a class="struct" href="../../../wayland_client/protocol/wl_data_device/struct.WlDataDevice.html" title="struct wayland_client::protocol::wl_data_device::WlDataDevice">WlDataDevice</a>,
+)</h4></section></summary><div class="docblock"><p>Drop performed.
+After the next data offer action event, data may be able to be received, unless the action is “ask”.</p>
+</div></details></div><h2 id="object-safety" class="section-header">Object Safety<a href="#object-safety" class="anchor">§</a></h2><div class="object-safety-info">This trait is <b>not</b> <a href="https://doc.rust-lang.org/1.81.0/reference/items/traits.html#object-safety">object safe</a>.</div><h2 id="implementors" class="section-header">Implementors<a href="#implementors" class="anchor">§</a></h2><div id="implementors-list"></div><script src="../../../trait.impl/smithay_client_toolkit/data_device_manager/data_device/trait.DataDeviceHandler.js" async></script></section></div></main></body></html>

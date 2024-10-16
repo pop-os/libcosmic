@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["HandleShape","RailBackground"],"fn":["draw","mouse_interaction","update"],"struct":["Appearance","Handle","Rail","Slider","State"],"trait":["StyleSheet"]};

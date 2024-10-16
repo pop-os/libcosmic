@@ -1,0 +1,263 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `/home/runner/.cargo/registry/src/index.crates.io-6f17d22bba15001f/usvg-parser-0.37.0/src/switch.rs`."><title>switch.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-46f98efaafac5295.ttf.woff2,FiraSans-Regular-018c141bf0843ffd.woff2,FiraSans-Medium-8f9a781e4970d388.woff2,SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2,SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../static.files/rustdoc-c5d6553a23f1e5a6.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="usvg_parser" data-themes="" data-resource-suffix="" data-rustdoc-version="1.81.0 (eeb90cda1 2024-09-04)" data-channel="1.81.0" data-search-js="search-d234aafac6c221dd.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../static.files/storage-118b08c4c78b968e.js"></script><script defer src="../../static.files/src-script-e66d777a5a92e9b2.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-d2fab2bf619172d3.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-df360f571f6edeae.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer"></div><main><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<a href="#2" id="2">2</a>
+<a href="#3" id="3">3</a>
+<a href="#4" id="4">4</a>
+<a href="#5" id="5">5</a>
+<a href="#6" id="6">6</a>
+<a href="#7" id="7">7</a>
+<a href="#8" id="8">8</a>
+<a href="#9" id="9">9</a>
+<a href="#10" id="10">10</a>
+<a href="#11" id="11">11</a>
+<a href="#12" id="12">12</a>
+<a href="#13" id="13">13</a>
+<a href="#14" id="14">14</a>
+<a href="#15" id="15">15</a>
+<a href="#16" id="16">16</a>
+<a href="#17" id="17">17</a>
+<a href="#18" id="18">18</a>
+<a href="#19" id="19">19</a>
+<a href="#20" id="20">20</a>
+<a href="#21" id="21">21</a>
+<a href="#22" id="22">22</a>
+<a href="#23" id="23">23</a>
+<a href="#24" id="24">24</a>
+<a href="#25" id="25">25</a>
+<a href="#26" id="26">26</a>
+<a href="#27" id="27">27</a>
+<a href="#28" id="28">28</a>
+<a href="#29" id="29">29</a>
+<a href="#30" id="30">30</a>
+<a href="#31" id="31">31</a>
+<a href="#32" id="32">32</a>
+<a href="#33" id="33">33</a>
+<a href="#34" id="34">34</a>
+<a href="#35" id="35">35</a>
+<a href="#36" id="36">36</a>
+<a href="#37" id="37">37</a>
+<a href="#38" id="38">38</a>
+<a href="#39" id="39">39</a>
+<a href="#40" id="40">40</a>
+<a href="#41" id="41">41</a>
+<a href="#42" id="42">42</a>
+<a href="#43" id="43">43</a>
+<a href="#44" id="44">44</a>
+<a href="#45" id="45">45</a>
+<a href="#46" id="46">46</a>
+<a href="#47" id="47">47</a>
+<a href="#48" id="48">48</a>
+<a href="#49" id="49">49</a>
+<a href="#50" id="50">50</a>
+<a href="#51" id="51">51</a>
+<a href="#52" id="52">52</a>
+<a href="#53" id="53">53</a>
+<a href="#54" id="54">54</a>
+<a href="#55" id="55">55</a>
+<a href="#56" id="56">56</a>
+<a href="#57" id="57">57</a>
+<a href="#58" id="58">58</a>
+<a href="#59" id="59">59</a>
+<a href="#60" id="60">60</a>
+<a href="#61" id="61">61</a>
+<a href="#62" id="62">62</a>
+<a href="#63" id="63">63</a>
+<a href="#64" id="64">64</a>
+<a href="#65" id="65">65</a>
+<a href="#66" id="66">66</a>
+<a href="#67" id="67">67</a>
+<a href="#68" id="68">68</a>
+<a href="#69" id="69">69</a>
+<a href="#70" id="70">70</a>
+<a href="#71" id="71">71</a>
+<a href="#72" id="72">72</a>
+<a href="#73" id="73">73</a>
+<a href="#74" id="74">74</a>
+<a href="#75" id="75">75</a>
+<a href="#76" id="76">76</a>
+<a href="#77" id="77">77</a>
+<a href="#78" id="78">78</a>
+<a href="#79" id="79">79</a>
+<a href="#80" id="80">80</a>
+<a href="#81" id="81">81</a>
+<a href="#82" id="82">82</a>
+<a href="#83" id="83">83</a>
+<a href="#84" id="84">84</a>
+<a href="#85" id="85">85</a>
+<a href="#86" id="86">86</a>
+<a href="#87" id="87">87</a>
+<a href="#88" id="88">88</a>
+<a href="#89" id="89">89</a>
+<a href="#90" id="90">90</a>
+<a href="#91" id="91">91</a>
+<a href="#92" id="92">92</a>
+<a href="#93" id="93">93</a>
+<a href="#94" id="94">94</a>
+<a href="#95" id="95">95</a>
+<a href="#96" id="96">96</a>
+<a href="#97" id="97">97</a>
+<a href="#98" id="98">98</a>
+<a href="#99" id="99">99</a>
+<a href="#100" id="100">100</a>
+<a href="#101" id="101">101</a>
+<a href="#102" id="102">102</a>
+<a href="#103" id="103">103</a>
+<a href="#104" id="104">104</a>
+<a href="#105" id="105">105</a>
+<a href="#106" id="106">106</a>
+<a href="#107" id="107">107</a>
+<a href="#108" id="108">108</a>
+<a href="#109" id="109">109</a>
+<a href="#110" id="110">110</a>
+<a href="#111" id="111">111</a>
+<a href="#112" id="112">112</a>
+<a href="#113" id="113">113</a>
+<a href="#114" id="114">114</a>
+<a href="#115" id="115">115</a>
+<a href="#116" id="116">116</a>
+<a href="#117" id="117">117</a>
+<a href="#118" id="118">118</a>
+<a href="#119" id="119">119</a>
+<a href="#120" id="120">120</a>
+<a href="#121" id="121">121</a>
+<a href="#122" id="122">122</a>
+<a href="#123" id="123">123</a>
+<a href="#124" id="124">124</a>
+<a href="#125" id="125">125</a>
+<a href="#126" id="126">126</a>
+<a href="#127" id="127">127</a>
+<a href="#128" id="128">128</a>
+<a href="#129" id="129">129</a>
+<a href="#130" id="130">130</a>
+<a href="#131" id="131">131</a>
+</pre></div><pre class="rust"><code><span class="comment">// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+</span><span class="kw">use </span>usvg_tree::Node;
+
+<span class="kw">use </span><span class="kw">crate</span>::svgtree::{AId, SvgNode};
+<span class="kw">use crate</span>::{converter, Options};
+
+<span class="comment">// Full list can be found here: https://www.w3.org/TR/SVG11/feature.html
+</span><span class="kw">static </span>FEATURES: <span class="kw-2">&amp;</span>[<span class="kw-2">&amp;</span>str] = <span class="kw-2">&amp;</span>[
+    <span class="string">"http://www.w3.org/TR/SVG11/feature#SVGDOM-static"</span>,
+    <span class="string">"http://www.w3.org/TR/SVG11/feature#SVG-static"</span>,
+    <span class="string">"http://www.w3.org/TR/SVG11/feature#CoreAttribute"</span>, <span class="comment">// no xml:base and xml:lang
+    </span><span class="string">"http://www.w3.org/TR/SVG11/feature#Structure"</span>,
+    <span class="string">"http://www.w3.org/TR/SVG11/feature#BasicStructure"</span>,
+    <span class="string">"http://www.w3.org/TR/SVG11/feature#ContainerAttribute"</span>, <span class="comment">// `enable-background`
+    </span><span class="string">"http://www.w3.org/TR/SVG11/feature#ConditionalProcessing"</span>,
+    <span class="string">"http://www.w3.org/TR/SVG11/feature#Image"</span>,
+    <span class="string">"http://www.w3.org/TR/SVG11/feature#Style"</span>,
+    <span class="comment">// "http://www.w3.org/TR/SVG11/feature#ViewportAttribute", // `clip` and `overflow`, not yet
+    </span><span class="string">"http://www.w3.org/TR/SVG11/feature#Shape"</span>,
+    <span class="string">"http://www.w3.org/TR/SVG11/feature#Text"</span>,
+    <span class="string">"http://www.w3.org/TR/SVG11/feature#BasicText"</span>,
+    <span class="string">"http://www.w3.org/TR/SVG11/feature#PaintAttribute"</span>, <span class="comment">// no color-interpolation and color-rendering
+    </span><span class="string">"http://www.w3.org/TR/SVG11/feature#BasicPaintAttribute"</span>, <span class="comment">// no color-interpolation
+    </span><span class="string">"http://www.w3.org/TR/SVG11/feature#OpacityAttribute"</span>,
+    <span class="string">"http://www.w3.org/TR/SVG11/feature#GraphicsAttribute"</span>,
+    <span class="string">"http://www.w3.org/TR/SVG11/feature#BasicGraphicsAttribute"</span>,
+    <span class="string">"http://www.w3.org/TR/SVG11/feature#Marker"</span>,
+    <span class="comment">// "http://www.w3.org/TR/SVG11/feature#ColorProfile", // not yet
+    </span><span class="string">"http://www.w3.org/TR/SVG11/feature#Gradient"</span>,
+    <span class="string">"http://www.w3.org/TR/SVG11/feature#Pattern"</span>,
+    <span class="string">"http://www.w3.org/TR/SVG11/feature#Clip"</span>,
+    <span class="string">"http://www.w3.org/TR/SVG11/feature#BasicClip"</span>,
+    <span class="string">"http://www.w3.org/TR/SVG11/feature#Mask"</span>,
+    <span class="string">"http://www.w3.org/TR/SVG11/feature#Filter"</span>,
+    <span class="string">"http://www.w3.org/TR/SVG11/feature#BasicFilter"</span>,
+    <span class="comment">// only xlink:href
+    </span><span class="string">"http://www.w3.org/TR/SVG11/feature#XlinkAttribute"</span>,
+    <span class="comment">// "http://www.w3.org/TR/SVG11/feature#Font",
+    // "http://www.w3.org/TR/SVG11/feature#BasicFont",
+</span>];
+
+<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>convert(
+    node: SvgNode,
+    state: <span class="kw-2">&amp;</span>converter::State,
+    cache: <span class="kw-2">&amp;mut </span>converter::Cache,
+    parent: <span class="kw-2">&amp;mut </span>Node,
+) -&gt; <span class="prelude-ty">Option</span>&lt;()&gt; {
+    <span class="kw">let </span>child = node
+        .children()
+        .find(|n| is_condition_passed(<span class="kw-2">*</span>n, state.opt))<span class="question-mark">?</span>;
+    <span class="kw">match </span>converter::convert_group(node, state, <span class="bool-val">false</span>, cache, parent) {
+        converter::GroupKind::Create(<span class="kw-2">ref mut </span>g) =&gt; {
+            converter::convert_element(child, state, cache, g);
+        }
+        converter::GroupKind::Skip =&gt; {
+            converter::convert_element(child, state, cache, parent);
+        }
+        converter::GroupKind::Ignore =&gt; {}
+    }
+
+    <span class="prelude-val">Some</span>(())
+}
+
+<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>is_condition_passed(node: SvgNode, opt: <span class="kw-2">&amp;</span>Options) -&gt; bool {
+    <span class="kw">if </span>!node.is_element() {
+        <span class="kw">return </span><span class="bool-val">false</span>;
+    }
+
+    <span class="kw">if </span>node.has_attribute(AId::RequiredExtensions) {
+        <span class="kw">return </span><span class="bool-val">false</span>;
+    }
+
+    <span class="comment">// 'The value is a list of feature strings, with the individual values separated by white space.
+    // Determines whether all of the named features are supported by the user agent.
+    // Only feature strings defined in the Feature String appendix are allowed.
+    // If all of the given features are supported, then the attribute evaluates to true;
+    // otherwise, the current element and its children are skipped and thus will not be rendered.'
+    </span><span class="kw">if let </span><span class="prelude-val">Some</span>(features) = node.attribute::&lt;<span class="kw-2">&amp;</span>str&gt;(AId::RequiredFeatures) {
+        <span class="kw">for </span>feature <span class="kw">in </span>features.split(<span class="string">' '</span>) {
+            <span class="kw">if </span>!FEATURES.contains(<span class="kw-2">&amp;</span>feature) {
+                <span class="kw">return </span><span class="bool-val">false</span>;
+            }
+        }
+    }
+
+    <span class="kw">if </span>!is_valid_sys_lang(node, opt) {
+        <span class="kw">return </span><span class="bool-val">false</span>;
+    }
+
+    <span class="bool-val">true
+</span>}
+
+<span class="doccomment">/// SVG spec 5.8.5
+</span><span class="kw">fn </span>is_valid_sys_lang(node: SvgNode, opt: <span class="kw-2">&amp;</span>Options) -&gt; bool {
+    <span class="comment">// 'The attribute value is a comma-separated list of language names
+    // as defined in BCP 47.'
+    //
+    // But we support only simple cases like `en` or `en-US`.
+    // No one really uses this, especially with complex BCP 47 values.
+    </span><span class="kw">if let </span><span class="prelude-val">Some</span>(langs) = node.attribute::&lt;<span class="kw-2">&amp;</span>str&gt;(AId::SystemLanguage) {
+        <span class="kw">let </span><span class="kw-2">mut </span>has_match = <span class="bool-val">false</span>;
+        <span class="kw">for </span>lang <span class="kw">in </span>langs.split(<span class="string">','</span>) {
+            <span class="kw">let </span>lang = lang.trim();
+
+            <span class="comment">// 'Evaluates to `true` if one of the languages indicated by user preferences exactly
+            // equals one of the languages given in the value of this parameter.'
+            </span><span class="kw">if </span>opt.languages.iter().any(|v| v == lang) {
+                has_match = <span class="bool-val">true</span>;
+                <span class="kw">break</span>;
+            }
+
+            <span class="comment">// 'If one of the languages indicated by user preferences exactly equals a prefix
+            // of one of the languages given in the value of this parameter such that
+            // the first tag character following the prefix is `-`.'
+            </span><span class="kw">if let </span><span class="prelude-val">Some</span>(idx) = lang.bytes().position(|c| c == <span class="string">b'-'</span>) {
+                <span class="kw">let </span>lang_prefix = <span class="kw-2">&amp;</span>lang[..idx];
+                <span class="kw">if </span>opt.languages.iter().any(|v| v == lang_prefix) {
+                    has_match = <span class="bool-val">true</span>;
+                    <span class="kw">break</span>;
+                }
+            }
+        }
+
+        has_match
+    } <span class="kw">else </span>{
+        <span class="bool-val">true
+    </span>}
+}
+</code></pre></div></section></main></body></html>
