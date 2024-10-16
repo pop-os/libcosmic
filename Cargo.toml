@@ -33,6 +33,12 @@ desktop = [
     "dep:freedesktop-desktop-entry",
     "dep:mime",
     "dep:shlex",
+    "tokio?/io-util",
+    "tokio?/net",
+]
+# Enables launching desktop files inside systemd scopes
+desktop-systemd-scope = [
+    "desktop",
     "dep:zbus",
 ]
 # Enables keycode serialization

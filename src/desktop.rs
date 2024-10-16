@@ -5,7 +5,6 @@ use std::{
     ffi::OsStr,
     path::{Path, PathBuf},
 };
-use zbus::zvariant;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum IconSource {
@@ -259,6 +258,7 @@ where
     //
     // Similar to what Gnome sets, for now.
     if let Some(pid) = crate::process::spawn(cmd).await {
+        #[cfg(feature = "desktop-systemd-scope")]
         if let Ok(session) = zbus::Connection::session().await {
             if let Ok(systemd_manager) = SystemdMangerProxy::new(&session).await {
                 let _ = systemd_manager
@@ -268,17 +268,19 @@ where
                         &[
                             (
                                 "Description".to_string(),
-                                zvariant::Value::from("Application launched by COSMIC")
+                                zbus::zvariant::Value::from("Application launched by COSMIC")
                                     .try_to_owned()
                                     .unwrap(),
                             ),
                             (
                                 "PIDs".to_string(),
-                                zvariant::Value::from(vec![pid]).try_to_owned().unwrap(),
+                                zbus::zvariant::Value::from(vec![pid])
+                                    .try_to_owned()
+                                    .unwrap(),
                             ),
                             (
                                 "CollectMode".to_string(),
-                                zvariant::Value::from("inactive-or-failed")
+                                zbus::zvariant::Value::from("inactive-or-failed")
                                     .try_to_owned()
                                     .unwrap(),
                             ),
@@ -291,6 +293,7 @@ where
     }
 }
 
+#[cfg(feature = "desktop-systemd-scope")]
 #[zbus::proxy(
     interface = "org.freedesktop.systemd1.Manager",
     default_service = "org.freedesktop.systemd1",
@@ -301,7 +304,7 @@ trait SystemdManger {
         &self,
         name: &str,
         mode: &str,
-        properties: &[(String, zvariant::OwnedValue)],
-        aux: &[(String, Vec<(String, zvariant::OwnedValue)>)],
-    ) -> zbus::Result<zvariant::OwnedObjectPath>;
+        properties: &[(String, zbus::zvariant::OwnedValue)],
+        aux: &[(String, Vec<(String, zbus::zvariant::OwnedValue)>)],
+    ) -> zbus::Result<zbus::zvariant::OwnedObjectPath>;
 }
