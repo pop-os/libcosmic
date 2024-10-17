@@ -3,7 +3,7 @@
 
 //! Application API example
 
-use cosmic::app::{Task, Core, Settings};
+use cosmic::app::{Core, Settings, Task};
 use cosmic::{executor, iced, ApplicationExt, Element};
 
 /// Runs application with these settings

@@ -3,9 +3,9 @@
 
 //! Application API example
 
-use cosmic::app::{Task, Core, Settings};
+use cosmic::app::{Core, Settings, Task};
 use cosmic::iced_core::Size;
-use cosmic::widget::{menu, segmented_button};
+use cosmic::widget::menu;
 use cosmic::{executor, iced, ApplicationExt, Element};
 use std::collections::HashMap;
 
