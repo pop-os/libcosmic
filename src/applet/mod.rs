@@ -2,7 +2,7 @@
 pub mod token;
 
 use crate::{
-    app::Core,
+    app::{self, iced_settings, Core},
     cctk::sctk,
     iced::{
         self,
@@ -10,9 +10,13 @@ use crate::{
         widget::Container,
         window, Color, Length, Limits, Rectangle,
     },
-    iced_style, iced_widget,
+    iced_widget,
     theme::{self, system_dark, system_light, Button, THEME},
-    widget::{self, layer_container},
+    widget::{
+        self,
+        autosize::{autosize, Autosize},
+        layer_container,
+    },
     Application, Element, Renderer,
 };
 use cctk::sctk::shell::xdg::window::WindowConfigure;
@@ -21,14 +25,16 @@ use cosmic_panel_config::{CosmicPanelBackground, PanelAnchor, PanelSize};
 use cosmic_theme::Theme;
 use iced::Pixels;
 use iced_core::{Padding, Shadow};
-use iced_style::container::Appearance;
-use iced_widget::runtime::command::platform_specific::wayland::popup::{
-    SctkPopupSettings, SctkPositioner,
-};
+use iced_widget::runtime::platform_specific::wayland::popup::{SctkPopupSettings, SctkPositioner};
 use sctk::reexports::protocols::xdg::shell::client::xdg_positioner::{Anchor, Gravity};
-use std::{borrow::Cow, num::NonZeroU32, rc::Rc};
+use std::{borrow::Cow, num::NonZeroU32, rc::Rc, sync::LazyLock};
+use tracing::info;
 
 use crate::app::cosmic;
+static AUTOSIZE_ID: LazyLock<iced::id::Id> =
+    LazyLock::new(|| iced::id::Id::new("cosmic-applet-autosize"));
+static AUTOSIZE_MAIN_ID: LazyLock<iced::id::Id> =
+    LazyLock::new(|| iced::id::Id::new("cosmic-applet-autosize-main"));
 
 #[derive(Debug, Clone)]
 pub struct Context {
@@ -37,9 +43,9 @@ pub struct Context {
     pub background: CosmicPanelBackground,
     pub output_name: String,
     pub panel_type: PanelType,
-    /// Includes the suggested size of the window.
+    /// Includes the configured size of the window.
     /// This can be used by apples to handle overflow themselves.
-    pub configure: Option<WindowConfigure>,
+    pub suggested_bounds: Option<(iced::Size)>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -94,7 +100,7 @@ impl Default for Context {
                 .unwrap_or(CosmicPanelBackground::ThemeDefault),
             output_name: std::env::var("COSMIC_PANEL_OUTPUT").unwrap_or_default(),
             panel_type: PanelType::from(std::env::var("COSMIC_PANEL_NAME").unwrap_or_default()),
-            configure: None,
+            suggested_bounds: None,
         }
     }
 }
@@ -116,19 +122,21 @@ impl Context {
         let suggested = self.suggested_size(true);
         let applet_padding = self.suggested_padding(true);
         let configured_width = self
-            .configure
+            .suggested_bounds
             .as_ref()
-            .and_then(|c| c.new_size.0.map(|w| w))
+            .and_then(|c| NonZeroU32::new(c.width as u32)) // TODO: should this be physical size instead of logical?
             .unwrap_or_else(|| {
                 NonZeroU32::new(suggested.0 as u32 + applet_padding as u32 * 2).unwrap()
             });
+
         let configured_height = self
-            .configure
+            .suggested_bounds
             .as_ref()
-            .and_then(|c| c.new_size.1.map(|h| h))
+            .and_then(|c| NonZeroU32::new(c.height as u32))
             .unwrap_or_else(|| {
                 NonZeroU32::new(suggested.1 as u32 + applet_padding as u32 * 2).unwrap()
             });
+        info!("{configured_height:?}");
         (configured_width, configured_height)
     }
 
@@ -149,18 +157,15 @@ impl Context {
     #[allow(clippy::cast_precision_loss)]
     pub fn window_settings(&self) -> crate::app::Settings {
         let (width, height) = self.suggested_size(true);
-        let width = f32::from(width);
-        let height = f32::from(height);
         let applet_padding = self.suggested_padding(true);
+        let width = f32::from(width) + applet_padding as f32 * 2.;
+        let height = f32::from(height) + applet_padding as f32 * 2.;
         let mut settings = crate::app::Settings::default()
-            .size(iced_core::Size::new(
-                width + applet_padding as f32 * 2.,
-                height + applet_padding as f32 * 2.,
-            ))
+            .size(iced_core::Size::new(width, height))
             .size_limits(
                 Limits::NONE
-                    .min_height(height as f32 + applet_padding as f32 * 2.0)
-                    .min_width(width as f32 + applet_padding as f32 * 2.0),
+                    .min_height(height as f32)
+                    .min_width(width as f32),
             )
             .resizable(None)
             .default_text_size(14.0)
@@ -169,6 +174,7 @@ impl Context {
         if let Some(theme) = self.theme() {
             settings = settings.theme(theme);
         }
+        settings.exit_on_close = true;
         settings
     }
 
@@ -182,26 +188,18 @@ impl Context {
         &self,
         icon: widget::icon::Handle,
     ) -> crate::widget::Button<'a, Message> {
-        let suggested = self.suggested_size(icon.symbolic);
+        let mut suggested = self.suggested_size(icon.symbolic);
         let applet_padding = self.suggested_padding(icon.symbolic);
-        let (mut configured_width, mut configured_height) = self.suggested_window_size();
 
-        // Adjust the width to include padding and force the crosswise dim to match the window size
         let is_horizontal = self.is_horizontal();
-        if is_horizontal {
-            configured_width =
-                NonZeroU32::new(suggested.0 as u32 + applet_padding as u32 * 2).unwrap();
-        } else {
-            configured_height =
-                NonZeroU32::new(suggested.1 as u32 + applet_padding as u32 * 2).unwrap();
-        }
+
         let symbolic = icon.symbolic;
 
         crate::widget::button::custom(
             layer_container(
                 widget::icon(icon)
-                    .style(if symbolic {
-                        theme::Svg::Custom(Rc::new(|theme| crate::iced_style::svg::Appearance {
+                    .class(if symbolic {
+                        theme::Svg::Custom(Rc::new(|theme| crate::iced_widget::svg::Style {
                             color: Some(theme.cosmic().background.on.into()),
                         }))
                     } else {
@@ -215,9 +213,9 @@ impl Context {
             .width(Length::Fill)
             .height(Length::Fill),
         )
-        .width(Length::Fixed(configured_width.get() as f32))
-        .height(Length::Fixed(configured_height.get() as f32))
-        .style(Button::AppletIcon)
+        .width(Length::Fixed((suggested.0 + 2 * applet_padding) as f32))
+        .height(Length::Fixed((suggested.1 + 2 * applet_padding) as f32))
+        .class(Button::AppletIcon)
     }
 
     #[must_use]
@@ -225,10 +223,11 @@ impl Context {
         &self,
         icon_name: &'a str,
     ) -> crate::widget::Button<'a, Message> {
+        let suggested_size = self.suggested_size(true);
         self.icon_button_from_handle(
             widget::icon::from_name(icon_name)
                 .symbolic(true)
-                .size(self.suggested_size(true).0)
+                .size(suggested_size.0)
                 .into(),
         )
     }
@@ -237,7 +236,7 @@ impl Context {
     pub fn popup_container<'a, Message: 'static>(
         &self,
         content: impl Into<Element<'a, Message>>,
-    ) -> Container<'a, Message, crate::Theme, Renderer> {
+    ) -> Autosize<'a, Message, crate::Theme, Renderer> {
         let (vertical_align, horizontal_align) = match self.anchor {
             PanelAnchor::Left => (Vertical::Center, Horizontal::Left),
             PanelAnchor::Right => (Vertical::Center, Horizontal::Right),
@@ -245,12 +244,12 @@ impl Context {
             PanelAnchor::Bottom => (Vertical::Bottom, Horizontal::Center),
         };
 
-        Container::<Message, _, Renderer>::new(
-            Container::<Message, _, Renderer>::new(content).style(theme::Container::custom(
-                |theme| {
+        autosize(
+            Container::<Message, _, Renderer>::new(
+                Container::<Message, _, Renderer>::new(content).style(|theme| {
                     let cosmic = theme.cosmic();
                     let corners = cosmic.corner_radii.clone();
-                    Appearance {
+                    iced_widget::container::Style {
                         text_color: Some(cosmic.background.on.into()),
                         background: Some(Color::from(cosmic.background.base).into()),
                         border: iced::Border {
@@ -261,13 +260,21 @@ impl Context {
                         shadow: Shadow::default(),
                         icon_color: Some(cosmic.background.on.into()),
                     }
-                },
-            )),
+                }),
+            )
+            .width(Length::Shrink)
+            .height(Length::Shrink)
+            .align_x(horizontal_align)
+            .align_y(vertical_align),
+            AUTOSIZE_ID.clone(),
         )
-        .width(Length::Shrink)
-        .height(Length::Shrink)
-        .align_x(horizontal_align)
-        .align_y(vertical_align)
+        .limits(
+            Limits::NONE
+                .min_width(1.)
+                .min_height(1.)
+                .max_width(500.)
+                .max_height(1000.),
+        )
     }
 
     #[must_use]
@@ -282,7 +289,7 @@ impl Context {
     ) -> SctkPopupSettings {
         let (width, height) = self.suggested_size(true);
         let applet_padding = self.suggested_padding(true);
-        let pixel_offset = 8;
+        let pixel_offset = 4;
         let (offset, anchor, gravity) = match self.anchor {
             PanelAnchor::Left => ((pixel_offset, 0), Anchor::Right, Gravity::Right),
             PanelAnchor::Right => ((-pixel_offset, 0), Anchor::Left, Gravity::Left),
@@ -310,6 +317,35 @@ impl Context {
             parent_size: None,
             grab: true,
         }
+    }
+
+    pub fn autosize_window<'a, Message: 'static>(
+        &self,
+        content: impl Into<Element<'a, Message>>,
+    ) -> Autosize<'a, Message, crate::Theme, crate::Renderer> {
+        let force_configured = matches!(&self.panel_type, &PanelType::Other(ref n) if n.is_empty());
+        let w = autosize(content, AUTOSIZE_MAIN_ID.clone());
+        let mut limits = Limits::NONE;
+        let suggested_window_size = self.suggested_window_size();
+
+        if let Some(width) = self
+            .suggested_bounds
+            .as_ref()
+            .filter(|c| c.width as i32 > 0)
+            .map(|c| c.width)
+        {
+            limits = limits.width(width as f32);
+        }
+        if let Some(height) = self
+            .suggested_bounds
+            .as_ref()
+            .filter(|c| c.height as i32 > 0)
+            .map(|c| c.height)
+        {
+            limits = limits.height(height as f32);
+        }
+
+        w.limits(limits)
     }
 
     #[must_use]
@@ -348,77 +384,67 @@ impl Context {
 /// # Errors
 ///
 /// Returns error on application failure.
-pub fn run<App: Application>(autosize: bool, flags: App::Flags) -> iced::Result {
+pub fn run<App: Application>(flags: App::Flags) -> iced::Result {
     let helper = Context::default();
-    let mut settings = helper.window_settings();
-    settings.autosize = autosize;
-    if autosize {
-        settings.size_limits = Limits::NONE;
-    }
 
-    if let Some(icon_theme) = settings.default_icon_theme {
+    let mut settings = helper.window_settings();
+    settings.resizable = None;
+
+    if let Some(icon_theme) = settings.default_icon_theme.clone() {
         crate::icon_theme::set_default(icon_theme);
     }
 
-    let (width, height) = (settings.size.width as u32, settings.size.height as u32);
+    THEME
+        .lock()
+        .unwrap()
+        .set_theme(settings.theme.theme_type.clone());
 
-    let mut core = Core::default();
-    core.window.show_window_menu = false;
+    let (iced_settings, (mut core, flags, mut window_settings)) =
+        iced_settings::<App>(settings, flags);
     core.window.show_headerbar = false;
     core.window.sharp_corners = true;
     core.window.show_maximize = false;
     core.window.show_minimize = false;
     core.window.use_template = false;
 
-    core.debug = settings.debug;
-    core.set_scale_factor(settings.scale_factor);
-    core.set_window_width(width);
-    core.set_window_height(height);
+    window_settings.decorations = false;
+    window_settings.exit_on_close_request = true;
+    window_settings.resizable = false;
+    window_settings.resize_border = 0;
 
-    THEME.lock().unwrap().set_theme(settings.theme.theme_type);
+    // TODO make multi-window not mandatory
 
-    let mut iced = iced::Settings::with_flags((core, flags));
-
-    iced.antialiasing = settings.antialiasing;
-    iced.default_font = settings.default_font;
-    iced.default_text_size = settings.default_text_size.into();
-    iced.id = Some(App::APP_ID.to_owned());
-
-    {
-        use iced::wayland::actions::window::SctkWindowSettings;
-        use iced_sctk::settings::InitialSurface;
-        iced.initial_surface = InitialSurface::XdgWindow(SctkWindowSettings {
-            app_id: Some(App::APP_ID.to_owned()),
-            autosize: settings.autosize,
-            client_decorations: settings.client_decorations,
-            resizable: settings.resizable,
-            size: (width, height),
-            size_limits: settings.size_limits,
-            title: None,
-            transparent: settings.transparent,
-            ..SctkWindowSettings::default()
-        });
+    let mut app = super::app::multi_window::multi_window(
+        cosmic::Cosmic::title,
+        cosmic::Cosmic::update,
+        cosmic::Cosmic::view,
+    );
+    if core.main_window.get().is_none() {
+        app = app.window(window_settings.clone());
+        _ = core.main_window.set(iced_core::window::Id::RESERVED);
     }
-
-    <cosmic::Cosmic<App> as iced::Application>::run(iced)
+    app.subscription(cosmic::Cosmic::subscription)
+        .style(cosmic::Cosmic::style)
+        .theme(cosmic::Cosmic::theme)
+        .settings(iced_settings)
+        .run_with(move || cosmic::Cosmic::<App>::init((core, flags, window_settings)))
 }
 
 #[must_use]
-pub fn style() -> <crate::Theme as iced_style::application::StyleSheet>::Style {
-    <crate::Theme as iced_style::application::StyleSheet>::Style::Custom(Box::new(|theme| {
-        iced_style::application::Appearance {
-            background_color: Color::from_rgba(0.0, 0.0, 0.0, 0.0),
-            text_color: theme.cosmic().on_bg_color().into(),
-            icon_color: theme.cosmic().on_bg_color().into(),
-        }
-    }))
+pub fn style() -> iced_runtime::Appearance {
+    let theme = crate::theme::THEME.lock().unwrap();
+    iced_runtime::Appearance {
+        background_color: Color::from_rgba(0.0, 0.0, 0.0, 0.0),
+        text_color: theme.cosmic().on_bg_color().into(),
+        icon_color: theme.cosmic().on_bg_color().into(),
+    }
 }
 
 pub fn menu_button<'a, Message>(
     content: impl Into<Element<'a, Message>>,
 ) -> crate::widget::Button<'a, Message> {
     crate::widget::button::custom(content)
-        .style(Button::AppletMenu)
+        .class(Button::AppletMenu)
         .padding(menu_control_padding())
         .width(Length::Fill)
 }

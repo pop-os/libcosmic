@@ -9,9 +9,10 @@ use iced_core::mouse;
 use iced_core::overlay;
 use iced_core::renderer;
 use iced_core::widget::Tree;
-use iced_core::{Clipboard, Element, Layout, Length, Padding, Rectangle, Shell, Widget};
+use iced_core::{Clipboard, Element, Layout, Length, Padding, Rectangle, Shell, Vector, Widget};
 
-pub use iced_style::container::{Appearance, StyleSheet};
+use iced_widget::container;
+pub use iced_widget::container::{Catalog, Style};
 
 pub fn aspect_ratio_container<'a, Message: 'static, T>(
     content: T,
@@ -117,22 +118,22 @@ where
 
     /// Centers the contents in the horizontal axis of the [`Container`].
     #[must_use]
-    pub fn center_x(mut self) -> Self {
-        self.container = self.container.center_x();
+    pub fn center_x(mut self, width: Length) -> Self {
+        self.container = self.container.center_x(width);
         self
     }
 
     /// Centers the contents in the vertical axis of the [`Container`].
     #[must_use]
-    pub fn center_y(mut self) -> Self {
-        self.container = self.container.center_y();
+    pub fn center_y(mut self, height: Length) -> Self {
+        self.container = self.container.center_y(height);
         self
     }
 
     /// Sets the style of the [`Container`].
     #[must_use]
-    pub fn style(mut self, style: impl Into<<crate::Theme as StyleSheet>::Style>) -> Self {
-        self.container = self.container.style(style);
+    pub fn class(mut self, style: impl Into<crate::style::Container<'a>>) -> Self {
+        self.container = self.container.class(style);
         self
     }
 }
@@ -173,9 +174,7 @@ where
         tree: &mut Tree,
         layout: Layout<'_>,
         renderer: &Renderer,
-        operation: &mut dyn iced_core::widget::Operation<
-            iced_core::widget::OperationOutputWrapper<Message>,
-        >,
+        operation: &mut dyn iced_core::widget::Operation<()>,
     ) {
         self.container.operate(tree, layout, renderer, operation);
     }
@@ -241,8 +240,9 @@ where
         tree: &'b mut Tree,
         layout: Layout<'_>,
         renderer: &Renderer,
+        translation: Vector,
     ) -> Option<overlay::Element<'b, Message, crate::Theme, Renderer>> {
-        self.container.overlay(tree, layout, renderer)
+        self.container.overlay(tree, layout, renderer, translation)
     }
 }
 

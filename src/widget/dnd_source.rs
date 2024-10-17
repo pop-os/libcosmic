@@ -1,69 +1,77 @@
 use std::any::Any;
 
+use iced_core::window;
+
 use crate::{
     iced::{
         clipboard::dnd::{DndAction, DndEvent, SourceEvent},
-        event, mouse, overlay, Event, Length, Point, Rectangle,
+        event, mouse, overlay, Event, Length, Point, Rectangle, Vector,
     },
     iced_core::{
         self, layout, renderer,
         widget::{tree, Tree},
         Clipboard, Shell,
     },
-    iced_style,
     widget::{container, Id, Widget},
     Element,
 };
 
 pub fn dnd_source<
     'a,
-    Message: 'static,
-    AppMessage: 'static,
+    Message: Clone + 'static,
     D: iced::clipboard::mime::AsMimeTypes + Send + 'static,
 >(
     child: impl Into<Element<'a, Message>>,
-) -> DndSource<'a, Message, AppMessage, D> {
+) -> DndSource<'a, Message, D> {
     DndSource::new(child)
 }
 
-pub struct DndSource<'a, Message, AppMessage, D> {
+pub struct DndSource<'a, Message, D> {
     id: Id,
     action: DndAction,
     container: Element<'a, Message>,
+    window: Option<window::Id>,
     drag_content: Option<Box<dyn Fn() -> D>>,
-    drag_icon: Option<Box<dyn Fn() -> (Element<'static, AppMessage>, tree::State)>>,
+    drag_icon: Option<Box<dyn Fn() -> (Element<'static, ()>, tree::State)>>,
+    on_start: Option<Message>,
+    on_cancelled: Option<Message>,
+    on_finish: Option<Message>,
     drag_threshold: f32,
-    _phantom: std::marker::PhantomData<AppMessage>,
 }
 
 impl<
         'a,
-        Message: 'static,
-        AppMessage: 'static,
+        Message: Clone + 'static,
         D: iced::clipboard::mime::AsMimeTypes + std::marker::Send + 'static,
-    > DndSource<'a, Message, AppMessage, D>
+    > DndSource<'a, Message, D>
 {
     pub fn new(child: impl Into<Element<'a, Message>>) -> Self {
         Self {
             id: Id::unique(),
+            window: None,
             action: DndAction::Copy | DndAction::Move,
             container: container(child).into(),
             drag_content: None,
             drag_icon: None,
             drag_threshold: 8.0,
-            _phantom: std::marker::PhantomData,
+            on_start: None,
+            on_cancelled: None,
+            on_finish: None,
         }
     }
 
     pub fn with_id(child: impl Into<Element<'a, Message>>, id: Id) -> Self {
         Self {
             id,
+            window: None,
             action: DndAction::Copy | DndAction::Move,
             container: container(child).into(),
             drag_content: None,
             drag_icon: None,
             drag_threshold: 8.0,
-            _phantom: std::marker::PhantomData,
+            on_start: None,
+            on_cancelled: None,
+            on_finish: None,
         }
     }
 
@@ -82,7 +90,7 @@ impl<
     #[must_use]
     pub fn drag_icon(
         mut self,
-        f: impl Fn() -> (Element<'static, AppMessage>, tree::State) + 'static,
+        f: impl Fn() -> (Element<'static, ()>, tree::State) + 'static,
     ) -> Self {
         self.drag_icon = Some(Box::new(f));
         self
@@ -98,10 +106,15 @@ impl<
         let Some(content) = self.drag_content.as_ref().map(|f| f()) else {
             return;
         };
+
         iced_core::clipboard::start_dnd(
             clipboard,
             false,
-            Some(iced_core::clipboard::DndSource::Widget(self.id.clone())),
+            if let Some(window) = self.window.as_ref() {
+                Some(iced_core::clipboard::DndSource::Surface(window.clone()))
+            } else {
+                Some(iced_core::clipboard::DndSource::Widget(self.id.clone()))
+            },
             self.drag_icon.as_ref().map(|f| {
                 let (icon, state) = f();
                 (
@@ -116,14 +129,33 @@ impl<
             self.action,
         );
     }
+
+    pub fn on_start(mut self, on_start: Option<Message>) -> Self {
+        self.on_start = on_start;
+        self
+    }
+
+    pub fn on_cancel(mut self, on_cancelled: Option<Message>) -> Self {
+        self.on_cancelled = on_cancelled;
+        self
+    }
+
+    pub fn on_finish(mut self, on_finish: Option<Message>) -> Self {
+        self.on_finish = on_finish;
+        self
+    }
+
+    pub fn window(mut self, window: window::Id) -> Self {
+        self.window = Some(window);
+        self
+    }
 }
 
 impl<
         'a,
-        Message: 'static,
-        AppMessage: 'static,
+        Message: Clone + 'static,
         D: iced::clipboard::mime::AsMimeTypes + std::marker::Send + 'static,
-    > Widget<Message, crate::Theme, crate::Renderer> for DndSource<'a, Message, AppMessage, D>
+    > Widget<Message, crate::Theme, crate::Renderer> for DndSource<'a, Message, D>
 {
     fn children(&self) -> Vec<Tree> {
         vec![Tree::new(&self.container)]
@@ -165,9 +197,7 @@ impl<
         tree: &mut Tree,
         layout: layout::Layout<'_>,
         renderer: &crate::Renderer,
-        operation: &mut dyn iced_core::widget::Operation<
-            iced_core::widget::OperationOutputWrapper<Message>,
-        >,
+        operation: &mut dyn iced_core::widget::Operation<()>,
     ) {
         operation.custom((&mut tree.state) as &mut dyn Any, Some(&self.id));
         operation.container(Some(&self.id), layout.bounds(), &mut |operation| {
@@ -210,7 +240,6 @@ impl<
                         }
 
                         state.left_pressed_position = Some(position);
-                        // dbg!(&state, &self.id);
                         return event::Status::Captured;
                     }
                 }
@@ -229,8 +258,10 @@ impl<
                                 return ret;
                             }
                             if let Some(left_pressed_position) = state.left_pressed_position {
-                                // dbg!(&state);
                                 if position.distance(left_pressed_position) > self.drag_threshold {
+                                    if let Some(on_start) = self.on_start.as_ref() {
+                                        shell.publish(on_start.clone())
+                                    }
                                     self.start_dnd(clipboard, state.cached_bounds);
                                     state.is_dragging = true;
                                     state.left_pressed_position = None;
@@ -249,8 +280,21 @@ impl<
                 }
                 _ => return ret,
             },
-            Event::Dnd(DndEvent::Source(SourceEvent::Cancelled | SourceEvent::Finished)) => {
+            Event::Dnd(DndEvent::Source(SourceEvent::Cancelled)) => {
                 if state.is_dragging {
+                    if let Some(m) = self.on_cancelled.as_ref() {
+                        shell.publish(m.clone());
+                    }
+                    state.is_dragging = false;
+                    return event::Status::Captured;
+                }
+                return ret;
+            }
+            Event::Dnd(DndEvent::Source(SourceEvent::Finished)) => {
+                if state.is_dragging {
+                    if let Some(m) = self.on_finish.as_ref() {
+                        shell.publish(m.clone());
+                    }
                     state.is_dragging = false;
                     return event::Status::Captured;
                 }
@@ -308,10 +352,11 @@ impl<
         tree: &'b mut Tree,
         layout: layout::Layout<'_>,
         renderer: &crate::Renderer,
+        translation: Vector,
     ) -> Option<overlay::Element<'b, Message, crate::Theme, crate::Renderer>> {
         self.container
             .as_widget_mut()
-            .overlay(&mut tree.children[0], layout, renderer)
+            .overlay(&mut tree.children[0], layout, renderer, translation)
     }
 
     fn drag_destinations(
@@ -319,7 +364,7 @@ impl<
         state: &Tree,
         layout: layout::Layout<'_>,
         renderer: &crate::Renderer,
-        dnd_rectangles: &mut iced_style::core::clipboard::DndDestinationRectangles,
+        dnd_rectangles: &mut iced_core::clipboard::DndDestinationRectangles,
     ) {
         self.container.as_widget().drag_destinations(
             &state.children[0],
@@ -340,12 +385,11 @@ impl<
 
 impl<
         'a,
-        Message: 'static,
-        AppMessage: 'static,
+        Message: Clone + 'static,
         D: iced::clipboard::mime::AsMimeTypes + std::marker::Send + 'static,
-    > From<DndSource<'a, Message, AppMessage, D>> for Element<'a, Message>
+    > From<DndSource<'a, Message, D>> for Element<'a, Message>
 {
-    fn from(e: DndSource<'a, Message, AppMessage, D>) -> Element<'a, Message> {
+    fn from(e: DndSource<'a, Message, D>) -> Element<'a, Message> {
         Element::new(e)
     }
 }

@@ -7,7 +7,7 @@
 //! A [`Button`] has some local [`State`].
 
 use iced_runtime::core::widget::Id;
-use iced_runtime::{keyboard, Command};
+use iced_runtime::{keyboard, task, Action, Task};
 
 use iced_core::event::{self, Event};
 use iced_core::renderer::{self, Quad, Renderer};
@@ -20,11 +20,11 @@ use iced_core::{overlay, Shadow};
 use iced_core::{
     Background, Clipboard, Color, Layout, Length, Padding, Point, Rectangle, Shell, Vector, Widget,
 };
-use iced_renderer::core::widget::{operation, OperationOutputWrapper};
+use iced_renderer::core::widget::operation;
 
 use crate::theme::THEME;
 
-pub use super::style::{Appearance, StyleSheet};
+pub use super::style::{Catalog, Style};
 
 /// Internally defines different button widget variants.
 enum Variant<Message> {
@@ -173,7 +173,7 @@ impl<'a, Message> Button<'a, Message> {
     }
 
     /// Sets the style variant of this [`Button`].
-    pub fn style(mut self, style: crate::theme::Button) -> Self {
+    pub fn class(mut self, style: crate::theme::Button) -> Self {
         self.style = style;
         self
     }
@@ -257,7 +257,7 @@ impl<'a, Message: 'a + Clone> Widget<Message, crate::Theme, crate::Renderer>
         tree: &mut Tree,
         layout: Layout<'_>,
         renderer: &crate::Renderer,
-        operation: &mut dyn Operation<OperationOutputWrapper<Message>>,
+        operation: &mut dyn Operation<()>,
     ) {
         operation.container(None, layout.bounds(), &mut |operation| {
             self.content.as_widget().operate(
@@ -470,10 +470,11 @@ impl<'a, Message: 'a + Clone> Widget<Message, crate::Theme, crate::Renderer>
                         selection_background,
                     );
 
-                    iced_core::svg::Renderer::draw(
+                    let svg_handle = svg::Svg::new(crate::widget::common::object_select().clone())
+                        .color(icon_color);
+                    iced_core::svg::Renderer::draw_svg(
                         renderer,
-                        crate::widget::common::object_select().clone(),
-                        Some(icon_color),
+                        svg_handle,
                         Rectangle {
                             width: 16.0,
                             height: 16.0,
@@ -498,11 +499,10 @@ impl<'a, Message: 'a + Clone> Widget<Message, crate::Theme, crate::Renderer>
                                 },
                                 selection_background,
                             );
-
-                            iced_core::svg::Renderer::draw(
+                            let svg_handle = svg::Svg::new(close_icon.clone()).color(icon_color);
+                            iced_core::svg::Renderer::draw_svg(
                                 renderer,
-                                close_icon.clone(),
-                                Some(icon_color),
+                                svg_handle,
                                 Rectangle {
                                     width: 16.0,
                                     height: 16.0,
@@ -533,11 +533,16 @@ impl<'a, Message: 'a + Clone> Widget<Message, crate::Theme, crate::Renderer>
         tree: &'b mut Tree,
         layout: Layout<'_>,
         renderer: &crate::Renderer,
+        mut translation: Vector,
     ) -> Option<overlay::Element<'b, Message, crate::Theme, crate::Renderer>> {
+        let mut position = layout.bounds().position();
+        translation.x += position.x;
+        translation.y += position.y;
         self.content.as_widget_mut().overlay(
             &mut tree.children[0],
             layout.children().next().unwrap(),
             renderer,
+            translation,
         )
     }
 
@@ -748,11 +753,11 @@ pub fn update<'a, Message: Clone>(
 pub fn draw<Renderer: iced_core::Renderer, Theme>(
     renderer: &mut Renderer,
     bounds: Rectangle,
-    styling: &super::style::Appearance,
-    draw_contents: impl FnOnce(&mut Renderer, &Appearance),
+    styling: &super::style::Style,
+    draw_contents: impl FnOnce(&mut Renderer, &Style),
     is_image: bool,
 ) where
-    Theme: super::style::StyleSheet,
+    Theme: super::style::Catalog,
 {
     let doubled_border_width = styling.border_width * 2.0;
     let doubled_outline_width = styling.outline_width * 2.0;
@@ -909,9 +914,9 @@ pub fn mouse_interaction(
     }
 }
 
-/// Produces a [`Command`] that focuses the [`Button`] with the given [`Id`].
-pub fn focus<Message: 'static>(id: Id) -> Command<Message> {
-    Command::widget(operation::focusable::focus(id))
+/// Produces a [`Task`] that focuses the [`Button`] with the given [`Id`].
+pub fn focus<Message: 'static>(id: Id) -> Task<Message> {
+    task::effect(Action::Widget(Box::new(operation::focusable::focus(id))))
 }
 
 impl operation::Focusable for State {

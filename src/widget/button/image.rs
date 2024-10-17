@@ -42,7 +42,7 @@ impl<'a, Message> Button<'a, Message> {
             line_height: 20,
             font_size: 14,
             font_weight: Weight::Normal,
-            style: Style::Image,
+            class: crate::theme::style::Button::Image,
             variant,
         }
     }
@@ -80,7 +80,7 @@ where
             .selected(builder.variant.selected)
             .id(builder.id)
             .on_press_maybe(builder.on_press)
-            .style(builder.style)
+            .class(builder.class)
             .into()
     }
 }

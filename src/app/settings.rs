@@ -20,7 +20,6 @@ pub struct Settings {
     pub(crate) autosize: bool,
 
     /// Set the application to not create a main window
-    #[cfg(feature = "wayland")]
     pub(crate) no_main_window: bool,
 
     /// Whether the window should have a border, a title bar, etc. or not.
@@ -77,7 +76,6 @@ impl Default for Settings {
             antialiasing: true,
             #[cfg(feature = "wayland")]
             autosize: false,
-            #[cfg(feature = "wayland")]
             no_main_window: false,
             client_decorations: true,
             debug: false,

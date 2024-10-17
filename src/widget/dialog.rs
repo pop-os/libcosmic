@@ -72,11 +72,13 @@ impl<'a, Message: Clone + 'static> From<Dialog<'a, Message>> for Element<'a, Mes
         let mut content_col = widget::column::with_capacity(3 + dialog.controls.len() * 2);
         content_col = content_col.push(widget::text::title3(dialog.title));
         if let Some(body) = dialog.body {
-            content_col = content_col.push(widget::vertical_space(Length::Fixed(space_xxs.into())));
+            content_col =
+                content_col.push(widget::vertical_space().height(Length::Fixed(space_xxs.into())));
             content_col = content_col.push(widget::text::body(body));
         }
         for control in dialog.controls {
-            content_col = content_col.push(widget::vertical_space(Length::Fixed(space_s.into())));
+            content_col =
+                content_col.push(widget::vertical_space().height(Length::Fixed(space_s.into())));
             content_col = content_col.push(control);
         }
 
@@ -90,7 +92,7 @@ impl<'a, Message: Clone + 'static> From<Dialog<'a, Message>> for Element<'a, Mes
         if let Some(button) = dialog.tertiary_action {
             button_row = button_row.push(button);
         }
-        button_row = button_row.push(widget::horizontal_space(Length::Fill));
+        button_row = button_row.push(widget::horizontal_space().width(Length::Fill));
         if let Some(button) = dialog.secondary_action {
             button_row = button_row.push(button);
         }
@@ -103,7 +105,7 @@ impl<'a, Message: Clone + 'static> From<Dialog<'a, Message>> for Element<'a, Mes
                 widget::column::with_children(vec![content_row.into(), button_row.into()])
                     .spacing(space_l),
             )
-            .style(style::Container::Dialog)
+            .class(style::Container::Dialog)
             .padding(space_m)
             .width(Length::Fixed(570.0)),
         )

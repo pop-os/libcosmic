@@ -86,7 +86,7 @@ where
                 text(first_day_of_week.to_string())
                     .size(12)
                     .width(Length::Fixed(36.0))
-                    .horizontal_alignment(Horizontal::Center),
+                    .align_x(Horizontal::Center),
             );
 
             first_day_of_week = first_day_of_week.succ();
@@ -138,17 +138,17 @@ fn date_button<Message>(
     on_select: &dyn Fn(NaiveDate) -> Message,
 ) -> crate::widget::Button<'static, Message> {
     let style = if is_day {
-        button::Style::Suggested
+        button::ButtonClass::Suggested
     } else {
-        button::Style::Text
+        button::ButtonClass::Text
     };
 
     let button = button::custom(
         text(format!("{}", date.day()))
-            .horizontal_alignment(Horizontal::Center)
-            .vertical_alignment(Vertical::Center),
+            .align_x(Horizontal::Center)
+            .align_y(Vertical::Center),
     )
-    .style(style)
+    .class(style)
     .height(Length::Fixed(36.0))
     .width(Length::Fixed(36.0));
 

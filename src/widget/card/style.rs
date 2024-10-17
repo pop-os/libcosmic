@@ -5,12 +5,12 @@ use iced_core::{Background, Color};
 
 /// Appearance of the cards.
 #[derive(Clone, Copy)]
-pub struct Appearance {
+pub struct Style {
     pub card_1: Background,
     pub card_2: Background,
 }
 
-impl Default for Appearance {
+impl Default for Style {
     fn default() -> Self {
         Self {
             card_1: Background::Color(Color::WHITE),
@@ -20,7 +20,7 @@ impl Default for Appearance {
 }
 
 /// Defines the [`Appearance`] of a cards.
-pub trait StyleSheet {
+pub trait Catalog {
     /// The default [`Appearance`] of the cards.
-    fn default(&self) -> Appearance;
+    fn default(&self) -> Style;
 }

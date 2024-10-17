@@ -4,114 +4,55 @@
 //! Create asynchronous actions to be performed in the background.
 
 use iced::window;
-use iced::Command;
+use iced::Task;
 use iced_core::window::Mode;
-#[cfg(feature = "wayland")]
-use iced_runtime::command::platform_specific::wayland::window::Action as WindowAction;
-#[cfg(feature = "wayland")]
-use iced_runtime::command::platform_specific::wayland::Action as WaylandAction;
-#[cfg(feature = "wayland")]
-use iced_runtime::command::platform_specific::Action as PlatformAction;
-use iced_runtime::command::Action;
+use iced_runtime::{task, Action};
 use std::future::Future;
 
 /// Yields a command which contains a batch of commands.
-pub fn batch<X: 'static + Into<Y>, Y: 'static>(
-    commands: impl IntoIterator<Item = Command<X>>,
-) -> Command<Y> {
-    Command::batch(commands).map(Into::into)
+pub fn batch<X: Send + 'static + Into<Y>, Y: Send + 'static>(
+    commands: impl IntoIterator<Item = Task<X>>,
+) -> Task<Y> {
+    Task::batch(commands).map(Into::into)
 }
 
 /// Yields a command which will run the future on the runtime executor.
-pub fn future<X: Into<Y>, Y>(future: impl Future<Output = X> + Send + 'static) -> Command<Y> {
-    Command::single(Action::Future(Box::pin(async move { future.await.into() })))
+pub fn future<X: Into<Y>, Y: 'static>(future: impl Future<Output = X> + Send + 'static) -> Task<Y> {
+    Task::future(async move { future.await.into() })
 }
 
 /// Yields a command which will return a message.
-pub fn message<X: Send + 'static + Into<Y>, Y>(message: X) -> Command<Y> {
+pub fn message<X: Send + 'static + Into<Y>, Y: 'static>(message: X) -> Task<Y> {
     future(async move { message.into() })
 }
 
 /// Initiates a window drag.
-#[cfg(feature = "wayland")]
-pub fn drag<M>(id: Option<window::Id>) -> Command<M> {
-    iced_sctk::commands::window::start_drag_window(id.unwrap_or(window::Id::MAIN))
-}
-
-/// Initiates a window drag.
-#[cfg(not(feature = "wayland"))]
-pub fn drag<M>(id: Option<window::Id>) -> Command<M> {
-    iced_runtime::window::drag(id.unwrap_or(window::Id::MAIN))
+pub fn drag<M>(id: window::Id) -> Task<M> {
+    iced_runtime::window::drag(id)
 }
 
 /// Maximizes the window.
-#[cfg(feature = "wayland")]
-pub fn maximize<M>(id: Option<window::Id>, maximized: bool) -> Command<M> {
-    iced_sctk::commands::window::maximize(id.unwrap_or(window::Id::MAIN), maximized)
-}
-
-/// Maximizes the window.
-#[cfg(not(feature = "wayland"))]
-pub fn maximize<M>(id: Option<window::Id>, maximized: bool) -> Command<M> {
-    iced_runtime::window::maximize(id.unwrap_or(window::Id::MAIN), maximized)
+pub fn maximize<M>(id: window::Id, maximized: bool) -> Task<M> {
+    iced_runtime::window::maximize(id, maximized)
 }
 
 /// Minimizes the window.
-#[cfg(feature = "wayland")]
-pub fn minimize<M>(id: Option<window::Id>) -> Command<M> {
-    iced_sctk::commands::window::set_mode_window(id.unwrap_or(window::Id::MAIN), Mode::Hidden)
-}
-
-/// Minimizes the window.
-#[cfg(not(feature = "wayland"))]
-pub fn minimize<M>(id: Option<window::Id>) -> Command<M> {
-    iced_runtime::window::minimize(id.unwrap_or(window::Id::MAIN), true)
+pub fn minimize<M>(id: window::Id) -> Task<M> {
+    iced_runtime::window::minimize(id, true)
 }
 
 /// Sets the title of a window.
-#[cfg(feature = "wayland")]
-pub fn set_title<M>(id: Option<window::Id>, title: String) -> Command<M> {
-    window_action(WindowAction::Title {
-        id: id.unwrap_or(window::Id::MAIN),
-        title,
-    })
-}
-
-/// Sets the title of a window.
-#[cfg(not(feature = "wayland"))]
 #[allow(unused_variables, clippy::needless_pass_by_value)]
-pub fn set_title<M>(id: Option<window::Id>, title: String) -> Command<M> {
-    Command::none()
+pub fn set_title<M>(id: window::Id, title: String) -> Task<M> {
+    Task::none()
 }
 
 /// Sets the window mode to windowed.
-#[cfg(feature = "wayland")]
-pub fn set_windowed<M>(id: Option<window::Id>) -> Command<M> {
-    iced_sctk::commands::window::set_mode_window(id.unwrap_or(window::Id::MAIN), Mode::Windowed)
-}
-
-/// Sets the window mode to windowed.
-#[cfg(not(feature = "wayland"))]
-pub fn set_windowed<M>(id: Option<window::Id>) -> Command<M> {
-    iced_runtime::window::change_mode(id.unwrap_or(window::Id::MAIN), Mode::Windowed)
+pub fn set_windowed<M>(id: window::Id) -> Task<M> {
+    iced_runtime::window::change_mode(id, Mode::Windowed)
 }
 
 /// Toggles the windows' maximize state.
-#[cfg(feature = "wayland")]
-pub fn toggle_maximize<M>(id: Option<window::Id>) -> Command<M> {
-    iced_sctk::commands::window::toggle_maximize(id.unwrap_or(window::Id::MAIN))
-}
-
-/// Toggles the windows' maximize state.
-#[cfg(not(feature = "wayland"))]
-pub fn toggle_maximize<M>(id: Option<window::Id>) -> Command<M> {
-    iced_runtime::window::toggle_maximize(id.unwrap_or(window::Id::MAIN))
-}
-
-/// Creates a command to apply an action to a window.
-#[cfg(feature = "wayland")]
-pub fn window_action<M>(action: WindowAction<M>) -> Command<M> {
-    Command::single(Action::PlatformSpecific(PlatformAction::Wayland(
-        WaylandAction::Window(action),
-    )))
+pub fn toggle_maximize<M>(id: window::Id) -> Task<M> {
+    iced_runtime::window::toggle_maximize(id)
 }

@@ -1,7 +1,7 @@
 // Copyright 2023 System76 <info@system76.com>
 // SPDX-License-Identifier: MPL-2.0
 
-use super::{Builder, Style};
+use super::{Builder, ButtonClass};
 use crate::widget::{
     icon::{self, Handle},
     tooltip,
@@ -48,7 +48,7 @@ impl<'a, Message> Button<'a, Message> {
             line_height: 20,
             font_size: 14,
             font_weight: Weight::Normal,
-            style: Style::Icon,
+            class: ButtonClass::Icon,
             variant: icon,
         }
     }
@@ -121,7 +121,7 @@ impl<'a, Message> Button<'a, Message> {
 
     pub fn vertical(mut self, vertical: bool) -> Self {
         self.variant.vertical = vertical;
-        self.style = Style::IconVertical;
+        self.class = ButtonClass::IconVertical;
         self
     }
 }
@@ -157,7 +157,7 @@ impl<'a, Message: Clone + 'static> From<Button<'a, Message>> for Element<'a, Mes
             crate::widget::column::with_children(content)
                 .padding(builder.padding)
                 .spacing(builder.spacing)
-                .align_items(Alignment::Center)
+                .align_x(Alignment::Center)
                 .apply(super::custom)
         } else {
             crate::widget::row::with_children(content)
@@ -165,7 +165,7 @@ impl<'a, Message: Clone + 'static> From<Button<'a, Message>> for Element<'a, Mes
                 .width(builder.width)
                 .height(builder.height)
                 .spacing(builder.spacing)
-                .align_items(Alignment::Center)
+                .align_y(Alignment::Center)
                 .apply(super::custom)
         };
 
@@ -174,18 +174,22 @@ impl<'a, Message: Clone + 'static> From<Button<'a, Message>> for Element<'a, Mes
             .id(builder.id)
             .on_press_maybe(builder.on_press)
             .selected(builder.variant.selected)
-            .style(builder.style);
+            .class(builder.class);
 
         if builder.tooltip.is_empty() {
             button.into()
         } else {
-            tooltip(button, builder.tooltip, tooltip::Position::Top)
-                .size(builder.font_size)
-                .font(crate::font::Font {
-                    weight: builder.font_weight,
-                    ..crate::font::default()
-                })
-                .into()
+            tooltip(
+                button,
+                crate::widget::text(builder.tooltip)
+                    .size(builder.font_size)
+                    .font(crate::font::Font {
+                        weight: builder.font_weight,
+                        ..crate::font::default()
+                    }),
+                tooltip::Position::Top,
+            )
+            .into()
         }
     }
 }

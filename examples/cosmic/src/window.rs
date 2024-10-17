@@ -6,7 +6,7 @@ use cosmic::{
         ThemeBuilder,
     },
     font::load_fonts,
-    iced::{self, Application, Command, Length, Subscription},
+    iced::{self, Application, Length, Subscription, Task},
     iced::{
         subscription,
         widget::{self, column, container, horizontal_space, row, text},
@@ -324,7 +324,7 @@ impl Application for Window {
     type Message = Message;
     type Theme = Theme;
 
-    fn new(_flags: ()) -> (Self, Command<Self::Message>) {
+    fn new(_flags: ()) -> (Self, Task<Self::Message>) {
         let mut window = Window::default()
             .nav_bar_toggled(true)
             .show_maximize(true)
@@ -389,8 +389,8 @@ impl Application for Window {
         ])
     }
 
-    fn update(&mut self, message: Message) -> iced::Command<Self::Message> {
-        let mut ret = Command::none();
+    fn update(&mut self, message: Message) -> iced::Task<Self::Message> {
+        let mut ret = Task::none();
         match message {
             Message::NavBar(key) => {
                 if let Some(page) = self.nav_id_to_page.get(key).copied() {
@@ -437,10 +437,10 @@ impl Application for Window {
             Message::ToggleNavBarCondensed => {
                 self.nav_bar_toggled_condensed = !self.nav_bar_toggled_condensed
             }
-            Message::Drag => return drag(window::Id::MAIN),
-            Message::Close => return close(window::Id::MAIN),
-            Message::Minimize => return minimize(window::Id::MAIN, true),
-            Message::Maximize => return toggle_maximize(window::Id::MAIN),
+            Message::Drag => return drag(self.core.main_window_id().unwrap()),
+            Message::Close => return close(self.core.main_window_id().unwrap()),
+            Message::Minimize => return minimize(self.core.main_window_id().unwrap(), true),
+            Message::Maximize => return toggle_maximize(self.core.main_window_id().unwrap()),
 
             Message::InputChanged => {}
 

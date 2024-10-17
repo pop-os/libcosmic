@@ -55,7 +55,10 @@ pub fn from_raster_bytes(
 ) -> Handle {
     Handle {
         symbolic: false,
-        data: Data::Image(image::Handle::from_memory(bytes)),
+        data: match bytes.into() {
+            Cow::Owned(b) => Data::Image(image::Handle::from_bytes(b)),
+            Cow::Borrowed(b) => Data::Image(image::Handle::from_bytes(b)),
+        },
     }
 }
 
@@ -66,12 +69,14 @@ pub fn from_raster_pixels(
     pixels: impl Into<Cow<'static, [u8]>>
         + std::convert::AsRef<[u8]>
         + std::marker::Send
-        + std::marker::Sync
-        + 'static,
+        + std::marker::Sync,
 ) -> Handle {
     Handle {
         symbolic: false,
-        data: Data::Image(image::Handle::from_pixels(width, height, pixels)),
+        data: match pixels.into() {
+            Cow::Owned(pixels) => Data::Image(image::Handle::from_bytes(pixels)),
+            Cow::Borrowed(pixels) => Data::Image(image::Handle::from_bytes(pixels)),
+        },
     }
 }
 

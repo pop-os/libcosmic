@@ -88,23 +88,19 @@ pub struct CosmicPaletteInner {
     /// name of the palette
     pub name: String,
 
-    /// basic palette
-    /// blue: colors used for various points of emphasis in the UI
-    pub blue: Srgba,
-    /// red: colors used for various points of emphasis in the UI
-    pub red: Srgba,
-    /// green: colors used for various points of emphasis in the UI
-    pub green: Srgba,
-    /// yellow: colors used for various points of emphasis in the UI
-    pub yellow: Srgba,
+    /// Utility Colors
+    /// Colors used for various points of emphasis in the UI.
+    pub bright_red: Srgba,
+    /// Colors used for various points of emphasis in the UI.
+    pub bright_green: Srgba,
+    /// Colors used for various points of emphasis in the UI.
+    pub bright_orange: Srgba,
 
-    /// surface grays
-    /// colors used for three levels of surfaces in the UI
+    /// Surface Grays
+    /// Colors used for three levels of surfaces in the UI.
     pub gray_1: Srgba,
-    /// colors used for three levels of surfaces in the UI
+    /// Colors used for three levels of surfaces in the UI.
     pub gray_2: Srgba,
-    /// colors used for three levels of surfaces in the UI
-    pub gray_3: Srgba,
 
     /// System Neutrals
     /// A wider spread of dark colors for more general use.
@@ -130,13 +126,24 @@ pub struct CosmicPaletteInner {
     /// A wider spread of dark colors for more general use.
     pub neutral_10: Srgba,
 
-    // Utility Colors
-    /// Utility bright green
-    pub bright_green: Srgba,
-    /// Utility bright red
-    pub bright_red: Srgba,
-    /// Utility bright orange
-    pub bright_orange: Srgba,
+    /// Potential Accent Color Combos
+    pub accent_blue: Srgba,
+    /// Potential Accent Color Combos
+    pub accent_indigo: Srgba,
+    /// Potential Accent Color Combos
+    pub accent_purple: Srgba,
+    /// Potential Accent Color Combos
+    pub accent_pink: Srgba,
+    /// Potential Accent Color Combos
+    pub accent_red: Srgba,
+    /// Potential Accent Color Combos
+    pub accent_orange: Srgba,
+    /// Potential Accent Color Combos
+    pub accent_yellow: Srgba,
+    /// Potential Accent Color Combos
+    pub accent_green: Srgba,
+    /// Potential Accent Color Combos
+    pub accent_warm_grey: Srgba,
 
     /// Extended Color Palette
     /// Colors used for themes, app icons, illustrations, and other brand purposes.
@@ -153,25 +160,6 @@ pub struct CosmicPaletteInner {
     pub ext_pink: Srgba,
     /// Colors used for themes, app icons, illustrations, and other brand purposes.
     pub ext_indigo: Srgba,
-
-    /// Potential Accent Color Combos
-    pub accent_blue: Srgba,
-    /// Potential Accent Color Combos
-    pub accent_red: Srgba,
-    /// Potential Accent Color Combos
-    pub accent_green: Srgba,
-    /// Potential Accent Color Combos
-    pub accent_warm_grey: Srgba,
-    /// Potential Accent Color Combos
-    pub accent_orange: Srgba,
-    /// Potential Accent Color Combos
-    pub accent_yellow: Srgba,
-    /// Potential Accent Color Combos
-    pub accent_purple: Srgba,
-    /// Potential Accent Color Combos
-    pub accent_pink: Srgba,
-    /// Potential Accent Color Combos
-    pub accent_indigo: Srgba,
 }
 
 impl CosmicPalette {

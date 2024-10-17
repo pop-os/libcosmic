@@ -3,7 +3,10 @@ use std::ops::Deref;
 use crate::{CosmicConfigEntry, Update};
 use cosmic_settings_daemon::{Changed, ConfigProxy, CosmicSettingsDaemonProxy};
 use futures_util::SinkExt;
-use iced_futures::futures::{self, future::pending, StreamExt};
+use iced_futures::{
+    futures::{self, future::pending, Stream, StreamExt},
+    stream, Subscription,
+};
 
 pub async fn settings_daemon_proxy() -> zbus::Result<CosmicSettingsDaemonProxy<'static>> {
     let conn = zbus::Connection::session().await?;
@@ -58,13 +61,20 @@ pub fn watcher_subscription<T: CosmicConfigEntry + Send + Sync + Default + 'stat
     config_id: &'static str,
     is_state: bool,
 ) -> iced_futures::Subscription<Update<T>> {
+    let id = std::any::TypeId::of::<T>();
+    Subscription::run_with_id(id, watcher_stream(settings_daemon, config_id, is_state))
+}
+
+fn watcher_stream<T: CosmicConfigEntry + Send + Sync + Default + 'static + Clone>(
+    settings_daemon: CosmicSettingsDaemonProxy<'static>,
+    config_id: &'static str,
+    is_state: bool,
+) -> impl Stream<Item = Update<T>> {
     enum Change {
         Changes(Changed),
         OwnerChanged(bool),
     }
-
-    let id = std::any::TypeId::of::<T>();
-    iced_futures::subscription::channel((is_state, config_id, id), 5, move |mut tx| async move {
+    stream::channel(5, move |mut tx| async move {
         let version = T::VERSION;
 
         let Ok(cosmic_config) = (if is_state {

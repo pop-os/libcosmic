@@ -9,7 +9,7 @@ use crate::theme::THEME;
 /// The appearance of a button.
 #[must_use]
 #[derive(Debug, Clone, Copy)]
-pub struct Appearance {
+pub struct Style {
     /// The amount of offset to apply to the shadow of the button.
     pub shadow_offset: Vector,
 
@@ -41,7 +41,7 @@ pub struct Appearance {
     pub text_color: Option<Color>,
 }
 
-impl Appearance {
+impl Style {
     // TODO: `Radius` is not `const fn` compatible.
     pub fn new() -> Self {
         let rad_0 = THEME.lock().unwrap().cosmic().corner_radii.radius_0;
@@ -60,33 +60,34 @@ impl Appearance {
     }
 }
 
-impl std::default::Default for Appearance {
+impl std::default::Default for Style {
     fn default() -> Self {
         Self::new()
     }
 }
 
+// TODO update to match other styles
 /// A set of rules that dictate the style of a button.
-pub trait StyleSheet {
+pub trait Catalog {
     /// The supported style of the [`StyleSheet`].
-    type Style: Default;
+    type Class: Default;
 
     /// Produces the active [`Appearance`] of a button.
-    fn active(&self, focused: bool, selected: bool, style: &Self::Style) -> Appearance;
+    fn active(&self, focused: bool, selected: bool, style: &Self::Class) -> Style;
 
     /// Produces the disabled [`Appearance`] of a button.
-    fn disabled(&self, style: &Self::Style) -> Appearance;
+    fn disabled(&self, style: &Self::Class) -> Style;
 
     /// [`Appearance`] when the button is the target of a DND operation.
-    fn drop_target(&self, style: &Self::Style) -> Appearance {
+    fn drop_target(&self, style: &Self::Class) -> Style {
         self.hovered(false, false, style)
     }
 
     /// Produces the hovered [`Appearance`] of a button.
-    fn hovered(&self, focused: bool, selected: bool, style: &Self::Style) -> Appearance;
+    fn hovered(&self, focused: bool, selected: bool, style: &Self::Class) -> Style;
 
     /// Produces the pressed [`Appearance`] of a button.
-    fn pressed(&self, focused: bool, selected: bool, style: &Self::Style) -> Appearance;
+    fn pressed(&self, focused: bool, selected: bool, style: &Self::Class) -> Style;
 
     /// Background color of the selection indicator
     fn selection_background(&self) -> Background;

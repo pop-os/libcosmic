@@ -13,10 +13,8 @@ use iced_core::event::{self, Event};
 use iced_core::widget::{Operation, Tree};
 use iced_core::{
     layout, mouse, overlay as iced_overlay, renderer, Clipboard, Layout, Length, Padding,
-    Rectangle, Shell, Widget,
+    Rectangle, Shell, Vector, Widget,
 };
-
-use iced_renderer::core::widget::OperationOutputWrapper;
 
 #[must_use]
 pub struct ContextDrawer<'a, Message> {
@@ -48,19 +46,19 @@ impl<'a, Message: Clone + 'static> ContextDrawer<'a, Message> {
                 text::heading(header)
                     .width(Length::FillPortion(1))
                     .height(Length::Fill)
-                    .horizontal_alignment(alignment::Horizontal::Center)
-                    .vertical_alignment(alignment::Vertical::Center),
+                    .align_x(alignment::Horizontal::Center)
+                    .align_y(alignment::Vertical::Center),
             )
             .push(
                 button::text("Close")
                     .trailing_icon(icon::from_name("go-next-symbolic"))
                     .on_press(on_close)
-                    .style(crate::theme::Button::Link)
+                    .class(crate::theme::Button::Link)
                     .apply(container)
                     .width(Length::FillPortion(1))
                     .height(Length::Fill)
                     .align_x(alignment::Horizontal::Right)
-                    .center_y(),
+                    .center_y(Length::Fill),
             )
             // XXX must be done after pushing elements or it may be overwritten by size hints from contents
             .height(Length::Fixed(80.0))
@@ -84,7 +82,7 @@ impl<'a, Message: Clone + 'static> ContextDrawer<'a, Message> {
         container(
             LayerContainer::new(pane)
                 .layer(cosmic_theme::Layer::Primary)
-                .style(crate::style::Container::ContextDrawer)
+                .class(crate::style::Container::ContextDrawer)
                 .width(Length::Fill)
                 .height(Length::Fill)
                 .max_width(max_width),
@@ -159,7 +157,7 @@ impl<'a, Message: Clone> Widget<Message, crate::Theme, Renderer> for ContextDraw
         tree: &mut Tree,
         layout: Layout<'_>,
         renderer: &Renderer,
-        operation: &mut dyn Operation<OperationOutputWrapper<Message>>,
+        operation: &mut dyn Operation<()>,
     ) {
         self.content
             .as_widget()
@@ -232,17 +230,20 @@ impl<'a, Message: Clone> Widget<Message, crate::Theme, Renderer> for ContextDraw
         tree: &'b mut Tree,
         layout: Layout<'_>,
         _renderer: &Renderer,
+        translation: Vector,
     ) -> Option<iced_overlay::Element<'b, Message, crate::Theme, Renderer>> {
         let bounds = layout.bounds();
 
-        Some(iced_overlay::Element::new(
-            layout.position(),
-            Box::new(Overlay {
-                content: &mut self.drawer,
-                tree: &mut tree.children[1],
-                width: bounds.width,
-            }),
-        ))
+        let mut position = layout.position();
+        position.x += translation.x;
+        position.y += translation.y;
+
+        Some(iced_overlay::Element::new(Box::new(Overlay {
+            content: &mut self.drawer,
+            tree: &mut tree.children[1],
+            width: bounds.width,
+            position,
+        })))
     }
 
     #[cfg(feature = "a11y")]

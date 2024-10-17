@@ -4,7 +4,7 @@
 //! Calendar widget example
 
 use chrono::{Local, NaiveDate};
-use cosmic::app::{Command, Core, Settings};
+use cosmic::app::{Core, Settings, Task};
 use cosmic::{executor, iced, ApplicationExt, Element};
 
 /// Runs application with these settings
@@ -50,7 +50,7 @@ impl cosmic::Application for App {
     }
 
     /// Creates the application, and optionally emits command on initialize.
-    fn init(core: Core, _input: Self::Flags) -> (Self, Command<Self::Message>) {
+    fn init(core: Core, _input: Self::Flags) -> (Self, Task<Self::Message>) {
         let now = Local::now();
 
         let mut app = App {
@@ -64,7 +64,7 @@ impl cosmic::Application for App {
     }
 
     /// Handle application events here.
-    fn update(&mut self, message: Self::Message) -> Command<Self::Message> {
+    fn update(&mut self, message: Self::Message) -> Task<Self::Message> {
         match message {
             Message::DateSelected(date) => {
                 self.date_selected = date;
@@ -73,7 +73,7 @@ impl cosmic::Application for App {
 
         println!("Date selected: {:?}", self.date_selected);
 
-        Command::none()
+        Task::none()
     }
 
     /// Creates a view after each update.
@@ -99,7 +99,7 @@ impl App
 where
     Self: cosmic::Application,
 {
-    fn update_title(&mut self) -> Command<Message> {
+    fn update_title(&mut self) -> Task<Message> {
         self.set_header_title(String::from("Calendar Demo"));
         self.set_window_title(String::from("Calendar Demo"))
     }

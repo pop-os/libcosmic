@@ -146,14 +146,14 @@ pub fn menu_button<'a, Message: 'a>(
 ) -> crate::widget::Button<'a, Message> {
     widget::button::custom(
         widget::Row::with_children(children)
-            .align_items(Alignment::Center)
+            .align_y(Alignment::Center)
             .height(Length::Fill)
             .width(Length::Fill),
     )
     .height(Length::Fixed(36.0))
     .padding([4, 16])
     .width(Length::Fill)
-    .style(theme::Button::MenuItem)
+    .class(theme::Button::MenuItem)
 }
 
 /// Represents a menu item that performs an action when selected or a separator between menu items.
@@ -197,7 +197,7 @@ where
 {
     widget::button::custom(widget::text(label))
         .padding([4, 12])
-        .style(theme::Button::MenuRoot)
+        .class(theme::Button::MenuRoot)
         .into()
 }
 
@@ -245,7 +245,7 @@ where
                     let key = find_key(&action, key_binds);
                     let menu_button = menu_button(vec![
                         widget::text(label).into(),
-                        widget::horizontal_space(Length::Fill).into(),
+                        widget::horizontal_space().width(Length::Fill).into(),
                         widget::text(key).into(),
                     ])
                     .on_press(action.message());
@@ -256,7 +256,7 @@ where
                     let key = find_key(&action, key_binds);
                     let menu_button = menu_button(vec![
                         widget::text(label).into(),
-                        widget::horizontal_space(Length::Fill).into(),
+                        widget::horizontal_space().width(Length::Fill).into(),
                         widget::text(key).into(),
                     ]);
 
@@ -270,8 +270,8 @@ where
                                 widget::icon::from_name("object-select-symbolic")
                                     .size(16)
                                     .icon()
-                                    .style(theme::Svg::Custom(Rc::new(|theme| {
-                                        crate::iced_style::svg::Appearance {
+                                    .class(theme::Svg::Custom(Rc::new(|theme| {
+                                        iced_widget::svg::Style {
                                             color: Some(theme.cosmic().accent_color().into()),
                                         }
                                     })))
@@ -282,9 +282,9 @@ where
                             },
                             widget::Space::with_width(Length::Fixed(8.0)).into(),
                             widget::text(label)
-                                .horizontal_alignment(iced::alignment::Horizontal::Left)
+                                .align_x(iced::alignment::Horizontal::Left)
                                 .into(),
-                            widget::horizontal_space(Length::Fill).into(),
+                            widget::horizontal_space().width(Length::Fill).into(),
                             widget::text(key).into(),
                         ])
                         .on_press(action.message()),
@@ -294,13 +294,13 @@ where
                     trees.push(MenuTree::<Message, Renderer>::with_children(
                         menu_button(vec![
                             widget::text(label).into(),
-                            widget::horizontal_space(Length::Fill).into(),
+                            widget::horizontal_space().width(Length::Fill).into(),
                             widget::icon::from_name("pan-end-symbolic")
                                 .size(16)
                                 .icon()
                                 .into(),
                         ])
-                        .style(
+                        .class(
                             // Menu folders have no on_press so they take on the disabled style by default
                             if children.is_empty() {
                                 // This will make the folder use the disabled style if it has no children

@@ -8,17 +8,17 @@ use iced_core::{Background, Color};
 
 use crate::{
     theme::TRANSPARENT_COMPONENT,
-    widget::button::{Appearance, StyleSheet},
+    widget::button::{Catalog, Style},
 };
 
 #[derive(Default)]
 pub enum Button {
     AppletIcon,
     Custom {
-        active: Box<dyn Fn(bool, &crate::Theme) -> Appearance>,
-        disabled: Box<dyn Fn(&crate::Theme) -> Appearance>,
-        hovered: Box<dyn Fn(bool, &crate::Theme) -> Appearance>,
-        pressed: Box<dyn Fn(bool, &crate::Theme) -> Appearance>,
+        active: Box<dyn Fn(bool, &crate::Theme) -> Style>,
+        disabled: Box<dyn Fn(&crate::Theme) -> Style>,
+        hovered: Box<dyn Fn(bool, &crate::Theme) -> Style>,
+        pressed: Box<dyn Fn(bool, &crate::Theme) -> Style>,
     },
     AppletMenu,
     Destructive,
@@ -44,10 +44,10 @@ pub fn appearance(
     disabled: bool,
     style: &Button,
     color: impl Fn(&Component) -> (Color, Option<Color>, Option<Color>),
-) -> Appearance {
+) -> Style {
     let cosmic = theme.cosmic();
     let mut corner_radii = &cosmic.corner_radii.radius_xl;
-    let mut appearance = Appearance::new();
+    let mut appearance = Style::new();
 
     match style {
         Button::Standard
@@ -163,10 +163,10 @@ pub fn appearance(
     appearance
 }
 
-impl StyleSheet for crate::Theme {
-    type Style = Button;
+impl Catalog for crate::Theme {
+    type Class = Button;
 
-    fn active(&self, focused: bool, selected: bool, style: &Self::Style) -> Appearance {
+    fn active(&self, focused: bool, selected: bool, style: &Self::Class) -> Style {
         if let Button::Custom { active, .. } = style {
             return active(focused, self);
         }
@@ -186,7 +186,7 @@ impl StyleSheet for crate::Theme {
         })
     }
 
-    fn disabled(&self, style: &Self::Style) -> Appearance {
+    fn disabled(&self, style: &Self::Class) -> Style {
         if let Button::Custom { disabled, .. } = style {
             return disabled(self);
         }
@@ -202,11 +202,11 @@ impl StyleSheet for crate::Theme {
         })
     }
 
-    fn drop_target(&self, style: &Self::Style) -> Appearance {
+    fn drop_target(&self, style: &Self::Class) -> Style {
         self.active(false, false, style)
     }
 
-    fn hovered(&self, focused: bool, selected: bool, style: &Self::Style) -> Appearance {
+    fn hovered(&self, focused: bool, selected: bool, style: &Self::Class) -> Style {
         if let Button::Custom { hovered, .. } = style {
             return hovered(focused, self);
         }
@@ -233,7 +233,7 @@ impl StyleSheet for crate::Theme {
         )
     }
 
-    fn pressed(&self, focused: bool, selected: bool, style: &Self::Style) -> Appearance {
+    fn pressed(&self, focused: bool, selected: bool, style: &Self::Class) -> Style {
         if let Button::Custom { pressed, .. } = style {
             return pressed(focused, self);
         }

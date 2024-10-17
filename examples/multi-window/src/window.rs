@@ -4,9 +4,9 @@ use cosmic::{
     app::Core,
     iced::{self, event, window},
     iced_core::{id, Alignment, Length, Point},
-    iced_widget::{column, container, scrollable, text, text_input},
+    iced_widget::{column, container, scrollable, text},
     widget::{button, header_bar},
-    ApplicationExt, Command,
+    ApplicationExt, Task,
 };
 
 #[derive(Debug, Clone, PartialEq)]
@@ -42,10 +42,10 @@ impl cosmic::Application for MultiWindow {
         &mut self.core
     }
 
-    fn init(core: Core, _input: Self::Flags) -> (Self, cosmic::app::Command<Self::Message>) {
+    fn init(core: Core, _input: Self::Flags) -> (Self, cosmic::app::Task<Self::Message>) {
         let windows = MultiWindow {
             windows: HashMap::from([(
-                window::Id::MAIN,
+                core.main_window_id().unwrap(),
                 Window {
                     input_id: id::Id::new("main"),
                     input_value: String::new(),
@@ -54,12 +54,12 @@ impl cosmic::Application for MultiWindow {
             core,
         };
 
-        (windows, cosmic::app::Command::none())
+        (windows, cosmic::app::Task::none())
     }
 
     fn subscription(&self) -> cosmic::iced_futures::Subscription<Self::Message> {
-        event::listen_with(|event, _| {
-            if let iced::Event::Window(id, window_event) = event {
+        event::listen_with(|event, _, id| {
+            if let iced::Event::Window(window_event) = event {
                 match window_event {
                     window::Event::CloseRequested => Some(Message::CloseWindow(id)),
                     window::Event::Opened { position, .. } => {
@@ -77,24 +77,24 @@ impl cosmic::Application for MultiWindow {
     fn update(
         &mut self,
         message: Self::Message,
-    ) -> iced::Command<cosmic::app::Message<Self::Message>> {
+    ) -> iced::Task<cosmic::app::Message<Self::Message>> {
         match message {
             Message::CloseWindow(id) => window::close(id),
             Message::WindowClosed(id) => {
                 self.windows.remove(&id);
-                Command::none()
+                Task::none()
             }
             Message::WindowOpened(id, ..) => {
                 if let Some(window) = self.windows.get(&id) {
-                    text_input::focus(window.input_id.clone())
+                    cosmic::widget::text_input::focus(window.input_id.clone())
                 } else {
-                    Command::none()
+                    Task::none()
                 }
             }
             Message::NewWindow => {
                 let count = self.windows.len() + 1;
 
-                let (id, spawn_window) = window::spawn(window::Settings {
+                let (id, spawn_window) = window::open(window::Settings {
                     position: Default::default(),
                     exit_on_close_request: count % 2 == 0,
                     decorations: false,
@@ -110,16 +110,14 @@ impl cosmic::Application for MultiWindow {
                 );
                 _ = self.set_window_title(format!("window_{}", count), id);
 
-                spawn_window
+                spawn_window.map(|id| cosmic::app::Message::App(Message::WindowOpened(id, None)))
             }
             Message::Input(id, value) => {
-                if let Some(w) = self.windows.get_mut(&window::Id::MAIN) {
-                    if id == w.input_id {
-                        w.input_value = value;
-                    }
+                if let Some((_, w)) = self.windows.iter_mut().find(|e| e.1.input_id == id) {
+                    w.input_value = value;
                 }
 
-                Command::none()
+                Task::none()
             }
         }
     }
@@ -128,7 +126,7 @@ impl cosmic::Application for MultiWindow {
         let w = self.windows.get(&id).unwrap();
 
         let input_id = w.input_id.clone();
-        let input = text_input("something", &w.input_value)
+        let input = cosmic::widget::text_input::text_input("something", &w.input_value)
             .on_input(move |msg| Message::Input(input_id.clone(), msg))
             .id(w.input_id.clone());
         let focused = self
@@ -136,23 +134,21 @@ impl cosmic::Application for MultiWindow {
             .focused_window()
             .map(|i| i == id)
             .unwrap_or_default();
-        let new_window_button = button(text("New Window")).on_press(Message::NewWindow);
+        let new_window_button = button::custom(text("New Window")).on_press(Message::NewWindow);
 
         let content = scrollable(
             column![input, new_window_button]
                 .spacing(50)
                 .width(Length::Fill)
-                .align_items(Alignment::Center),
+                .align_x(Alignment::Center),
         );
 
-        let window_content = container(container(content).width(200).center_x())
-            .style(cosmic::style::Container::Background)
-            .width(Length::Fill)
-            .height(Length::Fill)
-            .center_x()
-            .center_y();
+        let window_content = container(container(content).center_x(Length::Fixed(200.)))
+            .class(cosmic::style::Container::Background)
+            .center_x(Length::Fill)
+            .center_y(Length::Fill);
 
-        if id == window::Id::MAIN {
+        if id == self.core.main_window_id().unwrap() {
             window_content.into()
         } else {
             column![header_bar().focused(focused), window_content].into()
@@ -160,6 +156,6 @@ impl cosmic::Application for MultiWindow {
     }
 
     fn view(&self) -> cosmic::prelude::Element<Self::Message> {
-        self.view_window(window::Id::MAIN)
+        self.view_window(self.core.main_window_id().unwrap())
     }
 }

@@ -2,6 +2,7 @@ mod subscription;
 
 use iced::futures::channel::mpsc::UnboundedSender;
 use iced::widget::Container;
+use iced::Vector;
 pub use subscription::*;
 
 use iced_core::alignment;
@@ -14,9 +15,9 @@ use iced_core::widget::Tree;
 use iced_core::{Clipboard, Element, Layout, Length, Padding, Rectangle, Shell, Widget};
 use std::{fmt::Debug, hash::Hash};
 
-pub use iced_style::container::{Appearance, StyleSheet};
+pub use iced_widget::container::{Catalog, Style};
 
-pub fn rectangle_tracker<'a, Message, I, T>(
+pub fn rectangle_tracking_container<'a, Message, I, T>(
     content: T,
     id: I,
     tx: UnboundedSender<(I, Rectangle)>,
@@ -71,6 +72,7 @@ where
     id: I,
     container: Container<'a, Message, crate::Theme, Renderer>,
     ignore_bounds: bool,
+    request_size: bool,
 }
 
 impl<'a, Message, Renderer, I> RectangleTrackingContainer<'a, Message, Renderer, I>
@@ -88,6 +90,7 @@ where
             tx,
             container: Container::new(content),
             ignore_bounds: false,
+            request_size: true,
         }
     }
 
@@ -146,22 +149,22 @@ where
 
     /// Centers the contents in the horizontal axis of the [`Container`].
     #[must_use]
-    pub fn center_x(mut self) -> Self {
-        self.container = self.container.center_x();
+    pub fn center_x(mut self, width: Length) -> Self {
+        self.container = self.container.center_x(width);
         self
     }
 
     /// Centers the contents in the vertical axis of the [`Container`].
     #[must_use]
-    pub fn center_y(mut self) -> Self {
-        self.container = self.container.center_y();
+    pub fn center_y(mut self, height: Length) -> Self {
+        self.container = self.container.center_y(height);
         self
     }
 
     /// Sets the style of the [`Container`].
     #[must_use]
-    pub fn style(mut self, style: impl Into<<crate::Theme as StyleSheet>::Style>) -> Self {
-        self.container = self.container.style(style);
+    pub fn style(mut self, style: impl Into<<crate::Theme as Catalog>::Class<'a>>) -> Self {
+        self.container = self.container.class(style);
         self
     }
 
@@ -202,7 +205,7 @@ where
         renderer: &Renderer,
         limits: &layout::Limits,
     ) -> layout::Node {
-        self.container.layout(
+        let layout = self.container.layout(
             tree,
             renderer,
             if self.ignore_bounds {
@@ -210,7 +213,10 @@ where
             } else {
                 limits
             },
-        )
+        );
+        if self.request_size {}
+
+        layout
     }
 
     fn operate(
@@ -218,9 +224,7 @@ where
         tree: &mut Tree,
         layout: Layout<'_>,
         renderer: &Renderer,
-        operation: &mut dyn iced_core::widget::Operation<
-            iced_core::widget::OperationOutputWrapper<Message>,
-        >,
+        operation: &mut dyn iced_core::widget::Operation<()>,
     ) {
         self.container.operate(tree, layout, renderer, operation);
     }
@@ -271,7 +275,6 @@ where
         viewport: &Rectangle,
     ) {
         let _ = self.tx.unbounded_send((self.id, layout.bounds()));
-
         self.container.draw(
             tree,
             renderer,
@@ -288,8 +291,9 @@ where
         tree: &'b mut Tree,
         layout: Layout<'_>,
         renderer: &Renderer,
+        translation: Vector,
     ) -> Option<overlay::Element<'b, Message, crate::Theme, Renderer>> {
-        self.container.overlay(tree, layout, renderer)
+        self.container.overlay(tree, layout, renderer, translation)
     }
 
     fn drag_destinations(
@@ -297,7 +301,7 @@ where
         state: &Tree,
         layout: Layout<'_>,
         renderer: &Renderer,
-        dnd_rectangles: &mut iced_style::core::clipboard::DndDestinationRectangles,
+        dnd_rectangles: &mut iced_core::clipboard::DndDestinationRectangles,
     ) {
         self.container
             .drag_destinations(state, layout, renderer, dnd_rectangles);

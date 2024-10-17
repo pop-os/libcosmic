@@ -5,7 +5,7 @@
 
 use std::collections::HashMap;
 
-use cosmic::app::{Command, Core, Settings};
+use cosmic::app::{Core, Settings, Task};
 use cosmic::iced_core::Size;
 use cosmic::widget::{menu, nav_bar};
 use cosmic::{executor, iced, ApplicationExt, Element};
@@ -106,7 +106,7 @@ impl cosmic::Application for App {
     }
 
     /// Creates the application, and optionally emits command on initialize.
-    fn init(core: Core, input: Self::Flags) -> (Self, Command<Self::Message>) {
+    fn init(core: Core, input: Self::Flags) -> (Self, Task<Self::Message>) {
         let mut nav_model = nav_bar::Model::default();
 
         for (title, content) in input {
@@ -143,13 +143,13 @@ impl cosmic::Application for App {
     }
 
     /// Called when a navigation item is selected.
-    fn on_nav_select(&mut self, id: nav_bar::Id) -> Command<Self::Message> {
+    fn on_nav_select(&mut self, id: nav_bar::Id) -> Task<Self::Message> {
         self.nav_model.activate(id);
         self.update_title()
     }
 
     /// Handle application events here.
-    fn update(&mut self, message: Self::Message) -> Command<Self::Message> {
+    fn update(&mut self, message: Self::Message) -> Task<Self::Message> {
         match message {
             Message::NavMenuAction(message) => match message {
                 NavMenuAction::Delete(id) => self.nav_model.remove(id),
@@ -168,7 +168,7 @@ impl cosmic::Application for App {
             },
         }
 
-        Command::none()
+        Task::none()
     }
 
     /// Creates a view after each update.
@@ -200,7 +200,7 @@ where
             .unwrap_or("Unknown Page")
     }
 
-    fn update_title(&mut self) -> Command<Message> {
+    fn update_title(&mut self) -> Task<Message> {
         let header_title = self.active_page_title().to_owned();
         let window_title = format!("{header_title} — COSMIC AppDemo");
         self.set_header_title(header_title);

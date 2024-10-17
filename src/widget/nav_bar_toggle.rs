@@ -11,7 +11,7 @@ pub struct NavBarToggle<Message> {
     active: bool,
     #[setters(strip_option)]
     on_toggle: Option<Message>,
-    style: crate::theme::Button,
+    class: crate::theme::Button,
     selected: bool,
 }
 
@@ -20,7 +20,7 @@ pub fn nav_bar_toggle<Message>() -> NavBarToggle<Message> {
     NavBarToggle {
         active: false,
         on_toggle: None,
-        style: crate::theme::Button::Text,
+        class: crate::theme::Button::Text,
         selected: false,
     }
 }
@@ -43,7 +43,7 @@ impl<'a, Message: 'static + Clone> From<NavBarToggle<Message>> for Element<'a, M
             .padding([8, 16])
             .on_press_maybe(nav_bar_toggle.on_toggle)
             .selected(nav_bar_toggle.selected)
-            .style(nav_bar_toggle.style)
+            .class(nav_bar_toggle.class)
             .into()
     }
 }
