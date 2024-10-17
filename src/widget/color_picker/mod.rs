@@ -10,10 +10,10 @@ use std::time::{Duration, Instant};
 
 use crate::theme::iced::Slider;
 use crate::theme::{Button, THEME};
-use crate::widget::{container, segmented_button::Entity, slider};
+use crate::widget::{button::Catalog, container, segmented_button::Entity, slider};
 use crate::Element;
 use derive_setters::Setters;
-use iced::Command;
+use iced::Task;
 use iced_core::event::{self, Event};
 use iced_core::gradient::{ColorStop, Linear};
 use iced_core::renderer::Quad;
@@ -23,12 +23,11 @@ use iced_core::{
     Rectangle, Renderer, Shadow, Shell, Size, Vector, Widget,
 };
 
-use iced_style::slider::{HandleShape, RailBackground};
+use iced_widget::slider::{HandleShape, RailBackground};
 use iced_widget::{canvas, column, horizontal_space, row, scrollable, vertical_space, Row};
 use lazy_static::lazy_static;
 use palette::{FromColor, RgbHue};
 
-use super::button::StyleSheet;
 use super::divider::horizontal;
 use super::icon::{self, from_name};
 use super::segmented_button::{self, SingleSelect};
@@ -135,7 +134,7 @@ impl ColorPickerModel {
         )
     }
 
-    pub fn update<Message>(&mut self, update: ColorPickerUpdate) -> Command<Message> {
+    pub fn update<Message>(&mut self, update: ColorPickerUpdate) -> Task<Message> {
         match update {
             ColorPickerUpdate::ActiveColor(c) => {
                 self.must_clear_cache.store(true, Ordering::SeqCst);
@@ -206,7 +205,7 @@ impl ColorPickerModel {
                 self.copied_at = None;
             }
         };
-        Command::none()
+        Task::none()
     }
 
     #[must_use]
@@ -298,7 +297,7 @@ where
                 .width(self.width),
             // canvas with gradient for the current color
             // still needs the canvas and the handle to be drawn on it
-            container(vertical_space(self.height))
+            container(vertical_space().height(self.height))
                 .width(self.width)
                 .height(self.height),
             slider(
@@ -310,16 +309,21 @@ where
                     on_update(ColorPickerUpdate::ActiveColor(new))
                 }
             )
-            .style(Slider::Custom {
+            .class(Slider::Custom {
                 active: Rc::new(|t| {
                     let cosmic = t.cosmic();
-                    let mut a = slider::StyleSheet::active(t, &Slider::default());
-                    a.rail.colors = RailBackground::Gradient {
-                        gradient: Linear::new(Radians(0.0)).add_stops(HSV_RAINBOW.clone()),
-                        auto_angle: true,
-                    };
+                    let mut a =
+                        slider::Catalog::style(t, &Slider::default(), slider::Status::Active);
+                    // a.rail.colors = RailBackground::Gradient {
+                    //     gradient: Linear::new(Radians(0.0)).add_stops(HSV_RAINBOW.clone()),
+                    //     auto_angle: true,
+                    // };
+                    a.rail.backgrounds = (
+                        Background::Color(Color::TRANSPARENT),
+                        Background::Color(Color::TRANSPARENT),
+                    );
                     a.rail.width = 8.0;
-                    a.handle.color = Color::TRANSPARENT;
+                    a.handle.background = Color::TRANSPARENT.into();
                     a.handle.shape = HandleShape::Circle { radius: 8.0 };
                     a.handle.border_color = cosmic.palette.neutral_10.into();
                     a.handle.border_width = 4.0;
@@ -327,13 +331,15 @@ where
                 }),
                 hovered: Rc::new(|t| {
                     let cosmic = t.cosmic();
-                    let mut a = slider::StyleSheet::active(t, &Slider::default());
-                    a.rail.colors = RailBackground::Gradient {
-                        gradient: Linear::new(Radians(0.0)).add_stops(HSV_RAINBOW.clone()),
-                        auto_angle: true,
-                    };
+                    let mut a =
+                        slider::Catalog::style(t, &Slider::default(), slider::Status::Active);
+                    // a.rail.colors = RailBackground::Gradient {
+                    //     gradient: Linear::new(Radians(0.0)).add_stops(HSV_RAINBOW.clone()),
+                    //     auto_angle: true,
+                    // };
+                    a.rail.backgrounds = (Color::TRANSPARENT.into(), Color::TRANSPARENT.into());
                     a.rail.width = 8.0;
-                    a.handle.color = Color::TRANSPARENT;
+                    a.handle.background = Color::TRANSPARENT.into();
                     a.handle.shape = HandleShape::Circle { radius: 8.0 };
                     a.handle.border_color = cosmic.palette.neutral_10.into();
                     a.handle.border_width = 4.0;
@@ -341,13 +347,22 @@ where
                 }),
                 dragging: Rc::new(|t| {
                     let cosmic = t.cosmic();
-                    let mut a = slider::StyleSheet::active(t, &Slider::default());
-                    a.rail.colors = RailBackground::Gradient {
-                        gradient: Linear::new(Radians(0.0)).add_stops(HSV_RAINBOW.clone()),
-                        auto_angle: true,
-                    };
+                    let mut a =
+                        slider::Catalog::style(t, &Slider::default(), slider::Status::Active);
+                    // a.rail.backgrounds = (
+                    //     RailBackground::Gradient(Gradient {
+                    //         gradient: Linear::new(Radians(0.0)).add_stops(HSV_RAINBOW.clone()),
+                    //         auto_angle: true,
+                    //     }),
+                    //     RailBackground::Gradient {
+                    //         gradient: Linear::new(Radians(0.0)).add_stops(HSV_RAINBOW.clone()),
+                    //         auto_angle: true,
+                    //     },
+                    // );
+                    a.rail.backgrounds =
+                        (iced::Color::TRANSPARENT.into(), Color::TRANSPARENT.into());
                     a.rail.width = 8.0;
-                    a.handle.color = Color::TRANSPARENT;
+                    a.handle.background = Color::TRANSPARENT.into();
                     a.handle.shape = HandleShape::Circle { radius: 8.0 };
                     a.handle.border_color = cosmic.palette.neutral_10.into();
                     a.handle.border_width = 4.0;
@@ -373,7 +388,7 @@ where
                         from_name("edit-copy-symbolic").size(spacing.space_s).into(),
                     ))
                     .on_press(on_update(ColorPickerUpdate::Copied(Instant::now())))
-                    .style(Button::Text);
+                    .class(Button::Text);
 
                     match self.copied_at.take() {
                         Some(t) if Instant::now().duration_since(t) > Duration::from_secs(2) => {
@@ -381,13 +396,13 @@ where
                         }
                         Some(_) => tooltip(
                             button,
-                            copied_to_clipboard_label,
+                            text(copied_to_clipboard_label),
                             iced_widget::tooltip::Position::Bottom,
                         )
                         .into(),
                         None => tooltip(
                             button,
-                            copy_to_clipboard_label,
+                            text(copy_to_clipboard_label),
                             iced_widget::tooltip::Position::Bottom,
                         )
                         .into(),
@@ -431,7 +446,7 @@ where
                     )
                     .width(self.width)
                     .direction(iced_widget::scrollable::Direction::Horizontal(
-                        scrollable::Properties::new().alignment(scrollable::Alignment::End),
+                        scrollable::Scrollbar::new().anchor(scrollable::Anchor::End),
                     ))
                 }]
                 .spacing(spacing.space_xxs),
@@ -445,7 +460,7 @@ where
                     button::custom(
                         text(reset_to_default)
                             .width(self.width)
-                            .horizontal_alignment(iced_core::alignment::Horizontal::Center)
+                            .align_x(iced_core::alignment::Horizontal::Center)
                     )
                     .width(self.width)
                     .on_press(on_update(ColorPickerUpdate::Reset))
@@ -461,18 +476,18 @@ where
                     button::custom(
                         text(cancel)
                             .width(self.width)
-                            .horizontal_alignment(iced_core::alignment::Horizontal::Center)
+                            .align_x(iced_core::alignment::Horizontal::Center)
                     )
                     .width(self.width)
                     .on_press(on_update(ColorPickerUpdate::Cancel)),
                     button::custom(
                         text(save)
                             .width(self.width)
-                            .horizontal_alignment(iced_core::alignment::Horizontal::Center)
+                            .align_x(iced_core::alignment::Horizontal::Center)
                     )
                     .width(self.width)
                     .on_press(on_update(ColorPickerUpdate::AppliedColor))
-                    .style(Button::Suggested)
+                    .class(Button::Suggested)
                 ]
                 .spacing(spacing.space_xs)
                 .width(self.width),
@@ -589,7 +604,7 @@ where
 
         let translation = Vector::new(canvas_layout.bounds().x, canvas_layout.bounds().y);
         iced_core::Renderer::with_translation(renderer, translation, |renderer| {
-            canvas::Renderer::draw(renderer, vec![geo]);
+            iced_renderer::geometry::Renderer::draw_geometry(renderer, geo);
         });
 
         let bounds = canvas_layout.bounds();
@@ -657,10 +672,11 @@ where
         state: &'b mut Tree,
         layout: Layout<'_>,
         renderer: &crate::Renderer,
+        translation: Vector,
     ) -> Option<iced_core::overlay::Element<'b, Message, crate::Theme, crate::Renderer>> {
         self.inner
             .as_widget_mut()
-            .overlay(&mut state.children[0], layout, renderer)
+            .overlay(&mut state.children[0], layout, renderer, translation)
     }
 
     fn on_event(
@@ -782,12 +798,12 @@ pub fn color_button<'a, Message: 'static>(
     let spacing = THEME.lock().unwrap().cosmic().spacing;
 
     button::custom(if color.is_some() {
-        Element::from(vertical_space(Length::Fixed(f32::from(spacing.space_s))))
+        Element::from(vertical_space().height(Length::Fixed(f32::from(spacing.space_s))))
     } else {
         Element::from(column![
-            vertical_space(Length::FillPortion(6)),
+            vertical_space().height(Length::FillPortion(6)),
             row![
-                horizontal_space(Length::FillPortion(6)),
+                horizontal_space().width(Length::FillPortion(6)),
                 Icon::from(
                     icon::from_name("list-add-symbolic")
                         .prefer_svg(true)
@@ -797,17 +813,17 @@ pub fn color_button<'a, Message: 'static>(
                 .width(icon_portion)
                 .height(Length::Fill)
                 .content_fit(iced_core::ContentFit::Contain),
-                horizontal_space(Length::FillPortion(6)),
+                horizontal_space().width(Length::FillPortion(6)),
             ]
             .height(icon_portion)
             .width(Length::Fill),
-            vertical_space(Length::FillPortion(6)),
+            vertical_space().height(Length::FillPortion(6)),
         ])
     })
     .width(Length::Fixed(f32::from(spacing.space_s)))
     .height(Length::Fixed(f32::from(spacing.space_s)))
     .on_press_maybe(on_press)
-    .style(crate::theme::Button::Custom {
+    .class(crate::theme::Button::Custom {
         active: Box::new(move |focused, theme| {
             let cosmic = theme.cosmic();
 
@@ -817,7 +833,7 @@ pub fn color_button<'a, Message: 'static>(
                 (0.0, Color::TRANSPARENT)
             };
             let standard = theme.active(focused, false, &Button::Standard);
-            button::Appearance {
+            button::Style {
                 shadow_offset: Vector::default(),
                 background: color.map(Background::from).or(standard.background),
                 border_radius: cosmic.radius_xs().into(),
@@ -834,7 +850,7 @@ pub fn color_button<'a, Message: 'static>(
             let cosmic = theme.cosmic();
 
             let standard = theme.disabled(&Button::Standard);
-            button::Appearance {
+            button::Style {
                 shadow_offset: Vector::default(),
                 background: color.map(Background::from).or(standard.background),
                 border_radius: cosmic.radius_xs().into(),
@@ -857,7 +873,7 @@ pub fn color_button<'a, Message: 'static>(
             };
 
             let standard = theme.hovered(focused, false, &Button::Standard);
-            button::Appearance {
+            button::Style {
                 shadow_offset: Vector::default(),
                 background: color.map(Background::from).or(standard.background),
                 border_radius: cosmic.radius_xs().into(),
@@ -880,7 +896,7 @@ pub fn color_button<'a, Message: 'static>(
             };
 
             let standard = theme.pressed(focused, false, &Button::Standard);
-            button::Appearance {
+            button::Style {
                 shadow_offset: Vector::default(),
                 background: color.map(Background::from).or(standard.background),
                 border_radius: cosmic.radius_xs().into(),

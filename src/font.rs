@@ -4,7 +4,7 @@
 //! Select preferred fonts.
 
 pub use iced::Font;
-use iced_core::font::{Family, Weight};
+use iced_core::font::Weight;
 
 pub fn default() -> Font {
     Font::from(crate::config::interface_font())

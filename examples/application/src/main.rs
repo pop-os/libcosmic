@@ -3,7 +3,8 @@
 
 //! Application API example
 
-use cosmic::app::{Command, Core, Settings};
+use cosmic::app::{Core, Settings, Task};
+use cosmic::iced::widget::column;
 use cosmic::iced_core::Size;
 use cosmic::widget::nav_bar;
 use cosmic::{executor, iced, ApplicationExt, Element};
@@ -50,12 +51,17 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 /// Messages that are used specifically by our [`App`].
 #[derive(Clone, Debug)]
-pub enum Message {}
+pub enum Message {
+    Input1(String),
+    Input2(String),
+}
 
 /// The [`App`] stores application-specific state.
 pub struct App {
     core: Core,
     nav_model: nav_bar::Model,
+    input_1: String,
+    input_2: String,
 }
 
 /// Implement [`cosmic::Application`] to integrate with COSMIC.
@@ -81,7 +87,7 @@ impl cosmic::Application for App {
     }
 
     /// Creates the application, and optionally emits command on initialize.
-    fn init(core: Core, input: Self::Flags) -> (Self, Command<Self::Message>) {
+    fn init(core: Core, input: Self::Flags) -> (Self, Task<Self::Message>) {
         let mut nav_model = nav_bar::Model::default();
 
         for (title, content) in input {
@@ -90,7 +96,12 @@ impl cosmic::Application for App {
 
         nav_model.activate_position(0);
 
-        let mut app = App { core, nav_model };
+        let mut app = App {
+            core,
+            nav_model,
+            input_1: String::new(),
+            input_2: String::new(),
+        };
 
         let command = app.update_title();
 
@@ -103,14 +114,22 @@ impl cosmic::Application for App {
     }
 
     /// Called when a navigation item is selected.
-    fn on_nav_select(&mut self, id: nav_bar::Id) -> Command<Self::Message> {
+    fn on_nav_select(&mut self, id: nav_bar::Id) -> Task<Self::Message> {
         self.nav_model.activate(id);
         self.update_title()
     }
 
     /// Handle application events here.
-    fn update(&mut self, _message: Self::Message) -> Command<Self::Message> {
-        Command::none()
+    fn update(&mut self, message: Self::Message) -> Task<Self::Message> {
+        match message {
+            Message::Input1(v) => {
+                self.input_1 = v;
+            }
+            Message::Input2(v) => {
+                self.input_2 = v;
+            }
+        }
+        Task::none()
     }
 
     /// Creates a view after each update.
@@ -122,11 +141,20 @@ impl cosmic::Application for App {
 
         let text = cosmic::widget::text(page_content);
 
-        let centered = cosmic::widget::container(text)
+        let centered = cosmic::widget::container(
+            column![
+                text,
+                cosmic::widget::text_input::text_input("", &self.input_1).on_input(Message::Input1),
+                cosmic::widget::text_input::text_input("", &self.input_2).on_input(Message::Input2),
+            ]
             .width(iced::Length::Fill)
             .height(iced::Length::Shrink)
-            .align_x(iced::alignment::Horizontal::Center)
-            .align_y(iced::alignment::Vertical::Center);
+            .align_x(iced::alignment::Horizontal::Center),
+        )
+        .width(iced::Length::Fill)
+        .height(iced::Length::Shrink)
+        .align_x(iced::alignment::Horizontal::Center)
+        .align_y(iced::alignment::Vertical::Center);
 
         Element::from(centered)
     }
@@ -142,10 +170,14 @@ where
             .unwrap_or("Unknown Page")
     }
 
-    fn update_title(&mut self) -> Command<Message> {
+    fn update_title(&mut self) -> Task<Message> {
         let header_title = self.active_page_title().to_owned();
         let window_title = format!("{header_title} — COSMIC AppDemo");
         self.set_header_title(header_title);
-        self.set_window_title(window_title)
+        if let Some(id) = self.core.main_window_id() {
+            self.set_window_title(window_title, id)
+        } else {
+            Task::none()
+        }
     }
 }

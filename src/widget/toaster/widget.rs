@@ -14,7 +14,6 @@ use iced_core::widget::Operation;
 use iced_core::Element;
 use iced_core::Overlay;
 use iced_core::{Clipboard, Layout, Length, Point, Rectangle, Shell, Vector, Widget};
-use iced_renderer::core::widget::OperationOutputWrapper;
 
 pub struct Toaster<'a, Message, Theme, Renderer> {
     toasts: Element<'a, Message, Theme, Renderer>,
@@ -90,7 +89,7 @@ where
         state: &'b mut Tree,
         layout: Layout<'_>,
         renderer: &Renderer,
-        operation: &mut dyn Operation<OperationOutputWrapper<Message>>,
+        operation: &mut dyn Operation<()>,
     ) {
         self.content
             .as_widget()
@@ -142,22 +141,23 @@ where
         state: &'b mut Tree,
         layout: Layout<'_>,
         renderer: &Renderer,
+        translation: Vector,
     ) -> Option<overlay::Element<'b, Message, Theme, Renderer>> {
         //TODO: this hides the overlay of the content during the toast
         if self.is_empty {
-            self.content
-                .as_widget_mut()
-                .overlay(&mut state.children[0], layout, renderer)
+            self.content.as_widget_mut().overlay(
+                &mut state.children[0],
+                layout,
+                renderer,
+                translation,
+            )
         } else {
             let bounds = layout.bounds();
 
-            Some(overlay::Element::new(
-                bounds.position(),
-                Box::new(ToasterOverlay::new(
-                    &mut state.children[1],
-                    &mut self.toasts,
-                )),
-            ))
+            Some(overlay::Element::new(Box::new(ToasterOverlay::new(
+                &mut state.children[1],
+                &mut self.toasts,
+            ))))
         }
     }
 
@@ -166,7 +166,7 @@ where
         state: &Tree,
         layout: Layout<'_>,
         renderer: &Renderer,
-        dnd_rectangles: &mut iced_style::core::clipboard::DndDestinationRectangles,
+        dnd_rectangles: &mut iced_core::clipboard::DndDestinationRectangles,
     ) {
         self.content.as_widget().drag_destinations(
             &state.children[0],
@@ -196,13 +196,7 @@ impl<'a, 'b, Message, Theme, Renderer> Overlay<Message, Theme, Renderer>
 where
     Renderer: renderer::Renderer,
 {
-    fn layout(
-        &mut self,
-        renderer: &Renderer,
-        bounds: Size,
-        position: Point,
-        _translation: Vector,
-    ) -> Node {
+    fn layout(&mut self, renderer: &Renderer, bounds: Size) -> Node {
         let limits = Limits::new(Size::ZERO, bounds);
 
         let mut node = self
@@ -276,7 +270,7 @@ where
     ) -> Option<overlay::Element<'c, Message, Theme, Renderer>> {
         self.element
             .as_widget_mut()
-            .overlay(self.state, layout, renderer)
+            .overlay(self.state, layout, renderer, Default::default())
     }
 }
 

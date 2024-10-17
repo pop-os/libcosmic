@@ -41,9 +41,9 @@ impl<'a, Message: 'static + Clone> Warning<'a, Message> {
         widget::row::with_capacity(2)
             .push(label)
             .push(close_button)
-            .align_items(Alignment::Center)
+            .align_y(Alignment::Center)
             .apply(widget::container)
-            .style(theme::Container::custom(warning_container))
+            .class(theme::Container::custom(warning_container))
             .padding(10)
             .align_y(alignment::Vertical::Center)
             .width(Length::Fill)
@@ -57,9 +57,9 @@ impl<'a, Message: 'static + Clone> From<Warning<'a, Message>> for Element<'a, Me
 }
 
 #[must_use]
-pub fn warning_container(theme: &Theme) -> widget::container::Appearance {
+pub fn warning_container(theme: &Theme) -> widget::container::Style {
     let cosmic = theme.cosmic();
-    widget::container::Appearance {
+    widget::container::Style {
         icon_color: Some(theme.cosmic().warning.on.into()),
         text_color: Some(theme.cosmic().warning.on.into()),
         background: Some(Background::Color(theme.cosmic().warning_color().into())),

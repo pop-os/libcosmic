@@ -6,7 +6,7 @@
 use std::collections::HashMap;
 use std::{env, process};
 
-use cosmic::app::{Command, Core, Settings};
+use cosmic::app::{Task, Core, Settings};
 use cosmic::iced::window;
 use cosmic::iced_core::alignment::{Horizontal, Vertical};
 use cosmic::iced_core::keyboard::Key;
@@ -97,7 +97,7 @@ impl cosmic::Application for App {
     }
 
     /// Creates the application, and optionally emits command on initialize.
-    fn init(core: Core, _input: Self::Flags) -> (Self, Command<Self::Message>) {
+    fn init(core: Core, _input: Self::Flags) -> (Self, Task<Self::Message>) {
         let app = App {
             core,
             config: Config {
@@ -106,7 +106,7 @@ impl cosmic::Application for App {
             key_binds: key_binds(),
         };
 
-        (app, Command::none())
+        (app, Task::none())
     }
 
     fn header_start(&self) -> Vec<Element<Self::Message>> {
@@ -114,13 +114,13 @@ impl cosmic::Application for App {
     }
 
     /// Handle application events here.
-    fn update(&mut self, message: Self::Message) -> Command<Self::Message> {
+    fn update(&mut self, message: Self::Message) -> Task<Self::Message> {
         match message {
             Message::WindowClose => {
-                return window::close(window::Id::MAIN);
+                return window::close(self.core.main_window_id().unwrap());
             }
             Message::WindowNew => match env::current_exe() {
-                Ok(exe) => match process::Command::new(&exe).spawn() {
+                Ok(exe) => match process::Task::new(&exe).spawn() {
                     Ok(_child) => {}
                     Err(err) => {
                         eprintln!("failed to execute {:?}: {}", exe, err);
@@ -132,7 +132,7 @@ impl cosmic::Application for App {
             },
             Message::ToggleHideContent => self.config.hide_content = !self.config.hide_content,
         }
-        Command::none()
+        Task::none()
     }
 
     /// Creates a view after each update.

@@ -9,12 +9,12 @@ use iced_core::mouse;
 use iced_core::overlay;
 use iced_core::renderer;
 use iced_core::touch;
-use iced_core::widget::{tree, Operation, OperationOutputWrapper, Tree};
+use iced_core::widget::{tree, Operation, Tree};
 use iced_core::{
     Clipboard, Element, Layout, Length, Point, Rectangle, Shell, Size, Vector, Widget,
 };
 
-pub use iced_style::container::{Appearance, StyleSheet};
+pub use iced_widget::container::{Catalog, Style};
 
 pub fn popover<'a, Message, Renderer>(
     content: impl Into<Element<'a, Message, crate::Theme, Renderer>>,
@@ -123,7 +123,7 @@ where
         tree: &mut Tree,
         layout: Layout<'_>,
         renderer: &Renderer,
-        operation: &mut dyn Operation<OperationOutputWrapper<Message>>,
+        operation: &mut dyn Operation<()>,
     ) {
         self.content
             .as_widget()
@@ -214,6 +214,7 @@ where
         tree: &'b mut Tree,
         layout: Layout<'_>,
         renderer: &Renderer,
+        mut translation: Vector,
     ) -> Option<overlay::Element<'b, Message, crate::Theme, Renderer>> {
         if !tree.state.downcast_mut::<State>().is_open {
             return None;
@@ -239,19 +240,22 @@ where
             // Round position to prevent rendering issues
             overlay_position.x = overlay_position.x.round();
             overlay_position.y = overlay_position.y.round();
+            translation.x += overlay_position.x;
+            translation.y += overlay_position.y;
 
-            Some(overlay::Element::new(
-                overlay_position,
-                Box::new(Overlay {
-                    tree: &mut tree.children[1],
-                    content: popup,
-                    position: self.position,
-                }),
-            ))
+            Some(overlay::Element::new(Box::new(Overlay {
+                tree: &mut tree.children[1],
+                content: popup,
+                position: self.position,
+                pos: Point::new(translation.x, translation.y),
+            })))
         } else {
-            self.content
-                .as_widget_mut()
-                .overlay(&mut tree.children[0], layout, renderer)
+            self.content.as_widget_mut().overlay(
+                &mut tree.children[0],
+                layout,
+                renderer,
+                translation,
+            )
         }
     }
 
@@ -286,6 +290,7 @@ pub struct Overlay<'a, 'b, Message, Renderer> {
     tree: &'a mut Tree,
     content: &'a mut Element<'b, Message, crate::Theme, Renderer>,
     position: Position,
+    pos: Point,
 }
 
 impl<'a, 'b, Message, Renderer> overlay::Overlay<Message, crate::Theme, Renderer>
@@ -294,13 +299,8 @@ where
     Message: Clone,
     Renderer: iced_core::Renderer,
 {
-    fn layout(
-        &mut self,
-        renderer: &Renderer,
-        bounds: Size,
-        mut position: Point,
-        _translation: iced::Vector,
-    ) -> layout::Node {
+    fn layout(&mut self, renderer: &Renderer, bounds: Size) -> layout::Node {
+        let mut position = self.pos;
         let limits = layout::Limits::new(Size::UNIT, bounds);
         let node = self
             .content
@@ -342,7 +342,7 @@ where
         &mut self,
         layout: Layout<'_>,
         renderer: &Renderer,
-        operation: &mut dyn Operation<OperationOutputWrapper<Message>>,
+        operation: &mut dyn Operation<()>,
     ) {
         self.content
             .as_widget()
@@ -413,7 +413,7 @@ where
     ) -> Option<overlay::Element<'c, Message, crate::Theme, Renderer>> {
         self.content
             .as_widget_mut()
-            .overlay(&mut self.tree, layout, renderer)
+            .overlay(&mut self.tree, layout, renderer, Default::default())
     }
 }
 

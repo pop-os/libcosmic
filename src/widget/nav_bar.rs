@@ -147,11 +147,12 @@ impl<'a, Message: Clone + 'static> From<NavBar<'a, Message>>
             .spacing(space_xxs)
             .style(crate::theme::SegmentedButton::TabBar)
             .apply(scrollable)
+            .class(crate::style::iced::Scrollable::Minimal)
             .height(Length::Fill)
             .apply(container)
             .padding(space_xxs)
             .height(Length::Fill)
-            .style(theme::Container::custom(nav_bar_style))
+            .class(theme::Container::custom(nav_bar_style))
     }
 }
 
@@ -162,9 +163,9 @@ impl<'a, Message: Clone + 'static> From<NavBar<'a, Message>> for crate::Element<
 }
 
 #[must_use]
-pub fn nav_bar_style(theme: &Theme) -> iced_style::container::Appearance {
+pub fn nav_bar_style(theme: &Theme) -> iced_widget::container::Style {
     let cosmic = &theme.cosmic();
-    iced_style::container::Appearance {
+    iced_widget::container::Style {
         icon_color: Some(cosmic.on_bg_color().into()),
         text_color: Some(cosmic.on_bg_color().into()),
         background: Some(Background::Color(cosmic.primary.base.into())),

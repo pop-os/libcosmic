@@ -3,7 +3,7 @@
 
 //! Button widgets for COSMIC applications.
 
-pub use crate::theme::Button as Style;
+pub use crate::theme::Button as ButtonClass;
 
 pub mod link;
 use derive_setters::Setters;
@@ -26,7 +26,7 @@ pub use image::Button as ImageButton;
 
 mod style;
 #[doc(inline)]
-pub use style::{Appearance, StyleSheet};
+pub use style::{Catalog, Style};
 
 mod text;
 #[doc(inline)]
@@ -105,7 +105,7 @@ pub struct Builder<'a, Message, Variant> {
     font_weight: Weight,
 
     /// The preferred style of the button.
-    style: Style,
+    class: ButtonClass,
 
     #[setters(skip)]
     variant: Variant,

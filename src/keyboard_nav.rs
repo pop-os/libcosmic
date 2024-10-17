@@ -17,7 +17,7 @@ pub enum Message {
 }
 
 pub fn subscription() -> Subscription<Message> {
-    listen_raw(|event, status| {
+    listen_raw(|event, status, _| {
         if event::Status::Ignored != status {
             return None;
         }

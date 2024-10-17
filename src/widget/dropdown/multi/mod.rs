@@ -9,7 +9,7 @@ pub mod menu;
 pub use menu::Menu;
 
 mod widget;
-pub use widget::{Appearance, Dropdown, StyleSheet};
+pub use widget::{Catalog, Dropdown, Style};
 
 pub fn dropdown<'a, S: AsRef<str>, Message: 'a, Item: Clone + PartialEq + 'static>(
     model: &'a Model<S, Item>,

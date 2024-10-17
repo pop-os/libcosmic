@@ -8,7 +8,7 @@ use iced::{
 use iced_futures::Subscription;
 use std::{collections::HashMap, fmt::Debug, hash::Hash};
 
-use super::RectangleTracker;
+use super::MinSizeTrackerContainer;
 
 pub fn rectangle_tracker_subscription<
     I: 'static + Hash + Copy + Send + Sync + Debug,
@@ -38,7 +38,7 @@ async fn start_listening<I: Copy, R: 'static + Hash + Copy + Send + Sync + Debug
                 let (tx, rx) = unbounded();
 
                 (
-                    Some((id, RectangleUpdate::Init(RectangleTracker { tx }))),
+                    Some((id, RectangleUpdate::Init(MinSizeTracker { tx }))),
                     State::Waiting(rx, HashMap::new()),
                 )
             }
@@ -84,5 +84,5 @@ where
     I: 'static + Hash + Copy + Send + Sync + Debug,
 {
     Rectangle((I, Rectangle)),
-    Init(RectangleTracker<I>),
+    Init(MinSizeTrackerContainer<I>),
 }

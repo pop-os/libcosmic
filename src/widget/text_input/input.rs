@@ -18,6 +18,9 @@ use super::style::StyleSheet;
 pub use super::value::Value;
 
 use apply::Apply;
+use cosmic_theme::Theme;
+use iced::clipboard::dnd::{DndAction, DndEvent, OfferEvent, SourceEvent};
+use iced::clipboard::mime::AsMimeTypes;
 use iced::Limits;
 use iced_core::event::{self, Event};
 use iced_core::mouse::{self, click};
@@ -39,15 +42,9 @@ use iced_core::{
 };
 #[cfg(feature = "wayland")]
 use iced_renderer::core::event::{wayland, PlatformSpecific};
-use iced_renderer::core::widget::OperationOutputWrapper;
 #[cfg(feature = "wayland")]
-use iced_runtime::command::platform_specific;
-use iced_runtime::Command;
-
-#[cfg(feature = "wayland")]
-use cctk::sctk::reexports::client::protocol::wl_data_device_manager::DndAction;
-#[cfg(feature = "wayland")]
-use iced_runtime::command::platform_specific::wayland::data_device::{DataFromMimeType, DndIcon};
+use iced_runtime::platform_specific;
+use iced_runtime::{task, Action, Task};
 
 thread_local! {
     // Prevents two inputs from being focused at the same time.
@@ -146,7 +143,7 @@ where
             })
             .size(16)
             .apply(crate::widget::button::custom)
-            .style(crate::theme::Button::Icon)
+            .class(crate::theme::Button::Icon)
             .on_press(msg)
             .padding(8)
             .into(),
@@ -173,7 +170,6 @@ where
         .padding(spacing)
 }
 
-#[cfg(feature = "wayland")]
 pub(crate) const SUPPORTED_TEXT_MIME_TYPES: &[&str; 6] = &[
     "text/plain;charset=utf-8",
     "text/plain;charset=UTF-8",
@@ -182,17 +178,12 @@ pub(crate) const SUPPORTED_TEXT_MIME_TYPES: &[&str; 6] = &[
     "text/plain",
     "TEXT",
 ];
-#[cfg(feature = "wayland")]
-pub type DnDCommand =
-    Box<dyn Send + Sync + Fn() -> platform_specific::wayland::data_device::ActionInner>;
-#[cfg(not(feature = "wayland"))]
-pub type DnDCommand = ();
 
 /// A field that can be filled with text.
 #[allow(missing_debug_implementations)]
 #[must_use]
 pub struct TextInput<'a, Message> {
-    id: Option<Id>,
+    id: Id,
     placeholder: Cow<'a, str>,
     value: Value,
     is_secure: bool,
@@ -215,7 +206,6 @@ pub struct TextInput<'a, Message> {
     trailing_icon: Option<Element<'a, Message, crate::Theme, crate::Renderer>>,
     style: <crate::Theme as StyleSheet>::Style,
     on_create_dnd_source: Option<Box<dyn Fn(State) -> Message + 'a>>,
-    on_dnd_command_produced: Option<Box<dyn Fn(DnDCommand) -> Message + 'a>>,
     surface_ids: Option<(window::Id, window::Id)>,
     dnd_icon: bool,
     line_height: text::LineHeight,
@@ -237,7 +227,7 @@ where
 
         let v: Cow<'a, str> = value.into();
         TextInput {
-            id: None,
+            id: Id::unique(),
             placeholder: placeholder.into(),
             value: Value::new(v.as_ref()),
             is_secure: false,
@@ -258,7 +248,6 @@ where
             trailing_icon: None,
             error: None,
             style: crate::theme::TextInput::default(),
-            on_dnd_command_produced: None,
             on_create_dnd_source: None,
             surface_ids: None,
             dnd_icon: false,
@@ -266,6 +255,15 @@ where
             label: None,
             helper_text: None,
             always_active: false,
+        }
+    }
+
+    fn dnd_id(&self) -> u128 {
+        match &self.id.0 {
+            iced_core::id::Internal::Custom(id, _) | iced_core::id::Internal::Unique(id) => {
+                *id as u128
+            }
+            _ => unreachable!(),
         }
     }
 
@@ -290,7 +288,7 @@ where
 
     /// Sets the [`Id`] of the [`TextInput`].
     pub fn id(mut self, id: Id) -> Self {
-        self.id = Some(id);
+        self.id = id;
         self
     }
 
@@ -433,10 +431,12 @@ where
         value: Option<&Value>,
         style: &renderer::Style,
     ) {
+        let text_layout = self.text_layout(layout.clone());
         draw(
             renderer,
             theme,
             layout,
+            text_layout,
             cursor_position,
             tree,
             value.unwrap_or(&self.value),
@@ -467,20 +467,6 @@ where
         self
     }
 
-    /// Sets the dnd command produced handler of the [`TextInput`].
-    /// Commands should be returned in the update function of the application.
-    #[cfg(feature = "wayland")]
-    pub fn on_dnd_command_produced(
-        mut self,
-        on_dnd_command_produced: impl Fn(
-                Box<dyn Send + Sync + Fn() -> platform_specific::wayland::data_device::ActionInner>,
-            ) -> Message
-            + 'a,
-    ) -> Self {
-        self.on_dnd_command_produced = Some(Box::new(on_dnd_command_produced));
-        self
-    }
-
     /// Sets the window id of the [`TextInput`] and the window id of the drag icon.
     /// Both ids are required to be unique.
     /// This is required for the dnd to work.
@@ -500,7 +486,7 @@ where
             crate::widget::icon::from_name("edit-clear-symbolic")
                 .size(16)
                 .apply(crate::widget::button::custom)
-                .style(crate::theme::Button::Icon)
+                .class(crate::theme::Button::Icon)
                 .on_press(on_clear)
                 .padding(8)
                 .into(),
@@ -550,6 +536,7 @@ where
         }
         let old_value = state
             .value
+            .raw()
             .buffer()
             .lines
             .iter()
@@ -559,6 +546,7 @@ where
             || old_value != self.value.to_string()
             || state
                 .label
+                .raw()
                 .buffer()
                 .lines
                 .iter()
@@ -567,6 +555,7 @@ where
                 != self.label.unwrap_or_default()
             || state
                 .helper_text
+                .raw()
                 .buffer()
                 .lines
                 .iter()
@@ -651,7 +640,7 @@ where
             let v = self.value.to_string();
             value_paragraph.update(Text {
                 content: if self.value.is_empty() {
-                    &self.placeholder
+                    self.placeholder.as_ref()
                 } else {
                     &v
                 },
@@ -662,7 +651,7 @@ where
                 vertical_alignment: alignment::Vertical::Center,
                 line_height: text::LineHeight::default(),
                 shaping: text::Shaping::Advanced,
-                wrap: text::Wrap::default(),
+                wrapping: text::Wrapping::default(),
             });
 
             let Size { width, height } =
@@ -717,12 +706,13 @@ where
         tree: &mut Tree,
         _layout: Layout<'_>,
         _renderer: &crate::Renderer,
-        operation: &mut dyn Operation<OperationOutputWrapper<Message>>,
+        operation: &mut dyn Operation<()>,
     ) {
         let state = tree.state.downcast_mut::<State>();
 
-        operation.focusable(state, self.id.as_ref());
-        operation.text_input(state, self.id.as_ref());
+        operation.custom(state, Some(&self.id));
+        operation.focusable(state, Some(&self.id));
+        operation.text_input(state, Some(&self.id));
     }
 
     fn overlay<'b>(
@@ -730,6 +720,7 @@ where
         tree: &'b mut Tree,
         layout: Layout<'_>,
         renderer: &crate::Renderer,
+        translation: Vector,
     ) -> Option<overlay::Element<'b, Message, crate::Theme, crate::Renderer>> {
         let mut layout_ = Vec::with_capacity(2);
         if self.leading_icon.is_some() {
@@ -752,7 +743,9 @@ where
             .zip(&mut tree.children)
             .zip(layout_)
             .filter_map(|((child, state), layout)| {
-                child.as_widget_mut().overlay(state, layout, renderer)
+                child
+                    .as_widget_mut()
+                    .overlay(state, layout, renderer, translation)
             })
             .collect::<Vec<_>>();
 
@@ -814,8 +807,10 @@ where
                 }
             }
         }
-
+        let dnd_id = self.dnd_id();
+        let id = Widget::id(self);
         update(
+            id,
             event,
             text_layout.children().next().unwrap(),
             trailing_icon_layout,
@@ -833,9 +828,7 @@ where
             self.on_toggle_edit.as_deref(),
             || tree.state.downcast_mut::<State>(),
             self.on_create_dnd_source.as_deref(),
-            self.dnd_icon,
-            self.on_dnd_command_produced.as_deref(),
-            self.surface_ids,
+            dnd_id,
             line_height,
             layout,
         )
@@ -851,10 +844,12 @@ where
         cursor_position: mouse::Cursor,
         viewport: &Rectangle,
     ) {
+        let text_layout = self.text_layout(layout.clone());
         draw(
             renderer,
             theme,
             layout,
+            text_layout,
             cursor_position,
             tree,
             &self.value,
@@ -934,11 +929,43 @@ where
     }
 
     fn id(&self) -> Option<Id> {
-        self.id.clone()
+        Some(self.id.clone())
     }
 
     fn set_id(&mut self, id: Id) {
-        self.id = Some(id);
+        self.id = id;
+    }
+
+    fn drag_destinations(
+        &self,
+        state: &Tree,
+        layout: Layout<'_>,
+        renderer: &crate::Renderer,
+        dnd_rectangles: &mut iced_core::clipboard::DndDestinationRectangles,
+    ) {
+        if let Some(input) = layout.children().last() {
+            let Rectangle {
+                x,
+                y,
+                width,
+                height,
+            } = input.bounds();
+            dnd_rectangles.push(iced::clipboard::dnd::DndDestinationRectangle {
+                id: self.dnd_id(),
+                rectangle: iced::clipboard::dnd::Rectangle {
+                    x: x as f64,
+                    y: y as f64,
+                    width: width as f64,
+                    height: height as f64,
+                },
+                mime_types: SUPPORTED_TEXT_MIME_TYPES
+                    .iter()
+                    .map(|s| Cow::Borrowed(*s))
+                    .collect(),
+                actions: DndAction::Move,
+                preferred: DndAction::Move,
+            });
+        }
     }
 }
 
@@ -954,32 +981,38 @@ where
     }
 }
 
-/// Produces a [`Command`] that focuses the [`TextInput`] with the given [`Id`].
-pub fn focus<Message: 'static>(id: Id) -> Command<Message> {
-    Command::widget(operation::focusable::focus(id))
+/// Produces a [`Task`] that focuses the [`TextInput`] with the given [`Id`].
+pub fn focus<Message: 'static>(id: Id) -> Task<Message> {
+    task::effect(Action::widget(operation::focusable::focus(id)))
 }
 
-/// Produces a [`Command`] that moves the cursor of the [`TextInput`] with the given [`Id`] to the
+/// Produces a [`Task`] that moves the cursor of the [`TextInput`] with the given [`Id`] to the
 /// end.
-pub fn move_cursor_to_end<Message: 'static>(id: Id) -> Command<Message> {
-    Command::widget(operation::text_input::move_cursor_to_end(id))
+pub fn move_cursor_to_end<Message: 'static>(id: Id) -> Task<Message> {
+    task::effect(Action::widget(operation::text_input::move_cursor_to_end(
+        id,
+    )))
 }
 
-/// Produces a [`Command`] that moves the cursor of the [`TextInput`] with the given [`Id`] to the
+/// Produces a [`Task`] that moves the cursor of the [`TextInput`] with the given [`Id`] to the
 /// front.
-pub fn move_cursor_to_front<Message: 'static>(id: Id) -> Command<Message> {
-    Command::widget(operation::text_input::move_cursor_to_front(id))
+pub fn move_cursor_to_front<Message: 'static>(id: Id) -> Task<Message> {
+    task::effect(Action::widget(operation::text_input::move_cursor_to_front(
+        id,
+    )))
 }
 
-/// Produces a [`Command`] that moves the cursor of the [`TextInput`] with the given [`Id`] to the
+/// Produces a [`Task`] that moves the cursor of the [`TextInput`] with the given [`Id`] to the
 /// provided position.
-pub fn move_cursor_to<Message: 'static>(id: Id, position: usize) -> Command<Message> {
-    Command::widget(operation::text_input::move_cursor_to(id, position))
+pub fn move_cursor_to<Message: 'static>(id: Id, position: usize) -> Task<Message> {
+    task::effect(Action::widget(operation::text_input::move_cursor_to(
+        id, position,
+    )))
 }
 
-/// Produces a [`Command`] that selects all the content of the [`TextInput`] with the given [`Id`].
-pub fn select_all<Message: 'static>(id: Id) -> Command<Message> {
-    Command::widget(operation::text_input::select_all(id))
+/// Produces a [`Task`] that selects all the content of the [`TextInput`] with the given [`Id`].
+pub fn select_all<Message: 'static>(id: Id) -> Task<Message> {
+    task::effect(Action::widget(operation::text_input::select_all(id)))
 }
 
 /// Computes the layout of a [`TextInput`].
@@ -1019,7 +1052,7 @@ pub fn layout<Message>(
             vertical_alignment: alignment::Vertical::Center,
             line_height,
             shaping: text::Shaping::Advanced,
-            wrap: text::Wrap::default(),
+            wrapping: text::Wrapping::default(),
         });
         let label_size = label_paragraph.min_bounds();
 
@@ -1158,7 +1191,7 @@ pub fn layout<Message>(
             vertical_alignment: alignment::Vertical::Center,
             line_height: helper_text_line_height,
             shaping: text::Shaping::Advanced,
-            wrap: text::Wrap::default(),
+            wrapping: text::Wrapping::default(),
         });
         let helper_text_size = helper_text_paragraph.min_bounds();
         let helper_text_node = layout::Node::new(helper_text_size).translate(helper_pos);
@@ -1188,7 +1221,8 @@ pub fn layout<Message>(
 #[allow(clippy::missing_panics_doc)]
 #[allow(clippy::cast_lossless)]
 #[allow(clippy::cast_possible_truncation)]
-pub fn update<'a, Message>(
+pub fn update<'a, Message: 'static>(
+    id: Option<Id>,
     event: Event,
     text_layout: Layout<'_>,
     trailing_icon_layout: Option<Layout<'_>>,
@@ -1206,9 +1240,7 @@ pub fn update<'a, Message>(
     on_toggle_edit: Option<&dyn Fn(bool) -> Message>,
     state: impl FnOnce() -> &'a mut State,
     #[allow(unused_variables)] on_start_dnd_source: Option<&dyn Fn(State) -> Message>,
-    #[allow(unused_variables)] dnd_icon: bool,
-    #[allow(unused_variables)] on_dnd_command_produced: Option<&dyn Fn(DnDCommand) -> Message>,
-    #[allow(unused_variables)] surface_ids: Option<(window::Id, window::Id)>,
+    #[allow(unused_variables)] dnd_id: u128,
     line_height: text::LineHeight,
     layout: Layout<'_>,
 ) -> event::Status
@@ -1253,7 +1285,8 @@ where
                 let text_layout = layout.children().next().unwrap();
                 let target = cursor_position.x - text_layout.bounds().x;
 
-                let click = mouse::Click::new(cursor_position, state.last_click);
+                let click =
+                    mouse::Click::new(cursor_position, mouse::Button::Left, state.last_click);
 
                 match (
                     &state.dragging_state,
@@ -1266,28 +1299,18 @@ where
                         // single click that is on top of the selected text
                         // is the click on selected text?
 
-                        if let (
-                            Some(on_start_dnd),
-                            Some(on_dnd_command_produced),
-                            Some((window_id, icon_id)),
-                            Some(on_input),
-                        ) = (
-                            on_start_dnd_source,
-                            on_dnd_command_produced,
-                            surface_ids,
-                            on_input,
-                        ) {
+                        if let Some(on_input) = on_input {
                             let left = start.min(end);
                             let right = end.max(start);
 
                             let (left_position, _left_offset) = measure_cursor_and_scroll_offset(
-                                &state.value,
+                                state.value.raw(),
                                 text_layout.bounds(),
                                 left,
                             );
 
                             let (right_position, _right_offset) = measure_cursor_and_scroll_offset(
-                                &state.value,
+                                state.value.raw(),
                                 text_layout.bounds(),
                                 right,
                             );
@@ -1305,10 +1328,12 @@ where
                                 if is_secure {
                                     return event::Status::Ignored;
                                 }
-                                let text =
+                                let input_text =
                                     state.selected_text(&value.to_string()).unwrap_or_default();
-                                state.dragging_state =
-                                    Some(DraggingState::Dnd(DndAction::empty(), text.clone()));
+                                state.dragging_state = Some(DraggingState::Dnd(
+                                    DndAction::empty(),
+                                    input_text.clone(),
+                                ));
                                 let mut editor = Editor::new(unsecured_value, &mut state.cursor);
                                 editor.delete();
 
@@ -1316,23 +1341,25 @@ where
                                 let unsecured_value = Value::new(&contents);
                                 let message = (on_input)(contents);
                                 shell.publish(message);
-                                shell.publish(on_start_dnd(state.clone()));
+                                if let Some(on_start_dnd) = on_start_dnd_source {
+                                    shell.publish(on_start_dnd(state.clone()));
+                                }
                                 let state_clone = state.clone();
-                                shell.publish(on_dnd_command_produced(Box::new(move || {
-                                    platform_specific::wayland::data_device::ActionInner::StartDnd {
-                                        mime_types: SUPPORTED_TEXT_MIME_TYPES
-                                            .iter()
-                                            .map(std::string::ToString::to_string)
-                                            .collect(),
-                                        actions: DndAction::Move,
-                                        origin_id: window_id,
-                                        icon_id: Some((
-                                            DndIcon::Widget(icon_id, Box::new(state_clone.clone())),
-                                            iced::Vector::ZERO,
-                                        )),
-                                        data: Box::new(TextInputString(text.clone())),
-                                    }
-                                })));
+
+                                iced_core::clipboard::start_dnd(
+                                    clipboard,
+                                    false,
+                                    id.map(|id| iced_core::clipboard::DndSource::Widget(id)),
+                                    Some((
+                                        Element::from(
+                                            TextInput::<'static, ()>::new("", input_text.clone())
+                                                .dnd_icon(true),
+                                        ),
+                                        iced_core::widget::tree::State::new(state_clone),
+                                    )),
+                                    Box::new(TextInputString(input_text)),
+                                    DndAction::Move,
+                                );
 
                                 update_cache(state, &unsecured_value);
                             } else {
@@ -1435,7 +1462,7 @@ where
                             return event::Status::Ignored;
                         };
 
-                        let click = mouse::Click::new(pos, state.last_click);
+                        let click = mouse::Click::new(pos, mouse::Button::Left, state.last_click);
 
                         match (
                             &state.dragging_state,
@@ -1621,7 +1648,10 @@ where
                     {
                         if !is_secure {
                             if let Some((start, end)) = state.cursor.selection(value) {
-                                clipboard.write(value.select(start, end).to_string());
+                                clipboard.write(
+                                    iced_core::clipboard::Kind::Primary,
+                                    value.select(start, end).to_string(),
+                                );
                             }
                         }
                     }
@@ -1632,7 +1662,10 @@ where
                     {
                         if !is_secure {
                             if let Some((start, end)) = state.cursor.selection(value) {
-                                clipboard.write(value.select(start, end).to_string());
+                                clipboard.write(
+                                    iced_core::clipboard::Kind::Primary,
+                                    value.select(start, end).to_string(),
+                                );
                             }
 
                             let mut editor = Editor::new(value, &mut state.cursor);
@@ -1650,7 +1683,7 @@ where
                             content
                         } else {
                             let content: String = clipboard
-                                .read()
+                                .read(iced_core::clipboard::Kind::Primary)
                                 .unwrap_or_default()
                                 .chars()
                                 .filter(|c| !c.is_control())
@@ -1760,7 +1793,7 @@ where
 
             state.keyboard_modifiers = modifiers;
         }
-        Event::Window(_, window::Event::RedrawRequested(now)) => {
+        Event::Window(window::Event::RedrawRequested(now)) => {
             let state = state();
 
             if let Some(focus) = &mut state.is_focused {
@@ -1775,9 +1808,7 @@ where
             }
         }
         #[cfg(feature = "wayland")]
-        Event::PlatformSpecific(PlatformSpecific::Wayland(wayland::Event::DataSource(
-            wayland::DataSourceEvent::DndFinished | wayland::DataSourceEvent::Cancelled,
-        ))) => {
+        Event::Dnd(DndEvent::Source(SourceEvent::Finished | SourceEvent::Cancelled)) => {
             let state = state();
             if matches!(state.dragging_state, Some(DraggingState::Dnd(..))) {
                 state.dragging_state = None;
@@ -1785,54 +1816,32 @@ where
             }
         }
         #[cfg(feature = "wayland")]
-        Event::PlatformSpecific(PlatformSpecific::Wayland(wayland::Event::DataSource(
-            wayland::DataSourceEvent::DndActionAccepted(action),
-        ))) => {
-            let state = state();
-            if let Some(DraggingState::Dnd(_, text)) = state.dragging_state.as_ref() {
-                state.dragging_state = Some(DraggingState::Dnd(action, text.clone()));
-                return event::Status::Captured;
-            }
-        }
-        #[cfg(feature = "wayland")]
-        Event::PlatformSpecific(PlatformSpecific::Wayland(wayland::Event::DndOffer(
-            wayland::DndOfferEvent::Enter { x, y, mime_types },
-        ))) => {
-            let Some(on_dnd_command_produced) = on_dnd_command_produced else {
-                return event::Status::Ignored;
-            };
-
+        Event::Dnd(DndEvent::Offer(
+            rectangle,
+            OfferEvent::Enter {
+                x,
+                y,
+                mime_types,
+                surface,
+            },
+        )) if rectangle == Some(dnd_id) => {
             let state = state();
             let is_clicked = text_layout.bounds().contains(Point {
                 x: x as f32,
                 y: y as f32,
             });
 
-            if !is_clicked {
-                state.dnd_offer = DndOfferState::OutsideWidget(mime_types, DndAction::None);
-                return event::Status::Captured;
-            }
             let mut accepted = false;
             for m in &mime_types {
                 if SUPPORTED_TEXT_MIME_TYPES.contains(&m.as_str()) {
                     let clone = m.clone();
                     accepted = true;
-                    shell.publish(on_dnd_command_produced(Box::new(move || {
-                        platform_specific::wayland::data_device::ActionInner::Accept(Some(
-                            clone.clone(),
-                        ))
-                    })));
                 }
             }
             if accepted {
-                shell.publish(on_dnd_command_produced(Box::new(move || {
-                    platform_specific::wayland::data_device::ActionInner::SetActions {
-                        preferred: DndAction::Move,
-                        accepted: DndAction::Move.union(DndAction::Copy),
-                    }
-                })));
                 let target = x as f32 - text_layout.bounds().x;
-                state.dnd_offer = DndOfferState::HandlingOffer(mime_types.clone(), DndAction::None);
+                state.dnd_offer =
+                    DndOfferState::HandlingOffer(mime_types.clone(), DndAction::empty());
                 // existing logic for setting the selection
                 let position = if target > 0.0 {
                     update_cache(state, value);
@@ -1846,57 +1855,11 @@ where
             }
         }
         #[cfg(feature = "wayland")]
-        Event::PlatformSpecific(PlatformSpecific::Wayland(wayland::Event::DndOffer(
-            wayland::DndOfferEvent::Motion { x, y },
-        ))) => {
-            let Some(on_dnd_command_produced) = on_dnd_command_produced else {
-                return event::Status::Ignored;
-            };
-
+        Event::Dnd(DndEvent::Offer(rectangle, OfferEvent::Motion { x, y }))
+            if rectangle == Some(dnd_id) =>
+        {
             let state = state();
-            let is_clicked = text_layout.bounds().contains(Point {
-                x: x as f32,
-                y: y as f32,
-            });
 
-            if !is_clicked {
-                if let DndOfferState::HandlingOffer(mime_types, action) = state.dnd_offer.clone() {
-                    state.dnd_offer = DndOfferState::OutsideWidget(mime_types, action);
-                    shell.publish(on_dnd_command_produced(Box::new(move || {
-                        platform_specific::wayland::data_device::ActionInner::SetActions {
-                            preferred: DndAction::None,
-                            accepted: DndAction::None,
-                        }
-                    })));
-                    shell.publish(on_dnd_command_produced(Box::new(move || {
-                        platform_specific::wayland::data_device::ActionInner::Accept(None)
-                    })));
-                }
-                return event::Status::Captured;
-            } else if let DndOfferState::OutsideWidget(mime_types, action) = state.dnd_offer.clone()
-            {
-                let mut accepted = false;
-                for m in &mime_types {
-                    if SUPPORTED_TEXT_MIME_TYPES.contains(&m.as_str()) {
-                        accepted = true;
-                        let clone = m.clone();
-                        shell.publish(on_dnd_command_produced(Box::new(move || {
-                            platform_specific::wayland::data_device::ActionInner::Accept(Some(
-                                clone.clone(),
-                            ))
-                        })));
-                    }
-                }
-                if accepted {
-                    shell.publish(on_dnd_command_produced(Box::new(move || {
-                        platform_specific::wayland::data_device::ActionInner::SetActions {
-                            preferred: DndAction::Move,
-                            accepted: DndAction::Move.union(DndAction::Copy),
-                        }
-                    })));
-                    state.dnd_offer = DndOfferState::HandlingOffer(mime_types.clone(), action);
-                }
-            };
             let target = x as f32 - text_layout.bounds().x;
             // existing logic for setting the selection
             let position = if target > 0.0 {
@@ -1910,13 +1873,7 @@ where
             return event::Status::Captured;
         }
         #[cfg(feature = "wayland")]
-        Event::PlatformSpecific(PlatformSpecific::Wayland(wayland::Event::DndOffer(
-            wayland::DndOfferEvent::DropPerformed,
-        ))) => {
-            let Some(on_dnd_command_produced) = on_dnd_command_produced else {
-                return event::Status::Ignored;
-            };
-
+        Event::Dnd(DndEvent::Offer(rectangle, OfferEvent::Drop)) if rectangle == Some(dnd_id) => {
             let state = state();
             if let DndOfferState::HandlingOffer(mime_types, _action) = state.dnd_offer.clone() {
                 let Some(mime_type) = SUPPORTED_TEXT_MIME_TYPES
@@ -1927,21 +1884,15 @@ where
                     return event::Status::Captured;
                 };
                 state.dnd_offer = DndOfferState::Dropped;
-                shell.publish(on_dnd_command_produced(Box::new(move || {
-                    platform_specific::wayland::data_device::ActionInner::RequestDndData(
-                        (*mime_type).to_string(),
-                    )
-                })));
-            } else if let DndOfferState::OutsideWidget(..) = &state.dnd_offer {
-                state.dnd_offer = DndOfferState::None;
-                return event::Status::Captured;
             }
+
             return event::Status::Ignored;
         }
         #[cfg(feature = "wayland")]
-        Event::PlatformSpecific(PlatformSpecific::Wayland(wayland::Event::DndOffer(
-            wayland::DndOfferEvent::Leave,
-        ))) => {
+        Event::Dnd(DndEvent::Offer(
+            rectangle,
+            OfferEvent::Leave | OfferEvent::LeaveDestination,
+        )) if rectangle == Some(dnd_id) => {
             let state = state();
             // ASHLEY TODO we should be able to reset but for now we don't if we are handling a
             // drop
@@ -1954,13 +1905,9 @@ where
             return event::Status::Captured;
         }
         #[cfg(feature = "wayland")]
-        Event::PlatformSpecific(PlatformSpecific::Wayland(wayland::Event::DndOffer(
-            wayland::DndOfferEvent::DndData { mime_type, data },
-        ))) => {
-            let Some(on_dnd_command_produced) = on_dnd_command_produced else {
-                return event::Status::Ignored;
-            };
-
+        Event::Dnd(DndEvent::Offer(rectangle, OfferEvent::Data { data, mime_type }))
+            if rectangle == Some(dnd_id) =>
+        {
             let state = state();
             if let DndOfferState::Dropped = state.dnd_offer.clone() {
                 state.dnd_offer = DndOfferState::None;
@@ -1982,35 +1929,12 @@ where
                     shell.publish(message);
                 }
 
-                shell.publish(on_dnd_command_produced(Box::new(move || {
-                    platform_specific::wayland::data_device::ActionInner::DndFinished
-                })));
                 let value = if is_secure {
                     unsecured_value.secure()
                 } else {
                     unsecured_value
                 };
                 update_cache(state, &value);
-                return event::Status::Captured;
-            }
-            return event::Status::Ignored;
-        }
-        #[cfg(feature = "wayland")]
-        Event::PlatformSpecific(PlatformSpecific::Wayland(wayland::Event::DndOffer(
-            wayland::DndOfferEvent::SourceActions(actions),
-        ))) => {
-            let Some(on_dnd_command_produced) = on_dnd_command_produced else {
-                return event::Status::Ignored;
-            };
-
-            let state = state();
-            if let DndOfferState::HandlingOffer(..) = state.dnd_offer.clone() {
-                shell.publish(on_dnd_command_produced(Box::new(move || {
-                    platform_specific::wayland::data_device::ActionInner::SetActions {
-                        preferred: actions.intersection(DndAction::Move),
-                        accepted: actions,
-                    }
-                })));
                 return event::Status::Captured;
             }
             return event::Status::Ignored;
@@ -2032,6 +1956,7 @@ pub fn draw<'a, Message>(
     renderer: &mut crate::Renderer,
     theme: &crate::Theme,
     layout: Layout<'_>,
+    text_layout: Layout<'_>,
     cursor_position: mouse::Cursor,
     tree: &Tree,
     value: &Value,
@@ -2083,7 +2008,7 @@ pub fn draw<'a, Message>(
 
     let mut children_layout = layout.children();
     let bounds = layout.bounds();
-    let text_bounds = children_layout.next().unwrap().bounds();
+    let text_bounds = text_layout.bounds();
 
     let is_mouse_over = cursor_position.is_over(bounds);
 
@@ -2172,7 +2097,7 @@ pub fn draw<'a, Message>(
     if let (Some(label_layout), Some(label)) = (label_layout, label) {
         renderer.fill_text(
             Text {
-                content: label,
+                content: label.to_string(),
                 size: iced::Pixels(size.unwrap_or_else(|| renderer.default_size().0)),
                 font: font.unwrap_or_else(|| renderer.default_font()),
                 bounds: label_layout.bounds().size(),
@@ -2180,7 +2105,7 @@ pub fn draw<'a, Message>(
                 vertical_alignment: alignment::Vertical::Top,
                 line_height,
                 shaping: text::Shaping::Advanced,
-                wrap: text::Wrap::default(),
+                wrapping: text::Wrapping::default(),
             },
             label_layout.bounds().position(),
             appearance.label_color,
@@ -2214,14 +2139,24 @@ pub fn draw<'a, Message>(
     let size = size.unwrap_or_else(|| renderer.default_size().0);
 
     let radius_0 = THEME.lock().unwrap().cosmic().corner_radii.radius_0.into();
-    let (cursor, offset) = if let Some(focus) = &state.is_focused {
+    #[cfg(feature = "wayland")]
+    let handling_dnd_offer = !matches!(state.dnd_offer, DndOfferState::None);
+    #[cfg(not(feature = "wayland"))]
+    let handling_dnd_offer = false;
+    let (cursor, offset) = if let Some(focus) = &state.is_focused.or_else(|| {
+        handling_dnd_offer.then(|| Focus {
+            updated_at: Instant::now(),
+            now: Instant::now(),
+        })
+    }) {
         match state.cursor.state(value) {
             cursor::State::Index(position) => {
                 let (text_value_width, offset) =
-                    measure_cursor_and_scroll_offset(&state.value, text_bounds, position);
+                    measure_cursor_and_scroll_offset(state.value.raw(), text_bounds, position);
 
-                let is_cursor_visible =
-                    ((focus.now - focus.updated_at).as_millis() / CURSOR_BLINK_INTERVAL_MILLIS) % 2
+                let is_cursor_visible = handling_dnd_offer
+                    || ((focus.now - focus.updated_at).as_millis() / CURSOR_BLINK_INTERVAL_MILLIS)
+                        % 2
                         == 0;
 
                 if is_cursor_visible {
@@ -2263,10 +2198,10 @@ pub fn draw<'a, Message>(
 
                 let value_paragraph = &state.value;
                 let (left_position, left_offset) =
-                    measure_cursor_and_scroll_offset(value_paragraph, text_bounds, left);
+                    measure_cursor_and_scroll_offset(value_paragraph.raw(), text_bounds, left);
 
                 let (right_position, right_offset) =
-                    measure_cursor_and_scroll_offset(value_paragraph, text_bounds, right);
+                    measure_cursor_and_scroll_offset(value_paragraph.raw(), text_bounds, right);
 
                 let width = right_position - left_position;
 
@@ -2331,7 +2266,11 @@ pub fn draw<'a, Message>(
 
         renderer.fill_text(
             Text {
-                content: if text.is_empty() { placeholder } else { &text },
+                content: if text.is_empty() {
+                    placeholder.to_string()
+                } else {
+                    text.clone()
+                },
                 font,
                 bounds: bounds.size(),
                 size: iced::Pixels(size),
@@ -2339,7 +2278,7 @@ pub fn draw<'a, Message>(
                 vertical_alignment: alignment::Vertical::Center,
                 line_height: text::LineHeight::default(),
                 shaping: text::Shaping::Advanced,
-                wrap: text::Wrap::default(),
+                wrapping: text::Wrapping::default(),
             },
             bounds.position(),
             color,
@@ -2374,7 +2313,7 @@ pub fn draw<'a, Message>(
     if let (Some(helper_text_layout), Some(helper_text)) = (helper_text_layout, helper_text) {
         renderer.fill_text(
             Text {
-                content: helper_text,
+                content: helper_text.to_string(), // TODO remove to_string?
                 size: iced::Pixels(helper_text_size),
                 font,
                 bounds: helper_text_layout.bounds().size(),
@@ -2382,7 +2321,7 @@ pub fn draw<'a, Message>(
                 vertical_alignment: alignment::Vertical::Top,
                 line_height: helper_line_height,
                 shaping: text::Shaping::Advanced,
-                wrap: text::Wrap::default(),
+                wrapping: text::Wrapping::default(),
             },
             helper_text_layout.bounds().position(),
             text_color,
@@ -2414,11 +2353,23 @@ pub fn mouse_interaction(
 pub struct TextInputString(pub String);
 
 #[cfg(feature = "wayland")]
-impl DataFromMimeType for TextInputString {
-    fn from_mime_type(&self, mime_type: &str) -> Option<Vec<u8>> {
-        SUPPORTED_TEXT_MIME_TYPES
-            .contains(&mime_type)
-            .then(|| self.0.as_bytes().to_vec())
+impl AsMimeTypes for TextInputString {
+    fn available(&self) -> Cow<'static, [String]> {
+        Cow::Owned(
+            SUPPORTED_TEXT_MIME_TYPES
+                .iter()
+                .cloned()
+                .map(String::from)
+                .collect::<Vec<_>>(),
+        )
+    }
+
+    fn as_bytes(&self, mime_type: &str) -> Option<Cow<'static, [u8]>> {
+        if SUPPORTED_TEXT_MIME_TYPES.contains(&mime_type) {
+            Some(Cow::Owned(self.0.clone().as_bytes().to_vec()))
+        } else {
+            None
+        }
     }
 }
 
@@ -2434,7 +2385,6 @@ pub(crate) enum DraggingState {
 pub(crate) enum DndOfferState {
     #[default]
     None,
-    OutsideWidget(Vec<String>, DndAction),
     HandlingOffer(Vec<String>, DndAction),
     Dropped,
 }
@@ -2446,17 +2396,16 @@ pub(crate) struct DndOfferState;
 #[derive(Debug, Default, Clone)]
 #[must_use]
 pub struct State {
-    pub value: crate::Paragraph,
-    pub placeholder: crate::Paragraph,
-    pub label: crate::Paragraph,
-    pub helper_text: crate::Paragraph,
+    pub value: crate::Plain,
+    pub placeholder: crate::Plain,
+    pub label: crate::Plain,
+    pub helper_text: crate::Plain,
     pub dirty: bool,
     pub is_secure: bool,
     pub is_read_only: bool,
     select_on_focus: bool,
     is_focused: Option<Focus>,
     dragging_state: Option<DraggingState>,
-    #[cfg(feature = "wayland")]
     dnd_offer: DndOfferState,
     is_pasting: Option<Value>,
     last_click: Option<mouse::Click>,
@@ -2522,15 +2471,14 @@ impl State {
     pub fn focused(is_secure: bool, is_read_only: bool) -> Self {
         Self {
             is_secure,
-            value: crate::Paragraph::new(),
-            placeholder: crate::Paragraph::new(),
-            label: crate::Paragraph::new(),
-            helper_text: crate::Paragraph::new(),
+            value: crate::Plain::default(),
+            placeholder: crate::Plain::default(),
+            label: crate::Plain::default(),
+            helper_text: crate::Plain::default(),
             is_read_only,
             is_focused: None,
             select_on_focus: false,
             dragging_state: None,
-            #[cfg(feature = "wayland")]
             dnd_offer: DndOfferState::default(),
             is_pasting: None,
             last_click: None,
@@ -2654,6 +2602,7 @@ fn find_cursor_position(
 
     let char_offset = state
         .value
+        .raw()
         .hit_test(Point::new(x + offset, text_bounds.height / 2.0))
         .map(text::Hit::cursor)?;
 
@@ -2677,7 +2626,7 @@ fn replace_paragraph(
     let mut children_layout = layout.children();
     let text_bounds = children_layout.next().unwrap().bounds();
 
-    state.value = crate::Paragraph::with_text(Text {
+    state.value = crate::Plain::new(Text {
         font,
         line_height,
         content: &value.to_string(),
@@ -2686,7 +2635,7 @@ fn replace_paragraph(
         horizontal_alignment: alignment::Horizontal::Left,
         vertical_alignment: alignment::Vertical::Top,
         shaping: text::Shaping::Advanced,
-        wrap: text::Wrap::default(),
+        wrapping: text::Wrapping::default(),
     });
 }
 
@@ -2714,7 +2663,7 @@ fn offset(text_bounds: Rectangle, value: &Value, state: &State) -> f32 {
         };
 
         let (_, offset) =
-            measure_cursor_and_scroll_offset(&state.value, text_bounds, focus_position);
+            measure_cursor_and_scroll_offset(state.value.raw(), text_bounds, focus_position);
 
         offset
     } else {

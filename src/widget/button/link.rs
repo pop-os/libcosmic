@@ -4,7 +4,7 @@
 //! Hyperlink button widget
 
 use super::Builder;
-use super::Style;
+use super::ButtonClass;
 use crate::prelude::*;
 use crate::widget::icon::{self, Handle};
 use crate::widget::{button, row, tooltip};
@@ -44,7 +44,7 @@ impl<'a, Message> Button<'a, Message> {
             line_height: 20,
             font_size: 14,
             font_weight: Weight::Normal,
-            style: Style::Link,
+            class: ButtonClass::Link,
             variant: link,
         }
     }
@@ -81,23 +81,27 @@ impl<'a, Message: Clone + 'static> From<Button<'a, Message>> for Element<'a, Mes
             .width(builder.width)
             .height(builder.height)
             .spacing(builder.spacing)
-            .align_items(Alignment::Center)
+            .align_y(Alignment::Center)
             .apply(button::custom)
             .padding(0)
             .id(builder.id)
             .on_press_maybe(builder.on_press.take())
-            .style(builder.style);
+            .class(builder.class);
 
         if builder.tooltip.is_empty() {
             button.into()
         } else {
-            tooltip(button, builder.tooltip, tooltip::Position::Top)
-                .size(builder.font_size)
-                .font(crate::font::Font {
-                    weight: builder.font_weight,
-                    ..crate::font::default()
-                })
-                .into()
+            tooltip(
+                button,
+                crate::widget::text(builder.tooltip)
+                    .size(builder.font_size)
+                    .font(crate::font::Font {
+                        weight: builder.font_weight,
+                        ..crate::font::default()
+                    }),
+                tooltip::Position::Top,
+            )
+            .into()
         }
     }
 }

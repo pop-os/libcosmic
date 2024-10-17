@@ -56,11 +56,10 @@ impl<'a, Message: 'static> SpinButton<'a, Message> {
                     .apply(button::custom)
                     .width(Length::Fixed(32.0))
                     .height(Length::Fixed(32.0))
-                    .style(theme::Button::Text)
+                    .class(theme::Button::Text)
                     .on_press(model::Message::Decrement)
                     .into(),
                 text::title4(label)
-                    .vertical_alignment(Vertical::Center)
                     .apply(container)
                     .width(Length::Fixed(48.0))
                     .align_x(Horizontal::Center)
@@ -76,18 +75,18 @@ impl<'a, Message: 'static> SpinButton<'a, Message> {
                     .apply(button::custom)
                     .width(Length::Fixed(32.0))
                     .height(Length::Fixed(32.0))
-                    .style(theme::Button::Text)
+                    .class(theme::Button::Text)
                     .on_press(model::Message::Increment)
                     .into(),
             ])
             .width(Length::Shrink)
             .height(Length::Fixed(32.0))
-            .align_items(Alignment::Center),
+            .align_y(Alignment::Center),
         )
         .align_y(Vertical::Center)
         .width(Length::Shrink)
         .height(Length::Fixed(32.0))
-        .style(theme::Container::custom(container_style))
+        .class(theme::Container::custom(container_style))
         .apply(Element::from)
         .map(on_change)
     }
@@ -100,13 +99,13 @@ impl<'a, Message: 'static> From<SpinButton<'a, Message>> for Element<'a, Message
 }
 
 #[allow(clippy::trivially_copy_pass_by_ref)]
-fn container_style(theme: &crate::Theme) -> iced_style::container::Appearance {
+fn container_style(theme: &crate::Theme) -> iced_widget::container::Style {
     let basic = &theme.cosmic();
     let mut neutral_10 = basic.palette.neutral_10;
     neutral_10.alpha = 0.1;
     let accent = &basic.accent;
     let corners = &basic.corner_radii;
-    iced_style::container::Appearance {
+    iced_widget::container::Style {
         icon_color: Some(basic.palette.neutral_10.into()),
         text_color: Some(basic.palette.neutral_10.into()),
         background: None,

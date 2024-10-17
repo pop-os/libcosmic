@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: MPL-2.0
 
 use iced_core::Padding;
-use iced_style::container::StyleSheet;
+use iced_widget::container::Catalog;
 
 use crate::{theme, widget::divider, Apply, Element};
 
@@ -14,7 +14,7 @@ pub fn list_column<'a, Message: 'static>() -> ListColumn<'a, Message> {
 pub struct ListColumn<'a, Message> {
     spacing: u16,
     padding: Padding,
-    style: <crate::Theme as StyleSheet>::Style,
+    style: crate::theme::Container<'a>,
     children: Vec<Element<'a, Message>>,
 }
 
@@ -23,7 +23,7 @@ impl<'a, Message: 'static> Default for ListColumn<'a, Message> {
         Self {
             spacing: theme::THEME.lock().unwrap().cosmic().spacing.space_xxs,
             padding: Padding::from(0),
-            style: <crate::Theme as StyleSheet>::Style::List,
+            style: crate::theme::Container::List,
             children: Vec::with_capacity(4),
         }
     }
@@ -41,9 +41,11 @@ impl<'a, Message: 'static> ListColumn<'a, Message> {
         }
 
         // Ensure a minimum height of 32.
-        let container = crate::widget::container(item)
-            .min_height(32)
-            .align_y(iced::alignment::Vertical::Center);
+        let container = iced::widget::row![
+            crate::widget::container(item).align_y(iced::alignment::Vertical::Center),
+            crate::widget::vertical_space().height(iced::Length::Fixed(32.))
+        ]
+        .align_y(iced::alignment::Vertical::Center);
 
         self.children.push(container.into());
         self
@@ -55,7 +57,7 @@ impl<'a, Message: 'static> ListColumn<'a, Message> {
     }
 
     /// Sets the style variant of this [`Circular`].
-    pub fn style(mut self, style: <crate::Theme as StyleSheet>::Style) -> Self {
+    pub fn style(mut self, style: <crate::Theme as Catalog>::Class<'a>) -> Self {
         self.style = style;
         self
     }
@@ -72,7 +74,7 @@ impl<'a, Message: 'static> ListColumn<'a, Message> {
             .padding(self.padding)
             .apply(super::container)
             .padding([self.spacing, 8])
-            .style(self.style)
+            .class(self.style)
             .into()
     }
 }

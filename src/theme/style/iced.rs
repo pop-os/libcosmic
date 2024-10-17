@@ -5,52 +5,44 @@
 
 use crate::theme::{CosmicComponent, Theme, TRANSPARENT_COMPONENT};
 use cosmic_theme::composite::over;
+use iced::{
+    overlay::menu,
+    widget::{
+        button as iced_button, checkbox as iced_checkbox, container as iced_container, pane_grid,
+        pick_list, progress_bar, radio, rule, scrollable,
+        slider::{self, Rail},
+        svg, toggler,
+    },
+    Gradient,
+};
 use iced_core::{Background, Border, Color, Shadow, Vector};
-use iced_style::application;
-use iced_style::button as iced_button;
-use iced_style::checkbox;
-use iced_style::container;
-use iced_style::menu;
-use iced_style::pane_grid;
-use iced_style::pick_list;
-use iced_style::progress_bar;
-use iced_style::radio;
-use iced_style::rule;
-use iced_style::scrollable;
-use iced_style::slider;
-use iced_style::slider::Rail;
-use iced_style::svg;
-use iced_style::text_input;
-use iced_style::toggler;
-
+use iced_widget::{pane_grid::Highlight, text_editor, text_input};
 use std::rc::Rc;
 
-#[derive(Default)]
-pub enum Application {
-    #[default]
-    Default,
-    Custom(Box<dyn Fn(&Theme) -> application::Appearance>),
-}
+pub mod application {
+    use crate::Theme;
+    use iced_runtime::Appearance;
 
-impl Application {
-    pub fn custom<F: Fn(&Theme) -> application::Appearance + 'static>(f: F) -> Self {
-        Self::Custom(Box::new(f))
+    #[derive(Default)]
+    pub enum Application {
+        #[default]
+        Default,
+        Custom(Box<dyn Fn(&Theme) -> Appearance>),
     }
-}
 
-impl application::StyleSheet for Theme {
-    type Style = Application;
+    impl Application {
+        pub fn custom<F: Fn(&Theme) -> Appearance + 'static>(f: F) -> Self {
+            Self::Custom(Box::new(f))
+        }
+    }
 
-    fn appearance(&self, style: &Self::Style) -> application::Appearance {
-        let cosmic = self.cosmic();
+    pub fn appearance(theme: &Theme) -> Appearance {
+        let cosmic = theme.cosmic();
 
-        match style {
-            Application::Default => application::Appearance {
-                icon_color: cosmic.bg_color().into(),
-                background_color: cosmic.bg_color().into(),
-                text_color: cosmic.on_bg_color().into(),
-            },
-            Application::Custom(f) => f(self),
+        Appearance {
+            icon_color: cosmic.bg_color().into(),
+            background_color: cosmic.bg_color().into(),
+            text_color: cosmic.on_bg_color().into(),
         }
     }
 }
@@ -69,10 +61,84 @@ pub enum Button {
     LinkActive,
     Transparent,
     Card,
-    Custom {
-        active: Box<dyn Fn(&Theme) -> iced_button::Appearance>,
-        hover: Box<dyn Fn(&Theme) -> iced_button::Appearance>,
-    },
+    Custom(Box<dyn Fn(&Theme, iced_button::Status) -> iced_button::Style>),
+}
+
+impl iced_button::Catalog for Theme {
+    type Class<'a> = Button;
+
+    fn default<'a>() -> Self::Class<'a> {
+        Button::default()
+    }
+
+    fn style(&self, class: &Self::Class<'_>, status: iced_button::Status) -> iced_button::Style {
+        if let Button::Custom(f) = class {
+            return f(self, status);
+        }
+        let cosmic = self.cosmic();
+        let corner_radii = &cosmic.corner_radii;
+        let component = class.cosmic(self);
+
+        let mut appearance = iced_button::Style {
+            border_radius: match class {
+                Button::Link => corner_radii.radius_0.into(),
+                Button::Card => corner_radii.radius_xs.into(),
+                _ => corner_radii.radius_xl.into(),
+            },
+            border: Border {
+                radius: match class {
+                    Button::Link => corner_radii.radius_0.into(),
+                    Button::Card => corner_radii.radius_xs.into(),
+                    _ => corner_radii.radius_xl.into(),
+                },
+                ..Default::default()
+            },
+            background: match class {
+                Button::Link | Button::Text => None,
+                Button::LinkActive => Some(Background::Color(component.divider.into())),
+                _ => Some(Background::Color(component.base.into())),
+            },
+            text_color: match class {
+                Button::Link | Button::LinkActive => component.base.into(),
+                _ => component.on.into(),
+            },
+            ..iced_button::Style::default()
+        };
+
+        match status {
+            iced_button::Status::Active => {}
+            iced_button::Status::Hovered => {
+                appearance.background = match class {
+                    Button::Link => None,
+                    Button::LinkActive => Some(Background::Color(component.divider.into())),
+                    _ => Some(Background::Color(component.hover.into())),
+                };
+            }
+            iced_button::Status::Pressed => {
+                appearance.background = match class {
+                    Button::Link => None,
+                    Button::LinkActive => Some(Background::Color(component.divider.into())),
+                    _ => Some(Background::Color(component.pressed.into())),
+                };
+            }
+            iced_button::Status::Disabled => {
+                appearance.background = appearance.background.map(|background| match background {
+                    Background::Color(color) => Background::Color(Color {
+                        a: color.a * 0.5,
+                        ..color
+                    }),
+                    Background::Gradient(gradient) => {
+                        Background::Gradient(gradient.scale_alpha(0.5))
+                    }
+                });
+                appearance.text_color = Color {
+                    a: appearance.text_color.a * 0.5,
+                    ..appearance.text_color
+                };
+            }
+        };
+        appearance
+    }
 }
 
 impl Button {
@@ -96,86 +162,6 @@ impl Button {
     }
 }
 
-impl iced_button::StyleSheet for Theme {
-    type Style = Button;
-
-    fn active(&self, style: &Self::Style) -> iced_button::Appearance {
-        if let Button::Custom { active, .. } = style {
-            return active(self);
-        }
-
-        let corner_radii = &self.cosmic().corner_radii;
-        let component = style.cosmic(self);
-        iced_button::Appearance {
-            border_radius: match style {
-                Button::Link => corner_radii.radius_0.into(),
-                Button::Card => corner_radii.radius_xs.into(),
-                _ => corner_radii.radius_xl.into(),
-            },
-            border: Border {
-                radius: match style {
-                    Button::Link => corner_radii.radius_0.into(),
-                    Button::Card => corner_radii.radius_xs.into(),
-                    _ => corner_radii.radius_xl.into(),
-                },
-                ..Default::default()
-            },
-            background: match style {
-                Button::Link | Button::Text => None,
-                Button::LinkActive => Some(Background::Color(component.divider.into())),
-                _ => Some(Background::Color(component.base.into())),
-            },
-            text_color: match style {
-                Button::Link | Button::LinkActive => component.base.into(),
-                _ => component.on.into(),
-            },
-            ..iced_button::Appearance::default()
-        }
-    }
-
-    fn hovered(&self, style: &Self::Style) -> iced_button::Appearance {
-        if let Button::Custom { hover, .. } = style {
-            return hover(self);
-        }
-
-        let active = self.active(style);
-        let component = style.cosmic(self);
-
-        iced_button::Appearance {
-            background: match style {
-                Button::Link => None,
-                Button::LinkActive => Some(Background::Color(component.divider.into())),
-                _ => Some(Background::Color(component.hover.into())),
-            },
-            ..active
-        }
-    }
-
-    fn disabled(&self, style: &Self::Style) -> iced_button::Appearance {
-        let active = self.active(style);
-
-        if matches!(style, Button::Card) {
-            return active;
-        }
-
-        iced_button::Appearance {
-            shadow_offset: Vector::default(),
-            background: active.background.map(|background| match background {
-                Background::Color(color) => Background::Color(Color {
-                    a: color.a * 0.5,
-                    ..color
-                }),
-                Background::Gradient(gradient) => Background::Gradient(gradient.mul_alpha(0.5)),
-            }),
-            text_color: Color {
-                a: active.text_color.a * 0.5,
-                ..active.text_color
-            },
-            ..active
-        }
-    }
-}
-
 /*
  * TODO: Checkbox
  */
@@ -193,169 +179,193 @@ impl Default for Checkbox {
     }
 }
 
-impl checkbox::StyleSheet for Theme {
-    type Style = Checkbox;
+impl iced_checkbox::Catalog for Theme {
+    type Class<'a> = Checkbox;
 
-    fn active(&self, style: &Self::Style, is_checked: bool) -> checkbox::Appearance {
-        let cosmic = self.cosmic();
-
-        let corners = &cosmic.corner_radii;
-        match style {
-            Checkbox::Primary => checkbox::Appearance {
-                background: Background::Color(if is_checked {
-                    cosmic.accent.base.into()
-                } else {
-                    cosmic.button.base.into()
-                }),
-                icon_color: cosmic.accent.on.into(),
-                border: Border {
-                    radius: corners.radius_xs.into(),
-                    width: if is_checked { 0.0 } else { 1.0 },
-                    color: if is_checked {
-                        cosmic.accent.base
-                    } else {
-                        cosmic.button.border
-                    }
-                    .into(),
-                },
-
-                text_color: None,
-            },
-            Checkbox::Secondary => checkbox::Appearance {
-                background: Background::Color(if is_checked {
-                    cosmic.background.component.base.into()
-                } else {
-                    cosmic.background.base.into()
-                }),
-                icon_color: cosmic.background.on.into(),
-                border: Border {
-                    radius: corners.radius_xs.into(),
-                    width: if is_checked { 0.0 } else { 1.0 },
-                    color: cosmic.button.border.into(),
-                },
-                text_color: None,
-            },
-            Checkbox::Success => checkbox::Appearance {
-                background: Background::Color(if is_checked {
-                    cosmic.success.base.into()
-                } else {
-                    cosmic.button.base.into()
-                }),
-                icon_color: cosmic.success.on.into(),
-                border: Border {
-                    radius: corners.radius_xs.into(),
-                    width: if is_checked { 0.0 } else { 1.0 },
-                    color: if is_checked {
-                        cosmic.success.base
-                    } else {
-                        cosmic.button.border
-                    }
-                    .into(),
-                },
-                text_color: None,
-            },
-            Checkbox::Danger => checkbox::Appearance {
-                background: Background::Color(if is_checked {
-                    cosmic.destructive.base.into()
-                } else {
-                    cosmic.button.base.into()
-                }),
-                icon_color: cosmic.destructive.on.into(),
-                border: Border {
-                    radius: corners.radius_xs.into(),
-                    width: if is_checked { 0.0 } else { 1.0 },
-                    color: if is_checked {
-                        cosmic.destructive.base
-                    } else {
-                        cosmic.button.border
-                    }
-                    .into(),
-                },
-                text_color: None,
-            },
-        }
+    fn default<'a>() -> Self::Class<'a> {
+        Checkbox::default()
     }
 
-    fn hovered(&self, style: &Self::Style, is_checked: bool) -> checkbox::Appearance {
+    fn style(
+        &self,
+        class: &Self::Class<'_>,
+        status: iced_checkbox::Status,
+    ) -> iced_checkbox::Style {
         let cosmic = self.cosmic();
+
         let corners = &cosmic.corner_radii;
 
-        match style {
-            Checkbox::Primary => checkbox::Appearance {
-                background: Background::Color(if is_checked {
-                    cosmic.accent.base.into()
-                } else {
-                    cosmic.button.base.into()
-                }),
-                icon_color: cosmic.accent.on.into(),
-                border: Border {
-                    radius: corners.radius_xs.into(),
-                    width: if is_checked { 0.0 } else { 1.0 },
-                    color: if is_checked {
-                        cosmic.accent.base
-                    } else {
-                        cosmic.button.border
+        let disabled = matches!(status, iced_checkbox::Status::Disabled { .. });
+        match status {
+            iced_checkbox::Status::Active { is_checked }
+            | iced_checkbox::Status::Disabled { is_checked } => {
+                let mut active = match class {
+                    Checkbox::Primary => iced_checkbox::Style {
+                        background: Background::Color(if is_checked {
+                            cosmic.accent.base.into()
+                        } else {
+                            cosmic.button.base.into()
+                        }),
+                        icon_color: cosmic.accent.on.into(),
+                        border: Border {
+                            radius: corners.radius_xs.into(),
+                            width: if is_checked { 0.0 } else { 1.0 },
+                            color: if is_checked {
+                                cosmic.accent.base
+                            } else {
+                                cosmic.button.border
+                            }
+                            .into(),
+                        },
+
+                        text_color: None,
+                    },
+                    Checkbox::Secondary => iced_checkbox::Style {
+                        background: Background::Color(if is_checked {
+                            cosmic.background.component.base.into()
+                        } else {
+                            cosmic.background.base.into()
+                        }),
+                        icon_color: cosmic.background.on.into(),
+                        border: Border {
+                            radius: corners.radius_xs.into(),
+                            width: if is_checked { 0.0 } else { 1.0 },
+                            color: cosmic.button.border.into(),
+                        },
+                        text_color: None,
+                    },
+                    Checkbox::Success => iced_checkbox::Style {
+                        background: Background::Color(if is_checked {
+                            cosmic.success.base.into()
+                        } else {
+                            cosmic.button.base.into()
+                        }),
+                        icon_color: cosmic.success.on.into(),
+                        border: Border {
+                            radius: corners.radius_xs.into(),
+                            width: if is_checked { 0.0 } else { 1.0 },
+                            color: if is_checked {
+                                cosmic.success.base
+                            } else {
+                                cosmic.button.border
+                            }
+                            .into(),
+                        },
+                        text_color: None,
+                    },
+                    Checkbox::Danger => iced_checkbox::Style {
+                        background: Background::Color(if is_checked {
+                            cosmic.destructive.base.into()
+                        } else {
+                            cosmic.button.base.into()
+                        }),
+                        icon_color: cosmic.destructive.on.into(),
+                        border: Border {
+                            radius: corners.radius_xs.into(),
+                            width: if is_checked { 0.0 } else { 1.0 },
+                            color: if is_checked {
+                                cosmic.destructive.base
+                            } else {
+                                cosmic.button.border
+                            }
+                            .into(),
+                        },
+                        text_color: None,
+                    },
+                };
+                if disabled {
+                    match &mut active.background {
+                        Background::Color(color) => {
+                            color.a /= 2.;
+                        }
+                        Background::Gradient(gradient) => {
+                            *gradient = gradient.scale_alpha(0.5);
+                        }
                     }
-                    .into(),
-                },
-                text_color: None,
-            },
-            Checkbox::Secondary => checkbox::Appearance {
-                background: Background::Color(if is_checked {
-                    self.current_container().base.into()
-                } else {
-                    cosmic.button.base.into()
-                }),
-                icon_color: self.current_container().on.into(),
-                border: Border {
-                    radius: corners.radius_xs.into(),
-                    width: if is_checked { 0.0 } else { 1.0 },
-                    color: if is_checked {
-                        self.current_container().base
+                    if let Some(c) = active.text_color.as_mut() {
+                        c.a /= 2.
+                    };
+                    active.border.color.a /= 2.;
+                }
+                active
+            }
+            iced_checkbox::Status::Hovered { is_checked } => match class {
+                Checkbox::Primary => iced_checkbox::Style {
+                    background: Background::Color(if is_checked {
+                        cosmic.accent.base.into()
                     } else {
-                        cosmic.button.border
-                    }
-                    .into(),
+                        cosmic.button.base.into()
+                    }),
+                    icon_color: cosmic.accent.on.into(),
+                    border: Border {
+                        radius: corners.radius_xs.into(),
+                        width: if is_checked { 0.0 } else { 1.0 },
+                        color: if is_checked {
+                            cosmic.accent.base
+                        } else {
+                            cosmic.button.border
+                        }
+                        .into(),
+                    },
+                    text_color: None,
                 },
-                text_color: None,
-            },
-            Checkbox::Success => checkbox::Appearance {
-                background: Background::Color(if is_checked {
-                    cosmic.success.base.into()
-                } else {
-                    cosmic.button.base.into()
-                }),
-                icon_color: cosmic.success.on.into(),
-                border: Border {
-                    radius: corners.radius_xs.into(),
-                    width: if is_checked { 0.0 } else { 1.0 },
-                    color: if is_checked {
-                        cosmic.success.base
+                Checkbox::Secondary => iced_checkbox::Style {
+                    background: Background::Color(if is_checked {
+                        self.current_container().base.into()
                     } else {
-                        cosmic.button.border
-                    }
-                    .into(),
+                        cosmic.button.base.into()
+                    }),
+                    icon_color: self.current_container().on.into(),
+                    border: Border {
+                        radius: corners.radius_xs.into(),
+                        width: if is_checked { 0.0 } else { 1.0 },
+                        color: if is_checked {
+                            self.current_container().base
+                        } else {
+                            cosmic.button.border
+                        }
+                        .into(),
+                    },
+                    text_color: None,
                 },
-                text_color: None,
-            },
-            Checkbox::Danger => checkbox::Appearance {
-                background: Background::Color(if is_checked {
-                    cosmic.destructive.base.into()
-                } else {
-                    cosmic.button.base.into()
-                }),
-                icon_color: cosmic.destructive.on.into(),
-                border: Border {
-                    radius: corners.radius_xs.into(),
-                    width: if is_checked { 0.0 } else { 1.0 },
-                    color: if is_checked {
-                        cosmic.destructive.base
+                Checkbox::Success => iced_checkbox::Style {
+                    background: Background::Color(if is_checked {
+                        cosmic.success.base.into()
                     } else {
-                        cosmic.button.border
-                    }
-                    .into(),
+                        cosmic.button.base.into()
+                    }),
+                    icon_color: cosmic.success.on.into(),
+                    border: Border {
+                        radius: corners.radius_xs.into(),
+                        width: if is_checked { 0.0 } else { 1.0 },
+                        color: if is_checked {
+                            cosmic.success.base
+                        } else {
+                            cosmic.button.border
+                        }
+                        .into(),
+                    },
+                    text_color: None,
                 },
-                text_color: None,
+                Checkbox::Danger => iced_checkbox::Style {
+                    background: Background::Color(if is_checked {
+                        cosmic.destructive.base.into()
+                    } else {
+                        cosmic.button.base.into()
+                    }),
+                    icon_color: cosmic.destructive.on.into(),
+                    border: Border {
+                        radius: corners.radius_xs.into(),
+                        width: if is_checked { 0.0 } else { 1.0 },
+                        color: if is_checked {
+                            cosmic.destructive.base
+                        } else {
+                            cosmic.button.border
+                        }
+                        .into(),
+                    },
+                    text_color: None,
+                },
             },
         }
     }
@@ -365,12 +375,12 @@ impl checkbox::StyleSheet for Theme {
  * TODO: Container
  */
 #[derive(Default)]
-pub enum Container {
+pub enum Container<'a> {
     WindowBackground,
     Background,
     Card,
     ContextDrawer,
-    Custom(Box<dyn Fn(&Theme) -> container::Appearance>),
+    Custom(Box<dyn Fn(&Theme) -> iced_container::Style + 'a>),
     Dialog,
     Dropdown,
     HeaderBar {
@@ -384,14 +394,14 @@ pub enum Container {
     Transparent,
 }
 
-impl Container {
-    pub fn custom<F: Fn(&Theme) -> container::Appearance + 'static>(f: F) -> Self {
+impl<'a> Container<'a> {
+    pub fn custom<F: Fn(&Theme) -> iced_container::Style + 'a>(f: F) -> Self {
         Self::Custom(Box::new(f))
     }
 
     #[must_use]
-    pub fn background(theme: &cosmic_theme::Theme) -> container::Appearance {
-        container::Appearance {
+    pub fn background(theme: &cosmic_theme::Theme) -> iced_container::Style {
+        iced_container::Style {
             icon_color: Some(Color::from(theme.background.on)),
             text_color: Some(Color::from(theme.background.on)),
             background: Some(iced::Background::Color(theme.background.base.into())),
@@ -404,8 +414,8 @@ impl Container {
     }
 
     #[must_use]
-    pub fn primary(theme: &cosmic_theme::Theme) -> container::Appearance {
-        container::Appearance {
+    pub fn primary(theme: &cosmic_theme::Theme) -> iced_container::Style {
+        iced_container::Style {
             icon_color: Some(Color::from(theme.primary.on)),
             text_color: Some(Color::from(theme.primary.on)),
             background: Some(iced::Background::Color(theme.primary.base.into())),
@@ -418,8 +428,8 @@ impl Container {
     }
 
     #[must_use]
-    pub fn secondary(theme: &cosmic_theme::Theme) -> container::Appearance {
-        container::Appearance {
+    pub fn secondary(theme: &cosmic_theme::Theme) -> iced_container::Style {
+        iced_container::Style {
             icon_color: Some(Color::from(theme.secondary.on)),
             text_color: Some(Color::from(theme.secondary.on)),
             background: Some(iced::Background::Color(theme.secondary.base.into())),
@@ -432,19 +442,28 @@ impl Container {
     }
 }
 
-impl container::StyleSheet for Theme {
-    type Style = Container;
+impl<'a> From<iced_container::StyleFn<'a, Theme>> for Container<'a> {
+    fn from(value: iced_container::StyleFn<'a, Theme>) -> Self {
+        Self::custom(value)
+    }
+}
 
-    #[allow(clippy::too_many_lines)]
-    fn appearance(&self, style: &Self::Style) -> container::Appearance {
+impl iced_container::Catalog for Theme {
+    type Class<'a> = Container<'a>;
+
+    fn default<'a>() -> Self::Class<'a> {
+        Container::default()
+    }
+
+    fn style(&self, class: &Self::Class<'_>) -> iced_container::Style {
         let cosmic = self.cosmic();
 
-        match style {
-            Container::Transparent => container::Appearance::default(),
+        match class {
+            Container::Transparent => iced_container::Style::default(),
 
             Container::Custom(f) => f(self),
 
-            Container::WindowBackground => container::Appearance {
+            Container::WindowBackground => iced_container::Style {
                 icon_color: Some(Color::from(cosmic.background.on)),
                 text_color: Some(Color::from(cosmic.background.on)),
                 background: Some(iced::Background::Color(cosmic.background.base.into())),
@@ -463,7 +482,7 @@ impl container::StyleSheet for Theme {
 
             Container::List => {
                 let component = &self.current_container().component;
-                container::Appearance {
+                iced_container::Style {
                     icon_color: Some(component.on.into()),
                     text_color: Some(component.on.into()),
                     background: Some(Background::Color(component.base.into())),
@@ -488,7 +507,7 @@ impl container::StyleSheet for Theme {
                     (unfocused_color, unfocused_color)
                 };
 
-                container::Appearance {
+                iced_container::Style {
                     icon_color: Some(icon_color),
                     text_color: Some(text_color),
                     background: Some(iced::Background::Color(cosmic.background.base.into())),
@@ -533,7 +552,7 @@ impl container::StyleSheet for Theme {
             Container::Dropdown => {
                 let theme = self.cosmic();
 
-                container::Appearance {
+                iced_container::Style {
                     icon_color: None,
                     text_color: None,
                     background: Some(iced::Background::Color(theme.primary.base.into())),
@@ -545,7 +564,7 @@ impl container::StyleSheet for Theme {
                 }
             }
 
-            Container::Tooltip => container::Appearance {
+            Container::Tooltip => iced_container::Style {
                 icon_color: None,
                 text_color: None,
                 background: Some(iced::Background::Color(cosmic.palette.neutral_2.into())),
@@ -560,7 +579,7 @@ impl container::StyleSheet for Theme {
                 let cosmic = self.cosmic();
 
                 match self.layer {
-                    cosmic_theme::Layer::Background => container::Appearance {
+                    cosmic_theme::Layer::Background => iced_container::Style {
                         icon_color: Some(Color::from(cosmic.background.component.on)),
                         text_color: Some(Color::from(cosmic.background.component.on)),
                         background: Some(iced::Background::Color(
@@ -572,7 +591,7 @@ impl container::StyleSheet for Theme {
                         },
                         shadow: Shadow::default(),
                     },
-                    cosmic_theme::Layer::Primary => container::Appearance {
+                    cosmic_theme::Layer::Primary => iced_container::Style {
                         icon_color: Some(Color::from(cosmic.primary.component.on)),
                         text_color: Some(Color::from(cosmic.primary.component.on)),
                         background: Some(iced::Background::Color(
@@ -584,7 +603,7 @@ impl container::StyleSheet for Theme {
                         },
                         shadow: Shadow::default(),
                     },
-                    cosmic_theme::Layer::Secondary => container::Appearance {
+                    cosmic_theme::Layer::Secondary => iced_container::Style {
                         icon_color: Some(Color::from(cosmic.secondary.component.on)),
                         text_color: Some(Color::from(cosmic.secondary.component.on)),
                         background: Some(iced::Background::Color(
@@ -599,7 +618,7 @@ impl container::StyleSheet for Theme {
                 }
             }
 
-            Container::Dialog => container::Appearance {
+            Container::Dialog => iced_container::Style {
                 icon_color: Some(Color::from(cosmic.primary.on)),
                 text_color: Some(Color::from(cosmic.primary.on)),
                 background: Some(iced::Background::Color(cosmic.primary.base.into())),
@@ -623,33 +642,39 @@ pub enum Slider {
     #[default]
     Standard,
     Custom {
-        active: Rc<dyn Fn(&Theme) -> slider::Appearance>,
-        hovered: Rc<dyn Fn(&Theme) -> slider::Appearance>,
-        dragging: Rc<dyn Fn(&Theme) -> slider::Appearance>,
+        active: Rc<dyn Fn(&Theme) -> slider::Style>,
+        hovered: Rc<dyn Fn(&Theme) -> slider::Style>,
+        dragging: Rc<dyn Fn(&Theme) -> slider::Style>,
     },
 }
 
 /*
  * Slider
  */
-impl slider::StyleSheet for Theme {
-    type Style = Slider;
+impl slider::Catalog for Theme {
+    type Class<'a> = Slider;
 
-    fn active(&self, style: &Self::Style) -> slider::Appearance {
-        match style {
+    fn default<'a>() -> Self::Class<'a> {
+        Slider::default()
+    }
+
+    fn style(&self, class: &Self::Class<'_>, status: slider::Status) -> slider::Style {
+        let cosmic: &cosmic_theme::Theme = self.cosmic();
+        let mut appearance = match class {
             Slider::Standard =>
             //TODO: no way to set rail thickness
             {
-                let cosmic: &cosmic_theme::Theme = self.cosmic();
-
-                slider::Appearance {
+                slider::Style {
                     rail: Rail {
-                        colors: slider::RailBackground::Pair(
-                            cosmic.accent.base.into(),
-                            cosmic.palette.neutral_6.into(),
+                        backgrounds: (
+                            Background::Color(cosmic.accent.base.into()),
+                            Background::Color(cosmic.palette.neutral_6.into()),
                         ),
+                        border: Border {
+                            radius: cosmic.corner_radii.radius_xs.into(),
+                            ..Border::default()
+                        },
                         width: 4.0,
-                        border_radius: cosmic.corner_radii.radius_xs.into(),
                     },
 
                     handle: slider::Handle {
@@ -658,9 +683,9 @@ impl slider::StyleSheet for Theme {
                             width: 20,
                             border_radius: cosmic.corner_radii.radius_m.into(),
                         },
-                        color: cosmic.accent.base.into(),
                         border_color: Color::TRANSPARENT,
                         border_width: 0.0,
+                        background: Background::Color(cosmic.accent.base.into()),
                     },
 
                     breakpoint: slider::Breakpoint {
@@ -669,55 +694,61 @@ impl slider::StyleSheet for Theme {
                 }
             }
             Slider::Custom { active, .. } => active(self),
-        }
-    }
+        };
+        match status {
+            slider::Status::Active => appearance,
+            slider::Status::Hovered => match class {
+                Slider::Standard => {
+                    appearance.handle.shape = slider::HandleShape::Rectangle {
+                        height: 26,
+                        width: 26,
+                        border_radius: cosmic.corner_radii.radius_m.into(),
+                    };
+                    appearance.handle.border_width = 3.0;
+                    let mut border_color = self.cosmic().palette.neutral_10;
+                    border_color.alpha = 0.1;
+                    appearance.handle.border_color = border_color.into();
+                    appearance
+                }
+                Slider::Custom { hovered, .. } => hovered(self),
+            },
+            slider::Status::Dragged => match class {
+                Slider::Standard => {
+                    let mut style = {
+                        appearance.handle.shape = slider::HandleShape::Rectangle {
+                            height: 26,
+                            width: 26,
+                            border_radius: cosmic.corner_radii.radius_m.into(),
+                        };
+                        appearance.handle.border_width = 3.0;
+                        let mut border_color = self.cosmic().palette.neutral_10;
+                        border_color.alpha = 0.1;
+                        appearance.handle.border_color = border_color.into();
+                        appearance
+                    };
+                    let mut border_color = self.cosmic().palette.neutral_10;
+                    border_color.alpha = 0.2;
+                    style.handle.border_color = border_color.into();
 
-    fn hovered(&self, style: &Self::Style) -> slider::Appearance {
-        match style {
-            Slider::Standard => {
-                let cosmic: &cosmic_theme::Theme = self.cosmic();
-
-                let mut style = self.active(style);
-                style.handle.shape = slider::HandleShape::Rectangle {
-                    height: 26,
-                    width: 26,
-                    border_radius: cosmic.corner_radii.radius_m.into(),
-                };
-                style.handle.border_width = 3.0;
-                let mut border_color = self.cosmic().palette.neutral_10;
-                border_color.alpha = 0.1;
-                style.handle.border_color = border_color.into();
-                style
-            }
-            Slider::Custom { hovered, .. } => hovered(self),
-        }
-    }
-
-    fn dragging(&self, style: &Self::Style) -> slider::Appearance {
-        match style {
-            Slider::Standard => {
-                let mut style = self.hovered(style);
-                let mut border_color = self.cosmic().palette.neutral_10;
-                border_color.alpha = 0.2;
-                style.handle.border_color = border_color.into();
-
-                style
-            }
-            Slider::Custom { dragging, .. } => dragging(self),
+                    style
+                }
+                Slider::Custom { dragging, .. } => dragging(self),
+            },
         }
     }
 }
 
-/*
- * TODO: Menu
- */
-impl menu::StyleSheet for Theme {
-    type Style = ();
+impl menu::Catalog for Theme {
+    type Class<'a> = ();
 
-    fn appearance(&self, _style: &Self::Style) -> menu::Appearance {
+    fn default<'a>() -> <Self as menu::Catalog>::Class<'a> {
+        ()
+    }
+
+    fn style(&self, class: &<Self as menu::Catalog>::Class<'_>) -> menu::Style {
         let cosmic = self.cosmic();
 
-        menu::Appearance {
+        menu::Style {
             text_color: cosmic.on_bg_color().into(),
             background: Background::Color(cosmic.background.base.into()),
             border: Border {
@@ -733,13 +764,21 @@ impl menu::StyleSheet for Theme {
 /*
  * TODO: Pick List
  */
-impl pick_list::StyleSheet for Theme {
-    type Style = ();
+impl pick_list::Catalog for Theme {
+    type Class<'a> = ();
 
-    fn active(&self, _style: &()) -> pick_list::Appearance {
+    fn default<'a>() -> <Self as pick_list::Catalog>::Class<'a> {
+        ()
+    }
+
+    fn style(
+        &self,
+        class: &<Self as pick_list::Catalog>::Class<'_>,
+        status: pick_list::Status,
+    ) -> pick_list::Style {
         let cosmic = &self.cosmic();
 
-        pick_list::Appearance {
+        let appearance = pick_list::Style {
             text_color: cosmic.on_bg_color().into(),
             background: Color::TRANSPARENT.into(),
             placeholder_color: cosmic.on_bg_color().into(),
@@ -749,15 +788,14 @@ impl pick_list::StyleSheet for Theme {
             },
             // icon_size: 0.7, // TODO: how to replace
             handle_color: cosmic.on_bg_color().into(),
-        }
-    }
-
-    fn hovered(&self, style: &()) -> pick_list::Appearance {
-        let cosmic = &self.cosmic();
-
-        pick_list::Appearance {
-            background: Background::Color(cosmic.background.base.into()),
-            ..self.active(style)
+        };
+        match status {
+            pick_list::Status::Active => appearance,
+            pick_list::Status::Hovered => pick_list::Style {
+                background: Background::Color(cosmic.background.base.into()),
+                ..appearance
+            },
+            pick_list::Status::Opened => appearance,
         }
     }
 }
@@ -765,52 +803,53 @@ impl pick_list::StyleSheet for Theme {
 /*
  * TODO: Radio
  */
-impl radio::StyleSheet for Theme {
-    type Style = ();
+impl radio::Catalog for Theme {
+    type Class<'a> = ();
 
-    fn active(&self, _style: &Self::Style, is_selected: bool) -> radio::Appearance {
-        let theme = self.cosmic();
-
-        radio::Appearance {
-            background: if is_selected {
-                Color::from(theme.accent.base).into()
-            } else {
-                // TODO: this seems to be defined weirdly in FIGMA
-                Color::from(theme.background.base).into()
-            },
-            dot_color: theme.accent.on.into(),
-            border_width: 1.0,
-            border_color: if is_selected {
-                Color::from(theme.accent.base)
-            } else {
-                // TODO: this seems to be defined weirdly in FIGMA
-                Color::from(theme.palette.neutral_7)
-            },
-            text_color: None,
-        }
+    fn default<'a>() -> Self::Class<'a> {
+        ()
     }
 
-    fn hovered(&self, _style: &Self::Style, is_selected: bool) -> radio::Appearance {
+    fn style(&self, class: &Self::Class<'_>, status: radio::Status) -> radio::Style {
         let theme = self.cosmic();
         let mut neutral_10 = theme.palette.neutral_10;
         neutral_10.alpha = 0.1;
 
-        radio::Appearance {
-            background: if is_selected {
-                Color::from(theme.accent.base).into()
-            } else {
-                // TODO: this seems to be defined weirdly in FIGMA
-                Color::from(neutral_10).into()
+        match status {
+            radio::Status::Active { is_selected } => radio::Style {
+                background: if is_selected {
+                    Color::from(theme.accent.base).into()
+                } else {
+                    // TODO: this seems to be defined weirdly in FIGMA
+                    Color::from(theme.background.base).into()
+                },
+                dot_color: theme.accent.on.into(),
+                border_width: 1.0,
+                border_color: if is_selected {
+                    Color::from(theme.accent.base)
+                } else {
+                    // TODO: this seems to be defined weirdly in FIGMA
+                    Color::from(theme.palette.neutral_7)
+                },
+                text_color: None,
             },
-            dot_color: theme.accent.on.into(),
-            border_width: 1.0,
-            border_color: if is_selected {
-                Color::from(theme.accent.base)
-            } else {
-                // TODO: this seems to be defined weirdly in FIGMA
-                Color::from(theme.palette.neutral_7)
+            radio::Status::Hovered { is_selected } => radio::Style {
+                background: if is_selected {
+                    Color::from(theme.accent.base).into()
+                } else {
+                    // TODO: this seems to be defined weirdly in FIGMA
+                    Color::from(neutral_10).into()
+                },
+                dot_color: theme.accent.on.into(),
+                border_width: 1.0,
+                border_color: if is_selected {
+                    Color::from(theme.accent.base)
+                } else {
+                    // TODO: this seems to be defined weirdly in FIGMA
+                    Color::from(theme.palette.neutral_7)
+                },
+                text_color: None,
             },
-            text_color: None,
         }
     }
 }
@@ -818,44 +857,56 @@ impl radio::StyleSheet for Theme {
 /*
  * Toggler
  */
-impl toggler::StyleSheet for Theme {
-    type Style = ();
+impl toggler::Catalog for Theme {
+    type Class<'a> = ();
 
-    fn active(&self, _style: &Self::Style, is_active: bool) -> toggler::Appearance {
-        let theme = self.cosmic();
+    fn default<'a>() -> Self::Class<'a> {
+        ()
+    }
+
+    fn style(&self, class: &Self::Class<'_>, status: toggler::Status) -> toggler::Style {
+        let cosmic = self.cosmic();
         const HANDLE_MARGIN: f32 = 2.0;
-        toggler::Appearance {
-            background: if is_active {
-                theme.accent.base.into()
+        let mut neutral_10 = cosmic.palette.neutral_10;
+        neutral_10.alpha = 0.1;
+
+        let mut active = toggler::Style {
+            background: if matches!(status, toggler::Status::Active { is_toggled: true }) {
+                cosmic.accent.base.into()
             } else {
-                theme.palette.neutral_5.into()
+                cosmic.palette.neutral_5.into()
             },
-            background_border: None,
-            foreground: theme.palette.neutral_2.into(),
-            foreground_border: None,
-            border_radius: theme.radius_xl().into(),
-            handle_radius: theme
+            foreground: cosmic.palette.neutral_2.into(),
+            border_radius: cosmic.radius_xl().into(),
+            handle_radius: cosmic
                 .radius_xl()
                 .map(|x| (x - HANDLE_MARGIN).max(0.0))
                 .into(),
             handle_margin: HANDLE_MARGIN,
-        }
-    }
-
-    fn hovered(&self, style: &Self::Style, is_active: bool) -> toggler::Appearance {
-        let cosmic = self.cosmic();
-        //TODO: grab colors from palette
-        let mut neutral_10 = cosmic.palette.neutral_10;
-        neutral_10.alpha = 0.1;
-
-        toggler::Appearance {
-            background: if is_active {
-                over(neutral_10, cosmic.accent_color())
-            } else {
-                over(neutral_10, cosmic.palette.neutral_5)
+            background_border_width: 0.0,
+            background_border_color: Color::TRANSPARENT,
+            foreground_border_width: 0.0,
+            foreground_border_color: Color::TRANSPARENT,
+        };
+        match status {
+            toggler::Status::Active { is_toggled } => active,
+            toggler::Status::Hovered { is_toggled } => {
+                let is_active = matches!(status, toggler::Status::Hovered { is_toggled: true });
+                toggler::Style {
+                    background: if is_active {
+                        over(neutral_10, cosmic.accent_color())
+                    } else {
+                        over(neutral_10, cosmic.palette.neutral_5)
+                    }
+                    .into(),
+                    ..active
+                }
             }
-            .into(),
-            ..self.active(style, is_active)
+            toggler::Status::Disabled => {
+                active.background.a /= 2.;
+                active.foreground.a /= 2.;
+                active
+            }
         }
     }
 }
@@ -863,35 +914,32 @@ impl toggler::StyleSheet for Theme {
 /*
  * TODO: Pane Grid
  */
-impl pane_grid::StyleSheet for Theme {
-    type Style = ();
+impl pane_grid::Catalog for Theme {
+    type Class<'a> = ();
 
-    fn picked_split(&self, _style: &Self::Style) -> Option<pane_grid::Line> {
-        let theme = self.cosmic();
-
-        Some(pane_grid::Line {
-            color: theme.accent.base.into(),
-            width: 2.0,
-        })
+    fn default<'a>() -> <Self as pane_grid::Catalog>::Class<'a> {
+        ()
     }
 
-    fn hovered_split(&self, _style: &Self::Style) -> Option<pane_grid::Line> {
+    fn style(&self, class: &<Self as pane_grid::Catalog>::Class<'_>) -> pane_grid::Style {
         let theme = self.cosmic();
 
-        Some(pane_grid::Line {
-            color: theme.accent.hover.into(),
-            width: 2.0,
-        })
-    }
-
-    fn hovered_region(&self, _style: &Self::Style) -> pane_grid::Appearance {
-        let theme = self.cosmic();
-        pane_grid::Appearance {
-            background: Background::Color(theme.bg_color().into()),
-            border: Border {
-                radius: theme.corner_radii.radius_0.into(),
+        pane_grid::Style {
+            hovered_region: Highlight {
+                background: Background::Color(theme.bg_color().into()),
+                border: Border {
+                    radius: theme.corner_radii.radius_0.into(),
+                    width: 2.0,
+                    color: theme.bg_divider().into(),
+                },
+            },
+            picked_split: pane_grid::Line {
+                color: theme.accent.base.into(),
                 width: 2.0,
-                color: theme.bg_divider().into(),
+            },
+            hovered_split: pane_grid::Line {
+                color: theme.accent.hover.into(),
+                width: 2.0,
             },
         }
     }
@@ -906,36 +954,52 @@ pub enum ProgressBar {
     Primary,
     Success,
     Danger,
-    Custom(Box<dyn Fn(&Theme) -> progress_bar::Appearance>),
+    Custom(Box<dyn Fn(&Theme) -> progress_bar::Style>),
 }
 
 impl ProgressBar {
-    pub fn custom<F: Fn(&Theme) -> progress_bar::Appearance + 'static>(f: F) -> Self {
+    pub fn custom<F: Fn(&Theme) -> progress_bar::Style + 'static>(f: F) -> Self {
         Self::Custom(Box::new(f))
     }
 }
 
-impl progress_bar::StyleSheet for Theme {
-    type Style = ProgressBar;
+impl progress_bar::Catalog for Theme {
+    type Class<'a> = ProgressBar;
 
-    fn appearance(&self, style: &Self::Style) -> progress_bar::Appearance {
+    fn default<'a>() -> Self::Class<'a> {
+        ProgressBar::default()
+    }
+
+    fn style(&self, class: &Self::Class<'_>) -> progress_bar::Style {
         let theme = self.cosmic();
 
-        match style {
-            ProgressBar::Primary => progress_bar::Appearance {
+        match class {
+            ProgressBar::Primary => progress_bar::Style {
                 background: Color::from(theme.background.divider).into(),
                 bar: Color::from(theme.accent.base).into(),
-                border_radius: theme.corner_radii.radius_xs.into(),
+                border: Border {
+                    color: Color::default(),
+                    width: 0.0,
+                    radius: theme.corner_radii.radius_xs.into(),
+                },
             },
-            ProgressBar::Success => progress_bar::Appearance {
+            ProgressBar::Success => progress_bar::Style {
                 background: Color::from(theme.background.divider).into(),
                 bar: Color::from(theme.success.base).into(),
-                border_radius: theme.corner_radii.radius_xs.into(),
+                border: Border {
+                    color: Color::default(),
+                    width: 0.0,
+                    radius: theme.corner_radii.radius_xs.into(),
+                },
             },
-            ProgressBar::Danger => progress_bar::Appearance {
+            ProgressBar::Danger => progress_bar::Style {
                 background: Color::from(theme.background.divider).into(),
                 bar: Color::from(theme.destructive.base).into(),
-                border_radius: theme.corner_radii.radius_xs.into(),
+                border: Border {
+                    color: Color::default(),
+                    width: 0.0,
+                    radius: theme.corner_radii.radius_xs.into(),
+                },
             },
             ProgressBar::Custom(f) => f(self),
         }
@@ -951,33 +1015,37 @@ pub enum Rule {
     Default,
     LightDivider,
     HeavyDivider,
-    Custom(Box<dyn Fn(&Theme) -> rule::Appearance>),
+    Custom(Box<dyn Fn(&Theme) -> rule::Style>),
 }
 
 impl Rule {
-    pub fn custom<F: Fn(&Theme) -> rule::Appearance + 'static>(f: F) -> Self {
+    pub fn custom<F: Fn(&Theme) -> rule::Style + 'static>(f: F) -> Self {
         Self::Custom(Box::new(f))
     }
 }
 
-impl rule::StyleSheet for Theme {
-    type Style = Rule;
+impl rule::Catalog for Theme {
+    type Class<'a> = Rule;
 
-    fn appearance(&self, style: &Self::Style) -> rule::Appearance {
-        match style {
-            Rule::Default => rule::Appearance {
+    fn default<'a>() -> Self::Class<'a> {
+        Rule::default()
+    }
+
+    fn style(&self, class: &Self::Class<'_>) -> rule::Style {
+        match class {
+            Rule::Default => rule::Style {
                 color: self.current_container().divider.into(),
                 width: 1,
                 radius: 0.0.into(),
                 fill_mode: rule::FillMode::Full,
             },
-            Rule::LightDivider => rule::Appearance {
+            Rule::LightDivider => rule::Style {
                 color: self.current_container().divider.into(),
                 width: 1,
                 radius: 0.0.into(),
                 fill_mode: rule::FillMode::Padded(8),
             },
-            Rule::HeavyDivider => rule::Appearance {
+            Rule::HeavyDivider => rule::Style {
                 color: self.current_container().divider.into(),
                 width: 4,
                 radius: 2.0.into(),
@@ -998,99 +1066,148 @@ pub enum Scrollable {
 /*
  * TODO: Scrollable
  */
-impl scrollable::StyleSheet for Theme {
-    type Style = Scrollable;
+impl scrollable::Catalog for Theme {
+    type Class<'a> = Scrollable;
 
-    fn active(&self, style: &Self::Style) -> scrollable::Scrollbar {
-        let cosmic = self.cosmic();
-        let mut neutral_5 = cosmic.palette.neutral_5;
-        neutral_5.alpha = 0.7;
-        let mut a = scrollable::Scrollbar {
-            background: None,
-            border: Border {
-                radius: cosmic.corner_radii.radius_s.into(),
-                ..Default::default()
-            },
-            scroller: scrollable::Scroller {
-                color: neutral_5.into(),
-                border: Border {
-                    radius: cosmic.corner_radii.radius_s.into(),
-                    ..Default::default()
-                },
-            },
-        };
-
-        if matches!(style, Scrollable::Permanent) {
-            let mut neutral_3 = cosmic.palette.neutral_3;
-            neutral_3.alpha = 0.7;
-            a.background = Some(Background::Color(neutral_3.into()));
-        }
-
-        a
+    fn default<'a>() -> Self::Class<'a> {
+        Scrollable::default()
     }
 
-    fn hovered(&self, style: &Self::Style, is_mouse_over_scrollbar: bool) -> scrollable::Scrollbar {
-        let cosmic = self.cosmic();
-        let mut neutral_5 = cosmic.palette.neutral_5;
-        neutral_5.alpha = 0.7;
+    fn style(&self, class: &Self::Class<'_>, status: scrollable::Status) -> scrollable::Style {
+        match status {
+            scrollable::Status::Active => {
+                let cosmic = self.cosmic();
+                let mut neutral_5 = cosmic.palette.neutral_5;
+                neutral_5.alpha = 0.7;
+                let mut a = scrollable::Style {
+                    container: iced_container::transparent(self),
+                    vertical_rail: scrollable::Rail {
+                        border: Border {
+                            radius: cosmic.corner_radii.radius_s.into(),
+                            ..Default::default()
+                        },
+                        background: None,
+                        scroller: scrollable::Scroller {
+                            color: neutral_5.into(),
+                            border: Border {
+                                radius: cosmic.corner_radii.radius_s.into(),
+                                ..Default::default()
+                            },
+                        },
+                    },
+                    horizontal_rail: scrollable::Rail {
+                        border: Border {
+                            radius: cosmic.corner_radii.radius_s.into(),
+                            ..Default::default()
+                        },
+                        background: None,
+                        scroller: scrollable::Scroller {
+                            color: neutral_5.into(),
+                            border: Border {
+                                radius: cosmic.corner_radii.radius_s.into(),
+                                ..Default::default()
+                            },
+                        },
+                    },
+                    gap: None,
+                };
 
-        if is_mouse_over_scrollbar {
-            let mut hover_overlay = cosmic.palette.neutral_0;
-            hover_overlay.alpha = 0.2;
-            neutral_5 = over(hover_overlay, neutral_5);
-        }
-        let mut a = scrollable::Scrollbar {
-            background: None,
-            border: Border {
-                radius: cosmic.corner_radii.radius_s.into(),
-                ..Default::default()
-            },
-            scroller: scrollable::Scroller {
-                color: neutral_5.into(),
-                border: Border {
-                    radius: cosmic.corner_radii.radius_s.into(),
-                    ..Default::default()
-                },
-            },
-        };
-        if matches!(style, Scrollable::Permanent) {
-            let mut neutral_3 = cosmic.palette.neutral_3;
-            neutral_3.alpha = 0.7;
-            a.background = Some(Background::Color(neutral_3.into()));
-        }
+                if matches!(class, Scrollable::Permanent) {
+                    let mut neutral_3 = cosmic.palette.neutral_3;
+                    neutral_3.alpha = 0.7;
+                    a.horizontal_rail.background = Some(Background::Color(neutral_3.into()));
+                    a.vertical_rail.background = Some(Background::Color(neutral_3.into()));
+                }
 
-        a
+                a
+            }
+            // TODO handle vertical / horizontal
+            scrollable::Status::Hovered { .. } | scrollable::Status::Dragged { .. } => {
+                let cosmic = self.cosmic();
+                let mut neutral_5 = cosmic.palette.neutral_5;
+                neutral_5.alpha = 0.7;
+
+                // TODO hover
+
+                // if is_mouse_over_scrollbar {
+                //     let mut hover_overlay = cosmic.palette.neutral_0;
+                //     hover_overlay.alpha = 0.2;
+                //     neutral_5 = over(hover_overlay, neutral_5);
+                // }
+                let mut a: scrollable::Style = scrollable::Style {
+                    container: iced_container::Style::default(),
+                    vertical_rail: scrollable::Rail {
+                        border: Border {
+                            radius: cosmic.corner_radii.radius_s.into(),
+                            ..Default::default()
+                        },
+                        background: None,
+                        scroller: scrollable::Scroller {
+                            color: neutral_5.into(),
+                            border: Border {
+                                radius: cosmic.corner_radii.radius_s.into(),
+                                ..Default::default()
+                            },
+                        },
+                    },
+                    horizontal_rail: scrollable::Rail {
+                        border: Border {
+                            radius: cosmic.corner_radii.radius_s.into(),
+                            ..Default::default()
+                        },
+                        background: None,
+                        scroller: scrollable::Scroller {
+                            color: neutral_5.into(),
+                            border: Border {
+                                radius: cosmic.corner_radii.radius_s.into(),
+                                ..Default::default()
+                            },
+                        },
+                    },
+                    gap: None,
+                };
+
+                if matches!(class, Scrollable::Permanent) {
+                    let mut neutral_3 = cosmic.palette.neutral_3;
+                    neutral_3.alpha = 0.7;
+                    a.horizontal_rail.background = Some(Background::Color(neutral_3.into()));
+                    a.vertical_rail.background = Some(Background::Color(neutral_3.into()));
+                }
+
+                a
+            }
+        }
     }
 }
 
 #[derive(Clone, Default)]
 pub enum Svg {
     /// Apply a custom appearance filter
-    Custom(Rc<dyn Fn(&Theme) -> svg::Appearance>),
+    Custom(Rc<dyn Fn(&Theme) -> svg::Style>),
     /// No filtering is applied
     #[default]
     Default,
 }
 
 impl Svg {
-    pub fn custom<F: Fn(&Theme) -> svg::Appearance + 'static>(f: F) -> Self {
+    pub fn custom<F: Fn(&Theme) -> svg::Style + 'static>(f: F) -> Self {
         Self::Custom(Rc::new(f))
     }
 }
 
-impl svg::StyleSheet for Theme {
-    type Style = Svg;
+impl svg::Catalog for Theme {
+    type Class<'a> = Svg;
 
-    fn appearance(&self, style: &Self::Style) -> svg::Appearance {
-        #[allow(clippy::match_same_arms)]
-        match style {
-            Svg::Default => svg::Appearance::default(),
-            Svg::Custom(appearance) => appearance(self),
-        }
+    fn default<'a>() -> Self::Class<'a> {
+        Svg::default()
     }
 
-    fn hovered(&self, style: &Self::Style) -> svg::Appearance {
-        self.appearance(style)
+    fn style(&self, class: &Self::Class<'_>, status: svg::Status) -> svg::Style {
+        #[allow(clippy::match_same_arms)]
+        match class {
+            Svg::Default => svg::Style::default(),
+            Svg::Custom(appearance) => appearance(self),
+        }
     }
 }
 
@@ -1104,7 +1221,7 @@ pub enum Text {
     Default,
     Color(Color),
     // TODO: Can't use dyn Fn since this must be copy
-    Custom(fn(&Theme) -> iced_widget::text::Appearance),
+    Custom(fn(&Theme) -> iced_widget::text::Style),
 }
 
 impl From<Color> for Text {
@@ -1113,16 +1230,20 @@ impl From<Color> for Text {
     }
 }
 
-impl iced_widget::text::StyleSheet for Theme {
-    type Style = Text;
+impl iced_widget::text::Catalog for Theme {
+    type Class<'a> = Text;
 
-    fn appearance(&self, style: Self::Style) -> iced_widget::text::Appearance {
-        match style {
-            Text::Accent => iced_widget::text::Appearance {
+    fn default<'a>() -> Self::Class<'a> {
+        Text::default()
+    }
+
+    fn style(&self, class: &Self::Class<'_>) -> iced_widget::text::Style {
+        match class {
+            Text::Accent => iced_widget::text::Style {
                 color: Some(self.cosmic().accent.base.into()),
             },
-            Text::Default => iced_widget::text::Appearance { color: None },
-            Text::Color(c) => iced_widget::text::Appearance { color: Some(c) },
+            Text::Default => iced_widget::text::Style { color: None },
+            Text::Color(c) => iced_widget::text::Style { color: Some(*c) },
             Text::Custom(f) => f(self),
         }
     }
@@ -1138,221 +1259,213 @@ pub enum TextInput {
 /*
  * TODO: Text Input
  */
-impl text_input::StyleSheet for Theme {
-    type Style = TextInput;
+impl text_input::Catalog for Theme {
+    type Class<'a> = TextInput;
 
-    fn active(&self, style: &Self::Style) -> text_input::Appearance {
+    fn default<'a>() -> Self::Class<'a> {
+        TextInput::default()
+    }
+
+    fn style(&self, class: &Self::Class<'_>, status: text_input::Status) -> text_input::Style {
         let palette = self.cosmic();
         let mut bg = palette.palette.neutral_7;
         bg.alpha = 0.25;
-        match style {
-            TextInput::Default => text_input::Appearance {
+
+        let mut neutral_9 = palette.palette.neutral_9;
+        let value = neutral_9.into();
+        neutral_9.alpha = 0.7;
+        let placeholder = neutral_9.into();
+        let selection = palette.accent.base.into();
+
+        let mut appearance = match class {
+            TextInput::Default => text_input::Style {
                 background: Color::from(bg).into(),
                 border: Border {
                     radius: palette.corner_radii.radius_s.into(),
                     width: 1.0,
                     color: self.current_container().component.divider.into(),
                 },
-                icon_color: self.current_container().on.into(),
+                icon: self.current_container().on.into(),
+                placeholder,
+                value,
+                selection,
             },
-            TextInput::Search => text_input::Appearance {
+            TextInput::Search => text_input::Style {
                 background: Color::from(bg).into(),
                 border: Border {
                     radius: palette.corner_radii.radius_m.into(),
                     ..Default::default()
                 },
-                icon_color: self.current_container().on.into(),
+                icon: self.current_container().on.into(),
+                placeholder,
+                value,
+                selection,
             },
+        };
+
+        match status {
+            text_input::Status::Active => appearance,
+            text_input::Status::Hovered => {
+                let mut bg = palette.palette.neutral_7;
+                bg.alpha = 0.25;
+
+                match class {
+                    TextInput::Default => text_input::Style {
+                        background: Color::from(bg).into(),
+                        border: Border {
+                            radius: palette.corner_radii.radius_s.into(),
+                            width: 1.0,
+                            color: self.current_container().on.into(),
+                        },
+                        icon: self.current_container().on.into(),
+                        placeholder,
+                        value,
+                        selection,
+                    },
+                    TextInput::Search => text_input::Style {
+                        background: Color::from(bg).into(),
+                        border: Border {
+                            radius: palette.corner_radii.radius_m.into(),
+                            ..Default::default()
+                        },
+                        icon: self.current_container().on.into(),
+                        placeholder,
+                        value,
+                        selection,
+                    },
+                }
+            }
+            text_input::Status::Focused => {
+                let mut bg = palette.palette.neutral_7;
+                bg.alpha = 0.25;
+
+                match class {
+                    TextInput::Default => text_input::Style {
+                        background: Color::from(bg).into(),
+                        border: Border {
+                            radius: palette.corner_radii.radius_s.into(),
+                            width: 1.0,
+                            color: palette.accent.base.into(),
+                        },
+                        icon: self.current_container().on.into(),
+                        placeholder,
+                        value,
+                        selection,
+                    },
+                    TextInput::Search => text_input::Style {
+                        background: Color::from(bg).into(),
+                        border: Border {
+                            radius: palette.corner_radii.radius_m.into(),
+                            ..Default::default()
+                        },
+                        icon: self.current_container().on.into(),
+                        placeholder,
+                        value,
+                        selection,
+                    },
+                }
+            }
+            text_input::Status::Disabled => {
+                appearance.background = match appearance.background {
+                    Background::Color(color) => Background::Color(Color {
+                        a: color.a * 0.5,
+                        ..color
+                    }),
+                    Background::Gradient(gradient) => {
+                        Background::Gradient(gradient.scale_alpha(0.5))
+                    }
+                };
+                appearance.border.color.a /= 2.;
+                appearance.icon.a /= 2.;
+                appearance.placeholder.a /= 2.;
+                appearance.value.a /= 2.;
+                appearance
+            }
         }
-    }
-
-    fn hovered(&self, style: &Self::Style) -> text_input::Appearance {
-        let palette = self.cosmic();
-        let mut bg = palette.palette.neutral_7;
-        bg.alpha = 0.25;
-
-        match style {
-            TextInput::Default => text_input::Appearance {
-                background: Color::from(bg).into(),
-                border: Border {
-                    radius: palette.corner_radii.radius_s.into(),
-                    width: 1.0,
-                    color: self.current_container().on.into(),
-                },
-                icon_color: self.current_container().on.into(),
-            },
-            TextInput::Search => text_input::Appearance {
-                background: Color::from(bg).into(),
-                border: Border {
-                    radius: palette.corner_radii.radius_m.into(),
-                    ..Default::default()
-                },
-                icon_color: self.current_container().on.into(),
-            },
-        }
-    }
-
-    fn focused(&self, style: &Self::Style) -> text_input::Appearance {
-        let palette = self.cosmic();
-        let mut bg = palette.palette.neutral_7;
-        bg.alpha = 0.25;
-
-        match style {
-            TextInput::Default => text_input::Appearance {
-                background: Color::from(bg).into(),
-                border: Border {
-                    radius: palette.corner_radii.radius_s.into(),
-                    width: 1.0,
-                    color: palette.accent.base.into(),
-                },
-                icon_color: self.current_container().on.into(),
-            },
-            TextInput::Search => text_input::Appearance {
-                background: Color::from(bg).into(),
-                border: Border {
-                    radius: palette.corner_radii.radius_m.into(),
-                    ..Default::default()
-                },
-                icon_color: self.current_container().on.into(),
-            },
-        }
-    }
-
-    fn placeholder_color(&self, _style: &Self::Style) -> Color {
-        let palette = self.cosmic();
-        let mut neutral_9 = palette.palette.neutral_9;
-        neutral_9.alpha = 0.7;
-        neutral_9.into()
-    }
-
-    fn value_color(&self, _style: &Self::Style) -> Color {
-        let palette = self.cosmic();
-
-        palette.palette.neutral_9.into()
-    }
-
-    fn selection_color(&self, _style: &Self::Style) -> Color {
-        let palette = self.cosmic();
-
-        palette.accent.base.into()
-    }
-
-    fn disabled_color(&self, _style: &Self::Style) -> Color {
-        let palette = self.cosmic();
-        let mut neutral_9 = palette.palette.neutral_9;
-        neutral_9.alpha = 0.5;
-        neutral_9.into()
-    }
-
-    fn disabled(&self, style: &Self::Style) -> text_input::Appearance {
-        self.active(style)
     }
 }
 
-impl crate::widget::card::style::StyleSheet for Theme {
-    fn default(&self) -> crate::widget::card::style::Appearance {
-        let cosmic = self.cosmic();
+// TODO card
+// impl crate::widget::card::style::StyleSheet for Theme {
+//     fn default(&self) -> crate::widget::card::style::Style {
+//         let cosmic = self.cosmic();
 
-        match self.layer {
-            cosmic_theme::Layer::Background => crate::widget::card::style::Appearance {
-                card_1: Background::Color(cosmic.background.component.hover.into()),
-                card_2: Background::Color(cosmic.background.component.pressed.into()),
-            },
-            cosmic_theme::Layer::Primary => crate::widget::card::style::Appearance {
-                card_1: Background::Color(cosmic.primary.component.hover.into()),
-                card_2: Background::Color(cosmic.primary.component.pressed.into()),
-            },
-            cosmic_theme::Layer::Secondary => crate::widget::card::style::Appearance {
-                card_1: Background::Color(cosmic.secondary.component.hover.into()),
-                card_2: Background::Color(cosmic.secondary.component.pressed.into()),
-            },
-        }
-    }
-}
+//         match self.layer {
+//             cosmic_theme::Layer::Background => crate::widget::card::style::Style {
+//                 card_1: Background::Color(cosmic.background.component.hover.into()),
+//                 card_2: Background::Color(cosmic.background.component.pressed.into()),
+//             },
+//             cosmic_theme::Layer::Primary => crate::widget::card::style::Style {
+//                 card_1: Background::Color(cosmic.primary.component.hover.into()),
+//                 card_2: Background::Color(cosmic.primary.component.pressed.into()),
+//             },
+//             cosmic_theme::Layer::Secondary => crate::widget::card::style::Style {
+//                 card_1: Background::Color(cosmic.secondary.component.hover.into()),
+//                 card_2: Background::Color(cosmic.secondary.component.pressed.into()),
+//             },
+//         }
+//     }
+// }
 
 #[derive(Default)]
-pub enum TextEditor {
+pub enum TextEditor<'a> {
     #[default]
     Default,
-    Custom(Box<dyn iced_style::text_editor::StyleSheet<Style = Theme>>),
+    Custom(text_editor::StyleFn<'a, Theme>),
 }
 
-impl iced_style::text_editor::StyleSheet for Theme {
-    type Style = TextEditor;
+impl iced_widget::text_editor::Catalog for Theme {
+    type Class<'a> = TextEditor<'a>;
 
-    fn active(&self, style: &Self::Style) -> iced_style::text_editor::Appearance {
-        if let TextEditor::Custom(style) = style {
-            return style.active(self);
+    fn default<'a>() -> Self::Class<'a> {
+        TextEditor::default()
+    }
+
+    fn style(
+        &self,
+        class: &Self::Class<'_>,
+        status: iced_widget::text_editor::Status,
+    ) -> iced_widget::text_editor::Style {
+        if let TextEditor::Custom(style) = class {
+            return style(self, status);
         }
 
         let cosmic = self.cosmic();
-        iced_style::text_editor::Appearance {
-            background: iced::Color::from(cosmic.bg_color()).into(),
-            border: Border {
-                radius: cosmic.corner_radii.radius_0.into(),
-                width: f32::from(cosmic.space_xxxs()),
-                color: iced::Color::from(cosmic.bg_divider()),
+
+        let selection = cosmic.accent.base.into();
+        let value = cosmic.palette.neutral_9.into();
+        let mut placeholder = cosmic.palette.neutral_9;
+        placeholder.alpha = 0.7;
+        let placeholder = placeholder.into();
+        let icon = cosmic.background.on.into();
+
+        match status {
+            iced_widget::text_editor::Status::Active
+            | iced_widget::text_editor::Status::Hovered
+            | iced_widget::text_editor::Status::Disabled => iced_widget::text_editor::Style {
+                background: iced::Color::from(cosmic.bg_color()).into(),
+                border: Border {
+                    radius: cosmic.corner_radii.radius_0.into(),
+                    width: f32::from(cosmic.space_xxxs()),
+                    color: iced::Color::from(cosmic.bg_divider()),
+                },
+                icon,
+                placeholder,
+                value,
+                selection,
+            },
+            iced_widget::text_editor::Status::Focused => iced_widget::text_editor::Style {
+                background: iced::Color::from(cosmic.bg_color()).into(),
+                border: Border {
+                    radius: cosmic.corner_radii.radius_0.into(),
+                    width: f32::from(cosmic.space_xxxs()),
+                    color: iced::Color::from(cosmic.accent.base),
+                },
+                icon,
+                placeholder,
+                value,
+                selection,
             },
         }
-    }
-
-    fn focused(&self, style: &Self::Style) -> iced_style::text_editor::Appearance {
-        if let TextEditor::Custom(style) = style {
-            return style.focused(self);
-        }
-
-        let cosmic = self.cosmic();
-        iced_style::text_editor::Appearance {
-            background: iced::Color::from(cosmic.bg_color()).into(),
-            border: Border {
-                radius: cosmic.corner_radii.radius_0.into(),
-                width: f32::from(cosmic.space_xxxs()),
-                color: iced::Color::from(cosmic.accent.base),
-            },
-        }
-    }
-
-    fn placeholder_color(&self, style: &Self::Style) -> Color {
-        if let TextEditor::Custom(style) = style {
-            return style.placeholder_color(self);
-        }
-        let palette = self.cosmic();
-        let mut neutral_9 = palette.palette.neutral_9;
-        neutral_9.alpha = 0.7;
-        neutral_9.into()
-    }
-
-    fn value_color(&self, style: &Self::Style) -> Color {
-        if let TextEditor::Custom(style) = style {
-            return style.value_color(self);
-        }
-        let palette = self.cosmic();
-
-        palette.palette.neutral_9.into()
-    }
-
-    fn disabled_color(&self, style: &Self::Style) -> Color {
-        if let TextEditor::Custom(style) = style {
-            return style.disabled_color(self);
-        }
-        let palette = self.cosmic();
-        let mut neutral_9 = palette.palette.neutral_9;
-        neutral_9.alpha = 0.5;
-        neutral_9.into()
-    }
-
-    fn selection_color(&self, style: &Self::Style) -> Color {
-        if let TextEditor::Custom(style) = style {
-            return style.selection_color(self);
-        }
-        let cosmic = self.cosmic();
-        cosmic.accent.base.into()
-    }
-
-    fn disabled(&self, style: &Self::Style) -> iced_style::text_editor::Appearance {
-        if let TextEditor::Custom(style) = style {
-            return style.disabled(self);
-        }
-        self.active(style)
     }
 }

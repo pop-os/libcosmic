@@ -9,6 +9,8 @@
 pub mod command;
 mod core;
 pub mod cosmic;
+#[cfg(all(feature = "winit", feature = "multi-window"))]
+pub(crate) mod multi_window;
 pub mod settings;
 
 pub mod message {
@@ -47,17 +49,14 @@ pub mod message {
 
 use std::borrow::Cow;
 
-pub use self::command::Command;
+pub use self::command::Task;
 pub use self::core::Core;
 pub use self::settings::Settings;
 use crate::prelude::*;
 use crate::theme::THEME;
 use crate::widget::{context_drawer, horizontal_space, id_container, menu, nav_bar, popover};
 use apply::Apply;
-#[cfg(all(feature = "winit", feature = "multi-window"))]
-use iced::{multi_window::Application as IcedApplication, window};
-#[cfg(any(not(feature = "winit"), not(feature = "multi-window")))]
-use iced::{window, Application as IcedApplication};
+use iced::window;
 use iced::{Length, Subscription};
 pub use message::Message;
 use url::Url;
@@ -73,15 +72,15 @@ use {
 pub(crate) fn iced_settings<App: Application>(
     settings: Settings,
     flags: App::Flags,
-) -> iced::Settings<(Core, App::Flags)> {
+) -> (iced::Settings, (Core, App::Flags, iced::window::Settings)) {
     preload_fonts();
 
     let mut core = Core::default();
     core.debug = settings.debug;
     core.icon_theme_override = settings.default_icon_theme.is_some();
     core.set_scale_factor(settings.scale_factor);
-    core.set_window_width(settings.size.width as u32);
-    core.set_window_height(settings.size.height as u32);
+    core.set_window_width(settings.size.width);
+    core.set_window_height(settings.size.height);
 
     if let Some(icon_theme) = settings.default_icon_theme {
         crate::icon_theme::set_default(icon_theme);
@@ -91,65 +90,40 @@ pub(crate) fn iced_settings<App: Application>(
 
     THEME.lock().unwrap().set_theme(settings.theme.theme_type);
 
-    let mut iced = iced::Settings::with_flags((core, flags));
+    if settings.no_main_window {
+        core.main_window.set(iced::window::Id::NONE).unwrap();
+    }
+
+    let mut iced = iced::Settings::default();
 
     iced.antialiasing = settings.antialiasing;
     iced.default_font = settings.default_font;
     iced.default_text_size = iced::Pixels(settings.default_text_size);
-    iced.exit_on_close_request = settings.exit_on_close;
-    #[cfg(not(feature = "wayland"))]
-    {
-        let exit_on_close = settings.exit_on_close;
-        iced.window.exit_on_close_request = exit_on_close;
-    }
+    let exit_on_close = settings.exit_on_close;
+    iced.exit_on_close_request = exit_on_close;
+    let mut window_settings = iced::window::Settings::default();
+    window_settings.exit_on_close_request = exit_on_close;
     iced.id = Some(App::APP_ID.to_owned());
-    #[cfg(all(not(feature = "wayland"), target_os = "linux"))]
-    {
-        iced.window.platform_specific.application_id = App::APP_ID.to_string();
+    window_settings.platform_specific.application_id = App::APP_ID.to_string();
+    core.exit_on_main_window_closed = exit_on_close;
+
+    if let Some(border_size) = settings.resizable {
+        window_settings.resize_border = border_size as u32;
+        window_settings.resizable = true;
+    }
+    window_settings.decorations = !settings.client_decorations;
+    window_settings.size = settings.size;
+    let min_size = settings.size_limits.min();
+    if min_size != iced::Size::ZERO {
+        window_settings.min_size = Some(min_size);
+    }
+    let max_size = settings.size_limits.max();
+    if max_size != iced::Size::INFINITY {
+        window_settings.max_size = Some(max_size);
     }
 
-    #[cfg(feature = "wayland")]
-    {
-        use iced::wayland::actions::window::SctkWindowSettings;
-        use iced_sctk::settings::InitialSurface;
-        iced.initial_surface = if settings.no_main_window {
-            InitialSurface::None
-        } else {
-            InitialSurface::XdgWindow(SctkWindowSettings {
-                app_id: Some(App::APP_ID.to_owned()),
-                autosize: settings.autosize,
-                client_decorations: settings.client_decorations,
-                resizable: settings.resizable,
-                size: (settings.size.width as u32, settings.size.height as u32).into(),
-                size_limits: settings.size_limits,
-                title: None,
-                transparent: settings.transparent,
-                xdg_activation_token: std::env::var("XDG_ACTIVATION_TOKEN").ok(),
-                ..SctkWindowSettings::default()
-            })
-        };
-    }
-
-    #[cfg(not(feature = "wayland"))]
-    {
-        if let Some(border_size) = settings.resizable {
-            iced.window.resize_border = border_size as u32;
-            iced.window.resizable = true;
-        }
-        iced.window.decorations = !settings.client_decorations;
-        iced.window.size = settings.size;
-        let min_size = settings.size_limits.min();
-        if min_size != iced::Size::ZERO {
-            iced.window.min_size = Some(min_size);
-        }
-        let max_size = settings.size_limits.max();
-        if max_size != iced::Size::INFINITY {
-            iced.window.max_size = Some(max_size);
-        }
-        iced.window.transparent = settings.transparent;
-    }
-
-    iced
+    window_settings.transparent = settings.transparent;
+    (iced, (core, flags, window_settings))
 }
 
 /// Launch a COSMIC application with the given [`Settings`].
@@ -158,9 +132,40 @@ pub(crate) fn iced_settings<App: Application>(
 ///
 /// Returns error on application failure.
 pub fn run<App: Application>(settings: Settings, flags: App::Flags) -> iced::Result {
-    let settings = iced_settings::<App>(settings, flags);
-
-    cosmic::Cosmic::<App>::run(settings)
+    let default_font = settings.default_font;
+    let (settings, flags) = iced_settings::<App>(settings, flags);
+    #[cfg(not(feature = "multi-window"))]
+    {
+        iced::application(
+            cosmic::Cosmic::title,
+            cosmic::Cosmic::update,
+            cosmic::Cosmic::view,
+        )
+        .subscription(cosmic::Cosmic::subscription)
+        .style(cosmic::Cosmic::style)
+        .theme(cosmic::Cosmic::theme)
+        .window_size((500.0, 800.0))
+        .settings(settings)
+        .window(flags.2.clone())
+        .run_with(move || cosmic::Cosmic::<App>::init(flags))
+    }
+    #[cfg(feature = "multi-window")]
+    {
+        let mut app = multi_window::multi_window(
+            cosmic::Cosmic::title,
+            cosmic::Cosmic::update,
+            cosmic::Cosmic::view,
+        );
+        if flags.0.main_window.get().is_none() {
+            app = app.window(flags.2.clone());
+            _ = flags.0.main_window.set(iced_core::window::Id::RESERVED);
+        }
+        app.subscription(cosmic::Cosmic::subscription)
+            .style(cosmic::Cosmic::style)
+            .theme(cosmic::Cosmic::theme)
+            .settings(settings)
+            .run_with(move || cosmic::Cosmic::<App>::init(flags))
+    }
 }
 
 #[cfg(feature = "single-instance")]
@@ -362,9 +367,41 @@ where
         tracing::info!("Another instance is running");
         Ok(())
     } else {
-        let mut settings = iced_settings::<App>(settings, flags);
-        settings.flags.0.single_instance = true;
-        cosmic::Cosmic::<App>::run(settings)
+        let (settings, mut flags) = iced_settings::<App>(settings, flags);
+        flags.0.single_instance = true;
+
+        #[cfg(not(feature = "multi-window"))]
+        {
+            iced::application(
+                cosmic::Cosmic::title,
+                cosmic::Cosmic::update,
+                cosmic::Cosmic::view,
+            )
+            .subscription(cosmic::Cosmic::subscription)
+            .style(cosmic::Cosmic::style)
+            .theme(cosmic::Cosmic::theme)
+            .window_size((500.0, 800.0))
+            .settings(settings)
+            .window(flags.2.clone())
+            .run_with(move || cosmic::Cosmic::<App>::init(flags))
+        }
+        #[cfg(feature = "multi-window")]
+        {
+            let mut app = multi_window::multi_window(
+                cosmic::Cosmic::title,
+                cosmic::Cosmic::update,
+                cosmic::Cosmic::view,
+            );
+            if flags.0.main_window.get().is_none() {
+                app = app.window(flags.2.clone());
+                _ = flags.0.main_window.set(iced_core::window::Id::RESERVED);
+            }
+            app.subscription(cosmic::Cosmic::subscription)
+                .style(cosmic::Cosmic::style)
+                .theme(cosmic::Cosmic::theme)
+                .settings(settings)
+                .run_with(move || cosmic::Cosmic::<App>::init(flags))
+        }
     }
 }
 
@@ -409,7 +446,7 @@ where
     fn core_mut(&mut self) -> &mut Core;
 
     /// Creates the application, and optionally emits command on initialize.
-    fn init(core: Core, flags: Self::Flags) -> (Self, Command<Self::Message>);
+    fn init(core: Core, flags: Self::Flags) -> (Self, Task<Self::Message>);
 
     /// Displays a context drawer on the side of the application window when `Some`.
     fn context_drawer(&self) -> Option<Element<Self::Message>> {
@@ -439,11 +476,6 @@ where
     /// Attaches elements to the end section of the header.
     fn header_end(&self) -> Vec<Element<Self::Message>> {
         Vec::new()
-    }
-
-    /// Get the main [`window::Id`], which is [`window::Id::MAIN`] by default
-    fn main_window_id(&self) -> window::Id {
-        window::Id::MAIN
     }
 
     /// Allows overriding the default nav bar widget.
@@ -491,32 +523,32 @@ where
     }
 
     // Called when context drawer is toggled
-    fn on_context_drawer(&mut self) -> Command<Self::Message> {
-        Command::none()
+    fn on_context_drawer(&mut self) -> Task<Self::Message> {
+        Task::none()
     }
 
     /// Called when the escape key is pressed.
-    fn on_escape(&mut self) -> Command<Self::Message> {
-        Command::none()
+    fn on_escape(&mut self) -> Task<Self::Message> {
+        Task::none()
     }
 
     /// Called when a navigation item is selected.
-    fn on_nav_select(&mut self, id: nav_bar::Id) -> Command<Self::Message> {
-        Command::none()
+    fn on_nav_select(&mut self, id: nav_bar::Id) -> Task<Self::Message> {
+        Task::none()
     }
 
     /// Called when a context menu is requested for a navigation item.
-    fn on_nav_context(&mut self, id: nav_bar::Id) -> Command<Self::Message> {
-        Command::none()
+    fn on_nav_context(&mut self, id: nav_bar::Id) -> Task<Self::Message> {
+        Task::none()
     }
 
     /// Called when the search function is requested.
-    fn on_search(&mut self) -> Command<Self::Message> {
-        Command::none()
+    fn on_search(&mut self) -> Task<Self::Message> {
+        Task::none()
     }
 
     /// Called when a window is resized.
-    fn on_window_resize(&mut self, id: window::Id, width: u32, height: u32) {}
+    fn on_window_resize(&mut self, id: window::Id, width: f32, height: f32) {}
 
     /// Event sources that are to be listened to.
     fn subscription(&self) -> Subscription<Self::Message> {
@@ -524,8 +556,8 @@ where
     }
 
     /// Respond to an application-specific message.
-    fn update(&mut self, message: Self::Message) -> Command<Self::Message> {
-        Command::none()
+    fn update(&mut self, message: Self::Message) -> Task<Self::Message> {
+        Task::none()
     }
 
     /// Respond to a system theme change
@@ -533,8 +565,8 @@ where
         &mut self,
         keys: &[&'static str],
         new_theme: &cosmic_theme::Theme,
-    ) -> Command<Self::Message> {
-        Command::none()
+    ) -> Task<Self::Message> {
+        Task::none()
     }
 
     /// Respond to a system theme mode change
@@ -542,8 +574,8 @@ where
         &mut self,
         keys: &[&'static str],
         new_theme: &cosmic_theme::ThemeMode,
-    ) -> Command<Self::Message> {
-        Command::none()
+    ) -> Task<Self::Message> {
+        Task::none()
     }
 
     /// Constructs the view for the main window.
@@ -555,33 +587,33 @@ where
     }
 
     /// Overrides the default style for applications
-    fn style(&self) -> Option<<crate::Theme as iced_style::application::StyleSheet>::Style> {
+    fn style(&self) -> Option<iced_runtime::Appearance> {
         None
     }
 
     /// Handles dbus activation messages
     #[cfg(feature = "single-instance")]
-    fn dbus_activation(&mut self, msg: DbusActivationMessage) -> Command<Self::Message> {
-        Command::none()
+    fn dbus_activation(&mut self, msg: DbusActivationMessage) -> Task<Self::Message> {
+        Task::none()
     }
 }
 
 /// Methods automatically derived for all types implementing [`Application`].
 pub trait ApplicationExt: Application {
     /// Initiates a window drag.
-    fn drag(&mut self) -> Command<Self::Message>;
+    fn drag(&mut self) -> Task<Self::Message>;
 
     /// Maximizes the window.
-    fn maximize(&mut self) -> Command<Self::Message>;
+    fn maximize(&mut self) -> Task<Self::Message>;
 
     /// Minimizes the window.
-    fn minimize(&mut self) -> Command<Self::Message>;
+    fn minimize(&mut self) -> Task<Self::Message>;
     /// Get the title of the main window.
 
-    #[cfg(not(any(feature = "multi-window", feature = "wayland")))]
+    #[cfg(not(feature = "multi-window"))]
     fn title(&self) -> &str;
 
-    #[cfg(any(feature = "multi-window", feature = "wayland"))]
+    #[cfg(feature = "multi-window")]
     /// Get the title of a window.
     fn title(&self, id: window::Id) -> &str;
 
@@ -600,56 +632,58 @@ pub trait ApplicationExt: Application {
         self.core_mut().set_header_title(title);
     }
 
-    #[cfg(not(any(feature = "multi-window", feature = "wayland")))]
+    #[cfg(not(feature = "multi-window"))]
     /// Set the title of the main window.
-    fn set_window_title(&mut self, title: String) -> Command<Self::Message>;
+    fn set_window_title(&mut self, title: String) -> Task<Self::Message>;
 
-    #[cfg(any(feature = "multi-window", feature = "wayland"))]
+    #[cfg(feature = "multi-window")]
     /// Set the title of a window.
-    fn set_window_title(&mut self, title: String, id: window::Id) -> Command<Self::Message>;
+    fn set_window_title(&mut self, title: String, id: window::Id) -> Task<Self::Message>;
 
     /// View template for the main window.
     fn view_main(&self) -> Element<Message<Self::Message>>;
 }
 
 impl<App: Application> ApplicationExt for App {
-    fn drag(&mut self) -> Command<Self::Message> {
-        command::drag(Some(self.main_window_id()))
+    fn drag(&mut self) -> Task<Self::Message> {
+        self.core().drag(None)
     }
 
-    fn maximize(&mut self) -> Command<Self::Message> {
-        command::maximize(Some(self.main_window_id()), true)
+    fn maximize(&mut self) -> Task<Self::Message> {
+        self.core().maximize(None, true)
     }
 
-    fn minimize(&mut self) -> Command<Self::Message> {
-        command::minimize(Some(self.main_window_id()))
+    fn minimize(&mut self) -> Task<Self::Message> {
+        self.core().minimize(None)
     }
 
-    #[cfg(any(feature = "multi-window", feature = "wayland"))]
+    #[cfg(feature = "multi-window")]
     fn title(&self, id: window::Id) -> &str {
         self.core().title.get(&id).map_or("", |s| s.as_str())
     }
 
-    #[cfg(not(any(feature = "multi-window", feature = "wayland")))]
+    #[cfg(not(feature = "multi-window"))]
     fn title(&self) -> &str {
         self.core()
-            .title
-            .get(&self.main_window_id())
-            .map_or("", |s| s.as_str())
+            .main_window_id()
+            .and_then(|id| self.core().title.get(&id).map(std::string::String::as_str))
+            .unwrap_or("")
     }
 
-    #[cfg(any(feature = "multi-window", feature = "wayland"))]
-    fn set_window_title(&mut self, title: String, id: window::Id) -> Command<Self::Message> {
+    #[cfg(feature = "multi-window")]
+    fn set_window_title(&mut self, title: String, id: window::Id) -> Task<Self::Message> {
         self.core_mut().title.insert(id, title.clone());
-        command::set_title(Some(id), title)
+        self.core().set_title(Some(id), title)
     }
 
-    #[cfg(not(any(feature = "multi-window", feature = "wayland")))]
-    fn set_window_title(&mut self, title: String) -> Command<Self::Message> {
-        let id = self.main_window_id();
+    #[cfg(not(feature = "multi-window"))]
+    fn set_window_title(&mut self, title: String) -> Task<Self::Message> {
+        let Some(id) = self.core().main_window_id() else {
+            return Task::none();
+        };
 
         self.core_mut().title.insert(id, title.clone());
-        Command::none()
+        Task::none()
     }
 
     #[allow(clippy::too_many_lines)]
@@ -659,7 +693,7 @@ impl<App: Application> ApplicationExt for App {
         let is_condensed = core.is_condensed();
         let focused = core
             .focused_window()
-            .is_some_and(|i| i == self.main_window_id());
+            .is_some_and(|i| Some(i) == self.core().main_window_id());
 
         let content_row = crate::widget::row::with_children({
             let mut widgets = Vec::with_capacity(4);
@@ -678,7 +712,7 @@ impl<App: Application> ApplicationExt for App {
             if self.nav_model().is_none() || core.show_content() {
                 // Manual spacing must be used due to state workarounds below
                 if has_nav {
-                    widgets.push(horizontal_space(Length::Fixed(8.0)).into());
+                    widgets.push(horizontal_space().width(Length::Fixed(8.0)).into());
                 }
 
                 let main_content = self.view().map(Message::App);
@@ -727,7 +761,7 @@ impl<App: Application> ApplicationExt for App {
                         );
                     } else {
                         //TODO: this element is added to workaround state issues
-                        widgets.push(horizontal_space(Length::Shrink).into());
+                        widgets.push(horizontal_space().width(Length::Shrink).into());
                     }
                 }
             }
@@ -744,7 +778,7 @@ impl<App: Application> ApplicationExt for App {
                 .padding([0, 8, 8, 8])
                 .width(iced::Length::Fill)
                 .height(iced::Length::Fill)
-                .style(crate::theme::Container::WindowBackground)
+                .class(crate::theme::Container::WindowBackground)
                 .apply(|w| id_container(w, iced_core::id::Id::new("COSMIC_content_container")))
                 .into()
         } else {
@@ -770,7 +804,7 @@ impl<App: Application> ApplicationExt for App {
                             } else {
                                 Message::Cosmic(cosmic::Message::ToggleNavBar)
                             })
-                            .style(crate::theme::Button::HeaderBar);
+                            .class(crate::theme::Button::HeaderBar);
 
                         header = header.start(toggle);
                     }
@@ -825,11 +859,9 @@ impl<App: Application> ApplicationExt for App {
 #[cfg(feature = "single-instance")]
 fn single_instance_subscription<App: ApplicationExt>() -> Subscription<Message<App::Message>> {
     use iced_futures::futures::StreamExt;
-
-    iced::subscription::channel(
+    iced_futures::Subscription::run_with_id(
         TypeId::of::<DbusActivation>(),
-        10,
-        move |mut output| async move {
+        iced::stream::channel(10, move |mut output| async move {
             let mut single_instance: DbusActivation = DbusActivation::new();
             let mut rx = single_instance.rx();
             if let Ok(builder) = zbus::ConnectionBuilder::session() {
@@ -888,7 +920,7 @@ fn single_instance_subscription<App: ApplicationExt>() -> Subscription<Message<A
             loop {
                 iced::futures::pending!();
             }
-        },
+        }),
     )
 }
 

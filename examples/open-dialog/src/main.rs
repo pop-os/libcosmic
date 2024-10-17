@@ -4,7 +4,7 @@
 //! An application which provides an open dialog
 
 use apply::Apply;
-use cosmic::app::{Command, Core, Settings};
+use cosmic::app::{Task, Core, Settings};
 use cosmic::dialog::file_chooser::{self, FileFilter};
 use cosmic::iced_core::Length;
 use cosmic::widget::button;
@@ -66,7 +66,7 @@ impl cosmic::Application for App {
     }
 
     /// Creates the application, and optionally emits command on initialize.
-    fn init(core: Core, _input: Self::Flags) -> (Self, Command<Self::Message>) {
+    fn init(core: Core, _input: Self::Flags) -> (Self, Task<Self::Message>) {
         let mut app = App {
             core,
             file_contents: String::new(),
@@ -77,7 +77,7 @@ impl cosmic::Application for App {
         app.set_header_title("Open a file".into());
         let cmd = app.set_window_title(
             "COSMIC OpenDialog Demo".into(),
-            cosmic::iced::window::Id::MAIN,
+            cosmic::iced::self.core.main_window_id().unwrap(),
         );
 
         (app, cmd)
@@ -88,7 +88,7 @@ impl cosmic::Application for App {
         vec![button::suggested("Open").on_press(Message::OpenFile).into()]
     }
 
-    fn update(&mut self, message: Self::Message) -> Command<Self::Message> {
+    fn update(&mut self, message: Self::Message) -> Task<Self::Message> {
         match message {
             Message::Cancelled => {
                 eprintln!("open file dialog cancelled");
@@ -198,7 +198,7 @@ impl cosmic::Application for App {
             }
         }
 
-        Command::none()
+        Task::none()
     }
 
     fn view(&self) -> Element<Self::Message> {

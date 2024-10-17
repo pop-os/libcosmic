@@ -9,10 +9,13 @@ use iced_core::event::{self, Event};
 use iced_core::text::{self, Paragraph, Text};
 use iced_core::widget::tree::{self, Tree};
 use iced_core::{alignment, keyboard, layout, mouse, overlay, renderer, svg, touch, Shadow};
-use iced_core::{Clipboard, Layout, Length, Padding, Pixels, Rectangle, Shell, Size, Widget};
+use iced_core::{
+    Clipboard, Layout, Length, Padding, Pixels, Rectangle, Shell, Size, Vector, Widget,
+};
+use iced_widget::pick_list;
 use std::ffi::OsStr;
 
-pub use iced_widget::style::pick_list::{Appearance, StyleSheet};
+pub use iced_widget::pick_list::{Catalog, Style};
 
 /// A widget for selecting a single value from a list of selections.
 #[derive(Setters)]
@@ -98,7 +101,7 @@ impl<'a, S: AsRef<str>, Message: 'a, Item: Clone + PartialEq + 'static>
                             for (_, item) in &list.options {
                                 state
                                     .selections
-                                    .push((item.clone(), crate::Paragraph::new()));
+                                    .push((item.clone(), crate::Plain::default()));
                             }
                         }
                     }
@@ -182,6 +185,7 @@ impl<'a, S: AsRef<str>, Message: 'a, Item: Clone + PartialEq + 'static>
         tree: &'b mut Tree,
         layout: Layout<'_>,
         renderer: &crate::Renderer,
+        translation: Vector,
     ) -> Option<overlay::Element<'b, Message, crate::Theme, crate::Renderer>> {
         let state = tree.state.downcast_mut::<State<Item>>();
 
@@ -216,8 +220,8 @@ pub struct State<Item: Clone + PartialEq + 'static> {
     keyboard_modifiers: keyboard::Modifiers,
     is_open: bool,
     hovered_option: Option<Item>,
-    selections: Vec<(Item, crate::Paragraph)>,
-    descriptions: Vec<crate::Paragraph>,
+    selections: Vec<(Item, crate::Plain)>,
+    descriptions: Vec<crate::Plain>,
 }
 
 impl<Item: Clone + PartialEq + 'static> State<Item> {
@@ -259,7 +263,7 @@ pub fn layout(
     text_size: f32,
     text_line_height: text::LineHeight,
     font: Option<crate::font::Font>,
-    selection: Option<(&str, &mut crate::Paragraph)>,
+    selection: Option<(&str, &mut crate::Plain)>,
 ) -> layout::Node {
     use std::f32;
 
@@ -267,7 +271,7 @@ pub fn layout(
 
     let max_width = match width {
         Length::Shrink => {
-            let measure = move |(label, paragraph): (_, &mut crate::Paragraph)| -> f32 {
+            let measure = move |(label, paragraph): (_, &mut crate::Plain)| -> f32 {
                 paragraph.update(Text {
                     content: label,
                     bounds: Size::new(f32::MAX, f32::MAX),
@@ -277,7 +281,7 @@ pub fn layout(
                     horizontal_alignment: alignment::Horizontal::Left,
                     vertical_alignment: alignment::Vertical::Top,
                     shaping: text::Shaping::Advanced,
-                    wrap: text::Wrap::default(),
+                    wrapping: text::Wrapping::default(),
                 });
                 paragraph.min_width().round()
             };
@@ -410,7 +414,7 @@ pub fn overlay<'a, S: AsRef<str>, Message: 'a, Item: Clone + PartialEq + 'static
         )
         .width({
             let measure =
-                |label: &str, paragraph: &mut crate::Paragraph, line_height: text::LineHeight| {
+                |label: &str, paragraph: &mut crate::Plain, line_height: text::LineHeight| {
                     paragraph.update(Text {
                         content: label,
                         bounds: Size::new(f32::MAX, f32::MAX),
@@ -420,7 +424,7 @@ pub fn overlay<'a, S: AsRef<str>, Message: 'a, Item: Clone + PartialEq + 'static
                         horizontal_alignment: alignment::Horizontal::Left,
                         vertical_alignment: alignment::Vertical::Top,
                         shaping: text::Shaping::Advanced,
-                        wrap: text::Wrap::default(),
+                        wrapping: text::Wrapping::default(),
                     });
                     paragraph.min_width().round()
                 };
@@ -433,7 +437,7 @@ pub fn overlay<'a, S: AsRef<str>, Message: 'a, Item: Clone + PartialEq + 'static
                         let paragraph = if state.descriptions.len() > desc_count {
                             &mut state.descriptions[desc_count]
                         } else {
-                            state.descriptions.push(crate::Paragraph::new());
+                            state.descriptions.push(crate::Plain::default());
                             state.descriptions.last_mut().unwrap()
                         };
                         desc_count += 1;
@@ -448,7 +452,7 @@ pub fn overlay<'a, S: AsRef<str>, Message: 'a, Item: Clone + PartialEq + 'static
                             None => {
                                 state
                                     .selections
-                                    .push((item.clone(), crate::Paragraph::new()));
+                                    .push((item.clone(), crate::Plain::default()));
                                 state.selections.len() - 1
                             }
                         };
@@ -499,9 +503,9 @@ pub fn draw<'a, S, Item: Clone + PartialEq + 'static>(
     let is_mouse_over = cursor.is_over(bounds);
 
     let style = if is_mouse_over {
-        theme.hovered(&())
+        theme.style(&(), pick_list::Status::Hovered)
     } else {
-        theme.active(&())
+        theme.style(&(), pick_list::Status::Active)
     };
 
     iced_core::Renderer::fill_quad(
@@ -515,10 +519,10 @@ pub fn draw<'a, S, Item: Clone + PartialEq + 'static>(
     );
 
     if let Some(handle) = state.icon.clone() {
-        svg::Renderer::draw(
+        let svg_handle = iced_core::Svg::new(handle).color(style.text_color);
+        svg::Renderer::draw_svg(
             renderer,
-            handle,
-            Some(style.text_color),
+            svg_handle,
             Rectangle {
                 x: bounds.x + bounds.width - gap - 16.0,
                 y: bounds.center_y() - 8.0,
@@ -541,7 +545,7 @@ pub fn draw<'a, S, Item: Clone + PartialEq + 'static>(
         text::Renderer::fill_text(
             renderer,
             Text {
-                content,
+                content: content.to_string(),
                 size: iced::Pixels(text_size),
                 line_height: text_line_height,
                 font,
@@ -549,7 +553,7 @@ pub fn draw<'a, S, Item: Clone + PartialEq + 'static>(
                 horizontal_alignment: alignment::Horizontal::Left,
                 vertical_alignment: alignment::Vertical::Center,
                 shaping: text::Shaping::Advanced,
-                wrap: text::Wrap::default(),
+                wrapping: text::Wrapping::default(),
             },
             bounds.position(),
             style.text_color,
