@@ -6,7 +6,7 @@
 use std::collections::HashMap;
 use std::{env, process};
 
-use cosmic::app::{Task, Core, Settings};
+use cosmic::app::{Core, Settings, Task};
 use cosmic::iced::window;
 use cosmic::iced_core::alignment::{Horizontal, Vertical};
 use cosmic::iced_core::keyboard::Key;
@@ -120,7 +120,7 @@ impl cosmic::Application for App {
                 return window::close(self.core.main_window_id().unwrap());
             }
             Message::WindowNew => match env::current_exe() {
-                Ok(exe) => match process::Task::new(&exe).spawn() {
+                Ok(exe) => match process::Command::new(&exe).spawn() {
                     Ok(_child) => {}
                     Err(err) => {
                         eprintln!("failed to execute {:?}: {}", exe, err);

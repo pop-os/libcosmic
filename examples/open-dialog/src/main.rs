@@ -4,7 +4,7 @@
 //! An application which provides an open dialog
 
 use apply::Apply;
-use cosmic::app::{Task, Core, Settings};
+use cosmic::app::{Core, Settings, Task};
 use cosmic::dialog::file_chooser::{self, FileFilter};
 use cosmic::iced_core::Length;
 use cosmic::widget::button;
@@ -77,7 +77,7 @@ impl cosmic::Application for App {
         app.set_header_title("Open a file".into());
         let cmd = app.set_window_title(
             "COSMIC OpenDialog Demo".into(),
-            cosmic::iced::self.core.main_window_id().unwrap(),
+            self.core.main_window_id().unwrap(),
         );
 
         (app, cmd)
@@ -211,7 +211,11 @@ impl cosmic::Application for App {
                     .into(),
             );
 
-            content.push(iced::widget::vertical_space(Length::Fixed(12.0)).into());
+            content.push(
+                iced::widget::vertical_space()
+                    .height(Length::Fixed(12.0))
+                    .into(),
+            );
         }
 
         content.push(if self.selected_file.is_none() {
