@@ -9,7 +9,7 @@ use crate::{
     Element,
 };
 use derive_setters::Setters;
-use iced_core::{text::Wrap, Length};
+use iced_core::{text::Wrapping, Length};
 use taffy::AlignContent;
 
 /// A settings item aligned in a row
@@ -20,8 +20,8 @@ pub fn item<'a, Message: 'static>(
     widget: impl Into<Element<'a, Message>> + 'a,
 ) -> Row<'a, Message> {
     item_row(vec![
-        text(title).wrap(Wrap::Word).into(),
-        horizontal_space(iced::Length::Fill).into(),
+        text(title).wrapping(Wrapping::Word).into(),
+        horizontal_space().width(iced::Length::Fill).into(),
         widget.into(),
     ])
 }
@@ -35,7 +35,7 @@ pub fn item_row<Message>(children: Vec<Element<Message>>) -> Row<Message> {
     } = theme::THEME.lock().unwrap().cosmic().spacing;
     row::with_children(children)
         .spacing(space_xs)
-        .align_items(iced::Alignment::Center)
+        .align_y(iced::Alignment::Center)
         .padding([0, space_s])
 }
 
@@ -46,7 +46,10 @@ pub fn flex_item<'a, Message: 'static>(
     widget: impl Into<Element<'a, Message>> + 'a,
 ) -> FlexRow<'a, Message> {
     flex_item_row(vec![
-        text(title).wrap(Wrap::Word).width(Length::Fill).into(),
+        text(title)
+            .wrapping(Wrapping::Word)
+            .width(Length::Fill)
+            .into(),
         container(widget).into(),
     ])
 }
@@ -111,8 +114,8 @@ impl<'a, Message: 'static> Item<'a, Message> {
         if let Some(description) = self.description {
             let column = column::with_capacity(2)
                 .spacing(2)
-                .push(text(self.title).wrap(Wrap::Word))
-                .push(text(description).wrap(Wrap::Word).size(10))
+                .push(text(self.title).wrapping(Wrapping::Word))
+                .push(text(description).wrapping(Wrapping::Word).size(10))
                 .width(Length::Fill);
 
             contents.push(column.into());
@@ -129,6 +132,6 @@ impl<'a, Message: 'static> Item<'a, Message> {
         is_checked: bool,
         message: impl Fn(bool) -> Message + 'static,
     ) -> Row<'a, Message> {
-        self.control(crate::widget::toggler(None, is_checked, message))
+        self.control(crate::widget::toggler(is_checked, message))
     }
 }

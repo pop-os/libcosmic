@@ -3,7 +3,7 @@
 
 //! Application API example
 
-use cosmic::app::{Command, Core, Settings};
+use cosmic::app::{Core, Settings, Task};
 use cosmic::{executor, iced, ApplicationExt, Element};
 
 /// Runs application with these settings
@@ -55,7 +55,7 @@ impl cosmic::Application for App {
     }
 
     /// Creates the application, and optionally emits command on initialize.
-    fn init(core: Core, _input: Self::Flags) -> (Self, Command<Self::Message>) {
+    fn init(core: Core, _input: Self::Flags) -> (Self, Task<Self::Message>) {
         let mut app = App {
             core,
             editing: false,
@@ -63,7 +63,7 @@ impl cosmic::Application for App {
             search_id: cosmic::widget::Id::unique(),
         };
 
-        let commands = Command::batch(vec![
+        let commands = Task::batch(vec![
             cosmic::widget::text_input::focus(app.search_id.clone()),
             app.update_title(),
         ]);
@@ -72,7 +72,7 @@ impl cosmic::Application for App {
     }
 
     /// Handle application events here.
-    fn update(&mut self, message: Self::Message) -> Command<Self::Message> {
+    fn update(&mut self, message: Self::Message) -> Task<Self::Message> {
         match message {
             Message::Input(text) => {
                 self.input = text;
@@ -83,7 +83,7 @@ impl cosmic::Application for App {
             }
         }
 
-        Command::none()
+        Task::none()
     }
 
     /// Creates a view after each update.
@@ -115,7 +115,7 @@ impl App
 where
     Self: cosmic::Application,
 {
-    fn update_title(&mut self) -> Command<Message> {
+    fn update_title(&mut self) -> Task<Message> {
         let window_title = format!("COSMIC TextInputs Demo");
         self.set_header_title(window_title.clone());
         self.set_window_title(window_title)

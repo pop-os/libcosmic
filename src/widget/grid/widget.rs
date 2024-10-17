@@ -7,9 +7,8 @@ use iced_core::event::{self, Event};
 use iced_core::widget::{Operation, Tree};
 use iced_core::{
     layout, mouse, overlay, renderer, Alignment, Clipboard, Layout, Length, Padding, Rectangle,
-    Shell, Widget,
+    Shell, Vector, Widget,
 };
-use iced_renderer::core::widget::OperationOutputWrapper;
 
 /// Responsively generates rows and columns of widgets based on its dimmensions.
 #[must_use]
@@ -154,7 +153,7 @@ impl<'a, Message: 'static + Clone> Widget<Message, crate::Theme, Renderer> for G
         tree: &mut Tree,
         layout: Layout<'_>,
         renderer: &Renderer,
-        operation: &mut dyn Operation<OperationOutputWrapper<Message>>,
+        operation: &mut dyn Operation<()>,
     ) {
         operation.container(None, layout.bounds(), &mut |operation| {
             self.children
@@ -247,8 +246,9 @@ impl<'a, Message: 'static + Clone> Widget<Message, crate::Theme, Renderer> for G
         tree: &'b mut Tree,
         layout: Layout<'_>,
         renderer: &Renderer,
+        translation: Vector,
     ) -> Option<overlay::Element<'b, Message, crate::Theme, Renderer>> {
-        overlay::from_children(&mut self.children, tree, layout, renderer)
+        overlay::from_children(&mut self.children, tree, layout, renderer, translation)
     }
 
     #[cfg(feature = "a11y")]
@@ -274,7 +274,7 @@ impl<'a, Message: 'static + Clone> Widget<Message, crate::Theme, Renderer> for G
         state: &Tree,
         layout: Layout<'_>,
         renderer: &Renderer,
-        dnd_rectangles: &mut iced_style::core::clipboard::DndDestinationRectangles,
+        dnd_rectangles: &mut iced_core::clipboard::DndDestinationRectangles,
     ) {
         for ((e, layout), state) in self
             .children

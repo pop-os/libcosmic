@@ -24,7 +24,7 @@ pub fn icon(handle: Handle) -> Icon {
         handle,
         height: None,
         size: 16,
-        style: crate::theme::Svg::default(),
+        class: crate::theme::Svg::default(),
         width: None,
     }
 }
@@ -40,7 +40,7 @@ pub fn from_name(name: impl Into<Arc<str>>) -> Named {
 pub struct Icon {
     #[setters(skip)]
     handle: Handle,
-    style: crate::theme::Svg,
+    class: crate::theme::Svg,
     pub(super) size: u16,
     content_fit: ContentFit,
     #[setters(strip_option)]
@@ -86,7 +86,7 @@ impl Icon {
 
         let from_svg = |handle| {
             Svg::<crate::Theme>::new(handle)
-                .style(self.style.clone())
+                .class(self.class.clone())
                 .width(
                     self.width
                         .unwrap_or_else(|| Length::Fixed(f32::from(self.size))),

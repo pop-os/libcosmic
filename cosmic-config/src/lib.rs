@@ -384,6 +384,7 @@ where
     ) -> (Vec<crate::Error>, Vec<&'static str>);
 }
 
+#[derive(Debug)]
 pub struct Update<T> {
     pub errors: Vec<crate::Error>,
     pub keys: Vec<&'static str>,

@@ -60,7 +60,7 @@ pub use iced::widget::{combo_box, ComboBox};
 pub use iced::widget::{container, Container};
 
 #[doc(inline)]
-pub use iced::widget::{horizontal_space, space, vertical_space, Space};
+pub use iced::widget::{horizontal_space, vertical_space, Space};
 
 #[doc(inline)]
 pub use iced::widget::{image, Image};
@@ -93,6 +93,9 @@ pub use iced::widget::{text_editor, TextEditor};
 pub use iced_core::widget::{Id, Operation, Widget};
 
 pub mod aspect_ratio;
+
+#[cfg(feature = "autosize")]
+pub mod autosize;
 
 pub mod button;
 #[doc(inline)]
@@ -166,20 +169,20 @@ pub mod divider {
 
         /// Horizontal divider with default thickness
         #[must_use]
-        pub fn default() -> Rule<crate::Theme> {
-            horizontal_rule(1).style(crate::theme::Rule::Default)
+        pub fn default<'a>() -> Rule<'a, crate::Theme> {
+            horizontal_rule(1).class(crate::theme::Rule::Default)
         }
 
         /// Horizontal divider with light thickness
         #[must_use]
-        pub fn light() -> Rule<crate::Theme> {
-            horizontal_rule(1).style(crate::theme::Rule::LightDivider)
+        pub fn light<'a>() -> Rule<'a, crate::Theme> {
+            horizontal_rule(1).class(crate::theme::Rule::LightDivider)
         }
 
         /// Horizontal divider with heavy thickness.
         #[must_use]
-        pub fn heavy() -> Rule<crate::Theme> {
-            horizontal_rule(4).style(crate::theme::Rule::HeavyDivider)
+        pub fn heavy<'a>() -> Rule<'a, crate::Theme> {
+            horizontal_rule(4).class(crate::theme::Rule::HeavyDivider)
         }
     }
 
@@ -189,20 +192,20 @@ pub mod divider {
 
         /// Vertical divider with default thickness
         #[must_use]
-        pub fn default() -> Rule<crate::Theme> {
-            vertical_rule(1).style(crate::theme::Rule::Default)
+        pub fn default<'a>() -> Rule<'a, crate::Theme> {
+            vertical_rule(1).class(crate::theme::Rule::Default)
         }
 
         /// Vertical divider with light thickness
         #[must_use]
-        pub fn light() -> Rule<crate::Theme> {
-            vertical_rule(4).style(crate::theme::Rule::LightDivider)
+        pub fn light<'a>() -> Rule<'a, crate::Theme> {
+            vertical_rule(4).class(crate::theme::Rule::LightDivider)
         }
 
         /// Vertical divider with heavy thickness.
         #[must_use]
-        pub fn heavy() -> Rule<crate::Theme> {
-            vertical_rule(10).style(crate::theme::Rule::HeavyDivider)
+        pub fn heavy<'a>() -> Rule<'a, crate::Theme> {
+            vertical_rule(10).class(crate::theme::Rule::HeavyDivider)
         }
     }
 }
@@ -268,7 +271,7 @@ pub use radio::{radio, Radio};
 
 pub mod rectangle_tracker;
 #[doc(inline)]
-pub use rectangle_tracker::{rectangle_tracker, RectangleTracker};
+pub use rectangle_tracker::{rectangle_tracking_container, RectangleTracker};
 
 #[doc(inline)]
 pub use row::{row, Row};
@@ -343,13 +346,13 @@ pub mod tooltip {
 
     pub fn tooltip<'a, Message>(
         content: impl Into<Element<'a, Message>>,
-        tooltip: impl Into<Cow<'a, str>>,
+        tooltip: impl Into<Element<'a, Message>>,
         position: Position,
     ) -> Tooltip<'a, Message> {
         let xxs = crate::theme::active().cosmic().space_xxs();
 
         Tooltip::new(content, tooltip, position)
-            .style(crate::theme::Container::Tooltip)
+            .class(crate::theme::Container::Tooltip)
             .padding(xxs)
             .gap(1)
     }

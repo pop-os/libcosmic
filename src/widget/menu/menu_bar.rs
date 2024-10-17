@@ -9,6 +9,7 @@ use super::{
 };
 use crate::style::menu_bar::StyleSheet;
 
+use iced::{Point, Vector};
 use iced_core::Border;
 use iced_widget::core::{
     event,
@@ -434,6 +435,7 @@ where
         tree: &'b mut Tree,
         layout: Layout<'_>,
         _renderer: &Renderer,
+        translation: Vector,
     ) -> Option<overlay::Element<'b, Message, crate::Theme, Renderer>> {
         let state = tree.state.downcast_ref::<MenuBarState>();
         if !state.open {
@@ -455,6 +457,7 @@ where
                 root_bounds_list: layout.children().map(|lo| lo.bounds()).collect(),
                 path_highlight: self.path_highlight,
                 style: &self.style,
+                position: Point::new(translation.x, translation.y),
             }
             .overlay(),
         )

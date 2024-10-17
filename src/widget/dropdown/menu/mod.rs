@@ -97,7 +97,7 @@ impl<'a, S: AsRef<str>, Message: 'a> Menu<'a, S, Message> {
         position: Point,
         target_height: f32,
     ) -> overlay::Element<'a, Message, crate::Theme, crate::Renderer> {
-        overlay::Element::new(position, Box::new(Overlay::new(self, target_height)))
+        overlay::Element::new(Box::new(Overlay::new(self, target_height, position)))
     }
 }
 
@@ -129,10 +129,15 @@ struct Overlay<'a, Message> {
     width: f32,
     target_height: f32,
     style: (),
+    position: Point,
 }
 
 impl<'a, Message: 'a> Overlay<'a, Message> {
-    pub fn new<S: AsRef<str>>(menu: Menu<'a, S, Message>, target_height: f32) -> Self {
+    pub fn new<S: AsRef<str>>(
+        menu: Menu<'a, S, Message>,
+        target_height: f32,
+        position: Point,
+    ) -> Self {
         let Menu {
             state,
             options,
@@ -160,7 +165,7 @@ impl<'a, Message: 'a> Overlay<'a, Message> {
 
         container = container
             .padding(padding)
-            .style(crate::style::Container::Dropdown);
+            .class(crate::style::Container::Dropdown);
 
         state.tree.diff(&mut container as &mut dyn Widget<_, _, _>);
 
@@ -170,6 +175,7 @@ impl<'a, Message: 'a> Overlay<'a, Message> {
             width,
             target_height,
             style,
+            position,
         }
     }
 }
@@ -177,13 +183,8 @@ impl<'a, Message: 'a> Overlay<'a, Message> {
 impl<'a, Message> iced_core::Overlay<Message, crate::Theme, crate::Renderer>
     for Overlay<'a, Message>
 {
-    fn layout(
-        &mut self,
-        renderer: &crate::Renderer,
-        bounds: Size,
-        position: Point,
-        _translation: iced::Vector,
-    ) -> layout::Node {
+    fn layout(&mut self, renderer: &crate::Renderer, bounds: Size) -> layout::Node {
+        let position = self.position;
         let space_below = bounds.height - (position.y + self.target_height);
         let space_above = position.y;
 
@@ -447,10 +448,13 @@ impl<'a, S: AsRef<str>, Message> Widget<Message, crate::Theme, crate::Renderer>
                     appearance.selected_background,
                 );
 
-                svg::Renderer::draw(
+                let svg_handle =
+                    iced_core::Svg::new(crate::widget::common::object_select().clone())
+                        .color(appearance.selected_text_color)
+                        .border_radius(appearance.border_radius);
+                svg::Renderer::draw_svg(
                     renderer,
-                    crate::widget::common::object_select().clone(),
-                    Some(appearance.selected_text_color),
+                    svg_handle,
                     Rectangle {
                         x: item_x + item_width - 16.0 - 8.0,
                         y: bounds.y + (bounds.height / 2.0 - 8.0),
@@ -494,7 +498,7 @@ impl<'a, S: AsRef<str>, Message> Widget<Message, crate::Theme, crate::Renderer>
             text::Renderer::fill_text(
                 renderer,
                 Text {
-                    content: option.as_ref(),
+                    content: option.as_ref().to_string(),
                     bounds: bounds.size(),
                     size: Pixels(text_size),
                     line_height: self.text_line_height,
@@ -502,7 +506,7 @@ impl<'a, S: AsRef<str>, Message> Widget<Message, crate::Theme, crate::Renderer>
                     horizontal_alignment: alignment::Horizontal::Left,
                     vertical_alignment: alignment::Vertical::Center,
                     shaping: text::Shaping::Advanced,
-                    wrap: text::Wrap::default(),
+                    wrapping: text::Wrapping::default(),
                 },
                 bounds.position(),
                 color,

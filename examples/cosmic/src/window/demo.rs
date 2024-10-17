@@ -482,7 +482,7 @@ impl State {
             ))
             .layer(cosmic::cosmic_theme::Layer::Secondary)
             .padding(16)
-            .style(cosmic::theme::Container::Background)
+            .class(cosmic::theme::Container::Background)
             .into(),
             cosmic::widget::text_input::secure_input(
                 "Type to search apps or type “?” for more options...",

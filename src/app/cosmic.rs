@@ -1,32 +1,23 @@
 // Copyright 2023 System76 <info@system76.com>
 // SPDX-License-Identifier: MPL-2.0
 
+use std::borrow::Borrow;
 use std::sync::Arc;
 
-use super::{command, Application, ApplicationExt, Core, Subscription};
+use super::{Application, ApplicationExt, Core, Subscription};
 use crate::config::CosmicTk;
-use crate::theme::{self, Theme, ThemeType, THEME};
+use crate::theme::{Theme, ThemeType, THEME};
 use crate::widget::nav_bar;
 use crate::{keyboard_nav, Element};
 #[cfg(feature = "wayland")]
 use cctk::sctk::reexports::csd_frame::{WindowManagerCapabilities, WindowState};
 use cosmic_theme::ThemeMode;
 #[cfg(feature = "wayland")]
-use iced::event::wayland::{self, WindowEvent};
-#[cfg(feature = "wayland")]
-use iced::event::PlatformSpecific;
-#[cfg(all(feature = "winit", feature = "multi-window"))]
-use iced::multi_window::Application as IcedApplication;
-#[cfg(feature = "wayland")]
-use iced::wayland::Application as IcedApplication;
+use iced::event::wayland;
 #[cfg(not(any(feature = "multi-window", feature = "wayland")))]
 use iced::Application as IcedApplication;
-use iced::{window, Command};
+use iced::{window, Task};
 use iced_futures::event::listen_with;
-#[cfg(not(feature = "wayland"))]
-use iced_runtime::command::Action;
-#[cfg(not(feature = "wayland"))]
-use iced_runtime::window::Action as WindowAction;
 use palette::color_difference::EuclideanDistance;
 
 /// A message managed internally by COSMIC.
@@ -65,7 +56,7 @@ pub enum Message {
     /// Updates the window maximized state
     WindowMaximized(window::Id, bool),
     /// Updates the tracked window geometry.
-    WindowResize(window::Id, u32, u32),
+    WindowResize(window::Id, f32, f32),
     /// Tracks updates to window state.
     #[cfg(feature = "wayland")]
     WindowState(window::Id, WindowState),
@@ -86,7 +77,9 @@ pub enum Message {
     Unfocus(window::Id),
     /// Tracks updates to window suggested size.
     #[cfg(feature = "applet")]
-    Configure(cctk::sctk::shell::xdg::window::WindowConfigure),
+    SuggestedBounds(Option<iced::Size>),
+    /// Window Created
+    MainWindowCreated(window::Id),
 }
 
 #[derive(Default)]
@@ -94,109 +87,104 @@ pub struct Cosmic<App> {
     pub app: App,
 }
 
-impl<T: Application> IcedApplication for Cosmic<T>
+impl<T: Application> Cosmic<T>
 where
     T::Message: Send + 'static,
 {
-    type Executor = T::Executor;
-    type Flags = (Core, T::Flags);
-    type Message = super::Message<T::Message>;
-    type Theme = Theme;
-
-    fn new((mut core, flags): Self::Flags) -> (Self, iced::Command<Self::Message>) {
+    pub fn init(
+        (mut core, flags, window_settings): (Core, T::Flags, iced::window::Settings),
+    ) -> (Self, iced::Task<super::Message<T::Message>>) {
         #[cfg(feature = "dbus-config")]
         {
             use iced_futures::futures::executor::block_on;
             core.settings_daemon = block_on(cosmic_config::dbus::settings_daemon_proxy()).ok();
         }
 
-        let (model, command) = T::init(core, flags);
+        let (model, mut command) = T::init(core, flags);
 
         (Self::new(model), command)
     }
 
-    #[cfg(not(any(feature = "multi-window", feature = "wayland")))]
-    fn title(&self) -> String {
+    #[cfg(not(feature = "multi-window"))]
+    pub fn title(&self) -> String {
         self.app.title().to_string()
     }
 
-    #[cfg(any(feature = "multi-window", feature = "wayland"))]
-    fn title(&self, id: window::Id) -> String {
+    #[cfg(feature = "multi-window")]
+    pub fn title(&self, id: window::Id) -> String {
         self.app.title(id).to_string()
     }
 
-    fn update(&mut self, message: Self::Message) -> iced::Command<Self::Message> {
+    pub fn update(
+        &mut self,
+        message: super::Message<T::Message>,
+    ) -> iced::Task<super::Message<T::Message>> {
         match message {
             super::Message::App(message) => self.app.update(message),
             super::Message::Cosmic(message) => self.cosmic_update(message),
-            super::Message::None => iced::Command::none(),
+            super::Message::None => iced::Task::none(),
             #[cfg(feature = "single-instance")]
             super::Message::DbusActivation(message) => self.app.dbus_activation(message),
         }
     }
 
-    #[cfg(not(any(feature = "multi-window", feature = "wayland")))]
-    fn scale_factor(&self) -> f64 {
+    #[cfg(not(feature = "multi-window"))]
+    pub fn scale_factor(&self) -> f64 {
         f64::from(self.app.core().scale_factor())
     }
 
-    #[cfg(any(feature = "multi-window", feature = "wayland"))]
-    fn scale_factor(&self, _id: window::Id) -> f64 {
+    #[cfg(feature = "multi-window")]
+    pub fn scale_factor(&self, _id: window::Id) -> f64 {
         f64::from(self.app.core().scale_factor())
     }
 
-    fn style(&self) -> <Self::Theme as iced_style::application::StyleSheet>::Style {
+    pub fn style(&self, theme: &Theme) -> iced_runtime::Appearance {
         if let Some(style) = self.app.style() {
             style
         } else if self.app.core().window.sharp_corners {
-            theme::Application::default()
+            let theme = THEME.lock().unwrap();
+            crate::style::iced::application::appearance(theme.borrow())
         } else {
-            theme::Application::Custom(Box::new(|theme| iced_style::application::Appearance {
+            let theme = THEME.lock().unwrap();
+            iced_runtime::Appearance {
                 background_color: iced_core::Color::TRANSPARENT,
                 icon_color: theme.cosmic().on_bg_color().into(),
                 text_color: theme.cosmic().on_bg_color().into(),
-            }))
+            }
         }
     }
 
     #[allow(clippy::too_many_lines)]
-    fn subscription(&self) -> Subscription<Self::Message> {
-        let window_events = listen_with(|event, _| {
+    pub fn subscription(&self) -> Subscription<super::Message<T::Message>> {
+        let window_events = listen_with(|event, _, id| {
             match event {
-                iced::Event::Window(id, window::Event::Resized { width, height }) => {
+                iced::Event::Window(window::Event::Resized(iced::Size { width, height })) => {
                     return Some(Message::WindowResize(id, width, height));
                 }
-                iced::Event::Window(id, window::Event::Closed) => {
+                iced::Event::Window(window::Event::Closed) => {
                     return Some(Message::SurfaceClosed(id))
                 }
-                iced::Event::Window(id, window::Event::Focused) => return Some(Message::Focus(id)),
-                iced::Event::Window(id, window::Event::Unfocused) => {
-                    return Some(Message::Unfocus(id))
+                iced::Event::Window(window::Event::Focused) => return Some(Message::Focus(id)),
+                iced::Event::Window(window::Event::Unfocused) => return Some(Message::Unfocus(id)),
+                iced::Event::Window(window::Event::Opened { .. }) => {
+                    return Some(Message::MainWindowCreated(id));
                 }
                 #[cfg(feature = "wayland")]
-                iced::Event::PlatformSpecific(PlatformSpecific::Wayland(event)) => match event {
-                    wayland::Event::Window(WindowEvent::State(state), _surface, id) => {
-                        return Some(Message::WindowState(id, state));
+                iced::Event::PlatformSpecific(iced::event::PlatformSpecific::Wayland(event)) => {
+                    match event {
+                        wayland::Event::Popup(wayland::PopupEvent::Done, _, id)
+                        | wayland::Event::Layer(wayland::LayerEvent::Done, _, id) => {
+                            return Some(Message::SurfaceClosed(id));
+                        }
+                        #[cfg(feature = "applet")]
+                        wayland::Event::Window(
+                            iced::event::wayland::WindowEvent::SuggestedBounds(b),
+                        ) => {
+                            return Some(Message::SuggestedBounds(b));
+                        }
+                        _ => (),
                     }
-                    wayland::Event::Window(
-                        WindowEvent::WmCapabilities(capabilities),
-                        _surface,
-                        id,
-                    ) => {
-                        return Some(Message::WmCapabilities(id, capabilities));
-                    }
-                    wayland::Event::Popup(wayland::PopupEvent::Done, _, id)
-                    | wayland::Event::Layer(wayland::LayerEvent::Done, _, id) => {
-                        return Some(Message::SurfaceClosed(id));
-                    }
-                    #[cfg(feature = "applet")]
-                    wayland::Event::Window(WindowEvent::Configure(conf), _surface, id)
-                        if id == window::Id::MAIN =>
-                    {
-                        return Some(Message::Configure(conf));
-                    }
-                    _ => (),
-                },
+                }
                 _ => (),
             }
 
@@ -275,19 +263,24 @@ where
         Subscription::batch(subscriptions)
     }
 
-    #[cfg(not(any(feature = "multi-window", feature = "wayland")))]
-    fn theme(&self) -> Self::Theme {
+    #[cfg(not(feature = "multi-window"))]
+    pub fn theme(&self) -> Theme {
         crate::theme::active()
     }
 
-    #[cfg(any(feature = "multi-window", feature = "wayland"))]
-    fn theme(&self, _id: window::Id) -> Self::Theme {
+    #[cfg(feature = "multi-window")]
+    pub fn theme(&self, _id: window::Id) -> Theme {
         crate::theme::active()
     }
 
-    #[cfg(any(feature = "multi-window", feature = "wayland"))]
-    fn view(&self, id: window::Id) -> Element<Self::Message> {
-        if id != self.app.main_window_id() {
+    #[cfg(feature = "multi-window")]
+    pub fn view(&self, id: window::Id) -> Element<super::Message<T::Message>> {
+        if !self
+            .app
+            .core()
+            .main_window_id()
+            .is_some_and(|main_id| main_id == id)
+        {
             return self.app.view_window(id).map(super::Message::App);
         }
 
@@ -298,37 +291,43 @@ where
         }
     }
 
-    #[cfg(not(any(feature = "multi-window", feature = "wayland")))]
-    fn view(&self) -> Element<Self::Message> {
+    #[cfg(not(feature = "multi-window"))]
+    pub fn view(&self) -> Element<super::Message<T::Message>> {
         self.app.view_main()
     }
 }
 
 impl<T: Application> Cosmic<T> {
-    #[cfg(feature = "wayland")]
-    pub fn close(&mut self) -> iced::Command<super::Message<T::Message>> {
-        iced_sctk::commands::window::close_window(self.app.main_window_id())
-    }
-
-    #[cfg(not(feature = "wayland"))]
     #[allow(clippy::unused_self)]
-    pub fn close(&mut self) -> iced::Command<super::Message<T::Message>> {
-        iced::Command::single(Action::Window(WindowAction::Close(
-            self.app.main_window_id(),
-        )))
+    pub fn close(&mut self) -> iced::Task<super::Message<T::Message>> {
+        if let Some(id) = self.app.core().main_window_id() {
+            iced::window::close(id)
+        } else {
+            iced::Task::none()
+        }
     }
 
     #[allow(clippy::too_many_lines)]
-    fn cosmic_update(&mut self, message: Message) -> iced::Command<super::Message<T::Message>> {
+    fn cosmic_update(&mut self, message: Message) -> iced::Task<super::Message<T::Message>> {
         match message {
             Message::WindowMaximized(id, maximized) => {
-                if self.app.main_window_id() == id {
+                if self
+                    .app
+                    .core()
+                    .main_window_id()
+                    .is_some_and(|main_id| main_id == id)
+                {
                     self.app.core_mut().window.sharp_corners = maximized;
                 }
             }
 
             Message::WindowResize(id, width, height) => {
-                if self.app.main_window_id() == id {
+                if self
+                    .app
+                    .core()
+                    .main_window_id()
+                    .is_some_and(|main_id| main_id == id)
+                {
                     self.app.core_mut().set_window_width(width);
                     self.app.core_mut().set_window_height(height);
                 }
@@ -336,15 +335,19 @@ impl<T: Application> Cosmic<T> {
                 self.app.on_window_resize(id, width, height);
 
                 //TODO: more efficient test of maximized (winit has no event for maximize if set by the OS)
-                #[cfg(not(feature = "wayland"))]
-                return iced::window::fetch_maximized(id, move |maximized| {
+                return iced::window::get_maximized(id).map(move |maximized| {
                     super::Message::Cosmic(Message::WindowMaximized(id, maximized))
                 });
             }
 
             #[cfg(feature = "wayland")]
             Message::WindowState(id, state) => {
-                if self.app.main_window_id() == id {
+                if self
+                    .app
+                    .core()
+                    .main_window_id()
+                    .is_some_and(|main_id| main_id == id)
+                {
                     self.app.core_mut().window.sharp_corners = state.intersects(
                         WindowState::MAXIMIZED
                             | WindowState::FULLSCREEN
@@ -359,7 +362,12 @@ impl<T: Application> Cosmic<T> {
 
             #[cfg(feature = "wayland")]
             Message::WmCapabilities(id, capabilities) => {
-                if self.app.main_window_id() == id {
+                if self
+                    .app
+                    .core()
+                    .main_window_id()
+                    .is_some_and(|main_id| main_id == id)
+                {
                     self.app.core_mut().window.show_maximize =
                         capabilities.contains(WindowManagerCapabilities::MAXIMIZE);
                     self.app.core_mut().window.show_minimize =
@@ -379,9 +387,7 @@ impl<T: Application> Cosmic<T> {
                 keyboard_nav::Message::Escape => return self.app.on_escape(),
                 keyboard_nav::Message::Search => return self.app.on_search(),
 
-                keyboard_nav::Message::Fullscreen => {
-                    return command::toggle_maximize(Some(self.app.main_window_id()))
-                }
+                keyboard_nav::Message::Fullscreen => return self.app.core().toggle_maximize(None),
             },
 
             Message::ContextDrawer(show) => {
@@ -389,11 +395,11 @@ impl<T: Application> Cosmic<T> {
                 return self.app.on_context_drawer();
             }
 
-            Message::Drag => return command::drag(Some(self.app.main_window_id())),
+            Message::Drag => return self.app.core().drag(None),
 
-            Message::Minimize => return command::minimize(Some(self.app.main_window_id())),
+            Message::Minimize => return self.app.core().minimize(None),
 
-            Message::Maximize => return command::toggle_maximize(Some(self.app.main_window_id())),
+            Message::Maximize => return self.app.core().toggle_maximize(None),
 
             Message::NavBar(key) => {
                 self.app.core_mut().nav_bar_set_toggled_condensed(false);
@@ -433,7 +439,7 @@ impl<T: Application> Cosmic<T> {
                 let cur_is_dark = THEME.lock().unwrap().theme_type.is_dark();
                 // Ignore updates if the current theme mode does not match.
                 if cur_is_dark != theme.cosmic().is_dark {
-                    return iced::Command::none();
+                    return iced::Task::none();
                 }
                 let cmd = self.app.system_theme_update(&keys, theme.cosmic());
                 // Record the last-known system theme in event that the current theme is custom.
@@ -479,7 +485,7 @@ impl<T: Application> Cosmic<T> {
             }
             Message::SystemThemeModeChange(keys, mode) => {
                 if !keys.contains(&"is_dark") {
-                    return iced::Command::none();
+                    return iced::Task::none();
                 }
                 if match THEME.lock().unwrap().theme_type {
                     ThemeType::System {
@@ -488,7 +494,7 @@ impl<T: Application> Cosmic<T> {
                     } => prefer_dark.is_some(),
                     _ => false,
                 } {
-                    return iced::Command::none();
+                    return iced::Task::none();
                 }
                 let mut cmds = vec![self.app.system_theme_mode_update(&keys, &mode)];
 
@@ -527,23 +533,37 @@ impl<T: Application> Cosmic<T> {
                         }
                     }
                 }
-                return Command::batch(cmds);
+                return Task::batch(cmds);
             }
-            Message::Activate(_token) => {
+            Message::Activate(_token) =>
+            {
                 #[cfg(feature = "wayland")]
-                return iced_sctk::commands::activation::activate(
-                    self.app.main_window_id(),
-                    #[allow(clippy::used_underscore_binding)]
-                    _token,
-                );
-            }
-            Message::SurfaceClosed(id) => {
-                if let Some(msg) = self.app.on_close_requested(id) {
-                    return self.app.update(msg);
+                if let Some(id) = self.app.core().main_window_id() {
+                    return iced_winit::platform_specific::commands::activation::activate(
+                        id,
+                        #[allow(clippy::used_underscore_binding)]
+                        _token,
+                    );
                 }
             }
+            Message::SurfaceClosed(id) => {
+                let mut ret = if let Some(msg) = self.app.on_close_requested(id) {
+                    self.app.update(msg)
+                } else {
+                    Task::none()
+                };
+                let core = self.app.core();
+                if core.exit_on_main_window_closed
+                    && core.main_window_id().is_some_and(|m_id| id == m_id)
+                {
+                    ret = Task::batch(vec![iced::exit::<super::Message<T::Message>>()]);
+                }
+                return ret;
+            }
             Message::ShowWindowMenu => {
-                return window::show_window_menu(window::Id::MAIN);
+                if let Some(id) = self.app.core().main_window_id() {
+                    return iced::window::show_system_menu(id);
+                }
             }
             #[cfg(feature = "xdg-portal")]
             Message::DesktopSettings(crate::theme::portal::Desktop::ColorScheme(s)) => {
@@ -555,7 +575,7 @@ impl<T: Application> Cosmic<T> {
                     } => prefer_dark.is_some(),
                     _ => false,
                 } {
-                    return iced::Command::none();
+                    return iced::Task::none();
                 }
                 let is_dark = match s {
                     ColorScheme::NoPreference => None,
@@ -595,7 +615,7 @@ impl<T: Application> Cosmic<T> {
 
                 if cur_accent.distance_squared(*c) < 0.00001 {
                     // skip calculations if we already have the same color
-                    return iced::Command::none();
+                    return iced::Task::none();
                 }
 
                 {
@@ -640,19 +660,20 @@ impl<T: Application> Cosmic<T> {
                     core.focused_window = None;
                 }
             }
-            #[cfg(feature = "applet")]
-            Message::Configure(configure) => {
-                if let Some(w) = configure.new_size.0 {
-                    self.app.core_mut().set_window_width(w.get());
-                }
-                if let Some(h) = configure.new_size.1 {
-                    self.app.core_mut().set_window_height(h.get());
-                }
-                self.app.core_mut().applet.configure = Some(configure);
+            Message::MainWindowCreated(id) => {
+                let core = self.app.core_mut();
+                _ = core.main_window.set(id);
             }
+            #[cfg(feature = "applet")]
+            Message::SuggestedBounds(b) => {
+                tracing::info!("Suggested bounds: {b:?}");
+                let core = self.app.core_mut();
+                core.applet.suggested_bounds = b;
+            }
+            _ => {}
         }
 
-        iced::Command::none()
+        iced::Task::none()
     }
 }
 

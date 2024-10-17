@@ -3,7 +3,7 @@
 
 //! Application API example
 
-use cosmic::app::{Command, Core, Settings};
+use cosmic::app::{Task, Core, Settings};
 use cosmic::iced_core::Size;
 use cosmic::widget::{menu, segmented_button};
 use cosmic::{executor, iced, ApplicationExt, Element};
@@ -65,7 +65,7 @@ impl cosmic::Application for App {
     }
 
     /// Creates the application, and optionally emits command on initialize.
-    fn init(core: Core, _input: Self::Flags) -> (Self, Command<Self::Message>) {
+    fn init(core: Core, _input: Self::Flags) -> (Self, Task<Self::Message>) {
         let mut app = App {
             core,
             button_label: String::from("Right click me"),
@@ -80,10 +80,10 @@ impl cosmic::Application for App {
     }
 
     /// Handle application events here.
-    fn update(&mut self, message: Self::Message) -> Command<Self::Message> {
+    fn update(&mut self, message: Self::Message) -> Task<Self::Message> {
         self.button_label = format!("Clicked {message:?}");
 
-        Command::none()
+        Task::none()
     }
 
     /// Creates a view after each update.

@@ -4,28 +4,25 @@
 #![allow(clippy::module_name_repetitions)]
 #![cfg_attr(target_os = "redox", feature(lazy_cell))]
 
-#[cfg(all(feature = "wayland", feature = "winit"))]
-compile_error!("cannot use `wayland` feature with `winit`");
-
 /// Recommended default imports.
 pub mod prelude {
     pub use crate::ext::*;
-    #[cfg(any(feature = "winit", feature = "wayland"))]
+    #[cfg(feature = "winit")]
     pub use crate::ApplicationExt;
     pub use crate::{Also, Apply, Element, Renderer, Theme};
 }
 
 pub use apply::{Also, Apply};
 
-#[cfg(any(feature = "winit", feature = "wayland"))]
+#[cfg(feature = "winit")]
 pub mod app;
-#[cfg(any(feature = "winit", feature = "wayland"))]
+#[cfg(feature = "winit")]
 pub use app::{Application, ApplicationExt};
 
 #[cfg(feature = "applet")]
 pub mod applet;
 
-pub use iced::Command;
+pub use iced::Task;
 pub mod command;
 
 pub mod config;
@@ -62,12 +59,6 @@ pub use iced_renderer;
 #[doc(inline)]
 pub use iced_runtime;
 
-#[cfg(feature = "wayland")]
-pub use iced_sctk;
-
-#[doc(inline)]
-pub use iced_style;
-
 #[doc(inline)]
 pub use iced_widget;
 
@@ -96,7 +87,7 @@ pub mod theme;
 pub use theme::{style, Theme};
 
 pub mod widget;
-
+type Plain = iced_core::text::paragraph::Plain<<Renderer as iced_core::text::Renderer>::Paragraph>;
 type Paragraph = <Renderer as iced_core::text::Renderer>::Paragraph;
 pub type Renderer = iced::Renderer;
 pub type Element<'a, Message> = iced::Element<'a, Message, crate::Theme, Renderer>;

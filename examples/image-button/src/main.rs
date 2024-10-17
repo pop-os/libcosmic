@@ -3,7 +3,7 @@
 
 //! Application API example
 
-use cosmic::app::{Command, Core, Settings};
+use cosmic::app::{Task, Core, Settings};
 use cosmic::{executor, iced, ApplicationExt, Element};
 
 /// Runs application with these settings
@@ -51,7 +51,7 @@ impl cosmic::Application for App {
     }
 
     /// Creates the application, and optionally emits command on initialize.
-    fn init(core: Core, _input: Self::Flags) -> (Self, Command<Self::Message>) {
+    fn init(core: Core, _input: Self::Flags) -> (Self, Task<Self::Message>) {
         let mut app = App {
             core,
             selected: 0,
@@ -67,7 +67,7 @@ impl cosmic::Application for App {
     }
 
     /// Handle application events here.
-    fn update(&mut self, message: Self::Message) -> Command<Self::Message> {
+    fn update(&mut self, message: Self::Message) -> Task<Self::Message> {
         match message {
             Message::Clicked(id) => self.selected = id,
             Message::Remove(id) => {
@@ -75,7 +75,7 @@ impl cosmic::Application for App {
             }
         }
 
-        Command::none()
+        Task::none()
     }
 
     /// Creates a view after each update.
@@ -106,7 +106,7 @@ impl App
 where
     Self: cosmic::Application,
 {
-    fn update_title(&mut self) -> Command<Message> {
+    fn update_title(&mut self) -> Task<Message> {
         self.set_header_title(String::from("Image Button Demo"));
         self.set_window_title(String::from("Image Button Demo"))
     }

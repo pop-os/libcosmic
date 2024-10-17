@@ -1,6 +1,10 @@
-use crate::Theme;
-use cosmic_theme::LayeredTheme;
+mod subscription;
+
+use iced::futures::channel::mpsc::UnboundedSender;
 use iced::widget::Container;
+use iced::Vector;
+pub use subscription::*;
+
 use iced_core::alignment;
 use iced_core::event::{self, Event};
 use iced_core::layout;
@@ -8,58 +12,91 @@ use iced_core::mouse;
 use iced_core::overlay;
 use iced_core::renderer;
 use iced_core::widget::Tree;
-use iced_core::{Clipboard, Element, Layout, Length, Padding, Rectangle, Shell, Vector, Widget};
+use iced_core::{Clipboard, Element, Layout, Length, Padding, Rectangle, Shell, Widget};
+use std::{fmt::Debug, hash::Hash};
+
 pub use iced_widget::container::{Catalog, Style};
 
-pub fn layer_container<'a, Message: 'static, E>(
-    content: E,
-) -> LayerContainer<'a, Message, crate::Renderer>
+pub fn min_size_tracker<'a, Message, I, T>(
+    content: T,
+    id: I,
+    tx: UnboundedSender<(I, Rectangle)>,
+) -> MinSizeTrackerContainer<'a, Message, crate::Renderer, I>
 where
-    E: Into<Element<'a, Message, Theme, crate::Renderer>>,
+    I: Hash + Copy + Send + Sync + Debug + 'a,
+    T: Into<Element<'a, Message, crate::Theme, crate::Renderer>>,
 {
-    LayerContainer::new(content)
+    MinSizeTrackerContainer::new(content, id, tx)
+}
+
+pub fn subscription<
+    I: 'static + Hash + Copy + Send + Sync + Debug,
+    R: 'static + Hash + Copy + Send + Sync + Debug + Eq,
+>(
+    id: I,
+) -> iced::Subscription<(I, RectangleUpdate<R>)> {
+    subscription::rectangle_tracker_subscription(id)
+}
+
+#[derive(Clone, Debug)]
+pub struct MinSizeTracker<I> {
+    tx: UnboundedSender<(I, Rectangle)>,
+}
+
+impl<I> MinSizeTracker<I>
+where
+    I: Hash + Copy + Send + Sync + Debug,
+{
+    pub fn container<'a, Message: 'static, T>(
+        &self,
+        id: I,
+        content: T,
+    ) -> MinSizeTracker<'a, Message, crate::Renderer, I>
+    where
+        I: 'a,
+        T: Into<Element<'a, Message, crate::Theme, crate::Renderer>>,
+    {
+        MinSizeTracker::new(content, id, self.tx.clone())
+    }
 }
 
 /// An element decorating some content.
 ///
 /// It is normally used for alignment purposes.
 #[allow(missing_debug_implementations)]
-pub struct LayerContainer<'a, Message, Renderer>
+pub struct MinSizeTrackerContainer<'a, Message, Renderer, I>
 where
     Renderer: iced_core::Renderer,
 {
-    layer: Option<cosmic_theme::Layer>,
-    container: Container<'a, Message, Theme, Renderer>,
+    tx: UnboundedSender<(I, Rectangle)>,
+    id: I,
+    container: Container<'a, Message, crate::Theme, Renderer>,
+    ignore_bounds: bool,
 }
 
-impl<'a, Message, Renderer> LayerContainer<'a, Message, Renderer>
+impl<'a, Message, Renderer, I> MinSizeTrackerContainer<'a, Message, Renderer, I>
 where
     Renderer: iced_core::Renderer,
-    // iced_widget::container::Style: From<crate::theme::Container>,
+    I: 'a + Hash + Copy + Send + Sync + Debug,
 {
     /// Creates an empty [`Container`].
-    pub(crate) fn new<T>(content: T) -> Self
+    pub(crate) fn new<T>(content: T, id: I, tx: UnboundedSender<(I, Rectangle)>) -> Self
     where
-        T: Into<Element<'a, Message, Theme, Renderer>>,
+        T: Into<Element<'a, Message, crate::Theme, Renderer>>,
     {
-        LayerContainer {
-            layer: None,
+        MinSizeTrackerContainer {
+            id,
+            tx,
             container: Container::new(content),
+            ignore_bounds: false,
         }
     }
 
-    /// Sets the [`Layer`] of the [`LayerContainer`].
-    #[must_use]
-    pub fn layer(mut self, layer: cosmic_theme::Layer) -> Self {
-        self.layer = Some(layer);
-        self.class(match layer {
-            cosmic_theme::Layer::Background => crate::theme::Container::Background,
-            cosmic_theme::Layer::Primary => crate::theme::Container::Primary,
-            cosmic_theme::Layer::Secondary => crate::theme::Container::Secondary,
-        })
+    pub fn diff(&mut self, tree: &mut Tree) {
+        self.container.diff(tree);
     }
 
-    /// Sets the [`Padding`] of the [`LayerContainer`].
+    /// Sets the [`Padding`] of the [`Container`].
     #[must_use]
     pub fn padding<P: Into<Padding>>(mut self, padding: P) -> Self {
         self.container = self.container.padding(padding);
@@ -73,82 +110,87 @@ where
         self
     }
 
-    /// Sets the height of the [`LayerContainer`].
+    /// Sets the height of the [`Container`].
     #[must_use]
     pub fn height(mut self, height: Length) -> Self {
         self.container = self.container.height(height);
         self
     }
 
-    /// Sets the maximum width of the [`LayerContainer`].
+    /// Sets the maximum width of the [`Container`].
     #[must_use]
     pub fn max_width(mut self, max_width: f32) -> Self {
         self.container = self.container.max_width(max_width);
         self
     }
 
-    /// Sets the maximum height of the [`LayerContainer`] in pixels.
+    /// Sets the maximum height of the [`Container`] in pixels.
     #[must_use]
     pub fn max_height(mut self, max_height: f32) -> Self {
         self.container = self.container.max_height(max_height);
         self
     }
 
-    /// Sets the content alignment for the horizontal axis of the [`LayerContainer`].
+    /// Sets the content alignment for the horizontal axis of the [`Container`].
     #[must_use]
     pub fn align_x(mut self, alignment: alignment::Horizontal) -> Self {
         self.container = self.container.align_x(alignment);
         self
     }
 
-    /// Sets the content alignment for the vertical axis of the [`LayerContainer`].
+    /// Sets the content alignment for the vertical axis of the [`Container`].
     #[must_use]
     pub fn align_y(mut self, alignment: alignment::Vertical) -> Self {
         self.container = self.container.align_y(alignment);
         self
     }
 
-    /// Centers the contents in the horizontal axis of the [`LayerContainer`].
+    /// Centers the contents in the horizontal axis of the [`Container`].
     #[must_use]
     pub fn center_x(mut self, width: Length) -> Self {
         self.container = self.container.center_x(width);
         self
     }
 
-    /// Centers the contents in the vertical axis of the [`LayerContainer`].
+    /// Centers the contents in the vertical axis of the [`Container`].
     #[must_use]
     pub fn center_y(mut self, height: Length) -> Self {
         self.container = self.container.center_y(height);
         self
     }
 
-    /// Sets the style of the [`LayerContainer`].
+    /// Sets the style of the [`Container`].
     #[must_use]
-    pub fn class(mut self, style: impl Into<crate::style::iced::Container<'a>>) -> Self {
+    pub fn style(mut self, style: impl Into<<crate::Theme as Catalog>::Class<'a>>) -> Self {
         self.container = self.container.class(style);
+        self
+    }
+
+    /// Set to true to ignore parent container bounds when performing layout.
+    /// This can be useful for widgets that are in auto-sized surfaces.
+    #[must_use]
+    pub fn ignore_bounds(mut self, ignore_bounds: bool) -> Self {
+        self.ignore_bounds = ignore_bounds;
         self
     }
 }
 
-impl<'a, Message, Renderer> Widget<Message, Theme, Renderer>
-    for LayerContainer<'a, Message, Renderer>
+impl<'a, Message, Renderer, I> Widget<Message, crate::Theme, Renderer>
+    for MinSizeTrackerContainer<'a, Message, Renderer, I>
 where
     Renderer: iced_core::Renderer,
+    I: 'a + Hash + Copy + Send + Sync + Debug,
 {
     fn children(&self) -> Vec<Tree> {
         self.container.children()
     }
 
-    fn tag(&self) -> iced_core::widget::tree::Tag {
-        self.container.tag()
+    fn state(&self) -> iced_core::widget::tree::State {
+        self.container.state()
     }
 
     fn diff(&mut self, tree: &mut Tree) {
         self.container.diff(tree);
-    }
-
-    fn state(&self) -> iced_core::widget::tree::State {
-        self.container.state()
     }
 
     fn size(&self) -> iced_core::Size<Length> {
@@ -161,7 +203,15 @@ where
         renderer: &Renderer,
         limits: &layout::Limits,
     ) -> layout::Node {
-        self.container.layout(tree, renderer, limits)
+        self.container.layout(
+            tree,
+            renderer,
+            if self.ignore_bounds {
+                &layout::Limits::NONE
+            } else {
+                limits
+            },
+        )
     }
 
     fn operate(
@@ -183,7 +233,7 @@ where
         renderer: &Renderer,
         clipboard: &mut dyn Clipboard,
         shell: &mut Shell<'_, Message>,
-        viewport: &Rectangle,
+        viewport: &iced_core::Rectangle,
     ) -> event::Status {
         self.container.on_event(
             tree,
@@ -213,24 +263,18 @@ where
         &self,
         tree: &Tree,
         renderer: &mut Renderer,
-        theme: &Theme,
+        theme: &crate::Theme,
         renderer_style: &renderer::Style,
         layout: Layout<'_>,
         cursor_position: mouse::Cursor,
         viewport: &Rectangle,
     ) {
-        let theme = if let Some(layer) = self.layer {
-            let mut theme = theme.clone();
-            theme.set_layer(layer);
-            theme
-        } else {
-            theme.clone()
-        };
+        let _ = self.tx.unbounded_send((self.id, layout.bounds()));
 
         self.container.draw(
             tree,
             renderer,
-            &theme,
+            theme,
             renderer_style,
             layout,
             cursor_position,
@@ -244,7 +288,7 @@ where
         layout: Layout<'_>,
         renderer: &Renderer,
         translation: Vector,
-    ) -> Option<overlay::Element<'b, Message, Theme, Renderer>> {
+    ) -> Option<overlay::Element<'b, Message, crate::Theme, Renderer>> {
         self.container.overlay(tree, layout, renderer, translation)
     }
 
@@ -258,25 +302,18 @@ where
         self.container
             .drag_destinations(state, layout, renderer, dnd_rectangles);
     }
-
-    fn id(&self) -> Option<crate::widget::Id> {
-        Widget::id(&self.container)
-    }
-
-    fn set_id(&mut self, id: crate::widget::Id) {
-        self.container.set_id(id);
-    }
 }
 
-impl<'a, Message, Renderer> From<LayerContainer<'a, Message, Renderer>>
-    for Element<'a, Message, Theme, Renderer>
+impl<'a, Message, Renderer, I> From<MinSizeTrackerContainer<'a, Message, Renderer, I>>
+    for Element<'a, Message, crate::Theme, Renderer>
 where
     Message: 'a,
     Renderer: 'a + iced_core::Renderer,
+    I: 'a + Hash + Copy + Send + Sync + Debug,
 {
     fn from(
-        column: LayerContainer<'a, Message, Renderer>,
-    ) -> Element<'a, Message, Theme, Renderer> {
+        column: MinSizeTrackerContainer<'a, Message, Renderer, I>,
+    ) -> Element<'a, Message, crate::Theme, Renderer> {
         Element::new(column)
     }
 }

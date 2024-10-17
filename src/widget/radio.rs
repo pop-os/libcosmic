@@ -1,4 +1,6 @@
 //! Create choices using radio buttons.
+use crate::Theme;
+use iced::border;
 use iced_core::event::{self, Event};
 use iced_core::layout;
 use iced_core::mouse;
@@ -7,17 +9,18 @@ use iced_core::renderer;
 use iced_core::touch;
 use iced_core::widget::tree::Tree;
 use iced_core::{
-    Border, Clipboard, Element, Layout, Length, Pixels, Rectangle, Shell, Size, Widget,
+    Border, Clipboard, Element, Layout, Length, Pixels, Rectangle, Shell, Size, Vector, Widget,
 };
 
-pub use iced_style::radio::{Appearance, StyleSheet};
+use iced_widget::radio as iced_radio;
+pub use iced_widget::radio::Catalog;
 
-pub fn radio<'a, Message: Clone, Theme: StyleSheet, V, F>(
+pub fn radio<'a, Message: Clone, V, F>(
     label: impl Into<Element<'a, Message, Theme, crate::Renderer>>,
     value: V,
     selected: Option<V>,
     f: F,
-) -> Radio<'a, Message, Theme, crate::Renderer>
+) -> Radio<'a, Message, crate::Renderer>
 where
     V: Eq + Copy,
     F: FnOnce(V) -> Message,
@@ -83,9 +86,8 @@ where
 /// let content = column![a, b, c, all];
 /// ```
 #[allow(missing_debug_implementations)]
-pub struct Radio<'a, Message, Theme = crate::Theme, Renderer = crate::Renderer>
+pub struct Radio<'a, Message, Renderer = crate::Renderer>
 where
-    Theme: StyleSheet,
     Renderer: iced_core::Renderer,
 {
     is_selected: bool,
@@ -94,13 +96,11 @@ where
     width: Length,
     size: f32,
     spacing: f32,
-    style: Theme::Style,
 }
 
-impl<'a, Message, Theme, Renderer> Radio<'a, Message, Theme, Renderer>
+impl<'a, Message, Renderer> Radio<'a, Message, Renderer>
 where
     Message: Clone,
-    Theme: StyleSheet,
     Renderer: iced_core::Renderer,
 {
     /// The default size of a [`Radio`] button.
@@ -130,7 +130,6 @@ where
             width: Length::Shrink,
             size: Self::DEFAULT_SIZE,
             spacing: Self::DEFAULT_SPACING,
-            style: Default::default(),
         }
     }
 
@@ -154,20 +153,11 @@ where
         self.spacing = spacing.into().0;
         self
     }
-
-    #[must_use]
-    /// Sets the style of the [`Radio`] button.
-    pub fn style(mut self, style: impl Into<Theme::Style>) -> Self {
-        self.style = style.into();
-        self
-    }
 }
 
-impl<'a, Message, Theme, Renderer> Widget<Message, Theme, Renderer>
-    for Radio<'a, Message, Theme, Renderer>
+impl<'a, Message, Renderer> Widget<Message, Theme, Renderer> for Radio<'a, Message, Renderer>
 where
     Message: Clone,
-    Theme: StyleSheet,
     Renderer: iced_core::Renderer,
 {
     fn children(&self) -> Vec<Tree> {
@@ -207,9 +197,7 @@ where
         tree: &mut Tree,
         layout: Layout<'_>,
         renderer: &Renderer,
-        operation: &mut dyn iced_core::widget::Operation<
-            iced_core::widget::OperationOutputWrapper<Message>,
-        >,
+        operation: &mut dyn iced_core::widget::Operation<()>,
     ) {
         self.label.as_widget().operate(
             &mut tree.children[0],
@@ -302,9 +290,19 @@ where
         let mut children = layout.children();
 
         let custom_style = if is_mouse_over {
-            theme.hovered(&self.style, self.is_selected)
+            theme.style(
+                &(),
+                iced_radio::Status::Hovered {
+                    is_selected: self.is_selected,
+                },
+            )
         } else {
-            theme.active(&self.style, self.is_selected)
+            theme.style(
+                &(),
+                iced_radio::Status::Active {
+                    is_selected: self.is_selected,
+                },
+            )
         };
 
         {
@@ -336,7 +334,7 @@ where
                             width: dot_size,
                             height: dot_size,
                         },
-                        border: Border::with_radius(dot_size / 2.0),
+                        border: border::rounded(dot_size / 2.0),
                         ..renderer::Quad::default()
                     },
                     custom_style.dot_color,
@@ -363,11 +361,13 @@ where
         tree: &'b mut Tree,
         layout: Layout<'_>,
         renderer: &Renderer,
+        translation: Vector,
     ) -> Option<overlay::Element<'b, Message, Theme, Renderer>> {
         self.label.as_widget_mut().overlay(
             &mut tree.children[0],
             layout.children().nth(1).unwrap(),
             renderer,
+            translation,
         )
     }
 
@@ -376,7 +376,7 @@ where
         state: &Tree,
         layout: Layout<'_>,
         renderer: &Renderer,
-        dnd_rectangles: &mut iced_style::core::clipboard::DndDestinationRectangles,
+        dnd_rectangles: &mut iced_core::clipboard::DndDestinationRectangles,
     ) {
         self.label.as_widget().drag_destinations(
             &state.children[0],
@@ -387,14 +387,13 @@ where
     }
 }
 
-impl<'a, Message, Theme, Renderer> From<Radio<'a, Message, Theme, Renderer>>
+impl<'a, Message, Renderer> From<Radio<'a, Message, Renderer>>
     for Element<'a, Message, Theme, Renderer>
 where
     Message: 'a + Clone,
-    Theme: 'a + StyleSheet,
     Renderer: 'a + iced_core::Renderer,
 {
-    fn from(radio: Radio<'a, Message, Theme, Renderer>) -> Element<'a, Message, Theme, Renderer> {
+    fn from(radio: Radio<'a, Message, Renderer>) -> Element<'a, Message, Theme, Renderer> {
         Element::new(radio)
     }
 }

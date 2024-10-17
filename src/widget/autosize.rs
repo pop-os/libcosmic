@@ -1,3 +1,6 @@
+//! Autosize Container, which will resize the window to its contents.
+
+use cctk::sctk::shell::xdg::window;
 use iced_core::event::{self, Event};
 use iced_core::layout;
 use iced_core::mouse;
@@ -7,31 +10,34 @@ use iced_core::widget::{Id, Tree};
 use iced_core::{Clipboard, Element, Layout, Length, Rectangle, Shell, Vector, Widget};
 pub use iced_widget::container::{Catalog, Style};
 
-pub fn id_container<'a, Message: 'static, Theme, E>(
+pub fn autosize<'a, Message: 'static, Theme, E>(
     content: E,
     id: Id,
-) -> IdContainer<'a, Message, Theme, crate::Renderer>
+) -> Autosize<'a, Message, Theme, crate::Renderer>
 where
     E: Into<Element<'a, Message, Theme, crate::Renderer>>,
     Theme: iced_widget::container::Catalog,
     <Theme as iced_widget::container::Catalog>::Class<'a>: From<crate::theme::Container<'a>>,
 {
-    IdContainer::new(content, id)
+    Autosize::new(content, id)
 }
 
 /// An element decorating some content.
 ///
 /// It is normally used for alignment purposes.
 #[allow(missing_debug_implementations)]
-pub struct IdContainer<'a, Message, Theme, Renderer>
+pub struct Autosize<'a, Message, Theme, Renderer>
 where
     Renderer: iced_core::Renderer,
 {
     content: Element<'a, Message, Theme, Renderer>,
     id: Id,
+    limits: layout::Limits,
+    auto_width: bool,
+    auto_height: bool,
 }
 
-impl<'a, Message, Theme, Renderer> IdContainer<'a, Message, Theme, Renderer>
+impl<'a, Message, Theme, Renderer> Autosize<'a, Message, Theme, Renderer>
 where
     Renderer: iced_core::Renderer,
 {
@@ -40,15 +46,53 @@ where
     where
         T: Into<Element<'a, Message, Theme, Renderer>>,
     {
-        IdContainer {
+        Autosize {
             content: content.into(),
             id,
+            limits: layout::Limits::NONE,
+            auto_width: true,
+            auto_height: true,
         }
+    }
+
+    pub fn limits(mut self, limits: layout::Limits) -> Self {
+        self.limits = limits;
+        self
+    }
+
+    pub fn auto_width(mut self, auto_width: bool) -> Self {
+        self.auto_width = auto_width;
+        self
+    }
+
+    pub fn auto_height(mut self, auto_height: bool) -> Self {
+        self.auto_height = auto_height;
+        self
+    }
+
+    pub fn max_width(mut self, v: f32) -> Self {
+        self.limits = self.limits.max_width(v);
+        self
+    }
+
+    pub fn max_height(mut self, v: f32) -> Self {
+        self.limits = self.limits.max_height(v);
+        self
+    }
+
+    pub fn min_width(mut self, v: f32) -> Self {
+        self.limits = self.limits.min_width(v);
+        self
+    }
+
+    pub fn min_height(mut self, v: f32) -> Self {
+        self.limits = self.limits.min_height(v);
+        self
     }
 }
 
 impl<'a, Message, Theme, Renderer> Widget<Message, Theme, Renderer>
-    for IdContainer<'a, Message, Theme, Renderer>
+    for Autosize<'a, Message, Theme, Renderer>
 where
     Renderer: iced_core::Renderer,
 {
@@ -68,12 +112,23 @@ where
         &self,
         tree: &mut Tree,
         renderer: &Renderer,
-        limits: &layout::Limits,
+        _limits: &layout::Limits,
     ) -> layout::Node {
+        let mut limits = self.limits;
+        let min = self.limits.min();
+        let max = self.limits.max();
+        if self.auto_width {
+            limits.min_width(min.width);
+            limits.max_width(max.width);
+        }
+        if self.auto_height {
+            limits.min_height(min.height);
+            limits.max_height(max.height);
+        }
         let node = self
             .content
             .as_widget()
-            .layout(&mut tree.children[0], renderer, limits);
+            .layout(&mut tree.children[0], renderer, &self.limits);
         let size = node.size();
         layout::Node::with_children(size, vec![node])
     }
@@ -106,6 +161,16 @@ where
         shell: &mut Shell<'_, Message>,
         viewport: &Rectangle,
     ) -> event::Status {
+        #[cfg(feature = "wayland")]
+        if matches!(
+            event,
+            Event::PlatformSpecific(event::PlatformSpecific::Wayland(
+                event::wayland::Event::RequestResize
+            ))
+        ) {
+            let bounds = layout.bounds().size();
+            clipboard.request_logical_window_size(bounds.width.max(1.), bounds.height.max(1.));
+        }
         self.content.as_widget_mut().on_event(
             &mut tree.children[0],
             event.clone(),
@@ -198,14 +263,14 @@ where
     }
 }
 
-impl<'a, Message, Theme, Renderer> From<IdContainer<'a, Message, Theme, Renderer>>
+impl<'a, Message, Theme, Renderer> From<Autosize<'a, Message, Theme, Renderer>>
     for Element<'a, Message, Theme, Renderer>
 where
     Message: 'a,
     Renderer: 'a + iced_core::Renderer,
     Theme: 'a,
 {
-    fn from(c: IdContainer<'a, Message, Theme, Renderer>) -> Element<'a, Message, Theme, Renderer> {
+    fn from(c: Autosize<'a, Message, Theme, Renderer>) -> Element<'a, Message, Theme, Renderer> {
         Element::new(c)
     }
 }

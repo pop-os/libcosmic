@@ -1,7 +1,7 @@
 // Copyright 2023 System76 <info@system76.com>
 // SPDX-License-Identifier: MPL-2.0
 
-use std::collections::HashMap;
+use std::{cell::OnceCell, collections::HashMap};
 
 use crate::widget::nav_bar;
 use cosmic_config::CosmicConfigEntry;
@@ -40,8 +40,8 @@ pub struct Window {
     pub show_close: bool,
     pub show_maximize: bool,
     pub show_minimize: bool,
-    height: u32,
-    width: u32,
+    height: f32,
+    width: f32,
 }
 
 /// COSMIC-specific application settings
@@ -93,6 +93,10 @@ pub struct Core {
 
     #[cfg(feature = "dbus-config")]
     pub(crate) settings_daemon: Option<cosmic_settings_daemon::CosmicSettingsDaemonProxy<'static>>,
+
+    pub(crate) main_window: OnceCell<window::Id>,
+
+    pub(crate) exit_on_main_window_closed: bool,
 }
 
 impl Default for Core {
@@ -135,10 +139,10 @@ impl Default for Core {
                 show_maximize: true,
                 show_minimize: true,
                 show_window_menu: false,
-                height: 0,
-                width: 0,
+                height: 0.,
+                width: 0.,
             },
-            focused_window: Some(window::Id::MAIN),
+            focused_window: None,
             #[cfg(feature = "applet")]
             applet: crate::applet::Context::default(),
             #[cfg(feature = "single-instance")]
@@ -148,6 +152,8 @@ impl Default for Core {
             portal_is_dark: None,
             portal_accent: None,
             portal_is_high_contrast: None,
+            main_window: OnceCell::new(),
+            exit_on_main_window_closed: true,
         }
     }
 }
@@ -297,12 +303,12 @@ impl Core {
     }
 
     /// Set the height of the main window.
-    pub(crate) fn set_window_height(&mut self, new_height: u32) {
+    pub(crate) fn set_window_height(&mut self, new_height: f32) {
         self.window.height = new_height;
     }
 
     /// Set the width of the main window.
-    pub(crate) fn set_window_width(&mut self, new_width: u32) {
+    pub(crate) fn set_window_width(&mut self, new_width: f32) {
         self.window.width = new_width;
         self.is_condensed_update();
     }
@@ -363,5 +369,13 @@ impl Core {
     pub fn system_is_dark(&self) -> bool {
         self.portal_is_dark
             .unwrap_or(self.system_theme_mode.is_dark)
+    }
+
+    /// The [`Id`] of the main window
+    pub fn main_window_id(&self) -> Option<window::Id> {
+        self.main_window
+            .get()
+            .filter(|id| iced::window::Id::NONE != **id)
+            .cloned()
     }
 }

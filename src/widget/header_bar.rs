@@ -6,7 +6,7 @@ use crate::{ext::CollectionWidget, widget, Element};
 use apply::Apply;
 use derive_setters::Setters;
 use iced::Length;
-use iced_core::{widget::tree, Widget};
+use iced_core::{widget::tree, Vector, Widget};
 use std::borrow::Cow;
 
 #[must_use]
@@ -221,9 +221,7 @@ impl<'a, Message: Clone + 'static> Widget<Message, crate::Theme, crate::Renderer
         state: &mut tree::Tree,
         layout: iced_core::Layout<'_>,
         renderer: &crate::Renderer,
-        operation: &mut dyn iced_core::widget::Operation<
-            iced_core::widget::OperationOutputWrapper<Message>,
-        >,
+        operation: &mut dyn iced_core::widget::Operation<()>,
     ) {
         let child_tree = &mut state.children[0];
         let child_layout = layout.children().next().unwrap();
@@ -237,12 +235,16 @@ impl<'a, Message: Clone + 'static> Widget<Message, crate::Theme, crate::Renderer
         state: &'b mut tree::Tree,
         layout: iced_core::Layout<'_>,
         renderer: &crate::Renderer,
+        translation: Vector,
     ) -> Option<iced_core::overlay::Element<'b, Message, crate::Theme, crate::Renderer>> {
         let child_tree = &mut state.children[0];
         let child_layout = layout.children().next().unwrap();
-        self.header_bar_inner
-            .as_widget_mut()
-            .overlay(child_tree, child_layout, renderer)
+        self.header_bar_inner.as_widget_mut().overlay(
+            child_tree,
+            child_layout,
+            renderer,
+            translation,
+        )
     }
 
     fn drag_destinations(
@@ -250,7 +252,7 @@ impl<'a, Message: Clone + 'static> Widget<Message, crate::Theme, crate::Renderer
         state: &tree::Tree,
         layout: iced_core::Layout<'_>,
         renderer: &crate::Renderer,
-        dnd_rectangles: &mut iced_style::core::clipboard::DndDestinationRectangles,
+        dnd_rectangles: &mut iced_core::clipboard::DndDestinationRectangles,
     ) {
         if let Some((child_tree, child_layout)) =
             state.children.iter().zip(layout.children()).next()
@@ -274,7 +276,7 @@ impl<'a, Message: Clone + 'static> HeaderBar<'a, Message> {
         let mut end = std::mem::take(&mut self.end);
 
         // Also packs the window controls at the very end.
-        end.push(widget::horizontal_space(Length::Fixed(12.0)).into());
+        end.push(widget::horizontal_space().width(Length::Fixed(12.0)).into());
         end.push(self.window_controls());
 
         let height = match self.density.unwrap_or_else(crate::config::header_size) {
@@ -288,7 +290,7 @@ impl<'a, Message: Clone + 'static> HeaderBar<'a, Message> {
             // If elements exist in the start region, append them here.
             .push(
                 widget::row::with_children(start)
-                    .align_items(iced::Alignment::Center)
+                    .align_y(iced::Alignment::Center)
                     .apply(widget::container)
                     .align_x(iced::alignment::Horizontal::Left)
                     .width(Length::Shrink),
@@ -297,32 +299,32 @@ impl<'a, Message: Clone + 'static> HeaderBar<'a, Message> {
             // This will otherwise use the title as a widget if a title was defined.
             .push(if !center.is_empty() {
                 widget::row::with_children(center)
-                    .align_items(iced::Alignment::Center)
+                    .align_y(iced::Alignment::Center)
                     .apply(widget::container)
                     .align_x(iced::alignment::Horizontal::Center)
                     .width(Length::Fill)
                     .into()
             } else if self.title.is_empty() {
-                widget::horizontal_space(Length::Fill).into()
+                widget::horizontal_space().width(Length::Fill).into()
             } else {
                 self.title_widget()
             })
             .push(
                 widget::row::with_children(end)
-                    .align_items(iced::Alignment::Center)
+                    .align_y(iced::Alignment::Center)
                     .apply(widget::container)
                     .align_x(iced::alignment::Horizontal::Right)
                     .width(Length::Shrink),
             )
-            .align_items(iced::Alignment::Center)
+            .align_y(iced::Alignment::Center)
             .height(Length::Fixed(height))
             .padding([0, 8])
             .spacing(8)
             .apply(widget::container)
-            .style(crate::theme::Container::HeaderBar {
+            .class(crate::theme::Container::HeaderBar {
                 focused: self.focused,
             })
-            .center_y()
+            .center_y(Length::Shrink)
             .apply(widget::mouse_area);
 
         // Assigns a message to emit when the headerbar is dragged.
@@ -350,10 +352,8 @@ impl<'a, Message: Clone + 'static> HeaderBar<'a, Message> {
 
         widget::text::heading(title)
             .apply(widget::container)
-            .center_x()
-            .center_y()
-            .width(Length::Fill)
-            .height(Length::Fill)
+            .center_x(Length::Fill)
+            .center_y(Length::Fill)
             .into()
     }
 
@@ -380,7 +380,7 @@ impl<'a, Message: Clone + 'static> HeaderBar<'a, Message> {
                     .padding(8)
                 };
 
-                icon.style(crate::theme::Button::HeaderBar)
+                icon.class(crate::theme::Button::HeaderBar)
                     .selected(self.focused)
                     .icon_size($size)
                     .on_press($on_press)
@@ -405,8 +405,7 @@ impl<'a, Message: Clone + 'static> HeaderBar<'a, Message> {
             )
             .spacing(8)
             .apply(widget::container)
-            .height(Length::Fill)
-            .center_y()
+            .center_y(Length::Fill)
             .into()
     }
 }

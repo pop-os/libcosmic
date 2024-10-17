@@ -276,7 +276,7 @@ impl MenuBounds {
         let offset_bounds = Rectangle::new(offset_position, offset_size);
 
         let children_bounds = Rectangle::new(children_position, children_size);
-        let check_bounds = pad_rectangle(children_bounds, [bounds_expand; 4].into());
+        let check_bounds = pad_rectangle(children_bounds, bounds_expand.into());
 
         Self {
             child_positions,
@@ -445,13 +445,14 @@ where
     pub(crate) root_bounds_list: Vec<Rectangle>,
     pub(crate) path_highlight: Option<PathHighlight>,
     pub(crate) style: &'b <crate::Theme as StyleSheet>::Style,
+    pub(crate) position: Point,
 }
 impl<'a, 'b, Message, Renderer> Menu<'a, 'b, Message, Renderer>
 where
     Renderer: renderer::Renderer,
 {
     pub(crate) fn overlay(self) -> overlay::Element<'b, Message, crate::Theme, Renderer> {
-        overlay::Element::new(Point::ORIGIN, Box::new(self))
+        overlay::Element::new(Box::new(self))
     }
 }
 impl<'a, 'b, Message, Renderer> overlay::Overlay<Message, crate::Theme, Renderer>
@@ -459,14 +460,9 @@ impl<'a, 'b, Message, Renderer> overlay::Overlay<Message, crate::Theme, Renderer
 where
     Renderer: renderer::Renderer,
 {
-    fn layout(
-        &mut self,
-        renderer: &Renderer,
-        bounds: Size,
-        position: Point,
-        _translation: iced::Vector,
-    ) -> Node {
+    fn layout(&mut self, renderer: &Renderer, bounds: Size) -> Node {
         // layout children
+        let position = self.position;
         let state = self.tree.state.downcast_mut::<MenuBarState>();
         let overlay_offset = Point::ORIGIN - position;
         let tree_children = &mut self.tree.children;
