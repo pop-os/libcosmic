@@ -306,4 +306,45 @@ impl Theme {
 
         Ok(())
     }
+
+    pub fn apply_vs_codium(self) -> Result<(), OutputError> {
+        let vs_theme = VsTheme::from(self);
+        let config_dir = dirs::config_dir().ok_or(OutputError::MissingConfigDir)?;
+        let vs_code_dir = config_dir.join("VSCodium").join("User");
+        if !vs_code_dir.exists() {
+            std::fs::create_dir_all(&vs_code_dir).map_err(OutputError::Io)?;
+        }
+
+        // just add the json entry for workbench.colorCustomizations
+        let settings_file = vs_code_dir.join("settings.json");
+        let settings = std::fs::read_to_string(&settings_file).unwrap_or_default();
+        let mut settings: serde_json::Value = serde_json::from_str(&settings)?;
+        settings["workbench.colorCustomizations"] = serde_json::to_value(vs_theme).unwrap();
+        settings["window.autoDetectColorScheme"] = serde_json::Value::Bool(true);
+        std::fs::write(
+            &settings_file,
+            serde_json::to_string_pretty(&settings).unwrap(),
+        )
+        .map_err(OutputError::Io)?;
+
+        Ok(())
+    }
+
+    pub fn reset_vs_codium() -> Result<(), OutputError> {
+        let config_dir = dirs::config_dir().ok_or(OutputError::MissingConfigDir)?;
+        let vs_code_dir = config_dir.join("VSCodium").join("User");
+        let settings_file = vs_code_dir.join("settings.json");
+        // just remove the json entry for workbench.colorCustomizations
+        let settings = std::fs::read_to_string(&settings_file).unwrap_or_default();
+        let mut settings: serde_json::Value = serde_json::from_str(&settings).unwrap_or_default();
+        settings["workbench.colorCustomizations"] = serde_json::Value::Null;
+
+        std::fs::write(
+            &settings_file,
+            serde_json::to_string_pretty(&settings).unwrap(),
+        )
+        .map_err(OutputError::Io)?;
+
+        Ok(())
+    }
 }
