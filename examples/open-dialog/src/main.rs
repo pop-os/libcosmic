@@ -67,6 +67,7 @@ impl cosmic::Application for App {
 
     /// Creates the application, and optionally emits command on initialize.
     fn init(core: Core, _input: Self::Flags) -> (Self, Task<Self::Message>) {
+        let id = core.main_window_id().unwrap();
         let mut app = App {
             core,
             file_contents: String::new(),
@@ -75,10 +76,7 @@ impl cosmic::Application for App {
         };
 
         app.set_header_title("Open a file".into());
-        let cmd = app.set_window_title(
-            "COSMIC OpenDialog Demo".into(),
-            self.core.main_window_id().unwrap(),
-        );
+        let cmd = app.set_window_title("COSMIC OpenDialog Demo".into(), id);
 
         (app, cmd)
     }
