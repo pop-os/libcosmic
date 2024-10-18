@@ -33,7 +33,7 @@ where
 /// # Example
 /// ```no_run
 /// # type Radio<'a, Message> =
-/// #     cosmic::widget::Radio<'a, Message, cosmic::Theme, cosmic::Renderer>;
+/// #     cosmic::widget::Radio<'a, Message, cosmic::Renderer>;
 /// #
 /// # use cosmic::widget::text;
 /// # use cosmic::iced::widget::column;
