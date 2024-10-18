@@ -4,3 +4,4 @@ Cargo.lock
 target
 vendor
 vendor.tar
+/.vscode/settings.json
