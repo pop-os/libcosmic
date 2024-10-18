@@ -72,7 +72,6 @@ where
     id: I,
     container: Container<'a, Message, crate::Theme, Renderer>,
     ignore_bounds: bool,
-    request_size: bool,
 }
 
 impl<'a, Message, Renderer, I> RectangleTrackingContainer<'a, Message, Renderer, I>
@@ -90,7 +89,6 @@ where
             tx,
             container: Container::new(content),
             ignore_bounds: false,
-            request_size: true,
         }
     }
 
@@ -214,7 +212,6 @@ where
                 limits
             },
         );
-        if self.request_size {}
 
         layout
     }
