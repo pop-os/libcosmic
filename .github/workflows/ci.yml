@@ -77,10 +77,16 @@ jobs:
       fail-fast: false
       matrix:
         examples:
+          - "applet"
           - "application"
-          - "open-dialog"
+          - "calendar"
+          - "config"
           - "context-menu"
+          - "image-button"
+          - "menu"
           - "nav-context"
+          - "open-dialog"
+          - "text-input"
     runs-on: ubuntu-22.04
     steps:
       - name: Checkout sources
