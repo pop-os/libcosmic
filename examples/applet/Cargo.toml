@@ -15,14 +15,4 @@ log = "0.4.17"
 [dependencies.libcosmic]
 git = "https://github.com/pop-os/libcosmic"
 default-features = false
-features = [
-    "applet",
-    "applet-token",
-    "multi-window",
-    "tokio",
-    "wayland",
-    "winit",
-    "desktop",
-    "dbus-config",
-    "image",
-]
+features = ["applet-token"]

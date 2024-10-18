@@ -17,13 +17,14 @@ autosize = []
 applet = [
     "a11y",
     "autosize",
+    "winit",
     "wayland",
     "tokio",
     "cosmic-panel-config",
     "ron",
     "multi-window",
 ]
-applet-token = []
+applet-token = ["applet"]
 # Use the cosmic-settings-daemon for config handling
 dbus-config = ["cosmic-config/dbus", "dep:zbus", "cosmic-settings-daemon"]
 # Debug features
