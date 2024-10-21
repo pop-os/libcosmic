@@ -104,7 +104,10 @@ pub(crate) fn iced_settings<App: Application>(
     let mut window_settings = iced::window::Settings::default();
     window_settings.exit_on_close_request = exit_on_close;
     iced.id = Some(App::APP_ID.to_owned());
-    window_settings.platform_specific.application_id = App::APP_ID.to_string();
+    #[cfg(target_os = "linux")]
+    {
+        window_settings.platform_specific.application_id = App::APP_ID.to_string();
+    }
     core.exit_on_main_window_closed = exit_on_close;
 
     if let Some(border_size) = settings.resizable {
