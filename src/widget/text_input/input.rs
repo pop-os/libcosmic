@@ -431,7 +431,7 @@ where
         value: Option<&Value>,
         style: &renderer::Style,
     ) {
-        let text_layout = self.text_layout(layout.clone());
+        let text_layout = self.text_layout(layout);
         draw(
             renderer,
             theme,
@@ -2008,7 +2008,7 @@ pub fn draw<'a, Message>(
 
     let mut children_layout = layout.children();
     let bounds = layout.bounds();
-    let text_bounds = text_layout.bounds();
+    let text_bounds = children_layout.next().unwrap().bounds();
 
     let is_mouse_over = cursor_position.is_over(bounds);
 
@@ -2115,8 +2115,11 @@ pub fn draw<'a, Message>(
     let mut child_index = 0;
     let leading_icon_tree = children.get(child_index);
     // draw the start icon in the text input
+    let has_start_icon = icon.is_some();
     if let (Some(icon), Some(tree)) = (icon, leading_icon_tree) {
-        let icon_layout = children_layout.next().unwrap();
+        let mut children = text_layout.children();
+        let _ = children.next().unwrap();
+        let icon_layout = children.next().unwrap();
 
         icon.as_widget().draw(
             tree,
@@ -2292,7 +2295,12 @@ pub fn draw<'a, Message>(
 
     // draw the end icon in the text input
     if let (Some(icon), Some(tree)) = (trailing_icon, trailing_icon_tree) {
-        let icon_layout = children_layout.next().unwrap();
+        let mut children = text_layout.children();
+        let mut icon_layout = children.next().unwrap();
+        if has_start_icon {
+            icon_layout = children.next().unwrap();
+        }
+        icon_layout = children.next().unwrap();
 
         icon.as_widget().draw(
             tree,
