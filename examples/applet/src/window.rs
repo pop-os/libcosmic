@@ -97,9 +97,9 @@ impl cosmic::Application for Window {
     fn view_window(&self, _id: Id) -> Element<Self::Message> {
         let content_list = list_column().padding(5).spacing(0).add(settings::item(
             "Example row",
-            cosmic::widget::container(toggler(self.example_row, |value| {
-                Message::ToggleExampleRow(value)
-            }))
+            cosmic::widget::container(
+                toggler(self.example_row).on_toggle(|value| Message::ToggleExampleRow(value)),
+            )
             .height(Length::Fixed(50.)),
         ));
 
