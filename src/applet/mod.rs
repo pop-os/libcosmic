@@ -45,7 +45,7 @@ pub struct Context {
     pub panel_type: PanelType,
     /// Includes the configured size of the window.
     /// This can be used by apples to handle overflow themselves.
-    pub suggested_bounds: Option<(iced::Size)>,
+    pub suggested_bounds: Option<iced::Size>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
