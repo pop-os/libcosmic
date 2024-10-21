@@ -37,6 +37,12 @@ pub struct Section<'a, Message> {
 }
 
 impl<'a, Message: 'static> Section<'a, Message> {
+    /// Define an optional title for the section.
+    pub fn title(mut self, title: impl Into<Cow<'a, str>>) -> Self {
+        self.title = title.into();
+        self
+    }
+
     /// Add a child element to the section's list column.
     #[allow(clippy::should_implement_trait)]
     pub fn add(mut self, item: impl Into<Element<'a, Message>>) -> Self {
@@ -44,10 +50,21 @@ impl<'a, Message: 'static> Section<'a, Message> {
         self
     }
 
-    /// Define an optional title for the section.
-    pub fn title(mut self, title: impl Into<Cow<'a, str>>) -> Self {
-        self.title = title.into();
-        self
+    /// Add a child element to the section's list column, if `Some`.
+    pub fn add_maybe(self, item: Option<impl Into<Element<'a, Message>>>) -> Self {
+        if let Some(item) = item {
+            self.add(item)
+        } else {
+            self
+        }
+    }
+
+    /// Extends the [`Section`] with the given children.
+    pub fn extend(
+        self,
+        children: impl IntoIterator<Item = impl Into<Element<'a, Message>>>,
+    ) -> Self {
+        children.into_iter().fold(self, Self::add)
     }
 }
 
