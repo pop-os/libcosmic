@@ -1,0 +1,113 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="float-cmp"><title>float_cmp - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-46f98efaafac5295.ttf.woff2,FiraSans-Regular-018c141bf0843ffd.woff2,FiraSans-Medium-8f9a781e4970d388.woff2,SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2,SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../static.files/rustdoc-c5d6553a23f1e5a6.css"><meta name="rustdoc-vars" data-root-path="../" data-static-root-path="../static.files/" data-current-crate="float_cmp" data-themes="" data-resource-suffix="" data-rustdoc-version="1.81.0 (eeb90cda1 2024-09-04)" data-channel="1.81.0" data-search-js="search-d234aafac6c221dd.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../static.files/storage-118b08c4c78b968e.js"></script><script defer src="../crates.js"></script><script defer src="../static.files/main-d2fab2bf619172d3.js"></script><noscript><link rel="stylesheet" href="../static.files/noscript-df360f571f6edeae.css"></noscript><link rel="alternate icon" type="image/png" href="../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc mod crate"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle" title="show sidebar"></button></nav><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../float_cmp/index.html">float_cmp</a><span class="version">0.9.0</span></h2></div><div class="sidebar-elems"><ul class="block"><li><a id="all-types" href="all.html">All Items</a></li></ul><section><ul class="block"><li><a href="#macros">Macros</a></li><li><a href="#structs">Structs</a></li><li><a href="#traits">Traits</a></li></ul></section></div></nav><div class="sidebar-resizer"></div><main><div class="width-limiter"><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><h1>Crate <a class="mod" href="#">float_cmp</a><button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><span class="out-of-band"><a class="src" href="../src/float_cmp/lib.rs.html#4-195">source</a> · <button id="toggle-all-docs" title="collapse all docs">[<span>&#x2212;</span>]</button></span></div><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><h2 id="float-cmp"><a class="doc-anchor" href="#float-cmp">§</a>float-cmp</h2>
+<p>float-cmp defines and implements traits for approximate comparison of floating point types
+which have fallen away from exact equality due to the limited precision available within
+floating point representations. Implementations of these traits are provided for <code>f32</code>
+and <code>f64</code> types.</p>
+<p>When I was a kid in the ’80s, the programming rule was “Never compare floating point
+numbers”. If you can follow that rule and still get the outcome you desire, then more
+power to you. However, if you really do need to compare them, this crate provides a
+reasonable way to do so.</p>
+<p>Another crate <code>efloat</code> offers another solution by providing a floating point type that
+tracks its error bounds as operations are performed on it, and thus can implement the
+<code>ApproxEq</code> trait in this crate more accurately, without specifying a <code>Margin</code>.</p>
+<p>The recommended go-to solution (although it may not be appropriate in all cases) is the
+<code>approx_eq()</code> function in the <code>ApproxEq</code> trait (or better yet, the macros).  For <code>f32</code>
+and <code>f64</code>, the <code>F32Margin</code> and <code>F64Margin</code> types are provided for specifying margins as
+both an epsilon value and an ULPs value, and defaults are provided via <code>Default</code>
+(although there is no perfect default value that is always appropriate, so beware).</p>
+<p>Several other traits are provided including <code>Ulps</code>, <code>ApproxEqUlps</code>, <code>ApproxOrdUlps</code>, and
+<code>ApproxEqRatio</code>.</p>
+<h3 id="the-problem"><a class="doc-anchor" href="#the-problem">§</a>The problem</h3>
+<p>Floating point operations must round answers to the nearest representable number. Multiple
+operations may result in an answer different from what you expect. In the following example,
+the assert will fail, even though the printed output says “0.45 == 0.45”:</p>
+
+<div class="example-wrap should_panic"><a href="#" class="tooltip" title="This example panics">ⓘ</a><pre class="rust rust-example-rendered"><code>  <span class="kw">let </span>a: f32 = <span class="number">0.15 </span>+ <span class="number">0.15 </span>+ <span class="number">0.15</span>;
+  <span class="kw">let </span>b: f32 = <span class="number">0.1 </span>+ <span class="number">0.1 </span>+ <span class="number">0.25</span>;
+  <span class="macro">println!</span>(<span class="string">"{} == {}"</span>, a, b);
+  <span class="macro">assert!</span>(a==b)  <span class="comment">// Fails, because they are not exactly equal</span></code></pre></div>
+<p>This fails because the correct answer to most operations isn’t exactly representable, and so
+your computer’s processor chooses to represent the answer with the closest value it has
+available. This introduces error, and this error can accumulate as multiple operations are
+performed.</p>
+<h3 id="the-solution"><a class="doc-anchor" href="#the-solution">§</a>The solution</h3>
+<p>With <code>ApproxEq</code>, we can get the answer we intend:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code>  <span class="kw">let </span>a: f32 = <span class="number">0.15 </span>+ <span class="number">0.15 </span>+ <span class="number">0.15</span>;
+  <span class="kw">let </span>b: f32 = <span class="number">0.1 </span>+ <span class="number">0.1 </span>+ <span class="number">0.25</span>;
+  <span class="macro">println!</span>(<span class="string">"{} == {}"</span>, a, b);
+  <span class="comment">// They are equal, within 2 ulps
+  </span><span class="macro">assert!</span>( <span class="macro">approx_eq!</span>(f32, a, b, ulps = <span class="number">2</span>) );</code></pre></div>
+<h3 id="some-explanation"><a class="doc-anchor" href="#some-explanation">§</a>Some explanation</h3>
+<p>We use the term ULP (units of least precision, or units in the last place) to mean the
+difference between two adjacent floating point representations (adjacent meaning that there is
+no floating point number between them). This term is borrowed from prior work (personally I
+would have chosen “quanta”). The size of an ULP (measured as a float) varies
+depending on the exponents of the floating point numbers in question. That is a good thing,
+because as numbers fall away from equality due to the imprecise nature of their representation,
+they fall away in ULPs terms, not in absolute terms.  Pure epsilon-based comparisons are
+absolute and thus don’t map well to the nature of the additive error issue. They work fine
+for many ranges of numbers, but not for others (consider comparing -0.0000000028
+to +0.00000097).</p>
+<h3 id="using-this-crate"><a class="doc-anchor" href="#using-this-crate">§</a>Using this crate</h3>
+<p>By default this crate enables the <code>ratio</code> module providing the <code>ApproxEqRatio</code> trait.  This
+feature pulls in <code>num-traits</code>.  If you disable this feature, you’ll need to either enable
+<code>num-traits</code> directly or else enable the <code>std</code> feature; otherwise it won’t compile. This crate
+is <code>#![no_std]</code> unless you enable the <code>std</code> feature.</p>
+<p>You can use the <code>ApproxEq</code> trait directly like so:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code>    <span class="macro">assert!</span>( a.approx_eq(b, F32Margin { ulps: <span class="number">2</span>, epsilon: <span class="number">0.0 </span>}) );</code></pre></div>
+<p>We have implemented <code>From&lt;(f32,i32)&gt;</code> for <code>F32Margin</code> (and similarly for <code>F64Margin</code>)
+so you can use this shorthand:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code>    <span class="macro">assert!</span>( a.approx_eq(b, (<span class="number">0.0</span>, <span class="number">2</span>)) );</code></pre></div>
+<p>With macros, it is easier to be explicit about which type of margin you wish to set,
+without mentioning the other one (the other one will be zero). But the downside is
+that you have to specify the type you are dealing with:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code>    <span class="macro">assert!</span>( <span class="macro">approx_eq!</span>(f32, a, b, ulps = <span class="number">2</span>) );
+    <span class="macro">assert!</span>( <span class="macro">approx_eq!</span>(f32, a, b, epsilon = <span class="number">0.00000003</span>) );
+    <span class="macro">assert!</span>( <span class="macro">approx_eq!</span>(f32, a, b, epsilon = <span class="number">0.00000003</span>, ulps = <span class="number">2</span>) );
+    <span class="macro">assert!</span>( <span class="macro">approx_eq!</span>(f32, a, b, (<span class="number">0.0</span>, <span class="number">2</span>)) );
+    <span class="macro">assert!</span>( <span class="macro">approx_eq!</span>(f32, a, b, F32Margin { epsilon: <span class="number">0.0</span>, ulps: <span class="number">2 </span>}) );
+    <span class="macro">assert!</span>( <span class="macro">approx_eq!</span>(f32, a, b, F32Margin::default()) );
+    <span class="macro">assert!</span>( <span class="macro">approx_eq!</span>(f32, a, b) ); <span class="comment">// uses the default</span></code></pre></div>
+<p>For most cases, I recommend you use a smallish integer for the <code>ulps</code> parameter (1 to 5
+or so), and a similar small multiple of the floating point’s EPSILON constant (1.0 to 5.0
+or so), but there are <em>plenty</em> of cases where this is insufficient.</p>
+<h3 id="implementing-these-traits"><a class="doc-anchor" href="#implementing-these-traits">§</a>Implementing these traits</h3>
+<p>You can implement <code>ApproxEq</code> for your own complex types like shown below.
+The floating point type <code>F</code> must be <code>Copy</code>, but for large types you can implement
+it for references to your type as shown.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>float_cmp::ApproxEq;
+
+<span class="kw">pub struct </span>Vec2&lt;F&gt; {
+  <span class="kw">pub </span>x: F,
+  <span class="kw">pub </span>y: F,
+}
+
+<span class="kw">impl</span>&lt;<span class="lifetime">'a</span>, M: Copy + Default, F: Copy + ApproxEq&lt;Margin=M&gt;&gt; ApproxEq <span class="kw">for </span><span class="kw-2">&amp;</span><span class="lifetime">'a </span>Vec2&lt;F&gt; {
+  <span class="kw">type </span>Margin = M;
+
+  <span class="kw">fn </span>approx_eq&lt;T: Into&lt;<span class="self">Self</span>::Margin&gt;&gt;(<span class="self">self</span>, other: <span class="self">Self</span>, margin: T) -&gt; bool {
+    <span class="kw">let </span>margin = margin.into();
+    <span class="self">self</span>.x.approx_eq(other.x, margin)
+      &amp;&amp; <span class="self">self</span>.y.approx_eq(other.y, margin)
+  }
+}</code></pre></div>
+<h3 id="non-floating-point-types"><a class="doc-anchor" href="#non-floating-point-types">§</a>Non floating-point types</h3>
+<p><code>ApproxEq</code> can be implemented for non floating-point types as well, since <code>Margin</code> is
+an associated type.</p>
+<p>The <code>efloat</code> crate implements (or soon will implement) <code>ApproxEq</code> for a compound type
+that tracks floating point error bounds by checking if the error bounds overlap.
+In that case <code>type Margin = ()</code>.</p>
+<h3 id="inspiration"><a class="doc-anchor" href="#inspiration">§</a>Inspiration</h3>
+<p>This crate was inspired by this Random ASCII blog post:</p>
+<p><a href="https://randomascii.wordpress.com/2012/02/25/comparing-floating-point-numbers-2012-edition/">https://randomascii.wordpress.com/2012/02/25/comparing-floating-point-numbers-2012-edition/</a></p>
+</div></details><h2 id="macros" class="section-header">Macros<a href="#macros" class="anchor">§</a></h2><ul class="item-table"><li><div class="item-name"><a class="macro" href="macro.approx_eq.html" title="macro float_cmp::approx_eq">approx_eq</a></div></li><li><div class="item-name"><a class="macro" href="macro.assert_approx_eq.html" title="macro float_cmp::assert_approx_eq">assert_approx_eq</a></div></li></ul><h2 id="structs" class="section-header">Structs<a href="#structs" class="anchor">§</a></h2><ul class="item-table"><li><div class="item-name"><a class="struct" href="struct.F32Margin.html" title="struct float_cmp::F32Margin">F32Margin</a></div><div class="desc docblock-short">This type defines a margin within two <code>f32</code> values might be considered equal,
+and is intended as the associated type for the <code>ApproxEq</code> trait.</div></li><li><div class="item-name"><a class="struct" href="struct.F64Margin.html" title="struct float_cmp::F64Margin">F64Margin</a></div><div class="desc docblock-short">This type defines a margin within two <code>f64</code> values might be considered equal,
+and is intended as the associated type for the <code>ApproxEq</code> trait.</div></li></ul><h2 id="traits" class="section-header">Traits<a href="#traits" class="anchor">§</a></h2><ul class="item-table"><li><div class="item-name"><a class="trait" href="trait.ApproxEq.html" title="trait float_cmp::ApproxEq">ApproxEq</a></div><div class="desc docblock-short">A trait for approximate equality comparisons.</div></li><li><div class="item-name"><a class="trait" href="trait.ApproxEqUlps.html" title="trait float_cmp::ApproxEqUlps">ApproxEqUlps</a></div><div class="desc docblock-short">ApproxEqUlps is a trait for approximate equality comparisons.
+The associated type Flt is a floating point type which implements Ulps, and is
+required so that this trait can be implemented for compound types (e.g. vectors),
+not just for the floats themselves.</div></li><li><div class="item-name"><a class="trait" href="trait.Ulps.html" title="trait float_cmp::Ulps">Ulps</a></div></li></ul></section></div></main></body></html>

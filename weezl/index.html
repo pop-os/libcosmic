@@ -1,0 +1,40 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="LZW decoder and encoder"><title>weezl - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-46f98efaafac5295.ttf.woff2,FiraSans-Regular-018c141bf0843ffd.woff2,FiraSans-Medium-8f9a781e4970d388.woff2,SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2,SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../static.files/rustdoc-c5d6553a23f1e5a6.css"><meta name="rustdoc-vars" data-root-path="../" data-static-root-path="../static.files/" data-current-crate="weezl" data-themes="" data-resource-suffix="" data-rustdoc-version="1.81.0 (eeb90cda1 2024-09-04)" data-channel="1.81.0" data-search-js="search-d234aafac6c221dd.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../static.files/storage-118b08c4c78b968e.js"></script><script defer src="../crates.js"></script><script defer src="../static.files/main-d2fab2bf619172d3.js"></script><noscript><link rel="stylesheet" href="../static.files/noscript-df360f571f6edeae.css"></noscript><link rel="alternate icon" type="image/png" href="../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc mod crate"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle" title="show sidebar"></button></nav><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../weezl/index.html">weezl</a><span class="version">0.1.8</span></h2></div><div class="sidebar-elems"><ul class="block"><li><a id="all-types" href="all.html">All Items</a></li></ul><section><ul class="block"><li><a href="#modules">Modules</a></li><li><a href="#structs">Structs</a></li><li><a href="#enums">Enums</a></li></ul></section></div></nav><div class="sidebar-resizer"></div><main><div class="width-limiter"><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><h1>Crate <a class="mod" href="#">weezl</a><button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><span class="out-of-band"><a class="src" href="../src/weezl/lib.rs.html#1-146">source</a> · <button id="toggle-all-docs" title="collapse all docs">[<span>&#x2212;</span>]</button></span></div><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><h2 id="lzw-decoder-and-encoder"><a class="doc-anchor" href="#lzw-decoder-and-encoder">§</a>LZW decoder and encoder</h2>
+<p>This crates provides an <code>Encoder</code> and a <code>Decoder</code> in their respective modules. The code words
+are written from and to bit byte slices (or streams) where it is possible to write either the
+most or least significant bits first. The maximum possible code size is 12 bits, the smallest
+available code size is 2 bits.</p>
+<h3 id="example"><a class="doc-anchor" href="#example">§</a>Example</h3>
+<p>These two code blocks show the compression and corresponding decompression. Note that you must
+use the same arguments to <code>Encoder</code> and <code>Decoder</code>, otherwise the decoding might fail or produce
+bad results.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>weezl::{BitOrder, encode::Encoder};
+
+<span class="kw">let </span>data = <span class="string">b"Hello, world"</span>;
+<span class="kw">let </span>compressed = Encoder::new(BitOrder::Msb, <span class="number">9</span>)
+    .encode(data)
+    .unwrap();</code></pre></div>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>weezl::{BitOrder, decode::Decoder};
+
+<span class="kw">let </span>decompressed = Decoder::new(BitOrder::Msb, <span class="number">9</span>)
+    .decode(<span class="kw-2">&amp;</span>compressed)
+    .unwrap();
+<span class="macro">assert_eq!</span>(decompressed, data);</code></pre></div>
+<h3 id="lzw-details"><a class="doc-anchor" href="#lzw-details">§</a>LZW Details</h3>
+<p>The de- and encoder expect the LZW stream to start with a clear code and end with an
+end code which are defined as follows:</p>
+<ul>
+<li><code>CLEAR_CODE == 1 &lt;&lt; min_code_size</code></li>
+<li><code>END_CODE   == CLEAR_CODE + 1</code></li>
+</ul>
+<p>For optimal performance, all buffers and input and output slices should be as large as possible
+and at least 2048 bytes long. This extends to input streams which should have similarly sized
+buffers. This library uses Rust’s standard allocation interfaces (<code>Box</code> and <code>Vec</code> to be
+precise). Since there are no ways to handle allocation errors it is not recommended to operate
+it on 16-bit targets.</p>
+<h3 id="allocations-and-standard-library"><a class="doc-anchor" href="#allocations-and-standard-library">§</a>Allocations and standard library</h3>
+<p>The main algorithm can be used in <code>no_std</code> as well, although it requires an allocator. This
+restriction might be lifted at a later stage. For this you should deactivate the <code>std</code> feature.
+The main interfaces stay intact but the <code>into_stream</code> combinator is no available.</p>
+</div></details><h2 id="modules" class="section-header">Modules<a href="#modules" class="anchor">§</a></h2><ul class="item-table"><li><div class="item-name"><a class="mod" href="decode/index.html" title="mod weezl::decode">decode</a></div><div class="desc docblock-short">A module for all decoding needs.</div></li><li><div class="item-name"><a class="mod" href="encode/index.html" title="mod weezl::encode">encode</a></div><div class="desc docblock-short">A module for all encoding needs.</div></li></ul><h2 id="structs" class="section-header">Structs<a href="#structs" class="anchor">§</a></h2><ul class="item-table"><li><div class="item-name"><a class="struct" href="struct.BufferResult.html" title="struct weezl::BufferResult">BufferResult</a></div><div class="desc docblock-short">The result of a coding operation on a pair of buffer.</div></li><li><div class="item-name"><a class="struct" href="struct.StreamResult.html" title="struct weezl::StreamResult">StreamResult</a></div><div class="desc docblock-short">The result of coding into an output stream.</div></li></ul><h2 id="enums" class="section-header">Enums<a href="#enums" class="anchor">§</a></h2><ul class="item-table"><li><div class="item-name"><a class="enum" href="enum.BitOrder.html" title="enum weezl::BitOrder">BitOrder</a></div><div class="desc docblock-short">The order of bits in bytes.</div></li><li><div class="item-name"><a class="enum" href="enum.LzwError.html" title="enum weezl::LzwError">LzwError</a></div><div class="desc docblock-short">The error kind after unsuccessful coding of an LZW stream.</div></li><li><div class="item-name"><a class="enum" href="enum.LzwStatus.html" title="enum weezl::LzwStatus">LzwStatus</a></div><div class="desc docblock-short">The status after successful coding of an LZW stream.</div></li></ul></section></div></main></body></html>

@@ -1,0 +1,48 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Divide a fraction into a writeable target implementing `std::fmt::Write` Returns the remainder of the division"><title>divide_to_writeable in fraction::division - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-46f98efaafac5295.ttf.woff2,FiraSans-Regular-018c141bf0843ffd.woff2,FiraSans-Medium-8f9a781e4970d388.woff2,SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2,SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../static.files/rustdoc-c5d6553a23f1e5a6.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="fraction" data-themes="" data-resource-suffix="" data-rustdoc-version="1.81.0 (eeb90cda1 2024-09-04)" data-channel="1.81.0" data-search-js="search-d234aafac6c221dd.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../static.files/storage-118b08c4c78b968e.js"></script><script defer src="sidebar-items.js"></script><script defer src="../../static.files/main-d2fab2bf619172d3.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-df360f571f6edeae.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc fn"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle" title="show sidebar"></button></nav><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../../fraction/index.html">fraction</a><span class="version">0.15.3</span></h2></div><div class="sidebar-elems"><h2><a href="index.html">In fraction::division</a></h2></div></nav><div class="sidebar-resizer"></div><main><div class="width-limiter"><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><h1>Function <a href="../index.html">fraction</a>::<wbr><a href="index.html">division</a>::<wbr><a class="fn" href="#">divide_to_writeable</a><button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><span class="out-of-band"><a class="src" href="../../src/fraction/division.rs.html#552-565">source</a> · <button id="toggle-all-docs" title="collapse all docs">[<span>&#x2212;</span>]</button></span></div><pre class="rust item-decl"><code>pub fn divide_to_writeable&lt;I&gt;(
+    writeable: &amp;mut dyn <a class="trait" href="https://doc.rust-lang.org/1.81.0/core/fmt/trait.Write.html" title="trait core::fmt::Write">Write</a>,
+    dividend: I,
+    divisor: I,
+    precision: <a class="primitive" href="https://doc.rust-lang.org/1.81.0/std/primitive.usize.html">usize</a>,
+    trail_zeroes: <a class="primitive" href="https://doc.rust-lang.org/1.81.0/std/primitive.bool.html">bool</a>,
+) -&gt; <a class="enum" href="https://doc.rust-lang.org/1.81.0/core/result/enum.Result.html" title="enum core::result::Result">Result</a>&lt;I, <a class="enum" href="../error/enum.DivisionError.html" title="enum fraction::error::DivisionError">DivisionError</a>&gt;<div class="where">where
+    I: <a class="trait" href="https://doc.rust-lang.org/1.81.0/core/clone/trait.Clone.html" title="trait core::clone::Clone">Clone</a> + <a class="trait" href="../generic/trait.GenericInteger.html" title="trait fraction::generic::GenericInteger">GenericInteger</a>,</div></code></pre><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Divide a fraction into a writeable target implementing <a href="https://doc.rust-lang.org/std/fmt/trait.Write.html"><code>std::fmt::Write</code></a><br />
+Returns the remainder of the division</p>
+<ul>
+<li>No allocations</li>
+<li>Does not round the last digit</li>
+</ul>
+<p>Makes the division and puts the result into the formatter.
+Uses <a href="./fn.divide_integral.html"><code>divide_integral</code></a> and <a href="./fn.divide_rem.html"><code>divide_rem</code></a> functions internally.</p>
+<p>WARNING: Negative numbers as arguments are not supported.</p>
+<h2 id="examples"><a class="doc-anchor" href="#examples">§</a>Examples</h2>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>fraction::division::{ divide_to_writeable, division_result_max_char_length };
+
+<span class="kw">let </span>num = <span class="number">7</span>;
+<span class="kw">let </span>denom = <span class="number">4</span>;
+
+<span class="kw">let </span><span class="kw-2">mut </span>string = String::with_capacity(division_result_max_char_length(<span class="kw-2">&amp;</span>num, <span class="number">2</span>));
+
+divide_to_writeable(<span class="kw-2">&amp;mut </span>string, num, denom, <span class="number">2</span>, <span class="bool-val">false</span>).ok();
+
+<span class="macro">assert_eq!</span>(string, <span class="string">"1.75"</span>);</code></pre></div>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>fraction::division::divide_to_writeable;
+
+<span class="kw">use </span>std::fmt;
+
+<span class="kw">struct </span>Foo(i32, i32);
+
+<span class="kw">impl </span>fmt::Display <span class="kw">for </span>Foo {
+    <span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, formatter: <span class="kw-2">&amp;mut </span>fmt::Formatter) -&gt; fmt::Result {
+        <span class="kw">let </span>precision = formatter.precision().unwrap_or(<span class="number">2</span>);
+        <span class="kw">match </span>divide_to_writeable(formatter, <span class="self">self</span>.<span class="number">0</span>, <span class="self">self</span>.<span class="number">1</span>, precision, <span class="bool-val">false</span>) {
+            <span class="prelude-val">Err</span>(<span class="kw">_</span>) =&gt; <span class="prelude-val">Err</span>(fmt::Error),
+            <span class="kw">_ </span>=&gt; <span class="prelude-val">Ok</span>(())
+        }
+    }
+}
+
+<span class="macro">assert_eq!</span> (<span class="macro">format!</span>(<span class="string">"{}"</span>, Foo(<span class="number">1</span>, <span class="number">2</span>)), <span class="string">"0.5"</span>);
+<span class="macro">assert_eq!</span> (<span class="macro">format!</span>(<span class="string">"{:.3}"</span>, Foo(<span class="number">1</span>, <span class="number">3</span>)), <span class="string">"0.333"</span>);
+<span class="macro">assert_eq!</span> (<span class="macro">format!</span>(<span class="string">"{:.16}"</span>, Foo(<span class="number">5</span>, <span class="number">7</span>)), <span class="string">"0.7142857142857142"</span>);</code></pre></div>
+</div></details></section></div></main></body></html>

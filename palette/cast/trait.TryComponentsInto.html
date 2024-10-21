@@ -1,0 +1,70 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Trait for trying to cast a collection of color components from a collection of colors without copying."><title>TryComponentsInto in palette::cast - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-46f98efaafac5295.ttf.woff2,FiraSans-Regular-018c141bf0843ffd.woff2,FiraSans-Medium-8f9a781e4970d388.woff2,SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2,SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../static.files/rustdoc-c5d6553a23f1e5a6.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="palette" data-themes="" data-resource-suffix="" data-rustdoc-version="1.81.0 (eeb90cda1 2024-09-04)" data-channel="1.81.0" data-search-js="search-d234aafac6c221dd.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../static.files/storage-118b08c4c78b968e.js"></script><script defer src="sidebar-items.js"></script><script defer src="../../static.files/main-d2fab2bf619172d3.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-df360f571f6edeae.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc trait"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle" title="show sidebar"></button></nav><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../../palette/index.html">palette</a><span class="version">0.7.6</span></h2></div><h2 class="location"><a href="#">TryComponentsInto</a></h2><div class="sidebar-elems"><section><h3><a href="#required-associated-types">Required Associated Types</a></h3><ul class="block"><li><a href="#associatedtype.Error">Error</a></li></ul><h3><a href="#required-methods">Required Methods</a></h3><ul class="block"><li><a href="#tymethod.try_components_into">try_components_into</a></li></ul><h3><a href="#object-safety">Object Safety</a></h3><h3><a href="#implementors">Implementors</a></h3></section><h2><a href="index.html">In palette::cast</a></h2></div></nav><div class="sidebar-resizer"></div><main><div class="width-limiter"><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><h1>Trait <a href="../index.html">palette</a>::<wbr><a href="index.html">cast</a>::<wbr><a class="trait" href="#">TryComponentsInto</a><button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><span class="out-of-band"><a class="src" href="../../src/palette/cast/from_into_components_traits.rs.html#494-505">source</a> · <button id="toggle-all-docs" title="collapse all docs">[<span>&#x2212;</span>]</button></span></div><pre class="rust item-decl"><code>pub trait TryComponentsInto&lt;C&gt;: <a class="trait" href="https://doc.rust-lang.org/1.81.0/core/marker/trait.Sized.html" title="trait core::marker::Sized">Sized</a> {
+    type <a href="#associatedtype.Error" class="associatedtype">Error</a>;
+
+    // Required method
+    fn <a href="#tymethod.try_components_into" class="fn">try_components_into</a>(self) -&gt; <a class="enum" href="https://doc.rust-lang.org/1.81.0/core/result/enum.Result.html" title="enum core::result::Result">Result</a>&lt;C, Self::<a class="associatedtype" href="trait.TryComponentsInto.html#associatedtype.Error" title="type palette::cast::TryComponentsInto::Error">Error</a>&gt;;
+}</code></pre><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Trait for trying to cast a collection of color components from a collection
+of colors without copying.</p>
+<p>This trait is meant as a more convenient alternative to the free functions
+in <a href="index.html" title="mod palette::cast"><code>cast</code></a>, to allow method chaining among other things.</p>
+<h3 id="errors"><a class="doc-anchor" href="#errors">§</a>Errors</h3>
+<p>The cast will return an error if the cast fails, such as when the length of
+the input is not a multiple of the color’s array length.</p>
+<h3 id="examples"><a class="doc-anchor" href="#examples">§</a>Examples</h3>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>palette::{cast::TryComponentsInto, Srgb};
+
+<span class="kw">let </span>array: [<span class="kw">_</span>; <span class="number">6</span>] = [<span class="number">64</span>, <span class="number">139</span>, <span class="number">10</span>, <span class="number">93</span>, <span class="number">18</span>, <span class="number">214</span>];
+<span class="kw">let </span>slice: <span class="kw-2">&amp;</span>[<span class="kw">_</span>] = <span class="kw-2">&amp;</span>[<span class="number">64</span>, <span class="number">139</span>, <span class="number">10</span>, <span class="number">93</span>, <span class="number">18</span>, <span class="number">214</span>];
+<span class="kw">let </span>slice_mut: <span class="kw-2">&amp;mut </span>[<span class="kw">_</span>] = <span class="kw-2">&amp;mut </span>[<span class="number">64</span>, <span class="number">139</span>, <span class="number">10</span>, <span class="number">93</span>, <span class="number">18</span>, <span class="number">214</span>];
+<span class="kw">let </span>vec: Vec&lt;<span class="kw">_</span>&gt; = <span class="macro">vec!</span>[<span class="number">64</span>, <span class="number">139</span>, <span class="number">10</span>, <span class="number">93</span>, <span class="number">18</span>, <span class="number">214</span>];
+
+<span class="macro">assert_eq!</span>(
+    array.try_components_into(),
+    <span class="prelude-val">Ok</span>([Srgb::new(<span class="number">64u8</span>, <span class="number">139</span>, <span class="number">10</span>), Srgb::new(<span class="number">93</span>, <span class="number">18</span>, <span class="number">214</span>)])
+);
+
+<span class="macro">assert_eq!</span>(
+    slice.try_components_into(),
+    <span class="prelude-val">Ok</span>([Srgb::new(<span class="number">64u8</span>, <span class="number">139</span>, <span class="number">10</span>), Srgb::new(<span class="number">93</span>, <span class="number">18</span>, <span class="number">214</span>)].as_ref())
+);
+
+<span class="macro">assert_eq!</span>(
+    slice_mut.try_components_into(),
+    <span class="prelude-val">Ok</span>([Srgb::new(<span class="number">64u8</span>, <span class="number">139</span>, <span class="number">10</span>), Srgb::new(<span class="number">93</span>, <span class="number">18</span>, <span class="number">214</span>)].as_mut())
+);
+
+<span class="macro">assert_eq!</span>(
+    vec.try_components_into(),
+    <span class="prelude-val">Ok</span>(<span class="macro">vec!</span>[Srgb::new(<span class="number">64u8</span>, <span class="number">139</span>, <span class="number">10</span>), Srgb::new(<span class="number">93</span>, <span class="number">18</span>, <span class="number">214</span>)])
+);</code></pre></div>
+<p>Owning types can be cast as slices, too:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>palette::{cast::TryComponentsInto, Srgb};
+
+<span class="kw">let </span>array: [<span class="kw">_</span>; <span class="number">6</span>] = [<span class="number">64</span>, <span class="number">139</span>, <span class="number">10</span>, <span class="number">93</span>, <span class="number">18</span>, <span class="number">214</span>];
+<span class="kw">let </span><span class="kw-2">mut </span>vec: Vec&lt;<span class="kw">_</span>&gt; = <span class="macro">vec!</span>[<span class="number">64</span>, <span class="number">139</span>, <span class="number">10</span>, <span class="number">93</span>, <span class="number">18</span>, <span class="number">214</span>];
+
+<span class="macro">assert_eq!</span>(
+    (<span class="kw-2">&amp;</span>array).try_components_into(),
+    <span class="prelude-val">Ok</span>([Srgb::new(<span class="number">64u8</span>, <span class="number">139</span>, <span class="number">10</span>), Srgb::new(<span class="number">93</span>, <span class="number">18</span>, <span class="number">214</span>)].as_ref())
+);
+
+<span class="macro">assert_eq!</span>(
+    (<span class="kw-2">&amp;mut </span>vec).try_components_into(),
+    <span class="prelude-val">Ok</span>([Srgb::new(<span class="number">64u8</span>, <span class="number">139</span>, <span class="number">10</span>), Srgb::new(<span class="number">93</span>, <span class="number">18</span>, <span class="number">214</span>)].as_mut())
+);</code></pre></div>
+<p>This produces an error:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>palette::{cast::TryComponentsInto, Srgb};
+
+<span class="kw">let </span>components = <span class="kw-2">&amp;</span>[<span class="number">64</span>, <span class="number">139</span>, <span class="number">10</span>, <span class="number">93</span>, <span class="number">18</span>]; <span class="comment">// Not a multiple of 3
+</span><span class="kw">let </span>colors: <span class="prelude-ty">Result</span>&lt;<span class="kw-2">&amp;</span>[Srgb&lt;u8&gt;], <span class="kw">_</span>&gt; = components.try_components_into();
+<span class="macro">assert!</span>(colors.is_err());</code></pre></div>
+</div></details><h2 id="required-associated-types" class="section-header">Required Associated Types<a href="#required-associated-types" class="anchor">§</a></h2><div class="methods"><details class="toggle" open><summary><section id="associatedtype.Error" class="method"><a class="src rightside" href="../../src/palette/cast/from_into_components_traits.rs.html#496">source</a><h4 class="code-header">type <a href="#associatedtype.Error" class="associatedtype">Error</a></h4></section></summary><div class="docblock"><p>The error for when <code>try_into_colors</code> fails to cast.</p>
+</div></details></div><h2 id="required-methods" class="section-header">Required Methods<a href="#required-methods" class="anchor">§</a></h2><div class="methods"><details class="toggle method-toggle" open><summary><section id="tymethod.try_components_into" class="method"><a class="src rightside" href="../../src/palette/cast/from_into_components_traits.rs.html#504">source</a><h4 class="code-header">fn <a href="#tymethod.try_components_into" class="fn">try_components_into</a>(self) -&gt; <a class="enum" href="https://doc.rust-lang.org/1.81.0/core/result/enum.Result.html" title="enum core::result::Result">Result</a>&lt;C, Self::<a class="associatedtype" href="trait.TryComponentsInto.html#associatedtype.Error" title="type palette::cast::TryComponentsInto::Error">Error</a>&gt;</h4></section></summary><div class="docblock"><p>Try to cast this collection of color components into a collection of
+colors.</p>
+<p>Return an error if the conversion can’t be done, such as when the number
+of items in <code>self</code> isn’t a multiple of the number of components in the
+color type.</p>
+</div></details></div><h2 id="object-safety" class="section-header">Object Safety<a href="#object-safety" class="anchor">§</a></h2><div class="object-safety-info">This trait is <b>not</b> <a href="https://doc.rust-lang.org/1.81.0/reference/items/traits.html#object-safety">object safe</a>.</div><h2 id="implementors" class="section-header">Implementors<a href="#implementors" class="anchor">§</a></h2><div id="implementors-list"><details class="toggle implementors-toggle"><summary><section id="impl-TryComponentsInto%3CC%3E-for-T" class="impl"><a class="src rightside" href="../../src/palette/cast/from_into_components_traits.rs.html#584-594">source</a><a href="#impl-TryComponentsInto%3CC%3E-for-T" class="anchor">§</a><h3 class="code-header">impl&lt;T, C&gt; <a class="trait" href="trait.TryComponentsInto.html" title="trait palette::cast::TryComponentsInto">TryComponentsInto</a>&lt;C&gt; for T<div class="where">where
+    C: <a class="trait" href="trait.TryFromComponents.html" title="trait palette::cast::TryFromComponents">TryFromComponents</a>&lt;T&gt;,</div></h3></section></summary><div class="impl-items"><section id="associatedtype.Error-1" class="associatedtype trait-impl"><a href="#associatedtype.Error-1" class="anchor">§</a><h4 class="code-header">type <a href="#associatedtype.Error" class="associatedtype">Error</a> = &lt;C as <a class="trait" href="trait.TryFromComponents.html" title="trait palette::cast::TryFromComponents">TryFromComponents</a>&lt;T&gt;&gt;::<a class="associatedtype" href="trait.TryFromComponents.html#associatedtype.Error" title="type palette::cast::TryFromComponents::Error">Error</a></h4></section></div></details></div><script src="../../trait.impl/palette/cast/from_into_components_traits/trait.TryComponentsInto.js" async></script></section></div></main></body></html>

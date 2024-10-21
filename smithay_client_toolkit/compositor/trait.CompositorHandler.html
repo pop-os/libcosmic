@@ -1,0 +1,80 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="API documentation for the Rust `CompositorHandler` trait in crate `smithay_client_toolkit`."><title>CompositorHandler in smithay_client_toolkit::compositor - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-46f98efaafac5295.ttf.woff2,FiraSans-Regular-018c141bf0843ffd.woff2,FiraSans-Medium-8f9a781e4970d388.woff2,SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2,SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../static.files/rustdoc-c5d6553a23f1e5a6.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="smithay_client_toolkit" data-themes="" data-resource-suffix="" data-rustdoc-version="1.81.0 (eeb90cda1 2024-09-04)" data-channel="1.81.0" data-search-js="search-d234aafac6c221dd.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../static.files/storage-118b08c4c78b968e.js"></script><script defer src="sidebar-items.js"></script><script defer src="../../static.files/main-d2fab2bf619172d3.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-df360f571f6edeae.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc trait"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle" title="show sidebar"></button></nav><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../../smithay_client_toolkit/index.html">smithay_client_toolkit</a><span class="version">0.19.2</span></h2></div><h2 class="location"><a href="#">CompositorHandler</a></h2><div class="sidebar-elems"><section><h3><a href="#required-methods">Required Methods</a></h3><ul class="block"><li><a href="#tymethod.frame">frame</a></li><li><a href="#tymethod.scale_factor_changed">scale_factor_changed</a></li><li><a href="#tymethod.surface_enter">surface_enter</a></li><li><a href="#tymethod.surface_leave">surface_leave</a></li><li><a href="#tymethod.transform_changed">transform_changed</a></li></ul><h3><a href="#object-safety">Object Safety</a></h3><h3><a href="#implementors">Implementors</a></h3></section><h2><a href="index.html">In smithay_client_toolkit::compositor</a></h2></div></nav><div class="sidebar-resizer"></div><main><div class="width-limiter"><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><h1>Trait <a href="../index.html">smithay_client_toolkit</a>::<wbr><a href="index.html">compositor</a>::<wbr><a class="trait" href="#">CompositorHandler</a><button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><span class="out-of-band"><a class="src" href="../../src/smithay_client_toolkit/compositor.rs.html#24-78">source</a> · <button id="toggle-all-docs" title="collapse all docs">[<span>&#x2212;</span>]</button></span></div><pre class="rust item-decl"><code>pub trait CompositorHandler: <a class="trait" href="https://doc.rust-lang.org/1.81.0/core/marker/trait.Sized.html" title="trait core::marker::Sized">Sized</a> {
+    // Required methods
+    fn <a href="#tymethod.scale_factor_changed" class="fn">scale_factor_changed</a>(
+        &amp;mut self,
+        conn: &amp;<a class="struct" href="../../wayland_client/conn/struct.Connection.html" title="struct wayland_client::conn::Connection">Connection</a>,
+        qh: &amp;<a class="struct" href="../../wayland_client/event_queue/struct.QueueHandle.html" title="struct wayland_client::event_queue::QueueHandle">QueueHandle</a>&lt;Self&gt;,
+        surface: &amp;<a class="struct" href="../../wayland_client/protocol/wl_surface/struct.WlSurface.html" title="struct wayland_client::protocol::wl_surface::WlSurface">WlSurface</a>,
+        new_factor: <a class="primitive" href="https://doc.rust-lang.org/1.81.0/std/primitive.i32.html">i32</a>,
+    );
+<span class="item-spacer"></span>    fn <a href="#tymethod.transform_changed" class="fn">transform_changed</a>(
+        &amp;mut self,
+        conn: &amp;<a class="struct" href="../../wayland_client/conn/struct.Connection.html" title="struct wayland_client::conn::Connection">Connection</a>,
+        qh: &amp;<a class="struct" href="../../wayland_client/event_queue/struct.QueueHandle.html" title="struct wayland_client::event_queue::QueueHandle">QueueHandle</a>&lt;Self&gt;,
+        surface: &amp;<a class="struct" href="../../wayland_client/protocol/wl_surface/struct.WlSurface.html" title="struct wayland_client::protocol::wl_surface::WlSurface">WlSurface</a>,
+        new_transform: <a class="enum" href="../../wayland_client/protocol/wl_output/enum.Transform.html" title="enum wayland_client::protocol::wl_output::Transform">Transform</a>,
+    );
+<span class="item-spacer"></span>    fn <a href="#tymethod.frame" class="fn">frame</a>(
+        &amp;mut self,
+        conn: &amp;<a class="struct" href="../../wayland_client/conn/struct.Connection.html" title="struct wayland_client::conn::Connection">Connection</a>,
+        qh: &amp;<a class="struct" href="../../wayland_client/event_queue/struct.QueueHandle.html" title="struct wayland_client::event_queue::QueueHandle">QueueHandle</a>&lt;Self&gt;,
+        surface: &amp;<a class="struct" href="../../wayland_client/protocol/wl_surface/struct.WlSurface.html" title="struct wayland_client::protocol::wl_surface::WlSurface">WlSurface</a>,
+        time: <a class="primitive" href="https://doc.rust-lang.org/1.81.0/std/primitive.u32.html">u32</a>,
+    );
+<span class="item-spacer"></span>    fn <a href="#tymethod.surface_enter" class="fn">surface_enter</a>(
+        &amp;mut self,
+        conn: &amp;<a class="struct" href="../../wayland_client/conn/struct.Connection.html" title="struct wayland_client::conn::Connection">Connection</a>,
+        qh: &amp;<a class="struct" href="../../wayland_client/event_queue/struct.QueueHandle.html" title="struct wayland_client::event_queue::QueueHandle">QueueHandle</a>&lt;Self&gt;,
+        surface: &amp;<a class="struct" href="../../wayland_client/protocol/wl_surface/struct.WlSurface.html" title="struct wayland_client::protocol::wl_surface::WlSurface">WlSurface</a>,
+        output: &amp;<a class="struct" href="../../wayland_client/protocol/wl_output/struct.WlOutput.html" title="struct wayland_client::protocol::wl_output::WlOutput">WlOutput</a>,
+    );
+<span class="item-spacer"></span>    fn <a href="#tymethod.surface_leave" class="fn">surface_leave</a>(
+        &amp;mut self,
+        conn: &amp;<a class="struct" href="../../wayland_client/conn/struct.Connection.html" title="struct wayland_client::conn::Connection">Connection</a>,
+        qh: &amp;<a class="struct" href="../../wayland_client/event_queue/struct.QueueHandle.html" title="struct wayland_client::event_queue::QueueHandle">QueueHandle</a>&lt;Self&gt;,
+        surface: &amp;<a class="struct" href="../../wayland_client/protocol/wl_surface/struct.WlSurface.html" title="struct wayland_client::protocol::wl_surface::WlSurface">WlSurface</a>,
+        output: &amp;<a class="struct" href="../../wayland_client/protocol/wl_output/struct.WlOutput.html" title="struct wayland_client::protocol::wl_output::WlOutput">WlOutput</a>,
+    );
+}</code></pre><h2 id="required-methods" class="section-header">Required Methods<a href="#required-methods" class="anchor">§</a></h2><div class="methods"><details class="toggle method-toggle" open><summary><section id="tymethod.scale_factor_changed" class="method"><a class="src rightside" href="../../src/smithay_client_toolkit/compositor.rs.html#26-32">source</a><h4 class="code-header">fn <a href="#tymethod.scale_factor_changed" class="fn">scale_factor_changed</a>(
+    &amp;mut self,
+    conn: &amp;<a class="struct" href="../../wayland_client/conn/struct.Connection.html" title="struct wayland_client::conn::Connection">Connection</a>,
+    qh: &amp;<a class="struct" href="../../wayland_client/event_queue/struct.QueueHandle.html" title="struct wayland_client::event_queue::QueueHandle">QueueHandle</a>&lt;Self&gt;,
+    surface: &amp;<a class="struct" href="../../wayland_client/protocol/wl_surface/struct.WlSurface.html" title="struct wayland_client::protocol::wl_surface::WlSurface">WlSurface</a>,
+    new_factor: <a class="primitive" href="https://doc.rust-lang.org/1.81.0/std/primitive.i32.html">i32</a>,
+)</h4></section></summary><div class="docblock"><p>The surface has either been moved into or out of an output and the output has a different scale factor.</p>
+</div></details><details class="toggle method-toggle" open><summary><section id="tymethod.transform_changed" class="method"><a class="src rightside" href="../../src/smithay_client_toolkit/compositor.rs.html#35-41">source</a><h4 class="code-header">fn <a href="#tymethod.transform_changed" class="fn">transform_changed</a>(
+    &amp;mut self,
+    conn: &amp;<a class="struct" href="../../wayland_client/conn/struct.Connection.html" title="struct wayland_client::conn::Connection">Connection</a>,
+    qh: &amp;<a class="struct" href="../../wayland_client/event_queue/struct.QueueHandle.html" title="struct wayland_client::event_queue::QueueHandle">QueueHandle</a>&lt;Self&gt;,
+    surface: &amp;<a class="struct" href="../../wayland_client/protocol/wl_surface/struct.WlSurface.html" title="struct wayland_client::protocol::wl_surface::WlSurface">WlSurface</a>,
+    new_transform: <a class="enum" href="../../wayland_client/protocol/wl_output/enum.Transform.html" title="enum wayland_client::protocol::wl_output::Transform">Transform</a>,
+)</h4></section></summary><div class="docblock"><p>The surface has either been moved into or out of an output and the output has different transform.</p>
+</div></details><details class="toggle method-toggle" open><summary><section id="tymethod.frame" class="method"><a class="src rightside" href="../../src/smithay_client_toolkit/compositor.rs.html#53-59">source</a><h4 class="code-header">fn <a href="#tymethod.frame" class="fn">frame</a>(
+    &amp;mut self,
+    conn: &amp;<a class="struct" href="../../wayland_client/conn/struct.Connection.html" title="struct wayland_client::conn::Connection">Connection</a>,
+    qh: &amp;<a class="struct" href="../../wayland_client/event_queue/struct.QueueHandle.html" title="struct wayland_client::event_queue::QueueHandle">QueueHandle</a>&lt;Self&gt;,
+    surface: &amp;<a class="struct" href="../../wayland_client/protocol/wl_surface/struct.WlSurface.html" title="struct wayland_client::protocol::wl_surface::WlSurface">WlSurface</a>,
+    time: <a class="primitive" href="https://doc.rust-lang.org/1.81.0/std/primitive.u32.html">u32</a>,
+)</h4></section></summary><div class="docblock"><p>A frame callback has been completed.</p>
+<p>Frame callbacks are used to avoid updating surfaces that are not currently visible.  If a
+frame callback is requested prior to committing a surface, the client should avoid drawing
+to that surface until the callback completes.  See the
+<a href="../../wayland_client/protocol/wl_surface/struct.WlSurface.html#method.frame" title="method wayland_client::protocol::wl_surface::WlSurface::frame"><code>WlSurface::frame</code></a> request for more details.</p>
+<p>This function will be called if you request a frame callback by passing the surface itself
+as the userdata (<code>surface.frame(&amp;queue, &amp;surface)</code>); you can also implement <a href="../../wayland_client/event_queue/trait.Dispatch.html" title="trait wayland_client::event_queue::Dispatch"><code>Dispatch</code></a>
+for other values to more easily dispatch rendering for specific surface types.</p>
+</div></details><details class="toggle method-toggle" open><summary><section id="tymethod.surface_enter" class="method"><a class="src rightside" href="../../src/smithay_client_toolkit/compositor.rs.html#62-68">source</a><h4 class="code-header">fn <a href="#tymethod.surface_enter" class="fn">surface_enter</a>(
+    &amp;mut self,
+    conn: &amp;<a class="struct" href="../../wayland_client/conn/struct.Connection.html" title="struct wayland_client::conn::Connection">Connection</a>,
+    qh: &amp;<a class="struct" href="../../wayland_client/event_queue/struct.QueueHandle.html" title="struct wayland_client::event_queue::QueueHandle">QueueHandle</a>&lt;Self&gt;,
+    surface: &amp;<a class="struct" href="../../wayland_client/protocol/wl_surface/struct.WlSurface.html" title="struct wayland_client::protocol::wl_surface::WlSurface">WlSurface</a>,
+    output: &amp;<a class="struct" href="../../wayland_client/protocol/wl_output/struct.WlOutput.html" title="struct wayland_client::protocol::wl_output::WlOutput">WlOutput</a>,
+)</h4></section></summary><div class="docblock"><p>The surface has entered an output.</p>
+</div></details><details class="toggle method-toggle" open><summary><section id="tymethod.surface_leave" class="method"><a class="src rightside" href="../../src/smithay_client_toolkit/compositor.rs.html#71-77">source</a><h4 class="code-header">fn <a href="#tymethod.surface_leave" class="fn">surface_leave</a>(
+    &amp;mut self,
+    conn: &amp;<a class="struct" href="../../wayland_client/conn/struct.Connection.html" title="struct wayland_client::conn::Connection">Connection</a>,
+    qh: &amp;<a class="struct" href="../../wayland_client/event_queue/struct.QueueHandle.html" title="struct wayland_client::event_queue::QueueHandle">QueueHandle</a>&lt;Self&gt;,
+    surface: &amp;<a class="struct" href="../../wayland_client/protocol/wl_surface/struct.WlSurface.html" title="struct wayland_client::protocol::wl_surface::WlSurface">WlSurface</a>,
+    output: &amp;<a class="struct" href="../../wayland_client/protocol/wl_output/struct.WlOutput.html" title="struct wayland_client::protocol::wl_output::WlOutput">WlOutput</a>,
+)</h4></section></summary><div class="docblock"><p>The surface has left an output.</p>
+</div></details></div><h2 id="object-safety" class="section-header">Object Safety<a href="#object-safety" class="anchor">§</a></h2><div class="object-safety-info">This trait is <b>not</b> <a href="https://doc.rust-lang.org/1.81.0/reference/items/traits.html#object-safety">object safe</a>.</div><h2 id="implementors" class="section-header">Implementors<a href="#implementors" class="anchor">§</a></h2><div id="implementors-list"></div><script src="../../trait.impl/smithay_client_toolkit/compositor/trait.CompositorHandler.js" async></script></section></div></main></body></html>

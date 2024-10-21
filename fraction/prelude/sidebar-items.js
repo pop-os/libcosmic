@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["GenericFraction"],"struct":["BigInt","BigUint","GenericDecimal"],"type":["BigDecimal","BigFraction","Decimal","DynaDecimal","DynaFraction","Fraction"]};

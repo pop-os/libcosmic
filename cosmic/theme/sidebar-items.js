@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["ThemeType"],"fn":["active","active_type","is_dark","is_high_contrast","subscription","system_dark","system_light","system_preference"],"mod":["style"],"struct":["COSMIC_DARK","COSMIC_HC_DARK","COSMIC_HC_LIGHT","COSMIC_LIGHT","TRANSPARENT_COMPONENT","Theme"],"type":["CosmicColor","CosmicComponent","CosmicTheme"]};
