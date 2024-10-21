@@ -844,7 +844,7 @@ where
         cursor_position: mouse::Cursor,
         viewport: &Rectangle,
     ) {
-        let text_layout = self.text_layout(layout.clone());
+        let text_layout = self.text_layout(layout);
         draw(
             renderer,
             theme,
@@ -2008,7 +2008,8 @@ pub fn draw<'a, Message>(
 
     let mut children_layout = layout.children();
     let bounds = layout.bounds();
-    let text_bounds = children_layout.next().unwrap().bounds();
+    // XXX Dnd widget may not have a layout with children, so we just use the text_layout
+    let text_bounds = children_layout.next().unwrap_or(text_layout).bounds();
 
     let is_mouse_over = cursor_position.is_over(bounds);
 
