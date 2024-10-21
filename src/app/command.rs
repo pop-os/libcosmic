@@ -29,7 +29,7 @@ pub mod message {
 
 impl crate::app::Core {
     pub fn drag<M: Send + 'static>(&self, id: Option<window::Id>) -> iced::Task<Message<M>> {
-        let Some(id) = id.or(self.main_window.get().cloned()) else {
+        let Some(id) = id.or(self.main_window) else {
             return iced::Task::none();
         };
         crate::command::drag(id).map(Message::Cosmic)
@@ -40,14 +40,14 @@ impl crate::app::Core {
         id: Option<window::Id>,
         maximized: bool,
     ) -> iced::Task<Message<M>> {
-        let Some(id) = id.or(self.main_window.get().cloned()) else {
+        let Some(id) = id.or(self.main_window) else {
             return iced::Task::none();
         };
         crate::command::maximize(id, maximized).map(Message::Cosmic)
     }
 
     pub fn minimize<M: Send + 'static>(&self, id: Option<window::Id>) -> iced::Task<Message<M>> {
-        let Some(id) = id.or(self.main_window.get().cloned()) else {
+        let Some(id) = id.or(self.main_window) else {
             return iced::Task::none();
         };
         crate::command::minimize(id).map(Message::Cosmic)
@@ -62,7 +62,7 @@ impl crate::app::Core {
         id: Option<window::Id>,
         title: String,
     ) -> iced::Task<Message<M>> {
-        let Some(id) = id.or(self.main_window.get().cloned()) else {
+        let Some(id) = id.or(self.main_window) else {
             return iced::Task::none();
         };
         crate::command::set_title(id, title).map(Message::Cosmic)
@@ -72,7 +72,7 @@ impl crate::app::Core {
         &self,
         id: Option<window::Id>,
     ) -> iced::Task<Message<M>> {
-        let Some(id) = id.or(self.main_window.get().cloned()) else {
+        let Some(id) = id.or(self.main_window) else {
             return iced::Task::none();
         };
         crate::command::set_windowed(id).map(Message::Cosmic)
@@ -82,7 +82,7 @@ impl crate::app::Core {
         &self,
         id: Option<window::Id>,
     ) -> iced::Task<Message<M>> {
-        let Some(id) = id.or(self.main_window.get().cloned()) else {
+        let Some(id) = id.or(self.main_window) else {
             return iced::Task::none();
         };
         crate::command::toggle_maximize(id).map(Message::Cosmic)

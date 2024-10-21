@@ -94,7 +94,7 @@ pub struct Core {
     #[cfg(feature = "dbus-config")]
     pub(crate) settings_daemon: Option<cosmic_settings_daemon::CosmicSettingsDaemonProxy<'static>>,
 
-    pub(crate) main_window: OnceCell<window::Id>,
+    pub(crate) main_window: Option<window::Id>,
 
     pub(crate) exit_on_main_window_closed: bool,
 }
@@ -152,7 +152,7 @@ impl Default for Core {
             portal_is_dark: None,
             portal_accent: None,
             portal_is_high_contrast: None,
-            main_window: OnceCell::new(),
+            main_window: None,
             exit_on_main_window_closed: true,
         }
     }
@@ -373,9 +373,11 @@ impl Core {
 
     /// The [`Id`] of the main window
     pub fn main_window_id(&self) -> Option<window::Id> {
-        self.main_window
-            .get()
-            .filter(|id| iced::window::Id::NONE != **id)
-            .cloned()
+        self.main_window.filter(|id| iced::window::Id::NONE != *id)
+    }
+
+    /// Reset the tracked main window to a new value
+    pub fn set_main_window_id(&mut self, id: window::Id) -> Option<window::Id> {
+        self.main_window.replace(id)
     }
 }
