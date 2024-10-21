@@ -91,7 +91,7 @@ pub(crate) fn iced_settings<App: Application>(
     THEME.lock().unwrap().set_theme(settings.theme.theme_type);
 
     if settings.no_main_window {
-        core.main_window.set(iced::window::Id::NONE).unwrap();
+        core.main_window = Some(iced::window::Id::NONE);
     }
 
     let mut iced = iced::Settings::default();
@@ -136,7 +136,7 @@ pub(crate) fn iced_settings<App: Application>(
 /// Returns error on application failure.
 pub fn run<App: Application>(settings: Settings, flags: App::Flags) -> iced::Result {
     let default_font = settings.default_font;
-    let (settings, flags) = iced_settings::<App>(settings, flags);
+    let (settings, mut flags) = iced_settings::<App>(settings, flags);
     #[cfg(not(feature = "multi-window"))]
     {
         iced::application(
@@ -159,9 +159,9 @@ pub fn run<App: Application>(settings: Settings, flags: App::Flags) -> iced::Res
             cosmic::Cosmic::update,
             cosmic::Cosmic::view,
         );
-        if flags.0.main_window.get().is_none() {
+        if flags.0.main_window.is_none() {
             app = app.window(flags.2.clone());
-            _ = flags.0.main_window.set(iced_core::window::Id::RESERVED);
+            flags.0.main_window = Some(iced_core::window::Id::RESERVED);
         }
         app.subscription(cosmic::Cosmic::subscription)
             .style(cosmic::Cosmic::style)
@@ -395,9 +395,9 @@ where
                 cosmic::Cosmic::update,
                 cosmic::Cosmic::view,
             );
-            if flags.0.main_window.get().is_none() {
+            if flags.0.main_window.is_none() {
                 app = app.window(flags.2.clone());
-                _ = flags.0.main_window.set(iced_core::window::Id::RESERVED);
+                _ = flags.0.main_window = Some(iced_core::window::Id::RESERVED);
             }
             app.subscription(cosmic::Cosmic::subscription)
                 .style(cosmic::Cosmic::style)

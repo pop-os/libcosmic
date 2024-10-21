@@ -419,9 +419,9 @@ pub fn run<App: Application>(flags: App::Flags) -> iced::Result {
         cosmic::Cosmic::update,
         cosmic::Cosmic::view,
     );
-    if core.main_window.get().is_none() {
+    if core.main_window.is_none() {
         app = app.window(window_settings.clone());
-        _ = core.main_window.set(iced_core::window::Id::RESERVED);
+        core.main_window = Some(iced_core::window::Id::RESERVED);
     }
     app.subscription(cosmic::Cosmic::subscription)
         .style(cosmic::Cosmic::style)

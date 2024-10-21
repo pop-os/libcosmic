@@ -79,7 +79,7 @@ pub enum Message {
     #[cfg(feature = "applet")]
     SuggestedBounds(Option<iced::Size>),
     /// Window Created
-    MainWindowCreated(window::Id),
+    WindowCreated(window::Id),
 }
 
 #[derive(Default)]
@@ -167,7 +167,7 @@ where
                 iced::Event::Window(window::Event::Focused) => return Some(Message::Focus(id)),
                 iced::Event::Window(window::Event::Unfocused) => return Some(Message::Unfocus(id)),
                 iced::Event::Window(window::Event::Opened { .. }) => {
-                    return Some(Message::MainWindowCreated(id));
+                    return Some(Message::WindowCreated(id));
                 }
                 #[cfg(feature = "wayland")]
                 iced::Event::PlatformSpecific(iced::event::PlatformSpecific::Wayland(event)) => {
@@ -660,9 +660,12 @@ impl<T: Application> Cosmic<T> {
                     core.focused_window = None;
                 }
             }
-            Message::MainWindowCreated(id) => {
+            Message::WindowCreated(id) => {
                 let core = self.app.core_mut();
-                _ = core.main_window.set(id);
+                // Set the main window if it was not set to something else
+                if core.main_window.is_none() {
+                    core.main_window = Some(id);
+                }
             }
             #[cfg(feature = "applet")]
             Message::SuggestedBounds(b) => {
