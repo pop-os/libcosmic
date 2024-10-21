@@ -78,8 +78,6 @@ pub enum Message {
     /// Tracks updates to window suggested size.
     #[cfg(feature = "applet")]
     SuggestedBounds(Option<iced::Size>),
-    /// Window Created
-    WindowCreated(window::Id),
 }
 
 #[derive(Default)]
@@ -92,7 +90,7 @@ where
     T::Message: Send + 'static,
 {
     pub fn init(
-        (mut core, flags, window_settings): (Core, T::Flags, iced::window::Settings),
+        (mut core, flags): (Core, T::Flags),
     ) -> (Self, iced::Task<super::Message<T::Message>>) {
         #[cfg(feature = "dbus-config")]
         {
@@ -100,7 +98,7 @@ where
             core.settings_daemon = block_on(cosmic_config::dbus::settings_daemon_proxy()).ok();
         }
 
-        let (model, mut command) = T::init(core, flags);
+        let (model, command) = T::init(core, flags);
 
         (Self::new(model), command)
     }
@@ -166,9 +164,6 @@ where
                 }
                 iced::Event::Window(window::Event::Focused) => return Some(Message::Focus(id)),
                 iced::Event::Window(window::Event::Unfocused) => return Some(Message::Unfocus(id)),
-                iced::Event::Window(window::Event::Opened { .. }) => {
-                    return Some(Message::WindowCreated(id));
-                }
                 #[cfg(feature = "wayland")]
                 iced::Event::PlatformSpecific(iced::event::PlatformSpecific::Wayland(event)) => {
                     match event {
@@ -658,13 +653,6 @@ impl<T: Application> Cosmic<T> {
                 let core = self.app.core_mut();
                 if core.focused_window.as_ref().is_some_and(|cur| *cur == id) {
                     core.focused_window = None;
-                }
-            }
-            Message::WindowCreated(id) => {
-                let core = self.app.core_mut();
-                // Set the main window if it was not set to something else
-                if core.main_window.is_none() {
-                    core.main_window = Some(id);
                 }
             }
             #[cfg(feature = "applet")]
