@@ -72,7 +72,7 @@ use {
 pub(crate) fn iced_settings<App: Application>(
     settings: Settings,
     flags: App::Flags,
-) -> (iced::Settings, (Core, App::Flags, iced::window::Settings)) {
+) -> (iced::Settings, (Core, App::Flags), iced::window::Settings) {
     preload_fonts();
 
     let mut core = Core::default();
@@ -126,7 +126,7 @@ pub(crate) fn iced_settings<App: Application>(
     }
 
     window_settings.transparent = settings.transparent;
-    (iced, (core, flags, window_settings))
+    (iced, (core, flags), window_settings)
 }
 
 /// Launch a COSMIC application with the given [`Settings`].
@@ -136,7 +136,7 @@ pub(crate) fn iced_settings<App: Application>(
 /// Returns error on application failure.
 pub fn run<App: Application>(settings: Settings, flags: App::Flags) -> iced::Result {
     let default_font = settings.default_font;
-    let (settings, mut flags) = iced_settings::<App>(settings, flags);
+    let (settings, mut flags, window_settings) = iced_settings::<App>(settings, flags);
     #[cfg(not(feature = "multi-window"))]
     {
         iced::application(
@@ -149,7 +149,7 @@ pub fn run<App: Application>(settings: Settings, flags: App::Flags) -> iced::Res
         .theme(cosmic::Cosmic::theme)
         .window_size((500.0, 800.0))
         .settings(settings)
-        .window(flags.2.clone())
+        .window(window_settings)
         .run_with(move || cosmic::Cosmic::<App>::init(flags))
     }
     #[cfg(feature = "multi-window")]
@@ -160,7 +160,7 @@ pub fn run<App: Application>(settings: Settings, flags: App::Flags) -> iced::Res
             cosmic::Cosmic::view,
         );
         if flags.0.main_window.is_none() {
-            app = app.window(flags.2.clone());
+            app = app.window(window_settings);
             flags.0.main_window = Some(iced_core::window::Id::RESERVED);
         }
         app.subscription(cosmic::Cosmic::subscription)
@@ -370,7 +370,7 @@ where
         tracing::info!("Another instance is running");
         Ok(())
     } else {
-        let (settings, mut flags) = iced_settings::<App>(settings, flags);
+        let (settings, mut flags, window_settings) = iced_settings::<App>(settings, flags);
         flags.0.single_instance = true;
 
         #[cfg(not(feature = "multi-window"))]
@@ -385,7 +385,7 @@ where
             .theme(cosmic::Cosmic::theme)
             .window_size((500.0, 800.0))
             .settings(settings)
-            .window(flags.2.clone())
+            .window(window_settings)
             .run_with(move || cosmic::Cosmic::<App>::init(flags))
         }
         #[cfg(feature = "multi-window")]
@@ -396,8 +396,8 @@ where
                 cosmic::Cosmic::view,
             );
             if flags.0.main_window.is_none() {
-                app = app.window(flags.2.clone());
-                _ = flags.0.main_window = Some(iced_core::window::Id::RESERVED);
+                app = app.window(window_settings);
+                flags.0.main_window = Some(iced_core::window::Id::RESERVED);
             }
             app.subscription(cosmic::Cosmic::subscription)
                 .style(cosmic::Cosmic::style)

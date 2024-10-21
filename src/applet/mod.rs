@@ -399,7 +399,7 @@ pub fn run<App: Application>(flags: App::Flags) -> iced::Result {
         .unwrap()
         .set_theme(settings.theme.theme_type.clone());
 
-    let (iced_settings, (mut core, flags, mut window_settings)) =
+    let (iced_settings, (mut core, flags), mut window_settings) =
         iced_settings::<App>(settings, flags);
     core.window.show_headerbar = false;
     core.window.sharp_corners = true;
@@ -427,7 +427,7 @@ pub fn run<App: Application>(flags: App::Flags) -> iced::Result {
         .style(cosmic::Cosmic::style)
         .theme(cosmic::Cosmic::theme)
         .settings(iced_settings)
-        .run_with(move || cosmic::Cosmic::<App>::init((core, flags, window_settings)))
+        .run_with(move || cosmic::Cosmic::<App>::init((core, flags)))
 }
 
 #[must_use]

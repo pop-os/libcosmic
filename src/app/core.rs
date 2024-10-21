@@ -372,12 +372,14 @@ impl Core {
     }
 
     /// The [`Id`] of the main window
+    #[must_use]
     pub fn main_window_id(&self) -> Option<window::Id> {
         self.main_window.filter(|id| iced::window::Id::NONE != *id)
     }
 
     /// Reset the tracked main window to a new value
-    pub fn set_main_window_id(&mut self, id: window::Id) -> Option<window::Id> {
-        self.main_window.replace(id)
+    pub fn set_main_window_id(&mut self, mut id: Option<window::Id>) -> Option<window::Id> {
+        std::mem::swap(&mut self.main_window, &mut id);
+        id
     }
 }
