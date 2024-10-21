@@ -54,6 +54,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 pub enum Message {
     Input1(String),
     Input2(String),
+    Ignore,
+    ToggleHide,
 }
 
 /// The [`App`] stores application-specific state.
@@ -62,6 +64,7 @@ pub struct App {
     nav_model: nav_bar::Model,
     input_1: String,
     input_2: String,
+    hidden: bool,
 }
 
 /// Implement [`cosmic::Application`] to integrate with COSMIC.
@@ -101,6 +104,7 @@ impl cosmic::Application for App {
             nav_model,
             input_1: String::new(),
             input_2: String::new(),
+            hidden: true,
         };
 
         let command = app.update_title();
@@ -128,6 +132,10 @@ impl cosmic::Application for App {
             Message::Input2(v) => {
                 self.input_2 = v;
             }
+            Message::Ignore => {}
+            Message::ToggleHide => {
+                self.hidden = !self.hidden;
+            }
         }
         Task::none()
     }
@@ -144,8 +152,20 @@ impl cosmic::Application for App {
         let centered = cosmic::widget::container(
             column![
                 text,
+                cosmic::widget::text_input::text_input("", &self.input_1)
+                    .on_input(Message::Input1)
+                    .on_clear(Message::Ignore),
+                cosmic::widget::text_input::secure_input(
+                    "",
+                    &self.input_1,
+                    Some(Message::ToggleHide),
+                    self.hidden
+                )
+                .on_input(Message::Input1),
                 cosmic::widget::text_input::text_input("", &self.input_1).on_input(Message::Input1),
-                cosmic::widget::text_input::text_input("", &self.input_2).on_input(Message::Input2),
+                cosmic::widget::text_input::search_input("", &self.input_2)
+                    .on_input(Message::Input2)
+                    .on_clear(Message::Ignore),
             ]
             .width(iced::Length::Fill)
             .height(iced::Length::Shrink)
