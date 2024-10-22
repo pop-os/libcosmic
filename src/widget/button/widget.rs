@@ -338,9 +338,12 @@ impl<'a, Message: 'a + Clone> Widget<Message, crate::Theme, crate::Renderer>
         renderer_style: &renderer::Style,
         layout: Layout<'_>,
         cursor: mouse::Cursor,
-        _viewport: &Rectangle,
+        viewport: &Rectangle,
     ) {
         let bounds = layout.bounds();
+        if !viewport.intersects(&bounds) {
+            return;
+        }
         let content_layout = layout.children().next().unwrap();
 
         let mut headerbar_alpha = None;
@@ -391,6 +394,7 @@ impl<'a, Message: 'a + Clone> Widget<Message, crate::Theme, crate::Renderer>
         draw::<_, crate::Theme>(
             renderer,
             bounds,
+            *viewport,
             &styling,
             |renderer, _styling| {
                 self.content.as_widget().draw(
@@ -404,7 +408,7 @@ impl<'a, Message: 'a + Clone> Widget<Message, crate::Theme, crate::Renderer>
                     },
                     content_layout,
                     cursor,
-                    &bounds,
+                    viewport,
                 );
             },
             matches!(self.variant, Variant::Image { .. }),
@@ -415,12 +419,7 @@ impl<'a, Message: 'a + Clone> Widget<Message, crate::Theme, crate::Renderer>
             on_remove,
         } = &self.variant
         {
-            let mut parent_bounds = bounds;
-            parent_bounds.y -= 8.0;
-            parent_bounds.width += 16.0;
-            parent_bounds.height += 16.0;
-
-            renderer.with_layer(parent_bounds, |renderer| {
+            renderer.with_layer(*viewport, |renderer| {
                 let selection_background = theme.selection_background();
 
                 let c_rad = THEME.lock().unwrap().cosmic().corner_radii;
@@ -472,16 +471,15 @@ impl<'a, Message: 'a + Clone> Widget<Message, crate::Theme, crate::Renderer>
 
                     let svg_handle = svg::Svg::new(crate::widget::common::object_select().clone())
                         .color(icon_color);
-                    iced_core::svg::Renderer::draw_svg(
-                        renderer,
-                        svg_handle,
-                        Rectangle {
-                            width: 16.0,
-                            height: 16.0,
-                            x: bounds.x + 5.0 + styling.border_width,
-                            y: bounds.y + (bounds.height - 18.0 - styling.border_width),
-                        },
-                    );
+                    let bounds = Rectangle {
+                        width: 16.0,
+                        height: 16.0,
+                        x: bounds.x + 5.0 + styling.border_width,
+                        y: bounds.y + (bounds.height - 18.0 - styling.border_width),
+                    };
+                    if bounds.intersects(viewport) {
+                        iced_core::svg::Renderer::draw_svg(renderer, svg_handle, bounds);
+                    }
                 }
 
                 if on_remove.is_some() {
@@ -535,7 +533,7 @@ impl<'a, Message: 'a + Clone> Widget<Message, crate::Theme, crate::Renderer>
         renderer: &crate::Renderer,
         mut translation: Vector,
     ) -> Option<overlay::Element<'b, Message, crate::Theme, crate::Renderer>> {
-        let mut position = layout.bounds().position();
+        let position = layout.bounds().position();
         translation.x += position.x;
         translation.y += position.y;
         self.content.as_widget_mut().overlay(
@@ -753,6 +751,7 @@ pub fn update<'a, Message: Clone>(
 pub fn draw<Renderer: iced_core::Renderer, Theme>(
     renderer: &mut Renderer,
     bounds: Rectangle,
+    viewport_bounds: Rectangle,
     styling: &super::style::Style,
     draw_contents: impl FnOnce(&mut Renderer, &Style),
     is_image: bool,
@@ -836,7 +835,7 @@ pub fn draw<Renderer: iced_core::Renderer, Theme>(
         // Then draw the button contents onto the background.
         draw_contents(renderer, styling);
 
-        let mut clipped_bounds = bounds;
+        let mut clipped_bounds = viewport_bounds;
         clipped_bounds.height += styling.border_width;
 
         renderer.with_layer(clipped_bounds, |renderer| {
