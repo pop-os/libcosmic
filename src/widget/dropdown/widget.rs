@@ -243,6 +243,7 @@ impl<'a, S: AsRef<str>, Message: 'a> Widget<Message, crate::Theme, crate::Render
             self.selections,
             self.selected,
             &self.on_selected,
+            translation,
         )
     }
 }
@@ -439,6 +440,7 @@ pub fn overlay<'a, S: AsRef<str>, Message: 'a>(
     selections: &'a [S],
     selected_option: Option<usize>,
     on_selected: &'a dyn Fn(usize) -> Message,
+    translation: Vector,
 ) -> Option<overlay::Element<'a, Message, crate::Theme, crate::Renderer>> {
     if state.is_open {
         let bounds = layout.bounds();
@@ -475,6 +477,8 @@ pub fn overlay<'a, S: AsRef<str>, Message: 'a>(
 
         let mut position = layout.position();
         position.x -= padding.left;
+        position.x += translation.x;
+        position.y += translation.y;
         Some(menu.overlay(position, bounds.height))
     } else {
         None

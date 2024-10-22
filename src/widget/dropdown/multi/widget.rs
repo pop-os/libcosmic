@@ -200,6 +200,7 @@ impl<'a, S: AsRef<str>, Message: 'a, Item: Clone + PartialEq + 'static>
             self.text_line_height,
             self.selections,
             &self.on_selected,
+            translation,
         )
     }
 }
@@ -392,6 +393,7 @@ pub fn overlay<'a, S: AsRef<str>, Message: 'a, Item: Clone + PartialEq + 'static
     text_line_height: text::LineHeight,
     selections: &'a super::Model<S, Item>,
     on_selected: &'a dyn Fn(Item) -> Message,
+    translation: Vector,
 ) -> Option<overlay::Element<'a, Message, crate::Theme, crate::Renderer>> {
     if state.is_open {
         let description_line_height = text::LineHeight::Absolute(Pixels(
@@ -474,7 +476,8 @@ pub fn overlay<'a, S: AsRef<str>, Message: 'a, Item: Clone + PartialEq + 'static
 
         let mut position = layout.position();
         position.x -= padding.left;
-
+        position.x += translation.x;
+        position.y += translation.y;
         Some(menu.overlay(position, bounds.height))
     } else {
         None
