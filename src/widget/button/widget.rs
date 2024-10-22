@@ -408,7 +408,7 @@ impl<'a, Message: 'a + Clone> Widget<Message, crate::Theme, crate::Renderer>
                     },
                     content_layout,
                     cursor,
-                    viewport,
+                    &viewport.intersection(&bounds).unwrap_or_default(),
                 );
             },
             matches!(self.variant, Variant::Image { .. }),
@@ -556,13 +556,14 @@ impl<'a, Message: 'a + Clone> Widget<Message, crate::Theme, crate::Renderer>
             accesskit::{Action, DefaultActionVerb, NodeBuilder, NodeId, Rect, Role},
             A11yNode, A11yTree,
         };
+        // TODO why is state None sometimes?
+        if matches!(state.state, iced_core::widget::tree::State::None) {
+            tracing::info!("Button state is missing.");
+            return A11yTree::default();
+        }
 
         let child_layout = layout.children().next().unwrap();
-        let child_tree = &state.children[0];
-        let child_tree = self
-            .content
-            .as_widget()
-            .a11y_nodes(child_layout, child_tree, p);
+        let child_tree = state.children.first();
 
         let Rectangle {
             x,
@@ -607,7 +608,15 @@ impl<'a, Message: 'a + Clone> Widget<Message, crate::Theme, crate::Renderer>
         }
         node.set_default_action_verb(DefaultActionVerb::Click);
 
-        A11yTree::node_with_child_tree(A11yNode::new(node, self.id.clone()), child_tree)
+        if let Some(child_tree) = child_tree.map(|child_tree| {
+            self.content
+                .as_widget()
+                .a11y_nodes(child_layout, child_tree, p)
+        }) {
+            A11yTree::node_with_child_tree(A11yNode::new(node, self.id.clone()), child_tree)
+        } else {
+            A11yTree::leaf(node, self.id.clone())
+        }
     }
 
     fn id(&self) -> Option<Id> {
@@ -835,7 +844,7 @@ pub fn draw<Renderer: iced_core::Renderer, Theme>(
         // Then draw the button contents onto the background.
         draw_contents(renderer, styling);
 
-        let mut clipped_bounds = viewport_bounds;
+        let mut clipped_bounds = viewport_bounds.intersection(&bounds).unwrap_or_default();
         clipped_bounds.height += styling.border_width;
 
         renderer.with_layer(clipped_bounds, |renderer| {
