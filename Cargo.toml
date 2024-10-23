@@ -15,7 +15,6 @@ animated-image = ["image", "dep:async-fs", "tokio?/io-util", "tokio?/fs"]
 # XXX autosize should not be used on winit windows unless dialogs
 autosize = []
 applet = [
-    "a11y",
     "autosize",
     "winit",
     "wayland",
@@ -45,10 +44,7 @@ desktop = [
     "tokio?/net",
 ]
 # Enables launching desktop files inside systemd scopes
-desktop-systemd-scope = [
-    "desktop",
-    "dep:zbus",
-]
+desktop-systemd-scope = ["desktop", "dep:zbus"]
 # Enables keycode serialization
 serde-keycode = ["iced_core/serde"]
 # Prevents multiple separate process instances.
