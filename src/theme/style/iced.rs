@@ -122,6 +122,10 @@ impl iced_button::Catalog for Theme {
                 };
             }
             iced_button::Status::Disabled => {
+                // Card color is not transparent when it isn't clickable
+                if matches!(class, Button::Card) {
+                    return appearance;
+                }
                 appearance.background = appearance.background.map(|background| match background {
                     Background::Color(color) => Background::Color(Color {
                         a: color.a * 0.5,
