@@ -1,0 +1,32 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Get the image size from a reader"><title>reader_size in imagesize - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-46f98efaafac5295.ttf.woff2,FiraSans-Regular-018c141bf0843ffd.woff2,FiraSans-Medium-8f9a781e4970d388.woff2,SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2,SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../static.files/rustdoc-c5d6553a23f1e5a6.css"><meta name="rustdoc-vars" data-root-path="../" data-static-root-path="../static.files/" data-current-crate="imagesize" data-themes="" data-resource-suffix="" data-rustdoc-version="1.81.0 (eeb90cda1 2024-09-04)" data-channel="1.81.0" data-search-js="search-d234aafac6c221dd.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../static.files/storage-118b08c4c78b968e.js"></script><script defer src="sidebar-items.js"></script><script defer src="../static.files/main-d2fab2bf619172d3.js"></script><noscript><link rel="stylesheet" href="../static.files/noscript-df360f571f6edeae.css"></noscript><link rel="alternate icon" type="image/png" href="../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc fn"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle" title="show sidebar"></button></nav><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../imagesize/index.html">imagesize</a><span class="version">0.12.0</span></h2></div><div class="sidebar-elems"></div></nav><div class="sidebar-resizer"></div><main><div class="width-limiter"><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><h1>Function <a href="index.html">imagesize</a>::<wbr><a class="fn" href="#">reader_size</a><button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><span class="out-of-band"><a class="src" href="../src/imagesize/lib.rs.html#239-241">source</a> · <button id="toggle-all-docs" title="collapse all docs">[<span>&#x2212;</span>]</button></span></div><pre class="rust item-decl"><code>pub fn reader_size&lt;R: <a class="trait" href="https://doc.rust-lang.org/1.81.0/std/io/trait.BufRead.html" title="trait std::io::BufRead">BufRead</a> + <a class="trait" href="https://doc.rust-lang.org/1.81.0/std/io/trait.Seek.html" title="trait std::io::Seek">Seek</a>&gt;(reader: R) -&gt; <a class="type" href="type.ImageResult.html" title="type imagesize::ImageResult">ImageResult</a>&lt;<a class="struct" href="struct.ImageSize.html" title="struct imagesize::ImageSize">ImageSize</a>&gt;</code></pre><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Get the image size from a reader</p>
+<h2 id="arguments"><a class="doc-anchor" href="#arguments">§</a>Arguments</h2>
+<ul>
+<li><code>reader</code> - A reader for the data</li>
+</ul>
+<h2 id="error"><a class="doc-anchor" href="#error">§</a>Error</h2>
+<p>This method will return an <a href="enum.ImageError.html"><code>ImageError</code></a> under the following conditions:</p>
+<ul>
+<li>The header isn’t recognized as a supported image format</li>
+<li>The data isn’t long enough to find the size for the given format</li>
+</ul>
+<p>The minimum data required is 12 bytes. Anything shorter will return <a href="enum.ImageError.html#variant.IoError" title="variant imagesize::ImageError::IoError"><code>ImageError::IoError</code></a>.</p>
+<h2 id="examples"><a class="doc-anchor" href="#examples">§</a>Examples</h2>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>std::io::Cursor;
+<span class="kw">use </span>imagesize::reader_size;
+
+<span class="comment">// PNG Header with size 123x321
+</span><span class="kw">let </span>reader = Cursor::new([
+    <span class="number">0x89</span>, <span class="number">0x50</span>, <span class="number">0x4E</span>, <span class="number">0x47</span>, <span class="number">0x0D</span>, <span class="number">0x0A</span>, <span class="number">0x1A</span>, <span class="number">0x0A</span>,
+    <span class="number">0x00</span>, <span class="number">0x00</span>, <span class="number">0x00</span>, <span class="number">0x0D</span>, <span class="number">0x49</span>, <span class="number">0x48</span>, <span class="number">0x44</span>, <span class="number">0x52</span>,
+    <span class="number">0x00</span>, <span class="number">0x00</span>, <span class="number">0x00</span>, <span class="number">0x7B</span>, <span class="number">0x00</span>, <span class="number">0x00</span>, <span class="number">0x01</span>, <span class="number">0x41</span>,
+    <span class="number">0x08</span>, <span class="number">0x06</span>, <span class="number">0x00</span>, <span class="number">0x00</span>, <span class="number">0x00</span>, <span class="number">0x9A</span>, <span class="number">0x38</span>, <span class="number">0xC4
+</span>]);
+
+<span class="kw">match </span>reader_size(reader) {
+    <span class="prelude-val">Ok</span>(dim) =&gt; {
+        <span class="macro">assert_eq!</span>(dim.width, <span class="number">123</span>);
+        <span class="macro">assert_eq!</span>(dim.height, <span class="number">321</span>);
+    }
+    <span class="prelude-val">Err</span>(why) =&gt; <span class="macro">println!</span>(<span class="string">"Error getting reader size: {:?}"</span>, why)
+}</code></pre></div>
+</div></details></section></div></main></body></html>

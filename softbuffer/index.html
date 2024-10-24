@@ -1,0 +1,101 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Overview"><title>softbuffer - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-46f98efaafac5295.ttf.woff2,FiraSans-Regular-018c141bf0843ffd.woff2,FiraSans-Medium-8f9a781e4970d388.woff2,SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2,SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../static.files/rustdoc-c5d6553a23f1e5a6.css"><meta name="rustdoc-vars" data-root-path="../" data-static-root-path="../static.files/" data-current-crate="softbuffer" data-themes="" data-resource-suffix="" data-rustdoc-version="1.81.0 (eeb90cda1 2024-09-04)" data-channel="1.81.0" data-search-js="search-d234aafac6c221dd.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../static.files/storage-118b08c4c78b968e.js"></script><script defer src="../crates.js"></script><script defer src="../static.files/main-d2fab2bf619172d3.js"></script><noscript><link rel="stylesheet" href="../static.files/noscript-df360f571f6edeae.css"></noscript><link rel="alternate icon" type="image/png" href="../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc mod crate"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle" title="show sidebar"></button></nav><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../softbuffer/index.html">softbuffer</a><span class="version">0.4.1</span></h2></div><div class="sidebar-elems"><ul class="block"><li><a id="all-types" href="all.html">All Items</a></li></ul><section><ul class="block"><li><a href="#structs">Structs</a></li><li><a href="#enums">Enums</a></li></ul></section></div></nav><div class="sidebar-resizer"></div><main><div class="width-limiter"><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><h1>Crate <a class="mod" href="#">softbuffer</a><button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><span class="out-of-band"><a class="src" href="../src/softbuffer/lib.rs.html#1-543">source</a> · <button id="toggle-all-docs" title="collapse all docs">[<span>&#x2212;</span>]</button></span></div><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><h2 id="overview"><a class="doc-anchor" href="#overview">§</a>Overview</h2>
+<p>As the popularity of the library <a href="https://crates.io/crates/minifb">minifb</a> shows, it is useful to put a 2D buffer/image
+on a window in a platform-independent way. Minifb’s approach to doing window management itself, however, is problematic
+code duplication. We already have very high quality libraries for this in the Rust ecosystem
+(such as <a href="https://crates.io/crates/winit">winit</a>), and minifb’s implementation of window management is not ideal. For
+example, it occasionally segfaults on some platforms and is missing key features such as the ability to set a window
+icon. While it would be possible to add these features to minifb, it makes more sense to instead use the standard
+window handling systems.</p>
+<p>Softbuffer integrates with the <a href="https://crates.io/crates/raw-window-handle">raw-window-handle</a> crate
+to allow writing to a window in a cross-platform way while using the very high quality dedicated window management
+libraries that are available in the Rust ecosystem.</p>
+<p>What about <a href="https://crates.io/crates/pixels">pixels</a>? Pixels accomplishes a very similar goal to Softbuffer,
+however there are two key differences. Pixels provides some capacity for GPU-accelerated post-processing of what is
+displayed, while Softbuffer does not. Due to not having this post-processing, Softbuffer does not rely on the GPU or
+hardware accelerated graphics stack in any way, and is thus more portable to installations that do not have access to
+hardware acceleration (e.g. VMs, older computers, computers with misconfigured drivers). Softbuffer should be used over
+pixels when its GPU-accelerated post-processing effects are not needed.</p>
+<h2 id="license--credits"><a class="doc-anchor" href="#license--credits">§</a>License &amp; Credits</h2>
+<p>This library is dual-licensed under MIT or Apache-2.0, just like minifb and rust. Significant portions of code were taken
+from the minifb library to do platform-specific work.</p>
+<h2 id="platform-support"><a class="doc-anchor" href="#platform-support">§</a>Platform support:</h2>
+<p>Some, but not all, platforms supported in <a href="https://crates.io/crates/raw-window-handle">raw-window-handle</a> are supported
+by Softbuffer. Pull requests are welcome to add new platforms! <strong>Nonetheless, all major desktop platforms that winit uses
+on desktop are supported.</strong></p>
+<p>For now, the priority for new platforms is:</p>
+<ol>
+<li>to have at least one platform on each OS working (e.g. one of Win32 or WinRT, or one of Xlib, Xcb, and Wayland) and</li>
+<li>for that one platform on each OS to be the one that winit uses.</li>
+</ol>
+<p>(PRs will be accepted for any platform, even if it does not follow the above priority.)</p>
+<p>✅: Present | ❌: Absent</p>
+<ul>
+<li>AndroidNdk ❌</li>
+<li>AppKit ✅ (Thanks to <a href="https://github.com/sanxiyn">Seo Sanghyeon</a> and <a href="https://github.com/lunixbochs">lunixbochs</a>!)</li>
+<li>Orbital ✅</li>
+<li>UiKit ❌</li>
+<li>Wayland ✅ (Wayland support in winit is immature at the moment, so it might be wise to force X11 if you’re using winit)</li>
+<li>Web ✅ (Thanks to <a href="https://github.com/Liamolucko">Liamolucko</a>!)</li>
+<li>Win32 ✅</li>
+<li>WinRt ❌</li>
+<li>Xcb ✅</li>
+<li>Xlib ✅</li>
+</ul>
+<h3 id="webassembly"><a class="doc-anchor" href="#webassembly">§</a>WebAssembly</h3>
+<p>To run an example with the web backend: <code>cargo run-wasm --example winit</code></p>
+<h2 id="example"><a class="doc-anchor" href="#example">§</a>Example</h2>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>std::num::NonZeroU32;
+<span class="kw">use </span>std::rc::Rc;
+<span class="kw">use </span>winit::event::{Event, WindowEvent};
+<span class="kw">use </span>winit::event_loop::{ControlFlow, EventLoop};
+<span class="kw">use </span>winit::window::WindowBuilder;
+
+<span class="kw">fn </span>main() {
+    <span class="kw">let </span>event_loop = EventLoop::new().unwrap();
+    <span class="kw">let </span>window = Rc::new(WindowBuilder::new().build(<span class="kw-2">&amp;</span>event_loop).unwrap());
+    <span class="kw">let </span>context = softbuffer::Context::new(window.clone()).unwrap();
+    <span class="kw">let </span><span class="kw-2">mut </span>surface = softbuffer::Surface::new(<span class="kw-2">&amp;</span>context, window.clone()).unwrap();
+
+    event_loop.run(<span class="kw">move </span>|event, elwt| {
+        elwt.set_control_flow(ControlFlow::Wait);
+
+        <span class="kw">match </span>event {
+            Event::WindowEvent { window_id, event: WindowEvent::RedrawRequested } <span class="kw">if </span>window_id == window.id() =&gt; {
+                <span class="kw">let </span>(width, height) = {
+                    <span class="kw">let </span>size = window.inner_size();
+                    (size.width, size.height)
+                };
+                surface
+                    .resize(
+                        NonZeroU32::new(width).unwrap(),
+                        NonZeroU32::new(height).unwrap(),
+                    )
+                    .unwrap();
+
+                <span class="kw">let </span><span class="kw-2">mut </span>buffer = surface.buffer_mut().unwrap();
+                <span class="kw">for </span>index <span class="kw">in </span><span class="number">0</span>..(width * height) {
+                    <span class="kw">let </span>y = index / width;
+                    <span class="kw">let </span>x = index % width;
+                    <span class="kw">let </span>red = x % <span class="number">255</span>;
+                    <span class="kw">let </span>green = y % <span class="number">255</span>;
+                    <span class="kw">let </span>blue = (x * y) % <span class="number">255</span>;
+
+                    buffer[index <span class="kw">as </span>usize] = blue | (green &lt;&lt; <span class="number">8</span>) | (red &lt;&lt; <span class="number">16</span>);
+                }
+
+                buffer.present().unwrap();
+            }
+            Event::WindowEvent {
+                event: WindowEvent::CloseRequested,
+                window_id,
+            } <span class="kw">if </span>window_id == window.id() =&gt; {
+                elwt.exit();
+            }
+            <span class="kw">_ </span>=&gt; {}
+        }
+    }).unwrap();
+}</code></pre></div>
+<h3 id="changelog"><a class="doc-anchor" href="#changelog">§</a>Changelog</h3>
+<p>See the <a href="CHANGELOG.md">changelog</a> for a list of this package’s versions and the changes made in each version.</p>
+</div></details><h2 id="structs" class="section-header">Structs<a href="#structs" class="anchor">§</a></h2><ul class="item-table"><li><div class="item-name"><a class="struct" href="struct.Buffer.html" title="struct softbuffer::Buffer">Buffer</a></div><div class="desc docblock-short">A buffer that can be written to by the CPU and presented to the window.</div></li><li><div class="item-name"><a class="struct" href="struct.Context.html" title="struct softbuffer::Context">Context</a></div><div class="desc docblock-short">An instance of this struct contains the platform-specific data that must be managed in order to
+write to a window on that platform.</div></li><li><div class="item-name"><a class="struct" href="struct.NoDisplayHandle.html" title="struct softbuffer::NoDisplayHandle">NoDisplayHandle</a></div><div class="desc docblock-short">There is no display handle.</div></li><li><div class="item-name"><a class="struct" href="struct.NoWindowHandle.html" title="struct softbuffer::NoWindowHandle">NoWindowHandle</a></div><div class="desc docblock-short">There is no window handle.</div></li><li><div class="item-name"><a class="struct" href="struct.Rect.html" title="struct softbuffer::Rect">Rect</a></div><div class="desc docblock-short">A rectangular region of the buffer coordinate space.</div></li><li><div class="item-name"><a class="struct" href="struct.Surface.html" title="struct softbuffer::Surface">Surface</a></div><div class="desc docblock-short">A surface for drawing to a window with software buffers.</div></li></ul><h2 id="enums" class="section-header">Enums<a href="#enums" class="anchor">§</a></h2><ul class="item-table"><li><div class="item-name"><a class="enum" href="enum.SoftBufferError.html" title="enum softbuffer::SoftBufferError">SoftBufferError</a></div><div class="desc docblock-short">A sum type of all of the errors that can occur during the operation of this crate.</div></li></ul></section></div></main></body></html>

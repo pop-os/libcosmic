@@ -1,0 +1,50 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Wrapper type for by-address hashing and comparison."><title>by_address - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-46f98efaafac5295.ttf.woff2,FiraSans-Regular-018c141bf0843ffd.woff2,FiraSans-Medium-8f9a781e4970d388.woff2,SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2,SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../static.files/rustdoc-c5d6553a23f1e5a6.css"><meta name="rustdoc-vars" data-root-path="../" data-static-root-path="../static.files/" data-current-crate="by_address" data-themes="" data-resource-suffix="" data-rustdoc-version="1.81.0 (eeb90cda1 2024-09-04)" data-channel="1.81.0" data-search-js="search-d234aafac6c221dd.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../static.files/storage-118b08c4c78b968e.js"></script><script defer src="../crates.js"></script><script defer src="../static.files/main-d2fab2bf619172d3.js"></script><noscript><link rel="stylesheet" href="../static.files/noscript-df360f571f6edeae.css"></noscript><link rel="alternate icon" type="image/png" href="../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc mod crate"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle" title="show sidebar"></button></nav><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../by_address/index.html">by_address</a><span class="version">1.2.1</span></h2></div><div class="sidebar-elems"><ul class="block"><li><a id="all-types" href="all.html">All Items</a></li></ul><section><ul class="block"><li><a href="#structs">Structs</a></li></ul></section></div></nav><div class="sidebar-resizer"></div><main><div class="width-limiter"><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><h1>Crate <a class="mod" href="#">by_address</a><button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><span class="out-of-band"><a class="src" href="../src/by_address/lib.rs.html#1-430">source</a> · <button id="toggle-all-docs" title="collapse all docs">[<span>&#x2212;</span>]</button></span></div><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Wrapper type for by-address hashing and comparison.</p>
+<p><a href="struct.ByAddress.html" title="struct by_address::ByAddress"><code>ByAddress</code></a> can be used to wrap any pointer type (i.e. any type that implements the Deref
+trait).  This includes references, raw pointers, smart pointers like <code>Rc&lt;T&gt;</code> and <code>Box&lt;T&gt;</code>, and
+specialized pointer-like types such as <code>Vec&lt;T&gt;</code> and <code>String</code>.</p>
+<p>Comparison, ordering, and hashing of the wrapped pointer will be based on the address of its
+contents, rather than their value.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>by_address::ByAddress;
+<span class="kw">use </span>std::rc::Rc;
+
+<span class="kw">let </span>rc = Rc::new(<span class="number">5</span>);
+<span class="kw">let </span>x = ByAddress(rc.clone());
+<span class="kw">let </span>y = ByAddress(rc.clone());
+
+<span class="comment">// x and y are two pointers to the same address:
+</span><span class="macro">assert_eq!</span>(x, y);
+
+<span class="kw">let </span>z = ByAddress(Rc::new(<span class="number">5</span>));
+
+<span class="comment">// *x and *z have the same value, but not the same address:
+</span><span class="macro">assert_ne!</span>(x, z);</code></pre></div>
+<p>If <code>T</code> is a pointer to an unsized type, then comparison of <code>ByAddress&lt;T&gt;</code> uses the
+entire fat pointer, not just the “thin” data address.  This means that two slice pointers
+are consider equal only if they have the same starting address <em>and</em> length.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">let </span>v = [<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>, <span class="number">4</span>];
+
+<span class="macro">assert_eq!</span>(ByAddress(<span class="kw-2">&amp;</span>v[<span class="number">0</span>..<span class="number">4</span>]), ByAddress(<span class="kw-2">&amp;</span>v[<span class="number">0</span>..<span class="number">4</span>])); <span class="comment">// Same address and length.
+</span><span class="macro">assert_ne!</span>(ByAddress(<span class="kw-2">&amp;</span>v[<span class="number">0</span>..<span class="number">4</span>]), ByAddress(<span class="kw-2">&amp;</span>v[<span class="number">0</span>..<span class="number">2</span>])); <span class="comment">// Same address, different length.</span></code></pre></div>
+<p>You can use <a href="struct.ByThinAddress.html" title="struct by_address::ByThinAddress"><code>ByThinAddress</code></a> instead if you want to compare slices by starting address only,
+or trait objects by data pointer only.</p>
+<p>You can use wrapped pointers as keys in hashed or ordered collections, like BTreeMap/BTreeSet
+or HashMap/HashSet, even if the target of the pointer doesn’t implement hashing or ordering.
+This even includes pointers to trait objects, which usually don’t implement the Eq trait
+because it is not object-safe.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="doccomment">/// Call each item in `callbacks`, skipping any duplicate references.
+</span><span class="kw">fn </span>call_each_once(callbacks: <span class="kw-2">&amp;</span>[<span class="kw-2">&amp;</span><span class="kw">dyn </span>Fn()]) {
+    <span class="kw">let </span><span class="kw-2">mut </span>seen: HashSet&lt;ByAddress&lt;<span class="kw-2">&amp;</span><span class="kw">dyn </span>Fn()&gt;&gt; = HashSet::new();
+    <span class="kw">for </span><span class="kw-2">&amp;</span>f <span class="kw">in </span>callbacks {
+        <span class="kw">if </span>seen.insert(ByAddress(f)) {
+            f();
+        }
+    }
+}</code></pre></div>
+<p>However, note that comparing fat pointers to trait objects can be unreliable because of
+<a href="https://github.com/rust-lang/rust/issues/46139">Rust issue #46139</a>.  In some cases,
+<a href="struct.ByThinAddress.html" title="struct by_address::ByThinAddress"><code>ByThinAddress</code></a> may be more useful.</p>
+<p>This crate does not depend on libstd, so it can be used in <a href="https://doc.rust-lang.org/book/first-edition/using-rust-without-the-standard-library.html"><code>no_std</code></a> projects.</p>
+</div></details><h2 id="structs" class="section-header">Structs<a href="#structs" class="anchor">§</a></h2><ul class="item-table"><li><div class="item-name"><a class="struct" href="struct.ByAddress.html" title="struct by_address::ByAddress">ByAddress</a></div><div class="desc docblock-short">Wrapper for pointer types that implements by-address comparison.</div></li><li><div class="item-name"><a class="struct" href="struct.ByThinAddress.html" title="struct by_address::ByThinAddress">ByThinAddress</a></div><div class="desc docblock-short">Similar to <a href="struct.ByAddress.html" title="struct by_address::ByAddress"><code>ByAddress</code></a>, but omits the attributes of fat pointers.</div></li></ul></section></div></main></body></html>

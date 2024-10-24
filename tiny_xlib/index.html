@@ -1,0 +1,85 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="A tiny set of bindings to the Xlib library."><title>tiny_xlib - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-46f98efaafac5295.ttf.woff2,FiraSans-Regular-018c141bf0843ffd.woff2,FiraSans-Medium-8f9a781e4970d388.woff2,SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2,SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../static.files/rustdoc-c5d6553a23f1e5a6.css"><meta name="rustdoc-vars" data-root-path="../" data-static-root-path="../static.files/" data-current-crate="tiny_xlib" data-themes="" data-resource-suffix="" data-rustdoc-version="1.81.0 (eeb90cda1 2024-09-04)" data-channel="1.81.0" data-search-js="search-d234aafac6c221dd.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../static.files/storage-118b08c4c78b968e.js"></script><script defer src="../crates.js"></script><script defer src="../static.files/main-d2fab2bf619172d3.js"></script><noscript><link rel="stylesheet" href="../static.files/noscript-df360f571f6edeae.css"></noscript><link rel="alternate icon" type="image/png" href="../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc mod crate"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle" title="show sidebar"></button></nav><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../tiny_xlib/index.html">tiny_xlib</a><span class="version">0.2.3</span></h2></div><div class="sidebar-elems"><ul class="block"><li><a id="all-types" href="all.html">All Items</a></li></ul><section><ul class="block"><li><a href="#structs">Structs</a></li><li><a href="#functions">Functions</a></li></ul></section></div></nav><div class="sidebar-resizer"></div><main><div class="width-limiter"><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><h1>Crate <a class="mod" href="#">tiny_xlib</a><button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><span class="out-of-band"><a class="src" href="../src/tiny_xlib/lib.rs.html#20-569">source</a> · <button id="toggle-all-docs" title="collapse all docs">[<span>&#x2212;</span>]</button></span></div><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>A tiny set of bindings to the <a href="https://en.wikipedia.org/wiki/Xlib">Xlib</a> library.</p>
+<p>The primary contemporary library for handling <a href="https://en.wikipedia.org/wiki/Xlib">Xlib</a> is the <a href="https://crates.io/crates/x11-dl"><code>x11-dl</code></a> crate. However, there are three
+primary issues.</p>
+<ol>
+<li>
+<p><strong>You should not be using Xlib in 2023.</strong> <a href="https://en.wikipedia.org/wiki/Xlib">Xlib</a> is legacy code, and even that doesn’t get across
+how poor the API decisions that it’s locked itself into are. It has a global error hook for
+some reason, thread-safety is a mess, and it has so many soundness holes it might as well be made
+out of swiss cheese. You should not be using <a href="https://en.wikipedia.org/wiki/Xlib">Xlib</a>. If you <em>have</em> to use <a href="https://en.wikipedia.org/wiki/Xlib">Xlib</a>, you should just
+run all of your logic using the much more sound <a href="https://xcb.freedesktop.org/">XCB</a> library, or, even more ideally, something
+like <a href="https://crates.io/crates/x11rb"><code>x11rb</code></a>. Then, you take the <code>Display</code> pointer and use it for whatever legacy API you’ve
+locked yourself into, and use <a href="https://xcb.freedesktop.org/">XCB</a> or <a href="https://crates.io/crates/x11rb"><code>x11rb</code></a> for everything else. Yes, I just called <a href="https://en.wikipedia.org/wiki/GLX">GLX</a>
+a legacy API. It’s the 2020’s now. <a href="https://www.khronos.org/vulkan/">Vulkan</a> and <a href="https://crates.io/crates/wgpu"><code>wgpu</code></a> run everywhere aside from legacy machines.
+Not to mention, they support <a href="https://xcb.freedesktop.org/">XCB</a>.</p>
+</li>
+<li>
+<p>Even if you manage to use <a href="https://crates.io/crates/x11-dl"><code>x11-dl</code></a> without tripping over the legacy API, it is a massive crate.
+<a href="https://en.wikipedia.org/wiki/Xlib">Xlib</a> comes with quite a few functions, most of which are unnecessary in the 21st century.
+Even if you don’t use any of these and just stick to <a href="https://xcb.freedesktop.org/">XCB</a>, you still pay the price for it.
+Binaries that use <a href="https://crates.io/crates/x11-dl"><code>x11-dl</code></a> need to dedicate a significant amount of their binary and memory
+space to the library. Even on Release builds, I have recorded <a href="https://crates.io/crates/x11-dl"><code>x11-dl</code></a> taking up to seven
+percent of the binary.</p>
+</li>
+<li>
+<p>Global error handling. <a href="https://en.wikipedia.org/wiki/Xlib">Xlib</a> has a single global error hook. This is reminiscent of the Unix
+signal handling API, in that it makes it difficult to create well-modularized programs
+since they will fight with each-other over the error handlers. However, unlike the signal
+handling API, there is no way to tell if you’re replacing an existing error hook.</p>
+</li>
+</ol>
+<p><code>tiny-xlib</code> aims to solve all of these problems. It provides a safe API around <a href="https://en.wikipedia.org/wiki/Xlib">Xlib</a> that is
+conducive to being handed off to both <a href="https://xcb.freedesktop.org/">XCB</a> APIs and legacy <a href="https://en.wikipedia.org/wiki/Xlib">Xlib</a> APIs. The library only
+imports absolutely necessary functions. In addition, it also provides a common API for
+handling errors in a safe, modular way.</p>
+<h2 id="features"><a class="doc-anchor" href="#features">§</a>Features</h2>
+<ul>
+<li>Safe API around <a href="https://en.wikipedia.org/wiki/Xlib">Xlib</a>. See the <a href="struct.Display.html"><code>Display</code></a> structure.</li>
+<li>Minimal set of dependencies.</li>
+<li>Implements <a href="https://docs.rs/as_raw_xcb_connection/latest/as_raw_xcb_connection/trait.AsRawXcbConnection.html"><code>AsRawXcbConnection</code></a>, which allows it to be used with <a href="https://xcb.freedesktop.org/">XCB</a> APIs.</li>
+<li>Modular error handling.</li>
+</ul>
+<h2 id="non-features"><a class="doc-anchor" href="#non-features">§</a>Non-Features</h2>
+<ul>
+<li>Any API outside of opening <a href="struct.Display.html"><code>Display</code></a>s and handling errors. If this library doesn’t support some
+feature, it’s probably intentional. You should use <a href="https://xcb.freedesktop.org/">XCB</a> or <a href="https://crates.io/crates/x11rb"><code>x11rb</code></a> instead. This includes:</li>
+<li>Window management.</li>
+<li>Any extensions outside of <code>Xlib-xcb</code>.</li>
+<li>IME handling.</li>
+<li>Hardware rendering.</li>
+</ul>
+<h2 id="examples"><a class="doc-anchor" href="#examples">§</a>Examples</h2>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>as_raw_xcb_connection::AsRawXcbConnection;
+<span class="kw">use </span>tiny_xlib::Display;
+
+<span class="kw">use </span>x11rb::connection::Connection;
+<span class="kw">use </span>x11rb::xcb_ffi::XCBConnection;
+
+<span class="comment">// Open a display.
+</span><span class="kw">let </span>display = Display::new(<span class="prelude-val">None</span>)<span class="question-mark">?</span>;
+
+<span class="comment">// Get the XCB connection.
+</span><span class="kw">let </span>xcb_conn = display.as_raw_xcb_connection();
+
+<span class="comment">// Use that pointer to create a new XCB connection.
+</span><span class="kw">let </span>xcb_conn = <span class="kw">unsafe </span>{
+    XCBConnection::from_raw_xcb_connection(xcb_conn.cast(), <span class="bool-val">false</span>)<span class="question-mark">?
+</span>};
+
+<span class="comment">// Register a handler for X11 errors.
+</span>tiny_xlib::register_error_handler(Box::new(|<span class="kw">_</span>, error| {
+    <span class="macro">println!</span>(<span class="string">"X11 error: {:?}"</span>, error);
+    <span class="bool-val">false
+</span>}));
+
+<span class="comment">// Do whatever you want with the XCB connection.
+</span><span class="kw">loop </span>{
+    <span class="macro">println!</span>(<span class="string">"Event: {:?}"</span>, xcb_conn.wait_for_event()<span class="question-mark">?</span>);
+}</code></pre></div>
+<h2 id="optional-features"><a class="doc-anchor" href="#optional-features">§</a>Optional Features</h2>
+<ul>
+<li><code>tracing</code>, enabled by default, enables telemetry using the <a href="https://crates.io/crates/tracing"><code>tracing</code></a> crate.</li>
+<li><code>dlopen</code> uses the <a href="https://crates.io/crates/libloading"><code>libloading</code></a> library to load the X11 libraries instead of linking to them
+directly.</li>
+</ul>
+</div></details><h2 id="structs" class="section-header">Structs<a href="#structs" class="anchor">§</a></h2><ul class="item-table"><li><div class="item-name"><a class="struct" href="struct.Display.html" title="struct tiny_xlib::Display">Display</a></div><div class="desc docblock-short">The display pointer.</div></li><li><div class="item-name"><a class="struct" href="struct.ErrorEvent.html" title="struct tiny_xlib::ErrorEvent">ErrorEvent</a></div><div class="desc docblock-short">The error event type.</div></li><li><div class="item-name"><a class="struct" href="struct.HandlerKey.html" title="struct tiny_xlib::HandlerKey">HandlerKey</a></div><div class="desc docblock-short">A key to the error handler list that can be used to remove handlers.</div></li></ul><h2 id="functions" class="section-header">Functions<a href="#functions" class="anchor">§</a></h2><ul class="item-table"><li><div class="item-name"><a class="fn" href="fn.register_error_handler.html" title="fn tiny_xlib::register_error_handler">register_error_handler</a></div><div class="desc docblock-short">Insert an error handler into the list.</div></li><li><div class="item-name"><a class="fn" href="fn.unregister_error_handler.html" title="fn tiny_xlib::unregister_error_handler">unregister_error_handler</a></div><div class="desc docblock-short">Remove an error handler from the list.</div></li></ul></section></div></main></body></html>

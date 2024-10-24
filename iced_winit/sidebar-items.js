@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["Error"],"mod":["clipboard","conversion","platform_specific","program","settings"],"struct":["Proxy"]};

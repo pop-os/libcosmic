@@ -1,0 +1,129 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Fast, FFI-friendly string interning. A `Ustr` (Unique Str) is a lightweight handle representing a static, immutable entry in a global string cache, allowing for:"><title>ustr - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-46f98efaafac5295.ttf.woff2,FiraSans-Regular-018c141bf0843ffd.woff2,FiraSans-Medium-8f9a781e4970d388.woff2,SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2,SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../static.files/rustdoc-c5d6553a23f1e5a6.css"><meta name="rustdoc-vars" data-root-path="../" data-static-root-path="../static.files/" data-current-crate="ustr" data-themes="" data-resource-suffix="" data-rustdoc-version="1.81.0 (eeb90cda1 2024-09-04)" data-channel="1.81.0" data-search-js="search-d234aafac6c221dd.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../static.files/storage-118b08c4c78b968e.js"></script><script defer src="../crates.js"></script><script defer src="../static.files/main-d2fab2bf619172d3.js"></script><noscript><link rel="stylesheet" href="../static.files/noscript-df360f571f6edeae.css"></noscript><link rel="alternate icon" type="image/png" href="../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc mod crate"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle" title="show sidebar"></button></nav><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../ustr/index.html">ustr</a><span class="version">1.0.0</span></h2></div><div class="sidebar-elems"><ul class="block"><li><a id="all-types" href="all.html">All Items</a></li></ul><section><ul class="block"><li><a href="#reexports">Re-exports</a></li><li><a href="#modules">Modules</a></li><li><a href="#structs">Structs</a></li><li><a href="#functions">Functions</a></li><li><a href="#types">Type Aliases</a></li></ul></section></div></nav><div class="sidebar-resizer"></div><main><div class="width-limiter"><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><h1>Crate <a class="mod" href="#">ustr</a><button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><span class="out-of-band"><a class="src" href="../src/ustr/lib.rs.html#1-904">source</a> · <button id="toggle-all-docs" title="collapse all docs">[<span>&#x2212;</span>]</button></span></div><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Fast, FFI-friendly string interning. A <a href="struct.Ustr.html" title="struct ustr::Ustr"><code>Ustr</code></a> (<strong>U</strong>nique <strong>Str</strong>) is a
+lightweight handle representing a static, immutable entry in a global string
+cache, allowing for:</p>
+<ul>
+<li>Extremely fast string assignment and comparisons – it’s just a pointer
+comparison.</li>
+<li>Efficient storage – only one copy of the string is held in memory, and
+getting access to it is just a pointer indirection.</li>
+<li>Fast hashing – the precomputed hash is stored with the string</li>
+<li>Fast FFI – the string is stored with a terminating null byte so can be
+passed to C directly without doing the CString dance.</li>
+</ul>
+<p>The downside is no strings are ever freed, so if you’re creating lots and
+lots of strings, you might run out of memory. On the other hand, War and
+Peace is only 3MB, so it’s probably fine.</p>
+<p>This crate is based on <a href="https://github.com/OpenImageIO/oiio/blob/master/src/include/OpenImageIO/ustring.h">OpenImageIO’s ustring</a> but it is NOT binary-compatible (yet). The underlying hash map implementation is directy ported from OIIO.</p>
+<h2 id="usage"><a class="doc-anchor" href="#usage">§</a>Usage</h2>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>ustr::{Ustr, ustr, ustr <span class="kw">as </span>u};
+
+<span class="comment">// Creation is quick and easy using either `Ustr::from` or the ustr function
+// and only one copy of any string is stored
+</span><span class="kw">let </span>u1 = Ustr::from(<span class="string">"the quick brown fox"</span>);
+<span class="kw">let </span>u2 = ustr(<span class="string">"the quick brown fox"</span>);
+
+<span class="comment">// Comparisons and copies are extremely cheap
+</span><span class="kw">let </span>u3 = u1;
+<span class="macro">assert_eq!</span>(u2, u3);
+
+<span class="comment">// You can pass straight to FFI
+</span><span class="kw">let </span>len = <span class="kw">unsafe </span>{
+    libc::strlen(u1.as_char_ptr())
+};
+<span class="macro">assert_eq!</span>(len, <span class="number">19</span>);
+
+<span class="comment">// Use as_str() to get a &amp;str
+</span><span class="kw">let </span>words: Vec&lt;<span class="kw-2">&amp;</span>str&gt; = u1.as_str().split_whitespace().collect();
+<span class="macro">assert_eq!</span>(words, [<span class="string">"the"</span>, <span class="string">"quick"</span>, <span class="string">"brown"</span>, <span class="string">"fox"</span>]);
+
+<span class="comment">// For best performance when using Ustr as key for a HashMap or HashSet,
+// you'll want to use the precomputed hash. To make this easier, just use
+// the UstrMap and UstrSet exports:
+</span><span class="kw">use </span>ustr::UstrMap;
+
+<span class="comment">// Key type is always Ustr
+</span><span class="kw">let </span><span class="kw-2">mut </span>map: UstrMap&lt;usize&gt; = UstrMap::default();
+map.insert(u1, <span class="number">17</span>);
+<span class="macro">assert_eq!</span>(<span class="kw-2">*</span>map.get(<span class="kw-2">&amp;</span>u1).unwrap(), <span class="number">17</span>);</code></pre></div>
+<p>By enabling the <code>"serde"</code> feature you can serialize individual <code>Ustr</code>s
+or the whole cache with serde.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>ustr::{Ustr, ustr};
+<span class="kw">let </span>u_ser = ustr(<span class="string">"serde"</span>);
+<span class="kw">let </span>json = serde_json::to_string(<span class="kw-2">&amp;</span>u_ser).unwrap();
+<span class="kw">let </span>u_de : Ustr = serde_json::from_str(<span class="kw-2">&amp;</span>json).unwrap();
+<span class="macro">assert_eq!</span>(u_ser, u_de);</code></pre></div>
+<p>Since the cache is global, use the <code>ustr::DeserializedCache</code> dummy object to
+drive the deserialization.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>ustr::{Ustr, ustr};
+ustr(<span class="string">"Send me to JSON and back"</span>);
+<span class="kw">let </span>json = serde_json::to_string(ustr::cache()).unwrap();
+
+<span class="comment">// ... some time later ...
+</span><span class="kw">let _</span>: ustr::DeserializedCache = serde_json::from_str(<span class="kw-2">&amp;</span>json).unwrap();
+<span class="macro">assert_eq!</span>(ustr::num_entries(), <span class="number">1</span>);
+<span class="macro">assert_eq!</span>(ustr::string_cache_iter().collect::&lt;Vec&lt;<span class="kw">_</span>&gt;&gt;(), <span class="macro">vec!</span>[<span class="string">"Send me to JSON and back"</span>]);</code></pre></div>
+<h3 id="why"><a class="doc-anchor" href="#why">§</a>Why?</h3>
+<p>It is common in certain types of applications to use strings as identifiers,
+but not really do any processing with them.
+To paraphrase from OIIO’s <code>Ustring</code> documentation – compared to standard
+strings, <code>Ustr</code>s have several advantages:</p>
+<ul>
+<li>Each individual <code>Ustr</code> is very small – in fact, we guarantee that a
+<code>Ustr</code> is the same size and memory layout as an ordinary <code>*u8</code>.</li>
+<li>Storage is frugal, since there is only one allocated copy of each unique
+character sequence, throughout the lifetime of the program.</li>
+<li>Assignment from one <code>Ustr</code> to another is just copy of the pointer; no
+allocation, no character copying, no reference counting.</li>
+<li>Equality testing (do the strings contain the same characters) is a
+single operation, the comparison of the pointer.</li>
+<li>Memory allocation only occurs when a new <code>Ustr</code> is constructed from raw
+characters the FIRST time – subsequent constructions of the same string
+just finds it in the canonial string set, but doesn’t need to allocate
+new storage.  Destruction of a <code>Ustr</code> is trivial, there is no
+de-allocation because the canonical version stays in the set.  Also,
+therefore, no user code mistake can lead to memory leaks.</li>
+</ul>
+<p>But there are some problems, too.  Canonical strings are never freed
+from the table.  So in some sense all the strings “leak”, but they
+only leak one copy for each unique string that the program ever comes
+across.</p>
+<p>On the whole, <code>Ustr</code>s are a really great string representation</p>
+<ul>
+<li>if you tend to have (relatively) few unique strings, but many copies of
+those strings;</li>
+<li>if the creation of strings from raw characters is relatively rare
+compared to copying or comparing to existing strings;</li>
+<li>if you tend to make the same strings over and over again, and if it’s
+relatively rare that a single unique character sequence is used only
+once in the entire lifetime of the program;</li>
+<li>if your most common string operations are assignment and equality
+testing and you want them to be as fast as possible;</li>
+<li>if you are doing relatively little character-by-character assembly of
+strings, string concatenation, or other “string manipulation” (other
+than equality testing).</li>
+</ul>
+<p><code>Ustr</code>s are not so hot</p>
+<ul>
+<li>if your program tends to have very few copies of each character sequence
+over the entire lifetime of the program;</li>
+<li>if your program tends to generate a huge variety of unique strings over
+its lifetime, each of which is used only a short time and then
+discarded, never to be needed again;</li>
+<li>if you don’t need to do a lot of string assignment or equality testing,
+but lots of more complex string manipulation.</li>
+</ul>
+<h3 id="safety-and-compatibility"><a class="doc-anchor" href="#safety-and-compatibility">§</a>Safety and Compatibility</h3>
+<p>This crate contains a significant amount of unsafe but usage has been
+checked and is well-documented. It is also run through Miri as part of the
+CI process. I use it regularly on 64-bit systems, and it has passed Miri on
+a 32-bit system as well, bit 32-bit is not checked regularly. If you want to
+use it on 32-bit, please make sure to run Miri and open and issue if you
+find any problems.</p>
+</div></details><h2 id="reexports" class="section-header">Re-exports<a href="#reexports" class="anchor">§</a></h2><ul class="item-table"><li><div class="item-name" id="reexport.DeserializedCache"><code>pub use serialization::<a class="struct" href="serialization/struct.DeserializedCache.html" title="struct ustr::serialization::DeserializedCache">DeserializedCache</a>;</code></div></li></ul><h2 id="modules" class="section-header">Modules<a href="#modules" class="anchor">§</a></h2><ul class="item-table"><li><div class="item-name"><a class="mod" href="serialization/index.html" title="mod ustr::serialization">serialization</a></div></li></ul><h2 id="structs" class="section-header">Structs<a href="#structs" class="anchor">§</a></h2><ul class="item-table"><li><div class="item-name"><a class="struct" href="struct.Bins.html" title="struct ustr::Bins">Bins</a></div></li><li><div class="item-name"><a class="struct" href="struct.Ustr.html" title="struct ustr::Ustr">Ustr</a></div><div class="desc docblock-short">A handle representing a string in the global string cache.</div></li></ul><h2 id="functions" class="section-header">Functions<a href="#functions" class="anchor">§</a></h2><ul class="item-table"><li><div class="item-name"><a class="fn" href="fn.cache.html" title="fn ustr::cache">cache</a></div><div class="desc docblock-short">Utility function to get a reference to the main cache object for use with
+serialization.</div></li><li><div class="item-name"><a class="fn" href="fn.existing_ustr.html" title="fn ustr::existing_ustr">existing_ustr</a></div><div class="desc docblock-short">Create a new Ustr from the given &amp;str but only if it already exists in the
+string cache.</div></li><li><div class="item-name"><a class="fn" href="fn.num_entries.html" title="fn ustr::num_entries">num_entries</a></div><div class="desc docblock-short">Returns the number of unique strings in the cache</div></li><li><div class="item-name"><a class="fn" href="fn.string_cache_iter.html" title="fn ustr::string_cache_iter">string_cache_iter</a></div><div class="desc docblock-short">Return an iterator over the entire string cache.</div></li><li><div class="item-name"><a class="fn" href="fn.total_allocated.html" title="fn ustr::total_allocated">total_allocated</a></div><div class="desc docblock-short">Returns the total amount of memory allocated and in use by the cache in
+bytes</div></li><li><div class="item-name"><a class="fn" href="fn.total_capacity.html" title="fn ustr::total_capacity">total_capacity</a></div><div class="desc docblock-short">Returns the total amount of memory reserved by the cache in bytes</div></li><li><div class="item-name"><a class="fn" href="fn.ustr.html" title="fn ustr::ustr">ustr</a></div><div class="desc docblock-short">Create a new Ustr from the given &amp;str.</div></li></ul><h2 id="types" class="section-header">Type Aliases<a href="#types" class="anchor">§</a></h2><ul class="item-table"><li><div class="item-name"><a class="type" href="type.UstrMap.html" title="type ustr::UstrMap">UstrMap</a></div><div class="desc docblock-short">A standard <code>HashMap</code> using <code>Ustr</code> as the key type with a custom <code>Hasher</code>
+that just uses the precomputed hash for speed instead of calculating it</div></li><li><div class="item-name"><a class="type" href="type.UstrSet.html" title="type ustr::UstrSet">UstrSet</a></div><div class="desc docblock-short">A standard <code>HashSet</code> using <code>Ustr</code> as the key type with a custom <code>Hasher</code>
+that just uses the precomputed hash for speed instead of calculating it</div></li></ul></section></div></main></body></html>

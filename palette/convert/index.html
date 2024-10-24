@@ -1,0 +1,316 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Traits for converting between color spaces."><title>palette::convert - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-46f98efaafac5295.ttf.woff2,FiraSans-Regular-018c141bf0843ffd.woff2,FiraSans-Medium-8f9a781e4970d388.woff2,SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2,SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../static.files/rustdoc-c5d6553a23f1e5a6.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="palette" data-themes="" data-resource-suffix="" data-rustdoc-version="1.81.0 (eeb90cda1 2024-09-04)" data-channel="1.81.0" data-search-js="search-d234aafac6c221dd.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../static.files/storage-118b08c4c78b968e.js"></script><script defer src="../sidebar-items.js"></script><script defer src="../../static.files/main-d2fab2bf619172d3.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-df360f571f6edeae.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc mod"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle" title="show sidebar"></button></nav><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../../palette/index.html">palette</a><span class="version">0.7.6</span></h2></div><h2 class="location"><a href="#">Module convert</a></h2><div class="sidebar-elems"><section><ul class="block"><li><a href="#structs">Structs</a></li><li><a href="#traits">Traits</a></li><li><a href="#derives">Derive Macros</a></li></ul></section><h2><a href="../index.html">In crate palette</a></h2></div></nav><div class="sidebar-resizer"></div><main><div class="width-limiter"><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><h1>Module <a href="../index.html">palette</a>::<wbr><a class="mod" href="#">convert</a><button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><span class="out-of-band"><a class="src" href="../../src/palette/convert.rs.html#1-803">source</a> · <button id="toggle-all-docs" title="collapse all docs">[<span>&#x2212;</span>]</button></span></div><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Traits for converting between color spaces.</p>
+<p>Each color space type, such as <a href="../rgb/struct.Rgb.html" title="struct palette::rgb::Rgb"><code>Rgb</code></a> and
+<a href="../struct.Hsl.html" title="struct palette::Hsl"><code>Hsl</code></a>, implement a number of conversion traits:</p>
+<ul>
+<li><a href="trait.FromColor.html" title="trait palette::convert::FromColor"><code>FromColor</code></a> - Similar to <a href="https://doc.rust-lang.org/1.81.0/core/convert/trait.From.html" title="trait core::convert::From"><code>From</code></a>, converts from another color space.</li>
+<li><a href="trait.IntoColor.html" title="trait palette::convert::IntoColor"><code>IntoColor</code></a> - Similar to <a href="https://doc.rust-lang.org/1.81.0/core/convert/trait.Into.html" title="trait core::convert::Into"><code>Into</code></a>, converts into another color space.</li>
+<li><a href="trait.FromColorUnclamped.html" title="trait palette::convert::FromColorUnclamped"><code>FromColorUnclamped</code></a> - The same as <a href="trait.FromColor.html" title="trait palette::convert::FromColor"><code>FromColor</code></a>, but the resulting
+values may be outside the typical bounds.</li>
+<li><a href="trait.IntoColorUnclamped.html" title="trait palette::convert::IntoColorUnclamped"><code>IntoColorUnclamped</code></a> - The same as <a href="trait.IntoColor.html" title="trait palette::convert::IntoColor"><code>IntoColor</code></a>, but the resulting
+values may be outside the typical bounds.</li>
+</ul>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>palette::{FromColor, IntoColor, Srgb, Hsl};
+
+<span class="kw">let </span>rgb = Srgb::new(<span class="number">0.3f32</span>, <span class="number">0.8</span>, <span class="number">0.1</span>);
+
+<span class="kw">let </span>hsl1: Hsl = rgb.into_color();
+<span class="kw">let </span>hsl2 = Hsl::from_color(rgb);</code></pre></div>
+<p>Most of the color space types can be converted directly to each other, with
+these traits. If you look at the implemented traits for any color type, you
+will see a substantial list of <code>FromColorUnclamped</code> implementations. There
+are, however, exceptions and restrictions in some cases:</p>
+<ul>
+<li><strong>It’s not always possible to change the component type while
+converting.</strong> This can only be enabled in specific cases, to allow type
+inference to work. The input and output component types need to be the
+same in the general case.</li>
+<li><strong>It’s not always possible to change meta types while converting.</strong> Meta
+types are the additional input types on colors, such as white point or RGB
+standard. Similar to component types, these are generally restricted to
+help type inference.</li>
+<li><strong>Some color spaces want specific component types.</strong> For example,
+<a href="../struct.Xyz.html" title="struct palette::Xyz"><code>Xyz</code></a> and many other color spaces require real-ish numbers
+(<code>f32</code>, <code>f64</code>, etc.).</li>
+<li><strong>Some color spaces want specific meta types.</strong> For example,
+<a href="../struct.Oklab.html" title="struct palette::Oklab"><code>Oklab</code></a> requires the white point to be
+<a href="../white_point/struct.D65.html" title="struct palette::white_point::D65"><code>D65</code></a>.</li>
+</ul>
+<p>These limitations are usually the reason for why the compiler gives an error
+when calling <code>into_color</code>, <code>from_color</code>, or the corresponding unclamped
+methods. They are possible to work around by splitting the conversion into
+multiple steps.</p>
+<h2 id="in-place-conversion"><a class="doc-anchor" href="#in-place-conversion">§</a>In-place Conversion</h2>
+<p>It’s possible for some color spaces to be converted in-place, meaning the
+destination color will use the memory space of the source color. The
+requirement for this is that the source and destination color types have the
+same memory layout. That is, the same component types and the same number of
+components. This is verified by the <a href="../cast/trait.ArrayCast.html" title="trait palette::cast::ArrayCast"><code>ArrayCast</code></a>
+trait.</p>
+<p>In-place conversion is done with the <a href="trait.FromColorMut.html" title="trait palette::convert::FromColorMut"><code>FromColorMut</code></a> and <a href="trait.IntoColorMut.html" title="trait palette::convert::IntoColorMut"><code>IntoColorMut</code></a>
+traits, as well as their unclamped counterparts, <a href="trait.FromColorUnclampedMut.html" title="trait palette::convert::FromColorUnclampedMut"><code>FromColorUnclampedMut</code></a>
+and <a href="trait.IntoColorUnclampedMut.html" title="trait palette::convert::IntoColorUnclampedMut"><code>IntoColorUnclampedMut</code></a>. They work for both single colors and slices
+of colors.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>palette::{convert::FromColorMut, Srgb, Hsl, Hwb};
+
+<span class="kw">let </span><span class="kw-2">mut </span>rgb_colors: Vec&lt;Srgb&lt;f32&gt;&gt; = <span class="macro">vec!</span>[<span class="comment">/* ... */</span>];
+
+{
+    <span class="comment">// Creates a scope guard that prevents `rgb_colors` from being modified as RGB.
+    </span><span class="kw">let </span>hsl_colors = &lt;[Hsl]&gt;::from_color_mut(<span class="kw-2">&amp;mut </span>rgb_colors);
+
+    <span class="comment">// The converted colors can be converted again, without keeping the previous guard around.
+    </span><span class="kw">let </span>hwb_colors = hsl_colors.then_into_color_mut::&lt;[Hwb]&gt;();
+
+    <span class="comment">// The colors are automatically converted back to RGB at the end of the scope.
+    // The use of `then_into_color_mut` above makes this conversion a single HWB -&gt; RGB step,
+    // instead of HWB -&gt; HSL -&gt; RGB, since it consumed the HSL guard.
+</span>}</code></pre></div>
+<h2 id="deriving"><a class="doc-anchor" href="#deriving">§</a>Deriving</h2>
+<p><code>FromColorUnclamped</code> can be derived in a mostly automatic way. The other
+traits are blanket implemented based on it. The default minimum requirement
+is to implement <code>FromColorUnclamped&lt;Xyz&gt;</code>, but it can also be customized to
+make use of generics and have other manual implementations.</p>
+<p>It is also recommended to derive or implement
+<a href="../trait.WithAlpha.html" title="trait palette::WithAlpha"><code>WithAlpha</code></a>, to be able to convert between all <code>Alpha</code>
+wrapped color types.</p>
+<h3 id="configuration-attributes"><a class="doc-anchor" href="#configuration-attributes">§</a>Configuration Attributes</h3>
+<p>The derives can be configured using one or more <code>#[palette(...)]</code>
+attributes. They can be attached to either the item itself, or to the
+fields.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="attr">#[derive(FromColorUnclamped)]
+#[palette(
+    component = <span class="string">"T"</span>,
+    rgb_standard = <span class="string">"S"</span>,
+)]
+#[repr(C)]
+</span><span class="kw">struct </span>ExampleType&lt;S, T&gt; {
+    <span class="comment">// ...
+    </span><span class="attr">#[palette(alpha)]
+    </span>alpha: T,
+    standard: std::marker::PhantomData&lt;S&gt;,
+}
+</code></pre></div>
+<h4 id="item-attributes"><a class="doc-anchor" href="#item-attributes">§</a>Item Attributes</h4>
+<ul>
+<li>
+<p><code>skip_derives(Luma, Rgb)</code>: No conversion derives will be implemented for
+these colors. They are instead to be implemented manually, and serve as the
+basis for the automatic implementations.</p>
+</li>
+<li>
+<p><code>white_point = "some::white_point::Type"</code>: Sets the white point type that
+should be used when deriving. The default is <code>D65</code>, but it may be any other
+type, including type parameters.</p>
+</li>
+<li>
+<p><code>component = "some::component::Type"</code>: Sets the color component type that
+should be used when deriving. The default is <code>f32</code>, but it may be any other
+type, including type parameters.</p>
+</li>
+<li>
+<p><code>rgb_standard = "some::rgb_standard::Type"</code>: Sets the RGB standard type
+that should be used when deriving. The default is to either use <code>Srgb</code> or a
+best effort to convert between standards, but sometimes it has to be set to
+a specific type. This also accepts type parameters.</p>
+</li>
+<li>
+<p><code>luma_standard = "some::rgb_standard::Type"</code>: Sets the Luma standard type
+that should be used when deriving, similar to <code>rgb_standard</code>.</p>
+</li>
+</ul>
+<h4 id="field-attributes"><a class="doc-anchor" href="#field-attributes">§</a>Field Attributes</h4>
+<ul>
+<li><code>alpha</code>: Specifies field as the color’s transparency value.</li>
+</ul>
+<h3 id="examples"><a class="doc-anchor" href="#examples">§</a>Examples</h3>
+<p>Minimum requirements implementation:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>palette::convert::FromColorUnclamped;
+<span class="kw">use </span>palette::{Srgb, Xyz, IntoColor};
+
+<span class="doccomment">/// A custom version of Xyz that stores integer values from 0 to 100.
+</span><span class="attr">#[derive(PartialEq, Debug, FromColorUnclamped)]
+</span><span class="kw">struct </span>Xyz100 {
+    x: u8,
+    y: u8,
+    z: u8,
+}
+
+<span class="comment">// We have to implement at least one "manual" conversion. The default
+// is to and from `Xyz`, but it can be customized with `skip_derives(...)`.
+</span><span class="kw">impl </span>FromColorUnclamped&lt;Xyz&gt; <span class="kw">for </span>Xyz100 {
+    <span class="kw">fn </span>from_color_unclamped(color: Xyz) -&gt; Xyz100 {
+        Xyz100 {
+            x: (color.x * <span class="number">100.0</span>) <span class="kw">as </span>u8,
+            y: (color.y * <span class="number">100.0</span>) <span class="kw">as </span>u8,
+            z: (color.z * <span class="number">100.0</span>) <span class="kw">as </span>u8,
+        }
+    }
+}
+
+<span class="kw">impl </span>FromColorUnclamped&lt;Xyz100&gt; <span class="kw">for </span>Xyz {
+    <span class="kw">fn </span>from_color_unclamped(color: Xyz100) -&gt; Xyz {
+        Xyz::new(
+            color.x <span class="kw">as </span>f32 / <span class="number">100.0</span>,
+            color.y <span class="kw">as </span>f32 / <span class="number">100.0</span>,
+            color.z <span class="kw">as </span>f32 / <span class="number">100.0</span>,
+        )
+    }
+}
+
+<span class="comment">// Start with an Xyz100 color.
+</span><span class="kw">let </span>xyz = Xyz100 {
+    x: <span class="number">59</span>,
+    y: <span class="number">75</span>,
+    z: <span class="number">42</span>,
+};
+
+<span class="comment">// Convert the color to sRGB.
+</span><span class="kw">let </span>rgb: Srgb = xyz.into_color();
+
+<span class="macro">assert_eq!</span>(rgb.into_format(), Srgb::new(<span class="number">196u8</span>, <span class="number">238</span>, <span class="number">154</span>));</code></pre></div>
+<p>With generic components:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="attr">#[macro_use]
+</span><span class="kw">extern crate </span>approx;
+
+<span class="kw">use </span>palette::cast::{ComponentsAs, ArrayCast};
+<span class="kw">use </span>palette::rgb::{Rgb, RgbSpace, RgbStandard};
+<span class="kw">use </span>palette::encoding::Linear;
+<span class="kw">use </span>palette::white_point::D65;
+<span class="kw">use </span>palette::convert::{FromColorUnclamped, IntoColorUnclamped};
+<span class="kw">use </span>palette::{Hsv, Srgb, IntoColor};
+
+<span class="doccomment">/// sRGB, but with a reversed memory layout.
+</span><span class="attr">#[derive(Copy, Clone, ArrayCast, FromColorUnclamped)]
+#[palette(
+    skip_derives(Rgb),
+    component = <span class="string">"T"</span>,
+    rgb_standard = <span class="string">"palette::encoding::Srgb"
+</span>)]
+#[repr(C)] </span><span class="comment">// Makes sure the memory layout is as we want it.
+</span><span class="kw">struct </span>Bgr&lt;T&gt; {
+    blue: T,
+    green: T,
+    red: T,
+}
+
+<span class="comment">// It converts from and into any linear Rgb type that has the
+// D65 white point, which is the default if we don't specify
+// anything else with the `white_point` attribute argument.
+</span><span class="kw">impl</span>&lt;S, T&gt; FromColorUnclamped&lt;Bgr&lt;T&gt;&gt; <span class="kw">for </span>Rgb&lt;S, T&gt;
+<span class="kw">where
+    </span>S: RgbStandard,
+    S::Space: RgbSpace&lt;WhitePoint = D65&gt;,
+    Srgb&lt;T&gt;: IntoColorUnclamped&lt;Rgb&lt;S, T&gt;&gt;,
+{
+    <span class="kw">fn </span>from_color_unclamped(color: Bgr&lt;T&gt;) -&gt; Rgb&lt;S, T&gt; {
+        Srgb::new(color.red, color.green, color.blue)
+            .into_color_unclamped()
+    }
+}
+
+<span class="kw">impl</span>&lt;S, T&gt; FromColorUnclamped&lt;Rgb&lt;S, T&gt;&gt; <span class="kw">for </span>Bgr&lt;T&gt;
+<span class="kw">where
+    </span>S: RgbStandard,
+    S::Space: RgbSpace&lt;WhitePoint = D65&gt;,
+    Srgb&lt;T&gt;: FromColorUnclamped&lt;Rgb&lt;S, T&gt;&gt;,
+{
+    <span class="kw">fn </span>from_color_unclamped(color: Rgb&lt;S, T&gt;) -&gt; Bgr&lt;T&gt; {
+        <span class="kw">let </span>color = Srgb::from_color_unclamped(color);
+        Bgr {
+            blue: color.blue,
+            green: color.green,
+            red: color.red,
+        }
+    }
+}
+
+<span class="kw">fn </span>main() {
+    <span class="kw">let </span>buffer = <span class="macro">vec!</span>[
+        <span class="number">0.0f64</span>,
+        <span class="number">0.0</span>,
+        <span class="number">0.0</span>,
+        <span class="number">0.0</span>,
+        <span class="number">0.5</span>,
+        <span class="number">0.25</span>,
+    ];
+    <span class="kw">let </span>buffer: <span class="kw-2">&amp;</span>[Bgr&lt;<span class="kw">_</span>&gt;] = buffer.components_as();
+    <span class="kw">let </span>hsv: Hsv&lt;<span class="kw">_</span>, f64&gt; = buffer[<span class="number">1</span>].into_color();
+
+    <span class="macro">assert_relative_eq!</span>(hsv, Hsv::new(<span class="number">90.0</span>, <span class="number">1.0</span>, <span class="number">0.5</span>));
+}</code></pre></div>
+<p>With alpha component:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="attr">#[macro_use]
+</span><span class="kw">extern crate </span>approx;
+
+<span class="kw">use </span>palette::{LinSrgba, Srgb, IntoColor, WithAlpha};
+<span class="kw">use </span>palette::rgb::Rgb;
+<span class="kw">use </span>palette::convert::{FromColorUnclamped, IntoColorUnclamped};
+
+<span class="doccomment">/// CSS style sRGB.
+</span><span class="attr">#[derive(PartialEq, Debug, FromColorUnclamped, WithAlpha)]
+#[palette(
+    skip_derives(Rgb),
+    rgb_standard = <span class="string">"palette::encoding::Srgb"
+</span>)]
+</span><span class="kw">struct </span>CssRgb {
+    red: u8,
+    green: u8,
+    blue: u8,
+    <span class="attr">#[palette(alpha)]
+    </span>alpha: f32,
+}
+
+<span class="comment">// We will write a conversion function for opaque RGB and
+// `impl_default_conversions` will take care of preserving
+// the transparency for us.
+</span><span class="kw">impl</span>&lt;S&gt; FromColorUnclamped&lt;Rgb&lt;S, f32&gt;&gt; <span class="kw">for </span>CssRgb
+<span class="kw">where
+    </span>Srgb&lt;f32&gt;: FromColorUnclamped&lt;Rgb&lt;S, f32&gt;&gt;
+{
+    <span class="kw">fn </span>from_color_unclamped(color: Rgb&lt;S, f32&gt;) -&gt; CssRgb{
+        <span class="kw">let </span>srgb = Srgb::from_color_unclamped(color)
+            .into_format();
+
+        CssRgb {
+            red: srgb.red,
+            green: srgb.green,
+            blue: srgb.blue,
+            alpha: <span class="number">1.0
+        </span>}
+    }
+}
+
+<span class="kw">impl</span>&lt;S&gt; FromColorUnclamped&lt;CssRgb&gt; <span class="kw">for </span>Rgb&lt;S, f32&gt;
+<span class="kw">where
+    </span>Srgb&lt;f32&gt;: IntoColorUnclamped&lt;Rgb&lt;S, f32&gt;&gt;
+{
+    <span class="kw">fn </span>from_color_unclamped(color: CssRgb) -&gt; Rgb&lt;S, f32&gt;{
+        Srgb::new(color.red, color.green, color.blue)
+            .into_format()
+            .into_color_unclamped()
+    }
+}
+
+<span class="kw">fn </span>main() {
+    <span class="kw">let </span>css_color = CssRgb {
+        red: <span class="number">187</span>,
+        green: <span class="number">0</span>,
+        blue: <span class="number">255</span>,
+        alpha: <span class="number">0.3</span>,
+    };
+    <span class="kw">let </span>color: LinSrgba = css_color.into_color();
+
+    <span class="macro">assert_relative_eq!</span>(color, LinSrgba::new(<span class="number">0.496933</span>, <span class="number">0.0</span>, <span class="number">1.0</span>, <span class="number">0.3</span>));
+}</code></pre></div>
+</div></details><h2 id="structs" class="section-header">Structs<a href="#structs" class="anchor">§</a></h2><ul class="item-table"><li><div class="item-name"><a class="struct" href="struct.FromColorMutGuard.html" title="struct palette::convert::FromColorMutGuard">FromColorMutGuard</a></div><div class="desc docblock-short">A scope guard that restores the guarded colors to their original type when
+dropped.</div></li><li><div class="item-name"><a class="struct" href="struct.FromColorUnclampedMutGuard.html" title="struct palette::convert::FromColorUnclampedMutGuard">FromColorUnclampedMutGuard</a></div><div class="desc docblock-short">A scope guard that restores the guarded colors to their original type,
+without clamping, when dropped.</div></li><li><div class="item-name"><a class="struct" href="struct.OutOfBounds.html" title="struct palette::convert::OutOfBounds">OutOfBounds</a></div><div class="desc docblock-short">The error type for a color conversion that converted a color into a color
+with invalid values.</div></li></ul><h2 id="traits" class="section-header">Traits<a href="#traits" class="anchor">§</a></h2><ul class="item-table"><li><div class="item-name"><a class="trait" href="trait.FromColor.html" title="trait palette::convert::FromColor">FromColor</a></div><div class="desc docblock-short">A trait for converting one color from another, in a possibly lossy way.</div></li><li><div class="item-name"><a class="trait" href="trait.FromColorMut.html" title="trait palette::convert::FromColorMut">FromColorMut</a></div><div class="desc docblock-short">Temporarily convert colors in place.</div></li><li><div class="item-name"><a class="trait" href="trait.FromColorUnclamped.html" title="trait palette::convert::FromColorUnclamped">FromColorUnclamped</a></div><div class="desc docblock-short">A trait for unchecked conversion of one color from another.</div></li><li><div class="item-name"><a class="trait" href="trait.FromColorUnclampedMut.html" title="trait palette::convert::FromColorUnclampedMut">FromColorUnclampedMut</a></div><div class="desc docblock-short">Temporarily convert colors in place, without clamping.</div></li><li><div class="item-name"><a class="trait" href="trait.IntoColor.html" title="trait palette::convert::IntoColor">IntoColor</a></div><div class="desc docblock-short">A trait for converting a color into another, in a possibly lossy way.</div></li><li><div class="item-name"><a class="trait" href="trait.IntoColorMut.html" title="trait palette::convert::IntoColorMut">IntoColorMut</a></div><div class="desc docblock-short">Temporarily convert colors in place. The <code>Into</code> counterpart to
+<a href="trait.FromColorMut.html" title="trait palette::convert::FromColorMut"><code>FromColorMut</code></a>.</div></li><li><div class="item-name"><a class="trait" href="trait.IntoColorUnclamped.html" title="trait palette::convert::IntoColorUnclamped">IntoColorUnclamped</a></div><div class="desc docblock-short">A trait for unchecked conversion of a color into another.</div></li><li><div class="item-name"><a class="trait" href="trait.IntoColorUnclampedMut.html" title="trait palette::convert::IntoColorUnclampedMut">IntoColorUnclampedMut</a></div><div class="desc docblock-short">Temporarily convert colors in place. The <code>Into</code> counterpart to
+<a href="trait.FromColorUnclampedMut.html" title="trait palette::convert::FromColorUnclampedMut"><code>FromColorUnclampedMut</code></a>.</div></li><li><div class="item-name"><a class="trait" href="trait.TryFromColor.html" title="trait palette::convert::TryFromColor">TryFromColor</a></div><div class="desc docblock-short">A trait for fallible conversion of one color from another.</div></li><li><div class="item-name"><a class="trait" href="trait.TryIntoColor.html" title="trait palette::convert::TryIntoColor">TryIntoColor</a></div><div class="desc docblock-short">A trait for fallible conversion of a color into another.</div></li></ul><h2 id="derives" class="section-header">Derive Macros<a href="#derives" class="anchor">§</a></h2><ul class="item-table"><li><div class="item-name"><a class="derive" href="derive.FromColorUnclamped.html" title="derive palette::convert::FromColorUnclamped">FromColorUnclamped</a></div></li></ul></section></div></main></body></html>
