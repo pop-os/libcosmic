@@ -154,7 +154,7 @@ pub fn run<App: Application>(settings: Settings, flags: App::Flags) -> iced::Res
     }
     #[cfg(feature = "multi-window")]
     {
-        let mut app = multi_window::multi_window(
+        let mut app = multi_window::multi_window::<_, _, _, _, App::Executor>(
             cosmic::Cosmic::title,
             cosmic::Cosmic::update,
             cosmic::Cosmic::view,
@@ -390,7 +390,7 @@ where
         }
         #[cfg(feature = "multi-window")]
         {
-            let mut app = multi_window::multi_window(
+            let mut app = multi_window::multi_window::<_, _, _, _, App::Executor>(
                 cosmic::Cosmic::title,
                 cosmic::Cosmic::update,
                 cosmic::Cosmic::view,

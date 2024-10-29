@@ -8,6 +8,7 @@ rust-version = "1.80"
 name = "cosmic"
 
 [features]
+default = ["multi-window"]
 # Accessibility support
 a11y = ["iced/a11y", "iced_accessibility"]
 # Builds support for animated images
