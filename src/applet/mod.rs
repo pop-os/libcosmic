@@ -188,10 +188,8 @@ impl Context {
         &self,
         icon: widget::icon::Handle,
     ) -> crate::widget::Button<'a, Message> {
-        let mut suggested = self.suggested_size(icon.symbolic);
+        let suggested = self.suggested_size(icon.symbolic);
         let applet_padding = self.suggested_padding(icon.symbolic);
-
-        let is_horizontal = self.is_horizontal();
 
         let symbolic = icon.symbolic;
 
@@ -414,7 +412,7 @@ pub fn run<App: Application>(flags: App::Flags) -> iced::Result {
 
     // TODO make multi-window not mandatory
 
-    let mut app = super::app::multi_window::multi_window(
+    let mut app = super::app::multi_window::multi_window::<_, _, _, _, App::Executor>(
         cosmic::Cosmic::title,
         cosmic::Cosmic::update,
         cosmic::Cosmic::view,

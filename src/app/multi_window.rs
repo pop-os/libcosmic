@@ -13,17 +13,18 @@ use iced::{Element, Result, Settings, Subscription, Task};
 
 use std::marker::PhantomData;
 
-pub(crate) struct Instance<State, Message, Theme, Renderer, Update, View> {
+pub(crate) struct Instance<State, Message, Theme, Renderer, Update, View, Executor> {
     update: Update,
     view: View,
     _state: PhantomData<State>,
     _message: PhantomData<Message>,
     _theme: PhantomData<Theme>,
     _renderer: PhantomData<Renderer>,
+    _executor: PhantomData<Executor>,
 }
 
 /// Creates an iced [`MultiWindow`] given its title, update, and view logic.
-pub fn multi_window<State, Message, Theme, Renderer>(
+pub fn multi_window<State, Message, Theme, Renderer, Executor>(
     title: impl Title<State>,
     update: impl application::Update<State, Message>,
     view: impl for<'a> self::View<'a, State, Message, Theme, Renderer>,
@@ -33,23 +34,25 @@ where
     Message: Send + std::fmt::Debug + 'static,
     Theme: Default + DefaultStyle,
     Renderer: program::Renderer,
+    Executor: iced::Executor,
 {
     use std::marker::PhantomData;
 
-    impl<State, Message, Theme, Renderer, Update, View> Program
-        for Instance<State, Message, Theme, Renderer, Update, View>
+    impl<State, Message, Theme, Renderer, Update, View, Executor> Program
+        for Instance<State, Message, Theme, Renderer, Update, View, Executor>
     where
         Message: Send + std::fmt::Debug + 'static,
         Theme: Default + DefaultStyle,
         Renderer: program::Renderer,
         Update: application::Update<State, Message>,
         View: for<'a> self::View<'a, State, Message, Theme, Renderer>,
+        Executor: iced::Executor,
     {
         type State = State;
         type Message = Message;
         type Theme = Theme;
         type Renderer = Renderer;
-        type Executor = iced_futures::backend::default::Executor;
+        type Executor = Executor;
 
         fn update(&self, state: &mut Self::State, message: Self::Message) -> Task<Self::Message> {
             self.update.update(state, message).into()
@@ -72,6 +75,7 @@ where
             _message: PhantomData,
             _theme: PhantomData,
             _renderer: PhantomData,
+            _executor: PhantomData::<Executor>,
         },
         settings: Settings::default(),
         window: None,
