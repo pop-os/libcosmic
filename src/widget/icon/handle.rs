@@ -74,8 +74,8 @@ pub fn from_raster_pixels(
     Handle {
         symbolic: false,
         data: match pixels.into() {
-            Cow::Owned(pixels) => Data::Image(image::Handle::from_bytes(pixels)),
-            Cow::Borrowed(pixels) => Data::Image(image::Handle::from_bytes(pixels)),
+            Cow::Owned(pixels) => Data::Image(image::Handle::from_rgba(width, height, pixels)),
+            Cow::Borrowed(pixels) => Data::Image(image::Handle::from_rgba(width, height, pixels)),
         },
     }
 }
