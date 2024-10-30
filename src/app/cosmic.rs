@@ -25,6 +25,10 @@ use palette::color_difference::EuclideanDistance;
 pub enum Message {
     /// Application requests theme change.
     AppThemeChange(Theme),
+    /// Enables blur support.
+    EnableBlur,
+    /// Enables transparency.
+    EnableTransparency(cosmic_theme::Theme, f32),
     /// Requests to close the window.
     Close,
     /// Closes or shows the context drawer.
@@ -429,7 +433,17 @@ impl<T: Application> Cosmic<T> {
 
                 THEME.lock().unwrap().set_theme(theme.theme_type);
             }
-
+            Message::EnableBlur => {
+                if let Some(id) = self.app.core().main_window_id() {
+                    return Task::batch(vec![iced::runtime::window::enable_blur(id)]);
+                }
+            }
+            Message::EnableTransparency(mut theme, alpha) => {
+                theme.background.base.alpha *= alpha;
+                return self.cosmic_update(Message::AppThemeChange(crate::Theme::custom(
+                    std::sync::Arc::new(theme),
+                )));
+            }
             Message::SystemThemeChange(keys, theme) => {
                 let cur_is_dark = THEME.lock().unwrap().theme_type.is_dark();
                 // Ignore updates if the current theme mode does not match.

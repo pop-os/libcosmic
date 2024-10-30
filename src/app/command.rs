@@ -92,3 +92,14 @@ impl crate::app::Core {
 pub fn set_theme<M: Send + 'static>(theme: crate::Theme) -> iced::Task<Message<M>> {
     message::cosmic(super::cosmic::Message::AppThemeChange(theme))
 }
+
+pub fn set_transparent<M: Send + 'static>(
+    theme: cosmic_theme::Theme,
+    alpha: f32,
+) -> iced::Task<Message<M>> {
+    message::cosmic(super::cosmic::Message::EnableTransparency(theme, alpha))
+}
+
+pub fn enable_blur<M: Send + 'static>() -> iced::Task<Message<M>> {
+    message::cosmic(super::cosmic::Message::EnableBlur)
+}
