@@ -52,13 +52,13 @@ use std::borrow::Cow;
 pub use self::command::Task;
 pub use self::core::Core;
 pub use self::settings::Settings;
-use crate::prelude::*;
 use crate::theme::THEME;
 use crate::widget::{
     container, context_drawer, horizontal_space, id_container, menu, nav_bar, popover,
 };
+use crate::{prelude::*, widget};
 use apply::Apply;
-use iced::window;
+use iced::{window, Alignment};
 use iced::{Length, Subscription};
 pub use message::Message;
 use url::Url;
@@ -67,9 +67,13 @@ use {
     iced_futures::futures::channel::mpsc::{Receiver, Sender},
     iced_futures::futures::SinkExt,
     std::any::TypeId,
-    std::collections::HashMap,
     zbus::{interface, proxy, zvariant::Value},
 };
+
+#[cfg(feature = "desktop")]
+use crate::widget::About;
+#[cfg(any(feature = "single-instance", feature = "desktop"))]
+use std::collections::HashMap;
 
 pub(crate) fn iced_settings<App: Application>(
     settings: Settings,
@@ -589,6 +593,102 @@ where
     /// Constructs views for other windows.
     fn view_window(&self, id: window::Id) -> Element<Self::Message> {
         panic!("no view for window {id:?}");
+    }
+
+    #[cfg(feature = "desktop")]
+    /// Provides information about the application.
+    fn about(&self) -> Option<About> {
+        None
+    }
+
+    fn about_view(&self) -> Element<crate::app::cosmic::Message> {
+        if let Some(about) = self.about() {
+            let spacing = crate::theme::active().cosmic().spacing;
+
+            let application_name = about.application_name.map(widget::text::title3);
+            let application_icon = about
+                .application_icon
+                .map(|icon| crate::desktop::IconSource::Name(icon).as_cosmic_icon());
+
+            let mut links: HashMap<String, String> = HashMap::new();
+
+            if let Some(website) = about.website {
+                links.insert("Website".into(), website);
+            }
+
+            if let Some(repository_url) = about.repository_url {
+                links.insert("Repository".into(), repository_url);
+            }
+
+            if let Some(support_url) = about.support_url {
+                links.insert("Support".into(), support_url);
+            }
+
+            let links_section = self.maintainer_section(links, "Links");
+            let developers_section = self.maintainer_section(about.developers, "Developers");
+            let designers_section = self.maintainer_section(about.designers, "Designers");
+            let artists_section = self.maintainer_section(about.artists, "Artists");
+            let translators_section = self.maintainer_section(about.translators, "Translators");
+            let documenters_section = self.maintainer_section(about.documenters, "Documenters");
+
+            let developer_name = about.developer_name.map(widget::text);
+            let version = about.version.map(widget::button::standard);
+            let license = about.license_type.map(widget::button::standard);
+            let copyright = about.copyright.map(widget::text::body);
+            let comments = about.comments.map(widget::text::body);
+
+            widget::column()
+                .push_maybe(application_icon)
+                .push_maybe(application_name)
+                .push_maybe(developer_name)
+                .push(
+                    widget::row()
+                        .push_maybe(version)
+                        .push_maybe(license)
+                        .spacing(spacing.space_xxs),
+                )
+                .push_maybe(links_section)
+                .push_maybe(developers_section)
+                .push_maybe(designers_section)
+                .push_maybe(artists_section)
+                .push_maybe(translators_section)
+                .push_maybe(documenters_section)
+                .push_maybe(comments)
+                .push_maybe(copyright)
+                .align_x(Alignment::Center)
+                .spacing(spacing.space_xxs)
+                .width(Length::Fill)
+                .into()
+        } else {
+            crate::widget::text("Test").into()
+        }
+    }
+
+    fn maintainer_section<'a>(
+        &'a self,
+        list: HashMap<String, String>,
+        title: &'a str,
+    ) -> Option<widget::settings::Section<'a, crate::app::cosmic::Message>> {
+        let developers_section = if list.is_empty() {
+            None
+        } else {
+            let developers: Vec<Element<crate::app::cosmic::Message>> = list
+                .into_iter()
+                .map(|(name, email)| {
+                    widget::button::link(name)
+                        .on_press(crate::app::cosmic::Message::OpenUrl(format!(
+                            "mailto:{email}"
+                        )))
+                        .into()
+                })
+                .collect();
+            let mut developers_section = widget::settings::section().title(title);
+            for developer in developers {
+                developers_section = developers_section.add(developer);
+            }
+            Some(developers_section)
+        };
+        developers_section
     }
 
     /// Overrides the default style for applications

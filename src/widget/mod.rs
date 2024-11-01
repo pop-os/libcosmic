@@ -361,3 +361,6 @@ pub mod tooltip {
 pub mod warning;
 #[doc(inline)]
 pub use warning::*;
+
+pub mod about;
+pub use about::*;
