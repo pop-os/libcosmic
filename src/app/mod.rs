@@ -48,7 +48,6 @@ pub mod message {
 }
 
 use std::borrow::Cow;
-use std::collections::BTreeMap;
 
 pub use self::command::Task;
 pub use self::core::Core;
@@ -63,20 +62,18 @@ use iced::alignment::Vertical;
 use iced::{window, Alignment};
 use iced::{Length, Subscription};
 pub use message::Message;
-use taffy::AlignContent;
 use url::Url;
 #[cfg(feature = "single-instance")]
 use {
     iced_futures::futures::channel::mpsc::{Receiver, Sender},
     iced_futures::futures::SinkExt,
     std::any::TypeId,
+    std::collections::HashMap,
     zbus::{interface, proxy, zvariant::Value},
 };
 
 #[cfg(feature = "desktop")]
-use crate::widget::About;
-#[cfg(any(feature = "single-instance", feature = "desktop"))]
-use std::collections::HashMap;
+use {crate::widget::About, std::collections::BTreeMap};
 
 pub(crate) fn iced_settings<App: Application>(
     settings: Settings,
@@ -604,9 +601,38 @@ where
         None
     }
 
-    fn about_view(&self) -> Element<crate::app::cosmic::Message> {
+    #[cfg(feature = "desktop")]
+    /// Constructs the view for the about section.
+    fn about_view<'a>(&self) -> Element<'a, crate::app::cosmic::Message> {
         if let Some(about) = self.about() {
             let spacing = crate::theme::active().cosmic().spacing;
+
+            let section = |list: BTreeMap<String, String>, title: &'a str| {
+                if list.is_empty() {
+                    None
+                } else {
+                    let developers: Vec<Element<crate::app::cosmic::Message>> = list
+                        .into_iter()
+                        .map(|(name, email)| {
+                            widget::button::custom(
+                                widget::row()
+                                    .push(widget::text(name))
+                                    .push(horizontal_space())
+                                    .push(crate::widget::icon::from_name("link-symbolic").icon())
+                                    .padding(spacing.space_xxs)
+                                    .align_y(Vertical::Center),
+                            )
+                            .class(crate::theme::Button::Text)
+                            .on_press(crate::app::cosmic::Message::OpenUrl(format!(
+                                "mailto:{email}"
+                            )))
+                            .width(Length::Fill)
+                            .into()
+                        })
+                        .collect();
+                    Some(widget::settings::section().title(title).extend(developers))
+                }
+            };
 
             let application_name = about.application_name.map(widget::text::title3);
             let application_icon = about
@@ -627,12 +653,12 @@ where
                 links.insert("Support".into(), support_url);
             }
 
-            let links_section = self.maintainer_section(links, "Links");
-            let developers_section = self.maintainer_section(about.developers, "Developers");
-            let designers_section = self.maintainer_section(about.designers, "Designers");
-            let artists_section = self.maintainer_section(about.artists, "Artists");
-            let translators_section = self.maintainer_section(about.translators, "Translators");
-            let documenters_section = self.maintainer_section(about.documenters, "Documenters");
+            let links_section = section(links, "Links");
+            let developers_section = section(about.developers, "Developers");
+            let designers_section = section(about.designers, "Designers");
+            let artists_section = section(about.artists, "Artists");
+            let translators_section = section(about.translators, "Translators");
+            let documenters_section = section(about.documenters, "Documenters");
 
             let developer_name = about.developer_name.map(widget::text);
             let version = about.version.map(widget::button::standard);
@@ -665,40 +691,6 @@ where
         } else {
             crate::widget::text("Test").into()
         }
-    }
-
-    fn maintainer_section<'a>(
-        &'a self,
-        list: BTreeMap<String, String>,
-        title: &'a str,
-    ) -> Option<widget::settings::Section<'a, crate::app::cosmic::Message>> {
-        let spacing = crate::theme::active().cosmic().spacing;
-        let developers_section = if list.is_empty() {
-            None
-        } else {
-            let developers: Vec<Element<crate::app::cosmic::Message>> = list
-                .into_iter()
-                .map(|(name, email)| {
-                    widget::button::custom(
-                        widget::row()
-                            .push(widget::text(name))
-                            .push(horizontal_space())
-                            .push(crate::widget::icon::from_name("link-symbolic").icon())
-                            .padding(spacing.space_xxs)
-                            .align_y(Vertical::Center),
-                    )
-                    .class(crate::theme::Button::Text)
-                    .on_press(crate::app::cosmic::Message::OpenUrl(format!(
-                        "mailto:{email}"
-                    )))
-                    .width(Length::Fill)
-                    .into()
-                })
-                .collect();
-            let developers_section = widget::settings::section().title(title).extend(developers);
-            Some(developers_section)
-        };
-        developers_section
     }
 
     /// Overrides the default style for applications
