@@ -48,6 +48,7 @@ pub mod message {
 }
 
 use std::borrow::Cow;
+use std::collections::BTreeMap;
 
 pub use self::command::Task;
 pub use self::core::Core;
@@ -58,9 +59,11 @@ use crate::widget::{
 };
 use crate::{prelude::*, widget};
 use apply::Apply;
+use iced::alignment::Vertical;
 use iced::{window, Alignment};
 use iced::{Length, Subscription};
 pub use message::Message;
+use taffy::AlignContent;
 use url::Url;
 #[cfg(feature = "single-instance")]
 use {
@@ -610,7 +613,7 @@ where
                 .application_icon
                 .map(|icon| crate::desktop::IconSource::Name(icon).as_cosmic_icon());
 
-            let mut links: HashMap<String, String> = HashMap::new();
+            let mut links: BTreeMap<String, String> = BTreeMap::new();
 
             if let Some(website) = about.website {
                 links.insert("Website".into(), website);
@@ -645,7 +648,7 @@ where
                     widget::row()
                         .push_maybe(version)
                         .push_maybe(license)
-                        .spacing(spacing.space_xxs),
+                        .spacing(spacing.space_xs),
                 )
                 .push_maybe(links_section)
                 .push_maybe(developers_section)
@@ -656,7 +659,7 @@ where
                 .push_maybe(comments)
                 .push_maybe(copyright)
                 .align_x(Alignment::Center)
-                .spacing(spacing.space_xxs)
+                .spacing(spacing.space_xs)
                 .width(Length::Fill)
                 .into()
         } else {
@@ -666,26 +669,33 @@ where
 
     fn maintainer_section<'a>(
         &'a self,
-        list: HashMap<String, String>,
+        list: BTreeMap<String, String>,
         title: &'a str,
     ) -> Option<widget::settings::Section<'a, crate::app::cosmic::Message>> {
+        let spacing = crate::theme::active().cosmic().spacing;
         let developers_section = if list.is_empty() {
             None
         } else {
             let developers: Vec<Element<crate::app::cosmic::Message>> = list
                 .into_iter()
                 .map(|(name, email)| {
-                    widget::button::link(name)
-                        .on_press(crate::app::cosmic::Message::OpenUrl(format!(
-                            "mailto:{email}"
-                        )))
-                        .into()
+                    widget::button::custom(
+                        widget::row()
+                            .push(widget::text(name))
+                            .push(horizontal_space())
+                            .push(crate::widget::icon::from_name("link-symbolic").icon())
+                            .padding(spacing.space_xxs)
+                            .align_y(Vertical::Center),
+                    )
+                    .class(crate::theme::Button::Text)
+                    .on_press(crate::app::cosmic::Message::OpenUrl(format!(
+                        "mailto:{email}"
+                    )))
+                    .width(Length::Fill)
+                    .into()
                 })
                 .collect();
-            let mut developers_section = widget::settings::section().title(title);
-            for developer in developers {
-                developers_section = developers_section.add(developer);
-            }
+            let developers_section = widget::settings::section().title(title).extend(developers);
             Some(developers_section)
         };
         developers_section
