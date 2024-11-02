@@ -6,6 +6,9 @@
 //! Check out our [application](https://github.com/pop-os/libcosmic/tree/master/examples/application)
 //! example in our repository.
 
+#[cfg(feature = "desktop")]
+pub mod about;
+
 pub mod command;
 mod core;
 pub mod cosmic;
@@ -52,14 +55,13 @@ use std::borrow::Cow;
 pub use self::command::Task;
 pub use self::core::Core;
 pub use self::settings::Settings;
+use crate::prelude::*;
 use crate::theme::THEME;
 use crate::widget::{
     container, context_drawer, horizontal_space, id_container, menu, nav_bar, popover,
 };
-use crate::{prelude::*, widget};
 use apply::Apply;
-use iced::alignment::Vertical;
-use iced::{window, Alignment};
+use iced::window;
 use iced::{Length, Subscription};
 pub use message::Message;
 use url::Url;
@@ -73,7 +75,12 @@ use {
 };
 
 #[cfg(feature = "desktop")]
-use {crate::widget::About, std::collections::BTreeMap};
+use {
+    crate::app::about::About,
+    crate::widget,
+    iced::{alignment::Vertical, Alignment},
+    std::collections::BTreeMap,
+};
 
 pub(crate) fn iced_settings<App: Application>(
     settings: Settings,
