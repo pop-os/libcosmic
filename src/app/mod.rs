@@ -620,7 +620,7 @@ where
                 } else {
                     let developers: Vec<Element<crate::app::cosmic::Message>> = list
                         .into_iter()
-                        .map(|(name, email)| {
+                        .map(|(name, url)| {
                             widget::button::custom(
                                 widget::row()
                                     .push(widget::text(name))
@@ -630,9 +630,7 @@ where
                                     .align_y(Vertical::Center),
                             )
                             .class(crate::theme::Button::Text)
-                            .on_press(crate::app::cosmic::Message::OpenUrl(format!(
-                                "mailto:{email}"
-                            )))
+                            .on_press(crate::app::cosmic::Message::OpenUrl(url))
                             .width(Length::Fill)
                             .into()
                         })
