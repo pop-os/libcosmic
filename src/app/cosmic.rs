@@ -78,6 +78,8 @@ pub enum Message {
     /// Tracks updates to window suggested size.
     #[cfg(feature = "applet")]
     SuggestedBounds(Option<iced::Size>),
+    #[cfg(feature = "desktop")]
+    /// Opens the provided URL.
     OpenUrl(String),
 }
 
@@ -662,6 +664,7 @@ impl<T: Application> Cosmic<T> {
                 let core = self.app.core_mut();
                 core.applet.suggested_bounds = b;
             }
+            #[cfg(feature = "desktop")]
             Message::OpenUrl(url) => match open::that_detached(url) {
                 Ok(_) => (),
                 Err(err) => tracing::error!("{err}"),
