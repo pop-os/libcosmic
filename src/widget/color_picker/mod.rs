@@ -4,6 +4,7 @@
 //! Widgets for selecting colors with a color picker.
 
 use std::borrow::Cow;
+use std::iter;
 use std::rc::Rc;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::{Duration, Instant};
@@ -23,7 +24,7 @@ use iced_core::{
     Rectangle, Renderer, Shadow, Shell, Size, Vector, Widget,
 };
 
-use iced_widget::slider::{HandleShape, RailBackground};
+use iced_widget::slider::HandleShape;
 use iced_widget::{canvas, column, horizontal_space, row, scrollable, vertical_space, Row};
 use lazy_static::lazy_static;
 use palette::{FromColor, RgbHue};
@@ -38,15 +39,14 @@ pub use ColorPickerModel as Model;
 
 // TODO is this going to look correct enough?
 lazy_static! {
-    pub static ref HSV_RAINBOW: Vec<ColorStop> = (0u16..8)
-        .map(|h| ColorStop {
-            color: iced::Color::from(palette::Srgba::from_color(palette::Hsv::new_srgb_const(
+    pub static ref HSV_RAINBOW: Vec<iced::Color> = (0u16..8)
+        .map(
+            |h| iced::Color::from(palette::Srgba::from_color(palette::Hsv::new_srgb_const(
                 RgbHue::new(f32::from(h) * 360.0 / 7.0),
                 1.0,
                 1.0
-            ))),
-            offset: f32::from(h) / 7.0
-        })
+            )))
+        )
         .collect();
 }
 
@@ -287,137 +287,235 @@ where
     ) -> ColorPicker<'a, Message> {
         let on_update = self.on_update;
         let spacing = THEME.lock().unwrap().cosmic().spacing;
-        let mut inner = column![
-            // segmented buttons
-            segmented_control::horizontal(self.model)
-                .on_activate(Box::new(move |e| on_update(
-                    ColorPickerUpdate::ActivateSegmented(e)
-                )))
-                .minimum_button_width(0)
-                .width(self.width),
-            // canvas with gradient for the current color
-            // still needs the canvas and the handle to be drawn on it
-            container(vertical_space().height(self.height))
-                .width(self.width)
-                .height(self.height),
-            slider(
-                0.0..=359.99,
-                self.active_color.hue.into_positive_degrees(),
-                move |v| {
-                    let mut new = self.active_color;
-                    new.hue = v.into();
-                    on_update(ColorPickerUpdate::ActiveColor(new))
-                }
-            )
-            .class(Slider::Custom {
-                active: Rc::new(|t| {
-                    let cosmic = t.cosmic();
-                    let mut a =
-                        slider::Catalog::style(t, &Slider::default(), slider::Status::Active);
-                    // a.rail.colors = RailBackground::Gradient {
-                    //     gradient: Linear::new(Radians(0.0)).add_stops(HSV_RAINBOW.clone()),
-                    //     auto_angle: true,
-                    // };
-                    a.rail.backgrounds = (
-                        Background::Color(Color::TRANSPARENT),
-                        Background::Color(Color::TRANSPARENT),
-                    );
-                    a.rail.width = 8.0;
-                    a.handle.background = Color::TRANSPARENT.into();
-                    a.handle.shape = HandleShape::Circle { radius: 8.0 };
-                    a.handle.border_color = cosmic.palette.neutral_10.into();
-                    a.handle.border_width = 4.0;
-                    a
-                }),
-                hovered: Rc::new(|t| {
-                    let cosmic = t.cosmic();
-                    let mut a =
-                        slider::Catalog::style(t, &Slider::default(), slider::Status::Active);
-                    // a.rail.colors = RailBackground::Gradient {
-                    //     gradient: Linear::new(Radians(0.0)).add_stops(HSV_RAINBOW.clone()),
-                    //     auto_angle: true,
-                    // };
-                    a.rail.backgrounds = (Color::TRANSPARENT.into(), Color::TRANSPARENT.into());
-                    a.rail.width = 8.0;
-                    a.handle.background = Color::TRANSPARENT.into();
-                    a.handle.shape = HandleShape::Circle { radius: 8.0 };
-                    a.handle.border_color = cosmic.palette.neutral_10.into();
-                    a.handle.border_width = 4.0;
-                    a
-                }),
-                dragging: Rc::new(|t| {
-                    let cosmic = t.cosmic();
-                    let mut a =
-                        slider::Catalog::style(t, &Slider::default(), slider::Status::Active);
-                    // a.rail.backgrounds = (
-                    //     RailBackground::Gradient(Gradient {
-                    //         gradient: Linear::new(Radians(0.0)).add_stops(HSV_RAINBOW.clone()),
-                    //         auto_angle: true,
-                    //     }),
-                    //     RailBackground::Gradient {
-                    //         gradient: Linear::new(Radians(0.0)).add_stops(HSV_RAINBOW.clone()),
-                    //         auto_angle: true,
-                    //     },
-                    // );
-                    a.rail.backgrounds =
-                        (iced::Color::TRANSPARENT.into(), Color::TRANSPARENT.into());
-                    a.rail.width = 8.0;
-                    a.handle.background = Color::TRANSPARENT.into();
-                    a.handle.shape = HandleShape::Circle { radius: 8.0 };
-                    a.handle.border_color = cosmic.palette.neutral_10.into();
-                    a.handle.border_width = 4.0;
-                    a
-                }),
-            })
-            .width(self.width),
-            text_input("", self.input_color)
-                .on_input(move |s| on_update(ColorPickerUpdate::Input(s)))
-                .on_paste(move |s| on_update(ColorPickerUpdate::Input(s)))
-                .on_submit(on_update(ColorPickerUpdate::AppliedColor))
-                .leading_icon(
-                    color_button(
-                        None,
-                        Some(Color::from(palette::Srgb::from_color(self.active_color))),
-                        Length::FillPortion(12)
-                    )
-                    .into()
-                )
-                // TODO copy paste input contents
-                .trailing_icon({
-                    let button = button::custom(crate::widget::icon(
-                        from_name("edit-copy-symbolic").size(spacing.space_s).into(),
-                    ))
-                    .on_press(on_update(ColorPickerUpdate::Copied(Instant::now())))
-                    .class(Button::Text);
-
-                    match self.copied_at.take() {
-                        Some(t) if Instant::now().duration_since(t) > Duration::from_secs(2) => {
-                            button.into()
-                        }
-                        Some(_) => tooltip(
-                            button,
-                            text(copied_to_clipboard_label),
-                            iced_widget::tooltip::Position::Bottom,
-                        )
-                        .into(),
-                        None => tooltip(
-                            button,
-                            text(copy_to_clipboard_label),
-                            iced_widget::tooltip::Position::Bottom,
-                        )
-                        .into(),
+        let mut inner =
+            column![
+                // segmented buttons
+                segmented_control::horizontal(self.model)
+                    .on_activate(Box::new(move |e| on_update(
+                        ColorPickerUpdate::ActivateSegmented(e)
+                    )))
+                    .minimum_button_width(0)
+                    .width(self.width),
+                // canvas with gradient for the current color
+                // still needs the canvas and the handle to be drawn on it
+                container(vertical_space().height(self.height))
+                    .width(self.width)
+                    .height(self.height),
+                slider(
+                    0.0..=359.99,
+                    self.active_color.hue.into_positive_degrees(),
+                    move |v| {
+                        let mut new = self.active_color;
+                        new.hue = v.into();
+                        on_update(ColorPickerUpdate::ActiveColor(new))
                     }
+                )
+                .on_release(on_update(ColorPickerUpdate::ActionFinished))
+                .class(Slider::Custom {
+                    active: Rc::new(move |t| {
+                        let cosmic = t.cosmic();
+                        let mut a =
+                            slider::Catalog::style(t, &Slider::default(), slider::Status::Active);
+
+                        let hue = self.active_color.hue.into_positive_degrees();
+                        let pivot = hue * 7.0 / 360.;
+
+                        let low_end = pivot.floor() as usize;
+                        let high_start = pivot.ceil() as usize;
+                        let pivot_color = palette::Hsv::new_srgb(RgbHue::new(hue), 1.0, 1.0);
+                        let low_range = HSV_RAINBOW[0..=low_end]
+                            .iter()
+                            .enumerate()
+                            .map(|(i, color)| ColorStop {
+                                color: *color,
+                                offset: i as f32 / pivot.max(0.0001),
+                            })
+                            .chain(iter::once(ColorStop {
+                                color: iced::Color::from(palette::Srgba::from_color(pivot_color)),
+                                offset: 1.,
+                            }))
+                            .collect::<Vec<_>>();
+                        let high_range =
+                            iter::once(ColorStop {
+                                color: iced::Color::from(palette::Srgba::from_color(pivot_color)),
+                                offset: 0.,
+                            })
+                            .chain(HSV_RAINBOW[high_start..].iter().enumerate().map(
+                                |(i, color)| ColorStop {
+                                    color: *color,
+                                    offset: (i as f32 + (1. - pivot.fract()))
+                                        / (7. - pivot).max(0.0001),
+                                },
+                            ))
+                            .collect::<Vec<_>>();
+                        a.rail.backgrounds = (
+                            Background::Gradient(iced::Gradient::Linear(
+                                Linear::new(Radians(90.0)).add_stops(low_range),
+                            )),
+                            Background::Gradient(iced::Gradient::Linear(
+                                Linear::new(Radians(90.0)).add_stops(high_range),
+                            )),
+                        );
+
+                        a.rail.width = 8.0;
+                        a.handle.background = Color::TRANSPARENT.into();
+                        a.handle.shape = HandleShape::Circle { radius: 8.0 };
+                        a.handle.border_color = cosmic.palette.neutral_10.into();
+                        a.handle.border_width = 4.0;
+                        a
+                    }),
+                    hovered: Rc::new(move |t| {
+                        let cosmic = t.cosmic();
+                        let mut a =
+                            slider::Catalog::style(t, &Slider::default(), slider::Status::Active);
+                        let hue = self.active_color.hue.into_positive_degrees();
+                        let pivot = hue * 7.0 / 360.;
+
+                        let low_end = pivot.floor() as usize;
+                        let high_start = pivot.ceil() as usize;
+                        let pivot_color = palette::Hsv::new_srgb(RgbHue::new(hue), 1.0, 1.0);
+                        let low_range = HSV_RAINBOW[0..=low_end]
+                            .iter()
+                            .enumerate()
+                            .map(|(i, color)| ColorStop {
+                                color: *color,
+                                offset: i as f32 / pivot.max(0.0001),
+                            })
+                            .chain(iter::once(ColorStop {
+                                color: iced::Color::from(palette::Srgba::from_color(pivot_color)),
+                                offset: 1.,
+                            }))
+                            .collect::<Vec<_>>();
+                        let high_range =
+                            iter::once(ColorStop {
+                                color: iced::Color::from(palette::Srgba::from_color(pivot_color)),
+                                offset: 0.,
+                            })
+                            .chain(HSV_RAINBOW[high_start..].iter().enumerate().map(
+                                |(i, color)| ColorStop {
+                                    color: *color,
+                                    offset: (i as f32 + (1. - pivot.fract()))
+                                        / (7. - pivot).max(0.0001),
+                                },
+                            ))
+                            .collect::<Vec<_>>();
+                        a.rail.backgrounds = (
+                            Background::Gradient(iced::Gradient::Linear(
+                                Linear::new(Radians(90.0)).add_stops(low_range),
+                            )),
+                            Background::Gradient(iced::Gradient::Linear(
+                                Linear::new(Radians(90.0)).add_stops(high_range),
+                            )),
+                        );
+                        a.rail.width = 8.0;
+                        a.handle.background = Color::TRANSPARENT.into();
+                        a.handle.shape = HandleShape::Circle { radius: 8.0 };
+                        a.handle.border_color = cosmic.palette.neutral_10.into();
+                        a.handle.border_width = 4.0;
+                        a
+                    }),
+                    dragging: Rc::new(move |t| {
+                        let cosmic = t.cosmic();
+                        let mut a =
+                            slider::Catalog::style(t, &Slider::default(), slider::Status::Active);
+                        let hue = self.active_color.hue.into_positive_degrees();
+                        let pivot = hue * 7.0 / 360.;
+
+                        let low_end = pivot.floor() as usize;
+                        let high_start = pivot.ceil() as usize;
+                        let pivot_color = palette::Hsv::new_srgb(RgbHue::new(hue), 1.0, 1.0);
+                        let low_range = HSV_RAINBOW[0..=low_end]
+                            .iter()
+                            .enumerate()
+                            .map(|(i, color)| ColorStop {
+                                color: *color,
+                                offset: i as f32 / pivot.max(0.0001),
+                            })
+                            .chain(iter::once(ColorStop {
+                                color: iced::Color::from(palette::Srgba::from_color(pivot_color)),
+                                offset: 1.,
+                            }))
+                            .collect::<Vec<_>>();
+                        let high_range =
+                            iter::once(ColorStop {
+                                color: iced::Color::from(palette::Srgba::from_color(pivot_color)),
+                                offset: 0.,
+                            })
+                            .chain(HSV_RAINBOW[high_start..].iter().enumerate().map(
+                                |(i, color)| ColorStop {
+                                    color: *color,
+                                    offset: (i as f32 + (1. - pivot.fract()))
+                                        / (7. - pivot).max(0.0001),
+                                },
+                            ))
+                            .collect::<Vec<_>>();
+                        a.rail.backgrounds = (
+                            Background::Gradient(iced::Gradient::Linear(
+                                Linear::new(Radians(90.0)).add_stops(low_range),
+                            )),
+                            Background::Gradient(iced::Gradient::Linear(
+                                Linear::new(Radians(90.0)).add_stops(high_range),
+                            )),
+                        );
+                        a.rail.width = 8.0;
+                        a.handle.background = Color::TRANSPARENT.into();
+                        a.handle.shape = HandleShape::Circle { radius: 8.0 };
+                        a.handle.border_color = cosmic.palette.neutral_10.into();
+                        a.handle.border_width = 4.0;
+                        a
+                    }),
                 })
                 .width(self.width),
-        ]
-        // Should we ensure the side padding is at least half the width of the handle?
-        .padding([
-            spacing.space_none,
-            spacing.space_s,
-            spacing.space_s,
-            spacing.space_s,
-        ])
-        .spacing(spacing.space_s);
+                text_input("", self.input_color)
+                    .on_input(move |s| on_update(ColorPickerUpdate::Input(s)))
+                    .on_paste(move |s| on_update(ColorPickerUpdate::Input(s)))
+                    .on_submit(on_update(ColorPickerUpdate::AppliedColor))
+                    .leading_icon(
+                        color_button(
+                            None,
+                            Some(Color::from(palette::Srgb::from_color(self.active_color))),
+                            Length::FillPortion(12)
+                        )
+                        .into()
+                    )
+                    // TODO copy paste input contents
+                    .trailing_icon({
+                        let button = button::custom(crate::widget::icon(
+                            from_name("edit-copy-symbolic").size(spacing.space_s).into(),
+                        ))
+                        .on_press(on_update(ColorPickerUpdate::Copied(Instant::now())))
+                        .class(Button::Text);
+
+                        match self.copied_at.take() {
+                            Some(t)
+                                if Instant::now().duration_since(t) > Duration::from_secs(2) =>
+                            {
+                                button.into()
+                            }
+                            Some(_) => tooltip(
+                                button,
+                                text(copied_to_clipboard_label),
+                                iced_widget::tooltip::Position::Bottom,
+                            )
+                            .into(),
+                            None => tooltip(
+                                button,
+                                text(copy_to_clipboard_label),
+                                iced_widget::tooltip::Position::Bottom,
+                            )
+                            .into(),
+                        }
+                    })
+                    .width(self.width),
+            ]
+            // Should we ensure the side padding is at least half the width of the handle?
+            .padding([
+                spacing.space_none,
+                spacing.space_s,
+                spacing.space_s,
+                spacing.space_s,
+            ])
+            .spacing(spacing.space_s);
 
         if !self.recent_colors.is_empty() {
             inner = inner.push(horizontal::light().width(self.width));
