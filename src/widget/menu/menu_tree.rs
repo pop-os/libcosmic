@@ -281,9 +281,7 @@ where
                                 widget::Space::with_width(Length::Fixed(16.0)).into()
                             },
                             widget::Space::with_width(Length::Fixed(8.0)).into(),
-                            widget::text(label)
-                                .align_x(iced::alignment::Horizontal::Left)
-                                .into(),
+                            widget::text(label).align_x(iced::Alignment::Start).into(),
                             widget::horizontal_space().width(Length::Fill).into(),
                             widget::text(key).into(),
                         ])

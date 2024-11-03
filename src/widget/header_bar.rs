@@ -292,7 +292,7 @@ impl<'a, Message: Clone + 'static> HeaderBar<'a, Message> {
                 widget::row::with_children(start)
                     .align_y(iced::Alignment::Center)
                     .apply(widget::container)
-                    .align_x(iced::alignment::Horizontal::Left)
+                    .align_x(iced::Alignment::Start)
                     .width(Length::Shrink),
             )
             // If elements exist in the center region, use them here.
@@ -301,8 +301,7 @@ impl<'a, Message: Clone + 'static> HeaderBar<'a, Message> {
                 widget::row::with_children(center)
                     .align_y(iced::Alignment::Center)
                     .apply(widget::container)
-                    .align_x(iced::alignment::Horizontal::Center)
-                    .width(Length::Fill)
+                    .center_x(Length::Fill)
                     .into()
             } else if self.title.is_empty() {
                 widget::horizontal_space().width(Length::Fill).into()
@@ -313,7 +312,7 @@ impl<'a, Message: Clone + 'static> HeaderBar<'a, Message> {
                 widget::row::with_children(end)
                     .align_y(iced::Alignment::Center)
                     .apply(widget::container)
-                    .align_x(iced::alignment::Horizontal::Right)
+                    .align_x(iced::Alignment::End)
                     .width(Length::Shrink),
             )
             .align_y(iced::Alignment::Center)

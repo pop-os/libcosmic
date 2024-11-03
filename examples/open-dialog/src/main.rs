@@ -233,7 +233,7 @@ fn center<'a>(input: impl Into<Element<'a, Message>> + 'a) -> Element<'a, Messag
     iced::widget::container(input.into())
         .width(iced::Length::Fill)
         .height(iced::Length::Fill)
-        .align_x(iced::alignment::Horizontal::Center)
-        .align_y(iced::alignment::Vertical::Center)
+        .align_x(iced::Alignment::Center)
+        .align_y(iced::Alignment::Center)
         .into()
 }

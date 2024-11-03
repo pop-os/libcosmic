@@ -5,14 +5,13 @@ use iced::widget::Container;
 use iced::Vector;
 pub use subscription::*;
 
-use iced_core::alignment;
 use iced_core::event::{self, Event};
 use iced_core::layout;
 use iced_core::mouse;
 use iced_core::overlay;
 use iced_core::renderer;
 use iced_core::widget::Tree;
-use iced_core::{Clipboard, Element, Layout, Length, Padding, Rectangle, Shell, Widget};
+use iced_core::{Alignment, Clipboard, Element, Layout, Length, Padding, Rectangle, Shell, Widget};
 use std::{fmt::Debug, hash::Hash};
 
 pub use iced_widget::container::{Catalog, Style};
@@ -133,14 +132,14 @@ where
 
     /// Sets the content alignment for the horizontal axis of the [`Container`].
     #[must_use]
-    pub fn align_x(mut self, alignment: alignment::Horizontal) -> Self {
+    pub fn align_x(mut self, alignment: Alignment) -> Self {
         self.container = self.container.align_x(alignment);
         self
     }
 
     /// Sets the content alignment for the vertical axis of the [`Container`].
     #[must_use]
-    pub fn align_y(mut self, alignment: alignment::Vertical) -> Self {
+    pub fn align_y(mut self, alignment: Alignment) -> Self {
         self.container = self.container.align_y(alignment);
         self
     }
@@ -156,6 +155,13 @@ where
     #[must_use]
     pub fn center_y(mut self, height: Length) -> Self {
         self.container = self.container.center_y(height);
+        self
+    }
+
+    /// Centers the contents in the horizontal and vertical axis of the [`Container`].
+    #[must_use]
+    pub fn center(mut self, length: Length) -> Self {
+        self.container = self.container.center(length);
         self
     }
 

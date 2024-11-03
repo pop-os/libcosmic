@@ -558,7 +558,7 @@ where
                     button::custom(
                         text(reset_to_default)
                             .width(self.width)
-                            .align_x(iced_core::alignment::Horizontal::Center)
+                            .align_x(iced_core::Alignment::Center)
                     )
                     .width(self.width)
                     .on_press(on_update(ColorPickerUpdate::Reset))
@@ -574,14 +574,14 @@ where
                     button::custom(
                         text(cancel)
                             .width(self.width)
-                            .align_x(iced_core::alignment::Horizontal::Center)
+                            .align_x(iced_core::Alignment::Center)
                     )
                     .width(self.width)
                     .on_press(on_update(ColorPickerUpdate::Cancel)),
                     button::custom(
                         text(save)
                             .width(self.width)
-                            .align_x(iced_core::alignment::Horizontal::Center)
+                            .align_x(iced_core::Alignment::Center)
                     )
                     .width(self.width)
                     .on_press(on_update(ColorPickerUpdate::AppliedColor))

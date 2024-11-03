@@ -11,10 +11,7 @@ pub use self::model::{Message, Model};
 use crate::widget::{button, container, icon, row, text};
 use crate::{theme, Element};
 use apply::Apply;
-use iced::{
-    alignment::{Horizontal, Vertical},
-    Alignment, Length,
-};
+use iced::{Alignment, Length};
 use iced_core::{Border, Shadow};
 
 pub struct SpinButton<'a, Message> {
@@ -49,10 +46,7 @@ impl<'a, Message: 'static> SpinButton<'a, Message> {
                 icon::from_name("list-remove-symbolic")
                     .size(16)
                     .apply(container)
-                    .width(Length::Fixed(32.0))
-                    .height(Length::Fixed(32.0))
-                    .align_x(Horizontal::Center)
-                    .align_y(Vertical::Center)
+                    .center(Length::Fixed(32.0))
                     .apply(button::custom)
                     .width(Length::Fixed(32.0))
                     .height(Length::Fixed(32.0))
@@ -61,17 +55,13 @@ impl<'a, Message: 'static> SpinButton<'a, Message> {
                     .into(),
                 text::title4(label)
                     .apply(container)
-                    .width(Length::Fixed(48.0))
-                    .align_x(Horizontal::Center)
-                    .align_y(Vertical::Center)
+                    .center_x(Length::Fixed(48.0))
+                    .align_y(Alignment::Center)
                     .into(),
                 icon::from_name("list-add-symbolic")
                     .size(16)
                     .apply(container)
-                    .width(Length::Fixed(32.0))
-                    .height(Length::Fixed(32.0))
-                    .align_x(Horizontal::Center)
-                    .align_y(Vertical::Center)
+                    .center(Length::Fixed(32.0))
                     .apply(button::custom)
                     .width(Length::Fixed(32.0))
                     .height(Length::Fixed(32.0))
@@ -83,9 +73,8 @@ impl<'a, Message: 'static> SpinButton<'a, Message> {
             .height(Length::Fixed(32.0))
             .align_y(Alignment::Center),
         )
-        .align_y(Vertical::Center)
         .width(Length::Shrink)
-        .height(Length::Fixed(32.0))
+        .center_y(Length::Fixed(32.0))
         .class(theme::Container::custom(container_style))
         .apply(Element::from)
         .map(on_change)

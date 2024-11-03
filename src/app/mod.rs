@@ -54,7 +54,9 @@ pub use self::core::Core;
 pub use self::settings::Settings;
 use crate::prelude::*;
 use crate::theme::THEME;
-use crate::widget::{context_drawer, horizontal_space, id_container, menu, nav_bar, popover};
+use crate::widget::{
+    container, context_drawer, horizontal_space, id_container, menu, nav_bar, popover,
+};
 use apply::Apply;
 use iced::window;
 use iced::{Length, Subscription};
@@ -694,6 +696,9 @@ impl<App: Application> ApplicationExt for App {
     fn view_main(&self) -> Element<Message<Self::Message>> {
         let core = self.core();
         let is_condensed = core.is_condensed();
+        // TODO: More granularity might be needed for different resize border
+        // and window border handling of maximized and tiled windows
+        let sharp_corners = core.window.sharp_corners;
         let focused = core
             .focused_window()
             .is_some_and(|i| Some(i) == self.core().main_window_id());
@@ -706,18 +711,13 @@ impl<App: Application> ApplicationExt for App {
                 .nav_bar()
                 .map(|nav| id_container(nav, iced_core::id::Id::new("COSMIC_nav_bar")))
             {
-                widgets.push(nav.into());
+                widgets.push(container(nav).padding([0, 0, 8, 8]).into());
                 true
             } else {
                 false
             };
 
             if self.nav_model().is_none() || core.show_content() {
-                // Manual spacing must be used due to state workarounds below
-                if has_nav {
-                    widgets.push(horizontal_space().width(Length::Fixed(8.0)).into());
-                }
-
                 let main_content = self.view().map(Message::App);
 
                 //TODO: reduce duplication
@@ -737,14 +737,21 @@ impl<App: Application> ApplicationExt for App {
                                     drawer,
                                     iced_core::id::Id::new("COSMIC_context_drawer"),
                                 ))
-                            }),
+                            })
+                            .apply(container)
+                            .padding([0, 8, 8, 0])
+                            .into(),
                         );
                     } else {
-                        widgets.push(main_content);
+                        //TODO: container and padding are temporary, until
+                        //the `resize_border` is moved to not cover window content
+                        widgets.push(container(main_content).padding([0, 8, 8, 8]).into());
                     }
                 } else {
                     //TODO: hide content when out of space
-                    widgets.push(main_content);
+                    //TODO: container and padding are temporary, until
+                    //the `resize_border` is moved to not cover window content
+                    widgets.push(container(main_content).padding([0, 8, 8, 8]).into());
                     if let Some(context) = self.context_drawer() {
                         widgets.push(
                             crate::widget::ContextDrawer::new_inner(
@@ -753,15 +760,18 @@ impl<App: Application> ApplicationExt for App {
                                 Message::Cosmic(cosmic::Message::ContextDrawer(false)),
                                 context_width,
                             )
-                            .apply(crate::widget::container)
+                            .apply(container)
                             .width(context_width)
                             .apply(|drawer| {
                                 Element::from(id_container(
                                     drawer,
                                     iced_core::id::Id::new("COSMIC_context_drawer"),
                                 ))
-                            }),
-                        );
+                            })
+                            .apply(container)
+                            .padding([0, 8, 8, 0])
+                            .into(),
+                        )
                     } else {
                         //TODO: this element is added to workaround state issues
                         widgets.push(horizontal_space().width(Length::Shrink).into());
@@ -774,11 +784,13 @@ impl<App: Application> ApplicationExt for App {
         let content_col = crate::widget::column::with_capacity(2)
             .spacing(8)
             .push(content_row)
-            .push_maybe(self.footer().map(|footer| footer.map(Message::App)));
+            .push_maybe(
+                self.footer()
+                    .map(|footer| container(footer.map(Message::App)).padding([0, 8, 8, 8])),
+            );
         let content: Element<_> = if core.window.content_container {
             content_col
-                .apply(crate::widget::container)
-                .padding([0, 8, 8, 8])
+                .apply(container)
                 .width(iced::Length::Fill)
                 .height(iced::Length::Fill)
                 .class(crate::theme::Container::WindowBackground)
@@ -842,7 +854,17 @@ impl<App: Application> ApplicationExt for App {
                 None
             })
             // The content element contains every element beneath the header.
-            .push(content);
+            .push(content)
+            .apply(container)
+            .padding(if sharp_corners { 0 } else { 1 })
+            .style(move |theme| container::Style {
+                border: iced::Border {
+                    color: theme.cosmic().bg_divider().into(),
+                    width: if sharp_corners { 0.0 } else { 1.0 },
+                    radius: theme.cosmic().radius_s().map(|x| x + 1.0).into(),
+                },
+                ..Default::default()
+            });
 
         // Show any current dialog on top and centered over the view content
         // We have to use a popover even without a dialog to keep the tree from changing

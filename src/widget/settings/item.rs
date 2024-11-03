@@ -114,8 +114,8 @@ impl<'a, Message: 'static> Item<'a, Message> {
         if let Some(description) = self.description {
             let column = column::with_capacity(2)
                 .spacing(2)
-                .push(text(self.title).wrapping(Wrapping::Word))
-                .push(text(description).wrapping(Wrapping::Word).size(10))
+                .push(text::body(self.title).wrapping(Wrapping::Word))
+                .push(text::caption(description).wrapping(Wrapping::Word))
                 .width(Length::Fill);
 
             contents.push(column.into());
