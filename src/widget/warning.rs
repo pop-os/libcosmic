@@ -4,7 +4,7 @@
 use super::icon;
 use crate::{theme, widget, Element, Renderer, Theme};
 use apply::Apply;
-use iced::{alignment, Alignment, Background, Color, Length};
+use iced::{Alignment, Background, Color, Length};
 use iced_core::{Border, Shadow};
 use std::borrow::Cow;
 
@@ -45,7 +45,7 @@ impl<'a, Message: 'static + Clone> Warning<'a, Message> {
             .apply(widget::container)
             .class(theme::Container::custom(warning_container))
             .padding(10)
-            .align_y(alignment::Vertical::Center)
+            .align_y(Alignment::Center)
             .width(Length::Fill)
     }
 }

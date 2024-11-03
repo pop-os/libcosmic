@@ -564,12 +564,9 @@ impl Application for Window {
             };
 
             widgets.push(
-                scrollable(
-                    container(content.debug(self.debug))
-                        .align_x(iced::alignment::Horizontal::Center),
-                )
-                .width(Length::Fill)
-                .into(),
+                scrollable(container(content.debug(self.debug)).align_x(iced::Alignment::Center))
+                    .width(Length::Fill)
+                    .into(),
             );
         }
 

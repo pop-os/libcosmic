@@ -8,9 +8,9 @@ use crate::{Apply, Element, Renderer, Theme};
 
 use super::overlay::Overlay;
 
-use iced_core::alignment;
 use iced_core::event::{self, Event};
 use iced_core::widget::{Operation, Tree};
+use iced_core::Alignment;
 use iced_core::{
     layout, mouse, overlay as iced_overlay, renderer, Clipboard, Layout, Length, Padding,
     Rectangle, Shell, Vector, Widget,
@@ -46,18 +46,16 @@ impl<'a, Message: Clone + 'static> ContextDrawer<'a, Message> {
                 text::heading(header)
                     .width(Length::FillPortion(1))
                     .height(Length::Fill)
-                    .align_x(alignment::Horizontal::Center)
-                    .align_y(alignment::Vertical::Center),
+                    .align_x(Alignment::Center)
+                    .align_y(Alignment::Center),
             )
             .push(
                 button::text("Close")
                     .trailing_icon(icon::from_name("go-next-symbolic"))
                     .on_press(on_close)
-                    .class(crate::theme::Button::Link)
                     .apply(container)
                     .width(Length::FillPortion(1))
-                    .height(Length::Fill)
-                    .align_x(alignment::Horizontal::Right)
+                    .align_x(Alignment::End)
                     .center_y(Length::Fill),
             )
             // XXX must be done after pushing elements or it may be overwritten by size hints from contents
@@ -89,7 +87,7 @@ impl<'a, Message: Clone + 'static> ContextDrawer<'a, Message> {
         )
         .width(Length::Fill)
         .height(Length::Fill)
-        .align_x(alignment::Horizontal::Right)
+        .align_x(Alignment::End)
         .into()
     }
 

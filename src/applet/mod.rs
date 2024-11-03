@@ -206,10 +206,7 @@ impl Context {
                     .width(Length::Fixed(suggested.0 as f32))
                     .height(Length::Fixed(suggested.1 as f32)),
             )
-            .align_x(Horizontal::Center)
-            .align_y(Vertical::Center)
-            .width(Length::Fill)
-            .height(Length::Fill),
+            .center(Length::Fill),
         )
         .width(Length::Fixed((suggested.0 + 2 * applet_padding) as f32))
         .height(Length::Fixed((suggested.1 + 2 * applet_padding) as f32))

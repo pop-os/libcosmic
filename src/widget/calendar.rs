@@ -5,10 +5,9 @@
 
 use std::cmp;
 
-use crate::iced_core::{Length, Padding};
+use crate::iced_core::{Alignment, Length, Padding};
 use crate::widget::{button, column, grid, icon, row, text, Grid};
 use chrono::{Datelike, Days, Months, NaiveDate, Weekday};
-use iced::alignment::{Horizontal, Vertical};
 
 /// A widget that displays an interactive calendar.
 pub fn calendar<M>(
@@ -62,7 +61,7 @@ where
 {
     fn from(this: Calendar<'a, Message>) -> Self {
         let date = text(this.selected.format("%B %-d, %Y").to_string()).size(18);
-        let day_of_week = text(this.selected.format("%A").to_string()).size(14);
+        let day_of_week = text::body(this.selected.format("%A").to_string());
 
         let month_controls = row::with_capacity(2)
             .push(
@@ -86,7 +85,7 @@ where
                 text(first_day_of_week.to_string())
                     .size(12)
                     .width(Length::Fixed(36.0))
-                    .align_x(Horizontal::Center),
+                    .align_x(Alignment::Center),
             );
 
             first_day_of_week = first_day_of_week.succ();
@@ -143,14 +142,10 @@ fn date_button<Message>(
         button::ButtonClass::Text
     };
 
-    let button = button::custom(
-        text(format!("{}", date.day()))
-            .align_x(Horizontal::Center)
-            .align_y(Vertical::Center),
-    )
-    .class(style)
-    .height(Length::Fixed(36.0))
-    .width(Length::Fixed(36.0));
+    let button = button::custom(text(format!("{}", date.day())).center())
+        .class(style)
+        .height(Length::Fixed(36.0))
+        .width(Length::Fixed(36.0));
 
     if is_month {
         button.on_press((on_select)(set_day(date, date.day())))
