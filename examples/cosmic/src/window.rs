@@ -1,16 +1,16 @@
 /// Copyright 2022 System76 <info@system76.com>
 // SPDX-License-Identifier: MPL-2.0
 use cosmic::{
+    app::{command, Application, Core},
     cosmic_theme::{
         palette::{rgb::Rgb, Srgba},
         ThemeBuilder,
     },
-    font::load_fonts,
-    iced::{self, Application, Length, Subscription, Task},
     iced::{
-        subscription,
+        self,
         widget::{self, column, container, horizontal_space, row, text},
         window::{self, close, drag, minimize, toggle_maximize},
+        Length, Size, Subscription,
     },
     iced_futures::event::listen_raw,
     keyboard_nav,
@@ -20,7 +20,7 @@ use cosmic::{
         button, header_bar, icon, list, nav_bar, nav_bar_toggle, scrollable, segmented_button,
         settings, warning,
     },
-    Element,
+    ApplicationExt, Element,
 };
 use cosmic_time::{Instant, Timeline};
 use std::{
@@ -145,8 +145,8 @@ impl Default for Page {
 static WINDOW_WIDTH: AtomicU32 = AtomicU32::new(0);
 const BREAK_POINT: u32 = 900;
 
-#[derive(Default)]
 pub struct Window {
+    core: Core,
     bluetooth: bluetooth::State,
     debug: bool,
     demo: demo::State,
@@ -161,7 +161,6 @@ pub struct Window {
     show_minimize: bool,
     system_and_accounts: system_and_accounts::State,
     theme: Theme,
-    title: String,
     show_warning: bool,
     warning_message: String,
     scale_factor: f64,
@@ -210,7 +209,6 @@ pub enum Message {
     ToggleNavBar,
     ToggleNavBarCondensed,
     ToggleWarning,
-    FontsLoaded,
     Tick(Instant),
 }
 
@@ -231,7 +229,7 @@ impl Window {
     }
 
     fn page_title<Message: 'static>(&self, page: Page) -> Element<Message> {
-        row!(text(page.title()).size(28), horizontal_space(Length::Fill),).into()
+        row!(text(page.title()).size(28), horizontal_space(),).into()
     }
 
     fn is_condensed(&self) -> bool {
@@ -253,10 +251,7 @@ impl Window {
                 .label(page.title())
                 .padding(0)
                 .on_press(Message::from(page)),
-            row!(
-                text(sub_page.title()).size(28),
-                horizontal_space(Length::Fill),
-            ),
+            row!(text(sub_page.title()).size(28), horizontal_space(),),
         )
         .spacing(10)
         .into()
@@ -281,7 +276,7 @@ impl Window {
                     )
                     .spacing(2)
                     .into(),
-                    horizontal_space(iced::Length::Fill).into(),
+                    horizontal_space().into(),
                     icon::from_name("go-next-symbolic").size(20).icon().into(),
                 ])
                 .spacing(16),
@@ -290,7 +285,7 @@ impl Window {
         )
         .width(Length::Fill)
         .padding(0)
-        .style(theme::iced::Button::Transparent)
+        .class(theme::iced::Button::Transparent)
         .on_press(Message::from(sub_page.into_page()))
         // .id(BTN.clone())
         .into()
@@ -322,17 +317,43 @@ impl Application for Window {
     type Executor = cosmic::executor::Default;
     type Flags = ();
     type Message = Message;
-    type Theme = Theme;
 
-    fn new(_flags: ()) -> (Self, Task<Self::Message>) {
-        let mut window = Window::default()
-            .nav_bar_toggled(true)
-            .show_maximize(true)
-            .show_minimize(true);
+    /// The unique application ID to supply to the window manager.
+    const APP_ID: &'static str = "org.cosmic.CosmicDemo";
 
-        window.title = String::from("COSMIC Design System - Iced");
+    fn core(&self) -> &Core {
+        &self.core
+    }
+
+    fn core_mut(&mut self) -> &mut Core {
+        &mut self.core
+    }
+
+    fn init(core: Core, _flags: ()) -> (Self, command::Task<Self::Message>) {
+        let mut window = Window {
+            core,
+            bluetooth: bluetooth::State::default(),
+            debug: false,
+            demo: demo::State::default(),
+            editor: editor::State::default(),
+            desktop: desktop::State::default(),
+            nav_bar: segmented_button::SingleSelectModel::default(),
+            nav_id_to_page: segmented_button::SecondaryMap::default(),
+            nav_bar_toggled_condensed: false,
+            nav_bar_toggled: true,
+            page: Page::default(),
+            show_maximize: true,
+            show_minimize: true,
+            system_and_accounts: system_and_accounts::State::default(),
+            theme: Theme::default(),
+            show_warning: false,
+            warning_message: String::from("You were not supposed to touch that."),
+            scale_factor: 1.0,
+            scale_factor_string: String::new(),
+            timeline: Rc::new(RefCell::new(Timeline::default())),
+        };
+
         window.set_scale_factor(1.0);
-        window.warning_message = String::from("You were not supposed to touch that.");
 
         window.insert_page(Page::Demo);
         window.insert_page(Page::Editor);
@@ -352,19 +373,18 @@ impl Application for Window {
         window.insert_page(Page::Applications);
         window.demo.timeline = window.timeline.clone();
 
-        (window, load_fonts().map(|_| Message::FontsLoaded))
-    }
+        let command = window.set_window_title(
+            "COSMIC Design System - Iced".into(),
+            window.core.main_window_id().unwrap(),
+        );
 
-    fn title(&self) -> String {
-        self.title.clone()
+        (window, command)
     }
 
     fn subscription(&self) -> Subscription<Message> {
-        let window_break = listen_raw(|event, _| match event {
-            cosmic::iced::Event::Window(
-                _window_id,
-                window::Event::Resized { width, height: _ },
-            ) => {
+        let window_break = listen_raw(|event, _, _| match event {
+            cosmic::iced::Event::Window(window::Event::Resized(Size { width, height: _ })) => {
+                let width = width as u32;
                 let old_width = WINDOW_WIDTH.load(Ordering::Relaxed);
                 if old_width == 0
                     || old_width < BREAK_POINT && width > BREAK_POINT
@@ -385,12 +405,12 @@ impl Application for Window {
             self.timeline
                 .borrow()
                 .as_subscription()
-                .map(|(_, instant)| Self::Message::Tick(instant)),
+                .map(|(_, instant)| Message::Tick(instant)),
         ])
     }
 
-    fn update(&mut self, message: Message) -> iced::Task<Self::Message> {
-        let mut ret = Task::none();
+    fn update(&mut self, message: Message) -> command::Task<Self::Message> {
+        let mut ret = command::Task::none();
         match message {
             Message::NavBar(key) => {
                 if let Some(page) = self.nav_id_to_page.get(key).copied() {
@@ -404,7 +424,10 @@ impl Application for Window {
             }
             Message::Demo(message) => match self.demo.update(message) {
                 Some(demo::Output::Debug(debug)) => self.debug = debug,
-                Some(demo::Output::ScalingFactor(factor)) => self.set_scale_factor(factor),
+                Some(demo::Output::ScalingFactor(factor)) => {
+                    self.set_scale_factor(factor);
+                    ret = self.core.set_scaling_factor(factor);
+                }
                 Some(demo::Output::ThemeChanged(theme)) => {
                     self.theme = match theme {
                         demo::ThemeVariant::Light => Theme::light(),
@@ -424,6 +447,7 @@ impl Application for Window {
                         )),
                         demo::ThemeVariant::System => cosmic::theme::system_preference(),
                     };
+                    ret = command::set_theme(self.theme.clone())
                 }
                 Some(demo::Output::ToggleWarning) => self.toggle_warning(),
                 None => (),
@@ -451,7 +475,6 @@ impl Application for Window {
                 _ => (),
             },
             Message::ToggleWarning => self.toggle_warning(),
-            Message::FontsLoaded => {} // Message::Tick(instant) => self.timeline.borrow_mut().now(instant),            Message::Tick(instant) => self.timeline.borrow_mut().now(instant),
             Message::Tick(instant) => self.timeline.borrow_mut().now(instant),
         }
         ret
@@ -577,7 +600,7 @@ impl Application for Window {
             .padding([0, 8, 8, 8])
             .width(Length::Fill)
             .height(Length::Fill)
-            .style(theme::Container::Background)
+            .class(theme::Container::Background)
             .into();
         let warning = warning(&self.warning_message)
             .on_close(Message::ToggleWarning)
@@ -587,22 +610,14 @@ impl Application for Window {
                 header,
                 container(column(vec![
                     warning,
-                    iced::widget::vertical_space(Length::Fixed(12.0)).into(),
+                    iced::widget::Space::with_height(Length::Fixed(12.0)).into(),
                     content,
                 ]))
-                .style(theme::Container::Background)
+                .class(theme::Container::Background)
             ]
             .into()
         } else {
             column(vec![header, content]).into()
         }
-    }
-
-    fn scale_factor(&self) -> f64 {
-        self.scale_factor
-    }
-
-    fn theme(&self) -> Theme {
-        self.theme.clone()
     }
 }

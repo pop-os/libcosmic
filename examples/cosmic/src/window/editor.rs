@@ -71,8 +71,8 @@ impl State {
             .apply(button::icon)
             .on_press(Message::AddNew);
 
-        let tab_header = row!(tabs, new_tab_button).align_items(Alignment::Center);
+        let tab_header = row!(tabs, new_tab_button).align_y(Alignment::Center);
 
-        row!(tab_header, horizontal_space(Length::Fill)).into()
+        row!(tab_header, horizontal_space()).into()
     }
 }
