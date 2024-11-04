@@ -32,19 +32,46 @@ pub struct About {
     /// The license from a list of known licenses.
     pub license_type: Option<String>,
     /// The URL of the application’s support page.
+    #[setters(skip)]
     pub support_url: Option<String>,
     /// The URL of the application’s repository.
+    #[setters(skip)]
     pub repository_url: Option<String>,
     /// Translators who contributed to the application.
     #[setters(skip)]
     pub translators: BTreeMap<String, String>,
+    /// Links associated with the application.
+    #[setters(skip)]
+    pub links: BTreeMap<String, String>,
     /// The application’s version.
     pub version: Option<String>,
     /// The application’s website.
+    #[setters(skip)]
     pub website: Option<String>,
 }
 
 impl About {
+    pub fn set_repository_url(mut self, repository_url: impl Into<String>) -> Self {
+        let repository_url = repository_url.into();
+        self.repository_url = Some(repository_url.clone());
+        self.links.insert("Repository".into(), repository_url);
+        self
+    }
+
+    pub fn set_support_url(mut self, support_url: impl Into<String>) -> Self {
+        let support_url = support_url.into();
+        self.support_url = Some(support_url.clone());
+        self.links.insert("Support".into(), support_url);
+        self
+    }
+
+    pub fn set_website(mut self, website: impl Into<String>) -> Self {
+        let website = website.into();
+        self.website = Some(website.clone());
+        self.links.insert("Website".into(), website);
+        self
+    }
+
     pub fn set_artists(mut self, artists: impl Into<BTreeMap<String, String>>) -> Self {
         let artists: BTreeMap<String, String> = artists.into();
         self.artists = artists

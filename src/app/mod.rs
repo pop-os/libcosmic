@@ -604,98 +604,84 @@ where
 
     #[cfg(feature = "desktop")]
     /// Provides information about the application.
-    fn about(&self) -> Option<About> {
+    fn about(&self) -> Option<&About> {
         None
     }
 
     #[cfg(feature = "desktop")]
     /// Constructs the view for the about section.
-    fn about_view<'a>(&self) -> Element<'a, crate::app::cosmic::Message> {
-        if let Some(about) = self.about() {
-            let spacing = crate::theme::active().cosmic().spacing;
+    fn about_view<'a>(&'a self) -> Option<Element<'a, crate::app::cosmic::Message>> {
+        let about = self.about()?;
 
-            let section = |list: BTreeMap<String, String>, title: &'a str| {
-                if list.is_empty() {
-                    None
-                } else {
-                    let developers: Vec<Element<crate::app::cosmic::Message>> = list
-                        .into_iter()
-                        .map(|(name, url)| {
-                            widget::button::custom(
-                                widget::row()
-                                    .push(widget::text(name))
-                                    .push(horizontal_space())
-                                    .push(crate::widget::icon::from_name("link-symbolic").icon())
-                                    .padding(spacing.space_xxs)
-                                    .align_y(Vertical::Center),
-                            )
-                            .class(crate::theme::Button::Text)
-                            .on_press(crate::app::cosmic::Message::OpenUrl(url))
-                            .width(Length::Fill)
-                            .into()
-                        })
-                        .collect();
-                    Some(widget::settings::section().title(title).extend(developers))
-                }
-            };
+        let spacing = crate::theme::active().cosmic().spacing;
 
-            let application_name = about.application_name.map(widget::text::title3);
-            let application_icon = about
-                .application_icon
-                .map(|icon| crate::desktop::IconSource::Name(icon).as_cosmic_icon());
-
-            let mut links: BTreeMap<String, String> = BTreeMap::new();
-
-            if let Some(website) = about.website {
-                links.insert("Website".into(), website);
+        let section = |list: &'a BTreeMap<String, String>, title: &'a str| {
+            if list.is_empty() {
+                None
+            } else {
+                let developers: Vec<Element<crate::app::cosmic::Message>> = list
+                    .into_iter()
+                    .map(|(name, url)| {
+                        widget::button::custom(
+                            widget::row()
+                                .push(widget::text(name))
+                                .push(horizontal_space())
+                                .push(crate::widget::icon::from_name("link-symbolic").icon())
+                                .padding(spacing.space_xxs)
+                                .align_y(Vertical::Center),
+                        )
+                        .class(crate::theme::Button::Text)
+                        .on_press(crate::app::cosmic::Message::OpenUrl(url.clone()))
+                        .width(Length::Fill)
+                        .into()
+                    })
+                    .collect();
+                Some(widget::settings::section().title(title).extend(developers))
             }
+        };
 
-            if let Some(repository_url) = about.repository_url {
-                links.insert("Repository".into(), repository_url);
-            }
+        let application_name = about.application_name.as_ref().map(widget::text::title3);
+        let application_icon = about
+            .application_icon
+            .as_ref()
+            .map(|icon| crate::desktop::IconSource::Name(icon.clone()).as_cosmic_icon());
 
-            if let Some(support_url) = about.support_url {
-                links.insert("Support".into(), support_url);
-            }
+        let links_section = section(&about.links, "Links");
+        let developers_section = section(&about.developers, "Developers");
+        let designers_section = section(&about.designers, "Designers");
+        let artists_section = section(&about.artists, "Artists");
+        let translators_section = section(&about.translators, "Translators");
+        let documenters_section = section(&about.documenters, "Documenters");
 
-            let links_section = section(links, "Links");
-            let developers_section = section(about.developers, "Developers");
-            let designers_section = section(about.designers, "Designers");
-            let artists_section = section(about.artists, "Artists");
-            let translators_section = section(about.translators, "Translators");
-            let documenters_section = section(about.documenters, "Documenters");
+        let developer_name = about.developer_name.as_ref().map(widget::text);
+        let version = about.version.as_ref().map(widget::button::standard);
+        let license = about.license_type.as_ref().map(widget::button::standard);
+        let copyright = about.copyright.as_ref().map(widget::text::body);
+        let comments = about.comments.as_ref().map(widget::text::body);
 
-            let developer_name = about.developer_name.map(widget::text);
-            let version = about.version.map(widget::button::standard);
-            let license = about.license_type.map(widget::button::standard);
-            let copyright = about.copyright.map(widget::text::body);
-            let comments = about.comments.map(widget::text::body);
-
-            widget::column()
-                .push_maybe(application_icon)
-                .push_maybe(application_name)
-                .push_maybe(developer_name)
-                .push(
-                    widget::row()
-                        .push_maybe(version)
-                        .push_maybe(license)
-                        .spacing(spacing.space_xs),
-                )
-                .push_maybe(links_section)
-                .push_maybe(developers_section)
-                .push_maybe(designers_section)
-                .push_maybe(artists_section)
-                .push_maybe(translators_section)
-                .push_maybe(documenters_section)
-                .push_maybe(comments)
-                .push_maybe(copyright)
-                .align_x(Alignment::Center)
-                .spacing(spacing.space_xs)
-                .width(Length::Fill)
-                .into()
-        } else {
-            crate::widget::text("Test").into()
-        }
+        let about = widget::column()
+            .push_maybe(application_icon)
+            .push_maybe(application_name)
+            .push_maybe(developer_name)
+            .push(
+                widget::row()
+                    .push_maybe(version)
+                    .push_maybe(license)
+                    .spacing(spacing.space_xs),
+            )
+            .push_maybe(links_section)
+            .push_maybe(developers_section)
+            .push_maybe(designers_section)
+            .push_maybe(artists_section)
+            .push_maybe(translators_section)
+            .push_maybe(documenters_section)
+            .push_maybe(comments)
+            .push_maybe(copyright)
+            .align_x(Alignment::Center)
+            .spacing(spacing.space_xs)
+            .width(Length::Fill)
+            .into();
+        Some(about)
     }
 
     /// Overrides the default style for applications
