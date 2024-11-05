@@ -89,7 +89,7 @@ async-fs = { version = "2.1", optional = true }
 cctk = { git = "https://github.com/pop-os/cosmic-protocols", package = "cosmic-client-toolkit", rev = "c8d3a1c", optional = true }
 chrono = "0.4.35"
 cosmic-config = { path = "cosmic-config" }
-cosmic-settings-daemon = { git = "https://github.com/pop-os/dbus-settings-bindings", optional = true }
+cosmic-settings-daemon = { git = "https://github.com/pop-os/dbus-settings-bindings", branch = "zbus5", optional = true }
 css-color = "0.2.5"
 derive_setters = "0.1.5"
 fraction = "0.15.3"
@@ -112,7 +112,7 @@ tracing = "0.1"
 unicode-segmentation = "1.6"
 url = "2.4.0"
 ustr = { version = "1.0.0", features = ["serde"] }
-zbus = { version = "4.2.1", default-features = false, optional = true }
+zbus = { version = "5.1.0", default-features = false, optional = true }
 
 [target.'cfg(unix)'.dependencies]
 freedesktop-icons = "0.2.5"
