@@ -702,6 +702,11 @@ impl<App: Application> ApplicationExt for App {
         let focused = core
             .focused_window()
             .is_some_and(|i| Some(i) == self.core().main_window_id());
+        let main_content_padding = if core.window.content_container {
+            [0, 8, 8, 8]
+        } else {
+            [0, 0, 0, 0]
+        };
 
         let content_row = crate::widget::row::with_children({
             let mut widgets = Vec::with_capacity(4);
@@ -745,13 +750,13 @@ impl<App: Application> ApplicationExt for App {
                     } else {
                         //TODO: container and padding are temporary, until
                         //the `resize_border` is moved to not cover window content
-                        widgets.push(container(main_content).padding([0, 8, 8, 8]).into());
+                        widgets.push(container(main_content).padding(main_content_padding).into());
                     }
                 } else {
                     //TODO: hide content when out of space
                     //TODO: container and padding are temporary, until
                     //the `resize_border` is moved to not cover window content
-                    widgets.push(container(main_content).padding([0, 8, 8, 8]).into());
+                    widgets.push(container(main_content).padding(main_content_padding).into());
                     if let Some(context) = self.context_drawer() {
                         widgets.push(
                             crate::widget::ContextDrawer::new_inner(
