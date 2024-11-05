@@ -51,7 +51,7 @@ desktop-systemd-scope = ["desktop", "dep:zbus"]
 # Enables keycode serialization
 serde-keycode = ["iced_core/serde"]
 # Prevents multiple separate process instances.
-single-instance = ["dep:zbus", "ron"]
+single-instance = ["zbus/blocking-api", "ron"]
 # smol async runtime
 smol = ["dep:smol", "iced/smol", "zbus?/async-io", "rfd?/async-std"]
 tokio = [
@@ -130,7 +130,7 @@ tokio = { version = "1.44.1", optional = true }
 tracing = "0.1.41"
 unicode-segmentation = "1.12"
 url = "2.5.4"
-zbus = { version = "4.4.0", default-features = false, optional = true }
+zbus = { version = "5.7.1", default-features = false, optional = true }
 
 [target.'cfg(unix)'.dependencies]
 freedesktop-icons = { package = "cosmic-freedesktop-icons", git = "https://github.com/pop-os/freedesktop-icons" }
