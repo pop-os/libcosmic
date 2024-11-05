@@ -866,7 +866,8 @@ impl<App: Application> ApplicationExt for App {
                 border: iced::Border {
                     color: theme.cosmic().bg_divider().into(),
                     width: if sharp_corners { 0.0 } else { 1.0 },
-                    radius: theme.cosmic().radius_s().map(|x| x + 1.0).into(),
+                    // x + 2.0 is used to prevent corner artifacts
+                    radius: theme.cosmic().radius_s().map(|x| x + 2.0).into(),
                 },
                 ..Default::default()
             });
