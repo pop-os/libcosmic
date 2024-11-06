@@ -787,7 +787,8 @@ impl<App: Application> ApplicationExt for App {
             widgets
         });
         let content_col = crate::widget::column::with_capacity(2)
-            .spacing(8)
+            //TODO: Add back when the `resize_border` is moved to not cover window content
+            //.spacing(8)
             .push(content_row)
             .push_maybe(
                 self.footer()
