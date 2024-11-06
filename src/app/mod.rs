@@ -809,7 +809,7 @@ impl<App: Application> ApplicationExt for App {
                 .nav_bar()
                 .map(|nav| id_container(nav, iced_core::id::Id::new("COSMIC_nav_bar")))
             {
-                widgets.push(container(nav).padding([0, 0, 8, 8]).into());
+                widgets.push(container(nav).padding([0, 8, 8, 8]).into());
                 true
             } else {
                 false
