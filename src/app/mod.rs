@@ -792,11 +792,18 @@ impl<App: Application> ApplicationExt for App {
         // TODO: More granularity might be needed for different resize border
         // and window border handling of maximized and tiled windows
         let sharp_corners = core.window.sharp_corners;
+        let content_container = core.window.content_container;
+        let nav_bar_active = core.nav_bar_active();
         let focused = core
             .focused_window()
             .is_some_and(|i| Some(i) == self.core().main_window_id());
-        let main_content_padding = if core.window.content_container {
-            [0, 8, 8, 8]
+
+        let main_content_padding = if content_container {
+            if nav_bar_active {
+                [0, 8, 8, 0]
+            } else {
+                [0, 8, 8, 8]
+            }
         } else {
             [0, 0, 0, 0]
         };
@@ -837,7 +844,11 @@ impl<App: Application> ApplicationExt for App {
                                 ))
                             })
                             .apply(container)
-                            .padding([0, 8, 8, 0])
+                            .padding(if content_container {
+                                [0, 8, 8, 0]
+                            } else {
+                                [0, 0, 0, 0]
+                            })
                             .into(),
                         );
                     } else {
@@ -867,7 +878,11 @@ impl<App: Application> ApplicationExt for App {
                                 ))
                             })
                             .apply(container)
-                            .padding([0, 8, 8, 0])
+                            .padding(if content_container {
+                                [0, 8, 8, 0]
+                            } else {
+                                [0, 0, 0, 0]
+                            })
                             .into(),
                         )
                     } else {
@@ -880,8 +895,6 @@ impl<App: Application> ApplicationExt for App {
             widgets
         });
         let content_col = crate::widget::column::with_capacity(2)
-            //TODO: Add back when the `resize_border` is moved to not cover window content
-            //.spacing(8)
             .push(content_row)
             .push_maybe(
                 self.footer()
