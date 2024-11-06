@@ -12,8 +12,8 @@ use iced_core::event::{self, Event};
 use iced_core::widget::{Operation, Tree};
 use iced_core::Alignment;
 use iced_core::{
-    layout, mouse, overlay as iced_overlay, renderer, Clipboard, Layout, Length, Padding,
-    Rectangle, Shell, Vector, Widget,
+    layout, mouse, overlay as iced_overlay, renderer, Clipboard, Layout, Length, Rectangle, Shell,
+    Vector, Widget,
 };
 
 #[must_use]
@@ -34,46 +34,30 @@ impl<'a, Message: Clone + 'static> ContextDrawer<'a, Message> {
     where
         Drawer: Into<Element<'a, Message>>,
     {
+        let cosmic_theme::Spacing {
+            space_m, space_l, ..
+        } = crate::theme::active().cosmic().spacing;
+
         let header = row::with_capacity(3)
-            .padding(Padding {
-                top: 0.0,
-                bottom: 0.0,
-                left: 32.0,
-                right: 32.0,
-            })
+            .padding([space_m, space_l])
             .push(Space::new(Length::FillPortion(1), Length::Fixed(0.0)))
-            .push(
-                text::heading(header)
-                    .width(Length::FillPortion(1))
-                    .height(Length::Fill)
-                    .align_x(Alignment::Center)
-                    .align_y(Alignment::Center),
-            )
+            .push(text::heading(header).width(Length::FillPortion(1)).center())
             .push(
                 button::text("Close")
                     .trailing_icon(icon::from_name("go-next-symbolic"))
                     .on_press(on_close)
                     .apply(container)
                     .width(Length::FillPortion(1))
-                    .align_x(Alignment::End)
-                    .center_y(Length::Fill),
+                    .align_x(Alignment::End),
             )
             // XXX must be done after pushing elements or it may be overwritten by size hints from contents
-            .height(Length::Fixed(80.0))
             .width(Length::Fixed(480.0));
 
-        let pane = column::with_capacity(2)
-            .push(header.height(Length::Fixed(80.)))
-            .push(
-                scrollable(container(drawer.into()).padding(Padding {
-                    top: 0.0,
-                    left: 32.0,
-                    right: 32.0,
-                    bottom: 32.0,
-                }))
+        let pane = column::with_capacity(2).push(header).push(
+            scrollable(container(drawer.into()).padding([0, space_l, space_l, space_l]))
                 .height(Length::Fill)
                 .width(Length::Shrink),
-            );
+        );
 
         // XXX new limits do not exactly handle the max width well for containers
         // XXX this is a hack to get around that
