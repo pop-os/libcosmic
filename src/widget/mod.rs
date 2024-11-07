@@ -361,3 +361,7 @@ pub mod tooltip {
 pub mod warning;
 #[doc(inline)]
 pub use warning::*;
+
+#[cfg(feature = "markdown")]
+#[doc(inline)]
+pub use iced::widget::markdown;

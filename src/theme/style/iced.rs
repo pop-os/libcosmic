@@ -6,6 +6,7 @@
 use crate::theme::{CosmicComponent, Theme, TRANSPARENT_COMPONENT};
 use cosmic_theme::composite::over;
 use iced::{
+    border, color,
     overlay::menu,
     widget::{
         button as iced_button, checkbox as iced_checkbox, container as iced_container, pane_grid,
@@ -1471,5 +1472,17 @@ impl iced_widget::text_editor::Catalog for Theme {
                 selection,
             },
         }
+    }
+}
+
+#[cfg(feature = "markdown")]
+impl iced_widget::markdown::Catalog for Theme {
+    fn code_block<'a>() -> <Self as iced_container::Catalog>::Class<'a> {
+        Container::custom(|_| iced_container::Style {
+            background: Some(color!(0x111111).into()),
+            text_color: Some(Color::WHITE),
+            border: border::rounded(2),
+            ..iced_container::Style::default()
+        })
     }
 }
