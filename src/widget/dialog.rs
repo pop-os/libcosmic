@@ -1,12 +1,12 @@
 use crate::{iced::Length, style, theme, widget, Element};
 use std::borrow::Cow;
 
-pub fn dialog<'a, Message>(title: impl Into<Cow<'a, str>>) -> Dialog<'a, Message> {
-    Dialog::new(title)
+pub fn dialog<'a, Message>() -> Dialog<'a, Message> {
+    Dialog::new()
 }
 
 pub struct Dialog<'a, Message> {
-    title: Cow<'a, str>,
+    title: Option<Cow<'a, str>>,
     icon: Option<Element<'a, Message>>,
     body: Option<Cow<'a, str>>,
     controls: Vec<Element<'a, Message>>,
@@ -16,9 +16,9 @@ pub struct Dialog<'a, Message> {
 }
 
 impl<'a, Message> Dialog<'a, Message> {
-    pub fn new(title: impl Into<Cow<'a, str>>) -> Self {
+    pub fn new() -> Self {
         Self {
-            title: title.into(),
+            title: None,
             icon: None,
             body: None,
             controls: Vec::new(),
@@ -26,6 +26,11 @@ impl<'a, Message> Dialog<'a, Message> {
             secondary_action: None,
             tertiary_action: None,
         }
+    }
+
+    pub fn title(mut self, title: impl Into<Cow<'a, str>>) -> Self {
+        self.title = Some(title.into());
+        self
     }
 
     pub fn icon(mut self, icon: impl Into<Element<'a, Message>>) -> Self {
@@ -70,16 +75,28 @@ impl<'a, Message: Clone + 'static> From<Dialog<'a, Message>> for Element<'a, Mes
         } = theme::THEME.lock().unwrap().cosmic().spacing;
 
         let mut content_col = widget::column::with_capacity(3 + dialog.controls.len() * 2);
-        content_col = content_col.push(widget::text::title3(dialog.title));
+
+        let mut should_space = false;
+
+        if let Some(title) = dialog.title {
+            content_col = content_col.push(widget::text::title3(title));
+            should_space = true;
+        }
         if let Some(body) = dialog.body {
-            content_col =
-                content_col.push(widget::vertical_space().height(Length::Fixed(space_xxs.into())));
+            if should_space {
+                content_col = content_col
+                    .push(widget::vertical_space().height(Length::Fixed(space_xxs.into())));
+            }
             content_col = content_col.push(widget::text::body(body));
+            should_space = true;
         }
         for control in dialog.controls {
-            content_col =
-                content_col.push(widget::vertical_space().height(Length::Fixed(space_s.into())));
+            if should_space {
+                content_col = content_col
+                    .push(widget::vertical_space().height(Length::Fixed(space_s.into())));
+            }
             content_col = content_col.push(control);
+            should_space = true;
         }
 
         let mut content_row = widget::row::with_capacity(2).spacing(space_s);
