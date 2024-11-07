@@ -82,6 +82,7 @@ winit_wgpu = ["winit", "wgpu"]
 # Enables XDG portal integrations
 xdg-portal = ["ashpd"]
 qr_code = ["iced/qr_code"]
+markdown = ["iced/markdown"]
 
 [dependencies]
 apply = "0.3.0"
