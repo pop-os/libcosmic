@@ -286,7 +286,7 @@ impl<'a, Message: Clone + 'static> HeaderBar<'a, Message> {
         };
 
         // Creates the headerbar widget.
-        let mut widget = widget::row::with_capacity(4)
+        let mut widget = widget::row::with_capacity(3)
             // If elements exist in the start region, append them here.
             .push(
                 widget::row::with_children(start)
@@ -351,8 +351,7 @@ impl<'a, Message: Clone + 'static> HeaderBar<'a, Message> {
 
         widget::text::heading(title)
             .apply(widget::container)
-            .center_x(Length::Fill)
-            .center_y(Length::Fill)
+            .center(Length::Fill)
             .into()
     }
 

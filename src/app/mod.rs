@@ -809,7 +809,7 @@ impl<App: Application> ApplicationExt for App {
         };
 
         let content_row = crate::widget::row::with_children({
-            let mut widgets = Vec::with_capacity(4);
+            let mut widgets = Vec::with_capacity(3);
 
             // Insert nav bar onto the left side of the window.
             let has_nav = if let Some(nav) = self
