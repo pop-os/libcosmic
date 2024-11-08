@@ -54,7 +54,8 @@ impl<'a, Message: Clone + 'static> ContextDrawer<'a, Message> {
             );
 
         let pane = column::with_capacity(2).push(header).push(
-            scrollable(container(drawer.into()).padding([0, space_l, space_l, space_l]))
+            container(drawer.into())
+                .padding([0, space_l, space_l, space_l])
                 .height(Length::Fill)
                 .width(Length::Shrink),
         );
