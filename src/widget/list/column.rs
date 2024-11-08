@@ -41,13 +41,13 @@ impl<'a, Message: 'static> ListColumn<'a, Message> {
         }
 
         // Ensure a minimum height of 32.
-        let container = iced::widget::row![
-            crate::widget::container(item).align_y(iced::Alignment::Center),
+        let list_item = iced::widget::row![
+            item.into(),
             crate::widget::vertical_space().height(iced::Length::Fixed(32.))
         ]
         .align_y(iced::Alignment::Center);
 
-        self.children.push(container.into());
+        self.children.push(list_item.into());
         self
     }
 

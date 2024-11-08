@@ -39,6 +39,8 @@ impl<'a, Message: Clone + 'static> ContextDrawer<'a, Message> {
         } = crate::theme::active().cosmic().spacing;
 
         let header = row::with_capacity(3)
+            .width(Length::Fixed(480.0))
+            .align_y(Alignment::Center)
             .padding([space_m, space_l])
             .push(Space::new(Length::FillPortion(1), Length::Fixed(0.0)))
             .push(text::heading(header).width(Length::FillPortion(1)).center())
@@ -49,9 +51,7 @@ impl<'a, Message: Clone + 'static> ContextDrawer<'a, Message> {
                     .apply(container)
                     .width(Length::FillPortion(1))
                     .align_x(Alignment::End),
-            )
-            // XXX must be done after pushing elements or it may be overwritten by size hints from contents
-            .width(Length::Fixed(480.0));
+            );
 
         let pane = column::with_capacity(2).push(header).push(
             scrollable(container(drawer.into()).padding([0, space_l, space_l, space_l]))
