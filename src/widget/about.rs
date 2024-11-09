@@ -8,7 +8,6 @@ use {
     std::collections::BTreeMap,
 };
 
-#[cfg(feature = "desktop")]
 #[derive(Debug, Default, Clone, derive_setters::Setters)]
 #[setters(prefix = "set_", into, strip_option)]
 /// Information about the application.
@@ -126,7 +125,6 @@ impl About {
     }
 }
 
-#[cfg(feature = "desktop")]
 /// Constructs the widget for the about section.
 pub fn about<'a, Message: Clone + 'static>(
     about: &'a About,

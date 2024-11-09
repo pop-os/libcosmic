@@ -370,4 +370,4 @@ pub use iced::widget::markdown;
 pub mod about;
 #[cfg(feature = "desktop")]
 #[doc(inline)]
-pub use about::{about, About};
+pub use about::about;

@@ -6,7 +6,7 @@
 use cosmic::app::{Core, Settings, Task};
 use cosmic::iced::widget::column;
 use cosmic::iced_core::Size;
-use cosmic::widget::{self, nav_bar, About};
+use cosmic::widget::{self, about::About, nav_bar};
 use cosmic::{executor, iced, ApplicationExt, Element};
 
 /// Runs application with these settings
