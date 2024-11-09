@@ -469,6 +469,11 @@ where
         None
     }
 
+    /// App-specific actions at the start of the context drawer header
+    fn context_header_actions(&self) -> Vec<Element<Message<Self::Message>>> {
+        Vec::new()
+    }
+
     /// Displays a dialog in the center of the application window when `Some`.
     fn dialog(&self) -> Option<Element<Self::Message>> {
         None
@@ -834,6 +839,7 @@ impl<App: Application> ApplicationExt for App {
                         widgets.push(
                             context_drawer(
                                 &core.window.context_title,
+                                self.context_header_actions(),
                                 Message::Cosmic(cosmic::Message::ContextDrawer(false)),
                                 main_content,
                                 context.map(Message::App),
@@ -867,6 +873,7 @@ impl<App: Application> ApplicationExt for App {
                         widgets.push(
                             crate::widget::ContextDrawer::new_inner(
                                 &core.window.context_title,
+                                self.context_header_actions(),
                                 context.map(Message::App),
                                 Message::Cosmic(cosmic::Message::ContextDrawer(false)),
                                 context_width,
