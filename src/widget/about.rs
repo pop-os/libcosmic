@@ -206,5 +206,6 @@ pub fn about<'a, Message: Clone + 'static>(
             .spacing(spacing.space_xs)
             .width(Length::Fill),
     )
+    .spacing(spacing.space_xxxs)
     .into()
 }
