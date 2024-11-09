@@ -26,7 +26,7 @@ pub struct About {
     comments: Option<String>,
     /// The application's copyright.
     copyright: Option<String>,
-    /// The license text.
+    /// The license name.
     license: Option<String>,
     /// Artists who contributed to the application.
     #[setters(skip)]
@@ -49,15 +49,7 @@ pub struct About {
 }
 
 impl<'a> About {
-    pub fn links(mut self, links: impl Into<BTreeMap<&'a str, &'a str>>) -> Self {
-        let links: BTreeMap<&'a str, &'a str> = links.into();
-        self.links = links
-            .into_iter()
-            .map(|(k, v)| (k.to_string(), v.to_string()))
-            .collect();
-        self
-    }
-
+    /// Artists who contributed to the application.
     pub fn artists(mut self, artists: impl Into<BTreeMap<&'a str, &'a str>>) -> Self {
         let artists: BTreeMap<&'a str, &'a str> = artists.into();
         self.artists = artists
@@ -67,6 +59,7 @@ impl<'a> About {
         self
     }
 
+    /// Designers who contributed to the application.
     pub fn designers(mut self, designers: impl Into<BTreeMap<&'a str, &'a str>>) -> Self {
         let designers: BTreeMap<&'a str, &'a str> = designers.into();
         self.designers = designers
@@ -76,6 +69,7 @@ impl<'a> About {
         self
     }
 
+    /// Developers who contributed to the application.
     pub fn developers(mut self, developers: impl Into<BTreeMap<&'a str, &'a str>>) -> Self {
         let developers: BTreeMap<&'a str, &'a str> = developers.into();
         self.developers = developers
@@ -85,6 +79,7 @@ impl<'a> About {
         self
     }
 
+    /// Documenters who contributed to the application.
     pub fn documenters(mut self, documenters: impl Into<BTreeMap<&'a str, &'a str>>) -> Self {
         let documenters: BTreeMap<&'a str, &'a str> = documenters.into();
         self.documenters = documenters
@@ -94,11 +89,22 @@ impl<'a> About {
         self
     }
 
+    /// Translators who contributed to the application.
     pub fn translators(mut self, translators: impl Into<BTreeMap<&'a str, &'a str>>) -> Self {
         let translators: BTreeMap<&'a str, &'a str> = translators.into();
         self.translators = translators
             .into_iter()
             .map(|(k, v)| (k.to_string(), format!("mailto:{v}")))
+            .collect();
+        self
+    }
+
+    /// Links associated with the application.
+    pub fn links(mut self, links: impl Into<BTreeMap<&'a str, &'a str>>) -> Self {
+        let links: BTreeMap<&'a str, &'a str> = links.into();
+        self.links = links
+            .into_iter()
+            .map(|(k, v)| (k.to_string(), v.to_string()))
             .collect();
         self
     }
@@ -123,28 +129,28 @@ pub fn about<'a, Message: Clone + 'static>(
     let spacing = crate::theme::active().cosmic().spacing;
 
     let section = |list: &'a BTreeMap<String, String>, title: &'a str| {
-        if list.is_empty() {
-            None
-        } else {
-            let developers: Vec<Element<Message>> = list
-                .iter()
-                .map(|(name, url)| {
-                    widget::button::custom(
-                        widget::row()
-                            .push(widget::text(name))
-                            .push(horizontal_space())
-                            .push(crate::widget::icon::from_name("link-symbolic").icon())
-                            .padding(spacing.space_xxs)
-                            .align_y(Vertical::Center),
-                    )
-                    .class(crate::theme::Button::Text)
-                    .on_press(on_url_press(url.to_string()))
-                    .width(Length::Fill)
-                    .into()
-                })
-                .collect();
-            Some(widget::settings::section().title(title).extend(developers))
-        }
+        (!list.is_empty()).then_some({
+            let developers: Vec<Element<Message>> =
+                list.iter()
+                    .map(|(name, url)| {
+                        widget::button::custom(
+                            widget::row()
+                                .push(widget::text(name))
+                                .push(horizontal_space())
+                                .push_maybe((!url.is_empty()).then_some(
+                                    crate::widget::icon::from_name("link-symbolic").icon(),
+                                ))
+                                .padding(spacing.space_xxs)
+                                .align_y(Vertical::Center),
+                        )
+                        .class(crate::theme::Button::Text)
+                        .on_press(on_url_press(url.clone()))
+                        .width(Length::Fill)
+                        .into()
+                    })
+                    .collect();
+            widget::settings::section().title(title).extend(developers)
+        })
     };
 
     let application_name = about.name.as_ref().map(widget::text::title3);
@@ -159,11 +165,26 @@ pub fn about<'a, Message: Clone + 'static>(
     let artists_section = section(&about.artists, "Artists");
     let translators_section = section(&about.translators, "Translators");
     let documenters_section = section(&about.documenters, "Documenters");
-
     let author = about.author.as_ref().map(widget::text);
     let version = about.version.as_ref().map(widget::button::standard);
     let license = about.license.as_ref().map(|license| {
-        widget::button::standard(license).on_press_maybe(about.license_url().map(on_url_press))
+        let url = about.license_url();
+        widget::settings::section().title("License").add(
+            widget::button::custom(
+                widget::row()
+                    .push(widget::text(license))
+                    .push(horizontal_space())
+                    .push_maybe(
+                        url.is_some()
+                            .then_some(crate::widget::icon::from_name("link-symbolic").icon()),
+                    )
+                    .padding(spacing.space_xxs)
+                    .align_y(Vertical::Center),
+            )
+            .class(crate::theme::Button::Text)
+            .on_press(on_url_press(url.unwrap_or(String::new())))
+            .width(Length::Fill),
+        )
     });
     let copyright = about.copyright.as_ref().map(widget::text::body);
     let comments = about.comments.as_ref().map(widget::text::body);
@@ -173,12 +194,8 @@ pub fn about<'a, Message: Clone + 'static>(
             .push_maybe(application_icon)
             .push_maybe(application_name)
             .push_maybe(author)
-            .push(
-                widget::row()
-                    .push_maybe(version)
-                    .push_maybe(license)
-                    .spacing(spacing.space_xs),
-            )
+            .push_maybe(version)
+            .push_maybe(license)
             .push_maybe(links_section)
             .push_maybe(developers_section)
             .push_maybe(designers_section)
