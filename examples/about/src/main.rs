@@ -3,10 +3,10 @@
 
 //! Application API example
 
-use cosmic::app::{about::About, Core, Settings, Task};
+use cosmic::app::{Core, Settings, Task};
 use cosmic::iced::widget::column;
 use cosmic::iced_core::Size;
-use cosmic::widget::{self, nav_bar};
+use cosmic::widget::{self, nav_bar, About};
 use cosmic::{executor, iced, ApplicationExt, Element};
 
 /// Runs application with these settings
@@ -27,7 +27,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 #[derive(Clone, Debug)]
 pub enum Message {
     ToggleAbout,
-    Cosmic(cosmic::app::cosmic::Message),
+    Open(String),
 }
 
 /// The [`App`] stores application-specific state.
@@ -100,11 +100,7 @@ impl cosmic::Application for App {
             return None;
         }
 
-        if let Some(abuot_view) = self.about_view() {
-            Some(abuot_view.map(Message::Cosmic))
-        } else {
-            None
-        }
+        Some(widget::about(&self.about, Message::Open))
     }
 
     /// Handle application events here.
@@ -114,15 +110,12 @@ impl cosmic::Application for App {
                 self.core.window.show_context = !self.core.window.show_context;
                 self.core.set_show_context(self.core.window.show_context)
             }
-            Message::Cosmic(message) => {
-                return cosmic::command::message(cosmic::app::Message::Cosmic(message))
-            }
+            Message::Open(url) => match open::that_detached(url) {
+                Ok(_) => (),
+                Err(err) => tracing::error!("Failed to open URL: {err}"),
+            },
         }
         Task::none()
-    }
-
-    fn about(&self) -> Option<&About> {
-        Some(&self.about)
     }
 
     /// Creates a view after each update.

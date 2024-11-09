@@ -365,3 +365,7 @@ pub use warning::*;
 #[cfg(feature = "markdown")]
 #[doc(inline)]
 pub use iced::widget::markdown;
+
+#[cfg(feature = "desktop")]
+pub mod about;
+pub use about::{about, About};

@@ -1,9 +1,17 @@
 #[cfg(feature = "desktop")]
-use std::collections::BTreeMap;
+use {
+    crate::{
+        iced::{alignment::Vertical, Alignment, Length},
+        widget::{self, horizontal_space},
+        Element,
+    },
+    std::collections::BTreeMap,
+};
 
 #[cfg(feature = "desktop")]
 #[derive(Debug, Default, Clone, derive_setters::Setters)]
 #[setters(prefix = "set_", into, strip_option)]
+/// Information about the application.
 pub struct About {
     /// The application's name.
     pub application_name: Option<String>,
@@ -116,4 +124,82 @@ impl About {
             .collect();
         self
     }
+}
+
+#[cfg(feature = "desktop")]
+/// Constructs the widget for the about section.
+pub fn about<'a, Message: Clone + 'static>(
+    about: &'a About,
+    on_url_press: impl Fn(String) -> Message,
+) -> Element<'a, Message> {
+    let spacing = crate::theme::active().cosmic().spacing;
+
+    let section = |list: &'a BTreeMap<String, String>, title: &'a str| {
+        if list.is_empty() {
+            None
+        } else {
+            let developers: Vec<Element<Message>> = list
+                .into_iter()
+                .map(|(name, url)| {
+                    widget::button::custom(
+                        widget::row()
+                            .push(widget::text(name))
+                            .push(horizontal_space())
+                            .push(crate::widget::icon::from_name("link-symbolic").icon())
+                            .padding(spacing.space_xxs)
+                            .align_y(Vertical::Center),
+                    )
+                    .class(crate::theme::Button::Text)
+                    .on_press(on_url_press(url.clone()))
+                    .width(Length::Fill)
+                    .into()
+                })
+                .collect();
+            Some(widget::settings::section().title(title).extend(developers))
+        }
+    };
+
+    let application_name = about.application_name.as_ref().map(widget::text::title3);
+    let application_icon = about
+        .application_icon
+        .as_ref()
+        .map(|icon| crate::desktop::IconSource::Name(icon.clone()).as_cosmic_icon());
+
+    let links_section = section(&about.links, "Links");
+    let developers_section = section(&about.developers, "Developers");
+    let designers_section = section(&about.designers, "Designers");
+    let artists_section = section(&about.artists, "Artists");
+    let translators_section = section(&about.translators, "Translators");
+    let documenters_section = section(&about.documenters, "Documenters");
+
+    let developer_name = about.developer_name.as_ref().map(widget::text);
+    let version = about.version.as_ref().map(widget::button::standard);
+    let license = about.license_type.as_ref().map(widget::button::standard);
+    let copyright = about.copyright.as_ref().map(widget::text::body);
+    let comments = about.comments.as_ref().map(widget::text::body);
+
+    widget::scrollable(
+        widget::column()
+            .push_maybe(application_icon)
+            .push_maybe(application_name)
+            .push_maybe(developer_name)
+            .push(
+                widget::row()
+                    .push_maybe(version)
+                    .push_maybe(license)
+                    .spacing(spacing.space_xs),
+            )
+            .push_maybe(links_section)
+            .push_maybe(developers_section)
+            .push_maybe(designers_section)
+            .push_maybe(artists_section)
+            .push_maybe(translators_section)
+            .push_maybe(documenters_section)
+            .push_maybe(comments)
+            .push_maybe(copyright)
+            .align_x(Alignment::Center)
+            .spacing(spacing.space_xs)
+            .width(Length::Fill),
+    )
+    .into()
 }
