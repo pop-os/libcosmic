@@ -368,4 +368,5 @@ pub use iced::widget::markdown;
 
 #[cfg(feature = "desktop")]
 pub mod about;
+#[cfg(feature = "desktop")]
 pub use about::{about, About};
