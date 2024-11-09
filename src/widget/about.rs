@@ -1,5 +1,3 @@
-use iced_widget::tooltip::Position;
-use license::License;
 #[cfg(feature = "desktop")]
 use {
     crate::{
@@ -7,7 +5,7 @@ use {
         widget::{self, horizontal_space},
         Element,
     },
-    std::collections::BTreeMap,
+    license::License,
 };
 
 #[derive(Debug, Default, Clone, derive_setters::Setters)]
@@ -30,28 +28,28 @@ pub struct About {
     license: Option<String>,
     /// Artists who contributed to the application.
     #[setters(skip)]
-    artists: BTreeMap<String, String>,
+    artists: Vec<(String, String)>,
     /// Designers who contributed to the application.
     #[setters(skip)]
-    designers: BTreeMap<String, String>,
+    designers: Vec<(String, String)>,
     /// Developers who contributed to the application.
     #[setters(skip)]
-    developers: BTreeMap<String, String>,
+    developers: Vec<(String, String)>,
     /// Documenters who contributed to the application.
     #[setters(skip)]
-    documenters: BTreeMap<String, String>,
+    documenters: Vec<(String, String)>,
     /// Translators who contributed to the application.
     #[setters(skip)]
-    translators: BTreeMap<String, String>,
+    translators: Vec<(String, String)>,
     /// Links associated with the application.
     #[setters(skip)]
-    links: BTreeMap<String, String>,
+    links: Vec<(String, String)>,
 }
 
 impl<'a> About {
     /// Artists who contributed to the application.
-    pub fn artists(mut self, artists: impl Into<BTreeMap<&'a str, &'a str>>) -> Self {
-        let artists: BTreeMap<&'a str, &'a str> = artists.into();
+    pub fn artists(mut self, artists: impl Into<Vec<(&'a str, &'a str)>>) -> Self {
+        let artists: Vec<(&'a str, &'a str)> = artists.into();
         self.artists = artists
             .into_iter()
             .map(|(k, v)| (k.to_string(), format!("mailto:{v}")))
@@ -60,8 +58,8 @@ impl<'a> About {
     }
 
     /// Designers who contributed to the application.
-    pub fn designers(mut self, designers: impl Into<BTreeMap<&'a str, &'a str>>) -> Self {
-        let designers: BTreeMap<&'a str, &'a str> = designers.into();
+    pub fn designers(mut self, designers: impl Into<Vec<(&'a str, &'a str)>>) -> Self {
+        let designers: Vec<(&'a str, &'a str)> = designers.into();
         self.designers = designers
             .into_iter()
             .map(|(k, v)| (k.to_string(), format!("mailto:{v}")))
@@ -70,8 +68,8 @@ impl<'a> About {
     }
 
     /// Developers who contributed to the application.
-    pub fn developers(mut self, developers: impl Into<BTreeMap<&'a str, &'a str>>) -> Self {
-        let developers: BTreeMap<&'a str, &'a str> = developers.into();
+    pub fn developers(mut self, developers: impl Into<Vec<(&'a str, &'a str)>>) -> Self {
+        let developers: Vec<(&'a str, &'a str)> = developers.into();
         self.developers = developers
             .into_iter()
             .map(|(k, v)| (k.to_string(), format!("mailto:{v}")))
@@ -80,8 +78,8 @@ impl<'a> About {
     }
 
     /// Documenters who contributed to the application.
-    pub fn documenters(mut self, documenters: impl Into<BTreeMap<&'a str, &'a str>>) -> Self {
-        let documenters: BTreeMap<&'a str, &'a str> = documenters.into();
+    pub fn documenters(mut self, documenters: impl Into<Vec<(&'a str, &'a str)>>) -> Self {
+        let documenters: Vec<(&'a str, &'a str)> = documenters.into();
         self.documenters = documenters
             .into_iter()
             .map(|(k, v)| (k.to_string(), format!("mailto:{v}")))
@@ -90,8 +88,8 @@ impl<'a> About {
     }
 
     /// Translators who contributed to the application.
-    pub fn translators(mut self, translators: impl Into<BTreeMap<&'a str, &'a str>>) -> Self {
-        let translators: BTreeMap<&'a str, &'a str> = translators.into();
+    pub fn translators(mut self, translators: impl Into<Vec<(&'a str, &'a str)>>) -> Self {
+        let translators: Vec<(&'a str, &'a str)> = translators.into();
         self.translators = translators
             .into_iter()
             .map(|(k, v)| (k.to_string(), format!("mailto:{v}")))
@@ -100,11 +98,11 @@ impl<'a> About {
     }
 
     /// Links associated with the application.
-    pub fn links(mut self, links: impl Into<BTreeMap<&'a str, &'a str>>) -> Self {
-        let links: BTreeMap<&'a str, &'a str> = links.into();
+    pub fn links<T: Into<String>>(mut self, links: impl Into<Vec<(T, &'a str)>>) -> Self {
+        let links: Vec<(T, &'a str)> = links.into();
         self.links = links
             .into_iter()
-            .map(|(k, v)| (k.to_string(), v.to_string()))
+            .map(|(k, v)| (k.into(), v.to_string()))
             .collect();
         self
     }
@@ -128,7 +126,7 @@ pub fn about<'a, Message: Clone + 'static>(
 ) -> Element<'a, Message> {
     let spacing = crate::theme::active().cosmic().spacing;
 
-    let section = |list: &'a BTreeMap<String, String>, title: &'a str| {
+    let section = |list: &'a Vec<(String, String)>, title: &'a str| {
         (!list.is_empty()).then_some({
             let developers: Vec<Element<Message>> =
                 list.iter()

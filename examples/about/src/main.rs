@@ -72,7 +72,7 @@ impl cosmic::Application for App {
             .developers([("Michael Murphy", "mmstick@system76.com")])
             .links([
                 ("Website", "https://system76.com/cosmic"),
-                ("Repository", "https://github.com/pop-os/libcosmic)"),
+                ("Repository", "https://github.com/pop-os/libcosmic"),
                 ("Support", "https://github.com/pop-os/libcosmic/issues"),
             ]);
 
