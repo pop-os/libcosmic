@@ -1,3 +1,5 @@
+use iced_widget::tooltip::Position;
+use license::License;
 #[cfg(feature = "desktop")]
 use {
     crate::{
@@ -9,119 +11,107 @@ use {
 };
 
 #[derive(Debug, Default, Clone, derive_setters::Setters)]
-#[setters(prefix = "set_", into, strip_option)]
+#[setters(into, strip_option)]
 /// Information about the application.
 pub struct About {
     /// The application's name.
-    pub application_name: Option<String>,
+    name: Option<String>,
     /// The application's icon name.
-    pub application_icon: Option<String>,
+    icon: Option<String>,
+    /// The application’s version.
+    version: Option<String>,
+    /// Name of the application's author.
+    author: Option<String>,
+    /// Comments about the application.
+    comments: Option<String>,
+    /// The application's copyright.
+    copyright: Option<String>,
+    /// The license text.
+    license: Option<String>,
     /// Artists who contributed to the application.
     #[setters(skip)]
-    pub artists: BTreeMap<String, String>,
-    /// Comments about the application.
-    pub comments: Option<String>,
-    /// The application's copyright.
-    pub copyright: Option<String>,
+    artists: BTreeMap<String, String>,
     /// Designers who contributed to the application.
     #[setters(skip)]
-    pub designers: BTreeMap<String, String>,
-    /// Name of the application's developer.
-    pub developer_name: Option<String>,
+    designers: BTreeMap<String, String>,
     /// Developers who contributed to the application.
     #[setters(skip)]
-    pub developers: BTreeMap<String, String>,
+    developers: BTreeMap<String, String>,
     /// Documenters who contributed to the application.
     #[setters(skip)]
-    pub documenters: BTreeMap<String, String>,
-    /// The license text.
-    pub license: Option<String>,
-    /// The license from a list of known licenses.
-    pub license_type: Option<String>,
-    /// The URL of the application’s support page.
-    #[setters(skip)]
-    pub support_url: Option<String>,
-    /// The URL of the application’s repository.
-    #[setters(skip)]
-    pub repository_url: Option<String>,
+    documenters: BTreeMap<String, String>,
     /// Translators who contributed to the application.
     #[setters(skip)]
-    pub translators: BTreeMap<String, String>,
+    translators: BTreeMap<String, String>,
     /// Links associated with the application.
     #[setters(skip)]
-    pub links: BTreeMap<String, String>,
-    /// The application’s version.
-    pub version: Option<String>,
-    /// The application’s website.
-    #[setters(skip)]
-    pub website: Option<String>,
+    links: BTreeMap<String, String>,
 }
 
-impl About {
-    pub fn set_repository_url(mut self, repository_url: impl Into<String>) -> Self {
-        let repository_url = repository_url.into();
-        self.repository_url = Some(repository_url.clone());
-        self.links.insert("Repository".into(), repository_url);
+impl<'a> About {
+    pub fn links(mut self, links: impl Into<BTreeMap<&'a str, &'a str>>) -> Self {
+        let links: BTreeMap<&'a str, &'a str> = links.into();
+        self.links = links
+            .into_iter()
+            .map(|(k, v)| (k.to_string(), v.to_string()))
+            .collect();
         self
     }
 
-    pub fn set_support_url(mut self, support_url: impl Into<String>) -> Self {
-        let support_url = support_url.into();
-        self.support_url = Some(support_url.clone());
-        self.links.insert("Support".into(), support_url);
-        self
-    }
-
-    pub fn set_website(mut self, website: impl Into<String>) -> Self {
-        let website = website.into();
-        self.website = Some(website.clone());
-        self.links.insert("Website".into(), website);
-        self
-    }
-
-    pub fn set_artists(mut self, artists: impl Into<BTreeMap<String, String>>) -> Self {
-        let artists: BTreeMap<String, String> = artists.into();
+    pub fn artists(mut self, artists: impl Into<BTreeMap<&'a str, &'a str>>) -> Self {
+        let artists: BTreeMap<&'a str, &'a str> = artists.into();
         self.artists = artists
             .into_iter()
-            .map(|(k, v)| (k, format!("mailto:{v}")))
+            .map(|(k, v)| (k.to_string(), format!("mailto:{v}")))
             .collect();
         self
     }
 
-    pub fn set_designers(mut self, designers: impl Into<BTreeMap<String, String>>) -> Self {
-        let designers: BTreeMap<String, String> = designers.into();
+    pub fn designers(mut self, designers: impl Into<BTreeMap<&'a str, &'a str>>) -> Self {
+        let designers: BTreeMap<&'a str, &'a str> = designers.into();
         self.designers = designers
             .into_iter()
-            .map(|(k, v)| (k, format!("mailto:{v}")))
+            .map(|(k, v)| (k.to_string(), format!("mailto:{v}")))
             .collect();
         self
     }
 
-    pub fn set_developers(mut self, developers: impl Into<BTreeMap<String, String>>) -> Self {
-        let developers: BTreeMap<String, String> = developers.into();
+    pub fn developers(mut self, developers: impl Into<BTreeMap<&'a str, &'a str>>) -> Self {
+        let developers: BTreeMap<&'a str, &'a str> = developers.into();
         self.developers = developers
             .into_iter()
-            .map(|(k, v)| (k, format!("mailto:{v}")))
+            .map(|(k, v)| (k.to_string(), format!("mailto:{v}")))
             .collect();
         self
     }
 
-    pub fn set_documenters(mut self, documenters: impl Into<BTreeMap<String, String>>) -> Self {
-        let documenters: BTreeMap<String, String> = documenters.into();
+    pub fn documenters(mut self, documenters: impl Into<BTreeMap<&'a str, &'a str>>) -> Self {
+        let documenters: BTreeMap<&'a str, &'a str> = documenters.into();
         self.documenters = documenters
             .into_iter()
-            .map(|(k, v)| (k, format!("mailto:{v}")))
+            .map(|(k, v)| (k.to_string(), format!("mailto:{v}")))
             .collect();
         self
     }
 
-    pub fn set_translators(mut self, translators: impl Into<BTreeMap<String, String>>) -> Self {
-        let translators: BTreeMap<String, String> = translators.into();
+    pub fn translators(mut self, translators: impl Into<BTreeMap<&'a str, &'a str>>) -> Self {
+        let translators: BTreeMap<&'a str, &'a str> = translators.into();
         self.translators = translators
             .into_iter()
-            .map(|(k, v)| (k, format!("mailto:{v}")))
+            .map(|(k, v)| (k.to_string(), format!("mailto:{v}")))
             .collect();
         self
+    }
+
+    fn license_url(&self) -> Option<String> {
+        let license: &dyn License = match self.license.as_ref() {
+            Some(license) => license.parse().ok()?,
+            None => return None,
+        };
+
+        self.license
+            .as_ref()
+            .map(|_| format!("https://spdx.org/licenses/{}.html", license.id()))
     }
 }
 
@@ -137,7 +127,7 @@ pub fn about<'a, Message: Clone + 'static>(
             None
         } else {
             let developers: Vec<Element<Message>> = list
-                .into_iter()
+                .iter()
                 .map(|(name, url)| {
                     widget::button::custom(
                         widget::row()
@@ -148,7 +138,7 @@ pub fn about<'a, Message: Clone + 'static>(
                             .align_y(Vertical::Center),
                     )
                     .class(crate::theme::Button::Text)
-                    .on_press(on_url_press(url.clone()))
+                    .on_press(on_url_press(url.to_string()))
                     .width(Length::Fill)
                     .into()
                 })
@@ -157,9 +147,9 @@ pub fn about<'a, Message: Clone + 'static>(
         }
     };
 
-    let application_name = about.application_name.as_ref().map(widget::text::title3);
+    let application_name = about.name.as_ref().map(widget::text::title3);
     let application_icon = about
-        .application_icon
+        .icon
         .as_ref()
         .map(|icon| crate::desktop::IconSource::Name(icon.clone()).as_cosmic_icon());
 
@@ -170,9 +160,11 @@ pub fn about<'a, Message: Clone + 'static>(
     let translators_section = section(&about.translators, "Translators");
     let documenters_section = section(&about.documenters, "Documenters");
 
-    let developer_name = about.developer_name.as_ref().map(widget::text);
+    let author = about.author.as_ref().map(widget::text);
     let version = about.version.as_ref().map(widget::button::standard);
-    let license = about.license_type.as_ref().map(widget::button::standard);
+    let license = about.license.as_ref().map(|license| {
+        widget::button::standard(license).on_press_maybe(about.license_url().map(on_url_press))
+    });
     let copyright = about.copyright.as_ref().map(widget::text::body);
     let comments = about.comments.as_ref().map(widget::text::body);
 
@@ -180,7 +172,7 @@ pub fn about<'a, Message: Clone + 'static>(
         widget::column()
             .push_maybe(application_icon)
             .push_maybe(application_name)
-            .push_maybe(developer_name)
+            .push_maybe(author)
             .push(
                 widget::row()
                     .push_maybe(version)

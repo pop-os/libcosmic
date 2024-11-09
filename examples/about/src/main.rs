@@ -64,14 +64,17 @@ impl cosmic::Application for App {
         let nav_model = nav_bar::Model::default();
 
         let about = About::default()
-            .set_application_name("About Demo")
-            .set_application_icon(Self::APP_ID)
-            .set_developer_name("System 76")
-            .set_license_type("GPL-3.0")
-            .set_website("https://system76.com/cosmic")
-            .set_repository_url("https://github.com/pop-os/libcosmic")
-            .set_support_url("https://github.com/pop-os/libcosmic/issues")
-            .set_developers([("Michael Murphy".into(), "mmstick@system76.com".into())]);
+            .name("About Demo")
+            .icon(Self::APP_ID)
+            .version("0.1.0")
+            .author("System 76")
+            .license("GPL-3.0-only")
+            .developers([("Michael Murphy", "mmstick@system76.com")])
+            .links([
+                ("Website", "https://system76.com/cosmic"),
+                ("Repository", "https://github.com/pop-os/libcosmic)"),
+                ("Support", "https://github.com/pop-os/libcosmic/issues"),
+            ]);
 
         let mut app = App {
             core,
