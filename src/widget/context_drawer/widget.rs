@@ -1,9 +1,7 @@
 // Copyright 2023 System76 <info@system76.com>
 // SPDX-License-Identifier: MPL-2.0
 
-use crate::widget::{
-    button, column, container, icon, row, scrollable, text, LayerContainer, Space,
-};
+use crate::widget::{button, column, container, icon, row, text, LayerContainer};
 use crate::{Apply, Element, Renderer, Theme};
 
 use super::overlay::Overlay;
@@ -26,7 +24,8 @@ pub struct ContextDrawer<'a, Message> {
 
 impl<'a, Message: Clone + 'static> ContextDrawer<'a, Message> {
     pub fn new_inner<Drawer>(
-        header: &'a str,
+        title: &'a str,
+        actions: Vec<Element<'a, Message>>,
         drawer: Drawer,
         on_close: Message,
         max_width: f32,
@@ -35,15 +34,28 @@ impl<'a, Message: Clone + 'static> ContextDrawer<'a, Message> {
         Drawer: Into<Element<'a, Message>>,
     {
         let cosmic_theme::Spacing {
-            space_m, space_l, ..
+            space_xxs,
+            space_m,
+            space_l,
+            ..
         } = crate::theme::active().cosmic().spacing;
+
+        let title_opt = if title.is_empty() {
+            None
+        } else {
+            Some(text::heading(title).width(Length::FillPortion(1)).center())
+        };
 
         let header = row::with_capacity(3)
             .width(Length::Fixed(480.0))
             .align_y(Alignment::Center)
             .padding([space_m, space_l])
-            .push(Space::new(Length::FillPortion(1), Length::Fixed(0.0)))
-            .push(text::heading(header).width(Length::FillPortion(1)).center())
+            .push(
+                row::with_children(actions)
+                    .spacing(space_xxs)
+                    .width(Length::FillPortion(1)),
+            )
+            .push_maybe(title_opt)
             .push(
                 button::text("Close")
                     .trailing_icon(icon::from_name("go-next-symbolic"))
@@ -78,7 +90,8 @@ impl<'a, Message: Clone + 'static> ContextDrawer<'a, Message> {
 
     /// Creates an empty [`ContextDrawer`].
     pub fn new<Content, Drawer>(
-        header: &'a str,
+        title: &'a str,
+        actions: Vec<Element<'a, Message>>,
         content: Content,
         drawer: Drawer,
         on_close: Message,
@@ -88,7 +101,7 @@ impl<'a, Message: Clone + 'static> ContextDrawer<'a, Message> {
         Content: Into<Element<'a, Message>>,
         Drawer: Into<Element<'a, Message>>,
     {
-        let drawer = Self::new_inner(header, drawer, on_close, max_width);
+        let drawer = Self::new_inner(title, actions, drawer, on_close, max_width);
 
         ContextDrawer {
             id: None,
