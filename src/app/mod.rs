@@ -659,28 +659,30 @@ where
         let copyright = about.copyright.as_ref().map(widget::text::body);
         let comments = about.comments.as_ref().map(widget::text::body);
 
-        let about = widget::column()
-            .push_maybe(application_icon)
-            .push_maybe(application_name)
-            .push_maybe(developer_name)
-            .push(
-                widget::row()
-                    .push_maybe(version)
-                    .push_maybe(license)
-                    .spacing(spacing.space_xs),
-            )
-            .push_maybe(links_section)
-            .push_maybe(developers_section)
-            .push_maybe(designers_section)
-            .push_maybe(artists_section)
-            .push_maybe(translators_section)
-            .push_maybe(documenters_section)
-            .push_maybe(comments)
-            .push_maybe(copyright)
-            .align_x(Alignment::Center)
-            .spacing(spacing.space_xs)
-            .width(Length::Fill)
-            .into();
+        let about = widget::scrollable(
+            widget::column()
+                .push_maybe(application_icon)
+                .push_maybe(application_name)
+                .push_maybe(developer_name)
+                .push(
+                    widget::row()
+                        .push_maybe(version)
+                        .push_maybe(license)
+                        .spacing(spacing.space_xs),
+                )
+                .push_maybe(links_section)
+                .push_maybe(developers_section)
+                .push_maybe(designers_section)
+                .push_maybe(artists_section)
+                .push_maybe(translators_section)
+                .push_maybe(documenters_section)
+                .push_maybe(comments)
+                .push_maybe(copyright)
+                .align_x(Alignment::Center)
+                .spacing(spacing.space_xs)
+                .width(Length::Fill),
+        )
+        .into();
         Some(about)
     }
 
