@@ -13,7 +13,9 @@ use crate::Element;
 /// An overlayed widget that attaches a toggleable context drawer to the view.
 pub fn context_drawer<'a, Message: Clone + 'static, Content, Drawer>(
     title: &'a str,
-    actions: Vec<Element<'a, Message>>,
+    header_actions: Vec<Element<'a, Message>>,
+    header_opt: Option<Element<'a, Message>>,
+    footer_opt: Option<Element<'a, Message>>,
     on_close: Message,
     content: Content,
     drawer: Drawer,
@@ -23,5 +25,14 @@ where
     Content: Into<Element<'a, Message>>,
     Drawer: Into<Element<'a, Message>>,
 {
-    ContextDrawer::new(title, actions, content, drawer, on_close, max_width)
+    ContextDrawer::new(
+        title,
+        header_actions,
+        header_opt,
+        footer_opt,
+        content,
+        drawer,
+        on_close,
+        max_width,
+    )
 }

@@ -1,7 +1,7 @@
 #[cfg(feature = "desktop")]
 use {
     crate::{
-        iced::{alignment::Vertical, Alignment, Length},
+        iced::{Alignment, Length},
         widget::{self, horizontal_space},
         Element,
     },
@@ -124,7 +124,11 @@ pub fn about<'a, Message: Clone + 'static>(
     about: &'a About,
     on_url_press: impl Fn(String) -> Message,
 ) -> Element<'a, Message> {
-    let spacing = crate::theme::active().cosmic().spacing;
+    let cosmic_theme::Spacing {
+        space_xxs,
+        space_xs,
+        ..
+    } = crate::theme::active().cosmic().spacing;
 
     let section = |list: &'a Vec<(String, String)>, title: &'a str| {
         (!list.is_empty()).then_some({
@@ -138,8 +142,8 @@ pub fn about<'a, Message: Clone + 'static>(
                                 .push_maybe((!url.is_empty()).then_some(
                                     crate::widget::icon::from_name("link-symbolic").icon(),
                                 ))
-                                .padding(spacing.space_xxs)
-                                .align_y(Vertical::Center),
+                                .padding(space_xxs)
+                                .align_y(Alignment::Center),
                         )
                         .class(crate::theme::Button::Text)
                         .on_press(on_url_press(url.clone()))
@@ -176,8 +180,8 @@ pub fn about<'a, Message: Clone + 'static>(
                         url.is_some()
                             .then_some(crate::widget::icon::from_name("link-symbolic").icon()),
                     )
-                    .padding(spacing.space_xxs)
-                    .align_y(Vertical::Center),
+                    .padding(space_xxs)
+                    .align_y(Alignment::Center),
             )
             .class(crate::theme::Button::Text)
             .on_press(on_url_press(url.unwrap_or(String::new())))
@@ -187,25 +191,22 @@ pub fn about<'a, Message: Clone + 'static>(
     let copyright = about.copyright.as_ref().map(widget::text::body);
     let comments = about.comments.as_ref().map(widget::text::body);
 
-    widget::scrollable(
-        widget::column()
-            .push_maybe(application_icon)
-            .push_maybe(application_name)
-            .push_maybe(author)
-            .push_maybe(version)
-            .push_maybe(license)
-            .push_maybe(links_section)
-            .push_maybe(developers_section)
-            .push_maybe(designers_section)
-            .push_maybe(artists_section)
-            .push_maybe(translators_section)
-            .push_maybe(documenters_section)
-            .push_maybe(comments)
-            .push_maybe(copyright)
-            .align_x(Alignment::Center)
-            .spacing(spacing.space_xs)
-            .width(Length::Fill),
-    )
-    .spacing(spacing.space_xxxs)
-    .into()
+    widget::column()
+        .push_maybe(application_icon)
+        .push_maybe(application_name)
+        .push_maybe(author)
+        .push_maybe(version)
+        .push_maybe(license)
+        .push_maybe(links_section)
+        .push_maybe(developers_section)
+        .push_maybe(designers_section)
+        .push_maybe(artists_section)
+        .push_maybe(translators_section)
+        .push_maybe(documenters_section)
+        .push_maybe(comments)
+        .push_maybe(copyright)
+        .align_x(Alignment::Center)
+        .spacing(space_xs)
+        .width(Length::Fill)
+        .into()
 }

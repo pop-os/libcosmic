@@ -71,13 +71,6 @@ use {
     zbus::{interface, proxy, zvariant::Value},
 };
 
-#[cfg(feature = "desktop")]
-use {
-    crate::widget,
-    iced::{alignment::Vertical, Alignment},
-    std::collections::BTreeMap,
-};
-
 pub(crate) fn iced_settings<App: Application>(
     settings: Settings,
     flags: App::Flags,
@@ -470,6 +463,16 @@ where
         Vec::new()
     }
 
+    /// Non-scrolling elements placed below the context drawer title row
+    fn context_drawer_header(&self) -> Option<Element<Message<Self::Message>>> {
+        None
+    }
+
+    /// Elements placed below the context drawer scrollable
+    fn context_drawer_footer(&self) -> Option<Element<Message<Self::Message>>> {
+        None
+    }
+
     /// Displays a dialog in the center of the application window when `Some`.
     fn dialog(&self) -> Option<Element<Self::Message>> {
         None
@@ -752,6 +755,8 @@ impl<App: Application> ApplicationExt for App {
                             context_drawer(
                                 &core.window.context_title,
                                 self.context_header_actions(),
+                                self.context_drawer_header(),
+                                self.context_drawer_footer(),
                                 Message::Cosmic(cosmic::Message::ContextDrawer(false)),
                                 main_content,
                                 context.map(Message::App),
@@ -786,6 +791,8 @@ impl<App: Application> ApplicationExt for App {
                             crate::widget::ContextDrawer::new_inner(
                                 &core.window.context_title,
                                 self.context_header_actions(),
+                                self.context_drawer_header(),
+                                self.context_drawer_footer(),
                                 context.map(Message::App),
                                 Message::Cosmic(cosmic::Message::ContextDrawer(false)),
                                 context_width,

@@ -1,7 +1,7 @@
 // Copyright 2023 System76 <info@system76.com>
 // SPDX-License-Identifier: MPL-2.0
 
-use crate::widget::{button, column, container, icon, row, text, LayerContainer};
+use crate::widget::{button, column, container, icon, row, scrollable, text, LayerContainer};
 use crate::{Apply, Element, Renderer, Theme};
 
 use super::overlay::Overlay;
@@ -25,7 +25,9 @@ pub struct ContextDrawer<'a, Message> {
 impl<'a, Message: Clone + 'static> ContextDrawer<'a, Message> {
     pub fn new_inner<Drawer>(
         title: &'a str,
-        actions: Vec<Element<'a, Message>>,
+        header_actions: Vec<Element<'a, Message>>,
+        header_opt: Option<Element<'a, Message>>,
+        footer_opt: Option<Element<'a, Message>>,
         drawer: Drawer,
         on_close: Message,
         max_width: f32,
@@ -35,6 +37,8 @@ impl<'a, Message: Clone + 'static> ContextDrawer<'a, Message> {
     {
         let cosmic_theme::Spacing {
             space_xxs,
+            space_xs,
+            space_s,
             space_m,
             space_l,
             ..
@@ -46,12 +50,13 @@ impl<'a, Message: Clone + 'static> ContextDrawer<'a, Message> {
             Some(text::heading(title).width(Length::FillPortion(1)).center())
         };
 
-        let header = row::with_capacity(3)
+        let horizontal_padding = if max_width < 392.0 { space_s } else { space_l };
+
+        let header_row = row::with_capacity(3)
             .width(Length::Fixed(480.0))
             .align_y(Alignment::Center)
-            .padding([space_m, space_l])
             .push(
-                row::with_children(actions)
+                row::with_children(header_actions)
                     .spacing(space_xxs)
                     .width(Length::FillPortion(1)),
             )
@@ -64,12 +69,32 @@ impl<'a, Message: Clone + 'static> ContextDrawer<'a, Message> {
                     .width(Length::FillPortion(1))
                     .align_x(Alignment::End),
             );
-
-        let pane = column::with_capacity(2).push(header).push(
-            container(drawer.into())
+        let header = column::with_capacity(2)
+            .width(Length::Fixed(480.0))
+            .align_x(Alignment::Center)
+            .spacing(space_m)
+            .padding([space_m, horizontal_padding])
+            .push(header_row)
+            .push_maybe(header_opt);
+        let footer = footer_opt.map(|element| {
+            container(element)
+                .width(Length::Fixed(480.0))
+                .align_y(Alignment::Center)
+                .padding([space_xs, horizontal_padding])
+        });
+        let pane = column::with_capacity(3)
+            .push(header)
+            .push(
+                scrollable(container(drawer.into()).padding([
+                    0,
+                    horizontal_padding,
+                    if footer.is_some() { 0 } else { space_l },
+                    horizontal_padding,
+                ]))
                 .height(Length::Fill)
                 .width(Length::Shrink),
-        );
+            )
+            .push_maybe(footer);
 
         // XXX new limits do not exactly handle the max width well for containers
         // XXX this is a hack to get around that
@@ -90,7 +115,9 @@ impl<'a, Message: Clone + 'static> ContextDrawer<'a, Message> {
     /// Creates an empty [`ContextDrawer`].
     pub fn new<Content, Drawer>(
         title: &'a str,
-        actions: Vec<Element<'a, Message>>,
+        header_actions: Vec<Element<'a, Message>>,
+        header_opt: Option<Element<'a, Message>>,
+        footer_opt: Option<Element<'a, Message>>,
         content: Content,
         drawer: Drawer,
         on_close: Message,
@@ -100,7 +127,15 @@ impl<'a, Message: Clone + 'static> ContextDrawer<'a, Message> {
         Content: Into<Element<'a, Message>>,
         Drawer: Into<Element<'a, Message>>,
     {
-        let drawer = Self::new_inner(title, actions, drawer, on_close, max_width);
+        let drawer = Self::new_inner(
+            title,
+            header_actions,
+            header_opt,
+            footer_opt,
+            drawer,
+            on_close,
+            max_width,
+        );
 
         ContextDrawer {
             id: None,
