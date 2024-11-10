@@ -3,10 +3,10 @@
 
 //! Application API example
 
-use cosmic::app::{about::About, Core, Settings, Task};
+use cosmic::app::{Core, Settings, Task};
 use cosmic::iced::widget::column;
 use cosmic::iced_core::Size;
-use cosmic::widget::{self, nav_bar};
+use cosmic::widget::{self, about::About, nav_bar};
 use cosmic::{executor, iced, ApplicationExt, Element};
 
 /// Runs application with these settings
@@ -27,7 +27,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 #[derive(Clone, Debug)]
 pub enum Message {
     ToggleAbout,
-    Cosmic(cosmic::app::cosmic::Message),
+    Open(String),
 }
 
 /// The [`App`] stores application-specific state.
@@ -64,14 +64,17 @@ impl cosmic::Application for App {
         let nav_model = nav_bar::Model::default();
 
         let about = About::default()
-            .set_application_name("About Demo")
-            .set_application_icon(Self::APP_ID)
-            .set_developer_name("System 76")
-            .set_license_type("GPL-3.0")
-            .set_website("https://system76.com/cosmic")
-            .set_repository_url("https://github.com/pop-os/libcosmic")
-            .set_support_url("https://github.com/pop-os/libcosmic/issues")
-            .set_developers([("Michael Murphy".into(), "mmstick@system76.com".into())]);
+            .name("About Demo")
+            .icon(Self::APP_ID)
+            .version("0.1.0")
+            .author("System 76")
+            .license("GPL-3.0-only")
+            .developers([("Michael Murphy", "mmstick@system76.com")])
+            .links([
+                ("Website", "https://system76.com/cosmic"),
+                ("Repository", "https://github.com/pop-os/libcosmic"),
+                ("Support", "https://github.com/pop-os/libcosmic/issues"),
+            ]);
 
         let mut app = App {
             core,
@@ -100,11 +103,7 @@ impl cosmic::Application for App {
             return None;
         }
 
-        if let Some(abuot_view) = self.about_view() {
-            Some(abuot_view.map(Message::Cosmic))
-        } else {
-            None
-        }
+        Some(widget::about(&self.about, Message::Open))
     }
 
     /// Handle application events here.
@@ -114,15 +113,12 @@ impl cosmic::Application for App {
                 self.core.window.show_context = !self.core.window.show_context;
                 self.core.set_show_context(self.core.window.show_context)
             }
-            Message::Cosmic(message) => {
-                return cosmic::command::message(cosmic::app::Message::Cosmic(message))
-            }
+            Message::Open(url) => match open::that_detached(url) {
+                Ok(_) => (),
+                Err(err) => tracing::error!("Failed to open URL: {err}"),
+            },
         }
         Task::none()
-    }
-
-    fn about(&self) -> Option<&About> {
-        Some(&self.about)
     }
 
     /// Creates a view after each update.
