@@ -45,7 +45,7 @@ impl<'a, Message: Clone + 'static> ContextDrawer<'a, Message> {
         mut self,
         header_actions: impl IntoIterator<Item = Element<'a, Message>>,
     ) -> Self {
-        self.header_actions = header_actions.into_iter().map(|a| a.into()).collect();
+        self.header_actions = header_actions.into_iter().collect();
         self
     }
     /// Non-scrolling elements placed below the context drawer title row
