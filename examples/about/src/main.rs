@@ -3,7 +3,7 @@
 
 //! Application API example
 
-use cosmic::app::context_drawer::{context_drawer, ContextDrawer};
+use cosmic::app::context_drawer::{self, context_drawer, ContextDrawer};
 use cosmic::app::{Core, Settings, Task};
 use cosmic::iced::widget::column;
 use cosmic::iced_core::Size;
@@ -102,16 +102,16 @@ impl cosmic::Application for App {
     }
 
     fn context_drawer(&self) -> Option<ContextDrawer<Self::Message>> {
-        match self.show_about {
-            true => Some(context_drawer(widget::about(&self.about, Message::Open), Message::ToggleAbout)),
-            false => None,
-        }
+        self.show_about
+            .then(|| context_drawer::about(&self.about, Message::Open, Message::ToggleAbout))
     }
 
     /// Handle application events here.
     fn update(&mut self, message: Self::Message) -> Task<Self::Message> {
         match message {
             Message::ToggleAbout => {
+                self.core.window.show_context = !self.core.window.show_context;
+                self.core.set_show_context(self.core.window.show_context);
                 self.show_about = !self.show_about;
             }
             Message::Open(url) => match open::that_detached(url) {

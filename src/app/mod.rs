@@ -729,7 +729,7 @@ impl<App: Application> ApplicationExt for App {
 
                 //TODO: reduce duplication
                 let context_width = core.context_width(has_nav);
-                if core.window.context_is_overlay {
+                if core.window.context_is_overlay && core.window.show_context {
                     if let Some(context) = self.context_drawer() {
                         widgets.push(
                             Element::from(

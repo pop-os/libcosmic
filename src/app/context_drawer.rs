@@ -11,6 +11,15 @@ pub struct ContextDrawer<'a, Message: Clone + 'static> {
     pub on_close: Message,
 }
 
+#[cfg(feature = "about")]
+pub fn about<'a, Message: Clone + 'static>(
+    about: &'a crate::widget::about::About,
+    on_url_press: impl Fn(String) -> Message,
+    on_close: Message,
+) -> ContextDrawer<'a, Message> {
+    context_drawer(crate::widget::about(about, on_url_press), on_close)
+}
+
 pub fn context_drawer<'a, Message: Clone + 'static>(
     content: impl Into<Element<'a, Message>>,
     on_close: Message,
