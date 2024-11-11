@@ -3,7 +3,7 @@
 
 //! Application API example
 
-use cosmic::app::context_drawer::{self, context_drawer, ContextDrawer};
+use cosmic::app::context_drawer::{self, ContextDrawer};
 use cosmic::app::{Core, Settings, Task};
 use cosmic::iced::widget::column;
 use cosmic::iced_core::Size;
