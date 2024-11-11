@@ -41,9 +41,9 @@ impl<'a, Message: Clone + 'static> ContextDrawer<'a, Message> {
         self
     }
     /// App-specific actions at the start of the context drawer header
-    pub fn header_actions<E: Into<Element<'a, Message>>>(
+    pub fn header_actions(
         mut self,
-        header_actions: impl IntoIterator<Item = E>,
+        header_actions: impl IntoIterator<Item = Element<'a, Message>>,
     ) -> Self {
         self.header_actions = header_actions.into_iter().map(|a| a.into()).collect();
         self
