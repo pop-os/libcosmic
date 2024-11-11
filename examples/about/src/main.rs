@@ -110,8 +110,7 @@ impl cosmic::Application for App {
     fn update(&mut self, message: Self::Message) -> Task<Self::Message> {
         match message {
             Message::ToggleAbout => {
-                self.core.window.show_context = !self.core.window.show_context;
-                self.core.set_show_context(self.core.window.show_context);
+                self.set_show_context(!self.core.window.show_context);
                 self.show_about = !self.show_about;
             }
             Message::Open(url) => match open::that_detached(url) {

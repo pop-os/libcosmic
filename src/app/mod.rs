@@ -454,6 +454,7 @@ where
     fn init(core: Core, flags: Self::Flags) -> (Self, Task<Self::Message>);
 
     /// Displays a context drawer on the side of the application window when `Some`.
+    /// Use the [`ApplicationExt::set_show_context`] function for this to take effect.
     fn context_drawer(&self) -> Option<ContextDrawer<Self::Message>> {
         None
     }
