@@ -274,6 +274,17 @@ where
     fn set_id(&mut self, id: crate::widget::Id) {
         self.container.set_id(id);
     }
+
+    #[cfg(feature = "a11y")]
+    /// get the a11y nodes for the widget
+    fn a11y_nodes(
+        &self,
+        layout: iced_core::Layout<'_>,
+        state: &Tree,
+        p: iced::mouse::Cursor,
+    ) -> iced_accessibility::A11yTree {
+        self.container.a11y_nodes(layout, state, p)
+    }
 }
 
 impl<'a, Message, Renderer> From<LayerContainer<'a, Message, Renderer>>

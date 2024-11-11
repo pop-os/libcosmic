@@ -284,9 +284,8 @@ impl<'a, Message: Clone> Widget<Message, crate::Theme, Renderer> for ContextDraw
         state: &Tree,
         p: mouse::Cursor,
     ) -> iced_accessibility::A11yTree {
-        let c_layout = layout.children().next().unwrap();
         let c_state = &state.children[0];
-        self.content.as_widget().a11y_nodes(c_layout, c_state, p)
+        self.content.as_widget().a11y_nodes(layout, c_state, p)
     }
 
     fn drag_destinations(

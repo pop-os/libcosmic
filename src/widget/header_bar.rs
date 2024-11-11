@@ -265,6 +265,23 @@ impl<'a, Message: Clone + 'static> Widget<Message, crate::Theme, crate::Renderer
             );
         }
     }
+
+    #[cfg(feature = "a11y")]
+    /// get the a11y nodes for the widget
+    fn a11y_nodes(
+        &self,
+        layout: iced_core::Layout<'_>,
+        state: &tree::Tree,
+        p: iced::mouse::Cursor,
+    ) -> iced_accessibility::A11yTree {
+        let c_layout = layout.children().next().unwrap();
+        let c_state = &state.children[0];
+        let ret = self
+            .header_bar_inner
+            .as_widget()
+            .a11y_nodes(c_layout, c_state, p);
+        ret
+    }
 }
 
 impl<'a, Message: Clone + 'static> HeaderBar<'a, Message> {

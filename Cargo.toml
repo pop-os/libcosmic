@@ -8,7 +8,7 @@ rust-version = "1.80"
 name = "cosmic"
 
 [features]
-default = ["multi-window"]
+default = ["multi-window", "a11y"]
 # Accessibility support
 a11y = ["iced/a11y", "iced_accessibility"]
 # Enable about widget

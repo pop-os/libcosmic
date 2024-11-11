@@ -309,6 +309,17 @@ where
         self.container
             .drag_destinations(state, layout, renderer, dnd_rectangles);
     }
+
+    #[cfg(feature = "a11y")]
+    /// get the a11y nodes for the widget
+    fn a11y_nodes(
+        &self,
+        layout: Layout<'_>,
+        state: &Tree,
+        p: mouse::Cursor,
+    ) -> iced_accessibility::A11yTree {
+        self.container.a11y_nodes(layout, state, p)
+    }
 }
 
 impl<'a, Message, Renderer, I> From<RectangleTrackingContainer<'a, Message, Renderer, I>>
