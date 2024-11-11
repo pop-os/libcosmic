@@ -11,6 +11,8 @@ name = "cosmic"
 default = ["multi-window"]
 # Accessibility support
 a11y = ["iced/a11y", "iced_accessibility"]
+# Enable about widget
+about = ["desktop", "dep:license"]
 # Builds support for animated images
 animated-image = ["image", "dep:async-fs", "tokio?/io-util", "tokio?/fs"]
 # XXX autosize should not be used on winit windows unless dialogs
@@ -40,7 +42,6 @@ desktop = [
     "process",
     "dep:freedesktop-desktop-entry",
     "dep:mime",
-    "dep:license",
     "dep:shlex",
     "tokio?/io-util",
     "tokio?/net",
