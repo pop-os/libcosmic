@@ -165,12 +165,9 @@ where
         renderer: &Renderer,
         translation: Vector,
     ) -> Option<overlay::Element<'b, Message, Theme, Renderer>> {
-        self.content.as_widget_mut().overlay(
-            &mut tree.children[0],
-            layout.children().next().unwrap(),
-            renderer,
-            translation,
-        )
+        self.content
+            .as_widget_mut()
+            .overlay(&mut tree.children[0], layout, renderer, translation)
     }
 
     fn drag_destinations(
@@ -195,6 +192,19 @@ where
 
     fn set_id(&mut self, id: crate::widget::Id) {
         self.id = id;
+    }
+
+    #[cfg(feature = "a11y")]
+    /// get the a11y nodes for the widget
+    fn a11y_nodes(
+        &self,
+        layout: Layout<'_>,
+        state: &Tree,
+        p: mouse::Cursor,
+    ) -> iced_accessibility::A11yTree {
+        let c_layout = layout.children().next().unwrap();
+        let c_state = &state.children[0];
+        self.content.as_widget().a11y_nodes(c_layout, c_state, p)
     }
 }
 

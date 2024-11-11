@@ -252,6 +252,17 @@ where
     ) -> Option<overlay::Element<'b, Message, crate::Theme, Renderer>> {
         self.container.overlay(tree, layout, renderer, translation)
     }
+
+    #[cfg(feature = "a11y")]
+    /// get the a11y nodes for the widget
+    fn a11y_nodes(
+        &self,
+        layout: Layout<'_>,
+        state: &Tree,
+        p: mouse::Cursor,
+    ) -> iced_accessibility::A11yTree {
+        self.container.a11y_nodes(layout, state, p)
+    }
 }
 
 impl<'a, Message, Renderer> From<AspectRatio<'a, Message, Renderer>>

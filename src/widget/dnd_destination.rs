@@ -541,6 +541,18 @@ impl<'a, Message: 'static> Widget<Message, crate::Theme, crate::Renderer>
     fn set_id(&mut self, id: Id) {
         self.id = id;
     }
+
+    #[cfg(feature = "a11y")]
+    /// get the a11y nodes for the widget
+    fn a11y_nodes(
+        &self,
+        layout: iced_core::Layout<'_>,
+        state: &Tree,
+        p: mouse::Cursor,
+    ) -> iced_accessibility::A11yTree {
+        let c_state = &state.children[0];
+        self.container.as_widget().a11y_nodes(layout, c_state, p)
+    }
 }
 
 #[derive(Default)]

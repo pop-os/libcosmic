@@ -273,6 +273,18 @@ where
             dnd_rectangles,
         );
     }
+
+    #[cfg(feature = "a11y")]
+    /// get the a11y nodes for the widget
+    fn a11y_nodes(
+        &self,
+        layout: Layout<'_>,
+        state: &Tree,
+        p: mouse::Cursor,
+    ) -> iced_accessibility::A11yTree {
+        let c_state = &state.children[0];
+        self.content.as_widget().a11y_nodes(layout, c_state, p)
+    }
 }
 
 impl<'a, Message, Renderer> From<Popover<'a, Message, Renderer>>

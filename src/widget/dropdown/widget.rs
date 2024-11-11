@@ -246,6 +246,17 @@ impl<'a, S: AsRef<str>, Message: 'a> Widget<Message, crate::Theme, crate::Render
             translation,
         )
     }
+
+    // #[cfg(feature = "a11y")]
+    // /// get the a11y nodes for the widget
+    // fn a11y_nodes(
+    //     &self,
+    //     layout: Layout<'_>,
+    //     state: &Tree,
+    //     p: mouse::Cursor,
+    // ) -> iced_accessibility::A11yTree {
+    //     // TODO
+    // }
 }
 
 impl<'a, S: AsRef<str>, Message: 'a> From<Dropdown<'a, S, Message>>
