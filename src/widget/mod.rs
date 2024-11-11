@@ -119,9 +119,9 @@ pub use color_picker::{ColorPicker, ColorPickerModel};
 #[doc(inline)]
 pub use iced::widget::qr_code;
 
-pub mod context_drawer;
+pub(crate) mod context_drawer;
 #[doc(inline)]
-pub use context_drawer::{context_drawer, ContextDrawer};
+pub(crate) use context_drawer::{context_drawer, ContextDrawer};
 
 #[doc(inline)]
 pub use column::{column, Column};

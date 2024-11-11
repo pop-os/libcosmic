@@ -26,8 +26,6 @@ pub struct NavBar {
 #[allow(clippy::struct_excessive_bools)]
 #[derive(Clone)]
 pub struct Window {
-    /// Label to display as context drawer title.
-    pub context_title: String,
     /// Label to display as header bar title.
     pub header_title: String,
     pub use_template: bool,
@@ -127,7 +125,6 @@ impl Default for Core {
                 })
                 .unwrap_or_default(),
             window: Window {
-                context_title: String::new(),
                 header_title: String::new(),
                 use_template: true,
                 content_container: true,
@@ -186,11 +183,6 @@ impl Core {
     pub(crate) fn set_scale_factor(&mut self, factor: f32) {
         self.scale_factor = factor;
         self.is_condensed_update();
-    }
-
-    /// Set context drawer header title
-    pub fn set_context_title(&mut self, title: String) {
-        self.window.context_title = title;
     }
 
     /// Set header bar title

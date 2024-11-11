@@ -1,6 +1,8 @@
 // Copyright 2023 System76 <info@system76.com>
 // SPDX-License-Identifier: MPL-2.0
 
+use std::borrow::Cow;
+
 use crate::widget::{button, column, container, icon, row, scrollable, text, LayerContainer};
 use crate::{Apply, Element, Renderer, Theme};
 
@@ -24,7 +26,7 @@ pub struct ContextDrawer<'a, Message> {
 
 impl<'a, Message: Clone + 'static> ContextDrawer<'a, Message> {
     pub fn new_inner<Drawer>(
-        title: &'a str,
+        title: Option<Cow<'a, str>>,
         header_actions: Vec<Element<'a, Message>>,
         header_opt: Option<Element<'a, Message>>,
         footer_opt: Option<Element<'a, Message>>,
@@ -44,12 +46,6 @@ impl<'a, Message: Clone + 'static> ContextDrawer<'a, Message> {
             ..
         } = crate::theme::active().cosmic().spacing;
 
-        let title_opt = if title.is_empty() {
-            None
-        } else {
-            Some(text::heading(title).width(Length::FillPortion(1)).center())
-        };
-
         let horizontal_padding = if max_width < 392.0 { space_s } else { space_l };
 
         let header_row = row::with_capacity(3)
@@ -60,7 +56,9 @@ impl<'a, Message: Clone + 'static> ContextDrawer<'a, Message> {
                     .spacing(space_xxs)
                     .width(Length::FillPortion(1)),
             )
-            .push_maybe(title_opt)
+            .push_maybe(
+                title.map(|title| text::heading(title).width(Length::FillPortion(1)).center()),
+            )
             .push(
                 button::text("Close")
                     .trailing_icon(icon::from_name("go-next-symbolic"))
@@ -114,7 +112,7 @@ impl<'a, Message: Clone + 'static> ContextDrawer<'a, Message> {
 
     /// Creates an empty [`ContextDrawer`].
     pub fn new<Content, Drawer>(
-        title: &'a str,
+        title: Option<Cow<'a, str>>,
         header_actions: Vec<Element<'a, Message>>,
         header_opt: Option<Element<'a, Message>>,
         footer_opt: Option<Element<'a, Message>>,

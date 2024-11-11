@@ -6,13 +6,15 @@
 mod overlay;
 
 mod widget;
+use std::borrow::Cow;
+
 pub use widget::ContextDrawer;
 
 use crate::Element;
 
 /// An overlayed widget that attaches a toggleable context drawer to the view.
 pub fn context_drawer<'a, Message: Clone + 'static, Content, Drawer>(
-    title: &'a str,
+    title: Option<Cow<'a, str>>,
     header_actions: Vec<Element<'a, Message>>,
     header_opt: Option<Element<'a, Message>>,
     footer_opt: Option<Element<'a, Message>>,
