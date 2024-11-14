@@ -39,7 +39,6 @@ impl<'a, Message: Clone + 'static> ContextDrawer<'a, Message> {
     {
         let cosmic_theme::Spacing {
             space_xxs,
-            space_xs,
             space_s,
             space_m,
             space_l,
@@ -78,7 +77,7 @@ impl<'a, Message: Clone + 'static> ContextDrawer<'a, Message> {
             container(element)
                 .width(Length::Fixed(480.0))
                 .align_y(Alignment::Center)
-                .padding([space_xs, horizontal_padding])
+                .padding([space_xxs, horizontal_padding])
         });
         let pane = column::with_capacity(3)
             .push(header)

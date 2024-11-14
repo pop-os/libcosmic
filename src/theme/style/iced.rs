@@ -6,7 +6,6 @@
 use crate::theme::{CosmicComponent, Theme, TRANSPARENT_COMPONENT};
 use cosmic_theme::composite::over;
 use iced::{
-    border, color,
     overlay::menu,
     widget::{
         button as iced_button, checkbox as iced_checkbox, container as iced_container, pane_grid,
@@ -14,7 +13,6 @@ use iced::{
         slider::{self, Rail},
         svg, toggler,
     },
-    Gradient,
 };
 use iced_core::{Background, Border, Color, Shadow, Vector};
 use iced_widget::{pane_grid::Highlight, text_editor, text_input};
@@ -411,7 +409,7 @@ impl<'a> Container<'a> {
             text_color: Some(Color::from(theme.background.on)),
             background: Some(iced::Background::Color(theme.background.base.into())),
             border: Border {
-                radius: theme.corner_radii.radius_xs.into(),
+                radius: theme.corner_radii.radius_s.into(),
                 ..Default::default()
             },
             shadow: Shadow::default(),
@@ -425,7 +423,7 @@ impl<'a> Container<'a> {
             text_color: Some(Color::from(theme.primary.on)),
             background: Some(iced::Background::Color(theme.primary.base.into())),
             border: Border {
-                radius: theme.corner_radii.radius_xs.into(),
+                radius: theme.corner_radii.radius_s.into(),
                 ..Default::default()
             },
             shadow: Shadow::default(),
@@ -439,7 +437,7 @@ impl<'a> Container<'a> {
             text_color: Some(Color::from(theme.secondary.on)),
             background: Some(iced::Background::Color(theme.secondary.base.into())),
             border: Border {
-                radius: theme.corner_radii.radius_xs.into(),
+                radius: theme.corner_radii.radius_s.into(),
                 ..Default::default()
             },
             shadow: Shadow::default(),
@@ -531,13 +529,7 @@ impl iced_container::Catalog for Theme {
             }
 
             Container::ContextDrawer => {
-                let mut appearance = crate::style::Container::primary(cosmic);
-
-                appearance.border = Border {
-                    color: cosmic.primary.divider.into(),
-                    width: 0.0,
-                    radius: cosmic.corner_radii.radius_s.into(),
-                };
+                let mut appearance = Container::primary(cosmic);
 
                 appearance.shadow = Shadow {
                     color: cosmic.shade.into(),
