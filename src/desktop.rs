@@ -62,6 +62,7 @@ pub struct DesktopEntryData {
     pub desktop_actions: Vec<DesktopAction>,
     pub mime_types: Vec<Mime>,
     pub prefers_dgpu: bool,
+    pub terminal: bool,
 }
 
 #[cfg(not(windows))]
@@ -233,13 +234,18 @@ impl DesktopEntryData {
                 })
                 .unwrap_or_default(),
             prefers_dgpu: de.prefers_non_default_gpu(),
+            terminal: de.terminal(),
         }
     }
 }
 
 #[cfg(not(windows))]
-pub async fn spawn_desktop_exec<S, I, K, V>(exec: S, env_vars: I, app_id: Option<&str>)
-where
+pub async fn spawn_desktop_exec<S, I, K, V>(
+    exec: S,
+    env_vars: I,
+    app_id: Option<&str>,
+    terminal: bool,
+) where
     S: AsRef<str>,
     I: IntoIterator<Item = (K, V)>,
     K: AsRef<OsStr>,
@@ -252,14 +258,23 @@ where
         _ => return,
     };
 
-    let mut cmd = std::process::Command::new(&executable);
-
-    for arg in exec {
-        // TODO handle "%" args here if necessary?
-        if !arg.starts_with('%') {
-            cmd.arg(arg);
+    let mut cmd = match terminal {
+        true => {
+            let mut cmd = std::process::Command::new("cosmic-term");
+            cmd.args(vec!["--", format!("{}", &executable).as_str()]);
+            cmd
         }
-    }
+        false => {
+            let mut cmd = std::process::Command::new(&executable);
+            for arg in exec {
+                // TODO handle "%" args here if necessary?
+                if !arg.starts_with('%') {
+                    cmd.arg(arg);
+                }
+            }
+            cmd
+        }
+    };
 
     cmd.envs(env_vars);
 
