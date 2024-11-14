@@ -358,6 +358,10 @@ pub mod tooltip {
     }
 }
 
+pub mod vertical_spin_button;
+#[doc(inline)]
+pub use vertical_spin_button::*;
+
 pub mod warning;
 #[doc(inline)]
 pub use warning::*;
