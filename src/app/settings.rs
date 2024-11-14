@@ -57,8 +57,11 @@ pub struct Settings {
     /// Whether the window should be transparent.
     pub(crate) transparent: bool,
 
-    /// Whether the application should exit when there are no open windows
+    /// Whether the application window should close when the exit button is pressed
     pub(crate) exit_on_close: bool,
+
+    /// Whether the application should act as a daemon
+    pub(crate) is_daemon: bool,
 }
 
 impl Settings {
@@ -92,6 +95,7 @@ impl Default for Settings {
             theme: crate::theme::system_preference(),
             transparent: true,
             exit_on_close: true,
+            is_daemon: true,
         }
     }
 }

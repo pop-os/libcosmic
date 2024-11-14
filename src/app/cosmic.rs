@@ -160,7 +160,7 @@ where
                     return Some(Message::WindowResize(id, width, height));
                 }
                 iced::Event::Window(window::Event::Closed) => {
-                    return Some(Message::SurfaceClosed(id))
+                    return Some(Message::SurfaceClosed(id));
                 }
                 iced::Event::Window(window::Event::Focused) => return Some(Message::Focus(id)),
                 iced::Event::Window(window::Event::Unfocused) => return Some(Message::Unfocus(id)),
