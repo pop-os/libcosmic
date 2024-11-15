@@ -733,30 +733,29 @@ impl<App: Application> ApplicationExt for App {
                 if core.window.context_is_overlay && core.window.show_context {
                     if let Some(context) = self.context_drawer() {
                         widgets.push(
-                            Element::from(
-                                crate::widget::context_drawer(
-                                    context.title,
-                                    context.header_actions,
-                                    context.header,
-                                    context.footer,
-                                    context.on_close,
-                                    main_content,
-                                    context.content,
-                                    context_width,
-                                )
-                                .apply(|drawer| {
-                                    Element::from(id_container(
-                                        drawer,
-                                        iced_core::id::Id::new("COSMIC_context_drawer"),
-                                    ))
-                                })
-                                .apply(container)
-                                .padding(if content_container {
-                                    [0, 8, 8, 0]
-                                } else {
-                                    [0, 0, 0, 0]
-                                }),
+                            crate::widget::context_drawer(
+                                context.title,
+                                context.header_actions,
+                                context.header,
+                                context.footer,
+                                context.on_close,
+                                main_content,
+                                context.content,
+                                context_width,
                             )
+                            .apply(|drawer| {
+                                Element::from(id_container(
+                                    drawer,
+                                    iced_core::id::Id::new("COSMIC_context_drawer"),
+                                ))
+                            })
+                            .apply(container)
+                            .padding(if content_container {
+                                [0, 8, 8, 0]
+                            } else {
+                                [0, 0, 0, 0]
+                            })
+                            .apply(Element::from)
                             .map(Message::App),
                         );
                     } else {
@@ -779,7 +778,7 @@ impl<App: Application> ApplicationExt for App {
                     );
                     if let Some(context) = self.context_drawer() {
                         widgets.push(
-                            Element::from(crate::widget::ContextDrawer::new_inner(
+                            crate::widget::ContextDrawer::new_inner(
                                 context.title,
                                 context.header_actions,
                                 context.header,
@@ -787,7 +786,8 @@ impl<App: Application> ApplicationExt for App {
                                 context.content,
                                 context.on_close,
                                 context_width,
-                            ))
+                            )
+                            .apply(Element::from)
                             .map(Message::App)
                             .apply(container)
                             .width(context_width)
