@@ -3,6 +3,7 @@
 
 //! Application API example
 
+use cosmic::app::context_drawer::{self, ContextDrawer};
 use cosmic::app::{Core, Settings, Task};
 use cosmic::iced::widget::column;
 use cosmic::iced_core::Size;
@@ -35,6 +36,7 @@ pub struct App {
     core: Core,
     nav_model: nav_bar::Model,
     about: About,
+    show_about: bool,
 }
 
 /// Implement [`cosmic::Application`] to integrate with COSMIC.
@@ -80,6 +82,7 @@ impl cosmic::Application for App {
             core,
             nav_model,
             about,
+            show_about: false,
         };
 
         let command = app.update_title();
@@ -98,20 +101,17 @@ impl cosmic::Application for App {
         self.update_title()
     }
 
-    fn context_drawer(&self) -> Option<Element<Self::Message>> {
-        if !self.core.window.show_context {
-            return None;
-        }
-
-        Some(widget::about(&self.about, Message::Open))
+    fn context_drawer(&self) -> Option<ContextDrawer<Self::Message>> {
+        self.show_about
+            .then(|| context_drawer::about(&self.about, Message::Open, Message::ToggleAbout))
     }
 
     /// Handle application events here.
     fn update(&mut self, message: Self::Message) -> Task<Self::Message> {
         match message {
             Message::ToggleAbout => {
-                self.core.window.show_context = !self.core.window.show_context;
-                self.core.set_show_context(self.core.window.show_context)
+                self.set_show_context(!self.core.window.show_context);
+                self.show_about = !self.show_about;
             }
             Message::Open(url) => match open::that_detached(url) {
                 Ok(_) => (),
