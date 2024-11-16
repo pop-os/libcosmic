@@ -1486,3 +1486,19 @@ impl iced_widget::markdown::Catalog for Theme {
         })
     }
 }
+
+#[cfg(feature = "qr_code")]
+impl iced_widget::qr_code::Catalog for Theme {
+    type Class<'a> = iced_widget::qr_code::StyleFn<'a, Self>;
+
+    fn default<'a>() -> Self::Class<'a> {
+        Box::new(|_theme| iced_widget::qr_code::Style {
+            cell: Color::BLACK,
+            background: Color::WHITE,
+        })
+    }
+
+    fn style(&self, class: &Self::Class<'_>) -> iced_widget::qr_code::Style {
+        class(self)
+    }
+}
