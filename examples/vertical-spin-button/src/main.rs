@@ -1,4 +1,4 @@
-use cosmic::widget::{button, container, text, vertical_spinner};
+use cosmic::widget::{button, container, text, spin_button::vertical_spin_button};
 use cosmic::{
     app::{Core, Task},
     iced::{
@@ -83,7 +83,7 @@ impl Application for VertSpinnerApp {
 
     fn view(&self) -> Element<Self::Message> {
         let spinner_row = row![
-            vertical_spinner(
+            vertical_spin_button(
                 "Hours",
                 1,
                 self.hours,
@@ -91,7 +91,7 @@ impl Application for VertSpinnerApp {
                 12,
                 VertSpinnerMessages::UpdateHours
             ),
-            vertical_spinner(
+            vertical_spin_button(
                 "Minutes",
                 1,
                 self.mins,
@@ -99,7 +99,7 @@ impl Application for VertSpinnerApp {
                 59,
                 VertSpinnerMessages::UpdateMins
             ),
-            vertical_spinner(
+            vertical_spin_button(
                 "Seconds",
                 1,
                 self.secs,
