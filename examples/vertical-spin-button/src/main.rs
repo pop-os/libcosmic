@@ -1,4 +1,4 @@
-use cosmic::widget::{button, container, text, spin_button::vertical_spin_button};
+use cosmic::widget::{button, container, text, spin_button::vertical_spin_button, spin_button::spin_button};
 use cosmic::{
     app::{Core, Task},
     iced::{
@@ -14,21 +14,24 @@ pub struct VertSpinnerApp {
     hours: i32,
     mins: i16,
     secs: i8,
+    spin_button_num: f32,
     time_msg: String,
+    spin_btn_msg: String,
 }
 
 #[derive(Debug, Clone)]
-pub enum VertSpinnerMessages {
+pub enum SpinBtnMessages {
     UpdateHours(i32),
     UpdateMins(i16),
     UpdateSecs(i8),
+    UpdateSpinBtnVal(f32),
     UpdateTimeMessage,
 }
 
 impl Application for VertSpinnerApp {
     type Executor = cosmic::executor::Default;
     type Flags = ();
-    type Message = VertSpinnerMessages;
+    type Message = SpinBtnMessages;
 
     const APP_ID: &'static str = "com.system76.VertSpinnerExample";
 
@@ -47,7 +50,9 @@ impl Application for VertSpinnerApp {
                 hours: 0,
                 mins: 0,
                 secs: 0,
+                spin_button_num: 0.0,
                 time_msg: String::new(),
+                spin_btn_msg: String::new(),
             },
             Task::none(),
         )
@@ -55,10 +60,11 @@ impl Application for VertSpinnerApp {
 
     fn update(&mut self, message: Self::Message) -> Task<Self::Message> {
         match message {
-            VertSpinnerMessages::UpdateHours(hours) => self.hours = hours,
-            VertSpinnerMessages::UpdateMins(mins) => self.mins = mins,
-            VertSpinnerMessages::UpdateSecs(secs) => self.secs = secs,
-            VertSpinnerMessages::UpdateTimeMessage => {
+            SpinBtnMessages::UpdateHours(hours) => self.hours = hours,
+            SpinBtnMessages::UpdateMins(mins) => self.mins = mins,
+            SpinBtnMessages::UpdateSecs(secs) => self.secs = secs,
+            SpinBtnMessages::UpdateSpinBtnVal(spin_btn_val) => self.spin_button_num = spin_btn_val,
+            SpinBtnMessages::UpdateTimeMessage => {
                 self.time_msg = format!(
                     "{}:{}:{}",
                     self.hours,
@@ -74,7 +80,9 @@ impl Application for VertSpinnerApp {
                     } else {
                         self.secs.to_string()
                     }
-                )
+                );
+
+                self.spin_btn_msg = format!("This came from the spin button: {}", self.spin_button_num);
             }
         }
 
@@ -83,38 +91,56 @@ impl Application for VertSpinnerApp {
 
     fn view(&self) -> Element<Self::Message> {
         let spinner_row = row![
-            vertical_spin_button(
+            spin_button::spin_button(
                 "Hours",
                 1,
                 self.hours,
                 0,
                 12,
-                VertSpinnerMessages::UpdateHours
+                spin_button::Direction::Vertical,
+                SpinBtnMessages::UpdateHours
             ),
-            vertical_spin_button(
+            spin_button::spin_button(
                 "Minutes",
                 1,
                 self.mins,
                 0,
                 59,
-                VertSpinnerMessages::UpdateMins
+                spin_button::Direction::Vertical,
+                SpinBtnMessages::UpdateMins
             ),
-            vertical_spin_button(
+            spin_button::spin_button(
                 "Seconds",
                 1,
                 self.secs,
                 0,
                 59,
-                VertSpinnerMessages::UpdateSecs
+                spin_button::Direction::Vertical,
+                SpinBtnMessages::UpdateSecs
             ),
+            spin_button::spin_button(
+                "Spin Button Demo", 
+                0.5, 
+                self.spin_button_num, 
+                0.0, 
+                10.0, 
+                spin_button::Direction::Horizontal, 
+                SpinBtnMessages::UpdateSpinBtnVal
+            )
         ]
         .align_y(Vertical::Center);
 
+        let status_row = row![
+            text(self.time_msg.clone()),
+            cosmic::widget::horizontal_space().width(10),
+            text(self.spin_btn_msg.clone())
+        ];
+
         let final_col = column![
             spinner_row,
-            button::standard("Update Time").on_press(VertSpinnerMessages::UpdateTimeMessage),
+            button::standard("Update Time").on_press(SpinBtnMessages::UpdateTimeMessage),
             vertical_space().height(10),
-            text(self.time_msg.clone()),
+            status_row,
         ]
         .align_x(Alignment::Center);
 
@@ -126,7 +152,7 @@ impl Application for VertSpinnerApp {
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let settings = cosmic::app::Settings::default().size(Size::new(260., 240.));
+    let settings = cosmic::app::Settings::default().size(Size::new(550., 300.));
     cosmic::app::run::<VertSpinnerApp>(settings, ())?;
 
     Ok(())

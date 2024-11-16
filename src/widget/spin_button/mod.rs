@@ -4,6 +4,7 @@
 //! A control for incremental adjustments of a value.
 
 mod model;
+pub mod spin_button;
 use std::borrow::Cow;
 
 pub use self::model::{Message, Model};
