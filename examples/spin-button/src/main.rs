@@ -1,5 +1,5 @@
 use cosmic::widget::divider::horizontal;
-use cosmic::widget::{button, container, text, spin_button, spin_button::Direction};
+use cosmic::widget::{button, container, text, spin_button, spin_button::Orientation};
 use cosmic::{
     app::{Core, Task},
     iced::{
@@ -10,7 +10,7 @@ use cosmic::{
     Application, Element,
 };
 
-pub struct VertSpinnerApp {
+pub struct SpinButtonExamplApp {
     core: Core,
     i8_num: i8,
     i16_num: i16,
@@ -34,12 +34,12 @@ pub enum SpinBtnMessages {
     UpdateSpinnerMsg,
 }
 
-impl Application for VertSpinnerApp {
+impl Application for SpinButtonExamplApp {
     type Executor = cosmic::executor::Default;
     type Flags = ();
     type Message = SpinBtnMessages;
 
-    const APP_ID: &'static str = "com.system76.VertSpinnerExample";
+    const APP_ID: &'static str = "com.system76.SpinButtonExample";
 
     fn core(&self) -> &Core {
         &self.core
@@ -68,10 +68,7 @@ impl Application for VertSpinnerApp {
 
     fn update(&mut self, message: Self::Message) -> Task<Self::Message> {
         match message {
-            SpinBtnMessages::UpdateI8Num(new_i8) => {
-                self.i8_num = new_i8;
-                SpinBtnMessages::UpdateSpinnerMsg;
-            },
+            SpinBtnMessages::UpdateI8Num(new_i8) => self.i8_num = new_i8,
             SpinBtnMessages::UpdateI16Num(new_i16) => self.i16_num = new_i16,
             SpinBtnMessages::UpdateI32Num(new_i32) => self.i32_num = new_i32,
             SpinBtnMessages::UpdateI64Num(new_i64) => self.i64_num = new_i64,
@@ -95,7 +92,7 @@ impl Application for VertSpinnerApp {
                 self.i8_num, // current value, this is also what's displayed in the center of the widget
                 -5, // minimum value, if decremented below this the widget's current value rolls to the max value
                 5, // maximum value, if incremented above this the widget's current value rolls to the min value
-                Direction::Vertical, // oreintation of the widget
+                Some(Orientation::Vertical), // oreintation of the widget
                 SpinBtnMessages::UpdateI8Num // message to send to the application's update function
             ),
             spin_button(
@@ -104,7 +101,7 @@ impl Application for VertSpinnerApp {
                 self.i16_num,
                 0,
                 10,
-                Direction::Vertical,
+                Some(Orientation::Vertical),
                 SpinBtnMessages::UpdateI16Num
             ),
             spin_button(
@@ -113,7 +110,7 @@ impl Application for VertSpinnerApp {
                 self.i32_num,
                 0,
                 12,
-                Direction::Vertical,
+                Some(Orientation::Vertical),
                 SpinBtnMessages::UpdateI32Num
             ),
             spin_button(
@@ -122,7 +119,7 @@ impl Application for VertSpinnerApp {
                 self.i64_num,
                 15,
                 35,
-                Direction::Vertical,
+                Some(Orientation::Vertical),
                 SpinBtnMessages::UpdateI64Num
             ),
         ]
@@ -136,7 +133,7 @@ impl Application for VertSpinnerApp {
                     self.i128_num,
                     -1000,
                     500,
-                    Direction::Horizontal,
+                    None, // Passing None gives a default of a Horizontal Spin Button widget
                     SpinBtnMessages::UpdateI128Num
                 ),
             ],
@@ -148,7 +145,7 @@ impl Application for VertSpinnerApp {
                     self.f32_num,
                     -35.3,
                     12.3,
-                    Direction::Horizontal,
+                    Some(Orientation::Horizontal), // It can also be explicitly passed as Orientation::Horizontal
                     SpinBtnMessages::UpdateF32Num
                 )
             ],
@@ -160,7 +157,7 @@ impl Application for VertSpinnerApp {
                     self.f64_num,
                     0.0,
                     3.0,
-                    Direction::Horizontal,
+                    None,
                     SpinBtnMessages::UpdateF64Num
                 )
             ],

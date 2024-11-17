@@ -102,7 +102,7 @@ pub(crate) fn iced_settings<App: Application>(
     iced.default_font = settings.default_font;
     iced.default_text_size = iced::Pixels(settings.default_text_size);
     let exit_on_close = settings.exit_on_close;
-    iced.is_daemon = false;
+    //iced.is_daemon = false;
     iced.exit_on_close_request = settings.is_daemon;
     let mut window_settings = iced::window::Settings::default();
     window_settings.exit_on_close_request = exit_on_close;
