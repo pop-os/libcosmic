@@ -311,7 +311,7 @@ pub mod settings;
 
 pub mod spin_button;
 #[doc(inline)]
-pub use spin_button::{spin_button, SpinButton};
+pub use spin_button::{spin_button, spin_button_standard, SpinButton};
 
 pub mod tab_bar;
 

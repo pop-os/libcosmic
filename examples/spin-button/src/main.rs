@@ -1,5 +1,4 @@
-use cosmic::widget::divider::horizontal;
-use cosmic::widget::{button, container, text, spin_button, spin_button::Orientation};
+use cosmic::widget::{button, container, text, spin_button, spin_button_standard, spin_button::Orientation};
 use cosmic::{
     app::{Core, Task},
     iced::{
@@ -151,13 +150,14 @@ impl Application for SpinButtonExamplApp {
             ],
             vertical_space().height(5),
             row![
-                spin_button(
+                // This function can be called instead if a Horizontal Spin Button is needed.
+                // This shortens up the API call for default/standard Spin Button widgets.
+                spin_button_standard(
                     "f64",
                     1.3,
                     self.f64_num,
                     0.0,
                     3.0,
-                    None,
                     SpinBtnMessages::UpdateF64Num
                 )
             ],
@@ -187,7 +187,7 @@ impl Application for SpinButtonExamplApp {
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let settings = cosmic::app::Settings::default().size(Size::new(550., 1024.));
-    cosmic::app::run::<VertSpinnerApp>(settings, ())?;
+    cosmic::app::run::<SpinButtonExamplApp>(settings, ())?;
 
     Ok(())
 }
