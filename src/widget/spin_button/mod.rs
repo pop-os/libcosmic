@@ -59,7 +59,7 @@ impl<'a, T, M> SpinButton<'a, T, M>
 where
     T: Add<Output = T> + Sub<Output = T> + PartialEq + PartialOrd + Display + Copy
 {
-    /// Create a new default spin button
+    /// Create a new new button
     pub fn new(
         label: impl Into<String>,
         step: T,
@@ -82,7 +82,7 @@ where
     }
 }
 
-/// Shorthand function to create a default spin button
+/// Shorthand function to create a new spin button
 pub fn spin_button<'a, T, M>(
     label: impl Into<String>,
     step: T,
@@ -96,6 +96,21 @@ where
     T: Add<Output = T> + Sub<Output = T> + PartialEq + PartialOrd + Display + Copy
 {
     SpinButton::new(label, step, value, min, max, orientation, on_press)
+}
+
+/// Shorthand to create a standard (horizontal) spin button widget
+pub fn spin_button_standard<'a, T, M>(
+    label: impl Into<String>,
+    step: T,
+    value: T,
+    min: T,
+    max: T,
+    on_press: impl Fn(T) -> M + 'static,
+) -> SpinButton<'a, T, M>
+where 
+    T: Add<Output = T> + Sub<Output = T> + PartialEq + PartialOrd + Display + Copy
+{
+    SpinButton::new(label, step, value, min, max, None, on_press)
 }
 
 fn increment<T>(step: T, value: T, min: T, max: T) -> T
