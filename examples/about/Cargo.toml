@@ -24,4 +24,5 @@ features = [
     "wgpu",
     "single-instance",
     "multi-window",
+    "about",
 ]

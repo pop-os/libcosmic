@@ -7,6 +7,7 @@
 //! example in our repository.
 
 pub mod command;
+pub mod context_drawer;
 mod core;
 pub mod cosmic;
 #[cfg(all(feature = "winit", feature = "multi-window"))]
@@ -54,10 +55,9 @@ pub use self::core::Core;
 pub use self::settings::Settings;
 use crate::prelude::*;
 use crate::theme::THEME;
-use crate::widget::{
-    container, context_drawer, horizontal_space, id_container, menu, nav_bar, popover,
-};
+use crate::widget::{container, horizontal_space, id_container, menu, nav_bar, popover};
 use apply::Apply;
+use context_drawer::ContextDrawer;
 use iced::window;
 use iced::{Length, Subscription};
 pub use message::Message;
@@ -102,7 +102,8 @@ pub(crate) fn iced_settings<App: Application>(
     iced.default_font = settings.default_font;
     iced.default_text_size = iced::Pixels(settings.default_text_size);
     let exit_on_close = settings.exit_on_close;
-    iced.exit_on_close_request = exit_on_close;
+    iced.is_daemon = false;
+    iced.exit_on_close_request = settings.is_daemon;
     let mut window_settings = iced::window::Settings::default();
     window_settings.exit_on_close_request = exit_on_close;
     iced.id = Some(App::APP_ID.to_owned());
@@ -454,22 +455,8 @@ where
     fn init(core: Core, flags: Self::Flags) -> (Self, Task<Self::Message>);
 
     /// Displays a context drawer on the side of the application window when `Some`.
-    fn context_drawer(&self) -> Option<Element<Self::Message>> {
-        None
-    }
-
-    /// App-specific actions at the start of the context drawer header
-    fn context_header_actions(&self) -> Vec<Element<Message<Self::Message>>> {
-        Vec::new()
-    }
-
-    /// Non-scrolling elements placed below the context drawer title row
-    fn context_drawer_header(&self) -> Option<Element<Message<Self::Message>>> {
-        None
-    }
-
-    /// Elements placed below the context drawer scrollable
-    fn context_drawer_footer(&self) -> Option<Element<Message<Self::Message>>> {
+    /// Use the [`ApplicationExt::set_show_context`] function for this to take effect.
+    fn context_drawer(&self) -> Option<ContextDrawer<Self::Message>> {
         None
     }
 
@@ -637,11 +624,6 @@ pub trait ApplicationExt: Application {
     /// Get the title of a window.
     fn title(&self, id: window::Id) -> &str;
 
-    /// Set the context drawer title.
-    fn set_context_title(&mut self, title: String) {
-        self.core_mut().set_context_title(title);
-    }
-
     /// Set the context drawer visibility.
     fn set_show_context(&mut self, show: bool) {
         self.core_mut().set_show_context(show);
@@ -745,21 +727,21 @@ impl<App: Application> ApplicationExt for App {
             };
 
             if self.nav_model().is_none() || core.show_content() {
-                let main_content = self.view().map(Message::App);
+                let main_content = self.view();
 
                 //TODO: reduce duplication
                 let context_width = core.context_width(has_nav);
-                if core.window.context_is_overlay {
+                if core.window.context_is_overlay && core.window.show_context {
                     if let Some(context) = self.context_drawer() {
                         widgets.push(
-                            context_drawer(
-                                &core.window.context_title,
-                                self.context_header_actions(),
-                                self.context_drawer_header(),
-                                self.context_drawer_footer(),
-                                Message::Cosmic(cosmic::Message::ContextDrawer(false)),
+                            crate::widget::context_drawer(
+                                context.title,
+                                context.header_actions,
+                                context.header,
+                                context.footer,
+                                context.on_close,
                                 main_content,
-                                context.map(Message::App),
+                                context.content,
                                 context_width,
                             )
                             .apply(|drawer| {
@@ -774,29 +756,40 @@ impl<App: Application> ApplicationExt for App {
                             } else {
                                 [0, 0, 0, 0]
                             })
-                            .into(),
+                            .apply(Element::from)
+                            .map(Message::App),
                         );
                     } else {
                         //TODO: container and padding are temporary, until
                         //the `resize_border` is moved to not cover window content
-                        widgets.push(container(main_content).padding(main_content_padding).into());
+                        widgets.push(
+                            container(main_content.map(Message::App))
+                                .padding(main_content_padding)
+                                .into(),
+                        );
                     }
                 } else {
                     //TODO: hide content when out of space
                     //TODO: container and padding are temporary, until
                     //the `resize_border` is moved to not cover window content
-                    widgets.push(container(main_content).padding(main_content_padding).into());
+                    widgets.push(
+                        container(main_content.map(Message::App))
+                            .padding(main_content_padding)
+                            .into(),
+                    );
                     if let Some(context) = self.context_drawer() {
                         widgets.push(
                             crate::widget::ContextDrawer::new_inner(
-                                &core.window.context_title,
-                                self.context_header_actions(),
-                                self.context_drawer_header(),
-                                self.context_drawer_footer(),
-                                context.map(Message::App),
-                                Message::Cosmic(cosmic::Message::ContextDrawer(false)),
+                                context.title,
+                                context.header_actions,
+                                context.header,
+                                context.footer,
+                                context.content,
+                                context.on_close,
                                 context_width,
                             )
+                            .apply(Element::from)
+                            .map(Message::App)
                             .apply(container)
                             .width(context_width)
                             .apply(|drawer| {
