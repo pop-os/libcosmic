@@ -85,14 +85,14 @@ pub fn spin_button<'a, T, M>(
     on_press: impl Fn(T) -> M + 'static,
 ) -> SpinButton<'a, T, M>
 where 
-    T: Add<Output = T> + Sub<Output = T> + PartialEq + PartialOrd + Copy
+    T: Add<Output = T> + Sub<Output = T> + PartialEq + PartialOrd + Display + Copy
 {
     SpinButton::new(label, step, value, min, max, direction, on_press)
 }
 
 fn increment<T>(step: T, value: T, min: T, max: T) -> T
 where 
-    T: Add<Output = T> + Sub<Output = T> + PartialEq + PartialOrd + Copy
+    T: Add<Output = T> + Sub<Output = T> + PartialEq + PartialOrd + Display + Copy
 {   
     //! Make it roll over back to min if the increase is too high
     if value + step > max {
@@ -104,7 +104,7 @@ where
 
 fn decrement<T>(step: T, value: T, min: T, max: T) -> T
 where 
-    T: Add<Output = T> + Sub<Output = T> + PartialEq + PartialOrd + Copy
+    T: Add<Output = T> + Sub<Output = T> + PartialEq + PartialOrd + Display + Copy
 {
     //! Make it roll over back to max if the decrese is too low
     if value - step < min {
@@ -117,7 +117,7 @@ where
 impl<'a, T, Message> From<SpinButton<'a, T, Message>> for Element<'a, Message>
 where 
     Message: Clone + 'static,
-    T: Add<Output = T> + Sub<Output = T> + PartialEq + PartialOrd + Copy
+    T: Add<Output = T> + Sub<Output = T> + PartialEq + PartialOrd + Display + Copy
 {
     fn from(this: SpinButton<'a, T, Message>) -> Self {
         //! Matching on the direction enum given by the developer when the

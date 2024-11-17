@@ -17,10 +17,8 @@ pub struct VertSpinnerApp {
     i32_num: i32,
     i64_num: i64,
     i128_num: i128,
-    f16_num: f16,
     f32_num: f32,
     f64_num: f64,
-    f128_num: f128,
     spinner_msg: String,
 }
 
@@ -31,10 +29,8 @@ pub enum SpinBtnMessages {
     UpdateI32Num(i32),
     UpdateI64Num(i64),
     UpdateI128Num(i128),
-    UpdateF16Num(f16),
     UpdateF32Num(f32),
     UpdateF64Num(f64),
-    UpdateF128Num(f128),
     UpdateSpinnerMsg,
 }
 
@@ -62,10 +58,8 @@ impl Application for VertSpinnerApp {
                 i32_num: 0,
                 i64_num: 0,
                 i128_num: 0,
-                f16_num: 0.,
                 f32_num: 0.,
                 f64_num: 0.,
-                f128_num: 0.,
                 spinner_msg: String::new(),
             },
             Task::none(),
@@ -76,18 +70,17 @@ impl Application for VertSpinnerApp {
         match message {
             SpinBtnMessages::UpdateI8Num(new_i8) => {
                 self.i8_num = new_i8;
-                SpinBtnMessages::UpdateSpinnerMsg
+                SpinBtnMessages::UpdateSpinnerMsg;
             },
             SpinBtnMessages::UpdateI16Num(new_i16) => self.i16_num = new_i16,
             SpinBtnMessages::UpdateI32Num(new_i32) => self.i32_num = new_i32,
             SpinBtnMessages::UpdateI64Num(new_i64) => self.i64_num = new_i64,
             SpinBtnMessages::UpdateI128Num(new_i128) => self.i128_num = new_i128,
-            SpinBtnMessages::UpdateF16Num(new_f16) => self.f16_num = new_f16,
             SpinBtnMessages::UpdateF32Num(new_f32) => self.f32_num = new_f32,
             SpinBtnMessages::UpdateF64Num(new_f64) => self.f64_num = new_f64,
-            SpinBtnMessages::UpdateF128Num(new_f128) => self.f128_num = new_f128,
             SpinBtnMessages::UpdateSpinnerMsg => {
-                self.spinner_msg = format!("i8: {}, i16: {}, i32: {}, i64: {}, i128: {}\nf16: {}, f32: {}, f64: {}, f128: {}");
+                self.spinner_msg = format!("i8: {}, i16: {}, i32: {}, i64: {}, i128: {}\nf32: {}, f64: {}", 
+                    self.i8_num, self.i16_num, self.i32_num, self.i64_num, self.i128_num, self.f32_num, self.f64_num);
             }
         }
 
@@ -125,7 +118,7 @@ impl Application for VertSpinnerApp {
             ),
             spin_button(
                 "i64",
-                15,
+                10,
                 self.i64_num,
                 15,
                 35,
@@ -146,18 +139,7 @@ impl Application for VertSpinnerApp {
                     Direction::Horizontal,
                     SpinBtnMessages::UpdateI128Num
                 )
-            ].into(),
-            row![
-                spin_button(
-                    "f16",
-                    0.2,
-                    self.f16_num,
-                    -2.2,
-                    4.8,
-                    Direction::Horizontal,
-                    SpinBtnMessages::UpdateF16Num
-                )
-            ].into(),
+            ],
             row![
                 spin_button(
                     "f32", 
@@ -168,20 +150,19 @@ impl Application for VertSpinnerApp {
                     Direction::Horizontal,
                     SpinBtnMessages::UpdateF32Num
                 )
-            ].into(),
+            ],
             row![
                 spin_button(
                     "f64",
-                    1.0,
+                    1.3,
                     self.f64_num,
                     0.0,
                     3.0,
                     Direction::Horizontal,
                     SpinBtnMessages::UpdateF64Num
                 )
-            ].into(),
+            ],
         ]
-        .into()
         .align_x(Alignment::Center);
 
         let status_row = row![
