@@ -3,219 +3,217 @@
 
 //! A control for incremental adjustments of a value.
 
-mod model;
-pub mod spin_button;
-use std::borrow::Cow;
-
-pub use self::model::{Message, Model};
-
-use crate::widget::{button, column, container, icon, row, text};
-use crate::{theme, Element};
-use std::fmt::Display;
-use std::marker::PhantomData;
+use std::borrow::{Borrow, Cow};
+use std::fmt::{Display, Formatter};
 use std::ops::{Add, Sub};
+use std::marker::PhantomData;
 use apply::Apply;
-use iced::{Alignment, Length};
+use fraction::Decimal;
 use iced::alignment::Horizontal;
-use iced_core::{Border, Shadow};
+use iced::{Alignment, Border, Length, Shadow};
+use crate::{
+    Element,
+    widget::{
+        button, 
+        column, 
+        container, 
+        icon, 
+        row, 
+        text,
+    },
+};
 
-pub struct SpinButton<'a, Message> {
-    label: Cow<'a, str>,
-    on_change: Box<dyn Fn(model::Message) -> Message + 'static>,
+pub enum Direction {
+    Horizontal,
+    Vertical,
 }
 
-/// A control for incremental adjustments of a value.
-pub fn spin_button<'a, Message: 'static>(
-    label: impl Into<Cow<'a, str>>,
-    on_change: impl Fn(model::Message) -> Message + 'static,
-) -> SpinButton<'a, Message> {
-    SpinButton::new(label, on_change)
-}
-
-impl<'a, Message: 'static> SpinButton<'a, Message> {
-    pub fn new(
-        label: impl Into<Cow<'a, str>>,
-        on_change: impl Fn(model::Message) -> Message + 'static,
-    ) -> Self {
-        Self {
-            on_change: Box::from(on_change),
-            label: label.into(),
-        }
-    }
-
-    #[must_use]
-    pub fn into_element(self) -> Element<'a, Message> {
-        let Self { on_change, label } = self;
-        container(
-            row::with_children(vec![
-                icon::from_name("list-remove-symbolic")
-                    .size(16)
-                    .apply(container)
-                    .center(Length::Fixed(32.0))
-                    .apply(button::custom)
-                    .width(Length::Fixed(32.0))
-                    .height(Length::Fixed(32.0))
-                    .class(theme::Button::Text)
-                    .on_press(model::Message::Decrement)
-                    .into(),
-                text::title4(label)
-                    .apply(container)
-                    .center_x(Length::Fixed(48.0))
-                    .align_y(Alignment::Center)
-                    .into(),
-                icon::from_name("list-add-symbolic")
-                    .size(16)
-                    .apply(container)
-                    .center(Length::Fixed(32.0))
-                    .apply(button::custom)
-                    .width(Length::Fixed(32.0))
-                    .height(Length::Fixed(32.0))
-                    .class(theme::Button::Text)
-                    .on_press(model::Message::Increment)
-                    .into(),
-            ])
-            .width(Length::Shrink)
-            .height(Length::Fixed(32.0))
-            .align_y(Alignment::Center),
-        )
-        .width(Length::Shrink)
-        .center_y(Length::Fixed(32.0))
-        .class(theme::Container::custom(container_style))
-        .apply(Element::from)
-        .map(on_change)
-    }
-}
-
-impl<'a, Message: 'static> From<SpinButton<'a, Message>> for Element<'a, Message> {
-    fn from(spin_button: SpinButton<'a, Message>) -> Self {
-        spin_button.into_element()
-    }
-}
-
-#[allow(clippy::trivially_copy_pass_by_ref)]
-fn container_style(theme: &crate::Theme) -> iced_widget::container::Style {
-    let basic = &theme.cosmic();
-    let mut neutral_10 = basic.palette.neutral_10;
-    neutral_10.alpha = 0.1;
-    let accent = &basic.accent;
-    let corners = &basic.corner_radii;
-    iced_widget::container::Style {
-        icon_color: Some(basic.palette.neutral_10.into()),
-        text_color: Some(basic.palette.neutral_10.into()),
-        background: None,
-        border: Border {
-            radius: corners.radius_s.into(),
-            width: 0.0,
-            color: accent.base.into(),
-        },
-        shadow: Shadow::default(),
-    }
-}
-
-
-
-/// VerticalSpinButton is the state/model of the vertical spin button widget.
-/// Restricts T to Add, Sub, Eq, Ord, Display, and Copy so that
-/// T can only be numerical values.
-pub struct VerticalSpinButton<'a, T, M>
+pub struct SpinButton<'a, T, M> 
 where
-    T: Add<Output = T> + Sub<Output = T> + Eq + Ord + Display + Copy,
+    T: Add<Output = T> + Sub<Output = T> + PartialEq + PartialOrd + Display + Copy 
 {
     label: String,
-    step: T,
-    value: T,
-    min: T,
-    max: T,
-    on_select: Box<dyn Fn(T) -> M>,
+    /// The amount to increment or decrement the value.
+    pub step: T,
+    /// The current value of the spin button.
+    pub value: T,
+    /// The minimum value permitted.
+    pub min: T,
+    /// The maximum value permitted.
+    pub max: T,
+    /// The direction that the spin button is laid out; Horizontal (default) or Vertical
+    pub direction: Direction,
+    on_press: Box<dyn Fn(T) -> M>,
     phantom_data: PhantomData<&'a M>,
 }
 
-impl<'a, T, M> VerticalSpinButton<'a, T, M>
+impl<'a, T, M> SpinButton<'a, T, M>
 where
-    T: Add<Output = T> + Sub<Output = T> + Eq + Ord + Display + Copy,
+    T: Add<Output = T> + Sub<Output = T> + PartialEq + PartialOrd + Display + Copy
 {
-    /// Creates a new vertical spin button widget
+    /// Create a new default spin button
     pub fn new(
         label: impl Into<String>,
         step: T,
         value: T,
         min: T,
         max: T,
-        on_select: impl Fn(T) -> M + 'static,
+        direction: Direction,
+        on_press: impl Fn(T) -> M + 'static,
     ) -> Self {
-        VerticalSpinButton {
+        Self {
             label: label.into(),
             step,
             value,
             min,
             max,
-            on_select: Box::new(on_select),
+            direction,
+            on_press: Box::from(on_press),
             phantom_data: PhantomData,
         }
     }
 }
 
-pub fn vertical_spin_button<T, M>(
+/// Shorthand function to create a default spin button
+pub fn spin_button<'a, T, M>(
     label: impl Into<String>,
     step: T,
     value: T,
     min: T,
     max: T,
-    on_select: impl Fn(T) -> M + 'static,
-) -> VerticalSpinButton<'static, T, M>
-where
-    T: Add<Output = T> + Sub<Output = T> + Eq + Ord + Display + Copy,
+    direction: Direction,
+    on_press: impl Fn(T) -> M + 'static,
+) -> SpinButton<'a, T, M>
+where 
+    T: Add<Output = T> + Sub<Output = T> + PartialEq + PartialOrd + Copy
 {
-    VerticalSpinButton::new(label, step, value, min, max, on_select)
+    SpinButton::new(label, step, value, min, max, direction, on_press)
 }
 
-fn increment<T, Message>(step: T, val: T, min: T, max: T) -> T
-where
-    T: Add<Output = T> + Sub<Output = T> + Eq + Ord + Display + Copy,
-{
-    std::cmp::min(std::cmp::max(val + step, min), max)
-}
-
-fn decrement<T, Message>(step: T, val: T, min: T, max: T) -> T
-where
-    T: Add<Output = T> + Sub<Output = T> + Eq + Ord + Display + Copy,
-{
-    std::cmp::max(std::cmp::min(val - step, max), min)
-}
-
-impl<'a, T, Message> From<VerticalSpinButton<'a, T, Message>> for Element<'a, Message>
-where
-    Message: Clone + 'static,
-    T: Add<Output = T> + Sub<Output = T> + Eq + Ord + Display + Copy,
-{
-    fn from(this: VerticalSpinButton<T, Message>) -> Self {
-        let val_text = text(format!("{}", this.value)).size(14);
-        let spinner_container = column::with_capacity(3)
-            .push(
-                button::icon(icon::from_name("list-add-symbolic"))
-                    .padding([0, 12])
-                    .on_press((this.on_select)(increment::<T, Message>(
-                        this.step, this.value, this.min, this.max,
-                    ))),
-            )
-            .push(val_text)
-            .push(
-                button::icon(icon::from_name("list-remove-symbolic"))
-                    .padding([0, 12])
-                    .on_press((this.on_select)(decrement::<T, Message>(
-                        this.step, this.value, this.min, this.max,
-                    ))),
-            )
-            .align_x(Horizontal::Center);
-
-        let content_list = column::with_children(vec![
-            row::with_capacity(1).push(text(this.label)).into(),
-            row::with_children(vec![Element::from(spinner_container)]).into(),
-        ])
-        .width(75)
-        .padding([8, 0])
-        .align_x(Alignment::Center);
-
-        Self::new(content_list)
+fn increment<T>(step: T, value: T, min: T, max: T) -> T
+where 
+    T: Add<Output = T> + Sub<Output = T> + PartialEq + PartialOrd + Copy
+{   
+    //! Make it roll over back to min if the increase is too high
+    if value + step > max {
+        min
+    } else {
+        value + step
     }
 }
+
+fn decrement<T>(step: T, value: T, min: T, max: T) -> T
+where 
+    T: Add<Output = T> + Sub<Output = T> + PartialEq + PartialOrd + Copy
+{
+    //! Make it roll over back to max if the decrese is too low
+    if value - step < min {
+        max
+    } else {
+        value - step
+    }
+}
+
+impl<'a, T, Message> From<SpinButton<'a, T, Message>> for Element<'a, Message>
+where 
+    Message: Clone + 'static,
+    T: Add<Output = T> + Sub<Output = T> + PartialEq + PartialOrd + Copy
+{
+    fn from(this: SpinButton<'a, T, Message>) -> Self {
+        //! Matching on the direction enum given by the developer when the
+        //! widget is initially created in the application's view function.
+        match this.direction {
+            Direction::Horizontal => {
+                // Create a spinner container variable that contains the row with all of
+                // the combined widgets that make up the widget.
+                let spinner_container = column::with_capacity(2)
+                    .push(
+                        row::with_children(
+                            vec![
+                                // Using the title4 variant of text, just like the original spin button did.
+                                text::title4(this.label.clone())
+                                .apply(container)
+                                .center_x(Length::Fill)
+                                .align_y(Alignment::Center)
+                                .into(),
+                            ]
+                        )
+                    )
+                    .push(
+                        row::with_children(
+                            vec![                    
+                                // Using an button instead of an icon for the decrement functionality.
+                                button::icon(icon::from_name("list-remove-symbolic"))
+                                    .padding([0, 12])
+                                    .on_press((this.on_press)(decrement::<T>(
+                                        this.step, this.value, this.min, this.max,
+                                        ))
+                                    )
+                                    .into(),
+                                // Using the title4 variant of text for consistency.
+                                text::title4(format!("{}", this.value))
+                                    .apply(container)
+                                    .center_x(Length::Fixed(48.0))
+                                    .align_y(Alignment::Center)
+                                    .into(),
+                                // Using another button for the increment functionality.
+                                button::icon(icon::from_name("list-add-symbolic"))
+                                    .padding([0, 12])
+                                    .on_press((this.on_press)(increment::<T>(
+                                        this.step, this.value, this.min, this.max,
+                                    ))
+                                )
+                                .into(),
+                            ]
+                        )
+                        .align_y(Alignment::Center)
+                    )
+                    .align_x(Alignment::Center);
+                
+                // Return the horizontal spin button from the match statement.
+                Self::new(spinner_container)
+            },
+            Direction::Vertical => {
+                // Create a text widget that holds the value
+                let val_text = text(format!("{}", this.value)).size(14);
+                // Create a spinner container variable that contains the column with all of
+                // the combined widgets that make up the widget.
+                let spinner_container = column::with_capacity(3)
+                .push(
+                    // Use a button for the increment functionality
+                    button::icon(icon::from_name("list-add-symbolic"))
+                        .padding([0, 12])
+                        .on_press((this.on_press)(increment::<T>(
+                            this.step, this.value, this.min, this.max,
+                        ))),
+                )
+                // Add the text widget that holds the current value
+                .push(val_text)
+                .push(
+                    // Use a button for the decrement functionality
+                    button::icon(icon::from_name("list-remove-symbolic"))
+                        .padding([0, 12])
+                        .on_press((this.on_press)(decrement::<T>(
+                            this.step, this.value, this.min, this.max,
+                        ))),
+                )
+                .align_x(Horizontal::Center);
+
+                // Create a column that contains two rows:
+                // First Row -> The label/title for the spin button.
+                // Second Row -> The spin button container from above.
+                let content_list = column::with_children(vec![
+                    row::with_capacity(1).push(text(this.label)).into(),
+                    row::with_children(vec![Element::from(spinner_container)]).into(),
+                ])
+                .width(75)
+                .padding([8, 0])
+                .align_x(Alignment::Center);
+                
+                // Return the vertical spin button from the match statement.
+                Self::new(content_list)
+            }
+        }
+    }
+}
+
