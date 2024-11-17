@@ -90,13 +90,13 @@ impl Application for VertSpinnerApp {
     fn view(&self) -> Element<Self::Message> {
         let vert_spinner_row = row![
             spin_button(
-                "i8",
-                1,
-                self.i8_num,
-                -5,
-                5,
-                Direction::Vertical,
-                SpinBtnMessages::UpdateI8Num
+                "i8", // label: displayed above the widget no matter the orientation
+                1, // step: how much to increment/decrement by
+                self.i8_num, // current value, this is also what's displayed in the center of the widget
+                -5, // minimum value, if decremented below this the widget's current value rolls to the max value
+                5, // maximum value, if incremented above this the widget's current value rolls to the min value
+                Direction::Vertical, // oreintation of the widget
+                SpinBtnMessages::UpdateI8Num // message to send to the application's update function
             ),
             spin_button(
                 "i16",
