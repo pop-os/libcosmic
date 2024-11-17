@@ -135,15 +135,16 @@ impl Application for VertSpinnerApp {
                     100,
                     self.i128_num,
                     -1000,
-                    i128::MAX,
+                    500,
                     Direction::Horizontal,
                     SpinBtnMessages::UpdateI128Num
-                )
+                ),
             ],
+            vertical_space().height(5),
             row![
                 spin_button(
                     "f32", 
-                    1.5,
+                    1.3,
                     self.f32_num,
                     -35.3,
                     12.3,
@@ -151,6 +152,7 @@ impl Application for VertSpinnerApp {
                     SpinBtnMessages::UpdateF32Num
                 )
             ],
+            vertical_space().height(5),
             row![
                 spin_button(
                     "f64",
