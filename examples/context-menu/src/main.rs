@@ -74,7 +74,11 @@ impl cosmic::Application for App {
         };
 
         app.set_header_title("COSMIC Context Menu Demo".into());
-        let command = app.set_window_title("COSMIC Context Menu Demo".into());
+        let command = if let Some(win_id) = app.core.main_window_id() {
+            app.set_window_title("COSMIC Context Menu Demo".into(), win_id)
+        } else {
+            Task::none()
+        };
 
         (app, command)
     }
@@ -108,18 +112,19 @@ impl App {
         Some(menu::items(
             &HashMap::new(),
             vec![
-                menu::Item::Button("New window", ContextMenuAction::WindowNew),
+                menu::Item::Button("New window", None, ContextMenuAction::WindowNew),
                 menu::Item::Divider,
                 menu::Item::Folder(
                     "View",
                     vec![menu::Item::CheckBox(
                         "Hide content",
+                        None,
                         self.hide_content,
                         ContextMenuAction::ToggleHideContent,
                     )],
                 ),
                 menu::Item::Divider,
-                menu::Item::Button("Quit", ContextMenuAction::WindowClose),
+                menu::Item::Button("Quit", None, ContextMenuAction::WindowClose),
             ],
         ))
     }

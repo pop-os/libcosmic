@@ -135,9 +135,9 @@ impl cosmic::Application for App {
         Some(menu::items(
             &HashMap::new(),
             vec![
-                menu::Item::Button("Move Up", NavMenuAction::MoveUp(id)),
-                menu::Item::Button("Move Down", NavMenuAction::MoveDown(id)),
-                menu::Item::Button("Delete", NavMenuAction::Delete(id)),
+                menu::Item::Button("Move Up", None, NavMenuAction::MoveUp(id)),
+                menu::Item::Button("Move Down", None, NavMenuAction::MoveDown(id)),
+                menu::Item::Button("Delete", None, NavMenuAction::Delete(id)),
             ],
         ))
     }
@@ -204,6 +204,10 @@ where
         let header_title = self.active_page_title().to_owned();
         let window_title = format!("{header_title} — COSMIC AppDemo");
         self.set_header_title(header_title);
-        self.set_window_title(window_title)
+        if let Some(win_id) = self.core.main_window_id() {
+            self.set_window_title(window_title, win_id)
+        } else {
+            Task::none()
+        }
     }
 }
