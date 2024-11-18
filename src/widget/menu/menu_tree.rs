@@ -9,6 +9,7 @@ use std::rc::Rc;
 use iced_widget::core::{renderer, Element};
 
 use crate::iced_core::{Alignment, Length};
+use crate::widget::icon;
 use crate::widget::menu::action::MenuAction;
 use crate::widget::menu::key_bind::KeyBind;
 use crate::{theme, widget};
@@ -171,11 +172,11 @@ pub fn menu_button<'a, Message: 'a>(
 /// - `Divider` - Represents a divider between menu items.
 pub enum MenuItem<A: MenuAction, L: Into<Cow<'static, str>>> {
     /// Represents a button menu item.
-    Button(L, A),
+    Button(L, Option<icon::Handle>, A),
     /// Represents a button menu item that is disabled.
-    ButtonDisabled(L, A),
+    ButtonDisabled(L, Option<icon::Handle>, A),
     /// Represents a checkbox menu item.
-    CheckBox(L, bool, A),
+    CheckBox(L, Option<icon::Handle>, bool, A),
     /// Represents a folder menu item.
     Folder(L, Vec<MenuItem<A, L>>),
     /// Represents a divider between menu items.
@@ -240,53 +241,72 @@ where
         .enumerate()
         .flat_map(|(i, item)| {
             let mut trees = vec![];
+            let spacing = crate::theme::active().cosmic().spacing;
+
             match item {
-                MenuItem::Button(label, action) => {
+                MenuItem::Button(label, icon, action) => {
                     let key = find_key(&action, key_binds);
-                    let menu_button = menu_button(vec![
+                    let mut items = vec![
                         widget::text(label).into(),
                         widget::horizontal_space().width(Length::Fill).into(),
                         widget::text(key).into(),
-                    ])
-                    .on_press(action.message());
+                    ];
+
+                    if let Some(icon) = icon {
+                        items.insert(0, widget::icon::icon(icon).size(16).into());
+                        items.insert(1, widget::Space::with_width(spacing.space_xxs).into());
+                    }
+
+                    let menu_button = menu_button(items).on_press(action.message());
 
                     trees.push(MenuTree::<Message, Renderer>::new(menu_button));
                 }
-                MenuItem::ButtonDisabled(label, action) => {
+                MenuItem::ButtonDisabled(label, icon, action) => {
                     let key = find_key(&action, key_binds);
-                    let menu_button = menu_button(vec![
+
+                    let mut items = vec![
                         widget::text(label).into(),
                         widget::horizontal_space().width(Length::Fill).into(),
                         widget::text(key).into(),
-                    ]);
+                    ];
+
+                    if let Some(icon) = icon {
+                        items.insert(0, widget::icon::icon(icon).size(16).into());
+                        items.insert(1, widget::Space::with_width(spacing.space_xxs).into());
+                    }
+
+                    let menu_button = menu_button(items);
 
                     trees.push(MenuTree::<Message, Renderer>::new(menu_button));
                 }
-                MenuItem::CheckBox(label, value, action) => {
+                MenuItem::CheckBox(label, icon, value, action) => {
                     let key = find_key(&action, key_binds);
-                    trees.push(MenuTree::new(
-                        menu_button(vec![
-                            if value {
-                                widget::icon::from_name("object-select-symbolic")
-                                    .size(16)
-                                    .icon()
-                                    .class(theme::Svg::Custom(Rc::new(|theme| {
-                                        iced_widget::svg::Style {
-                                            color: Some(theme.cosmic().accent_color().into()),
-                                        }
-                                    })))
-                                    .width(Length::Fixed(16.0))
-                                    .into()
-                            } else {
-                                widget::Space::with_width(Length::Fixed(16.0)).into()
-                            },
-                            widget::Space::with_width(Length::Fixed(8.0)).into(),
-                            widget::text(label).align_x(iced::Alignment::Start).into(),
-                            widget::horizontal_space().width(Length::Fill).into(),
-                            widget::text(key).into(),
-                        ])
-                        .on_press(action.message()),
-                    ));
+                    let mut items = vec![
+                        if value {
+                            widget::icon::from_name("object-select-symbolic")
+                                .size(16)
+                                .icon()
+                                .class(theme::Svg::Custom(Rc::new(|theme| {
+                                    iced_widget::svg::Style {
+                                        color: Some(theme.cosmic().accent_color().into()),
+                                    }
+                                })))
+                                .width(Length::Fixed(16.0))
+                                .into()
+                        } else {
+                            widget::Space::with_width(Length::Fixed(16.0)).into()
+                        },
+                        widget::Space::with_width(spacing.space_xxs).into(),
+                        widget::text(label).align_x(iced::Alignment::Start).into(),
+                        widget::horizontal_space().width(Length::Fill).into(),
+                        widget::text(key).into(),
+                    ];
+
+                    if let Some(icon) = icon {
+                        items.insert(1, widget::icon::icon(icon).size(16).into());
+                    }
+
+                    trees.push(MenuTree::new(menu_button(items).on_press(action.message())));
                 }
                 MenuItem::Folder(label, children) => {
                     trees.push(MenuTree::<Message, Renderer>::with_children(
