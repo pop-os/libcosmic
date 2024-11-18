@@ -3,13 +3,6 @@ name = "vertical-spin-button"
 version = "0.1.0"
 edition = "2021"
 
-[features]
-default = ["xdg-portal"]
-rfd = ["libcosmic/rfd"]
-xdg-portal = ["libcosmic/xdg-portal"]
-
-[dependencies]
-
 [dependencies.libcosmic]
 features = ["debug", "winit", "wayland", "desktop", "tokio"]
 path ="../.."

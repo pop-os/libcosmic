@@ -1,4 +1,4 @@
-use cosmic::widget::{button, container, text, spin_button, spin_button_standard, spin_button::Orientation};
+use cosmic::widget::{button, container, text, spin_button, vertical_spin_button, /*spin_button::Orientation*/};
 use cosmic::{
     app::{Core, Task},
     iced::{
@@ -85,40 +85,36 @@ impl Application for SpinButtonExamplApp {
 
     fn view(&self) -> Element<Self::Message> {
         let vert_spinner_row = row![
-            spin_button(
+            vertical_spin_button(
                 "i8", // label: displayed above the widget no matter the orientation
                 1, // step: how much to increment/decrement by
                 self.i8_num, // current value, this is also what's displayed in the center of the widget
                 -5, // minimum value, if decremented below this the widget's current value rolls to the max value
                 5, // maximum value, if incremented above this the widget's current value rolls to the min value
-                Some(Orientation::Vertical), // oreintation of the widget
                 SpinBtnMessages::UpdateI8Num // message to send to the application's update function
             ),
-            spin_button(
+            vertical_spin_button(
                 "i16",
                 1,
                 self.i16_num,
                 0,
                 10,
-                Some(Orientation::Vertical),
                 SpinBtnMessages::UpdateI16Num
             ),
-            spin_button(
+            vertical_spin_button(
                 "i32",
                 1,
                 self.i32_num,
                 0,
                 12,
-                Some(Orientation::Vertical),
                 SpinBtnMessages::UpdateI32Num
             ),
-            spin_button(
+            vertical_spin_button(
                 "i64",
                 10,
                 self.i64_num,
                 15,
                 35,
-                Some(Orientation::Vertical),
                 SpinBtnMessages::UpdateI64Num
             ),
         ]
@@ -126,13 +122,13 @@ impl Application for SpinButtonExamplApp {
 
         let horiz_spinner_row = column![
             row![
+                // This function can be called instead if a Horizontal Spin Button is needed.
                 spin_button(
                     "i128",
                     100,
                     self.i128_num,
                     -1000,
                     500,
-                    None, // Passing None gives a default of a Horizontal Spin Button widget
                     SpinBtnMessages::UpdateI128Num
                 ),
             ],
@@ -144,15 +140,12 @@ impl Application for SpinButtonExamplApp {
                     self.f32_num,
                     -35.3,
                     12.3,
-                    Some(Orientation::Horizontal), // It can also be explicitly passed as Orientation::Horizontal
                     SpinBtnMessages::UpdateF32Num
                 )
             ],
             vertical_space().height(5),
             row![
-                // This function can be called instead if a Horizontal Spin Button is needed.
-                // This shortens up the API call for default/standard Spin Button widgets.
-                spin_button_standard(
+                spin_button(
                     "f64",
                     1.3,
                     self.f64_num,

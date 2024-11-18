@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: MPL-2.0
 
 // Updated by Bryan Hyland <bryan.hyland32@gmail.com>
-// Updated on: 17Nov24
+// Updated on: 18Nov24
 
 //! A control for incremental adjustments of a value.
 
@@ -89,17 +89,16 @@ pub fn spin_button<'a, T, M>(
     value: T,
     min: T,
     max: T,
-    orientation: Option<Orientation>,
     on_press: impl Fn(T) -> M + 'static,
 ) -> SpinButton<'a, T, M>
 where 
     T: Add<Output = T> + Sub<Output = T> + PartialEq + PartialOrd + Display + Copy
 {
-    SpinButton::new(label, step, value, min, max, orientation, on_press)
+    SpinButton::new(label, step, value, min, max, None, on_press)
 }
 
 /// Shorthand to create a standard (horizontal) spin button widget
-pub fn spin_button_standard<'a, T, M>(
+pub fn vertical_spin_button<'a, T, M>(
     label: impl Into<String>,
     step: T,
     value: T,
@@ -110,7 +109,7 @@ pub fn spin_button_standard<'a, T, M>(
 where 
     T: Add<Output = T> + Sub<Output = T> + PartialEq + PartialOrd + Display + Copy
 {
-    SpinButton::new(label, step, value, min, max, None, on_press)
+    SpinButton::new(label, step, value, min, max, Some(Orientation::Vertical), on_press)
 }
 
 fn increment<T>(step: T, value: T, min: T, max: T) -> T
@@ -220,14 +219,14 @@ where
     T: Add<Output = T> + Sub<Output = T> + PartialEq + PartialOrd + Display + Copy 
 {
     // Create a text widget that holds the value
-    let val_text = text(format!("{}", spin_btn.value)).size(14);
+    let val_text = text::title4(format!("{}", spin_btn.value));
     // Create a spinner container variable that contains the column with all of
     // the combined widgets that make up the widget.
     let spinner_container = column::with_capacity(3)
     .push(
         // Use a button for the increment functionality
         button::icon(icon::from_name("list-add-symbolic"))
-            .padding([0, 12])
+            .padding([5, 0])
             .on_press((spin_btn.on_press)(increment::<T>(
                 spin_btn.step, spin_btn.value, spin_btn.min, spin_btn.max,
             ))),
@@ -237,7 +236,7 @@ where
     .push(
         // Use a button for the decrement functionality
         button::icon(icon::from_name("list-remove-symbolic"))
-            .padding([0, 12])
+            .padding([5, 0])
             .on_press((spin_btn.on_press)(decrement::<T>(
                 spin_btn.step, spin_btn.value, spin_btn.min, spin_btn.max,
             ))),
@@ -248,7 +247,7 @@ where
     // First Row -> The label/title for the spin button.
     // Second Row -> The spin button container from above.
     let content_list = column::with_children(vec![
-        row::with_capacity(1).push(text(spin_btn.label.clone())).into(),
+        row::with_capacity(1).push(text::title4(spin_btn.label.clone())).into(),
         row::with_children(vec![Element::from(spinner_container)]).into(),
     ])
     .width(75)
