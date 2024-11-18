@@ -25,7 +25,7 @@ use crate::{
 };
 
 #[derive(Clone, Copy)]
-pub enum Orientation {
+enum Orientation {
     Horizontal,
     Vertical,
 }
@@ -60,7 +60,7 @@ where
     T: Add<Output = T> + Sub<Output = T> + PartialEq + PartialOrd + Display + Copy
 {
     /// Create a new new button
-    pub fn new(
+    fn new(
         label: impl Into<String>,
         step: T,
         value: T,
