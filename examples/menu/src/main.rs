@@ -159,18 +159,27 @@ pub fn menu_bar<'a>(config: &Config, key_binds: &HashMap<KeyBind, Action>) -> El
         menu::items(
             key_binds,
             vec![
-                menu::Item::Button("New window", Action::WindowNew),
+                menu::Item::Button(
+                    "New window",
+                    Some(cosmic::widget::icon::from_name("screenshot-window-symbolic").into()),
+                    Action::WindowNew,
+                ),
                 menu::Item::Divider,
                 menu::Item::Folder(
                     "View",
                     vec![menu::Item::CheckBox(
                         "Hide content",
+                        Some(cosmic::widget::icon::from_name("view-conceal-symbolic").into()),
                         config.hide_content,
                         Action::ToggleHideContent,
                     )],
                 ),
                 menu::Item::Divider,
-                menu::Item::Button("Quit", Action::WindowClose),
+                menu::Item::Button(
+                    "Quit",
+                    Some(cosmic::widget::icon::from_name("window-close-symbolic").into()),
+                    Action::WindowClose,
+                ),
             ],
         ),
     )])
