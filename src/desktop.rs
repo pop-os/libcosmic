@@ -258,22 +258,19 @@ pub async fn spawn_desktop_exec<S, I, K, V>(
         _ => return,
     };
 
-    let mut cmd = match terminal {
-        true => {
-            let mut cmd = std::process::Command::new("cosmic-term");
-            cmd.args(vec!["--", format!("{}", &executable).as_str()]);
-            cmd
-        }
-        false => {
-            let mut cmd = std::process::Command::new(&executable);
-            for arg in exec {
-                // TODO handle "%" args here if necessary?
-                if !arg.starts_with('%') {
-                    cmd.arg(arg);
-                }
+    let mut cmd = if terminal {
+        let mut cmd = std::process::Command::new("cosmic-term");
+        cmd.args(vec!["--", format!("{}", &executable).as_str()]);
+        cmd
+    } else {
+        let mut cmd = std::process::Command::new(&executable);
+        for arg in exec {
+            // TODO handle "%" args here if necessary?
+            if !arg.starts_with('%') {
+                cmd.arg(arg);
             }
-            cmd
         }
+        cmd
     };
 
     cmd.envs(env_vars);
