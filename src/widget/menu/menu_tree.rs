@@ -253,7 +253,7 @@ where
                     ];
 
                     if let Some(icon) = icon {
-                        items.insert(0, widget::icon::icon(icon).size(16).into());
+                        items.insert(0, widget::icon::icon(icon).size(14).into());
                         items.insert(1, widget::Space::with_width(spacing.space_xxs).into());
                     }
 
@@ -271,7 +271,7 @@ where
                     ];
 
                     if let Some(icon) = icon {
-                        items.insert(0, widget::icon::icon(icon).size(16).into());
+                        items.insert(0, widget::icon::icon(icon).size(14).into());
                         items.insert(1, widget::Space::with_width(spacing.space_xxs).into());
                     }
 
@@ -303,7 +303,8 @@ where
                     ];
 
                     if let Some(icon) = icon {
-                        items.insert(1, widget::icon::icon(icon).size(16).into());
+                        items.insert(1, widget::Space::with_width(spacing.space_xxs).into());
+                        items.insert(2, widget::icon::icon(icon).size(14).into());
                     }
 
                     trees.push(MenuTree::new(menu_button(items).on_press(action.message())));
