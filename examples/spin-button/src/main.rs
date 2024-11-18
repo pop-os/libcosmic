@@ -1,4 +1,4 @@
-use cosmic::widget::{button, container, text, spin_button, vertical_spin_button, /*spin_button::Orientation*/};
+use cosmic::widget::{button, container, text, spin_button, vertical};
 use cosmic::{
     app::{Core, Task},
     iced::{
@@ -85,7 +85,7 @@ impl Application for SpinButtonExamplApp {
 
     fn view(&self) -> Element<Self::Message> {
         let vert_spinner_row = row![
-            vertical_spin_button(
+            vertical(
                 "i8", // label: displayed above the widget no matter the orientation
                 1, // step: how much to increment/decrement by
                 self.i8_num, // current value, this is also what's displayed in the center of the widget
@@ -93,7 +93,7 @@ impl Application for SpinButtonExamplApp {
                 5, // maximum value, if incremented above this the widget's current value rolls to the min value
                 SpinBtnMessages::UpdateI8Num // message to send to the application's update function
             ),
-            vertical_spin_button(
+            vertical(
                 "i16",
                 1,
                 self.i16_num,
@@ -101,7 +101,7 @@ impl Application for SpinButtonExamplApp {
                 10,
                 SpinBtnMessages::UpdateI16Num
             ),
-            vertical_spin_button(
+            vertical(
                 "i32",
                 1,
                 self.i32_num,
@@ -109,7 +109,7 @@ impl Application for SpinButtonExamplApp {
                 12,
                 SpinBtnMessages::UpdateI32Num
             ),
-            vertical_spin_button(
+            vertical(
                 "i64",
                 10,
                 self.i64_num,

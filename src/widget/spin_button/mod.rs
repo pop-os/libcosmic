@@ -48,8 +48,8 @@ where
     /// The maximum value permitted.
     /// If the value is incremented above this value the current value will rollover to the min value.
     max: T,
-    /// The direction that the spin button is laid out; Horizontal (default) or Vertical
-    orientation: Option<Orientation>,
+    /// The direction that the spin button is laid out; Orientation::Horizontal or Orientation::Vertical
+    orientation: Orientation,
     /// The message that the spin button emits to the application's update function.
     on_press: Box<dyn Fn(T) -> M>,
     phantom_data: PhantomData<&'a M>,
@@ -66,7 +66,7 @@ where
         value: T,
         min: T,
         max: T,
-        orientation: Option<Orientation>,
+        orientation: Orientation,
         on_press: impl Fn(T) -> M + 'static,
     ) -> Self {
         Self {
@@ -94,11 +94,11 @@ pub fn spin_button<'a, T, M>(
 where 
     T: Add<Output = T> + Sub<Output = T> + PartialEq + PartialOrd + Display + Copy
 {
-    SpinButton::new(label, step, value, min, max, None, on_press)
+    SpinButton::new(label, step, value, min, max, Orientation::Horizontal, on_press)
 }
 
 /// Shorthand to create a standard (horizontal) spin button widget
-pub fn vertical_spin_button<'a, T, M>(
+pub fn vertical<'a, T, M>(
     label: impl Into<String>,
     step: T,
     value: T,
@@ -109,7 +109,7 @@ pub fn vertical_spin_button<'a, T, M>(
 where 
     T: Add<Output = T> + Sub<Output = T> + PartialEq + PartialOrd + Display + Copy
 {
-    SpinButton::new(label, step, value, min, max, Some(Orientation::Vertical), on_press)
+    SpinButton::new(label, step, value, min, max, Orientation::Vertical, on_press)
 }
 
 fn increment<T>(step: T, value: T, min: T, max: T) -> T
@@ -145,12 +145,8 @@ where
         // Matching on the direction enum given by the developer when the
         // widget is initially created in the application's view function.
         match this.orientation {
-            Some(orien) => match orien {
                 Orientation::Horizontal => create_horizontal_spin_button(&this),
-                Orientation::Vertical => create_vertical_spin_button(&this)
-            }
-            // Default behavior is to create a horizontal spin button widget
-            None => create_horizontal_spin_button(&this),
+                Orientation::Vertical => create_vertical_spin_button(&this),
         }
     }
 }
