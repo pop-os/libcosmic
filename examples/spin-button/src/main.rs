@@ -1,4 +1,4 @@
-use cosmic::widget::{button, container, text, spin_button, vertical};
+use cosmic::widget::{button, container, spin_button, text, vertical};
 use cosmic::{
     app::{Core, Task},
     iced::{
@@ -75,8 +75,16 @@ impl Application for SpinButtonExamplApp {
             SpinBtnMessages::UpdateF32Num(new_f32) => self.f32_num = new_f32,
             SpinBtnMessages::UpdateF64Num(new_f64) => self.f64_num = new_f64,
             SpinBtnMessages::UpdateSpinnerMsg => {
-                self.spinner_msg = format!("i8: {}, i16: {}, i32: {}, i64: {}, i128: {}\nf32: {}, f64: {}", 
-                    self.i8_num, self.i16_num, self.i32_num, self.i64_num, self.i128_num, self.f32_num, self.f64_num);
+                self.spinner_msg = format!(
+                    "i8: {}, i16: {}, i32: {}, i64: {}, i128: {}\nf32: {}, f64: {}",
+                    self.i8_num,
+                    self.i16_num,
+                    self.i32_num,
+                    self.i64_num,
+                    self.i128_num,
+                    self.f32_num,
+                    self.f64_num
+                );
             }
         }
 
@@ -86,29 +94,15 @@ impl Application for SpinButtonExamplApp {
     fn view(&self) -> Element<Self::Message> {
         let vert_spinner_row = row![
             vertical(
-                "i8", // label: displayed above the widget no matter the orientation
-                1, // step: how much to increment/decrement by
+                "i8",                         // label: displayed above the widget no matter the orientation
+                1,                            // step: how much to increment/decrement by
                 self.i8_num, // current value, this is also what's displayed in the center of the widget
                 -5, // minimum value, if decremented below this the widget's current value rolls to the max value
                 5, // maximum value, if incremented above this the widget's current value rolls to the min value
-                SpinBtnMessages::UpdateI8Num // message to send to the application's update function
+                SpinBtnMessages::UpdateI8Num  // message to send to the application's update function
             ),
-            vertical(
-                "i16",
-                1,
-                self.i16_num,
-                0,
-                10,
-                SpinBtnMessages::UpdateI16Num
-            ),
-            vertical(
-                "i32",
-                1,
-                self.i32_num,
-                0,
-                12,
-                SpinBtnMessages::UpdateI32Num
-            ),
+            vertical("i16", 1, self.i16_num, 0, 10, SpinBtnMessages::UpdateI16Num),
+            vertical("i32", 1, self.i32_num, 0, 12, SpinBtnMessages::UpdateI32Num),
             vertical(
                 "i64",
                 10,
@@ -133,39 +127,34 @@ impl Application for SpinButtonExamplApp {
                 ),
             ],
             vertical_space().height(5),
-            row![
-                spin_button(
-                    "f32", 
-                    1.3,
-                    self.f32_num,
-                    -35.3,
-                    12.3,
-                    SpinBtnMessages::UpdateF32Num
-                )
-            ],
+            row![spin_button(
+                "f32",
+                1.3,
+                self.f32_num,
+                -35.3,
+                12.3,
+                SpinBtnMessages::UpdateF32Num
+            )],
             vertical_space().height(5),
-            row![
-                spin_button(
-                    "f64",
-                    1.3,
-                    self.f64_num,
-                    0.0,
-                    3.0,
-                    SpinBtnMessages::UpdateF64Num
-                )
-            ],
+            row![spin_button(
+                "f64",
+                1.3,
+                self.f64_num,
+                0.0,
+                3.0,
+                SpinBtnMessages::UpdateF64Num
+            )],
         ]
         .align_x(Alignment::Center);
 
-        let status_row = row![
-            text(self.spinner_msg.clone()),
-        ];
+        let status_row = row![text(self.spinner_msg.clone()),];
 
         let final_col = column![
             vert_spinner_row,
             vertical_space().height(5),
             horiz_spinner_row,
-            button::standard("Show Spinner Values Passed").on_press(SpinBtnMessages::UpdateSpinnerMsg),
+            button::standard("Show Spinner Values Passed")
+                .on_press(SpinBtnMessages::UpdateSpinnerMsg),
             vertical_space().height(10),
             status_row,
         ]
