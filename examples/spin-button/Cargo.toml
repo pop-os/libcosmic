@@ -1,0 +1,12 @@
+[package]
+name = "spin-button"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+fraction = "0.15.3"
+
+[dependencies.libcosmic]
+features = ["debug", "multi-window", "wayland", "winit", "desktop", "tokio"]
+path = "../.."
+default-features = false
