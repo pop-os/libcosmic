@@ -125,7 +125,7 @@ fn increment<T>(step: T, value: T, min: T, max: T) -> T
 where
     T: Add<Output = T> + Sub<Output = T> + PartialEq + PartialOrd + Display + Copy,
 {
-    //! Make it roll over back to min if the increase is too high
+    /// Make it roll over back to min if the increase is too high
     if value + step > max {
         min
     } else {
@@ -137,7 +137,7 @@ fn decrement<T>(step: T, value: T, min: T, max: T) -> T
 where
     T: Add<Output = T> + Sub<Output = T> + PartialEq + PartialOrd + Display + Copy,
 {
-    //! Make it roll over back to max if the decrese is too low
+    /// Make it roll over back to max if the decrese is too low
     if value - step < min {
         max
     } else {
