@@ -142,6 +142,7 @@ pub fn run<App: Application>(settings: Settings, flags: App::Flags) -> iced::Res
     let (settings, mut flags, window_settings) = iced_settings::<App>(settings, flags);
     #[cfg(not(feature = "multi-window"))]
     {
+        flags.0.main_window = Some(iced::window::Id::RESERVED);
         iced::application(
             cosmic::Cosmic::title,
             cosmic::Cosmic::update,
