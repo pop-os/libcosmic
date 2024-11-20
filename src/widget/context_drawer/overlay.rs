@@ -118,9 +118,8 @@ where
         layout: Layout<'_>,
         renderer: &crate::Renderer,
     ) -> Option<overlay::Element<'c, Message, crate::Theme, crate::Renderer>> {
-        let translation = iced::Vector::new(self.position.x, self.position.y);
         self.content
             .as_widget_mut()
-            .overlay(self.tree, layout, renderer, translation)
+            .overlay(self.tree, layout, renderer, iced::Vector::default())
     }
 }
