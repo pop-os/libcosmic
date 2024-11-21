@@ -452,7 +452,7 @@ where
     /// Grants access to the COSMIC Core.
     fn core_mut(&mut self) -> &mut Core;
 
-    /// Creates the application, and optionally emits command on initialize.
+    /// Creates the application, and optionally emits task on initialize.
     fn init(core: Core, flags: Self::Flags) -> (Self, Task<Self::Message>);
 
     /// Displays a context drawer on the side of the application window when `Some`.

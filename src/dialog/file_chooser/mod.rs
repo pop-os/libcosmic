@@ -11,7 +11,7 @@
 //! # Open a file
 //!
 //! ```no_run
-//! cosmic::command::future(async {
+//! cosmic::task::future(async {
 //!     use cosmic::dialog::file_chooser;
 //!
 //!     let dialog = file_chooser::open::Dialog::new()
@@ -30,7 +30,7 @@
 //! # Open multiple files
 //!
 //! ```no_run
-//! cosmic::command::future(async {
+//! cosmic::task::future(async {
 //!     use cosmic::dialog::file_chooser;
 //!
 //!     let dialog = file_chooser::open::Dialog::new()
@@ -49,7 +49,7 @@
 //! # Open a folder
 //!
 //! ```no_run
-//! cosmic::command::future(async {
+//! cosmic::task::future(async {
 //!     use cosmic::dialog::file_chooser;
 //!
 //!     let dialog = file_chooser::open::Dialog::new()
@@ -68,7 +68,7 @@
 //! # Open multiple folders
 //!
 //! ```no_run
-//! cosmic::command::future(async {
+//! cosmic::task::future(async {
 //!     use cosmic::dialog::file_chooser;
 //!
 //!     let dialog = file_chooser::open::Dialog::new()

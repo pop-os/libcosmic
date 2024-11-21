@@ -22,8 +22,8 @@ pub use app::{Application, ApplicationExt};
 #[cfg(feature = "applet")]
 pub mod applet;
 
-pub use iced::Task;
-pub mod command;
+pub use app::Task;
+pub mod task;
 
 pub mod config;
 

@@ -105,7 +105,7 @@ impl cosmic::Application for App {
         &mut self.core
     }
 
-    /// Creates the application, and optionally emits command on initialize.
+    /// Creates the application, and optionally emits task on initialize.
     fn init(core: Core, input: Self::Flags) -> (Self, Task<Self::Message>) {
         let mut nav_model = nav_bar::Model::default();
 

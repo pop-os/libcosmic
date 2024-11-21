@@ -193,7 +193,7 @@ impl<Message: Clone + Send + 'static> Toasts<Message> {
         #[cfg(feature = "tokio")]
         {
             let on_close = self.on_close;
-            crate::command::future(async move {
+            crate::task::future(async move {
                 tokio::time::sleep(duration).await;
                 on_close(id)
             })
