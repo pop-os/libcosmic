@@ -9,19 +9,19 @@ use iced_core::window::Mode;
 use iced_runtime::{task, Action};
 use std::future::Future;
 
-/// Yields a command which contains a batch of commands.
+/// Yields a task which contains a batch of tasks.
 pub fn batch<X: Send + 'static + Into<Y>, Y: Send + 'static>(
-    commands: impl IntoIterator<Item = Task<X>>,
+    tasks: impl IntoIterator<Item = Task<X>>,
 ) -> Task<Y> {
-    Task::batch(commands).map(Into::into)
+    Task::batch(tasks).map(Into::into)
 }
 
-/// Yields a command which will run the future on the runtime executor.
+/// Yields a task which will run the future on the runtime executor.
 pub fn future<X: Into<Y>, Y: 'static>(future: impl Future<Output = X> + Send + 'static) -> Task<Y> {
     Task::future(async move { future.await.into() })
 }
 
-/// Yields a command which will return a message.
+/// Yields a task which will return a message.
 pub fn message<X: Send + 'static + Into<Y>, Y: 'static>(message: X) -> Task<Y> {
     future(async move { message.into() })
 }

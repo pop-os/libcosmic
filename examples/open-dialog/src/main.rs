@@ -65,7 +65,7 @@ impl cosmic::Application for App {
         &mut self.core
     }
 
-    /// Creates the application, and optionally emits command on initialize.
+    /// Creates the application, and optionally emits task on initialize.
     fn init(core: Core, _input: Self::Flags) -> (Self, Task<Self::Message>) {
         let id = core.main_window_id().unwrap();
         let mut app = App {
@@ -109,7 +109,7 @@ impl cosmic::Application for App {
                 self.set_header_title(url.to_string());
 
                 // Reads the selected file into memory.
-                return cosmic::command::future(async move {
+                return cosmic::task::future(async move {
                     // Check if its a valid local file path.
                     let path = match url.scheme() {
                         "file" => url.to_file_path().unwrap(),
@@ -145,7 +145,7 @@ impl cosmic::Application for App {
 
             // Creates a new open dialog.
             Message::OpenFile => {
-                return cosmic::command::future(async move {
+                return cosmic::task::future(async move {
                     eprintln!("opening new dialog");
 
                     #[cfg(feature = "rfd")]
