@@ -116,7 +116,7 @@ impl<'a, Message: Clone + 'static> From<Button<'a, Message>> for Element<'a, Mes
                 .into()
         });
 
-        let button: super::Button<'a, Message> = row::with_capacity(3)
+        let mut button: super::Button<'a, Message> = row::with_capacity(3)
             // Optional icon to place before label.
             .push_maybe(leading_icon)
             // Optional label between icons.
@@ -133,6 +133,13 @@ impl<'a, Message: Clone + 'static> From<Button<'a, Message>> for Element<'a, Mes
             .id(builder.id)
             .on_press_maybe(builder.on_press.take())
             .class(builder.class);
+
+        #[cfg(feature = "a11y")]
+        {
+            if !builder.label.is_empty() {
+                button = button.name(builder.label);
+            }
+        }
 
         if builder.tooltip.is_empty() {
             button.into()
