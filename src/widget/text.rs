@@ -29,7 +29,7 @@ pub fn title1<'a>(text: impl Into<Cow<'a, str>> + 'a) -> Text<'a, crate::Theme, 
     Text::new(text.into())
         .size(32.0)
         .line_height(LineHeight::Absolute(44.0.into()))
-        .font(crate::font::semibold())
+        .font(crate::font::light())
 }
 
 /// [`Text`] widget with the Title 2 typography preset.
