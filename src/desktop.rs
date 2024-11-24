@@ -6,6 +6,8 @@ use std::path::{Path, PathBuf};
 #[cfg(not(windows))]
 use std::{borrow::Cow, ffi::OsStr};
 
+use crate::mime_app::{exec_term_to_command, exec_to_command};
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum IconSource {
     Name(String),
@@ -258,20 +260,13 @@ pub async fn spawn_desktop_exec<S, I, K, V>(
         _ => return,
     };
 
-    let mut cmd = if terminal {
-        let mut cmd = std::process::Command::new("cosmic-term");
-        cmd.args(vec!["--", format!("{}", &executable).as_str()]);
-        cmd
+    let cmd = if terminal {
+        exec_term_to_command(&executable, None)
     } else {
-        let mut cmd = std::process::Command::new(&executable);
-        for arg in exec {
-            // TODO handle "%" args here if necessary?
-            if !arg.starts_with('%') {
-                cmd.arg(arg);
-            }
-        }
-        cmd
+        exec_to_command(&executable, None)
     };
+
+    let Some(mut cmd) = cmd else { return };
 
     cmd.envs(env_vars);
 

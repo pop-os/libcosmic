@@ -43,6 +43,7 @@ desktop = [
     "dep:freedesktop-desktop-entry",
     "dep:mime",
     "dep:shlex",
+    "dep:xdg",
     "tokio?/io-util",
     "tokio?/net",
 ]
@@ -95,6 +96,7 @@ cosmic-config = { path = "cosmic-config" }
 cosmic-settings-daemon = { git = "https://github.com/pop-os/dbus-settings-bindings", optional = true }
 css-color = "0.2.5"
 derive_setters = "0.1.5"
+icu_collator = "1.5"
 image = { version = "0.25.5", default-features = false, features = [
     "jpeg",
     "png",
@@ -103,6 +105,8 @@ lazy_static = "1.4.0"
 libc = { version = "0.2.155", optional = true }
 license = { version = "3.5.1", optional = true }
 mime = { version = "0.3.17", optional = true }
+mime_guess = "2"
+once_cell = "1.19"
 palette = "0.7.3"
 rfd = { version = "0.14.0", default-features = false, features = ["xdg-portal"], optional = true }
 rustix = { version = "0.38.34", features = [
@@ -117,11 +121,13 @@ tokio = { version = "1.24.2", optional = true }
 tracing = "0.1.41"
 unicode-segmentation = "1.6"
 url = "2.4.0"
+xdg = { version = "2.5.2", optional = true }
 zbus = { version = "4.2.1", default-features = false, optional = true }
 
 [target.'cfg(unix)'.dependencies]
 freedesktop-icons = { package = "cosmic-freedesktop-icons", git = "https://github.com/pop-os/freedesktop-icons" }
 freedesktop-desktop-entry = { version = "0.5.1", optional = true }
+freedesktop_entry_parser = "1.3"
 shlex = { version = "1.3.0", optional = true }
 
 [dependencies.cosmic-theme]
