@@ -15,7 +15,7 @@ pub use handle::{from_path, from_raster_bytes, from_raster_pixels, from_svg_byte
 use crate::Element;
 use derive_setters::Setters;
 use iced::widget::{Image, Svg};
-use iced::{ContentFit, Length};
+use iced::{ContentFit, Length, Rectangle};
 
 /// Create an [`Icon`] from a pre-existing [`Handle`]
 pub fn icon(handle: Handle) -> Icon {
@@ -123,5 +123,48 @@ impl Icon {
 impl<'a, Message: 'a> From<Icon> for Element<'a, Message> {
     fn from(icon: Icon) -> Self {
         icon.view::<Message>()
+    }
+}
+
+/// Draw an icon in the given bounds via the runtime's renderer.
+pub fn draw(renderer: &mut crate::Renderer, handle: &Handle, icon_bounds: Rectangle) {
+    enum IcedHandle {
+        Svg(iced_core::svg::Handle),
+        Image(iced_core::image::Handle),
+    }
+
+    let iced_handle = match handle.clone().data {
+        Data::Name(named) => named.path().map(|path| {
+            if path.extension().is_some_and(|ext| ext == OsStr::new("svg")) {
+                IcedHandle::Svg(iced_core::svg::Handle::from_path(path))
+            } else {
+                IcedHandle::Image(iced_core::image::Handle::from_path(path))
+            }
+        }),
+
+        Data::Image(handle) => Some(IcedHandle::Image(handle)),
+        Data::Svg(handle) => Some(IcedHandle::Svg(handle)),
+    };
+
+    match iced_handle {
+        Some(IcedHandle::Svg(handle)) => iced_core::svg::Renderer::draw_svg(
+            renderer,
+            iced_core::svg::Svg::new(handle),
+            icon_bounds,
+        ),
+
+        Some(IcedHandle::Image(handle)) => {
+            iced_core::image::Renderer::draw_image(
+                renderer,
+                handle,
+                iced_core::image::FilterMethod::Linear,
+                icon_bounds,
+                iced_core::Radians::from(0),
+                1.0,
+                [0.0; 4],
+            );
+        }
+
+        None => {}
     }
 }
