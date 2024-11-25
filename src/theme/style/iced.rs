@@ -738,11 +738,9 @@ impl slider::Catalog for Theme {
 impl menu::Catalog for Theme {
     type Class<'a> = ();
 
-    fn default<'a>() -> <Self as menu::Catalog>::Class<'a> {
-        ()
-    }
+    fn default<'a>() -> <Self as menu::Catalog>::Class<'a> {}
 
-    fn style(&self, class: &<Self as menu::Catalog>::Class<'_>) -> menu::Style {
+    fn style(&self, _class: &<Self as menu::Catalog>::Class<'_>) -> menu::Style {
         let cosmic = self.cosmic();
 
         menu::Style {
@@ -764,13 +762,11 @@ impl menu::Catalog for Theme {
 impl pick_list::Catalog for Theme {
     type Class<'a> = ();
 
-    fn default<'a>() -> <Self as pick_list::Catalog>::Class<'a> {
-        ()
-    }
+    fn default<'a>() -> <Self as pick_list::Catalog>::Class<'a> {}
 
     fn style(
         &self,
-        class: &<Self as pick_list::Catalog>::Class<'_>,
+        _class: &<Self as pick_list::Catalog>::Class<'_>,
         status: pick_list::Status,
     ) -> pick_list::Style {
         let cosmic = &self.cosmic();
@@ -803,11 +799,9 @@ impl pick_list::Catalog for Theme {
 impl radio::Catalog for Theme {
     type Class<'a> = ();
 
-    fn default<'a>() -> Self::Class<'a> {
-        ()
-    }
+    fn default<'a>() -> Self::Class<'a> {}
 
-    fn style(&self, class: &Self::Class<'_>, status: radio::Status) -> radio::Style {
+    fn style(&self, _class: &Self::Class<'_>, status: radio::Status) -> radio::Style {
         let theme = self.cosmic();
         let mut neutral_10 = theme.palette.neutral_10;
         neutral_10.alpha = 0.1;
@@ -857,11 +851,9 @@ impl radio::Catalog for Theme {
 impl toggler::Catalog for Theme {
     type Class<'a> = ();
 
-    fn default<'a>() -> Self::Class<'a> {
-        ()
-    }
+    fn default<'a>() -> Self::Class<'a> {}
 
-    fn style(&self, class: &Self::Class<'_>, status: toggler::Status) -> toggler::Style {
+    fn style(&self, _class: &Self::Class<'_>, status: toggler::Status) -> toggler::Style {
         let cosmic = self.cosmic();
         const HANDLE_MARGIN: f32 = 2.0;
         let mut neutral_10 = cosmic.palette.neutral_10;
@@ -886,8 +878,8 @@ impl toggler::Catalog for Theme {
             foreground_border_color: Color::TRANSPARENT,
         };
         match status {
-            toggler::Status::Active { is_toggled } => active,
-            toggler::Status::Hovered { is_toggled } => {
+            toggler::Status::Active { is_toggled: _ } => active,
+            toggler::Status::Hovered { is_toggled: _ } => {
                 let is_active = matches!(status, toggler::Status::Hovered { is_toggled: true });
                 toggler::Style {
                     background: if is_active {
@@ -914,11 +906,9 @@ impl toggler::Catalog for Theme {
 impl pane_grid::Catalog for Theme {
     type Class<'a> = ();
 
-    fn default<'a>() -> <Self as pane_grid::Catalog>::Class<'a> {
-        ()
-    }
+    fn default<'a>() -> <Self as pane_grid::Catalog>::Class<'a> {}
 
-    fn style(&self, class: &<Self as pane_grid::Catalog>::Class<'_>) -> pane_grid::Style {
+    fn style(&self, _class: &<Self as pane_grid::Catalog>::Class<'_>) -> pane_grid::Style {
         let theme = self.cosmic();
 
         pane_grid::Style {
@@ -1199,7 +1189,7 @@ impl svg::Catalog for Theme {
         Svg::default()
     }
 
-    fn style(&self, class: &Self::Class<'_>, status: svg::Status) -> svg::Style {
+    fn style(&self, class: &Self::Class<'_>, _status: svg::Status) -> svg::Style {
         #[allow(clippy::match_same_arms)]
         match class {
             Svg::Default => svg::Style::default(),

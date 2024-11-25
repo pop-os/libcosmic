@@ -8,13 +8,11 @@ use std::rc::Rc;
 
 use crate::widget::container;
 use crate::widget::Column;
-use iced::{Padding, Task};
+use iced::Task;
 use iced_core::Element;
 use slotmap::new_key_type;
 use slotmap::SlotMap;
 use widget::Toaster;
-
-use crate::ext::CollectionWidget;
 
 use super::column;
 use super::{button, icon, row, text};

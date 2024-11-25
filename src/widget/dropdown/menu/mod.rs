@@ -401,12 +401,12 @@ impl<'a, S: AsRef<str>, Message> Widget<Message, crate::Theme, crate::Renderer>
 
     fn draw(
         &self,
-        state: &Tree,
+        _state: &Tree,
         renderer: &mut crate::Renderer,
         theme: &crate::Theme,
-        style: &renderer::Style,
+        _style: &renderer::Style,
         layout: Layout<'_>,
-        cursor: mouse::Cursor,
+        _cursor: mouse::Cursor,
         viewport: &Rectangle,
     ) {
         let appearance = theme.appearance(&());

@@ -18,9 +18,7 @@ use super::style::StyleSheet;
 pub use super::value::Value;
 
 use apply::Apply;
-use cosmic_theme::Theme;
-use iced::clipboard::dnd::{DndAction, DndEvent, OfferEvent, SourceEvent};
-use iced::clipboard::mime::AsMimeTypes;
+use iced::clipboard::dnd::DndAction;
 use iced::Limits;
 use iced_core::event::{self, Event};
 use iced_core::mouse::{self, click};
@@ -581,13 +579,10 @@ where
         // if the previous state was at the end of the text, keep it there
         let old_value = Value::new(&old_value);
         if state.is_focused.is_some() {
-            match state.cursor.state(&old_value) {
-                cursor::State::Index(index) => {
-                    if index == old_value.len() {
-                        state.cursor.move_to(self.value.len());
-                    }
+            if let cursor::State::Index(index) = state.cursor.state(&old_value) {
+                if index == old_value.len() {
+                    state.cursor.move_to(self.value.len());
                 }
-                _ => {}
             };
         }
 
@@ -779,7 +774,7 @@ where
             }
         }
 
-        if tree.children.len() > 0 {
+        if !tree.children.is_empty() {
             let index = tree.children.len() - 1;
             if let (Some(trailing_icon), Some(tree)) =
                 (self.trailing_icon.as_mut(), tree.children.get_mut(index))
@@ -938,9 +933,9 @@ where
 
     fn drag_destinations(
         &self,
-        state: &Tree,
+        _state: &Tree,
         layout: Layout<'_>,
-        renderer: &crate::Renderer,
+        _renderer: &crate::Renderer,
         dnd_rectangles: &mut iced_core::clipboard::DndDestinationRectangles,
     ) {
         if let Some(input) = layout.children().last() {
@@ -1222,7 +1217,7 @@ pub fn layout<Message>(
 #[allow(clippy::cast_lossless)]
 #[allow(clippy::cast_possible_truncation)]
 pub fn update<'a, Message: 'static>(
-    id: Option<Id>,
+    _id: Option<Id>,
     event: Event,
     text_layout: Layout<'_>,
     trailing_icon_layout: Option<Layout<'_>>,
@@ -2247,7 +2242,7 @@ pub fn draw<'a, Message>(
         (None, 0.0)
     };
 
-    let text_width = state.value.min_width();
+    let _text_width = state.value.min_width();
 
     let render = |renderer: &mut crate::Renderer| {
         if let Some((cursor, color)) = cursor {
@@ -2297,11 +2292,11 @@ pub fn draw<'a, Message>(
     // draw the end icon in the text input
     if let (Some(icon), Some(tree)) = (trailing_icon, trailing_icon_tree) {
         let mut children = text_layout.children();
-        let mut icon_layout = children.next().unwrap();
+        let mut _icon_layout = children.next().unwrap();
         if has_start_icon {
-            icon_layout = children.next().unwrap();
+            _icon_layout = children.next().unwrap();
         }
-        icon_layout = children.next().unwrap();
+        _icon_layout = children.next().unwrap();
 
         icon.as_widget().draw(
             tree,
@@ -2312,7 +2307,7 @@ pub fn draw<'a, Message>(
                 text_color,
                 scale_factor: renderer_style.scale_factor,
             },
-            icon_layout,
+            _icon_layout,
             cursor_position,
             viewport,
         );
@@ -2488,7 +2483,7 @@ impl State {
             is_focused: None,
             select_on_focus: false,
             dragging_state: None,
-            dnd_offer: DndOfferState::default(),
+            dnd_offer: DndOfferState,
             is_pasting: None,
             last_click: None,
             cursor: Cursor::default(),

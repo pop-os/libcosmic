@@ -425,7 +425,7 @@ where
     ) -> Option<overlay::Element<'c, Message, crate::Theme, Renderer>> {
         self.content
             .as_widget_mut()
-            .overlay(&mut self.tree, layout, renderer, Default::default())
+            .overlay(self.tree, layout, renderer, Default::default())
     }
 }
 

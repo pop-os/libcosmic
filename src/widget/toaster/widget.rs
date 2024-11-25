@@ -152,7 +152,7 @@ where
                 translation,
             )
         } else {
-            let bounds = layout.bounds();
+            let _bounds = layout.bounds();
 
             Some(overlay::Element::new(Box::new(ToasterOverlay::new(
                 &mut state.children[1],

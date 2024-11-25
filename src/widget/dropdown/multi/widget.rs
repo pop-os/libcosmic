@@ -6,7 +6,7 @@ use super::menu::{self, Menu};
 use crate::widget::icon;
 use derive_setters::Setters;
 use iced_core::event::{self, Event};
-use iced_core::text::{self, Paragraph, Text};
+use iced_core::text::{self, Text};
 use iced_core::widget::tree::{self, Tree};
 use iced_core::{alignment, keyboard, layout, mouse, overlay, renderer, svg, touch, Shadow};
 use iced_core::{
@@ -159,7 +159,7 @@ impl<'a, S: AsRef<str>, Message: 'a, Item: Clone + PartialEq + 'static>
         cursor: mouse::Cursor,
         viewport: &Rectangle,
     ) {
-        let font = self.font.unwrap_or_else(|| crate::font::default());
+        let font = self.font.unwrap_or_else(crate::font::default);
 
         draw(
             renderer,
@@ -256,7 +256,7 @@ impl<Item: Clone + PartialEq + 'static> Default for State<Item> {
 /// Computes the layout of a [`Dropdown`].
 #[allow(clippy::too_many_arguments)]
 pub fn layout(
-    renderer: &crate::Renderer,
+    _renderer: &crate::Renderer,
     limits: &layout::Limits,
     width: Length,
     gap: f32,
@@ -278,7 +278,7 @@ pub fn layout(
                     bounds: Size::new(f32::MAX, f32::MAX),
                     size: iced::Pixels(text_size),
                     line_height: text_line_height,
-                    font: font.unwrap_or_else(|| crate::font::default()),
+                    font: font.unwrap_or_else(crate::font::default),
                     horizontal_alignment: alignment::Horizontal::Left,
                     vertical_alignment: alignment::Vertical::Top,
                     shaping: text::Shaping::Advanced,
@@ -384,7 +384,7 @@ pub fn mouse_interaction(layout: Layout<'_>, cursor: mouse::Cursor) -> mouse::In
 #[allow(clippy::too_many_arguments)]
 pub fn overlay<'a, S: AsRef<str>, Message: 'a, Item: Clone + PartialEq + 'static>(
     layout: Layout<'_>,
-    renderer: &crate::Renderer,
+    _renderer: &crate::Renderer,
     state: &'a mut State<Item>,
     gap: f32,
     padding: Padding,
@@ -422,7 +422,7 @@ pub fn overlay<'a, S: AsRef<str>, Message: 'a, Item: Clone + PartialEq + 'static
                         bounds: Size::new(f32::MAX, f32::MAX),
                         size: iced::Pixels(text_size),
                         line_height,
-                        font: font.unwrap_or_else(|| crate::font::default()),
+                        font: font.unwrap_or_else(crate::font::default),
                         horizontal_alignment: alignment::Horizontal::Left,
                         vertical_alignment: alignment::Vertical::Top,
                         shaping: text::Shaping::Advanced,

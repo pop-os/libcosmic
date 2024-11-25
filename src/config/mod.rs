@@ -6,7 +6,6 @@
 use crate::cosmic_theme::Density;
 use cosmic_config::cosmic_config_derive::CosmicConfigEntry;
 use cosmic_config::{Config, CosmicConfigEntry};
-use iced::font::Family;
 use serde::{Deserialize, Serialize};
 use std::sync::{LazyLock, RwLock};
 use ustr::Ustr;
