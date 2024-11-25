@@ -62,8 +62,7 @@ pub use iced::widget::{container, Container};
 #[doc(inline)]
 pub use iced::widget::{horizontal_space, vertical_space, Space};
 
-#[doc(inline)]
-pub use iced::widget::{image, Image};
+pub mod image;
 
 #[doc(inline)]
 pub use iced::widget::{lazy, Lazy};
