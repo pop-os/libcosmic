@@ -1,8 +1,8 @@
 // Copyright 2022 System76 <info@system76.com>
 // SPDX-License-Identifier: MPL-2.0
 
-use crate::cosmic_theme::Density;
-use crate::{ext::CollectionWidget, widget, Element};
+use crate::cosmic_theme::{Density, Spacing};
+use crate::{theme, widget, Element};
 use apply::Apply;
 use derive_setters::Setters;
 use iced::Length;
@@ -287,6 +287,12 @@ impl<'a, Message: Clone + 'static> Widget<Message, crate::Theme, crate::Renderer
 impl<'a, Message: Clone + 'static> HeaderBar<'a, Message> {
     /// Converts the headerbar builder into an Iced element.
     pub fn view(mut self) -> Element<'a, Message> {
+        let Spacing {
+            space_xxxs,
+            space_xxs,
+            ..
+        } = theme::active().cosmic().spacing;
+
         // Take ownership of the regions to be packed.
         let start = std::mem::take(&mut self.start);
         let center = std::mem::take(&mut self.center);
@@ -307,6 +313,7 @@ impl<'a, Message: Clone + 'static> HeaderBar<'a, Message> {
             // If elements exist in the start region, append them here.
             .push(
                 widget::row::with_children(start)
+                    .spacing(space_xxxs)
                     .align_y(iced::Alignment::Center)
                     .apply(widget::container)
                     .align_x(iced::Alignment::Start)
@@ -316,6 +323,7 @@ impl<'a, Message: Clone + 'static> HeaderBar<'a, Message> {
             // This will otherwise use the title as a widget if a title was defined.
             .push(if !center.is_empty() {
                 widget::row::with_children(center)
+                    .spacing(space_xxxs)
                     .align_y(iced::Alignment::Center)
                     .apply(widget::container)
                     .center_x(Length::Fill)
@@ -327,6 +335,7 @@ impl<'a, Message: Clone + 'static> HeaderBar<'a, Message> {
             })
             .push(
                 widget::row::with_children(end)
+                    .spacing(space_xxs)
                     .align_y(iced::Alignment::Center)
                     .apply(widget::container)
                     .align_x(iced::Alignment::End)
@@ -418,7 +427,7 @@ impl<'a, Message: Clone + 'static> HeaderBar<'a, Message> {
                     .take()
                     .map(|m| icon!("window-close-symbolic", 16, m)),
             )
-            .spacing(8)
+            .spacing(theme::active().cosmic().space_xxs())
             .apply(widget::container)
             .center_y(Length::Fill)
             .into()
