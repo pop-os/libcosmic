@@ -469,17 +469,8 @@ impl iced_container::Catalog for Theme {
             Container::WindowBackground => iced_container::Style {
                 icon_color: Some(Color::from(cosmic.background.on)),
                 text_color: Some(Color::from(cosmic.background.on)),
-                background: Some(iced::Background::Color(cosmic.background.base.into())),
-                border: Border {
-                    radius: [
-                        cosmic.corner_radii.radius_0[0],
-                        cosmic.corner_radii.radius_0[1],
-                        cosmic.corner_radii.radius_s[2],
-                        cosmic.corner_radii.radius_s[3],
-                    ]
-                    .into(),
-                    ..Default::default()
-                },
+                background: None,
+                border: Border::default(),
                 shadow: Shadow::default(),
             },
 
@@ -513,17 +504,8 @@ impl iced_container::Catalog for Theme {
                 iced_container::Style {
                     icon_color: Some(icon_color),
                     text_color: Some(text_color),
-                    background: Some(iced::Background::Color(cosmic.background.base.into())),
-                    border: Border {
-                        radius: [
-                            cosmic.corner_radii.radius_s[0],
-                            cosmic.corner_radii.radius_s[1],
-                            cosmic.corner_radii.radius_0[2],
-                            cosmic.corner_radii.radius_0[3],
-                        ]
-                        .into(),
-                        ..Default::default()
-                    },
+                    background: None,
+                    border: Border::default(),
                     shadow: Shadow::default(),
                 }
             }

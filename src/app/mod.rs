@@ -892,13 +892,17 @@ impl<App: Application> ApplicationExt for App {
             .apply(container)
             .padding(if sharp_corners { 0 } else { 1 })
             .style(move |theme| container::Style {
+                icon_color: Some(iced::Color::from(theme.cosmic().background.on)),
+                text_color: Some(iced::Color::from(theme.cosmic().background.on)),
+                background: Some(iced::Background::Color(
+                    theme.cosmic().background.base.into(),
+                )),
                 border: iced::Border {
                     color: theme.cosmic().bg_divider().into(),
                     width: if sharp_corners { 0.0 } else { 1.0 },
-                    // x + 2.0 is used to prevent corner artifacts
-                    radius: theme.cosmic().radius_s().map(|x| x + 2.0).into(),
+                    radius: theme.cosmic().radius_s().into(),
                 },
-                ..Default::default()
+                shadow: iced::Shadow::default(),
             });
 
         // Show any current dialog on top and centered over the view content
