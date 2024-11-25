@@ -5,7 +5,6 @@
 use super::menu::{self, Menu};
 use crate::widget::icon;
 use derive_setters::Setters;
-use iced::Radians;
 use iced_core::event::{self, Event};
 use iced_core::text::{self, Paragraph, Text};
 use iced_core::widget::tree::{self, Tree};
@@ -186,7 +185,7 @@ impl<'a, S: AsRef<str>, Message: 'a> Widget<Message, crate::Theme, crate::Render
         cursor: mouse::Cursor,
         viewport: &Rectangle,
     ) {
-        let font = self.font.unwrap_or_else(|| crate::font::default());
+        let font = self.font.unwrap_or_else(crate::font::default);
         draw(
             renderer,
             theme,
@@ -293,7 +292,7 @@ impl Default for State {
 /// Computes the layout of a [`Dropdown`].
 #[allow(clippy::too_many_arguments)]
 pub fn layout(
-    renderer: &crate::Renderer,
+    _renderer: &crate::Renderer,
     limits: &layout::Limits,
     width: Length,
     gap: f32,
@@ -316,7 +315,7 @@ pub fn layout(
                     bounds: Size::new(f32::MAX, f32::MAX),
                     size: iced::Pixels(text_size),
                     line_height: text_line_height,
-                    font: font.unwrap_or_else(|| crate::font::default()),
+                    font: font.unwrap_or_else(crate::font::default),
                     horizontal_alignment: alignment::Horizontal::Left,
                     vertical_alignment: alignment::Vertical::Top,
                     shaping: text::Shaping::Advanced,

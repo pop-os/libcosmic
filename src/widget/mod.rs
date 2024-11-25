@@ -337,7 +337,7 @@ pub use toggler::toggler;
 pub use tooltip::{tooltip, Tooltip};
 pub mod tooltip {
     use crate::Element;
-    use std::borrow::Cow;
+    
 
     pub use iced::widget::tooltip::Position;
 

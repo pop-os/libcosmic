@@ -209,7 +209,9 @@ where
         renderer: &Renderer,
         limits: &layout::Limits,
     ) -> layout::Node {
-        let layout = self.container.layout(
+        
+
+        self.container.layout(
             tree,
             renderer,
             if self.ignore_bounds {
@@ -217,9 +219,7 @@ where
             } else {
                 limits
             },
-        );
-
-        layout
+        )
     }
 
     fn operate(

@@ -111,7 +111,7 @@ impl<
             clipboard,
             false,
             if let Some(window) = self.window.as_ref() {
-                Some(iced_core::clipboard::DndSource::Surface(window.clone()))
+                Some(iced_core::clipboard::DndSource::Surface(*window))
             } else {
                 Some(iced_core::clipboard::DndSource::Widget(self.id.clone()))
             },

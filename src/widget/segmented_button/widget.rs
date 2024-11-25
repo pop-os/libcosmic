@@ -20,7 +20,7 @@ use iced::{
     Rectangle, Size, Task, Vector,
 };
 use iced_core::mouse::ScrollDelta;
-use iced_core::text::{LineHeight, Paragraph, Renderer as TextRenderer, Shaping, Wrapping};
+use iced_core::text::{LineHeight, Renderer as TextRenderer, Shaping, Wrapping};
 use iced_core::widget::{self, operation, tree};
 use iced_core::{layout, renderer, widget::Tree, Clipboard, Layout, Shell, Widget};
 use iced_core::{Border, Gradient, Point, Renderer as IcedRenderer, Shadow, Text};
@@ -562,7 +562,7 @@ where
         if let Some(ref context_menu) = self.context_menu {
             let mut tree = Tree::empty();
             tree.state = tree::State::new(MenuBarState::default());
-            tree.children = menu_roots_children(&context_menu);
+            tree.children = menu_roots_children(context_menu);
             children.push(tree);
         }
 
@@ -718,7 +718,7 @@ where
                     let on_dnd_enter =
                         self.on_dnd_enter
                             .as_ref()
-                            .zip(entity.clone())
+                            .zip(entity)
                             .map(|(on_enter, entity)| {
                                 move |_, _, mime_types| on_enter(entity, mime_types)
                             });

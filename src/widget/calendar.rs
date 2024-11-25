@@ -67,12 +67,12 @@ where
             .push(
                 button::icon(icon::from_name("go-previous-symbolic"))
                     .padding([0, 12])
-                    .on_press((this.on_select)(set_prev_month(this.selected.clone()))),
+                    .on_press((this.on_select)(set_prev_month(*this.selected))),
             )
             .push(
                 button::icon(icon::from_name("go-next-symbolic"))
                     .padding([0, 12])
-                    .on_press((this.on_select)(set_next_month(this.selected.clone()))),
+                    .on_press((this.on_select)(set_next_month(*this.selected))),
             );
 
         // Calender

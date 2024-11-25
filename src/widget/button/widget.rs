@@ -583,12 +583,7 @@ impl<'a, Message: 'a + Clone> Widget<Message, crate::Theme, crate::Renderer>
         }
         match self.description.as_ref() {
             Some(iced_accessibility::Description::Id(id)) => {
-                node.set_described_by(
-                    id.iter()
-                        .cloned()
-                        .map(|id| NodeId::from(id))
-                        .collect::<Vec<_>>(),
-                );
+                node.set_described_by(id.iter().cloned().map(NodeId::from).collect::<Vec<_>>());
             }
             Some(iced_accessibility::Description::Text(text)) => {
                 node.set_description(text.clone());
@@ -655,6 +650,7 @@ impl State {
     }
 
     /// Returns whether the [`Button`] is currently hovered or not.
+    #[allow(dead_code)]
     pub fn is_hovered(self) -> bool {
         self.is_hovered
     }

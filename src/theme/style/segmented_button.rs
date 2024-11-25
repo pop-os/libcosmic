@@ -153,7 +153,7 @@ mod horizontal {
 
     pub fn selection_active(
         cosmic: &cosmic_theme::Theme,
-        component: &Component,
+        _component: &Component,
     ) -> ItemStatusAppearance {
         let mut color = cosmic.palette.neutral_5;
         color.alpha = 0.2;
@@ -221,7 +221,7 @@ pub fn focus(
 
 pub fn hover(
     cosmic: &cosmic_theme::Theme,
-    component: &Component,
+    _component: &Component,
     default: &ItemStatusAppearance,
 ) -> ItemStatusAppearance {
     let mut color = cosmic.palette.neutral_8;

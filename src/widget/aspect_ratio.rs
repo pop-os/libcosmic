@@ -12,7 +12,6 @@ use iced_core::{
     Alignment, Clipboard, Element, Layout, Length, Padding, Rectangle, Shell, Vector, Widget,
 };
 
-use iced_widget::container;
 pub use iced_widget::container::{Catalog, Style};
 
 pub fn aspect_ratio_container<'a, Message: 'static, T>(

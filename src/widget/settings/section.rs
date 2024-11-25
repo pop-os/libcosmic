@@ -1,7 +1,6 @@
 // Copyright 2022 System76 <info@system76.com>
 // SPDX-License-Identifier: MPL-2.0
 
-use crate::ext::CollectionWidget;
 use crate::widget::{column, text, ListColumn};
 use crate::Element;
 use std::borrow::Cow;
@@ -21,9 +20,7 @@ pub fn section<'a, Message: 'static>() -> Section<'a, Message> {
 }
 
 /// A section with a pre-defined list column.
-pub fn with_column<'a, Message: 'static>(
-    children: ListColumn<'a, Message>,
-) -> Section<'a, Message> {
+pub fn with_column<Message: 'static>(children: ListColumn<'_, Message>) -> Section<'_, Message> {
     Section {
         title: Cow::Borrowed(""),
         children,

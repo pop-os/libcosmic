@@ -1,9 +1,9 @@
 // Copyright 2023 System76 <info@system76.com>
 // SPDX-License-Identifier: MPL-2.0
 
-use super::{Builder, ButtonClass, Style};
+use super::{Builder, ButtonClass};
 use crate::widget::{icon, row, tooltip};
-use crate::{ext::CollectionWidget, Element};
+use crate::Element;
 use apply::Apply;
 use iced_core::{font::Weight, text::LineHeight, widget::Id, Alignment, Length, Padding};
 use std::borrow::Cow;
@@ -40,6 +40,12 @@ pub fn text<'a, Message>(label: impl Into<Cow<'a, str>>) -> Button<'a, Message> 
 pub struct Text {
     pub(super) leading_icon: Option<icon::Handle>,
     pub(super) trailing_icon: Option<icon::Handle>,
+}
+
+impl Default for Text {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl Text {

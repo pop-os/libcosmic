@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: MPL-2.0
 
 use crate::cosmic_theme::Density;
-use crate::{ext::CollectionWidget, widget, Element};
+use crate::{widget, Element};
 use apply::Apply;
 use derive_setters::Setters;
 use iced::Length;
