@@ -882,7 +882,30 @@ impl<App: Application> ApplicationExt for App {
                         header = header.end(element.map(Message::App));
                     }
 
-                    header.apply(|w| id_container(w, iced_core::id::Id::new("COSMIC_header")))
+                    header
+                        // Needed for apps without a content container, but with a header bar
+                        .apply(container)
+                        .style(move |theme| container::Style {
+                            background: if content_container {
+                                None
+                            } else {
+                                Some(iced::Background::Color(
+                                    theme.cosmic().background.base.into(),
+                                ))
+                            },
+                            border: iced::Border {
+                                radius: [
+                                    theme.cosmic().radius_s()[0] - 1.0,
+                                    theme.cosmic().radius_s()[1] - 1.0,
+                                    theme.cosmic().radius_0()[2],
+                                    theme.cosmic().radius_0()[3],
+                                ]
+                                .into(),
+                                ..Default::default()
+                            },
+                            ..Default::default()
+                        })
+                        .apply(|w| id_container(w, iced_core::id::Id::new("COSMIC_header")))
                 })
             } else {
                 None
@@ -892,17 +915,19 @@ impl<App: Application> ApplicationExt for App {
             .apply(container)
             .padding(if sharp_corners { 0 } else { 1 })
             .style(move |theme| container::Style {
-                icon_color: Some(iced::Color::from(theme.cosmic().background.on)),
-                text_color: Some(iced::Color::from(theme.cosmic().background.on)),
-                background: Some(iced::Background::Color(
-                    theme.cosmic().background.base.into(),
-                )),
+                background: if content_container {
+                    Some(iced::Background::Color(
+                        theme.cosmic().background.base.into(),
+                    ))
+                } else {
+                    None
+                },
                 border: iced::Border {
                     color: theme.cosmic().bg_divider().into(),
                     width: if sharp_corners { 0.0 } else { 1.0 },
                     radius: theme.cosmic().radius_s().into(),
                 },
-                shadow: iced::Shadow::default(),
+                ..Default::default()
             });
 
         // Show any current dialog on top and centered over the view content
