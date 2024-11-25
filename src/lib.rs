@@ -75,6 +75,9 @@ pub mod keyboard_nav;
 
 #[cfg(feature = "desktop")]
 pub mod desktop;
+
+pub mod mime_app;
+
 #[cfg(feature = "process")]
 pub mod process;
 

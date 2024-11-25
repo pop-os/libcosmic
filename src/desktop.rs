@@ -6,6 +6,8 @@ use std::{
     path::{Path, PathBuf},
 };
 
+use crate::mime_app::{exec_term_to_command, exec_to_command};
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum IconSource {
     Name(String),
@@ -60,6 +62,7 @@ pub struct DesktopEntryData {
     pub desktop_actions: Vec<DesktopAction>,
     pub mime_types: Vec<Mime>,
     pub prefers_dgpu: bool,
+    pub terminal: bool,
 }
 
 pub fn load_applications<'a>(
@@ -225,12 +228,17 @@ impl DesktopEntryData {
                 })
                 .unwrap_or_default(),
             prefers_dgpu: de.prefers_non_default_gpu(),
+            terminal: de.terminal(),
         }
     }
 }
 
-pub async fn spawn_desktop_exec<S, I, K, V>(exec: S, env_vars: I, app_id: Option<&str>)
-where
+pub async fn spawn_desktop_exec<S, I, K, V>(
+    exec: S,
+    env_vars: I,
+    app_id: Option<&str>,
+    terminal: bool,
+) where
     S: AsRef<str>,
     I: IntoIterator<Item = (K, V)>,
     K: AsRef<OsStr>,
@@ -243,14 +251,13 @@ where
         _ => return,
     };
 
-    let mut cmd = std::process::Command::new(&executable);
+    let cmd = if terminal {
+        exec_term_to_command(&executable, None)
+    } else {
+        exec_to_command(&executable, None)
+    };
 
-    for arg in exec {
-        // TODO handle "%" args here if necessary?
-        if !arg.starts_with('%') {
-            cmd.arg(arg);
-        }
-    }
+    let Some(mut cmd) = cmd else { return };
 
     cmd.envs(env_vars);
 
