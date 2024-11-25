@@ -24,6 +24,8 @@ pub struct Dropdown<'a, S: AsRef<str>, Message> {
     on_selected: Box<dyn Fn(usize) -> Message + 'a>,
     #[setters(skip)]
     selections: &'a [S],
+    #[setters]
+    icons: &'a [icon::Handle],
     #[setters(skip)]
     selected: Option<usize>,
     #[setters(into)]
@@ -55,6 +57,7 @@ impl<'a, S: AsRef<str>, Message> Dropdown<'a, S, Message> {
         Self {
             on_selected: Box::new(on_selected),
             selections,
+            icons: &[],
             selected,
             width: Length::Shrink,
             gap: Self::DEFAULT_GAP,
@@ -62,29 +65,6 @@ impl<'a, S: AsRef<str>, Message> Dropdown<'a, S, Message> {
             text_size: None,
             text_line_height: text::LineHeight::Relative(1.2),
             font: None,
-        }
-    }
-
-    fn update_paragraphs(&self, state: &mut tree::State) {
-        let state = state.downcast_mut::<State>();
-
-        state
-            .selections
-            .resize_with(self.selections.len(), crate::Plain::default);
-        for (i, selection) in self.selections.iter().enumerate() {
-            state.selections[i].update(Text {
-                content: selection.as_ref(),
-                bounds: Size::INFINITY,
-                // TODO use the renderer default size
-                size: iced::Pixels(self.text_size.unwrap_or(14.0)),
-
-                line_height: self.text_line_height,
-                font: self.font.unwrap_or(crate::font::default()),
-                horizontal_alignment: alignment::Horizontal::Left,
-                vertical_alignment: alignment::Vertical::Top,
-                shaping: text::Shaping::Advanced,
-                wrapping: text::Wrapping::default(),
-            });
         }
     }
 }
@@ -158,6 +138,7 @@ impl<'a, S: AsRef<str>, Message: 'a> Widget<Message, crate::Theme, crate::Render
                     .map(AsRef::as_ref)
                     .zip(tree.state.downcast_mut::<State>().selections.get_mut(id))
             }),
+            !self.icons.is_empty(),
         )
     }
 
@@ -217,6 +198,7 @@ impl<'a, S: AsRef<str>, Message: 'a> Widget<Message, crate::Theme, crate::Render
             self.text_line_height,
             font,
             self.selected.and_then(|id| self.selections.get(id)),
+            self.selected.and_then(|id| self.icons.get(id)),
             tree.state.downcast_ref::<State>(),
             viewport,
         );
@@ -241,6 +223,7 @@ impl<'a, S: AsRef<str>, Message: 'a> Widget<Message, crate::Theme, crate::Render
             self.text_line_height,
             self.font,
             self.selections,
+            self.icons,
             self.selected,
             &self.on_selected,
             translation,
@@ -319,6 +302,7 @@ pub fn layout(
     text_line_height: text::LineHeight,
     font: Option<crate::font::Font>,
     selection: Option<(&str, &mut crate::Plain)>,
+    has_icons: bool,
 ) -> layout::Node {
     use std::f32;
 
@@ -346,9 +330,11 @@ pub fn layout(
         _ => 0.0,
     };
 
+    let icon_size = if has_icons { 24.0 } else { 0.0 };
+
     let size = {
         let intrinsic = Size::new(
-            max_width + gap + 16.0,
+            max_width + icon_size + gap + 16.0,
             f32::from(text_line_height.to_absolute(Pixels(text_size))),
         );
 
@@ -449,6 +435,7 @@ pub fn overlay<'a, S: AsRef<str>, Message: 'a>(
     _text_line_height: text::LineHeight,
     _font: Option<crate::font::Font>,
     selections: &'a [S],
+    icons: &'a [icon::Handle],
     selected_option: Option<usize>,
     on_selected: &'a dyn Fn(usize) -> Message,
     translation: Vector,
@@ -459,6 +446,7 @@ pub fn overlay<'a, S: AsRef<str>, Message: 'a>(
         let menu = Menu::new(
             &mut state.menu,
             selections,
+            icons,
             &mut state.hovered_option,
             selected_option,
             |option| {
@@ -473,15 +461,18 @@ pub fn overlay<'a, S: AsRef<str>, Message: 'a>(
                 selection_paragraph.min_width().round()
             };
 
+            let pad_width = padding.horizontal().mul_add(2.0, 16.0);
+
+            let icon_width = if icons.is_empty() { 0.0 } else { 24.0 };
+
             selections
                 .iter()
                 .zip(state.selections.iter_mut())
                 .map(|(label, selection)| measure(label.as_ref(), selection.raw()))
                 .fold(0.0, |next, current| current.max(next))
                 + gap
-                + 16.0
-                + padding.horizontal()
-                + padding.horizontal()
+                + pad_width
+                + icon_width
         })
         .padding(padding)
         .text_size(text_size);
@@ -509,6 +500,7 @@ pub fn draw<'a, S>(
     text_line_height: text::LineHeight,
     font: crate::font::Font,
     selected: Option<&'a S>,
+    icon: Option<&'a icon::Handle>,
     state: &'a State,
     viewport: &Rectangle,
 ) where
@@ -550,12 +542,26 @@ pub fn draw<'a, S>(
 
     if let Some(content) = selected.map(AsRef::as_ref) {
         let text_size = text_size.unwrap_or_else(|| text::Renderer::default_size(renderer).0);
-        let bounds = Rectangle {
+
+        let mut bounds = Rectangle {
             x: bounds.x + padding.left,
             y: bounds.center_y(),
             width: bounds.width - padding.horizontal(),
             height: f32::from(text_line_height.to_absolute(Pixels(text_size))),
         };
+
+        if let Some(handle) = icon {
+            let icon_bounds = Rectangle {
+                x: bounds.x,
+                y: bounds.y - (bounds.height / 2.0) - 2.0,
+                width: 20.0,
+                height: 20.0,
+            };
+
+            bounds.x += 24.0;
+            icon::draw(renderer, handle, icon_bounds);
+        }
+
         text::Renderer::fill_text(
             renderer,
             Text {

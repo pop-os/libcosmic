@@ -5,7 +5,7 @@
 mod appearance;
 pub use appearance::{Appearance, StyleSheet};
 
-use crate::widget::Container;
+use crate::widget::{icon, Container};
 use iced_core::event::{self, Event};
 use iced_core::layout::{self, Layout};
 use iced_core::text::{self, Text};
@@ -24,6 +24,7 @@ where
 {
     state: &'a mut State,
     options: &'a [S],
+    icons: &'a [icon::Handle],
     hovered_option: &'a mut Option<usize>,
     selected_option: Option<usize>,
     on_selected: Box<dyn FnMut(usize) -> Message + 'a>,
@@ -41,6 +42,7 @@ impl<'a, S: AsRef<str>, Message: 'a> Menu<'a, S, Message> {
     pub fn new(
         state: &'a mut State,
         options: &'a [S],
+        icons: &'a [icon::Handle],
         hovered_option: &'a mut Option<usize>,
         selected_option: Option<usize>,
         on_selected: impl FnMut(usize) -> Message + 'a,
@@ -49,6 +51,7 @@ impl<'a, S: AsRef<str>, Message: 'a> Menu<'a, S, Message> {
         Menu {
             state,
             options,
+            icons,
             hovered_option,
             selected_option,
             on_selected: Box::new(on_selected),
@@ -141,6 +144,7 @@ impl<'a, Message: 'a> Overlay<'a, Message> {
         let Menu {
             state,
             options,
+            icons,
             hovered_option,
             selected_option,
             on_selected,
@@ -154,6 +158,7 @@ impl<'a, Message: 'a> Overlay<'a, Message> {
 
         let mut container = Container::new(Scrollable::new(List {
             options,
+            icons,
             hovered_option,
             selected_option,
             on_selected,
@@ -268,6 +273,7 @@ impl<'a, Message> iced_core::Overlay<Message, crate::Theme, crate::Renderer>
 
 struct List<'a, S: AsRef<str>, Message> {
     options: &'a [S],
+    icons: &'a [icon::Handle],
     hovered_option: &'a mut Option<usize>,
     selected_option: Option<usize>,
     on_selected: Box<dyn FnMut(usize) -> Message + 'a>,
@@ -395,12 +401,12 @@ impl<'a, S: AsRef<str>, Message> Widget<Message, crate::Theme, crate::Renderer>
 
     fn draw(
         &self,
-        _state: &Tree,
+        state: &Tree,
         renderer: &mut crate::Renderer,
         theme: &crate::Theme,
-        _style: &renderer::Style,
+        style: &renderer::Style,
         layout: Layout<'_>,
-        _cursor: mouse::Cursor,
+        cursor: mouse::Cursor,
         viewport: &Rectangle,
     ) {
         let appearance = theme.appearance(&());
@@ -452,6 +458,7 @@ impl<'a, S: AsRef<str>, Message> Widget<Message, crate::Theme, crate::Renderer>
                     iced_core::Svg::new(crate::widget::common::object_select().clone())
                         .color(appearance.selected_text_color)
                         .border_radius(appearance.border_radius);
+
                 svg::Renderer::draw_svg(
                     renderer,
                     svg_handle,
@@ -489,12 +496,25 @@ impl<'a, S: AsRef<str>, Message> Widget<Message, crate::Theme, crate::Renderer>
                 (appearance.text_color, crate::font::default())
             };
 
-            let bounds = Rectangle {
+            let mut bounds = Rectangle {
                 x: bounds.x + self.padding.left,
                 y: bounds.center_y(),
                 width: f32::INFINITY,
                 ..bounds
             };
+
+            if let Some(handle) = self.icons.get(i) {
+                let icon_bounds = Rectangle {
+                    x: bounds.x,
+                    y: bounds.y + 8.0 - (bounds.height / 2.0),
+                    width: 20.0,
+                    height: 20.0,
+                };
+
+                bounds.x += 24.0;
+                icon::draw(renderer, handle, icon_bounds);
+            }
+
             text::Renderer::fill_text(
                 renderer,
                 Text {
