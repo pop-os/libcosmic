@@ -22,9 +22,7 @@ pub use app::{Application, ApplicationExt};
 #[cfg(feature = "applet")]
 pub mod applet;
 
-#[cfg(feature = "winit")]
-pub use app::Task;
-
+pub use iced::Task;
 pub mod task;
 
 pub mod config;
