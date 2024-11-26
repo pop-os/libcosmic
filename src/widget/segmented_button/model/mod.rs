@@ -355,9 +355,10 @@ where
             return None;
         };
 
+        self.order.remove(index as usize);
+        
         let position = self.order.len().min(position as usize);
 
-        self.order.remove(index as usize);
         self.order.insert(position, id);
         Some(position)
     }
