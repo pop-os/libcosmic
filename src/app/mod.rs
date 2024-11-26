@@ -882,30 +882,7 @@ impl<App: Application> ApplicationExt for App {
                         header = header.end(element.map(Message::App));
                     }
 
-                    header
-                        // Needed for apps without a content container, but with a header bar
-                        .apply(container)
-                        .style(move |theme| container::Style {
-                            background: if content_container {
-                                None
-                            } else {
-                                Some(iced::Background::Color(
-                                    theme.cosmic().background.base.into(),
-                                ))
-                            },
-                            border: iced::Border {
-                                radius: [
-                                    theme.cosmic().radius_s()[0] - 1.0,
-                                    theme.cosmic().radius_s()[1] - 1.0,
-                                    theme.cosmic().radius_0()[2],
-                                    theme.cosmic().radius_0()[3],
-                                ]
-                                .into(),
-                                ..Default::default()
-                            },
-                            ..Default::default()
-                        })
-                        .apply(|w| id_container(w, iced_core::id::Id::new("COSMIC_header")))
+                    header.apply(|w| id_container(w, iced_core::id::Id::new("COSMIC_header")))
                 })
             } else {
                 None
