@@ -356,7 +356,7 @@ where
         };
 
         self.order.remove(index as usize);
-        
+
         let position = self.order.len().min(position as usize);
 
         self.order.insert(position, id);
