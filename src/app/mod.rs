@@ -882,7 +882,30 @@ impl<App: Application> ApplicationExt for App {
                         header = header.end(element.map(Message::App));
                     }
 
-                    header.apply(|w| id_container(w, iced_core::id::Id::new("COSMIC_header")))
+                    if content_container {
+                        header.apply(|w| id_container(w, iced_core::id::Id::new("COSMIC_header")))
+                    } else {
+                        // Needed to avoid header bar corner gaps for apps without a content container
+                        header
+                            .apply(container)
+                            .style(move |theme| container::Style {
+                                background: Some(iced::Background::Color(
+                                    theme.cosmic().background.base.into(),
+                                )),
+                                border: iced::Border {
+                                    radius: [
+                                        theme.cosmic().radius_s()[0] - 1.0,
+                                        theme.cosmic().radius_s()[1] - 1.0,
+                                        theme.cosmic().radius_0()[2],
+                                        theme.cosmic().radius_0()[3],
+                                    ]
+                                    .into(),
+                                    ..Default::default()
+                                },
+                                ..Default::default()
+                            })
+                            .apply(|w| id_container(w, iced_core::id::Id::new("COSMIC_header")))
+                    }
                 })
             } else {
                 None
