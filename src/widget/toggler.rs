@@ -12,5 +12,6 @@ where
 {
     widget::Toggler::new(is_checked)
         .size(24)
+        .spacing(0)
         .width(Length::Shrink)
 }
