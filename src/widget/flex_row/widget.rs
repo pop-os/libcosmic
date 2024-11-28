@@ -10,7 +10,7 @@ use iced_core::{
     Widget,
 };
 
-/// Responsively generates rows and columns of widgets based on its dimmensions.
+/// Responsively generates rows and columns of widgets based on its dimensions.
 #[derive(Setters)]
 #[must_use]
 pub struct FlexRow<'a, Message> {

@@ -109,7 +109,7 @@ impl<'a, Message: Clone + 'static> From<Dialog<'a, Message>> for Element<'a, Mes
         if let Some(button) = dialog.tertiary_action {
             button_row = button_row.push(button);
         }
-        button_row = button_row.push(widget::horizontal_space().width(Length::Fill));
+        button_row = button_row.push(widget::horizontal_space());
         if let Some(button) = dialog.secondary_action {
             button_row = button_row.push(button);
         }

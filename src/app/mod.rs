@@ -888,7 +888,7 @@ impl<App: Application> ApplicationExt for App {
                         // Needed to avoid header bar corner gaps for apps without a content container
                         header
                             .apply(container)
-                            .style(move |theme| container::Style {
+                            .class(crate::theme::Container::custom(|theme| container::Style {
                                 background: Some(iced::Background::Color(
                                     theme.cosmic().background.base.into(),
                                 )),
@@ -903,7 +903,7 @@ impl<App: Application> ApplicationExt for App {
                                     ..Default::default()
                                 },
                                 ..Default::default()
-                            })
+                            }))
                             .apply(|w| id_container(w, iced_core::id::Id::new("COSMIC_header")))
                     }
                 })
@@ -914,21 +914,23 @@ impl<App: Application> ApplicationExt for App {
             .push(content)
             .apply(container)
             .padding(if sharp_corners { 0 } else { 1 })
-            .style(move |theme| container::Style {
-                background: if content_container {
-                    Some(iced::Background::Color(
-                        theme.cosmic().background.base.into(),
-                    ))
-                } else {
-                    None
-                },
-                border: iced::Border {
-                    color: theme.cosmic().bg_divider().into(),
-                    width: if sharp_corners { 0.0 } else { 1.0 },
-                    radius: theme.cosmic().radius_s().into(),
-                },
-                ..Default::default()
-            });
+            .class(crate::theme::Container::custom(move |theme| {
+                container::Style {
+                    background: if content_container {
+                        Some(iced::Background::Color(
+                            theme.cosmic().background.base.into(),
+                        ))
+                    } else {
+                        None
+                    },
+                    border: iced::Border {
+                        color: theme.cosmic().bg_divider().into(),
+                        width: if sharp_corners { 0.0 } else { 1.0 },
+                        radius: theme.cosmic().radius_s().into(),
+                    },
+                    ..Default::default()
+                }
+            }));
 
         // Show any current dialog on top and centered over the view content
         // We have to use a popover even without a dialog to keep the tree from changing

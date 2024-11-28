@@ -329,7 +329,7 @@ impl<'a, Message: Clone + 'static> HeaderBar<'a, Message> {
                     .center_x(Length::Fill)
                     .into()
             } else if self.title.is_empty() {
-                widget::horizontal_space().width(Length::Fill).into()
+                widget::horizontal_space().into()
             } else {
                 self.title_widget()
             })

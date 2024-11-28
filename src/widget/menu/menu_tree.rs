@@ -248,7 +248,7 @@ where
                     let key = find_key(&action, key_binds);
                     let mut items = vec![
                         widget::text(label).into(),
-                        widget::horizontal_space().width(Length::Fill).into(),
+                        widget::horizontal_space().into(),
                         widget::text(key).into(),
                     ];
 
@@ -266,7 +266,7 @@ where
 
                     let mut items = vec![
                         widget::text(label).into(),
-                        widget::horizontal_space().width(Length::Fill).into(),
+                        widget::horizontal_space().into(),
                         widget::text(key).into(),
                     ];
 
@@ -298,7 +298,7 @@ where
                         },
                         widget::Space::with_width(spacing.space_xxs).into(),
                         widget::text(label).align_x(iced::Alignment::Start).into(),
-                        widget::horizontal_space().width(Length::Fill).into(),
+                        widget::horizontal_space().into(),
                         widget::text(key).into(),
                     ];
 
@@ -313,7 +313,7 @@ where
                     trees.push(MenuTree::<Message, Renderer>::with_children(
                         menu_button(vec![
                             widget::text(label).into(),
-                            widget::horizontal_space().width(Length::Fill).into(),
+                            widget::horizontal_space().into(),
                             widget::icon::from_name("pan-end-symbolic")
                                 .size(16)
                                 .icon()
