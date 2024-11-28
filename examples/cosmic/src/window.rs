@@ -17,7 +17,7 @@ use cosmic::{
     prelude::*,
     theme::{self, Theme},
     widget::{
-        button, header_bar, icon, list, nav_bar, nav_bar_toggle, scrollable, segmented_button,
+        button, container, header_bar, icon, nav_bar, nav_bar_toggle, scrollable, segmented_button,
         settings, warning,
     },
     Element,
@@ -231,7 +231,7 @@ impl Window {
     }
 
     fn page_title<Message: 'static>(&self, page: Page) -> Element<Message> {
-        row!(text(page.title()).size(28), horizontal_space(Length::Fill),).into()
+        row!(text(page.title()).size(28), horizontal_space(),).into()
     }
 
     fn is_condensed(&self) -> bool {
@@ -253,10 +253,7 @@ impl Window {
                 .label(page.title())
                 .padding(0)
                 .on_press(Message::from(page)),
-            row!(
-                text(sub_page.title()).size(28),
-                horizontal_space(Length::Fill),
-            ),
+            row!(text(sub_page.title()).size(28), horizontal_space(),),
         )
         .spacing(10)
         .into()
@@ -272,7 +269,7 @@ impl Window {
         sub_page: impl SubPage,
     ) -> Element<Message> {
         iced::widget::Button::new(
-            list::container(
+            container(
                 settings::item_row(vec![
                     icon::from_name(sub_page.icon_name()).size(20).icon().into(),
                     column!(
@@ -281,12 +278,14 @@ impl Window {
                     )
                     .spacing(2)
                     .into(),
-                    horizontal_space(iced::Length::Fill).into(),
+                    horizontal_space().into(),
                     icon::from_name("go-next-symbolic").size(20).icon().into(),
                 ])
                 .spacing(16),
             )
-            .padding([20, 24]),
+            .padding([20, 24])
+            .class(theme::Container::List)
+            .width(Length::Fill),
         )
         .width(Length::Fill)
         .padding(0)
@@ -361,10 +360,7 @@ impl Application for Window {
 
     fn subscription(&self) -> Subscription<Message> {
         let window_break = listen_raw(|event, _| match event {
-            cosmic::iced::Event::Window(
-                _window_id,
-                window::Event::Resized { width, height: _ },
-            ) => {
+            cosmic::iced::Event::Window(window::Event::Resized { width, height: _ }) => {
                 let old_width = WINDOW_WIDTH.load(Ordering::Relaxed);
                 if old_width == 0
                     || old_width < BREAK_POINT && width > BREAK_POINT
@@ -584,7 +580,9 @@ impl Application for Window {
                 header,
                 container(column(vec![
                     warning,
-                    iced::widget::vertical_space(Length::Fixed(12.0)).into(),
+                    iced::widget::vertical_space()
+                        .width(Length::Fixed(12.0))
+                        .into(),
                     content,
                 ]))
                 .style(theme::Container::Background)

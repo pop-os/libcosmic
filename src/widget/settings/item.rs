@@ -21,7 +21,7 @@ pub fn item<'a, Message: 'static>(
 ) -> Row<'a, Message> {
     item_row(vec![
         text(title).wrapping(Wrapping::Word).into(),
-        horizontal_space().width(iced::Length::Fill).into(),
+        horizontal_space().into(),
         widget.into(),
     ])
 }
@@ -30,13 +30,9 @@ pub fn item<'a, Message: 'static>(
 #[must_use]
 #[allow(clippy::module_name_repetitions)]
 pub fn item_row<Message>(children: Vec<Element<Message>>) -> Row<Message> {
-    let cosmic_theme::Spacing {
-        space_s, space_xs, ..
-    } = theme::THEME.lock().unwrap().cosmic().spacing;
     row::with_children(children)
-        .spacing(space_xs)
+        .spacing(theme::active().cosmic().space_xs())
         .align_y(iced::Alignment::Center)
-        .padding([0, space_s])
 }
 
 /// A settings item aligned in a flex row
@@ -57,12 +53,8 @@ pub fn flex_item<'a, Message: 'static>(
 /// A settings item aligned in a flex row
 #[allow(clippy::module_name_repetitions)]
 pub fn flex_item_row<Message>(children: Vec<Element<Message>>) -> FlexRow<Message> {
-    let cosmic_theme::Spacing {
-        space_s, space_xs, ..
-    } = theme::THEME.lock().unwrap().cosmic().spacing;
     flex_row(children)
-        .padding([0, space_s])
-        .spacing(space_xs)
+        .spacing(theme::active().cosmic().space_xs())
         .min_item_width(200.0)
         .justify_items(iced::Alignment::Center)
         .justify_content(AlignContent::SpaceBetween)

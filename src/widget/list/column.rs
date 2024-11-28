@@ -4,7 +4,11 @@
 use iced_core::Padding;
 use iced_widget::container::Catalog;
 
-use crate::{theme, widget::divider, Apply, Element};
+use crate::{
+    theme,
+    widget::{container, divider, vertical_space},
+    Apply, Element,
+};
 
 pub fn list_column<'a, Message: 'static>() -> ListColumn<'a, Message> {
     ListColumn::default()
@@ -14,16 +18,16 @@ pub fn list_column<'a, Message: 'static>() -> ListColumn<'a, Message> {
 pub struct ListColumn<'a, Message> {
     spacing: u16,
     padding: Padding,
-    style: crate::theme::Container<'a>,
+    style: theme::Container<'a>,
     children: Vec<Element<'a, Message>>,
 }
 
 impl<'a, Message: 'static> Default for ListColumn<'a, Message> {
     fn default() -> Self {
         Self {
-            spacing: theme::THEME.lock().unwrap().cosmic().spacing.space_xxs,
+            spacing: 0,
             padding: Padding::from(0),
-            style: crate::theme::Container::List,
+            style: theme::Container::List,
             children: Vec::with_capacity(4),
         }
     }
@@ -36,15 +40,24 @@ impl<'a, Message: 'static> ListColumn<'a, Message> {
 
     #[allow(clippy::should_implement_trait)]
     pub fn add(mut self, item: impl Into<Element<'a, Message>>) -> Self {
+        let cosmic_theme::Spacing {
+            space_xxs, space_m, ..
+        } = theme::active().cosmic().spacing;
+
         if !self.children.is_empty() {
-            self.children.push(divider::horizontal::light().into());
+            self.children.push(
+                container(divider::horizontal::default())
+                    .padding([0, 16])
+                    .into(),
+            );
         }
 
         // Ensure a minimum height of 32.
         let list_item = iced::widget::row![
-            crate::widget::container(item).align_y(iced::Alignment::Center),
-            crate::widget::vertical_space().height(iced::Length::Fixed(32.))
+            container(item).align_y(iced::Alignment::Center),
+            vertical_space().height(iced::Length::Fixed(32.))
         ]
+        .padding([space_xxs, space_m])
         .align_y(iced::Alignment::Center);
 
         self.children.push(list_item.into());
@@ -72,9 +85,10 @@ impl<'a, Message: 'static> ListColumn<'a, Message> {
         crate::widget::column::with_children(self.children)
             .spacing(self.spacing)
             .padding(self.padding)
-            .apply(super::container)
-            .padding([self.spacing, 8])
+            .apply(container)
+            .padding([self.spacing, 0])
             .class(self.style)
+            .width(iced::Length::Fill)
             .into()
     }
 }

@@ -13,8 +13,5 @@ use crate::{theme, Element};
 /// A column with a predefined style for creating a settings panel
 #[must_use]
 pub fn view_column<Message: 'static>(children: Vec<Element<Message>>) -> Column<Message> {
-    let space_m = theme::THEME.lock().unwrap().cosmic().spacing.space_m;
-    column::with_children(children)
-        .spacing(space_m)
-        .padding([0, space_m])
+    column::with_children(children).spacing(theme::active().cosmic().space_m())
 }

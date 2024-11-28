@@ -1,7 +1,6 @@
 // Copyright 2022 System76 <info@system76.com>
 // SPDX-License-Identifier: MPL-2.0
 
-use crate::ext::CollectionWidget;
 use crate::widget::{column, text, ListColumn};
 use crate::Element;
 use std::borrow::Cow;
