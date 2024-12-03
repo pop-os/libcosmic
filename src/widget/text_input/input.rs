@@ -1649,7 +1649,7 @@ where
                         if !is_secure {
                             if let Some((start, end)) = state.cursor.selection(value) {
                                 clipboard.write(
-                                    iced_core::clipboard::Kind::Primary,
+                                    iced_core::clipboard::Kind::Standard,
                                     value.select(start, end).to_string(),
                                 );
                             }
@@ -1663,7 +1663,7 @@ where
                         if !is_secure {
                             if let Some((start, end)) = state.cursor.selection(value) {
                                 clipboard.write(
-                                    iced_core::clipboard::Kind::Primary,
+                                    iced_core::clipboard::Kind::Standard,
                                     value.select(start, end).to_string(),
                                 );
                             }
@@ -1683,7 +1683,7 @@ where
                             content
                         } else {
                             let content: String = clipboard
-                                .read(iced_core::clipboard::Kind::Primary)
+                                .read(iced_core::clipboard::Kind::Standard)
                                 .unwrap_or_default()
                                 .chars()
                                 .filter(|c| !c.is_control())
