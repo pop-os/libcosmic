@@ -1471,9 +1471,9 @@ impl iced_widget::text_editor::Catalog for Theme {
 impl iced_widget::markdown::Catalog for Theme {
     fn code_block<'a>() -> <Self as iced_container::Catalog>::Class<'a> {
         Container::custom(|_| iced_container::Style {
-            background: Some(color!(0x111111).into()),
+            background: Some(iced::color!(0x111111).into()),
             text_color: Some(Color::WHITE),
-            border: border::rounded(2),
+            border: iced::border::rounded(2),
             ..iced_container::Style::default()
         })
     }
