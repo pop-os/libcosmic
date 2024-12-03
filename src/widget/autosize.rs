@@ -112,23 +112,21 @@ where
         &self,
         tree: &mut Tree,
         renderer: &Renderer,
-        _limits: &layout::Limits,
+        limits: &layout::Limits,
     ) -> layout::Node {
-        let mut limits = self.limits;
-        let min = self.limits.min();
-        let max = self.limits.max();
-        if self.auto_width {
-            limits.min_width(min.width);
-            limits.max_width(max.width);
+        let mut my_limits = self.limits;
+        let min = limits.min();
+        let max = limits.max();
+        if !self.auto_width {
+            my_limits = limits.min_width(min.width).max_width(max.width);
         }
-        if self.auto_height {
-            limits.min_height(min.height);
-            limits.max_height(max.height);
+        if !self.auto_height {
+            my_limits = limits.min_height(min.height).max_height(max.height);
         }
         let node = self
             .content
             .as_widget()
-            .layout(&mut tree.children[0], renderer, &self.limits);
+            .layout(&mut tree.children[0], renderer, &my_limits);
         let size = node.size();
         layout::Node::with_children(size, vec![node])
     }
