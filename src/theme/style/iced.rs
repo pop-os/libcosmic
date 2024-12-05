@@ -528,17 +528,7 @@ impl iced_container::Catalog for Theme {
                 }
             }
 
-            Container::ContextDrawer => {
-                let mut appearance = Container::primary(cosmic);
-
-                appearance.shadow = Shadow {
-                    color: cosmic.shade.into(),
-                    offset: Vector::new(0.0, 0.0),
-                    blur_radius: 16.0,
-                };
-
-                appearance
-            }
+            Container::ContextDrawer => Container::primary(cosmic),
 
             Container::Background => Container::background(cosmic),
 
