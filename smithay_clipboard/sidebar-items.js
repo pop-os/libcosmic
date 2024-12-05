@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"mod":["dnd","mime","text"],"struct":["Clipboard"],"type":["SimpleClipboard"]};

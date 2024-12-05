@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["DbusActivationDetails"],"fn":["run"],"mod":["command","context_drawer","cosmic","message","settings"],"struct":["Core"],"trait":["Application","ApplicationExt","CosmicFlags"]};
