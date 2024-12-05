@@ -14,13 +14,13 @@ use crate::{
 #[derive(Default)]
 pub enum Button {
     AppletIcon,
+    AppletMenu,
     Custom {
         active: Box<dyn Fn(bool, &crate::Theme) -> Style>,
         disabled: Box<dyn Fn(&crate::Theme) -> Style>,
         hovered: Box<dyn Fn(bool, &crate::Theme) -> Style>,
         pressed: Box<dyn Fn(bool, &crate::Theme) -> Style>,
     },
-    AppletMenu,
     Destructive,
     HeaderBar,
     Icon,
@@ -31,6 +31,7 @@ pub enum Button {
     MenuFolder,
     MenuItem,
     MenuRoot,
+    NavToggle,
     #[default]
     Standard,
     Suggested,
@@ -73,7 +74,7 @@ pub fn appearance(
             }
         }
 
-        Button::Icon | Button::IconVertical | Button::HeaderBar => {
+        Button::Icon | Button::IconVertical | Button::HeaderBar | Button::NavToggle => {
             if matches!(style, Button::IconVertical) {
                 corner_radii = &cosmic.corner_radii.radius_m;
                 if selected {
@@ -81,6 +82,9 @@ pub fn appearance(
                         cosmic.icon_button.selected_state_color(),
                     )));
                 }
+            }
+            if matches!(style, Button::NavToggle) {
+                corner_radii = &cosmic.corner_radii.radius_s;
             }
 
             let (background, text, icon) = color(&cosmic.icon_button);
