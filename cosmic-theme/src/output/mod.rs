@@ -21,9 +21,11 @@ pub enum OutputError {
 impl Theme {
     pub fn apply_exports(&self) -> Result<(), OutputError> {
         let gtk_res = Theme::apply_gtk(self.is_dark);
-        let vs_res = self.clone().apply_vs_code();
+        let vscode_res = self.clone().apply_vs_code();
+        let vscodium_res = self.clone().apply_vs_codium();
         gtk_res?;
-        vs_res?;
+        vscode_res?;
+        vscodium_res?;
         Ok(())
     }
 
@@ -35,9 +37,11 @@ impl Theme {
 
     pub fn reset_exports() -> Result<(), OutputError> {
         let gtk_res = Theme::reset_gtk();
-        let vs_res = Theme::reset_vs_code();
+        let vscode_res = Theme::reset_vs_code();
+        let vscodium_res = Theme::reset_vs_codium();
         gtk_res?;
-        vs_res?;
+        vscode_res?;
+        vscodium_res?;
         Ok(())
     }
 }
