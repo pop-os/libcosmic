@@ -18,15 +18,23 @@ pub fn list_column<'a, Message: 'static>() -> ListColumn<'a, Message> {
 pub struct ListColumn<'a, Message> {
     spacing: u16,
     padding: Padding,
+    list_item_padding: Padding,
+    divider_padding: u16,
     style: theme::Container<'a>,
     children: Vec<Element<'a, Message>>,
 }
 
 impl<'a, Message: 'static> Default for ListColumn<'a, Message> {
     fn default() -> Self {
+        let cosmic_theme::Spacing {
+            space_xxs, space_m, ..
+        } = theme::active().cosmic().spacing;
+
         Self {
             spacing: 0,
             padding: Padding::from(0),
+            divider_padding: 16,
+            list_item_padding: [space_xxs, space_m].into(),
             style: theme::Container::List,
             children: Vec::with_capacity(4),
         }
@@ -40,14 +48,10 @@ impl<'a, Message: 'static> ListColumn<'a, Message> {
 
     #[allow(clippy::should_implement_trait)]
     pub fn add(mut self, item: impl Into<Element<'a, Message>>) -> Self {
-        let cosmic_theme::Spacing {
-            space_xxs, space_m, ..
-        } = theme::active().cosmic().spacing;
-
         if !self.children.is_empty() {
             self.children.push(
                 container(divider::horizontal::default())
-                    .padding([0, 16])
+                    .padding([0, self.divider_padding])
                     .into(),
             );
         }
@@ -57,7 +61,7 @@ impl<'a, Message: 'static> ListColumn<'a, Message> {
             container(item).align_y(iced::Alignment::Center),
             vertical_space().height(iced::Length::Fixed(32.))
         ]
-        .padding([space_xxs, space_m])
+        .padding(self.list_item_padding)
         .align_y(iced::Alignment::Center);
 
         self.children.push(list_item.into());
@@ -77,6 +81,16 @@ impl<'a, Message: 'static> ListColumn<'a, Message> {
 
     pub fn padding(mut self, padding: impl Into<Padding>) -> Self {
         self.padding = padding.into();
+        self
+    }
+
+    pub fn divider_padding(mut self, padding: u16) -> Self {
+        self.divider_padding = padding;
+        self
+    }
+
+    pub fn list_item_padding(mut self, padding: impl Into<Padding>) -> Self {
+        self.list_item_padding = padding.into();
         self
     }
 
