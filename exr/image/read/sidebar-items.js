@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["read","read_all_data_from_file","read_all_flat_layers_from_file","read_all_rgba_layers_from_file","read_first_flat_layer_from_file","read_first_rgba_layer_from_file"],"mod":["any_channels","image","layers","levels","samples","specific_channels"],"struct":["ReadBuilder"]};
