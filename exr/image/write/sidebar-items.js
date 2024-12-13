@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["write_rgb_file","write_rgba_file"],"mod":["channels","layers","samples"],"struct":["WriteImageWithOptions"],"trait":["WritableImage"]};

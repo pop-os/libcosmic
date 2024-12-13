@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["Error"],"fn":["from_file","from_file_data","from_rgba"],"struct":["Icon"]};

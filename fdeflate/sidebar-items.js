@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["BoundedDecompressionError","DecompressionError"],"fn":["compress_to_vec","decompress_to_vec","decompress_to_vec_bounded"],"struct":["Compressor","Decompressor","StoredOnlyCompressor"]};
