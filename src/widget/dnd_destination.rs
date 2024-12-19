@@ -31,10 +31,10 @@ pub fn dnd_destination<'a, Message: 'static>(
     DndDestination::new(child, mimes)
 }
 
-pub fn dnd_destination_for_data<T: AllowedMimeTypes, Message: 'static>(
-    child: impl Into<Element<'static, Message>>,
+pub fn dnd_destination_for_data<'a, T: AllowedMimeTypes, Message: 'static>(
+    child: impl Into<Element<'a, Message>>,
     on_finish: impl Fn(Option<T>, DndAction) -> Message + 'static,
-) -> DndDestination<'static, Message> {
+) -> DndDestination<'a, Message> {
     DndDestination::for_data(child, on_finish)
 }
 
