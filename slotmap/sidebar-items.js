@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"macro":["new_key_type"],"mod":["basic","dense","hop","secondary","sparse_secondary"],"struct":["DefaultKey","DenseSlotMap","HopSlotMap","KeyData","SecondaryMap","SlotMap","SparseSecondaryMap"],"trait":["Key"]};

@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["DndAction"],"fn":["end_dnd","peek_dnd","register_dnd_destination","set_action","start_dnd"]};
