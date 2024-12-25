@@ -22,7 +22,6 @@ pub fn header_bar<'a, Message>() -> HeaderBar<'a, Message> {
         center: Vec::new(),
         end: Vec::new(),
         density: None,
-        horizontal_padding: 8,
         focused: false,
         on_double_click: None,
     }
@@ -74,9 +73,6 @@ pub struct HeaderBar<'a, Message> {
     /// Controls the density of the headerbar.
     #[setters(strip_option)]
     density: Option<Density>,
-
-    /// Horizontal padding of the headerbar
-    horizontal_padding: u16,
 
     /// Focused state of the window
     focused: bool,
@@ -346,7 +342,7 @@ impl<'a, Message: Clone + 'static> HeaderBar<'a, Message> {
             )
             .align_y(iced::Alignment::Center)
             .height(Length::Fixed(height))
-            .padding([0, self.horizontal_padding])
+            .padding([0, 8])
             .spacing(8)
             .apply(widget::container)
             .class(crate::theme::Container::HeaderBar {
