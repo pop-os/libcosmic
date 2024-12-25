@@ -703,14 +703,11 @@ impl<App: Application> ApplicationExt for App {
             .focused_window()
             .is_some_and(|i| Some(i) == self.core().main_window_id());
 
-        // Offset for the window border
-        let window_padding = if sharp_corners { 8 } else { 7 };
-
         let main_content_padding = if content_container {
             if nav_bar_active {
-                [0, window_padding, window_padding, 0]
+                [0, 8, 8, 0]
             } else {
-                [0, window_padding, window_padding, window_padding]
+                [0, 8, 8, 8]
             }
         } else {
             [0, 0, 0, 0]
@@ -724,11 +721,7 @@ impl<App: Application> ApplicationExt for App {
                 .nav_bar()
                 .map(|nav| id_container(nav, iced_core::id::Id::new("COSMIC_nav_bar")))
             {
-                widgets.push(
-                    container(nav)
-                        .padding([0, window_padding, window_padding, window_padding])
-                        .into(),
-                );
+                widgets.push(container(nav).padding([0, 8, 8, 8]).into());
                 true
             } else {
                 false
@@ -760,7 +753,7 @@ impl<App: Application> ApplicationExt for App {
                             })
                             .apply(container)
                             .padding(if content_container {
-                                [0, window_padding, window_padding, 0]
+                                [0, 8, 8, 0]
                             } else {
                                 [0, 0, 0, 0]
                             })
@@ -808,7 +801,7 @@ impl<App: Application> ApplicationExt for App {
                             })
                             .apply(container)
                             .padding(if content_container {
-                                [0, window_padding, window_padding, 0]
+                                [0, 8, 8, 0]
                             } else {
                                 [0, 0, 0, 0]
                             })
@@ -825,14 +818,10 @@ impl<App: Application> ApplicationExt for App {
         });
         let content_col = crate::widget::column::with_capacity(2)
             .push(content_row)
-            .push_maybe(self.footer().map(|footer| {
-                container(footer.map(Message::App)).padding([
-                    0,
-                    window_padding,
-                    window_padding,
-                    window_padding,
-                ])
-            }));
+            .push_maybe(
+                self.footer()
+                    .map(|footer| container(footer.map(Message::App)).padding([0, 8, 8, 8])),
+            );
         let content: Element<_> = if core.window.content_container {
             content_col
                 .apply(container)
@@ -851,7 +840,6 @@ impl<App: Application> ApplicationExt for App {
                     let mut header = crate::widget::header_bar()
                         .focused(focused)
                         .title(&core.window.header_title)
-                        .horizontal_padding(window_padding)
                         .on_drag(Message::Cosmic(cosmic::Message::Drag))
                         .on_right_click(Message::Cosmic(cosmic::Message::ShowWindowMenu))
                         .on_double_click(Message::Cosmic(cosmic::Message::Maximize));

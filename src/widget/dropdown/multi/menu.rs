@@ -152,20 +152,20 @@ impl<'a, Message: 'a> Overlay<'a, Message> {
             style,
         } = menu;
 
-        let mut container = Container::new(Scrollable::new(InnerList {
-            options,
-            hovered_option,
-            selected_option,
-            on_selected,
-            on_option_hovered,
-            padding,
-            text_size,
-            text_line_height,
-        }));
-
-        container = container
-            .padding(padding)
-            .class(crate::style::Container::Dropdown);
+        let mut container = Container::new(Scrollable::new(
+            Container::new(InnerList {
+                options,
+                hovered_option,
+                selected_option,
+                on_selected,
+                on_option_hovered,
+                padding,
+                text_size,
+                text_line_height,
+            })
+            .padding(padding),
+        ))
+        .class(crate::style::Container::Dropdown);
 
         state.tree.diff(&mut container as &mut dyn Widget<_, _, _>);
 

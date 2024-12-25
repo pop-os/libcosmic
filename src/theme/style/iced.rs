@@ -536,20 +536,17 @@ impl iced_container::Catalog for Theme {
 
             Container::Secondary => Container::secondary(cosmic),
 
-            Container::Dropdown => {
-                let theme = self.cosmic();
-
-                iced_container::Style {
-                    icon_color: None,
-                    text_color: None,
-                    background: Some(iced::Background::Color(theme.primary.base.into())),
-                    border: Border {
-                        radius: cosmic.corner_radii.radius_xs.into(),
-                        ..Default::default()
-                    },
-                    shadow: Shadow::default(),
-                }
-            }
+            Container::Dropdown => iced_container::Style {
+                icon_color: None,
+                text_color: None,
+                background: Some(iced::Background::Color(cosmic.bg_component_color().into())),
+                border: Border {
+                    color: cosmic.bg_component_divider().into(),
+                    width: 1.0,
+                    radius: cosmic.corner_radii.radius_s.into(),
+                },
+                shadow: Shadow::default(),
+            },
 
             Container::Tooltip => iced_container::Style {
                 icon_color: None,
