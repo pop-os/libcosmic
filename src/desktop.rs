@@ -1,10 +1,10 @@
+#[cfg(not(windows))]
 pub use freedesktop_desktop_entry::DesktopEntry;
+#[cfg(not(windows))]
 pub use mime::Mime;
-use std::{
-    borrow::Cow,
-    ffi::OsStr,
-    path::{Path, PathBuf},
-};
+use std::path::{Path, PathBuf};
+#[cfg(not(windows))]
+use std::{borrow::Cow, ffi::OsStr};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum IconSource {
@@ -42,12 +42,14 @@ impl Default for IconSource {
     }
 }
 
+#[cfg(not(windows))]
 #[derive(Debug, Clone, PartialEq)]
 pub struct DesktopAction {
     pub name: String,
     pub exec: String,
 }
 
+#[cfg(not(windows))]
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct DesktopEntryData {
     pub id: String,
@@ -62,6 +64,7 @@ pub struct DesktopEntryData {
     pub prefers_dgpu: bool,
 }
 
+#[cfg(not(windows))]
 pub fn load_applications<'a>(
     locale: impl Into<Option<&'a str>>,
     include_no_display: bool,
@@ -69,6 +72,7 @@ pub fn load_applications<'a>(
     load_applications_filtered(locale, |de| include_no_display || !de.no_display())
 }
 
+#[cfg(not(windows))]
 pub fn app_id_or_fallback_matches(app_id: &str, entry: &DesktopEntryData) -> bool {
     let lowercase_wm_class = match entry.wm_class.as_ref() {
         Some(s) => Some(s.to_lowercase()),
@@ -80,6 +84,7 @@ pub fn app_id_or_fallback_matches(app_id: &str, entry: &DesktopEntryData) -> boo
         || app_id.to_lowercase() == entry.name.to_lowercase()
 }
 
+#[cfg(not(windows))]
 pub fn load_applications_for_app_ids<'a, 'b>(
     locale: impl Into<Option<&'a str>>,
     app_ids: impl Iterator<Item = &'b str>,
@@ -123,6 +128,7 @@ pub fn load_applications_for_app_ids<'a, 'b>(
     applications
 }
 
+#[cfg(not(windows))]
 pub fn load_applications_filtered<'a, F: FnMut(&DesktopEntry) -> bool>(
     locale: impl Into<Option<&'a str>>,
     mut filter: F,
@@ -148,6 +154,7 @@ pub fn load_applications_filtered<'a, F: FnMut(&DesktopEntry) -> bool>(
         .collect()
 }
 
+#[cfg(not(windows))]
 pub fn load_desktop_file<'a>(
     locale: impl Into<Option<&'a str>>,
     path: impl AsRef<Path>,
@@ -160,6 +167,7 @@ pub fn load_desktop_file<'a>(
     })
 }
 
+#[cfg(not(windows))]
 impl DesktopEntryData {
     fn from_desktop_entry<'a>(
         locale: impl Into<Option<&'a str>>,
@@ -229,6 +237,7 @@ impl DesktopEntryData {
     }
 }
 
+#[cfg(not(windows))]
 pub async fn spawn_desktop_exec<S, I, K, V>(exec: S, env_vars: I, app_id: Option<&str>)
 where
     S: AsRef<str>,
@@ -293,6 +302,7 @@ where
     }
 }
 
+#[cfg(not(windows))]
 #[cfg(feature = "desktop-systemd-scope")]
 #[zbus::proxy(
     interface = "org.freedesktop.systemd1.Manager",
