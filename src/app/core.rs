@@ -13,6 +13,8 @@ use slotmap::Key;
 
 use crate::Theme;
 
+use super::{Element, Task};
+
 /// Status of the nav bar and its panels.
 #[derive(Clone)]
 pub struct NavBar {

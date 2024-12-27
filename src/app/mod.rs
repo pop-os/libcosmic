@@ -27,6 +27,12 @@ pub mod message {
         DbusActivation(super::DbusActivationMessage),
         /// Do nothing
         None,
+        #[cfg(feature = "wayland")]
+        /// Create a subsurface with a view function
+        Subsurface(
+            iced_runtime::platform_specific::wayland::subsurface::SctkSubsurfaceSettings,
+            Option<Box<dyn std::any::Any>>,
+        ),
     }
 
     pub const fn app<M>(message: M) -> Message<M> {
