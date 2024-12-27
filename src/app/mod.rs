@@ -852,8 +852,7 @@ impl<App: Application> ApplicationExt for App {
                                 Message::Cosmic(cosmic::Message::ToggleNavBarCondensed)
                             } else {
                                 Message::Cosmic(cosmic::Message::ToggleNavBar)
-                            })
-                            .class(crate::theme::Button::HeaderBar);
+                            });
 
                         header = header.start(toggle);
                     }

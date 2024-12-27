@@ -299,7 +299,6 @@ impl<'a, Message: Clone + 'static> HeaderBar<'a, Message> {
         let mut end = std::mem::take(&mut self.end);
 
         // Also packs the window controls at the very end.
-        end.push(widget::horizontal_space().width(Length::Fixed(12.0)).into());
         end.push(self.window_controls());
 
         let height = match self.density.unwrap_or_else(crate::config::header_size) {

@@ -20,7 +20,7 @@ pub fn nav_bar_toggle<Message>() -> NavBarToggle<Message> {
     NavBarToggle {
         active: false,
         on_toggle: None,
-        class: crate::theme::Button::Text,
+        class: crate::theme::Button::NavToggle,
         selected: false,
     }
 }
