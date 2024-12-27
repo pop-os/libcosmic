@@ -308,6 +308,7 @@ impl Context {
             },
             parent_size: None,
             grab: true,
+            popup_view: None,
         }
     }
 

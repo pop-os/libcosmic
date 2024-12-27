@@ -1,3 +1,5 @@
+use std::sync::{Arc, Mutex};
+
 use cosmic::app::Core;
 use cosmic::iced::application;
 use cosmic::iced::platform_specific::shell::commands::popup::{destroy_popup, get_popup};
@@ -6,7 +8,7 @@ use cosmic::iced::{Length, Limits, Task};
 use cosmic::iced_runtime::core::window;
 use cosmic::theme::iced;
 use cosmic::widget::{list_column, settings, toggler};
-use cosmic::{Element, Theme};
+use cosmic::{applet, Element, Theme};
 
 const ID: &str = "com.system76.CosmicAppletExample";
 
@@ -14,7 +16,7 @@ const ID: &str = "com.system76.CosmicAppletExample";
 pub struct Window {
     core: Core,
     popup: Option<Id>,
-    example_row: bool,
+    example_row: Arc<Mutex<bool>>,
 }
 
 #[derive(Clone, Debug)]
@@ -73,6 +75,32 @@ impl cosmic::Application for Window {
                         .height(500)
                         .width(500);
                     popup_settings.positioner.size = Some((500, 500));
+
+                    let applet = self.core.applet.clone();
+                    let toggled = self.example_row.clone();
+                    popup_settings = popup_settings.with_view(Box::new(
+                        move || -> Option<cosmic::Element<'static, cosmic::app::Message<Message>>> {
+                            {
+                                let guard = toggled.lock().unwrap();
+
+                                let content_list =
+                                    list_column().padding(5).spacing(0).add(settings::item(
+                                        "Example row",
+                                        cosmic::widget::container(
+                                            toggler(*guard).on_toggle(|value| {
+                                                Message::ToggleExampleRow(value)
+                                            }),
+                                        )
+                                        .height(Length::Fixed(50.)),
+                                    ));
+
+                                Some(
+                                    Element::from(applet.popup_container(content_list))
+                                        .map(cosmic::app::Message::App),
+                                )
+                            }
+                        },
+                    ));
                     get_popup(popup_settings)
                 };
             }
@@ -81,7 +109,10 @@ impl cosmic::Application for Window {
                     self.popup = None;
                 }
             }
-            Message::ToggleExampleRow(toggled) => self.example_row = toggled,
+            Message::ToggleExampleRow(toggled) => {
+                let mut guard = self.example_row.lock().unwrap();
+                *guard = toggled;
+            }
         }
         Task::none()
     }
@@ -95,15 +126,7 @@ impl cosmic::Application for Window {
     }
 
     fn view_window(&self, _id: Id) -> Element<Self::Message> {
-        let content_list = list_column().padding(5).spacing(0).add(settings::item(
-            "Example row",
-            cosmic::widget::container(
-                toggler(self.example_row).on_toggle(|value| Message::ToggleExampleRow(value)),
-            )
-            .height(Length::Fixed(50.)),
-        ));
-
-        self.core.applet.popup_container(content_list).into()
+        "oops".into()
     }
 
     fn style(&self) -> Option<cosmic::iced_runtime::Appearance> {
