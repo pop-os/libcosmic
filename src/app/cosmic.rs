@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: MPL-2.0
 
 use std::borrow::Borrow;
+use std::collections::HashMap;
 use std::sync::Arc;
 
 use super::{Application, ApplicationExt, Core, Subscription};
@@ -81,8 +82,11 @@ pub enum Message {
 }
 
 #[derive(Default)]
-pub struct Cosmic<App> {
+pub struct Cosmic<App: Application> {
     pub app: App,
+    #[cfg(feature = "wayland")]
+    pub subsurfaces:
+        HashMap<window::Id, Box<dyn Fn(&App) -> Element<'static, super::Message<App::Message>>>>,
 }
 
 impl<T: Application> Cosmic<T>
@@ -123,6 +127,20 @@ where
             super::Message::None => iced::Task::none(),
             #[cfg(feature = "single-instance")]
             super::Message::DbusActivation(message) => self.app.dbus_activation(message),
+            #[cfg(feature = "wayland")]
+            super::Message::Subsurface(settings, view) => {
+                if let Some(view) = view.and_then(|view| match view.downcast() {
+                    Ok(v) => Some(v),
+                    Err(err) => {
+                        tracing::error!("Invalid view for subsurface view: {err:?}");
+                        None
+                    }
+                }) {
+                    self.get_subsurface(settings, view)
+                } else {
+                    iced_winit::commands::subsurface::get_subsurface(settings)
+                }
+            }
         };
 
         #[cfg(target_env = "gnu")]
@@ -287,6 +305,10 @@ where
 
     #[cfg(feature = "multi-window")]
     pub fn view(&self, id: window::Id) -> Element<super::Message<T::Message>> {
+        #[cfg(feature = "wayland")]
+        if let Some(v) = self.subsurfaces.get(&id) {
+            return v(&self.app);
+        }
         if !self
             .app
             .core()
@@ -697,6 +719,23 @@ impl<T: Application> Cosmic<T> {
 
 impl<App: Application> Cosmic<App> {
     pub fn new(app: App) -> Self {
-        Self { app }
+        Self {
+            app,
+            #[cfg(feature = "wayland")]
+            subsurfaces: HashMap::new(),
+        }
+    }
+
+    #[cfg(feature = "wayland")]
+    /// Create a subsurface
+    pub fn get_subsurface(
+        &mut self,
+        settings: iced_runtime::platform_specific::wayland::subsurface::SctkSubsurfaceSettings,
+        view: Box<dyn Fn(&App) -> Element<'static, super::Message<App::Message>>>,
+    ) -> Task<super::Message<App::Message>> {
+        use iced_winit::commands::subsurface::get_subsurface;
+
+        self.subsurfaces.insert(settings.id, view);
+        get_subsurface(settings)
     }
 }
