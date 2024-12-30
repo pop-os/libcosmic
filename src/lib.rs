@@ -75,7 +75,7 @@ pub mod keyboard_nav;
 
 #[cfg(feature = "desktop")]
 pub mod desktop;
-#[cfg(feature = "process")]
+#[cfg(all(feature = "process", not(windows)))]
 pub mod process;
 
 #[cfg(feature = "wayland")]
