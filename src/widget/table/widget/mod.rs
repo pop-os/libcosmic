@@ -215,6 +215,7 @@ where
                             .iter()
                             .map(|category| {
                                 widget::row()
+                                    .spacing(space_xxxs)
                                     .push_maybe(item.get_icon(*category).map(|icon| icon.size(24)))
                                     .push(widget::text::body(item.get_text(*category)))
                                     .align_y(Alignment::Center)
