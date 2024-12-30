@@ -28,7 +28,7 @@ impl std::fmt::Display for Category {
     }
 }
 
-impl table::model::category::ItemCategory for Category {
+impl table::ItemCategory for Category {
     fn width(&self) -> iced::Length {
         match self {
             Self::Name => iced::Length::Fill,
@@ -54,7 +54,7 @@ impl Default for Item {
     }
 }
 
-impl table::model::category::ItemInterface<Category> for Item {
+impl table::ItemInterface<Category> for Item {
     fn get_icon(&self, category: Category) -> Option<cosmic::widget::Icon> {
         if category == Category::Name {
             Some(cosmic::widget::icon::from_name("application-x-executable-symbolic").icon())
@@ -104,7 +104,7 @@ pub enum Message {
 /// The [`App`] stores application-specific state.
 pub struct App {
     core: Core,
-    table_model: table::Model<table::model::selection::SingleSelect, Item, Category>,
+    table_model: table::SingleSelectModel<Item, Category>,
 }
 
 /// Implement [`cosmic::Application`] to integrate with COSMIC.
@@ -192,9 +192,19 @@ impl cosmic::Application for App {
 
     /// Creates a view after each update.
     fn view(&self) -> Element<Self::Message> {
-        table::TableView::new(&self.table_model)
-            .on_item_select(Message::ItemSelect)
-            .on_category_select(Message::CategorySelect)
-            .element_standard()
+        cosmic::widget::responsive(|size| {
+            if size.width < 600.0 {
+                table::SingleSelectTableView::new(&self.table_model)
+                    .on_item_select(Message::ItemSelect)
+                    .on_category_select(Message::CategorySelect)
+                    .element_compact()
+            } else {
+                table::SingleSelectTableView::new(&self.table_model)
+                    .on_item_select(Message::ItemSelect)
+                    .on_category_select(Message::CategorySelect)
+                    .element_standard()
+            }
+        })
+        .into()
     }
 }

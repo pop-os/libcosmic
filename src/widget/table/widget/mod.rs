@@ -199,12 +199,11 @@ where
                 .apply(Element::from)]
         } else {
             self.model
-                .order
                 .iter()
                 .map(|entity| {
-                    let item = self.model.item(*entity).unwrap();
+                    let item = self.model.item(entity).unwrap();
                     let categories = &self.model.categories;
-                    let selected = self.model.is_active(*entity);
+                    let selected = self.model.is_active(entity);
 
                     vec![
                         divider::horizontal::default()
@@ -222,20 +221,12 @@ where
                                     .apply(container)
                                     .width(category.width())
                                     .align_y(Alignment::Center)
-                                    .padding(self.item_padding)
                                     .apply(Element::from)
                             })
                             .collect::<Vec<Element<'a, Message>>>()
                             .apply(widget::row::with_children)
-                            .apply(widget::mouse_area)
-                            .apply(|mouse_area| {
-                                if let Some(ref on_item_select) = self.on_item_select {
-                                    mouse_area.on_press((on_item_select)(*entity))
-                                } else {
-                                    mouse_area
-                                }
-                            })
                             .apply(container)
+                            .padding(self.item_padding)
                             .class(theme::Container::custom(move |theme| {
                                 widget::container::Style {
                                     icon_color: if selected {
@@ -262,6 +253,14 @@ where
                                     shadow: Default::default(),
                                 }
                             }))
+                            .apply(widget::mouse_area)
+                            .apply(|mouse_area| {
+                                if let Some(ref on_item_select) = self.on_item_select {
+                                    mouse_area.on_press((on_item_select)(entity))
+                                } else {
+                                    mouse_area
+                                }
+                            })
                             .apply(Element::from),
                     ]
                 })
@@ -273,6 +272,8 @@ where
             .flatten()
             .collect::<Vec<Element<'a, Message>>>()
             .apply(widget::column::with_children)
+            .spacing(self.item_spacing)
+            .padding(self.element_padding)
             .apply(Element::from)
     }
 
@@ -283,7 +284,9 @@ where
             .iter()
             .map(|entity| {
                 let item = self.model.item(entity).unwrap();
+                let selected = self.model.is_active(entity);
                 widget::column()
+                    .spacing(self.item_spacing)
                     .push(
                         widget::divider::horizontal::default()
                             .apply(container)
@@ -291,6 +294,7 @@ where
                     )
                     .push(
                         widget::row()
+                            .spacing(space_xxxs)
                             .align_y(Alignment::Center)
                             .push_maybe(
                                 item.get_icon(Category::default()).map(|icon| icon.size(48)),
@@ -321,12 +325,49 @@ where
                                     }),
                             )
                             .apply(container)
-                            .padding(self.item_padding),
+                            .padding(self.item_padding)
+                            .width(iced::Length::Fill)
+                            .class(theme::Container::custom(move |theme| {
+                                widget::container::Style {
+                                    icon_color: if selected {
+                                        Some(theme.cosmic().on_accent_color().into())
+                                    } else {
+                                        None
+                                    },
+                                    text_color: if selected {
+                                        Some(theme.cosmic().on_accent_color().into())
+                                    } else {
+                                        None
+                                    },
+                                    background: if selected {
+                                        Some(iced::Background::Color(
+                                            theme.cosmic().accent_color().into(),
+                                        ))
+                                    } else {
+                                        None
+                                    },
+                                    border: Border {
+                                        radius: theme.cosmic().radius_xs().into(),
+                                        ..Default::default()
+                                    },
+                                    shadow: Default::default(),
+                                }
+                            }))
+                            .apply(widget::mouse_area)
+                            .apply(|ma| {
+                                if let Some(on_item_select) = &self.on_item_select {
+                                    ma.on_press((on_item_select)(entity))
+                                } else {
+                                    ma
+                                }
+                            }),
                     )
                     .apply(Element::from)
             })
             .collect::<Vec<Element<'a, Message>>>()
             .apply(widget::column::with_children)
+            .spacing(self.item_spacing)
+            .padding(self.element_padding)
             .apply(Element::from)
     }
 }
