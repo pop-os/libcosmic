@@ -43,7 +43,7 @@ where
     pub(super) selection: SelectionMode,
 
     /// What category to sort by and whether it's ascending or not
-    pub(super) sort: (Category, bool),
+    pub(super) sort: Option<(Category, bool)>,
 
     /// Application-managed data associated with each item
     pub(super) storage: Storage,
@@ -62,7 +62,7 @@ where
             indents: SecondaryMap::default(),
             order: VecDeque::new(),
             selection: SelectionMode::default(),
-            sort: (Category::default(), false),
+            sort: None,
             storage: Storage::default(),
         }
     }
@@ -342,12 +342,18 @@ where
 
     /// Sorts items in the model, this should be called before it is drawn after all items have been added for the view
     pub fn sort(&mut self, category: Category, ascending: bool) {
-        self.sort = (category, ascending);
+        self.sort = Some((category, ascending));
         let mut order: Vec<Entity> = self.order.iter().cloned().collect();
         order.sort_by(|entity_a, entity_b| {
-            self.item(*entity_a)
-                .unwrap()
-                .compare(self.item(*entity_b).unwrap(), category)
+            if ascending {
+                self.item(*entity_a)
+                    .unwrap()
+                    .compare(self.item(*entity_b).unwrap(), category)
+            } else {
+                self.item(*entity_b)
+                    .unwrap()
+                    .compare(self.item(*entity_a).unwrap(), category)
+            }
         });
         self.order = order.into();
     }
