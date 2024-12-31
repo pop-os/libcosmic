@@ -91,7 +91,7 @@ pub struct Cosmic<App: Application> {
 
 impl<T: Application> Cosmic<T>
 where
-    T::Message: Send + 'static,
+    T::Message: Send + 'static + super::message::SurfaceMessageHandler,
 {
     pub fn init(
         (mut core, flags): (Core, T::Flags),
@@ -122,70 +122,93 @@ where
         message: super::Message<T::Message>,
     ) -> iced::Task<super::Message<T::Message>> {
         let message = match message {
-            super::Message::App(message) => self.app.update(message),
+            super::Message::App(message) => {
+                match super::message::SurfaceMessageHandler::to_surface_message(message) {
+                    super::message::MessageWrapper::Surface(surface_message) =>
+                    {
+                        #[cfg(feature = "wayland")]
+                        match surface_message {
+                            super::message::SurfaceMessage::Subsurface(settings, view) => {
+                                let Some(settings) = std::sync::Arc::try_unwrap(settings)
+                                .ok()
+                                .and_then(|s| s.downcast::<Box<dyn Fn(&mut T) -> iced_runtime::platform_specific::wayland::subsurface::SctkSubsurfaceSettings + Send + Sync>>().ok()) else {
+                                tracing::error!("Invalid settings for subsurface");
+                                return Task::none();
+                            };
+
+                                if let Some(view) = view.and_then(|view| {
+                                    match std::sync::Arc::try_unwrap(view).ok()?.downcast::<Box<
+                                        dyn Fn(&T) -> Element<'static, super::Message<T::Message>>
+                                            + Send
+                                            + Sync,
+                                    >>(
+                                    ) {
+                                        Ok(v) => Some(v),
+                                        Err(err) => {
+                                            tracing::error!(
+                                                "Invalid view for subsurface view: {err:?}"
+                                            );
+                                            None
+                                        }
+                                    }
+                                }) {
+                                    let settings = settings(&mut self.app);
+                                    self.get_subsurface(settings, *view)
+                                } else {
+                                    iced_winit::commands::subsurface::get_subsurface(settings(
+                                        &mut self.app,
+                                    ))
+                                }
+                            }
+                            #[cfg(feature = "wayland")]
+                            super::message::SurfaceMessage::Popup(settings, view) => {
+                                let Some(settings) = std::sync::Arc::try_unwrap(settings)
+                                .ok()
+                                .and_then(|s| s.downcast::<Box<dyn Fn(&mut T) -> iced_runtime::platform_specific::wayland::popup::SctkPopupSettings + Send + Sync>>().ok()) else {
+                                tracing::error!("Invalid settings for popup");
+                                return Task::none();
+                            };
+
+                                if let Some(view) = view.and_then(|view| {
+                                    match std::sync::Arc::try_unwrap(view).ok()?.downcast::<Box<
+                                        dyn Fn(&T) -> Element<'static, super::Message<T::Message>>
+                                            + Send
+                                            + Sync,
+                                    >>(
+                                    ) {
+                                        Ok(v) => Some(v),
+                                        Err(err) => {
+                                            tracing::error!(
+                                                "Invalid view for subsurface view: {err:?}"
+                                            );
+                                            None
+                                        }
+                                    }
+                                }) {
+                                    let settings = settings(&mut self.app);
+
+                                    self.get_popup(settings, *view)
+                                } else {
+                                    iced_winit::commands::popup::get_popup(settings(&mut self.app))
+                                }
+                            }
+                            #[cfg(feature = "wayland")]
+                            super::message::SurfaceMessage::DestroyPopup(id) => {
+                                iced_winit::commands::popup::destroy_popup(id)
+                            }
+                            #[cfg(feature = "wayland")]
+                            super::message::SurfaceMessage::DestroySubsurface(id) => {
+                                iced_winit::commands::subsurface::destroy_subsurface(id)
+                            }
+                        }
+                    }
+                    super::message::MessageWrapper::Message(message) => self.app.update(message),
+                }
+            }
             super::Message::Cosmic(message) => self.cosmic_update(message),
             super::Message::None => iced::Task::none(),
             #[cfg(feature = "single-instance")]
             super::Message::DbusActivation(message) => self.app.dbus_activation(message),
-            #[cfg(feature = "wayland")]
-            super::Message::Subsurface(settings, view) => {
-                let Some(settings) = std::sync::Arc::try_unwrap(settings)
-                    .ok()
-                    .and_then(|s| s.downcast::<Box<dyn Fn(&mut T) -> iced_runtime::platform_specific::wayland::subsurface::SctkSubsurfaceSettings + Send + Sync>>().ok()) else {
-                    tracing::error!("Invalid settings for subsurface");
-                    return Task::none();
-                };
-
-                if let Some(view) = view.and_then(|view| {
-                    match std::sync::Arc::try_unwrap(view).ok()?.downcast::<Box<
-                        dyn Fn(&T) -> Element<'static, super::Message<T::Message>> + Send + Sync,
-                    >>() {
-                        Ok(v) => Some(v),
-                        Err(err) => {
-                            tracing::error!("Invalid view for subsurface view: {err:?}");
-                            None
-                        }
-                    }
-                }) {
-                    let settings = settings(&mut self.app);
-                    self.get_subsurface(settings, *view)
-                } else {
-                    iced_winit::commands::subsurface::get_subsurface(settings(&mut self.app))
-                }
-            }
-            #[cfg(feature = "wayland")]
-            super::Message::Popup(settings, view) => {
-                let Some(settings) = std::sync::Arc::try_unwrap(settings)
-                    .ok()
-                    .and_then(|s| s.downcast::<Box<dyn Fn(&mut T) -> iced_runtime::platform_specific::wayland::popup::SctkPopupSettings + Send + Sync>>().ok()) else {
-                    tracing::error!("Invalid settings for popup");
-                    return Task::none();
-                };
-
-                if let Some(view) = view.and_then(|view| {
-                    match std::sync::Arc::try_unwrap(view).ok()?.downcast::<Box<
-                        dyn Fn(&T) -> Element<'static, super::Message<T::Message>> + Send + Sync,
-                    >>() {
-                        Ok(v) => Some(v),
-                        Err(err) => {
-                            tracing::error!("Invalid view for subsurface view: {err:?}");
-                            None
-                        }
-                    }
-                }) {
-                    let settings = settings(&mut self.app);
-
-                    self.get_popup(settings, *view)
-                } else {
-                    iced_winit::commands::popup::get_popup(settings(&mut self.app))
-                }
-            }
-            #[cfg(feature = "wayland")]
-            super::Message::DestroyPopup(id) => iced_winit::commands::popup::destroy_popup(id),
-            #[cfg(feature = "wayland")]
-            super::Message::DestroySubsurface(id) => {
-                iced_winit::commands::subsurface::destroy_subsurface(id)
-            }
         };
 
         #[cfg(target_env = "gnu")]

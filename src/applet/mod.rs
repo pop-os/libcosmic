@@ -2,7 +2,7 @@
 pub mod token;
 
 use crate::{
-    app::{self, iced_settings, Core},
+    app::{self, iced_settings, message::SurfaceMessageHandler, Core},
     cctk::sctk,
     iced::{
         self,
@@ -376,7 +376,10 @@ impl Context {
 /// # Errors
 ///
 /// Returns error on application failure.
-pub fn run<App: Application>(flags: App::Flags) -> iced::Result {
+pub fn run<App: Application>(flags: App::Flags) -> iced::Result
+where
+    App::Message: SurfaceMessageHandler,
+{
     let helper = Context::default();
 
     let mut settings = helper.window_settings();
