@@ -15,7 +15,7 @@ pub(crate) mod multi_window;
 pub mod settings;
 
 pub mod message {
-    #[derive(Clone, Debug)]
+    #[derive(Clone)]
     #[must_use]
     pub enum Message<M> {
         /// Messages from the application, for the application.
@@ -30,9 +30,21 @@ pub mod message {
         #[cfg(feature = "wayland")]
         /// Create a subsurface with a view function
         Subsurface(
-            iced_runtime::platform_specific::wayland::subsurface::SctkSubsurfaceSettings,
-            Option<Box<dyn std::any::Any>>,
+            std::sync::Arc<Box<dyn std::any::Any + Send + Sync>>,
+            Option<std::sync::Arc<Box<dyn std::any::Any + Send + Sync>>>,
         ),
+        #[cfg(feature = "wayland")]
+        /// Destroy a subsurface with a view function
+        DestroySubsurface(iced::window::Id),
+        #[cfg(feature = "wayland")]
+        /// Create a popup with a view function
+        Popup(
+            std::sync::Arc<Box<dyn std::any::Any + Send + Sync>>,
+            Option<std::sync::Arc<Box<dyn std::any::Any + Send + Sync>>>,
+        ),
+        #[cfg(feature = "wayland")]
+        /// Destroy a subsurface with a view function
+        DestroyPopup(iced::window::Id),
     }
 
     pub const fn app<M>(message: M) -> Message<M> {
@@ -47,9 +59,116 @@ pub mod message {
         Message::None
     }
 
+    #[cfg(feature = "wayland")]
+    pub const fn destroy_popup<M>(id: iced_core::window::Id) -> Message<M> {
+        Message::DestroyPopup(id)
+    }
+
+    #[cfg(feature = "wayland")]
+    pub const fn destroy_subsurface<M>(id: iced_core::window::Id) -> Message<M> {
+        Message::DestroySubsurface(id)
+    }
+
+    #[cfg(feature = "wayland")]
+    pub fn get_popup<App: crate::Application>(
+        settings: impl Fn(&mut App) -> iced_runtime::platform_specific::wayland::popup::SctkPopupSettings
+            + Send
+            + Sync
+            + 'static,
+        view: Option<
+            impl Fn(&App) -> crate::Element<'static, super::Message<App::Message>>
+                + Send
+                + Sync
+                + 'static,
+        >,
+    ) -> Message<App::Message> {
+        use std::{any::Any, sync::Arc};
+        let boxed: Box<
+            dyn Fn(&mut App) -> iced_runtime::platform_specific::wayland::popup::SctkPopupSettings
+                + Send
+                + Sync
+                + 'static,
+        > = Box::new(settings);
+        let boxed: Box<dyn Any + Send + Sync + 'static> = Box::new(boxed);
+
+        Message::Popup(
+            Arc::new(boxed),
+            view.map(|view| {
+                let boxed: Box<
+                    dyn Fn(&App) -> crate::Element<'static, super::Message<App::Message>>
+                        + Send
+                        + Sync
+                        + 'static,
+                > = Box::new(view);
+                let boxed: Box<dyn Any + Send + Sync + 'static> = Box::new(boxed);
+                Arc::new(boxed)
+            }),
+        )
+    }
+
+    #[cfg(feature = "wayland")]
+    pub fn get_subsurface<App: crate::Application>(
+        settings: impl Fn(&mut App) -> iced_runtime::platform_specific::wayland::subsurface::SctkSubsurfaceSettings + Send + Sync + 'static,
+        view: Option<
+            impl Fn(&App) -> crate::Element<'static, super::Message<App::Message>>
+                + Send
+                + Sync
+                + 'static,
+        >,
+    ) -> Message<App::Message> {
+        use std::{any::Any, sync::Arc};
+        let boxed: Box<
+            dyn Fn(
+                    &mut App,
+                )
+                    -> iced_runtime::platform_specific::wayland::subsurface::SctkSubsurfaceSettings
+                + Send
+                + Sync
+                + 'static,
+        > = Box::new(settings);
+        let boxed: Box<dyn Any + Send + Sync + 'static> = Box::new(boxed);
+
+        Message::Subsurface(
+            Arc::new(boxed),
+            view.map(|view| {
+                let boxed: Box<
+                    dyn Fn(&App) -> crate::Element<'static, super::Message<App::Message>>
+                        + Send
+                        + Sync
+                        + 'static,
+                > = Box::new(view);
+                let boxed: Box<dyn Any + Send + Sync + 'static> = Box::new(boxed);
+                Arc::new(boxed)
+            }),
+        )
+    }
+
     impl<M> From<M> for Message<M> {
         fn from(value: M) -> Self {
             Self::App(value)
+        }
+    }
+
+    impl<M: std::fmt::Debug> std::fmt::Debug for Message<M> {
+        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+            match self {
+                Self::App(arg0) => f.debug_tuple("App").field(arg0).finish(),
+                Self::Cosmic(arg0) => f.debug_tuple("Cosmic").field(arg0).finish(),
+
+                #[cfg(feature = "single-instance")]
+                Self::DbusActivation(arg0) => f.debug_tuple("DbusActivation").field(arg0).finish(),
+                Self::None => write!(f, "None"),
+                #[cfg(feature = "wayland")]
+                Self::Subsurface(arg0, arg1) => f.debug_tuple("Subsurface").field(arg1).finish(),
+                #[cfg(feature = "wayland")]
+                Self::DestroySubsurface(arg0) => {
+                    f.debug_tuple("DestroySubsurface").field(arg0).finish()
+                }
+                #[cfg(feature = "wayland")]
+                Self::Popup(arg0, arg1) => f.debug_tuple("Popup").field(arg1).finish(),
+                #[cfg(feature = "wayland")]
+                Self::DestroyPopup(arg0) => f.debug_tuple("DestroyPopup").field(arg0).finish(),
+            }
         }
     }
 }
