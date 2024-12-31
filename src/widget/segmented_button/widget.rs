@@ -910,6 +910,13 @@ where
                             }
                         }
 
+                        if let Event::Mouse(mouse::Event::ButtonReleased(_))
+                        | Event::Touch(touch::Event::FingerLifted { .. }) = event
+                        {
+                            state.focused = false;
+                            state.focused_item = Item::None;
+                        }
+
                         if let Some(on_activate) = self.on_activate.as_ref() {
                             if let Event::Mouse(mouse::Event::ButtonReleased(mouse::Button::Left))
                             | Event::Touch(touch::Event::FingerLifted { .. }) = event
@@ -928,8 +935,6 @@ where
                                     state.show_context = Some(key);
                                     state.context_cursor =
                                         cursor_position.position().unwrap_or_default();
-                                    state.focused = true;
-                                    state.focused_item = Item::Tab(key);
 
                                     let menu_state =
                                         tree.children[0].state.downcast_mut::<MenuBarState>();
@@ -1321,13 +1326,17 @@ where
 
             let center_y = bounds.center_y();
 
+            let menu_open = !tree.children.is_empty()
+                && tree.children[0].state.downcast_ref::<MenuBarState>().open;
+
             let key_is_active = self.model.is_active(key);
             let key_is_hovered = self.button_is_hovered(state, key);
+            let key_has_context_menu_open = menu_open && state.show_context == Some(key);
             let status_appearance = if self.button_is_focused(state, key) {
                 appearance.focus
             } else if key_is_active {
                 appearance.active
-            } else if key_is_hovered {
+            } else if key_is_hovered || key_has_context_menu_open {
                 appearance.hover
             } else {
                 appearance.inactive

@@ -579,7 +579,7 @@ where
                 .merge(menu_status)
             }
 
-            Mouse(ButtonReleased(Left)) | Touch(FingerLifted { .. }) => {
+            Mouse(ButtonReleased(_)) | Touch(FingerLifted { .. }) => {
                 let state = self.tree.state.downcast_mut::<MenuBarState>();
                 state.pressed = false;
 
@@ -596,7 +596,13 @@ where
                         .iter()
                         .any(|ms| ms.menu_bounds.check_bounds.contains(overlay_cursor));
 
-                    if self.close_condition.click_inside && is_inside {
+                    if self.close_condition.click_inside
+                        && is_inside
+                        && matches!(
+                            event,
+                            Mouse(ButtonReleased(Left)) | Touch(FingerLifted { .. })
+                        )
+                    {
                         state.reset();
                         return Captured;
                     }
