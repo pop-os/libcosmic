@@ -335,6 +335,10 @@ pub use toggler::toggler;
 
 #[doc(inline)]
 pub use tooltip::{tooltip, Tooltip};
+
+#[cfg(feature = "wayland")]
+pub mod wayland;
+
 pub mod tooltip {
     use crate::Element;
     use std::borrow::Cow;

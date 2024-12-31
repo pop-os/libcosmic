@@ -31,3 +31,6 @@ pub use self::segmented_button::SegmentedButton;
 mod text_input;
 #[doc(inline)]
 pub use self::text_input::TextInput;
+
+pub mod tooltip;
+pub use tooltip::Tooltip;
