@@ -15,7 +15,57 @@ pub(crate) mod multi_window;
 pub mod settings;
 
 pub mod message {
+    pub enum MessageWrapper<M> {
+        Surface(SurfaceMessage),
+        Message(M),
+    }
+
+    pub trait SurfaceMessageHandler: Sized {
+        fn to_surface_message(self) -> MessageWrapper<Self>;
+    }
+
+    #[cfg(not(feature = "wayland"))]
+    impl<M> SurfaceMessageHandler for M {
+        fn to_surface_message(self) -> MessageWrapper<Self> {
+            MessageWrapper::Message(self)
+        }
+    }
+
     #[derive(Clone)]
+    pub enum SurfaceMessage {
+        /// Create a subsurface with a view function
+        Subsurface(
+            std::sync::Arc<Box<dyn std::any::Any + Send + Sync>>,
+            Option<std::sync::Arc<Box<dyn std::any::Any + Send + Sync>>>,
+        ),
+        /// Destroy a subsurface with a view function
+        DestroySubsurface(iced::window::Id),
+        /// Create a popup with a view function
+        Popup(
+            std::sync::Arc<Box<dyn std::any::Any + Send + Sync>>,
+            Option<std::sync::Arc<Box<dyn std::any::Any + Send + Sync>>>,
+        ),
+        /// Destroy a subsurface with a view function
+        DestroyPopup(iced::window::Id),
+    }
+
+    #[cfg(feature = "wayland")]
+    impl std::fmt::Debug for SurfaceMessage {
+        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+            match self {
+                SurfaceMessage::Subsurface(any, any1) => f.debug_tuple("Subsurface").finish(),
+                SurfaceMessage::DestroySubsurface(id) => {
+                    f.debug_tuple("DestroySubsurface").field(id).finish()
+                }
+                SurfaceMessage::Popup(any, any1) => f.debug_tuple("Popup").finish(),
+                SurfaceMessage::DestroyPopup(id) => {
+                    f.debug_tuple("DestroyPopup").field(id).finish()
+                }
+            }
+        }
+    }
+
+    #[derive(Clone, Debug)]
     #[must_use]
     pub enum Message<M> {
         /// Messages from the application, for the application.
@@ -27,24 +77,6 @@ pub mod message {
         DbusActivation(super::DbusActivationMessage),
         /// Do nothing
         None,
-        #[cfg(feature = "wayland")]
-        /// Create a subsurface with a view function
-        Subsurface(
-            std::sync::Arc<Box<dyn std::any::Any + Send + Sync>>,
-            Option<std::sync::Arc<Box<dyn std::any::Any + Send + Sync>>>,
-        ),
-        #[cfg(feature = "wayland")]
-        /// Destroy a subsurface with a view function
-        DestroySubsurface(iced::window::Id),
-        #[cfg(feature = "wayland")]
-        /// Create a popup with a view function
-        Popup(
-            std::sync::Arc<Box<dyn std::any::Any + Send + Sync>>,
-            Option<std::sync::Arc<Box<dyn std::any::Any + Send + Sync>>>,
-        ),
-        #[cfg(feature = "wayland")]
-        /// Destroy a subsurface with a view function
-        DestroyPopup(iced::window::Id),
     }
 
     pub const fn app<M>(message: M) -> Message<M> {
@@ -60,17 +92,25 @@ pub mod message {
     }
 
     #[cfg(feature = "wayland")]
-    pub const fn destroy_popup<M>(id: iced_core::window::Id) -> Message<M> {
-        Message::DestroyPopup(id)
+    pub fn destroy_popup<App: super::Application>(id: iced_core::window::Id) -> App::Message
+    where
+        App::Message: SurfaceMessageHandler + From<SurfaceMessage>,
+    {
+        let surface_msg = SurfaceMessage::DestroyPopup(id);
+        App::Message::from(surface_msg)
     }
 
     #[cfg(feature = "wayland")]
-    pub const fn destroy_subsurface<M>(id: iced_core::window::Id) -> Message<M> {
-        Message::DestroySubsurface(id)
+    pub fn destroy_subsurface<App: super::Application>(id: iced_core::window::Id) -> App::Message
+    where
+        App::Message: SurfaceMessageHandler + From<SurfaceMessage>,
+    {
+        let surface_msg = SurfaceMessage::DestroySubsurface(id);
+        App::Message::from(surface_msg)
     }
 
     #[cfg(feature = "wayland")]
-    pub fn get_popup<App: crate::Application>(
+    pub fn get_popup<App: super::Application>(
         settings: impl Fn(&mut App) -> iced_runtime::platform_specific::wayland::popup::SctkPopupSettings
             + Send
             + Sync
@@ -81,7 +121,10 @@ pub mod message {
                 + Sync
                 + 'static,
         >,
-    ) -> Message<App::Message> {
+    ) -> App::Message
+    where
+        App::Message: SurfaceMessageHandler + From<SurfaceMessage>,
+    {
         use std::{any::Any, sync::Arc};
         let boxed: Box<
             dyn Fn(&mut App) -> iced_runtime::platform_specific::wayland::popup::SctkPopupSettings
@@ -91,7 +134,7 @@ pub mod message {
         > = Box::new(settings);
         let boxed: Box<dyn Any + Send + Sync + 'static> = Box::new(boxed);
 
-        Message::Popup(
+        App::Message::from(SurfaceMessage::Popup(
             Arc::new(boxed),
             view.map(|view| {
                 let boxed: Box<
@@ -103,11 +146,11 @@ pub mod message {
                 let boxed: Box<dyn Any + Send + Sync + 'static> = Box::new(boxed);
                 Arc::new(boxed)
             }),
-        )
+        ))
     }
 
     #[cfg(feature = "wayland")]
-    pub fn get_subsurface<App: crate::Application>(
+    pub fn get_subsurface<App: super::Application>(
         settings: impl Fn(&mut App) -> iced_runtime::platform_specific::wayland::subsurface::SctkSubsurfaceSettings + Send + Sync + 'static,
         view: Option<
             impl Fn(&App) -> crate::Element<'static, super::Message<App::Message>>
@@ -115,7 +158,10 @@ pub mod message {
                 + Sync
                 + 'static,
         >,
-    ) -> Message<App::Message> {
+    ) -> App::Message
+    where
+        App::Message: SurfaceMessageHandler + From<SurfaceMessage>,
+    {
         use std::{any::Any, sync::Arc};
         let boxed: Box<
             dyn Fn(
@@ -128,7 +174,7 @@ pub mod message {
         > = Box::new(settings);
         let boxed: Box<dyn Any + Send + Sync + 'static> = Box::new(boxed);
 
-        Message::Subsurface(
+        App::Message::from(SurfaceMessage::Subsurface(
             Arc::new(boxed),
             view.map(|view| {
                 let boxed: Box<
@@ -140,35 +186,12 @@ pub mod message {
                 let boxed: Box<dyn Any + Send + Sync + 'static> = Box::new(boxed);
                 Arc::new(boxed)
             }),
-        )
+        ))
     }
 
     impl<M> From<M> for Message<M> {
         fn from(value: M) -> Self {
             Self::App(value)
-        }
-    }
-
-    impl<M: std::fmt::Debug> std::fmt::Debug for Message<M> {
-        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-            match self {
-                Self::App(arg0) => f.debug_tuple("App").field(arg0).finish(),
-                Self::Cosmic(arg0) => f.debug_tuple("Cosmic").field(arg0).finish(),
-
-                #[cfg(feature = "single-instance")]
-                Self::DbusActivation(arg0) => f.debug_tuple("DbusActivation").field(arg0).finish(),
-                Self::None => write!(f, "None"),
-                #[cfg(feature = "wayland")]
-                Self::Subsurface(arg0, arg1) => f.debug_tuple("Subsurface").field(arg1).finish(),
-                #[cfg(feature = "wayland")]
-                Self::DestroySubsurface(arg0) => {
-                    f.debug_tuple("DestroySubsurface").field(arg0).finish()
-                }
-                #[cfg(feature = "wayland")]
-                Self::Popup(arg0, arg1) => f.debug_tuple("Popup").field(arg1).finish(),
-                #[cfg(feature = "wayland")]
-                Self::DestroyPopup(arg0) => f.debug_tuple("DestroyPopup").field(arg0).finish(),
-            }
         }
     }
 }
@@ -186,6 +209,7 @@ use context_drawer::ContextDrawer;
 use iced::window;
 use iced::{Length, Subscription};
 pub use message::Message;
+use message::SurfaceMessageHandler;
 use url::Url;
 #[cfg(feature = "single-instance")]
 use {
@@ -262,12 +286,16 @@ pub(crate) fn iced_settings<App: Application>(
 /// # Errors
 ///
 /// Returns error on application failure.
-pub fn run<App: Application>(settings: Settings, flags: App::Flags) -> iced::Result {
+pub fn run<App: Application>(settings: Settings, flags: App::Flags) -> iced::Result
+where
+    App::Message: SurfaceMessageHandler,
+{
     #[cfg(target_env = "gnu")]
     if let Some(threshold) = settings.default_mmap_threshold {
         crate::malloc::limit_mmap_threshold(threshold);
     }
 
+    let default_font = settings.default_font;
     let (settings, mut flags, window_settings) = iced_settings::<App>(settings, flags);
     #[cfg(not(feature = "multi-window"))]
     {
