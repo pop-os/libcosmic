@@ -85,7 +85,7 @@ pub enum Message {
 pub struct Cosmic<App: Application> {
     pub app: App,
     #[cfg(feature = "wayland")]
-    pub subsurfaces:
+    pub surface_views:
         HashMap<window::Id, Box<dyn Fn(&App) -> Element<'static, super::Message<App::Message>>>>,
 }
 
@@ -129,17 +129,62 @@ where
             super::Message::DbusActivation(message) => self.app.dbus_activation(message),
             #[cfg(feature = "wayland")]
             super::Message::Subsurface(settings, view) => {
-                if let Some(view) = view.and_then(|view| match view.downcast() {
-                    Ok(v) => Some(v),
-                    Err(err) => {
-                        tracing::error!("Invalid view for subsurface view: {err:?}");
-                        None
+                let Some(settings) = std::sync::Arc::try_unwrap(settings)
+                    .ok()
+                    .and_then(|s| s.downcast::<Box<dyn Fn(&mut T) -> iced_runtime::platform_specific::wayland::subsurface::SctkSubsurfaceSettings + Send + Sync>>().ok()) else {
+                    tracing::error!("Invalid settings for subsurface");
+                    return Task::none();
+                };
+
+                if let Some(view) = view.and_then(|view| {
+                    match std::sync::Arc::try_unwrap(view).ok()?.downcast::<Box<
+                        dyn Fn(&T) -> Element<'static, super::Message<T::Message>> + Send + Sync,
+                    >>() {
+                        Ok(v) => Some(v),
+                        Err(err) => {
+                            tracing::error!("Invalid view for subsurface view: {err:?}");
+                            None
+                        }
                     }
                 }) {
-                    self.get_subsurface(settings, view)
+                    let settings = settings(&mut self.app);
+                    self.get_subsurface(settings, *view)
                 } else {
-                    iced_winit::commands::subsurface::get_subsurface(settings)
+                    iced_winit::commands::subsurface::get_subsurface(settings(&mut self.app))
                 }
+            }
+            #[cfg(feature = "wayland")]
+            super::Message::Popup(settings, view) => {
+                let Some(settings) = std::sync::Arc::try_unwrap(settings)
+                    .ok()
+                    .and_then(|s| s.downcast::<Box<dyn Fn(&mut T) -> iced_runtime::platform_specific::wayland::popup::SctkPopupSettings + Send + Sync>>().ok()) else {
+                    tracing::error!("Invalid settings for popup");
+                    return Task::none();
+                };
+
+                if let Some(view) = view.and_then(|view| {
+                    match std::sync::Arc::try_unwrap(view).ok()?.downcast::<Box<
+                        dyn Fn(&T) -> Element<'static, super::Message<T::Message>> + Send + Sync,
+                    >>() {
+                        Ok(v) => Some(v),
+                        Err(err) => {
+                            tracing::error!("Invalid view for subsurface view: {err:?}");
+                            None
+                        }
+                    }
+                }) {
+                    let settings = settings(&mut self.app);
+
+                    self.get_popup(settings, *view)
+                } else {
+                    iced_winit::commands::popup::get_popup(settings(&mut self.app))
+                }
+            }
+            #[cfg(feature = "wayland")]
+            super::Message::DestroyPopup(id) => iced_winit::commands::popup::destroy_popup(id),
+            #[cfg(feature = "wayland")]
+            super::Message::DestroySubsurface(id) => {
+                iced_winit::commands::subsurface::destroy_subsurface(id)
             }
         };
 
@@ -306,7 +351,7 @@ where
     #[cfg(feature = "multi-window")]
     pub fn view(&self, id: window::Id) -> Element<super::Message<T::Message>> {
         #[cfg(feature = "wayland")]
-        if let Some(v) = self.subsurfaces.get(&id) {
+        if let Some(v) = self.surface_views.get(&id) {
             return v(&self.app);
         }
         if !self
@@ -722,7 +767,7 @@ impl<App: Application> Cosmic<App> {
         Self {
             app,
             #[cfg(feature = "wayland")]
-            subsurfaces: HashMap::new(),
+            surface_views: HashMap::new(),
         }
     }
 
@@ -731,11 +776,24 @@ impl<App: Application> Cosmic<App> {
     pub fn get_subsurface(
         &mut self,
         settings: iced_runtime::platform_specific::wayland::subsurface::SctkSubsurfaceSettings,
-        view: Box<dyn Fn(&App) -> Element<'static, super::Message<App::Message>>>,
+        view: Box<dyn Fn(&App) -> Element<'static, super::Message<App::Message>> + Send + Sync>,
     ) -> Task<super::Message<App::Message>> {
         use iced_winit::commands::subsurface::get_subsurface;
 
-        self.subsurfaces.insert(settings.id, view);
+        self.surface_views.insert(settings.id, view);
         get_subsurface(settings)
+    }
+
+    #[cfg(feature = "wayland")]
+    /// Create a subsurface
+    pub fn get_popup(
+        &mut self,
+        settings: iced_runtime::platform_specific::wayland::popup::SctkPopupSettings,
+        view: Box<dyn Fn(&App) -> Element<'static, super::Message<App::Message>> + Send + Sync>,
+    ) -> Task<super::Message<App::Message>> {
+        use iced_winit::commands::popup::get_popup;
+
+        self.surface_views.insert(settings.id, view);
+        get_popup(settings)
     }
 }
