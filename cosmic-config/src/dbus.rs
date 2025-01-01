@@ -86,27 +86,6 @@ fn watcher_stream<T: CosmicConfigEntry + Send + Sync + Default + 'static + Clone
             unreachable!();
         };
 
-        let mut config = match T::get_entry(&cosmic_config) {
-            Ok(config) => config,
-            Err((errors, default)) => {
-                if !errors.is_empty() {
-                    eprintln!("Error getting config: {config_id} {errors:?}");
-                }
-                default
-            }
-        };
-
-        if let Err(err) = tx
-            .send(Update {
-                errors: Vec::new(),
-                keys: Vec::new(),
-                config: config.clone(),
-            })
-            .await
-        {
-            eprintln!("Failed to send config: {err}");
-        }
-
         let mut attempts = 0;
 
         loop {
@@ -168,6 +147,29 @@ fn watcher_stream<T: CosmicConfigEntry + Send + Sync + Default + 'static + Clone
             let mut owner_changed = owner_changed
                 .map(|c| Change::OwnerChanged(c.is_some()))
                 .fuse();
+
+            // update now, just in case we missed changes while setting up stream
+            let mut config = match T::get_entry(&cosmic_config) {
+                Ok(config) => config,
+                Err((errors, default)) => {
+                    if !errors.is_empty() {
+                        eprintln!("Error getting config: {config_id} {errors:?}");
+                    }
+                    default
+                }
+            };
+
+            if let Err(err) = tx
+                .send(Update {
+                    errors: Vec::new(),
+                    keys: Vec::new(),
+                    config: config.clone(),
+                })
+                .await
+            {
+                eprintln!("Failed to send config: {err}");
+            }
+
             loop {
                 let change: Changed = futures::select! {
                     c = changes.next() => {
