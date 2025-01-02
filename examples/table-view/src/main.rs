@@ -32,11 +32,11 @@ impl std::fmt::Display for Category {
 }
 
 impl table::ItemCategory for Category {
-    fn width(&self) -> iced::Length {
+    fn width(&self) -> u16 {
         match self {
-            Self::Name => iced::Length::Fill,
-            Self::Date => iced::Length::Fixed(200.0),
-            Self::Size => iced::Length::Fixed(150.0),
+            Self::Name => 300,
+            Self::Date => 200,
+            Self::Size => 150,
         }
     }
 }
@@ -66,11 +66,11 @@ impl table::ItemInterface<Category> for Item {
         }
     }
 
-    fn get_text(&self, category: Category) -> std::borrow::Cow<'static, str> {
+    fn get_text(&self, category: Category) -> Option<String> {
         match category {
-            Category::Name => self.name.clone().into(),
-            Category::Date => self.date.format("%Y/%m/%d").to_string().into(),
-            Category::Size => format!("{} items", self.size).into(),
+            Category::Name => Some(self.name.clone()),
+            Category::Date => Some(self.date.format("%Y/%m/%d").to_string()),
+            Category::Size => Some(format!("{} items", self.size)),
         }
     }
 
