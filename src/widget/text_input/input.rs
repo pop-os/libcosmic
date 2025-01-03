@@ -195,9 +195,9 @@ pub struct TextInput<'a, Message> {
     padding: Padding,
     size: Option<f32>,
     helper_size: f32,
-    label: Option<&'a str>,
-    helper_text: Option<&'a str>,
-    error: Option<&'a str>,
+    label: Option<Cow<'a, str>>,
+    helper_text: Option<Cow<'a, str>>,
+    error: Option<Cow<'a, str>>,
     on_input: Option<Box<dyn Fn(String) -> Message + 'a>>,
     on_paste: Option<Box<dyn Fn(String) -> Message + 'a>>,
     on_submit: Option<Message>,
@@ -275,14 +275,14 @@ where
     }
 
     /// Sets the text of the [`TextInput`].
-    pub fn label(mut self, label: &'a str) -> Self {
-        self.label = Some(label);
+    pub fn label(mut self, label: impl Into<Cow<'a, str>>) -> Self {
+        self.label = Some(label.into());
         self
     }
 
     /// Sets the helper text of the [`TextInput`].
-    pub fn helper_text(mut self, helper_text: &'a str) -> Self {
-        self.helper_text = Some(helper_text);
+    pub fn helper_text(mut self, helper_text: impl Into<Cow<'a, str>>) -> Self {
+        self.helper_text = Some(helper_text.into());
         self
     }
 
@@ -293,8 +293,8 @@ where
     }
 
     /// Sets the error message of the [`TextInput`].
-    pub fn error(mut self, error: &'a str) -> Self {
-        self.error = Some(error);
+    pub fn error(mut self, error: impl Into<Cow<'a, str>>) -> Self {
+        self.error = Some(error.into());
         self
     }
 
