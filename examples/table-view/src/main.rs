@@ -10,7 +10,7 @@ use cosmic::widget::nav_bar;
 use cosmic::widget::table;
 use cosmic::{executor, iced, Element};
 
-#[derive(Debug, Default, PartialEq, Eq, Clone, Copy, Hash)]
+#[derive(Debug, Default, PartialEq, Eq, Clone, Copy)]
 pub enum Category {
     #[default]
     Name,
@@ -29,11 +29,11 @@ impl std::fmt::Display for Category {
 }
 
 impl table::ItemCategory for Category {
-    fn width(&self) -> u16 {
+    fn width(&self) -> iced::Length {
         match self {
-            Self::Name => 300,
-            Self::Date => 200,
-            Self::Size => 150,
+            Self::Name => iced::Length::Fill,
+            Self::Date => iced::Length::Fixed(200.0),
+            Self::Size => iced::Length::Fixed(150.0),
         }
     }
 }
@@ -63,11 +63,11 @@ impl table::ItemInterface<Category> for Item {
         }
     }
 
-    fn get_text(&self, category: Category) -> Option<String> {
+    fn get_text(&self, category: Category) -> std::borrow::Cow<'static, str> {
         match category {
-            Category::Name => Some(self.name.clone()),
-            Category::Date => Some(self.date.format("%Y/%m/%d").to_string()),
-            Category::Size => Some(format!("{} items", self.size)),
+            Category::Name => self.name.clone().into(),
+            Category::Date => self.date.format("%Y/%m/%d").to_string().into(),
+            Category::Size => format!("{} items", self.size).into(),
         }
     }
 
@@ -192,30 +192,19 @@ impl cosmic::Application for App {
 
     /// Creates a view after each update.
     fn view(&self) -> Element<Self::Message> {
-        // cosmic::widget::responsive(|size| {
-        //     if size.width < 600.0 {
-        //         table::SingleSelectTableView::new(&self.table_model)
-        //             .on_item_select(Message::ItemSelect)
-        //             .on_category_select(Message::CategorySelect)
-        //             .element_compact()
-        //     } else {
-        //         table::SingleSelectTableView::new(&self.table_model)
-        //             .on_item_select(Message::ItemSelect)
-        //             .on_category_select(Message::CategorySelect)
-        //             .element_standard()
-        //     }
-        // })
-        // .into()
-        cosmic::widget::row()
-            .push(Element::new(
+        cosmic::widget::responsive(|size| {
+            if size.width < 600.0 {
                 table::SingleSelectTableView::new(&self.table_model)
-                    .on_item_left(Message::ItemSelect),
-            ))
-            .push(
+                    .on_item_select(Message::ItemSelect)
+                    .on_category_select(Message::CategorySelect)
+                    .element_compact()
+            } else {
                 table::SingleSelectTableView::new(&self.table_model)
-                    .on_item_left(Message::ItemSelect)
-                    .element_standard(),
-            )
-            .into()
+                    .on_item_select(Message::ItemSelect)
+                    .on_category_select(Message::CategorySelect)
+                    .element_standard()
+            }
+        })
+        .into()
     }
 }
