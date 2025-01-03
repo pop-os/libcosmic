@@ -13,7 +13,7 @@ use cosmic::widget::table;
 use cosmic::widget::{self, nav_bar};
 use cosmic::{executor, iced};
 
-#[derive(Debug, Default, PartialEq, Eq, Clone, Copy, Hash)]
+#[derive(Debug, Default, PartialEq, Eq, Clone, Copy)]
 pub enum Category {
     #[default]
     Name,
@@ -32,11 +32,11 @@ impl std::fmt::Display for Category {
 }
 
 impl table::ItemCategory for Category {
-    fn width(&self) -> u16 {
+    fn width(&self) -> iced::Length {
         match self {
-            Self::Name => 300,
-            Self::Date => 200,
-            Self::Size => 150,
+            Self::Name => iced::Length::Fill,
+            Self::Date => iced::Length::Fixed(200.0),
+            Self::Size => iced::Length::Fixed(150.0),
         }
     }
 }
@@ -66,11 +66,11 @@ impl table::ItemInterface<Category> for Item {
         }
     }
 
-    fn get_text(&self, category: Category) -> Option<String> {
+    fn get_text(&self, category: Category) -> std::borrow::Cow<'static, str> {
         match category {
-            Category::Name => Some(self.name.clone()),
-            Category::Date => Some(self.date.format("%Y/%m/%d").to_string()),
-            Category::Size => Some(format!("{} items", self.size)),
+            Category::Name => self.name.clone().into(),
+            Category::Date => self.date.format("%Y/%m/%d").to_string().into(),
+            Category::Size => format!("{} items", self.size).into(),
         }
     }
 
