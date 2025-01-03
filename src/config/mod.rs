@@ -4,12 +4,12 @@
 //! Configurations available to libcosmic applications.
 
 use crate::cosmic_theme::Density;
+use crate::icon_theme::DEFAULT;
 use cosmic_config::cosmic_config_derive::CosmicConfigEntry;
 use cosmic_config::{Config, CosmicConfigEntry};
-use iced::font::Family;
 use serde::{Deserialize, Serialize};
 use std::sync::{LazyLock, RwLock};
-use ustr::Ustr;
+use ustr::{existing_ustr, ustr, Ustr};
 
 /// ID for the `CosmicTk` config.
 pub const ID: &str = "com.system76.CosmicTk";
@@ -103,6 +103,9 @@ pub struct CosmicTk {
     pub monospace_font: FontConfig,
 }
 
+const DEFAULT_FONT_FAMILIES: LazyLock<[Ustr; 2]> =
+    LazyLock::new(|| [ustr("Fira Mono"), ustr("Fira Sans")]);
+
 impl Default for CosmicTk {
     fn default() -> Self {
         Self {
@@ -113,13 +116,13 @@ impl Default for CosmicTk {
             header_size: Density::Standard,
             interface_density: Density::Standard,
             interface_font: FontConfig {
-                family: Ustr::from("Fira Sans"),
+                family: DEFAULT_FONT_FAMILIES[1],
                 weight: iced::font::Weight::Normal,
                 stretch: iced::font::Stretch::Normal,
                 style: iced::font::Style::Normal,
             },
             monospace_font: FontConfig {
-                family: Ustr::from("Fira Mono"),
+                family: DEFAULT_FONT_FAMILIES[0],
                 weight: iced::font::Weight::Normal,
                 stretch: iced::font::Stretch::Normal,
                 style: iced::font::Style::Normal,
