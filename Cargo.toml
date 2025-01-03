@@ -114,7 +114,6 @@ tokio = { version = "1.24.2", optional = true }
 tracing = "0.1.41"
 unicode-segmentation = "1.6"
 url = "2.4.0"
-ustr = { version = "1.0.0", features = ["serde"] }
 zbus = { version = "4.2.1", default-features = false, optional = true }
 
 [target.'cfg(unix)'.dependencies]

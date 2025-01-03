@@ -4,15 +4,20 @@
 //! Configurations available to libcosmic applications.
 
 use crate::cosmic_theme::Density;
-use crate::icon_theme::DEFAULT;
 use cosmic_config::cosmic_config_derive::CosmicConfigEntry;
 use cosmic_config::{Config, CosmicConfigEntry};
 use serde::{Deserialize, Serialize};
-use std::sync::{LazyLock, RwLock};
-use ustr::{existing_ustr, ustr, Ustr};
+use std::collections::BTreeSet;
+use std::sync::{LazyLock, Mutex, RwLock};
 
 /// ID for the `CosmicTk` config.
 pub const ID: &str = "com.system76.CosmicTk";
+
+const MONO_FAMILY_DEFAULT: &str = "Fira Mono";
+const SANS_FAMILY_DEFAULT: &str = "Fira Sans";
+
+/// Stores static strings of the family names for `iced::Font` compatibility.
+pub static FAMILY_MAP: LazyLock<Mutex<BTreeSet<&'static str>>> = LazyLock::new(|| Mutex::default());
 
 pub static COSMIC_TK: LazyLock<RwLock<CosmicTk>> = LazyLock::new(|| {
     RwLock::new(
@@ -67,12 +72,12 @@ pub fn interface_density() -> Density {
 
 #[allow(clippy::missing_panics_doc)]
 pub fn interface_font() -> FontConfig {
-    COSMIC_TK.read().unwrap().interface_font
+    COSMIC_TK.read().unwrap().interface_font.clone()
 }
 
 #[allow(clippy::missing_panics_doc)]
 pub fn monospace_font() -> FontConfig {
-    COSMIC_TK.read().unwrap().monospace_font
+    COSMIC_TK.read().unwrap().monospace_font.clone()
 }
 
 #[derive(Clone, CosmicConfigEntry, Debug, Eq, PartialEq)]
@@ -103,9 +108,6 @@ pub struct CosmicTk {
     pub monospace_font: FontConfig,
 }
 
-const DEFAULT_FONT_FAMILIES: LazyLock<[Ustr; 2]> =
-    LazyLock::new(|| [ustr("Fira Mono"), ustr("Fira Sans")]);
-
 impl Default for CosmicTk {
     fn default() -> Self {
         Self {
@@ -116,13 +118,13 @@ impl Default for CosmicTk {
             header_size: Density::Standard,
             interface_density: Density::Standard,
             interface_font: FontConfig {
-                family: DEFAULT_FONT_FAMILIES[1],
+                family: SANS_FAMILY_DEFAULT.to_owned(),
                 weight: iced::font::Weight::Normal,
                 stretch: iced::font::Stretch::Normal,
                 style: iced::font::Style::Normal,
             },
             monospace_font: FontConfig {
-                family: DEFAULT_FONT_FAMILIES[0],
+                family: MONO_FAMILY_DEFAULT.to_owned(),
                 weight: iced::font::Weight::Normal,
                 stretch: iced::font::Stretch::Normal,
                 style: iced::font::Style::Normal,
@@ -137,9 +139,9 @@ impl CosmicTk {
     }
 }
 
-#[derive(Copy, Clone, Debug, Eq, PartialEq, Deserialize, Serialize)]
+#[derive(Clone, Debug, Eq, PartialEq, Deserialize, Serialize)]
 pub struct FontConfig {
-    pub family: Ustr,
+    pub family: String,
     pub weight: iced::font::Weight,
     pub stretch: iced::font::Stretch,
     pub style: iced::font::Style,
@@ -147,8 +149,19 @@ pub struct FontConfig {
 
 impl From<FontConfig> for iced::Font {
     fn from(font: FontConfig) -> Self {
+        let mut family_map = FAMILY_MAP.lock().unwrap();
+
+        let name: &'static str = family_map
+            .get(font.family.as_str())
+            .map(|&x| x)
+            .unwrap_or_else(|| {
+                let value = font.family.clone().leak();
+                family_map.insert(value);
+                value
+            });
+
         Self {
-            family: iced::font::Family::Name(font.family.as_str()),
+            family: iced::font::Family::Name(name),
             weight: font.weight,
             stretch: font.stretch,
             style: font.style,
