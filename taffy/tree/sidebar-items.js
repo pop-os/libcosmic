@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["RequestedAxis","RunMode","SizingMode","TaffyError"],"struct":["Cache","CollapsibleMarginSet","Layout","LayoutInput","LayoutOutput","NodeId","TaffyTree"],"trait":["LayoutTree","PartialLayoutTree"],"type":["TaffyResult"]};

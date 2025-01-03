@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"struct":["PollWatcher"],"trait":["ScanEventHandler"],"type":["ScanEvent"]};
