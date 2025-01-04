@@ -18,3 +18,16 @@ pub type SingleSelectModel<Item, Category> = Model<SingleSelect, Item, Category>
 pub type MultiSelectTableView<'a, Item, Category, Message> =
     TableView<'a, MultiSelect, Item, Category, Message>;
 pub type MultiSelectModel<Item, Category> = Model<MultiSelect, Item, Category>;
+
+pub fn table<'a, SelectionMode, Item, Category, Message>(
+    model: &'a Model<SelectionMode, Item, Category>,
+) -> TableView<'a, SelectionMode, Item, Category, Message>
+where
+    Message: Clone,
+    SelectionMode: Default,
+    Category: ItemCategory,
+    Item: ItemInterface<Category>,
+    Model<SelectionMode, Item, Category>: model::selection::Selectable,
+{
+    TableView::new(model)
+}

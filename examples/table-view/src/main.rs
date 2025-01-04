@@ -6,8 +6,8 @@
 use chrono::Datelike;
 use cosmic::app::{Core, Settings, Task};
 use cosmic::iced_core::Size;
-use cosmic::widget::nav_bar;
 use cosmic::widget::table;
+use cosmic::widget::{self, nav_bar};
 use cosmic::{executor, iced, Element};
 
 #[derive(Debug, Default, PartialEq, Eq, Clone, Copy)]
@@ -194,12 +194,12 @@ impl cosmic::Application for App {
     fn view(&self) -> Element<Self::Message> {
         cosmic::widget::responsive(|size| {
             if size.width < 600.0 {
-                table::SingleSelectTableView::new(&self.table_model)
+                widget::table(&self.table_model)
                     .on_item_select(Message::ItemSelect)
                     .on_category_select(Message::CategorySelect)
                     .element_compact()
             } else {
-                table::SingleSelectTableView::new(&self.table_model)
+                widget::table(&self.table_model)
                     .on_item_select(Message::ItemSelect)
                     .on_category_select(Message::CategorySelect)
                     .element_standard()
