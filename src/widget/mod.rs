@@ -316,7 +316,7 @@ pub use spin_button::{spin_button, vertical as vertical_spin_button, SpinButton}
 pub mod tab_bar;
 
 pub mod table;
-pub use table::table;
+pub use table::{compact_table, table};
 
 pub mod text;
 #[doc(inline)]

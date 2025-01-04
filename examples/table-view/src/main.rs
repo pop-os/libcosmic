@@ -6,9 +6,10 @@
 use chrono::Datelike;
 use cosmic::app::{Core, Settings, Task};
 use cosmic::iced_core::Size;
+use cosmic::prelude::*;
 use cosmic::widget::table;
 use cosmic::widget::{self, nav_bar};
-use cosmic::{executor, iced, Element};
+use cosmic::{executor, iced};
 
 #[derive(Debug, Default, PartialEq, Eq, Clone, Copy)]
 pub enum Category {
@@ -194,15 +195,15 @@ impl cosmic::Application for App {
     fn view(&self) -> Element<Self::Message> {
         cosmic::widget::responsive(|size| {
             if size.width < 600.0 {
-                widget::table(&self.table_model)
+                widget::compact_table(&self.table_model)
                     .on_item_select(Message::ItemSelect)
                     .on_category_select(Message::CategorySelect)
-                    .element_compact()
+                    .apply(Element::from)
             } else {
                 widget::table(&self.table_model)
                     .on_item_select(Message::ItemSelect)
                     .on_category_select(Message::CategorySelect)
-                    .element_standard()
+                    .apply(Element::from)
             }
         })
         .into()

@@ -9,7 +9,8 @@ pub use model::{
     Entity, Model,
 };
 pub mod widget;
-pub use widget::TableView;
+pub use widget::compact::CompactTableView;
+pub use widget::standard::TableView;
 
 pub type SingleSelectTableView<'a, Item, Category, Message> =
     TableView<'a, SingleSelect, Item, Category, Message>;
@@ -30,4 +31,17 @@ where
     Model<SelectionMode, Item, Category>: model::selection::Selectable,
 {
     TableView::new(model)
+}
+
+pub fn compact_table<'a, SelectionMode, Item, Category, Message>(
+    model: &'a Model<SelectionMode, Item, Category>,
+) -> CompactTableView<'a, SelectionMode, Item, Category, Message>
+where
+    Message: Clone,
+    SelectionMode: Default,
+    Category: ItemCategory,
+    Item: ItemInterface<Category>,
+    Model<SelectionMode, Item, Category>: model::selection::Selectable,
+{
+    CompactTableView::new(model)
 }
