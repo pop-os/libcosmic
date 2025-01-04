@@ -1,4 +1,5 @@
 mod state;
+use derive_setters::Setters;
 use state::State;
 
 use super::model::{
@@ -16,6 +17,7 @@ use iced::{Alignment, Border, Length, Padding};
 
 // THIS IS A PLACEHOLDER UNTIL A MORE SOPHISTICATED WIDGET CAN BE DEVELOPED
 
+#[derive(Setters)]
 #[must_use]
 pub struct TableView<'a, SelectionMode, Item, Category, Message>
 where
@@ -27,16 +29,28 @@ where
 {
     pub(super) model: &'a Model<SelectionMode, Item, Category>,
 
-    pub(super) item_spacing: u16,
+    #[setters(into)]
     pub(super) element_padding: Padding,
+
+    #[setters(into)]
     pub(super) item_padding: Padding,
+    pub(super) item_spacing: u16,
+
+    #[setters(into)]
     pub(super) divider_padding: Padding,
+
+    #[setters(skip)]
     pub(super) item_context_tree: Option<Vec<menu::Tree<'a, Message>>>,
+    #[setters(skip)]
     pub(super) category_context_tree: Option<Vec<menu::Tree<'a, Message>>>,
 
+    #[setters(skip)]
     pub(super) on_item_select: Option<Box<dyn Fn(Entity) -> Message + 'a>>,
+    #[setters(skip)]
     pub(super) on_item_context: Option<Box<dyn Fn(Entity) -> Message + 'a>>,
+    #[setters(skip)]
     pub(super) on_category_select: Option<Box<dyn Fn(Category, bool) -> Message + 'a>>,
+    #[setters(skip)]
     pub(super) on_category_context: Option<Box<dyn Fn(Category) -> Message + 'a>>,
 }
 
@@ -71,26 +85,6 @@ where
         }
     }
 
-    pub fn item_spacing(mut self, spacing: u16) -> Self {
-        self.item_spacing = spacing;
-        self
-    }
-
-    pub fn element_padding(mut self, padding: impl Into<Padding>) -> Self {
-        self.element_padding = padding.into();
-        self
-    }
-
-    pub fn divider_padding(mut self, padding: u16) -> Self {
-        self.divider_padding = Padding::from(0).left(padding).right(padding);
-        self
-    }
-
-    pub fn item_padding(mut self, padding: impl Into<Padding>) -> Self {
-        self.item_padding = padding.into();
-        self
-    }
-
     pub fn on_item_select<F>(mut self, on_select: F) -> Self
     where
         F: Fn(Entity) -> Message + 'a,
@@ -121,6 +115,20 @@ where
         self
     }
 
+    pub fn category_context(mut self, context_menu: Option<Vec<menu::Tree<'a, Message>>>) -> Self
+    where
+        Message: 'static,
+    {
+        self.category_context_tree =
+            context_menu.map(|menus| vec![menu::Tree::with_children(widget::row(), menus)]);
+
+        if let Some(ref mut context_menu) = self.category_context_tree {
+            context_menu.iter_mut().for_each(menu::Tree::set_index);
+        }
+
+        self
+    }
+
     pub fn on_category_select<F>(mut self, on_select: F) -> Self
     where
         F: Fn(Category, bool) -> Message + 'a,
@@ -137,7 +145,7 @@ where
         self
     }
 
-    #[must_use]
+    /*#[must_use]
     pub fn element_standard(&self) -> Element<'a, Message> {
         let cosmic_theme::Spacing { space_xxxs, .. } = theme::active().cosmic().spacing;
 
@@ -370,4 +378,5 @@ where
             .padding(self.element_padding)
             .apply(Element::from)
     }
+    */
 }
