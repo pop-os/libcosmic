@@ -1742,9 +1742,11 @@ where
                         {
                             let mut editor = Editor::new(unsecured_value, &mut state.cursor);
 
-                            editor.insert(
-                                text.unwrap_or_default().chars().next().unwrap_or_default(),
-                            );
+                            let character =
+                                text.unwrap_or_default().chars().next().unwrap_or_default();
+                            if !character.is_control() {
+                                editor.insert(character);
+                            }
                             let contents = editor.contents();
                             let unsecured_value = Value::new(&contents);
                             let message = (on_input)(contents);
