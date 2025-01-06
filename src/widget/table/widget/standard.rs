@@ -40,7 +40,8 @@ where
     #[setters(skip)]
     pub(super) item_context_tree: Option<Vec<menu::Tree<'a, Message>>>,
     #[setters(skip)]
-    pub(super) category_context_tree: Option<Vec<menu::Tree<'a, Message>>>,
+    pub(super) category_context_trees:
+        std::collections::HashMap<Category, Option<Vec<menu::Tree<'a, Message>>>>,
 
     #[setters(skip)]
     pub(super) on_item_select: Option<Box<dyn Fn(Entity) -> Message + 'a>>,
@@ -64,11 +65,15 @@ where
     fn from(val: TableView<'a, SelectionMode, Item, Category, Message>) -> Self {
         let cosmic_theme::Spacing { space_xxxs, .. } = theme::active().cosmic().spacing;
 
+        let mut category_contexts = val.category_context_trees.into_values();
+
         let header_row = val
             .model
             .categories
             .iter()
             .map(|category| {
+                let cat_context_tree = category_contexts.next().unwrap();
+
                 widget::row()
                     .spacing(space_xxxs)
                     .push(widget::text::heading(category.to_string()))
@@ -110,6 +115,7 @@ where
                             mouse_area
                         }
                     })
+                    .apply(|mouse_area| widget::context_menu(mouse_area, cat_context_tree))
                     .apply(Element::from)
             })
             .collect::<Vec<Element<'a, Message>>>()
@@ -217,7 +223,7 @@ where
             ..
         } = theme::active().cosmic().spacing;
 
-        Self {
+        let mut result = Self {
             model,
             element_padding: Padding::from(0),
 
@@ -232,8 +238,14 @@ where
 
             on_category_select: None,
             on_category_context: None,
-            category_context_tree: None,
+            category_context_trees: std::collections::HashMap::new(),
+        };
+
+        for category in model.categories.iter().cloned() {
+            result.category_context_trees.insert(category, None);
         }
+
+        result
     }
 
     pub fn on_item_select<F>(mut self, on_select: F) -> Self
@@ -266,16 +278,15 @@ where
         self
     }
 
-    pub fn category_context(mut self, context_menu: Option<Vec<menu::Tree<'a, Message>>>) -> Self
+    pub fn category_context(mut self, category: Category, context_menu: Option<Vec<menu::Tree<'a, Message>>>) -> Self
     where
         Message: 'static,
     {
-        self.category_context_tree =
-            context_menu.map(|menus| vec![menu::Tree::with_children(widget::row(), menus)]);
-
-        if let Some(ref mut context_menu) = self.category_context_tree {
-            context_menu.iter_mut().for_each(menu::Tree::set_index);
-        }
+            *self.category_context_trees.get_mut(&category).unwrap() =
+                context_menu.map(|menus| vec![menu::Tree::with_children(widget::row(), menus)]);
+            if let Some(ref mut context_menu) = self.category_context_trees.get_mut(&category).unwrap() {
+                context_menu.iter_mut().for_each(menu::Tree::set_index);
+            }
 
         self
     }

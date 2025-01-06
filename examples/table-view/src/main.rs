@@ -11,7 +11,7 @@ use cosmic::widget::table;
 use cosmic::widget::{self, nav_bar};
 use cosmic::{executor, iced};
 
-#[derive(Debug, Default, PartialEq, Eq, Clone, Copy)]
+#[derive(Debug, Default, PartialEq, Eq, Clone, Copy, Hash)]
 pub enum Category {
     #[default]
     Name,
