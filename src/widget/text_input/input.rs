@@ -1350,12 +1350,13 @@ where
                                     clipboard,
                                     false,
                                     id.map(|id| iced_core::clipboard::DndSource::Widget(id)),
-                                    Some((
+                                    Some(iced_core::clipboard::IconSurface::new(
                                         Element::from(
                                             TextInput::<'static, ()>::new("", input_text.clone())
                                                 .dnd_icon(true),
                                         ),
                                         iced_core::widget::tree::State::new(state_clone),
+                                        Vector::ZERO,
                                     )),
                                     Box::new(TextInputString(input_text)),
                                     DndAction::Move,
