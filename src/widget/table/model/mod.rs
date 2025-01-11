@@ -340,6 +340,11 @@ where
         }
     }
 
+    /// Get the sort data
+    pub fn get_sort(&self) -> Option<(Category, bool)> {
+        self.sort
+    }
+
     /// Sorts items in the model, this should be called before it is drawn after all items have been added for the view
     pub fn sort(&mut self, category: Category, ascending: bool) {
         self.sort = Some((category, ascending));

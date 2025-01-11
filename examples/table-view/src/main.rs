@@ -101,7 +101,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 #[derive(Clone, Debug)]
 pub enum Message {
     ItemSelect(table::Entity),
-    CategorySelect(Category, bool),
+    CategorySelect(Category),
+    PrintMsg(String),
     NoOp,
 }
 
@@ -187,9 +188,16 @@ impl cosmic::Application for App {
     fn update(&mut self, message: Self::Message) -> Task<Self::Message> {
         match message {
             Message::ItemSelect(entity) => self.table_model.activate(entity),
-            Message::CategorySelect(category, descending) => {
-                self.table_model.sort(category, descending)
+            Message::CategorySelect(category) => {
+                let mut ascending = true;
+                if let Some(old_sort) = self.table_model.get_sort() {
+                    if old_sort.0 == category {
+                        ascending = !old_sort.1;
+                    }
+                }
+                self.table_model.sort(category, ascending)
             }
+            Message::PrintMsg(string) => tracing_log::log::info!("{}", string),
             Message::NoOp => {}
         }
         Task::none()
@@ -200,7 +208,7 @@ impl cosmic::Application for App {
         cosmic::widget::responsive(|size| {
             if size.width < 600.0 {
                 widget::compact_table(&self.table_model)
-                    .on_item_select(Message::ItemSelect)
+                    .on_item_left_click(Message::ItemSelect)
                     .item_context(|item| {
                         Some(widget::menu::items(
                             &HashMap::new(),
@@ -214,8 +222,8 @@ impl cosmic::Application for App {
                     .apply(Element::from)
             } else {
                 widget::table(&self.table_model)
-                    .on_item_select(Message::ItemSelect)
-                    .on_category_select(Message::CategorySelect)
+                    .on_item_left_click(Message::ItemSelect)
+                    .on_category_left_click(Message::CategorySelect)
                     .item_context(|item| {
                         Some(widget::menu::items(
                             &HashMap::new(),
@@ -227,53 +235,21 @@ impl cosmic::Application for App {
                         ))
                     })
                     .category_context(|category| {
-                        Some(match category {
-                            Category::Name => widget::menu::items(
-                                &HashMap::new(),
-                                vec![
-                                    widget::menu::Item::Button(
-                                        "Action on Name Category",
-                                        None,
-                                        Action::None,
-                                    ),
-                                    widget::menu::Item::Button(
-                                        "Other action on Name",
-                                        None,
-                                        Action::None,
-                                    ),
-                                ],
-                            ),
-                            Category::Date => widget::menu::items(
-                                &HashMap::new(),
-                                vec![
-                                    widget::menu::Item::Button(
-                                        "Action on Date Category",
-                                        None,
-                                        Action::None,
-                                    ),
-                                    widget::menu::Item::Button(
-                                        "Other action on Date",
-                                        None,
-                                        Action::None,
-                                    ),
-                                ],
-                            ),
-                            Category::Size => widget::menu::items(
-                                &HashMap::new(),
-                                vec![
-                                    widget::menu::Item::Button(
-                                        "Action on Size Category",
-                                        None,
-                                        Action::None,
-                                    ),
-                                    widget::menu::Item::Button(
-                                        "Other action on Size",
-                                        None,
-                                        Action::None,
-                                    ),
-                                ],
-                            ),
-                        })
+                        Some(widget::menu::items(
+                            &HashMap::new(),
+                            vec![
+                                widget::menu::Item::Button(
+                                    format!("Action on {} category", category.to_string()),
+                                    None,
+                                    Action::None,
+                                ),
+                                widget::menu::Item::Button(
+                                    format!("Other action on {} category", category.to_string()),
+                                    None,
+                                    Action::None,
+                                ),
+                            ],
+                        ))
                     })
                     .apply(Element::from)
             }

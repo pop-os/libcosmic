@@ -35,13 +35,17 @@ where
     #[setters(into)]
     pub(super) divider_padding: Padding,
 
+    // === Item Interaction ===
+    #[setters(skip)]
+    pub(super) on_item_mb_left: Option<Box<dyn Fn(Entity) -> Message + 'static>>,
+    #[setters(skip)]
+    pub(super) on_item_mb_double: Option<Box<dyn Fn(Entity) -> Message + 'static>>,
+    #[setters(skip)]
+    pub(super) on_item_mb_mid: Option<Box<dyn Fn(Entity) -> Message + 'static>>,
+    #[setters(skip)]
+    pub(super) on_item_mb_right: Option<Box<dyn Fn(Entity) -> Message + 'static>>,
     #[setters(skip)]
     pub(super) item_context_builder: Box<dyn Fn(&Item) -> Option<Vec<menu::Tree<'a, Message>>>>,
-
-    #[setters(skip)]
-    pub(super) on_item_select: Option<Box<dyn Fn(Entity) -> Message + 'a>>,
-    #[setters(skip)]
-    pub(super) on_item_context: Option<Box<dyn Fn(Entity) -> Message + 'a>>,
 }
 
 impl<'a, SelectionMode, Item, Category, Message>
@@ -132,11 +136,36 @@ where
                                 }
                             }))
                             .apply(widget::mouse_area)
-                            .apply(|ma| {
-                                if let Some(on_item_select) = &val.on_item_select {
-                                    ma.on_press((on_item_select)(entity))
+                            // Left click
+                            .apply(|mouse_area| {
+                                if let Some(ref on_item_mb) = val.on_item_mb_left {
+                                    mouse_area.on_press((on_item_mb)(entity))
                                 } else {
-                                    ma
+                                    mouse_area
+                                }
+                            })
+                            // Double click
+                            .apply(|mouse_area| {
+                                if let Some(ref on_item_mb) = val.on_item_mb_left {
+                                    mouse_area.on_double_click((on_item_mb)(entity))
+                                } else {
+                                    mouse_area
+                                }
+                            })
+                            // Middle click
+                            .apply(|mouse_area| {
+                                if let Some(ref on_item_mb) = val.on_item_mb_mid {
+                                    mouse_area.on_middle_press((on_item_mb)(entity))
+                                } else {
+                                    mouse_area
+                                }
+                            })
+                            // Right click
+                            .apply(|mouse_area| {
+                                if let Some(ref on_item_mb) = val.on_item_mb_right {
+                                    mouse_area.on_right_press((on_item_mb)(entity))
+                                } else {
+                                    mouse_area
                                 }
                             })
                             .apply(|ma| widget::context_menu(ma, context_menu)),
@@ -177,25 +206,43 @@ where
             item_spacing: 0,
             icon_size: 48,
 
+            on_item_mb_left: None,
+            on_item_mb_double: None,
+            on_item_mb_mid: None,
+            on_item_mb_right: None,
             item_context_builder: Box::new(|_| None),
-            on_item_select: None,
-            on_item_context: None,
         }
     }
 
-    pub fn on_item_select<F>(mut self, on_select: F) -> Self
+    pub fn on_item_left_click<F>(mut self, on_click: F) -> Self
     where
-        F: Fn(Entity) -> Message + 'a,
+        F: Fn(Entity) -> Message + 'static,
     {
-        self.on_item_select = Some(Box::new(on_select));
+        self.on_item_mb_left = Some(Box::new(on_click));
         self
     }
 
-    pub fn on_item_context<F>(mut self, on_select: F) -> Self
+    pub fn on_item_double_click<F>(mut self, on_click: F) -> Self
     where
-        F: Fn(Entity) -> Message + 'a,
+        F: Fn(Entity) -> Message + 'static,
     {
-        self.on_item_context = Some(Box::new(on_select));
+        self.on_item_mb_double = Some(Box::new(on_click));
+        self
+    }
+
+    pub fn on_item_middle_click<F>(mut self, on_click: F) -> Self
+    where
+        F: Fn(Entity) -> Message + 'static,
+    {
+        self.on_item_mb_mid = Some(Box::new(on_click));
+        self
+    }
+
+    pub fn on_item_right_click<F>(mut self, on_click: F) -> Self
+    where
+        F: Fn(Entity) -> Message + 'static,
+    {
+        self.on_item_mb_right = Some(Box::new(on_click));
         self
     }
 

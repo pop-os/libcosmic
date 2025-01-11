@@ -10,7 +10,7 @@ use crate::{
     widget::{self, container, divider, menu},
     Apply, Element,
 };
-use iced::{Alignment, Border, Padding};
+use iced::{Alignment, Border, Length, Padding};
 
 // THIS IS A PLACEHOLDER UNTIL A MORE SOPHISTICATED WIDGET CAN BE DEVELOPED
 
@@ -28,28 +28,45 @@ where
 
     #[setters(into)]
     pub(super) element_padding: Padding,
+    #[setters(into)]
+    pub(super) width: Length,
+    #[setters(into)]
+    pub(super) height: Length,
 
     #[setters(into)]
     pub(super) item_padding: Padding,
     pub(super) item_spacing: u16,
+    pub(super) icon_spacing: u16,
     pub(super) icon_size: u16,
 
     #[setters(into)]
     pub(super) divider_padding: Padding,
 
+    // === Item Interaction ===
+    #[setters(skip)]
+    pub(super) on_item_mb_left: Option<Box<dyn Fn(Entity) -> Message + 'static>>,
+    #[setters(skip)]
+    pub(super) on_item_mb_double: Option<Box<dyn Fn(Entity) -> Message + 'static>>,
+    #[setters(skip)]
+    pub(super) on_item_mb_mid: Option<Box<dyn Fn(Entity) -> Message + 'static>>,
+    #[setters(skip)]
+    pub(super) on_item_mb_right: Option<Box<dyn Fn(Entity) -> Message + 'static>>,
     #[setters(skip)]
     pub(super) item_context_builder: Box<dyn Fn(&Item) -> Option<Vec<menu::Tree<'a, Message>>>>,
-    #[setters(skip)]
-    pub(super) category_contexts: Box<dyn Fn(Category) -> Option<Vec<menu::Tree<'a, Message>>>>,
+    // Item DND
 
+    // === Category Interaction ===
     #[setters(skip)]
-    pub(super) on_item_select: Option<Box<dyn Fn(Entity) -> Message + 'a>>,
+    pub(super) on_category_mb_left: Option<Box<dyn Fn(Category) -> Message + 'static>>,
     #[setters(skip)]
-    pub(super) on_item_context: Option<Box<dyn Fn(Entity) -> Message + 'a>>,
+    pub(super) on_category_mb_double: Option<Box<dyn Fn(Category) -> Message + 'static>>,
     #[setters(skip)]
-    pub(super) on_category_select: Option<Box<dyn Fn(Category, bool) -> Message + 'a>>,
+    pub(super) on_category_mb_mid: Option<Box<dyn Fn(Category) -> Message + 'static>>,
     #[setters(skip)]
-    pub(super) on_category_context: Option<Box<dyn Fn(Category) -> Message + 'a>>,
+    pub(super) on_category_mb_right: Option<Box<dyn Fn(Category) -> Message + 'static>>,
+    #[setters(skip)]
+    pub(super) category_context_builder:
+        Box<dyn Fn(Category) -> Option<Vec<menu::Tree<'a, Message>>>>,
 }
 
 impl<'a, SelectionMode, Item, Category, Message>
@@ -62,15 +79,14 @@ where
     Message: Clone + 'static,
 {
     fn from(val: TableView<'a, SelectionMode, Item, Category, Message>) -> Self {
-        let cosmic_theme::Spacing { space_xxxs, .. } = theme::active().cosmic().spacing;
-
+        // Header row
         let header_row = val
             .model
             .categories
             .iter()
             .cloned()
             .map(|category| {
-                let cat_context_tree = (val.category_contexts)(category);
+                let cat_context_tree = (val.category_context_builder)(category);
 
                 let mut sort_state = 0;
 
@@ -86,7 +102,7 @@ where
 
                 // Build the category header
                 widget::row()
-                    .spacing(space_xxxs)
+                    .spacing(val.icon_spacing)
                     .push(widget::text::heading(category.to_string()))
                     .push_maybe(match sort_state {
                         1 => Some(widget::icon::from_name("pan-up-symbolic").icon()),
@@ -102,19 +118,8 @@ where
                     .width(category.width())
                     .apply(widget::mouse_area)
                     .apply(|mouse_area| {
-                        if let Some(ref on_category_select) = val.on_category_select {
-                            mouse_area.on_press((on_category_select)(
-                                category,
-                                if let Some(sort) = val.model.sort {
-                                    if sort.0 == category {
-                                        !sort.1
-                                    } else {
-                                        false
-                                    }
-                                } else {
-                                    false
-                                },
-                            ))
+                        if let Some(ref on_category_select) = val.on_category_mb_left {
+                            mouse_area.on_press((on_category_select)(category))
                         } else {
                             mouse_area
                         }
@@ -149,7 +154,7 @@ where
                             .iter()
                             .map(|category| {
                                 widget::row()
-                                    .spacing(space_xxxs)
+                                    .spacing(val.icon_spacing)
                                     .push_maybe(
                                         item.get_icon(*category)
                                             .map(|icon| icon.size(val.icon_size)),
@@ -192,9 +197,34 @@ where
                                 }
                             }))
                             .apply(widget::mouse_area)
+                            // Left click
                             .apply(|mouse_area| {
-                                if let Some(ref on_item_select) = val.on_item_select {
-                                    mouse_area.on_press((on_item_select)(entity))
+                                if let Some(ref on_item_mb) = val.on_item_mb_left {
+                                    mouse_area.on_press((on_item_mb)(entity))
+                                } else {
+                                    mouse_area
+                                }
+                            })
+                            // Double click
+                            .apply(|mouse_area| {
+                                if let Some(ref on_item_mb) = val.on_item_mb_left {
+                                    mouse_area.on_double_click((on_item_mb)(entity))
+                                } else {
+                                    mouse_area
+                                }
+                            })
+                            // Middle click
+                            .apply(|mouse_area| {
+                                if let Some(ref on_item_mb) = val.on_item_mb_mid {
+                                    mouse_area.on_middle_press((on_item_mb)(entity))
+                                } else {
+                                    mouse_area
+                                }
+                            })
+                            // Right click
+                            .apply(|mouse_area| {
+                                if let Some(ref on_item_mb) = val.on_item_mb_right {
+                                    mouse_area.on_right_press((on_item_mb)(entity))
                                 } else {
                                     mouse_area
                                 }
@@ -211,6 +241,8 @@ where
             .flatten()
             .collect::<Vec<Element<'a, Message>>>()
             .apply(widget::column::with_children)
+            .width(val.width)
+            .height(val.height)
             .spacing(val.item_spacing)
             .padding(val.element_padding)
             .apply(Element::from)
@@ -235,37 +267,61 @@ where
 
         Self {
             model,
-            element_padding: Padding::from(0),
 
-            divider_padding: Padding::from(0).left(space_xxxs).right(space_xxxs),
+            element_padding: Padding::from(0),
+            width: Length::Fill,
+            height: Length::Shrink,
 
             item_padding: Padding::from(space_xxs).into(),
             item_spacing: 0,
+            icon_spacing: space_xxxs,
             icon_size: 24,
 
-            on_item_select: None,
-            on_item_context: None,
+            divider_padding: Padding::from(0).left(space_xxxs).right(space_xxxs),
+
+            on_item_mb_left: None,
+            on_item_mb_double: None,
+            on_item_mb_mid: None,
+            on_item_mb_right: None,
             item_context_builder: Box::new(|_| None),
 
-            on_category_select: None,
-            on_category_context: None,
-            category_contexts: Box::new(|_| None),
+            on_category_mb_left: None,
+            on_category_mb_double: None,
+            on_category_mb_mid: None,
+            on_category_mb_right: None,
+            category_context_builder: Box::new(|_| None),
         }
     }
 
-    pub fn on_item_select<F>(mut self, on_select: F) -> Self
+    pub fn on_item_left_click<F>(mut self, on_click: F) -> Self
     where
-        F: Fn(Entity) -> Message + 'a,
+        F: Fn(Entity) -> Message + 'static,
     {
-        self.on_item_select = Some(Box::new(on_select));
+        self.on_item_mb_left = Some(Box::new(on_click));
         self
     }
 
-    pub fn on_item_context<F>(mut self, on_select: F) -> Self
+    pub fn on_item_double_click<F>(mut self, on_click: F) -> Self
     where
-        F: Fn(Entity) -> Message + 'a,
+        F: Fn(Entity) -> Message + 'static,
     {
-        self.on_item_context = Some(Box::new(on_select));
+        self.on_item_mb_double = Some(Box::new(on_click));
+        self
+    }
+
+    pub fn on_item_middle_click<F>(mut self, on_click: F) -> Self
+    where
+        F: Fn(Entity) -> Message + 'static,
+    {
+        self.on_item_mb_mid = Some(Box::new(on_click));
+        self
+    }
+
+    pub fn on_item_right_click<F>(mut self, on_click: F) -> Self
+    where
+        F: Fn(Entity) -> Message + 'static,
+    {
+        self.on_item_mb_right = Some(Box::new(on_click));
         self
     }
 
@@ -278,28 +334,42 @@ where
         self
     }
 
+    pub fn on_category_left_click<F>(mut self, on_select: F) -> Self
+    where
+        F: Fn(Category) -> Message + 'static,
+    {
+        self.on_category_mb_left = Some(Box::new(on_select));
+        self
+    }
+    pub fn on_category_double_click<F>(mut self, on_select: F) -> Self
+    where
+        F: Fn(Category) -> Message + 'static,
+    {
+        self.on_category_mb_double = Some(Box::new(on_select));
+        self
+    }
+    pub fn on_category_middle_click<F>(mut self, on_select: F) -> Self
+    where
+        F: Fn(Category) -> Message + 'static,
+    {
+        self.on_category_mb_mid = Some(Box::new(on_select));
+        self
+    }
+
+    pub fn on_category_right_click<F>(mut self, on_select: F) -> Self
+    where
+        F: Fn(Category) -> Message + 'static,
+    {
+        self.on_category_mb_right = Some(Box::new(on_select));
+        self
+    }
+
     pub fn category_context<F>(mut self, context_menu_builder: F) -> Self
     where
         F: Fn(Category) -> Option<Vec<menu::Tree<'a, Message>>> + 'static,
         Message: 'static,
     {
-        self.category_contexts = Box::new(context_menu_builder);
-        self
-    }
-
-    pub fn on_category_select<F>(mut self, on_select: F) -> Self
-    where
-        F: Fn(Category, bool) -> Message + 'a,
-    {
-        self.on_category_select = Some(Box::new(on_select));
-        self
-    }
-
-    pub fn on_category_context<F>(mut self, on_select: F) -> Self
-    where
-        F: Fn(Category) -> Message + 'a,
-    {
-        self.on_category_context = Some(Box::new(on_select));
+        self.category_context_builder = Box::new(context_menu_builder);
         self
     }
 }
