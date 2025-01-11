@@ -101,12 +101,6 @@ fn filename_eq(path_opt: &Option<PathBuf>, filename: &str) -> bool {
         .unwrap_or(false)
 }
 
-pub trait LanguageSorter {
-    fn language_sorter(&self) -> Option<Lazy<Collator>> {
-        None
-    }
-}
-
 pub struct MimeAppCache {
     cache: HashMap<Mime, Vec<MimeApp>>,
     terminals: Vec<MimeApp>,
