@@ -33,15 +33,15 @@ where
     #[setters(into)]
     pub(super) item_padding: Padding,
     pub(super) item_spacing: u16,
+    pub(super) icon_size: u16,
 
     #[setters(into)]
     pub(super) divider_padding: Padding,
 
     #[setters(skip)]
-    pub(super) item_context_tree: Option<Vec<menu::Tree<'a, Message>>>,
+    pub(super) item_context_builder: Box<dyn Fn(&Item) -> Option<Vec<menu::Tree<'a, Message>>>>,
     #[setters(skip)]
-    pub(super) category_context_trees:
-        std::collections::HashMap<Category, Option<Vec<menu::Tree<'a, Message>>>>,
+    pub(super) category_contexts: Box<dyn Fn(Category) -> Option<Vec<menu::Tree<'a, Message>>>>,
 
     #[setters(skip)]
     pub(super) on_item_select: Option<Box<dyn Fn(Entity) -> Message + 'a>>,
@@ -65,29 +65,34 @@ where
     fn from(val: TableView<'a, SelectionMode, Item, Category, Message>) -> Self {
         let cosmic_theme::Spacing { space_xxxs, .. } = theme::active().cosmic().spacing;
 
-        let mut category_contexts = val.category_context_trees.into_values();
-
         let header_row = val
             .model
             .categories
             .iter()
+            .cloned()
             .map(|category| {
-                let cat_context_tree = category_contexts.next().unwrap();
+                let cat_context_tree = (val.category_contexts)(category);
 
+                let mut sort_state = 0;
+
+                if let Some(sort) = val.model.sort {
+                    if sort.0 == category {
+                        if sort.1 {
+                            sort_state = 1;
+                        } else {
+                            sort_state = 2;
+                        }
+                    }
+                };
+
+                // Build the category header
                 widget::row()
                     .spacing(space_xxxs)
                     .push(widget::text::heading(category.to_string()))
-                    .push_maybe(if let Some(sort) = val.model.sort {
-                        if sort.0 == *category {
-                            match sort.1 {
-                                true => Some(widget::icon::from_name("pan-up-symbolic").icon()),
-                                false => Some(widget::icon::from_name("pan-down-symbolic").icon()),
-                            }
-                        } else {
-                            None
-                        }
-                    } else {
-                        None
+                    .push_maybe(match sort_state {
+                        1 => Some(widget::icon::from_name("pan-up-symbolic").icon()),
+                        2 => Some(widget::icon::from_name("pan-down-symbolic").icon()),
+                        _ => None,
                     })
                     .apply(container)
                     .padding(
@@ -100,9 +105,9 @@ where
                     .apply(|mouse_area| {
                         if let Some(ref on_category_select) = val.on_category_select {
                             mouse_area.on_press((on_category_select)(
-                                *category,
+                                category,
                                 if let Some(sort) = val.model.sort {
-                                    if sort.0 == *category {
+                                    if sort.0 == category {
                                         !sort.1
                                     } else {
                                         false
@@ -121,6 +126,7 @@ where
             .collect::<Vec<Element<'a, Message>>>()
             .apply(widget::row::with_children)
             .apply(Element::from);
+        // Build the items
         let items_full = if val.model.items.is_empty() {
             vec![divider::horizontal::default()
                 .apply(container)
@@ -129,10 +135,11 @@ where
         } else {
             val.model
                 .iter()
-                .map(|entity| {
+                .map(move |entity| {
                     let item = val.model.item(entity).unwrap();
                     let categories = &val.model.categories;
                     let selected = val.model.is_active(entity);
+                    let item_context = (val.item_context_builder)(&item);
 
                     vec![
                         divider::horizontal::default()
@@ -144,7 +151,10 @@ where
                             .map(|category| {
                                 widget::row()
                                     .spacing(space_xxxs)
-                                    .push_maybe(item.get_icon(*category).map(|icon| icon.size(24)))
+                                    .push_maybe(
+                                        item.get_icon(*category)
+                                            .map(|icon| icon.size(val.icon_size)),
+                                    )
                                     .push(widget::text::body(item.get_text(*category)))
                                     .align_y(Alignment::Center)
                                     .apply(container)
@@ -190,6 +200,7 @@ where
                                     mouse_area
                                 }
                             })
+                            .apply(|mouse_area| widget::context_menu(mouse_area, item_context))
                             .apply(Element::from),
                     ]
                 })
@@ -223,7 +234,7 @@ where
             ..
         } = theme::active().cosmic().spacing;
 
-        let mut result = Self {
+        Self {
             model,
             element_padding: Padding::from(0),
 
@@ -231,21 +242,16 @@ where
 
             item_padding: Padding::from(space_xxs).into(),
             item_spacing: 0,
+            icon_size: 24,
 
             on_item_select: None,
             on_item_context: None,
-            item_context_tree: None,
+            item_context_builder: Box::new(|_| None),
 
             on_category_select: None,
             on_category_context: None,
-            category_context_trees: std::collections::HashMap::new(),
-        };
-
-        for category in model.categories.iter().cloned() {
-            result.category_context_trees.insert(category, None);
+            category_contexts: Box::new(|_| None),
         }
-
-        result
     }
 
     pub fn on_item_select<F>(mut self, on_select: F) -> Self
@@ -264,30 +270,21 @@ where
         self
     }
 
-    pub fn item_context(mut self, context_menu: Option<Vec<menu::Tree<'a, Message>>>) -> Self
+    pub fn item_context<F>(mut self, context_menu_builder: F) -> Self
     where
+        F: Fn(&Item) -> Option<Vec<menu::Tree<'a, Message>>> + 'static,
         Message: 'static,
     {
-        self.item_context_tree =
-            context_menu.map(|menus| vec![menu::Tree::with_children(widget::row(), menus)]);
-
-        if let Some(ref mut context_menu) = self.item_context_tree {
-            context_menu.iter_mut().for_each(menu::Tree::set_index);
-        }
-
+        self.item_context_builder = Box::new(context_menu_builder);
         self
     }
 
-    pub fn category_context(mut self, category: Category, context_menu: Option<Vec<menu::Tree<'a, Message>>>) -> Self
+    pub fn category_context<F>(mut self, context_menu_builder: F) -> Self
     where
+        F: Fn(Category) -> Option<Vec<menu::Tree<'a, Message>>> + 'static,
         Message: 'static,
     {
-            *self.category_context_trees.get_mut(&category).unwrap() =
-                context_menu.map(|menus| vec![menu::Tree::with_children(widget::row(), menus)]);
-            if let Some(ref mut context_menu) = self.category_context_trees.get_mut(&category).unwrap() {
-                context_menu.iter_mut().for_each(menu::Tree::set_index);
-            }
-
+        self.category_contexts = Box::new(context_menu_builder);
         self
     }
 

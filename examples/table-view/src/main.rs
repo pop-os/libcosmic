@@ -3,6 +3,8 @@
 
 //! Table API example
 
+use std::collections::HashMap;
+
 use chrono::Datelike;
 use cosmic::app::{Core, Settings, Task};
 use cosmic::iced_core::Size;
@@ -100,6 +102,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 pub enum Message {
     ItemSelect(table::Entity),
     CategorySelect(Category, bool),
+    NoOp,
 }
 
 /// The [`App`] stores application-specific state.
@@ -187,6 +190,7 @@ impl cosmic::Application for App {
             Message::CategorySelect(category, descending) => {
                 self.table_model.sort(category, descending)
             }
+            Message::NoOp => {}
         }
         Task::none()
     }
@@ -197,15 +201,96 @@ impl cosmic::Application for App {
             if size.width < 600.0 {
                 widget::compact_table(&self.table_model)
                     .on_item_select(Message::ItemSelect)
-                    .on_category_select(Message::CategorySelect)
+                    .item_context(|item| {
+                        Some(widget::menu::items(
+                            &HashMap::new(),
+                            vec![widget::menu::Item::Button(
+                                format!("Action on {}", item.name),
+                                None,
+                                Action::None,
+                            )],
+                        ))
+                    })
                     .apply(Element::from)
             } else {
                 widget::table(&self.table_model)
                     .on_item_select(Message::ItemSelect)
                     .on_category_select(Message::CategorySelect)
+                    .item_context(|item| {
+                        Some(widget::menu::items(
+                            &HashMap::new(),
+                            vec![widget::menu::Item::Button(
+                                format!("Action on {}", item.name),
+                                None,
+                                Action::None,
+                            )],
+                        ))
+                    })
+                    .category_context(|category| {
+                        Some(match category {
+                            Category::Name => widget::menu::items(
+                                &HashMap::new(),
+                                vec![
+                                    widget::menu::Item::Button(
+                                        "Action on Name Category",
+                                        None,
+                                        Action::None,
+                                    ),
+                                    widget::menu::Item::Button(
+                                        "Other action on Name",
+                                        None,
+                                        Action::None,
+                                    ),
+                                ],
+                            ),
+                            Category::Date => widget::menu::items(
+                                &HashMap::new(),
+                                vec![
+                                    widget::menu::Item::Button(
+                                        "Action on Date Category",
+                                        None,
+                                        Action::None,
+                                    ),
+                                    widget::menu::Item::Button(
+                                        "Other action on Date",
+                                        None,
+                                        Action::None,
+                                    ),
+                                ],
+                            ),
+                            Category::Size => widget::menu::items(
+                                &HashMap::new(),
+                                vec![
+                                    widget::menu::Item::Button(
+                                        "Action on Size Category",
+                                        None,
+                                        Action::None,
+                                    ),
+                                    widget::menu::Item::Button(
+                                        "Other action on Size",
+                                        None,
+                                        Action::None,
+                                    ),
+                                ],
+                            ),
+                        })
+                    })
                     .apply(Element::from)
             }
         })
         .into()
+    }
+}
+
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum Action {
+    None,
+}
+
+impl widget::menu::Action for Action {
+    type Message = Message;
+
+    fn message(&self) -> Self::Message {
+        Message::NoOp
     }
 }

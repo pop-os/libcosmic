@@ -30,23 +30,18 @@ where
     #[setters(into)]
     pub(super) item_padding: Padding,
     pub(super) item_spacing: u16,
+    pub(super) icon_size: u16,
 
     #[setters(into)]
     pub(super) divider_padding: Padding,
 
     #[setters(skip)]
-    pub(super) item_context_tree: Option<Vec<menu::Tree<'a, Message>>>,
-    #[setters(skip)]
-    pub(super) category_context_tree: Option<Vec<menu::Tree<'a, Message>>>,
+    pub(super) item_context_builder: Box<dyn Fn(&Item) -> Option<Vec<menu::Tree<'a, Message>>>>,
 
     #[setters(skip)]
     pub(super) on_item_select: Option<Box<dyn Fn(Entity) -> Message + 'a>>,
     #[setters(skip)]
     pub(super) on_item_context: Option<Box<dyn Fn(Entity) -> Message + 'a>>,
-    #[setters(skip)]
-    pub(super) on_category_select: Option<Box<dyn Fn(Category, bool) -> Message + 'a>>,
-    #[setters(skip)]
-    pub(super) on_category_context: Option<Box<dyn Fn(Category) -> Message + 'a>>,
 }
 
 impl<'a, SelectionMode, Item, Category, Message>
@@ -65,6 +60,8 @@ where
             .map(|entity| {
                 let item = val.model.item(entity).unwrap();
                 let selected = val.model.is_active(entity);
+                let context_menu = (val.item_context_builder)(&item);
+
                 widget::column()
                     .spacing(val.item_spacing)
                     .push(
@@ -140,7 +137,8 @@ where
                                 } else {
                                     ma
                                 }
-                            }),
+                            })
+                            .apply(|ma| widget::context_menu(ma, context_menu)),
                     )
                     .apply(Element::from)
             })
@@ -176,14 +174,11 @@ where
 
             item_padding: Padding::from(space_xxs).into(),
             item_spacing: 0,
+            icon_size: 48,
 
+            item_context_builder: Box::new(|_| None),
             on_item_select: None,
             on_item_context: None,
-            item_context_tree: None,
-
-            on_category_select: None,
-            on_category_context: None,
-            category_context_tree: None,
         }
     }
 
@@ -203,47 +198,12 @@ where
         self
     }
 
-    pub fn item_context(mut self, context_menu: Option<Vec<menu::Tree<'a, Message>>>) -> Self
+    pub fn item_context<F>(mut self, context_menu_builder: F) -> Self
     where
+        F: Fn(&Item) -> Option<Vec<menu::Tree<'a, Message>>> + 'static,
         Message: 'static,
     {
-        self.item_context_tree =
-            context_menu.map(|menus| vec![menu::Tree::with_children(widget::row(), menus)]);
-
-        if let Some(ref mut context_menu) = self.item_context_tree {
-            context_menu.iter_mut().for_each(menu::Tree::set_index);
-        }
-
-        self
-    }
-
-    pub fn category_context(mut self, context_menu: Option<Vec<menu::Tree<'a, Message>>>) -> Self
-    where
-        Message: 'static,
-    {
-        self.category_context_tree =
-            context_menu.map(|menus| vec![menu::Tree::with_children(widget::row(), menus)]);
-
-        if let Some(ref mut context_menu) = self.category_context_tree {
-            context_menu.iter_mut().for_each(menu::Tree::set_index);
-        }
-
-        self
-    }
-
-    pub fn on_category_select<F>(mut self, on_select: F) -> Self
-    where
-        F: Fn(Category, bool) -> Message + 'a,
-    {
-        self.on_category_select = Some(Box::new(on_select));
-        self
-    }
-
-    pub fn on_category_context<F>(mut self, on_select: F) -> Self
-    where
-        F: Fn(Category) -> Message + 'a,
-    {
-        self.on_category_context = Some(Box::new(on_select));
+        self.item_context_builder = Box::new(context_menu_builder);
         self
     }
 }
