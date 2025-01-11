@@ -4,7 +4,9 @@ use crate::widget::Icon;
 
 /// Implementation of std::fmt::Display allows user to customize the header
 /// Ideally, this is implemented on an enum.
-pub trait ItemCategory: Default + std::fmt::Display + Clone + Copy + PartialEq + Eq + std::hash::Hash {
+pub trait ItemCategory:
+    Default + std::fmt::Display + Clone + Copy + PartialEq + Eq + std::hash::Hash
+{
     /// Function that gets the width of the data
     fn width(&self) -> iced::Length;
 }
