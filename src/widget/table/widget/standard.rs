@@ -10,7 +10,7 @@ use crate::{
     widget::{self, container, divider, menu},
     Apply, Element,
 };
-use iced::{Alignment, Border, Length, Padding};
+use iced::{Alignment, Border, Padding};
 
 // THIS IS A PLACEHOLDER UNTIL A MORE SOPHISTICATED WIDGET CAN BE DEVELOPED
 
