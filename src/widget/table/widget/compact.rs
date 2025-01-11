@@ -74,7 +74,8 @@ where
                             .spacing(space_xxxs)
                             .align_y(Alignment::Center)
                             .push_maybe(
-                                item.get_icon(Category::default()).map(|icon| icon.size(48)),
+                                item.get_icon(Category::default())
+                                    .map(|icon| icon.size(val.icon_size)),
                             )
                             .push(
                                 widget::column()
