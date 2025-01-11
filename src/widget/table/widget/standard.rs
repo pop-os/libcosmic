@@ -265,7 +265,7 @@ where
             ..
         } = theme::active().cosmic().spacing;
 
-        let mut result = Self {
+        Self {
             model,
 
             element_padding: Padding::from(0),
@@ -291,8 +291,6 @@ where
             on_category_mb_right: None,
             category_context_builder: Box::new(|_| None),
         }
-
-        result
     }
 
     pub fn on_item_left_click<F>(mut self, on_click: F) -> Self
