@@ -32,7 +32,7 @@ pub struct DndSource<'a, Message, D> {
     container: Element<'a, Message>,
     window: Option<window::Id>,
     drag_content: Option<Box<dyn Fn() -> D>>,
-    drag_icon: Option<Box<dyn Fn() -> (Element<'static, ()>, tree::State)>>,
+    drag_icon: Option<Box<dyn Fn(Vector) -> (Element<'static, ()>, tree::State, Vector)>>,
     on_start: Option<Message>,
     on_cancelled: Option<Message>,
     on_finish: Option<Message>,
@@ -90,7 +90,7 @@ impl<
     #[must_use]
     pub fn drag_icon(
         mut self,
-        f: impl Fn() -> (Element<'static, ()>, tree::State) + 'static,
+        f: impl Fn(Vector) -> (Element<'static, ()>, tree::State, Vector) + 'static,
     ) -> Self {
         self.drag_icon = Some(Box::new(f));
         self
@@ -102,7 +102,7 @@ impl<
         self
     }
 
-    pub fn start_dnd(&self, clipboard: &mut dyn Clipboard, bounds: Rectangle) {
+    pub fn start_dnd(&self, clipboard: &mut dyn Clipboard, bounds: Rectangle, offset: Vector) {
         let Some(content) = self.drag_content.as_ref().map(|f| f()) else {
             return;
         };
@@ -116,13 +116,14 @@ impl<
                 Some(iced_core::clipboard::DndSource::Widget(self.id.clone()))
             },
             self.drag_icon.as_ref().map(|f| {
-                let (icon, state) = f();
-                (
+                let (icon, state, offset) = f(offset);
+                iced_core::clipboard::IconSurface::new(
                     container(icon)
                         .width(Length::Fixed(bounds.width))
                         .height(Length::Fixed(bounds.height))
                         .into(),
                     state,
+                    offset,
                 )
             }),
             Box::new(content),
@@ -262,7 +263,11 @@ impl<
                                     if let Some(on_start) = self.on_start.as_ref() {
                                         shell.publish(on_start.clone())
                                     }
-                                    self.start_dnd(clipboard, state.cached_bounds);
+                                    let offset = Vector::new(
+                                        left_pressed_position.x - layout.bounds().x,
+                                        left_pressed_position.y - layout.bounds().y,
+                                    );
+                                    self.start_dnd(clipboard, state.cached_bounds, offset);
                                     state.is_dragging = true;
                                     state.left_pressed_position = None;
                                 }

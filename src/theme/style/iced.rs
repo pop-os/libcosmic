@@ -8,8 +8,8 @@ use cosmic_theme::composite::over;
 use iced::{
     overlay::menu,
     widget::{
-        button as iced_button, checkbox as iced_checkbox, container as iced_container, pane_grid,
-        pick_list, progress_bar, radio, rule, scrollable,
+        button as iced_button, checkbox as iced_checkbox, combo_box, container as iced_container,
+        pane_grid, pick_list, progress_bar, radio, rule, scrollable,
         slider::{self, Rail},
         svg, toggler,
     },
@@ -1481,3 +1481,5 @@ impl iced_widget::qr_code::Catalog for Theme {
         class(self)
     }
 }
+
+impl combo_box::Catalog for Theme {}
