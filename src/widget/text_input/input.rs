@@ -450,9 +450,9 @@ where
             &self.style,
             self.dnd_icon,
             self.line_height,
-            self.error,
-            self.label,
-            self.helper_text,
+            self.error.as_deref(),
+            self.label.as_deref(),
+            self.helper_text.as_deref(),
             self.helper_size,
             self.helper_line_height,
             &layout.bounds(),
@@ -552,7 +552,7 @@ where
                 .iter()
                 .map(|l| l.text())
                 .collect::<String>()
-                != self.label.unwrap_or_default()
+                != self.label.as_deref().unwrap_or_default()
             || state
                 .helper_text
                 .raw()
@@ -561,7 +561,7 @@ where
                 .iter()
                 .map(|l| l.text())
                 .collect::<String>()
-                != self.helper_text.unwrap_or_default()
+                != self.helper_text.as_deref().unwrap_or_default()
         {
             state.is_secure = self.is_secure;
             state.dirty = true;
@@ -669,8 +669,8 @@ where
                 self.leading_icon.as_ref(),
                 self.trailing_icon.as_ref(),
                 self.line_height,
-                self.label,
-                self.helper_text,
+                self.label.as_deref(),
+                self.helper_text.as_deref(),
                 self.helper_size,
                 self.helper_line_height,
                 font,
@@ -863,9 +863,9 @@ where
             &self.style,
             self.dnd_icon,
             self.line_height,
-            self.error,
-            self.label,
-            self.helper_text,
+            self.error.as_deref(),
+            self.label.as_deref(),
+            self.helper_text.as_deref(),
             self.helper_size,
             self.helper_line_height,
             viewport,
