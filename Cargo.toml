@@ -14,7 +14,7 @@ a11y = ["iced/a11y", "iced_accessibility"]
 # Enable about widget
 about = ["desktop", "dep:license"]
 # Builds support for animated images
-animated-image = ["image", "dep:async-fs", "tokio?/io-util", "tokio?/fs"]
+animated-image = ["dep:async-fs", "image/gif", "tokio?/io-util", "tokio?/fs"]
 # XXX autosize should not be used on winit windows unless dialogs
 autosize = []
 applet = [
@@ -95,7 +95,10 @@ cosmic-config = { path = "cosmic-config" }
 cosmic-settings-daemon = { git = "https://github.com/pop-os/dbus-settings-bindings", optional = true }
 css-color = "0.2.5"
 derive_setters = "0.1.5"
-image = { version = "0.25.1", optional = true }
+image = { version = "0.25.5", default-features = false, features = [
+    "jpeg",
+    "png",
+] }
 lazy_static = "1.4.0"
 libc = { version = "0.2.155", optional = true }
 license = { version = "3.5.1", optional = true }
@@ -127,7 +130,14 @@ path = "cosmic-theme"
 [dependencies.iced]
 path = "./iced"
 default-features = false
-features = ["advanced", "image", "lazy", "svg", "web-colors", "tiny-skia"]
+features = [
+    "advanced",
+    "image-without-codecs",
+    "lazy",
+    "svg",
+    "web-colors",
+    "tiny-skia",
+]
 
 [dependencies.iced_runtime]
 path = "./iced/runtime"
