@@ -42,6 +42,7 @@ pub fn set_day(date_selected: NaiveDate, day: u32) -> NaiveDate {
     }
 }
 
+#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Debug, Hash)]
 pub struct CalendarModel {
     pub selected: NaiveDate,
     visible: NaiveDate,
