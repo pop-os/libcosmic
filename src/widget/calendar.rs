@@ -45,7 +45,7 @@ pub fn set_day(date_selected: NaiveDate, day: u32) -> NaiveDate {
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Debug, Hash)]
 pub struct CalendarModel {
     pub selected: NaiveDate,
-    visible: NaiveDate,
+    pub visible: NaiveDate,
 }
 
 impl CalendarModel {
@@ -58,11 +58,8 @@ impl CalendarModel {
         }
     }
 
-    pub fn new(selected: NaiveDate) -> Self {
-        CalendarModel {
-            selected,
-            visible: selected.clone(),
-        }
+    pub fn new(selected: NaiveDate, visible: NaiveDate) -> Self {
+        CalendarModel { selected, visible }
     }
 
     pub fn show_prev_month(&mut self) {
@@ -93,6 +90,11 @@ impl CalendarModel {
     pub fn set_next_month(&mut self) {
         self.show_next_month();
         self.selected = self.visible.clone();
+    }
+
+    pub fn set_selected_visible(&mut self, selected: NaiveDate) {
+        self.selected = selected;
+        self.visible = self.selected.clone();
     }
 }
 
