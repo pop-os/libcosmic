@@ -11,7 +11,7 @@ pub trait ItemCategory:
     fn width(&self) -> iced::Length;
 }
 
-pub trait ItemInterface<Category: ItemCategory>: Default {
+pub trait ItemInterface<Category: ItemCategory> {
     fn get_icon(&self, category: Category) -> Option<Icon>;
     fn get_text(&self, category: Category) -> Cow<'static, str>;
 

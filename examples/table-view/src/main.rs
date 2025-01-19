@@ -143,7 +143,7 @@ impl cosmic::Application for App {
         let mut table_model =
             table::Model::new(vec![Category::Name, Category::Date, Category::Size]);
 
-        table_model.insert().item(Item {
+        let _ = table_model.insert(Item {
             name: "Foo".into(),
             date: chrono::DateTime::default()
                 .with_day(1)
@@ -154,7 +154,7 @@ impl cosmic::Application for App {
                 .unwrap(),
             size: 2,
         });
-        table_model.insert().item(Item {
+        let _ = table_model.insert(Item {
             name: "Bar".into(),
             date: chrono::DateTime::default()
                 .with_day(2)
@@ -165,7 +165,7 @@ impl cosmic::Application for App {
                 .unwrap(),
             size: 4,
         });
-        table_model.insert().item(Item {
+        let _ = table_model.insert(Item {
             name: "Baz".into(),
             date: chrono::DateTime::default()
                 .with_day(3)
