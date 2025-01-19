@@ -221,8 +221,8 @@ where
     /// let id = model.insert().text("Item A").icon("custom-icon").id();
     /// ```
     #[must_use]
-    pub fn insert(&mut self) -> EntityMut<SelectionMode, Item, Category> {
-        let id = self.items.insert(Item::default());
+    pub fn insert(&mut self, item: Item) -> EntityMut<SelectionMode, Item, Category> {
+        let id = self.items.insert(item);
         self.order.push_back(id);
         EntityMut { model: self, id }
     }
