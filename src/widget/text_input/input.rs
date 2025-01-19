@@ -195,9 +195,9 @@ pub struct TextInput<'a, Message> {
     padding: Padding,
     size: Option<f32>,
     helper_size: f32,
-    label: Option<&'a str>,
-    helper_text: Option<&'a str>,
-    error: Option<&'a str>,
+    label: Option<Cow<'a, str>>,
+    helper_text: Option<Cow<'a, str>>,
+    error: Option<Cow<'a, str>>,
     on_input: Option<Box<dyn Fn(String) -> Message + 'a>>,
     on_paste: Option<Box<dyn Fn(String) -> Message + 'a>>,
     on_submit: Option<Message>,
@@ -275,14 +275,14 @@ where
     }
 
     /// Sets the text of the [`TextInput`].
-    pub fn label(mut self, label: &'a str) -> Self {
-        self.label = Some(label);
+    pub fn label(mut self, label: impl Into<Cow<'a, str>>) -> Self {
+        self.label = Some(label.into());
         self
     }
 
     /// Sets the helper text of the [`TextInput`].
-    pub fn helper_text(mut self, helper_text: &'a str) -> Self {
-        self.helper_text = Some(helper_text);
+    pub fn helper_text(mut self, helper_text: impl Into<Cow<'a, str>>) -> Self {
+        self.helper_text = Some(helper_text.into());
         self
     }
 
@@ -293,8 +293,8 @@ where
     }
 
     /// Sets the error message of the [`TextInput`].
-    pub fn error(mut self, error: &'a str) -> Self {
-        self.error = Some(error);
+    pub fn error(mut self, error: impl Into<Cow<'a, str>>) -> Self {
+        self.error = Some(error.into());
         self
     }
 
@@ -450,9 +450,9 @@ where
             &self.style,
             self.dnd_icon,
             self.line_height,
-            self.error,
-            self.label,
-            self.helper_text,
+            self.error.as_deref(),
+            self.label.as_deref(),
+            self.helper_text.as_deref(),
             self.helper_size,
             self.helper_line_height,
             &layout.bounds(),
@@ -552,7 +552,7 @@ where
                 .iter()
                 .map(|l| l.text())
                 .collect::<String>()
-                != self.label.unwrap_or_default()
+                != self.label.as_deref().unwrap_or_default()
             || state
                 .helper_text
                 .raw()
@@ -561,7 +561,7 @@ where
                 .iter()
                 .map(|l| l.text())
                 .collect::<String>()
-                != self.helper_text.unwrap_or_default()
+                != self.helper_text.as_deref().unwrap_or_default()
         {
             state.is_secure = self.is_secure;
             state.dirty = true;
@@ -669,8 +669,8 @@ where
                 self.leading_icon.as_ref(),
                 self.trailing_icon.as_ref(),
                 self.line_height,
-                self.label,
-                self.helper_text,
+                self.label.as_deref(),
+                self.helper_text.as_deref(),
                 self.helper_size,
                 self.helper_line_height,
                 font,
@@ -863,9 +863,9 @@ where
             &self.style,
             self.dnd_icon,
             self.line_height,
-            self.error,
-            self.label,
-            self.helper_text,
+            self.error.as_deref(),
+            self.label.as_deref(),
+            self.helper_text.as_deref(),
             self.helper_size,
             self.helper_line_height,
             viewport,

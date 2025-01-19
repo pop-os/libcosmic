@@ -3,8 +3,9 @@
 
 //! Calendar widget example
 
-use chrono::{Local, NaiveDate};
+use chrono::NaiveDate;
 use cosmic::app::{Core, Settings, Task};
+use cosmic::widget::calendar::CalendarModel;
 use cosmic::{executor, iced, ApplicationExt, Element};
 
 /// Runs application with these settings
@@ -19,12 +20,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 #[derive(Clone, Debug)]
 pub enum Message {
     DateSelected(NaiveDate),
+    PrevMonth,
+    NextMonth,
 }
 
 /// The [`App`] stores application-specific state.
 pub struct App {
     core: Core,
-    date_selected: NaiveDate,
+    calendar_model: CalendarModel,
 }
 
 /// Implement [`cosmic::Application`] to integrate with COSMIC.
@@ -51,11 +54,9 @@ impl cosmic::Application for App {
 
     /// Creates the application, and optionally emits task on initialize.
     fn init(core: Core, _input: Self::Flags) -> (Self, Task<Self::Message>) {
-        let now = Local::now();
-
         let mut app = App {
             core,
-            date_selected: NaiveDate::from(now.naive_local()),
+            calendar_model: CalendarModel::now(),
         };
 
         let command = app.update_title();
@@ -67,11 +68,17 @@ impl cosmic::Application for App {
     fn update(&mut self, message: Self::Message) -> Task<Self::Message> {
         match message {
             Message::DateSelected(date) => {
-                self.date_selected = date;
+                self.calendar_model.selected = date;
+            }
+            Message::PrevMonth => {
+                self.calendar_model.show_prev_month();
+            }
+            Message::NextMonth => {
+                self.calendar_model.show_next_month();
             }
         }
 
-        println!("Date selected: {:?}", self.date_selected);
+        println!("Date selected: {:?}", &self.calendar_model.selected);
 
         Task::none()
     }
@@ -80,8 +87,12 @@ impl cosmic::Application for App {
     fn view(&self) -> Element<Self::Message> {
         let mut content = cosmic::widget::column().spacing(12);
 
-        let calendar =
-            cosmic::widget::calendar(&self.date_selected, |date| Message::DateSelected(date));
+        let calendar = cosmic::widget::calendar(
+            &self.calendar_model,
+            |date| Message::DateSelected(date),
+            || Message::PrevMonth,
+            || Message::NextMonth,
+        );
 
         content = content.push(calendar);
 

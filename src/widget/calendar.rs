@@ -7,16 +7,20 @@ use std::cmp;
 
 use crate::iced_core::{Alignment, Length, Padding};
 use crate::widget::{button, column, grid, icon, row, text, Grid};
-use chrono::{Datelike, Days, Months, NaiveDate, Weekday};
+use chrono::{Datelike, Days, Local, Months, NaiveDate, Weekday};
 
 /// A widget that displays an interactive calendar.
 pub fn calendar<M>(
-    selected: &NaiveDate,
+    model: &CalendarModel,
     on_select: impl Fn(NaiveDate) -> M + 'static,
+    on_prev: impl Fn() -> M + 'static,
+    on_next: impl Fn() -> M + 'static,
 ) -> Calendar<M> {
     Calendar {
-        selected,
+        model,
         on_select: Box::new(on_select),
+        on_prev: Box::new(on_prev),
+        on_next: Box::new(on_next),
     }
 }
 
@@ -38,21 +42,64 @@ pub fn set_day(date_selected: NaiveDate, day: u32) -> NaiveDate {
     }
 }
 
-pub fn set_prev_month(date_selected: NaiveDate) -> NaiveDate {
-    date_selected
-        .checked_sub_months(Months::new(1))
-        .expect("valid naivedate")
+pub struct CalendarModel {
+    pub selected: NaiveDate,
+    visible: NaiveDate,
 }
 
-pub fn set_next_month(date_selected: NaiveDate) -> NaiveDate {
-    date_selected
-        .checked_add_months(Months::new(1))
-        .expect("valid naivedate")
+impl CalendarModel {
+    pub fn now() -> Self {
+        let now = Local::now();
+        let naive_now = NaiveDate::from(now.naive_local());
+        CalendarModel {
+            selected: naive_now.clone(),
+            visible: naive_now,
+        }
+    }
+
+    pub fn new(selected: NaiveDate) -> Self {
+        CalendarModel {
+            selected,
+            visible: selected.clone(),
+        }
+    }
+
+    pub fn show_prev_month(&mut self) {
+        let prev_month_date = self
+            .visible
+            .clone()
+            .checked_sub_months(Months::new(1))
+            .expect("valid naivedate");
+
+        self.visible = prev_month_date.clone();
+    }
+
+    pub fn show_next_month(&mut self) {
+        let next_month_date = self
+            .visible
+            .clone()
+            .checked_add_months(Months::new(1))
+            .expect("valid naivedate");
+
+        self.visible = next_month_date.clone();
+    }
+
+    pub fn set_prev_month(&mut self) {
+        self.show_prev_month();
+        self.selected = self.visible.clone();
+    }
+
+    pub fn set_next_month(&mut self) {
+        self.show_next_month();
+        self.selected = self.visible.clone();
+    }
 }
 
 pub struct Calendar<'a, M> {
-    selected: &'a NaiveDate,
+    model: &'a CalendarModel,
     on_select: Box<dyn Fn(NaiveDate) -> M>,
+    on_prev: Box<dyn Fn() -> M>,
+    on_next: Box<dyn Fn() -> M>,
 }
 
 impl<'a, Message> From<Calendar<'a, Message>> for crate::Element<'a, Message>
@@ -60,19 +107,18 @@ where
     Message: Clone + 'static,
 {
     fn from(this: Calendar<'a, Message>) -> Self {
-        let date = text(this.selected.format("%B %-d, %Y").to_string()).size(18);
-        let day_of_week = text::body(this.selected.format("%A").to_string());
+        let date = text(this.model.visible.format("%B %Y").to_string()).size(18);
 
         let month_controls = row::with_capacity(2)
             .push(
                 button::icon(icon::from_name("go-previous-symbolic"))
                     .padding([0, 12])
-                    .on_press((this.on_select)(set_prev_month(this.selected.clone()))),
+                    .on_press((this.on_prev)()),
             )
             .push(
                 button::icon(icon::from_name("go-next-symbolic"))
                     .padding([0, 12])
-                    .on_press((this.on_select)(set_next_month(this.selected.clone()))),
+                    .on_press((this.on_next)()),
             );
 
         // Calender
@@ -93,8 +139,8 @@ where
         calendar_grid = calendar_grid.insert_row();
 
         let monday = get_calender_first(
-            this.selected.year(),
-            this.selected.month(),
+            this.model.visible.year(),
+            this.model.visible.month(),
             first_day_of_week,
         );
         let mut day_iter = monday.iter_days();
@@ -104,17 +150,24 @@ where
             }
 
             let date = day_iter.next().unwrap();
-            let is_month =
-                date.month() == this.selected.month() && date.year_ce() == this.selected.year_ce();
-            let is_day = date.day() == this.selected.day() && is_month;
+            let is_currently_viewed_month = date.month() == this.model.visible.month()
+                && date.year_ce() == this.model.visible.year_ce();
+            let is_currently_selected_month = date.month() == this.model.selected.month()
+                && date.year_ce() == this.model.selected.year_ce();
+            let is_currently_selected_day =
+                date.day() == this.model.selected.day() && is_currently_selected_month;
 
-            calendar_grid =
-                calendar_grid.push(date_button(date, is_month, is_day, &this.on_select));
+            calendar_grid = calendar_grid.push(date_button(
+                date,
+                is_currently_viewed_month,
+                is_currently_selected_day,
+                &this.on_select,
+            ));
         }
 
         let content_list = column::with_children(vec![
             row::with_children(vec![
-                column::with_children(vec![date.into(), day_of_week.into()]).into(),
+                date.into(),
                 crate::widget::Space::with_width(Length::Fill).into(),
                 month_controls.into(),
             ])
@@ -132,11 +185,11 @@ where
 
 fn date_button<Message>(
     date: NaiveDate,
-    is_month: bool,
-    is_day: bool,
+    is_currently_viewed_month: bool,
+    is_currently_selected_day: bool,
     on_select: &dyn Fn(NaiveDate) -> Message,
 ) -> crate::widget::Button<'static, Message> {
-    let style = if is_day {
+    let style = if is_currently_selected_day {
         button::ButtonClass::Suggested
     } else {
         button::ButtonClass::Text
@@ -147,7 +200,7 @@ fn date_button<Message>(
         .height(Length::Fixed(36.0))
         .width(Length::Fixed(36.0));
 
-    if is_month {
+    if is_currently_viewed_month {
         button.on_press((on_select)(set_day(date, date.day())))
     } else {
         button
