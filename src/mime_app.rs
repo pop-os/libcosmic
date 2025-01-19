@@ -7,7 +7,6 @@ use crate::widget;
 use icu_collator::Collator;
 pub use mime_guess::Mime;
 use once_cell::sync::Lazy;
-use palette::cast::ArraysInto;
 use std::{
     cmp::Ordering, collections::HashMap, env, path::PathBuf, process, sync::Mutex, time::Instant,
 };
