@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["FromHexError"],"mod":["channels"],"struct":["Iter","Rgb"],"trait":["Primaries","RgbSpace","RgbStandard"],"type":["GammaSrgb","GammaSrgba","LinSrgb","LinSrgba","PackedAbgr","PackedArgb","PackedBgra","PackedRgba","Rgba","Srgb","Srgba"]};
