@@ -16,6 +16,7 @@ use crate::Element;
 use derive_setters::Setters;
 use iced::widget::{Image, Svg};
 use iced::{ContentFit, Length, Rectangle};
+use iced_core::Rotation;
 
 /// Create an [`Icon`] from a pre-existing [`Handle`]
 pub fn icon(handle: Handle) -> Icon {
@@ -25,6 +26,7 @@ pub fn icon(handle: Handle) -> Icon {
         height: None,
         size: 16,
         class: crate::theme::Svg::default(),
+        rotation: None,
         width: None,
     }
 }
@@ -47,6 +49,8 @@ pub struct Icon {
     width: Option<Length>,
     #[setters(strip_option)]
     height: Option<Length>,
+    #[setters(strip_option)]
+    rotation: Option<Rotation>,
 }
 
 impl Icon {
@@ -80,6 +84,7 @@ impl Icon {
                     self.height
                         .unwrap_or_else(|| Length::Fixed(f32::from(self.size))),
                 )
+                .rotation(self.rotation.unwrap_or(Rotation::default()))
                 .content_fit(self.content_fit)
                 .into()
         };
@@ -95,6 +100,7 @@ impl Icon {
                     self.height
                         .unwrap_or_else(|| Length::Fixed(f32::from(self.size))),
                 )
+                .rotation(self.rotation.unwrap_or(Rotation::default()))
                 .content_fit(self.content_fit)
                 .symbolic(self.handle.symbolic)
                 .into()
