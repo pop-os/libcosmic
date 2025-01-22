@@ -124,8 +124,7 @@ where
         let message = match message {
             super::Message::App(message) => {
                 match super::message::SurfaceMessageHandler::to_surface_message(message) {
-                    super::message::MessageWrapper::Surface(surface_message) =>
-                    {
+                    super::message::MessageWrapper::Surface(surface_message) => {
                         #[cfg(feature = "wayland")]
                         match surface_message {
                             super::message::SurfaceMessage::Subsurface(settings, view) => {
@@ -160,7 +159,6 @@ where
                                     ))
                                 }
                             }
-                            #[cfg(feature = "wayland")]
                             super::message::SurfaceMessage::Popup(settings, view) => {
                                 let Some(settings) = std::sync::Arc::try_unwrap(settings)
                                 .ok()
@@ -200,7 +198,18 @@ where
                             super::message::SurfaceMessage::DestroySubsurface(id) => {
                                 iced_winit::commands::subsurface::destroy_subsurface(id)
                             }
+                            super::message::SurfaceMessage::ResponsiveMenuBar {
+                                menu_bar,
+                                limits,
+                                size,
+                            } => {
+                                let core = self.app.core_mut();
+                                core.menu_bars.insert(menu_bar, (limits, size));
+                                iced::Task::none()
+                            }
                         }
+                        #[cfg(not(feature = "wayland"))]
+                        iced::Task::none()
                     }
                     super::message::MessageWrapper::Message(message) => self.app.update(message),
                 }

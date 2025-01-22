@@ -6,24 +6,30 @@
 use crate::widget::menu::{
     self, CloseCondition, ItemHeight, ItemWidth, MenuBarState, PathHighlight,
 };
+use crate::widget::ArcElementWrapper;
 use derive_setters::Setters;
 use iced::touch::Finger;
 use iced::{Event, Vector};
 use iced_core::widget::{tree, Tree, Widget};
 use iced_core::{event, mouse, touch, Length, Point, Size};
 use std::collections::HashSet;
+use std::sync::{Arc, Mutex};
+
+use super::dropdown;
 
 /// A context menu is a menu in a graphical user interface that appears upon user interaction, such as a right-click mouse operation.
-pub fn context_menu<'a, Message: 'a>(
-    content: impl Into<crate::Element<'a, Message>> + 'a,
+pub fn context_menu<Message: Clone + 'static>(
+    content: impl Into<crate::Element<'static, Message>> + 'static,
     // on_context: Message,
-    context_menu: Option<Vec<menu::Tree<'a, Message>>>,
-) -> ContextMenu<'a, Message> {
+    context_menu: Option<Vec<menu::Tree<Message>>>,
+) -> ContextMenu<'static, Message> {
     let mut this = ContextMenu {
         content: content.into(),
         context_menu: context_menu.map(|menus| {
             vec![menu::Tree::with_children(
-                crate::widget::row::<'static, Message>(),
+                ArcElementWrapper(Arc::new(Mutex::new(crate::Element::from(
+                    crate::widget::row::<'static, Message>(),
+                )))),
                 menus,
             )]
         }),
@@ -43,10 +49,10 @@ pub struct ContextMenu<'a, Message> {
     #[setters(skip)]
     content: crate::Element<'a, Message>,
     #[setters(skip)]
-    context_menu: Option<Vec<menu::Tree<'a, Message>>>,
+    context_menu: Option<Vec<menu::Tree<Message>>>,
 }
 
-impl<'a, Message: Clone> Widget<Message, crate::Theme, crate::Renderer>
+impl<'a, Message: Clone + 'static> Widget<Message, crate::Theme, crate::Renderer>
     for ContextMenu<'a, Message>
 {
     fn tag(&self) -> tree::Tag {
@@ -58,6 +64,7 @@ impl<'a, Message: Clone> Widget<Message, crate::Theme, crate::Renderer>
         tree::State::new(LocalState {
             context_cursor: Point::default(),
             fingers_pressed: Default::default(),
+            menu_state: Default::default(),
         })
     }
 
@@ -75,9 +82,12 @@ impl<'a, Message: Clone> Widget<Message, crate::Theme, crate::Renderer>
                 .map(|root| {
                     let mut tree = Tree::empty();
                     let flat = root
-                        .flattern()
+                        .flatten()
                         .iter()
-                        .map(|mt| Tree::new(mt.item.as_widget()))
+                        .map(|mt| {
+                            let guard = mt.item.0.lock().unwrap();
+                            Tree::new(guard.as_widget())
+                        })
                         .collect();
                     tree.children = flat;
                     tree
@@ -214,7 +224,7 @@ impl<'a, Message: Clone> Widget<Message, crate::Theme, crate::Renderer>
         translation: Vector,
     ) -> Option<iced_core::overlay::Element<'b, Message, crate::Theme, crate::Renderer>> {
         let state = tree.state.downcast_ref::<LocalState>();
-
+        let menu_state = state.menu_state.clone();
         let Some(context_menu) = self.context_menu.as_mut() else {
             return None;
         };
@@ -229,8 +239,8 @@ impl<'a, Message: Clone> Widget<Message, crate::Theme, crate::Renderer>
 
         Some(
             crate::widget::menu::Menu {
-                tree: &mut tree.children[1],
-                menu_roots: context_menu,
+                tree: menu_state,
+                menu_roots: std::borrow::Cow::Borrowed(context_menu),
                 bounds_expand: 16,
                 menu_overlays_parent: true,
                 close_condition: CloseCondition {
@@ -245,7 +255,7 @@ impl<'a, Message: Clone> Widget<Message, crate::Theme, crate::Renderer>
                 cross_offset: 0,
                 root_bounds_list: vec![bounds],
                 path_highlight: Some(PathHighlight::MenuActive),
-                style: &crate::theme::menu_bar::MenuBarStyle::Default,
+                style: std::borrow::Cow::Owned(crate::theme::menu_bar::MenuBarStyle::Default),
                 position: Point::new(translation.x, translation.y),
             }
             .overlay(),
@@ -265,8 +275,10 @@ impl<'a, Message: Clone> Widget<Message, crate::Theme, crate::Renderer>
     }
 }
 
-impl<'a, Message: Clone + 'a> From<ContextMenu<'a, Message>> for crate::Element<'a, Message> {
-    fn from(widget: ContextMenu<'a, Message>) -> Self {
+impl<Message: Clone + 'static> From<ContextMenu<'static, Message>>
+    for crate::Element<'static, Message>
+{
+    fn from(widget: ContextMenu<'static, Message>) -> Self {
         Self::new(widget)
     }
 }
@@ -285,4 +297,5 @@ fn touch_lifted(event: &Event) -> bool {
 pub struct LocalState {
     context_cursor: Point,
     fingers_pressed: HashSet<Finger>,
+    menu_state: dropdown::menu::State,
 }

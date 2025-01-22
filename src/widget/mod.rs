@@ -97,6 +97,9 @@ pub mod aspect_ratio;
 #[cfg(feature = "autosize")]
 pub mod autosize;
 
+#[cfg(feature = "winit")]
+pub(crate) mod responsive_container;
+
 pub mod button;
 #[doc(inline)]
 pub use button::{Button, IconButton, LinkButton, TextButton};
@@ -365,6 +368,10 @@ pub mod tooltip {
 pub mod warning;
 #[doc(inline)]
 pub use warning::*;
+
+pub mod wrapper;
+#[doc(inline)]
+pub use wrapper::*;
 
 #[cfg(feature = "markdown")]
 #[doc(inline)]

@@ -13,10 +13,14 @@ mod widget;
 pub use widget::*;
 
 /// Displays a list of options in a popover menu on select.
-pub fn dropdown<'a, S: AsRef<str>, Message: 'a>(
+pub fn dropdown<
+    'a,
+    S: AsRef<str> + std::clone::Clone + Send + Sync + 'static,
+    Message: 'static + Clone,
+>(
     selections: &'a [S],
     selected: Option<usize>,
-    on_selected: impl Fn(usize) -> Message + 'a,
+    on_selected: impl Fn(usize) -> Message + Send + Sync + 'static,
 ) -> Dropdown<'a, S, Message> {
     Dropdown::new(selections, selected, on_selected)
 }
