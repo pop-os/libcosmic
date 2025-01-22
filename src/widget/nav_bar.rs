@@ -67,7 +67,7 @@ impl<'a, Message: Clone + 'static> NavBar<'a, Message> {
         self
     }
 
-    pub fn context_menu(mut self, context_menu: Option<Vec<menu::Tree<'a, Message>>>) -> Self {
+    pub fn context_menu(mut self, context_menu: Option<Vec<menu::Tree<Message>>>) -> Self {
         self.segmented_button = self.segmented_button.context_menu(context_menu);
         self
     }

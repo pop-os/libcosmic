@@ -3,11 +3,25 @@
 
 //! Application API example
 
+use std::collections::HashMap;
+use std::sync::LazyLock;
+
+use cosmic::app::message::{SurfaceMessage, SurfaceMessageHandler};
 use cosmic::app::{Core, Settings, Task};
+use cosmic::iced::alignment::{Horizontal, Vertical};
 use cosmic::iced::widget::column;
+use cosmic::iced::Length;
 use cosmic::iced_core::Size;
-use cosmic::widget::nav_bar;
+use cosmic::widget::icon::{from_name, Handle};
+use cosmic::widget::menu::KeyBind;
+use cosmic::widget::{
+    container,
+    menu::{self, action::MenuAction},
+    nav_bar, responsive,
+};
 use cosmic::{executor, iced, ApplicationExt, Element};
+
+static MENU_ID: LazyLock<iced::id::Id> = LazyLock::new(|| iced::id::Id::new("menu_id"));
 
 #[derive(Clone, Copy)]
 pub enum Page {
@@ -28,11 +42,24 @@ impl Page {
     }
 }
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum Action {
+    Hi,
+}
+
+impl MenuAction for Action {
+    type Message = Message;
+
+    fn message(&self) -> Message {
+        Message::Hi
+    }
+}
+
 /// Runs application with these settings
 #[rustfmt::skip]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    tracing_subscriber::fmt::init();
-    let _ = tracing_log::LogTracer::init();
+    // tracing_subscriber::fmt::init();
+    // let _ = tracing_log::LogTracer::init();
 
     let input = vec![
         (Page::Page1, "🖖 Hello from libcosmic.".into()),
@@ -56,6 +83,23 @@ pub enum Message {
     Input2(String),
     Ignore,
     ToggleHide,
+    Surface(SurfaceMessage),
+    Hi,
+}
+
+impl SurfaceMessageHandler for Message {
+    fn to_surface_message(self) -> cosmic::app::message::MessageWrapper<Self> {
+        match self {
+            Message::Surface(msg) => cosmic::app::message::MessageWrapper::Surface(msg),
+            msg => cosmic::app::message::MessageWrapper::Message(msg),
+        }
+    }
+}
+
+impl From<SurfaceMessage> for Message {
+    fn from(value: SurfaceMessage) -> Self {
+        Message::Surface(value)
+    }
 }
 
 /// The [`App`] stores application-specific state.
@@ -65,6 +109,7 @@ pub struct App {
     input_1: String,
     input_2: String,
     hidden: bool,
+    keybinds: HashMap<KeyBind, Action>,
 }
 
 /// Implement [`cosmic::Application`] to integrate with COSMIC.
@@ -105,6 +150,7 @@ impl cosmic::Application for App {
             input_1: String::new(),
             input_2: String::new(),
             hidden: true,
+            keybinds: HashMap::new(),
         };
 
         let command = app.update_title();
@@ -135,6 +181,12 @@ impl cosmic::Application for App {
             Message::Ignore => {}
             Message::ToggleHide => {
                 self.hidden = !self.hidden;
+            }
+            Message::Surface(_) => {
+                unimplemented!()
+            }
+            Message::Hi => {
+                dbg!("hi");
             }
         }
         Task::none()
@@ -177,6 +229,49 @@ impl cosmic::Application for App {
         .align_y(iced::Alignment::Center);
 
         Element::from(centered)
+    }
+
+    fn header_start(&self) -> Vec<Element<Self::Message>> {
+        vec![self.core.responsive_menu_bar(
+            MENU_ID.clone(),
+            vec![
+                menu::Tree::with_children(
+                    menu::root("hiiiiiiiiiiiiiiiiiii 1"),
+                    menu::items(
+                        &self.keybinds,
+                        vec![menu::Item::Button("hi", None, Action::Hi)],
+                    ),
+                ),
+                menu::Tree::with_children(
+                    menu::root("hiiiiiiiiiiiiiiiiii 2"),
+                    menu::items(
+                        &self.keybinds,
+                        vec![menu::Item::Button("hi 2", None, Action::Hi)],
+                    ),
+                ),
+                menu::Tree::with_children(
+                    menu::root("hiiiiiiiiiiiiiiiiiiiii 3"),
+                    menu::items(
+                        &self.keybinds,
+                        vec![menu::Item::Button("hi 3", None, Action::Hi)],
+                    ),
+                ),
+                menu::Tree::with_children(
+                    menu::root("hi 3"),
+                    menu::items(
+                        &self.keybinds,
+                        vec![menu::Item::Button("hi 3", None, Action::Hi)],
+                    ),
+                ),
+                menu::Tree::with_children(
+                    menu::root("hi 4"),
+                    menu::items(
+                        &self.keybinds,
+                        vec![menu::Item::Button("hi 3", None, Action::Hi)],
+                    ),
+                ),
+            ],
+        )]
     }
 }
 

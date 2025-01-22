@@ -55,6 +55,7 @@
 //!
 
 pub mod action;
+
 pub use action::MenuAction as Action;
 
 mod flex;

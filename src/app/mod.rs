@@ -15,6 +15,8 @@ pub(crate) mod multi_window;
 pub mod settings;
 
 pub mod message {
+    use iced::{Limits, Size};
+
     pub enum MessageWrapper<M> {
         Surface(SurfaceMessage),
         Message(M),
@@ -31,6 +33,7 @@ pub mod message {
         }
     }
 
+    /// Ignore this message in your application. It will be intercepted.
     #[derive(Clone)]
     pub enum SurfaceMessage {
         /// Create a subsurface with a view function
@@ -47,20 +50,39 @@ pub mod message {
         ),
         /// Destroy a subsurface with a view function
         DestroyPopup(iced::window::Id),
+        /// Responsive menu bar update
+        ResponsiveMenuBar {
+            /// Id of the menu bar
+            menu_bar: crate::widget::Id,
+            /// Limits of the menu bar
+            limits: Limits,
+            /// Requested Full Size for expanded menu bar
+            size: Size,
+        },
     }
 
     #[cfg(feature = "wayland")]
     impl std::fmt::Debug for SurfaceMessage {
         fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
             match self {
-                SurfaceMessage::Subsurface(any, any1) => f.debug_tuple("Subsurface").finish(),
-                SurfaceMessage::DestroySubsurface(id) => {
-                    f.debug_tuple("DestroySubsurface").field(id).finish()
+                Self::Subsurface(arg0, arg1) => {
+                    f.debug_tuple("Subsurface").field(arg0).field(arg1).finish()
                 }
-                SurfaceMessage::Popup(any, any1) => f.debug_tuple("Popup").finish(),
-                SurfaceMessage::DestroyPopup(id) => {
-                    f.debug_tuple("DestroyPopup").field(id).finish()
+                Self::DestroySubsurface(arg0) => {
+                    f.debug_tuple("DestroySubsurface").field(arg0).finish()
                 }
+                Self::Popup(arg0, arg1) => f.debug_tuple("Popup").field(arg0).field(arg1).finish(),
+                Self::DestroyPopup(arg0) => f.debug_tuple("DestroyPopup").field(arg0).finish(),
+                Self::ResponsiveMenuBar {
+                    menu_bar,
+                    limits,
+                    size,
+                } => f
+                    .debug_struct("ResponsiveMenuBar")
+                    .field("menu_bar", menu_bar)
+                    .field("limits", limits)
+                    .field("size", size)
+                    .finish(),
             }
         }
     }
@@ -148,6 +170,20 @@ pub mod message {
             }),
         ))
     }
+
+    // TODO could this somehow be used by widgets? It is the wrong message type though.
+    // #[cfg(feature = "wayland")]
+    // pub fn get_simple_popup<App: super::Application>(
+    //     settings: iced_runtime::platform_specific::wayland::popup::SctkPopupSettings,
+    //     view: Option<
+    //         impl Fn() -> crate::Element<'static, super::Message<App::Message>> + Send + Sync + 'static,
+    //     >,
+    // ) -> App::Message
+    // where
+    //     App::Message: SurfaceMessageHandler + From<SurfaceMessage>,
+    // {
+    //     todo!()
+    // }
 
     #[cfg(feature = "wayland")]
     pub fn get_subsurface<App: super::Application>(
@@ -477,7 +513,7 @@ impl DbusActivation {
 pub fn run_single_instance<App: Application>(settings: Settings, flags: App::Flags) -> iced::Result
 where
     App::Flags: CosmicFlags,
-    App::Message: Clone + std::fmt::Debug + Send + 'static,
+    App::Message: Clone + std::fmt::Debug + Send + SurfaceMessageHandler + 'static,
 {
     let activation_token = std::env::var("XDG_ACTIVATION_TOKEN").ok();
 
