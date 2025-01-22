@@ -3,17 +3,24 @@
 
 use std::{cell::OnceCell, collections::HashMap};
 
-use crate::widget::nav_bar;
+use crate::{
+    theme::menu_bar,
+    widget::{
+        button, icon,
+        menu::{self, Tree},
+        nav_bar, responsive_container,
+    },
+};
 use cosmic_config::CosmicConfigEntry;
 use cosmic_theme::ThemeMode;
-use iced::window;
-use iced_core::window::Id;
+use iced::{window, Limits, Size};
+use iced_core::{window::Id, Element};
 use palette::Srgba;
 use slotmap::Key;
 
 use crate::Theme;
 
-use super::{Element, Task};
+use super::{message::SurfaceMessage, Renderer, Task};
 
 /// Status of the nav bar and its panels.
 #[derive(Clone)]
@@ -97,6 +104,8 @@ pub struct Core {
     pub(crate) main_window: Option<window::Id>,
 
     pub(crate) exit_on_main_window_closed: bool,
+
+    pub(crate) menu_bars: HashMap<crate::widget::Id, (Limits, Size)>,
 }
 
 impl Default for Core {
@@ -153,6 +162,7 @@ impl Default for Core {
             portal_is_high_contrast: None,
             main_window: None,
             exit_on_main_window_closed: true,
+            menu_bars: HashMap::new(),
         }
     }
 }
@@ -375,5 +385,36 @@ impl Core {
     pub fn set_main_window_id(&mut self, mut id: Option<window::Id>) -> Option<window::Id> {
         std::mem::swap(&mut self.main_window, &mut id);
         id
+    }
+
+    pub fn responsive_menu_bar<'a, Message: Clone + From<SurfaceMessage> + 'static>(
+        &self,
+        id: crate::widget::Id,
+        roots: Vec<Tree<'a, Message, Renderer>>,
+    ) -> crate::Element<'a, Message> {
+        let menu_bar_size = self.menu_bars.get(&id);
+        if !menu_bar_size.is_some_and(|(limits, size)| {
+            let max_size = limits.max();
+
+            max_size.width < size.width
+        }) {
+            crate::Element::from(responsive_container::responsive_container(
+                menu::bar(roots),
+                id,
+            ))
+        } else {
+            crate::Element::from(
+                responsive_container::responsive_container(
+                    menu::bar(vec![menu::Tree::<'a, _, _>::with_children(
+                        button::icon(icon::from_name("open-menu-symbolic"))
+                            .padding([4, 12])
+                            .class(crate::theme::Button::MenuRoot),
+                        roots,
+                    )]),
+                    id,
+                )
+                .size(menu_bar_size.unwrap().1),
+            )
+        }
     }
 }

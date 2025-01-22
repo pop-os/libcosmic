@@ -1,6 +1,8 @@
 // From iced_aw, license MIT
 
 //! Change the appearance of menu bars and their menus.
+use std::sync::Arc;
+
 use crate::Theme;
 use iced_widget::core::Color;
 
@@ -33,19 +35,19 @@ pub trait StyleSheet {
 }
 
 /// The style of a menu bar and its menus
-#[derive(Default)]
+#[derive(Default, Clone)]
 #[allow(missing_debug_implementations)]
 pub enum MenuBarStyle {
     /// The default style.
     #[default]
     Default,
     /// A [`Theme`] that uses a `Custom` palette.
-    Custom(Box<dyn StyleSheet<Style = Theme>>),
+    Custom(Arc<dyn StyleSheet<Style = Theme>>),
 }
 
 impl From<fn(&Theme) -> Appearance> for MenuBarStyle {
     fn from(f: fn(&Theme) -> Appearance) -> Self {
-        Self::Custom(Box::new(f))
+        Self::Custom(Arc::new(f))
     }
 }
 

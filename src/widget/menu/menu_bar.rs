@@ -84,7 +84,7 @@ where
         .map(|root| {
             let mut tree = Tree::empty();
             let flat = root
-                .flattern()
+                .flatten()
                 .iter()
                 .map(|mt| Tree::new(mt.item.as_widget()))
                 .collect();
@@ -110,7 +110,7 @@ pub(crate) fn menu_roots_diff<'a, Message, Renderer>(
         .zip(menu_roots.iter())
         .for_each(|(t, root)| {
             let mut flat = root
-                .flattern()
+                .flatten()
                 .iter()
                 .map(|mt| {
                     let widget = mt.item.as_widget();
@@ -129,7 +129,7 @@ pub(crate) fn menu_roots_diff<'a, Message, Renderer>(
         let extended = menu_roots[tree.children.len()..].iter().map(|root| {
             let mut tree = Tree::empty();
             let flat = root
-                .flattern()
+                .flatten()
                 .iter()
                 .map(|mt| Tree::new(mt.item.as_widget()))
                 .collect();
@@ -366,6 +366,8 @@ where
                 if state.menu_states.is_empty() && view_cursor.is_over(layout.bounds()) {
                     state.view_cursor = view_cursor;
                     state.open = true;
+                    // #[cfg(feature = "wayland")]
+                    // TODO emit Message to open menu
                 }
             }
             _ => (),
@@ -437,6 +439,9 @@ where
         _renderer: &Renderer,
         translation: Vector,
     ) -> Option<overlay::Element<'b, Message, crate::Theme, Renderer>> {
+        // #[cfg(feature = "wayland")]
+        // return None;
+
         let state = tree.state.downcast_ref::<MenuBarState>();
         if !state.open {
             return None;

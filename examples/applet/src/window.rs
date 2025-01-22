@@ -1,32 +1,65 @@
-use std::sync::{Arc, Mutex};
-
 use cosmic::app::message::{SurfaceMessage, SurfaceMessageHandler};
 use cosmic::app::Core;
-use cosmic::iced::application;
-use cosmic::iced::platform_specific::shell::commands::popup::{destroy_popup, get_popup};
 use cosmic::iced::window::Id;
 use cosmic::iced::{Length, Limits, Task};
 use cosmic::iced_runtime::core::window;
+use cosmic::iced_runtime::platform_specific::wayland::popup::SctkPopupSettings;
 use cosmic::iced_runtime::platform_specific::wayland::subsurface;
-use cosmic::theme::iced;
-use cosmic::widget::{layer_container, list_column, settings, toggler};
-use cosmic::{applet, iced_core, Element, Theme};
+use cosmic::widget::dropdown::DropdownView;
+use cosmic::widget::{autosize, dropdown, layer_container, list_column, settings, toggler};
+use cosmic::{iced_core, Element};
+use once_cell::sync::Lazy;
 
 const ID: &str = "com.system76.CosmicAppletExample";
 
-#[derive(Default)]
+static SUBSURFACE_ID: Lazy<cosmic::widget::Id> =
+    Lazy::new(|| cosmic::widget::Id::new("subsurface"));
+
 pub struct Window {
     core: Core,
     popup: Option<Id>,
     example_row: bool,
-    subsurface_id: Option<Id>,
+    selected: Option<usize>,
+    subsurface_id: Id,
+    dropdown_id: Id,
 }
 
-#[derive(Clone, Debug)]
+impl Default for Window {
+    fn default() -> Self {
+        Self {
+            core: Core::default(),
+            popup: None,
+            example_row: false,
+            selected: None,
+            subsurface_id: Id::unique(),
+            dropdown_id: Id::unique(),
+        }
+    }
+}
+
+#[derive(Clone)]
 pub enum Message {
     PopupClosed(Id),
+    PopupCloseRequested(Id),
     ToggleExampleRow(bool),
+    Selected(usize),
     Surface(SurfaceMessage),
+    OpenDropdown(SctkPopupSettings, DropdownView<Message>),
+}
+
+impl std::fmt::Debug for Message {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::PopupClosed(arg0) => f.debug_tuple("PopupClosed").field(arg0).finish(),
+            Self::PopupCloseRequested(arg0) => {
+                f.debug_tuple("PopupCloseRequested").field(arg0).finish()
+            }
+            Self::ToggleExampleRow(arg0) => f.debug_tuple("ToggleExampleRow").field(arg0).finish(),
+            Self::Selected(arg0) => f.debug_tuple("Selected").field(arg0).finish(),
+            Self::Surface(arg0) => f.debug_tuple("Surface").field(arg0).finish(),
+            Self::OpenDropdown(arg0, _) => f.debug_tuple("OpenDropdown").field(arg0).finish(),
+        }
+    }
 }
 
 impl SurfaceMessageHandler for Message {
@@ -82,6 +115,29 @@ impl cosmic::Application for Window {
             }
 
             Message::Surface(surface_message) => {}
+            Message::Selected(i) => {
+                self.selected = Some(i);
+                return cosmic::task::message(cosmic::app::message::destroy_popup::<Window>(
+                    self.dropdown_id,
+                ));
+            }
+            Message::OpenDropdown(sctk_popup_settings, view) => {
+                self.dropdown_id = sctk_popup_settings.id;
+                return cosmic::task::message(cosmic::app::message::get_popup::<
+                Window,
+            >(
+                move |_: &mut Window| sctk_popup_settings.clone(),
+                Some(
+                    move |_: &Window| -> cosmic::Element<'static, cosmic::app::Message<Message>> {
+                        view().map(cosmic::app::Message::App)
+                    },
+                ),
+            ));
+            }
+            Message::PopupCloseRequested(id) => {
+                dbg!(id, self.dropdown_id);
+                return cosmic::task::message(cosmic::app::message::destroy_popup::<Window>(id));
+            }
         }
         Task::none()
     }
@@ -129,8 +185,8 @@ impl cosmic::Application for Window {
                                             )
                                             .height(Length::Fixed(50.)),
                                         ),
-                                    );
-
+                                    ).add(dropdown(&["1", "asdf", "hello", "test"], state.selected, Message::Selected).with_popup(state.popup.unwrap_or(Id::NONE), Message::OpenDropdown).on_close_popup(Message::PopupCloseRequested)
+                                );
                                     Element::from(
                                         state.core.applet.popup_container(content_list),
                                     )
@@ -141,25 +197,29 @@ impl cosmic::Application for Window {
                     )
                 },
             ),
-            |layout| {
-                cosmic::app::message::get_subsurface::<Window>(
+            |_| {
+                cosmic::app::message::get_subsurface(
                     |app: &mut Window| {
-                        let id = window::Id::unique();
-                        app.subsurface_id = Some(id);
-
                         subsurface::SctkSubsurfaceSettings {
                             parent: window::Id::RESERVED,
-                            id,
+                            id: app.subsurface_id,
                             loc: iced_core::Point { x: -100., y: 0. },
-                            size: Some(iced_core::Size::new(100., 18.)),
+                            size: Some((10., 10.).into()),
                             z: 1,
                         }
                     },
-                    Some(|app: &Window| layer_container(cosmic::widget::text("hello")).into()),
+                    Some(|_: &Window| {
+                        autosize::autosize(
+                            layer_container(cosmic::widget::text("hello"))
+                                .layer(cosmic::cosmic_theme::Layer::Background),
+                            SUBSURFACE_ID.clone(),
+                        )
+                        .into()
+                    }),
                 )
             },
             cosmic::app::message::destroy_subsurface::<Window>(
-                self.subsurface_id.unwrap_or(window::Id::NONE),
+                self.subsurface_id
             ),
         )
         .into()

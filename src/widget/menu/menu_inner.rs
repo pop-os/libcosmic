@@ -1,8 +1,13 @@
 // From iced_aw, license MIT
 
 //! Menu tree overlay
+use std::{
+    borrow::Cow,
+    sync::{Arc, Mutex},
+};
+
 use super::{menu_bar::MenuBarState, menu_tree::MenuTree};
-use crate::style::menu_bar::StyleSheet;
+use crate::{style::menu_bar::StyleSheet, widget::dropdown};
 
 use iced_core::{Border, Shadow};
 use iced_widget::core::{
@@ -240,7 +245,7 @@ struct MenuBounds {
 impl MenuBounds {
     #[allow(clippy::too_many_arguments)]
     fn new<Message, Renderer>(
-        menu_tree: &MenuTree<'_, Message, Renderer>,
+        menu_tree: &MenuTree<Message>,
         renderer: &Renderer,
         item_width: ItemWidth,
         item_height: ItemHeight,
@@ -300,7 +305,7 @@ impl MenuState {
         overlay_offset: Vector,
         slice: MenuSlice,
         renderer: &Renderer,
-        menu_tree: &MenuTree<'_, Message, Renderer>,
+        menu_tree: &MenuTree<Message>,
         tree: &mut [Tree],
     ) -> Node
     where
@@ -354,7 +359,7 @@ impl MenuState {
         overlay_offset: Vector,
         index: usize,
         renderer: &Renderer,
-        menu_tree: &MenuTree<'_, Message, Renderer>,
+        menu_tree: &MenuTree<Message>,
         tree: &mut Tree,
     ) -> Node
     where
@@ -427,12 +432,9 @@ impl MenuState {
     }
 }
 
-pub(crate) struct Menu<'a, 'b, Message, Renderer>
-where
-    Renderer: renderer::Renderer,
-{
-    pub(crate) tree: &'b mut Tree,
-    pub(crate) menu_roots: &'b mut Vec<MenuTree<'a, Message, Renderer>>,
+pub(crate) struct Menu<'b, Message: std::clone::Clone> {
+    pub(crate) tree: dropdown::menu::State,
+    pub(crate) menu_roots: Cow<'b, Vec<MenuTree<Message>>>,
     pub(crate) bounds_expand: u16,
     /// Allows menu overlay items to overlap the parent
     pub(crate) menu_overlays_parent: bool,
@@ -444,10 +446,10 @@ where
     pub(crate) cross_offset: i32,
     pub(crate) root_bounds_list: Vec<Rectangle>,
     pub(crate) path_highlight: Option<PathHighlight>,
-    pub(crate) style: &'b <crate::Theme as StyleSheet>::Style,
+    pub(crate) style: Cow<'b, <crate::Theme as StyleSheet>::Style>,
     pub(crate) position: Point,
 }
-impl<'a, 'b, Message, Renderer> Menu<'a, 'b, Message, Renderer>
+impl<'b, Message: Clone + 'static, Renderer> Menu<'b, Message>
 where
     Renderer: renderer::Renderer,
 {
@@ -751,7 +753,7 @@ fn pad_rectangle(rect: Rectangle, padding: Padding) -> Rectangle {
 }
 
 pub(super) fn init_root_menu<Message, Renderer>(
-    menu: &mut Menu<'_, '_, Message, Renderer>,
+    menu: &mut Menu<'_, Message>,
     renderer: &Renderer,
     shell: &mut Shell<'_, Message>,
     overlay_cursor: Point,
@@ -829,7 +831,7 @@ pub(super) fn init_root_menu<Message, Renderer>(
 #[allow(clippy::too_many_arguments)]
 fn process_menu_events<'b, Message, Renderer>(
     tree: &'b mut Tree,
-    menu_roots: &'b mut [MenuTree<'_, Message, Renderer>],
+    menu_roots: &'b mut [MenuTree<Message>],
     event: event::Event,
     view_cursor: Cursor,
     renderer: &Renderer,
@@ -887,7 +889,7 @@ where
 
 #[allow(unused_results)]
 fn process_overlay_events<Message, Renderer>(
-    menu: &mut Menu<'_, '_, Message, Renderer>,
+    menu: &mut Menu<'_, Message>,
     renderer: &Renderer,
     viewport_size: Size,
     overlay_offset: Vector,
@@ -897,6 +899,7 @@ fn process_overlay_events<Message, Renderer>(
 ) -> event::Status
 where
     Renderer: renderer::Renderer,
+    Message: std::clone::Clone,
 {
     use event::Status::{Captured, Ignored};
     /*
@@ -1077,16 +1080,13 @@ where
     Captured
 }
 
-fn process_scroll_events<Message, Renderer>(
-    menu: &mut Menu<'_, '_, Message, Renderer>,
+fn process_scroll_events<Message: Clone>(
+    menu: &mut Menu<'_, Message>,
     delta: mouse::ScrollDelta,
     overlay_cursor: Point,
     viewport_size: Size,
     overlay_offset: Vector,
-) -> event::Status
-where
-    Renderer: renderer::Renderer,
-{
+) -> event::Status {
     use event::Status::{Captured, Ignored};
     use mouse::ScrollDelta;
 
@@ -1155,16 +1155,13 @@ where
 
 #[allow(clippy::pedantic)]
 /// Returns (children_size, child_positions, child_sizes)
-fn get_children_layout<Message, Renderer>(
-    menu_tree: &MenuTree<'_, Message, Renderer>,
-    renderer: &Renderer,
+fn get_children_layout<Message>(
+    menu_tree: &MenuTree<Message>,
+    renderer: &crate::Renderer,
     item_width: ItemWidth,
     item_height: ItemHeight,
     tree: &mut [Tree],
-) -> (Size, Vec<f32>, Vec<Size>)
-where
-    Renderer: renderer::Renderer,
-{
+) -> (Size, Vec<f32>, Vec<Size>) {
     let width = match item_width {
         ItemWidth::Uniform(u) => f32::from(u),
         ItemWidth::Static(s) => f32::from(menu_tree.width.unwrap_or(s)),
@@ -1184,7 +1181,8 @@ where
             .children
             .iter()
             .map(|mt| {
-                let w = mt.item.as_widget();
+                let guard = mt.item.0.lock().unwrap();
+                let w = guard.as_widget();
                 match w.size().height {
                     Length::Fixed(f) => Size::new(width, f),
                     Length::Shrink => {

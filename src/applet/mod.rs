@@ -308,6 +308,7 @@ impl Context {
             },
             parent_size: None,
             grab: true,
+            close_with_children: false,
         }
     }
 

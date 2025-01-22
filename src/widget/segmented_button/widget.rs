@@ -9,7 +9,7 @@ use crate::widget::menu::{
     self, menu_roots_children, menu_roots_diff, CloseCondition, ItemHeight, ItemWidth,
     MenuBarState, PathHighlight,
 };
-use crate::widget::{icon, Icon};
+use crate::widget::{dropdown, icon, Icon};
 use crate::{Element, Renderer};
 use derive_setters::Setters;
 use iced::clipboard::dnd::{self, DndAction, DndDestinationRectangle, DndEvent, OfferEvent};
@@ -127,7 +127,7 @@ where
     pub(super) style: Style,
     /// The context menu to display when a context is activated
     #[setters(skip)]
-    pub(super) context_menu: Option<Vec<menu::Tree<'a, Message, crate::Renderer>>>,
+    pub(super) context_menu: Option<Vec<menu::Tree<Message>>>,
     /// Emits the ID of the item that was activated.
     #[setters(skip)]
     pub(super) on_activate: Option<Box<dyn Fn(Entity) -> Message + 'static>>,
@@ -197,13 +197,13 @@ where
         }
     }
 
-    pub fn context_menu(mut self, context_menu: Option<Vec<menu::Tree<'a, Message>>>) -> Self
+    pub fn context_menu(mut self, context_menu: Option<Vec<menu::Tree<Message>>>) -> Self
     where
-        Message: 'static,
+        Message: Clone + 'static,
     {
         self.context_menu = context_menu.map(|menus| {
             vec![menu::Tree::with_children(
-                crate::widget::row::<'static, Message>(),
+                crate::Element::from(crate::widget::row::<'static, Message>()),
                 menus,
             )]
         });
@@ -592,6 +592,7 @@ where
             wheel_timestamp: Default::default(),
             dnd_state: Default::default(),
             fingers_pressed: Default::default(),
+            menu_state: Default::default(),
         })
     }
 
@@ -1537,7 +1538,7 @@ where
         translation: Vector,
     ) -> Option<iced_core::overlay::Element<'b, Message, crate::Theme, Renderer>> {
         let state = tree.state.downcast_ref::<LocalState>();
-
+        let menu_state = state.menu_state.clone();
         let Some(entity) = state.show_context else {
             return None;
         };
@@ -1565,8 +1566,8 @@ where
 
         Some(
             crate::widget::menu::Menu {
-                tree: &mut tree.children[0],
-                menu_roots: context_menu,
+                tree: menu_state,
+                menu_roots: Cow::Borrowed(context_menu),
                 bounds_expand: 16,
                 menu_overlays_parent: true,
                 close_condition: CloseCondition {
@@ -1581,7 +1582,7 @@ where
                 cross_offset: 0,
                 root_bounds_list: vec![bounds],
                 path_highlight: Some(PathHighlight::MenuActive),
-                style: &crate::theme::menu_bar::MenuBarStyle::Default,
+                style: Cow::Owned(crate::theme::menu_bar::MenuBarStyle::Default),
                 position: Point::new(translation.x, translation.y),
             }
             .overlay(),
@@ -1666,6 +1667,8 @@ pub struct LocalState {
     pub dnd_state: crate::widget::dnd_destination::State<Option<Entity>>,
     /// Tracks multi-touch events
     fingers_pressed: HashSet<Finger>,
+    /// Menu state
+    pub(crate) menu_state: dropdown::menu::State,
 }
 
 #[derive(Debug, Default, PartialEq)]
