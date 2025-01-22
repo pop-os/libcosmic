@@ -7,4 +7,4 @@ publish = false
 
 [dependencies]
 cosmic-config = { path = "../../cosmic-config" }
-ron = "0.8.0"
+ron = "0.9.0-alpha.0"
