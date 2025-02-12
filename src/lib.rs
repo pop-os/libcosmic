@@ -33,6 +33,9 @@ pub use cosmic_config;
 #[doc(inline)]
 pub use cosmic_theme;
 
+#[cfg(feature = "desktop")]
+pub mod desktop;
+
 #[cfg(any(feature = "xdg-portal", feature = "rfd"))]
 pub mod dialog;
 
@@ -73,8 +76,9 @@ pub use iced_wgpu;
 pub mod icon_theme;
 pub mod keyboard_nav;
 
-#[cfg(feature = "desktop")]
-pub mod desktop;
+#[cfg(target_env = "gnu")]
+pub(crate) mod malloc;
+
 #[cfg(all(feature = "process", not(windows)))]
 pub mod process;
 

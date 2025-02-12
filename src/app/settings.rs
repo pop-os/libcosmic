@@ -38,6 +38,9 @@ pub struct Settings {
     /// Default size of fonts.
     pub(crate) default_text_size: f32,
 
+    /// Set the default mmap threshold for malloc with mallopt.
+    pub(crate) default_mmap_threshold: Option<i32>,
+
     /// Whether the window should be resizable or not.
     /// and the size of the window border which can be dragged for a resize
     pub(crate) resizable: Option<f64>,
@@ -85,6 +88,7 @@ impl Default for Settings {
             default_font: font::default(),
             default_icon_theme: None,
             default_text_size: 14.0,
+            default_mmap_threshold: Some(128 * 1024),
             resizable: Some(8.0),
             scale_factor: std::env::var("COSMIC_SCALE")
                 .ok()
