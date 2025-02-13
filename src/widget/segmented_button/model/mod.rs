@@ -310,6 +310,11 @@ where
         self.items.get(id).map_or(false, |e| e.enabled)
     }
 
+    /// Get number of items in the model.
+    pub fn len(&self) -> usize {
+        self.order.len()
+    }
+
     /// Iterates across items in the model in the order that they are displayed.
     pub fn iter(&self) -> impl Iterator<Item = Entity> + '_ {
         self.order.iter().copied()
