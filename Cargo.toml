@@ -198,6 +198,7 @@ path = "./iced/tiny_skia"
 [dependencies.iced_winit]
 path = "./iced/winit"
 optional = true
+features = ["program"]
 
 [dependencies.iced_wgpu]
 path = "./iced/wgpu"
