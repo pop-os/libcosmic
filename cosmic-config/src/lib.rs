@@ -329,8 +329,8 @@ impl ConfigGet for Config {
 
     fn get_local<T: DeserializeOwned>(&self, key: &str) -> Result<T, Error> {
         // If key path exists
-        match self.key_path(key)? {
-            key_path if key_path.is_file() => {
+        match self.key_path(key) {
+            Ok(key_path) if key_path.is_file() => {
                 // Load user override
                 let data = fs::read_to_string(key_path)
                     .map_err(|err| Error::GetKey(key.to_string(), err))?;
