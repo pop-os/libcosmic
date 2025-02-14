@@ -33,6 +33,7 @@ pub enum Error {
     Io(std::io::Error),
     NoConfigDirectory,
     Notify(notify::Error),
+    NotFound,
     Ron(ron::Error),
     RonSpanned(ron::error::SpannedError),
     GetKey(String, std::io::Error),
@@ -46,6 +47,7 @@ impl fmt::Display for Error {
             Self::Io(err) => err.fmt(f),
             Self::NoConfigDirectory => write!(f, "cosmic config directory not found"),
             Self::Notify(err) => err.fmt(f),
+            Self::NotFound => write!(f, "cosmic config key not configured"),
             Self::Ron(err) => err.fmt(f),
             Self::RonSpanned(err) => err.fmt(f),
             Self::GetKey(key, err) => write!(f, "failed to get key '{}': {}", key, err),
@@ -54,6 +56,15 @@ impl fmt::Display for Error {
 }
 
 impl std::error::Error for Error {}
+
+impl Error {
+    /// Whether the reason for the missing config is caused by an error.
+    ///
+    /// Useful for determining if it is appropriate to log as an error.
+    pub fn is_err(&self) -> bool {
+        matches!(self, Self::NoConfigDirectory | Self::NotFound)
+    }
+}
 
 impl From<atomicwrites::Error<std::io::Error>> for Error {
     fn from(f: atomicwrites::Error<std::io::Error>) -> Self {
@@ -87,7 +98,15 @@ impl From<ron::error::SpannedError> for Error {
 
 pub trait ConfigGet {
     /// Get a configuration value
+    ///
+    /// Fallback to the system default if a local user override is not defined.
     fn get<T: DeserializeOwned>(&self, key: &str) -> Result<T, Error>;
+
+    /// Get a locally-defined configuration value from the user's local config.
+    fn get_local<T: DeserializeOwned>(&self, key: &str) -> Result<T, Error>;
+
+    /// Get the system-defined default configuration value.
+    fn get_system_default<T: DeserializeOwned>(&self, key: &str) -> Result<T, Error>;
 }
 
 pub trait ConfigSet {
@@ -216,7 +235,7 @@ impl Config {
     }
 
     // Start a transaction (to set multiple configs at the same time)
-    pub fn transaction<'a>(&'a self) -> ConfigTransaction<'a> {
+    pub fn transaction(&self) -> ConfigTransaction {
         ConfigTransaction {
             config: self,
             updates: Mutex::new(Vec::new()),
@@ -288,6 +307,7 @@ impl Config {
         Ok(system_path.join(sanitize_name(key)?))
     }
 
+    /// Get the path of the key in the user's local config directory.
     fn key_path(&self, key: &str) -> Result<PathBuf, Error> {
         let Some(user_path) = self.user_path.as_ref() else {
             return Err(Error::NoConfigDirectory);
@@ -300,22 +320,34 @@ impl Config {
 impl ConfigGet for Config {
     //TODO: check for transaction
     fn get<T: DeserializeOwned>(&self, key: &str) -> Result<T, Error> {
+        match self.get_local(key) {
+            Ok(value) => Ok(value),
+            Err(Error::NotFound) => self.get_system_default(key),
+            Err(why) => Err(why),
+        }
+    }
+
+    fn get_local<T: DeserializeOwned>(&self, key: &str) -> Result<T, Error> {
         // If key path exists
-        let key_path = self.key_path(key);
-        let data = match key_path {
-            Ok(key_path) if key_path.is_file() => {
+        match self.key_path(key)? {
+            key_path if key_path.is_file() => {
                 // Load user override
-                fs::read_to_string(key_path).map_err(|err| Error::GetKey(key.to_string(), err))?
+                let data = fs::read_to_string(key_path)
+                    .map_err(|err| Error::GetKey(key.to_string(), err))?;
+
+                Ok(ron::from_str(&data)?)
             }
-            _ => {
-                // Load system default
-                let default_path = self.default_path(key)?;
-                fs::read_to_string(default_path)
-                    .map_err(|err| Error::GetKey(key.to_string(), err))?
-            }
-        };
-        let t = ron::from_str(&data)?;
-        Ok(t)
+
+            _ => Err(Error::NotFound),
+        }
+    }
+
+    fn get_system_default<T: DeserializeOwned>(&self, key: &str) -> Result<T, Error> {
+        // Load system default
+        let default_path = self.default_path(key)?;
+        let data =
+            fs::read_to_string(default_path).map_err(|err| Error::GetKey(key.to_string(), err))?;
+        Ok(ron::from_str(&data)?)
     }
 }
 
