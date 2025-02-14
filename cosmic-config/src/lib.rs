@@ -62,7 +62,7 @@ impl Error {
     ///
     /// Useful for determining if it is appropriate to log as an error.
     pub fn is_err(&self) -> bool {
-        matches!(self, Self::NoConfigDirectory | Self::NotFound)
+        !matches!(self, Self::NoConfigDirectory | Self::NotFound)
     }
 }
 
