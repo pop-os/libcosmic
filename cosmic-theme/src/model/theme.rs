@@ -1,6 +1,6 @@
 use crate::{
     composite::over,
-    steps::{color_index, get_index, get_surface_color, get_text, steps},
+    steps::{color_index, get_index, get_small_widget_color, get_surface_color, get_text, steps},
     Component, Container, CornerRadii, CosmicPalette, CosmicPaletteInner, Spacing, ThemeMode,
     DARK_PALETTE, LIGHT_PALETTE, NAME,
 };
@@ -847,7 +847,7 @@ impl ThemeBuilder {
             color_index(bg_component, step_array.len()),
             &step_array,
             &p_ref.neutral_8,
-            text_steps_array.as_ref(),
+            text_steps_array.as_deref(),
         );
 
         let primary = {
@@ -879,7 +879,7 @@ impl ThemeBuilder {
                         color_index(component_base, step_array.len()),
                         &step_array,
                         &p_ref.neutral_8,
-                        text_steps_array.as_ref(),
+                        text_steps_array.as_deref(),
                     ),
                     component_hovered_overlay,
                     component_pressed_overlay,
@@ -891,15 +891,9 @@ impl ThemeBuilder {
                     base_index,
                     &step_array,
                     &p_ref.neutral_8,
-                    text_steps_array.as_ref(),
+                    text_steps_array.as_deref(),
                 ),
-                get_surface_color(
-                    base_index,
-                    5,
-                    &neutral_steps,
-                    base_index <= 65,
-                    &p_ref.neutral_6,
-                ),
+                get_small_widget_color(base_index, 5, &neutral_steps, &p_ref.neutral_6),
             );
 
             container
@@ -971,15 +965,9 @@ impl ThemeBuilder {
                     bg_index,
                     &step_array,
                     &p_ref.neutral_8,
-                    text_steps_array.as_ref(),
+                    text_steps_array.as_deref(),
                 ),
-                get_surface_color(
-                    bg_index,
-                    5,
-                    &neutral_steps,
-                    bg_index <= 65,
-                    &p_ref.neutral_6,
-                ),
+                get_small_widget_color(bg_index, 5, &neutral_steps, &p_ref.neutral_6),
             ),
             primary,
             secondary: {
@@ -1011,7 +999,7 @@ impl ThemeBuilder {
                             color_index(secondary_component, step_array.len()),
                             &step_array,
                             &p_ref.neutral_8,
-                            text_steps_array.as_ref(),
+                            text_steps_array.as_deref(),
                         ),
                         component_hovered_overlay,
                         component_pressed_overlay,
@@ -1023,15 +1011,9 @@ impl ThemeBuilder {
                         base_index,
                         &step_array,
                         &p_ref.neutral_8,
-                        text_steps_array.as_ref(),
+                        text_steps_array.as_deref(),
                     ),
-                    get_surface_color(
-                        base_index,
-                        5,
-                        &neutral_steps,
-                        base_index <= 65,
-                        &p_ref.neutral_6,
-                    ),
+                    get_small_widget_color(base_index, 5, &neutral_steps, &p_ref.neutral_6),
                 )
             },
             accent: Component::colored_component(

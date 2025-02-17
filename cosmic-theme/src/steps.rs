@@ -1,7 +1,7 @@
 use std::num::NonZeroUsize;
 
 use almost::equal;
-use palette::{convert::FromColorUnclamped, ClampAssign, FromColor, Oklcha, Srgb, Srgba};
+use palette::{convert::FromColorUnclamped, ClampAssign, FromColor, Lch, Oklcha, Srgb, Srgba};
 
 /// Get an array of 100 colors with a specific hue and chroma
 /// over the full range of lightness.
@@ -35,7 +35,7 @@ pub fn get_index(base_index: usize, steps: usize, step_len: usize, is_dark: bool
 pub fn get_surface_color(
     base_index: usize,
     steps: usize,
-    step_array: &Vec<Srgba>,
+    step_array: &[Srgba],
     mut is_dark: bool,
     fallback: &Srgba,
 ) -> Srgba {
@@ -48,12 +48,38 @@ pub fn get_surface_color(
         .unwrap_or(fallback)
 }
 
+/// get surface color given a base and some steps
+#[must_use]
+pub fn get_small_widget_color(
+    base_index: usize,
+    steps: usize,
+    step_array: &[Srgba],
+    fallback: &Srgba,
+) -> Srgba {
+    assert!(step_array.len() == 100);
+
+    let is_dark = base_index <= 40 || (base_index > 51 && base_index < 65);
+
+    let res = *get_index(base_index, steps, step_array.len(), is_dark)
+        .and_then(|i| step_array.get(i))
+        .unwrap_or(fallback);
+
+    let mut lch = Lch::from_color(res);
+    if lch.chroma / Lch::<f32>::max_chroma() > 0.03 {
+        lch.chroma = 0.03 * Lch::<f32>::max_chroma();
+        lch.clamp_assign();
+        Srgba::from_color(lch)
+    } else {
+        res
+    }
+}
+
 /// get text color given a base background color
 pub fn get_text(
     base_index: usize,
-    step_array: &Vec<Srgba>,
+    step_array: &[Srgba],
     fallback: &Srgba,
-    tint_array: Option<&Vec<Srgba>>,
+    tint_array: Option<&[Srgba]>,
 ) -> Srgba {
     assert!(step_array.len() == 100);
     let step_array = if let Some(tint_array) = tint_array {
