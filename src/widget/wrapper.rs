@@ -8,48 +8,80 @@ use crate::Element;
 use iced::{event, Length, Rectangle, Size};
 use iced_core::{id::Id, widget, widget::tree, Widget};
 
-#[derive(Clone)]
-pub struct RcElementWrapper<M> {
-    pub(crate) element: Rc<RefCell<Element<'static, M>>>,
+#[derive(Debug)]
+pub struct RcWrapper<T> {
+    pub(crate) data: Rc<RefCell<T>>,
     pub(crate) thread_id: ThreadId,
 }
 
-impl<M> RcElementWrapper<M> {
-    pub fn new(element: Element<'static, M>) -> Self {
+impl<T> Clone for RcWrapper<T> {
+    fn clone(&self) -> Self {
         Self {
-            element: Rc::new(RefCell::new(element)),
+            data: self.data.clone(),
+            thread_id: self.thread_id,
+        }
+    }
+}
+
+unsafe impl<M: 'static> Send for RcWrapper<M> {}
+unsafe impl<M: 'static> Sync for RcWrapper<M> {}
+
+impl<T> RcWrapper<T> {
+    pub fn new(element: T) -> Self {
+        Self {
+            data: Rc::new(RefCell::new(element)),
             thread_id: thread::current().id(),
         }
     }
 
-    pub fn with_element<T>(&self, f: impl FnOnce(&Element<'static, M>) -> T) -> T {
+    /// # Panics
+    ///
+    /// Will panic if used outside of original thread.
+    pub fn with_data<O>(&self, f: impl FnOnce(&T) -> O) -> O {
         assert_eq!(self.thread_id, thread::current().id());
-        let my_ref: &Element<'static, M> = &RefCell::borrow(self.element.as_ref());
+        let my_ref: &T = &RefCell::borrow(self.data.as_ref());
         f(my_ref)
     }
 
-    pub fn with_element_mut<T>(&self, f: impl FnOnce(&mut Element<'static, M>) -> T) -> T {
+    /// # Panics
+    ///
+    /// Will panic if used outside of original thread.
+    pub fn with_data_mut<O>(&self, f: impl FnOnce(&mut T) -> O) -> O {
         assert_eq!(self.thread_id, thread::current().id());
-        let my_refmut: &mut Element<'static, M> = &mut RefCell::borrow_mut(self.element.as_ref());
+        let my_refmut: &mut T = &mut RefCell::borrow_mut(self.data.as_ref());
         f(my_refmut)
     }
 
-    pub(crate) unsafe fn as_ptr(&self) -> *mut Element<'static, M> {
+    /// # Panics
+    ///
+    /// Will panic if used outside of original thread.
+    pub(crate) unsafe fn as_ptr(&self) -> *mut T {
         assert_eq!(self.thread_id, thread::current().id());
-        RefCell::as_ptr(self.element.as_ref())
+        RefCell::as_ptr(self.data.as_ref())
     }
 }
 
-unsafe impl<M: 'static> Send for RcElementWrapper<M> {}
-unsafe impl<M: 'static> Sync for RcElementWrapper<M> {}
+#[derive(Clone)]
+pub struct RcElementWrapper<M> {
+    pub(crate) element: RcWrapper<Element<'static, M>>,
+}
+
+impl<M> RcElementWrapper<M> {
+    #[must_use]
+    pub fn new(element: Element<'static, M>) -> Self {
+        RcElementWrapper {
+            element: RcWrapper::new(element),
+        }
+    }
+}
 
 impl<M> Widget<M, crate::Theme, crate::Renderer> for RcElementWrapper<M> {
     fn size(&self) -> Size<Length> {
-        self.with_element(|e| e.as_widget().size())
+        self.element.with_data(|e| e.as_widget().size())
     }
 
     fn size_hint(&self) -> Size<Length> {
-        self.element.borrow_mut().as_widget().size_hint()
+        self.element.with_data(move |e| e.as_widget().size_hint())
     }
 
     fn layout(
@@ -58,7 +90,8 @@ impl<M> Widget<M, crate::Theme, crate::Renderer> for RcElementWrapper<M> {
         renderer: &crate::Renderer,
         limits: &crate::iced_core::layout::Limits,
     ) -> crate::iced_core::layout::Node {
-        self.with_element_mut(|e| e.as_widget_mut().layout(tree, renderer, limits))
+        self.element
+            .with_data_mut(|e| e.as_widget_mut().layout(tree, renderer, limits))
     }
 
     fn draw(
@@ -71,26 +104,26 @@ impl<M> Widget<M, crate::Theme, crate::Renderer> for RcElementWrapper<M> {
         cursor: crate::iced_core::mouse::Cursor,
         viewport: &Rectangle,
     ) {
-        self.with_element(move |e| {
+        self.element.with_data(move |e| {
             e.as_widget()
-                .draw(tree, renderer, theme, style, layout, cursor, viewport)
-        })
+                .draw(tree, renderer, theme, style, layout, cursor, viewport);
+        });
     }
 
     fn tag(&self) -> tree::Tag {
-        self.with_element(|e| e.as_widget().tag())
+        self.element.with_data(|e| e.as_widget().tag())
     }
 
     fn state(&self) -> tree::State {
-        self.with_element(|e| e.as_widget().state())
+        self.element.with_data(|e| e.as_widget().state())
     }
 
     fn children(&self) -> Vec<tree::Tree> {
-        self.with_element(|e| e.as_widget().children())
+        self.element.with_data(|e| e.as_widget().children())
     }
 
     fn diff(&mut self, tree: &mut tree::Tree) {
-        self.with_element_mut(|e| e.as_widget_mut().diff(tree))
+        self.element.with_data_mut(|e| e.as_widget_mut().diff(tree));
     }
 
     fn operate(
@@ -100,9 +133,9 @@ impl<M> Widget<M, crate::Theme, crate::Renderer> for RcElementWrapper<M> {
         renderer: &crate::Renderer,
         operation: &mut dyn widget::Operation,
     ) {
-        self.with_element(|e| {
+        self.element.with_data(|e| {
             e.as_widget().operate(state, layout, renderer, operation);
-        })
+        });
     }
 
     fn on_event(
@@ -116,7 +149,7 @@ impl<M> Widget<M, crate::Theme, crate::Renderer> for RcElementWrapper<M> {
         shell: &mut crate::iced_core::Shell<'_, M>,
         viewport: &Rectangle,
     ) -> event::Status {
-        self.with_element_mut(|e| {
+        self.element.with_data_mut(|e| {
             e.as_widget_mut().on_event(
                 state, event, layout, cursor, renderer, clipboard, shell, viewport,
             )
@@ -131,7 +164,7 @@ impl<M> Widget<M, crate::Theme, crate::Renderer> for RcElementWrapper<M> {
         viewport: &Rectangle,
         renderer: &crate::Renderer,
     ) -> crate::iced_core::mouse::Interaction {
-        self.with_element(|e| {
+        self.element.with_data(|e| {
             e.as_widget()
                 .mouse_interaction(state, layout, cursor, viewport, renderer)
         })
@@ -144,8 +177,8 @@ impl<M> Widget<M, crate::Theme, crate::Renderer> for RcElementWrapper<M> {
         renderer: &crate::Renderer,
         translation: crate::iced_core::Vector,
     ) -> Option<crate::iced_core::overlay::Element<'a, M, crate::Theme, crate::Renderer>> {
-        assert_eq!(self.thread_id, thread::current().id());
-        Rc::get_mut(&mut self.element).and_then(|e| {
+        assert_eq!(self.element.thread_id, thread::current().id());
+        Rc::get_mut(&mut self.element.data).and_then(|e| {
             e.get_mut()
                 .as_widget_mut()
                 .overlay(state, layout, renderer, translation)
@@ -153,11 +186,11 @@ impl<M> Widget<M, crate::Theme, crate::Renderer> for RcElementWrapper<M> {
     }
 
     fn id(&self) -> Option<Id> {
-        self.with_element_mut(|e| e.as_widget_mut().id())
+        self.element.with_data_mut(|e| e.as_widget_mut().id())
     }
 
     fn set_id(&mut self, id: Id) {
-        self.with_element_mut(|e| e.as_widget_mut().set_id(id))
+        self.element.with_data_mut(|e| e.as_widget_mut().set_id(id));
     }
 
     fn drag_destinations(
@@ -167,10 +200,10 @@ impl<M> Widget<M, crate::Theme, crate::Renderer> for RcElementWrapper<M> {
         renderer: &crate::Renderer,
         dnd_rectangles: &mut crate::iced_core::clipboard::DndDestinationRectangles,
     ) {
-        self.with_element_mut(|e| {
+        self.element.with_data_mut(|e| {
             e.as_widget_mut()
-                .drag_destinations(state, layout, renderer, dnd_rectangles)
-        })
+                .drag_destinations(state, layout, renderer, dnd_rectangles);
+        });
     }
 }
 
