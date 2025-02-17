@@ -390,7 +390,7 @@ impl Core {
     pub fn responsive_menu_bar<'a, Message: Clone + From<SurfaceMessage> + 'static>(
         &self,
         id: crate::widget::Id,
-        roots: Vec<Tree<'a, Message, Renderer>>,
+        roots: Vec<Tree<'a, Message>>,
     ) -> crate::Element<'a, Message> {
         let menu_bar_size = self.menu_bars.get(&id);
         if !menu_bar_size.is_some_and(|(limits, size)| {
@@ -405,10 +405,12 @@ impl Core {
         } else {
             crate::Element::from(
                 responsive_container::responsive_container(
-                    menu::bar(vec![menu::Tree::<'a, _, _>::with_children(
-                        button::icon(icon::from_name("open-menu-symbolic"))
-                            .padding([4, 12])
-                            .class(crate::theme::Button::MenuRoot),
+                    menu::bar(vec![menu::Tree::<_>::with_children(
+                        Element::from(
+                            button::icon(icon::from_name("open-menu-symbolic"))
+                                .padding([4, 12])
+                                .class(crate::theme::Button::MenuRoot),
+                        ),
                         roots,
                     )]),
                     id,

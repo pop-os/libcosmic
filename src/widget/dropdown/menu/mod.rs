@@ -130,6 +130,7 @@ pub struct State {
     pub(crate) tree: Arc<Mutex<Tree>>,
 }
 
+// TODO use the Rc wrapper instead
 // XXX The tree is only used on one thread, but this is needed to make a message
 unsafe impl Send for State {}
 unsafe impl Sync for State {}

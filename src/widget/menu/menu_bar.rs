@@ -84,7 +84,7 @@ where
         .map(|root| {
             let mut tree = Tree::empty();
             let flat = root
-                .flatten()
+                .flattern()
                 .iter()
                 .map(|mt| Tree::new(mt.item.as_widget()))
                 .collect();
@@ -110,7 +110,7 @@ pub(crate) fn menu_roots_diff<'a, Message, Renderer>(
         .zip(menu_roots.iter())
         .for_each(|(t, root)| {
             let mut flat = root
-                .flatten()
+                .flattern()
                 .iter()
                 .map(|mt| {
                     let widget = mt.item.as_widget();
@@ -129,7 +129,7 @@ pub(crate) fn menu_roots_diff<'a, Message, Renderer>(
         let extended = menu_roots[tree.children.len()..].iter().map(|root| {
             let mut tree = Tree::empty();
             let flat = root
-                .flatten()
+                .flattern()
                 .iter()
                 .map(|mt| Tree::new(mt.item.as_widget()))
                 .collect();
