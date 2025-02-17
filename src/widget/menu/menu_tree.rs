@@ -5,14 +5,13 @@
 use std::borrow::Cow;
 use std::collections::HashMap;
 use std::rc::Rc;
-use std::sync::{Arc, Mutex};
 
 use iced_widget::core::{renderer, Element};
 
 use crate::iced_core::{Alignment, Length};
+use crate::widget::icon;
 use crate::widget::menu::action::MenuAction;
 use crate::widget::menu::key_bind::KeyBind;
-use crate::widget::{icon, ArcElementWrapper};
 use crate::{theme, widget};
 
 /// Nested menu is essentially a tree of items, a menu is a collection of items
@@ -24,27 +23,27 @@ use crate::{theme, widget};
 /// but there's no need to explicitly distinguish them here, if a menu tree
 /// has children, it's a menu, otherwise it's an item
 #[allow(missing_debug_implementations)]
-#[derive(Clone)]
-
-pub struct MenuTree<Message> {
+pub struct MenuTree<'a, Message, Renderer = crate::Renderer> {
     /// The menu tree will be flatten into a vector to build a linear widget tree,
     /// the `index` field is the index of the item in that vector
     pub(crate) index: usize,
 
-    // TODO needs to be wrapped in Arc<Mutex kinda like in cosmic-files. Check the widget there for details
     /// The item of the menu tree
-    pub(crate) item: ArcElementWrapper<Message>,
+    pub(crate) item: Element<'a, Message, crate::Theme, Renderer>,
     /// The children of the menu tree
-    pub(crate) children: Vec<MenuTree<Message>>,
+    pub(crate) children: Vec<MenuTree<'a, Message, Renderer>>,
     /// The width of the menu tree
     pub(crate) width: Option<u16>,
     /// The height of the menu tree
     pub(crate) height: Option<u16>,
 }
 
-impl<Message: Clone + 'static> MenuTree<Message> {
+impl<'a, Message, Renderer> MenuTree<'a, Message, Renderer>
+where
+    Renderer: renderer::Renderer,
+{
     /// Create a new menu tree from a widget
-    pub fn new(item: impl Into<ArcElementWrapper<Message>>) -> Self {
+    pub fn new(item: impl Into<Element<'a, Message, crate::Theme, Renderer>>) -> Self {
         Self {
             index: 0,
             item: item.into(),
@@ -56,8 +55,8 @@ impl<Message: Clone + 'static> MenuTree<Message> {
 
     /// Create a menu tree from a widget and a vector of sub trees
     pub fn with_children(
-        item: impl Into<ArcElementWrapper<Message>>,
-        children: Vec<impl Into<MenuTree<Message>>>,
+        item: impl Into<Element<'a, Message, crate::Theme, Renderer>>,
+        children: Vec<impl Into<MenuTree<'a, Message, Renderer>>>,
     ) -> Self {
         Self {
             index: 0,
@@ -93,7 +92,7 @@ impl<Message: Clone + 'static> MenuTree<Message> {
     /// Set the index of each item
     pub(crate) fn set_index(&mut self) {
         /// inner counting function.
-        fn rec<Message: Clone + 'static>(mt: &mut MenuTree<Message>, count: &mut usize) {
+        fn rec<Message, Renderer>(mt: &mut MenuTree<'_, Message, Renderer>, count: &mut usize) {
             // keep items under the same menu line up
             mt.children.iter_mut().for_each(|c| {
                 c.index = *count;
@@ -110,32 +109,36 @@ impl<Message: Clone + 'static> MenuTree<Message> {
     }
 
     /// Flatten the menu tree
-    pub(crate) fn flatten(&self) -> Vec<Self> {
+    pub(crate) fn flattern(&'a self) -> Vec<&Self> {
         /// Inner flattening function
-        fn rec<Message: Clone + 'static>(
-            mt: &MenuTree<Message>,
-            flat: &mut Vec<MenuTree<Message>>,
+        fn rec<'a, Message, Renderer>(
+            mt: &'a MenuTree<'a, Message, Renderer>,
+            flat: &mut Vec<&MenuTree<'a, Message, Renderer>>,
         ) {
-            mt.children.clone().into_iter().for_each(|c| {
+            mt.children.iter().for_each(|c| {
                 flat.push(c);
             });
 
             mt.children.iter().for_each(|c| {
-                rec(&c, flat);
+                rec(c, flat);
             });
         }
 
         let mut flat = Vec::new();
-        flat.push(self.clone());
+        flat.push(self);
         rec(self, &mut flat);
 
         flat
     }
 }
 
-impl<Message: Clone + 'static> From<crate::Element<'static, Message>> for MenuTree<Message> {
-    fn from(value: crate::Element<'static, Message>) -> Self {
-        Self::new(ArcElementWrapper(Arc::new(Mutex::new(value))))
+impl<'a, Message, Renderer> From<Element<'a, Message, crate::Theme, Renderer>>
+    for MenuTree<'a, Message, Renderer>
+where
+    Renderer: renderer::Renderer,
+{
+    fn from(value: Element<'a, Message, crate::Theme, Renderer>) -> Self {
+        Self::new(value)
     }
 }
 
@@ -154,7 +157,6 @@ pub fn menu_button<'a, Message: 'a>(
     .class(theme::Button::MenuItem)
 }
 
-#[derive(Clone)]
 /// Represents a menu item that performs an action when selected or a separator between menu items.
 ///
 /// - `Action` - Represents a menu item that performs an action when selected.
@@ -211,13 +213,18 @@ where
 /// # Returns
 /// - A vector of `MenuTree`.
 pub fn menu_items<
+    'a,
     A: MenuAction<Message = Message>,
     L: Into<Cow<'static, str>> + 'static,
-    Message: 'static + std::clone::Clone,
+    Message: 'a,
+    Renderer: renderer::Renderer + 'a,
 >(
     key_binds: &HashMap<KeyBind, A>,
     children: Vec<MenuItem<A, L>>,
-) -> Vec<MenuTree<Message>> {
+) -> Vec<MenuTree<'a, Message, Renderer>>
+where
+    Element<'a, Message, crate::Theme, Renderer>: From<widget::button::Button<'a, Message>>,
+{
     fn find_key<A: MenuAction>(action: &A, key_binds: &HashMap<KeyBind, A>) -> String {
         for (key_bind, key_action) in key_binds {
             if action == key_action {
@@ -252,7 +259,7 @@ pub fn menu_items<
 
                     let menu_button = menu_button(items).on_press(action.message());
 
-                    trees.push(MenuTree::<Message>::from(Element::from(menu_button)));
+                    trees.push(MenuTree::<Message, Renderer>::new(menu_button));
                 }
                 MenuItem::ButtonDisabled(label, icon, action) => {
                     let key = find_key(&action, key_binds);
@@ -270,7 +277,7 @@ pub fn menu_items<
 
                     let menu_button = menu_button(items);
 
-                    trees.push(MenuTree::<Message>::from(Element::from(menu_button)));
+                    trees.push(MenuTree::<Message, Renderer>::new(menu_button));
                 }
                 MenuItem::CheckBox(label, icon, value, action) => {
                     let key = find_key(&action, key_binds);
@@ -300,40 +307,36 @@ pub fn menu_items<
                         items.insert(2, widget::icon::icon(icon).size(14).into());
                     }
 
-                    trees.push(MenuTree::from(Element::from(
-                        menu_button(items).on_press(action.message()),
-                    )));
+                    trees.push(MenuTree::new(menu_button(items).on_press(action.message())));
                 }
                 MenuItem::Folder(label, children) => {
-                    trees.push(MenuTree::<Message>::with_children(
-                        ArcElementWrapper(Arc::new(Mutex::new(crate::Element::from(
-                            menu_button::<'static, _>(vec![
-                                widget::text(label).into(),
-                                widget::horizontal_space().into(),
-                                widget::icon::from_name("pan-end-symbolic")
-                                    .size(16)
-                                    .icon()
-                                    .into(),
-                            ])
-                            .class(
-                                // Menu folders have no on_press so they take on the disabled style by default
-                                if children.is_empty() {
-                                    // This will make the folder use the disabled style if it has no children
-                                    theme::Button::MenuItem
-                                } else {
-                                    // This will make the folder use the enabled style if it has children
-                                    theme::Button::MenuFolder
-                                },
-                            ),
-                        )))),
+                    trees.push(MenuTree::<Message, Renderer>::with_children(
+                        menu_button(vec![
+                            widget::text(label).into(),
+                            widget::horizontal_space().into(),
+                            widget::icon::from_name("pan-end-symbolic")
+                                .size(16)
+                                .icon()
+                                .into(),
+                        ])
+                        .class(
+                            // Menu folders have no on_press so they take on the disabled style by default
+                            if children.is_empty() {
+                                // This will make the folder use the disabled style if it has no children
+                                theme::Button::MenuItem
+                            } else {
+                                // This will make the folder use the enabled style if it has children
+                                theme::Button::MenuFolder
+                            },
+                        ),
                         menu_items(key_binds, children),
                     ));
                 }
                 MenuItem::Divider => {
                     if i != size - 1 {
-                        trees.push(MenuTree::<Message>::from(Element::from(
+                        trees.push(MenuTree::<Message, Renderer>::new(
                             widget::divider::horizontal::light(),
-                        )));
+                        ));
                     }
                 }
             }
