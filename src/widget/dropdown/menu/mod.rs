@@ -9,7 +9,7 @@ use std::sync::{Arc, Mutex};
 pub use appearance::{Appearance, StyleSheet};
 use iced::advanced::widget;
 
-use crate::widget::{icon, Container};
+use crate::widget::{icon, Container, RcElementWrapper, RcWrapper};
 use iced_core::event::{self, Event};
 use iced_core::layout::{self, Layout};
 use iced_core::text::{self, Text};
@@ -127,19 +127,14 @@ where
 #[must_use]
 #[derive(Debug, Clone)]
 pub struct State {
-    pub(crate) tree: Arc<Mutex<Tree>>,
+    pub(crate) tree: RcWrapper<Tree>,
 }
-
-// TODO use the Rc wrapper instead
-// XXX The tree is only used on one thread, but this is needed to make a message
-unsafe impl Send for State {}
-unsafe impl Sync for State {}
 
 impl State {
     /// Creates a new [`State`] for a [`Menu`].
     pub fn new() -> Self {
         Self {
-            tree: Arc::new(Mutex::new(Tree::empty())),
+            tree: RcWrapper::new(Tree::empty()),
         }
     }
 }
@@ -151,7 +146,7 @@ impl Default for State {
 }
 
 struct Overlay<'a, Message> {
-    state: Arc<Mutex<Tree>>,
+    state: RcWrapper<Tree>,
     container: Container<'a, Message, crate::Theme, crate::Renderer>,
     width: f32,
     target_height: f32,
@@ -199,9 +194,10 @@ impl<'a, Message: 'a> Overlay<'a, Message> {
         ))
         .class(crate::style::Container::Dropdown);
 
-        let mut tree_guard = state.tree.lock().unwrap();
-        tree_guard.diff(&mut container as &mut dyn Widget<_, _, _>);
-        drop(tree_guard);
+        state
+            .tree
+            .with_data_mut(|tree| tree.diff(&mut container as &mut dyn Widget<_, _, _>));
+
         Self {
             state: state.tree.clone(),
             container,
@@ -213,8 +209,6 @@ impl<'a, Message: 'a> Overlay<'a, Message> {
     }
 
     fn _layout(&self, renderer: &crate::Renderer, bounds: Size) -> layout::Node {
-        let mut guard = self.state.lock().unwrap();
-
         let space_below = bounds.height - (self.position.y + self.target_height);
         let space_above = self.position.y;
 
@@ -231,7 +225,9 @@ impl<'a, Message: 'a> Overlay<'a, Message> {
         )
         .width(self.width);
 
-        let node = self.container.layout(&mut guard, renderer, &limits);
+        let node = self
+            .state
+            .with_data_mut(|tree| self.container.layout(tree, renderer, &limits));
 
         node.clone().move_to(if space_below > space_above {
             self.position + Vector::new(0.0, self.target_height)
@@ -250,12 +246,12 @@ impl<'a, Message: 'a> Overlay<'a, Message> {
         shell: &mut Shell<'_, Message>,
     ) -> event::Status {
         let bounds = layout.bounds();
-        let mut guard = self.state.lock().unwrap();
 
-        let state = &mut *guard;
-        self.container.on_event(
-            state, event, layout, cursor, renderer, clipboard, shell, &bounds,
-        )
+        self.state.with_data_mut(|tree| {
+            self.container.on_event(
+                tree, event, layout, cursor, renderer, clipboard, shell, &bounds,
+            )
+        })
     }
 
     fn _mouse_interaction(
@@ -265,10 +261,10 @@ impl<'a, Message: 'a> Overlay<'a, Message> {
         viewport: &Rectangle,
         renderer: &crate::Renderer,
     ) -> mouse::Interaction {
-        let guard = self.state.lock().unwrap();
-
-        self.container
-            .mouse_interaction(&guard, layout, cursor, viewport, renderer)
+        self.state.with_data(|tree| {
+            self.container
+                .mouse_interaction(tree, layout, cursor, viewport, renderer)
+        })
     }
 
     fn _draw(
@@ -279,8 +275,6 @@ impl<'a, Message: 'a> Overlay<'a, Message> {
         layout: Layout<'_>,
         cursor: mouse::Cursor,
     ) {
-        let state = self.state.lock().unwrap();
-
         let appearance = theme.appearance(&self.style);
         let bounds = layout.bounds();
 
@@ -297,8 +291,10 @@ impl<'a, Message: 'a> Overlay<'a, Message> {
             appearance.background,
         );
 
-        self.container
-            .draw(&*state, renderer, theme, style, layout, cursor, &bounds);
+        self.state.with_data(|tree| {
+            self.container
+                .draw(tree, renderer, theme, style, layout, cursor, &bounds)
+        })
     }
 }
 
@@ -306,8 +302,6 @@ impl<'a, Message: 'a> iced_core::Overlay<Message, crate::Theme, crate::Renderer>
     for Overlay<'a, Message>
 {
     fn layout(&mut self, renderer: &crate::Renderer, bounds: Size) -> layout::Node {
-        let mut guard = self.state.lock().unwrap();
-
         self._layout(renderer, bounds)
     }
 
@@ -341,8 +335,6 @@ impl<'a, Message: 'a> iced_core::Overlay<Message, crate::Theme, crate::Renderer>
         layout: Layout<'_>,
         cursor: mouse::Cursor,
     ) {
-        let guard = self.state.lock().unwrap();
-
         self._draw(renderer, theme, style, layout, cursor);
     }
 }
@@ -360,11 +352,10 @@ impl<'a, Message: 'a> crate::widget::Widget<Message, crate::Theme, crate::Render
         renderer: &crate::Renderer,
         limits: &iced::Limits,
     ) -> layout::Node {
-        let mut guard = self.state.lock().unwrap();
-
         let limits = limits.width(self.width);
 
-        self.container.layout(&mut guard, renderer, &limits)
+        self.state
+            .with_data_mut(|tree| self.container.layout(tree, renderer, &limits))
     }
 
     fn mouse_interaction(
