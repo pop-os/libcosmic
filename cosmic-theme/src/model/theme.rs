@@ -1,11 +1,11 @@
 use crate::{
     composite::over,
-    steps::{color_index, get_surface_color, get_text, steps},
+    steps::{color_index, get_index, get_surface_color, get_text, steps},
     Component, Container, CornerRadii, CosmicPalette, CosmicPaletteInner, Spacing, ThemeMode,
     DARK_PALETTE, LIGHT_PALETTE, NAME,
 };
 use cosmic_config::{Config, CosmicConfigEntry};
-use palette::{rgb::Rgb, IntoColor, Oklcha, Srgb, Srgba};
+use palette::{color_difference::Wcag21RelativeContrast, rgb::Rgb, IntoColor, Oklcha, Srgb, Srgba};
 use serde::{Deserialize, Serialize};
 use std::num::NonZeroUsize;
 
@@ -97,6 +97,9 @@ pub struct Theme {
     pub is_frosted: bool,
     /// shade color for dialogs
     pub shade: Srgba,
+    /// accent text colors
+    /// If None, accent base color is the accent text color.
+    pub accent_text: Option<Srgba>,
 }
 
 impl Default for Theme {
@@ -276,7 +279,7 @@ impl Theme {
     #[allow(clippy::doc_markdown)]
     /// get @accent_text_color
     pub fn accent_text_color(&self) -> Srgba {
-        self.accent.base
+        self.accent_text.unwrap_or(self.accent.base)
     }
     #[must_use]
     #[allow(clippy::doc_markdown)]
@@ -847,6 +850,105 @@ impl ThemeBuilder {
             text_steps_array.as_ref(),
         );
 
+        let primary = {
+            let container_bg = if let Some(primary_container_bg_color) = primary_container_bg {
+                primary_container_bg_color
+            } else {
+                get_surface_color(bg_index, 5, &step_array, is_dark, &p_ref.neutral_1)
+            };
+
+            let base_index: usize = color_index(container_bg, step_array.len());
+            let component_base =
+                get_surface_color(base_index, 6, &step_array, is_dark, &p_ref.neutral_3);
+
+            component_hovered_overlay = if base_index < 91 {
+                p_ref.neutral_10
+            } else {
+                p_ref.neutral_0
+            };
+            component_hovered_overlay.alpha = 0.1;
+
+            component_pressed_overlay = component_hovered_overlay;
+            component_pressed_overlay.alpha = 0.2;
+
+            let container = Container::new(
+                Component::component(
+                    component_base,
+                    accent,
+                    get_text(
+                        color_index(component_base, step_array.len()),
+                        &step_array,
+                        &p_ref.neutral_8,
+                        text_steps_array.as_ref(),
+                    ),
+                    component_hovered_overlay,
+                    component_pressed_overlay,
+                    is_high_contrast,
+                    p_ref.neutral_8,
+                ),
+                container_bg,
+                get_text(
+                    base_index,
+                    &step_array,
+                    &p_ref.neutral_8,
+                    text_steps_array.as_ref(),
+                ),
+                get_surface_color(
+                    base_index,
+                    5,
+                    &neutral_steps,
+                    base_index <= 65,
+                    &p_ref.neutral_6,
+                ),
+            );
+
+            container
+        };
+
+        let accent_text = if is_dark {
+            (primary.base.relative_contrast(accent.color) < 4.).then(|| {
+                let step_array = steps(accent, NonZeroUsize::new(100).unwrap());
+                let primary_color_index = color_index(primary.base, 100);
+                let steps = if is_high_contrast { 60 } else { 50 };
+                let accent_text = get_surface_color(
+                    primary_color_index,
+                    steps,
+                    &step_array,
+                    is_dark,
+                    &Srgba::new(1., 1., 1., 1.),
+                );
+                if primary.base.relative_contrast(accent_text.color) < 4. {
+                    Srgba::new(1., 1., 1., 1.)
+                } else {
+                    accent_text
+                }
+            })
+        } else {
+            let darkest = if bg.relative_luminance().luma < primary.base.relative_luminance().luma {
+                bg
+            } else {
+                primary.base
+            };
+
+            (darkest.relative_contrast(accent.color) < 4.).then(|| {
+                let step_array = steps(accent, NonZeroUsize::new(100).unwrap());
+                let primary_color_index = color_index(darkest, 100);
+                let steps = if is_high_contrast { 60 } else { 50 };
+                let accent_text = get_surface_color(
+                    primary_color_index,
+                    steps,
+                    &step_array,
+                    is_dark,
+                    &Srgba::new(1., 1., 1., 1.),
+                );
+                if darkest.relative_contrast(accent_text.color) < 4. {
+                    Srgba::new(0., 0., 0., 1.)
+                } else {
+                    accent_text
+                }
+            })
+        };
+
         let mut theme: Theme = Theme {
             name: palette.name().to_string(),
             shade: if palette.is_dark() {
@@ -879,60 +981,7 @@ impl ThemeBuilder {
                     &p_ref.neutral_6,
                 ),
             ),
-            primary: {
-                let container_bg = if let Some(primary_container_bg_color) = primary_container_bg {
-                    primary_container_bg_color
-                } else {
-                    get_surface_color(bg_index, 5, &step_array, is_dark, &p_ref.neutral_1)
-                };
-
-                let base_index: usize = color_index(container_bg, step_array.len());
-                let component_base =
-                    get_surface_color(base_index, 6, &step_array, is_dark, &p_ref.neutral_3);
-
-                component_hovered_overlay = if base_index < 91 {
-                    p_ref.neutral_10
-                } else {
-                    p_ref.neutral_0
-                };
-                component_hovered_overlay.alpha = 0.1;
-
-                component_pressed_overlay = component_hovered_overlay;
-                component_pressed_overlay.alpha = 0.2;
-
-                let container = Container::new(
-                    Component::component(
-                        component_base,
-                        accent,
-                        get_text(
-                            color_index(component_base, step_array.len()),
-                            &step_array,
-                            &p_ref.neutral_8,
-                            text_steps_array.as_ref(),
-                        ),
-                        component_hovered_overlay,
-                        component_pressed_overlay,
-                        is_high_contrast,
-                        p_ref.neutral_8,
-                    ),
-                    container_bg,
-                    get_text(
-                        base_index,
-                        &step_array,
-                        &p_ref.neutral_8,
-                        text_steps_array.as_ref(),
-                    ),
-                    get_surface_color(
-                        base_index,
-                        5,
-                        &neutral_steps,
-                        base_index <= 65,
-                        &p_ref.neutral_6,
-                    ),
-                );
-
-                container
-            },
+            primary,
             secondary: {
                 let container_bg = if let Some(secondary_container_bg) = secondary_container_bg {
                     secondary_container_bg
@@ -1098,6 +1147,7 @@ impl ThemeBuilder {
             active_hint,
             window_hint,
             is_frosted,
+            accent_text,
         };
         theme.spacing = spacing;
         theme.corner_radii = corner_radii;
