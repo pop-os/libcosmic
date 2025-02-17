@@ -9,7 +9,7 @@ use crate::widget::menu::{
     self, menu_roots_children, menu_roots_diff, CloseCondition, ItemHeight, ItemWidth,
     MenuBarState, PathHighlight,
 };
-use crate::widget::{dropdown, icon, Icon};
+use crate::widget::{icon, Icon};
 use crate::{Element, Renderer};
 use derive_setters::Setters;
 use iced::clipboard::dnd::{self, DndAction, DndDestinationRectangle, DndEvent, OfferEvent};
@@ -127,7 +127,7 @@ where
     pub(super) style: Style,
     /// The context menu to display when a context is activated
     #[setters(skip)]
-    pub(super) context_menu: Option<Vec<menu::Tree<Message>>>,
+    pub(super) context_menu: Option<Vec<menu::Tree<'a, Message, crate::Renderer>>>,
     /// Emits the ID of the item that was activated.
     #[setters(skip)]
     pub(super) on_activate: Option<Box<dyn Fn(Entity) -> Message + 'static>>,
@@ -197,13 +197,13 @@ where
         }
     }
 
-    pub fn context_menu(mut self, context_menu: Option<Vec<menu::Tree<Message>>>) -> Self
+    pub fn context_menu(mut self, context_menu: Option<Vec<menu::Tree<'a, Message>>>) -> Self
     where
-        Message: Clone + 'static,
+        Message: 'static,
     {
         self.context_menu = context_menu.map(|menus| {
             vec![menu::Tree::with_children(
-                crate::Element::from(crate::widget::row::<'static, Message>()),
+                crate::widget::row::<'static, Message>(),
                 menus,
             )]
         });
@@ -593,7 +593,6 @@ where
             dnd_state: Default::default(),
             fingers_pressed: Default::default(),
             pressed_item: None,
-            menu_state: Default::default(),
         })
     }
 
@@ -1553,7 +1552,7 @@ where
         translation: Vector,
     ) -> Option<iced_core::overlay::Element<'b, Message, crate::Theme, Renderer>> {
         let state = tree.state.downcast_ref::<LocalState>();
-        let menu_state = state.menu_state.clone();
+
         let Some(entity) = state.show_context else {
             return None;
         };
@@ -1581,8 +1580,8 @@ where
 
         Some(
             crate::widget::menu::Menu {
-                tree: menu_state,
-                menu_roots: Cow::Borrowed(context_menu),
+                tree: &mut tree.children[0],
+                menu_roots: context_menu,
                 bounds_expand: 16,
                 menu_overlays_parent: true,
                 close_condition: CloseCondition {
@@ -1597,7 +1596,7 @@ where
                 cross_offset: 0,
                 root_bounds_list: vec![bounds],
                 path_highlight: Some(PathHighlight::MenuActive),
-                style: Cow::Owned(crate::theme::menu_bar::MenuBarStyle::Default),
+                style: &crate::theme::menu_bar::MenuBarStyle::Default,
                 position: Point::new(translation.x, translation.y),
             }
             .overlay(),
@@ -1684,8 +1683,6 @@ pub struct LocalState {
     fingers_pressed: HashSet<Finger>,
     /// The currently pressed item
     pressed_item: Option<Item>,
-    /// Menu state
-    pub(crate) menu_state: dropdown::menu::State,
 }
 
 #[derive(Debug, Default, PartialEq)]
