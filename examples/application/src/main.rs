@@ -275,111 +275,75 @@ impl cosmic::Application for App {
                         ],
                     ),
                 ),
-                Tree::with_children(Element::from(button::text("hi 4")), {
-                    let mut root_items = vec![menu::Tree::with_children(
-                        menu::root("hi 41 extra root"),
-                        menu::items(
-                            &self.keybinds,
-                            vec![menu::Item::Button("hi 3", None, Action::Hi)],
-                        ),
-                    )];
-                    let mut items = menu::items(
+                Tree::with_children(
+                    Element::from(button::text("hi 4")),
+                    menu::items(
                         &self.keybinds,
                         vec![
+                            menu::Item::Folder(
+                                "hi 41 extra root",
+                                vec![menu::Item::Button("hi 3", None, Action::Hi)],
+                            ),
                             menu::Item::Button("hi 42", None, Action::Hi),
                             menu::Item::Button("hi 43", None, Action::Hi),
                             menu::Item::Button("hi 44", None, Action::Hi),
                             menu::Item::Button("hi 45", None, Action::Hi),
                             menu::Item::Button("hi 46", None, Action::Hi),
                         ],
-                    );
-                    root_items.append(&mut items);
-                    root_items
-                }),
+                    ),
+                ),
             ])
             .into()]
         }
         #[cfg(feature = "wayland")]
         {
             vec![self.core.responsive_menu_bar(
+                &self.keybinds,
                 MENU_ID.clone(),
                 vec![
                     (
-                        menu::root("hiiiiiiiiiiiiiiiiiii 1"),
-                        menu::items(
-                            &self.keybinds,
-                            vec![menu::Item::Button("hi", None, Action::Hi)],
-                        ),
+                        "hiiiiiiiiiiiiiiiiiii 1".into(),
+                        vec![menu::Item::Button("hi 1".into(), None, Action::Hi)],
                     ),
                     (
-                        menu::root("hiiiiiiiiiiiiiiiiiiiii 2"),
-                        menu::items(
-                            &self.keybinds,
-                            vec![
-                                menu::Item::Button("hi 21", None, Action::Hi),
-                                menu::Item::Button("hi 22", None, Action::Hi),
-                            ],
-                        ),
+                        "hiiiiiiiiiiiiiiiiiii 2".into(),
+                        vec![
+                            menu::Item::Button("hi 2".into(), None, Action::Hi),
+                            menu::Item::Button("hi 22".into(), None, Action::Hi),
+                        ],
                     ),
                     (
-                        menu::root("hi 3"),
-                        menu::items(
-                            &self.keybinds,
-                            vec![menu::Item::Button("hi 33", None, Action::Hi)],
-                        ),
+                        "hiiiiiiiiiiiiiiiiiii 3".into(),
+                        vec![
+                            menu::Item::Button("hi 3".into(), None, Action::Hi),
+                            menu::Item::Button("hi 33".into(), None, Action::Hi),
+                            menu::Item::Button("hi 333".into(), None, Action::Hi),
+                        ],
                     ),
-                    (menu::root("hi 4"), {
-                        let mut root_items = vec![menu::Tree::with_children(
-                            menu_button(vec![text("hi 41 extra root").into()])
-                                .on_press(Message::Hi),
-                            vec![menu::Tree::with_children(
-                                menu_button(vec![text("hi 41 extra  2").into()])
-                                    .on_press(Message::Hi),
-                                {
-                                    let mut root_items = vec![menu::Tree::with_children(
-                                        menu_button(vec![text("hi 41 extra root").into()])
-                                            .on_press(Message::Hi),
-                                        vec![menu::Tree::with_children(
-                                            menu_button(vec![text("hi 41 extra  2").into()])
-                                                .on_press(Message::Hi),
-                                            menu::items(
-                                                &self.keybinds,
-                                                vec![menu::Item::Button(
-                                                    "hi 41 extra root item",
-                                                    None,
-                                                    Action::Hi,
-                                                )],
-                                            ),
-                                        )],
-                                    )];
-                                    let mut items = menu::items(
-                                        &self.keybinds,
+                    (
+                        "hiiiiiiiiiiiiiiiiiii 4".into(),
+                        vec![
+                            menu::Item::Button("hi 4".into(), None, Action::Hi),
+                            menu::Item::Button("hi 44".into(), None, Action::Hi),
+                            menu::Item::Button("hi 444".into(), None, Action::Hi),
+                            menu::Item::Folder(
+                                "nest 4".into(),
+                                vec![
+                                    menu::Item::Button("hi 4".into(), None, Action::Hi),
+                                    menu::Item::Button("hi 44".into(), None, Action::Hi),
+                                    menu::Item::Button("hi 444".into(), None, Action::Hi),
+                                    menu::Item::Folder(
+                                        "nest 2 4".into(),
                                         vec![
-                                            menu::Item::Button("hi 42", None, Action::Hi),
-                                            menu::Item::Button("hi 43", None, Action::Hi),
-                                            menu::Item::Button("hi 44", None, Action::Hi),
-                                            menu::Item::Button("hi 45", None, Action::Hi),
-                                            menu::Item::Button("hi 46", None, Action::Hi),
+                                            menu::Item::Button("hi 4".into(), None, Action::Hi),
+                                            menu::Item::Button("hi 44".into(), None, Action::Hi),
+                                            menu::Item::Button("hi 444".into(), None, Action::Hi),
                                         ],
-                                    );
-                                    root_items.append(&mut items);
-                                    root_items
-                                },
-                            )],
-                        )];
-                        let mut items = menu::items(
-                            &self.keybinds,
-                            vec![
-                                menu::Item::Button("hi 42", None, Action::Hi),
-                                menu::Item::Button("hi 43", None, Action::Hi),
-                                menu::Item::Button("hi 44", None, Action::Hi),
-                                menu::Item::Button("hi 45", None, Action::Hi),
-                                menu::Item::Button("hi 46", None, Action::Hi),
-                            ],
-                        );
-                        root_items.append(&mut items);
-                        root_items
-                    }),
+                                    ),
+                                ],
+                            ),
+                        ],
+                    ),
                 ],
             )]
         }
