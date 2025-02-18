@@ -3,6 +3,10 @@ name = "application"
 version = "0.1.0"
 edition = "2021"
 
+[features]
+default = ["wayland"]
+wayland = ["libcosmic/wayland"]
+
 [dependencies]
 tracing = "0.1.37"
 tracing-subscriber = "0.3.17"
@@ -18,7 +22,6 @@ features = [
     "xdg-portal",
     "dbus-config",
     "a11y",
-    "wayland",
     "wgpu",
     "single-instance",
     "multi-window",
