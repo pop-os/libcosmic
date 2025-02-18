@@ -138,7 +138,11 @@ pub(crate) fn iced_settings<App: Application>(
 ///
 /// Returns error on application failure.
 pub fn run<App: Application>(settings: Settings, flags: App::Flags) -> iced::Result {
-    let default_font = settings.default_font;
+    #[cfg(target_env = "gnu")]
+    if let Some(threshold) = settings.default_mmap_threshold {
+        crate::malloc::limit_mmap_threshold(threshold);
+    }
+
     let (settings, mut flags, window_settings) = iced_settings::<App>(settings, flags);
     #[cfg(not(feature = "multi-window"))]
     {

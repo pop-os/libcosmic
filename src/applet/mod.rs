@@ -153,7 +153,6 @@ impl Context {
         self.size = Size::Hardcoded((width, height));
     }
 
-    #[must_use]
     #[allow(clippy::cast_precision_loss)]
     pub fn window_settings(&self) -> crate::app::Settings {
         let (width, height) = self.suggested_size(true);
@@ -183,7 +182,6 @@ impl Context {
         matches!(self.anchor, PanelAnchor::Top | PanelAnchor::Bottom)
     }
 
-    #[must_use]
     pub fn icon_button_from_handle<'a, Message: 'static>(
         &self,
         icon: widget::icon::Handle,
@@ -213,7 +211,6 @@ impl Context {
         .class(Button::AppletIcon)
     }
 
-    #[must_use]
     pub fn icon_button<'a, Message: 'static>(
         &self,
         icon_name: &'a str,
@@ -384,6 +381,11 @@ pub fn run<App: Application>(flags: App::Flags) -> iced::Result {
 
     let mut settings = helper.window_settings();
     settings.resizable = None;
+
+    #[cfg(target_env = "gnu")]
+    if let Some(threshold) = settings.default_mmap_threshold {
+        crate::malloc::limit_mmap_threshold(threshold);
+    }
 
     if let Some(icon_theme) = settings.default_icon_theme.clone() {
         crate::icon_theme::set_default(icon_theme);
