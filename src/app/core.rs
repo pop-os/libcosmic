@@ -388,32 +388,65 @@ impl Core {
         id
     }
 
-    pub fn responsive_menu_bar<'a, Message: Clone + From<SurfaceMessage> + 'static>(
+    #[cfg(feature = "wayland")]
+    /// # Panics
+    ///
+    /// Will panic if the menu bar collapses without tracking the size
+    pub fn responsive_menu_bar<
+        'a,
+        Message: Clone
+            + From<crate::surface_message::SurfaceMessage>
+            + crate::surface_message::SurfaceMessageHandler
+            + 'static,
+    >(
         &self,
         id: crate::widget::Id,
-        roots: Vec<Tree<'a, Message>>,
+        trees: Vec<(
+            crate::widget::Button<'a, Message>,
+            Vec<impl Into<Tree<'a, Message>>>,
+        )>,
     ) -> crate::Element<'a, Message> {
+        use iced::Length;
+
+        use crate::widget::id_container;
+
         let menu_bar_size = self.menu_bars.get(&id);
+        #[allow(clippy::if_not_else)]
         if !menu_bar_size.is_some_and(|(limits, size)| {
             let max_size = limits.max();
-
             max_size.width < size.width
         }) {
             crate::Element::from(responsive_container::responsive_container(
-                menu::bar(roots),
+                id_container(
+                    menu::bar(
+                        trees
+                            .into_iter()
+                            .map(|mt| menu::Tree::<_>::with_children(mt.0, mt.1))
+                            .collect(),
+                    ),
+                    crate::widget::Id::new(format!("menu_bar_expanded_{id}")),
+                ),
                 id,
             ))
         } else {
             crate::Element::from(
                 responsive_container::responsive_container(
-                    menu::bar(vec![menu::Tree::<_>::with_children(
-                        Element::from(
-                            button::icon(icon::from_name("open-menu-symbolic"))
-                                .padding([4, 12])
-                                .class(crate::theme::Button::MenuRoot),
-                        ),
-                        roots,
-                    )]),
+                    id_container(
+                        menu::bar(vec![menu::Tree::<_>::with_children(
+                            Element::from(
+                                button::icon(icon::from_name("open-menu-symbolic"))
+                                    .padding([4, 12])
+                                    .class(crate::theme::Button::MenuRoot),
+                            ),
+                            trees
+                                .into_iter()
+                                .map(|mt| {
+                                    menu::Tree::<_>::with_children(mt.0.width(Length::Fill), mt.1)
+                                })
+                                .collect(),
+                        )]),
+                        crate::widget::Id::new(format!("menu_bar_collapsed_{id}")),
+                    ),
                     id,
                 )
                 .size(menu_bar_size.unwrap().1),
