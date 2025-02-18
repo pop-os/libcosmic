@@ -135,7 +135,6 @@ impl cosmic::Application for Window {
             ));
             }
             Message::PopupCloseRequested(id) => {
-                dbg!(id, self.dropdown_id);
                 return cosmic::task::message(cosmic::app::message::destroy_popup::<Window>(id));
             }
         }
