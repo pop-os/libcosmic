@@ -398,14 +398,18 @@ impl Core {
             + From<crate::surface_message::SurfaceMessage>
             + crate::surface_message::SurfaceMessageHandler
             + 'static,
+        A: menu::Action<Message = Message>,
     >(
         &self,
+        key_binds: &HashMap<menu::KeyBind, A>,
         id: crate::widget::Id,
         trees: Vec<(
-            crate::widget::Button<'a, Message>,
-            Vec<impl Into<Tree<'a, Message>>>,
+            std::borrow::Cow<'static, str>,
+            Vec<menu::Item<A, std::borrow::Cow<'static, str>>>,
         )>,
     ) -> crate::Element<'a, Message> {
+        use std::borrow::Cow;
+
         use iced::Length;
 
         use crate::widget::id_container;
@@ -421,7 +425,12 @@ impl Core {
                     menu::bar(
                         trees
                             .into_iter()
-                            .map(|mt| menu::Tree::<_>::with_children(mt.0, mt.1))
+                            .map(|mt| {
+                                menu::Tree::<_>::with_children(
+                                    menu::root(mt.0),
+                                    menu::items(&key_binds, mt.1),
+                                )
+                            })
                             .collect(),
                     ),
                     crate::widget::Id::new(format!("menu_bar_expanded_{id}")),
@@ -438,19 +447,13 @@ impl Core {
                                     .padding([4, 12])
                                     .class(crate::theme::Button::MenuRoot),
                             ),
-                            trees
-                                .into_iter()
-                                .map(|mt| {
-                                    menu::Tree::<_>::with_children(
-                                        mt.0.width(Length::Fill)
-                                            .height(Length::Fixed(36.0))
-                                            .padding([4, 16])
-                                            .class(crate::theme::Button::MenuItem)
-                                            .force_enabled(true),
-                                        mt.1,
-                                    )
-                                })
-                                .collect(),
+                            menu::items(
+                                &key_binds,
+                                trees
+                                    .into_iter()
+                                    .map(|mt| menu::Item::Folder(mt.0, mt.1))
+                                    .collect(),
+                            ),
                         )]),
                         crate::widget::Id::new(format!("menu_bar_collapsed_{id}")),
                     ),
