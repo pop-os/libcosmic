@@ -4,6 +4,7 @@
 use std::{cell::OnceCell, collections::HashMap};
 
 use crate::{
+    surface_message::SurfaceMessage,
     theme::menu_bar,
     widget::{
         button, icon,
@@ -18,9 +19,9 @@ use iced_core::{window::Id, Element};
 use palette::Srgba;
 use slotmap::Key;
 
-use crate::Theme;
+use crate::{surface_message::SurfaceMessageHandler, Theme};
 
-use super::{message::SurfaceMessage, Renderer, Task};
+use super::{Renderer, Task};
 
 /// Status of the nav bar and its panels.
 #[derive(Clone)]
