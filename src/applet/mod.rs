@@ -11,6 +11,7 @@ use crate::{
         window, Color, Length, Limits, Rectangle,
     },
     iced_widget,
+    surface_message::SurfaceMessageHandler,
     theme::{self, system_dark, system_light, Button, THEME},
     widget::{
         self,
@@ -308,6 +309,7 @@ impl Context {
             },
             parent_size: None,
             grab: true,
+            close_with_children: false,
         }
     }
 
@@ -376,7 +378,10 @@ impl Context {
 /// # Errors
 ///
 /// Returns error on application failure.
-pub fn run<App: Application>(flags: App::Flags) -> iced::Result {
+pub fn run<App: Application>(flags: App::Flags) -> iced::Result
+where
+    App::Message: SurfaceMessageHandler,
+{
     let helper = Context::default();
 
     let mut settings = helper.window_settings();

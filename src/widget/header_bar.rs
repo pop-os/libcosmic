@@ -306,7 +306,10 @@ impl<'a, Message: Clone + 'static> HeaderBar<'a, Message> {
             Density::Spacious => 48.0,
             Density::Standard => 48.0,
         };
-
+        let portion = ((start.len().max(end.len()) as f32 / center.len().max(1) as f32).round()
+            as u16)
+            .max(1);
+        let center_empty = center.is_empty() && self.title.is_empty();
         // Creates the headerbar widget.
         let mut widget = widget::row::with_capacity(3)
             // If elements exist in the start region, append them here.
@@ -316,7 +319,7 @@ impl<'a, Message: Clone + 'static> HeaderBar<'a, Message> {
                     .align_y(iced::Alignment::Center)
                     .apply(widget::container)
                     .align_x(iced::Alignment::Start)
-                    .width(Length::Shrink),
+                    .width(Length::FillPortion(portion)),
             )
             // If elements exist in the center region, use them here.
             // This will otherwise use the title as a widget if a title was defined.
@@ -338,7 +341,11 @@ impl<'a, Message: Clone + 'static> HeaderBar<'a, Message> {
                     .align_y(iced::Alignment::Center)
                     .apply(widget::container)
                     .align_x(iced::Alignment::End)
-                    .width(Length::Shrink),
+                    .width(if center_empty {
+                        Length::Fill
+                    } else {
+                        Length::FillPortion(portion)
+                    }),
             )
             .align_y(iced::Alignment::Center)
             .height(Length::Fixed(height))

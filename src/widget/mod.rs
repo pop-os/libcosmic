@@ -97,6 +97,9 @@ pub mod aspect_ratio;
 #[cfg(feature = "autosize")]
 pub mod autosize;
 
+#[cfg(feature = "winit")]
+pub(crate) mod responsive_container;
+
 pub mod button;
 #[doc(inline)]
 pub use button::{Button, IconButton, LinkButton, TextButton};
@@ -335,6 +338,10 @@ pub use toggler::toggler;
 
 #[doc(inline)]
 pub use tooltip::{tooltip, Tooltip};
+
+#[cfg(feature = "wayland")]
+pub mod wayland;
+
 pub mod tooltip {
     use crate::Element;
     use std::borrow::Cow;
@@ -361,6 +368,10 @@ pub mod tooltip {
 pub mod warning;
 #[doc(inline)]
 pub use warning::*;
+
+pub mod wrapper;
+#[doc(inline)]
+pub use wrapper::*;
 
 #[cfg(feature = "markdown")]
 #[doc(inline)]

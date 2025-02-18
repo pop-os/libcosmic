@@ -366,6 +366,8 @@ where
                 if state.menu_states.is_empty() && view_cursor.is_over(layout.bounds()) {
                     state.view_cursor = view_cursor;
                     state.open = true;
+                    // #[cfg(feature = "wayland")]
+                    // TODO emit Message to open menu
                 }
             }
             _ => (),
@@ -437,6 +439,9 @@ where
         _renderer: &Renderer,
         translation: Vector,
     ) -> Option<overlay::Element<'b, Message, crate::Theme, Renderer>> {
+        // #[cfg(feature = "wayland")]
+        // return None;
+
         let state = tree.state.downcast_ref::<MenuBarState>();
         if !state.open {
             return None;

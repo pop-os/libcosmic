@@ -3,15 +3,25 @@
 
 use std::{cell::OnceCell, collections::HashMap};
 
-use crate::widget::nav_bar;
+use crate::{
+    surface_message::SurfaceMessage,
+    theme::menu_bar,
+    widget::{
+        button, icon,
+        menu::{self, Tree},
+        nav_bar, responsive_container,
+    },
+};
 use cosmic_config::CosmicConfigEntry;
 use cosmic_theme::ThemeMode;
-use iced::window;
-use iced_core::window::Id;
+use iced::{window, Limits, Size};
+use iced_core::{window::Id, Element};
 use palette::Srgba;
 use slotmap::Key;
 
-use crate::Theme;
+use crate::{surface_message::SurfaceMessageHandler, Theme};
+
+use super::{Renderer, Task};
 
 /// Status of the nav bar and its panels.
 #[derive(Clone)]
@@ -95,6 +105,8 @@ pub struct Core {
     pub(crate) main_window: Option<window::Id>,
 
     pub(crate) exit_on_main_window_closed: bool,
+
+    pub(crate) menu_bars: HashMap<crate::widget::Id, (Limits, Size)>,
 }
 
 impl Default for Core {
@@ -151,6 +163,7 @@ impl Default for Core {
             portal_is_high_contrast: None,
             main_window: None,
             exit_on_main_window_closed: true,
+            menu_bars: HashMap::new(),
         }
     }
 }
@@ -373,5 +386,81 @@ impl Core {
     pub fn set_main_window_id(&mut self, mut id: Option<window::Id>) -> Option<window::Id> {
         std::mem::swap(&mut self.main_window, &mut id);
         id
+    }
+
+    #[cfg(feature = "wayland")]
+    /// # Panics
+    ///
+    /// Will panic if the menu bar collapses without tracking the size
+    pub fn responsive_menu_bar<
+        'a,
+        Message: Clone
+            + From<crate::surface_message::SurfaceMessage>
+            + crate::surface_message::SurfaceMessageHandler
+            + 'static,
+        A: menu::Action<Message = Message>,
+    >(
+        &self,
+        key_binds: &HashMap<menu::KeyBind, A>,
+        id: crate::widget::Id,
+        trees: Vec<(
+            std::borrow::Cow<'static, str>,
+            Vec<menu::Item<A, std::borrow::Cow<'static, str>>>,
+        )>,
+    ) -> crate::Element<'a, Message> {
+        use std::borrow::Cow;
+
+        use iced::Length;
+
+        use crate::widget::id_container;
+
+        let menu_bar_size = self.menu_bars.get(&id);
+        #[allow(clippy::if_not_else)]
+        if !menu_bar_size.is_some_and(|(limits, size)| {
+            let max_size = limits.max();
+            max_size.width < size.width
+        }) {
+            crate::Element::from(responsive_container::responsive_container(
+                id_container(
+                    menu::bar(
+                        trees
+                            .into_iter()
+                            .map(|mt| {
+                                menu::Tree::<_>::with_children(
+                                    menu::root(mt.0),
+                                    menu::items(&key_binds, mt.1),
+                                )
+                            })
+                            .collect(),
+                    ),
+                    crate::widget::Id::new(format!("menu_bar_expanded_{id}")),
+                ),
+                id,
+            ))
+        } else {
+            crate::Element::from(
+                responsive_container::responsive_container(
+                    id_container(
+                        menu::bar(vec![menu::Tree::<_>::with_children(
+                            Element::from(
+                                button::icon(icon::from_name("open-menu-symbolic"))
+                                    .padding([4, 12])
+                                    .class(crate::theme::Button::MenuRoot),
+                            ),
+                            menu::items(
+                                &key_binds,
+                                trees
+                                    .into_iter()
+                                    .map(|mt| menu::Item::Folder(mt.0, mt.1))
+                                    .collect(),
+                            ),
+                        )]),
+                        crate::widget::Id::new(format!("menu_bar_collapsed_{id}")),
+                    ),
+                    id,
+                )
+                .size(menu_bar_size.unwrap().1),
+            )
+        }
     }
 }

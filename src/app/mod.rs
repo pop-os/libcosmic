@@ -6,6 +6,8 @@
 //! Check out our [application](https://github.com/pop-os/libcosmic/tree/master/examples/application)
 //! example in our repository.
 
+use crate::surface_message::{MessageWrapper, SurfaceMessage, SurfaceMessageHandler};
+
 pub mod command;
 pub mod context_drawer;
 mod core;
@@ -15,6 +17,10 @@ pub(crate) mod multi_window;
 pub mod settings;
 
 pub mod message {
+    use crate::surface_message::{MessageWrapper, SurfaceMessage, SurfaceMessageHandler};
+
+    use iced::{Limits, Size};
+
     #[derive(Clone, Debug)]
     #[must_use]
     pub enum Message<M> {
@@ -39,6 +45,171 @@ pub mod message {
 
     pub const fn none<M>() -> Message<M> {
         Message::None
+    }
+
+    #[cfg(feature = "wayland")]
+    pub fn destroy_popup<App: super::Application>(id: iced_core::window::Id) -> App::Message
+    where
+        App::Message: SurfaceMessageHandler + From<SurfaceMessage>,
+    {
+        let surface_msg = SurfaceMessage::DestroyPopup(id);
+        App::Message::from(surface_msg)
+    }
+
+    /// Used to produce a destroy popup message from within a widget.
+    #[cfg(feature = "wayland")]
+    pub fn destroy_popup_simple<Message>(id: iced_core::window::Id) -> Message
+    where
+        Message: SurfaceMessageHandler + From<SurfaceMessage> + 'static,
+    {
+        Message::from(SurfaceMessage::DestroyPopup(id))
+    }
+
+    #[cfg(feature = "wayland")]
+    pub fn destroy_subsurface<App: super::Application>(id: iced_core::window::Id) -> App::Message
+    where
+        App::Message: SurfaceMessageHandler + From<SurfaceMessage>,
+    {
+        let surface_msg = SurfaceMessage::DestroySubsurface(id);
+        App::Message::from(surface_msg)
+    }
+
+    #[cfg(feature = "wayland")]
+    pub fn app_popup<App: super::Application>(
+        settings: impl Fn(&mut App) -> iced_runtime::platform_specific::wayland::popup::SctkPopupSettings
+            + Send
+            + Sync
+            + 'static,
+        view: Option<
+            impl Fn(&App) -> crate::Element<'static, super::Message<App::Message>>
+                + Send
+                + Sync
+                + 'static,
+        >,
+    ) -> App::Message
+    where
+        App::Message: SurfaceMessageHandler + From<SurfaceMessage>,
+    {
+        use std::{any::Any, sync::Arc};
+
+        use crate::surface_message::{SurfaceMessage, SurfaceMessageHandler};
+        let boxed: Box<
+            dyn Fn(&mut App) -> iced_runtime::platform_specific::wayland::popup::SctkPopupSettings
+                + Send
+                + Sync
+                + 'static,
+        > = Box::new(settings);
+        let boxed: Box<dyn Any + Send + Sync + 'static> = Box::new(boxed);
+
+        App::Message::from(SurfaceMessage::AppPopup(
+            Arc::new(boxed),
+            view.map(|view| {
+                let boxed: Box<
+                    dyn Fn(&App) -> crate::Element<'static, super::Message<App::Message>>
+                        + Send
+                        + Sync
+                        + 'static,
+                > = Box::new(view);
+                let boxed: Box<dyn Any + Send + Sync + 'static> = Box::new(boxed);
+                Arc::new(boxed)
+            }),
+        ))
+    }
+
+    /// Used to create a popup message from within a widget.
+    #[cfg(feature = "wayland")]
+    pub fn simple_popup<Message>(
+        settings: impl Fn() -> iced_runtime::platform_specific::wayland::popup::SctkPopupSettings
+            + Send
+            + Sync
+            + 'static,
+        view: Option<
+            impl Fn() -> crate::Element<'static, crate::app::Message<Message>> + Send + Sync + 'static,
+        >,
+    ) -> Message
+    where
+        Message: SurfaceMessageHandler + From<SurfaceMessage> + 'static,
+    {
+        use std::{any::Any, sync::Arc};
+
+        use crate::surface_message::{SurfaceMessage, SurfaceMessageHandler};
+        let boxed: Box<
+            dyn Fn() -> iced_runtime::platform_specific::wayland::popup::SctkPopupSettings
+                + Send
+                + Sync
+                + 'static,
+        > = Box::new(settings);
+        let boxed: Box<dyn Any + Send + Sync + 'static> = Box::new(boxed);
+
+        Message::from(SurfaceMessage::Popup(
+            Arc::new(boxed),
+            view.map(|view| {
+                let boxed: Box<
+                    dyn Fn() -> crate::Element<'static, super::Message<Message>>
+                        + Send
+                        + Sync
+                        + 'static,
+                > = Box::new(view);
+                let boxed: Box<dyn Any + Send + Sync + 'static> = Box::new(boxed);
+                Arc::new(boxed)
+            }),
+        ))
+    }
+
+    // TODO could this somehow be used by widgets? It is the wrong message type though.
+    // #[cfg(feature = "wayland")]
+    // pub fn get_simple_popup<App: super::Application>(
+    //     settings: iced_runtime::platform_specific::wayland::popup::SctkPopupSettings,
+    //     view: Option<
+    //         impl Fn() -> crate::Element<'static, super::Message<App::Message>> + Send + Sync + 'static,
+    //     >,
+    // ) -> App::Message
+    // where
+    //     App::Message: SurfaceMessageHandler + From<SurfaceMessage>,
+    // {
+    //     todo!()
+    // }
+
+    #[cfg(feature = "wayland")]
+    pub fn subsurface<App: super::Application>(
+        settings: impl Fn(&mut App) -> iced_runtime::platform_specific::wayland::subsurface::SctkSubsurfaceSettings + Send + Sync + 'static,
+        view: Option<
+            impl Fn(&App) -> crate::Element<'static, super::Message<App::Message>>
+                + Send
+                + Sync
+                + 'static,
+        >,
+    ) -> App::Message
+    where
+        App::Message: SurfaceMessageHandler + From<SurfaceMessage>,
+    {
+        use std::{any::Any, sync::Arc};
+
+        use crate::surface_message::{SurfaceMessage, SurfaceMessageHandler};
+        let boxed: Box<
+            dyn Fn(
+                    &mut App,
+                )
+                    -> iced_runtime::platform_specific::wayland::subsurface::SctkSubsurfaceSettings
+                + Send
+                + Sync
+                + 'static,
+        > = Box::new(settings);
+        let boxed: Box<dyn Any + Send + Sync + 'static> = Box::new(boxed);
+
+        App::Message::from(SurfaceMessage::Subsurface(
+            Arc::new(boxed),
+            view.map(|view| {
+                let boxed: Box<
+                    dyn Fn(&App) -> crate::Element<'static, super::Message<App::Message>>
+                        + Send
+                        + Sync
+                        + 'static,
+                > = Box::new(view);
+                let boxed: Box<dyn Any + Send + Sync + 'static> = Box::new(boxed);
+                Arc::new(boxed)
+            }),
+        ))
     }
 
     impl<M> From<M> for Message<M> {
@@ -137,12 +308,16 @@ pub(crate) fn iced_settings<App: Application>(
 /// # Errors
 ///
 /// Returns error on application failure.
-pub fn run<App: Application>(settings: Settings, flags: App::Flags) -> iced::Result {
+pub fn run<App: Application>(settings: Settings, flags: App::Flags) -> iced::Result
+where
+    App::Message: SurfaceMessageHandler,
+{
     #[cfg(target_env = "gnu")]
     if let Some(threshold) = settings.default_mmap_threshold {
         crate::malloc::limit_mmap_threshold(threshold);
     }
 
+    let default_font = settings.default_font;
     let (settings, mut flags, window_settings) = iced_settings::<App>(settings, flags);
     #[cfg(not(feature = "multi-window"))]
     {
@@ -324,7 +499,7 @@ impl DbusActivation {
 pub fn run_single_instance<App: Application>(settings: Settings, flags: App::Flags) -> iced::Result
 where
     App::Flags: CosmicFlags,
-    App::Message: Clone + std::fmt::Debug + Send + 'static,
+    App::Message: Clone + std::fmt::Debug + Send + SurfaceMessageHandler + 'static,
 {
     let activation_token = std::env::var("XDG_ACTIVATION_TOKEN").ok();
 
