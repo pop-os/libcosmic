@@ -6,6 +6,8 @@
 //! Check out our [application](https://github.com/pop-os/libcosmic/tree/master/examples/application)
 //! example in our repository.
 
+use crate::surface_message::{MessageWrapper, SurfaceMessage, SurfaceMessageHandler};
+
 pub mod command;
 pub mod context_drawer;
 mod core;
@@ -15,77 +17,9 @@ pub(crate) mod multi_window;
 pub mod settings;
 
 pub mod message {
+    use crate::surface_message::{MessageWrapper, SurfaceMessage, SurfaceMessageHandler};
+
     use iced::{Limits, Size};
-
-    pub enum MessageWrapper<M> {
-        Surface(SurfaceMessage),
-        Message(M),
-    }
-
-    pub trait SurfaceMessageHandler: Sized {
-        fn to_surface_message(self) -> MessageWrapper<Self>;
-    }
-
-    #[cfg(not(feature = "wayland"))]
-    impl<M> SurfaceMessageHandler for M {
-        fn to_surface_message(self) -> MessageWrapper<Self> {
-            MessageWrapper::Message(self)
-        }
-    }
-
-    /// Ignore this message in your application. It will be intercepted.
-    #[derive(Clone)]
-    pub enum SurfaceMessage {
-        /// Create a subsurface with a view function
-        Subsurface(
-            std::sync::Arc<Box<dyn std::any::Any + Send + Sync>>,
-            Option<std::sync::Arc<Box<dyn std::any::Any + Send + Sync>>>,
-        ),
-        /// Destroy a subsurface with a view function
-        DestroySubsurface(iced::window::Id),
-        /// Create a popup with a view function
-        Popup(
-            std::sync::Arc<Box<dyn std::any::Any + Send + Sync>>,
-            Option<std::sync::Arc<Box<dyn std::any::Any + Send + Sync>>>,
-        ),
-        /// Destroy a subsurface with a view function
-        DestroyPopup(iced::window::Id),
-        /// Responsive menu bar update
-        ResponsiveMenuBar {
-            /// Id of the menu bar
-            menu_bar: crate::widget::Id,
-            /// Limits of the menu bar
-            limits: Limits,
-            /// Requested Full Size for expanded menu bar
-            size: Size,
-        },
-    }
-
-    #[cfg(feature = "wayland")]
-    impl std::fmt::Debug for SurfaceMessage {
-        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-            match self {
-                Self::Subsurface(arg0, arg1) => {
-                    f.debug_tuple("Subsurface").field(arg0).field(arg1).finish()
-                }
-                Self::DestroySubsurface(arg0) => {
-                    f.debug_tuple("DestroySubsurface").field(arg0).finish()
-                }
-                Self::Popup(arg0, arg1) => f.debug_tuple("Popup").field(arg0).field(arg1).finish(),
-                Self::DestroyPopup(arg0) => f.debug_tuple("DestroyPopup").field(arg0).finish(),
-                Self::ResponsiveMenuBar {
-                    menu_bar,
-                    limits,
-                    size,
-                } => f
-                    .debug_struct("ResponsiveMenuBar")
-                    .field("menu_bar", menu_bar)
-                    .field("limits", limits)
-                    .field("size", size)
-                    .finish(),
-            }
-        }
-    }
 
     #[derive(Clone, Debug)]
     #[must_use]
@@ -122,6 +56,15 @@ pub mod message {
         App::Message::from(surface_msg)
     }
 
+    /// Used to produce a destroy popup message from within a widget.
+    #[cfg(feature = "wayland")]
+    pub fn destroy_popup_simple<Message>(id: iced_core::window::Id) -> Message
+    where
+        Message: SurfaceMessageHandler + From<SurfaceMessage> + 'static,
+    {
+        Message::from(SurfaceMessage::DestroyPopup(id))
+    }
+
     #[cfg(feature = "wayland")]
     pub fn destroy_subsurface<App: super::Application>(id: iced_core::window::Id) -> App::Message
     where
@@ -132,7 +75,7 @@ pub mod message {
     }
 
     #[cfg(feature = "wayland")]
-    pub fn get_popup<App: super::Application>(
+    pub fn app_popup<App: super::Application>(
         settings: impl Fn(&mut App) -> iced_runtime::platform_specific::wayland::popup::SctkPopupSettings
             + Send
             + Sync
@@ -148,6 +91,8 @@ pub mod message {
         App::Message: SurfaceMessageHandler + From<SurfaceMessage>,
     {
         use std::{any::Any, sync::Arc};
+
+        use crate::surface_message::{SurfaceMessage, SurfaceMessageHandler};
         let boxed: Box<
             dyn Fn(&mut App) -> iced_runtime::platform_specific::wayland::popup::SctkPopupSettings
                 + Send
@@ -156,11 +101,51 @@ pub mod message {
         > = Box::new(settings);
         let boxed: Box<dyn Any + Send + Sync + 'static> = Box::new(boxed);
 
-        App::Message::from(SurfaceMessage::Popup(
+        App::Message::from(SurfaceMessage::AppPopup(
             Arc::new(boxed),
             view.map(|view| {
                 let boxed: Box<
                     dyn Fn(&App) -> crate::Element<'static, super::Message<App::Message>>
+                        + Send
+                        + Sync
+                        + 'static,
+                > = Box::new(view);
+                let boxed: Box<dyn Any + Send + Sync + 'static> = Box::new(boxed);
+                Arc::new(boxed)
+            }),
+        ))
+    }
+
+    /// Used to create a popup message from within a widget.
+    #[cfg(feature = "wayland")]
+    pub fn simple_popup<Message>(
+        settings: impl Fn() -> iced_runtime::platform_specific::wayland::popup::SctkPopupSettings
+            + Send
+            + Sync
+            + 'static,
+        view: Option<
+            impl Fn() -> crate::Element<'static, crate::app::Message<Message>> + Send + Sync + 'static,
+        >,
+    ) -> Message
+    where
+        Message: SurfaceMessageHandler + From<SurfaceMessage> + 'static,
+    {
+        use std::{any::Any, sync::Arc};
+
+        use crate::surface_message::{SurfaceMessage, SurfaceMessageHandler};
+        let boxed: Box<
+            dyn Fn() -> iced_runtime::platform_specific::wayland::popup::SctkPopupSettings
+                + Send
+                + Sync
+                + 'static,
+        > = Box::new(settings);
+        let boxed: Box<dyn Any + Send + Sync + 'static> = Box::new(boxed);
+
+        Message::from(SurfaceMessage::Popup(
+            Arc::new(boxed),
+            view.map(|view| {
+                let boxed: Box<
+                    dyn Fn() -> crate::Element<'static, super::Message<Message>>
                         + Send
                         + Sync
                         + 'static,
@@ -186,7 +171,7 @@ pub mod message {
     // }
 
     #[cfg(feature = "wayland")]
-    pub fn get_subsurface<App: super::Application>(
+    pub fn subsurface<App: super::Application>(
         settings: impl Fn(&mut App) -> iced_runtime::platform_specific::wayland::subsurface::SctkSubsurfaceSettings + Send + Sync + 'static,
         view: Option<
             impl Fn(&App) -> crate::Element<'static, super::Message<App::Message>>
@@ -199,6 +184,8 @@ pub mod message {
         App::Message: SurfaceMessageHandler + From<SurfaceMessage>,
     {
         use std::{any::Any, sync::Arc};
+
+        use crate::surface_message::{SurfaceMessage, SurfaceMessageHandler};
         let boxed: Box<
             dyn Fn(
                     &mut App,
@@ -245,7 +232,6 @@ use context_drawer::ContextDrawer;
 use iced::window;
 use iced::{Length, Subscription};
 pub use message::Message;
-use message::SurfaceMessageHandler;
 use url::Url;
 #[cfg(feature = "single-instance")]
 use {

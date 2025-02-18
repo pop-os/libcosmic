@@ -7,6 +7,7 @@ use std::sync::Arc;
 
 use super::{Application, ApplicationExt, Core, Subscription};
 use crate::config::CosmicTk;
+use crate::surface_message::{MessageWrapper, SurfaceMessage, SurfaceMessageHandler};
 use crate::theme::{Theme, ThemeType, THEME};
 use crate::widget::nav_bar;
 use crate::{keyboard_nav, Element};
@@ -91,7 +92,7 @@ pub struct Cosmic<App: Application> {
 
 impl<T: Application> Cosmic<T>
 where
-    T::Message: Send + 'static + super::message::SurfaceMessageHandler,
+    T::Message: Send + 'static + crate::surface_message::SurfaceMessageHandler,
 {
     pub fn init(
         (mut core, flags): (Core, T::Flags),
@@ -123,11 +124,11 @@ where
     ) -> iced::Task<super::Message<T::Message>> {
         let message = match message {
             super::Message::App(message) => {
-                match super::message::SurfaceMessageHandler::to_surface_message(message) {
-                    super::message::MessageWrapper::Surface(surface_message) => {
+                match SurfaceMessageHandler::to_surface_message(message) {
+                    MessageWrapper::Surface(surface_message) => {
                         #[cfg(feature = "wayland")]
                         match surface_message {
-                            super::message::SurfaceMessage::Subsurface(settings, view) => {
+                            SurfaceMessage::Subsurface(settings, view) => {
                                 let Some(settings) = std::sync::Arc::try_unwrap(settings)
                                 .ok()
                                 .and_then(|s| s.downcast::<Box<dyn Fn(&mut T) -> iced_runtime::platform_specific::wayland::subsurface::SctkSubsurfaceSettings + Send + Sync>>().ok()) else {
@@ -159,7 +160,7 @@ where
                                     ))
                                 }
                             }
-                            super::message::SurfaceMessage::Popup(settings, view) => {
+                            SurfaceMessage::AppPopup(settings, view) => {
                                 let Some(settings) = std::sync::Arc::try_unwrap(settings)
                                 .ok()
                                 .and_then(|s| s.downcast::<Box<dyn Fn(&mut T) -> iced_runtime::platform_specific::wayland::popup::SctkPopupSettings + Send + Sync>>().ok()) else {
@@ -191,14 +192,14 @@ where
                                 }
                             }
                             #[cfg(feature = "wayland")]
-                            super::message::SurfaceMessage::DestroyPopup(id) => {
+                            SurfaceMessage::DestroyPopup(id) => {
                                 iced_winit::commands::popup::destroy_popup(id)
                             }
                             #[cfg(feature = "wayland")]
-                            super::message::SurfaceMessage::DestroySubsurface(id) => {
+                            SurfaceMessage::DestroySubsurface(id) => {
                                 iced_winit::commands::subsurface::destroy_subsurface(id)
                             }
-                            super::message::SurfaceMessage::ResponsiveMenuBar {
+                            SurfaceMessage::ResponsiveMenuBar {
                                 menu_bar,
                                 limits,
                                 size,
@@ -207,11 +208,42 @@ where
                                 core.menu_bars.insert(menu_bar, (limits, size));
                                 iced::Task::none()
                             }
+                            SurfaceMessage::Popup(settings, view) => {
+                                let Some(settings) = std::sync::Arc::try_unwrap(settings)
+                                .ok()
+                                .and_then(|s| s.downcast::<Box<dyn Fn() -> iced_runtime::platform_specific::wayland::popup::SctkPopupSettings + Send + Sync>>().ok()) else {
+                                tracing::error!("Invalid settings for popup");
+                                return Task::none();
+                            };
+
+                                if let Some(view) = view.and_then(|view| {
+                                    match std::sync::Arc::try_unwrap(view).ok()?.downcast::<Box<
+                                        dyn Fn() -> Element<'static, super::Message<T::Message>>
+                                            + Send
+                                            + Sync,
+                                    >>(
+                                    ) {
+                                        Ok(v) => Some(v),
+                                        Err(err) => {
+                                            tracing::error!(
+                                                "Invalid view for subsurface view: {err:?}"
+                                            );
+                                            None
+                                        }
+                                    }
+                                }) {
+                                    let settings = settings();
+
+                                    self.get_popup(settings, Box::new(move |_| view()))
+                                } else {
+                                    iced_winit::commands::popup::get_popup(settings())
+                                }
+                            }
                         }
                         #[cfg(not(feature = "wayland"))]
                         iced::Task::none()
                     }
-                    super::message::MessageWrapper::Message(message) => self.app.update(message),
+                    MessageWrapper::Message(message) => self.app.update(message),
                 }
             }
             super::Message::Cosmic(message) => self.cosmic_update(message),

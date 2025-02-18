@@ -1,10 +1,10 @@
-use cosmic::app::message::{SurfaceMessage, SurfaceMessageHandler};
 use cosmic::app::Core;
 use cosmic::iced::window::Id;
 use cosmic::iced::{Length, Limits, Task};
 use cosmic::iced_runtime::core::window;
 use cosmic::iced_runtime::platform_specific::wayland::popup::SctkPopupSettings;
 use cosmic::iced_runtime::platform_specific::wayland::subsurface;
+use cosmic::surface_message::{SurfaceMessage, SurfaceMessageHandler};
 use cosmic::widget::dropdown::DropdownView;
 use cosmic::widget::{autosize, dropdown, layer_container, list_column, settings, toggler};
 use cosmic::{iced_core, Element};
@@ -63,10 +63,10 @@ impl std::fmt::Debug for Message {
 }
 
 impl SurfaceMessageHandler for Message {
-    fn to_surface_message(self) -> cosmic::app::message::MessageWrapper<Self> {
+    fn to_surface_message(self) -> cosmic::surface_message::MessageWrapper<Self> {
         match self {
-            Message::Surface(msg) => cosmic::app::message::MessageWrapper::Surface(msg),
-            msg => cosmic::app::message::MessageWrapper::Message(msg),
+            Message::Surface(msg) => cosmic::surface_message::MessageWrapper::Surface(msg),
+            msg => cosmic::surface_message::MessageWrapper::Message(msg),
         }
     }
 }
@@ -123,7 +123,7 @@ impl cosmic::Application for Window {
             }
             Message::OpenDropdown(sctk_popup_settings, view) => {
                 self.dropdown_id = sctk_popup_settings.id;
-                return cosmic::task::message(cosmic::app::message::get_popup::<
+                return cosmic::task::message(cosmic::app::message::app_popup::<
                 Window,
             >(
                 move |_: &mut Window| sctk_popup_settings.clone(),
@@ -148,7 +148,7 @@ impl cosmic::Application for Window {
                 if let Some(id) = self.popup {
                     cosmic::app::message::destroy_popup::<Window>(id)
                 } else {
-                    cosmic::app::message::get_popup::<Window>(
+                    cosmic::app::message::app_popup::<Window>(
                         |state: &mut Window| {
                             let new_id = Id::unique();
                             state.popup = Some(new_id);
@@ -198,7 +198,7 @@ impl cosmic::Application for Window {
                 },
             ),
             |_| {
-                cosmic::app::message::get_subsurface(
+                cosmic::app::message::subsurface(
                     |app: &mut Window| {
                         subsurface::SctkSubsurfaceSettings {
                             parent: window::Id::RESERVED,
