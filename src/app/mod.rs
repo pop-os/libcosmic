@@ -1019,11 +1019,13 @@ fn single_instance_subscription<App: ApplicationExt>() -> Subscription<Message<A
 }
 
 const EMBEDDED_FONTS: &[&[u8]] = &[
-    include_bytes!("../../res/Fira/FiraSans-Light.otf"),
-    include_bytes!("../../res/Fira/FiraSans-Regular.otf"),
-    include_bytes!("../../res/Fira/FiraSans-SemiBold.otf"),
-    include_bytes!("../../res/Fira/FiraSans-Bold.otf"),
-    include_bytes!("../../res/Fira/FiraMono-Regular.otf"),
+    include_bytes!("../../res/open-sans/OpenSans-Light.ttf"),
+    include_bytes!("../../res/open-sans/OpenSans-Regular.ttf"),
+    include_bytes!("../../res/open-sans/OpenSans-Semibold.ttf"),
+    include_bytes!("../../res/open-sans/OpenSans-Bold.ttf"),
+    include_bytes!("../../res/open-sans/OpenSans-ExtraBold.ttf"),
+    include_bytes!("../../res/noto/NotoSansMono-Regular.ttf"),
+    include_bytes!("../../res/noto/NotoSansMono-Bold.ttf"),
 ];
 
 fn preload_fonts() {
