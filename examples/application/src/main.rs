@@ -12,11 +12,12 @@ use cosmic::iced::widget::column;
 use cosmic::iced::Length;
 use cosmic::iced_core::Size;
 use cosmic::surface_message::{MessageWrapper, SurfaceMessage, SurfaceMessageHandler};
-use cosmic::widget::button;
 use cosmic::widget::icon::{from_name, Handle};
 use cosmic::widget::menu::KeyBind;
+use cosmic::widget::{button, text};
 use cosmic::widget::{
     container,
+    menu::menu_button,
     menu::{self, action::MenuAction},
     nav_bar, responsive,
 };
@@ -329,35 +330,42 @@ impl cosmic::Application for App {
                     ),
                     (menu::root("hi 4"), {
                         let mut root_items = vec![menu::Tree::with_children(
-                            menu::root("hi 41 extra root"),
-                            vec![menu::Tree::with_children(menu::root("hi 41 extra  2"), {
-                                let mut root_items = vec![menu::Tree::with_children(
-                                    menu::root("hi 41 extra root"),
-                                    vec![menu::Tree::with_children(
-                                        menu::root("hi 41 extra  2"),
-                                        menu::items(
-                                            &self.keybinds,
-                                            vec![menu::Item::Button(
-                                                "hi 41 extra root item",
-                                                None,
-                                                Action::Hi,
-                                            )],
-                                        ),
-                                    )],
-                                )];
-                                let mut items = menu::items(
-                                    &self.keybinds,
-                                    vec![
-                                        menu::Item::Button("hi 42", None, Action::Hi),
-                                        menu::Item::Button("hi 43", None, Action::Hi),
-                                        menu::Item::Button("hi 44", None, Action::Hi),
-                                        menu::Item::Button("hi 45", None, Action::Hi),
-                                        menu::Item::Button("hi 46", None, Action::Hi),
-                                    ],
-                                );
-                                root_items.append(&mut items);
-                                root_items
-                            })],
+                            menu_button(vec![text("hi 41 extra root").into()])
+                                .on_press(Message::Hi),
+                            vec![menu::Tree::with_children(
+                                menu_button(vec![text("hi 41 extra  2").into()])
+                                    .on_press(Message::Hi),
+                                {
+                                    let mut root_items = vec![menu::Tree::with_children(
+                                        menu_button(vec![text("hi 41 extra root").into()])
+                                            .on_press(Message::Hi),
+                                        vec![menu::Tree::with_children(
+                                            menu_button(vec![text("hi 41 extra  2").into()])
+                                                .on_press(Message::Hi),
+                                            menu::items(
+                                                &self.keybinds,
+                                                vec![menu::Item::Button(
+                                                    "hi 41 extra root item",
+                                                    None,
+                                                    Action::Hi,
+                                                )],
+                                            ),
+                                        )],
+                                    )];
+                                    let mut items = menu::items(
+                                        &self.keybinds,
+                                        vec![
+                                            menu::Item::Button("hi 42", None, Action::Hi),
+                                            menu::Item::Button("hi 43", None, Action::Hi),
+                                            menu::Item::Button("hi 44", None, Action::Hi),
+                                            menu::Item::Button("hi 45", None, Action::Hi),
+                                            menu::Item::Button("hi 46", None, Action::Hi),
+                                        ],
+                                    );
+                                    root_items.append(&mut items);
+                                    root_items
+                                },
+                            )],
                         )];
                         let mut items = menu::items(
                             &self.keybinds,

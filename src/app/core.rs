@@ -441,7 +441,14 @@ impl Core {
                             trees
                                 .into_iter()
                                 .map(|mt| {
-                                    menu::Tree::<_>::with_children(mt.0.width(Length::Fill), mt.1)
+                                    menu::Tree::<_>::with_children(
+                                        mt.0.width(Length::Fill)
+                                            .height(Length::Fixed(36.0))
+                                            .padding([4, 16])
+                                            .class(crate::theme::Button::MenuItem)
+                                            .force_enabled(true),
+                                        mt.1,
+                                    )
                                 })
                                 .collect(),
                         )]),
