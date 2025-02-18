@@ -241,21 +241,21 @@ impl cosmic::Application for App {
         {
             vec![cosmic::widget::menu::bar(vec![
                 Tree::with_children(
-                    Element::from(button::text("hiiiiiiiiiiiiiiiiiii 1")),
+                    menu::root("hiiiiiiiiiiiiiiiiiii 1"),
                     menu::items(
                         &self.keybinds,
                         vec![menu::Item::Button("hi", None, Action::Hi)],
                     ),
                 ),
                 Tree::with_children(
-                    Element::from(button::text("hiiiiiiiiiiiiiiiiii 2")),
+                    menu::root("hiiiiiiiiiiiiiiiiii 2"),
                     menu::items(
                         &self.keybinds,
                         vec![menu::Item::Button("hi 2", None, Action::Hi)],
                     ),
                 ),
                 Tree::with_children(
-                    Element::from(button::text("hiiiiiiiiiiiiiiiiiiiii 3")),
+                    menu::root("hiiiiiiiiiiiiiiiiiiiii 3"),
                     menu::items(
                         &self.keybinds,
                         vec![
@@ -265,7 +265,7 @@ impl cosmic::Application for App {
                     ),
                 ),
                 Tree::with_children(
-                    Element::from(button::text("hi 3")),
+                    menu::root("hi 3"),
                     menu::items(
                         &self.keybinds,
                         vec![
@@ -276,7 +276,7 @@ impl cosmic::Application for App {
                     ),
                 ),
                 Tree::with_children(
-                    Element::from(button::text("hi 4")),
+                    menu::root("hi 4"),
                     menu::items(
                         &self.keybinds,
                         vec![
