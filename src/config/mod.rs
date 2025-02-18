@@ -13,8 +13,8 @@ use std::sync::{LazyLock, Mutex, RwLock};
 /// ID for the `CosmicTk` config.
 pub const ID: &str = "com.system76.CosmicTk";
 
-const MONO_FAMILY_DEFAULT: &str = "Fira Mono";
-const SANS_FAMILY_DEFAULT: &str = "Fira Sans";
+const MONO_FAMILY_DEFAULT: &str = "Noto Sans Mono";
+const SANS_FAMILY_DEFAULT: &str = "Open Sans";
 
 /// Stores static strings of the family names for `iced::Font` compatibility.
 pub static FAMILY_MAP: LazyLock<Mutex<BTreeSet<&'static str>>> = LazyLock::new(|| Mutex::default());
