@@ -51,7 +51,6 @@ pub enum SurfaceMessage {
     },
 }
 
-#[cfg(feature = "wayland")]
 impl std::fmt::Debug for SurfaceMessage {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
