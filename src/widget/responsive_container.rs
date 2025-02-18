@@ -9,7 +9,7 @@ use iced_core::renderer;
 use iced_core::widget::{tree, Id, Tree};
 use iced_core::{Clipboard, Element, Layout, Length, Rectangle, Shell, Vector, Widget};
 
-use crate::app::message::SurfaceMessage;
+use crate::surface_message::SurfaceMessage;
 
 pub(crate) fn responsive_container<'a, Message: 'static + From<SurfaceMessage>, Theme, E>(
     content: E,

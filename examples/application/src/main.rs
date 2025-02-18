@@ -6,12 +6,12 @@
 use std::collections::HashMap;
 use std::sync::LazyLock;
 
-use cosmic::app::message::{SurfaceMessage, SurfaceMessageHandler};
 use cosmic::app::{Core, Settings, Task};
 use cosmic::iced::alignment::{Horizontal, Vertical};
 use cosmic::iced::widget::column;
 use cosmic::iced::Length;
 use cosmic::iced_core::Size;
+use cosmic::surface_message::{MessageWrapper, SurfaceMessage, SurfaceMessageHandler};
 use cosmic::widget::icon::{from_name, Handle};
 use cosmic::widget::menu::KeyBind;
 use cosmic::widget::{
@@ -88,10 +88,10 @@ pub enum Message {
 }
 
 impl SurfaceMessageHandler for Message {
-    fn to_surface_message(self) -> cosmic::app::message::MessageWrapper<Self> {
+    fn to_surface_message(self) -> MessageWrapper<Self> {
         match self {
-            Message::Surface(msg) => cosmic::app::message::MessageWrapper::Surface(msg),
-            msg => cosmic::app::message::MessageWrapper::Message(msg),
+            Message::Surface(msg) => MessageWrapper::Surface(msg),
+            msg => MessageWrapper::Message(msg),
         }
     }
 }

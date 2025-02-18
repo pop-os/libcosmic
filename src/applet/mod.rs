@@ -2,7 +2,7 @@
 pub mod token;
 
 use crate::{
-    app::{self, iced_settings, message::SurfaceMessageHandler, Core},
+    app::{self, iced_settings, Core},
     cctk::sctk,
     iced::{
         self,
@@ -11,6 +11,7 @@ use crate::{
         window, Color, Length, Limits, Rectangle,
     },
     iced_widget,
+    surface_message::SurfaceMessageHandler,
     theme::{self, system_dark, system_light, Button, THEME},
     widget::{
         self,

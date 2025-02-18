@@ -85,6 +85,8 @@ pub mod process;
 #[cfg(feature = "wayland")]
 pub use cctk;
 
+pub mod surface_message;
+
 pub mod theme;
 
 #[doc(inline)]
