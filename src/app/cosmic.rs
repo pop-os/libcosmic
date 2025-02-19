@@ -117,13 +117,18 @@ where
         &mut self,
         message: super::Message<T::Message>,
     ) -> iced::Task<super::Message<T::Message>> {
-        match message {
+        let message = match message {
             super::Message::App(message) => self.app.update(message),
             super::Message::Cosmic(message) => self.cosmic_update(message),
             super::Message::None => iced::Task::none(),
             #[cfg(feature = "single-instance")]
             super::Message::DbusActivation(message) => self.app.dbus_activation(message),
-        }
+        };
+
+        #[cfg(target_env = "gnu")]
+        crate::malloc::trim(0);
+
+        message
     }
 
     #[cfg(not(feature = "multi-window"))]
@@ -291,16 +296,26 @@ where
             return self.app.view_window(id).map(super::Message::App);
         }
 
-        if self.app.core().window.use_template {
+        let view = if self.app.core().window.use_template {
             self.app.view_main()
         } else {
             self.app.view().map(super::Message::App)
-        }
+        };
+
+        #[cfg(target_env = "gnu")]
+        crate::malloc::trim(0);
+
+        view
     }
 
     #[cfg(not(feature = "multi-window"))]
     pub fn view(&self) -> Element<super::Message<T::Message>> {
-        self.app.view_main()
+        let view = self.app.view_main();
+
+        #[cfg(target_env = "gnu")]
+        crate::malloc::trim(0);
+
+        view
     }
 }
 
