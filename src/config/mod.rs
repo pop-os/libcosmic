@@ -24,7 +24,7 @@ pub static COSMIC_TK: LazyLock<RwLock<CosmicTk>> = LazyLock::new(|| {
         CosmicTk::config()
             .map(|c| {
                 CosmicTk::get_entry(&c).unwrap_or_else(|(errors, mode)| {
-                    for why in errors {
+                    for why in errors.into_iter().filter(cosmic_config::Error::is_err) {
                         tracing::error!(?why, "CosmicTk config entry error");
                     }
                     mode

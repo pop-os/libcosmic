@@ -117,7 +117,7 @@ impl Default for Core {
             system_theme_mode: ThemeMode::config()
                 .map(|c| {
                     ThemeMode::get_entry(&c).unwrap_or_else(|(errors, mode)| {
-                        for why in errors {
+                        for why in errors.into_iter().filter(cosmic_config::Error::is_err) {
                             tracing::error!(?why, "ThemeMode config entry error");
                         }
                         mode
