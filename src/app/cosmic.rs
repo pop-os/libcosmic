@@ -192,7 +192,11 @@ where
                 .core()
                 .watch_config::<crate::config::CosmicTk>(crate::config::ID)
                 .map(|update| {
-                    for why in update.errors {
+                    for why in update
+                        .errors
+                        .into_iter()
+                        .filter(cosmic_config::Error::is_err)
+                    {
                         tracing::error!(?why, "cosmic toolkit config update error");
                     }
 
@@ -216,7 +220,11 @@ where
                     },
                 )
                 .map(|update| {
-                    for why in update.errors {
+                    for why in update
+                        .errors
+                        .into_iter()
+                        .filter(cosmic_config::Error::is_err)
+                    {
                         tracing::error!(?why, "cosmic theme config update error");
                     }
                     Message::SystemThemeChange(
@@ -229,8 +237,12 @@ where
                 .core()
                 .watch_config::<ThemeMode>(cosmic_theme::THEME_MODE_ID)
                 .map(|update| {
-                    for e in update.errors {
-                        tracing::error!("{e}");
+                    for error in update
+                        .errors
+                        .into_iter()
+                        .filter(cosmic_config::Error::is_err)
+                    {
+                        tracing::error!(?error, "error reading system theme mode update");
                     }
                     Message::SystemThemeModeChange(update.keys, update.config)
                 })
