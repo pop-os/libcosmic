@@ -91,8 +91,11 @@ pub fn subscription(is_dark: bool) -> Subscription<crate::theme::Theme> {
         crate::cosmic_theme::Theme::VERSION,
     )
     .map(|res| {
-        for err in res.errors {
-            tracing::error!("{:?}", err);
+        for error in res.errors.into_iter().filter(cosmic_config::Error::is_err) {
+            tracing::error!(
+                ?error,
+                "error while watching system theme preference changes"
+            );
         }
 
         Theme::system(Arc::new(res.config))
@@ -105,8 +108,8 @@ pub fn system_dark() -> Theme {
     };
 
     let t = crate::cosmic_theme::Theme::get_entry(&helper).unwrap_or_else(|(errors, theme)| {
-        for err in errors {
-            tracing::error!("{:?}", err);
+        for error in errors.into_iter().filter(cosmic_config::Error::is_err) {
+            tracing::error!(?error, "error loading system dark theme");
         }
         theme
     });
@@ -120,8 +123,8 @@ pub fn system_light() -> Theme {
     };
 
     let t = crate::cosmic_theme::Theme::get_entry(&helper).unwrap_or_else(|(errors, theme)| {
-        for err in errors {
-            tracing::error!("{:?}", err);
+        for error in errors.into_iter().filter(cosmic_config::Error::is_err) {
+            tracing::error!(?error, "error loading system light theme");
         }
         theme
     });
