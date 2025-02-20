@@ -1,6 +1,6 @@
 use proc_macro::TokenStream;
 use quote::quote;
-use syn::{self};
+use syn::{self, LitInt};
 
 #[proc_macro_derive(CosmicConfigEntry, attributes(version, id))]
 pub fn cosmic_config_entry_derive(input: TokenStream) -> TokenStream {
@@ -17,17 +17,19 @@ fn impl_cosmic_config_entry_macro(ast: &syn::DeriveInput) -> TokenStream {
     let version = attributes
         .iter()
         .find_map(|attr| {
-            if attr.path.is_ident("version") {
-                match attr.parse_meta() {
-                    Ok(syn::Meta::NameValue(syn::MetaNameValue {
-                        lit: syn::Lit::Int(lit_int),
-                        ..
-                    })) => Some(lit_int.base10_parse::<u64>().unwrap()),
-                    _ => None,
+            let mut version_found = None;
+
+            _ = attr.parse_nested_meta(|meta| {
+                if meta.path.is_ident("version") {
+                    if let Ok(lit_int) = meta.input.parse::<LitInt>() {
+                        version_found = Some(lit_int.base10_parse::<u64>().unwrap());
+                    }
                 }
-            } else {
-                None
-            }
+
+                Ok(())
+            });
+
+            version_found
         })
         .unwrap_or(0);
 

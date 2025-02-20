@@ -7,12 +7,12 @@ publish = false
 
 [dependencies]
 apply = "0.3.0"
-fraction = "0.14.0"
+fraction = "0.15.3"
 libcosmic = { path = "../..", features = ["debug", "winit", "tokio", "single-instance", "dbus-config", "a11y", "wgpu", "xdg-portal"] }
-once_cell = "1.18"
-slotmap = "1.0.6"
-env_logger = "0.10"
-log = "0.4.17"
+once_cell = "1.20"
+slotmap = "1.0.7"
+env_logger = "0.11"
+log = "0.4.25"
 
 [dependencies.cosmic-time]
 git = "https://github.com/pop-os/cosmic-time"
