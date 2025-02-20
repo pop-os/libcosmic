@@ -22,6 +22,7 @@ use iced::Limits;
 use iced::clipboard::dnd::{DndAction, DndEvent, OfferEvent, SourceEvent};
 use iced::clipboard::mime::AsMimeTypes;
 use iced_core::event::{self, Event};
+use iced_core::input_method::{self, InputMethod, Preedit};
 use iced_core::mouse::{self, click};
 use iced_core::overlay::Group;
 use iced_core::renderer::{self, Renderer as CoreRenderer};
@@ -1938,6 +1939,63 @@ pub fn update<'a, Message: Clone + 'static>(
 
             state.keyboard_modifiers = modifiers;
         }
+        Event::InputMethod(event) => {
+            let state = state();
+
+            match event {
+                input_method::Event::Opened | input_method::Event::Closed => {
+                    state.preedit = matches!(event, input_method::Event::Opened)
+                        .then(input_method::Preedit::new);
+                    return event::Status::Captured;
+                }
+                input_method::Event::Preedit(content, selection) => {
+                    if state.is_focused.is_some() {
+                        state.preedit = Some(input_method::Preedit {
+                            content: content.to_owned(),
+                            selection: selection.clone(),
+                            text_size: Some(size.into()),
+                        });
+                        return event::Status::Captured;
+                    }
+                }
+                input_method::Event::Commit(text) => {
+                    let Some(focus) = &mut state.is_focused else {
+                        return event::Status::Ignored;
+                    };
+                    let Some(on_input) = on_input else {
+                        return event::Status::Ignored;
+                    };
+                    if state.is_read_only {
+                        return event::Status::Ignored;
+                    }
+
+                    focus.updated_at = Instant::now();
+                    LAST_FOCUS_UPDATE.with(|x| x.set(focus.updated_at));
+
+                    let mut editor = Editor::new(unsecured_value, &mut state.cursor);
+                    editor.paste(Value::new(&text));
+
+                    let contents = editor.contents();
+                    let unsecured_value = Value::new(&contents);
+                    let message = if let Some(paste) = &on_paste {
+                        (paste)(contents)
+                    } else {
+                        (on_input)(contents)
+                    };
+                    shell.publish(message);
+
+                    state.is_pasting = None;
+                    let value = if is_secure {
+                        unsecured_value.secure()
+                    } else {
+                        unsecured_value
+                    };
+
+                    update_cache(state, &value);
+                    return event::Status::Captured;
+                }
+            }
+        }
         Event::Window(window::Event::RedrawRequested(now)) => {
             let state = state();
 
@@ -1950,6 +2008,8 @@ pub fn update<'a, Message: Clone + 'static>(
                 shell.request_redraw(window::RedrawRequest::At(
                     now + Duration::from_millis(u64::try_from(millis_until_redraw).unwrap()),
                 ));
+
+                shell.request_input_method(&input_method(state, text_layout, unsecured_value));
             }
         }
         #[cfg(feature = "wayland")]
@@ -2096,6 +2156,42 @@ pub fn update<'a, Message: Clone + 'static>(
     }
 
     event::Status::Ignored
+}
+
+fn input_method<'b>(
+    state: &'b State,
+    text_layout: Layout<'_>,
+    value: &Value,
+) -> InputMethod<&'b str> {
+    if state.is_focused() {
+    } else {
+        return InputMethod::Disabled;
+    };
+
+    let Some(preedit) = &state.preedit else {
+        return InputMethod::Allowed;
+    };
+
+    let text_bounds = text_layout.bounds();
+    let cursor_index = match state.cursor.state(value) {
+        cursor::State::Index(position) => position,
+        cursor::State::Selection { start, end } => start.min(end),
+    };
+    let (cursor, offset) =
+        measure_cursor_and_scroll_offset(state.value.raw(), text_bounds, cursor_index);
+    let bottom_left = Point {
+        x: text_bounds.x + cursor - offset,
+        y: text_bounds.y + text_bounds.height,
+    };
+    InputMethod::Open {
+        position: bottom_left,
+        purpose: if state.is_secure {
+            input_method::Purpose::Secure
+        } else {
+            input_method::Purpose::Normal
+        },
+        preedit: Some(preedit.as_ref()),
+    }
 }
 
 /// Draws the [`TextInput`] with the given [`Renderer`], overriding its
@@ -2589,6 +2685,7 @@ pub struct State {
     is_pasting: Option<Value>,
     last_click: Option<mouse::Click>,
     cursor: Cursor,
+    preedit: Option<Preedit>,
     keyboard_modifiers: keyboard::Modifiers,
     // TODO: Add stateful horizontal scrolling offset
 }
@@ -2668,6 +2765,7 @@ impl State {
             is_pasting: None,
             last_click: None,
             cursor: Cursor::default(),
+            preedit: None,
             keyboard_modifiers: keyboard::Modifiers::default(),
             dirty: false,
         }
