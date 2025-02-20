@@ -1,0 +1,1 @@
+searchState.loadedDescShard("xdg_home", 0, "xdg-home\nGet the path of the current user’s home directory.")
