@@ -200,7 +200,7 @@ pub struct TextInput<'a, Message> {
     error: Option<Cow<'a, str>>,
     on_input: Option<Box<dyn Fn(String) -> Message + 'a>>,
     on_paste: Option<Box<dyn Fn(String) -> Message + 'a>>,
-    on_submit: Option<Message>,
+    on_submit: Option<Box<dyn Fn(String) -> Message + 'a>>,
     on_toggle_edit: Option<Box<dyn Fn(bool) -> Message + 'a>>,
     leading_icon: Option<Element<'a, Message, crate::Theme, crate::Renderer>>,
     trailing_icon: Option<Element<'a, Message, crate::Theme, crate::Renderer>>,
@@ -211,6 +211,8 @@ pub struct TextInput<'a, Message> {
     line_height: text::LineHeight,
     helper_line_height: text::LineHeight,
     always_active: bool,
+    /// The text input tracks and manages the input value in its state.
+    manage_value: bool,
 }
 
 impl<'a, Message> TextInput<'a, Message>
@@ -255,6 +257,7 @@ where
             label: None,
             helper_text: None,
             always_active: false,
+            manage_value: false,
         }
     }
 
@@ -340,14 +343,24 @@ where
 
     /// Sets the message that should be produced when the [`TextInput`] is
     /// focused and the enter key is pressed.
-    pub fn on_submit(self, message: Message) -> Self {
-        self.on_submit_maybe(Some(message))
+    pub fn on_submit<F>(mut self, callback: F) -> Self
+    where
+        F: 'a + Fn(String) -> Message,
+    {
+        self.on_submit_maybe(Some(Box::new(callback)))
     }
 
     /// Maybe sets the message that should be produced when the [`TextInput`] is
     /// focused and the enter key is pressed.
-    pub fn on_submit_maybe(mut self, message: Option<Message>) -> Self {
-        self.on_submit = message;
+    pub fn on_submit_maybe<F>(mut self, callback: Option<F>) -> Self
+    where
+        F: 'a + Fn(String) -> Message,
+    {
+        if let Some(callback) = callback {
+            self.on_submit = Some(Box::new(callback));
+        } else {
+            self.on_submit = None;
+        }
         self
     }
 
@@ -413,6 +426,12 @@ where
     /// Sets the style of the [`TextInput`].
     pub fn style(mut self, style: impl Into<<crate::Theme as StyleSheet>::Style>) -> Self {
         self.style = style.into();
+        self
+    }
+
+    /// Sets the text input to manage its input value or not
+    pub fn manage_value(mut self, manage_value: bool) -> Self {
+        self.manage_value = true;
         self
     }
 
@@ -526,9 +545,14 @@ where
 
     fn diff(&mut self, tree: &mut Tree) {
         let state = tree.state.downcast_mut::<State>();
-
+        if !self.manage_value || !self.value.is_empty() && state.tracked_value != self.value {
+            state.tracked_value = self.value.clone();
+        } else if self.value.is_empty() {
+            self.value = state.tracked_value.clone();
+            // std::mem::swap(&mut state.tracked_value, &mut self.value);
+        }
         // Unfocus text input if it becomes disabled
-        if self.on_input.is_none() {
+        if self.on_input.is_none() && !self.manage_value {
             state.last_click = None;
             state.is_focused = None;
             state.is_pasting = None;
@@ -595,6 +619,11 @@ where
             f.updated_at == LAST_FOCUS_UPDATE.with(|f| f.get())
         }) {
             state.is_focused = None;
+        }
+
+        // Stop pasting if input becomes disabled
+        if !self.manage_value && self.on_input.is_none() {
+            state.is_pasting = None;
         }
 
         let mut children: Vec<_> = self
@@ -824,13 +853,14 @@ where
             self.is_editable,
             self.on_input.as_deref(),
             self.on_paste.as_deref(),
-            &self.on_submit,
+            self.on_submit.as_deref(),
             self.on_toggle_edit.as_deref(),
             || tree.state.downcast_mut::<State>(),
             self.on_create_dnd_source.as_deref(),
             dnd_id,
             line_height,
             layout,
+            self.manage_value,
         )
     }
 
@@ -856,7 +886,7 @@ where
             &self.placeholder,
             self.size,
             self.font,
-            self.on_input.is_none(),
+            self.on_input.is_none() && !self.manage_value,
             self.is_secure,
             self.leading_icon.as_ref(),
             self.trailing_icon.as_ref(),
@@ -925,7 +955,11 @@ where
         }
         let mut children = layout.children();
         let layout = children.next().unwrap();
-        mouse_interaction(layout, cursor_position, self.on_input.is_none())
+        mouse_interaction(
+            layout,
+            cursor_position,
+            self.on_input.is_none() && !self.manage_value,
+        )
     }
 
     fn id(&self) -> Option<Id> {
@@ -1236,13 +1270,14 @@ pub fn update<'a, Message: 'static>(
     is_editable: bool,
     on_input: Option<&dyn Fn(String) -> Message>,
     on_paste: Option<&dyn Fn(String) -> Message>,
-    on_submit: &Option<Message>,
+    on_submit: Option<&dyn Fn(String) -> Message>,
     on_toggle_edit: Option<&dyn Fn(bool) -> Message>,
     state: impl FnOnce() -> &'a mut State,
     #[allow(unused_variables)] on_start_dnd_source: Option<&dyn Fn(State) -> Message>,
     #[allow(unused_variables)] dnd_id: u128,
     line_height: text::LineHeight,
     layout: Layout<'_>,
+    manage_value: bool,
 ) -> event::Status
 where
     Message: Clone,
@@ -1264,7 +1299,7 @@ where
         | Event::Touch(touch::Event::FingerPressed { .. }) => {
             let state = state();
 
-            let click_position = if on_input.is_some() {
+            let click_position = if on_input.is_some() || manage_value {
                 cursor.position_over(layout.bounds())
             } else {
                 None
@@ -1299,7 +1334,7 @@ where
                         // single click that is on top of the selected text
                         // is the click on selected text?
 
-                        if let Some(on_input) = on_input {
+                        if manage_value || on_input.is_some() {
                             let left = start.min(end);
                             let right = end.max(start);
 
@@ -1339,8 +1374,11 @@ where
 
                                 let contents = editor.contents();
                                 let unsecured_value = Value::new(&contents);
-                                let message = (on_input)(contents);
-                                shell.publish(message);
+                                state.tracked_value = unsecured_value.clone();
+                                if let Some(on_input) = on_input {
+                                    let message = (on_input)(contents);
+                                    shell.publish(message);
+                                }
                                 if let Some(on_start_dnd) = on_start_dnd_source {
                                     shell.publish(on_start_dnd(state.clone()));
                                 }
@@ -1531,7 +1569,7 @@ where
             let state = state();
 
             if let Some(focus) = &mut state.is_focused {
-                let Some(on_input) = on_input else {
+                if !manage_value && on_input.is_none() {
                     return event::Status::Ignored;
                 };
 
@@ -1546,7 +1584,7 @@ where
                 match key {
                     keyboard::Key::Named(keyboard::key::Named::Enter) => {
                         if let Some(on_submit) = on_submit.clone() {
-                            shell.publish(on_submit);
+                            shell.publish((on_submit)(unsecured_value.to_string()));
                         }
                     }
                     keyboard::Key::Named(keyboard::key::Named::Backspace) => {
@@ -1566,9 +1604,11 @@ where
 
                         let contents = editor.contents();
                         let unsecured_value = Value::new(&contents);
-                        let message = (on_input)(editor.contents());
-                        shell.publish(message);
-
+                        state.tracked_value = unsecured_value.clone();
+                        if let Some(on_input) = on_input {
+                            let message = (on_input)(editor.contents());
+                            shell.publish(message);
+                        }
                         let value = if is_secure {
                             unsecured_value.secure()
                         } else {
@@ -1592,8 +1632,12 @@ where
                         editor.delete();
                         let contents = editor.contents();
                         let unsecured_value = Value::new(&contents);
-                        let message = (on_input)(contents);
-                        shell.publish(message);
+                        if let Some(on_input) = on_input {
+                            let message = (on_input)(contents);
+                            state.tracked_value = unsecured_value.clone();
+                            shell.publish(message);
+                        }
+
                         let value = if is_secure {
                             unsecured_value.secure()
                         } else {
@@ -1671,10 +1715,12 @@ where
 
                             let mut editor = Editor::new(value, &mut state.cursor);
                             editor.delete();
-
-                            let message = (on_input)(editor.contents());
-
-                            shell.publish(message);
+                            let content = editor.contents();
+                            state.tracked_value = Value::new(&content);
+                            if let Some(on_input) = on_input {
+                                let message = (on_input)(content);
+                                shell.publish(message);
+                            }
                         }
                     }
                     keyboard::Key::Character(c)
@@ -1699,13 +1745,16 @@ where
 
                         let contents = editor.contents();
                         let unsecured_value = Value::new(&contents);
-                        let message = if let Some(paste) = &on_paste {
-                            (paste)(contents)
-                        } else {
-                            (on_input)(contents)
-                        };
-                        shell.publish(message);
+                        state.tracked_value = unsecured_value.clone();
+                        if let Some(on_input) = on_input {
+                            let message = if let Some(paste) = &on_paste {
+                                (paste)(contents)
+                            } else {
+                                (on_input)(contents)
+                            };
 
+                            shell.publish(message);
+                        }
                         state.is_pasting = Some(content);
 
                         let value = if is_secure {
@@ -1750,8 +1799,11 @@ where
                             }
                             let contents = editor.contents();
                             let unsecured_value = Value::new(&contents);
-                            let message = (on_input)(contents);
-                            shell.publish(message);
+                            state.tracked_value = unsecured_value.clone();
+                            if let Some(on_input) = on_input {
+                                let message = (on_input)(contents);
+                                shell.publish(message);
+                            }
 
                             focus.updated_at = Instant::now();
                             LAST_FOCUS_UPDATE.with(|x| x.set(focus.updated_at));
@@ -1926,7 +1978,7 @@ where
                 editor.paste(Value::new(content.as_str()));
                 let contents = editor.contents();
                 let unsecured_value = Value::new(&contents);
-
+                state.tracked_value = unsecured_value.clone();
                 if let Some(on_paste) = on_paste.as_ref() {
                     let message = (on_paste)(contents);
                     shell.publish(message);
@@ -2408,6 +2460,7 @@ pub(crate) struct DndOfferState;
 #[derive(Debug, Default, Clone)]
 #[must_use]
 pub struct State {
+    pub tracked_value: Value,
     pub value: crate::Plain,
     pub placeholder: crate::Plain,
     pub label: crate::Plain,
@@ -2482,6 +2535,7 @@ impl State {
     /// Creates a new [`State`], representing a focused [`TextInput`].
     pub fn focused(is_secure: bool, is_read_only: bool) -> Self {
         Self {
+            tracked_value: Value::default(),
             is_secure,
             value: crate::Plain::default(),
             placeholder: crate::Plain::default(),

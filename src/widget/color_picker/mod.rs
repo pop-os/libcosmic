@@ -469,7 +469,7 @@ where
                 text_input("", self.input_color)
                     .on_input(move |s| on_update(ColorPickerUpdate::Input(s)))
                     .on_paste(move |s| on_update(ColorPickerUpdate::Input(s)))
-                    .on_submit(on_update(ColorPickerUpdate::AppliedColor))
+                    .on_submit(move |_| on_update(ColorPickerUpdate::AppliedColor))
                     .leading_icon(
                         color_button(
                             None,
