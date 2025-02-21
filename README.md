@@ -25,7 +25,7 @@ Some examples are included in the [examples](./examples) directory to to kicksta
 COSMIC adventure. To run them, you need to clone the repository with the following commands:
 
 ```sh
-git clone https://github.com/pop-os/libcosmic
+git clone --recurse-submodules https://github.com/pop-os/libcosmic
 cd libcosmic
 ```
 
