@@ -1,6 +1,7 @@
 use cosmic::app::Core;
+use cosmic::iced::event::listen_with;
 use cosmic::iced::window::Id;
-use cosmic::iced::{Length, Limits, Task};
+use cosmic::iced::{self, Length, Limits, Task};
 use cosmic::iced_runtime::core::window;
 use cosmic::iced_runtime::platform_specific::wayland::popup::SctkPopupSettings;
 use cosmic::iced_runtime::platform_specific::wayland::subsurface;
@@ -114,7 +115,7 @@ impl cosmic::Application for Window {
                 self.example_row = toggled;
             }
 
-            Message::Surface(surface_message) => {}
+            Message::Surface(_) => {}
             Message::Selected(i) => {
                 self.selected = Some(i);
                 return cosmic::task::message(cosmic::app::message::destroy_popup::<Window>(
@@ -123,16 +124,14 @@ impl cosmic::Application for Window {
             }
             Message::OpenDropdown(sctk_popup_settings, view) => {
                 self.dropdown_id = sctk_popup_settings.id;
-                return cosmic::task::message(cosmic::app::message::app_popup::<
-                Window,
-            >(
-                move |_: &mut Window| sctk_popup_settings.clone(),
-                Some(
-                    move |_: &Window| -> cosmic::Element<'static, cosmic::app::Message<Message>> {
-                        view().map(cosmic::app::Message::App)
-                    },
-                ),
-            ));
+                return cosmic::task::message(cosmic::app::message::app_popup::<Window>(
+                    move |_: &mut Window| sctk_popup_settings.clone(),
+                    Some(Box::new(
+                        move |_: &Window| -> cosmic::Element<'_, cosmic::app::Message<Message>> {
+                            view().map(cosmic::app::Message::App)
+                        },
+                    )),
+                ));
             }
             Message::PopupCloseRequested(id) => {
                 return cosmic::task::message(cosmic::app::message::destroy_popup::<Window>(id));
@@ -169,57 +168,67 @@ impl cosmic::Application for Window {
                             popup_settings
                         },
                         Some(
-                            move |state: &Window| -> cosmic::Element<
-                                'static,
-                                cosmic::app::Message<Message>,
-                            > {
-                                {
-                                    let content_list = list_column().padding(5).spacing(0).add(
-                                        settings::item(
-                                            "Example row",
-                                            cosmic::widget::container(
-                                                toggler(state.example_row).on_toggle(|value| {
-                                                    Message::ToggleExampleRow(value)
-                                                }),
-                                            )
-                                            .height(Length::Fixed(50.)),
-                                        ),
-                                    ).add(dropdown(&["1", "asdf", "hello", "test"], state.selected, Message::Selected).with_popup(state.popup.unwrap_or(Id::NONE), Message::OpenDropdown).on_close_popup(Message::PopupCloseRequested)
-                                );
-                                    Element::from(
-                                        state.core.applet.popup_container(content_list),
-                                    )
-                                    .map(cosmic::app::Message::App)
-                                }
-                            },
+                            Box::new(
+                                move |state: &Window| -> cosmic::Element<
+                                    '_,
+                                    cosmic::app::Message<Message>,
+                                > {
+                                    {
+                                        let content_list = list_column()
+                                            .padding(5)
+                                            .spacing(0)
+                                            .add(settings::item(
+                                                "Example row",
+                                                cosmic::widget::container(
+                                                    toggler(state.example_row).on_toggle(|value| {
+                                                        Message::ToggleExampleRow(value)
+                                                    }),
+                                                )
+                                                .height(Length::Fixed(50.)),
+                                            ))
+                                            .add(
+                                                dropdown(
+                                                    &["1", "asdf", "hello", "test"],
+                                                    state.selected,
+                                                    Message::Selected,
+                                                )
+                                                .with_popup(
+                                                    state.popup.unwrap_or(Id::NONE),
+                                                    Message::OpenDropdown,
+                                                )
+                                                .on_close_popup(Message::PopupCloseRequested),
+                                            );
+                                        Element::from(
+                                            state.core.applet.popup_container(content_list),
+                                        )
+                                        .map(cosmic::app::Message::App)
+                                    }
+                                },
+                            ),
                         ),
                     )
                 },
             ),
             |_| {
                 cosmic::app::message::subsurface(
-                    |app: &mut Window| {
-                        subsurface::SctkSubsurfaceSettings {
-                            parent: window::Id::RESERVED,
-                            id: app.subsurface_id,
-                            loc: iced_core::Point { x: -100., y: 0. },
-                            size: Some((10., 10.).into()),
-                            z: 1,
-                        }
+                    |app: &mut Window| subsurface::SctkSubsurfaceSettings {
+                        parent: window::Id::RESERVED,
+                        id: app.subsurface_id,
+                        loc: iced_core::Point { x: -100., y: 0. },
+                        size: Some((10., 10.).into()),
+                        z: 1,
+                        steal_keyboard_focus: true,
                     },
-                    Some(|_: &Window| {
-                        autosize::autosize(
+                    Some(Box::new(|_: &'_ Window| {
+                        Element::from(autosize::autosize(
                             layer_container(cosmic::widget::text("hello"))
                                 .layer(cosmic::cosmic_theme::Layer::Background),
                             SUBSURFACE_ID.clone(),
-                        )
-                        .into()
-                    }),
+                        ))
+                    })),
                 )
             },
-            cosmic::app::message::destroy_subsurface::<Window>(
-                self.subsurface_id
-            ),
+            cosmic::app::message::destroy_subsurface::<Window>(self.subsurface_id),
         )
         .into()
     }
@@ -230,5 +239,14 @@ impl cosmic::Application for Window {
 
     fn style(&self) -> Option<cosmic::iced_runtime::Appearance> {
         Some(cosmic::applet::style())
+    }
+
+    fn subscription(&self) -> cosmic::iced::Subscription<Self::Message> {
+        listen_with(|e, status, id| {
+            if matches!(e, iced::event::Event::Keyboard(_)) {
+                dbg!(e, id);
+            }
+            None
+        })
     }
 }

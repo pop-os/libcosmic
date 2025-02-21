@@ -105,7 +105,9 @@ libc = { version = "0.2.155", optional = true }
 license = { version = "3.5.1", optional = true }
 mime = { version = "0.3.17", optional = true }
 palette = "0.7.3"
-rfd = { version = "0.14.0", default-features = false, features = ["xdg-portal"], optional = true }
+rfd = { version = "0.14.0", default-features = false, features = [
+    "xdg-portal",
+], optional = true }
 rustix = { version = "0.38.34", features = [
     "pipe",
     "process",

@@ -7,6 +7,7 @@ use apply::Apply;
 use cosmic::app::{Core, Settings, Task};
 use cosmic::dialog::file_chooser::{self, FileFilter};
 use cosmic::iced_core::Length;
+use cosmic::surface_message::{SurfaceMessage, SurfaceMessageHandler};
 use cosmic::widget::button;
 use cosmic::{executor, iced, ApplicationExt, Element};
 use std::sync::Arc;
@@ -34,6 +35,22 @@ pub enum Message {
     OpenError(Arc<file_chooser::Error>),
     OpenFile,
     Selected(Url),
+    Surface(SurfaceMessage),
+}
+
+impl SurfaceMessageHandler for Message {
+    fn to_surface_message(self) -> cosmic::surface_message::MessageWrapper<Self> {
+        match self {
+            Message::Surface(m) => cosmic::surface_message::MessageWrapper::Surface(m),
+            m => cosmic::surface_message::MessageWrapper::Message(m),
+        }
+    }
+}
+
+impl From<SurfaceMessage> for Message {
+    fn from(value: SurfaceMessage) -> Self {
+        Message::Surface(value)
+    }
 }
 
 /// The [`App`] stores application-specific state.
@@ -91,13 +108,11 @@ impl cosmic::Application for App {
             Message::Cancelled => {
                 eprintln!("open file dialog cancelled");
             }
-
             Message::FileRead(url, contents) => {
                 eprintln!("read file");
                 self.selected_file = Some(url);
                 self.file_contents = contents;
             }
-
             Message::Selected(url) => {
                 eprintln!("selected file");
 
@@ -142,8 +157,6 @@ impl cosmic::Application for App {
                     Message::FileRead(url, contents)
                 });
             }
-
-            // Creates a new open dialog.
             Message::OpenFile => {
                 return cosmic::task::future(async move {
                     eprintln!("opening new dialog");
@@ -169,13 +182,9 @@ impl cosmic::Application for App {
                     }
                 });
             }
-
-            // Displays an error in the application's warning bar.
             Message::Error(why) => {
                 self.error_status = Some(why);
             }
-
-            // Displays an error in the application's warning bar.
             Message::OpenError(why) => {
                 if let Some(why) = Arc::into_inner(why) {
                     let mut source: &dyn std::error::Error = &why;
@@ -190,10 +199,10 @@ impl cosmic::Application for App {
                     self.error_status = Some(string);
                 }
             }
-
             Message::CloseError => {
                 self.error_status = None;
             }
+            Message::Surface(surface_message) => {}
         }
 
         Task::none()

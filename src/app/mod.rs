@@ -81,10 +81,12 @@ pub mod message {
             + Sync
             + 'static,
         view: Option<
-            impl Fn(&App) -> crate::Element<'static, super::Message<App::Message>>
-                + Send
-                + Sync
-                + 'static,
+            Box<
+                dyn for<'a> Fn(&'a App) -> crate::Element<'a, super::Message<App::Message>>
+                    + Send
+                    + Sync
+                    + 'static,
+            >,
         >,
     ) -> App::Message
     where
@@ -104,13 +106,7 @@ pub mod message {
         App::Message::from(SurfaceMessage::AppPopup(
             Arc::new(boxed),
             view.map(|view| {
-                let boxed: Box<
-                    dyn Fn(&App) -> crate::Element<'static, super::Message<App::Message>>
-                        + Send
-                        + Sync
-                        + 'static,
-                > = Box::new(view);
-                let boxed: Box<dyn Any + Send + Sync + 'static> = Box::new(boxed);
+                let boxed: Box<dyn Any + Send + Sync + 'static> = Box::new(view);
                 Arc::new(boxed)
             }),
         ))
@@ -118,7 +114,7 @@ pub mod message {
 
     /// Used to create a popup message from within a widget.
     #[cfg(feature = "wayland")]
-    pub fn simple_popup<Message>(
+    pub fn simple_popup<Message, V>(
         settings: impl Fn() -> iced_runtime::platform_specific::wayland::popup::SctkPopupSettings
             + Send
             + Sync
@@ -129,6 +125,7 @@ pub mod message {
     ) -> Message
     where
         Message: SurfaceMessageHandler + From<SurfaceMessage> + 'static,
+        V:,
     {
         use std::{any::Any, sync::Arc};
 
@@ -173,19 +170,21 @@ pub mod message {
     #[cfg(feature = "wayland")]
     pub fn subsurface<App: super::Application>(
         settings: impl Fn(&mut App) -> iced_runtime::platform_specific::wayland::subsurface::SctkSubsurfaceSettings + Send + Sync + 'static,
+        // XXX Boxed trait object is required for less cumbersome type inference, but we box it anyways.
         view: Option<
-            impl Fn(&App) -> crate::Element<'static, super::Message<App::Message>>
-                + Send
-                + Sync
-                + 'static,
+            Box<
+                dyn for<'a> Fn(&'a App) -> crate::Element<'a, super::Message<App::Message>>
+                    + Send
+                    + Sync
+                    + 'static,
+            >,
         >,
     ) -> App::Message
     where
         App::Message: SurfaceMessageHandler + From<SurfaceMessage>,
     {
+        use crate::surface_message::SurfaceMessage;
         use std::{any::Any, sync::Arc};
-
-        use crate::surface_message::{SurfaceMessage, SurfaceMessageHandler};
         let boxed: Box<
             dyn Fn(
                     &mut App,
@@ -200,13 +199,7 @@ pub mod message {
         App::Message::from(SurfaceMessage::Subsurface(
             Arc::new(boxed),
             view.map(|view| {
-                let boxed: Box<
-                    dyn Fn(&App) -> crate::Element<'static, super::Message<App::Message>>
-                        + Send
-                        + Sync
-                        + 'static,
-                > = Box::new(view);
-                let boxed: Box<dyn Any + Send + Sync + 'static> = Box::new(boxed);
+                let boxed: Box<dyn Any + Send + Sync + 'static> = Box::new(view);
                 Arc::new(boxed)
             }),
         ))
