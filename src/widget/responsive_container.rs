@@ -1,4 +1,4 @@
-//! Autosize Container, which will resize the window to its contents.
+//! Responsive Container, which will notify of size changes.
 
 use iced::{Limits, Size};
 use iced_core::event::{self, Event};

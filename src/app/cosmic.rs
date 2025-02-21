@@ -86,8 +86,10 @@ pub enum Message {
 pub struct Cosmic<App: Application> {
     pub app: App,
     #[cfg(feature = "wayland")]
-    pub surface_views:
-        HashMap<window::Id, Box<dyn Fn(&App) -> Element<'static, super::Message<App::Message>>>>,
+    pub surface_views: HashMap<
+        window::Id,
+        Box<dyn for<'a> Fn(&'a App) -> Element<'a, super::Message<App::Message>>>,
+    >,
 }
 
 impl<T: Application> Cosmic<T>
@@ -138,7 +140,10 @@ where
 
                                 if let Some(view) = view.and_then(|view| {
                                     match std::sync::Arc::try_unwrap(view).ok()?.downcast::<Box<
-                                        dyn Fn(&T) -> Element<'static, super::Message<T::Message>>
+                                        dyn for<'a> Fn(
+                                                &'a T,
+                                            )
+                                                -> Element<'a, super::Message<T::Message>>
                                             + Send
                                             + Sync,
                                     >>(
@@ -170,7 +175,10 @@ where
 
                                 if let Some(view) = view.and_then(|view| {
                                     match std::sync::Arc::try_unwrap(view).ok()?.downcast::<Box<
-                                        dyn Fn(&T) -> Element<'static, super::Message<T::Message>>
+                                        dyn for<'a> Fn(
+                                                &'a T,
+                                            )
+                                                -> Element<'a, super::Message<T::Message>>
                                             + Send
                                             + Sync,
                                     >>(
@@ -840,7 +848,9 @@ impl<App: Application> Cosmic<App> {
     pub fn get_subsurface(
         &mut self,
         settings: iced_runtime::platform_specific::wayland::subsurface::SctkSubsurfaceSettings,
-        view: Box<dyn Fn(&App) -> Element<'static, super::Message<App::Message>> + Send + Sync>,
+        view: Box<
+            dyn for<'a> Fn(&'a App) -> Element<'a, super::Message<App::Message>> + Send + Sync,
+        >,
     ) -> Task<super::Message<App::Message>> {
         use iced_winit::commands::subsurface::get_subsurface;
 
@@ -853,7 +863,9 @@ impl<App: Application> Cosmic<App> {
     pub fn get_popup(
         &mut self,
         settings: iced_runtime::platform_specific::wayland::popup::SctkPopupSettings,
-        view: Box<dyn Fn(&App) -> Element<'static, super::Message<App::Message>> + Send + Sync>,
+        view: Box<
+            dyn for<'a> Fn(&'a App) -> Element<'a, super::Message<App::Message>> + Send + Sync,
+        >,
     ) -> Task<super::Message<App::Message>> {
         use iced_winit::commands::popup::get_popup;
 
