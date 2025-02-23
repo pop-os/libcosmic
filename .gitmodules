@@ -1,7 +1,7 @@
 [submodule "iced"]
 	path = iced
-	url = https://github.com/pop-os/iced.git
-	branch = master
+	url = https://github.com/kenz-gelsoft/iced.git
+	branch = backport-input-method2
 [submodule "icon-theme"]
 	path = cosmic-icons
 	url = https://github.com/pop-os/cosmic-icons

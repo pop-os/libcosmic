@@ -2168,10 +2168,6 @@ fn input_method<'b>(
         return InputMethod::Disabled;
     };
 
-    let Some(preedit) = &state.preedit else {
-        return InputMethod::Allowed;
-    };
-
     let text_bounds = text_layout.bounds();
     let cursor_index = match state.cursor.state(value) {
         cursor::State::Index(position) => position,
@@ -2183,14 +2179,14 @@ fn input_method<'b>(
         x: text_bounds.x + cursor - offset,
         y: text_bounds.y + text_bounds.height,
     };
-    InputMethod::Open {
+    InputMethod::Enabled {
         position: bottom_left,
         purpose: if state.is_secure {
             input_method::Purpose::Secure
         } else {
             input_method::Purpose::Normal
         },
-        preedit: Some(preedit.as_ref()),
+        preedit: state.preedit.as_ref().map(input_method::Preedit::as_ref),
     }
 }
 
