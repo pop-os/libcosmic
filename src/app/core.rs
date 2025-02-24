@@ -388,7 +388,7 @@ impl Core {
         id
     }
 
-    #[cfg(feature = "wayland")]
+    #[cfg(feature = "surface-message")]
     /// # Panics
     ///
     /// Will panic if the menu bar collapses without tracking the size

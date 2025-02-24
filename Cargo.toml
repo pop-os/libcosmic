@@ -71,7 +71,9 @@ wayland = [
     "iced/wayland",
     "iced_winit/wayland",
     "cctk",
+    "surface-message",
 ]
+surface-message = []
 # multi-window support
 multi-window = ["iced/multi-window"]
 # Render with wgpu

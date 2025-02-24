@@ -7,6 +7,13 @@ pub enum MessageWrapper<M> {
     Message(M),
 }
 
+#[cfg(not(feature = "surface-message"))]
+impl<M> From<M> for MessageWrapper<M> {
+    fn from(value: M) -> Self {
+        MessageWrapper::Message(value)
+    }
+}
+
 /// Ignore this message in your application. It will be intercepted.
 #[derive(Clone)]
 pub enum SurfaceMessage {
