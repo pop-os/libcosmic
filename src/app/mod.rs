@@ -6,7 +6,7 @@
 //! Check out our [application](https://github.com/pop-os/libcosmic/tree/master/examples/application)
 //! example in our repository.
 
-use crate::surface_message::{MessageWrapper, SurfaceMessage, SurfaceMessageHandler};
+use crate::surface_message::{MessageWrapper, SurfaceMessage};
 
 pub mod command;
 pub mod context_drawer;
@@ -17,7 +17,7 @@ pub(crate) mod multi_window;
 pub mod settings;
 
 pub mod message {
-    use crate::surface_message::{MessageWrapper, SurfaceMessage, SurfaceMessageHandler};
+    use crate::surface_message::{MessageWrapper, SurfaceMessage};
 
     use iced::{Limits, Size};
 
@@ -50,7 +50,8 @@ pub mod message {
     #[cfg(feature = "wayland")]
     pub fn destroy_popup<App: super::Application>(id: iced_core::window::Id) -> App::Message
     where
-        App::Message: SurfaceMessageHandler + From<SurfaceMessage>,
+        App::Message:
+            Into<crate::surface_message::MessageWrapper<App::Message>> + From<SurfaceMessage>,
     {
         let surface_msg = SurfaceMessage::DestroyPopup(id);
         App::Message::from(surface_msg)
@@ -60,7 +61,8 @@ pub mod message {
     #[cfg(feature = "wayland")]
     pub fn destroy_popup_simple<Message>(id: iced_core::window::Id) -> Message
     where
-        Message: SurfaceMessageHandler + From<SurfaceMessage> + 'static,
+        Message:
+            Into<crate::surface_message::MessageWrapper<Message>> + From<SurfaceMessage> + 'static,
     {
         Message::from(SurfaceMessage::DestroyPopup(id))
     }
@@ -68,7 +70,8 @@ pub mod message {
     #[cfg(feature = "wayland")]
     pub fn destroy_subsurface<App: super::Application>(id: iced_core::window::Id) -> App::Message
     where
-        App::Message: SurfaceMessageHandler + From<SurfaceMessage>,
+        App::Message:
+            Into<crate::surface_message::MessageWrapper<App::Message>> + From<SurfaceMessage>,
     {
         let surface_msg = SurfaceMessage::DestroySubsurface(id);
         App::Message::from(surface_msg)
@@ -90,11 +93,12 @@ pub mod message {
         >,
     ) -> App::Message
     where
-        App::Message: SurfaceMessageHandler + From<SurfaceMessage>,
+        App::Message:
+            Into<crate::surface_message::MessageWrapper<App::Message>> + From<SurfaceMessage>,
     {
         use std::{any::Any, sync::Arc};
 
-        use crate::surface_message::{SurfaceMessage, SurfaceMessageHandler};
+        use crate::surface_message::SurfaceMessage;
         let boxed: Box<
             dyn Fn(&mut App) -> iced_runtime::platform_specific::wayland::popup::SctkPopupSettings
                 + Send
@@ -124,12 +128,13 @@ pub mod message {
         >,
     ) -> Message
     where
-        Message: SurfaceMessageHandler + From<SurfaceMessage> + 'static,
+        Message:
+            Into<crate::surface_message::MessageWrapper<Message>> + From<SurfaceMessage> + 'static,
         V:,
     {
         use std::{any::Any, sync::Arc};
 
-        use crate::surface_message::{SurfaceMessage, SurfaceMessageHandler};
+        use crate::surface_message::SurfaceMessage;
         let boxed: Box<
             dyn Fn() -> iced_runtime::platform_specific::wayland::popup::SctkPopupSettings
                 + Send
@@ -153,20 +158,6 @@ pub mod message {
         ))
     }
 
-    // TODO could this somehow be used by widgets? It is the wrong message type though.
-    // #[cfg(feature = "wayland")]
-    // pub fn get_simple_popup<App: super::Application>(
-    //     settings: iced_runtime::platform_specific::wayland::popup::SctkPopupSettings,
-    //     view: Option<
-    //         impl Fn() -> crate::Element<'static, super::Message<App::Message>> + Send + Sync + 'static,
-    //     >,
-    // ) -> App::Message
-    // where
-    //     App::Message: SurfaceMessageHandler + From<SurfaceMessage>,
-    // {
-    //     todo!()
-    // }
-
     #[cfg(feature = "wayland")]
     pub fn subsurface<App: super::Application>(
         settings: impl Fn(&mut App) -> iced_runtime::platform_specific::wayland::subsurface::SctkSubsurfaceSettings + Send + Sync + 'static,
@@ -181,7 +172,8 @@ pub mod message {
         >,
     ) -> App::Message
     where
-        App::Message: SurfaceMessageHandler + From<SurfaceMessage>,
+        App::Message:
+            Into<crate::surface_message::MessageWrapper<App::Message>> + From<SurfaceMessage>,
     {
         use crate::surface_message::SurfaceMessage;
         use std::{any::Any, sync::Arc};
@@ -303,7 +295,7 @@ pub(crate) fn iced_settings<App: Application>(
 /// Returns error on application failure.
 pub fn run<App: Application>(settings: Settings, flags: App::Flags) -> iced::Result
 where
-    App::Message: SurfaceMessageHandler,
+    App::Message: Into<crate::surface_message::MessageWrapper<App::Message>>,
 {
     #[cfg(target_env = "gnu")]
     if let Some(threshold) = settings.default_mmap_threshold {
@@ -492,7 +484,11 @@ impl DbusActivation {
 pub fn run_single_instance<App: Application>(settings: Settings, flags: App::Flags) -> iced::Result
 where
     App::Flags: CosmicFlags,
-    App::Message: Clone + std::fmt::Debug + Send + SurfaceMessageHandler + 'static,
+    App::Message: Clone
+        + std::fmt::Debug
+        + Send
+        + Into<crate::surface_message::MessageWrapper<App::Message>>
+        + 'static,
 {
     let activation_token = std::env::var("XDG_ACTIVATION_TOKEN").ok();
 
