@@ -19,7 +19,7 @@ use iced_core::{window::Id, Element};
 use palette::Srgba;
 use slotmap::Key;
 
-use crate::{surface_message::SurfaceMessageHandler, Theme};
+use crate::Theme;
 
 use super::{Renderer, Task};
 
@@ -396,7 +396,7 @@ impl Core {
         'a,
         Message: Clone
             + From<crate::surface_message::SurfaceMessage>
-            + crate::surface_message::SurfaceMessageHandler
+            + Into<crate::surface_message::MessageWrapper<Message>>
             + 'static,
         A: menu::Action<Message = Message>,
     >(

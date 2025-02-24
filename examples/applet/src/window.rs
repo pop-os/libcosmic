@@ -5,7 +5,7 @@ use cosmic::iced::{self, Length, Limits, Task};
 use cosmic::iced_runtime::core::window;
 use cosmic::iced_runtime::platform_specific::wayland::popup::SctkPopupSettings;
 use cosmic::iced_runtime::platform_specific::wayland::subsurface;
-use cosmic::surface_message::{SurfaceMessage, SurfaceMessageHandler};
+use cosmic::surface_message::{MessageWrapper, SurfaceMessage};
 use cosmic::widget::dropdown::DropdownView;
 use cosmic::widget::{autosize, dropdown, layer_container, list_column, settings, toggler};
 use cosmic::{iced_core, Element};
@@ -63,11 +63,11 @@ impl std::fmt::Debug for Message {
     }
 }
 
-impl SurfaceMessageHandler for Message {
-    fn to_surface_message(self) -> cosmic::surface_message::MessageWrapper<Self> {
-        match self {
-            Message::Surface(msg) => cosmic::surface_message::MessageWrapper::Surface(msg),
-            msg => cosmic::surface_message::MessageWrapper::Message(msg),
+impl From<Message> for MessageWrapper<Message> {
+    fn from(value: Message) -> Self {
+        match value {
+            Message::Surface(s) => MessageWrapper::Surface(s),
+            m => MessageWrapper::Message(m),
         }
     }
 }

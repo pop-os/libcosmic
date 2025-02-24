@@ -11,7 +11,7 @@ use cosmic::iced::alignment::{Horizontal, Vertical};
 use cosmic::iced::widget::column;
 use cosmic::iced::Length;
 use cosmic::iced_core::Size;
-use cosmic::surface_message::{MessageWrapper, SurfaceMessage, SurfaceMessageHandler};
+use cosmic::surface_message::{MessageWrapper, SurfaceMessage};
 use cosmic::widget::icon::{from_name, Handle};
 use cosmic::widget::menu::KeyBind;
 use cosmic::widget::{button, text};
@@ -89,17 +89,15 @@ pub enum Message {
     Hi,
 }
 
-#[cfg(feature = "wayland")]
-impl SurfaceMessageHandler for Message {
-    fn to_surface_message(self) -> MessageWrapper<Self> {
-        match self {
-            Message::Surface(msg) => MessageWrapper::Surface(msg),
-            msg => MessageWrapper::Message(msg),
+impl From<Message> for MessageWrapper<Message> {
+    fn from(value: Message) -> Self {
+        match value {
+            Message::Surface(s) => MessageWrapper::Surface(s),
+            m => MessageWrapper::Message(m),
         }
     }
 }
 
-#[cfg(feature = "wayland")]
 impl From<SurfaceMessage> for Message {
     fn from(value: SurfaceMessage) -> Self {
         Message::Surface(value)

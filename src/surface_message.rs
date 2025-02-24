@@ -7,17 +7,6 @@ pub enum MessageWrapper<M> {
     Message(M),
 }
 
-pub trait SurfaceMessageHandler: Sized {
-    fn to_surface_message(self) -> MessageWrapper<Self>;
-}
-
-#[cfg(not(feature = "wayland"))]
-impl<M> SurfaceMessageHandler for M {
-    fn to_surface_message(self) -> MessageWrapper<Self> {
-        MessageWrapper::Message(self)
-    }
-}
-
 /// Ignore this message in your application. It will be intercepted.
 #[derive(Clone)]
 pub enum SurfaceMessage {
