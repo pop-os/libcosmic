@@ -7,7 +7,7 @@ use apply::Apply;
 use cosmic::app::{Core, Settings, Task};
 use cosmic::dialog::file_chooser::{self, FileFilter};
 use cosmic::iced_core::Length;
-use cosmic::surface_message::{SurfaceMessage, SurfaceMessageHandler};
+use cosmic::surface_message::{MessageWrapper, SurfaceMessage};
 use cosmic::widget::button;
 use cosmic::{executor, iced, ApplicationExt, Element};
 use std::sync::Arc;
@@ -38,11 +38,11 @@ pub enum Message {
     Surface(SurfaceMessage),
 }
 
-impl SurfaceMessageHandler for Message {
-    fn to_surface_message(self) -> cosmic::surface_message::MessageWrapper<Self> {
-        match self {
-            Message::Surface(m) => cosmic::surface_message::MessageWrapper::Surface(m),
-            m => cosmic::surface_message::MessageWrapper::Message(m),
+impl From<Message> for MessageWrapper<Message> {
+    fn from(value: Message) -> Self {
+        match value {
+            Message::Surface(s) => MessageWrapper::Surface(s),
+            m => MessageWrapper::Message(m),
         }
     }
 }
