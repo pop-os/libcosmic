@@ -1,4 +1,5 @@
 use cosmic::app::Core;
+use cosmic::cctk::wayland_protocols::xdg::shell::client::xdg_positioner::Gravity;
 use cosmic::iced::event::listen_with;
 use cosmic::iced::window::Id;
 use cosmic::iced::{self, Length, Limits, Task};
@@ -209,15 +210,24 @@ impl cosmic::Application for Window {
                     )
                 },
             ),
-            |_| {
+            |layout| {
+                let bounds = layout.bounds();
+                let pos = bounds.position();
+                let size = bounds.size();
+
                 cosmic::app::message::subsurface(
-                    |app: &mut Window| subsurface::SctkSubsurfaceSettings {
+                    move |app: &mut Window| subsurface::SctkSubsurfaceSettings {
                         parent: window::Id::RESERVED,
                         id: app.subsurface_id,
-                        loc: iced_core::Point { x: -100., y: 0. },
-                        size: Some((10., 10.).into()),
+                        loc: iced::Point {
+                            x: bounds.width / 2.,
+                            y: bounds.height,
+                        },
+                        size: None,
                         z: 1,
-                        steal_keyboard_focus: true,
+                        steal_keyboard_focus: false,
+                        offset: (0, 0),
+                        gravity: Gravity::Bottom,
                     },
                     Some(Box::new(|_: &'_ Window| {
                         Element::from(autosize::autosize(
