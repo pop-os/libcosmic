@@ -17,9 +17,9 @@ impl Catalog for crate::Theme {
         match style {
             Tooltip::Default => crate::widget::wayland::tooltip::Style {
                 text_color: cosmic.on_bg_color().into(),
-                background: Some(Background::Color(cosmic.background.component.base.into())),
+                background: None,
                 border_width: 0.0,
-                border_radius: cosmic.corner_radii.radius_m.into(),
+                border_radius: cosmic.corner_radii.radius_0.into(),
                 border_color: Color::TRANSPARENT,
                 shadow_offset: iced::Vector::default(),
                 outline_width: Default::default(),

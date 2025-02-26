@@ -47,34 +47,19 @@ pub mod message {
         Message::None
     }
 
-    #[cfg(feature = "wayland")]
-    pub fn destroy_popup<App: super::Application>(id: iced_core::window::Id) -> App::Message
-    where
-        App::Message:
-            Into<crate::surface_message::MessageWrapper<App::Message>> + From<SurfaceMessage>,
-    {
-        let surface_msg = SurfaceMessage::DestroyPopup(id);
-        App::Message::from(surface_msg)
-    }
-
     /// Used to produce a destroy popup message from within a widget.
     #[cfg(feature = "wayland")]
-    pub fn destroy_popup_simple<Message>(id: iced_core::window::Id) -> Message
+    pub fn destroy_popup<Message>(id: iced_core::window::Id) -> Message
     where
-        Message:
-            Into<crate::surface_message::MessageWrapper<Message>> + From<SurfaceMessage> + 'static,
+        Message: From<SurfaceMessage> + 'static,
     {
         Message::from(SurfaceMessage::DestroyPopup(id))
     }
 
     #[cfg(feature = "wayland")]
-    pub fn destroy_subsurface<App: super::Application>(id: iced_core::window::Id) -> App::Message
-    where
-        App::Message:
-            Into<crate::surface_message::MessageWrapper<App::Message>> + From<SurfaceMessage>,
-    {
+    pub fn destroy_subsurface<M: From<SurfaceMessage>>(id: iced_core::window::Id) -> M {
         let surface_msg = SurfaceMessage::DestroySubsurface(id);
-        App::Message::from(surface_msg)
+        M::from(surface_msg)
     }
 
     #[cfg(feature = "wayland")]
@@ -108,6 +93,44 @@ pub mod message {
         let boxed: Box<dyn Any + Send + Sync + 'static> = Box::new(boxed);
 
         App::Message::from(SurfaceMessage::AppPopup(
+            Arc::new(boxed),
+            view.map(|view| {
+                let boxed: Box<dyn Any + Send + Sync + 'static> = Box::new(view);
+                Arc::new(boxed)
+            }),
+        ))
+    }
+
+    /// Used to create a subsurface message from within a widget.
+    #[cfg(feature = "wayland")]
+    pub fn simple_subsurface<Message, V>(
+        settings: impl Fn() -> iced_runtime::platform_specific::wayland::subsurface::SctkSubsurfaceSettings + Send + Sync + 'static,
+        view: Option<
+            Box<
+                dyn Fn() -> crate::Element<'static, super::Message<Message>>
+                    + Send
+                    + Sync
+                    + 'static,
+            >,
+        >,
+    ) -> Message
+    where
+        Message:
+            Into<crate::surface_message::MessageWrapper<Message>> + From<SurfaceMessage> + 'static,
+        V:,
+    {
+        use std::{any::Any, sync::Arc};
+
+        use crate::surface_message::SurfaceMessage;
+        let boxed: Box<
+            dyn Fn() -> iced_runtime::platform_specific::wayland::subsurface::SctkSubsurfaceSettings
+                + Send
+                + Sync
+                + 'static,
+        > = Box::new(settings);
+        let boxed: Box<dyn Any + Send + Sync + 'static> = Box::new(boxed);
+
+        Message::from(SurfaceMessage::Subsurface(
             Arc::new(boxed),
             view.map(|view| {
                 let boxed: Box<dyn Any + Send + Sync + 'static> = Box::new(view);

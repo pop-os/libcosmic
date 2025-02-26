@@ -2,7 +2,7 @@
 pub mod token;
 
 use crate::{
-    app::{self, iced_settings, Core},
+    app::iced_settings,
     cctk::sctk,
     iced::{
         self,
@@ -11,10 +11,11 @@ use crate::{
         window, Color, Length, Limits, Rectangle,
     },
     iced_widget,
+    surface_message::SurfaceMessage,
     theme::{self, system_dark, system_light, Button, THEME},
     widget::{
         self,
-        autosize::{autosize, Autosize},
+        autosize::{self, autosize, Autosize},
         layer_container,
     },
     Application, Element, Renderer,
@@ -23,11 +24,17 @@ use cctk::sctk::shell::xdg::window::WindowConfigure;
 pub use cosmic_panel_config;
 use cosmic_panel_config::{CosmicPanelBackground, PanelAnchor, PanelSize};
 use cosmic_theme::Theme;
+use iced::platform_specific::runtime::wayland::subsurface;
 use iced::Pixels;
-use iced_core::{Padding, Shadow};
+use iced_core::{Layout, Padding, Shadow};
 use iced_widget::runtime::platform_specific::wayland::popup::{SctkPopupSettings, SctkPositioner};
 use sctk::reexports::protocols::xdg::shell::client::xdg_positioner::{Anchor, Gravity};
-use std::{borrow::Cow, num::NonZeroU32, rc::Rc, sync::LazyLock};
+use std::{
+    borrow::Cow,
+    num::NonZeroU32,
+    rc::Rc,
+    sync::{Arc, LazyLock},
+};
 use tracing::info;
 
 use crate::app::cosmic;
@@ -35,6 +42,8 @@ static AUTOSIZE_ID: LazyLock<iced::id::Id> =
     LazyLock::new(|| iced::id::Id::new("cosmic-applet-autosize"));
 static AUTOSIZE_MAIN_ID: LazyLock<iced::id::Id> =
     LazyLock::new(|| iced::id::Id::new("cosmic-applet-autosize-main"));
+static TOOLTIP_ID: LazyLock<crate::widget::Id> = LazyLock::new(|| iced::id::Id::new("subsurface"));
+static TOOLTIP_WINDOW_ID: LazyLock<window::Id> = LazyLock::new(|| window::Id::unique());
 
 #[derive(Debug, Clone)]
 pub struct Context {
@@ -221,6 +230,93 @@ impl Context {
                 .symbolic(true)
                 .size(suggested_size.0)
                 .into(),
+        )
+    }
+
+    pub fn applet_tooltip<
+        'a,
+        Message: 'static + From<SurfaceMessage> + Into<crate::surface_message::MessageWrapper<Message>>,
+    >(
+        &self,
+        content: impl Into<Element<'a, Message>>,
+        tooltip: impl Into<Cow<'static, str>>,
+    ) -> crate::widget::wayland::tooltip::widget::Tooltip<'a, Message> {
+        let window_id = TOOLTIP_WINDOW_ID.clone();
+        let subsurface_id = TOOLTIP_ID.clone();
+        let anchor = self.anchor;
+        let tooltip = tooltip.into();
+        let on_hover = move |layout: Layout| {
+            let bounds = layout.bounds();
+            let subsurface_id = subsurface_id.clone();
+            let tooltip = tooltip.clone();
+            let window_id = window_id;
+            let (loc, gravity) = match anchor {
+                PanelAnchor::Left => (
+                    iced::Point {
+                        x: bounds.width,
+                        y: bounds.height / 2.,
+                    },
+                    Gravity::Right,
+                ),
+                PanelAnchor::Right => (
+                    iced::Point {
+                        x: 0.,
+                        y: bounds.height / 2.,
+                    },
+                    Gravity::Left,
+                ),
+                PanelAnchor::Top => (
+                    iced::Point {
+                        x: bounds.width / 2.,
+                        y: bounds.height,
+                    },
+                    Gravity::Bottom,
+                ),
+                PanelAnchor::Bottom => (
+                    iced::Point {
+                        x: bounds.width / 2.,
+                        y: 0.,
+                    },
+                    Gravity::Top,
+                ),
+            };
+
+            crate::app::message::simple_subsurface::<
+                Message,
+                Option<
+                    Box<
+                        dyn Fn() -> crate::Element<'static, crate::app::Message<Message>>
+                            + Send
+                            + Sync
+                            + 'static,
+                    >,
+                >,
+            >(
+                move || subsurface::SctkSubsurfaceSettings {
+                    parent: window::Id::RESERVED,
+                    id: window_id,
+                    loc,
+                    size: None,
+                    z: 1,
+                    steal_keyboard_focus: false,
+                    offset: (0, 0),
+                    gravity,
+                    input_region: Rectangle::default(),
+                },
+                Some(Box::new(move || {
+                    Element::<'static, crate::app::Message<Message>>::from(autosize::autosize(
+                        layer_container(crate::widget::text(tooltip.clone()))
+                            .layer(crate::cosmic_theme::Layer::Background)
+                            .padding(4.),
+                        subsurface_id.clone(),
+                    ))
+                })),
+            )
+        };
+        crate::widget::wayland::tooltip::widget::Tooltip::new(
+            content,
+            on_hover,
+            crate::app::message::destroy_subsurface::<Message>(window_id),
         )
     }
 

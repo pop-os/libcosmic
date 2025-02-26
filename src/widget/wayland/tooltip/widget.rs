@@ -75,7 +75,7 @@ impl<'a, Message> Tooltip<'a, Message> {
             on_hover: Box::new(on_hover),
             width: Length::Shrink,
             height: Length::Shrink,
-            padding: Padding::new(5.0),
+            padding: Padding::new(0.0),
             selected: false,
             style: crate::theme::Tooltip::default(),
             on_leave,
