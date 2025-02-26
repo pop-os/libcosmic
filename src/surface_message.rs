@@ -17,6 +17,11 @@ impl<M> From<M> for MessageWrapper<M> {
 /// Ignore this message in your application. It will be intercepted.
 #[derive(Clone)]
 pub enum SurfaceMessage {
+    /// Create a subsurface with a view function accepting the App as a parameter
+    AppSubsurface(
+        std::sync::Arc<Box<dyn std::any::Any + Send + Sync>>,
+        Option<std::sync::Arc<Box<dyn std::any::Any + Send + Sync>>>,
+    ),
     /// Create a subsurface with a view function
     Subsurface(
         std::sync::Arc<Box<dyn std::any::Any + Send + Sync>>,
@@ -50,6 +55,9 @@ pub enum SurfaceMessage {
 impl std::fmt::Debug for SurfaceMessage {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
+            Self::AppSubsurface(arg0, arg1) => {
+                f.debug_tuple("Subsurface").field(arg0).field(arg1).finish()
+            }
             Self::Subsurface(arg0, arg1) => {
                 f.debug_tuple("Subsurface").field(arg0).field(arg1).finish()
             }

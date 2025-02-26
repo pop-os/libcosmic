@@ -130,7 +130,7 @@ where
                 MessageWrapper::Surface(surface_message) => {
                     #[cfg(feature = "wayland")]
                     match surface_message {
-                        SurfaceMessage::Subsurface(settings, view) => {
+                        SurfaceMessage::AppSubsurface(settings, view) => {
                             let Some(settings) = std::sync::Arc::try_unwrap(settings)
                                 .ok()
                                 .and_then(|s| s.downcast::<Box<dyn Fn(&mut T) -> iced_runtime::platform_specific::wayland::subsurface::SctkSubsurfaceSettings + Send + Sync>>().ok()) else {
@@ -150,6 +150,7 @@ where
                                         tracing::error!(
                                             "Invalid view for subsurface view: {err:?}"
                                         );
+
                                         None
                                     }
                                 }
@@ -160,6 +161,38 @@ where
                                 iced_winit::commands::subsurface::get_subsurface(settings(
                                     &mut self.app,
                                 ))
+                            }
+                        }
+                        SurfaceMessage::Subsurface(settings, view) => {
+                            let Some(settings) = std::sync::Arc::try_unwrap(settings)
+                                .ok()
+                                .and_then(|s| s.downcast::<Box<dyn Fn() -> iced_runtime::platform_specific::wayland::subsurface::SctkSubsurfaceSettings + Send + Sync>>().ok()) else {
+                                tracing::error!("Invalid settings for subsurface");
+                                return Task::none();
+                            };
+
+                            if let Some(view) = view.and_then(|view| {
+                                match std::sync::Arc::try_unwrap(view).ok()?.downcast::<Box<
+                                    dyn Fn() -> Element<'static, super::Message<T::Message>>
+                                        + Send
+                                        + Sync,
+                                >>(
+                                ) {
+                                    Ok(v) => Some(v),
+                                    Err(err) => {
+                                        tracing::error!(
+                                            "Invalid view for subsurface view: {err:?}"
+                                        );
+                                        dbg!("bad view");
+
+                                        None
+                                    }
+                                }
+                            }) {
+                                let settings = settings();
+                                self.get_subsurface(settings, Box::new(move |_| view()))
+                            } else {
+                                iced_winit::commands::subsurface::get_subsurface(settings())
                             }
                         }
                         SurfaceMessage::AppPopup(settings, view) => {
