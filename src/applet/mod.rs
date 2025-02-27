@@ -20,11 +20,9 @@ use crate::{
     },
     Application, Element, Renderer,
 };
-use cctk::sctk::shell::xdg::window::WindowConfigure;
 pub use cosmic_panel_config;
 use cosmic_panel_config::{CosmicPanelBackground, PanelAnchor, PanelSize};
 use cosmic_theme::Theme;
-use iced::platform_specific::runtime::wayland::subsurface;
 use iced::Pixels;
 use iced_core::{Layout, Padding, Shadow};
 use iced_widget::runtime::platform_specific::wayland::popup::{SctkPopupSettings, SctkPositioner};
@@ -250,38 +248,14 @@ impl Context {
             let subsurface_id = subsurface_id.clone();
             let tooltip = tooltip.clone();
             let window_id = window_id;
-            let (loc, gravity) = match anchor {
-                PanelAnchor::Left => (
-                    iced::Point {
-                        x: bounds.width,
-                        y: bounds.height / 2.,
-                    },
-                    Gravity::Right,
-                ),
-                PanelAnchor::Right => (
-                    iced::Point {
-                        x: 0.,
-                        y: bounds.height / 2.,
-                    },
-                    Gravity::Left,
-                ),
-                PanelAnchor::Top => (
-                    iced::Point {
-                        x: bounds.width / 2.,
-                        y: bounds.height,
-                    },
-                    Gravity::Bottom,
-                ),
-                PanelAnchor::Bottom => (
-                    iced::Point {
-                        x: bounds.width / 2.,
-                        y: 0.,
-                    },
-                    Gravity::Top,
-                ),
+            let (popup_anchor, gravity) = match anchor {
+                PanelAnchor::Left => (Anchor::Right, Gravity::Right),
+                PanelAnchor::Right => (Anchor::Left, Gravity::Left),
+                PanelAnchor::Top => (Anchor::Bottom, Gravity::Bottom),
+                PanelAnchor::Bottom => (Anchor::Top, Gravity::Top),
             };
 
-            crate::app::message::simple_subsurface::<
+            crate::app::message::simple_popup::<
                 Message,
                 Option<
                     Box<
@@ -292,16 +266,28 @@ impl Context {
                     >,
                 >,
             >(
-                move || subsurface::SctkSubsurfaceSettings {
+                move || SctkPopupSettings {
                     parent: window::Id::RESERVED,
                     id: window_id,
-                    loc,
-                    size: None,
-                    z: 1,
-                    steal_keyboard_focus: false,
-                    offset: (0, 0),
-                    gravity,
-                    input_region: Rectangle::default(),
+                    grab: false,
+                    input_zone: Some(Rectangle::default()),
+                    positioner: SctkPositioner {
+                        size: None,
+                        size_limits: Limits::NONE.min_width(1.).min_height(1.),
+                        anchor_rect: Rectangle {
+                            x: bounds.x.round() as i32,
+                            y: bounds.y.round() as i32,
+                            width: bounds.width.round() as i32,
+                            height: bounds.height.round() as i32,
+                        },
+                        anchor: popup_anchor,
+                        gravity,
+                        constraint_adjustment: 15,
+                        offset: (0, 0),
+                        reactive: true,
+                    },
+                    parent_size: None,
+                    close_with_children: true,
                 },
                 Some(Box::new(move || {
                     Element::<'static, crate::app::Message<Message>>::from(autosize::autosize(
@@ -405,6 +391,7 @@ impl Context {
             parent_size: None,
             grab: true,
             close_with_children: false,
+            input_zone: None,
         }
     }
 

@@ -524,6 +524,7 @@ pub fn update<
                         SctkPopupSettings {
                             parent,
                             id,
+                            input_zone: None,
                             positioner: SctkPositioner {
                                 size: Some((selections_width as u32 + gap as u32 + pad_width as u32 + icon_width as u32, 10)),
                                 anchor_rect,
@@ -534,7 +535,7 @@ pub fn update<
                             },
                             parent_size: None,
                             grab: true,
-                            close_with_children: true
+                            close_with_children: true,
                         },
                         Arc::new(move || {
                             Element::from(
