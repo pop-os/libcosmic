@@ -210,7 +210,10 @@ impl cosmic::Application for Window {
             },
         );
 
-        self.core.applet.applet_tooltip(btn, "test").into()
+        self.core
+            .applet
+            .applet_tooltip(btn, "test", self.popup.is_some())
+            .into()
     }
 
     fn view_window(&self, _id: Id) -> Element<Self::Message> {

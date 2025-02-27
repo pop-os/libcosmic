@@ -50,14 +50,17 @@ pub enum SurfaceMessage {
         /// Requested Full Size for expanded menu bar
         size: Size,
     },
+    Ignore,
 }
 
 impl std::fmt::Debug for SurfaceMessage {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Self::AppSubsurface(arg0, arg1) => {
-                f.debug_tuple("Subsurface").field(arg0).field(arg1).finish()
-            }
+            Self::AppSubsurface(arg0, arg1) => f
+                .debug_tuple("AppSubsurface")
+                .field(arg0)
+                .field(arg1)
+                .finish(),
             Self::Subsurface(arg0, arg1) => {
                 f.debug_tuple("Subsurface").field(arg0).field(arg1).finish()
             }
@@ -79,6 +82,7 @@ impl std::fmt::Debug for SurfaceMessage {
                 .field("limits", limits)
                 .field("size", size)
                 .finish(),
+            Self::Ignore => write!(f, "Ignore"),
         }
     }
 }
