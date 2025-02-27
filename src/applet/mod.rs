@@ -238,8 +238,9 @@ impl Context {
         &self,
         content: impl Into<Element<'a, Message>>,
         tooltip: impl Into<Cow<'static, str>>,
+        has_popup: bool,
     ) -> crate::widget::wayland::tooltip::widget::Tooltip<'a, Message> {
-        let window_id = TOOLTIP_WINDOW_ID.clone();
+        let window_id = *TOOLTIP_WINDOW_ID;
         let subsurface_id = TOOLTIP_ID.clone();
         let anchor = self.anchor;
         let tooltip = tooltip.into();
@@ -254,50 +255,53 @@ impl Context {
                 PanelAnchor::Top => (Anchor::Bottom, Gravity::Bottom),
                 PanelAnchor::Bottom => (Anchor::Top, Gravity::Top),
             };
-
-            crate::app::message::simple_popup::<
-                Message,
-                Option<
-                    Box<
-                        dyn Fn() -> crate::Element<'static, crate::app::Message<Message>>
-                            + Send
-                            + Sync
-                            + 'static,
+            if has_popup {
+                SurfaceMessage::Ignore.into()
+            } else {
+                crate::app::message::simple_popup::<
+                    Message,
+                    Option<
+                        Box<
+                            dyn Fn() -> crate::Element<'static, crate::app::Message<Message>>
+                                + Send
+                                + Sync
+                                + 'static,
+                        >,
                     >,
-                >,
-            >(
-                move || SctkPopupSettings {
-                    parent: window::Id::RESERVED,
-                    id: window_id,
-                    grab: false,
-                    input_zone: Some(Rectangle::default()),
-                    positioner: SctkPositioner {
-                        size: None,
-                        size_limits: Limits::NONE.min_width(1.).min_height(1.),
-                        anchor_rect: Rectangle {
-                            x: bounds.x.round() as i32,
-                            y: bounds.y.round() as i32,
-                            width: bounds.width.round() as i32,
-                            height: bounds.height.round() as i32,
+                >(
+                    move || SctkPopupSettings {
+                        parent: window::Id::RESERVED,
+                        id: window_id,
+                        grab: false,
+                        input_zone: Some(Rectangle::default()),
+                        positioner: SctkPositioner {
+                            size: None,
+                            size_limits: Limits::NONE.min_width(1.).min_height(1.),
+                            anchor_rect: Rectangle {
+                                x: bounds.x.round() as i32,
+                                y: bounds.y.round() as i32,
+                                width: bounds.width.round() as i32,
+                                height: bounds.height.round() as i32,
+                            },
+                            anchor: popup_anchor,
+                            gravity,
+                            constraint_adjustment: 15,
+                            offset: (0, 0),
+                            reactive: true,
                         },
-                        anchor: popup_anchor,
-                        gravity,
-                        constraint_adjustment: 15,
-                        offset: (0, 0),
-                        reactive: true,
+                        parent_size: None,
+                        close_with_children: true,
                     },
-                    parent_size: None,
-                    close_with_children: true,
-                },
-                Some(Box::new(move || {
-                    Element::<'static, crate::app::Message<Message>>::from(autosize::autosize(
-                        layer_container(crate::widget::text(tooltip.clone()))
-                            .layer(crate::cosmic_theme::Layer::Background)
-                            .padding(4.),
-                        subsurface_id.clone(),
-                    ))
-                })),
-            )
+                    Some(Box::new(move || {
+                        Element::<'static, crate::app::Message<Message>>::from(autosize::autosize(
+                            layer_container(crate::widget::text(tooltip.clone()))
+                                .layer(crate::cosmic_theme::Layer::Background)
+                                .padding(4.),
+                            subsurface_id.clone(),
+                        ))
+                    })),
+                )
+            }
         };
         crate::widget::wayland::tooltip::widget::Tooltip::new(
             content,

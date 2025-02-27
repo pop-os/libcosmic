@@ -132,11 +132,11 @@ where
                     match surface_message {
                         SurfaceMessage::AppSubsurface(settings, view) => {
                             let Some(settings) = std::sync::Arc::try_unwrap(settings)
-                                .ok()
-                                .and_then(|s| s.downcast::<Box<dyn Fn(&mut T) -> iced_runtime::platform_specific::wayland::subsurface::SctkSubsurfaceSettings + Send + Sync>>().ok()) else {
-                                tracing::error!("Invalid settings for subsurface");
-                                return Task::none();
-                            };
+                                                    .ok()
+                                                    .and_then(|s| s.downcast::<Box<dyn Fn(&mut T) -> iced_runtime::platform_specific::wayland::subsurface::SctkSubsurfaceSettings + Send + Sync>>().ok()) else {
+                                                    tracing::error!("Invalid settings for subsurface");
+                                                    return Task::none();
+                                                };
 
                             if let Some(view) = view.and_then(|view| {
                                 match std::sync::Arc::try_unwrap(view).ok()?.downcast::<Box<
@@ -165,11 +165,11 @@ where
                         }
                         SurfaceMessage::Subsurface(settings, view) => {
                             let Some(settings) = std::sync::Arc::try_unwrap(settings)
-                                .ok()
-                                .and_then(|s| s.downcast::<Box<dyn Fn() -> iced_runtime::platform_specific::wayland::subsurface::SctkSubsurfaceSettings + Send + Sync>>().ok()) else {
-                                tracing::error!("Invalid settings for subsurface");
-                                return Task::none();
-                            };
+                                                    .ok()
+                                                    .and_then(|s| s.downcast::<Box<dyn Fn() -> iced_runtime::platform_specific::wayland::subsurface::SctkSubsurfaceSettings + Send + Sync>>().ok()) else {
+                                                    tracing::error!("Invalid settings for subsurface");
+                                                    return Task::none();
+                                                };
 
                             if let Some(view) = view.and_then(|view| {
                                 match std::sync::Arc::try_unwrap(view).ok()?.downcast::<Box<
@@ -197,11 +197,11 @@ where
                         }
                         SurfaceMessage::AppPopup(settings, view) => {
                             let Some(settings) = std::sync::Arc::try_unwrap(settings)
-                                .ok()
-                                .and_then(|s| s.downcast::<Box<dyn Fn(&mut T) -> iced_runtime::platform_specific::wayland::popup::SctkPopupSettings + Send + Sync>>().ok()) else {
-                                tracing::error!("Invalid settings for popup");
-                                return Task::none();
-                            };
+                                                    .ok()
+                                                    .and_then(|s| s.downcast::<Box<dyn Fn(&mut T) -> iced_runtime::platform_specific::wayland::popup::SctkPopupSettings + Send + Sync>>().ok()) else {
+                                                    tracing::error!("Invalid settings for popup");
+                                                    return Task::none();
+                                                };
 
                             if let Some(view) = view.and_then(|view| {
                                 match std::sync::Arc::try_unwrap(view).ok()?.downcast::<Box<
@@ -245,11 +245,11 @@ where
                         }
                         SurfaceMessage::Popup(settings, view) => {
                             let Some(settings) = std::sync::Arc::try_unwrap(settings)
-                                .ok()
-                                .and_then(|s| s.downcast::<Box<dyn Fn() -> iced_runtime::platform_specific::wayland::popup::SctkPopupSettings + Send + Sync>>().ok()) else {
-                                tracing::error!("Invalid settings for popup");
-                                return Task::none();
-                            };
+                                                    .ok()
+                                                    .and_then(|s| s.downcast::<Box<dyn Fn() -> iced_runtime::platform_specific::wayland::popup::SctkPopupSettings + Send + Sync>>().ok()) else {
+                                                    tracing::error!("Invalid settings for popup");
+                                                    return Task::none();
+                                                };
 
                             if let Some(view) = view.and_then(|view| {
                                 match std::sync::Arc::try_unwrap(view).ok()?.downcast::<Box<
@@ -274,6 +274,7 @@ where
                                 iced_winit::commands::popup::get_popup(settings())
                             }
                         }
+                        SurfaceMessage::Ignore => iced::Task::none(),
                     }
                     #[cfg(not(feature = "wayland"))]
                     iced::Task::none()
