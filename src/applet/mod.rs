@@ -302,7 +302,7 @@ impl Context {
         crate::widget::wayland::tooltip::widget::Tooltip::new(
             content,
             on_hover,
-            crate::app::message::destroy_subsurface::<Message>(window_id),
+            crate::app::message::destroy_popup::<Message>(window_id),
         )
     }
 
