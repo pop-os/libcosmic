@@ -611,7 +611,7 @@ pub struct ColorPicker<'a, Message> {
     must_clear_cache: Rc<AtomicBool>,
 }
 
-impl<'a, Message> Widget<Message, crate::Theme, crate::Renderer> for ColorPicker<'a, Message>
+impl<Message> Widget<Message, crate::Theme, crate::Renderer> for ColorPicker<'_, Message>
 where
     Message: Clone + 'static,
 {
@@ -874,7 +874,7 @@ impl State {
     }
 }
 
-impl<'a, Message> ColorPicker<'a, Message> where Message: Clone + 'static {}
+impl<Message> ColorPicker<'_, Message> where Message: Clone + 'static {}
 // TODO convert active color to hex or rgba
 fn color_to_string(c: palette::Hsv, is_hex: bool) -> String {
     let srgb = palette::Srgb::from_color(c);

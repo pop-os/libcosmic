@@ -6,7 +6,7 @@ use super::menu::{self, Menu};
 use crate::widget::icon::{self, Handle};
 use crate::Element;
 use derive_setters::Setters;
-use iced::{window, Radians};
+use iced::window;
 use iced_core::event::{self, Event};
 use iced_core::text::{self, Paragraph, Text};
 use iced_core::widget::tree::{self, Tree};
@@ -139,8 +139,8 @@ where
     }
 }
 
-impl<'a, S: AsRef<str> + Send + Sync + Clone + 'static, Message: 'static + std::clone::Clone>
-    Widget<Message, crate::Theme, crate::Renderer> for Dropdown<'a, S, Message>
+impl<S: AsRef<str> + Send + Sync + Clone + 'static, Message: 'static + std::clone::Clone>
+    Widget<Message, crate::Theme, crate::Renderer> for Dropdown<'_, S, Message>
 where
     [S]: std::borrow::ToOwned,
 {
@@ -270,7 +270,7 @@ where
         cursor: mouse::Cursor,
         viewport: &Rectangle,
     ) {
-        let font = self.font.unwrap_or_else(|| crate::font::default());
+        let font = self.font.unwrap_or_else(crate::font::default);
         draw(
             renderer,
             theme,
@@ -407,7 +407,7 @@ pub fn layout(
                     bounds: Size::new(f32::MAX, f32::MAX),
                     size: iced::Pixels(text_size),
                     line_height: text_line_height,
-                    font: font.unwrap_or_else(|| crate::font::default()),
+                    font: font.unwrap_or_else(crate::font::default),
                     horizontal_alignment: alignment::Horizontal::Left,
                     vertical_alignment: alignment::Vertical::Top,
                     shaping: text::Shaping::Advanced,

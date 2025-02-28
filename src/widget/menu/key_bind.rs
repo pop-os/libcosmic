@@ -40,7 +40,7 @@ impl KeyBind {
     pub fn matches(&self, modifiers: Modifiers, key: &Key) -> bool {
         let key_eq = match (key, &self.key) {
             // CapsLock and Shift change the case of Key::Character, so we compare these in a case insensitive way
-            (Key::Character(a), Key::Character(b)) => a.eq_ignore_ascii_case(&b),
+            (Key::Character(a), Key::Character(b)) => a.eq_ignore_ascii_case(b),
             (a, b) => a.eq(b),
         };
         key_eq

@@ -596,7 +596,7 @@ impl<'a, Message: 'a + Clone> Widget<Message, crate::Theme, crate::Renderer>
                 node.set_described_by(
                     id.iter()
                         .cloned()
-                        .map(|id| NodeId::from(id))
+                        .map(NodeId::from)
                         .collect::<Vec<_>>(),
                 );
             }

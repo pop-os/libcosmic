@@ -6,7 +6,6 @@
 //! Check out our [application](https://github.com/pop-os/libcosmic/tree/master/examples/application)
 //! example in our repository.
 
-use crate::surface_message::{MessageWrapper, SurfaceMessage};
 
 pub mod command;
 pub mod context_drawer;
@@ -17,9 +16,9 @@ pub(crate) mod multi_window;
 pub mod settings;
 
 pub mod message {
-    use crate::surface_message::{MessageWrapper, SurfaceMessage};
+    use crate::surface_message::SurfaceMessage;
 
-    use iced::{Limits, Size};
+    
 
     #[derive(Clone, Debug)]
     #[must_use]
@@ -536,7 +535,7 @@ where
         .and_then(|b| b.destination(App::APP_ID).ok())
         .and_then(|b| b.build().ok())
         .is_some_and(|mut p| {
-            match {
+            let res = {
                 let mut platform_data = HashMap::new();
                 if let Some(activation_token) = activation_token {
                     platform_data.insert("activation-token", activation_token.into());
@@ -550,7 +549,7 @@ where
                 } else {
                     p.activate(platform_data)
                 }
-            } {
+            }; match res {
                 Ok(()) => {
                     tracing::info!("Successfully activated another instance");
                     true
@@ -1221,6 +1220,6 @@ fn preload_fonts() {
         .unwrap();
 
     EMBEDDED_FONTS
-        .into_iter()
+        .iter()
         .for_each(move |font| font_system.load_font(Cow::Borrowed(font)));
 }

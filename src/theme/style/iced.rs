@@ -754,7 +754,7 @@ impl menu::Catalog for Theme {
     type Class<'a> = ();
 
     fn default<'a>() -> <Self as menu::Catalog>::Class<'a> {
-        ()
+        
     }
 
     fn style(&self, class: &<Self as menu::Catalog>::Class<'_>) -> menu::Style {
@@ -777,7 +777,7 @@ impl pick_list::Catalog for Theme {
     type Class<'a> = ();
 
     fn default<'a>() -> <Self as pick_list::Catalog>::Class<'a> {
-        ()
+        
     }
 
     fn style(
@@ -822,7 +822,7 @@ impl radio::Catalog for Theme {
     type Class<'a> = ();
 
     fn default<'a>() -> Self::Class<'a> {
-        ()
+        
     }
 
     fn style(&self, class: &Self::Class<'_>, status: radio::Status) -> radio::Style {
@@ -876,7 +876,7 @@ impl toggler::Catalog for Theme {
     type Class<'a> = ();
 
     fn default<'a>() -> Self::Class<'a> {
-        ()
+        
     }
 
     fn style(&self, class: &Self::Class<'_>, status: toggler::Status) -> toggler::Style {
@@ -933,7 +933,7 @@ impl pane_grid::Catalog for Theme {
     type Class<'a> = ();
 
     fn default<'a>() -> <Self as pane_grid::Catalog>::Class<'a> {
-        ()
+        
     }
 
     fn style(&self, class: &<Self as pane_grid::Catalog>::Class<'_>) -> pane_grid::Style {

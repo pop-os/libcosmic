@@ -1,4 +1,4 @@
-use iced::{Background, Color};
+use iced::Color;
 
 use crate::widget::wayland::tooltip::Catalog;
 

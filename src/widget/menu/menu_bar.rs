@@ -64,8 +64,8 @@ impl Default for MenuBarState {
     }
 }
 
-pub(crate) fn menu_roots_children<'a, Message, Renderer>(
-    menu_roots: &Vec<MenuTree<'a, Message, Renderer>>,
+pub(crate) fn menu_roots_children<Message, Renderer>(
+    menu_roots: &Vec<MenuTree<'_, Message, Renderer>>,
 ) -> Vec<Tree>
 where
     Renderer: renderer::Renderer,
@@ -95,8 +95,8 @@ where
 }
 
 #[allow(invalid_reference_casting)]
-pub(crate) fn menu_roots_diff<'a, Message, Renderer>(
-    menu_roots: &mut Vec<MenuTree<'a, Message, Renderer>>,
+pub(crate) fn menu_roots_diff<Message, Renderer>(
+    menu_roots: &mut Vec<MenuTree<'_, Message, Renderer>>,
     tree: &mut Tree,
 ) where
     Renderer: renderer::Renderer,
@@ -280,8 +280,8 @@ where
         self
     }
 }
-impl<'a, Message, Renderer> Widget<Message, crate::Theme, Renderer>
-    for MenuBar<'a, Message, Renderer>
+impl<Message, Renderer> Widget<Message, crate::Theme, Renderer>
+    for MenuBar<'_, Message, Renderer>
 where
     Renderer: renderer::Renderer,
 {

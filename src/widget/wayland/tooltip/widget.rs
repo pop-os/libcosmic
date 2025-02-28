@@ -7,10 +7,9 @@
 //! A [`Tooltip`] has some local [`State`].
 
 use iced_runtime::core::widget::Id;
-use iced_runtime::{keyboard, task, Action, Task};
 
 use iced_core::event::{self, Event};
-use iced_core::renderer::{self, Quad, Renderer};
+use iced_core::renderer::{self, Renderer};
 use iced_core::touch;
 use iced_core::widget::tree::{self, Tree};
 use iced_core::widget::Operation;
@@ -20,9 +19,7 @@ use iced_core::{overlay, Shadow};
 use iced_core::{
     Background, Clipboard, Color, Layout, Length, Padding, Point, Rectangle, Shell, Vector, Widget,
 };
-use iced_renderer::core::widget::operation;
 
-use crate::theme::THEME;
 
 pub use super::{Catalog, Style};
 
@@ -267,7 +264,7 @@ impl<'a, Message: 'a + Clone> Widget<Message, crate::Theme, crate::Renderer>
 
         let styling = theme.style(&self.style);
 
-        let mut icon_color = styling.icon_color.unwrap_or(renderer_style.icon_color);
+        let icon_color = styling.icon_color.unwrap_or(renderer_style.icon_color);
 
         draw::<_, crate::Theme>(
             renderer,

@@ -1,6 +1,5 @@
 //! Autosize Container, which will resize the window to its contents.
 
-use cctk::sctk::shell::xdg::window;
 use iced_core::event::{self, Event};
 use iced_core::layout;
 use iced_core::mouse;
@@ -91,8 +90,8 @@ where
     }
 }
 
-impl<'a, Message, Theme, Renderer> Widget<Message, Theme, Renderer>
-    for Autosize<'a, Message, Theme, Renderer>
+impl<Message, Theme, Renderer> Widget<Message, Theme, Renderer>
+    for Autosize<'_, Message, Theme, Renderer>
 where
     Renderer: iced_core::Renderer,
 {
