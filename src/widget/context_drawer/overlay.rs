@@ -17,8 +17,7 @@ pub(super) struct Overlay<'a, 'b, Message> {
     pub(super) width: f32,
 }
 
-impl<Message> overlay::Overlay<Message, crate::Theme, crate::Renderer>
-    for Overlay<'_, '_, Message>
+impl<Message> overlay::Overlay<Message, crate::Theme, crate::Renderer> for Overlay<'_, '_, Message>
 where
     Message: Clone,
 {

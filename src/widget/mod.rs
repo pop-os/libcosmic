@@ -344,7 +344,6 @@ pub mod wayland;
 
 pub mod tooltip {
     use crate::Element;
-    
 
     pub use iced::widget::tooltip::Position;
 

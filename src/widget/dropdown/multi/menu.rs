@@ -180,9 +180,7 @@ impl<'a, Message: 'a> Overlay<'a, Message> {
     }
 }
 
-impl<Message> iced_core::Overlay<Message, crate::Theme, crate::Renderer>
-    for Overlay<'_, Message>
-{
+impl<Message> iced_core::Overlay<Message, crate::Theme, crate::Renderer> for Overlay<'_, Message> {
     fn layout(&mut self, renderer: &crate::Renderer, bounds: Size) -> layout::Node {
         let position = self.position;
         let space_below = bounds.height - (position.y + self.target_height);

@@ -20,7 +20,6 @@ use iced_core::{
     Background, Clipboard, Color, Layout, Length, Padding, Point, Rectangle, Shell, Vector, Widget,
 };
 
-
 pub use super::{Catalog, Style};
 
 /// Internally defines different button widget variants.

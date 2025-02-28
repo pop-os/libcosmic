@@ -25,12 +25,7 @@ use cosmic_panel_config::{CosmicPanelBackground, PanelAnchor, PanelSize};
 use iced_core::{Layout, Padding, Shadow};
 use iced_widget::runtime::platform_specific::wayland::popup::{SctkPopupSettings, SctkPositioner};
 use sctk::reexports::protocols::xdg::shell::client::xdg_positioner::{Anchor, Gravity};
-use std::{
-    borrow::Cow,
-    num::NonZeroU32,
-    rc::Rc,
-    sync::LazyLock,
-};
+use std::{borrow::Cow, num::NonZeroU32, rc::Rc, sync::LazyLock};
 use tracing::info;
 
 use crate::app::cosmic;
@@ -166,11 +161,7 @@ impl Context {
         let height = f32::from(height) + applet_padding as f32 * 2.;
         let mut settings = crate::app::Settings::default()
             .size(iced_core::Size::new(width, height))
-            .size_limits(
-                Limits::NONE
-                    .min_height(height)
-                    .min_width(width),
-            )
+            .size_limits(Limits::NONE.min_height(height).min_width(width))
             .resizable(None)
             .default_text_size(14.0)
             .default_font(crate::font::default())

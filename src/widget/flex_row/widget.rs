@@ -85,9 +85,7 @@ impl<'a, Message> FlexRow<'a, Message> {
     }
 }
 
-impl<Message: 'static + Clone> Widget<Message, crate::Theme, Renderer>
-    for FlexRow<'_, Message>
-{
+impl<Message: 'static + Clone> Widget<Message, crate::Theme, Renderer> for FlexRow<'_, Message> {
     fn children(&self) -> Vec<Tree> {
         self.children.iter().map(Tree::new).collect()
     }
