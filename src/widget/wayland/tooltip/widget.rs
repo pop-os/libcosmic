@@ -224,30 +224,26 @@ impl<'a, Message: 'a + Clone> Widget<Message, crate::Theme, crate::Renderer>
         shell: &mut Shell<'_, Message>,
         viewport: &Rectangle,
     ) -> event::Status {
-        if self.content.as_widget_mut().on_event(
-            &mut tree.children[0],
-            event.clone(),
-            layout.children().next().unwrap(),
-            cursor,
-            renderer,
-            clipboard,
-            shell,
-            viewport,
-        ) == event::Status::Captured
-        {
-            return event::Status::Captured;
-        }
-
-        update(
+        let status = update(
             self.id.clone(),
-            event,
+            event.clone(),
             layout,
             cursor,
             shell,
             &self.on_hover,
             &self.on_leave,
             || tree.state.downcast_mut::<State>(),
-        )
+        );
+        status.merge(self.content.as_widget_mut().on_event(
+            &mut tree.children[0],
+            event,
+            layout.children().next().unwrap(),
+            cursor,
+            renderer,
+            clipboard,
+            shell,
+            viewport,
+        ))
     }
 
     #[allow(clippy::too_many_lines)]
@@ -304,9 +300,13 @@ impl<'a, Message: 'a + Clone> Widget<Message, crate::Theme, crate::Renderer>
         viewport: &Rectangle,
         renderer: &crate::Renderer,
     ) -> mouse::Interaction {
-        self.content
-            .as_widget()
-            .mouse_interaction(tree, layout, cursor, viewport, renderer)
+        self.content.as_widget().mouse_interaction(
+            &tree.children[0],
+            layout,
+            cursor,
+            viewport,
+            renderer,
+        )
     }
 
     fn overlay<'b>(
