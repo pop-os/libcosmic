@@ -46,9 +46,7 @@ pub struct ContextMenu<'a, Message> {
     context_menu: Option<Vec<menu::Tree<'a, Message>>>,
 }
 
-impl<Message: Clone> Widget<Message, crate::Theme, crate::Renderer>
-    for ContextMenu<'_, Message>
-{
+impl<Message: Clone> Widget<Message, crate::Theme, crate::Renderer> for ContextMenu<'_, Message> {
     fn tag(&self) -> tree::Tag {
         tree::Tag::of::<LocalState>()
     }

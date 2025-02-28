@@ -4,10 +4,10 @@
 use std::collections::HashMap;
 
 use crate::widget::{
-        button, icon,
-        menu::{self},
-        nav_bar, responsive_container,
-    };
+    button, icon,
+    menu::{self},
+    nav_bar, responsive_container,
+};
 use cosmic_config::CosmicConfigEntry;
 use cosmic_theme::ThemeMode;
 use iced::{window, Limits, Size};
@@ -16,7 +16,6 @@ use palette::Srgba;
 use slotmap::Key;
 
 use crate::Theme;
-
 
 /// Status of the nav bar and its panels.
 #[derive(Clone)]
@@ -403,10 +402,6 @@ impl Core {
             Vec<menu::Item<A, std::borrow::Cow<'static, str>>>,
         )>,
     ) -> crate::Element<'a, Message> {
-        
-
-        
-
         use crate::widget::id_container;
 
         let menu_bar_size = self.menu_bars.get(&id);

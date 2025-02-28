@@ -417,8 +417,7 @@ where
     text_line_height: text::LineHeight,
 }
 
-impl<S: AsRef<str>, Message> Widget<Message, crate::Theme, crate::Renderer>
-    for List<'_, S, Message>
+impl<S: AsRef<str>, Message> Widget<Message, crate::Theme, crate::Renderer> for List<'_, S, Message>
 where
     [S]: std::borrow::ToOwned,
 {

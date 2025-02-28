@@ -280,8 +280,7 @@ where
         self
     }
 }
-impl<Message, Renderer> Widget<Message, crate::Theme, Renderer>
-    for MenuBar<'_, Message, Renderer>
+impl<Message, Renderer> Widget<Message, crate::Theme, Renderer> for MenuBar<'_, Message, Renderer>
 where
     Renderer: renderer::Renderer,
 {

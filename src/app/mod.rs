@@ -6,7 +6,6 @@
 //! Check out our [application](https://github.com/pop-os/libcosmic/tree/master/examples/application)
 //! example in our repository.
 
-
 pub mod command;
 pub mod context_drawer;
 mod core;
@@ -17,8 +16,6 @@ pub mod settings;
 
 pub mod message {
     use crate::surface_message::SurfaceMessage;
-
-    
 
     #[derive(Clone, Debug)]
     #[must_use]
@@ -549,7 +546,8 @@ where
                 } else {
                     p.activate(platform_data)
                 }
-            }; match res {
+            };
+            match res {
                 Ok(()) => {
                     tracing::info!("Successfully activated another instance");
                     true

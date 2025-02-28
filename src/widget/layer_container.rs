@@ -138,8 +138,7 @@ where
     }
 }
 
-impl<Message, Renderer> Widget<Message, Theme, Renderer>
-    for LayerContainer<'_, Message, Renderer>
+impl<Message, Renderer> Widget<Message, Theme, Renderer> for LayerContainer<'_, Message, Renderer>
 where
     Renderer: iced_core::Renderer,
 {

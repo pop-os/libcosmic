@@ -152,7 +152,8 @@ impl From<FontConfig> for iced::Font {
         let mut family_map = FAMILY_MAP.lock().unwrap();
 
         let name: &'static str = family_map
-            .get(font.family.as_str()).copied()
+            .get(font.family.as_str())
+            .copied()
             .unwrap_or_else(|| {
                 let value = font.family.clone().leak();
                 family_map.insert(value);

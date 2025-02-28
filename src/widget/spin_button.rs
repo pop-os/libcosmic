@@ -9,10 +9,10 @@ use crate::{
     Element,
 };
 use apply::Apply;
-use iced::{Border, Shadow};
 use iced::{Alignment, Length};
-use std::ops::{Add, Sub};
+use iced::{Border, Shadow};
 use std::borrow::Cow;
+use std::ops::{Add, Sub};
 
 /// Horizontal spin button widget.
 pub fn spin_button<'a, T, M>(
@@ -151,9 +151,7 @@ where
     }
 }
 
-fn horizontal_variant<T, Message>(
-    spin_button: SpinButton<'_, T, Message>,
-) -> Element<'_, Message>
+fn horizontal_variant<T, Message>(spin_button: SpinButton<'_, T, Message>) -> Element<'_, Message>
 where
     Message: Clone + 'static,
     T: Copy + Sub<Output = T> + Add<Output = T> + PartialOrd,
