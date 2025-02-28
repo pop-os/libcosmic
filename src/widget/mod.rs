@@ -339,7 +339,7 @@ pub use toggler::toggler;
 #[doc(inline)]
 pub use tooltip::{tooltip, Tooltip};
 
-#[cfg(feature = "wayland")]
+#[cfg(all(feature = "wayland", feature = "winit"))]
 pub mod wayland;
 
 pub mod tooltip {

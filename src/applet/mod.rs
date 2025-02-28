@@ -25,7 +25,7 @@ use cosmic_panel_config::{CosmicPanelBackground, PanelAnchor, PanelSize};
 use iced_core::{Layout, Padding, Shadow};
 use iced_widget::runtime::platform_specific::wayland::popup::{SctkPopupSettings, SctkPositioner};
 use sctk::reexports::protocols::xdg::shell::client::xdg_positioner::{Anchor, Gravity};
-use std::{borrow::Cow, num::NonZeroU32, rc::Rc, sync::LazyLock};
+use std::{borrow::Cow, num::NonZeroU32, rc::Rc, sync::LazyLock, time::Duration};
 use tracing::info;
 
 use crate::app::cosmic;
@@ -228,75 +228,61 @@ impl Context {
         content: impl Into<Element<'a, Message>>,
         tooltip: impl Into<Cow<'static, str>>,
         has_popup: bool,
-    ) -> crate::widget::wayland::tooltip::widget::Tooltip<'a, Message> {
+    ) -> crate::widget::wayland::tooltip::widget::Tooltip<'a, Message, Message> {
         let window_id = *TOOLTIP_WINDOW_ID;
         let subsurface_id = TOOLTIP_ID.clone();
         let anchor = self.anchor;
         let tooltip = tooltip.into();
-        let on_hover = move |layout: Layout| {
-            let bounds = layout.bounds();
-            let subsurface_id = subsurface_id.clone();
-            let tooltip = tooltip.clone();
-            let window_id = window_id;
-            let (popup_anchor, gravity) = match anchor {
-                PanelAnchor::Left => (Anchor::Right, Gravity::Right),
-                PanelAnchor::Right => (Anchor::Left, Gravity::Left),
-                PanelAnchor::Top => (Anchor::Bottom, Gravity::Bottom),
-                PanelAnchor::Bottom => (Anchor::Top, Gravity::Top),
-            };
-            if has_popup {
-                SurfaceMessage::Ignore.into()
-            } else {
-                crate::app::message::simple_popup::<
-                    Message,
-                    Option<
-                        Box<
-                            dyn Fn() -> crate::Element<'static, crate::app::Message<Message>>
-                                + Send
-                                + Sync
-                                + 'static,
-                        >,
-                    >,
-                >(
-                    move || SctkPopupSettings {
-                        parent: window::Id::RESERVED,
-                        id: window_id,
-                        grab: false,
-                        input_zone: Some(Rectangle::default()),
-                        positioner: SctkPositioner {
-                            size: None,
-                            size_limits: Limits::NONE.min_width(1.).min_height(1.),
-                            anchor_rect: Rectangle {
-                                x: bounds.x.round() as i32,
-                                y: bounds.y.round() as i32,
-                                width: bounds.width.round() as i32,
-                                height: bounds.height.round() as i32,
-                            },
-                            anchor: popup_anchor,
-                            gravity,
-                            constraint_adjustment: 15,
-                            offset: (0, 0),
-                            reactive: true,
-                        },
-                        parent_size: None,
-                        close_with_children: true,
-                    },
-                    Some(Box::new(move || {
-                        Element::<'static, crate::app::Message<Message>>::from(autosize::autosize(
-                            layer_container(crate::widget::text(tooltip.clone()))
-                                .layer(crate::cosmic_theme::Layer::Background)
-                                .padding(4.),
-                            subsurface_id.clone(),
-                        ))
-                    })),
-                )
-            }
-        };
-        crate::widget::wayland::tooltip::widget::Tooltip::new(
+
+        crate::widget::wayland::tooltip::widget::Tooltip::<'a, Message, Message>::new(
             content,
-            on_hover,
+            (!has_popup).then_some(move |bounds: Rectangle| {
+                let window_id = window_id;
+                let (popup_anchor, gravity) = match anchor {
+                    PanelAnchor::Left => (Anchor::Right, Gravity::Right),
+                    PanelAnchor::Right => (Anchor::Left, Gravity::Left),
+                    PanelAnchor::Top => (Anchor::Bottom, Gravity::Bottom),
+                    PanelAnchor::Bottom => (Anchor::Top, Gravity::Top),
+                };
+
+                SctkPopupSettings {
+                    parent: window::Id::RESERVED,
+                    id: window_id,
+                    grab: false,
+                    input_zone: Some(Rectangle::new(
+                        iced::Point::new(-1000., -1000.),
+                        iced::Size::default(),
+                    )),
+                    positioner: SctkPositioner {
+                        size: None,
+                        size_limits: Limits::NONE.min_width(1.).min_height(1.),
+                        anchor_rect: Rectangle {
+                            x: bounds.x.round() as i32,
+                            y: bounds.y.round() as i32,
+                            width: bounds.width.round() as i32,
+                            height: bounds.height.round() as i32,
+                        },
+                        anchor: popup_anchor,
+                        gravity,
+                        constraint_adjustment: 15,
+                        offset: (0, 0),
+                        reactive: true,
+                    },
+                    parent_size: None,
+                    close_with_children: true,
+                }
+            }),
+            move || {
+                Element::<'static, crate::app::Message<Message>>::from(autosize::autosize(
+                    layer_container(crate::widget::text(tooltip.clone()))
+                        .layer(crate::cosmic_theme::Layer::Background)
+                        .padding(4.),
+                    subsurface_id.clone(),
+                ))
+            },
             crate::app::message::destroy_popup::<Message>(window_id),
         )
+        .delay(Duration::from_millis(100))
     }
 
     // TODO popup container which tracks the size of itself and requests the popup to resize to match
@@ -455,7 +441,7 @@ impl Context {
 /// Returns error on application failure.
 pub fn run<App: Application>(flags: App::Flags) -> iced::Result
 where
-    App::Message: Into<crate::surface_message::MessageWrapper<App::Message>>,
+    App::Message: Into<crate::surface_message::MessageWrapper<App::Message>> + From<SurfaceMessage>,
 {
     let helper = Context::default();
 
