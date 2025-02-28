@@ -1,6 +1,10 @@
+use std::future::Future;
+use std::sync::Arc;
+
 use iced::Size;
 
 use iced::Limits;
+use iced::Task;
 
 pub enum MessageWrapper<M> {
     Surface(SurfaceMessage),
@@ -51,6 +55,7 @@ pub enum SurfaceMessage {
         size: Size,
     },
     Ignore,
+    Task(Arc<dyn Fn() -> Task<SurfaceMessage> + Send + Sync>),
 }
 
 impl std::fmt::Debug for SurfaceMessage {
@@ -83,6 +88,7 @@ impl std::fmt::Debug for SurfaceMessage {
                 .field("size", size)
                 .finish(),
             Self::Ignore => write!(f, "Ignore"),
+            Self::Task(_) => f.debug_tuple("Future").finish(),
         }
     }
 }

@@ -45,6 +45,7 @@ pub mod message {
 
     /// Used to produce a destroy popup message from within a widget.
     #[cfg(feature = "wayland")]
+    #[must_use]
     pub fn destroy_popup<Message>(id: iced_core::window::Id) -> Message
     where
         Message: From<SurfaceMessage> + 'static,
@@ -53,12 +54,14 @@ pub mod message {
     }
 
     #[cfg(feature = "wayland")]
+    #[must_use]
     pub fn destroy_subsurface<M: From<SurfaceMessage>>(id: iced_core::window::Id) -> M {
         let surface_msg = SurfaceMessage::DestroySubsurface(id);
         M::from(surface_msg)
     }
 
     #[cfg(feature = "wayland")]
+    #[must_use]
     pub fn app_popup<App: super::Application>(
         settings: impl Fn(&mut App) -> iced_runtime::platform_specific::wayland::popup::SctkPopupSettings
             + Send
@@ -99,6 +102,7 @@ pub mod message {
 
     /// Used to create a subsurface message from within a widget.
     #[cfg(feature = "wayland")]
+    #[must_use]
     pub fn simple_subsurface<Message, V>(
         settings: impl Fn() -> iced_runtime::platform_specific::wayland::subsurface::SctkSubsurfaceSettings + Send + Sync + 'static,
         view: Option<
@@ -109,10 +113,9 @@ pub mod message {
                     + 'static,
             >,
         >,
-    ) -> Message
+    ) -> SurfaceMessage
     where
-        Message:
-            Into<crate::surface_message::MessageWrapper<Message>> + From<SurfaceMessage> + 'static,
+        Message: From<SurfaceMessage> + 'static,
         V:,
     {
         use std::{any::Any, sync::Arc};
@@ -126,17 +129,18 @@ pub mod message {
         > = Box::new(settings);
         let boxed: Box<dyn Any + Send + Sync + 'static> = Box::new(boxed);
 
-        Message::from(SurfaceMessage::Subsurface(
+        SurfaceMessage::Subsurface(
             Arc::new(boxed),
             view.map(|view| {
                 let boxed: Box<dyn Any + Send + Sync + 'static> = Box::new(view);
                 Arc::new(boxed)
             }),
-        ))
+        )
     }
 
     /// Used to create a popup message from within a widget.
     #[cfg(feature = "wayland")]
+    #[must_use]
     pub fn simple_popup<Message, V>(
         settings: impl Fn() -> iced_runtime::platform_specific::wayland::popup::SctkPopupSettings
             + Send
@@ -145,10 +149,9 @@ pub mod message {
         view: Option<
             impl Fn() -> crate::Element<'static, crate::app::Message<Message>> + Send + Sync + 'static,
         >,
-    ) -> Message
+    ) -> SurfaceMessage
     where
-        Message:
-            Into<crate::surface_message::MessageWrapper<Message>> + From<SurfaceMessage> + 'static,
+        Message: From<SurfaceMessage> + 'static,
         V:,
     {
         use std::{any::Any, sync::Arc};
@@ -162,7 +165,7 @@ pub mod message {
         > = Box::new(settings);
         let boxed: Box<dyn Any + Send + Sync + 'static> = Box::new(boxed);
 
-        Message::from(SurfaceMessage::Popup(
+        SurfaceMessage::Popup(
             Arc::new(boxed),
             view.map(|view| {
                 let boxed: Box<
@@ -174,10 +177,11 @@ pub mod message {
                 let boxed: Box<dyn Any + Send + Sync + 'static> = Box::new(boxed);
                 Arc::new(boxed)
             }),
-        ))
+        )
     }
 
     #[cfg(feature = "wayland")]
+    #[must_use]
     pub fn subsurface<App: super::Application>(
         settings: impl Fn(&mut App) -> iced_runtime::platform_specific::wayland::subsurface::SctkSubsurfaceSettings + Send + Sync + 'static,
         // XXX Boxed trait object is required for less cumbersome type inference, but we box it anyways.
@@ -229,6 +233,7 @@ pub use self::command::Task;
 pub use self::core::Core;
 pub use self::settings::Settings;
 use crate::prelude::*;
+use crate::surface_message::SurfaceMessage;
 use crate::theme::THEME;
 use crate::widget::{container, horizontal_space, id_container, menu, nav_bar, popover};
 use apply::Apply;
@@ -314,7 +319,7 @@ pub(crate) fn iced_settings<App: Application>(
 /// Returns error on application failure.
 pub fn run<App: Application>(settings: Settings, flags: App::Flags) -> iced::Result
 where
-    App::Message: Into<crate::surface_message::MessageWrapper<App::Message>>,
+    App::Message: Into<crate::surface_message::MessageWrapper<App::Message>> + From<SurfaceMessage>,
 {
     #[cfg(target_env = "gnu")]
     if let Some(threshold) = settings.default_mmap_threshold {
@@ -507,6 +512,7 @@ where
         + std::fmt::Debug
         + Send
         + Into<crate::surface_message::MessageWrapper<App::Message>>
+        + From<SurfaceMessage>
         + 'static,
 {
     let activation_token = std::env::var("XDG_ACTIVATION_TOKEN").ok();

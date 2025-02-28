@@ -32,7 +32,7 @@ mod text_input;
 #[doc(inline)]
 pub use self::text_input::TextInput;
 
-#[cfg(feature = "wayland")]
+#[cfg(all(feature = "wayland", feature = "winit"))]
 pub mod tooltip;
-#[cfg(feature = "wayland")]
+#[cfg(all(feature = "wayland", feature = "winit"))]
 pub use tooltip::Tooltip;
