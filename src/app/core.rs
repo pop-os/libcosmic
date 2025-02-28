@@ -1,17 +1,13 @@
 // Copyright 2023 System76 <info@system76.com>
 // SPDX-License-Identifier: MPL-2.0
 
-use std::{cell::OnceCell, collections::HashMap};
+use std::collections::HashMap;
 
-use crate::{
-    surface_message::SurfaceMessage,
-    theme::menu_bar,
-    widget::{
+use crate::widget::{
         button, icon,
-        menu::{self, Tree},
+        menu::{self},
         nav_bar, responsive_container,
-    },
-};
+    };
 use cosmic_config::CosmicConfigEntry;
 use cosmic_theme::ThemeMode;
 use iced::{window, Limits, Size};
@@ -21,7 +17,6 @@ use slotmap::Key;
 
 use crate::Theme;
 
-use super::{Renderer, Task};
 
 /// Status of the nav bar and its panels.
 #[derive(Clone)]
@@ -218,7 +213,7 @@ impl Core {
             // Context drawer min width (344px) + padding (8px)
             breakpoint += 344.0 + 8.0;
         };
-        self.is_condensed = (breakpoint * self.scale_factor) > self.window.width as f32;
+        self.is_condensed = (breakpoint * self.scale_factor) > self.window.width;
         self.nav_bar_update();
     }
 
@@ -231,7 +226,7 @@ impl Core {
     }
 
     pub(crate) fn context_width(&self, has_nav: bool) -> f32 {
-        let window_width = (self.window.width as f32) / self.scale_factor;
+        let window_width = self.window.width / self.scale_factor;
 
         // Content width (360px) + padding (8px)
         let mut reserved_width = 360.0 + 8.0;
@@ -366,7 +361,7 @@ impl Core {
     /// Get the current focused window if it exists
     #[must_use]
     pub fn focused_window(&self) -> Option<window::Id> {
-        self.focused_window.clone()
+        self.focused_window
     }
 
     /// Whether the application should use a dark theme, according to the system
@@ -408,9 +403,9 @@ impl Core {
             Vec<menu::Item<A, std::borrow::Cow<'static, str>>>,
         )>,
     ) -> crate::Element<'a, Message> {
-        use std::borrow::Cow;
+        
 
-        use iced::Length;
+        
 
         use crate::widget::id_container;
 
@@ -428,7 +423,7 @@ impl Core {
                             .map(|mt| {
                                 menu::Tree::<_>::with_children(
                                     menu::root(mt.0),
-                                    menu::items(&key_binds, mt.1),
+                                    menu::items(key_binds, mt.1),
                                 )
                             })
                             .collect(),
@@ -448,7 +443,7 @@ impl Core {
                                     .class(crate::theme::Button::MenuRoot),
                             ),
                             menu::items(
-                                &key_binds,
+                                key_binds,
                                 trees
                                     .into_iter()
                                     .map(|mt| menu::Item::Folder(mt.0, mt.1))

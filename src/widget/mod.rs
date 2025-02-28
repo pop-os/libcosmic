@@ -344,7 +344,7 @@ pub mod wayland;
 
 pub mod tooltip {
     use crate::Element;
-    use std::borrow::Cow;
+    
 
     pub use iced::widget::tooltip::Position;
 

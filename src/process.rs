@@ -1,6 +1,5 @@
 #[cfg(all(feature = "smol", not(feature = "tokio")))]
 use smol::io::AsyncReadExt;
-use std::fs::File;
 use std::io;
 use std::os::fd::OwnedFd;
 use std::process::{exit, Command, Stdio};

@@ -6,7 +6,6 @@
 use iced::window;
 use iced::Task;
 use iced_core::window::Mode;
-use iced_runtime::{task, Action};
 use std::future::Future;
 
 /// Yields a task which contains a batch of tasks.

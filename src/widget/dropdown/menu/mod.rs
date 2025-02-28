@@ -7,9 +7,8 @@ use std::borrow::Cow;
 use std::sync::{Arc, Mutex};
 
 pub use appearance::{Appearance, StyleSheet};
-use iced::advanced::widget;
 
-use crate::widget::{icon, Container, RcElementWrapper, RcWrapper};
+use crate::widget::{icon, Container, RcWrapper};
 use iced_core::event::{self, Event};
 use iced_core::layout::{self, Layout};
 use iced_core::text::{self, Text};
@@ -418,8 +417,8 @@ where
     text_line_height: text::LineHeight,
 }
 
-impl<'a, S: AsRef<str>, Message> Widget<Message, crate::Theme, crate::Renderer>
-    for List<'a, S, Message>
+impl<S: AsRef<str>, Message> Widget<Message, crate::Theme, crate::Renderer>
+    for List<'_, S, Message>
 where
     [S]: std::borrow::ToOwned,
 {

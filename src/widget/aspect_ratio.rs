@@ -12,7 +12,6 @@ use iced_core::{
     Alignment, Clipboard, Element, Layout, Length, Padding, Rectangle, Shell, Vector, Widget,
 };
 
-use iced_widget::container;
 pub use iced_widget::container::{Catalog, Style};
 
 pub fn aspect_ratio_container<'a, Message: 'static, T>(
@@ -35,7 +34,7 @@ where
     container: Container<'a, Message, crate::Theme, Renderer>,
 }
 
-impl<'a, Message, Renderer> AspectRatio<'a, Message, Renderer>
+impl<Message, Renderer> AspectRatio<'_, Message, Renderer>
 where
     Renderer: iced_core::Renderer,
 {
@@ -146,8 +145,8 @@ where
     }
 }
 
-impl<'a, Message, Renderer> Widget<Message, crate::Theme, Renderer>
-    for AspectRatio<'a, Message, Renderer>
+impl<Message, Renderer> Widget<Message, crate::Theme, Renderer>
+    for AspectRatio<'_, Message, Renderer>
 where
     Renderer: iced_core::Renderer,
 {

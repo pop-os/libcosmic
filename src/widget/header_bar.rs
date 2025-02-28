@@ -120,8 +120,8 @@ pub struct HeaderBarWidget<'a, Message> {
     header_bar_inner: Element<'a, Message>,
 }
 
-impl<'a, Message: Clone + 'static> Widget<Message, crate::Theme, crate::Renderer>
-    for HeaderBarWidget<'a, Message>
+impl<Message: Clone + 'static> Widget<Message, crate::Theme, crate::Renderer>
+    for HeaderBarWidget<'_, Message>
 {
     fn diff(&mut self, tree: &mut tree::Tree) {
         tree.diff_children(&mut [&mut self.header_bar_inner]);

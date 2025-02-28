@@ -22,8 +22,6 @@ use crate::{
 };
 pub use cosmic_panel_config;
 use cosmic_panel_config::{CosmicPanelBackground, PanelAnchor, PanelSize};
-use cosmic_theme::Theme;
-use iced::Pixels;
 use iced_core::{Layout, Padding, Shadow};
 use iced_widget::runtime::platform_specific::wayland::popup::{SctkPopupSettings, SctkPositioner};
 use sctk::reexports::protocols::xdg::shell::client::xdg_positioner::{Anchor, Gravity};
@@ -31,7 +29,7 @@ use std::{
     borrow::Cow,
     num::NonZeroU32,
     rc::Rc,
-    sync::{Arc, LazyLock},
+    sync::LazyLock,
 };
 use tracing::info;
 
@@ -41,7 +39,7 @@ static AUTOSIZE_ID: LazyLock<iced::id::Id> =
 static AUTOSIZE_MAIN_ID: LazyLock<iced::id::Id> =
     LazyLock::new(|| iced::id::Id::new("cosmic-applet-autosize-main"));
 static TOOLTIP_ID: LazyLock<crate::widget::Id> = LazyLock::new(|| iced::id::Id::new("subsurface"));
-static TOOLTIP_WINDOW_ID: LazyLock<window::Id> = LazyLock::new(|| window::Id::unique());
+static TOOLTIP_WINDOW_ID: LazyLock<window::Id> = LazyLock::new(window::Id::unique);
 
 #[derive(Debug, Clone)]
 pub struct Context {
@@ -170,8 +168,8 @@ impl Context {
             .size(iced_core::Size::new(width, height))
             .size_limits(
                 Limits::NONE
-                    .min_height(height as f32)
-                    .min_width(width as f32),
+                    .min_height(height)
+                    .min_width(width),
             )
             .resizable(None)
             .default_text_size(14.0)
@@ -326,7 +324,7 @@ impl Context {
             Container::<Message, _, Renderer>::new(
                 Container::<Message, _, Renderer>::new(content).style(|theme| {
                     let cosmic = theme.cosmic();
-                    let corners = cosmic.corner_radii.clone();
+                    let corners = cosmic.corner_radii;
                     iced_widget::container::Style {
                         text_color: Some(cosmic.background.on.into()),
                         background: Some(Color::from(cosmic.background.base).into()),
@@ -403,7 +401,7 @@ impl Context {
         &self,
         content: impl Into<Element<'a, Message>>,
     ) -> Autosize<'a, Message, crate::Theme, crate::Renderer> {
-        let force_configured = matches!(&self.panel_type, &PanelType::Other(ref n) if n.is_empty());
+        let force_configured = matches!(&self.panel_type, PanelType::Other(n) if n.is_empty());
         let w = autosize(content, AUTOSIZE_MAIN_ID.clone());
         let mut limits = Limits::NONE;
         let suggested_window_size = self.suggested_window_size();
@@ -414,7 +412,7 @@ impl Context {
             .filter(|c| c.width as i32 > 0)
             .map(|c| c.width)
         {
-            limits = limits.width(width as f32);
+            limits = limits.width(width);
         }
         if let Some(height) = self
             .suggested_bounds
@@ -422,7 +420,7 @@ impl Context {
             .filter(|c| c.height as i32 > 0)
             .map(|c| c.height)
         {
-            limits = limits.height(height as f32);
+            limits = limits.height(height);
         }
 
         w.limits(limits)

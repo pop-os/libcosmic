@@ -18,7 +18,6 @@ use super::style::StyleSheet;
 pub use super::value::Value;
 
 use apply::Apply;
-use cosmic_theme::Theme;
 use iced::clipboard::dnd::{DndAction, DndEvent, OfferEvent, SourceEvent};
 use iced::clipboard::mime::AsMimeTypes;
 use iced::Limits;
@@ -40,10 +39,6 @@ use iced_core::{
     Clipboard, Color, Element, Layout, Length, Padding, Pixels, Point, Rectangle, Shell, Size,
     Vector, Widget,
 };
-#[cfg(feature = "wayland")]
-use iced_renderer::core::event::{wayland, PlatformSpecific};
-#[cfg(feature = "wayland")]
-use iced_runtime::platform_specific;
 use iced_runtime::{task, Action, Task};
 
 thread_local! {
@@ -343,7 +338,7 @@ where
 
     /// Sets the message that should be produced when the [`TextInput`] is
     /// focused and the enter key is pressed.
-    pub fn on_submit<F>(mut self, callback: F) -> Self
+    pub fn on_submit<F>(self, callback: F) -> Self
     where
         F: 'a + Fn(String) -> Message,
     {
@@ -526,7 +521,7 @@ where
     }
 }
 
-impl<'a, Message> Widget<Message, crate::Theme, crate::Renderer> for TextInput<'a, Message>
+impl<Message> Widget<Message, crate::Theme, crate::Renderer> for TextInput<'_, Message>
 where
     Message: Clone + 'static,
 {
@@ -605,13 +600,10 @@ where
         // if the previous state was at the end of the text, keep it there
         let old_value = Value::new(&old_value);
         if state.is_focused.is_some() {
-            match state.cursor.state(&old_value) {
-                cursor::State::Index(index) => {
-                    if index == old_value.len() {
-                        state.cursor.move_to(self.value.len());
-                    }
+            if let cursor::State::Index(index) = state.cursor.state(&old_value) {
+                if index == old_value.len() {
+                    state.cursor.move_to(self.value.len());
                 }
-                _ => {}
             };
         }
 
@@ -808,7 +800,7 @@ where
             }
         }
 
-        if tree.children.len() > 0 {
+        if !tree.children.is_empty() {
             let index = tree.children.len() - 1;
             if let (Some(trailing_icon), Some(tree)) =
                 (self.trailing_icon.as_mut(), tree.children.get_mut(index))
@@ -1387,7 +1379,7 @@ where
                                 iced_core::clipboard::start_dnd(
                                     clipboard,
                                     false,
-                                    id.map(|id| iced_core::clipboard::DndSource::Widget(id)),
+                                    id.map(iced_core::clipboard::DndSource::Widget),
                                     Some(iced_core::clipboard::IconSurface::new(
                                         Element::from(
                                             TextInput::<'static, ()>::new("", input_text.clone())
@@ -1583,7 +1575,7 @@ where
 
                 match key {
                     keyboard::Key::Named(keyboard::key::Named::Enter) => {
-                        if let Some(on_submit) = on_submit.clone() {
+                        if let Some(on_submit) = on_submit {
                             shell.publish((on_submit)(unsecured_value.to_string()));
                         }
                     }

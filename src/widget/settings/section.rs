@@ -20,9 +20,9 @@ pub fn section<'a, Message: 'static>() -> Section<'a, Message> {
 }
 
 /// A section with a pre-defined list column.
-pub fn with_column<'a, Message: 'static>(
-    children: ListColumn<'a, Message>,
-) -> Section<'a, Message> {
+pub fn with_column<Message: 'static>(
+    children: ListColumn<'_, Message>,
+) -> Section<'_, Message> {
     Section {
         title: Cow::Borrowed(""),
         children,

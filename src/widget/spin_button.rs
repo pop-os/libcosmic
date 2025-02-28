@@ -9,12 +9,10 @@ use crate::{
     Element,
 };
 use apply::Apply;
-use derive_setters::Setters;
-use iced::{alignment::Horizontal, Border, Shadow};
+use iced::{Border, Shadow};
 use iced::{Alignment, Length};
-use std::marker::PhantomData;
 use std::ops::{Add, Sub};
-use std::{borrow::Cow, fmt::Display};
+use std::borrow::Cow;
 
 /// Horizontal spin button widget.
 pub fn spin_button<'a, T, M>(
@@ -153,9 +151,9 @@ where
     }
 }
 
-fn horizontal_variant<'a, T, Message>(
-    spin_button: SpinButton<'a, T, Message>,
-) -> Element<'a, Message>
+fn horizontal_variant<T, Message>(
+    spin_button: SpinButton<'_, T, Message>,
+) -> Element<'_, Message>
 where
     Message: Clone + 'static,
     T: Copy + Sub<Output = T> + Add<Output = T> + PartialOrd,
@@ -193,7 +191,7 @@ where
         .into()
 }
 
-fn vertical_variant<'a, T, Message>(spin_button: SpinButton<'a, T, Message>) -> Element<'a, Message>
+fn vertical_variant<T, Message>(spin_button: SpinButton<'_, T, Message>) -> Element<'_, Message>
 where
     Message: Clone + 'static,
     T: Copy + Sub<Output = T> + Add<Output = T> + PartialOrd,
