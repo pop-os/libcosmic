@@ -207,7 +207,7 @@ pub mod message {
         > = Box::new(settings);
         let boxed: Box<dyn Any + Send + Sync + 'static> = Box::new(boxed);
 
-        App::Message::from(SurfaceMessage::Subsurface(
+        App::Message::from(SurfaceMessage::AppSubsurface(
             Arc::new(boxed),
             view.map(|view| {
                 let boxed: Box<dyn Any + Send + Sync + 'static> = Box::new(view);
