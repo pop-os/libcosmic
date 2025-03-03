@@ -441,7 +441,7 @@ impl Context {
 /// Returns error on application failure.
 pub fn run<App: Application>(flags: App::Flags) -> iced::Result
 where
-    App::Message: Into<crate::surface_message::MessageWrapper<App::Message>> + From<SurfaceMessage>,
+    App::Message: Into<crate::surface_message::MessageWrapper<App::Message>>,
 {
     let helper = Context::default();
 

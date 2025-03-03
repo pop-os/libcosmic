@@ -29,6 +29,8 @@ pub mod message {
         DbusActivation(super::DbusActivationMessage),
         /// Do nothing
         None,
+        /// Internal surface message
+        Surface(SurfaceMessage),
     }
 
     pub const fn app<M>(message: M) -> Message<M> {
@@ -319,7 +321,7 @@ pub(crate) fn iced_settings<App: Application>(
 /// Returns error on application failure.
 pub fn run<App: Application>(settings: Settings, flags: App::Flags) -> iced::Result
 where
-    App::Message: Into<crate::surface_message::MessageWrapper<App::Message>> + From<SurfaceMessage>,
+    App::Message: Into<crate::surface_message::MessageWrapper<App::Message>>,
 {
     #[cfg(target_env = "gnu")]
     if let Some(threshold) = settings.default_mmap_threshold {
@@ -512,7 +514,6 @@ where
         + std::fmt::Debug
         + Send
         + Into<crate::surface_message::MessageWrapper<App::Message>>
-        + From<SurfaceMessage>
         + 'static,
 {
     let activation_token = std::env::var("XDG_ACTIVATION_TOKEN").ok();
