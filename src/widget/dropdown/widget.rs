@@ -296,7 +296,9 @@ where
         translation: Vector,
     ) -> Option<overlay::Element<'b, Message, crate::Theme, crate::Renderer>> {
         #[cfg(feature = "wayland")]
-        return None;
+        if self.on_open.is_some() || self.window_id.is_some() || self.on_close_popup.is_some() {
+            return None;
+        }
 
         let state = tree.state.downcast_mut::<State>();
 
