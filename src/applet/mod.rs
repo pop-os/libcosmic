@@ -323,10 +323,10 @@ impl Context {
         )
         .limits(
             Limits::NONE
-                .min_width(1.)
                 .min_height(1.)
-                .max_width(500.)
-                .max_height(1000.),
+                .min_width(360.0)
+                .max_width(360.0)
+                .max_height(1000.0),
         )
     }
 
@@ -365,7 +365,11 @@ impl Context {
                 },
                 reactive: true,
                 constraint_adjustment: 15, // slide_y, slide_x, flip_x, flip_y
-                ..Default::default()
+                size_limits: Limits::NONE
+                    .min_height(1.0)
+                    .min_width(360.0)
+                    .max_width(360.0)
+                    .max_height(1080.0),
             },
             parent_size: None,
             grab: true,
