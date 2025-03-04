@@ -28,7 +28,7 @@ pub fn subscription() -> Subscription<Message> {
                 modifiers,
                 ..
             }) => match key {
-                Named::Tab => {
+                Named::Tab if !modifiers.control() => {
                     return Some(if modifiers.shift() {
                         Message::FocusPrevious
                     } else {
