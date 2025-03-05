@@ -531,7 +531,7 @@ pub fn update<
                                 size: Some((selections_width as u32 + gap as u32 + pad_width as u32 + icon_width as u32, 10)),
                                 anchor_rect,
                                 anchor: cctk::wayland_protocols::xdg::shell::client::xdg_positioner::Anchor::Top,
-                                gravity:cctk::wayland_protocols::xdg::shell::client::xdg_positioner::Gravity::Bottom,
+                                gravity: cctk::wayland_protocols::xdg::shell::client::xdg_positioner::Gravity::Bottom,
                                 reactive: true,
                                 ..Default::default()
                             },
