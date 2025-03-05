@@ -24,10 +24,12 @@ pub fn set_title<M>(id: window::Id, title: String) -> iced::Task<crate::Action<M
     iced::Task::none()
 }
 
+#[cfg(feature = "winit")]
 pub fn set_scaling_factor<M: Send + 'static>(factor: f32) -> iced::Task<crate::Action<M>> {
     iced::Task::done(crate::app::Action::ScaleFactor(factor)).map(crate::Action::Cosmic)
 }
 
+#[cfg(feature = "winit")]
 pub fn set_theme<M: Send + 'static>(theme: crate::Theme) -> iced::Task<crate::Action<M>> {
     iced::Task::done(crate::app::Action::AppThemeChange(theme)).map(crate::Action::Cosmic)
 }

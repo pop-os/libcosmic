@@ -97,7 +97,6 @@ pub mod aspect_ratio;
 #[cfg(feature = "autosize")]
 pub mod autosize;
 
-#[cfg(feature = "winit")]
 pub(crate) mod responsive_container;
 
 #[cfg(feature = "surface-message")]

@@ -6,7 +6,7 @@ use cosmic::iced::{self, Length, Limits, Task};
 use cosmic::iced_runtime::core::window;
 use cosmic::iced_runtime::platform_specific::wayland::popup::SctkPopupSettings;
 use cosmic::iced_runtime::platform_specific::wayland::subsurface;
-use cosmic::surface_message::{MessageWrapper, SurfaceMessage};
+use cosmic::surface::{MessageWrapper, SurfaceMessage};
 use cosmic::widget::dropdown::DropdownView;
 use cosmic::widget::{autosize, dropdown, layer_container, list_column, settings, toggler};
 use cosmic::{iced_core, Element};
