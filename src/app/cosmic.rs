@@ -354,7 +354,7 @@ where
 
         #[cfg(feature = "single-instance")]
         if self.app.core().single_instance {
-            subscriptions.push(super::single_instance_subscription::<T>());
+            subscriptions.push(crate::dbus_activation::subscription::<T>());
         }
 
         Subscription::batch(subscriptions)

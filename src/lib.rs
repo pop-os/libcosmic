@@ -34,9 +34,6 @@ pub mod core;
 #[doc(inline)]
 pub use core::Core;
 
-pub use iced::Task;
-pub mod task;
-
 pub mod config;
 
 #[doc(inline)]
@@ -44,6 +41,11 @@ pub use cosmic_config;
 
 #[doc(inline)]
 pub use cosmic_theme;
+
+#[cfg(feature = "single-instance")]
+pub mod dbus_activation;
+#[cfg(feature = "single-instance")]
+pub use dbus_activation::DbusActivation;
 
 #[cfg(feature = "desktop")]
 pub mod desktop;
@@ -98,6 +100,9 @@ pub mod process;
 pub use cctk;
 
 pub mod surface;
+
+pub use iced::Task;
+pub mod task;
 
 pub mod theme;
 

@@ -27,15 +27,6 @@ use iced::window;
 use iced::{Length, Subscription};
 pub use settings::Settings;
 use std::borrow::Cow;
-use url::Url;
-#[cfg(feature = "single-instance")]
-use {
-    iced_futures::futures::channel::mpsc::{Receiver, Sender},
-    iced_futures::futures::SinkExt,
-    std::any::TypeId,
-    std::collections::HashMap,
-    zbus::{interface, proxy, zvariant::Value},
-};
 
 pub(crate) fn iced_settings<App: Application>(
     settings: Settings,
@@ -147,142 +138,6 @@ pub fn run<App: Application>(settings: Settings, flags: App::Flags) -> iced::Res
 }
 
 #[cfg(feature = "single-instance")]
-#[derive(Debug, Clone)]
-pub struct DbusActivationMessage<Action = String, Args = Vec<String>> {
-    pub activation_token: Option<String>,
-    pub desktop_startup_id: Option<String>,
-    pub msg: DbusActivationDetails<Action, Args>,
-}
-
-#[derive(Debug, Clone)]
-pub enum DbusActivationDetails<Action = String, Args = Vec<String>> {
-    Activate,
-    Open {
-        url: Vec<Url>,
-    },
-    /// action can be deserialized as Flags
-    ActivateAction {
-        action: Action,
-        args: Args,
-    },
-}
-#[cfg(feature = "single-instance")]
-#[derive(Debug, Default)]
-pub struct DbusActivation(Option<Sender<DbusActivationMessage>>);
-#[cfg(feature = "single-instance")]
-impl DbusActivation {
-    #[must_use]
-    pub fn new() -> Self {
-        Self(None)
-    }
-
-    pub fn rx(&mut self) -> Receiver<DbusActivationMessage> {
-        let (tx, rx) = iced_futures::futures::channel::mpsc::channel(10);
-        self.0 = Some(tx);
-        rx
-    }
-}
-
-#[cfg(feature = "single-instance")]
-#[proxy(interface = "org.freedesktop.DbusActivation", assume_defaults = true)]
-pub trait DbusActivationInterface {
-    /// Activate the application.
-    fn activate(&mut self, platform_data: HashMap<&str, Value<'_>>) -> zbus::Result<()>;
-
-    /// Open the given URIs.
-    fn open(
-        &mut self,
-        uris: Vec<&str>,
-        platform_data: HashMap<&str, Value<'_>>,
-    ) -> zbus::Result<()>;
-
-    /// Activate the given action.
-    fn activate_action(
-        &mut self,
-        action_name: &str,
-        parameter: Vec<&str>,
-        platform_data: HashMap<&str, Value<'_>>,
-    ) -> zbus::Result<()>;
-}
-
-#[cfg(feature = "single-instance")]
-#[interface(name = "org.freedesktop.DbusActivation")]
-impl DbusActivation {
-    async fn activate(&mut self, platform_data: HashMap<&str, Value<'_>>) {
-        if let Some(tx) = &mut self.0 {
-            let _ = tx
-                .send(DbusActivationMessage {
-                    activation_token: platform_data.get("activation-token").and_then(|t| match t {
-                        Value::Str(t) => Some(t.to_string()),
-                        _ => None,
-                    }),
-                    desktop_startup_id: platform_data.get("desktop-startup-id").and_then(
-                        |t| match t {
-                            Value::Str(t) => Some(t.to_string()),
-                            _ => None,
-                        },
-                    ),
-                    msg: DbusActivationDetails::Activate,
-                })
-                .await;
-        }
-    }
-
-    async fn open(&mut self, uris: Vec<&str>, platform_data: HashMap<&str, Value<'_>>) {
-        if let Some(tx) = &mut self.0 {
-            let _ = tx
-                .send(DbusActivationMessage {
-                    activation_token: platform_data.get("activation-token").and_then(|t| match t {
-                        Value::Str(t) => Some(t.to_string()),
-                        _ => None,
-                    }),
-                    desktop_startup_id: platform_data.get("desktop-startup-id").and_then(
-                        |t| match t {
-                            Value::Str(t) => Some(t.to_string()),
-                            _ => None,
-                        },
-                    ),
-                    msg: DbusActivationDetails::Open {
-                        url: uris.iter().filter_map(|u| Url::parse(u).ok()).collect(),
-                    },
-                })
-                .await;
-        }
-    }
-
-    async fn activate_action(
-        &mut self,
-        action_name: &str,
-        parameter: Vec<&str>,
-        platform_data: HashMap<&str, Value<'_>>,
-    ) {
-        if let Some(tx) = &mut self.0 {
-            let _ = tx
-                .send(DbusActivationMessage {
-                    activation_token: platform_data.get("activation-token").and_then(|t| match t {
-                        Value::Str(t) => Some(t.to_string()),
-                        _ => None,
-                    }),
-                    desktop_startup_id: platform_data.get("desktop-startup-id").and_then(
-                        |t| match t {
-                            Value::Str(t) => Some(t.to_string()),
-                            _ => None,
-                        },
-                    ),
-                    msg: DbusActivationDetails::ActivateAction {
-                        action: action_name.to_string(),
-                        args: parameter
-                            .iter()
-                            .map(std::string::ToString::to_string)
-                            .collect(),
-                    },
-                })
-                .await;
-        }
-    }
-}
-
-#[cfg(feature = "single-instance")]
 /// Launch a COSMIC application with the given [`Settings`].
 /// If the application is already running, the arguments will be passed to the
 /// running instance.
@@ -293,6 +148,8 @@ where
     App::Flags: CosmicFlags,
     App::Message: Clone + std::fmt::Debug + Send + 'static,
 {
+    use std::collections::HashMap;
+
     let activation_token = std::env::var("XDG_ACTIVATION_TOKEN").ok();
 
     let override_single = std::env::var("COSMIC_SINGLE_INSTANCE")
@@ -309,7 +166,7 @@ where
         return run::<App>(settings, flags);
     };
 
-    if DbusActivationInterfaceProxyBlocking::builder(&conn)
+    if crate::dbus_activation::DbusActivationInterfaceProxyBlocking::builder(&conn)
         .destination(App::APP_ID)
         .ok()
         .and_then(|b| b.path(path).ok())
@@ -576,7 +433,7 @@ where
 
     /// Handles dbus activation messages
     #[cfg(feature = "single-instance")]
-    fn dbus_activation(&mut self, msg: DbusActivationMessage) -> Task<Self::Message> {
+    fn dbus_activation(&mut self, msg: crate::dbus_activation::Message) -> Task<Self::Message> {
         Task::none()
     }
 }
@@ -933,75 +790,6 @@ impl<App: Application> ApplicationExt for App {
         let view_element: Element<_> = popover.into();
         view_element.debug(core.debug)
     }
-}
-
-#[cfg(feature = "single-instance")]
-fn single_instance_subscription<App: ApplicationExt>() -> Subscription<crate::Action<App::Message>>
-{
-    use iced_futures::futures::StreamExt;
-    iced_futures::Subscription::run_with_id(
-        TypeId::of::<DbusActivation>(),
-        iced::stream::channel(10, move |mut output| async move {
-            let mut single_instance: DbusActivation = DbusActivation::new();
-            let mut rx = single_instance.rx();
-            if let Ok(builder) = zbus::ConnectionBuilder::session() {
-                let path: String = format!("/{}", App::APP_ID.replace('.', "/"));
-                if let Ok(conn) = builder.build().await {
-                    // XXX Setup done this way seems to be more reliable.
-                    //
-                    // the docs for serve_at seem to imply it will replace the
-                    // existing interface at the requested path, but it doesn't
-                    // seem to work that way all the time. The docs for
-                    // object_server().at() imply it won't replace the existing
-                    // interface.
-                    //
-                    // request_name is used either way, with the builder or
-                    // with the connection, but it must be done after the
-                    // object server is setup.
-                    if conn.object_server().at(path, single_instance).await != Ok(true) {
-                        tracing::error!("Failed to serve dbus");
-                        std::process::exit(1);
-                    }
-                    if conn.request_name(App::APP_ID).await.is_err() {
-                        tracing::error!("Failed to serve dbus");
-                        std::process::exit(1);
-                    }
-
-                    #[cfg(feature = "smol")]
-                    let handle = {
-                        std::thread::spawn(move || {
-                            let conn_clone = _conn.clone();
-
-                            zbus::block_on(async move {
-                                loop {
-                                    conn_clone.executor().tick().await;
-                                }
-                            })
-                        })
-                    };
-                    while let Some(mut msg) = rx.next().await {
-                        if let Some(token) = msg.activation_token.take() {
-                            if let Err(err) = output
-                                .send(crate::Action::Cosmic(Action::Activate(token)))
-                                .await
-                            {
-                                tracing::error!(?err, "Failed to send message");
-                            }
-                        }
-                        if let Err(err) = output.send(crate::Action::DbusActivation(msg)).await {
-                            tracing::error!(?err, "Failed to send message");
-                        }
-                    }
-                }
-            } else {
-                tracing::warn!("Failed to connect to dbus for single instance");
-            }
-
-            loop {
-                iced::futures::pending!();
-            }
-        }),
-    )
 }
 
 const EMBEDDED_FONTS: &[&[u8]] = &[

@@ -2,7 +2,9 @@
 // SPDX-License-Identifier: MPL-2.0
 
 use super::Action;
+#[cfg(feature = "winit")]
 use crate::Application;
+
 use std::{any::Any, sync::Arc};
 
 /// Used to produce a destroy popup message from within a widget.
