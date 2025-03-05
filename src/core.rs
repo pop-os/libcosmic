@@ -382,6 +382,7 @@ impl Core {
         id
     }
 
+    #[cfg(feature = "winit")]
     pub fn drag<M: Send + 'static>(&self, id: Option<window::Id>) -> crate::app::Task<M> {
         let Some(id) = id.or(self.main_window) else {
             return iced::Task::none();
@@ -389,6 +390,7 @@ impl Core {
         crate::command::drag(id)
     }
 
+    #[cfg(feature = "winit")]
     pub fn maximize<M: Send + 'static>(
         &self,
         id: Option<window::Id>,
@@ -400,6 +402,7 @@ impl Core {
         crate::command::maximize(id, maximized)
     }
 
+    #[cfg(feature = "winit")]
     pub fn minimize<M: Send + 'static>(&self, id: Option<window::Id>) -> crate::app::Task<M> {
         let Some(id) = id.or(self.main_window) else {
             return iced::Task::none();
@@ -407,6 +410,7 @@ impl Core {
         crate::command::minimize(id)
     }
 
+    #[cfg(feature = "winit")]
     pub fn set_title<M: Send + 'static>(
         &self,
         id: Option<window::Id>,
@@ -418,6 +422,7 @@ impl Core {
         crate::command::set_title(id, title)
     }
 
+    #[cfg(feature = "winit")]
     pub fn set_windowed<M: Send + 'static>(&self, id: Option<window::Id>) -> crate::app::Task<M> {
         let Some(id) = id.or(self.main_window) else {
             return iced::Task::none();
@@ -425,6 +430,7 @@ impl Core {
         crate::command::set_windowed(id)
     }
 
+    #[cfg(feature = "winit")]
     pub fn toggle_maximize<M: Send + 'static>(
         &self,
         id: Option<window::Id>,

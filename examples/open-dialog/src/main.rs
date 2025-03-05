@@ -7,7 +7,6 @@ use apply::Apply;
 use cosmic::app::{Core, Settings, Task};
 use cosmic::dialog::file_chooser::{self, FileFilter};
 use cosmic::iced_core::Length;
-use cosmic::surface_message::{MessageWrapper, SurfaceMessage};
 use cosmic::widget::button;
 use cosmic::{executor, iced, ApplicationExt, Element};
 use std::sync::Arc;
@@ -35,22 +34,7 @@ pub enum Message {
     OpenError(Arc<file_chooser::Error>),
     OpenFile,
     Selected(Url),
-    Surface(SurfaceMessage),
-}
-
-impl From<Message> for MessageWrapper<Message> {
-    fn from(value: Message) -> Self {
-        match value {
-            Message::Surface(s) => MessageWrapper::Surface(s),
-            m => MessageWrapper::Message(m),
-        }
-    }
-}
-
-impl From<SurfaceMessage> for Message {
-    fn from(value: SurfaceMessage) -> Self {
-        Message::Surface(value)
-    }
+    Surface(cosmic::surface::Action),
 }
 
 /// The [`App`] stores application-specific state.
@@ -202,7 +186,7 @@ impl cosmic::Application for App {
             Message::CloseError => {
                 self.error_status = None;
             }
-            Message::Surface(surface_message) => {}
+            Message::Surface(surface) => {}
         }
 
         Task::none()
