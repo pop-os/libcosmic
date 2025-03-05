@@ -9,18 +9,30 @@ pub mod prelude {
     pub use crate::ext::*;
     #[cfg(feature = "winit")]
     pub use crate::ApplicationExt;
-    pub use crate::{Also, Apply, Element, Renderer, Theme};
+    pub use crate::{Also, Apply, Element, Renderer, Task, Theme};
 }
 
 pub use apply::{Also, Apply};
 
+/// Actions are managed internally by the cosmic runtime.
+pub mod action;
+pub use action::Action;
+
 #[cfg(feature = "winit")]
 pub mod app;
 #[cfg(feature = "winit")]
+#[doc(inline)]
 pub use app::{Application, ApplicationExt};
 
 #[cfg(feature = "applet")]
 pub mod applet;
+
+pub mod command;
+
+/// State which is managed by the cosmic runtime.
+pub mod core;
+#[doc(inline)]
+pub use core::Core;
 
 pub use iced::Task;
 pub mod task;
@@ -85,7 +97,7 @@ pub mod process;
 #[cfg(feature = "wayland")]
 pub use cctk;
 
-pub mod surface_message;
+pub mod surface;
 
 pub mod theme;
 

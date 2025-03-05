@@ -3,15 +3,11 @@
 
 use std::collections::HashMap;
 
-use crate::widget::{
-    button, icon,
-    menu::{self},
-    nav_bar, responsive_container,
-};
+use crate::widget::nav_bar;
 use cosmic_config::CosmicConfigEntry;
 use cosmic_theme::ThemeMode;
 use iced::{window, Limits, Size};
-use iced_core::{window::Id, Element};
+use iced_core::window::Id;
 use palette::Srgba;
 use slotmap::Key;
 
@@ -250,6 +246,10 @@ impl Core {
         }
     }
 
+    pub fn main_window_is(&self, id: iced::window::Id) -> bool {
+        self.main_window_id().is_some_and(|main_id| main_id == id)
+    }
+
     /// Whether the nav panel is visible or not
     #[must_use]
     pub fn nav_bar_active(&self) -> bool {
@@ -382,75 +382,57 @@ impl Core {
         id
     }
 
-    #[cfg(feature = "surface-message")]
-    /// # Panics
-    ///
-    /// Will panic if the menu bar collapses without tracking the size
-    pub fn responsive_menu_bar<
-        'a,
-        Message: Clone
-            + From<crate::surface_message::SurfaceMessage>
-            + Into<crate::surface_message::MessageWrapper<Message>>
-            + 'static,
-        A: menu::Action<Message = Message>,
-    >(
-        &self,
-        key_binds: &HashMap<menu::KeyBind, A>,
-        id: crate::widget::Id,
-        trees: Vec<(
-            std::borrow::Cow<'static, str>,
-            Vec<menu::Item<A, std::borrow::Cow<'static, str>>>,
-        )>,
-    ) -> crate::Element<'a, Message> {
-        use crate::widget::id_container;
+    pub fn drag<M: Send + 'static>(&self, id: Option<window::Id>) -> crate::app::Task<M> {
+        let Some(id) = id.or(self.main_window) else {
+            return iced::Task::none();
+        };
+        crate::command::drag(id)
+    }
 
-        let menu_bar_size = self.menu_bars.get(&id);
-        #[allow(clippy::if_not_else)]
-        if !menu_bar_size.is_some_and(|(limits, size)| {
-            let max_size = limits.max();
-            max_size.width < size.width
-        }) {
-            crate::Element::from(responsive_container::responsive_container(
-                id_container(
-                    menu::bar(
-                        trees
-                            .into_iter()
-                            .map(|mt| {
-                                menu::Tree::<_>::with_children(
-                                    menu::root(mt.0),
-                                    menu::items(key_binds, mt.1),
-                                )
-                            })
-                            .collect(),
-                    ),
-                    crate::widget::Id::new(format!("menu_bar_expanded_{id}")),
-                ),
-                id,
-            ))
-        } else {
-            crate::Element::from(
-                responsive_container::responsive_container(
-                    id_container(
-                        menu::bar(vec![menu::Tree::<_>::with_children(
-                            Element::from(
-                                button::icon(icon::from_name("open-menu-symbolic"))
-                                    .padding([4, 12])
-                                    .class(crate::theme::Button::MenuRoot),
-                            ),
-                            menu::items(
-                                key_binds,
-                                trees
-                                    .into_iter()
-                                    .map(|mt| menu::Item::Folder(mt.0, mt.1))
-                                    .collect(),
-                            ),
-                        )]),
-                        crate::widget::Id::new(format!("menu_bar_collapsed_{id}")),
-                    ),
-                    id,
-                )
-                .size(menu_bar_size.unwrap().1),
-            )
-        }
+    pub fn maximize<M: Send + 'static>(
+        &self,
+        id: Option<window::Id>,
+        maximized: bool,
+    ) -> crate::app::Task<M> {
+        let Some(id) = id.or(self.main_window) else {
+            return iced::Task::none();
+        };
+        crate::command::maximize(id, maximized)
+    }
+
+    pub fn minimize<M: Send + 'static>(&self, id: Option<window::Id>) -> crate::app::Task<M> {
+        let Some(id) = id.or(self.main_window) else {
+            return iced::Task::none();
+        };
+        crate::command::minimize(id)
+    }
+
+    pub fn set_title<M: Send + 'static>(
+        &self,
+        id: Option<window::Id>,
+        title: String,
+    ) -> crate::app::Task<M> {
+        let Some(id) = id.or(self.main_window) else {
+            return iced::Task::none();
+        };
+        crate::command::set_title(id, title)
+    }
+
+    pub fn set_windowed<M: Send + 'static>(&self, id: Option<window::Id>) -> crate::app::Task<M> {
+        let Some(id) = id.or(self.main_window) else {
+            return iced::Task::none();
+        };
+        crate::command::set_windowed(id)
+    }
+
+    pub fn toggle_maximize<M: Send + 'static>(
+        &self,
+        id: Option<window::Id>,
+    ) -> crate::app::Task<M> {
+        let Some(id) = id.or(self.main_window) else {
+            return iced::Task::none();
+        };
+
+        crate::command::toggle_maximize(id)
     }
 }

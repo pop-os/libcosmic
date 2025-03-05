@@ -11,7 +11,6 @@ use cosmic::iced::alignment::{Horizontal, Vertical};
 use cosmic::iced::widget::column;
 use cosmic::iced::Length;
 use cosmic::iced_core::Size;
-use cosmic::surface_message::{MessageWrapper, SurfaceMessage};
 use cosmic::widget::icon::{from_name, Handle};
 use cosmic::widget::menu::KeyBind;
 use cosmic::widget::{button, text};
@@ -85,23 +84,8 @@ pub enum Message {
     Input2(String),
     Ignore,
     ToggleHide,
-    Surface(SurfaceMessage),
+    Surface(cosmic::surface::Action),
     Hi,
-}
-
-impl From<Message> for MessageWrapper<Message> {
-    fn from(value: Message) -> Self {
-        match value {
-            Message::Surface(s) => MessageWrapper::Surface(s),
-            m => MessageWrapper::Message(m),
-        }
-    }
-}
-
-impl From<SurfaceMessage> for Message {
-    fn from(value: SurfaceMessage) -> Self {
-        Message::Surface(value)
-    }
 }
 
 /// The [`App`] stores application-specific state.
@@ -185,7 +169,7 @@ impl cosmic::Application for App {
                 self.hidden = !self.hidden;
             }
             Message::Surface(_) => {
-                unimplemented!()
+                // unimplemented!()
             }
             Message::Hi => {
                 dbg!("hi");
@@ -295,9 +279,11 @@ impl cosmic::Application for App {
         }
         #[cfg(feature = "wayland")]
         {
-            vec![self.core.responsive_menu_bar(
+            vec![cosmic::widget::responsive_menu_bar(
+                self.core(),
                 &self.keybinds,
                 MENU_ID.clone(),
+                Message::Surface,
                 vec![
                     (
                         "hiiiiiiiiiiiiiiiiiii 1".into(),

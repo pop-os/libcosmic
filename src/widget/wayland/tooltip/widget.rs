@@ -14,7 +14,7 @@ use iced::Task;
 use iced_runtime::core::widget::Id;
 
 use iced_core::event::{self, Event};
-use iced_core::renderer::{self, Renderer};
+use iced_core::renderer;
 use iced_core::touch;
 use iced_core::widget::tree::{self, Tree};
 use iced_core::widget::Operation;
@@ -24,8 +24,6 @@ use iced_core::{overlay, Shadow};
 use iced_core::{
     Background, Clipboard, Color, Layout, Length, Padding, Point, Rectangle, Shell, Vector, Widget,
 };
-
-use crate::surface_message::SurfaceMessage;
 
 pub use super::{Catalog, Style};
 
@@ -41,7 +39,7 @@ enum Variant<Message> {
 /// A generic button which emits a message when pressed.
 #[allow(missing_debug_implementations)]
 #[must_use]
-pub struct Tooltip<'a, Message, AppMessage> {
+pub struct Tooltip<'a, Message> {
     id: Id,
     #[cfg(feature = "a11y")]
     name: Option<std::borrow::Cow<'a, str>>,
@@ -51,6 +49,7 @@ pub struct Tooltip<'a, Message, AppMessage> {
     label: Option<Vec<iced_accessibility::accesskit::NodeId>>,
     content: crate::Element<'a, Message>,
     on_leave: Message,
+    on_surface_action: Box<dyn Fn(crate::surface::Action) -> Message>,
     width: Length,
     height: Length,
     padding: Padding,
@@ -65,15 +64,10 @@ pub struct Tooltip<'a, Message, AppMessage> {
                 + 'static,
         >,
     >,
-    view: Arc<
-        dyn Fn() -> crate::Element<'static, crate::app::Message<AppMessage>>
-            + Send
-            + Sync
-            + 'static,
-    >,
+    view: Arc<dyn Fn() -> crate::Element<'static, Message> + Send + Sync + 'static>,
 }
 
-impl<'a, Message, AppMessage> Tooltip<'a, Message, AppMessage> {
+impl<'a, Message> Tooltip<'a, Message> {
     /// Creates a new [`Tooltip`] with the given content.
     pub fn new(
         content: impl Into<crate::Element<'a, Message>>,
@@ -83,11 +77,9 @@ impl<'a, Message, AppMessage> Tooltip<'a, Message, AppMessage> {
                 + Sync
                 + 'static,
         >,
-        view: impl Fn() -> crate::Element<'static, crate::app::Message<AppMessage>>
-            + Send
-            + Sync
-            + 'static,
+        view: impl Fn() -> crate::Element<'static, Message> + Send + Sync + 'static,
         on_leave: Message,
+        on_surface_action: impl Fn(crate::surface::Action) -> Message + 'static,
     ) -> Self {
         Self {
             id: Id::unique(),
@@ -104,6 +96,7 @@ impl<'a, Message, AppMessage> Tooltip<'a, Message, AppMessage> {
             selected: false,
             style: crate::theme::Tooltip::default(),
             on_leave,
+            on_surface_action: Box::new(on_surface_action),
             delay: None,
             settings: if let Some(s) = settings {
                 Some(Arc::new(s))
@@ -189,11 +182,8 @@ impl<'a, Message, AppMessage> Tooltip<'a, Message, AppMessage> {
     }
 }
 
-impl<
-        'a,
-        Message: 'a + Clone + From<SurfaceMessage>,
-        AppMessage: Clone + 'static + From<SurfaceMessage>,
-    > Widget<Message, crate::Theme, crate::Renderer> for Tooltip<'a, Message, AppMessage>
+impl<'a, Message: 'static + Clone> Widget<Message, crate::Theme, crate::Renderer>
+    for Tooltip<'a, Message>
 {
     fn tag(&self) -> tree::Tag {
         tree::Tag::of::<State>()
@@ -273,6 +263,7 @@ impl<
             &self.view,
             self.delay,
             &self.on_leave,
+            &self.on_surface_action,
             || tree.state.downcast_mut::<State>(),
         );
         status.merge(self.content.as_widget_mut().on_event(
@@ -390,13 +381,8 @@ impl<
     }
 }
 
-impl<
-        'a,
-        Message: From<SurfaceMessage> + Clone + 'a,
-        AppMessage: From<SurfaceMessage> + Clone + 'static,
-    > From<Tooltip<'a, Message, AppMessage>> for crate::Element<'a, Message>
-{
-    fn from(button: Tooltip<'a, Message, AppMessage>) -> Self {
+impl<'a, Message: Clone + 'static> From<Tooltip<'a, Message>> for crate::Element<'a, Message> {
+    fn from(button: Tooltip<'a, Message>) -> Self {
         Self::new(button)
     }
 }
@@ -419,11 +405,7 @@ impl State {
 /// Processes the given [`Event`] and updates the [`State`] of a [`Tooltip`]
 /// accordingly.
 #[allow(clippy::needless_pass_by_value)]
-pub fn update<
-    'a,
-    Message: Clone + From<SurfaceMessage>,
-    AppMessage: Clone + 'a + From<SurfaceMessage> + 'static,
->(
+pub fn update<'a, Message: Clone + 'static>(
     _id: Id,
     event: Event,
     layout: Layout<'_>,
@@ -437,14 +419,10 @@ pub fn update<
                 + 'static,
         >,
     >,
-    view: &Arc<
-        dyn Fn() -> crate::Element<'static, crate::app::Message<AppMessage>>
-            + Send
-            + Sync
-            + 'static,
-    >,
+    view: &Arc<dyn Fn() -> crate::Element<'static, Message> + Send + Sync + 'static>,
     delay: Option<Duration>,
     on_leave: &Message,
+    on_surface_action: &dyn Fn(crate::surface::Action) -> Message,
     state: impl FnOnce() -> &'a mut State,
 ) -> event::Status {
     match event {
@@ -491,46 +469,44 @@ pub fn update<
                             let view = view.clone();
                             let bounds = layout.bounds();
 
-                            shell.publish(
-                                SurfaceMessage::Task(Arc::new(move || {
-                                    let s = s.clone();
-                                    let view = view.clone();
-                                    let is_hovered = is_hovered.clone();
-                                    Task::future(async move {
-                                        _ = tokio::time::sleep(delay).await;
+                            let sm = crate::surface::Action::Task(Arc::new(move || {
+                                let s = s.clone();
+                                let view = view.clone();
+                                let is_hovered = is_hovered.clone();
+                                Task::future(async move {
+                                    _ = tokio::time::sleep(delay).await;
 
-                                        let is_hovered = is_hovered.clone();
-                                        let g = is_hovered.lock().unwrap();
-                                        if !*g {
-                                            return SurfaceMessage::Ignore;
-                                        }
-                                        let boxed: Box<
-                                            dyn Fn() -> iced_runtime::platform_specific::wayland::popup::SctkPopupSettings
-                                                + Send
-                                                + Sync
-                                                + 'static,
-                                        > = Box::new(move || s(bounds));
-                                        let boxed: Box<dyn Any + Send + Sync + 'static> = Box::new(boxed);
-                                        SurfaceMessage::Popup(
-                                            Arc::new(boxed),
-                                            Some({
-                                                let boxed: Box<
-                                                    dyn Fn() -> crate::Element<
-                                                            'static,
-                                                            crate::app::Message<AppMessage>,
-                                                        > + Send
-                                                        + Sync
-                                                        + 'static,
-                                                > = Box::new(move || view());
-                                                let boxed: Box<dyn Any + Send + Sync + 'static> =
-                                                    Box::new(boxed);
-                                                Arc::new(boxed)
-                                            }),
-                                        )
-                                    })
-                                }))
-                                .into(),
-                            );
+                                    let is_hovered = is_hovered.clone();
+                                    let g = is_hovered.lock().unwrap();
+                                    if !*g {
+                                        return crate::surface::Action::Ignore;
+                                    }
+                                    let boxed: Box<
+                                        dyn Fn() -> iced_runtime::platform_specific::wayland::popup::SctkPopupSettings
+                                            + Send
+                                            + Sync
+                                            + 'static,
+                                    > = Box::new(move || s(bounds));
+                                    let boxed: Box<dyn Any + Send + Sync + 'static> =
+                                        Box::new(boxed);
+                                    crate::surface::Action::Popup(
+                                        Arc::new(boxed),
+                                        Some({
+                                            let boxed: Box<
+                                                dyn Fn() -> crate::Element<'static, Message>
+                                                    + Send
+                                                    + Sync
+                                                    + 'static,
+                                            > = Box::new(move || view());
+                                            let boxed: Box<dyn Any + Send + Sync + 'static> =
+                                                Box::new(boxed);
+                                            Arc::new(boxed)
+                                        }),
+                                    )
+                                })
+                            }));
+
+                            shell.publish((on_surface_action)(sm));
                         } else {
                             let s = settings.clone();
                             let view = view.clone();
@@ -544,14 +520,12 @@ pub fn update<
                             > = Box::new(move || s(bounds));
                             let boxed: Box<dyn Any + Send + Sync + 'static> = Box::new(boxed);
 
-                            let sm = SurfaceMessage::Popup(
+                            let sm = crate::surface::Action::Popup(
                                 Arc::new(boxed),
                                 Some({
                                     let boxed: Box<
-                                        dyn Fn() -> crate::Element<
-                                                'static,
-                                                crate::app::Message<AppMessage>,
-                                            > + Send
+                                        dyn Fn() -> crate::Element<'static, Message>
+                                            + Send
                                             + Sync
                                             + 'static,
                                     > = Box::new(move || view());
@@ -560,7 +534,7 @@ pub fn update<
                                     Arc::new(boxed)
                                 }),
                             );
-                            shell.publish(sm.into());
+                            shell.publish((on_surface_action)(sm));
                         }
                     }
                 }

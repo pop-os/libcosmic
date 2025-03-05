@@ -1,3 +1,6 @@
+// Copyright 2023 System76 <info@system76.com>
+// SPDX-License-Identifier: MPL-2.0
+
 #[cfg(all(feature = "smol", not(feature = "tokio")))]
 use smol::io::AsyncReadExt;
 use std::io;

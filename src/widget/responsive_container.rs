@@ -9,18 +9,17 @@ use iced_core::renderer;
 use iced_core::widget::{tree, Id, Tree};
 use iced_core::{Clipboard, Element, Layout, Length, Rectangle, Shell, Vector, Widget};
 
-use crate::surface_message::SurfaceMessage;
-
-pub(crate) fn responsive_container<'a, Message: 'static + From<SurfaceMessage>, Theme, E>(
+pub(crate) fn responsive_container<'a, Message: 'static, Theme, E>(
     content: E,
     id: Id,
+    on_action: impl Fn(crate::surface::Action) -> Message + 'static,
 ) -> ResponsiveContainer<'a, Message, Theme, crate::Renderer>
 where
     E: Into<Element<'a, Message, Theme, crate::Renderer>>,
     Theme: iced_widget::container::Catalog,
     <Theme as iced_widget::container::Catalog>::Class<'a>: From<crate::theme::Container<'a>>,
 {
-    ResponsiveContainer::new(content, id)
+    ResponsiveContainer::new(content, id, on_action)
 }
 
 /// An element decorating some content.
@@ -34,6 +33,7 @@ where
     content: Element<'a, Message, Theme, Renderer>,
     id: Id,
     size: Option<Size>,
+    on_action: Box<dyn Fn(crate::surface::Action) -> Message>,
 }
 
 impl<'a, Message, Theme, Renderer> ResponsiveContainer<'a, Message, Theme, Renderer>
@@ -41,7 +41,11 @@ where
     Renderer: iced_core::Renderer,
 {
     /// Creates an empty [`IdContainer`].
-    pub(crate) fn new<T>(content: T, id: Id) -> Self
+    pub(crate) fn new<T>(
+        content: T,
+        id: Id,
+        on_action: impl Fn(crate::surface::Action) -> Message + 'static,
+    ) -> Self
     where
         T: Into<Element<'a, Message, Theme, Renderer>>,
     {
@@ -49,6 +53,7 @@ where
             content: content.into(),
             id,
             size: None,
+            on_action: Box::new(on_action),
         }
     }
 
@@ -62,7 +67,6 @@ impl<Message, Theme, Renderer> Widget<Message, Theme, Renderer>
     for ResponsiveContainer<'_, Message, Theme, Renderer>
 where
     Renderer: iced_core::Renderer,
-    Message: From<SurfaceMessage>,
 {
     fn tag(&self) -> tree::Tag {
         tree::Tag::of::<State>()
@@ -148,11 +152,13 @@ where
         let state = tree.state.downcast_mut::<State>();
 
         if state.needs_update {
-            shell.publish(Message::from(SurfaceMessage::ResponsiveMenuBar {
-                menu_bar: self.id.clone(),
-                limits: state.limits,
-                size: state.size,
-            }));
+            shell.publish((self.on_action)(
+                crate::surface::Action::ResponsiveMenuBar {
+                    menu_bar: self.id.clone(),
+                    limits: state.limits,
+                    size: state.size,
+                },
+            ));
             state.needs_update = false;
         }
 
@@ -264,7 +270,7 @@ where
 impl<'a, Message, Theme, Renderer> From<ResponsiveContainer<'a, Message, Theme, Renderer>>
     for Element<'a, Message, Theme, Renderer>
 where
-    Message: 'a + From<SurfaceMessage>,
+    Message: 'a,
     Renderer: 'a + iced_core::Renderer,
     Theme: 'a,
 {
