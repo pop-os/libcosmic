@@ -8,7 +8,7 @@ use iced_core::keyboard::key::Named;
 use iced_futures::event::listen_raw;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
-pub enum Message {
+pub enum Action {
     Escape,
     FocusNext,
     FocusPrevious,
@@ -16,7 +16,7 @@ pub enum Message {
     Search,
 }
 
-pub fn subscription() -> Subscription<Message> {
+pub fn subscription() -> Subscription<Action> {
     listen_raw(|event, status, _| {
         if event::Status::Ignored != status {
             return None;
@@ -30,18 +30,18 @@ pub fn subscription() -> Subscription<Message> {
             }) => match key {
                 Named::Tab => {
                     return Some(if modifiers.shift() {
-                        Message::FocusPrevious
+                        Action::FocusPrevious
                     } else {
-                        Message::FocusNext
+                        Action::FocusNext
                     });
                 }
 
                 Named::Escape => {
-                    return Some(Message::Escape);
+                    return Some(Action::Escape);
                 }
 
                 Named::F11 => {
-                    return Some(Message::Fullscreen);
+                    return Some(Action::Fullscreen);
                 }
 
                 _ => (),
@@ -51,7 +51,7 @@ pub fn subscription() -> Subscription<Message> {
                 modifiers,
                 ..
             }) if c == "f" && modifiers.control() => {
-                return Some(Message::Search);
+                return Some(Action::Search);
             }
 
             _ => (),

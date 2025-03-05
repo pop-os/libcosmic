@@ -11,7 +11,6 @@ use crate::{
         window, Color, Length, Limits, Rectangle,
     },
     iced_widget,
-    surface_message::SurfaceMessage,
     theme::{self, system_dark, system_light, Button, THEME},
     widget::{
         self,
@@ -220,21 +219,19 @@ impl Context {
         )
     }
 
-    pub fn applet_tooltip<
-        'a,
-        Message: 'static + From<SurfaceMessage> + Into<crate::surface_message::MessageWrapper<Message>>,
-    >(
+    pub fn applet_tooltip<'a, Message: 'static>(
         &self,
         content: impl Into<Element<'a, Message>>,
         tooltip: impl Into<Cow<'static, str>>,
         has_popup: bool,
-    ) -> crate::widget::wayland::tooltip::widget::Tooltip<'a, Message, Message> {
+        on_surface_action: impl Fn(crate::surface::Action) -> Message + 'static,
+    ) -> crate::widget::wayland::tooltip::widget::Tooltip<'a, Message> {
         let window_id = *TOOLTIP_WINDOW_ID;
         let subsurface_id = TOOLTIP_ID.clone();
         let anchor = self.anchor;
         let tooltip = tooltip.into();
 
-        crate::widget::wayland::tooltip::widget::Tooltip::<'a, Message, Message>::new(
+        crate::widget::wayland::tooltip::widget::Tooltip::<'a, Message>::new(
             content,
             (!has_popup).then_some(move |bounds: Rectangle| {
                 let window_id = window_id;
@@ -273,14 +270,15 @@ impl Context {
                 }
             }),
             move || {
-                Element::<'static, crate::app::Message<Message>>::from(autosize::autosize(
+                Element::from(autosize::autosize(
                     layer_container(crate::widget::text(tooltip.clone()))
                         .layer(crate::cosmic_theme::Layer::Background)
                         .padding(4.),
                     subsurface_id.clone(),
                 ))
             },
-            crate::app::message::destroy_popup::<Message>(window_id),
+            on_surface_action(crate::surface::action::destroy_popup(window_id)),
+            on_surface_action,
         )
         .delay(Duration::from_millis(100))
     }
@@ -443,10 +441,7 @@ impl Context {
 /// # Errors
 ///
 /// Returns error on application failure.
-pub fn run<App: Application>(flags: App::Flags) -> iced::Result
-where
-    App::Message: Into<crate::surface_message::MessageWrapper<App::Message>>,
-{
+pub fn run<App: Application>(flags: App::Flags) -> iced::Result {
     let helper = Context::default();
 
     let mut settings = helper.window_settings();

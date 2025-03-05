@@ -100,6 +100,12 @@ pub mod autosize;
 #[cfg(feature = "winit")]
 pub(crate) mod responsive_container;
 
+#[cfg(feature = "surface-message")]
+mod responsive_menu_bar;
+#[cfg(feature = "surface-message")]
+#[doc(inline)]
+pub use responsive_menu_bar::responsive_menu_bar;
+
 pub mod button;
 #[doc(inline)]
 pub use button::{Button, IconButton, LinkButton, TextButton};
