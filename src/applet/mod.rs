@@ -277,7 +277,7 @@ impl Context {
                     subsurface_id.clone(),
                 ))
             },
-            on_surface_action(crate::surface::action::destroy_popup(window_id)),
+            on_surface_action(crate::surface::Action::DestroyPopup(window_id)),
             on_surface_action,
         )
         .delay(Duration::from_millis(100))

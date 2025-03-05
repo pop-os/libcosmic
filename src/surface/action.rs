@@ -18,7 +18,7 @@ pub fn destroy_subsurface(id: iced_core::window::Id) -> Action {
     Action::DestroySubsurface(id)
 }
 
-#[cfg(feature = "wayland")]
+#[cfg(all(feature = "wayland", feature = "winit"))]
 #[must_use]
 pub fn app_popup<App: Application>(
     settings: impl Fn(&mut App) -> iced_runtime::platform_specific::wayland::popup::SctkPopupSettings
@@ -52,7 +52,7 @@ pub fn app_popup<App: Application>(
 }
 
 /// Used to create a subsurface message from within a widget.
-#[cfg(feature = "wayland")]
+#[cfg(all(feature = "wayland", feature = "winit"))]
 #[must_use]
 pub fn simple_subsurface<Message: 'static, V>(
     settings: impl Fn() -> iced_runtime::platform_specific::wayland::subsurface::SctkSubsurfaceSettings
@@ -81,7 +81,7 @@ pub fn simple_subsurface<Message: 'static, V>(
 }
 
 /// Used to create a popup message from within a widget.
-#[cfg(feature = "wayland")]
+#[cfg(all(feature = "wayland", feature = "winit"))]
 #[must_use]
 pub fn simple_popup<Message: 'static, V>(
     settings: impl Fn() -> iced_runtime::platform_specific::wayland::popup::SctkPopupSettings
@@ -112,7 +112,7 @@ pub fn simple_popup<Message: 'static, V>(
     )
 }
 
-#[cfg(feature = "wayland")]
+#[cfg(all(feature = "wayland", feature = "winit"))]
 #[must_use]
 pub fn subsurface<App: Application>(
     settings: impl Fn(&mut App) -> iced_runtime::platform_specific::wayland::subsurface::SctkSubsurfaceSettings

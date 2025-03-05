@@ -1,7 +1,6 @@
 // Copyright 2025 System76 <info@system76.com>
 // SPDX-License-Identifier: MPL-2.0
 
-#[cfg(feature = "winit")]
 pub mod action;
 
 use iced::Limits;
