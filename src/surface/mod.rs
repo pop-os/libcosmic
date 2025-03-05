@@ -1,26 +1,17 @@
+// Copyright 2025 System76 <info@system76.com>
+// SPDX-License-Identifier: MPL-2.0
+
+pub mod action;
+
+use iced::Limits;
+use iced::Size;
+use iced::Task;
 use std::future::Future;
 use std::sync::Arc;
 
-use iced::Size;
-
-use iced::Limits;
-use iced::Task;
-
-pub enum MessageWrapper<M> {
-    Surface(SurfaceMessage),
-    Message(M),
-}
-
-#[cfg(not(feature = "surface-message"))]
-impl<M> From<M> for MessageWrapper<M> {
-    fn from(value: M) -> Self {
-        MessageWrapper::Message(value)
-    }
-}
-
 /// Ignore this message in your application. It will be intercepted.
 #[derive(Clone)]
-pub enum SurfaceMessage {
+pub enum Action {
     /// Create a subsurface with a view function accepting the App as a parameter
     AppSubsurface(
         std::sync::Arc<Box<dyn std::any::Any + Send + Sync>>,
@@ -55,10 +46,10 @@ pub enum SurfaceMessage {
         size: Size,
     },
     Ignore,
-    Task(Arc<dyn Fn() -> Task<SurfaceMessage> + Send + Sync>),
+    Task(Arc<dyn Fn() -> Task<Action> + Send + Sync>),
 }
 
-impl std::fmt::Debug for SurfaceMessage {
+impl std::fmt::Debug for Action {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::AppSubsurface(arg0, arg1) => f

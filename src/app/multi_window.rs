@@ -1,3 +1,6 @@
+// Copyright 2024 System76 <info@system76.com>
+// SPDX-License-Identifier: MPL-2.0
+
 //! Create and run daemons that run in the background.
 //! Copied from iced 0.13, but adds optional initial window
 
