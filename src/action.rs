@@ -1,12 +1,13 @@
 // Copyright 2023 System76 <info@system76.com>
 // SPDX-License-Identifier: MPL-2.0
 
+#[cfg(feature = "winit")]
 use crate::app;
 
 pub const fn app<M>(message: M) -> Action<M> {
     Action::App(message)
 }
-
+#[cfg(feature = "winit")]
 pub const fn cosmic<M>(message: app::Action) -> Action<M> {
     Action::Cosmic(message)
 }
@@ -20,9 +21,10 @@ pub const fn none<M>() -> Action<M> {
 pub enum Action<M> {
     /// Messages from the application, for the application.
     App(M),
+    #[cfg(feature = "winit")]
     /// Internal messages to be handled by libcosmic.
     Cosmic(app::Action),
-    #[cfg(feature = "single-instance")]
+    #[cfg(all(feature = "winit", feature = "single-instance"))]
     /// Dbus activation messages
     DbusActivation(app::DbusActivationMessage),
     /// Do nothing
