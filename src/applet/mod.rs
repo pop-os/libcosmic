@@ -225,13 +225,13 @@ impl Context {
         tooltip: impl Into<Cow<'static, str>>,
         has_popup: bool,
         on_surface_action: impl Fn(crate::surface::Action) -> Message + 'static,
-    ) -> crate::widget::wayland::tooltip::widget::Tooltip<'a, Message> {
+    ) -> crate::widget::wayland::tooltip::widget::Tooltip<'a, Message, Message> {
         let window_id = *TOOLTIP_WINDOW_ID;
         let subsurface_id = TOOLTIP_ID.clone();
         let anchor = self.anchor;
         let tooltip = tooltip.into();
 
-        crate::widget::wayland::tooltip::widget::Tooltip::<'a, Message>::new(
+        crate::widget::wayland::tooltip::widget::Tooltip::<'a, Message, Message>::new(
             content,
             (!has_popup).then_some(move |bounds: Rectangle| {
                 let window_id = window_id;

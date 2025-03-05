@@ -117,10 +117,9 @@ impl cosmic::Application for Window {
             }
 
             Message::Surface(a) => {
-                dbg!("hi i got an action...");
-                return cosmic::task::message(cosmic::Action::Cosmic(cosmic::app::Action::Surface(
-                    a,
-                )));
+                return cosmic::task::message(cosmic::Action::Cosmic(
+                    cosmic::app::Action::Surface(a),
+                ));
             }
             Message::Selected(i) => {
                 self.selected = Some(i);
@@ -195,11 +194,12 @@ impl cosmic::Application for Window {
             },
         );
 
-        Element::from(
-            self.core
-                .applet
-                .applet_tooltip(btn, "test", self.popup.is_some(), |a| Message::Surface(a)),
-        )
+        Element::from(self.core.applet.applet_tooltip::<Message>(
+            btn,
+            "test",
+            self.popup.is_some(),
+            |a| Message::Surface(a),
+        ))
     }
 
     fn view_window(&self, _id: Id) -> Element<Message> {
@@ -208,14 +208,5 @@ impl cosmic::Application for Window {
 
     fn style(&self) -> Option<cosmic::iced_runtime::Appearance> {
         Some(cosmic::applet::style())
-    }
-
-    fn subscription(&self) -> cosmic::iced::Subscription<Message> {
-        listen_with(|e, status, id| {
-            if matches!(e, iced::event::Event::Keyboard(_)) {
-                dbg!(e, id);
-            }
-            None
-        })
     }
 }

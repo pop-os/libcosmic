@@ -39,7 +39,7 @@ enum Variant<Message> {
 /// A generic button which emits a message when pressed.
 #[allow(missing_debug_implementations)]
 #[must_use]
-pub struct Tooltip<'a, Message> {
+pub struct Tooltip<'a, Message, TopLevelMessage> {
     id: Id,
     #[cfg(feature = "a11y")]
     name: Option<std::borrow::Cow<'a, str>>,
@@ -64,10 +64,12 @@ pub struct Tooltip<'a, Message> {
                 + 'static,
         >,
     >,
-    view: Arc<dyn Fn() -> crate::Element<'static, Message> + Send + Sync + 'static>,
+    view: Arc<
+        dyn Fn() -> crate::Element<'static, crate::Action<TopLevelMessage>> + Send + Sync + 'static,
+    >,
 }
 
-impl<'a, Message> Tooltip<'a, Message> {
+impl<'a, Message, TopLevelMessage> Tooltip<'a, Message, TopLevelMessage> {
     /// Creates a new [`Tooltip`] with the given content.
     pub fn new(
         content: impl Into<crate::Element<'a, Message>>,
@@ -77,7 +79,10 @@ impl<'a, Message> Tooltip<'a, Message> {
                 + Sync
                 + 'static,
         >,
-        view: impl Fn() -> crate::Element<'static, Message> + Send + Sync + 'static,
+        view: impl Fn() -> crate::Element<'static, crate::Action<TopLevelMessage>>
+            + Send
+            + Sync
+            + 'static,
         on_leave: Message,
         on_surface_action: impl Fn(crate::surface::Action) -> Message + 'static,
     ) -> Self {
@@ -182,8 +187,8 @@ impl<'a, Message> Tooltip<'a, Message> {
     }
 }
 
-impl<'a, Message: 'static + Clone> Widget<Message, crate::Theme, crate::Renderer>
-    for Tooltip<'a, Message>
+impl<'a, Message: 'static + Clone, TopLevelMessage: 'static + Clone>
+    Widget<Message, crate::Theme, crate::Renderer> for Tooltip<'a, Message, TopLevelMessage>
 {
     fn tag(&self) -> tree::Tag {
         tree::Tag::of::<State>()
@@ -381,8 +386,10 @@ impl<'a, Message: 'static + Clone> Widget<Message, crate::Theme, crate::Renderer
     }
 }
 
-impl<'a, Message: Clone + 'static> From<Tooltip<'a, Message>> for crate::Element<'a, Message> {
-    fn from(button: Tooltip<'a, Message>) -> Self {
+impl<'a, Message: Clone + 'static, TopLevelMessage: Clone + 'static>
+    From<Tooltip<'a, Message, TopLevelMessage>> for crate::Element<'a, Message>
+{
+    fn from(button: Tooltip<'a, Message, TopLevelMessage>) -> Self {
         Self::new(button)
     }
 }
@@ -405,7 +412,7 @@ impl State {
 /// Processes the given [`Event`] and updates the [`State`] of a [`Tooltip`]
 /// accordingly.
 #[allow(clippy::needless_pass_by_value)]
-pub fn update<'a, Message: Clone + 'static>(
+pub fn update<'a, Message: Clone + 'static, TopLevelMessage: Clone + 'static>(
     _id: Id,
     event: Event,
     layout: Layout<'_>,
@@ -419,7 +426,9 @@ pub fn update<'a, Message: Clone + 'static>(
                 + 'static,
         >,
     >,
-    view: &Arc<dyn Fn() -> crate::Element<'static, Message> + Send + Sync + 'static>,
+    view: &Arc<
+        dyn Fn() -> crate::Element<'static, crate::Action<TopLevelMessage>> + Send + Sync + 'static,
+    >,
     delay: Option<Duration>,
     on_leave: &Message,
     on_surface_action: &dyn Fn(crate::surface::Action) -> Message,
@@ -493,8 +502,10 @@ pub fn update<'a, Message: Clone + 'static>(
                                         Arc::new(boxed),
                                         Some({
                                             let boxed: Box<
-                                                dyn Fn() -> crate::Element<'static, Message>
-                                                    + Send
+                                                dyn Fn() -> crate::Element<
+                                                        'static,
+                                                        crate::Action<TopLevelMessage>,
+                                                    > + Send
                                                     + Sync
                                                     + 'static,
                                             > = Box::new(move || view());
@@ -524,8 +535,10 @@ pub fn update<'a, Message: Clone + 'static>(
                                 Arc::new(boxed),
                                 Some({
                                     let boxed: Box<
-                                        dyn Fn() -> crate::Element<'static, Message>
-                                            + Send
+                                        dyn Fn() -> crate::Element<
+                                                'static,
+                                                crate::Action<TopLevelMessage>,
+                                            > + Send
                                             + Sync
                                             + 'static,
                                     > = Box::new(move || view());
