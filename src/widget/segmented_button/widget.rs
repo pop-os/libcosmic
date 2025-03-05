@@ -592,6 +592,7 @@ where
             wheel_timestamp: Default::default(),
             dnd_state: Default::default(),
             fingers_pressed: Default::default(),
+            pressed_item: None,
         })
     }
 
@@ -918,11 +919,25 @@ where
                         }
 
                         if let Some(on_activate) = self.on_activate.as_ref() {
-                            if let Event::Mouse(mouse::Event::ButtonReleased(mouse::Button::Left))
+                            if let Event::Mouse(mouse::Event::ButtonPressed(mouse::Button::Left))
+                            | Event::Touch(touch::Event::FingerPressed { .. }) = event
+                            {
+                                state.pressed_item = Some(Item::Tab(key));
+                            } else if let Event::Mouse(mouse::Event::ButtonReleased(
+                                mouse::Button::Left,
+                            ))
                             | Event::Touch(touch::Event::FingerLifted { .. }) = event
                             {
-                                shell.publish(on_activate(key));
-                                return event::Status::Captured;
+                                let mut can_activate = true;
+                                if state.pressed_item != Some(Item::Tab(key)) {
+                                    can_activate = false;
+                                }
+
+                                if can_activate {
+                                    shell.publish(on_activate(key));
+                                    state.pressed_item = None;
+                                    return event::Status::Captured;
+                                }
                             }
                         }
 
@@ -1666,6 +1681,8 @@ pub struct LocalState {
     pub dnd_state: crate::widget::dnd_destination::State<Option<Entity>>,
     /// Tracks multi-touch events
     fingers_pressed: HashSet<Finger>,
+    /// The currently pressed item
+    pressed_item: Option<Item>,
 }
 
 #[derive(Debug, Default, PartialEq)]
