@@ -3,6 +3,8 @@
 
 #[cfg(feature = "winit")]
 use crate::app;
+#[cfg(feature = "single-instance")]
+use crate::dbus_activation;
 
 pub const fn app<M>(message: M) -> Action<M> {
     Action::App(message)
@@ -24,9 +26,9 @@ pub enum Action<M> {
     #[cfg(feature = "winit")]
     /// Internal messages to be handled by libcosmic.
     Cosmic(app::Action),
-    #[cfg(all(feature = "winit", feature = "single-instance"))]
+    #[cfg(feature = "single-instance")]
     /// Dbus activation messages
-    DbusActivation(app::DbusActivationMessage),
+    DbusActivation(dbus_activation::Message),
     /// Do nothing
     None,
 }
