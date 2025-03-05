@@ -920,10 +920,12 @@ where
 
                         if let Some(on_activate) = self.on_activate.as_ref() {
                             if let Event::Mouse(mouse::Event::ButtonPressed(mouse::Button::Left))
-                                | Event::Touch(touch::Event::FingerPressed { .. }) = event {
+                            | Event::Touch(touch::Event::FingerPressed { .. }) = event
+                            {
                                 state.pressed_item = Some(Item::Tab(key));
-                            }
-                            else if let Event::Mouse(mouse::Event::ButtonReleased(mouse::Button::Left))
+                            } else if let Event::Mouse(mouse::Event::ButtonReleased(
+                                mouse::Button::Left,
+                            ))
                             | Event::Touch(touch::Event::FingerLifted { .. }) = event
                             {
                                 let mut can_activate = true;
