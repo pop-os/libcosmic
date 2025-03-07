@@ -238,15 +238,26 @@ fn container_style(theme: &crate::Theme) -> iced_widget::container::Style {
     neutral_10.alpha = 0.1;
     let accent = &cosmic_theme.accent;
     let corners = &cosmic_theme.corner_radii;
+    let border = if theme.theme_type.is_high_contrast() {
+        let current_container = theme.current_container();
+        Border {
+            radius: corners.radius_s.into(),
+            width: 1.,
+            color: current_container.component.border.into(),
+        }
+    } else {
+        Border {
+            radius: corners.radius_s.into(),
+            width: 0.0,
+            color: accent.base.into(),
+        }
+    };
+
     iced_widget::container::Style {
         icon_color: Some(accent.base.into()),
         text_color: Some(cosmic_theme.palette.neutral_10.into()),
         background: None,
-        border: Border {
-            radius: corners.radius_s.into(),
-            width: 0.0,
-            color: accent.base.into(),
-        },
+        border,
         shadow: Shadow::default(),
     }
 }
