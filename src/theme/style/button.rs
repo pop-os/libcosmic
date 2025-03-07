@@ -50,7 +50,7 @@ pub fn appearance(
     let cosmic = theme.cosmic();
     let mut corner_radii = &cosmic.corner_radii.radius_xl;
     let mut appearance = Style::new();
-
+    let hc = theme.theme_type.is_high_contrast();
     match style {
         Button::Standard
         | Button::Text
@@ -71,6 +71,9 @@ pub fn appearance(
             if !matches!(style, Button::Standard) {
                 appearance.text_color = text;
                 appearance.icon_color = icon;
+            } else if hc {
+                appearance.border_color = style_component.border.into();
+                appearance.border_width = 1.;
             }
         }
 
@@ -105,6 +108,9 @@ pub fn appearance(
             if focused || selected {
                 appearance.border_width = 2.0;
                 appearance.border_color = cosmic.accent.base.into();
+            } else if hc {
+                appearance.border_color = theme.current_container().component.divider.into();
+                appearance.border_width = 1.;
             }
 
             return appearance;

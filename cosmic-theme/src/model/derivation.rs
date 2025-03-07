@@ -25,9 +25,10 @@ impl Container {
         base: Srgba,
         on: Srgba,
         mut small_widget: Srgba,
+        is_high_contrast: bool,
     ) -> Self {
         let mut divider_c = on;
-        divider_c.alpha = 0.2;
+        divider_c.alpha = if is_high_contrast { 0.5 } else { 0.2 };
 
         small_widget.alpha = 0.25;
 

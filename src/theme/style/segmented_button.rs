@@ -30,6 +30,16 @@ impl StyleSheet for Theme {
             SegmentedButton::TabBar => {
                 let cosmic = self.cosmic();
                 let active = horizontal::tab_bar_active(cosmic);
+                let hc = cosmic.is_high_contrast;
+                let (border_end, border_start, border_top) = if hc {
+                    (
+                        Some((1., container.component.border.into())),
+                        Some((1., container.component.border.into())),
+                        Some((1., container.component.border.into())),
+                    )
+                } else {
+                    (None, None, None)
+                };
                 Appearance {
                     border_radius: cosmic.corner_radii.radius_0.into(),
                     inactive: ItemStatusAppearance {
@@ -37,17 +47,23 @@ impl StyleSheet for Theme {
                         first: ItemAppearance {
                             border_radius: cosmic.corner_radii.radius_0.into(),
                             border_bottom: Some((1.0, cosmic.accent.base.into())),
-                            ..Default::default()
+                            border_end,
+                            border_start,
+                            border_top,
                         },
                         middle: ItemAppearance {
                             border_radius: cosmic.corner_radii.radius_0.into(),
                             border_bottom: Some((1.0, cosmic.accent.base.into())),
-                            ..Default::default()
+                            border_end,
+                            border_start,
+                            border_top,
                         },
                         last: ItemAppearance {
                             border_radius: cosmic.corner_radii.radius_0.into(),
                             border_bottom: Some((1.0, cosmic.accent.base.into())),
-                            ..Default::default()
+                            border_end,
+                            border_start,
+                            border_top,
                         },
                         text_color: container.component.on.into(),
                     },
