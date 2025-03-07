@@ -447,7 +447,7 @@ where
     pub(crate) style: &'b <crate::Theme as StyleSheet>::Style,
     pub(crate) position: Point,
 }
-impl<'a, 'b, Message, Renderer> Menu<'a, 'b, Message, Renderer>
+impl<'b, Message, Renderer> Menu<'_, 'b, Message, Renderer>
 where
     Renderer: renderer::Renderer,
 {
@@ -455,8 +455,8 @@ where
         overlay::Element::new(Box::new(self))
     }
 }
-impl<'a, 'b, Message, Renderer> overlay::Overlay<Message, crate::Theme, Renderer>
-    for Menu<'a, 'b, Message, Renderer>
+impl<Message, Renderer> overlay::Overlay<Message, crate::Theme, Renderer>
+    for Menu<'_, '_, Message, Renderer>
 where
     Renderer: renderer::Renderer,
 {

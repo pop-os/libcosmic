@@ -111,7 +111,7 @@ impl<
             clipboard,
             false,
             if let Some(window) = self.window.as_ref() {
-                Some(iced_core::clipboard::DndSource::Surface(window.clone()))
+                Some(iced_core::clipboard::DndSource::Surface(*window))
             } else {
                 Some(iced_core::clipboard::DndSource::Widget(self.id.clone()))
             },
@@ -153,10 +153,9 @@ impl<
 }
 
 impl<
-        'a,
         Message: Clone + 'static,
         D: iced::clipboard::mime::AsMimeTypes + std::marker::Send + 'static,
-    > Widget<Message, crate::Theme, crate::Renderer> for DndSource<'a, Message, D>
+    > Widget<Message, crate::Theme, crate::Renderer> for DndSource<'_, Message, D>
 {
     fn children(&self) -> Vec<Tree> {
         vec![Tree::new(&self.container)]

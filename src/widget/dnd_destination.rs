@@ -243,8 +243,8 @@ impl<'a, Message: 'static> DndDestination<'a, Message> {
     }
 }
 
-impl<'a, Message: 'static> Widget<Message, crate::Theme, crate::Renderer>
-    for DndDestination<'a, Message>
+impl<Message: 'static> Widget<Message, crate::Theme, crate::Renderer>
+    for DndDestination<'_, Message>
 {
     fn children(&self) -> Vec<Tree> {
         vec![Tree::new(&self.container)]

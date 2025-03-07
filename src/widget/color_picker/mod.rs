@@ -469,7 +469,7 @@ where
                 text_input("", self.input_color)
                     .on_input(move |s| on_update(ColorPickerUpdate::Input(s)))
                     .on_paste(move |s| on_update(ColorPickerUpdate::Input(s)))
-                    .on_submit(on_update(ColorPickerUpdate::AppliedColor))
+                    .on_submit(move |_| on_update(ColorPickerUpdate::AppliedColor))
                     .leading_icon(
                         color_button(
                             None,
@@ -611,7 +611,7 @@ pub struct ColorPicker<'a, Message> {
     must_clear_cache: Rc<AtomicBool>,
 }
 
-impl<'a, Message> Widget<Message, crate::Theme, crate::Renderer> for ColorPicker<'a, Message>
+impl<Message> Widget<Message, crate::Theme, crate::Renderer> for ColorPicker<'_, Message>
 where
     Message: Clone + 'static,
 {
@@ -874,7 +874,7 @@ impl State {
     }
 }
 
-impl<'a, Message> ColorPicker<'a, Message> where Message: Clone + 'static {}
+impl<Message> ColorPicker<'_, Message> where Message: Clone + 'static {}
 // TODO convert active color to hex or rgba
 fn color_to_string(c: palette::Hsv, is_hex: bool) -> String {
     let srgb = palette::Srgb::from_color(c);

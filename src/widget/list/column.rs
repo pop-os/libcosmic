@@ -24,7 +24,7 @@ pub struct ListColumn<'a, Message> {
     children: Vec<Element<'a, Message>>,
 }
 
-impl<'a, Message: 'static> Default for ListColumn<'a, Message> {
+impl<Message: 'static> Default for ListColumn<'_, Message> {
     fn default() -> Self {
         let cosmic_theme::Spacing {
             space_xxs, space_m, ..

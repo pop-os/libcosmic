@@ -44,6 +44,12 @@ pub struct Grid<'a, Message> {
     row: u16,
 }
 
+impl<Message> Default for Grid<'_, Message> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl<'a, Message> Grid<'a, Message> {
     pub const fn new() -> Self {
         Self {
@@ -106,7 +112,7 @@ impl<'a, Message> Grid<'a, Message> {
     }
 }
 
-impl<'a, Message: 'static + Clone> Widget<Message, crate::Theme, Renderer> for Grid<'a, Message> {
+impl<Message: 'static + Clone> Widget<Message, crate::Theme, Renderer> for Grid<'_, Message> {
     fn children(&self) -> Vec<Tree> {
         self.children.iter().map(Tree::new).collect()
     }
@@ -301,6 +307,12 @@ pub struct Assignment {
     pub(super) row: u16,
     pub(super) width: u16,
     pub(super) height: u16,
+}
+
+impl Default for Assignment {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl Assignment {

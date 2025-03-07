@@ -74,10 +74,7 @@ pub fn load_applications<'a>(
 
 #[cfg(not(windows))]
 pub fn app_id_or_fallback_matches(app_id: &str, entry: &DesktopEntryData) -> bool {
-    let lowercase_wm_class = match entry.wm_class.as_ref() {
-        Some(s) => Some(s.to_lowercase()),
-        None => None,
-    };
+    let lowercase_wm_class = entry.wm_class.as_ref().map(|s| s.to_lowercase());
 
     app_id == entry.id
         || Some(app_id.to_lowercase()) == lowercase_wm_class

@@ -35,8 +35,8 @@ impl<'a, Message, Theme, Renderer> Toaster<'a, Message, Theme, Renderer> {
     }
 }
 
-impl<'a, Message, Theme, Renderer> Widget<Message, Theme, Renderer>
-    for Toaster<'a, Message, Theme, Renderer>
+impl<Message, Theme, Renderer> Widget<Message, Theme, Renderer>
+    for Toaster<'_, Message, Theme, Renderer>
 where
     Renderer: iced_core::Renderer,
 {
@@ -191,8 +191,8 @@ where
     }
 }
 
-impl<'a, 'b, Message, Theme, Renderer> Overlay<Message, Theme, Renderer>
-    for ToasterOverlay<'a, 'b, Message, Theme, Renderer>
+impl<Message, Theme, Renderer> Overlay<Message, Theme, Renderer>
+    for ToasterOverlay<'_, '_, Message, Theme, Renderer>
 where
     Renderer: renderer::Renderer,
 {

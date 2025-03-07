@@ -55,6 +55,7 @@ pub struct Button<'a, Message> {
     selected: bool,
     style: crate::theme::Button,
     variant: Variant<Message>,
+    force_enabled: bool,
 }
 
 impl<'a, Message> Button<'a, Message> {
@@ -77,6 +78,7 @@ impl<'a, Message> Button<'a, Message> {
             selected: false,
             style: crate::theme::Button::default(),
             variant: Variant::Normal,
+            force_enabled: false,
         }
     }
 
@@ -90,6 +92,7 @@ impl<'a, Message> Button<'a, Message> {
             name: None,
             #[cfg(feature = "a11y")]
             description: None,
+            force_enabled: false,
             #[cfg(feature = "a11y")]
             label: None,
             content: content.into(),
@@ -160,6 +163,12 @@ impl<'a, Message> Button<'a, Message> {
     /// If `None`, the [`Button`] will be disabled.
     pub fn on_press_maybe(mut self, on_press: Option<Message>) -> Self {
         self.on_press = on_press;
+        self
+    }
+
+    /// Sets the the [`Button`] to enabled whether or not it has handlers for on press.
+    pub fn force_enabled(mut self, enabled: bool) -> Self {
+        self.force_enabled = enabled;
         self
     }
 
@@ -348,7 +357,8 @@ impl<'a, Message: 'a + Clone> Widget<Message, crate::Theme, crate::Renderer>
 
         let mut headerbar_alpha = None;
 
-        let is_enabled = self.on_press.is_some() || self.on_press_down.is_some();
+        let is_enabled =
+            self.on_press.is_some() || self.on_press_down.is_some() || self.force_enabled;
         let is_mouse_over = cursor.position().is_some_and(|p| bounds.contains(p));
 
         let state = tree.state.downcast_ref::<State>();
@@ -583,12 +593,7 @@ impl<'a, Message: 'a + Clone> Widget<Message, crate::Theme, crate::Renderer>
         }
         match self.description.as_ref() {
             Some(iced_accessibility::Description::Id(id)) => {
-                node.set_described_by(
-                    id.iter()
-                        .cloned()
-                        .map(|id| NodeId::from(id))
-                        .collect::<Vec<_>>(),
-                );
+                node.set_described_by(id.iter().cloned().map(NodeId::from).collect::<Vec<_>>());
             }
             Some(iced_accessibility::Description::Text(text)) => {
                 node.set_description(text.clone());

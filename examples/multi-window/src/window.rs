@@ -74,10 +74,7 @@ impl cosmic::Application for MultiWindow {
         })
     }
 
-    fn update(
-        &mut self,
-        message: Self::Message,
-    ) -> iced::Task<cosmic::app::Message<Self::Message>> {
+    fn update(&mut self, message: Self::Message) -> iced::Task<cosmic::Action<Self::Message>> {
         match message {
             Message::CloseWindow(id) => window::close(id),
             Message::WindowClosed(id) => {
@@ -110,7 +107,7 @@ impl cosmic::Application for MultiWindow {
                 );
                 _ = self.set_window_title(format!("window_{}", count), id);
 
-                spawn_window.map(|id| cosmic::app::Message::App(Message::WindowOpened(id, None)))
+                spawn_window.map(|id| cosmic::Action::App(Message::WindowOpened(id, None)))
             }
             Message::Input(id, value) => {
                 if let Some((_, w)) = self.windows.iter_mut().find(|e| e.1.input_id == id) {
