@@ -894,6 +894,7 @@ impl ThemeBuilder {
                     text_steps_array.as_deref(),
                 ),
                 get_small_widget_color(base_index, 5, &neutral_steps, &p_ref.neutral_6),
+                is_high_contrast,
             );
 
             container
@@ -968,6 +969,7 @@ impl ThemeBuilder {
                     text_steps_array.as_deref(),
                 ),
                 get_small_widget_color(bg_index, 5, &neutral_steps, &p_ref.neutral_6),
+                is_high_contrast,
             ),
             primary,
             secondary: {
@@ -1014,6 +1016,7 @@ impl ThemeBuilder {
                         text_steps_array.as_deref(),
                     ),
                     get_small_widget_color(base_index, 5, &neutral_steps, &p_ref.neutral_6),
+                    is_high_contrast,
                 )
             },
             accent: Component::colored_component(

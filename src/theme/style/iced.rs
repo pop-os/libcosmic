@@ -528,7 +528,15 @@ impl iced_container::Catalog for Theme {
                 }
             }
 
-            Container::ContextDrawer => Container::primary(cosmic),
+            Container::ContextDrawer => {
+                let mut a = Container::primary(cosmic);
+
+                if cosmic.is_high_contrast {
+                    a.border.width = 1.;
+                    a.border.color = cosmic.primary.divider.into();
+                }
+                a
+            }
 
             Container::Background => Container::background(cosmic),
 
@@ -644,19 +652,39 @@ impl slider::Catalog for Theme {
 
     fn style(&self, class: &Self::Class<'_>, status: slider::Status) -> slider::Style {
         let cosmic: &cosmic_theme::Theme = self.cosmic();
+        let hc = self.theme_type.is_high_contrast();
+        let is_dark = self.theme_type.is_dark();
+
         let mut appearance = match class {
             Slider::Standard =>
             //TODO: no way to set rail thickness
             {
+                let (active_track, inactive_track) = if hc {
+                    (
+                        cosmic.accent_text_color(),
+                        if is_dark {
+                            cosmic.palette.neutral_6
+                        } else {
+                            cosmic.palette.neutral_4
+                        },
+                    )
+                } else {
+                    (cosmic.accent.base, cosmic.palette.neutral_6)
+                };
                 slider::Style {
                     rail: Rail {
                         backgrounds: (
-                            Background::Color(cosmic.accent.base.into()),
-                            Background::Color(cosmic.palette.neutral_6.into()),
+                            Background::Color(active_track.into()),
+                            Background::Color(inactive_track.into()),
                         ),
                         border: Border {
                             radius: cosmic.corner_radii.radius_xs.into(),
-                            ..Border::default()
+                            color: if hc && !is_dark {
+                                self.current_container().component.border.into()
+                            } else {
+                                Color::TRANSPARENT
+                            },
+                            width: if hc && !is_dark { 1. } else { 0. },
                         },
                         width: 4.0,
                     },
@@ -745,9 +773,6 @@ impl menu::Catalog for Theme {
     }
 }
 
-/*
- * TODO: Pick List
- */
 impl pick_list::Catalog for Theme {
     type Class<'a> = ();
 
@@ -761,18 +786,24 @@ impl pick_list::Catalog for Theme {
         status: pick_list::Status,
     ) -> pick_list::Style {
         let cosmic = &self.cosmic();
-
+        let hc = cosmic.is_high_contrast;
         let appearance = pick_list::Style {
             text_color: cosmic.on_bg_color().into(),
             background: Color::TRANSPARENT.into(),
             placeholder_color: cosmic.on_bg_color().into(),
             border: Border {
                 radius: cosmic.corner_radii.radius_m.into(),
-                ..Default::default()
+                width: if hc { 1. } else { 0. },
+                color: if hc {
+                    self.current_container().component.border.into()
+                } else {
+                    Color::TRANSPARENT
+                },
             },
             // icon_size: 0.7, // TODO: how to replace
             handle_color: cosmic.on_bg_color().into(),
         };
+
         match status {
             pick_list::Status::Active => appearance,
             pick_list::Status::Hovered => pick_list::Style {
@@ -957,33 +988,46 @@ impl progress_bar::Catalog for Theme {
     fn style(&self, class: &Self::Class<'_>) -> progress_bar::Style {
         let theme = self.cosmic();
 
+        let (active_track, inactive_track) = if theme.is_high_contrast {
+            (
+                theme.accent_text_color(),
+                if theme.is_dark {
+                    theme.palette.neutral_6
+                } else {
+                    theme.palette.neutral_4
+                },
+            )
+        } else {
+            (theme.accent.base, theme.background.divider)
+        };
+        let border = Border {
+            radius: theme.corner_radii.radius_xs.into(),
+            color: if theme.is_high_contrast && !theme.is_dark {
+                self.current_container().component.border.into()
+            } else {
+                Color::TRANSPARENT
+            },
+            width: if theme.is_high_contrast && !theme.is_dark {
+                1.
+            } else {
+                0.
+            },
+        };
         match class {
             ProgressBar::Primary => progress_bar::Style {
-                background: Color::from(theme.background.divider).into(),
-                bar: Color::from(theme.accent.base).into(),
-                border: Border {
-                    color: Color::default(),
-                    width: 0.0,
-                    radius: theme.corner_radii.radius_xs.into(),
-                },
+                background: Color::from(inactive_track).into(),
+                bar: Color::from(active_track).into(),
+                border,
             },
             ProgressBar::Success => progress_bar::Style {
-                background: Color::from(theme.background.divider).into(),
+                background: Color::from(inactive_track).into(),
                 bar: Color::from(theme.success.base).into(),
-                border: Border {
-                    color: Color::default(),
-                    width: 0.0,
-                    radius: theme.corner_radii.radius_xs.into(),
-                },
+                border,
             },
             ProgressBar::Danger => progress_bar::Style {
-                background: Color::from(theme.background.divider).into(),
+                background: Color::from(inactive_track).into(),
                 bar: Color::from(theme.destructive.base).into(),
-                border: Border {
-                    color: Color::default(),
-                    width: 0.0,
-                    radius: theme.corner_radii.radius_xs.into(),
-                },
+                border,
             },
             ProgressBar::Custom(f) => f(self),
         }
