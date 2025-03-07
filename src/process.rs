@@ -23,14 +23,24 @@ async fn read_from_pipe(read: OwnedFd) -> Option<u32> {
 
 /// Performs a double fork with setsid to spawn and detach a command.
 pub async fn spawn(mut command: Command) -> Option<u32> {
+    // NOTE: Windows platform is not supported
     command
         .stdin(Stdio::null())
         .stdout(Stdio::null())
         .stderr(Stdio::null());
 
+    // Handle Linux
+    #[cfg(target_os = "linux")]
     let Ok((read, write)) = rustix::pipe::pipe_with(rustix::pipe::PipeFlags::CLOEXEC) else {
         return None;
     };
+
+    // Handle macOS
+    #[cfg(target_os = "macos")]
+    let Ok((read, write)) = rustix::pipe::pipe() else {
+        return None;
+    };
+
 
     match unsafe { libc::fork() } {
         // Parent process
