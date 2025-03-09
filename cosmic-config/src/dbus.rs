@@ -62,7 +62,10 @@ pub fn watcher_subscription<T: CosmicConfigEntry + Send + Sync + Default + 'stat
     is_state: bool,
 ) -> iced_futures::Subscription<Update<T>> {
     let id = std::any::TypeId::of::<T>();
-    Subscription::run_with_id(id, watcher_stream(settings_daemon, config_id, is_state))
+    Subscription::run_with_id(
+        (id, config_id),
+        watcher_stream(settings_daemon, config_id, is_state),
+    )
 }
 
 fn watcher_stream<T: CosmicConfigEntry + Send + Sync + Default + 'static + Clone>(
