@@ -75,8 +75,8 @@ impl<'a, Message, Renderer> Popover<'a, Message, Renderer> {
     // TODO More options for positioning similar to GdkPopup, xdg_popup
 }
 
-impl<'a, Message: Clone, Renderer> Widget<Message, crate::Theme, Renderer>
-    for Popover<'a, Message, Renderer>
+impl<Message: Clone, Renderer> Widget<Message, crate::Theme, Renderer>
+    for Popover<'_, Message, Renderer>
 where
     Renderer: iced_core::Renderer,
 {
@@ -305,8 +305,8 @@ pub struct Overlay<'a, 'b, Message, Renderer> {
     pos: Point,
 }
 
-impl<'a, 'b, Message, Renderer> overlay::Overlay<Message, crate::Theme, Renderer>
-    for Overlay<'a, 'b, Message, Renderer>
+impl<Message, Renderer> overlay::Overlay<Message, crate::Theme, Renderer>
+    for Overlay<'_, '_, Message, Renderer>
 where
     Message: Clone,
     Renderer: iced_core::Renderer,
@@ -425,7 +425,7 @@ where
     ) -> Option<overlay::Element<'c, Message, crate::Theme, Renderer>> {
         self.content
             .as_widget_mut()
-            .overlay(&mut self.tree, layout, renderer, Default::default())
+            .overlay(self.tree, layout, renderer, Default::default())
     }
 }
 

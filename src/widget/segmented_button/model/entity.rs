@@ -15,7 +15,7 @@ pub struct EntityMut<'a, SelectionMode: Default> {
     pub(super) model: &'a mut Model<SelectionMode>,
 }
 
-impl<'a, SelectionMode: Default> EntityMut<'a, SelectionMode>
+impl<SelectionMode: Default> EntityMut<'_, SelectionMode>
 where
     Model<SelectionMode>: Selectable,
 {

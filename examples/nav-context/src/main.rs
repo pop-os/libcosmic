@@ -70,10 +70,10 @@ pub enum NavMenuAction {
 }
 
 impl menu::Action for NavMenuAction {
-    type Message = cosmic::app::Message<Message>;
+    type Message = cosmic::Action<Message>;
 
     fn message(&self) -> Self::Message {
-        cosmic::app::Message::App(Message::NavMenuAction(*self))
+        cosmic::Action::App(Message::NavMenuAction(*self))
     }
 }
 
@@ -131,7 +131,7 @@ impl cosmic::Application for App {
     fn nav_context_menu(
         &self,
         id: nav_bar::Id,
-    ) -> Option<Vec<menu::Tree<cosmic::app::Message<Self::Message>>>> {
+    ) -> Option<Vec<menu::Tree<cosmic::Action<Self::Message>>>> {
         Some(menu::items(
             &HashMap::new(),
             vec![

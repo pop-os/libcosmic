@@ -9,9 +9,9 @@ use std::rc::Rc;
 use iced_widget::core::{renderer, Element};
 
 use crate::iced_core::{Alignment, Length};
-use crate::widget::icon;
 use crate::widget::menu::action::MenuAction;
 use crate::widget::menu::key_bind::KeyBind;
+use crate::widget::{icon, Button};
 use crate::{theme, widget};
 
 /// Nested menu is essentially a tree of items, a menu is a collection of items
@@ -192,14 +192,13 @@ pub enum MenuItem<A: MenuAction, L: Into<Cow<'static, str>>> {
 /// - A button for the root menu item.
 pub fn menu_root<'a, Message, Renderer: renderer::Renderer>(
     label: impl Into<Cow<'a, str>> + 'a,
-) -> iced::Element<'a, Message, crate::Theme, Renderer>
+) -> Button<'a, Message>
 where
     Element<'a, Message, crate::Theme, Renderer>: From<widget::Button<'a, Message>>,
 {
     widget::button::custom(widget::text(label))
         .padding([4, 12])
         .class(theme::Button::MenuRoot)
-        .into()
 }
 
 /// Create a list of menu items from a vector of `MenuItem`.

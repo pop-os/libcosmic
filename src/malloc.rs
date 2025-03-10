@@ -1,3 +1,6 @@
+// Copyright 2025 System76 <info@system76.com>
+// SPDX-License-Identifier: MPL-2.0
+
 use std::os::raw::c_int;
 
 const M_MMAP_THRESHOLD: c_int = -3;

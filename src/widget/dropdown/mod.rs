@@ -5,6 +5,7 @@
 //! Displays a list of options in a popover menu on select.
 
 pub mod menu;
+use iced_core::window;
 pub use menu::Menu;
 
 pub mod multi;
@@ -12,11 +13,39 @@ pub mod multi;
 mod widget;
 pub use widget::*;
 
+use crate::surface;
+
 /// Displays a list of options in a popover menu on select.
-pub fn dropdown<'a, S: AsRef<str>, Message: 'a>(
+pub fn dropdown<
+    S: AsRef<str> + std::clone::Clone + Send + Sync + 'static,
+    Message: 'static + Clone,
+>(
+    selections: &[S],
+    selected: Option<usize>,
+    on_selected: impl Fn(usize) -> Message + Send + Sync + 'static,
+) -> Dropdown<'_, S, Message, Message> {
+    Dropdown::new(selections, selected, move |_, i| on_selected(i))
+}
+
+#[cfg(all(feature = "winit", feature = "wayland"))]
+/// Displays a list of options in a popover menu on select.
+/// AppMessage must be the App's toplevel message.
+pub fn popup_dropdown<
+    'a,
+    S: AsRef<str> + std::clone::Clone + Send + Sync + 'static,
+    Message: 'static + Clone,
+    AppMessage: 'static + Clone,
+>(
     selections: &'a [S],
     selected: Option<usize>,
-    on_selected: impl Fn(usize) -> Message + 'a,
-) -> Dropdown<'a, S, Message> {
-    Dropdown::new(selections, selected, on_selected)
+    on_selected: impl Fn(window::Id, usize) -> Message + Send + Sync + 'static,
+    parent_id: window::Id,
+    on_surface_action: impl Fn(surface::Action) -> Message + 'a,
+    map_action: impl Fn(Message) -> AppMessage + 'static + Send + Sync,
+) -> Dropdown<'a, S, Message, AppMessage> {
+    Dropdown::new(selections, selected, on_selected).with_popup(
+        parent_id,
+        on_surface_action,
+        map_action,
+    )
 }

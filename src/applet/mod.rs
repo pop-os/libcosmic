@@ -2,7 +2,7 @@
 pub mod token;
 
 use crate::{
-    app::{self, iced_settings, Core},
+    app::iced_settings,
     cctk::sctk,
     iced::{
         self,
@@ -14,20 +14,17 @@ use crate::{
     theme::{self, system_dark, system_light, Button, THEME},
     widget::{
         self,
-        autosize::{autosize, Autosize},
+        autosize::{self, autosize, Autosize},
         layer_container,
     },
     Application, Element, Renderer,
 };
-use cctk::sctk::shell::xdg::window::WindowConfigure;
 pub use cosmic_panel_config;
 use cosmic_panel_config::{CosmicPanelBackground, PanelAnchor, PanelSize};
-use cosmic_theme::Theme;
-use iced::Pixels;
-use iced_core::{Padding, Shadow};
+use iced_core::{Layout, Padding, Shadow};
 use iced_widget::runtime::platform_specific::wayland::popup::{SctkPopupSettings, SctkPositioner};
 use sctk::reexports::protocols::xdg::shell::client::xdg_positioner::{Anchor, Gravity};
-use std::{borrow::Cow, num::NonZeroU32, rc::Rc, sync::LazyLock};
+use std::{borrow::Cow, num::NonZeroU32, rc::Rc, sync::LazyLock, time::Duration};
 use tracing::info;
 
 use crate::app::cosmic;
@@ -35,6 +32,8 @@ static AUTOSIZE_ID: LazyLock<iced::id::Id> =
     LazyLock::new(|| iced::id::Id::new("cosmic-applet-autosize"));
 static AUTOSIZE_MAIN_ID: LazyLock<iced::id::Id> =
     LazyLock::new(|| iced::id::Id::new("cosmic-applet-autosize-main"));
+static TOOLTIP_ID: LazyLock<crate::widget::Id> = LazyLock::new(|| iced::id::Id::new("subsurface"));
+static TOOLTIP_WINDOW_ID: LazyLock<window::Id> = LazyLock::new(window::Id::unique);
 
 #[derive(Debug, Clone)]
 pub struct Context {
@@ -161,11 +160,7 @@ impl Context {
         let height = f32::from(height) + applet_padding as f32 * 2.;
         let mut settings = crate::app::Settings::default()
             .size(iced_core::Size::new(width, height))
-            .size_limits(
-                Limits::NONE
-                    .min_height(height as f32)
-                    .min_width(width as f32),
-            )
+            .size_limits(Limits::NONE.min_height(height).min_width(width))
             .resizable(None)
             .default_text_size(14.0)
             .default_font(crate::font::default())
@@ -224,6 +219,70 @@ impl Context {
         )
     }
 
+    pub fn applet_tooltip<'a, Message: 'static>(
+        &self,
+        content: impl Into<Element<'a, Message>>,
+        tooltip: impl Into<Cow<'static, str>>,
+        has_popup: bool,
+        on_surface_action: impl Fn(crate::surface::Action) -> Message + 'static,
+    ) -> crate::widget::wayland::tooltip::widget::Tooltip<'a, Message, Message> {
+        let window_id = *TOOLTIP_WINDOW_ID;
+        let subsurface_id = TOOLTIP_ID.clone();
+        let anchor = self.anchor;
+        let tooltip = tooltip.into();
+
+        crate::widget::wayland::tooltip::widget::Tooltip::<'a, Message, Message>::new(
+            content,
+            (!has_popup).then_some(move |bounds: Rectangle| {
+                let window_id = window_id;
+                let (popup_anchor, gravity) = match anchor {
+                    PanelAnchor::Left => (Anchor::Right, Gravity::Right),
+                    PanelAnchor::Right => (Anchor::Left, Gravity::Left),
+                    PanelAnchor::Top => (Anchor::Bottom, Gravity::Bottom),
+                    PanelAnchor::Bottom => (Anchor::Top, Gravity::Top),
+                };
+
+                SctkPopupSettings {
+                    parent: window::Id::RESERVED,
+                    id: window_id,
+                    grab: false,
+                    input_zone: Some(Rectangle::new(
+                        iced::Point::new(-1000., -1000.),
+                        iced::Size::default(),
+                    )),
+                    positioner: SctkPositioner {
+                        size: None,
+                        size_limits: Limits::NONE.min_width(1.).min_height(1.),
+                        anchor_rect: Rectangle {
+                            x: bounds.x.round() as i32,
+                            y: bounds.y.round() as i32,
+                            width: bounds.width.round() as i32,
+                            height: bounds.height.round() as i32,
+                        },
+                        anchor: popup_anchor,
+                        gravity,
+                        constraint_adjustment: 15,
+                        offset: (0, 0),
+                        reactive: true,
+                    },
+                    parent_size: None,
+                    close_with_children: true,
+                }
+            }),
+            move || {
+                Element::from(autosize::autosize(
+                    layer_container(crate::widget::text(tooltip.clone()))
+                        .layer(crate::cosmic_theme::Layer::Background)
+                        .padding(4.),
+                    subsurface_id.clone(),
+                ))
+            },
+            on_surface_action(crate::surface::Action::DestroyPopup(window_id)),
+            on_surface_action,
+        )
+        .delay(Duration::from_millis(100))
+    }
+
     // TODO popup container which tracks the size of itself and requests the popup to resize to match
     pub fn popup_container<'a, Message: 'static>(
         &self,
@@ -240,7 +299,7 @@ impl Context {
             Container::<Message, _, Renderer>::new(
                 Container::<Message, _, Renderer>::new(content).style(|theme| {
                     let cosmic = theme.cosmic();
-                    let corners = cosmic.corner_radii.clone();
+                    let corners = cosmic.corner_radii;
                     iced_widget::container::Style {
                         text_color: Some(cosmic.background.on.into()),
                         background: Some(Color::from(cosmic.background.base).into()),
@@ -262,10 +321,10 @@ impl Context {
         )
         .limits(
             Limits::NONE
-                .min_width(1.)
                 .min_height(1.)
-                .max_width(500.)
-                .max_height(1000.),
+                .min_width(360.0)
+                .max_width(360.0)
+                .max_height(1000.0),
         )
     }
 
@@ -304,10 +363,16 @@ impl Context {
                 },
                 reactive: true,
                 constraint_adjustment: 15, // slide_y, slide_x, flip_x, flip_y
-                ..Default::default()
+                size_limits: Limits::NONE
+                    .min_height(1.0)
+                    .min_width(360.0)
+                    .max_width(360.0)
+                    .max_height(1080.0),
             },
             parent_size: None,
             grab: true,
+            close_with_children: false,
+            input_zone: None,
         }
     }
 
@@ -315,7 +380,7 @@ impl Context {
         &self,
         content: impl Into<Element<'a, Message>>,
     ) -> Autosize<'a, Message, crate::Theme, crate::Renderer> {
-        let force_configured = matches!(&self.panel_type, &PanelType::Other(ref n) if n.is_empty());
+        let force_configured = matches!(&self.panel_type, PanelType::Other(n) if n.is_empty());
         let w = autosize(content, AUTOSIZE_MAIN_ID.clone());
         let mut limits = Limits::NONE;
         let suggested_window_size = self.suggested_window_size();
@@ -326,7 +391,7 @@ impl Context {
             .filter(|c| c.width as i32 > 0)
             .map(|c| c.width)
         {
-            limits = limits.width(width as f32);
+            limits = limits.width(width);
         }
         if let Some(height) = self
             .suggested_bounds
@@ -334,7 +399,7 @@ impl Context {
             .filter(|c| c.height as i32 > 0)
             .map(|c| c.height)
         {
-            limits = limits.height(height as f32);
+            limits = limits.height(height);
         }
 
         w.limits(limits)

@@ -17,7 +17,7 @@ const MONO_FAMILY_DEFAULT: &str = "Noto Sans Mono";
 const SANS_FAMILY_DEFAULT: &str = "Open Sans";
 
 /// Stores static strings of the family names for `iced::Font` compatibility.
-pub static FAMILY_MAP: LazyLock<Mutex<BTreeSet<&'static str>>> = LazyLock::new(|| Mutex::default());
+pub static FAMILY_MAP: LazyLock<Mutex<BTreeSet<&'static str>>> = LazyLock::new(Mutex::default);
 
 pub static COSMIC_TK: LazyLock<RwLock<CosmicTk>> = LazyLock::new(|| {
     RwLock::new(
@@ -153,7 +153,7 @@ impl From<FontConfig> for iced::Font {
 
         let name: &'static str = family_map
             .get(font.family.as_str())
-            .map(|&x| x)
+            .copied()
             .unwrap_or_else(|| {
                 let value = font.family.clone().leak();
                 family_map.insert(value);

@@ -1,7 +1,7 @@
 // Copyright 2023 System76 <info@system76.com>
 // SPDX-License-Identifier: MPL-2.0
 
-use super::{Builder, ButtonClass, Style};
+use super::{Builder, ButtonClass};
 use crate::widget::{icon, row, tooltip};
 use crate::{ext::CollectionWidget, Element};
 use apply::Apply;
@@ -42,6 +42,12 @@ pub struct Text {
     pub(super) trailing_icon: Option<icon::Handle>,
 }
 
+impl Default for Text {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Text {
     pub const fn new() -> Self {
         Self {
@@ -51,7 +57,7 @@ impl Text {
     }
 }
 
-impl<'a, Message> Button<'a, Message> {
+impl<Message> Button<'_, Message> {
     pub fn new(text: Text) -> Self {
         let guard = crate::theme::THEME.lock().unwrap();
         let theme = guard.cosmic();

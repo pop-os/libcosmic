@@ -29,7 +29,7 @@ pub fn icon<'a, Message>(handle: impl Into<Handle>) -> Button<'a, Message> {
     })
 }
 
-impl<'a, Message> Button<'a, Message> {
+impl<Message> Button<'_, Message> {
     pub fn new(icon: Icon) -> Self {
         let guard = crate::theme::THEME.lock().unwrap();
         let theme = guard.cosmic();

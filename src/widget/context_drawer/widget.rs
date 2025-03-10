@@ -155,7 +155,7 @@ impl<'a, Message: Clone + 'static> ContextDrawer<'a, Message> {
     }
 }
 
-impl<'a, Message: Clone> Widget<Message, crate::Theme, Renderer> for ContextDrawer<'a, Message> {
+impl<Message: Clone> Widget<Message, crate::Theme, Renderer> for ContextDrawer<'_, Message> {
     fn children(&self) -> Vec<Tree> {
         vec![Tree::new(&self.content), Tree::new(&self.drawer)]
     }

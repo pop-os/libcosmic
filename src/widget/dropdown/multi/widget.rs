@@ -159,7 +159,7 @@ impl<'a, S: AsRef<str>, Message: 'a, Item: Clone + PartialEq + 'static>
         cursor: mouse::Cursor,
         viewport: &Rectangle,
     ) {
-        let font = self.font.unwrap_or_else(|| crate::font::default());
+        let font = self.font.unwrap_or_else(crate::font::default);
 
         draw(
             renderer,
@@ -278,7 +278,7 @@ pub fn layout(
                     bounds: Size::new(f32::MAX, f32::MAX),
                     size: iced::Pixels(text_size),
                     line_height: text_line_height,
-                    font: font.unwrap_or_else(|| crate::font::default()),
+                    font: font.unwrap_or_else(crate::font::default),
                     horizontal_alignment: alignment::Horizontal::Left,
                     vertical_alignment: alignment::Vertical::Top,
                     shaping: text::Shaping::Advanced,
@@ -422,7 +422,7 @@ pub fn overlay<'a, S: AsRef<str>, Message: 'a, Item: Clone + PartialEq + 'static
                         bounds: Size::new(f32::MAX, f32::MAX),
                         size: iced::Pixels(text_size),
                         line_height,
-                        font: font.unwrap_or_else(|| crate::font::default()),
+                        font: font.unwrap_or_else(crate::font::default),
                         horizontal_alignment: alignment::Horizontal::Left,
                         vertical_alignment: alignment::Vertical::Top,
                         shaping: text::Shaping::Advanced,

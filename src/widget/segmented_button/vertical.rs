@@ -30,8 +30,8 @@ where
     SegmentedButton::new(model)
 }
 
-impl<'a, SelectionMode, Message> SegmentedVariant
-    for SegmentedButton<'a, Vertical, SelectionMode, Message>
+impl<SelectionMode, Message> SegmentedVariant
+    for SegmentedButton<'_, Vertical, SelectionMode, Message>
 where
     Model<SelectionMode>: Selectable,
     SelectionMode: Default,

@@ -144,7 +144,7 @@ impl From<Named> for Icon {
     }
 }
 
-impl<'a, Message: 'static> From<Named> for crate::Element<'a, Message> {
+impl<Message: 'static> From<Named> for crate::Element<'_, Message> {
     fn from(builder: Named) -> Self {
         builder.icon().into()
     }
