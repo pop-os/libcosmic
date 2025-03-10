@@ -315,6 +315,10 @@ pub use spin_button::{spin_button, vertical as vertical_spin_button, SpinButton}
 
 pub mod tab_bar;
 
+pub mod table;
+#[doc(inline)]
+pub use table::{compact_table, table};
+
 pub mod text;
 #[doc(inline)]
 pub use text::{text, Text};
@@ -337,7 +341,6 @@ pub use toggler::toggler;
 pub use tooltip::{tooltip, Tooltip};
 pub mod tooltip {
     use crate::Element;
-    use std::borrow::Cow;
 
     pub use iced::widget::tooltip::Position;
 
