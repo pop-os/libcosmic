@@ -99,16 +99,43 @@ where
     #[cfg(all(feature = "winit", feature = "wayland"))]
     /// Handle dropdown requests for popup creation.
     /// Intended to be used with [`crate::app::message::get_popup`]
-    pub fn with_popup(
+    pub fn with_popup<NewAppMessage>(
         mut self,
         parent_id: window::Id,
         on_surface_action: impl Fn(surface::Action) -> Message + Send + Sync + 'static,
-        action_map: impl Fn(Message) -> AppMessage + Send + Sync + 'static,
-    ) -> Self {
-        self.window_id = Some(parent_id);
-        self.on_surface_action = Some(Arc::new(on_surface_action));
-        self.action_map = Some(Arc::new(action_map));
-        self
+        action_map: impl Fn(Message) -> NewAppMessage + Send + Sync + 'static,
+    ) -> Dropdown<'a, S, Message, NewAppMessage> {
+        let Self {
+            on_selected,
+            selections,
+            icons,
+            selected,
+            width,
+            gap,
+            padding,
+            text_size,
+            text_line_height,
+            font,
+            positioner,
+            ..
+        } = self;
+
+        Dropdown::<'a, S, Message, NewAppMessage> {
+            on_selected,
+            selections,
+            icons,
+            selected,
+            width,
+            gap,
+            padding,
+            text_size,
+            text_line_height,
+            font,
+            on_surface_action: Some(Arc::new(on_surface_action)),
+            action_map: Some(Arc::new(action_map)),
+            window_id: Some(parent_id),
+            positioner,
+        }
     }
 
     #[cfg(all(feature = "winit", feature = "wayland"))]
@@ -525,7 +552,8 @@ pub fn update<
                             positioner: SctkPositioner {
                                 size: Some((selections_width as u32 + gap as u32 + pad_width as u32 + icon_width as u32, 10)),
                                 anchor_rect,
-                                anchor: cctk::wayland_protocols::xdg::shell::client::xdg_positioner::Anchor::Top,
+                                // TODO: left or right alignment based on direction?
+                                anchor: cctk::wayland_protocols::xdg::shell::client::xdg_positioner::Anchor::Bottom,
                                 gravity: cctk::wayland_protocols::xdg::shell::client::xdg_positioner::Gravity::Bottom,
                                 reactive: true,
                                 ..Default::default()
