@@ -87,11 +87,19 @@ winit_wgpu = ["winit", "wgpu"]
 xdg-portal = ["ashpd"]
 qr_code = ["iced/qr_code"]
 markdown = ["iced/markdown"]
+async-std = [
+    "dep:async-std",
+    "ashpd/async-std",
+    "rfd?/async-std",
+    "zbus?/async-io",
+    "iced/async-std",
+]
 
 [dependencies]
 apply = "0.3.0"
 ashpd = { version = "0.9.1", default-features = false, optional = true }
 async-fs = { version = "2.1", optional = true }
+async-std = { version = "1.10", optional = true }
 cctk = { git = "https://github.com/pop-os/cosmic-protocols", package = "cosmic-client-toolkit", rev = "178eb0b", optional = true }
 chrono = "0.4.35"
 cosmic-config = { path = "cosmic-config" }

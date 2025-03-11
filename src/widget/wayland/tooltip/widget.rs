@@ -483,8 +483,14 @@ pub fn update<'a, Message: Clone + 'static, TopLevelMessage: Clone + 'static>(
                                 let view = view.clone();
                                 let is_hovered = is_hovered.clone();
                                 Task::future(async move {
-                                    _ = tokio::time::sleep(delay).await;
-
+                                    #[cfg(feature = "tokio")]
+                                    {
+                                        _ = tokio::time::sleep(delay).await;
+                                    }
+                                    #[cfg(feature = "async-std")]
+                                    {
+                                        _ = async_std::task::sleep(delay).await;
+                                    }
                                     let is_hovered = is_hovered.clone();
                                     let g = is_hovered.lock().unwrap();
                                     if !*g {
