@@ -42,7 +42,8 @@ pub fn popup_dropdown<
     _on_surface_action: impl Fn(surface::Action) -> Message + Send + Sync + 'static,
     _map_action: impl Fn(Message) -> AppMessage + Send + Sync + 'static,
 ) -> Dropdown<'a, S, Message, AppMessage> {
-    let dropdown = Dropdown::new(selections, selected, on_selected);
+    let dropdown: Dropdown<'_, S, Message, AppMessage> =
+        Dropdown::new(selections, selected, on_selected);
 
     #[cfg(all(feature = "winit", feature = "wayland"))]
     let dropdown = dropdown.with_popup(_parent_id, _on_surface_action, _map_action);
