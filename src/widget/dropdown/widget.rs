@@ -4,7 +4,7 @@
 
 use super::menu::{self, Menu};
 use crate::widget::icon::{self, Handle};
-use crate::Element;
+use crate::{surface, Element};
 use derive_setters::Setters;
 use iced::window;
 use iced_core::event::{self, Event};
@@ -18,6 +18,7 @@ use iced_widget::pick_list::{self, Catalog};
 use std::borrow::Cow;
 use std::ffi::OsStr;
 use std::hash::{DefaultHasher, Hash, Hasher};
+use std::marker::PhantomData;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, LazyLock, Mutex};
 
@@ -26,7 +27,7 @@ static AUTOSIZE_ID: LazyLock<crate::widget::Id> =
     LazyLock::new(|| crate::widget::Id::new("cosmic-applet-autosize"));
 /// A widget for selecting a single value from a list of selections.
 #[derive(Setters)]
-pub struct Dropdown<'a, S: AsRef<str> + Send + Sync + Clone + 'static, Message>
+pub struct Dropdown<'a, S: AsRef<str> + Send + Sync + Clone + 'static, Message, AppMessage>
 where
     [S]: std::borrow::ToOwned,
 {
@@ -48,26 +49,18 @@ where
     text_line_height: text::LineHeight,
     #[setters(strip_option)]
     font: Option<crate::font::Font>,
-    #[cfg(feature = "wayland")]
     #[setters(skip)]
-    on_open: Option<
-        Arc<
-            dyn Fn(
-                    iced_runtime::platform_specific::wayland::popup::SctkPopupSettings,
-                    DropdownView<Message>,
-                ) -> Message
-                + 'a,
-        >,
-    >,
+    on_surface_action: Option<Arc<dyn Fn(surface::Action) -> Message + Send + Sync + 'static>>,
     #[setters(skip)]
-    on_close_popup: Option<Box<dyn Fn(window::Id) -> Message + 'a>>,
+    action_map: Option<Arc<dyn Fn(Message) -> AppMessage + 'static + Send + Sync>>,
     #[setters(strip_option)]
     window_id: Option<window::Id>,
-    #[cfg(feature = "wayland")]
+    #[cfg(all(feature = "winit", feature = "wayland"))]
     positioner: iced_runtime::platform_specific::wayland::popup::SctkPositioner,
 }
 
-impl<'a, S: AsRef<str> + Send + Sync + Clone + 'static, Message: 'static> Dropdown<'a, S, Message>
+impl<'a, S: AsRef<str> + Send + Sync + Clone + 'static, Message: 'static, AppMessage: 'static>
+    Dropdown<'a, S, Message, AppMessage>
 where
     [S]: std::borrow::ToOwned,
 {
@@ -95,33 +88,30 @@ where
             text_size: None,
             text_line_height: text::LineHeight::Relative(1.2),
             font: None,
-            #[cfg(feature = "wayland")]
-            on_open: None,
             window_id: None,
-            #[cfg(feature = "wayland")]
+            #[cfg(all(feature = "winit", feature = "wayland"))]
             positioner: iced_runtime::platform_specific::wayland::popup::SctkPositioner::default(),
-            on_close_popup: None,
+            on_surface_action: None,
+            action_map: None,
         }
     }
 
-    #[cfg(feature = "wayland")]
+    #[cfg(all(feature = "winit", feature = "wayland"))]
     /// Handle dropdown requests for popup creation.
     /// Intended to be used with [`crate::app::message::get_popup`]
     pub fn with_popup(
         mut self,
         parent_id: window::Id,
-        on_open: impl Fn(
-                iced_runtime::platform_specific::wayland::popup::SctkPopupSettings,
-                DropdownView<Message>,
-            ) -> Message
-            + 'a,
+        on_surface_action: impl Fn(surface::Action) -> Message + Send + Sync + 'static,
+        action_map: impl Fn(Message) -> AppMessage + Send + Sync + 'static,
     ) -> Self {
         self.window_id = Some(parent_id);
-        self.on_open = Some(Arc::new(on_open));
+        self.on_surface_action = Some(Arc::new(on_surface_action));
+        self.action_map = Some(Arc::new(action_map));
         self
     }
 
-    #[cfg(feature = "wayland")]
+    #[cfg(all(feature = "winit", feature = "wayland"))]
     pub fn with_positioner(
         mut self,
         positioner: iced_runtime::platform_specific::wayland::popup::SctkPositioner,
@@ -129,18 +119,13 @@ where
         self.positioner = positioner;
         self
     }
-
-    #[cfg(feature = "wayland")]
-    /// Handle dropdown requests for popup removal.
-    /// Intended to be used with [`crate::app::message::destroy_popup`]
-    pub fn on_close_popup(mut self, on_close: impl Fn(window::Id) -> Message + 'a) -> Self {
-        self.on_close_popup = Some(Box::new(on_close));
-        self
-    }
 }
 
-impl<S: AsRef<str> + Send + Sync + Clone + 'static, Message: 'static + std::clone::Clone>
-    Widget<Message, crate::Theme, crate::Renderer> for Dropdown<'_, S, Message>
+impl<
+        S: AsRef<str> + Send + Sync + Clone + 'static,
+        Message: 'static + Clone,
+        AppMessage: 'static + Clone,
+    > Widget<Message, crate::Theme, crate::Renderer> for Dropdown<'_, S, Message, AppMessage>
 where
     [S]: std::borrow::ToOwned,
 {
@@ -225,21 +210,20 @@ where
         shell: &mut Shell<'_, Message>,
         _viewport: &Rectangle,
     ) -> event::Status {
-        update(
+        update::<S, Message, AppMessage>(
             &event,
             layout,
             cursor,
             shell,
-            #[cfg(feature = "wayland")]
-            self.on_open.clone(),
-            #[cfg(feature = "wayland")]
+            #[cfg(all(feature = "winit", feature = "wayland"))]
             self.positioner.clone(),
             self.on_selected.clone(),
             self.selected,
             self.selections,
             || tree.state.downcast_mut::<State>(),
             self.window_id,
-            self.on_close_popup.as_deref(),
+            self.on_surface_action.clone(),
+            self.action_map.clone(),
             self.icons,
             self.gap,
             self.padding,
@@ -295,8 +279,8 @@ where
         renderer: &crate::Renderer,
         translation: Vector,
     ) -> Option<overlay::Element<'b, Message, crate::Theme, crate::Renderer>> {
-        #[cfg(feature = "wayland")]
-        if self.on_open.is_some() || self.window_id.is_some() || self.on_close_popup.is_some() {
+        #[cfg(all(feature = "winit", feature = "wayland"))]
+        if self.window_id.is_some() || self.on_surface_action.is_some() {
             return None;
         }
 
@@ -316,6 +300,7 @@ where
             self.selected,
             self.on_selected.as_ref(),
             translation,
+            None,
         )
     }
 
@@ -331,12 +316,16 @@ where
     // }
 }
 
-impl<'a, S: AsRef<str> + Send + Sync + Clone + 'static, Message: 'static + std::clone::Clone>
-    From<Dropdown<'a, S, Message>> for crate::Element<'a, Message>
+impl<
+        'a,
+        S: AsRef<str> + Send + Sync + Clone + 'static,
+        Message: 'static + std::clone::Clone,
+        AppMessage: 'static + std::clone::Clone,
+    > From<Dropdown<'a, S, Message, AppMessage>> for crate::Element<'a, Message>
 where
     [S]: std::borrow::ToOwned,
 {
-    fn from(pick_list: Dropdown<'a, S, Message>) -> Self {
+    fn from(pick_list: Dropdown<'a, S, Message, AppMessage>) -> Self {
         Self::new(pick_list)
     }
 }
@@ -441,33 +430,26 @@ pub fn layout(
 
 /// Processes an [`Event`] and updates the [`State`] of a [`Dropdown`]
 /// accordingly.
-#[allow(clippy::too_many_arguments)]
+#[allow(clippy::too_many_arguments, clippy::too_many_lines)]
 pub fn update<
     'a,
-    S: AsRef<str> + Send + Sync + std::clone::Clone + 'static,
+    S: AsRef<str> + Send + Sync + Clone + 'static,
     Message: Clone + 'static,
+    AppMessage: Clone + 'static,
 >(
     event: &Event,
     layout: Layout<'_>,
     cursor: mouse::Cursor,
     shell: &mut Shell<'_, Message>,
-    #[cfg(feature = "wayland")] on_open: Option<
-        Arc<
-            dyn Fn(
-                    iced_runtime::platform_specific::wayland::popup::SctkPopupSettings,
-                    DropdownView<Message>,
-                ) -> Message
-                + 'a,
-        >,
-    >,
-    #[cfg(feature = "wayland")]
+    #[cfg(all(feature = "winit", feature = "wayland"))]
     positioner: iced_runtime::platform_specific::wayland::popup::SctkPositioner,
     on_selected: Arc<dyn Fn(usize) -> Message + Send + Sync + 'static>,
     selected: Option<usize>,
     selections: &[S],
     state: impl FnOnce() -> &'a mut State,
-    window_id: Option<window::Id>,
-    on_close: Option<&'a dyn Fn(window::Id) -> Message>,
+    _window_id: Option<window::Id>,
+    on_surface_action: Option<Arc<dyn Fn(surface::Action) -> Message + Send + Sync + 'static>>,
+    action_map: Option<Arc<dyn Fn(Message) -> AppMessage + Send + Sync + 'static>>,
     icons: &[icon::Handle],
     gap: f32,
     padding: Padding,
@@ -484,8 +466,9 @@ pub fn update<
                 // Event wasn't processed by overlay, so cursor was clicked either outside it's
                 // bounds or on the drop-down, either way we close the overlay.
                 state.is_open.store(false, Ordering::Relaxed);
-                if let Some(on_close) = on_close {
-                    shell.publish(on_close(state.popup_id));
+                #[cfg(all(feature = "winit", feature = "wayland"))]
+                if let Some(on_close) = on_surface_action {
+                    shell.publish(on_close(surface::action::destroy_popup(state.popup_id)));
                 }
                 event::Status::Captured
             } else if cursor.is_over(layout.bounds()) {
@@ -494,8 +477,10 @@ pub fn update<
                 *hovered_guard = selected;
                 let id = window::Id::unique();
                 state.popup_id = id;
-                #[cfg(feature = "wayland")]
-                if let Some((on_open, parent)) = on_open.zip(window_id) {
+                #[cfg(all(feature = "winit", feature = "wayland"))]
+                if let Some(((on_surface_action, parent), action_map)) =
+                    on_surface_action.zip(_window_id).zip(action_map)
+                {
                     use iced_runtime::platform_specific::wayland::popup::{
                         SctkPopupSettings, SctkPositioner,
                     };
@@ -521,9 +506,19 @@ pub fn update<
                     let icons: Cow<'static, [Handle]> = Cow::Owned(icons.to_vec());
                     let selections: Cow<'static, [S]> = Cow::Owned(selections.to_vec());
                     let state = state.clone();
-
-                    shell.publish(on_open(
-                        SctkPopupSettings {
+                    let on_close = surface::action::destroy_popup(id);
+                    let on_surface_action_clone = on_surface_action.clone();
+                    let get_popup_action = surface::action::simple_popup::<
+                        AppMessage,
+                        Box<
+                            dyn Fn() -> Element<'static, crate::Action<AppMessage>>
+                                + Send
+                                + Sync
+                                + 'static,
+                        >,
+                    >(
+                        move || {
+                            SctkPopupSettings {
                             parent,
                             id,
                             input_zone: None,
@@ -538,15 +533,29 @@ pub fn update<
                             parent_size: None,
                             grab: true,
                             close_with_children: true,
+                        }
                         },
-                        Arc::new(move || {
-                            Element::from(
-                                menu_widget(
-                                    bounds, &state, gap, padding,text_size.unwrap_or(14.0), selections.clone(), icons.clone(), selected_option, on_selected.clone()
-                                )
-                            )
-                        }),
-                    ));
+                        Some(Box::new(move || {
+                            let action_map = action_map.clone();
+                            let on_selected = on_selected.clone();
+                            let e: Element<'static, crate::Action<AppMessage>> =
+                                Element::from(menu_widget(
+                                    bounds,
+                                    &state,
+                                    gap,
+                                    padding,
+                                    text_size.unwrap_or(14.0),
+                                    selections.clone(),
+                                    icons.clone(),
+                                    selected_option,
+                                    Arc::new(move |i| on_selected.clone()(i)),
+                                    Some(on_surface_action_clone(on_close.clone())),
+                                ))
+                                .map(move |m| crate::Action::App(action_map.clone()(m)));
+                            e
+                        })),
+                    );
+                    shell.publish(on_surface_action(get_popup_action));
                 }
                 event::Status::Captured
             } else {
@@ -595,7 +604,7 @@ pub fn mouse_interaction(layout: Layout<'_>, cursor: mouse::Cursor) -> mouse::In
     }
 }
 
-#[cfg(feature = "wayland")]
+#[cfg(all(feature = "winit", feature = "wayland"))]
 /// Returns the current menu widget of a [`Dropdown`].
 #[allow(clippy::too_many_arguments)]
 pub fn menu_widget<
@@ -611,6 +620,7 @@ pub fn menu_widget<
     icons: Cow<'static, [icon::Handle]>,
     selected_option: Option<usize>,
     on_selected: Arc<dyn Fn(usize) -> Message + Send + Sync + 'static>,
+    close_on_selected: Option<Message>,
 ) -> crate::Element<'static, Message>
 where
     [S]: std::borrow::ToOwned,
@@ -640,6 +650,7 @@ where
             (on_selected)(option)
         },
         None,
+        close_on_selected,
     )
     .width(width)
     .padding(padding)
@@ -672,6 +683,7 @@ pub fn overlay<'a, S: AsRef<str> + Send + Sync + Clone + 'static, Message: std::
     selected_option: Option<usize>,
     on_selected: &'a dyn Fn(usize) -> Message,
     translation: Vector,
+    close_on_selected: Option<Message>,
 ) -> Option<overlay::Element<'a, Message, crate::Theme, crate::Renderer>>
 where
     [S]: std::borrow::ToOwned,
@@ -691,6 +703,7 @@ where
                 (on_selected)(option)
             },
             None,
+            close_on_selected,
         )
         .width({
             let measure = |_label: &str, selection_paragraph: &crate::Paragraph| -> f32 {

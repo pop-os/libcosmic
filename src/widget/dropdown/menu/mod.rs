@@ -8,6 +8,7 @@ use std::sync::{Arc, Mutex};
 
 pub use appearance::{Appearance, StyleSheet};
 
+use crate::surface;
 use crate::widget::{icon, Container, RcWrapper};
 use iced_core::event::{self, Event};
 use iced_core::layout::{self, Layout};
@@ -32,6 +33,7 @@ where
     hovered_option: Arc<Mutex<Option<usize>>>,
     selected_option: Option<usize>,
     on_selected: Box<dyn FnMut(usize) -> Message + 'a>,
+    close_on_selected: Option<Message>,
     on_option_hovered: Option<&'a dyn Fn(usize) -> Message>,
     width: f32,
     padding: Padding,
@@ -54,6 +56,7 @@ where
         selected_option: Option<usize>,
         on_selected: impl FnMut(usize) -> Message + 'a,
         on_option_hovered: Option<&'a dyn Fn(usize) -> Message>,
+        close_on_selected: Option<Message>,
     ) -> Self {
         Menu {
             state,
@@ -68,6 +71,7 @@ where
             text_size: None,
             text_line_height: text::LineHeight::default(),
             style: Default::default(),
+            close_on_selected,
         }
     }
 
@@ -153,7 +157,7 @@ struct Overlay<'a, Message> {
     position: Point,
 }
 
-impl<'a, Message: 'a> Overlay<'a, Message> {
+impl<'a, Message: Clone + 'a> Overlay<'a, Message> {
     pub fn new<S: AsRef<str>>(
         menu: Menu<'a, S, Message>,
         target_height: f32,
@@ -175,6 +179,7 @@ impl<'a, Message: 'a> Overlay<'a, Message> {
             text_size,
             text_line_height,
             style,
+            close_on_selected,
         } = menu;
 
         let mut container = Container::new(Scrollable::new(
@@ -184,6 +189,7 @@ impl<'a, Message: 'a> Overlay<'a, Message> {
                 hovered_option,
                 selected_option,
                 on_selected,
+                close_on_selected,
                 on_option_hovered,
                 text_size,
                 text_line_height,
@@ -297,7 +303,7 @@ impl<'a, Message: 'a> Overlay<'a, Message> {
     }
 }
 
-impl<'a, Message: 'a> iced_core::Overlay<Message, crate::Theme, crate::Renderer>
+impl<'a, Message: Clone + 'a> iced_core::Overlay<Message, crate::Theme, crate::Renderer>
     for Overlay<'a, Message>
 {
     fn layout(&mut self, renderer: &crate::Renderer, bounds: Size) -> layout::Node {
@@ -338,7 +344,7 @@ impl<'a, Message: 'a> iced_core::Overlay<Message, crate::Theme, crate::Renderer>
     }
 }
 
-impl<'a, Message: 'a> crate::widget::Widget<Message, crate::Theme, crate::Renderer>
+impl<'a, Message: Clone + 'a> crate::widget::Widget<Message, crate::Theme, crate::Renderer>
     for Overlay<'a, Message>
 {
     fn size(&self) -> Size<Length> {
@@ -411,6 +417,7 @@ where
     hovered_option: Arc<Mutex<Option<usize>>>,
     selected_option: Option<usize>,
     on_selected: Box<dyn FnMut(usize) -> Message + 'a>,
+    close_on_selected: Option<Message>,
     on_option_hovered: Option<&'a dyn Fn(usize) -> Message>,
     padding: Padding,
     text_size: Option<f32>,
@@ -420,6 +427,7 @@ where
 impl<S: AsRef<str>, Message> Widget<Message, crate::Theme, crate::Renderer> for List<'_, S, Message>
 where
     [S]: std::borrow::ToOwned,
+    Message: Clone,
 {
     fn size(&self) -> Size<Length> {
         Size::new(Length::Fill, Length::Shrink)
@@ -469,6 +477,9 @@ where
                 if cursor.is_over(layout.bounds()) {
                     if let Some(index) = *hovered_guard {
                         shell.publish((self.on_selected)(index));
+                        if let Some(close_on_selected) = self.close_on_selected.clone() {
+                            shell.publish(close_on_selected);
+                        }
                         return event::Status::Captured;
                     }
                 }
@@ -510,6 +521,9 @@ where
 
                     if let Some(index) = *hovered_guard {
                         shell.publish((self.on_selected)(index));
+                        if let Some(close_on_selected) = self.close_on_selected.clone() {
+                            shell.publish(close_on_selected);
+                        }
                         return event::Status::Captured;
                     }
                 }
@@ -680,6 +694,7 @@ impl<'a, S: AsRef<str>, Message: 'a> From<List<'a, S, Message>>
     for Element<'a, Message, crate::Theme, crate::Renderer>
 where
     [S]: std::borrow::ToOwned,
+    Message: Clone,
 {
     fn from(list: List<'a, S, Message>) -> Self {
         Element::new(list)

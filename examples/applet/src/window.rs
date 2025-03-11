@@ -1,29 +1,19 @@
 use cosmic::app::{Core, Task};
-use cosmic::cctk::wayland_protocols::xdg::shell::client::xdg_positioner::Gravity;
-use cosmic::iced::event::listen_with;
+
 use cosmic::iced::window::Id;
-use cosmic::iced::{self, Length, Limits};
+use cosmic::iced::Length;
 use cosmic::iced_runtime::core::window;
-use cosmic::iced_runtime::platform_specific::wayland::popup::SctkPopupSettings;
-use cosmic::iced_runtime::platform_specific::wayland::subsurface;
 use cosmic::surface::action::{app_popup, destroy_popup};
-use cosmic::widget::dropdown::DropdownView;
-use cosmic::widget::{autosize, dropdown, layer_container, list_column, settings, toggler};
-use cosmic::{iced_core, Element};
-use once_cell::sync::Lazy;
+use cosmic::widget::{dropdown::popup_dropdown, list_column, settings, toggler};
+use cosmic::Element;
 
 const ID: &str = "com.system76.CosmicAppletExample";
-
-static SUBSURFACE_ID: Lazy<cosmic::widget::Id> =
-    Lazy::new(|| cosmic::widget::Id::new("subsurface"));
 
 pub struct Window {
     core: Core,
     popup: Option<Id>,
     example_row: bool,
     selected: Option<usize>,
-    subsurface_id: Id,
-    dropdown_id: Id,
 }
 
 impl Default for Window {
@@ -33,51 +23,17 @@ impl Default for Window {
             popup: None,
             example_row: false,
             selected: None,
-            subsurface_id: Id::unique(),
-            dropdown_id: Id::unique(),
         }
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum Message {
     PopupClosed(Id),
-    PopupCloseRequested(Id),
     ToggleExampleRow(bool),
     Selected(usize),
     Surface(cosmic::surface::Action),
-    OpenDropdown(SctkPopupSettings, DropdownView<Message>),
 }
-
-impl std::fmt::Debug for Message {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Self::PopupClosed(arg0) => f.debug_tuple("PopupClosed").field(arg0).finish(),
-            Self::PopupCloseRequested(arg0) => {
-                f.debug_tuple("PopupCloseRequested").field(arg0).finish()
-            }
-            Self::ToggleExampleRow(arg0) => f.debug_tuple("ToggleExampleRow").field(arg0).finish(),
-            Self::Selected(arg0) => f.debug_tuple("Selected").field(arg0).finish(),
-            Self::Surface(arg0) => f.debug_tuple("Surface").field(arg0).finish(),
-            Self::OpenDropdown(arg0, _) => f.debug_tuple("OpenDropdown").field(arg0).finish(),
-        }
-    }
-}
-
-// impl From<Message> for MessageWrapper<Message> {
-//     fn from(value: Message) -> Self {
-//         match value {
-//             Message::Surface(s) => MessageWrapper::Surface(s),
-//             m => MessageWrapper::Message(m),
-//         }
-//     }
-// }
-
-// impl From<SurfaceMessage> for Message {
-//     fn from(value: SurfaceMessage) -> Self {
-//         Message::Surface(value)
-//     }
-// }
 
 impl cosmic::Application for Window {
     type Executor = cosmic::SingleThreadExecutor;
@@ -123,25 +79,6 @@ impl cosmic::Application for Window {
             }
             Message::Selected(i) => {
                 self.selected = Some(i);
-                return cosmic::task::message(cosmic::Action::Cosmic(
-                    cosmic::app::Action::Surface(cosmic::surface::action::destroy_popup(
-                        self.dropdown_id,
-                    )),
-                ));
-            }
-            Message::OpenDropdown(sctk_popup_settings, view) => {
-                self.dropdown_id = sctk_popup_settings.id;
-                return cosmic::task::message(cosmic::Action::Cosmic(
-                    cosmic::app::Action::Surface(cosmic::surface::action::app_popup(
-                        move |_: &mut Window| sctk_popup_settings.clone(),
-                        Some(Box::new(move |_: &Window| view().map(cosmic::Action::App))),
-                    )),
-                ));
-            }
-            Message::PopupCloseRequested(id) => {
-                return cosmic::task::message(cosmic::Action::Cosmic(
-                    cosmic::app::Action::Surface(cosmic::surface::action::destroy_popup(id)),
-                ));
             }
         };
         Task::none()
@@ -178,15 +115,14 @@ impl cosmic::Application for Window {
                                 )
                                 .height(Length::Fixed(50.)),
                             ))
-                            .add(
-                                dropdown(
-                                    &["1", "asdf", "hello", "test"],
-                                    state.selected,
-                                    Message::Selected,
-                                )
-                                .with_popup(state.popup.unwrap_or(Id::NONE), Message::OpenDropdown)
-                                .on_close_popup(Message::PopupCloseRequested),
-                            );
+                            .add(popup_dropdown(
+                                &["1", "asdf", "hello", "test"],
+                                state.selected,
+                                Message::Selected,
+                                state.popup.unwrap_or(Id::NONE),
+                                Message::Surface,
+                                |m| m,
+                            ));
                         Element::from(state.core.applet.popup_container(content_list))
                             .map(cosmic::Action::App)
                     })),
