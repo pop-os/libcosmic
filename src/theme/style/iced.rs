@@ -461,6 +461,9 @@ impl iced_container::Catalog for Theme {
     fn style(&self, class: &Self::Class<'_>) -> iced_container::Style {
         let cosmic = self.cosmic();
 
+        // Ensures visually aligned radii for content and window corners
+        let window_corner_radius = cosmic.radius_s().map(|x| if x < 4.0 { x } else { x + 4.0 });
+
         match class {
             Container::Transparent => iced_container::Style::default(),
 
@@ -474,8 +477,8 @@ impl iced_container::Catalog for Theme {
                     radius: [
                         cosmic.corner_radii.radius_0[0],
                         cosmic.corner_radii.radius_0[1],
-                        cosmic.corner_radii.radius_s[2],
-                        cosmic.corner_radii.radius_s[3],
+                        window_corner_radius[2],
+                        window_corner_radius[3],
                     ]
                     .into(),
                     ..Default::default()
@@ -516,8 +519,8 @@ impl iced_container::Catalog for Theme {
                     background: Some(iced::Background::Color(cosmic.background.base.into())),
                     border: Border {
                         radius: [
-                            cosmic.corner_radii.radius_s[0],
-                            cosmic.corner_radii.radius_s[1],
+                            window_corner_radius[0],
+                            window_corner_radius[1],
                             cosmic.corner_radii.radius_0[2],
                             cosmic.corner_radii.radius_0[3],
                         ]
@@ -1001,7 +1004,7 @@ impl progress_bar::Catalog for Theme {
             (theme.accent.base, theme.background.divider)
         };
         let border = Border {
-            radius: theme.corner_radii.radius_xs.into(),
+            radius: theme.corner_radii.radius_xl.into(),
             color: if theme.is_high_contrast && !theme.is_dark {
                 self.current_container().component.border.into()
             } else {

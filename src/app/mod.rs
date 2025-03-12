@@ -838,6 +838,13 @@ impl<App: Application> ApplicationExt for App {
             content_col.into()
         };
 
+        // Ensures visually aligned radii for content and window corners
+        let window_corner_radius =
+            crate::theme::active()
+                .cosmic()
+                .radius_s()
+                .map(|x| if x < 4.0 { x } else { x + 4.0 });
+
         let view_column = crate::widget::column::with_capacity(2)
             .push_maybe(if core.window.show_headerbar {
                 Some({
@@ -891,21 +898,23 @@ impl<App: Application> ApplicationExt for App {
                         // Needed to avoid header bar corner gaps for apps without a content container
                         header
                             .apply(container)
-                            .class(crate::theme::Container::custom(|theme| container::Style {
-                                background: Some(iced::Background::Color(
-                                    theme.cosmic().background.base.into(),
-                                )),
-                                border: iced::Border {
-                                    radius: [
-                                        theme.cosmic().radius_s()[0] - 1.0,
-                                        theme.cosmic().radius_s()[1] - 1.0,
-                                        theme.cosmic().radius_0()[2],
-                                        theme.cosmic().radius_0()[3],
-                                    ]
-                                    .into(),
+                            .class(crate::theme::Container::custom(move |theme| {
+                                container::Style {
+                                    background: Some(iced::Background::Color(
+                                        theme.cosmic().background.base.into(),
+                                    )),
+                                    border: iced::Border {
+                                        radius: [
+                                            window_corner_radius[0] - 1.0,
+                                            window_corner_radius[1] - 1.0,
+                                            theme.cosmic().radius_0()[2],
+                                            theme.cosmic().radius_0()[3],
+                                        ]
+                                        .into(),
+                                        ..Default::default()
+                                    },
                                     ..Default::default()
-                                },
-                                ..Default::default()
+                                }
                             }))
                             .apply(|w| id_container(w, iced_core::id::Id::new("COSMIC_header")))
                     }
@@ -929,7 +938,7 @@ impl<App: Application> ApplicationExt for App {
                     border: iced::Border {
                         color: theme.cosmic().bg_divider().into(),
                         width: if sharp_corners { 0.0 } else { 1.0 },
-                        radius: theme.cosmic().radius_s().into(),
+                        radius: window_corner_radius.into(),
                     },
                     ..Default::default()
                 }
