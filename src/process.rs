@@ -41,7 +41,6 @@ pub async fn spawn(mut command: Command) -> Option<u32> {
         return None;
     };
 
-
     match unsafe { libc::fork() } {
         // Parent process
         1.. => {
