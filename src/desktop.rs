@@ -107,7 +107,7 @@ pub fn load_applications_for_app_ids<'a, 'b>(
             true
         // Fallback: If the name matches...
         } else if let Some(i) = app_ids.iter().position(|id| {
-            de.name(None)
+            de.name::<&str>(&[])
                 .map(|n| n.to_lowercase() == id.to_lowercase())
                 .unwrap_or_default()
         }) {
@@ -134,11 +134,12 @@ pub fn load_applications_filtered<'a, F: FnMut(&DesktopEntry) -> bool>(
     mut filter: F,
 ) -> Vec<DesktopEntryData> {
     let locale = locale.into();
-
+    let locale_arr: Option<Vec<_>> = locale.map(|l| vec![l]);
     freedesktop_desktop_entry::Iter::new(freedesktop_desktop_entry::default_paths())
         .filter_map(|path| {
-            std::fs::read_to_string(&path).ok().and_then(|input| {
-                DesktopEntry::decode(&path, &input).ok().and_then(|de| {
+            DesktopEntry::from_path(&path, locale_arr.as_deref())
+                .ok()
+                .and_then(|de| {
                     if !filter(&de) {
                         return None;
                     }
@@ -149,7 +150,6 @@ pub fn load_applications_filtered<'a, F: FnMut(&DesktopEntry) -> bool>(
                         de,
                     ))
                 })
-            })
         })
         .collect()
 }
@@ -160,11 +160,12 @@ pub fn load_desktop_file<'a>(
     path: impl AsRef<Path>,
 ) -> Option<DesktopEntryData> {
     let path = path.as_ref();
-    std::fs::read_to_string(path).ok().and_then(|input| {
-        DesktopEntry::decode(path, &input)
-            .ok()
-            .map(|de| DesktopEntryData::from_desktop_entry(locale, PathBuf::from(path), de))
-    })
+    let locale = locale.into();
+    let locale_arr: Option<Vec<_>> = locale.clone().map(|l| vec![l]);
+
+    DesktopEntry::from_path(&path, locale_arr.as_deref())
+        .ok()
+        .map(|de| DesktopEntryData::from_desktop_entry(locale, PathBuf::from(path), de))
 }
 
 #[cfg(not(windows))]
@@ -175,14 +176,14 @@ impl DesktopEntryData {
         de: DesktopEntry,
     ) -> DesktopEntryData {
         let locale = locale.into();
-
+        let locale_arr: Option<Vec<_>> = locale.map(|l| vec![l]);
         let name = de
-            .name(locale)
-            .unwrap_or(Cow::Borrowed(de.appid))
+            .name(locale_arr.as_deref().unwrap_or_default())
+            .unwrap_or(Cow::Borrowed(&de.appid))
             .to_string();
 
         // check if absolute path exists and otherwise treat it as a name
-        let icon = de.icon().unwrap_or(de.appid);
+        let icon = de.icon().unwrap_or(&de.appid);
         let icon_path = Path::new(icon);
         let icon = if icon_path.is_absolute() && icon_path.exists() {
             IconSource::Path(icon_path.into())
@@ -200,16 +201,20 @@ impl DesktopEntryData {
             categories: de
                 .categories()
                 .unwrap_or_default()
-                .split_terminator(';')
+                .into_iter()
                 .map(std::string::ToString::to_string)
                 .collect(),
             desktop_actions: de
                 .actions()
                 .map(|actions| {
                     actions
-                        .split(';')
+                        .into_iter()
                         .filter_map(|action| {
-                            let name = de.action_entry_localized(action, "Name", locale);
+                            let name = de.action_entry_localized(
+                                action,
+                                "Name",
+                                locale_arr.as_deref().unwrap_or_default(),
+                            );
                             let exec = de.action_entry(action, "Exec");
                             if let (Some(name), Some(exec)) = (name, exec) {
                                 Some(DesktopAction {
@@ -227,7 +232,7 @@ impl DesktopEntryData {
                 .mime_type()
                 .map(|mime_types| {
                     mime_types
-                        .split_terminator(';')
+                        .into_iter()
                         .filter_map(|mime_type| mime_type.parse::<Mime>().ok())
                         .collect::<Vec<_>>()
                 })
