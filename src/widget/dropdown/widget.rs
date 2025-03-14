@@ -3,9 +3,10 @@
 // SPDX-License-Identifier: MPL-2.0 AND MIT
 
 use super::menu::{self, Menu};
-use crate::widget::icon;
+use crate::widget::icon::{self, Handle};
+use crate::{surface, Element};
 use derive_setters::Setters;
-use iced::Radians;
+use iced::window;
 use iced_core::event::{self, Event};
 use iced_core::text::{self, Paragraph, Text};
 use iced_core::widget::tree::{self, Tree};
@@ -14,14 +15,24 @@ use iced_core::{
     Clipboard, Layout, Length, Padding, Pixels, Rectangle, Shell, Size, Vector, Widget,
 };
 use iced_widget::pick_list::{self, Catalog};
+use std::borrow::Cow;
 use std::ffi::OsStr;
 use std::hash::{DefaultHasher, Hash, Hasher};
+use std::marker::PhantomData;
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::{Arc, LazyLock, Mutex};
 
+pub type DropdownView<Message> = Arc<dyn Fn() -> Element<'static, Message> + Send + Sync>;
+static AUTOSIZE_ID: LazyLock<crate::widget::Id> =
+    LazyLock::new(|| crate::widget::Id::new("cosmic-applet-autosize"));
 /// A widget for selecting a single value from a list of selections.
 #[derive(Setters)]
-pub struct Dropdown<'a, S: AsRef<str>, Message> {
+pub struct Dropdown<'a, S: AsRef<str> + Send + Sync + Clone + 'static, Message, AppMessage>
+where
+    [S]: std::borrow::ToOwned,
+{
     #[setters(skip)]
-    on_selected: Box<dyn Fn(usize) -> Message + 'a>,
+    on_selected: Arc<dyn Fn(usize) -> Message + Send + Sync>,
     #[setters(skip)]
     selections: &'a [S],
     #[setters]
@@ -38,9 +49,21 @@ pub struct Dropdown<'a, S: AsRef<str>, Message> {
     text_line_height: text::LineHeight,
     #[setters(strip_option)]
     font: Option<crate::font::Font>,
+    #[setters(skip)]
+    on_surface_action: Option<Arc<dyn Fn(surface::Action) -> Message + Send + Sync + 'static>>,
+    #[setters(skip)]
+    action_map: Option<Arc<dyn Fn(Message) -> AppMessage + 'static + Send + Sync>>,
+    #[setters(strip_option)]
+    window_id: Option<window::Id>,
+    #[cfg(all(feature = "winit", feature = "wayland"))]
+    positioner: iced_runtime::platform_specific::wayland::popup::SctkPositioner,
 }
 
-impl<'a, S: AsRef<str>, Message> Dropdown<'a, S, Message> {
+impl<'a, S: AsRef<str> + Send + Sync + Clone + 'static, Message: 'static, AppMessage: 'static>
+    Dropdown<'a, S, Message, AppMessage>
+where
+    [S]: std::borrow::ToOwned,
+{
     /// The default gap.
     pub const DEFAULT_GAP: f32 = 4.0;
 
@@ -52,10 +75,10 @@ impl<'a, S: AsRef<str>, Message> Dropdown<'a, S, Message> {
     pub fn new(
         selections: &'a [S],
         selected: Option<usize>,
-        on_selected: impl Fn(usize) -> Message + 'a,
+        on_selected: impl Fn(usize) -> Message + 'static + Send + Sync,
     ) -> Self {
         Self {
-            on_selected: Box::new(on_selected),
+            on_selected: Arc::new(on_selected),
             selections,
             icons: &[],
             selected,
@@ -65,12 +88,73 @@ impl<'a, S: AsRef<str>, Message> Dropdown<'a, S, Message> {
             text_size: None,
             text_line_height: text::LineHeight::Relative(1.2),
             font: None,
+            window_id: None,
+            #[cfg(all(feature = "winit", feature = "wayland"))]
+            positioner: iced_runtime::platform_specific::wayland::popup::SctkPositioner::default(),
+            on_surface_action: None,
+            action_map: None,
         }
+    }
+
+    #[cfg(all(feature = "winit", feature = "wayland"))]
+    /// Handle dropdown requests for popup creation.
+    /// Intended to be used with [`crate::app::message::get_popup`]
+    pub fn with_popup<NewAppMessage>(
+        mut self,
+        parent_id: window::Id,
+        on_surface_action: impl Fn(surface::Action) -> Message + Send + Sync + 'static,
+        action_map: impl Fn(Message) -> NewAppMessage + Send + Sync + 'static,
+    ) -> Dropdown<'a, S, Message, NewAppMessage> {
+        let Self {
+            on_selected,
+            selections,
+            icons,
+            selected,
+            width,
+            gap,
+            padding,
+            text_size,
+            text_line_height,
+            font,
+            positioner,
+            ..
+        } = self;
+
+        Dropdown::<'a, S, Message, NewAppMessage> {
+            on_selected,
+            selections,
+            icons,
+            selected,
+            width,
+            gap,
+            padding,
+            text_size,
+            text_line_height,
+            font,
+            on_surface_action: Some(Arc::new(on_surface_action)),
+            action_map: Some(Arc::new(action_map)),
+            window_id: Some(parent_id),
+            positioner,
+        }
+    }
+
+    #[cfg(all(feature = "winit", feature = "wayland"))]
+    pub fn with_positioner(
+        mut self,
+        positioner: iced_runtime::platform_specific::wayland::popup::SctkPositioner,
+    ) -> Self {
+        self.positioner = positioner;
+        self
     }
 }
 
-impl<'a, S: AsRef<str>, Message: 'a> Widget<Message, crate::Theme, crate::Renderer>
-    for Dropdown<'a, S, Message>
+impl<
+        S: AsRef<str> + Send + Sync + Clone + 'static,
+        Message: 'static + Clone,
+        AppMessage: 'static + Clone,
+    > Widget<Message, crate::Theme, crate::Renderer> for Dropdown<'_, S, Message, AppMessage>
+where
+    [S]: std::borrow::ToOwned,
 {
     fn tag(&self) -> tree::Tag {
         tree::Tag::of::<State>()
@@ -153,15 +237,26 @@ impl<'a, S: AsRef<str>, Message: 'a> Widget<Message, crate::Theme, crate::Render
         shell: &mut Shell<'_, Message>,
         _viewport: &Rectangle,
     ) -> event::Status {
-        update(
+        update::<S, Message, AppMessage>(
             &event,
             layout,
             cursor,
             shell,
-            self.on_selected.as_ref(),
+            #[cfg(all(feature = "winit", feature = "wayland"))]
+            self.positioner.clone(),
+            self.on_selected.clone(),
             self.selected,
             self.selections,
             || tree.state.downcast_mut::<State>(),
+            self.window_id,
+            self.on_surface_action.clone(),
+            self.action_map.clone(),
+            self.icons,
+            self.gap,
+            self.padding,
+            self.text_size,
+            self.font,
+            self.selected,
         )
     }
 
@@ -186,7 +281,7 @@ impl<'a, S: AsRef<str>, Message: 'a> Widget<Message, crate::Theme, crate::Render
         cursor: mouse::Cursor,
         viewport: &Rectangle,
     ) {
-        let font = self.font.unwrap_or_else(|| crate::font::default());
+        let font = self.font.unwrap_or_else(crate::font::default);
         draw(
             renderer,
             theme,
@@ -211,6 +306,11 @@ impl<'a, S: AsRef<str>, Message: 'a> Widget<Message, crate::Theme, crate::Render
         renderer: &crate::Renderer,
         translation: Vector,
     ) -> Option<overlay::Element<'b, Message, crate::Theme, crate::Renderer>> {
+        #[cfg(all(feature = "winit", feature = "wayland"))]
+        if self.window_id.is_some() || self.on_surface_action.is_some() {
+            return None;
+        }
+
         let state = tree.state.downcast_mut::<State>();
 
         overlay(
@@ -225,8 +325,9 @@ impl<'a, S: AsRef<str>, Message: 'a> Widget<Message, crate::Theme, crate::Render
             self.selections,
             self.icons,
             self.selected,
-            &self.on_selected,
+            self.on_selected.as_ref(),
             translation,
+            None,
         )
     }
 
@@ -242,24 +343,31 @@ impl<'a, S: AsRef<str>, Message: 'a> Widget<Message, crate::Theme, crate::Render
     // }
 }
 
-impl<'a, S: AsRef<str>, Message: 'a> From<Dropdown<'a, S, Message>>
-    for crate::Element<'a, Message>
+impl<
+        'a,
+        S: AsRef<str> + Send + Sync + Clone + 'static,
+        Message: 'static + std::clone::Clone,
+        AppMessage: 'static + std::clone::Clone,
+    > From<Dropdown<'a, S, Message, AppMessage>> for crate::Element<'a, Message>
+where
+    [S]: std::borrow::ToOwned,
 {
-    fn from(pick_list: Dropdown<'a, S, Message>) -> Self {
+    fn from(pick_list: Dropdown<'a, S, Message, AppMessage>) -> Self {
         Self::new(pick_list)
     }
 }
 
 /// The local state of a [`Dropdown`].
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct State {
     icon: Option<svg::Handle>,
     menu: menu::State,
     keyboard_modifiers: keyboard::Modifiers,
-    is_open: bool,
-    hovered_option: Option<usize>,
+    is_open: Arc<AtomicBool>,
+    hovered_option: Arc<Mutex<Option<usize>>>,
     hashes: Vec<u64>,
     selections: Vec<crate::Plain>,
+    popup_id: window::Id,
 }
 
 impl State {
@@ -276,10 +384,11 @@ impl State {
             },
             menu: menu::State::default(),
             keyboard_modifiers: keyboard::Modifiers::default(),
-            is_open: false,
-            hovered_option: None,
+            is_open: Arc::new(AtomicBool::new(false)),
+            hovered_option: Arc::new(Mutex::new(None)),
             selections: Vec::new(),
             hashes: Vec::new(),
+            popup_id: window::Id::unique(),
         }
     }
 }
@@ -316,7 +425,7 @@ pub fn layout(
                     bounds: Size::new(f32::MAX, f32::MAX),
                     size: iced::Pixels(text_size),
                     line_height: text_line_height,
-                    font: font.unwrap_or_else(|| crate::font::default()),
+                    font: font.unwrap_or_else(crate::font::default),
                     horizontal_alignment: alignment::Horizontal::Left,
                     vertical_alignment: alignment::Vertical::Top,
                     shaping: text::Shaping::Advanced,
@@ -348,32 +457,136 @@ pub fn layout(
 
 /// Processes an [`Event`] and updates the [`State`] of a [`Dropdown`]
 /// accordingly.
-#[allow(clippy::too_many_arguments)]
-pub fn update<'a, S: AsRef<str>, Message>(
+#[allow(clippy::too_many_arguments, clippy::too_many_lines)]
+pub fn update<
+    'a,
+    S: AsRef<str> + Send + Sync + Clone + 'static,
+    Message: Clone + 'static,
+    AppMessage: Clone + 'static,
+>(
     event: &Event,
     layout: Layout<'_>,
     cursor: mouse::Cursor,
     shell: &mut Shell<'_, Message>,
-    on_selected: &dyn Fn(usize) -> Message,
+    #[cfg(all(feature = "winit", feature = "wayland"))]
+    positioner: iced_runtime::platform_specific::wayland::popup::SctkPositioner,
+    on_selected: Arc<dyn Fn(usize) -> Message + Send + Sync + 'static>,
     selected: Option<usize>,
     selections: &[S],
     state: impl FnOnce() -> &'a mut State,
+    _window_id: Option<window::Id>,
+    on_surface_action: Option<Arc<dyn Fn(surface::Action) -> Message + Send + Sync + 'static>>,
+    action_map: Option<Arc<dyn Fn(Message) -> AppMessage + Send + Sync + 'static>>,
+    icons: &[icon::Handle],
+    gap: f32,
+    padding: Padding,
+    text_size: Option<f32>,
+    font: Option<crate::font::Font>,
+    selected_option: Option<usize>,
 ) -> event::Status {
     match event {
         Event::Mouse(mouse::Event::ButtonPressed(mouse::Button::Left))
         | Event::Touch(touch::Event::FingerPressed { .. }) => {
             let state = state();
-
-            if state.is_open {
+            let is_open = state.is_open.load(Ordering::Relaxed);
+            if is_open {
                 // Event wasn't processed by overlay, so cursor was clicked either outside it's
                 // bounds or on the drop-down, either way we close the overlay.
-                state.is_open = false;
-
+                state.is_open.store(false, Ordering::Relaxed);
+                #[cfg(all(feature = "winit", feature = "wayland"))]
+                if let Some(on_close) = on_surface_action {
+                    shell.publish(on_close(surface::action::destroy_popup(state.popup_id)));
+                }
                 event::Status::Captured
             } else if cursor.is_over(layout.bounds()) {
-                state.is_open = true;
-                state.hovered_option = selected;
+                state.is_open.store(true, Ordering::Relaxed);
+                let mut hovered_guard = state.hovered_option.lock().unwrap();
+                *hovered_guard = selected;
+                let id = window::Id::unique();
+                state.popup_id = id;
+                #[cfg(all(feature = "winit", feature = "wayland"))]
+                if let Some(((on_surface_action, parent), action_map)) =
+                    on_surface_action.zip(_window_id).zip(action_map)
+                {
+                    use iced_runtime::platform_specific::wayland::popup::{
+                        SctkPopupSettings, SctkPositioner,
+                    };
+                    let bounds = layout.bounds();
+                    let anchor_rect = Rectangle {
+                        x: bounds.x as i32,
+                        y: bounds.y as i32,
+                        width: bounds.width as i32,
+                        height: bounds.height as i32,
+                    };
+                    let icon_width = if icons.is_empty() { 0.0 } else { 24.0 };
+                    let measure = |_label: &str, selection_paragraph: &crate::Paragraph| -> f32 {
+                        selection_paragraph.min_width().round()
+                    };
+                    let pad_width = padding.horizontal().mul_add(2.0, 16.0);
 
+                    let selections_width = selections
+                        .iter()
+                        .zip(state.selections.iter_mut())
+                        .map(|(label, selection)| measure(label.as_ref(), selection.raw()))
+                        .fold(0.0, |next, current| current.max(next));
+
+                    let icons: Cow<'static, [Handle]> = Cow::Owned(icons.to_vec());
+                    let selections: Cow<'static, [S]> = Cow::Owned(selections.to_vec());
+                    let state = state.clone();
+                    let on_close = surface::action::destroy_popup(id);
+                    let on_surface_action_clone = on_surface_action.clone();
+                    let get_popup_action = surface::action::simple_popup::<
+                        AppMessage,
+                        Box<
+                            dyn Fn() -> Element<'static, crate::Action<AppMessage>>
+                                + Send
+                                + Sync
+                                + 'static,
+                        >,
+                    >(
+                        move || {
+                            SctkPopupSettings {
+                            parent,
+                            id,
+                            input_zone: None,
+                            positioner: SctkPositioner {
+                                size: Some((selections_width as u32 + gap as u32 + pad_width as u32 + icon_width as u32, 10)),
+                                anchor_rect,
+                                // TODO: left or right alignment based on direction?
+                                anchor: cctk::wayland_protocols::xdg::shell::client::xdg_positioner::Anchor::BottomLeft,
+                                gravity: cctk::wayland_protocols::xdg::shell::client::xdg_positioner::Gravity::BottomRight,
+                                reactive: true,
+                                offset: (-padding.left as i32, 0),
+                                constraint_adjustment: 9,
+                                ..Default::default()
+                            },
+                            parent_size: None,
+                            grab: true,
+                            close_with_children: true,
+                        }
+                        },
+                        Some(Box::new(move || {
+                            let action_map = action_map.clone();
+                            let on_selected = on_selected.clone();
+                            let e: Element<'static, crate::Action<AppMessage>> =
+                                Element::from(menu_widget(
+                                    bounds,
+                                    &state,
+                                    gap,
+                                    padding,
+                                    text_size.unwrap_or(14.0),
+                                    selections.clone(),
+                                    icons.clone(),
+                                    selected_option,
+                                    Arc::new(move |i| on_selected.clone()(i)),
+                                    Some(on_surface_action_clone(on_close.clone())),
+                                ))
+                                .map(move |m| crate::Action::App(action_map.clone()(m)));
+                            e
+                        })),
+                    );
+                    shell.publish(on_surface_action(get_popup_action));
+                }
                 event::Status::Captured
             } else {
                 event::Status::Ignored
@@ -383,11 +596,9 @@ pub fn update<'a, S: AsRef<str>, Message>(
             delta: mouse::ScrollDelta::Lines { .. },
         }) => {
             let state = state();
+            let is_open = state.is_open.load(Ordering::Relaxed);
 
-            if state.keyboard_modifiers.command()
-                && cursor.is_over(layout.bounds())
-                && !state.is_open
-            {
+            if state.keyboard_modifiers.command() && cursor.is_over(layout.bounds()) && !is_open {
                 let next_index = selected.map(|index| index + 1).unwrap_or_default();
 
                 if selections.len() < next_index {
@@ -423,9 +634,72 @@ pub fn mouse_interaction(layout: Layout<'_>, cursor: mouse::Cursor) -> mouse::In
     }
 }
 
+#[cfg(all(feature = "winit", feature = "wayland"))]
+/// Returns the current menu widget of a [`Dropdown`].
+#[allow(clippy::too_many_arguments)]
+pub fn menu_widget<
+    S: AsRef<str> + Send + Sync + Clone + 'static,
+    Message: 'static + std::clone::Clone,
+>(
+    bounds: Rectangle,
+    state: &State,
+    gap: f32,
+    padding: Padding,
+    text_size: f32,
+    selections: Cow<'static, [S]>,
+    icons: Cow<'static, [icon::Handle]>,
+    selected_option: Option<usize>,
+    on_selected: Arc<dyn Fn(usize) -> Message + Send + Sync + 'static>,
+    close_on_selected: Option<Message>,
+) -> crate::Element<'static, Message>
+where
+    [S]: std::borrow::ToOwned,
+{
+    let icon_width = if icons.is_empty() { 0.0 } else { 24.0 };
+    let measure = |_label: &str, selection_paragraph: &crate::Paragraph| -> f32 {
+        selection_paragraph.min_width().round()
+    };
+    let selections_width = selections
+        .iter()
+        .zip(state.selections.iter())
+        .map(|(label, selection)| measure(label.as_ref(), selection.raw()))
+        .fold(0.0, |next, current| current.max(next));
+    let pad_width = padding.horizontal().mul_add(2.0, 16.0);
+
+    let width = selections_width + gap + pad_width + icon_width;
+    let is_open = state.is_open.clone();
+    let menu: Menu<'static, S, Message> = Menu::new(
+        state.menu.clone(),
+        selections,
+        icons,
+        state.hovered_option.clone(),
+        selected_option,
+        move |option| {
+            is_open.store(false, Ordering::Relaxed);
+
+            (on_selected)(option)
+        },
+        None,
+        close_on_selected,
+    )
+    .width(width)
+    .padding(padding)
+    .text_size(text_size);
+
+    crate::widget::autosize::autosize(
+        menu.popup(iced::Point::new(0., 0.), bounds.height),
+        AUTOSIZE_ID.clone(),
+    )
+    .auto_height(true)
+    .auto_width(true)
+    .min_height(1.)
+    .min_width(width)
+    .into()
+}
+
 /// Returns the current overlay of a [`Dropdown`].
 #[allow(clippy::too_many_arguments)]
-pub fn overlay<'a, S: AsRef<str>, Message: 'a>(
+pub fn overlay<'a, S: AsRef<str> + Send + Sync + Clone + 'static, Message: std::clone::Clone + 'a>(
     layout: Layout<'_>,
     _renderer: &crate::Renderer,
     state: &'a mut State,
@@ -439,22 +713,27 @@ pub fn overlay<'a, S: AsRef<str>, Message: 'a>(
     selected_option: Option<usize>,
     on_selected: &'a dyn Fn(usize) -> Message,
     translation: Vector,
-) -> Option<overlay::Element<'a, Message, crate::Theme, crate::Renderer>> {
-    if state.is_open {
+    close_on_selected: Option<Message>,
+) -> Option<overlay::Element<'a, Message, crate::Theme, crate::Renderer>>
+where
+    [S]: std::borrow::ToOwned,
+{
+    if state.is_open.load(Ordering::Relaxed) {
         let bounds = layout.bounds();
 
         let menu = Menu::new(
-            &mut state.menu,
-            selections,
-            icons,
-            &mut state.hovered_option,
+            state.menu.clone(),
+            Cow::Borrowed(selections),
+            Cow::Borrowed(icons),
+            state.hovered_option.clone(),
             selected_option,
             |option| {
-                state.is_open = false;
+                state.is_open.store(false, Ordering::Relaxed);
 
                 (on_selected)(option)
             },
             None,
+            close_on_selected,
         )
         .width({
             let measure = |_label: &str, selection_paragraph: &crate::Paragraph| -> f32 {

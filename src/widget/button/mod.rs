@@ -111,7 +111,7 @@ pub struct Builder<'a, Message, Variant> {
     variant: Variant,
 }
 
-impl<'a, Message, Variant> Builder<'a, Message, Variant> {
+impl<Message, Variant> Builder<'_, Message, Variant> {
     /// Set the value of [`on_press`] as either `Some` or `None`.
     pub fn on_press_maybe(mut self, on_press: Option<Message>) -> Self {
         self.on_press = on_press;

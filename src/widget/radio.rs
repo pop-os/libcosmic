@@ -155,7 +155,7 @@ where
     }
 }
 
-impl<'a, Message, Renderer> Widget<Message, Theme, Renderer> for Radio<'a, Message, Renderer>
+impl<Message, Renderer> Widget<Message, Theme, Renderer> for Radio<'_, Message, Renderer>
 where
     Message: Clone,
     Renderer: iced_core::Renderer,

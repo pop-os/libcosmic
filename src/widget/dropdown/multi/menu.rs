@@ -180,9 +180,7 @@ impl<'a, Message: 'a> Overlay<'a, Message> {
     }
 }
 
-impl<'a, Message> iced_core::Overlay<Message, crate::Theme, crate::Renderer>
-    for Overlay<'a, Message>
-{
+impl<Message> iced_core::Overlay<Message, crate::Theme, crate::Renderer> for Overlay<'_, Message> {
     fn layout(&mut self, renderer: &crate::Renderer, bounds: Size) -> layout::Node {
         let position = self.position;
         let space_below = bounds.height - (position.y + self.target_height);
@@ -279,8 +277,8 @@ struct InnerList<'a, S, Item, Message> {
     text_line_height: text::LineHeight,
 }
 
-impl<'a, S, Item, Message> Widget<Message, crate::Theme, crate::Renderer>
-    for InnerList<'a, S, Item, Message>
+impl<S, Item, Message> Widget<Message, crate::Theme, crate::Renderer>
+    for InnerList<'_, S, Item, Message>
 where
     S: AsRef<str>,
     Item: Clone + PartialEq,

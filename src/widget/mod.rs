@@ -97,6 +97,14 @@ pub mod aspect_ratio;
 #[cfg(feature = "autosize")]
 pub mod autosize;
 
+pub(crate) mod responsive_container;
+
+#[cfg(feature = "surface-message")]
+mod responsive_menu_bar;
+#[cfg(feature = "surface-message")]
+#[doc(inline)]
+pub use responsive_menu_bar::responsive_menu_bar;
+
 pub mod button;
 #[doc(inline)]
 pub use button::{Button, IconButton, LinkButton, TextButton};
@@ -339,6 +347,10 @@ pub use toggler::toggler;
 
 #[doc(inline)]
 pub use tooltip::{tooltip, Tooltip};
+
+#[cfg(all(feature = "wayland", feature = "winit"))]
+pub mod wayland;
+
 pub mod tooltip {
     use crate::Element;
 
@@ -364,6 +376,10 @@ pub mod tooltip {
 pub mod warning;
 #[doc(inline)]
 pub use warning::*;
+
+pub mod wrapper;
+#[doc(inline)]
+pub use wrapper::*;
 
 #[cfg(feature = "markdown")]
 #[doc(inline)]

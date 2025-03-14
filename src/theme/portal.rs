@@ -1,7 +1,7 @@
 use ashpd::desktop::settings::{ColorScheme, Contrast};
 use ashpd::desktop::Color;
 use iced::futures::{self, select, FutureExt, SinkExt, StreamExt};
-use iced_futures::{stream, subscription};
+use iced_futures::stream;
 use tracing::error;
 
 #[derive(Debug, Clone)]
@@ -27,7 +27,7 @@ pub fn desktop_settings() -> iced_futures::Subscription<Desktop> {
                         .await;
                         #[cfg(not(feature = "tokio"))]
                         {
-                            pending::<()>().await;
+                            futures::future::pending::<()>().await;
                             unreachable!();
                         }
                         attempts += 1;

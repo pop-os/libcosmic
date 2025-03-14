@@ -34,6 +34,7 @@ pub enum Message {
     OpenError(Arc<file_chooser::Error>),
     OpenFile,
     Selected(Url),
+    Surface(cosmic::surface::Action),
 }
 
 /// The [`App`] stores application-specific state.
@@ -91,13 +92,11 @@ impl cosmic::Application for App {
             Message::Cancelled => {
                 eprintln!("open file dialog cancelled");
             }
-
             Message::FileRead(url, contents) => {
                 eprintln!("read file");
                 self.selected_file = Some(url);
                 self.file_contents = contents;
             }
-
             Message::Selected(url) => {
                 eprintln!("selected file");
 
@@ -142,8 +141,6 @@ impl cosmic::Application for App {
                     Message::FileRead(url, contents)
                 });
             }
-
-            // Creates a new open dialog.
             Message::OpenFile => {
                 return cosmic::task::future(async move {
                     eprintln!("opening new dialog");
@@ -169,13 +166,9 @@ impl cosmic::Application for App {
                     }
                 });
             }
-
-            // Displays an error in the application's warning bar.
             Message::Error(why) => {
                 self.error_status = Some(why);
             }
-
-            // Displays an error in the application's warning bar.
             Message::OpenError(why) => {
                 if let Some(why) = Arc::into_inner(why) {
                     let mut source: &dyn std::error::Error = &why;
@@ -190,10 +183,10 @@ impl cosmic::Application for App {
                     self.error_status = Some(string);
                 }
             }
-
             Message::CloseError => {
                 self.error_status = None;
             }
+            Message::Surface(surface) => {}
         }
 
         Task::none()

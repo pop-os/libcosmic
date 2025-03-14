@@ -6,70 +6,27 @@
 //! Check out our [application](https://github.com/pop-os/libcosmic/tree/master/examples/application)
 //! example in our repository.
 
-pub mod command;
+mod action;
+pub use action::Action;
+use cosmic_config::CosmicConfigEntry;
 pub mod context_drawer;
-mod core;
 pub mod cosmic;
 #[cfg(all(feature = "winit", feature = "multi-window"))]
 pub(crate) mod multi_window;
 pub mod settings;
 
-pub mod message {
-    #[derive(Clone, Debug)]
-    #[must_use]
-    pub enum Message<M> {
-        /// Messages from the application, for the application.
-        App(M),
-        /// Internal messages to be handled by libcosmic.
-        Cosmic(super::cosmic::Message),
-        #[cfg(feature = "single-instance")]
-        /// Dbus activation messages
-        DbusActivation(super::DbusActivationMessage),
-        /// Do nothing
-        None,
-    }
+pub type Task<M> = iced::Task<crate::Action<M>>;
 
-    pub const fn app<M>(message: M) -> Message<M> {
-        Message::App(message)
-    }
-
-    pub const fn cosmic<M>(message: super::cosmic::Message) -> Message<M> {
-        Message::Cosmic(message)
-    }
-
-    pub const fn none<M>() -> Message<M> {
-        Message::None
-    }
-
-    impl<M> From<M> for Message<M> {
-        fn from(value: M) -> Self {
-            Self::App(value)
-        }
-    }
-}
-
-use std::borrow::Cow;
-
-pub use self::command::Task;
-pub use self::core::Core;
-pub use self::settings::Settings;
 use crate::prelude::*;
 use crate::theme::THEME;
 use crate::widget::{container, horizontal_space, id_container, menu, nav_bar, popover};
+pub use crate::Core;
 use apply::Apply;
 use context_drawer::ContextDrawer;
 use iced::window;
 use iced::{Length, Subscription};
-pub use message::Message;
-use url::Url;
-#[cfg(feature = "single-instance")]
-use {
-    iced_futures::futures::channel::mpsc::{Receiver, Sender},
-    iced_futures::futures::SinkExt,
-    std::any::TypeId,
-    std::collections::HashMap,
-    zbus::{interface, proxy, zvariant::Value},
-};
+pub use settings::Settings;
+use std::borrow::Cow;
 
 pub(crate) fn iced_settings<App: Application>(
     settings: Settings,
@@ -143,6 +100,7 @@ pub fn run<App: Application>(settings: Settings, flags: App::Flags) -> iced::Res
         crate::malloc::limit_mmap_threshold(threshold);
     }
 
+    let default_font = settings.default_font;
     let (settings, mut flags, window_settings) = iced_settings::<App>(settings, flags);
     #[cfg(not(feature = "multi-window"))]
     {
@@ -180,142 +138,6 @@ pub fn run<App: Application>(settings: Settings, flags: App::Flags) -> iced::Res
 }
 
 #[cfg(feature = "single-instance")]
-#[derive(Debug, Clone)]
-pub struct DbusActivationMessage<Action = String, Args = Vec<String>> {
-    pub activation_token: Option<String>,
-    pub desktop_startup_id: Option<String>,
-    pub msg: DbusActivationDetails<Action, Args>,
-}
-
-#[derive(Debug, Clone)]
-pub enum DbusActivationDetails<Action = String, Args = Vec<String>> {
-    Activate,
-    Open {
-        url: Vec<Url>,
-    },
-    /// action can be deserialized as Flags
-    ActivateAction {
-        action: Action,
-        args: Args,
-    },
-}
-#[cfg(feature = "single-instance")]
-#[derive(Debug, Default)]
-pub struct DbusActivation(Option<Sender<DbusActivationMessage>>);
-#[cfg(feature = "single-instance")]
-impl DbusActivation {
-    #[must_use]
-    pub fn new() -> Self {
-        Self(None)
-    }
-
-    pub fn rx(&mut self) -> Receiver<DbusActivationMessage> {
-        let (tx, rx) = iced_futures::futures::channel::mpsc::channel(10);
-        self.0 = Some(tx);
-        rx
-    }
-}
-
-#[cfg(feature = "single-instance")]
-#[proxy(interface = "org.freedesktop.DbusActivation", assume_defaults = true)]
-pub trait DbusActivationInterface {
-    /// Activate the application.
-    fn activate(&mut self, platform_data: HashMap<&str, Value<'_>>) -> zbus::Result<()>;
-
-    /// Open the given URIs.
-    fn open(
-        &mut self,
-        uris: Vec<&str>,
-        platform_data: HashMap<&str, Value<'_>>,
-    ) -> zbus::Result<()>;
-
-    /// Activate the given action.
-    fn activate_action(
-        &mut self,
-        action_name: &str,
-        parameter: Vec<&str>,
-        platform_data: HashMap<&str, Value<'_>>,
-    ) -> zbus::Result<()>;
-}
-
-#[cfg(feature = "single-instance")]
-#[interface(name = "org.freedesktop.DbusActivation")]
-impl DbusActivation {
-    async fn activate(&mut self, platform_data: HashMap<&str, Value<'_>>) {
-        if let Some(tx) = &mut self.0 {
-            let _ = tx
-                .send(DbusActivationMessage {
-                    activation_token: platform_data.get("activation-token").and_then(|t| match t {
-                        Value::Str(t) => Some(t.to_string()),
-                        _ => None,
-                    }),
-                    desktop_startup_id: platform_data.get("desktop-startup-id").and_then(
-                        |t| match t {
-                            Value::Str(t) => Some(t.to_string()),
-                            _ => None,
-                        },
-                    ),
-                    msg: DbusActivationDetails::Activate,
-                })
-                .await;
-        }
-    }
-
-    async fn open(&mut self, uris: Vec<&str>, platform_data: HashMap<&str, Value<'_>>) {
-        if let Some(tx) = &mut self.0 {
-            let _ = tx
-                .send(DbusActivationMessage {
-                    activation_token: platform_data.get("activation-token").and_then(|t| match t {
-                        Value::Str(t) => Some(t.to_string()),
-                        _ => None,
-                    }),
-                    desktop_startup_id: platform_data.get("desktop-startup-id").and_then(
-                        |t| match t {
-                            Value::Str(t) => Some(t.to_string()),
-                            _ => None,
-                        },
-                    ),
-                    msg: DbusActivationDetails::Open {
-                        url: uris.iter().filter_map(|u| Url::parse(u).ok()).collect(),
-                    },
-                })
-                .await;
-        }
-    }
-
-    async fn activate_action(
-        &mut self,
-        action_name: &str,
-        parameter: Vec<&str>,
-        platform_data: HashMap<&str, Value<'_>>,
-    ) {
-        if let Some(tx) = &mut self.0 {
-            let _ = tx
-                .send(DbusActivationMessage {
-                    activation_token: platform_data.get("activation-token").and_then(|t| match t {
-                        Value::Str(t) => Some(t.to_string()),
-                        _ => None,
-                    }),
-                    desktop_startup_id: platform_data.get("desktop-startup-id").and_then(
-                        |t| match t {
-                            Value::Str(t) => Some(t.to_string()),
-                            _ => None,
-                        },
-                    ),
-                    msg: DbusActivationDetails::ActivateAction {
-                        action: action_name.to_string(),
-                        args: parameter
-                            .iter()
-                            .map(std::string::ToString::to_string)
-                            .collect(),
-                    },
-                })
-                .await;
-        }
-    }
-}
-
-#[cfg(feature = "single-instance")]
 /// Launch a COSMIC application with the given [`Settings`].
 /// If the application is already running, the arguments will be passed to the
 /// running instance.
@@ -326,6 +148,8 @@ where
     App::Flags: CosmicFlags,
     App::Message: Clone + std::fmt::Debug + Send + 'static,
 {
+    use std::collections::HashMap;
+
     let activation_token = std::env::var("XDG_ACTIVATION_TOKEN").ok();
 
     let override_single = std::env::var("COSMIC_SINGLE_INSTANCE")
@@ -342,14 +166,14 @@ where
         return run::<App>(settings, flags);
     };
 
-    if DbusActivationInterfaceProxyBlocking::builder(&conn)
+    if crate::dbus_activation::DbusActivationInterfaceProxyBlocking::builder(&conn)
         .destination(App::APP_ID)
         .ok()
         .and_then(|b| b.path(path).ok())
         .and_then(|b| b.destination(App::APP_ID).ok())
         .and_then(|b| b.build().ok())
         .is_some_and(|mut p| {
-            match {
+            let res = {
                 let mut platform_data = HashMap::new();
                 if let Some(activation_token) = activation_token {
                     platform_data.insert("activation-token", activation_token.into());
@@ -363,7 +187,8 @@ where
                 } else {
                     p.activate(platform_data)
                 }
-            } {
+            };
+            match res {
                 Ok(()) => {
                     tracing::info!("Successfully activated another instance");
                     true
@@ -491,7 +316,7 @@ where
     }
 
     /// Allows overriding the default nav bar widget.
-    fn nav_bar(&self) -> Option<Element<Message<Self::Message>>> {
+    fn nav_bar(&self) -> Option<Element<crate::Action<Self::Message>>> {
         if !self.core().nav_bar_active() {
             return None;
         }
@@ -499,8 +324,8 @@ where
         let nav_model = self.nav_model()?;
 
         let mut nav =
-            crate::widget::nav_bar(nav_model, |id| Message::Cosmic(cosmic::Message::NavBar(id)))
-                .on_context(|id| Message::Cosmic(cosmic::Message::NavBarContext(id)))
+            crate::widget::nav_bar(nav_model, |id| crate::Action::Cosmic(Action::NavBar(id)))
+                .on_context(|id| crate::Action::Cosmic(Action::NavBarContext(id)))
                 .context_menu(self.nav_context_menu(self.core().nav_bar_context()))
                 .into_container()
                 // XXX both must be shrink to avoid flex layout from ignoring it
@@ -515,7 +340,10 @@ where
     }
 
     /// Shows a context menu for the active nav bar item.
-    fn nav_context_menu(&self, id: nav_bar::Id) -> Option<Vec<menu::Tree<Message<Self::Message>>>> {
+    fn nav_context_menu(
+        &self,
+        id: nav_bar::Id,
+    ) -> Option<Vec<menu::Tree<crate::Action<Self::Message>>>> {
         None
     }
 
@@ -605,7 +433,7 @@ where
 
     /// Handles dbus activation messages
     #[cfg(feature = "single-instance")]
-    fn dbus_activation(&mut self, msg: DbusActivationMessage) -> Task<Self::Message> {
+    fn dbus_activation(&mut self, msg: crate::dbus_activation::Message) -> Task<Self::Message> {
         Task::none()
     }
 }
@@ -648,7 +476,21 @@ pub trait ApplicationExt: Application {
     fn set_window_title(&mut self, title: String, id: window::Id) -> Task<Self::Message>;
 
     /// View template for the main window.
-    fn view_main(&self) -> Element<Message<Self::Message>>;
+    fn view_main(&self) -> Element<crate::Action<Self::Message>>;
+
+    fn watch_config<T: CosmicConfigEntry + Send + Sync + Default + 'static + Clone + PartialEq>(
+        &self,
+        id: &'static str,
+    ) -> iced::Subscription<cosmic_config::Update<T>> {
+        self.core().watch_config(id)
+    }
+
+    fn watch_state<T: CosmicConfigEntry + Send + Sync + Default + 'static + Clone + PartialEq>(
+        &self,
+        id: &'static str,
+    ) -> iced::Subscription<cosmic_config::Update<T>> {
+        self.core().watch_state(id)
+    }
 }
 
 impl<App: Application> ApplicationExt for App {
@@ -695,7 +537,7 @@ impl<App: Application> ApplicationExt for App {
 
     #[allow(clippy::too_many_lines)]
     /// Creates the view for the main window.
-    fn view_main(&self) -> Element<Message<Self::Message>> {
+    fn view_main(&self) -> Element<crate::Action<Self::Message>> {
         let core = self.core();
         let is_condensed = core.is_condensed();
         // TODO: More granularity might be needed for different resize border
@@ -762,13 +604,13 @@ impl<App: Application> ApplicationExt for App {
                                 [0, 0, 0, 0]
                             })
                             .apply(Element::from)
-                            .map(Message::App),
+                            .map(crate::Action::App),
                         );
                     } else {
                         //TODO: container and padding are temporary, until
                         //the `resize_border` is moved to not cover window content
                         widgets.push(
-                            container(main_content.map(Message::App))
+                            container(main_content.map(crate::Action::App))
                                 .padding(main_content_padding)
                                 .into(),
                         );
@@ -778,7 +620,7 @@ impl<App: Application> ApplicationExt for App {
                     //TODO: container and padding are temporary, until
                     //the `resize_border` is moved to not cover window content
                     widgets.push(
-                        container(main_content.map(Message::App))
+                        container(main_content.map(crate::Action::App))
                             .padding(main_content_padding)
                             .into(),
                     );
@@ -794,7 +636,7 @@ impl<App: Application> ApplicationExt for App {
                                 context_width,
                             )
                             .apply(Element::from)
-                            .map(Message::App)
+                            .map(crate::Action::App)
                             .apply(container)
                             .width(context_width)
                             .apply(|drawer| {
@@ -824,7 +666,7 @@ impl<App: Application> ApplicationExt for App {
             .push(content_row)
             .push_maybe(
                 self.footer()
-                    .map(|footer| container(footer.map(Message::App)).padding([0, 8, 8, 8])),
+                    .map(|footer| container(footer.map(crate::Action::App)).padding([0, 8, 8, 8])),
             );
         let content: Element<_> = if core.window.content_container {
             content_col
@@ -851,45 +693,45 @@ impl<App: Application> ApplicationExt for App {
                     let mut header = crate::widget::header_bar()
                         .focused(focused)
                         .title(&core.window.header_title)
-                        .on_drag(Message::Cosmic(cosmic::Message::Drag))
-                        .on_right_click(Message::Cosmic(cosmic::Message::ShowWindowMenu))
-                        .on_double_click(Message::Cosmic(cosmic::Message::Maximize));
+                        .on_drag(crate::Action::Cosmic(Action::Drag))
+                        .on_right_click(crate::Action::Cosmic(Action::ShowWindowMenu))
+                        .on_double_click(crate::Action::Cosmic(Action::Maximize));
 
                     if self.nav_model().is_some() {
                         let toggle = crate::widget::nav_bar_toggle()
                             .active(core.nav_bar_active())
                             .selected(focused)
                             .on_toggle(if is_condensed {
-                                Message::Cosmic(cosmic::Message::ToggleNavBarCondensed)
+                                crate::Action::Cosmic(Action::ToggleNavBarCondensed)
                             } else {
-                                Message::Cosmic(cosmic::Message::ToggleNavBar)
+                                crate::Action::Cosmic(Action::ToggleNavBar)
                             });
 
                         header = header.start(toggle);
                     }
 
                     if core.window.show_close {
-                        header = header.on_close(Message::Cosmic(cosmic::Message::Close));
+                        header = header.on_close(crate::Action::Cosmic(Action::Close));
                     }
 
                     if core.window.show_maximize && crate::config::show_maximize() {
-                        header = header.on_maximize(Message::Cosmic(cosmic::Message::Maximize));
+                        header = header.on_maximize(crate::Action::Cosmic(Action::Maximize));
                     }
 
                     if core.window.show_minimize && crate::config::show_minimize() {
-                        header = header.on_minimize(Message::Cosmic(cosmic::Message::Minimize));
+                        header = header.on_minimize(crate::Action::Cosmic(Action::Minimize));
                     }
 
                     for element in self.header_start() {
-                        header = header.start(element.map(Message::App));
+                        header = header.start(element.map(crate::Action::App));
                     }
 
                     for element in self.header_center() {
-                        header = header.center(element.map(Message::App));
+                        header = header.center(element.map(crate::Action::App));
                     }
 
                     for element in self.header_end() {
-                        header = header.end(element.map(Message::App));
+                        header = header.end(element.map(crate::Action::App));
                     }
 
                     if content_container {
@@ -951,80 +793,12 @@ impl<App: Application> ApplicationExt for App {
             .dialog()
             .map(|w| Element::from(id_container(w, iced_core::id::Id::new("COSMIC_dialog"))))
         {
-            popover = popover.popup(dialog.map(Message::App));
+            popover = popover.popup(dialog.map(crate::Action::App));
         }
 
         let view_element: Element<_> = popover.into();
         view_element.debug(core.debug)
     }
-}
-
-#[cfg(feature = "single-instance")]
-fn single_instance_subscription<App: ApplicationExt>() -> Subscription<Message<App::Message>> {
-    use iced_futures::futures::StreamExt;
-    iced_futures::Subscription::run_with_id(
-        TypeId::of::<DbusActivation>(),
-        iced::stream::channel(10, move |mut output| async move {
-            let mut single_instance: DbusActivation = DbusActivation::new();
-            let mut rx = single_instance.rx();
-            if let Ok(builder) = zbus::ConnectionBuilder::session() {
-                let path: String = format!("/{}", App::APP_ID.replace('.', "/"));
-                if let Ok(conn) = builder.build().await {
-                    // XXX Setup done this way seems to be more reliable.
-                    //
-                    // the docs for serve_at seem to imply it will replace the
-                    // existing interface at the requested path, but it doesn't
-                    // seem to work that way all the time. The docs for
-                    // object_server().at() imply it won't replace the existing
-                    // interface.
-                    //
-                    // request_name is used either way, with the builder or
-                    // with the connection, but it must be done after the
-                    // object server is setup.
-                    if conn.object_server().at(path, single_instance).await != Ok(true) {
-                        tracing::error!("Failed to serve dbus");
-                        std::process::exit(1);
-                    }
-                    if conn.request_name(App::APP_ID).await.is_err() {
-                        tracing::error!("Failed to serve dbus");
-                        std::process::exit(1);
-                    }
-
-                    #[cfg(feature = "smol")]
-                    let handle = {
-                        std::thread::spawn(move || {
-                            let conn_clone = _conn.clone();
-
-                            zbus::block_on(async move {
-                                loop {
-                                    conn_clone.executor().tick().await;
-                                }
-                            })
-                        })
-                    };
-                    while let Some(mut msg) = rx.next().await {
-                        if let Some(token) = msg.activation_token.take() {
-                            if let Err(err) = output
-                                .send(Message::Cosmic(cosmic::Message::Activate(token)))
-                                .await
-                            {
-                                tracing::error!(?err, "Failed to send message");
-                            }
-                        }
-                        if let Err(err) = output.send(Message::DbusActivation(msg)).await {
-                            tracing::error!(?err, "Failed to send message");
-                        }
-                    }
-                }
-            } else {
-                tracing::warn!("Failed to connect to dbus for single instance");
-            }
-
-            loop {
-                iced::futures::pending!();
-            }
-        }),
-    )
 }
 
 const EMBEDDED_FONTS: &[&[u8]] = &[
@@ -1043,6 +817,6 @@ fn preload_fonts() {
         .unwrap();
 
     EMBEDDED_FONTS
-        .into_iter()
+        .iter()
         .for_each(move |font| font_system.load_font(Cow::Borrowed(font)));
 }
