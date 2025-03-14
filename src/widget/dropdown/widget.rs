@@ -553,9 +553,11 @@ pub fn update<
                                 size: Some((selections_width as u32 + gap as u32 + pad_width as u32 + icon_width as u32, 10)),
                                 anchor_rect,
                                 // TODO: left or right alignment based on direction?
-                                anchor: cctk::wayland_protocols::xdg::shell::client::xdg_positioner::Anchor::Bottom,
-                                gravity: cctk::wayland_protocols::xdg::shell::client::xdg_positioner::Gravity::Bottom,
+                                anchor: cctk::wayland_protocols::xdg::shell::client::xdg_positioner::Anchor::BottomLeft,
+                                gravity: cctk::wayland_protocols::xdg::shell::client::xdg_positioner::Gravity::BottomRight,
                                 reactive: true,
+                                offset: (-padding.left as i32, 0),
+                                constraint_adjustment: 9,
                                 ..Default::default()
                             },
                             parent_size: None,
