@@ -1,12 +1,12 @@
 // Copyright 2023 System76 <info@system76.com>
 // SPDX-License-Identifier: MPL-2.0
 
-use std::{cell::OnceCell, collections::HashMap};
+use std::collections::HashMap;
 
 use crate::widget::nav_bar;
 use cosmic_config::CosmicConfigEntry;
 use cosmic_theme::ThemeMode;
-use iced::window;
+use iced::{window, Limits, Size};
 use iced_core::window::Id;
 use palette::Srgba;
 use slotmap::Key;
@@ -95,6 +95,8 @@ pub struct Core {
     pub(crate) main_window: Option<window::Id>,
 
     pub(crate) exit_on_main_window_closed: bool,
+
+    pub(crate) menu_bars: HashMap<crate::widget::Id, (Limits, Size)>,
 }
 
 impl Default for Core {
@@ -151,6 +153,7 @@ impl Default for Core {
             portal_is_high_contrast: None,
             main_window: None,
             exit_on_main_window_closed: true,
+            menu_bars: HashMap::new(),
         }
     }
 }
@@ -205,7 +208,7 @@ impl Core {
             // Context drawer min width (344px) + padding (8px)
             breakpoint += 344.0 + 8.0;
         };
-        self.is_condensed = (breakpoint * self.scale_factor) > self.window.width as f32;
+        self.is_condensed = (breakpoint * self.scale_factor) > self.window.width;
         self.nav_bar_update();
     }
 
@@ -218,7 +221,7 @@ impl Core {
     }
 
     pub(crate) fn context_width(&self, has_nav: bool) -> f32 {
-        let window_width = (self.window.width as f32) / self.scale_factor;
+        let window_width = self.window.width / self.scale_factor;
 
         // Content width (360px) + padding (8px)
         let mut reserved_width = 360.0 + 8.0;
@@ -241,6 +244,10 @@ impl Core {
             self.nav_bar.toggled_condensed = false;
             self.is_condensed_update();
         }
+    }
+
+    pub fn main_window_is(&self, id: iced::window::Id) -> bool {
+        self.main_window_id().is_some_and(|main_id| main_id == id)
     }
 
     /// Whether the nav panel is visible or not
@@ -353,7 +360,7 @@ impl Core {
     /// Get the current focused window if it exists
     #[must_use]
     pub fn focused_window(&self) -> Option<window::Id> {
-        self.focused_window.clone()
+        self.focused_window
     }
 
     /// Whether the application should use a dark theme, according to the system
@@ -373,5 +380,65 @@ impl Core {
     pub fn set_main_window_id(&mut self, mut id: Option<window::Id>) -> Option<window::Id> {
         std::mem::swap(&mut self.main_window, &mut id);
         id
+    }
+
+    #[cfg(feature = "winit")]
+    pub fn drag<M: Send + 'static>(&self, id: Option<window::Id>) -> crate::app::Task<M> {
+        let Some(id) = id.or(self.main_window) else {
+            return iced::Task::none();
+        };
+        crate::command::drag(id)
+    }
+
+    #[cfg(feature = "winit")]
+    pub fn maximize<M: Send + 'static>(
+        &self,
+        id: Option<window::Id>,
+        maximized: bool,
+    ) -> crate::app::Task<M> {
+        let Some(id) = id.or(self.main_window) else {
+            return iced::Task::none();
+        };
+        crate::command::maximize(id, maximized)
+    }
+
+    #[cfg(feature = "winit")]
+    pub fn minimize<M: Send + 'static>(&self, id: Option<window::Id>) -> crate::app::Task<M> {
+        let Some(id) = id.or(self.main_window) else {
+            return iced::Task::none();
+        };
+        crate::command::minimize(id)
+    }
+
+    #[cfg(feature = "winit")]
+    pub fn set_title<M: Send + 'static>(
+        &self,
+        id: Option<window::Id>,
+        title: String,
+    ) -> crate::app::Task<M> {
+        let Some(id) = id.or(self.main_window) else {
+            return iced::Task::none();
+        };
+        crate::command::set_title(id, title)
+    }
+
+    #[cfg(feature = "winit")]
+    pub fn set_windowed<M: Send + 'static>(&self, id: Option<window::Id>) -> crate::app::Task<M> {
+        let Some(id) = id.or(self.main_window) else {
+            return iced::Task::none();
+        };
+        crate::command::set_windowed(id)
+    }
+
+    #[cfg(feature = "winit")]
+    pub fn toggle_maximize<M: Send + 'static>(
+        &self,
+        id: Option<window::Id>,
+    ) -> crate::app::Task<M> {
+        let Some(id) = id.or(self.main_window) else {
+            return iced::Task::none();
+        };
+
+        crate::command::toggle_maximize(id)
     }
 }

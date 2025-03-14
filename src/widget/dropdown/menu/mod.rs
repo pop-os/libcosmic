@@ -3,9 +3,13 @@
 // SPDX-License-Identifier: MPL-2.0 AND MIT
 
 mod appearance;
+use std::borrow::Cow;
+use std::sync::{Arc, Mutex};
+
 pub use appearance::{Appearance, StyleSheet};
 
-use crate::widget::{icon, Container};
+use crate::surface;
+use crate::widget::{icon, Container, RcWrapper};
 use iced_core::event::{self, Event};
 use iced_core::layout::{self, Layout};
 use iced_core::text::{self, Text};
@@ -21,13 +25,15 @@ use iced_widget::scrollable::Scrollable;
 pub struct Menu<'a, S, Message>
 where
     S: AsRef<str>,
+    [S]: std::borrow::ToOwned,
 {
-    state: &'a mut State,
-    options: &'a [S],
-    icons: &'a [icon::Handle],
-    hovered_option: &'a mut Option<usize>,
+    state: State,
+    options: Cow<'a, [S]>,
+    icons: Cow<'a, [icon::Handle]>,
+    hovered_option: Arc<Mutex<Option<usize>>>,
     selected_option: Option<usize>,
     on_selected: Box<dyn FnMut(usize) -> Message + 'a>,
+    close_on_selected: Option<Message>,
     on_option_hovered: Option<&'a dyn Fn(usize) -> Message>,
     width: f32,
     padding: Padding,
@@ -36,17 +42,21 @@ where
     style: (),
 }
 
-impl<'a, S: AsRef<str>, Message: 'a> Menu<'a, S, Message> {
+impl<'a, S: AsRef<str>, Message: 'a + std::clone::Clone> Menu<'a, S, Message>
+where
+    [S]: std::borrow::ToOwned,
+{
     /// Creates a new [`Menu`] with the given [`State`], a list of options, and
     /// the message to produced when an option is selected.
     pub fn new(
-        state: &'a mut State,
-        options: &'a [S],
-        icons: &'a [icon::Handle],
-        hovered_option: &'a mut Option<usize>,
+        state: State,
+        options: Cow<'a, [S]>,
+        icons: Cow<'a, [icon::Handle]>,
+        hovered_option: Arc<Mutex<Option<usize>>>,
         selected_option: Option<usize>,
         on_selected: impl FnMut(usize) -> Message + 'a,
         on_option_hovered: Option<&'a dyn Fn(usize) -> Message>,
+        close_on_selected: Option<Message>,
     ) -> Self {
         Menu {
             state,
@@ -61,6 +71,7 @@ impl<'a, S: AsRef<str>, Message: 'a> Menu<'a, S, Message> {
             text_size: None,
             text_line_height: text::LineHeight::default(),
             style: Default::default(),
+            close_on_selected,
         }
     }
 
@@ -102,20 +113,31 @@ impl<'a, S: AsRef<str>, Message: 'a> Menu<'a, S, Message> {
     ) -> overlay::Element<'a, Message, crate::Theme, crate::Renderer> {
         overlay::Element::new(Box::new(Overlay::new(self, target_height, position)))
     }
+
+    /// Turns the [`Menu`] into a popup [`Element`] at the given target
+    /// position.
+    ///
+    /// The `target_height` will be used to display the menu either on top
+    /// of the target or under it, depending on the screen position and the
+    /// dimensions of the [`Menu`].
+    #[must_use]
+    pub fn popup(self, position: Point, target_height: f32) -> crate::Element<'a, Message> {
+        Overlay::new(self, target_height, position).into()
+    }
 }
 
 /// The local state of a [`Menu`].
 #[must_use]
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct State {
-    tree: Tree,
+    pub(crate) tree: RcWrapper<Tree>,
 }
 
 impl State {
     /// Creates a new [`State`] for a [`Menu`].
     pub fn new() -> Self {
         Self {
-            tree: Tree::empty(),
+            tree: RcWrapper::new(Tree::empty()),
         }
     }
 }
@@ -127,7 +149,7 @@ impl Default for State {
 }
 
 struct Overlay<'a, Message> {
-    state: &'a mut Tree,
+    state: RcWrapper<Tree>,
     container: Container<'a, Message, crate::Theme, crate::Renderer>,
     width: f32,
     target_height: f32,
@@ -135,12 +157,15 @@ struct Overlay<'a, Message> {
     position: Point,
 }
 
-impl<'a, Message: 'a> Overlay<'a, Message> {
+impl<'a, Message: Clone + 'a> Overlay<'a, Message> {
     pub fn new<S: AsRef<str>>(
         menu: Menu<'a, S, Message>,
         target_height: f32,
         position: Point,
-    ) -> Self {
+    ) -> Self
+    where
+        [S]: ToOwned,
+    {
         let Menu {
             state,
             options,
@@ -154,6 +179,7 @@ impl<'a, Message: 'a> Overlay<'a, Message> {
             text_size,
             text_line_height,
             style,
+            close_on_selected,
         } = menu;
 
         let mut container = Container::new(Scrollable::new(
@@ -163,6 +189,7 @@ impl<'a, Message: 'a> Overlay<'a, Message> {
                 hovered_option,
                 selected_option,
                 on_selected,
+                close_on_selected,
                 on_option_hovered,
                 text_size,
                 text_line_height,
@@ -172,10 +199,12 @@ impl<'a, Message: 'a> Overlay<'a, Message> {
         ))
         .class(crate::style::Container::Dropdown);
 
-        state.tree.diff(&mut container as &mut dyn Widget<_, _, _>);
+        state
+            .tree
+            .with_data_mut(|tree| tree.diff(&mut container as &mut dyn Widget<_, _, _>));
 
         Self {
-            state: &mut state.tree,
+            state: state.tree.clone(),
             container,
             width,
             target_height,
@@ -183,20 +212,15 @@ impl<'a, Message: 'a> Overlay<'a, Message> {
             position,
         }
     }
-}
 
-impl<'a, Message> iced_core::Overlay<Message, crate::Theme, crate::Renderer>
-    for Overlay<'a, Message>
-{
-    fn layout(&mut self, renderer: &crate::Renderer, bounds: Size) -> layout::Node {
-        let position = self.position;
-        let space_below = bounds.height - (position.y + self.target_height);
-        let space_above = position.y;
+    fn _layout(&self, renderer: &crate::Renderer, bounds: Size) -> layout::Node {
+        let space_below = bounds.height - (self.position.y + self.target_height);
+        let space_above = self.position.y;
 
         let limits = layout::Limits::new(
             Size::ZERO,
             Size::new(
-                bounds.width - position.x,
+                bounds.width - self.position.x,
                 if space_below > space_above {
                     space_below
                 } else {
@@ -206,16 +230,18 @@ impl<'a, Message> iced_core::Overlay<Message, crate::Theme, crate::Renderer>
         )
         .width(self.width);
 
-        let node = self.container.layout(self.state, renderer, &limits);
+        let node = self
+            .state
+            .with_data_mut(|tree| self.container.layout(tree, renderer, &limits));
 
         node.clone().move_to(if space_below > space_above {
-            position + Vector::new(0.0, self.target_height)
+            self.position + Vector::new(0.0, self.target_height)
         } else {
-            position - Vector::new(0.0, node.size().height)
+            self.position - Vector::new(0.0, node.size().height)
         })
     }
 
-    fn on_event(
+    fn _on_event(
         &mut self,
         event: Event,
         layout: Layout<'_>,
@@ -226,23 +252,27 @@ impl<'a, Message> iced_core::Overlay<Message, crate::Theme, crate::Renderer>
     ) -> event::Status {
         let bounds = layout.bounds();
 
-        self.container.on_event(
-            self.state, event, layout, cursor, renderer, clipboard, shell, &bounds,
-        )
+        self.state.with_data_mut(|tree| {
+            self.container.on_event(
+                tree, event, layout, cursor, renderer, clipboard, shell, &bounds,
+            )
+        })
     }
 
-    fn mouse_interaction(
+    fn _mouse_interaction(
         &self,
         layout: Layout<'_>,
         cursor: mouse::Cursor,
         viewport: &Rectangle,
         renderer: &crate::Renderer,
     ) -> mouse::Interaction {
-        self.container
-            .mouse_interaction(self.state, layout, cursor, viewport, renderer)
+        self.state.with_data(|tree| {
+            self.container
+                .mouse_interaction(tree, layout, cursor, viewport, renderer)
+        })
     }
 
-    fn draw(
+    fn _draw(
         &self,
         renderer: &mut crate::Renderer,
         theme: &crate::Theme,
@@ -266,25 +296,138 @@ impl<'a, Message> iced_core::Overlay<Message, crate::Theme, crate::Renderer>
             appearance.background,
         );
 
-        self.container
-            .draw(self.state, renderer, theme, style, layout, cursor, &bounds);
+        self.state.with_data(|tree| {
+            self.container
+                .draw(tree, renderer, theme, style, layout, cursor, &bounds)
+        })
     }
 }
 
-struct List<'a, S: AsRef<str>, Message> {
-    options: &'a [S],
-    icons: &'a [icon::Handle],
-    hovered_option: &'a mut Option<usize>,
+impl<'a, Message: Clone + 'a> iced_core::Overlay<Message, crate::Theme, crate::Renderer>
+    for Overlay<'a, Message>
+{
+    fn layout(&mut self, renderer: &crate::Renderer, bounds: Size) -> layout::Node {
+        self._layout(renderer, bounds)
+    }
+
+    fn on_event(
+        &mut self,
+        event: Event,
+        layout: Layout<'_>,
+        cursor: mouse::Cursor,
+        renderer: &crate::Renderer,
+        clipboard: &mut dyn Clipboard,
+        shell: &mut Shell<'_, Message>,
+    ) -> event::Status {
+        self._on_event(event, layout, cursor, renderer, clipboard, shell)
+    }
+
+    fn mouse_interaction(
+        &self,
+        layout: Layout<'_>,
+        cursor: mouse::Cursor,
+        viewport: &Rectangle,
+        renderer: &crate::Renderer,
+    ) -> mouse::Interaction {
+        self._mouse_interaction(layout, cursor, viewport, renderer)
+    }
+
+    fn draw(
+        &self,
+        renderer: &mut crate::Renderer,
+        theme: &crate::Theme,
+        style: &renderer::Style,
+        layout: Layout<'_>,
+        cursor: mouse::Cursor,
+    ) {
+        self._draw(renderer, theme, style, layout, cursor);
+    }
+}
+
+impl<'a, Message: Clone + 'a> crate::widget::Widget<Message, crate::Theme, crate::Renderer>
+    for Overlay<'a, Message>
+{
+    fn size(&self) -> Size<Length> {
+        Size::new(Length::Fixed(self.width), Length::Shrink)
+    }
+
+    fn layout(
+        &self,
+        _tree: &mut iced_core::widget::Tree,
+        renderer: &crate::Renderer,
+        limits: &iced::Limits,
+    ) -> layout::Node {
+        let limits = limits.width(self.width);
+
+        self.state
+            .with_data_mut(|tree| self.container.layout(tree, renderer, &limits))
+    }
+
+    fn mouse_interaction(
+        &self,
+        _tree: &Tree,
+        layout: Layout<'_>,
+        cursor: mouse::Cursor,
+        viewport: &Rectangle,
+        renderer: &crate::Renderer,
+    ) -> mouse::Interaction {
+        self._mouse_interaction(layout, cursor, viewport, renderer)
+    }
+
+    fn on_event(
+        &mut self,
+        _tree: &mut Tree,
+        event: Event,
+        layout: Layout<'_>,
+        cursor: mouse::Cursor,
+        renderer: &crate::Renderer,
+        clipboard: &mut dyn Clipboard,
+        shell: &mut Shell<'_, Message>,
+        _viewport: &Rectangle,
+    ) -> event::Status {
+        self._on_event(event, layout, cursor, renderer, clipboard, shell)
+    }
+
+    fn draw(
+        &self,
+        tree: &Tree,
+        renderer: &mut crate::Renderer,
+        theme: &crate::Theme,
+        style: &renderer::Style,
+        layout: Layout<'_>,
+        cursor: mouse::Cursor,
+        _viewport: &Rectangle,
+    ) {
+        self._draw(renderer, theme, style, layout, cursor);
+    }
+}
+
+impl<'a, Message: Clone + 'a> From<Overlay<'a, Message>> for crate::Element<'a, Message> {
+    fn from(widget: Overlay<'a, Message>) -> Self {
+        Element::new(widget)
+    }
+}
+
+struct List<'a, S: AsRef<str>, Message>
+where
+    [S]: std::borrow::ToOwned,
+{
+    options: Cow<'a, [S]>,
+    icons: Cow<'a, [icon::Handle]>,
+    hovered_option: Arc<Mutex<Option<usize>>>,
     selected_option: Option<usize>,
     on_selected: Box<dyn FnMut(usize) -> Message + 'a>,
+    close_on_selected: Option<Message>,
     on_option_hovered: Option<&'a dyn Fn(usize) -> Message>,
     padding: Padding,
     text_size: Option<f32>,
     text_line_height: text::LineHeight,
 }
 
-impl<'a, S: AsRef<str>, Message> Widget<Message, crate::Theme, crate::Renderer>
-    for List<'a, S, Message>
+impl<S: AsRef<str>, Message> Widget<Message, crate::Theme, crate::Renderer> for List<'_, S, Message>
+where
+    [S]: std::borrow::ToOwned,
+    Message: Clone,
 {
     fn size(&self) -> Size<Length> {
         Size::new(Length::Fill, Length::Shrink)
@@ -330,9 +473,13 @@ impl<'a, S: AsRef<str>, Message> Widget<Message, crate::Theme, crate::Renderer>
     ) -> event::Status {
         match event {
             Event::Mouse(mouse::Event::ButtonPressed(mouse::Button::Left)) => {
+                let hovered_guard = self.hovered_option.lock().unwrap();
                 if cursor.is_over(layout.bounds()) {
-                    if let Some(index) = *self.hovered_option {
+                    if let Some(index) = *hovered_guard {
                         shell.publish((self.on_selected)(index));
+                        if let Some(close_on_selected) = self.close_on_selected.clone() {
+                            shell.publish(close_on_selected);
+                        }
                         return event::Status::Captured;
                     }
                 }
@@ -348,14 +495,15 @@ impl<'a, S: AsRef<str>, Message> Widget<Message, crate::Theme, crate::Renderer>
                             + self.padding.vertical();
 
                     let new_hovered_option = (cursor_position.y / option_height) as usize;
+                    let mut hovered_guard = self.hovered_option.lock().unwrap();
 
                     if let Some(on_option_hovered) = self.on_option_hovered {
-                        if *self.hovered_option != Some(new_hovered_option) {
+                        if *hovered_guard != Some(new_hovered_option) {
                             shell.publish(on_option_hovered(new_hovered_option));
                         }
                     }
 
-                    *self.hovered_option = Some(new_hovered_option);
+                    *hovered_guard = Some(new_hovered_option);
                 }
             }
             Event::Touch(touch::Event::FingerPressed { .. }) => {
@@ -367,11 +515,15 @@ impl<'a, S: AsRef<str>, Message> Widget<Message, crate::Theme, crate::Renderer>
                     let option_height =
                         f32::from(self.text_line_height.to_absolute(Pixels(text_size)))
                             + self.padding.vertical();
+                    let mut hovered_guard = self.hovered_option.lock().unwrap();
 
-                    *self.hovered_option = Some((cursor_position.y / option_height) as usize);
+                    *hovered_guard = Some((cursor_position.y / option_height) as usize);
 
-                    if let Some(index) = *self.hovered_option {
+                    if let Some(index) = *hovered_guard {
                         shell.publish((self.on_selected)(index));
+                        if let Some(close_on_selected) = self.close_on_selected.clone() {
+                            shell.publish(close_on_selected);
+                        }
                         return event::Status::Captured;
                     }
                 }
@@ -434,6 +586,8 @@ impl<'a, S: AsRef<str>, Message> Widget<Message, crate::Theme, crate::Renderer>
                 height: option_height,
             };
 
+            let hovered_guard = self.hovered_option.lock().unwrap();
+
             let (color, font) = if self.selected_option == Some(i) {
                 let item_x = bounds.x + appearance.border_width;
                 let item_width = appearance.border_width.mul_add(-2.0, bounds.width);
@@ -471,7 +625,7 @@ impl<'a, S: AsRef<str>, Message> Widget<Message, crate::Theme, crate::Renderer>
                 );
 
                 (appearance.selected_text_color, crate::font::semibold())
-            } else if *self.hovered_option == Some(i) {
+            } else if *hovered_guard == Some(i) {
                 let item_x = bounds.x + appearance.border_width;
                 let item_width = appearance.border_width.mul_add(-2.0, bounds.width);
 
@@ -538,6 +692,9 @@ impl<'a, S: AsRef<str>, Message> Widget<Message, crate::Theme, crate::Renderer>
 
 impl<'a, S: AsRef<str>, Message: 'a> From<List<'a, S, Message>>
     for Element<'a, Message, crate::Theme, crate::Renderer>
+where
+    [S]: std::borrow::ToOwned,
+    Message: Clone,
 {
     fn from(list: List<'a, S, Message>) -> Self {
         Element::new(list)

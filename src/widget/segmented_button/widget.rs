@@ -547,8 +547,8 @@ where
     }
 }
 
-impl<'a, Variant, SelectionMode, Message> Widget<Message, crate::Theme, Renderer>
-    for SegmentedButton<'a, Variant, SelectionMode, Message>
+impl<Variant, SelectionMode, Message> Widget<Message, crate::Theme, Renderer>
+    for SegmentedButton<'_, Variant, SelectionMode, Message>
 where
     Self: SegmentedVariant,
     Model<SelectionMode>: Selectable,
@@ -562,7 +562,7 @@ where
         if let Some(ref context_menu) = self.context_menu {
             let mut tree = Tree::empty();
             tree.state = tree::State::new(MenuBarState::default());
-            tree.children = menu_roots_children(&context_menu);
+            tree.children = menu_roots_children(context_menu);
             children.push(tree);
         }
 
@@ -719,7 +719,7 @@ where
                     let on_dnd_enter =
                         self.on_dnd_enter
                             .as_ref()
-                            .zip(entity.clone())
+                            .zip(entity)
                             .map(|(on_enter, entity)| {
                                 move |_, _, mime_types| on_enter(entity, mime_types)
                             });

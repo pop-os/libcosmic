@@ -183,7 +183,7 @@ pub fn about<'a, Message: Clone + 'static>(
                     .align_y(Alignment::Center),
             )
             .class(crate::theme::Button::Text)
-            .on_press(on_url_press(url.unwrap_or(String::new())))
+            .on_press(on_url_press(url.unwrap_or_default()))
             .width(Length::Fill),
         )
     });

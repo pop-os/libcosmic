@@ -9,7 +9,7 @@ pub trait ElementExt {
     fn debug(self, debug: bool) -> Self;
 }
 
-impl<'a, Message: 'static> ElementExt for crate::Element<'a, Message> {
+impl<Message: 'static> ElementExt for crate::Element<'_, Message> {
     fn debug(self, debug: bool) -> Self {
         if debug {
             self.explain(Color::WHITE)

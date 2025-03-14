@@ -756,9 +756,7 @@ impl slider::Catalog for Theme {
 impl menu::Catalog for Theme {
     type Class<'a> = ();
 
-    fn default<'a>() -> <Self as menu::Catalog>::Class<'a> {
-        ()
-    }
+    fn default<'a>() -> <Self as menu::Catalog>::Class<'a> {}
 
     fn style(&self, class: &<Self as menu::Catalog>::Class<'_>) -> menu::Style {
         let cosmic = self.cosmic();
@@ -779,9 +777,7 @@ impl menu::Catalog for Theme {
 impl pick_list::Catalog for Theme {
     type Class<'a> = ();
 
-    fn default<'a>() -> <Self as pick_list::Catalog>::Class<'a> {
-        ()
-    }
+    fn default<'a>() -> <Self as pick_list::Catalog>::Class<'a> {}
 
     fn style(
         &self,
@@ -824,9 +820,7 @@ impl pick_list::Catalog for Theme {
 impl radio::Catalog for Theme {
     type Class<'a> = ();
 
-    fn default<'a>() -> Self::Class<'a> {
-        ()
-    }
+    fn default<'a>() -> Self::Class<'a> {}
 
     fn style(&self, class: &Self::Class<'_>, status: radio::Status) -> radio::Style {
         let theme = self.cosmic();
@@ -878,9 +872,7 @@ impl radio::Catalog for Theme {
 impl toggler::Catalog for Theme {
     type Class<'a> = ();
 
-    fn default<'a>() -> Self::Class<'a> {
-        ()
-    }
+    fn default<'a>() -> Self::Class<'a> {}
 
     fn style(&self, class: &Self::Class<'_>, status: toggler::Status) -> toggler::Style {
         let cosmic = self.cosmic();
@@ -935,9 +927,7 @@ impl toggler::Catalog for Theme {
 impl pane_grid::Catalog for Theme {
     type Class<'a> = ();
 
-    fn default<'a>() -> <Self as pane_grid::Catalog>::Class<'a> {
-        ()
-    }
+    fn default<'a>() -> <Self as pane_grid::Catalog>::Class<'a> {}
 
     fn style(&self, class: &<Self as pane_grid::Catalog>::Class<'_>) -> pane_grid::Style {
         let theme = self.cosmic();

@@ -53,7 +53,7 @@ impl CalendarModel {
         let now = Local::now();
         let naive_now = NaiveDate::from(now.naive_local());
         CalendarModel {
-            selected: naive_now.clone(),
+            selected: naive_now,
             visible: naive_now,
         }
     }
@@ -65,36 +65,34 @@ impl CalendarModel {
     pub fn show_prev_month(&mut self) {
         let prev_month_date = self
             .visible
-            .clone()
             .checked_sub_months(Months::new(1))
             .expect("valid naivedate");
 
-        self.visible = prev_month_date.clone();
+        self.visible = prev_month_date;
     }
 
     pub fn show_next_month(&mut self) {
         let next_month_date = self
             .visible
-            .clone()
             .checked_add_months(Months::new(1))
             .expect("valid naivedate");
 
-        self.visible = next_month_date.clone();
+        self.visible = next_month_date;
     }
 
     pub fn set_prev_month(&mut self) {
         self.show_prev_month();
-        self.selected = self.visible.clone();
+        self.selected = self.visible;
     }
 
     pub fn set_next_month(&mut self) {
         self.show_next_month();
-        self.selected = self.visible.clone();
+        self.selected = self.visible;
     }
 
     pub fn set_selected_visible(&mut self, selected: NaiveDate) {
         self.selected = selected;
-        self.visible = self.selected.clone();
+        self.visible = self.selected;
     }
 }
 

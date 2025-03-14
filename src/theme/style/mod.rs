@@ -31,3 +31,8 @@ pub use self::segmented_button::SegmentedButton;
 mod text_input;
 #[doc(inline)]
 pub use self::text_input::TextInput;
+
+#[cfg(all(feature = "wayland", feature = "winit"))]
+pub mod tooltip;
+#[cfg(all(feature = "wayland", feature = "winit"))]
+pub use tooltip::Tooltip;

@@ -15,6 +15,12 @@ pub struct Dialog<'a, Message> {
     tertiary_action: Option<Element<'a, Message>>,
 }
 
+impl<Message> Default for Dialog<'_, Message> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl<'a, Message> Dialog<'a, Message> {
     pub fn new() -> Self {
         Self {

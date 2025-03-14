@@ -25,7 +25,7 @@ pub fn nav_bar_toggle<Message>() -> NavBarToggle<Message> {
     }
 }
 
-impl<'a, Message: 'static + Clone> From<NavBarToggle<Message>> for Element<'a, Message> {
+impl<Message: 'static + Clone> From<NavBarToggle<Message>> for Element<'_, Message> {
     fn from(nav_bar_toggle: NavBarToggle<Message>) -> Self {
         let icon = if nav_bar_toggle.active {
             widget::icon::from_svg_bytes(
