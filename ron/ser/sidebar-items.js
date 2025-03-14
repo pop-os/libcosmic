@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["to_string","to_string_pretty","to_writer","to_writer_pretty"],"mod":["path_meta"],"struct":["PrettyConfig","Serializer"]};
