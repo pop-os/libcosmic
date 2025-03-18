@@ -1247,7 +1247,7 @@ pub fn layout<Message>(
 #[allow(clippy::missing_panics_doc)]
 #[allow(clippy::cast_lossless)]
 #[allow(clippy::cast_possible_truncation)]
-pub fn update<'a, Message: 'static>(
+pub fn update<'a, Message: Clone + 'static>(
     id: Option<Id>,
     event: Event,
     text_layout: Layout<'_>,
@@ -1270,10 +1270,7 @@ pub fn update<'a, Message: 'static>(
     line_height: text::LineHeight,
     layout: Layout<'_>,
     manage_value: bool,
-) -> event::Status
-where
-    Message: Clone,
-{
+) -> event::Status {
     let update_cache = |state, value| {
         replace_paragraph(state, layout, value, font, iced::Pixels(size), line_height);
     };
@@ -1285,6 +1282,8 @@ where
     };
     let unsecured_value = value;
     let value = &mut secured_value;
+
+    // NOTE: Clicks must be captured to prevent mouse areas behind them handling the same clicks.
 
     match event {
         Event::Mouse(mouse::Event::ButtonPressed(mouse::Button::Left))
@@ -1309,7 +1308,6 @@ where
             }
 
             if let Some(cursor_position) = click_position {
-                let text_layout = layout.children().next().unwrap();
                 let target = cursor_position.x - text_layout.bounds().x;
 
                 let click =
@@ -1463,19 +1461,17 @@ where
                     && matches!(state.dragging_state, None | Some(DraggingState::Selection))
                 {
                     state.is_read_only = false;
+
+                    let now = Instant::now();
+                    LAST_FOCUS_UPDATE.with(|x| x.set(now));
+                    state.is_focused = Some(Focus {
+                        updated_at: now,
+                        now,
+                    });
+
                     if let Some(on_toggle_edit) = on_toggle_edit {
                         let message = (on_toggle_edit)(!state.is_read_only);
                         shell.publish(message);
-
-                        let now = Instant::now();
-                        LAST_FOCUS_UPDATE.with(|x| x.set(now));
-                        state.is_focused = Some(Focus {
-                            updated_at: now,
-                            now,
-                        });
-
-                        state.move_cursor_to_end();
-                        return event::Status::Captured;
                     }
                 }
 
@@ -1483,61 +1479,77 @@ where
 
                 return event::Status::Captured;
             }
+
             let mut is_trailing_clicked = false;
             if is_editable {
                 if let Some(trailing_layout) = trailing_icon_layout {
                     is_trailing_clicked = cursor.is_over(trailing_layout.bounds());
+                    if is_trailing_clicked {
+                        if on_toggle_edit.is_some() {
+                            let Some(pos) = cursor.position() else {
+                                return event::Status::Ignored;
+                            };
 
-                    if is_trailing_clicked && on_toggle_edit.is_some() {
-                        let Some(pos) = cursor.position() else {
-                            return event::Status::Ignored;
-                        };
+                            let click =
+                                mouse::Click::new(pos, mouse::Button::Left, state.last_click);
 
-                        let click = mouse::Click::new(pos, mouse::Button::Left, state.last_click);
+                            match (
+                                &state.dragging_state,
+                                click.kind(),
+                                state.cursor().state(value),
+                            ) {
+                                (None, click::Kind::Single, _) => {
+                                    state.is_read_only = !state.is_read_only;
+                                    if let Some(on_toggle_edit) = on_toggle_edit {
+                                        let message = (on_toggle_edit)(!state.is_read_only);
+                                        shell.publish(message);
 
-                        match (
-                            &state.dragging_state,
-                            click.kind(),
-                            state.cursor().state(value),
-                        ) {
-                            (None, click::Kind::Single, _) => {
-                                state.is_read_only = !state.is_read_only;
-                                if let Some(on_toggle_edit) = on_toggle_edit {
-                                    let message = (on_toggle_edit)(!state.is_read_only);
-                                    shell.publish(message);
+                                        let now = Instant::now();
+                                        LAST_FOCUS_UPDATE.with(|x| x.set(now));
+                                        state.is_focused = Some(Focus {
+                                            updated_at: now,
+                                            now,
+                                        });
 
-                                    let now = Instant::now();
-                                    LAST_FOCUS_UPDATE.with(|x| x.set(now));
-                                    state.is_focused = Some(Focus {
-                                        updated_at: now,
-                                        now,
-                                    });
-
-                                    state.move_cursor_to_end();
-
-                                    return event::Status::Captured;
+                                        state.move_cursor_to_end();
+                                    }
+                                }
+                                _ => {
+                                    state.dragging_state = None;
                                 }
                             }
-                            _ => {
-                                state.dragging_state = None;
-                            }
                         }
+
+                        return event::Status::Captured;
                     }
                 }
             }
 
+            // Condition met when mouse click is completely outside of the widget.
             if !is_trailing_clicked && click_position.is_none() {
                 state.is_focused = None;
                 state.dragging_state = None;
                 state.is_pasting = None;
-
                 state.keyboard_modifiers = keyboard::Modifiers::default();
+                state.is_read_only = true;
+
+                // Ensure clicks outside emit the toggle edit message.
+                if let Some(on_toggle_edit) = on_toggle_edit {
+                    let message = (on_toggle_edit)(false);
+                    shell.publish(message);
+                }
             }
         }
         Event::Mouse(mouse::Event::ButtonReleased(mouse::Button::Left))
         | Event::Touch(touch::Event::FingerLifted { .. } | touch::Event::FingerLost { .. }) => {
             let state = state();
             state.dragging_state = None;
+
+            return if cursor.is_over(layout.bounds()) {
+                event::Status::Captured
+            } else {
+                event::Status::Ignored
+            };
         }
         Event::Mouse(mouse::Event::CursorMoved { position })
         | Event::Touch(touch::Event::FingerMoved { position, .. }) => {
@@ -1769,10 +1781,11 @@ where
 
                         state.keyboard_modifiers = keyboard::Modifiers::default();
                     }
+
                     keyboard::Key::Named(
-                        keyboard::key::Named::Tab
-                        | keyboard::key::Named::ArrowUp
-                        | keyboard::key::Named::ArrowDown,
+                        keyboard::key::Named::ArrowUp
+                        | keyboard::key::Named::ArrowDown
+                        | keyboard::key::Named::Tab,
                     ) => {
                         return event::Status::Ignored;
                     }
