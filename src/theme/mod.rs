@@ -6,11 +6,12 @@
 #[cfg(feature = "xdg-portal")]
 pub mod portal;
 pub mod style;
+use cosmic_theme::Spacing;
 use cosmic_theme::ThemeMode;
 pub use style::*;
 
-use cosmic_config::config_subscription;
 use cosmic_config::CosmicConfigEntry;
+use cosmic_config::config_subscription;
 use cosmic_theme::Component;
 use cosmic_theme::LayeredTheme;
 use iced_futures::Subscription;
@@ -61,6 +62,12 @@ pub fn active() -> Theme {
 #[allow(clippy::missing_panics_doc)]
 pub fn active_type() -> ThemeType {
     THEME.lock().unwrap().theme_type.clone()
+}
+
+/// Preferred interface spacing parameters defined by the active theme.
+#[inline(always)]
+pub fn spacing() -> Spacing {
+    active().cosmic().spacing
 }
 
 /// Whether the active theme has a dark preference.

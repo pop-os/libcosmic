@@ -205,6 +205,7 @@ impl cosmic::Application for App {
                     .on_input(Message::Input2)
                     .on_clear(Message::Ignore),
             ]
+            .spacing(cosmic::theme::spacing().space_s)
             .width(iced::Length::Fill)
             .height(iced::Length::Shrink)
             .align_x(iced::Alignment::Center),
