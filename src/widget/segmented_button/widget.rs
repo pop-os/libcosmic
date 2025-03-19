@@ -6,29 +6,29 @@ use crate::iced_core::id::Internal;
 use crate::theme::{SegmentedButton as Style, THEME};
 use crate::widget::dnd_destination::DragId;
 use crate::widget::menu::{
-    self, menu_roots_children, menu_roots_diff, CloseCondition, ItemHeight, ItemWidth,
-    MenuBarState, PathHighlight,
+    self, CloseCondition, ItemHeight, ItemWidth, MenuBarState, PathHighlight, menu_roots_children,
+    menu_roots_diff,
 };
-use crate::widget::{icon, Icon};
+use crate::widget::{Icon, icon};
 use crate::{Element, Renderer};
 use derive_setters::Setters;
 use iced::clipboard::dnd::{self, DndAction, DndDestinationRectangle, DndEvent, OfferEvent};
 use iced::clipboard::mime::AllowedMimeTypes;
 use iced::touch::Finger;
 use iced::{
-    alignment, event, keyboard, mouse, touch, Alignment, Background, Color, Event, Length, Padding,
-    Rectangle, Size, Task, Vector,
+    Alignment, Background, Color, Event, Length, Padding, Rectangle, Size, Task, Vector, alignment,
+    event, keyboard, mouse, touch,
 };
 use iced_core::mouse::ScrollDelta;
 use iced_core::text::{LineHeight, Paragraph, Renderer as TextRenderer, Shaping, Wrapping};
 use iced_core::widget::{self, operation, tree};
-use iced_core::{layout, renderer, widget::Tree, Clipboard, Layout, Shell, Widget};
 use iced_core::{Border, Gradient, Point, Renderer as IcedRenderer, Shadow, Text};
-use iced_runtime::{task, Action};
+use iced_core::{Clipboard, Layout, Shell, Widget, layout, renderer, widget::Tree};
+use iced_runtime::{Action, task};
 use slotmap::{Key, SecondaryMap};
 use std::borrow::Cow;
-use std::collections::hash_map::DefaultHasher;
 use std::collections::HashSet;
+use std::collections::hash_map::DefaultHasher;
 use std::hash::{Hash, Hasher};
 use std::marker::PhantomData;
 use std::mem;
@@ -537,7 +537,7 @@ where
     pub fn get_drag_id(&self) -> u128 {
         self.drag_id.map_or_else(
             || {
-                u128::from(match &self.id.0 .0 {
+                u128::from(match &self.id.0.0 {
                     Internal::Unique(id) | Internal::Custom(id, _) => *id,
                     Internal::Set(_) => panic!("Invalid Id assigned to dnd destination."),
                 })
@@ -1180,7 +1180,7 @@ where
                 }
 
                 Background::Gradient(g) => {
-                    let Gradient::Linear(mut l) = g;
+                    let Gradient::Linear(l) = g;
                     for c in &mut l.stops {
                         let Some(stop) = c else {
                             continue;
