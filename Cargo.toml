@@ -1,8 +1,8 @@
 [package]
 name = "libcosmic"
 version = "0.1.0"
-edition = "2021"
-rust-version = "1.80"
+edition = "2024"
+rust-version = "1.85"
 
 [lib]
 name = "cosmic"
@@ -97,41 +97,38 @@ async-std = [
 
 [dependencies]
 apply = "0.3.0"
-ashpd = { version = "0.9.1", default-features = false, optional = true }
+ashpd = { version = "0.9.2", default-features = false, optional = true }
 async-fs = { version = "2.1", optional = true }
-async-std = { version = "1.10", optional = true }
+async-std = { version = "1.13", optional = true }
 cctk = { git = "https://github.com/pop-os/cosmic-protocols", package = "cosmic-client-toolkit", rev = "178eb0b", optional = true }
-chrono = "0.4.35"
+chrono = "0.4.40"
 cosmic-config = { path = "cosmic-config" }
 cosmic-settings-daemon = { git = "https://github.com/pop-os/dbus-settings-bindings", optional = true }
-css-color = "0.2.5"
-derive_setters = "0.1.5"
+css-color = "0.2.8"
+derive_setters = "0.1.6"
 futures = "0.3"
 image = { version = "0.25.5", default-features = false, features = [
     "jpeg",
     "png",
 ] }
-lazy_static = "1.4.0"
-libc = { version = "0.2.155", optional = true }
-license = { version = "3.5.1", optional = true }
+lazy_static = "1.5.0"
+libc = { version = "0.2.171", optional = true }
+license = { version = "3.6.0", optional = true }
 mime = { version = "0.3.17", optional = true }
-palette = "0.7.3"
-rfd = { version = "0.14.0", default-features = false, features = [
+palette = "0.7.6"
+rfd = { version = "0.14.1", default-features = false, features = [
     "xdg-portal",
 ], optional = true }
-rustix = { version = "0.38.34", features = [
-    "pipe",
-    "process",
-], optional = true }
-serde = { version = "1.0.180", features = ["derive"] }
-slotmap = "1.0.6"
-smol = { version = "2.0.0", optional = true }
-thiserror = "1.0.44"
-tokio = { version = "1.24.2", optional = true }
+rustix = { version = "1.0", features = ["pipe", "process"], optional = true }
+serde = { version = "1.0.219", features = ["derive"] }
+slotmap = "1.0.7"
+smol = { version = "2.0.2", optional = true }
+thiserror = "2.0.12"
+tokio = { version = "1.44.1", optional = true }
 tracing = "0.1.41"
-unicode-segmentation = "1.6"
-url = "2.4.0"
-zbus = { version = "4.2.1", default-features = false, optional = true }
+unicode-segmentation = "1.12"
+url = "2.5.4"
+zbus = { version = "4.4.0", default-features = false, optional = true }
 
 [target.'cfg(unix)'.dependencies]
 freedesktop-icons = { package = "cosmic-freedesktop-icons", git = "https://github.com/pop-os/freedesktop-icons" }
@@ -190,7 +187,7 @@ git = "https://github.com/pop-os/cosmic-panel"
 optional = true
 
 [dependencies.ron]
-version = "0.8"
+version = "0.9"
 optional = true
 
 [dependencies.taffy]
@@ -208,7 +205,7 @@ members = [
 exclude = ["iced"]
 
 [workspace.dependencies]
-dirs = "5.0.1"
+dirs = "6.0.0"
 
 
 [patch."https://github.com/pop-os/libcosmic"]

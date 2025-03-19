@@ -8,8 +8,8 @@ default = ["wayland"]
 wayland = ["libcosmic/wayland"]
 
 [dependencies]
-tracing = "0.1.37"
-tracing-subscriber = "0.3.17"
+tracing = "0.1.41"
+tracing-subscriber = "0.3.19"
 tracing-log = "0.2.0"
 
 [dependencies.libcosmic]
