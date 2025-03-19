@@ -3,6 +3,7 @@
 
 //! Create asynchronous actions to be performed in the background.
 
+use futures::stream::{Stream, StreamExt};
 use std::future::Future;
 
 /// Yields a task which contains a batch of tasks.
@@ -22,4 +23,11 @@ pub fn future<X: Into<Y>, Y: 'static>(
 /// Yields a task which will return a message.
 pub fn message<X: Send + 'static + Into<Y>, Y: 'static>(message: X) -> iced::Task<Y> {
     future(async move { message.into() })
+}
+
+/// Yields a task which will run a stream on the runtime executor.
+pub fn stream<X: Into<Y> + 'static, Y: 'static>(
+    stream: impl Stream<Item = X> + Send + 'static,
+) -> iced::Task<Y> {
+    iced::Task::stream(stream.map(Into::into))
 }
