@@ -18,9 +18,9 @@ use super::style::StyleSheet;
 pub use super::value::Value;
 
 use apply::Apply;
+use iced::Limits;
 use iced::clipboard::dnd::{DndAction, DndEvent, OfferEvent, SourceEvent};
 use iced::clipboard::mime::AsMimeTypes;
-use iced::Limits;
 use iced_core::event::{self, Event};
 use iced_core::mouse::{self, click};
 use iced_core::overlay::Group;
@@ -28,18 +28,18 @@ use iced_core::renderer::{self, Renderer as CoreRenderer};
 use iced_core::text::{self, Paragraph, Renderer, Text};
 use iced_core::time::{Duration, Instant};
 use iced_core::touch;
+use iced_core::widget::Id;
 use iced_core::widget::operation::{self, Operation};
 use iced_core::widget::tree::{self, Tree};
-use iced_core::widget::Id;
 use iced_core::window;
-use iced_core::{alignment, Background};
-use iced_core::{keyboard, Border, Shadow};
-use iced_core::{layout, overlay};
+use iced_core::{Background, alignment};
+use iced_core::{Border, Shadow, keyboard};
 use iced_core::{
     Clipboard, Color, Element, Layout, Length, Padding, Pixels, Point, Rectangle, Shell, Size,
     Vector, Widget,
 };
-use iced_runtime::{task, Action, Task};
+use iced_core::{layout, overlay};
+use iced_runtime::{Action, Task, task};
 
 thread_local! {
     // Prevents two inputs from being focused at the same time.
@@ -59,7 +59,7 @@ where
     TextInput::new(placeholder, value)
 }
 
-/// A text label whiich can transform into a text input on activation.
+/// A text label which can transform into a text input on activation.
 pub fn editable_input<'a, Message: Clone + 'static>(
     placeholder: impl Into<Cow<'a, str>>,
     text: impl Into<Cow<'a, str>>,
@@ -182,7 +182,7 @@ pub struct TextInput<'a, Message> {
     placeholder: Cow<'a, str>,
     value: Value,
     is_secure: bool,
-    is_editable: bool,
+    is_editable_variant: bool,
     is_read_only: bool,
     select_on_focus: bool,
     font: Option<<crate::Renderer as iced_core::text::Renderer>::Font>,
@@ -193,8 +193,11 @@ pub struct TextInput<'a, Message> {
     label: Option<Cow<'a, str>>,
     helper_text: Option<Cow<'a, str>>,
     error: Option<Cow<'a, str>>,
+    on_focus: Option<Message>,
+    on_unfocus: Option<Message>,
     on_input: Option<Box<dyn Fn(String) -> Message + 'a>>,
     on_paste: Option<Box<dyn Fn(String) -> Message + 'a>>,
+    on_tab: Option<Message>,
     on_submit: Option<Box<dyn Fn(String) -> Message + 'a>>,
     on_toggle_edit: Option<Box<dyn Fn(bool) -> Message + 'a>>,
     leading_icon: Option<Element<'a, Message, crate::Theme, crate::Renderer>>,
@@ -228,7 +231,7 @@ where
             placeholder: placeholder.into(),
             value: Value::new(v.as_ref()),
             is_secure: false,
-            is_editable: false,
+            is_editable_variant: false,
             is_read_only: false,
             select_on_focus: false,
             font: None,
@@ -237,9 +240,12 @@ where
             size: None,
             helper_size: 10.0,
             helper_line_height: text::LineHeight::Absolute(14.0.into()),
+            on_focus: None,
+            on_unfocus: None,
             on_input: None,
             on_paste: None,
             on_submit: None,
+            on_tab: None,
             on_toggle_edit: None,
             leading_icon: None,
             trailing_icon: None,
@@ -256,6 +262,7 @@ where
         }
     }
 
+    #[inline]
     fn dnd_id(&self) -> u128 {
         match &self.id.0 {
             iced_core::id::Internal::Custom(id, _) | iced_core::id::Internal::Unique(id) => {
@@ -267,7 +274,8 @@ where
 
     /// Sets the input to be always active.
     /// This makes it behave as if it was always focused.
-    pub fn always_active(mut self) -> Self {
+    #[inline]
+    pub const fn always_active(mut self) -> Self {
         self.always_active = true;
         self
     }
@@ -285,6 +293,7 @@ where
     }
 
     /// Sets the [`Id`] of the [`TextInput`].
+    #[inline]
     pub fn id(mut self, id: Id) -> Self {
         self.id = id;
         self
@@ -303,24 +312,47 @@ where
     }
 
     /// Converts the [`TextInput`] into a secure password input.
-    pub fn password(mut self) -> Self {
+    #[inline]
+    pub const fn password(mut self) -> Self {
         self.is_secure = true;
         self
     }
 
-    pub fn editable(mut self) -> Self {
-        self.is_editable = true;
+    /// Applies behaviors unique to the `editable_input` variable.
+    #[inline]
+    pub(crate) const fn editable(mut self) -> Self {
+        self.is_editable_variant = true;
         self
     }
 
-    pub fn editing(mut self, enable: bool) -> Self {
+    #[inline]
+    pub const fn editing(mut self, enable: bool) -> Self {
         self.is_read_only = !enable;
         self
     }
 
     /// Selects all text when the text input is focused
-    pub fn select_on_focus(mut self, select_on_focus: bool) -> Self {
+    #[inline]
+    pub const fn select_on_focus(mut self, select_on_focus: bool) -> Self {
         self.select_on_focus = select_on_focus;
+        self
+    }
+
+    /// Emits a message when an unfocused text input has been focused by click.
+    ///
+    /// This will not trigger if the input was focused externally by the application.
+    #[inline]
+    pub fn on_focus(mut self, on_focus: Message) -> Self {
+        self.on_focus = Some(on_focus);
+        self
+    }
+
+    /// Emits a message when a focused text input has been unfocused via the Tab or Esc key.
+    ///
+    /// This will not trigger if the input was unfocused externally by the application.
+    #[inline]
+    pub fn on_unfocus(mut self, on_unfocus: Message) -> Self {
+        self.on_unfocus = Some(on_unfocus);
         self
     }
 
@@ -328,41 +360,37 @@ where
     /// the [`TextInput`].
     ///
     /// If this method is not called, the [`TextInput`] will be disabled.
-    pub fn on_input<F>(mut self, callback: F) -> Self
-    where
-        F: 'a + Fn(String) -> Message,
-    {
+    pub fn on_input(mut self, callback: impl Fn(String) -> Message + 'a) -> Self {
         self.on_input = Some(Box::new(callback));
         self
     }
 
-    /// Sets the message that should be produced when the [`TextInput`] is
-    /// focused and the enter key is pressed.
-    pub fn on_submit<F>(self, callback: F) -> Self
-    where
-        F: 'a + Fn(String) -> Message,
-    {
-        self.on_submit_maybe(Some(Box::new(callback)))
-    }
-
-    /// Maybe sets the message that should be produced when the [`TextInput`] is
-    /// focused and the enter key is pressed.
-    pub fn on_submit_maybe<F>(mut self, callback: Option<F>) -> Self
-    where
-        F: 'a + Fn(String) -> Message,
-    {
-        if let Some(callback) = callback {
-            self.on_submit = Some(Box::new(callback));
-        } else {
-            self.on_submit = None;
-        }
+    /// Emits a message when a focused text input receives the Enter/Return key.
+    pub fn on_submit(mut self, callback: impl Fn(String) -> Message + 'a) -> Self {
+        self.on_submit = Some(Box::new(callback));
         self
     }
 
-    pub fn on_toggle_edit<F>(mut self, callback: F) -> Self
-    where
-        F: 'a + Fn(bool) -> Message,
-    {
+    /// Optionally emits a message when a focused text input receives the Enter/Return key.
+    pub fn on_submit_maybe(self, callback: Option<impl Fn(String) -> Message + 'a>) -> Self {
+        if let Some(callback) = callback {
+            self.on_submit(callback)
+        } else {
+            self
+        }
+    }
+
+    /// Emits a message when the Tab key has been captured, which prevents focus from changing.
+    ///
+    /// If you do no want to capture the Tab key, use [`TextInput::on_unfocus`] instead.
+    #[inline]
+    pub fn on_tab(mut self, on_tab: Message) -> Self {
+        self.on_tab = Some(on_tab);
+        self
+    }
+
+    /// Emits a message when the editable state of the input changes.
+    pub fn on_toggle_edit(mut self, callback: impl Fn(bool) -> Message + 'a) -> Self {
         self.on_toggle_edit = Some(Box::new(callback));
         self
     }
@@ -377,12 +405,17 @@ where
     /// Sets the [`Font`] of the [`TextInput`].
     ///
     /// [`Font`]: text::Renderer::Font
-    pub fn font(mut self, font: <crate::Renderer as iced_core::text::Renderer>::Font) -> Self {
+    #[inline]
+    pub const fn font(
+        mut self,
+        font: <crate::Renderer as iced_core::text::Renderer>::Font,
+    ) -> Self {
         self.font = Some(font);
         self
     }
 
     /// Sets the start [`Icon`] of the [`TextInput`].
+    #[inline]
     pub fn leading_icon(
         mut self,
         icon: Element<'a, Message, crate::Theme, crate::Renderer>,
@@ -392,6 +425,7 @@ where
     }
 
     /// Sets the end [`Icon`] of the [`TextInput`].
+    #[inline]
     pub fn trailing_icon(
         mut self,
         icon: Element<'a, Message, crate::Theme, crate::Renderer>,
@@ -407,7 +441,7 @@ where
     }
 
     /// Sets the [`Padding`] of the [`TextInput`].
-    pub fn padding<P: Into<Padding>>(mut self, padding: P) -> Self {
+    pub fn padding(mut self, padding: impl Into<Padding>) -> Self {
         self.padding = padding.into();
         self
     }
@@ -425,8 +459,9 @@ where
     }
 
     /// Sets the text input to manage its input value or not
-    pub fn manage_value(mut self, manage_value: bool) -> Self {
-        self.manage_value = true;
+    #[inline]
+    pub const fn manage_value(mut self, manage_value: bool) -> Self {
+        self.manage_value = manage_value;
         self
     }
 
@@ -435,6 +470,7 @@ where
     ///
     /// [`Renderer`]: text::Renderer
     #[allow(clippy::too_many_arguments)]
+    #[inline]
     pub fn draw(
         &self,
         tree: &Tree,
@@ -484,13 +520,15 @@ where
     /// Sets the window id of the [`TextInput`] and the window id of the drag icon.
     /// Both ids are required to be unique.
     /// This is required for the dnd to work.
-    pub fn surface_ids(mut self, window_id: (window::Id, window::Id)) -> Self {
+    #[inline]
+    pub const fn surface_ids(mut self, window_id: (window::Id, window::Id)) -> Self {
         self.surface_ids = Some(window_id);
         self
     }
 
     /// Sets the mode of this [`TextInput`] to be a drag and drop icon.
-    pub fn dnd_icon(mut self, dnd_icon: bool) -> Self {
+    #[inline]
+    pub const fn dnd_icon(mut self, dnd_icon: bool) -> Self {
         self.dnd_icon = dnd_icon;
         self
     }
@@ -508,6 +546,7 @@ where
     }
 
     /// Get the layout node of the actual text input
+
     fn text_layout<'b>(&'a self, layout: Layout<'b>) -> Layout<'b> {
         if self.dnd_icon {
             layout
@@ -525,10 +564,12 @@ impl<Message> Widget<Message, crate::Theme, crate::Renderer> for TextInput<'_, M
 where
     Message: Clone + 'static,
 {
+    #[inline]
     fn tag(&self) -> tree::Tag {
         tree::Tag::of::<State>()
     }
 
+    #[inline]
     fn state(&self) -> tree::State {
         tree::State::new(State::new(
             self.is_secure,
@@ -540,6 +581,7 @@ where
 
     fn diff(&mut self, tree: &mut Tree) {
         let state = tree.state.downcast_mut::<State>();
+
         if !self.manage_value || !self.value.is_empty() && state.tracked_value != self.value {
             state.tracked_value = self.value.clone();
         } else if self.value.is_empty() {
@@ -586,8 +628,6 @@ where
             state.dirty = true;
         }
 
-        self.is_read_only = state.is_read_only;
-
         if self.always_active && state.is_focused.is_none() {
             let now = Instant::now();
             LAST_FOCUS_UPDATE.with(|x| x.set(now));
@@ -607,11 +647,17 @@ where
             };
         }
 
-        if !state.is_focused.as_ref().map_or(false, |f| {
-            f.updated_at == LAST_FOCUS_UPDATE.with(|f| f.get())
-        }) {
-            state.is_focused = None;
+        if !state
+            .is_focused
+            .as_ref()
+            .map(|f| f.updated_at == LAST_FOCUS_UPDATE.with(|f| f.get()))
+            .unwrap_or_default()
+        {
+            state.unfocus();
+            // state.is_read_only = true;
         }
+
+        self.is_read_only = state.is_read_only;
 
         // Stop pasting if input becomes disabled
         if !self.manage_value && self.on_input.is_none() {
@@ -635,6 +681,7 @@ where
             .collect()
     }
 
+    #[inline]
     fn size(&self) -> Size<Length> {
         Size {
             width: self.width,
@@ -790,7 +837,8 @@ where
         let size = self.size.unwrap_or_else(|| renderer.default_size().0);
         let line_height = self.line_height;
 
-        if self.is_editable {
+        // Disables editing of the editable variant when clicking outside of it.
+        if self.is_editable_variant {
             if let Some(ref on_edit) = self.on_toggle_edit {
                 let state = tree.state.downcast_mut::<State>();
                 if !state.is_read_only && state.is_focused.is_none() {
@@ -800,34 +848,38 @@ where
             }
         }
 
+        // Calculates the layout of the trailing icon button element.
         if !tree.children.is_empty() {
             let index = tree.children.len() - 1;
             if let (Some(trailing_icon), Some(tree)) =
                 (self.trailing_icon.as_mut(), tree.children.get_mut(index))
             {
-                let children = text_layout.children();
-                trailing_icon_layout = Some(children.last().unwrap());
+                trailing_icon_layout = Some(text_layout.children().last().unwrap());
 
-                if let Some(trailing_layout) = trailing_icon_layout {
-                    if cursor_position.is_over(trailing_layout.bounds()) {
-                        let res = trailing_icon.as_widget_mut().on_event(
-                            tree,
-                            event.clone(),
-                            trailing_layout,
-                            cursor_position,
-                            renderer,
-                            clipboard,
-                            shell,
-                            viewport,
-                        );
+                // Enable custom buttons defined on the trailing icon position to be handled.
+                if !self.is_editable_variant {
+                    if let Some(trailing_layout) = trailing_icon_layout {
+                        if cursor_position.is_over(trailing_layout.bounds()) {
+                            let res = trailing_icon.as_widget_mut().on_event(
+                                tree,
+                                event.clone(),
+                                trailing_layout,
+                                cursor_position,
+                                renderer,
+                                clipboard,
+                                shell,
+                                viewport,
+                            );
 
-                        if res == event::Status::Captured {
-                            return res;
+                            if res == event::Status::Captured {
+                                return res;
+                            }
                         }
                     }
                 }
             }
         }
+
         let dnd_id = self.dnd_id();
         let id = Widget::id(self);
         update(
@@ -841,11 +893,14 @@ where
             &mut self.value,
             size,
             font,
+            self.is_editable_variant,
             self.is_secure,
-            self.is_editable,
+            self.on_focus.as_ref(),
+            self.on_unfocus.as_ref(),
             self.on_input.as_deref(),
             self.on_paste.as_deref(),
             self.on_submit.as_deref(),
+            self.on_tab.as_ref(),
             self.on_toggle_edit.as_deref(),
             || tree.state.downcast_mut::<State>(),
             self.on_create_dnd_source.as_deref(),
@@ -856,6 +911,7 @@ where
         )
     }
 
+    #[inline]
     fn draw(
         &self,
         tree: &Tree,
@@ -908,9 +964,7 @@ where
         if let (Some(leading_icon), Some(tree)) =
             (self.leading_icon.as_ref(), state.children.get(index))
         {
-            let mut children = layout.children();
-            children.next();
-            let leading_icon_layout = children.next().unwrap();
+            let leading_icon_layout = layout.children().nth(1).unwrap();
 
             if cursor_position.is_over(leading_icon_layout.bounds()) {
                 return leading_icon.as_widget().mouse_interaction(
@@ -954,19 +1008,21 @@ where
         )
     }
 
+    #[inline]
     fn id(&self) -> Option<Id> {
         Some(self.id.clone())
     }
 
+    #[inline]
     fn set_id(&mut self, id: Id) {
         self.id = id;
     }
 
     fn drag_destinations(
         &self,
-        state: &Tree,
+        _state: &Tree,
         layout: Layout<'_>,
-        renderer: &crate::Renderer,
+        _renderer: &crate::Renderer,
         dnd_rectangles: &mut iced_core::clipboard::DndDestinationRectangles,
     ) {
         if let Some(input) = layout.children().last() {
@@ -1251,18 +1307,21 @@ pub fn update<'a, Message: Clone + 'static>(
     id: Option<Id>,
     event: Event,
     text_layout: Layout<'_>,
-    trailing_icon_layout: Option<Layout<'_>>,
+    edit_button_layout: Option<Layout<'_>>,
     cursor: mouse::Cursor,
     clipboard: &mut dyn Clipboard,
     shell: &mut Shell<'_, Message>,
     value: &mut Value,
     size: f32,
     font: <crate::Renderer as iced_core::text::Renderer>::Font,
+    is_editable_variant: bool,
     is_secure: bool,
-    is_editable: bool,
+    on_focus: Option<&Message>,
+    on_unfocus: Option<&Message>,
     on_input: Option<&dyn Fn(String) -> Message>,
     on_paste: Option<&dyn Fn(String) -> Message>,
     on_submit: Option<&dyn Fn(String) -> Message>,
+    on_tab: Option<&Message>,
     on_toggle_edit: Option<&dyn Fn(bool) -> Message>,
     state: impl FnOnce() -> &'a mut State,
     #[allow(unused_variables)] on_start_dnd_source: Option<&dyn Fn(State) -> Message>,
@@ -1285,9 +1344,15 @@ pub fn update<'a, Message: Clone + 'static>(
 
     // NOTE: Clicks must be captured to prevent mouse areas behind them handling the same clicks.
 
+    /// Mark a branch as cold
+    #[inline]
+    #[cold]
+    fn cold() {}
+
     match event {
         Event::Mouse(mouse::Event::ButtonPressed(mouse::Button::Left))
         | Event::Touch(touch::Event::FingerPressed { .. }) => {
+            cold();
             let state = state();
 
             let click_position = if on_input.is_some() || manage_value {
@@ -1296,18 +1361,30 @@ pub fn update<'a, Message: Clone + 'static>(
                 None
             };
 
-            if click_position.is_some() {
-                state.is_focused = state.is_focused.or_else(|| {
-                    let now = Instant::now();
-                    LAST_FOCUS_UPDATE.with(|x| x.set(now));
-                    Some(Focus {
-                        updated_at: now,
-                        now,
-                    })
-                });
-            }
-
             if let Some(cursor_position) = click_position {
+                // Check if the edit button was clicked.
+                if state.dragging_state == None
+                    && edit_button_layout.map_or(false, |l| cursor.is_over(l.bounds()))
+                {
+                    if is_editable_variant {
+                        state.is_read_only = !state.is_read_only;
+                        state.move_cursor_to_end();
+
+                        if let Some(on_toggle_edit) = on_toggle_edit {
+                            shell.publish(on_toggle_edit(!state.is_read_only));
+                        }
+
+                        let now = Instant::now();
+                        LAST_FOCUS_UPDATE.with(|x| x.set(now));
+                        state.is_focused = Some(Focus {
+                            updated_at: now,
+                            now,
+                        });
+                    }
+
+                    return event::Status::Captured;
+                }
+
                 let target = cursor_position.x - text_layout.bounds().x;
 
                 let click =
@@ -1324,7 +1401,7 @@ pub fn update<'a, Message: Clone + 'static>(
                         // single click that is on top of the selected text
                         // is the click on selected text?
 
-                        if manage_value || on_input.is_some() {
+                        if on_input.is_some() || manage_value {
                             let left = start.min(end);
                             let right = end.max(start);
 
@@ -1393,40 +1470,14 @@ pub fn update<'a, Message: Clone + 'static>(
                                 update_cache(state, &unsecured_value);
                             } else {
                                 update_cache(state, value);
-                                // existing logic for setting the selection
-                                let position = if target > 0.0 {
-                                    find_cursor_position(text_layout.bounds(), value, state, target)
-                                } else {
-                                    None
-                                };
-
-                                state.cursor.move_to(position.unwrap_or(0));
-                                state.dragging_state = Some(DraggingState::Selection);
+                                state.setting_selection(value, text_layout.bounds(), target);
                             }
                         } else {
-                            // existing logic for setting the selection
-                            let position = if target > 0.0 {
-                                update_cache(state, value);
-                                find_cursor_position(text_layout.bounds(), value, state, target)
-                            } else {
-                                None
-                            };
-
-                            state.cursor.move_to(position.unwrap_or(0));
-                            state.dragging_state = Some(DraggingState::Selection);
+                            state.setting_selection(value, text_layout.bounds(), target);
                         }
                     }
                     (None, click::Kind::Single, _) => {
-                        // existing logic for setting the selection
-                        let position = if target > 0.0 {
-                            update_cache(state, value);
-                            find_cursor_position(text_layout.bounds(), value, state, target)
-                        } else {
-                            None
-                        };
-
-                        state.cursor.move_to(position.unwrap_or(0));
-                        state.dragging_state = Some(DraggingState::Selection);
+                        state.setting_selection(value, text_layout.bounds(), target);
                     }
                     (None | Some(DraggingState::Selection), click::Kind::Double, _) => {
                         update_cache(state, value);
@@ -1455,93 +1506,41 @@ pub fn update<'a, Message: Clone + 'static>(
                     }
                 }
 
-                // Enable write mode when an editable input label is clicked
-                if is_editable
-                    && state.is_read_only
+                // Focus on click of the text input, and ensure that the input is writable.
+                if state.is_focused.is_none()
                     && matches!(state.dragging_state, None | Some(DraggingState::Selection))
                 {
-                    state.is_read_only = false;
+                    if let Some(on_focus) = on_focus {
+                        shell.publish(on_focus.clone());
+                    }
+
+                    if state.is_read_only {
+                        state.is_read_only = false;
+                        if let Some(on_toggle_edit) = on_toggle_edit {
+                            let message = (on_toggle_edit)(true);
+                            shell.publish(message);
+                        }
+                    }
 
                     let now = Instant::now();
                     LAST_FOCUS_UPDATE.with(|x| x.set(now));
+
                     state.is_focused = Some(Focus {
                         updated_at: now,
                         now,
                     });
-
-                    if let Some(on_toggle_edit) = on_toggle_edit {
-                        let message = (on_toggle_edit)(!state.is_read_only);
-                        shell.publish(message);
-                    }
                 }
 
                 state.last_click = Some(click);
 
                 return event::Status::Captured;
-            }
-
-            let mut is_trailing_clicked = false;
-            if is_editable {
-                if let Some(trailing_layout) = trailing_icon_layout {
-                    is_trailing_clicked = cursor.is_over(trailing_layout.bounds());
-                    if is_trailing_clicked {
-                        if on_toggle_edit.is_some() {
-                            let Some(pos) = cursor.position() else {
-                                return event::Status::Ignored;
-                            };
-
-                            let click =
-                                mouse::Click::new(pos, mouse::Button::Left, state.last_click);
-
-                            match (
-                                &state.dragging_state,
-                                click.kind(),
-                                state.cursor().state(value),
-                            ) {
-                                (None, click::Kind::Single, _) => {
-                                    state.is_read_only = !state.is_read_only;
-                                    if let Some(on_toggle_edit) = on_toggle_edit {
-                                        let message = (on_toggle_edit)(!state.is_read_only);
-                                        shell.publish(message);
-
-                                        let now = Instant::now();
-                                        LAST_FOCUS_UPDATE.with(|x| x.set(now));
-                                        state.is_focused = Some(Focus {
-                                            updated_at: now,
-                                            now,
-                                        });
-
-                                        state.move_cursor_to_end();
-                                    }
-                                }
-                                _ => {
-                                    state.dragging_state = None;
-                                }
-                            }
-                        }
-
-                        return event::Status::Captured;
-                    }
-                }
-            }
-
-            // Condition met when mouse click is completely outside of the widget.
-            if !is_trailing_clicked && click_position.is_none() {
-                state.is_focused = None;
-                state.dragging_state = None;
-                state.is_pasting = None;
-                state.keyboard_modifiers = keyboard::Modifiers::default();
-                state.is_read_only = true;
-
-                // Ensure clicks outside emit the toggle edit message.
-                if let Some(on_toggle_edit) = on_toggle_edit {
-                    let message = (on_toggle_edit)(false);
-                    shell.publish(message);
-                }
+            } else {
+                state.unfocus();
             }
         }
         Event::Mouse(mouse::Event::ButtonReleased(mouse::Button::Left))
         | Event::Touch(touch::Event::FingerLifted { .. } | touch::Event::FingerLost { .. }) => {
+            cold();
             let state = state();
             state.dragging_state = None;
 
@@ -1573,13 +1572,9 @@ pub fn update<'a, Message: Clone + 'static>(
             let state = state();
 
             if let Some(focus) = &mut state.is_focused {
-                if !manage_value && on_input.is_none() {
+                if state.is_read_only || (!manage_value && on_input.is_none()) {
                     return event::Status::Ignored;
                 };
-
-                if state.is_read_only {
-                    return event::Status::Ignored;
-                }
 
                 let modifiers = state.keyboard_modifiers;
                 focus.updated_at = Instant::now();
@@ -1750,6 +1745,7 @@ pub fn update<'a, Message: Clone + 'static>(
                         let contents = editor.contents();
                         let unsecured_value = Value::new(&contents);
                         state.tracked_value = unsecured_value.clone();
+
                         if let Some(on_input) = on_input {
                             let message = if let Some(paste) = &on_paste {
                                 (paste)(contents)
@@ -1759,6 +1755,7 @@ pub fn update<'a, Message: Clone + 'static>(
 
                             shell.publish(message);
                         }
+
                         state.is_pasting = Some(content);
 
                         let value = if is_secure {
@@ -1775,17 +1772,34 @@ pub fn update<'a, Message: Clone + 'static>(
                         state.cursor.select_all(value);
                     }
                     keyboard::Key::Named(keyboard::key::Named::Escape) => {
-                        state.is_focused = None;
-                        state.dragging_state = None;
-                        state.is_pasting = None;
+                        state.unfocus();
+                        state.is_read_only = true;
 
-                        state.keyboard_modifiers = keyboard::Modifiers::default();
+                        if let Some(on_unfocus) = on_unfocus {
+                            shell.publish(on_unfocus.clone());
+                        }
+                    }
+
+                    keyboard::Key::Named(keyboard::key::Named::Tab) => {
+                        if let Some(on_tab) = on_tab {
+                            // Allow the application to decide how the event is handled.
+                            // This could be to connect the text input to another text input.
+                            // Or to connect the text input to a button.
+                            shell.publish(on_tab.clone());
+                        } else {
+                            state.unfocus();
+                            state.is_read_only = true;
+
+                            if let Some(on_unfocus) = on_unfocus {
+                                shell.publish(on_unfocus.clone());
+                            }
+
+                            return event::Status::Ignored;
+                        };
                     }
 
                     keyboard::Key::Named(
-                        keyboard::key::Named::ArrowUp
-                        | keyboard::key::Named::ArrowDown
-                        | keyboard::key::Named::Tab,
+                        keyboard::key::Named::ArrowUp | keyboard::key::Named::ArrowDown,
                     ) => {
                         return event::Status::Ignored;
                     }
@@ -1819,8 +1833,6 @@ pub fn update<'a, Message: Clone + 'static>(
                                 unsecured_value
                             };
                             update_cache(state, &value);
-
-                            return event::Status::Captured;
                         }
                     }
                     _ => {}
@@ -1869,8 +1881,10 @@ pub fn update<'a, Message: Clone + 'static>(
         }
         #[cfg(feature = "wayland")]
         Event::Dnd(DndEvent::Source(SourceEvent::Finished | SourceEvent::Cancelled)) => {
+            cold();
             let state = state();
             if matches!(state.dragging_state, Some(DraggingState::Dnd(..))) {
+                // TODO: restore value in text input
                 state.dragging_state = None;
                 return event::Status::Captured;
             }
@@ -1885,6 +1899,7 @@ pub fn update<'a, Message: Clone + 'static>(
                 surface,
             },
         )) if rectangle == Some(dnd_id) => {
+            cold();
             let state = state();
             let is_clicked = text_layout.bounds().contains(Point {
                 x: x as f32,
@@ -1934,6 +1949,7 @@ pub fn update<'a, Message: Clone + 'static>(
         }
         #[cfg(feature = "wayland")]
         Event::Dnd(DndEvent::Offer(rectangle, OfferEvent::Drop)) if rectangle == Some(dnd_id) => {
+            cold();
             let state = state();
             if let DndOfferState::HandlingOffer(mime_types, _action) = state.dnd_offer.clone() {
                 let Some(mime_type) = SUPPORTED_TEXT_MIME_TYPES
@@ -1953,6 +1969,7 @@ pub fn update<'a, Message: Clone + 'static>(
             rectangle,
             OfferEvent::Leave | OfferEvent::LeaveDestination,
         )) if rectangle == Some(dnd_id) => {
+            cold();
             let state = state();
             // ASHLEY TODO we should be able to reset but for now we don't if we are handling a
             // drop
@@ -1968,6 +1985,7 @@ pub fn update<'a, Message: Clone + 'static>(
         Event::Dnd(DndEvent::Offer(rectangle, OfferEvent::Data { data, mime_type }))
             if rectangle == Some(dnd_id) =>
         {
+            cold();
             let state = state();
             if let DndOfferState::Dropped = state.dnd_offer.clone() {
                 state.dnd_offer = DndOfferState::None;
@@ -2560,18 +2578,21 @@ impl State {
     }
 
     /// Returns whether the [`TextInput`] is currently focused or not.
+    #[inline]
     #[must_use]
     pub fn is_focused(&self) -> bool {
         self.is_focused.is_some()
     }
 
     /// Returns the [`Cursor`] of the [`TextInput`].
+    #[inline]
     #[must_use]
     pub fn cursor(&self) -> Cursor {
         self.cursor
     }
 
     /// Focuses the [`TextInput`].
+    #[cold]
     pub fn focus(&mut self) {
         let now = Instant::now();
         LAST_FOCUS_UPDATE.with(|x| x.set(now));
@@ -2589,63 +2610,90 @@ impl State {
     }
 
     /// Unfocuses the [`TextInput`].
-    pub fn unfocus(&mut self) {
+    #[cold]
+    pub(super) fn unfocus(&mut self) {
         self.is_focused = None;
+        self.dragging_state = None;
+        self.is_pasting = None;
+        self.keyboard_modifiers = keyboard::Modifiers::default();
     }
 
     /// Moves the [`Cursor`] of the [`TextInput`] to the front of the input text.
+    #[inline]
     pub fn move_cursor_to_front(&mut self) {
         self.cursor.move_to(0);
     }
 
     /// Moves the [`Cursor`] of the [`TextInput`] to the end of the input text.
+    #[inline]
     pub fn move_cursor_to_end(&mut self) {
         self.cursor.move_to(usize::MAX);
     }
 
     /// Moves the [`Cursor`] of the [`TextInput`] to an arbitrary location.
+    #[inline]
     pub fn move_cursor_to(&mut self, position: usize) {
         self.cursor.move_to(position);
     }
 
     /// Selects all the content of the [`TextInput`].
+    #[inline]
     pub fn select_all(&mut self) {
         self.cursor.select_range(0, usize::MAX);
+    }
+
+    pub(super) fn setting_selection(&mut self, value: &Value, bounds: Rectangle<f32>, target: f32) {
+        let position = if target > 0.0 {
+            find_cursor_position(bounds, value, self, target)
+        } else {
+            None
+        };
+
+        self.cursor.move_to(position.unwrap_or(0));
+        self.dragging_state = Some(DraggingState::Selection);
     }
 }
 
 impl operation::Focusable for State {
+    #[inline]
     fn is_focused(&self) -> bool {
         Self::is_focused(self)
     }
 
+    #[inline]
     fn focus(&mut self) {
         Self::focus(self);
     }
 
+    #[inline]
     fn unfocus(&mut self) {
         Self::unfocus(self);
     }
 }
 
 impl operation::TextInput for State {
+    #[inline]
     fn move_cursor_to_front(&mut self) {
         Self::move_cursor_to_front(self);
     }
 
+    #[inline]
     fn move_cursor_to_end(&mut self) {
         Self::move_cursor_to_end(self);
     }
 
+    #[inline]
     fn move_cursor_to(&mut self, position: usize) {
         Self::move_cursor_to(self, position);
     }
 
+    #[inline]
     fn select_all(&mut self) {
         Self::select_all(self);
     }
 }
 
+#[inline(never)]
 fn measure_cursor_and_scroll_offset(
     paragraph: &impl text::Paragraph,
     text_bounds: Rectangle,
@@ -2662,6 +2710,7 @@ fn measure_cursor_and_scroll_offset(
 
 /// Computes the position of the text cursor at the given X coordinate of
 /// a [`TextInput`].
+#[inline(never)]
 fn find_cursor_position(
     text_bounds: Rectangle,
     value: &Value,
@@ -2686,6 +2735,7 @@ fn find_cursor_position(
     )
 }
 
+#[inline(never)]
 fn replace_paragraph(
     state: &mut State,
     layout: Layout<'_>,
@@ -2715,6 +2765,7 @@ const CURSOR_BLINK_INTERVAL_MILLIS: u128 = 500;
 mod platform {
     use iced_core::keyboard;
 
+    #[inline]
     pub fn is_jump_modifier_pressed(modifiers: keyboard::Modifiers) -> bool {
         if cfg!(target_os = "macos") {
             modifiers.alt()
@@ -2724,6 +2775,7 @@ mod platform {
     }
 }
 
+#[inline(never)]
 fn offset(text_bounds: Rectangle, value: &Value, state: &State) -> f32 {
     if state.is_focused() {
         let cursor = state.cursor();

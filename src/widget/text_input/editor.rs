@@ -10,11 +10,13 @@ pub struct Editor<'a> {
 }
 
 impl<'a> Editor<'a> {
+    #[inline]
     pub fn new(value: &'a mut Value, cursor: &'a mut Cursor) -> Editor<'a> {
         Editor { value, cursor }
     }
 
     #[must_use]
+    #[inline]
     pub fn contents(&self) -> String {
         self.value.to_string()
     }

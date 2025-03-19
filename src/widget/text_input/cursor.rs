@@ -27,6 +27,7 @@ pub enum State {
 }
 
 impl Default for Cursor {
+    #[inline]
     fn default() -> Self {
         Self {
             state: State::Index(0),
@@ -37,6 +38,7 @@ impl Default for Cursor {
 impl Cursor {
     /// Returns the [`State`] of the [`Cursor`].
     #[must_use]
+    #[inline(never)]
     pub fn state(&self, value: &Value) -> State {
         match self.state {
             State::Index(index) => State::Index(index.min(value.len())),
@@ -57,6 +59,7 @@ impl Cursor {
     ///
     /// `start` is guaranteed to be <= than `end`.
     #[must_use]
+    #[inline]
     pub fn selection(&self, value: &Value) -> Option<(usize, usize)> {
         match self.state(value) {
             State::Selection { start, end } => Some((start.min(end), start.max(end))),
@@ -64,18 +67,22 @@ impl Cursor {
         }
     }
 
+    #[inline]
     pub(crate) fn move_to(&mut self, position: usize) {
         self.state = State::Index(position);
     }
 
+    #[inline]
     pub(crate) fn move_right(&mut self, value: &Value) {
         self.move_right_by_amount(value, 1);
     }
 
+    #[inline]
     pub(crate) fn move_right_by_words(&mut self, value: &Value) {
         self.move_to(value.next_end_of_word(self.right(value)));
     }
 
+    #[inline]
     pub(crate) fn move_right_by_amount(&mut self, value: &Value, amount: usize) {
         match self.state(value) {
             State::Index(index) => self.move_to(index.saturating_add(amount).min(value.len())),
@@ -83,6 +90,7 @@ impl Cursor {
         }
     }
 
+    #[inline]
     pub(crate) fn move_left(&mut self, value: &Value) {
         match self.state(value) {
             State::Index(index) if index > 0 => self.move_to(index - 1),
@@ -91,18 +99,21 @@ impl Cursor {
         }
     }
 
+    #[inline]
     pub(crate) fn move_left_by_words(&mut self, value: &Value) {
         self.move_to(value.previous_start_of_word(self.left(value)));
     }
 
+    #[inline]
     pub(crate) fn select_range(&mut self, start: usize, end: usize) {
-        if start == end {
-            self.state = State::Index(start);
+        self.state = if start == end {
+            State::Index(start)
         } else {
-            self.state = State::Selection { start, end };
-        }
+            State::Selection { start, end }
+        };
     }
 
+    #[inline]
     pub(crate) fn select_left(&mut self, value: &Value) {
         match self.state(value) {
             State::Index(index) if index > 0 => self.select_range(index, index - 1),
@@ -111,6 +122,7 @@ impl Cursor {
         }
     }
 
+    #[inline]
     pub(crate) fn select_right(&mut self, value: &Value) {
         match self.state(value) {
             State::Index(index) if index < value.len() => self.select_range(index, index + 1),
@@ -121,6 +133,7 @@ impl Cursor {
         }
     }
 
+    #[inline]
     pub(crate) fn select_left_by_words(&mut self, value: &Value) {
         match self.state(value) {
             State::Index(index) => self.select_range(index, value.previous_start_of_word(index)),
@@ -130,6 +143,7 @@ impl Cursor {
         }
     }
 
+    #[inline]
     pub(crate) fn select_right_by_words(&mut self, value: &Value) {
         match self.state(value) {
             State::Index(index) => self.select_range(index, value.next_end_of_word(index)),
@@ -139,10 +153,12 @@ impl Cursor {
         }
     }
 
+    #[inline]
     pub(crate) fn select_all(&mut self, value: &Value) {
         self.select_range(0, value.len());
     }
 
+    #[inline]
     pub(crate) fn start(&self, value: &Value) -> usize {
         let start = match self.state {
             State::Index(index) => index,
@@ -152,6 +168,7 @@ impl Cursor {
         start.min(value.len())
     }
 
+    #[inline]
     pub(crate) fn end(&self, value: &Value) -> usize {
         let end = match self.state {
             State::Index(index) => index,
@@ -161,6 +178,7 @@ impl Cursor {
         end.min(value.len())
     }
 
+    #[inline]
     fn left(&self, value: &Value) -> usize {
         match self.state(value) {
             State::Index(index) => index,
@@ -168,6 +186,7 @@ impl Cursor {
         }
     }
 
+    #[inline]
     fn right(&self, value: &Value) -> usize {
         match self.state(value) {
             State::Index(index) => index,

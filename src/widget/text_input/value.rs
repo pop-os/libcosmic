@@ -27,12 +27,14 @@ impl Value {
     ///
     /// A [`Value`] is empty when it contains no graphemes.
     #[must_use]
+    #[inline]
     pub fn is_empty(&self) -> bool {
         self.len() == 0
     }
 
     /// Returns the total amount of graphemes in the [`Value`].
     #[must_use]
+    #[inline]
     pub fn len(&self) -> usize {
         self.graphemes.len()
     }
@@ -75,6 +77,7 @@ impl Value {
     /// Returns a new [`Value`] containing the graphemes from `start` until the
     /// given `end`.
     #[must_use]
+    #[inline]
     pub fn select(&self, start: usize, end: usize) -> Self {
         let graphemes = self.graphemes[start.min(self.len())..end.min(self.len())].to_vec();
 
@@ -84,6 +87,7 @@ impl Value {
     /// Returns a new [`Value`] containing the graphemes until the given
     /// `index`.
     #[must_use]
+    #[inline]
     pub fn until(&self, index: usize) -> Self {
         let graphemes = self.graphemes[..index.min(self.len())].to_vec();
 
@@ -91,6 +95,7 @@ impl Value {
     }
 
     /// Inserts a new `char` at the given grapheme `index`.
+    #[inline]
     pub fn insert(&mut self, index: usize, c: char) {
         self.graphemes.insert(index, c.to_string());
 
@@ -100,6 +105,7 @@ impl Value {
     }
 
     /// Inserts a bunch of graphemes at the given grapheme `index`.
+    #[inline]
     pub fn insert_many(&mut self, index: usize, mut value: Value) {
         let _ = self
             .graphemes
@@ -107,11 +113,13 @@ impl Value {
     }
 
     /// Removes the grapheme at the given `index`.
+    #[inline]
     pub fn remove(&mut self, index: usize) {
         let _ = self.graphemes.remove(index);
     }
 
     /// Removes the graphemes from `start` to `end`.
+    #[inline]
     pub fn remove_many(&mut self, start: usize, end: usize) {
         let _ = self.graphemes.splice(start..end, std::iter::empty());
     }
@@ -129,6 +137,7 @@ impl Value {
 }
 
 impl ToString for Value {
+    #[inline]
     fn to_string(&self) -> String {
         self.graphemes.concat()
     }
