@@ -32,7 +32,7 @@ pub async fn spawn(mut command: Command) -> Option<u32> {
         .stderr(Stdio::null());
 
     // Handle Linux
-    #[cfg(target_os = "linux")]
+    #[cfg(all(unix, not(target_os = "macos")))]
     let Ok((read, write)) = rustix::pipe::pipe_with(rustix::pipe::PipeFlags::CLOEXEC) else {
         return None;
     };
