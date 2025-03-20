@@ -1,0 +1,15 @@
+[package]
+name = "table-view"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+tracing = "0.1.37"
+tracing-subscriber = "0.3.17"
+tracing-log = "0.2.0"
+chrono = "*"
+
+[dependencies.libcosmic]
+features = ["debug", "multi-window", "wayland", "winit", "desktop", "tokio"]
+path = "../.."
+default-features = false
