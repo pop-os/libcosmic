@@ -1531,7 +1531,9 @@ pub fn update<'a, Message: Clone + 'static>(
                 state.dragging_state = None;
                 state.is_pasting = None;
                 state.keyboard_modifiers = keyboard::Modifiers::default();
-                state.is_read_only = true;
+                if is_editable {
+                    state.is_read_only = true;
+                }
 
                 // Ensure clicks outside emit the toggle edit message.
                 if let Some(on_toggle_edit) = on_toggle_edit {
