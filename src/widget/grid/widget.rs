@@ -166,10 +166,13 @@ impl<Message: 'static + Clone> Widget<Message, crate::Theme, Renderer> for Grid<
                 .iter()
                 .zip(&mut tree.children)
                 .zip(layout.children())
-                .for_each(|((child, state), layout)| {
-                    child
-                        .as_widget()
-                        .operate(state, layout, renderer, operation);
+                .for_each(|((child, state), c_layout)| {
+                    child.as_widget().operate(
+                        state,
+                        c_layout.with_virtual_offset(layout.virtual_offset()),
+                        renderer,
+                        operation,
+                    );
                 });
         });
     }
@@ -189,11 +192,11 @@ impl<Message: 'static + Clone> Widget<Message, crate::Theme, Renderer> for Grid<
             .iter_mut()
             .zip(&mut tree.children)
             .zip(layout.children())
-            .map(|((child, state), layout)| {
+            .map(|((child, state), c_layout)| {
                 child.as_widget_mut().on_event(
                     state,
                     event.clone(),
-                    layout,
+                    c_layout.with_virtual_offset(layout.virtual_offset()),
                     cursor,
                     renderer,
                     clipboard,
@@ -216,10 +219,14 @@ impl<Message: 'static + Clone> Widget<Message, crate::Theme, Renderer> for Grid<
             .iter()
             .zip(&tree.children)
             .zip(layout.children())
-            .map(|((child, state), layout)| {
-                child
-                    .as_widget()
-                    .mouse_interaction(state, layout, cursor, viewport, renderer)
+            .map(|((child, state), c_layout)| {
+                child.as_widget().mouse_interaction(
+                    state,
+                    c_layout.with_virtual_offset(layout.virtual_offset()),
+                    cursor,
+                    viewport,
+                    renderer,
+                )
             })
             .max()
             .unwrap_or_default()
@@ -235,15 +242,21 @@ impl<Message: 'static + Clone> Widget<Message, crate::Theme, Renderer> for Grid<
         cursor: mouse::Cursor,
         viewport: &Rectangle,
     ) {
-        for ((child, state), layout) in self
+        for ((child, state), c_layout) in self
             .children
             .iter()
             .zip(&tree.children)
             .zip(layout.children())
         {
-            child
-                .as_widget()
-                .draw(state, renderer, theme, style, layout, cursor, viewport);
+            child.as_widget().draw(
+                state,
+                renderer,
+                theme,
+                style,
+                c_layout.with_virtual_offset(layout.virtual_offset()),
+                cursor,
+                viewport,
+            );
         }
     }
 
@@ -271,7 +284,13 @@ impl<Message: 'static + Clone> Widget<Message, crate::Theme, Renderer> for Grid<
                 .iter()
                 .zip(layout.children())
                 .zip(state.children.iter())
-                .map(|((c, c_layout), state)| c.as_widget().a11y_nodes(c_layout, state, p)),
+                .map(|((c, c_layout), state)| {
+                    c.as_widget().a11y_nodes(
+                        c_layout.with_virtual_offset(layout.virtual_offset()),
+                        state,
+                        p,
+                    )
+                }),
         )
     }
 
@@ -282,14 +301,18 @@ impl<Message: 'static + Clone> Widget<Message, crate::Theme, Renderer> for Grid<
         renderer: &Renderer,
         dnd_rectangles: &mut iced_core::clipboard::DndDestinationRectangles,
     ) {
-        for ((e, layout), state) in self
+        for ((e, c_layout), state) in self
             .children
             .iter()
             .zip(layout.children())
             .zip(state.children.iter())
         {
-            e.as_widget()
-                .drag_destinations(state, layout, renderer, dnd_rectangles);
+            e.as_widget().drag_destinations(
+                state,
+                c_layout.with_virtual_offset(layout.virtual_offset()),
+                renderer,
+                dnd_rectangles,
+            );
         }
     }
 }

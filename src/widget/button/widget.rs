@@ -271,7 +271,11 @@ impl<'a, Message: 'a + Clone> Widget<Message, crate::Theme, crate::Renderer>
         operation.container(None, layout.bounds(), &mut |operation| {
             self.content.as_widget().operate(
                 &mut tree.children[0],
-                layout.children().next().unwrap(),
+                layout
+                    .children()
+                    .next()
+                    .unwrap()
+                    .with_virtual_offset(layout.virtual_offset()),
                 renderer,
                 operation,
             );
@@ -315,7 +319,11 @@ impl<'a, Message: 'a + Clone> Widget<Message, crate::Theme, crate::Renderer>
         if self.content.as_widget_mut().on_event(
             &mut tree.children[0],
             event.clone(),
-            layout.children().next().unwrap(),
+            layout
+                .children()
+                .next()
+                .unwrap()
+                .with_virtual_offset(layout.virtual_offset()),
             cursor,
             renderer,
             clipboard,
@@ -416,7 +424,7 @@ impl<'a, Message: 'a + Clone> Widget<Message, crate::Theme, crate::Renderer>
                         text_color,
                         scale_factor: renderer_style.scale_factor,
                     },
-                    content_layout,
+                    content_layout.with_virtual_offset(layout.virtual_offset()),
                     cursor,
                     &viewport.intersection(&bounds).unwrap_or_default(),
                 );
@@ -533,7 +541,11 @@ impl<'a, Message: 'a + Clone> Widget<Message, crate::Theme, crate::Renderer>
         _viewport: &Rectangle,
         _renderer: &crate::Renderer,
     ) -> mouse::Interaction {
-        mouse_interaction(layout, cursor, self.on_press.is_some())
+        mouse_interaction(
+            layout.with_virtual_offset(layout.virtual_offset()),
+            cursor,
+            self.on_press.is_some(),
+        )
     }
 
     fn overlay<'b>(
@@ -548,7 +560,11 @@ impl<'a, Message: 'a + Clone> Widget<Message, crate::Theme, crate::Renderer>
         translation.y += position.y;
         self.content.as_widget_mut().overlay(
             &mut tree.children[0],
-            layout.children().next().unwrap(),
+            layout
+                .children()
+                .next()
+                .unwrap()
+                .with_virtual_offset(layout.virtual_offset()),
             renderer,
             translation,
         )
@@ -614,9 +630,11 @@ impl<'a, Message: 'a + Clone> Widget<Message, crate::Theme, crate::Renderer>
         node.set_default_action_verb(DefaultActionVerb::Click);
 
         if let Some(child_tree) = child_tree.map(|child_tree| {
-            self.content
-                .as_widget()
-                .a11y_nodes(child_layout, child_tree, p)
+            self.content.as_widget().a11y_nodes(
+                child_layout.with_virtual_offset(layout.virtual_offset()),
+                child_tree,
+                p,
+            )
         }) {
             A11yTree::node_with_child_tree(A11yNode::new(node, self.id.clone()), child_tree)
         } else {

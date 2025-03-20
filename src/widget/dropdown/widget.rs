@@ -535,6 +535,8 @@ pub fn update<
                     let state = state.clone();
                     let on_close = surface::action::destroy_popup(id);
                     let on_surface_action_clone = on_surface_action.clone();
+                    let translation = layout.virtual_offset();
+                    dbg!(translation);
                     let get_popup_action = surface::action::simple_popup::<
                         AppMessage,
                         Box<
@@ -556,7 +558,7 @@ pub fn update<
                                 anchor: cctk::wayland_protocols::xdg::shell::client::xdg_positioner::Anchor::BottomLeft,
                                 gravity: cctk::wayland_protocols::xdg::shell::client::xdg_positioner::Gravity::BottomRight,
                                 reactive: true,
-                                offset: (-padding.left as i32, 0),
+                                offset: ((-padding.left - translation.x) as i32, -translation.y as i32),
                                 constraint_adjustment: 9,
                                 ..Default::default()
                             },

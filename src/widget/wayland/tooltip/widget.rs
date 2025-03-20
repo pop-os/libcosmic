@@ -240,7 +240,11 @@ impl<'a, Message: 'static + Clone, TopLevelMessage: 'static + Clone>
         operation.container(None, layout.bounds(), &mut |operation| {
             self.content.as_widget().operate(
                 &mut tree.children[0],
-                layout.children().next().unwrap(),
+                layout
+                    .children()
+                    .next()
+                    .unwrap()
+                    .with_virtual_offset(layout.virtual_offset()),
                 renderer,
                 operation,
             );
@@ -271,16 +275,22 @@ impl<'a, Message: 'static + Clone, TopLevelMessage: 'static + Clone>
             &self.on_surface_action,
             || tree.state.downcast_mut::<State>(),
         );
-        status.merge(self.content.as_widget_mut().on_event(
-            &mut tree.children[0],
-            event,
-            layout.children().next().unwrap(),
-            cursor,
-            renderer,
-            clipboard,
-            shell,
-            viewport,
-        ))
+        status.merge(
+            self.content.as_widget_mut().on_event(
+                &mut tree.children[0],
+                event,
+                layout
+                    .children()
+                    .next()
+                    .unwrap()
+                    .with_virtual_offset(layout.virtual_offset()),
+                cursor,
+                renderer,
+                clipboard,
+                shell,
+                viewport,
+            ),
+        )
     }
 
     #[allow(clippy::too_many_lines)]
@@ -321,7 +331,7 @@ impl<'a, Message: 'static + Clone, TopLevelMessage: 'static + Clone>
                         text_color: styling.text_color,
                         scale_factor: renderer_style.scale_factor,
                     },
-                    content_layout,
+                    content_layout.with_virtual_offset(layout.virtual_offset()),
                     cursor,
                     &viewport.intersection(&bounds).unwrap_or_default(),
                 );
@@ -339,7 +349,7 @@ impl<'a, Message: 'static + Clone, TopLevelMessage: 'static + Clone>
     ) -> mouse::Interaction {
         self.content.as_widget().mouse_interaction(
             &tree.children[0],
-            layout,
+            layout.children().next().unwrap(),
             cursor,
             viewport,
             renderer,
@@ -358,7 +368,11 @@ impl<'a, Message: 'static + Clone, TopLevelMessage: 'static + Clone>
         translation.y += position.y;
         self.content.as_widget_mut().overlay(
             &mut tree.children[0],
-            layout.children().next().unwrap(),
+            layout
+                .children()
+                .next()
+                .unwrap()
+                .with_virtual_offset(layout.virtual_offset()),
             renderer,
             translation,
         )
@@ -374,7 +388,11 @@ impl<'a, Message: 'static + Clone, TopLevelMessage: 'static + Clone>
     ) -> iced_accessibility::A11yTree {
         let c_layout = layout.children().next().unwrap();
 
-        self.content.as_widget().a11y_nodes(c_layout, state, p)
+        self.content.as_widget().a11y_nodes(
+            c_layout.with_virtual_offset(layout.virtual_offset()),
+            state,
+            p,
+        )
     }
 
     fn id(&self) -> Option<Id> {
