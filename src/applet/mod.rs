@@ -108,7 +108,7 @@ impl Context {
     #[must_use]
     pub fn suggested_size(&self, is_symbolic: bool) -> (u16, u16) {
         match &self.size {
-            Size::PanelSize(ref size) => {
+            Size::PanelSize(size) => {
                 let s = size.get_applet_icon_size(is_symbolic) as u16;
                 (s, s)
             }
@@ -142,7 +142,7 @@ impl Context {
     #[must_use]
     pub fn suggested_padding(&self, is_symbolic: bool) -> u16 {
         match &self.size {
-            Size::PanelSize(ref size) => size.get_applet_padding(is_symbolic),
+            Size::PanelSize(size) => size.get_applet_padding(is_symbolic),
             Size::Hardcoded(_) => 8,
         }
     }
