@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["calendar","get_calender_first","set_day"],"struct":["Calendar","CalendarModel"]};

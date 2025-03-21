@@ -1,0 +1,87 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Enum Flags"><title>enumflags2 - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../static.files/rustdoc-46132b98.css"><meta name="rustdoc-vars" data-root-path="../" data-static-root-path="../static.files/" data-current-crate="enumflags2" data-themes="" data-resource-suffix="" data-rustdoc-version="1.85.0 (4d91de4e4 2025-02-17)" data-channel="1.85.0" data-search-js="search-75f5ac3e.js" data-settings-js="settings-0f613d39.js" ><script src="../static.files/storage-59e33391.js"></script><script defer src="../crates.js"></script><script defer src="../static.files/main-5f194d8c.js"></script><noscript><link rel="stylesheet" href="../static.files/noscript-893ab5e7.css"></noscript><link rel="alternate icon" type="image/png" href="../static.files/favicon-32x32-6580c154.png"><link rel="icon" type="image/svg+xml" href="../static.files/favicon-044be391.svg"></head><body class="rustdoc mod crate"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle" title="show sidebar"></button></nav><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../enumflags2/index.html">enumflags2</a><span class="version">0.7.11</span></h2></div><div class="sidebar-elems"><ul class="block"><li><a id="all-types" href="all.html">All Items</a></li></ul><section id="rustdoc-toc"><h3><a href="#">Sections</a></h3><ul class="block top-toc"><li><a href="#enum-flags" title="Enum Flags">Enum Flags</a><ul><li><a href="#example" title="Example">Example</a></li><li><a href="#optional-feature-flags" title="Optional Feature Flags">Optional Feature Flags</a></li><li><a href="#const-fn-compatible-apis" title="`const fn`-compatible APIs"><code>const fn</code>-compatible APIs</a></li><li><a href="#customizing-default" title="Customizing `Default`">Customizing <code>Default</code></a></li></ul></li></ul><h3><a href="#macros">Crate Items</a></h3><ul class="block"><li><a href="#macros" title="Macros">Macros</a></li><li><a href="#structs" title="Structs">Structs</a></li><li><a href="#traits" title="Traits">Traits</a></li></ul></section><div id="rustdoc-modnav"></div></div></nav><div class="sidebar-resizer"></div><main><div class="width-limiter"><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><h1>Crate <span>enumflags2</span><button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"><a class="src" href="../src/enumflags2/lib.rs.html#1-1059">Source</a> </span></div><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><h2 id="enum-flags"><a class="doc-anchor" href="#enum-flags">§</a>Enum Flags</h2>
+<p><code>enumflags2</code> implements the classic bitflags datastructure. Annotate an enum
+with <code>#[bitflags]</code>, and <code>BitFlags&lt;YourEnum&gt;</code> will be able to hold arbitrary combinations
+of your enum within the space of a single integer.</p>
+<p>Unlike other crates, <code>enumflags2</code> makes the type-level distinction between
+a single flag (<code>YourEnum</code>) and a set of flags (<code>BitFlags&lt;YourEnum&gt;</code>).
+This allows idiomatic handling of bitflags, such as with <code>match</code> and <code>iter</code>.</p>
+<h3 id="example"><a class="doc-anchor" href="#example">§</a>Example</h3>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>enumflags2::{bitflags, make_bitflags, BitFlags};
+
+<span class="attr">#[bitflags]
+#[repr(u8)]
+#[derive(Copy, Clone, Debug, PartialEq)]
+</span><span class="kw">enum </span>Test {
+    A = <span class="number">0b0001</span>,
+    B = <span class="number">0b0010</span>,
+    C, <span class="comment">// unspecified variants pick unused bits automatically
+    </span>D = <span class="number">0b1000</span>,
+}
+
+<span class="comment">// Flags can be combined with |, this creates a BitFlags of your type:
+</span><span class="kw">let </span>a_b: BitFlags&lt;Test&gt; = Test::A | Test::B;
+<span class="kw">let </span>a_c = Test::A | Test::C;
+<span class="kw">let </span>b_c_d = <span class="macro">make_bitflags!</span>(Test::{B | C | D});
+
+<span class="comment">// The debug output lets you inspect both the numeric value and
+// the actual flags:
+</span><span class="macro">assert_eq!</span>(<span class="macro">format!</span>(<span class="string">"{:?}"</span>, a_b), <span class="string">"BitFlags&lt;Test&gt;(0b11, A | B)"</span>);
+
+<span class="comment">// But if you'd rather see only one of those, that's available too:
+</span><span class="macro">assert_eq!</span>(<span class="macro">format!</span>(<span class="string">"{}"</span>, a_b), <span class="string">"A | B"</span>);
+<span class="macro">assert_eq!</span>(<span class="macro">format!</span>(<span class="string">"{:04b}"</span>, a_b), <span class="string">"0011"</span>);
+
+<span class="comment">// Iterate over the flags like a normal set
+</span><span class="macro">assert_eq!</span>(a_b.iter().collect::&lt;Vec&lt;<span class="kw">_</span>&gt;&gt;(), <span class="kw-2">&amp;</span>[Test::A, Test::B]);
+
+<span class="comment">// Query the contents with contains and intersects
+</span><span class="macro">assert!</span>(a_b.contains(Test::A));
+<span class="macro">assert!</span>(b_c_d.contains(Test::B | Test::C));
+<span class="macro">assert!</span>(!(b_c_d.contains(a_b)));
+
+<span class="macro">assert!</span>(a_b.intersects(a_c));
+<span class="macro">assert!</span>(!(a_b.intersects(Test::C | Test::D)));</code></pre></div>
+<h3 id="optional-feature-flags"><a class="doc-anchor" href="#optional-feature-flags">§</a>Optional Feature Flags</h3>
+<ul>
+<li><a href="https://serde.rs/"><code>serde</code></a> implements <code>Serialize</code> and <code>Deserialize</code>
+for <code>BitFlags&lt;T&gt;</code>.</li>
+<li><code>std</code> implements <code>std::error::Error</code> for <code>FromBitsError</code>.</li>
+</ul>
+<h3 id="const-fn-compatible-apis"><a class="doc-anchor" href="#const-fn-compatible-apis">§</a><code>const fn</code>-compatible APIs</h3>
+<p><strong>Background:</strong> The subset of <code>const fn</code> features currently stabilized is pretty limited.
+Most notably, <a href="https://github.com/rust-lang/rfcs/pull/2632">const traits are still at the RFC stage</a>,
+which makes it impossible to use any overloaded operators in a const
+context.</p>
+<p><strong>Naming convention:</strong> If a separate, more limited function is provided
+for usage in a <code>const fn</code>, the name is suffixed with <code>_c</code>.</p>
+<p>Apart from functions whose name ends with <code>_c</code>, the <a href="macro.make_bitflags.html" title="macro enumflags2::make_bitflags"><code>make_bitflags!</code></a> macro
+is often useful for many <code>const</code> and <code>const fn</code> usecases.</p>
+<p><strong>Blanket implementations:</strong> If you attempt to write a <code>const fn</code> ranging
+over <code>T: BitFlag</code>, you will be met with an error explaining that currently,
+the only allowed trait bound for a <code>const fn</code> is <code>?Sized</code>. You will probably
+want to write a separate implementation for <code>BitFlags&lt;T, u8&gt;</code>,
+<code>BitFlags&lt;T, u16&gt;</code>, etc — best accomplished by a simple macro.</p>
+<p><strong>Documentation considerations:</strong> The strategy described above is often used
+by <code>enumflags2</code> itself. To avoid clutter in the auto-generated documentation,
+the implementations for widths other than <code>u8</code> are marked with <code>#[doc(hidden)]</code>.</p>
+<h3 id="customizing-default"><a class="doc-anchor" href="#customizing-default">§</a>Customizing <code>Default</code></h3>
+<p>By default, creating an instance of <code>BitFlags&lt;T&gt;</code> with <code>Default</code> will result in an empty
+set. If that’s undesirable, you may customize this:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="attr">#[bitflags(default = B | C)]
+#[repr(u8)]
+#[derive(Copy, Clone, Debug, PartialEq)]
+</span><span class="kw">enum </span>Test {
+    A = <span class="number">0b0001</span>,
+    B = <span class="number">0b0010</span>,
+    C = <span class="number">0b0100</span>,
+    D = <span class="number">0b1000</span>,
+}
+
+<span class="macro">assert_eq!</span>(BitFlags::default(), Test::B | Test::C);</code></pre></div>
+</div></details><h2 id="macros" class="section-header">Macros<a href="#macros" class="anchor">§</a></h2><ul class="item-table"><li><div class="item-name"><a class="macro" href="macro.make_bitflags.html" title="macro enumflags2::make_bitflags">make_<wbr>bitflags</a></div><div class="desc docblock-short"><code>make_bitflags!</code> provides a succint syntax for creating instances of
+<code>BitFlags&lt;T&gt;</code>. Instead of repeating the name of your type for each flag
+you want to add, try <code>make_bitflags!(Flags::{Foo | Bar})</code>.</div></li></ul><h2 id="structs" class="section-header">Structs<a href="#structs" class="anchor">§</a></h2><ul class="item-table"><li><div class="item-name"><a class="struct" href="struct.BitFlags.html" title="struct enumflags2::BitFlags">BitFlags</a></div><div class="desc docblock-short">Represents a set of flags of some type <code>T</code>.
+<code>T</code> must have the <code>#[bitflags]</code> attribute applied.</div></li><li><div class="item-name"><a class="struct" href="struct.ConstToken.html" title="struct enumflags2::ConstToken">Const<wbr>Token</a></div><div class="desc docblock-short">Workaround for <code>const fn</code> limitations.</div></li><li><div class="item-name"><a class="struct" href="struct.FromBitsError.html" title="struct enumflags2::FromBitsError">From<wbr>Bits<wbr>Error</a></div><div class="desc docblock-short">The error struct used by <a href="struct.BitFlags.html#method.from_bits" title="associated function enumflags2::BitFlags::from_bits"><code>BitFlags::from_bits</code></a>
+and the <a href="https://doc.rust-lang.org/1.85.0/core/convert/trait.TryFrom.html" title="trait core::convert::TryFrom"><code>TryFrom</code></a> implementation for invalid values.</div></li><li><div class="item-name"><a class="struct" href="struct.Iter.html" title="struct enumflags2::Iter">Iter</a></div><div class="desc docblock-short">Iterator that yields each flag set in a <code>BitFlags</code>.</div></li></ul><h2 id="traits" class="section-header">Traits<a href="#traits" class="anchor">§</a></h2><ul class="item-table"><li><div class="item-name"><a class="trait" href="trait.BitFlag.html" title="trait enumflags2::BitFlag">BitFlag</a></div><div class="desc docblock-short">A trait automatically implemented by <code>#[bitflags]</code> to make the enum
+a valid type parameter for <code>BitFlags&lt;T&gt;</code>.</div></li></ul></section></div></main></body></html>
