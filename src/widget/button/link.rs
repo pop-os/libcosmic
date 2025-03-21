@@ -55,6 +55,7 @@ impl<'a, Message> Button<'a, Message> {
     }
 }
 
+#[inline(never)]
 pub fn icon() -> Handle {
     icon::from_svg_bytes(&include_bytes!("external-link.svg")[..]).symbolic(true)
 }

@@ -5,14 +5,15 @@ use {
     crate::ApplicationExt,
     iced::Subscription,
     iced_futures::futures::{
-        channel::mpsc::{Receiver, Sender},
         SinkExt,
+        channel::mpsc::{Receiver, Sender},
     },
     std::{any::TypeId, collections::HashMap},
     url::Url,
     zbus::{interface, proxy, zvariant::Value},
 };
 
+#[cold]
 pub fn subscription<App: ApplicationExt>() -> Subscription<crate::Action<App::Message>> {
     use iced_futures::futures::StreamExt;
     iced_futures::Subscription::run_with_id(
@@ -105,10 +106,12 @@ pub struct DbusActivation(Option<Sender<Message>>);
 
 impl DbusActivation {
     #[must_use]
+    #[inline]
     pub fn new() -> Self {
         Self(None)
     }
 
+    #[inline]
     pub fn rx(&mut self) -> Receiver<Message> {
         let (tx, rx) = iced_futures::futures::channel::mpsc::channel(10);
         self.0 = Some(tx);
@@ -139,6 +142,7 @@ pub trait DbusActivationInterface {
 
 #[interface(name = "org.freedesktop.DbusActivation")]
 impl DbusActivation {
+    #[cold]
     async fn activate(&mut self, platform_data: HashMap<&str, Value<'_>>) {
         if let Some(tx) = &mut self.0 {
             let _ = tx
@@ -159,6 +163,7 @@ impl DbusActivation {
         }
     }
 
+    #[cold]
     async fn open(&mut self, uris: Vec<&str>, platform_data: HashMap<&str, Value<'_>>) {
         if let Some(tx) = &mut self.0 {
             let _ = tx
@@ -181,6 +186,7 @@ impl DbusActivation {
         }
     }
 
+    #[cold]
     async fn activate_action(
         &mut self,
         action_name: &str,

@@ -7,13 +7,13 @@
 
 use apply::Apply;
 use iced::{
-    clipboard::{dnd::DndAction, mime::AllowedMimeTypes},
     Background, Length,
+    clipboard::{dnd::DndAction, mime::AllowedMimeTypes},
 };
 use iced_core::{Border, Color, Shadow};
 
-use crate::widget::{container, menu, scrollable, segmented_button, Container, Icon};
-use crate::{theme, Theme};
+use crate::widget::{Container, Icon, container, menu, scrollable, segmented_button};
+use crate::{Theme, theme};
 
 use super::dnd_destination::DragId;
 
@@ -62,16 +62,19 @@ pub struct NavBar<'a, Message> {
 }
 
 impl<'a, Message: Clone + 'static> NavBar<'a, Message> {
+    #[inline]
     pub fn close_icon(mut self, close_icon: Icon) -> Self {
         self.segmented_button = self.segmented_button.close_icon(close_icon);
         self
     }
 
+    #[inline]
     pub fn context_menu(mut self, context_menu: Option<Vec<menu::Tree<'a, Message>>>) -> Self {
         self.segmented_button = self.segmented_button.context_menu(context_menu);
         self
     }
 
+    #[inline]
     pub fn drag_id(mut self, id: DragId) -> Self {
         self.segmented_button = self.segmented_button.drag_id(id);
         self
@@ -79,6 +82,7 @@ impl<'a, Message: Clone + 'static> NavBar<'a, Message> {
 
     /// Pre-convert this widget into the [`Container`] widget that it becomes.
     #[must_use]
+    #[inline]
     pub fn into_container(self) -> Container<'a, Message, crate::Theme, crate::Renderer> {
         Container::from(self)
     }

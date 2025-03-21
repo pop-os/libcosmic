@@ -240,6 +240,7 @@ impl DesktopEntryData {
 }
 
 #[cfg(not(windows))]
+#[cold]
 pub async fn spawn_desktop_exec<S, I, K, V>(exec: S, env_vars: I, app_id: Option<&str>)
 where
     S: AsRef<str>,

@@ -7,19 +7,19 @@
 //! A [`Button`] has some local [`State`].
 
 use iced_runtime::core::widget::Id;
-use iced_runtime::{keyboard, task, Action, Task};
+use iced_runtime::{Action, Task, keyboard, task};
 
 use iced_core::event::{self, Event};
 use iced_core::renderer::{self, Quad, Renderer};
 use iced_core::touch;
-use iced_core::widget::tree::{self, Tree};
 use iced_core::widget::Operation;
-use iced_core::{layout, svg};
-use iced_core::{mouse, Border};
-use iced_core::{overlay, Shadow};
+use iced_core::widget::tree::{self, Tree};
 use iced_core::{
     Background, Clipboard, Color, Layout, Length, Padding, Point, Rectangle, Shell, Vector, Widget,
 };
+use iced_core::{Border, mouse};
+use iced_core::{Shadow, overlay};
+use iced_core::{layout, svg};
 use iced_renderer::core::widget::operation;
 
 use crate::theme::THEME;
@@ -118,24 +118,28 @@ impl<'a, Message> Button<'a, Message> {
     }
 
     /// Sets the [`Id`] of the [`Button`].
+    #[inline]
     pub fn id(mut self, id: Id) -> Self {
         self.id = id;
         self
     }
 
     /// Sets the width of the [`Button`].
+    #[inline]
     pub fn width(mut self, width: impl Into<Length>) -> Self {
         self.width = width.into();
         self
     }
 
     /// Sets the height of the [`Button`].
+    #[inline]
     pub fn height(mut self, height: impl Into<Length>) -> Self {
         self.height = height.into();
         self
     }
 
     /// Sets the [`Padding`] of the [`Button`].
+    #[inline]
     pub fn padding<P: Into<Padding>>(mut self, padding: P) -> Self {
         self.padding = padding.into();
         self
@@ -144,6 +148,7 @@ impl<'a, Message> Button<'a, Message> {
     /// Sets the message that will be produced when the [`Button`] is pressed and released.
     ///
     /// Unless `on_press` or `on_press_down` is called, the [`Button`] will be disabled.
+    #[inline]
     pub fn on_press(mut self, on_press: Message) -> Self {
         self.on_press = Some(on_press);
         self
@@ -152,6 +157,7 @@ impl<'a, Message> Button<'a, Message> {
     /// Sets the message that will be produced when the [`Button`] is pressed,
     ///
     /// Unless `on_press` or `on_press_down` is called, the [`Button`] will be disabled.
+    #[inline]
     pub fn on_press_down(mut self, on_press: Message) -> Self {
         self.on_press_down = Some(on_press);
         self
@@ -161,12 +167,14 @@ impl<'a, Message> Button<'a, Message> {
     /// if `Some`.
     ///
     /// If `None`, the [`Button`] will be disabled.
+    #[inline]
     pub fn on_press_maybe(mut self, on_press: Option<Message>) -> Self {
         self.on_press = on_press;
         self
     }
 
     /// Sets the the [`Button`] to enabled whether or not it has handlers for on press.
+    #[inline]
     pub fn force_enabled(mut self, enabled: bool) -> Self {
         self.force_enabled = enabled;
         self
@@ -175,6 +183,7 @@ impl<'a, Message> Button<'a, Message> {
     /// Sets the widget to a selected state.
     ///
     /// Displays a selection indicator on image buttons.
+    #[inline]
     pub fn selected(mut self, selected: bool) -> Self {
         self.selected = selected;
 
@@ -182,6 +191,7 @@ impl<'a, Message> Button<'a, Message> {
     }
 
     /// Sets the style variant of this [`Button`].
+    #[inline]
     pub fn class(mut self, style: crate::theme::Button) -> Self {
         self.style = style;
         self
@@ -579,8 +589,8 @@ impl<'a, Message: 'a + Clone> Widget<Message, crate::Theme, crate::Renderer>
         p: mouse::Cursor,
     ) -> iced_accessibility::A11yTree {
         use iced_accessibility::{
-            accesskit::{Action, DefaultActionVerb, NodeBuilder, NodeId, Rect, Role},
             A11yNode, A11yTree,
+            accesskit::{Action, DefaultActionVerb, NodeBuilder, NodeId, Rect, Role},
         };
         // TODO why is state None sometimes?
         if matches!(state.state, iced_core::widget::tree::State::None) {
@@ -668,26 +678,31 @@ pub struct State {
 
 impl State {
     /// Creates a new [`State`].
+    #[inline]
     pub fn new() -> Self {
         Self::default()
     }
 
     /// Returns whether the [`Button`] is currently focused or not.
+    #[inline]
     pub fn is_focused(self) -> bool {
         self.is_focused
     }
 
     /// Returns whether the [`Button`] is currently hovered or not.
+    #[inline]
     pub fn is_hovered(self) -> bool {
         self.is_hovered
     }
 
     /// Focuses the [`Button`].
+    #[inline]
     pub fn focus(&mut self) {
         self.is_focused = true;
     }
 
     /// Unfocuses the [`Button`].
+    #[inline]
     pub fn unfocus(&mut self) {
         self.is_focused = false;
     }
@@ -951,14 +966,17 @@ pub fn focus<Message: 'static>(id: Id) -> Task<Message> {
 }
 
 impl operation::Focusable for State {
+    #[inline]
     fn is_focused(&self) -> bool {
         Self::is_focused(*self)
     }
 
+    #[inline]
     fn focus(&mut self) {
         Self::focus(self);
     }
 
+    #[inline]
     fn unfocus(&mut self) {
         Self::unfocus(self);
     }

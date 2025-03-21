@@ -6,7 +6,7 @@
 use std::cmp;
 
 use crate::iced_core::{Alignment, Length, Padding};
-use crate::widget::{button, column, grid, icon, row, text, Grid};
+use crate::widget::{Grid, button, column, grid, icon, row, text};
 use chrono::{Datelike, Days, Local, Months, NaiveDate, Weekday};
 
 /// A widget that displays an interactive calendar.
@@ -58,6 +58,7 @@ impl CalendarModel {
         }
     }
 
+    #[inline]
     pub fn new(selected: NaiveDate, visible: NaiveDate) -> Self {
         CalendarModel { selected, visible }
     }
@@ -80,16 +81,19 @@ impl CalendarModel {
         self.visible = next_month_date;
     }
 
+    #[inline]
     pub fn set_prev_month(&mut self) {
         self.show_prev_month();
         self.selected = self.visible;
     }
 
+    #[inline]
     pub fn set_next_month(&mut self) {
         self.show_next_month();
         self.selected = self.visible;
     }
 
+    #[inline]
     pub fn set_selected_visible(&mut self, selected: NaiveDate) {
         self.selected = selected;
         self.visible = self.selected;
@@ -225,6 +229,7 @@ fn padded_control<'a, Message>(
         .width(Length::Fill)
 }
 
+#[inline]
 fn menu_control_padding() -> Padding {
     let guard = crate::theme::THEME.lock().unwrap();
     let cosmic = guard.cosmic();

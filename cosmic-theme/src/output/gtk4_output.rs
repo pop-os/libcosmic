@@ -11,6 +11,7 @@ use super::{to_rgba, OutputError};
 
 impl Theme {
     #[must_use]
+    #[cold]
     /// turn the theme into css
     pub fn as_gtk4(&self) -> String {
         let Self {
@@ -145,6 +146,7 @@ impl Theme {
     /// # Errors
     ///
     /// Returns an `OutputError` if there is an error writing the CSS file.
+    #[cold]
     pub fn write_gtk4(&self) -> Result<(), OutputError> {
         let css_str = self.as_gtk4();
         let Some(config_dir) = dirs::config_dir() else {
@@ -174,6 +176,7 @@ impl Theme {
     /// # Errors
     ///
     /// Returns an `OutputError` if there is an error applying the CSS file.
+    #[cold]
     pub fn apply_gtk(is_dark: bool) -> Result<(), OutputError> {
         let Some(config_dir) = dirs::config_dir() else {
             return Err(OutputError::MissingConfigDir);
@@ -213,6 +216,7 @@ impl Theme {
     /// # Errors
     ///
     /// Returns an `OutputError` if there is an error resetting the CSS file.
+    #[cold]
     pub fn reset_gtk() -> Result<(), OutputError> {
         let Some(config_dir) = dirs::config_dir() else {
             return Err(OutputError::MissingConfigDir);
@@ -229,6 +233,7 @@ impl Theme {
         res
     }
 
+    #[cold]
     fn backup_non_cosmic_css(path: &Path, cosmic_css: &Path) -> io::Result<()> {
         if !Self::is_cosmic_css(path, cosmic_css)?.unwrap_or(true) {
             let backup_path = path.with_extension("css.bak");
@@ -237,6 +242,7 @@ impl Theme {
         Ok(())
     }
 
+    #[cold]
     fn reset_cosmic_css(path: &Path, cosmic_css: &Path) -> io::Result<()> {
         if Self::is_cosmic_css(path, cosmic_css)?.unwrap_or_default() {
             fs::remove_file(path)?;

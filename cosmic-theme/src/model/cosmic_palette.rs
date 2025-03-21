@@ -26,6 +26,7 @@ pub enum CosmicPalette {
 
 impl CosmicPalette {
     /// extract the inner palette
+    #[inline]
     pub fn inner(self) -> CosmicPaletteInner {
         match self {
             CosmicPalette::Dark(p) => p,
@@ -37,6 +38,7 @@ impl CosmicPalette {
 }
 
 impl AsMut<CosmicPaletteInner> for CosmicPalette {
+    #[inline]
     fn as_mut(&mut self) -> &mut CosmicPaletteInner {
         match self {
             CosmicPalette::Dark(p) => p,
@@ -48,6 +50,7 @@ impl AsMut<CosmicPaletteInner> for CosmicPalette {
 }
 
 impl AsRef<CosmicPaletteInner> for CosmicPalette {
+    #[inline]
     fn as_ref(&self) -> &CosmicPaletteInner {
         match self {
             CosmicPalette::Dark(p) => p,
@@ -60,6 +63,7 @@ impl AsRef<CosmicPaletteInner> for CosmicPalette {
 
 impl CosmicPalette {
     /// check if the palette is dark
+    #[inline]
     pub fn is_dark(&self) -> bool {
         match self {
             CosmicPalette::Dark(_) | CosmicPalette::HighContrastDark(_) => true,
@@ -68,6 +72,7 @@ impl CosmicPalette {
     }
 
     /// check if the palette is high_contrast
+    #[inline]
     pub fn is_high_contrast(&self) -> bool {
         match self {
             CosmicPalette::HighContrastLight(_) | CosmicPalette::HighContrastDark(_) => true,
@@ -77,6 +82,7 @@ impl CosmicPalette {
 }
 
 impl Default for CosmicPalette {
+    #[inline]
     fn default() -> Self {
         CosmicPalette::Dark(Default::default())
     }
@@ -164,6 +170,7 @@ pub struct CosmicPaletteInner {
 
 impl CosmicPalette {
     /// name of the palette
+    #[inline]
     pub fn name(&self) -> &str {
         match &self {
             CosmicPalette::Dark(p) => &p.name,

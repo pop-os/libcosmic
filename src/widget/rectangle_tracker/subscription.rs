@@ -1,15 +1,17 @@
 use iced::{
-    futures::{
-        channel::mpsc::{unbounded, UnboundedReceiver},
-        stream, StreamExt,
-    },
     Rectangle,
+    futures::{
+        StreamExt,
+        channel::mpsc::{UnboundedReceiver, unbounded},
+        stream,
+    },
 };
 use iced_futures::Subscription;
 use std::{collections::HashMap, fmt::Debug, hash::Hash};
 
 use super::RectangleTracker;
 
+#[cold]
 pub fn rectangle_tracker_subscription<
     I: 'static + Hash + Copy + Send + Sync + Debug,
     R: 'static + Hash + Copy + Send + Sync + Debug + Eq,

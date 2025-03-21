@@ -20,7 +20,7 @@ use iced::{
     event, keyboard, mouse, touch,
 };
 use iced_core::mouse::ScrollDelta;
-use iced_core::text::{LineHeight, Paragraph, Renderer as TextRenderer, Shaping, Wrapping};
+use iced_core::text::{LineHeight, Renderer as TextRenderer, Shaping, Wrapping};
 use iced_core::widget::{self, operation, tree};
 use iced_core::{Border, Gradient, Point, Renderer as IcedRenderer, Shadow, Text};
 use iced_core::{Clipboard, Layout, Shell, Widget, layout, renderer, widget::Tree};
@@ -158,6 +158,7 @@ where
     Model<SelectionMode>: Selectable,
     SelectionMode: Default,
 {
+    #[inline]
     pub fn new(model: &'a Model<SelectionMode>) -> Self {
         Self {
             model,
@@ -1726,6 +1727,7 @@ impl Id {
     ///
     /// This function produces a different [`Id`] every time it is called.
     #[must_use]
+    #[inline]
     pub fn unique() -> Self {
         Self(widget::Id::unique())
     }

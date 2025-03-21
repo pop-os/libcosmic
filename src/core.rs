@@ -6,7 +6,7 @@ use std::collections::HashMap;
 use crate::widget::nav_bar;
 use cosmic_config::CosmicConfigEntry;
 use cosmic_theme::ThemeMode;
-use iced::{window, Limits, Size};
+use iced::{Limits, Size, window};
 use iced_core::window::Id;
 use palette::Srgba;
 use slotmap::Key;
@@ -161,45 +161,52 @@ impl Default for Core {
 impl Core {
     /// Whether the window is too small for the nav bar + main content.
     #[must_use]
-    pub fn is_condensed(&self) -> bool {
+    #[inline]
+    pub const fn is_condensed(&self) -> bool {
         self.is_condensed
     }
 
     /// The scaling factor used by the application.
     #[must_use]
-    pub fn scale_factor(&self) -> f32 {
+    #[inline]
+    pub const fn scale_factor(&self) -> f32 {
         self.scale_factor
     }
 
     /// Enable or disable keyboard navigation
-    pub fn set_keyboard_nav(&mut self, enabled: bool) {
+    #[inline]
+    pub const fn set_keyboard_nav(&mut self, enabled: bool) {
         self.keyboard_nav = enabled;
     }
 
-    #[must_use]
     /// Enable or disable keyboard navigation
-    pub fn keyboard_nav(&self) -> bool {
+    #[must_use]
+    #[inline]
+    pub const fn keyboard_nav(&self) -> bool {
         self.keyboard_nav
     }
 
     /// Changes the scaling factor used by the application.
+    #[cold]
     pub(crate) fn set_scale_factor(&mut self, factor: f32) {
         self.scale_factor = factor;
         self.is_condensed_update();
     }
 
     /// Set header bar title
+    #[inline]
     pub fn set_header_title(&mut self, title: String) {
         self.window.header_title = title;
     }
 
+    #[inline]
     /// Whether to show or hide the main window's content.
     pub(crate) fn show_content(&self) -> bool {
         !self.is_condensed || !self.nav_bar.toggled_condensed
     }
 
-    /// Call this whenever the scaling factor or window width has changed.
     #[allow(clippy::cast_precision_loss)]
+    /// Call this whenever the scaling factor or window width has changed.
     fn is_condensed_update(&mut self) {
         // Nav bar (280px) + padding (8px) + content (360px)
         let mut breakpoint = 280.0 + 8.0 + 360.0;
@@ -212,6 +219,7 @@ impl Core {
         self.nav_bar_update();
     }
 
+    #[inline]
     fn condensed_conflict(&self) -> bool {
         // There is a conflict if the view is condensed and both the nav bar and context drawer are open on the same layer
         self.is_condensed
@@ -220,6 +228,7 @@ impl Core {
             && !self.window.context_is_overlay
     }
 
+    #[inline]
     pub(crate) fn context_width(&self, has_nav: bool) -> f32 {
         let window_width = self.window.width / self.scale_factor;
 
@@ -230,12 +239,14 @@ impl Core {
             reserved_width += 280.0 + 8.0;
         }
 
+        #[allow(clippy::manual_clamp)]
         // This logic is to ensure the context drawer does not take up too much of the content's space
         // The minimum width is 344px and the maximum with is 480px
         // We want to keep the content at least 360px until going down to the minimum width
         (window_width - reserved_width).min(480.0).max(344.0)
     }
 
+    #[cold]
     pub fn set_show_context(&mut self, show: bool) {
         self.window.show_context = show;
         self.is_condensed_update();
@@ -246,38 +257,46 @@ impl Core {
         }
     }
 
+    #[inline]
     pub fn main_window_is(&self, id: iced::window::Id) -> bool {
         self.main_window_id().is_some_and(|main_id| main_id == id)
     }
 
     /// Whether the nav panel is visible or not
     #[must_use]
-    pub fn nav_bar_active(&self) -> bool {
+    #[inline]
+    pub const fn nav_bar_active(&self) -> bool {
         self.nav_bar.active
     }
 
+    #[inline]
     pub fn nav_bar_toggle(&mut self) {
         self.nav_bar.toggled = !self.nav_bar.toggled;
         self.nav_bar_set_toggled_condensed(self.nav_bar.toggled);
     }
 
+    #[inline]
     pub fn nav_bar_toggle_condensed(&mut self) {
         self.nav_bar_set_toggled_condensed(!self.nav_bar.toggled_condensed);
     }
 
-    pub(crate) fn nav_bar_context(&self) -> nav_bar::Id {
+    #[inline]
+    pub(crate) const fn nav_bar_context(&self) -> nav_bar::Id {
         self.nav_bar.context_id
     }
 
+    #[inline]
     pub(crate) fn nav_bar_set_context(&mut self, id: nav_bar::Id) {
         self.nav_bar.context_id = id;
     }
 
+    #[inline]
     pub fn nav_bar_set_toggled(&mut self, toggled: bool) {
         self.nav_bar.toggled = toggled;
         self.nav_bar_set_toggled_condensed(self.nav_bar.toggled);
     }
 
+    #[cold]
     pub(crate) fn nav_bar_set_toggled_condensed(&mut self, toggled: bool) {
         self.nav_bar.toggled_condensed = toggled;
         self.nav_bar_update();
@@ -293,6 +312,7 @@ impl Core {
         }
     }
 
+    #[inline]
     pub(crate) fn nav_bar_update(&mut self) {
         self.nav_bar.active = if self.is_condensed {
             self.nav_bar.toggled_condensed
@@ -301,25 +321,29 @@ impl Core {
         };
     }
 
+    #[inline]
     /// Set the height of the main window.
-    pub(crate) fn set_window_height(&mut self, new_height: f32) {
+    pub(crate) const fn set_window_height(&mut self, new_height: f32) {
         self.window.height = new_height;
     }
 
+    #[inline]
     /// Set the width of the main window.
     pub(crate) fn set_window_width(&mut self, new_width: f32) {
         self.window.width = new_width;
         self.is_condensed_update();
     }
 
+    #[inline]
     /// Get the current system theme
-    pub fn system_theme(&self) -> &Theme {
+    pub const fn system_theme(&self) -> &Theme {
         &self.system_theme
     }
 
+    #[inline]
     #[must_use]
     /// Get the current system theme mode
-    pub fn system_theme_mode(&self) -> ThemeMode {
+    pub const fn system_theme_mode(&self) -> ThemeMode {
         self.system_theme_mode
     }
 
@@ -359,12 +383,14 @@ impl Core {
 
     /// Get the current focused window if it exists
     #[must_use]
-    pub fn focused_window(&self) -> Option<window::Id> {
+    #[inline]
+    pub const fn focused_window(&self) -> Option<window::Id> {
         self.focused_window
     }
 
     /// Whether the application should use a dark theme, according to the system
     #[must_use]
+    #[inline]
     pub fn system_is_dark(&self) -> bool {
         self.portal_is_dark
             .unwrap_or(self.system_theme_mode.is_dark)
@@ -372,11 +398,13 @@ impl Core {
 
     /// The [`Id`] of the main window
     #[must_use]
+    #[inline]
     pub fn main_window_id(&self) -> Option<window::Id> {
         self.main_window.filter(|id| iced::window::Id::NONE != *id)
     }
 
     /// Reset the tracked main window to a new value
+    #[inline]
     pub fn set_main_window_id(&mut self, mut id: Option<window::Id>) -> Option<window::Id> {
         std::mem::swap(&mut self.main_window, &mut id);
         id

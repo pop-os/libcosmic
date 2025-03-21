@@ -20,6 +20,7 @@ pub struct Watcher {
 
 impl Deref for Watcher {
     type Target = ConfigProxy<'static>;
+    #[inline]
     fn deref(&self) -> &Self::Target {
         &self.proxy
     }

@@ -6,8 +6,8 @@ use derive_setters::Setters;
 use iced_core::event::{self, Event};
 use iced_core::widget::{Operation, Tree};
 use iced_core::{
-    layout, mouse, overlay, renderer, Clipboard, Layout, Length, Padding, Rectangle, Shell, Vector,
-    Widget,
+    Clipboard, Layout, Length, Padding, Rectangle, Shell, Vector, Widget, layout, mouse, overlay,
+    renderer,
 };
 
 /// Responsively generates rows and columns of widgets based on its dimensions.
@@ -78,6 +78,7 @@ impl<'a, Message> FlexRow<'a, Message> {
     }
 
     /// Sets the space between each column and row.
+    #[inline]
     pub const fn spacing(mut self, spacing: u16) -> Self {
         self.column_spacing = spacing;
         self.row_spacing = spacing;

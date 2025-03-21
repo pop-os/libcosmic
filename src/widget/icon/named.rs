@@ -113,6 +113,7 @@ impl Named {
         None
     }
 
+    #[inline]
     pub fn handle(self) -> Handle {
         Handle {
             symbolic: self.symbolic,
@@ -120,6 +121,7 @@ impl Named {
         }
     }
 
+    #[inline]
     pub fn icon(self) -> Icon {
         let size = self.size;
 
@@ -133,18 +135,21 @@ impl Named {
 }
 
 impl From<Named> for Handle {
+    #[inline]
     fn from(builder: Named) -> Self {
         builder.handle()
     }
 }
 
 impl From<Named> for Icon {
+    #[inline]
     fn from(builder: Named) -> Self {
         builder.icon()
     }
 }
 
 impl<Message: 'static> From<Named> for crate::Element<'_, Message> {
+    #[inline]
     fn from(builder: Named) -> Self {
         builder.icon().into()
     }

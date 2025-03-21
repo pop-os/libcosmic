@@ -89,11 +89,13 @@ where
     /// ```ignore
     /// model.activate(id);
     /// ```
+    #[inline]
     pub fn activate(&mut self, id: Entity) {
         Selectable::activate(self, id);
     }
 
     /// Activates the item at the given position, returning true if it was activated.
+    #[inline]
     pub fn activate_position(&mut self, position: u16) -> bool {
         if let Some(entity) = self.entity_at(position) {
             self.activate(entity);
@@ -113,6 +115,7 @@ where
     ///     .build();
     /// ```
     #[must_use]
+    #[inline]
     pub fn builder() -> ModelBuilder<SelectionMode> {
         ModelBuilder::default()
     }
@@ -126,6 +129,7 @@ where
     /// ```ignore
     /// model.clear();
     /// ```
+    #[inline]
     pub fn clear(&mut self) {
         for entity in self.order.clone() {
             self.remove(entity);
@@ -133,6 +137,7 @@ where
     }
 
     /// Shows or hides the item's close button.
+    #[inline]
     pub fn closable_set(&mut self, id: Entity, closable: bool) {
         if let Some(settings) = self.items.get_mut(id) {
             settings.closable = closable;
@@ -146,6 +151,7 @@ where
     ///     println!("ID is still valid");
     /// }
     /// ```
+    #[inline]
     pub fn contains_item(&self, id: Entity) -> bool {
         self.items.contains_key(id)
     }
@@ -203,6 +209,7 @@ where
             .and_then(|storage| storage.remove(id));
     }
 
+    #[inline]
     pub fn divider_above(&self, id: Entity) -> Option<bool> {
         self.divider_aboves.get(id).copied()
     }
@@ -215,6 +222,7 @@ where
         self.divider_aboves.insert(id, divider_above)
     }
 
+    #[inline]
     pub fn divider_above_remove(&mut self, id: Entity) -> Option<bool> {
         self.divider_aboves.remove(id)
     }
@@ -224,6 +232,7 @@ where
     /// ```ignore
     /// model.enable(id, true);
     /// ```
+    #[inline]
     pub fn enable(&mut self, id: Entity, enable: bool) {
         if let Some(e) = self.items.get_mut(id) {
             e.enabled = enable;
@@ -232,6 +241,7 @@ where
 
     /// Get the item that is located at a given position.
     #[must_use]
+    #[inline]
     pub fn entity_at(&mut self, position: u16) -> Option<Entity> {
         self.order.get(position as usize).copied()
     }
@@ -243,6 +253,7 @@ where
     ///     println!("has icon: {:?}", icon);
     /// }
     /// ```
+    #[inline]
     pub fn icon(&self, id: Entity) -> Option<&Icon> {
         self.icons.get(id)
     }
@@ -254,6 +265,7 @@ where
     ///     println!("previously had icon: {:?}", old_icon);
     /// }
     /// ```
+    #[inline]
     pub fn icon_set(&mut self, id: Entity, icon: Icon) -> Option<Icon> {
         if !self.contains_item(id) {
             return None;
@@ -268,6 +280,7 @@ where
     /// if let Some(old_icon) = model.icon_remove(id) {
     ///     println!("previously had icon: {:?}", old_icon);
     /// }
+    #[inline]
     pub fn icon_remove(&mut self, id: Entity) -> Option<Icon> {
         self.icons.remove(id)
     }
@@ -278,6 +291,7 @@ where
     /// let id = model.insert().text("Item A").icon("custom-icon").id();
     /// ```
     #[must_use]
+    #[inline]
     pub fn insert(&mut self) -> EntityMut<SelectionMode> {
         let id = self.items.insert(Settings::default());
         self.order.push_back(id);
@@ -286,14 +300,16 @@ where
 
     /// Check if the given ID is the active ID.
     #[must_use]
+    #[inline]
     pub fn is_active(&self, id: Entity) -> bool {
         <Self as Selectable>::is_active(self, id)
     }
 
     /// Whether the item should contain a close button.
     #[must_use]
+    #[inline]
     pub fn is_closable(&self, id: Entity) -> bool {
-        self.items.get(id).map_or(false, |e| e.closable)
+        self.items.get(id).map(|e| e.closable).unwrap_or_default()
     }
 
     /// Check if the item is enabled.
@@ -306,11 +322,13 @@ where
     /// }
     /// ```
     #[must_use]
+    #[inline]
     pub fn is_enabled(&self, id: Entity) -> bool {
-        self.items.get(id).map_or(false, |e| e.enabled)
+        self.items.get(id).map(|e| e.enabled).unwrap_or_default()
     }
 
     /// Get number of items in the model.
+    #[inline]
     pub fn len(&self) -> usize {
         self.order.len()
     }
@@ -320,10 +338,12 @@ where
         self.order.iter().copied()
     }
 
+    #[inline]
     pub fn indent(&self, id: Entity) -> Option<u16> {
         self.indents.get(id).copied()
     }
 
+    #[inline]
     pub fn indent_set(&mut self, id: Entity, indent: u16) -> Option<u16> {
         if !self.contains_item(id) {
             return None;
@@ -332,6 +352,7 @@ where
         self.indents.insert(id, indent)
     }
 
+    #[inline]
     pub fn indent_remove(&mut self, id: Entity) -> Option<u16> {
         self.indents.remove(id)
     }
@@ -343,6 +364,7 @@ where
     ///     println!("found item at {}", position);
     /// }
     #[must_use]
+    #[inline]
     pub fn position(&self, id: Entity) -> Option<u16> {
         #[allow(clippy::cast_possible_truncation)]
         self.order.iter().position(|k| *k == id).map(|v| v as u16)
@@ -356,9 +378,7 @@ where
     /// }
     /// ```
     pub fn position_set(&mut self, id: Entity, position: u16) -> Option<usize> {
-        let Some(index) = self.position(id) else {
-            return None;
-        };
+        let index = self.position(id)?;
 
         self.order.remove(index as usize);
 
@@ -415,6 +435,7 @@ where
     ///     println!("{:?} has text {text}", id);
     /// }
     /// ```
+    #[inline]
     pub fn text(&self, id: Entity) -> Option<&str> {
         self.text.get(id).map(Cow::as_ref)
     }
@@ -439,6 +460,7 @@ where
     /// if let Some(old_text) = model.text_remove(id) {
     ///     println!("{:?} had text {}", id, old_text);
     /// }
+    #[inline]
     pub fn text_remove(&mut self, id: Entity) -> Option<Cow<'static, str>> {
         self.text.remove(id)
     }

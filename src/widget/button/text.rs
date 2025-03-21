@@ -3,8 +3,7 @@
 
 use super::{Builder, ButtonClass};
 use crate::widget::{icon, row, tooltip};
-use crate::{ext::CollectionWidget, Element};
-use apply::Apply;
+use crate::{Apply, Element};
 use iced_core::{font::Weight, text::LineHeight, widget::Id, Alignment, Length, Padding};
 use std::borrow::Cow;
 

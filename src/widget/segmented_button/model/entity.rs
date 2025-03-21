@@ -25,6 +25,7 @@ where
     /// model.insert().text("Item A").activate();
     /// ```
     #[allow(clippy::must_use_candidate, clippy::return_self_not_must_use)]
+    #[inline]
     pub fn activate(self) -> Self {
         self.model.activate(self.id);
         self
@@ -40,6 +41,7 @@ where
     /// model.insert().text("Item A").secondary(&mut secondary_data, String::new("custom data"));
     /// ```
     #[allow(clippy::must_use_candidate, clippy::return_self_not_must_use)]
+    #[inline]
     pub fn secondary<Data>(self, map: &mut SecondaryMap<Entity, Data>, data: Data) -> Self {
         map.insert(self.id, data);
         self
@@ -54,6 +56,7 @@ where
     /// model.insert().text("Item A").secondary(&mut secondary_data, String::new("custom data"));
     /// ```
     #[allow(clippy::must_use_candidate, clippy::return_self_not_must_use)]
+    #[inline]
     pub fn secondary_sparse<Data>(
         self,
         map: &mut SparseSecondaryMap<Entity, Data>,
@@ -65,6 +68,7 @@ where
 
     /// Shows a close button for this item.
     #[allow(clippy::must_use_candidate, clippy::return_self_not_must_use)]
+    #[inline]
     pub fn closable(self) -> Self {
         self.model.closable_set(self.id, true);
         self
@@ -78,12 +82,14 @@ where
     /// model.insert().text("Item A").data(String::from("custom string"));
     /// ```
     #[allow(clippy::must_use_candidate, clippy::return_self_not_must_use)]
+    #[inline]
     pub fn data<Data: 'static>(self, data: Data) -> Self {
         self.model.data_set(self.id, data);
         self
     }
 
     #[allow(clippy::must_use_candidate, clippy::return_self_not_must_use)]
+    #[inline]
     pub fn divider_above(self, divider_above: bool) -> Self {
         self.model.divider_above_set(self.id, divider_above);
         self
@@ -95,6 +101,7 @@ where
     /// model.insert().text("Item A").icon(IconSource::from("icon-a"));
     /// ```
     #[allow(clippy::must_use_candidate, clippy::return_self_not_must_use)]
+    #[inline]
     pub fn icon(self, icon: impl Into<Icon>) -> Self {
         self.model.icon_set(self.id, icon.into());
         self
@@ -106,11 +113,13 @@ where
     /// let id = model.insert("Item A").id();
     /// ```
     #[must_use]
-    pub fn id(self) -> Entity {
+    #[inline]
+    pub const fn id(self) -> Entity {
         self.id
     }
 
     #[allow(clippy::must_use_candidate, clippy::return_self_not_must_use)]
+    #[inline]
     pub fn indent(self, indent: u16) -> Self {
         self.model.indent_set(self.id, indent);
         self
@@ -118,6 +127,7 @@ where
 
     /// Define the position of the item.
     #[allow(clippy::must_use_candidate, clippy::return_self_not_must_use)]
+    #[inline]
     pub fn position(self, position: u16) -> Self {
         self.model.position_set(self.id, position);
         self
@@ -125,6 +135,7 @@ where
 
     /// Swap the position with another item in the model.
     #[allow(clippy::must_use_candidate, clippy::return_self_not_must_use)]
+    #[inline]
     pub fn position_swap(self, other: Entity) -> Self {
         self.model.position_swap(self.id, other);
         self

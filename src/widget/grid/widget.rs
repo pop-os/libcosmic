@@ -105,6 +105,7 @@ impl<'a, Message> Grid<'a, Message> {
         self
     }
 
+    #[inline]
     pub fn insert_row(mut self) -> Self {
         self.row += 1;
         self.column = 1;

@@ -6,16 +6,16 @@ use std::collections::HashMap;
 use std::sync::Arc;
 
 use super::{Action, Application, ApplicationExt, Subscription};
-use crate::theme::{Theme, ThemeType, THEME};
-use crate::{keyboard_nav, Core, Element};
+use crate::theme::{THEME, Theme, ThemeType};
+use crate::{Core, Element, keyboard_nav};
 #[cfg(feature = "wayland")]
 use cctk::sctk::reexports::csd_frame::{WindowManagerCapabilities, WindowState};
 use cosmic_theme::ThemeMode;
-#[cfg(feature = "wayland")]
-use iced::event::wayland;
 #[cfg(not(any(feature = "multi-window", feature = "wayland")))]
 use iced::Application as IcedApplication;
-use iced::{window, Task};
+#[cfg(feature = "wayland")]
+use iced::event::wayland;
+use iced::{Task, window};
 use iced_futures::event::listen_with;
 use palette::color_difference::EuclideanDistance;
 
@@ -243,6 +243,7 @@ where
     }
 
     #[allow(clippy::too_many_lines)]
+    #[cold]
     pub fn subscription(&self) -> Subscription<crate::Action<T::Message>> {
         let window_events = listen_with(|event, _, id| {
             match event {
@@ -410,6 +411,7 @@ where
 
 impl<T: Application> Cosmic<T> {
     #[allow(clippy::unused_self)]
+    #[cold]
     pub fn close(&mut self) -> iced::Task<crate::Action<T::Message>> {
         if let Some(id) = self.app.core().main_window_id() {
             iced::window::close(id)
@@ -490,10 +492,10 @@ impl<T: Application> Cosmic<T> {
 
             Action::KeyboardNav(message) => match message {
                 keyboard_nav::Action::FocusNext => {
-                    return iced::widget::focus_next().map(crate::Action::Cosmic)
+                    return iced::widget::focus_next().map(crate::Action::Cosmic);
                 }
                 keyboard_nav::Action::FocusPrevious => {
-                    return iced::widget::focus_previous().map(crate::Action::Cosmic)
+                    return iced::widget::focus_previous().map(crate::Action::Cosmic);
                 }
                 keyboard_nav::Action::Escape => return self.app.on_escape(),
                 keyboard_nav::Action::Search => return self.app.on_search(),

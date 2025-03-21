@@ -16,7 +16,7 @@ pub struct NavBarToggle<Message> {
 }
 
 #[must_use]
-pub fn nav_bar_toggle<Message>() -> NavBarToggle<Message> {
+pub const fn nav_bar_toggle<Message>() -> NavBarToggle<Message> {
     NavBarToggle {
         active: false,
         on_toggle: None,

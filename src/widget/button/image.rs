@@ -3,10 +3,10 @@
 
 use super::Builder;
 use crate::{
-    widget::{self, image::Handle},
     Element,
+    widget::{self, image::Handle},
 };
-use iced_core::{font::Weight, widget::Id, Length, Padding};
+use iced_core::{Length, Padding, font::Weight, widget::Id};
 use std::borrow::Cow;
 
 pub type Button<'a, Message> = Builder<'a, Message, Image<'a, Handle, Message>>;
@@ -28,6 +28,7 @@ pub struct Image<'a, Handle, Message> {
 }
 
 impl<'a, Message> Button<'a, Message> {
+    #[inline]
     pub fn new(variant: Image<'a, Handle, Message>) -> Self {
         Self {
             id: Id::unique(),
@@ -47,16 +48,19 @@ impl<'a, Message> Button<'a, Message> {
         }
     }
 
+    #[inline]
     pub fn on_remove(mut self, message: Message) -> Self {
         self.variant.on_remove = Some(message);
         self
     }
 
+    #[inline]
     pub fn on_remove_maybe(mut self, message: Option<Message>) -> Self {
         self.variant.on_remove = message;
         self
     }
 
+    #[inline]
     pub fn selected(mut self, selected: bool) -> Self {
         self.variant.selected = selected;
         self

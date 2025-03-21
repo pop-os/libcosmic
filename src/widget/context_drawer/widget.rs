@@ -3,17 +3,17 @@
 
 use std::borrow::Cow;
 
-use crate::widget::{button, column, container, icon, row, scrollable, text, LayerContainer};
+use crate::widget::{LayerContainer, button, column, container, icon, row, scrollable, text};
 use crate::{Apply, Element, Renderer, Theme};
 
 use super::overlay::Overlay;
 
+use iced_core::Alignment;
 use iced_core::event::{self, Event};
 use iced_core::widget::{Operation, Tree};
-use iced_core::Alignment;
 use iced_core::{
-    layout, mouse, overlay as iced_overlay, renderer, Clipboard, Layout, Length, Rectangle, Shell,
-    Vector, Widget,
+    Clipboard, Layout, Length, Rectangle, Shell, Vector, Widget, layout, mouse,
+    overlay as iced_overlay, renderer,
 };
 
 #[must_use]
@@ -37,76 +37,97 @@ impl<'a, Message: Clone + 'static> ContextDrawer<'a, Message> {
     where
         Drawer: Into<Element<'a, Message>>,
     {
-        let cosmic_theme::Spacing {
-            space_xxs,
-            space_s,
-            space_m,
-            space_l,
-            ..
-        } = crate::theme::active().cosmic().spacing;
+        #[inline(never)]
+        fn inner<'a, Message: Clone + 'static>(
+            title: Option<Cow<'a, str>>,
+            header_actions: Vec<Element<'a, Message>>,
+            header_opt: Option<Element<'a, Message>>,
+            footer_opt: Option<Element<'a, Message>>,
+            drawer: Element<'a, Message>,
+            on_close: Message,
+            max_width: f32,
+        ) -> Element<'a, Message> {
+            let cosmic_theme::Spacing {
+                space_xxs,
+                space_s,
+                space_m,
+                space_l,
+                ..
+            } = crate::theme::active().cosmic().spacing;
 
-        let horizontal_padding = if max_width < 392.0 { space_s } else { space_l };
+            let horizontal_padding = if max_width < 392.0 { space_s } else { space_l };
 
-        let header_row = row::with_capacity(3)
-            .width(Length::Fixed(480.0))
-            .align_y(Alignment::Center)
-            .push(
-                row::with_children(header_actions)
-                    .spacing(space_xxs)
-                    .width(Length::FillPortion(1)),
-            )
-            .push_maybe(
-                title.map(|title| text::heading(title).width(Length::FillPortion(1)).center()),
-            )
-            .push(
-                button::text("Close")
-                    .trailing_icon(icon::from_name("go-next-symbolic"))
-                    .on_press(on_close)
-                    .apply(container)
-                    .width(Length::FillPortion(1))
-                    .align_x(Alignment::End),
-            );
-        let header = column::with_capacity(2)
-            .width(Length::Fixed(480.0))
-            .align_x(Alignment::Center)
-            .spacing(space_m)
-            .padding([space_m, horizontal_padding])
-            .push(header_row)
-            .push_maybe(header_opt);
-        let footer = footer_opt.map(|element| {
-            container(element)
+            let header_row = row::with_capacity(3)
                 .width(Length::Fixed(480.0))
                 .align_y(Alignment::Center)
-                .padding([space_xxs, horizontal_padding])
-        });
-        let pane = column::with_capacity(3)
-            .push(header)
-            .push(
-                scrollable(container(drawer.into()).padding([
-                    0,
-                    horizontal_padding,
-                    if footer.is_some() { 0 } else { space_l },
-                    horizontal_padding,
-                ]))
-                .height(Length::Fill)
-                .width(Length::Shrink),
-            )
-            .push_maybe(footer);
+                .push(
+                    row::with_children(header_actions)
+                        .spacing(space_xxs)
+                        .width(Length::FillPortion(1)),
+                )
+                .push_maybe(
+                    title.map(|title| text::heading(title).width(Length::FillPortion(1)).center()),
+                )
+                .push(
+                    button::text("Close")
+                        .trailing_icon(icon::from_name("go-next-symbolic"))
+                        .on_press(on_close)
+                        .apply(container)
+                        .width(Length::FillPortion(1))
+                        .align_x(Alignment::End),
+                );
+            let header = column::with_capacity(2)
+                .width(Length::Fixed(480.0))
+                .align_x(Alignment::Center)
+                .spacing(space_m)
+                .padding([space_m, horizontal_padding])
+                .push(header_row)
+                .push_maybe(header_opt);
+            let footer = footer_opt.map(|element| {
+                container(element)
+                    .width(Length::Fixed(480.0))
+                    .align_y(Alignment::Center)
+                    .padding([space_xxs, horizontal_padding])
+            });
+            let pane = column::with_capacity(3)
+                .push(header)
+                .push(
+                    scrollable(container(drawer).padding([
+                        0,
+                        horizontal_padding,
+                        if footer.is_some() { 0 } else { space_l },
+                        horizontal_padding,
+                    ]))
+                    .height(Length::Fill)
+                    .width(Length::Shrink),
+                )
+                .push_maybe(footer);
 
-        // XXX new limits do not exactly handle the max width well for containers
-        // XXX this is a hack to get around that
-        container(
-            LayerContainer::new(pane)
-                .layer(cosmic_theme::Layer::Primary)
-                .class(crate::style::Container::ContextDrawer)
-                .width(Length::Fill)
-                .height(Length::Fill)
-                .max_width(max_width),
+            // XXX new limits do not exactly handle the max width well for containers
+            // XXX this is a hack to get around that
+            container(
+                LayerContainer::new(pane)
+                    .layer(cosmic_theme::Layer::Primary)
+                    .class(crate::style::Container::ContextDrawer)
+                    .width(Length::Fill)
+                    .height(Length::Fill)
+                    .max_width(max_width),
+            )
+            .width(Length::Fill)
+            .height(Length::Fill)
+            .align_x(Alignment::End)
+            .into()
+        }
+
+        inner(
+            title,
+            header_actions,
+            header_opt,
+            footer_opt,
+            drawer.into(),
+            on_close,
+            max_width,
         )
-        .width(Length::Fill)
-        .height(Length::Fill)
-        .align_x(Alignment::End)
-        .into()
     }
 
     /// Creates an empty [`ContextDrawer`].
@@ -149,6 +170,7 @@ impl<'a, Message: Clone + 'static> ContextDrawer<'a, Message> {
     }
 
     // Optionally assigns message to `on_close` event.
+    #[inline]
     pub fn on_close_maybe(mut self, message: Option<Message>) -> Self {
         self.on_close = message;
         self

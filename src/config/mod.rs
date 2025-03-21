@@ -134,6 +134,7 @@ impl Default for CosmicTk {
 }
 
 impl CosmicTk {
+    #[inline]
     pub fn config() -> Result<Config, cosmic_config::Error> {
         Config::new(ID, Self::VERSION)
     }

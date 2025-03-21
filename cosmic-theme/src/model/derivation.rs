@@ -77,26 +77,31 @@ pub struct Component {
 #[allow(clippy::must_use_candidate)]
 #[allow(clippy::doc_markdown)]
 impl Component {
+    #[inline]
     /// get @hover_state_color
     pub fn hover_state_color(&self) -> Srgba {
         self.hover
     }
 
+    #[inline]
     /// get @pressed_state_color
     pub fn pressed_state_color(&self) -> Srgba {
         self.pressed
     }
 
+    #[inline]
     /// get @selected_state_color
     pub fn selected_state_color(&self) -> Srgba {
         self.selected
     }
 
+    #[inline]
     /// get @selected_state_text_color
     pub fn selected_state_text_color(&self) -> Srgba {
         self.selected_text
     }
 
+    #[inline]
     /// get @focus_color
     pub fn focus_color(&self) -> Srgba {
         self.focus

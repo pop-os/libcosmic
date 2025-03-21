@@ -2,13 +2,13 @@
 // SPDX-License-Identifier: MPL-2.0
 
 use super::{Builder, ButtonClass};
+use crate::Element;
 use crate::widget::{
     icon::{self, Handle},
     tooltip,
 };
-use crate::Element;
 use apply::Apply;
-use iced_core::{font::Weight, text::LineHeight, widget::Id, Alignment, Length, Padding};
+use iced_core::{Alignment, Length, Padding, font::Weight, text::LineHeight, widget::Id};
 use std::borrow::Cow;
 
 pub type Button<'a, Message> = Builder<'a, Message, Icon>;
@@ -114,11 +114,13 @@ impl<Message> Button<'_, Message> {
         self
     }
 
+    #[inline]
     pub fn selected(mut self, selected: bool) -> Self {
         self.variant.selected = selected;
         self
     }
 
+    #[inline]
     pub fn vertical(mut self, vertical: bool) -> Self {
         self.variant.vertical = vertical;
         self.class = ButtonClass::IconVertical;

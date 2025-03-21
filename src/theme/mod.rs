@@ -53,36 +53,41 @@ pub(crate) static THEME: Mutex<Theme> = Mutex::new(Theme {
 });
 
 /// Currently-defined theme.
+#[inline]
 #[allow(clippy::missing_panics_doc)]
 pub fn active() -> Theme {
     THEME.lock().unwrap().clone()
 }
 
 /// Currently-defined theme type.
+#[inline]
 #[allow(clippy::missing_panics_doc)]
 pub fn active_type() -> ThemeType {
     THEME.lock().unwrap().theme_type.clone()
 }
 
 /// Preferred interface spacing parameters defined by the active theme.
-#[inline(always)]
+#[inline]
 pub fn spacing() -> Spacing {
     active().cosmic().spacing
 }
 
 /// Whether the active theme has a dark preference.
+#[inline]
 #[must_use]
 pub fn is_dark() -> bool {
     active_type().is_dark()
 }
 
 /// Whether the active theme is high contrast.
+#[inline]
 #[must_use]
 pub fn is_high_contrast() -> bool {
     active_type().is_high_contrast()
 }
 
 /// Watches for changes to the system's theme preference.
+#[cold]
 pub fn subscription(is_dark: bool) -> Subscription<crate::theme::Theme> {
     config_subscription::<_, crate::cosmic_theme::Theme>(
         (
@@ -173,6 +178,7 @@ pub enum ThemeType {
 impl ThemeType {
     /// Whether the theme has a dark preference.
     #[must_use]
+    #[inline]
     pub fn is_dark(&self) -> bool {
         match self {
             Self::Dark | Self::HighContrastDark => true,
@@ -182,6 +188,7 @@ impl ThemeType {
     }
 
     /// Whether the theme has a high contrast.
+    #[inline]
     #[must_use]
     pub fn is_high_contrast(&self) -> bool {
         match self {
@@ -191,6 +198,7 @@ impl ThemeType {
         }
     }
 
+    #[inline]
     /// Prefer dark or light theme.
     /// If `None`, the system preference is used.
     pub fn prefer_dark(&mut self, new_prefer_dark: Option<bool>) {
@@ -208,6 +216,7 @@ pub struct Theme {
 }
 
 impl Theme {
+    #[inline]
     pub fn cosmic(&self) -> &cosmic_theme::Theme {
         match self.theme_type {
             ThemeType::Dark => &COSMIC_DARK,
@@ -218,6 +227,7 @@ impl Theme {
         }
     }
 
+    #[inline]
     pub fn dark() -> Self {
         Self {
             theme_type: ThemeType::Dark,
@@ -225,6 +235,7 @@ impl Theme {
         }
     }
 
+    #[inline]
     pub fn light() -> Self {
         Self {
             theme_type: ThemeType::Light,
@@ -232,6 +243,7 @@ impl Theme {
         }
     }
 
+    #[inline]
     pub fn dark_hc() -> Self {
         Self {
             theme_type: ThemeType::HighContrastDark,
@@ -239,6 +251,7 @@ impl Theme {
         }
     }
 
+    #[inline]
     pub fn light_hc() -> Self {
         Self {
             theme_type: ThemeType::HighContrastLight,
@@ -246,6 +259,7 @@ impl Theme {
         }
     }
 
+    #[inline]
     pub fn custom(theme: Arc<CosmicTheme>) -> Self {
         Self {
             theme_type: ThemeType::Custom(theme),
@@ -253,6 +267,7 @@ impl Theme {
         }
     }
 
+    #[inline]
     pub fn system(theme: Arc<CosmicTheme>) -> Self {
         Self {
             theme_type: ThemeType::System {
@@ -263,6 +278,7 @@ impl Theme {
         }
     }
 
+    #[inline]
     /// get current container
     /// can be used in a component that is intended to be a child of a `CosmicContainer`
     pub fn current_container(&self) -> &cosmic_theme::Container {
@@ -273,6 +289,7 @@ impl Theme {
         }
     }
 
+    #[inline]
     /// set the theme
     pub fn set_theme(&mut self, theme: ThemeType) {
         self.theme_type = theme;
@@ -280,6 +297,7 @@ impl Theme {
 }
 
 impl LayeredTheme for Theme {
+    #[inline]
     fn set_layer(&mut self, layer: cosmic_theme::Layer) {
         self.layer = layer;
     }

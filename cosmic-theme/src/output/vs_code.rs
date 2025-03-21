@@ -266,6 +266,7 @@ impl From<Theme> for VsTheme {
 }
 
 impl Theme {
+    #[cold]
     pub fn apply_vs_code(self) -> Result<(), OutputError> {
         let vs_theme = VsTheme::from(self);
         let config_dir = dirs::config_dir().ok_or(OutputError::MissingConfigDir)?;
@@ -289,6 +290,7 @@ impl Theme {
         Ok(())
     }
 
+    #[cold]
     pub fn reset_vs_code() -> Result<(), OutputError> {
         let config_dir = dirs::config_dir().ok_or(OutputError::MissingConfigDir)?;
         let vs_code_dir = config_dir.join("Code").join("User");

@@ -5,11 +5,11 @@ use iced_core::Padding;
 use iced_widget::container::Catalog;
 
 use crate::{
-    theme,
+    Apply, Element, theme,
     widget::{container, divider, vertical_space},
-    Apply, Element,
 };
 
+#[inline]
 pub fn list_column<'a, Message: 'static>() -> ListColumn<'a, Message> {
     ListColumn::default()
 }
@@ -42,48 +42,61 @@ impl<Message: 'static> Default for ListColumn<'_, Message> {
 }
 
 impl<'a, Message: 'static> ListColumn<'a, Message> {
+    #[inline]
     pub fn new() -> Self {
         Self::default()
     }
 
     #[allow(clippy::should_implement_trait)]
-    pub fn add(mut self, item: impl Into<Element<'a, Message>>) -> Self {
-        if !self.children.is_empty() {
-            self.children.push(
-                container(divider::horizontal::default())
-                    .padding([0, self.divider_padding])
-                    .into(),
-            );
+    pub fn add(self, item: impl Into<Element<'a, Message>>) -> Self {
+        #[inline(never)]
+        fn inner<'a, Message: 'static>(
+            mut this: ListColumn<'a, Message>,
+            item: Element<'a, Message>,
+        ) -> ListColumn<'a, Message> {
+            if !this.children.is_empty() {
+                this.children.push(
+                    container(divider::horizontal::default())
+                        .padding([0, this.divider_padding])
+                        .into(),
+                );
+            }
+
+            // Ensure a minimum height of 32.
+            let list_item = iced::widget::row![
+                container(item).align_y(iced::Alignment::Center),
+                vertical_space().height(iced::Length::Fixed(32.))
+            ]
+            .padding(this.list_item_padding)
+            .align_y(iced::Alignment::Center);
+
+            this.children.push(list_item.into());
+            this
         }
 
-        // Ensure a minimum height of 32.
-        let list_item = iced::widget::row![
-            container(item).align_y(iced::Alignment::Center),
-            vertical_space().height(iced::Length::Fixed(32.))
-        ]
-        .padding(self.list_item_padding)
-        .align_y(iced::Alignment::Center);
-
-        self.children.push(list_item.into());
-        self
+        inner(self, item.into())
     }
 
+    #[inline]
     pub fn spacing(mut self, spacing: u16) -> Self {
         self.spacing = spacing;
         self
     }
 
     /// Sets the style variant of this [`Circular`].
+    #[inline]
     pub fn style(mut self, style: <crate::Theme as Catalog>::Class<'a>) -> Self {
         self.style = style;
         self
     }
 
+    #[inline]
     pub fn padding(mut self, padding: impl Into<Padding>) -> Self {
         self.padding = padding.into();
         self
     }
 
+    #[inline]
     pub fn divider_padding(mut self, padding: u16) -> Self {
         self.divider_padding = padding;
         self

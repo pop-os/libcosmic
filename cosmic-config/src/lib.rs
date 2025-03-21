@@ -40,6 +40,7 @@ pub enum Error {
 }
 
 impl fmt::Display for Error {
+    #[cold]
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             Self::AtomicWrites(err) => err.fmt(f),
@@ -61,6 +62,7 @@ impl Error {
     /// Whether the reason for the missing config is caused by an error.
     ///
     /// Useful for determining if it is appropriate to log as an error.
+    #[inline]
     pub fn is_err(&self) -> bool {
         !matches!(self, Self::NoConfigDirectory | Self::NotFound)
     }
@@ -134,11 +136,6 @@ fn sanitize_name(name: &str) -> Result<&Path, Error> {
 }
 
 impl Config {
-    /// Get the config for the libcosmic toolkit
-    pub fn libcosmic() -> Result<Self, Error> {
-        Self::new("com.system76.libcosmic", 1)
-    }
-
     /// Get a system config for the given name and config version
     pub fn system(name: &str, version: u64) -> Result<Self, Error> {
         let path = sanitize_name(name)?.join(format!("v{version}"));
@@ -235,6 +232,7 @@ impl Config {
     }
 
     // Start a transaction (to set multiple configs at the same time)
+    #[inline]
     pub fn transaction(&self) -> ConfigTransaction {
         ConfigTransaction {
             config: self,
@@ -368,7 +366,7 @@ pub struct ConfigTransaction<'a> {
     updates: Mutex<Vec<(PathBuf, String)>>,
 }
 
-impl<'a> ConfigTransaction<'a> {
+impl ConfigTransaction<'_> {
     /// Apply all pending changes from ConfigTransaction
     //TODO: apply all changes at once
     pub fn commit(self) -> Result<(), Error> {
@@ -386,7 +384,7 @@ impl<'a> ConfigTransaction<'a> {
 
 // Setting any setting in this way will do one transaction for all settings
 // when commit finishes that transaction
-impl<'a> ConfigSet for ConfigTransaction<'a> {
+impl ConfigSet for ConfigTransaction<'_> {
     fn set<T: Serialize>(&self, key: &str, value: T) -> Result<(), Error> {
         //TODO: sanitize key (no slashes, cannot be . or ..)
         let key_path = self.config.key_path(key)?;

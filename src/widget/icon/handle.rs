@@ -17,6 +17,7 @@ pub struct Handle {
 }
 
 impl Handle {
+    #[inline]
     pub fn icon(self) -> Icon {
         super::icon(self)
     }
@@ -53,13 +54,17 @@ pub fn from_raster_bytes(
         + std::marker::Sync
         + 'static,
 ) -> Handle {
-    Handle {
-        symbolic: false,
-        data: match bytes.into() {
-            Cow::Owned(b) => Data::Image(image::Handle::from_bytes(b)),
-            Cow::Borrowed(b) => Data::Image(image::Handle::from_bytes(b)),
-        },
+    fn inner(bytes: Cow<'static, [u8]>) -> Handle {
+        Handle {
+            symbolic: false,
+            data: match bytes {
+                Cow::Owned(b) => Data::Image(image::Handle::from_bytes(b)),
+                Cow::Borrowed(b) => Data::Image(image::Handle::from_bytes(b)),
+            },
+        }
     }
+
+    inner(bytes.into())
 }
 
 /// Create an image handle from RGBA data, where you must define the width and height.
@@ -71,13 +76,19 @@ pub fn from_raster_pixels(
         + std::marker::Send
         + std::marker::Sync,
 ) -> Handle {
-    Handle {
-        symbolic: false,
-        data: match pixels.into() {
-            Cow::Owned(pixels) => Data::Image(image::Handle::from_rgba(width, height, pixels)),
-            Cow::Borrowed(pixels) => Data::Image(image::Handle::from_rgba(width, height, pixels)),
-        },
+    fn inner(width: u32, height: u32, pixels: Cow<'static, [u8]>) -> Handle {
+        Handle {
+            symbolic: false,
+            data: match pixels {
+                Cow::Owned(pixels) => Data::Image(image::Handle::from_rgba(width, height, pixels)),
+                Cow::Borrowed(pixels) => {
+                    Data::Image(image::Handle::from_rgba(width, height, pixels))
+                }
+            },
+        }
     }
+
+    inner(width, height, pixels.into())
 }
 
 /// Create a SVG handle from memory.

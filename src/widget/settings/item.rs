@@ -19,11 +19,19 @@ pub fn item<'a, Message: 'static>(
     title: impl Into<Cow<'a, str>> + 'a,
     widget: impl Into<Element<'a, Message>> + 'a,
 ) -> Row<'a, Message> {
-    item_row(vec![
-        text(title).wrapping(Wrapping::Word).into(),
-        horizontal_space().into(),
-        widget.into(),
-    ])
+    #[inline(never)]
+    fn inner<'a, Message: 'static>(
+        title: Cow<'a, str>,
+        widget: Element<'a, Message>,
+    ) -> Row<'a, Message> {
+        item_row(vec![
+            text(title).wrapping(Wrapping::Word).into(),
+            horizontal_space().into(),
+            widget,
+        ])
+    }
+
+    inner(title.into(), widget.into())
 }
 
 /// A settings item aligned in a row
@@ -41,13 +49,21 @@ pub fn flex_item<'a, Message: 'static>(
     title: impl Into<Cow<'a, str>> + 'a,
     widget: impl Into<Element<'a, Message>> + 'a,
 ) -> FlexRow<'a, Message> {
-    flex_item_row(vec![
-        text(title)
-            .wrapping(Wrapping::Word)
-            .width(Length::Fill)
-            .into(),
-        container(widget).into(),
-    ])
+    #[inline(never)]
+    fn inner<'a, Message: 'static>(
+        title: Cow<'a, str>,
+        widget: Element<'a, Message>,
+    ) -> FlexRow<'a, Message> {
+        flex_item_row(vec![
+            text(title)
+                .wrapping(Wrapping::Word)
+                .width(Length::Fill)
+                .into(),
+            container(widget).into(),
+        ])
+    }
+
+    inner(title.into(), widget.into())
 }
 
 /// A settings item aligned in a flex row
@@ -88,15 +104,16 @@ pub struct Item<'a, Message> {
 impl<'a, Message: 'static> Item<'a, Message> {
     /// Assigns a control to the item.
     pub fn control(self, widget: impl Into<Element<'a, Message>>) -> Row<'a, Message> {
-        item_row(self.control_(widget))
+        item_row(self.control_(widget.into()))
     }
 
     /// Assigns a control which flexes.
     pub fn flex_control(self, widget: impl Into<Element<'a, Message>>) -> FlexRow<'a, Message> {
-        flex_item_row(self.control_(widget))
+        flex_item_row(self.control_(widget.into()))
     }
 
-    fn control_(self, widget: impl Into<Element<'a, Message>>) -> Vec<Element<'a, Message>> {
+    #[inline(never)]
+    fn control_(self, widget: Element<'a, Message>) -> Vec<Element<'a, Message>> {
         let mut contents = Vec::with_capacity(4);
 
         if let Some(icon) = self.icon {

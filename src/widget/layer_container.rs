@@ -69,6 +69,7 @@ where
 
     /// Sets the width of the [`self.`].
     #[must_use]
+    #[inline]
     pub fn width(mut self, width: Length) -> Self {
         self.container = self.container.width(width);
         self
@@ -76,6 +77,7 @@ where
 
     /// Sets the height of the [`LayerContainer`].
     #[must_use]
+    #[inline]
     pub fn height(mut self, height: Length) -> Self {
         self.container = self.container.height(height);
         self
@@ -83,6 +85,7 @@ where
 
     /// Sets the maximum width of the [`LayerContainer`].
     #[must_use]
+    #[inline]
     pub fn max_width(mut self, max_width: f32) -> Self {
         self.container = self.container.max_width(max_width);
         self
@@ -90,6 +93,7 @@ where
 
     /// Sets the maximum height of the [`LayerContainer`] in pixels.
     #[must_use]
+    #[inline]
     pub fn max_height(mut self, max_height: f32) -> Self {
         self.container = self.container.max_height(max_height);
         self
@@ -97,6 +101,7 @@ where
 
     /// Sets the content alignment for the horizontal axis of the [`LayerContainer`].
     #[must_use]
+    #[inline]
     pub fn align_x(mut self, alignment: Alignment) -> Self {
         self.container = self.container.align_x(alignment);
         self
@@ -104,6 +109,7 @@ where
 
     /// Sets the content alignment for the vertical axis of the [`LayerContainer`].
     #[must_use]
+    #[inline]
     pub fn align_y(mut self, alignment: Alignment) -> Self {
         self.container = self.container.align_y(alignment);
         self
@@ -111,6 +117,7 @@ where
 
     /// Centers the contents in the horizontal axis of the [`LayerContainer`].
     #[must_use]
+    #[inline]
     pub fn center_x(mut self, width: Length) -> Self {
         self.container = self.container.center_x(width);
         self
@@ -118,6 +125,7 @@ where
 
     /// Centers the contents in the vertical axis of the [`LayerContainer`].
     #[must_use]
+    #[inline]
     pub fn center_y(mut self, height: Length) -> Self {
         self.container = self.container.center_y(height);
         self
@@ -125,6 +133,7 @@ where
 
     /// Centers the contents in the horizontal and vertical axis of the [`Container`].
     #[must_use]
+    #[inline]
     pub fn center(mut self, length: Length) -> Self {
         self.container = self.container.center(length);
         self

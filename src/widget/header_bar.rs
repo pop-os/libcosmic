@@ -2,11 +2,11 @@
 // SPDX-License-Identifier: MPL-2.0
 
 use crate::cosmic_theme::{Density, Spacing};
-use crate::{theme, widget, Element};
+use crate::{Element, theme, widget};
 use apply::Apply;
 use derive_setters::Setters;
 use iced::Length;
-use iced_core::{widget::tree, Vector, Widget};
+use iced_core::{Vector, Widget, widget::tree};
 use std::borrow::Cow;
 
 #[must_use]
@@ -109,6 +109,7 @@ impl<'a, Message: Clone + 'static> HeaderBar<'a, Message> {
 
     /// Build the widget
     #[must_use]
+    #[inline]
     pub fn build(self) -> HeaderBarWidget<'a, Message> {
         HeaderBarWidget {
             header_bar_inner: self.view(),

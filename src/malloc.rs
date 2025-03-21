@@ -11,6 +11,7 @@ unsafe extern "C" {
     fn mallopt(param: c_int, value: c_int) -> c_int;
 }
 
+#[inline]
 pub fn trim(pad: usize) {
     unsafe {
         malloc_trim(pad);
@@ -18,6 +19,7 @@ pub fn trim(pad: usize) {
 }
 
 /// Prevents glibc from hoarding memory via memory fragmentation.
+#[inline]
 pub fn limit_mmap_threshold(threshold: i32) {
     unsafe {
         mallopt(M_MMAP_THRESHOLD, threshold as c_int);

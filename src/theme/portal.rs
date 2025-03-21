@@ -1,6 +1,6 @@
-use ashpd::desktop::settings::{ColorScheme, Contrast};
 use ashpd::desktop::Color;
-use iced::futures::{self, select, FutureExt, SinkExt, StreamExt};
+use ashpd::desktop::settings::{ColorScheme, Contrast};
+use iced::futures::{self, FutureExt, SinkExt, StreamExt, select};
 use iced_futures::stream;
 use tracing::error;
 
@@ -11,6 +11,7 @@ pub enum Desktop {
     Contrast(Contrast),
 }
 
+#[cold]
 pub fn desktop_settings() -> iced_futures::Subscription<Desktop> {
     iced_futures::Subscription::run_with_id(
         std::any::TypeId::of::<Desktop>(),

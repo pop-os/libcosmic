@@ -16,6 +16,7 @@ pub enum ConfigUpdate<T> {
     Failed,
 }
 
+#[cold]
 pub fn config_subscription<
     I: 'static + Copy + Send + Sync + Hash,
     T: 'static + Send + Sync + PartialEq + Clone + CosmicConfigEntry,
@@ -27,6 +28,7 @@ pub fn config_subscription<
     iced_futures::Subscription::run_with_id(id, watcher_stream(config_id, config_version, false))
 }
 
+#[cold]
 pub fn config_state_subscription<
     I: 'static + Copy + Send + Sync + Hash,
     T: 'static + Send + Sync + PartialEq + Clone + CosmicConfigEntry,

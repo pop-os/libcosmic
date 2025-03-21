@@ -17,10 +17,10 @@ pub mod settings;
 
 pub type Task<M> = iced::Task<crate::Action<M>>;
 
+pub use crate::Core;
 use crate::prelude::*;
 use crate::theme::THEME;
 use crate::widget::{container, horizontal_space, id_container, menu, nav_bar, popover};
-pub use crate::Core;
 use apply::Apply;
 use context_drawer::ContextDrawer;
 use iced::window;
@@ -28,6 +28,7 @@ use iced::{Length, Subscription};
 pub use settings::Settings;
 use std::borrow::Cow;
 
+#[cold]
 pub(crate) fn iced_settings<App: Application>(
     settings: Settings,
     flags: App::Flags,
@@ -681,11 +682,10 @@ impl<App: Application> ApplicationExt for App {
         };
 
         // Ensures visually aligned radii for content and window corners
-        let window_corner_radius =
-            crate::theme::active()
-                .cosmic()
-                .radius_s()
-                .map(|x| if x < 4.0 { x } else { x + 4.0 });
+        let window_corner_radius = crate::theme::active()
+            .cosmic()
+            .radius_s()
+            .map(|x| if x < 4.0 { x } else { x + 4.0 });
 
         let view_column = crate::widget::column::with_capacity(2)
             .push_maybe(if core.window.show_headerbar {
@@ -811,6 +811,7 @@ const EMBEDDED_FONTS: &[&[u8]] = &[
     include_bytes!("../../res/noto/NotoSansMono-Bold.ttf"),
 ];
 
+#[cold]
 fn preload_fonts() {
     let mut font_system = iced::advanced::graphics::text::font_system()
         .write()

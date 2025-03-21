@@ -6,15 +6,13 @@
 use std::collections::VecDeque;
 use std::rc::Rc;
 
-use crate::widget::container;
 use crate::widget::Column;
+use crate::widget::container;
 use iced::Task;
 use iced_core::Element;
-use slotmap::new_key_type;
 use slotmap::SlotMap;
+use slotmap::new_key_type;
 use widget::Toaster;
-
-use crate::ext::CollectionWidget;
 
 use super::column;
 use super::{button, icon, row, text};
@@ -106,6 +104,7 @@ pub struct Action<Message> {
 }
 
 impl<Message> std::fmt::Debug for Action<Message> {
+    #[cold]
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("Action")
             .field("description", &self.description)

@@ -3,7 +3,7 @@
 
 //! Subscribe to common application keyboard shortcuts.
 
-use iced::{event, keyboard, Event, Subscription};
+use iced::{Event, Subscription, event, keyboard};
 use iced_core::keyboard::key::Named;
 use iced_futures::event::listen_raw;
 
@@ -16,6 +16,7 @@ pub enum Action {
     Search,
 }
 
+#[cold]
 pub fn subscription() -> Subscription<Action> {
     listen_raw(|event, status, _| {
         if event::Status::Ignored != status {

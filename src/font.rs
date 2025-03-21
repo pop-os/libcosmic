@@ -6,10 +6,12 @@
 pub use iced::Font;
 use iced_core::font::Weight;
 
+#[inline]
 pub fn default() -> Font {
     Font::from(crate::config::interface_font())
 }
 
+#[inline]
 pub fn light() -> Font {
     Font {
         weight: Weight::Light,
@@ -17,6 +19,7 @@ pub fn light() -> Font {
     }
 }
 
+#[inline]
 pub fn semibold() -> Font {
     Font {
         weight: Weight::Semibold,
@@ -24,6 +27,7 @@ pub fn semibold() -> Font {
     }
 }
 
+#[inline]
 pub fn bold() -> Font {
     Font {
         weight: Weight::Bold,
@@ -31,6 +35,7 @@ pub fn bold() -> Font {
     }
 }
 
+#[inline]
 pub fn mono() -> Font {
     Font::from(crate::config::monospace_font())
 }

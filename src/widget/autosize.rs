@@ -54,36 +54,43 @@ where
         }
     }
 
+    #[inline]
     pub fn limits(mut self, limits: layout::Limits) -> Self {
         self.limits = limits;
         self
     }
 
+    #[inline]
     pub fn auto_width(mut self, auto_width: bool) -> Self {
         self.auto_width = auto_width;
         self
     }
 
+    #[inline]
     pub fn auto_height(mut self, auto_height: bool) -> Self {
         self.auto_height = auto_height;
         self
     }
 
+    #[inline]
     pub fn max_width(mut self, v: f32) -> Self {
         self.limits = self.limits.max_width(v);
         self
     }
 
+    #[inline]
     pub fn max_height(mut self, v: f32) -> Self {
         self.limits = self.limits.max_height(v);
         self
     }
 
+    #[inline]
     pub fn min_width(mut self, v: f32) -> Self {
         self.limits = self.limits.min_width(v);
         self
     }
 
+    #[inline]
     pub fn min_height(mut self, v: f32) -> Self {
         self.limits = self.limits.min_height(v);
         self

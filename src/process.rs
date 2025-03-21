@@ -5,7 +5,7 @@
 use smol::io::AsyncReadExt;
 use std::io;
 use std::os::fd::OwnedFd;
-use std::process::{exit, Command, Stdio};
+use std::process::{Command, Stdio, exit};
 #[cfg(feature = "tokio")]
 use tokio::io::AsyncReadExt;
 
@@ -24,6 +24,7 @@ async fn read_from_pipe(read: OwnedFd) -> Option<u32> {
 }
 
 /// Performs a double fork with setsid to spawn and detach a command.
+#[cold]
 pub async fn spawn(mut command: Command) -> Option<u32> {
     // NOTE: Windows platform is not supported
     command

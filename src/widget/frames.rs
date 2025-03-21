@@ -10,17 +10,17 @@ use std::time::{Duration, Instant};
 use ::image as image_rs;
 use iced_core::image::Renderer as ImageRenderer;
 use iced_core::mouse::Cursor;
-use iced_core::widget::{tree, Tree};
+use iced_core::widget::{Tree, tree};
 use iced_core::{
-    event, layout, renderer, window, Clipboard, ContentFit, Element, Event, Layout, Length,
-    Rectangle, Shell, Size, Vector, Widget,
+    Clipboard, ContentFit, Element, Event, Layout, Length, Rectangle, Shell, Size, Vector, Widget,
+    event, layout, renderer, window,
 };
 use iced_runtime::Command;
 use iced_widget::image::{self, Handle};
+use image_rs::AnimationDecoder;
 use image_rs::codecs::gif::GifDecoder;
 use image_rs::codecs::png::PngDecoder;
 use image_rs::codecs::webp::WebPDecoder;
-use image_rs::AnimationDecoder;
 
 #[cfg(not(feature = "tokio"))]
 use iced_futures::futures::{AsyncRead, AsyncReadExt};
@@ -61,6 +61,7 @@ pub struct Frames {
 }
 
 impl fmt::Debug for Frames {
+    #[cold]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("Frames").finish()
     }
@@ -95,31 +96,36 @@ impl Frames {
 
     /// Load [`Frames`] from the supplied path
     pub fn load_from_path(path: impl AsRef<Path>) -> Command<Result<Frames, Error>> {
-        #[cfg(feature = "tokio")]
-        use tokio::fs::File;
-        #[cfg(feature = "tokio")]
-        use tokio::io::BufReader;
+        #[inline(never)]
+        fn inner(path: &Path) -> Command<Result<Frames, Error>> {
+            #[cfg(feature = "tokio")]
+            use tokio::fs::File;
+            #[cfg(feature = "tokio")]
+            use tokio::io::BufReader;
 
-        #[cfg(not(feature = "tokio"))]
-        use async_fs::File;
-        #[cfg(not(feature = "tokio"))]
-        use iced_futures::futures::io::BufReader;
+            #[cfg(not(feature = "tokio"))]
+            use async_fs::File;
+            #[cfg(not(feature = "tokio"))]
+            use iced_futures::futures::io::BufReader;
 
-        let path = path.as_ref().to_path_buf();
+            let path = path.as_ref().to_path_buf();
 
-        let f = async move {
-            let image_type = match &path.extension() {
-                Some(ext) if ext == &OsStr::new("gif") => ImageType::Gif,
-                Some(ext) if ext == &OsStr::new("apng") => ImageType::Apng,
-                Some(ext) if ext == &OsStr::new("webp") => ImageType::WebP,
-                _ => return Err(Error::Extension),
+            let f = async move {
+                let image_type = match &path.extension() {
+                    Some(ext) if ext == &OsStr::new("gif") => ImageType::Gif,
+                    Some(ext) if ext == &OsStr::new("apng") => ImageType::Apng,
+                    Some(ext) if ext == &OsStr::new("webp") => ImageType::WebP,
+                    _ => return Err(Error::Extension),
+                };
+                let reader = BufReader::new(File::open(path).await?);
+
+                Self::from_reader(reader, image_type).await
             };
-            let reader = BufReader::new(File::open(path).await?);
 
-            Self::from_reader(reader, image_type).await
-        };
+            Command::perform(f, std::convert::identity)
+        }
 
-        Command::perform(f, std::convert::identity)
+        inner(path.as_ref())
     }
 
     /// Decode [`Frames`] from the supplied async reader

@@ -16,6 +16,7 @@ pub struct ThemeMode {
 }
 
 impl Default for ThemeMode {
+    #[inline]
     fn default() -> Self {
         Self {
             is_dark: true,
@@ -25,15 +26,19 @@ impl Default for ThemeMode {
 }
 
 impl ThemeMode {
+    #[inline]
     /// Check if the theme is currently using dark mode
     pub fn is_dark(config: &Config) -> Result<bool, cosmic_config::Error> {
         config.get::<bool>("is_dark")
     }
 
+    #[inline]
+    /// The current version of the theme mode config.
     pub const fn version() -> u64 {
         Self::VERSION
     }
 
+    #[inline]
     /// Get the config for the theme mode
     pub fn config() -> Result<Config, cosmic_config::Error> {
         Config::new(THEME_MODE_ID, Self::VERSION)

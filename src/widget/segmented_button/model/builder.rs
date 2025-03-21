@@ -32,6 +32,7 @@ where
     }
 
     /// Consumes the builder and returns the model.
+    #[inline]
     pub fn build(self) -> Model<SelectionMode> {
         self.0
     }
@@ -43,6 +44,7 @@ where
 {
     /// Activates the newly-inserted item.
     #[allow(clippy::must_use_candidate, clippy::return_self_not_must_use)]
+    #[inline]
     pub fn activate(mut self) -> Self {
         self.model.0.activate(self.id);
         self
@@ -50,6 +52,7 @@ where
 
     /// Defines that the close button should appear
     #[allow(clippy::must_use_candidate, clippy::return_self_not_must_use)]
+    #[inline]
     pub fn closable(mut self) -> Self {
         self.model.0.closable_set(self.id, true);
         self
@@ -60,6 +63,7 @@ where
     /// The secondary map internally uses a `Vec`, so should only be used for data that
     /// is commonly associated.
     #[allow(clippy::must_use_candidate, clippy::return_self_not_must_use)]
+    #[inline]
     pub fn secondary<Data>(self, map: &mut SecondaryMap<Entity, Data>, data: Data) -> Self {
         map.insert(self.id, data);
         self
@@ -69,6 +73,7 @@ where
     ///
     /// Sparse maps internally use a `HashMap`, for data that is sparsely associated.
     #[allow(clippy::must_use_candidate, clippy::return_self_not_must_use)]
+    #[inline]
     pub fn secondary_sparse<Data>(
         self,
         map: &mut SparseSecondaryMap<Entity, Data>,
@@ -90,11 +95,13 @@ where
     ///     .build()
     /// ```
     #[allow(clippy::must_use_candidate, clippy::return_self_not_must_use)]
+    #[inline]
     pub fn data<Data: 'static>(mut self, data: Data) -> Self {
         self.model.0.data_set(self.id, data);
         self
     }
 
+    #[inline]
     pub fn divider_above(mut self) -> Self {
         self.model.0.divider_above_set(self.id, true);
         self
@@ -115,6 +122,7 @@ where
 
     /// Define the position of the newly-inserted item.
     #[allow(clippy::must_use_candidate, clippy::return_self_not_must_use)]
+    #[inline]
     pub fn position(mut self, position: u16) -> Self {
         self.model.0.position_set(self.id, position);
         self
@@ -122,6 +130,7 @@ where
 
     /// Swap the position with another item in the model.
     #[allow(clippy::must_use_candidate, clippy::return_self_not_must_use)]
+    #[inline]
     pub fn position_swap(mut self, other: Entity) -> Self {
         self.model.0.position_swap(self.id, other);
         self

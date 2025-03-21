@@ -19,6 +19,6 @@ pub mod composite;
 pub mod steps;
 
 /// name of cosmic theme
-pub const NAME: &'static str = "com.system76.CosmicTheme";
+pub const NAME: &str = "com.system76.CosmicTheme";
 
 pub use palette;
