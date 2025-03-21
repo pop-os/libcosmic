@@ -8,10 +8,10 @@ use derive_setters::Setters;
 use iced_core::event::{self, Event};
 use iced_core::text::{self, Paragraph, Text};
 use iced_core::widget::tree::{self, Tree};
-use iced_core::{alignment, keyboard, layout, mouse, overlay, renderer, svg, touch, Shadow};
 use iced_core::{
     Clipboard, Layout, Length, Padding, Pixels, Rectangle, Shell, Size, Vector, Widget,
 };
+use iced_core::{Shadow, alignment, keyboard, layout, mouse, overlay, renderer, svg, touch};
 use iced_widget::pick_list;
 use std::ffi::OsStr;
 

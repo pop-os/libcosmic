@@ -2,8 +2,8 @@ use crate::iced;
 use crate::iced_futures::futures;
 use cctk::sctk::reexports::calloop;
 use futures::{
-    channel::mpsc::{unbounded, UnboundedReceiver},
     SinkExt, StreamExt,
+    channel::mpsc::{UnboundedReceiver, unbounded},
 };
 use iced::Subscription;
 use iced_futures::stream;

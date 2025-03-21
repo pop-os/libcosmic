@@ -3,4 +3,4 @@
 
 pub mod column;
 
-pub use self::column::{list_column, ListColumn};
+pub use self::column::{ListColumn, list_column};

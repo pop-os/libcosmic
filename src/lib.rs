@@ -6,9 +6,9 @@
 
 /// Recommended default imports.
 pub mod prelude {
-    pub use crate::ext::*;
     #[cfg(feature = "winit")]
     pub use crate::ApplicationExt;
+    pub use crate::ext::*;
     pub use crate::{Also, Apply, Element, Renderer, Task, Theme};
 }
 
@@ -107,7 +107,7 @@ pub mod task;
 pub mod theme;
 
 #[doc(inline)]
-pub use theme::{style, Theme};
+pub use theme::{Theme, style};
 
 pub mod widget;
 type Plain = iced_core::text::paragraph::Plain<<Renderer as iced_core::text::Renderer>::Paragraph>;

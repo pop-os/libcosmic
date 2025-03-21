@@ -5,9 +5,9 @@ use crate::Element;
 
 use iced::advanced::layout::{self, Layout};
 use iced::advanced::widget::{self, Operation};
-use iced::advanced::{overlay, renderer};
 use iced::advanced::{Clipboard, Shell};
-use iced::{event, mouse, Event, Point, Rectangle, Size};
+use iced::advanced::{overlay, renderer};
+use iced::{Event, Point, Rectangle, Size, event, mouse};
 use iced_core::Renderer;
 
 pub(super) struct Overlay<'a, 'b, Message> {

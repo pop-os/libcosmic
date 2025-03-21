@@ -7,8 +7,8 @@ use iced_core::layout::{self, Layout};
 use iced_core::text::{self, Text};
 use iced_core::widget::Tree;
 use iced_core::{
-    alignment, mouse, overlay, renderer, svg, touch, Border, Clipboard, Element, Length, Padding,
-    Pixels, Point, Rectangle, Renderer, Shadow, Shell, Size, Vector, Widget,
+    Border, Clipboard, Element, Length, Padding, Pixels, Point, Rectangle, Renderer, Shadow, Shell,
+    Size, Vector, Widget, alignment, mouse, overlay, renderer, svg, touch,
 };
 use iced_widget::scrollable::Scrollable;
 

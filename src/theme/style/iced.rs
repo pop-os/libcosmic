@@ -3,7 +3,7 @@
 
 //! Contains stylesheet implementations for widgets native to iced.
 
-use crate::theme::{CosmicComponent, Theme, TRANSPARENT_COMPONENT};
+use crate::theme::{CosmicComponent, TRANSPARENT_COMPONENT, Theme};
 use cosmic_theme::composite::over;
 use iced::{
     overlay::menu,

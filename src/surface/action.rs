@@ -24,9 +24,9 @@ pub fn destroy_subsurface(id: iced_core::window::Id) -> Action {
 #[must_use]
 pub fn app_popup<App: Application>(
     settings: impl Fn(&mut App) -> iced_runtime::platform_specific::wayland::popup::SctkPopupSettings
-        + Send
-        + Sync
-        + 'static,
+    + Send
+    + Sync
+    + 'static,
     view: Option<
         Box<
             dyn for<'a> Fn(&'a App) -> crate::Element<'a, crate::Action<App::Message>>
@@ -58,9 +58,9 @@ pub fn app_popup<App: Application>(
 #[must_use]
 pub fn simple_subsurface<Message: 'static, V>(
     settings: impl Fn() -> iced_runtime::platform_specific::wayland::subsurface::SctkSubsurfaceSettings
-        + Send
-        + Sync
-        + 'static,
+    + Send
+    + Sync
+    + 'static,
     view: Option<
         Box<dyn Fn() -> crate::Element<'static, crate::Action<Message>> + Send + Sync + 'static>,
     >,
@@ -87,9 +87,9 @@ pub fn simple_subsurface<Message: 'static, V>(
 #[must_use]
 pub fn simple_popup<Message: 'static, V>(
     settings: impl Fn() -> iced_runtime::platform_specific::wayland::popup::SctkPopupSettings
-        + Send
-        + Sync
-        + 'static,
+    + Send
+    + Sync
+    + 'static,
     view: Option<
         impl Fn() -> crate::Element<'static, crate::Action<Message>> + Send + Sync + 'static,
     >,
@@ -117,10 +117,13 @@ pub fn simple_popup<Message: 'static, V>(
 #[cfg(all(feature = "wayland", feature = "winit"))]
 #[must_use]
 pub fn subsurface<App: Application>(
-    settings: impl Fn(&mut App) -> iced_runtime::platform_specific::wayland::subsurface::SctkSubsurfaceSettings
-        + Send
-        + Sync
-        + 'static,
+    settings: impl Fn(
+        &mut App,
+    )
+        -> iced_runtime::platform_specific::wayland::subsurface::SctkSubsurfaceSettings
+    + Send
+    + Sync
+    + 'static,
     // XXX Boxed trait object is required for less cumbersome type inference, but we box it anyways.
     view: Option<
         Box<

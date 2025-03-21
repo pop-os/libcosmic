@@ -48,46 +48,46 @@
 
 // Re-exports from Iced
 #[doc(inline)]
-pub use iced::widget::{canvas, Canvas};
+pub use iced::widget::{Canvas, canvas};
 
 #[doc(inline)]
-pub use iced::widget::{checkbox, Checkbox};
+pub use iced::widget::{Checkbox, checkbox};
 
 #[doc(inline)]
-pub use iced::widget::{combo_box, ComboBox};
+pub use iced::widget::{ComboBox, combo_box};
 
 #[doc(inline)]
-pub use iced::widget::{container, Container};
+pub use iced::widget::{Container, container};
 
 #[doc(inline)]
-pub use iced::widget::{horizontal_space, vertical_space, Space};
+pub use iced::widget::{Space, horizontal_space, vertical_space};
 
 #[doc(inline)]
-pub use iced::widget::{image, Image};
+pub use iced::widget::{Image, image};
 
 #[doc(inline)]
-pub use iced::widget::{lazy, Lazy};
+pub use iced::widget::{Lazy, lazy};
 
 #[doc(inline)]
-pub use iced::widget::{mouse_area, MouseArea};
+pub use iced::widget::{MouseArea, mouse_area};
 
 #[doc(inline)]
-pub use iced::widget::{pane_grid, PaneGrid};
+pub use iced::widget::{PaneGrid, pane_grid};
 
 #[doc(inline)]
-pub use iced::widget::{progress_bar, ProgressBar};
+pub use iced::widget::{ProgressBar, progress_bar};
 
 #[doc(inline)]
-pub use iced::widget::{responsive, Responsive};
+pub use iced::widget::{Responsive, responsive};
 
 #[doc(inline)]
-pub use iced::widget::{slider, vertical_slider, Slider, VerticalSlider};
+pub use iced::widget::{Slider, VerticalSlider, slider, vertical_slider};
 
 #[doc(inline)]
-pub use iced::widget::{svg, Svg};
+pub use iced::widget::{Svg, svg};
 
 #[doc(inline)]
-pub use iced::widget::{text_editor, TextEditor};
+pub use iced::widget::{TextEditor, text_editor};
 
 #[doc(inline)]
 pub use iced_core::widget::{Id, Operation, Widget};
@@ -113,7 +113,7 @@ pub(crate) mod common;
 
 pub mod calendar;
 #[doc(inline)]
-pub use calendar::{calendar, Calendar};
+pub use calendar::{Calendar, calendar};
 
 pub mod card;
 #[doc(inline)]
@@ -129,10 +129,10 @@ pub use iced::widget::qr_code;
 
 pub mod context_drawer;
 #[doc(inline)]
-pub use context_drawer::{context_drawer, ContextDrawer};
+pub use context_drawer::{ContextDrawer, context_drawer};
 
 #[doc(inline)]
-pub use column::{column, Column};
+pub use column::{Column, column};
 pub mod column {
     //! A container which aligns its children in a column.
 
@@ -159,21 +159,21 @@ pub mod column {
 
 pub mod layer_container;
 #[doc(inline)]
-pub use layer_container::{layer_container, LayerContainer};
+pub use layer_container::{LayerContainer, layer_container};
 
 pub mod context_menu;
 #[doc(inline)]
-pub use context_menu::{context_menu, ContextMenu};
+pub use context_menu::{ContextMenu, context_menu};
 
 pub mod dialog;
 #[doc(inline)]
-pub use dialog::{dialog, Dialog};
+pub use dialog::{Dialog, dialog};
 
 /// An element to distinguish a boundary between two elements.
 pub mod divider {
     /// Horizontal variant of a divider.
     pub mod horizontal {
-        use iced::widget::{horizontal_rule, Rule};
+        use iced::widget::{Rule, horizontal_rule};
 
         /// Horizontal divider with default thickness
         #[must_use]
@@ -196,7 +196,7 @@ pub mod divider {
 
     /// Vertical variant of a divider.
     pub mod vertical {
-        use iced::widget::{vertical_rule, Rule};
+        use iced::widget::{Rule, vertical_rule};
 
         /// Vertical divider with default thickness
         #[must_use]
@@ -220,35 +220,35 @@ pub mod divider {
 
 pub mod dnd_destination;
 #[doc(inline)]
-pub use dnd_destination::{dnd_destination, DndDestination};
+pub use dnd_destination::{DndDestination, dnd_destination};
 
 pub mod dnd_source;
 #[doc(inline)]
-pub use dnd_source::{dnd_source, DndSource};
+pub use dnd_source::{DndSource, dnd_source};
 
 pub mod dropdown;
 #[doc(inline)]
-pub use dropdown::{dropdown, Dropdown};
+pub use dropdown::{Dropdown, dropdown};
 
 pub mod flex_row;
 #[doc(inline)]
-pub use flex_row::{flex_row, FlexRow};
+pub use flex_row::{FlexRow, flex_row};
 
 pub mod grid;
 #[doc(inline)]
-pub use grid::{grid, Grid};
+pub use grid::{Grid, grid};
 
 mod header_bar;
 #[doc(inline)]
-pub use header_bar::{header_bar, HeaderBar};
+pub use header_bar::{HeaderBar, header_bar};
 
 pub mod icon;
 #[doc(inline)]
-pub use icon::{icon, Icon};
+pub use icon::{Icon, icon};
 
 pub mod id_container;
 #[doc(inline)]
-pub use id_container::{id_container, IdContainer};
+pub use id_container::{IdContainer, id_container};
 
 #[cfg(feature = "animated-image")]
 pub mod frames;
@@ -257,7 +257,7 @@ pub use taffy::JustifyContent;
 
 pub mod list;
 #[doc(inline)]
-pub use list::{list_column, ListColumn};
+pub use list::{ListColumn, list_column};
 
 pub mod menu;
 
@@ -267,22 +267,22 @@ pub use nav_bar::{nav_bar, nav_bar_dnd};
 
 pub mod nav_bar_toggle;
 #[doc(inline)]
-pub use nav_bar_toggle::{nav_bar_toggle, NavBarToggle};
+pub use nav_bar_toggle::{NavBarToggle, nav_bar_toggle};
 
 pub mod popover;
 #[doc(inline)]
-pub use popover::{popover, Popover};
+pub use popover::{Popover, popover};
 
 pub mod radio;
 #[doc(inline)]
-pub use radio::{radio, Radio};
+pub use radio::{Radio, radio};
 
 pub mod rectangle_tracker;
 #[doc(inline)]
-pub use rectangle_tracker::{rectangle_tracking_container, RectangleTracker};
+pub use rectangle_tracker::{RectangleTracker, rectangle_tracking_container};
 
 #[doc(inline)]
-pub use row::{row, Row};
+pub use row::{Row, row};
 
 pub mod row {
     //! A container which aligns its children in a row.
@@ -319,30 +319,30 @@ pub mod settings;
 
 pub mod spin_button;
 #[doc(inline)]
-pub use spin_button::{spin_button, vertical as vertical_spin_button, SpinButton};
+pub use spin_button::{SpinButton, spin_button, vertical as vertical_spin_button};
 
 pub mod tab_bar;
 
 pub mod text;
 #[doc(inline)]
-pub use text::{text, Text};
+pub use text::{Text, text};
 
 pub mod text_input;
 #[doc(inline)]
 pub use text_input::{
-    editable_input, inline_input, search_input, secure_input, text_input, TextInput,
+    TextInput, editable_input, inline_input, search_input, secure_input, text_input,
 };
 
 pub mod toaster;
 #[doc(inline)]
-pub use toaster::{toaster, Toast, ToastId, Toasts};
+pub use toaster::{Toast, ToastId, Toasts, toaster};
 
 mod toggler;
 #[doc(inline)]
 pub use toggler::toggler;
 
 #[doc(inline)]
-pub use tooltip::{tooltip, Tooltip};
+pub use tooltip::{Tooltip, tooltip};
 
 #[cfg(all(feature = "wayland", feature = "winit"))]
 pub mod wayland;

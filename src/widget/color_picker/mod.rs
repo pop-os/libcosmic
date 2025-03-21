@@ -9,30 +9,30 @@ use std::rc::Rc;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::{Duration, Instant};
 
+use crate::Element;
 use crate::theme::iced::Slider;
 use crate::theme::{Button, THEME};
 use crate::widget::{button::Catalog, container, segmented_button::Entity, slider};
-use crate::Element;
 use derive_setters::Setters;
 use iced::Task;
 use iced_core::event::{self, Event};
 use iced_core::gradient::{ColorStop, Linear};
 use iced_core::renderer::Quad;
-use iced_core::widget::{tree, Tree};
+use iced_core::widget::{Tree, tree};
 use iced_core::{
-    layout, mouse, renderer, Background, Border, Clipboard, Color, Layout, Length, Radians,
-    Rectangle, Renderer, Shadow, Shell, Size, Vector, Widget,
+    Background, Border, Clipboard, Color, Layout, Length, Radians, Rectangle, Renderer, Shadow,
+    Shell, Size, Vector, Widget, layout, mouse, renderer,
 };
 
 use iced_widget::slider::HandleShape;
-use iced_widget::{canvas, column, horizontal_space, row, scrollable, vertical_space, Row};
+use iced_widget::{Row, canvas, column, horizontal_space, row, scrollable, vertical_space};
 use lazy_static::lazy_static;
 use palette::{FromColor, RgbHue};
 
 use super::divider::horizontal;
 use super::icon::{self, from_name};
 use super::segmented_button::{self, SingleSelect};
-use super::{button, segmented_control, text, text_input, tooltip, Icon};
+use super::{Icon, button, segmented_control, text, text_input, tooltip};
 
 #[doc(inline)]
 pub use ColorPickerModel as Model;

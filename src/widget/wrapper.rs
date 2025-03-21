@@ -5,8 +5,8 @@ use std::{
 };
 
 use crate::Element;
-use iced::{event, Length, Rectangle, Size};
-use iced_core::{id::Id, widget, widget::tree, Widget};
+use iced::{Length, Rectangle, Size, event};
+use iced_core::{Widget, id::Id, widget, widget::tree};
 
 #[derive(Debug)]
 pub struct RcWrapper<T> {

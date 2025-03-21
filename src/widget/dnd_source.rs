@@ -3,17 +3,17 @@ use std::any::Any;
 use iced_core::window;
 
 use crate::{
+    Element,
     iced::{
+        Event, Length, Point, Rectangle, Vector,
         clipboard::dnd::{DndAction, DndEvent, SourceEvent},
-        event, mouse, overlay, Event, Length, Point, Rectangle, Vector,
+        event, mouse, overlay,
     },
     iced_core::{
-        self, layout, renderer,
-        widget::{tree, Tree},
-        Clipboard, Shell,
+        self, Clipboard, Shell, layout, renderer,
+        widget::{Tree, tree},
     },
-    widget::{container, Id, Widget},
-    Element,
+    widget::{Id, Widget, container},
 };
 
 pub fn dnd_source<
@@ -40,10 +40,10 @@ pub struct DndSource<'a, Message, D> {
 }
 
 impl<
-        'a,
-        Message: Clone + 'static,
-        D: iced::clipboard::mime::AsMimeTypes + std::marker::Send + 'static,
-    > DndSource<'a, Message, D>
+    'a,
+    Message: Clone + 'static,
+    D: iced::clipboard::mime::AsMimeTypes + std::marker::Send + 'static,
+> DndSource<'a, Message, D>
 {
     pub fn new(child: impl Into<Element<'a, Message>>) -> Self {
         Self {
@@ -152,10 +152,8 @@ impl<
     }
 }
 
-impl<
-        Message: Clone + 'static,
-        D: iced::clipboard::mime::AsMimeTypes + std::marker::Send + 'static,
-    > Widget<Message, crate::Theme, crate::Renderer> for DndSource<'_, Message, D>
+impl<Message: Clone + 'static, D: iced::clipboard::mime::AsMimeTypes + std::marker::Send + 'static>
+    Widget<Message, crate::Theme, crate::Renderer> for DndSource<'_, Message, D>
 {
     fn children(&self) -> Vec<Tree> {
         vec![Tree::new(&self.container)]
@@ -400,10 +398,10 @@ impl<
 }
 
 impl<
-        'a,
-        Message: Clone + 'static,
-        D: iced::clipboard::mime::AsMimeTypes + std::marker::Send + 'static,
-    > From<DndSource<'a, Message, D>> for Element<'a, Message>
+    'a,
+    Message: Clone + 'static,
+    D: iced::clipboard::mime::AsMimeTypes + std::marker::Send + 'static,
+> From<DndSource<'a, Message, D>> for Element<'a, Message>
 {
     fn from(e: DndSource<'a, Message, D>) -> Element<'a, Message> {
         Element::new(e)

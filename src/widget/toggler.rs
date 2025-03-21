@@ -1,7 +1,7 @@
 // Copyright 2022 System76 <info@system76.com>
 // SPDX-License-Identifier: MPL-2.0
 
-use iced::{widget, Length};
+use iced::{Length, widget};
 use iced_core::text;
 
 pub fn toggler<'a, Message, Theme: iced_widget::toggler::Catalog, Renderer>(

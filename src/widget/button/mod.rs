@@ -8,21 +8,21 @@ pub use crate::theme::Button as ButtonClass;
 pub mod link;
 use derive_setters::Setters;
 #[doc(inline)]
-pub use link::link;
-#[doc(inline)]
 pub use link::Button as LinkButton;
+#[doc(inline)]
+pub use link::link;
 
 mod icon;
 #[doc(inline)]
-pub use icon::icon;
-#[doc(inline)]
 pub use icon::Button as IconButton;
+#[doc(inline)]
+pub use icon::icon;
 
 mod image;
 #[doc(inline)]
-pub use image::image;
-#[doc(inline)]
 pub use image::Button as ImageButton;
+#[doc(inline)]
+pub use image::image;
 
 mod style;
 #[doc(inline)]
@@ -36,7 +36,7 @@ pub use text::{destructive, standard, suggested, text};
 
 mod widget;
 #[doc(inline)]
-pub use widget::{draw, focus, layout, mouse_interaction, Button};
+pub use widget::{Button, draw, focus, layout, mouse_interaction};
 
 use iced_core::font::Weight;
 use iced_core::widget::Id;

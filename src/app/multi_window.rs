@@ -7,10 +7,9 @@
 use iced::application;
 use iced::window;
 use iced::{
-    self,
+    self, Program,
     program::{self, with_style, with_subscription, with_theme, with_title},
     runtime::{Appearance, DefaultStyle},
-    Program,
 };
 use iced::{Element, Result, Settings, Subscription, Task};
 

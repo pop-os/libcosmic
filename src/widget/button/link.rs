@@ -5,12 +5,12 @@
 
 use super::Builder;
 use super::ButtonClass;
+use crate::Element;
 use crate::prelude::*;
 use crate::widget::icon::{self, Handle};
 use crate::widget::{button, row, tooltip};
-use crate::Element;
 use iced_core::text::LineHeight;
-use iced_core::{font::Weight, widget::Id, Alignment, Length, Padding};
+use iced_core::{Alignment, Length, Padding, font::Weight, widget::Id};
 use std::borrow::Cow;
 
 pub type Button<'a, Message> = Builder<'a, Message, Hyperlink>;

@@ -49,10 +49,10 @@ pub fn from_path(path: PathBuf) -> Handle {
 /// Create an image handle from memory.
 pub fn from_raster_bytes(
     bytes: impl Into<Cow<'static, [u8]>>
-        + std::convert::AsRef<[u8]>
-        + std::marker::Send
-        + std::marker::Sync
-        + 'static,
+    + std::convert::AsRef<[u8]>
+    + std::marker::Send
+    + std::marker::Sync
+    + 'static,
 ) -> Handle {
     fn inner(bytes: Cow<'static, [u8]>) -> Handle {
         Handle {
@@ -72,9 +72,9 @@ pub fn from_raster_pixels(
     width: u32,
     height: u32,
     pixels: impl Into<Cow<'static, [u8]>>
-        + std::convert::AsRef<[u8]>
-        + std::marker::Send
-        + std::marker::Sync,
+    + std::convert::AsRef<[u8]>
+    + std::marker::Send
+    + std::marker::Sync,
 ) -> Handle {
     fn inner(width: u32, height: u32, pixels: Cow<'static, [u8]>) -> Handle {
         Handle {

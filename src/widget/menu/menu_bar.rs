@@ -12,12 +12,11 @@ use crate::style::menu_bar::StyleSheet;
 use iced::{Point, Vector};
 use iced_core::Border;
 use iced_widget::core::{
-    event,
+    Alignment, Clipboard, Element, Layout, Length, Padding, Rectangle, Shell, Widget, event,
     layout::{Limits, Node},
     mouse::{self, Cursor},
     overlay, renderer, touch,
-    widget::{tree, Tree},
-    Alignment, Clipboard, Element, Layout, Length, Padding, Rectangle, Shell, Widget,
+    widget::{Tree, tree},
 };
 
 /// A `MenuBar` collects `MenuTree`s and handles all the layout, event processing, and drawing.

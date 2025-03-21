@@ -21,7 +21,7 @@ use sctk::{
     activation::{ActivationHandler, ActivationState},
     registry::{ProvidesRegistryState, RegistryState},
 };
-use wayland_client::{globals::registry_queue_init, Connection, QueueHandle};
+use wayland_client::{Connection, QueueHandle, globals::registry_queue_init};
 
 struct AppData {
     exit: bool,

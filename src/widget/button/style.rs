@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: MPL-2.0
 
 //! Change the apperance of a button.
-use iced_core::{border::Radius, Background, Color, Vector};
+use iced_core::{Background, Color, Vector, border::Radius};
 
 use crate::theme::THEME;
 

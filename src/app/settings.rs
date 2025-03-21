@@ -3,9 +3,9 @@
 
 //! Configure a new COSMIC application.
 
-use crate::{font, Theme};
-use iced_core::layout::Limits;
+use crate::{Theme, font};
 use iced_core::Font;
+use iced_core::layout::Limits;
 
 /// Configure a new COSMIC application.
 #[allow(clippy::struct_excessive_bools)]

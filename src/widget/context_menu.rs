@@ -9,8 +9,8 @@ use crate::widget::menu::{
 use derive_setters::Setters;
 use iced::touch::Finger;
 use iced::{Event, Vector};
-use iced_core::widget::{tree, Tree, Widget};
-use iced_core::{event, mouse, touch, Length, Point, Size};
+use iced_core::widget::{Tree, Widget, tree};
+use iced_core::{Length, Point, Size, event, mouse, touch};
 use std::collections::HashSet;
 
 /// A context menu is a menu in a graphical user interface that appears upon user interaction, such as a right-click mouse operation.

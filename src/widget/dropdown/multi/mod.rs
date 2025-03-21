@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: MPL-2.0 AND MIT
 
 mod model;
-pub use model::{list, model, List, Model};
+pub use model::{List, Model, list, model};
 
 pub mod menu;
 pub use menu::Menu;

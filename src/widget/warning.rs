@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: MPL-2.0
 
 use super::icon;
-use crate::{theme, widget, Element, Renderer, Theme};
+use crate::{Element, Renderer, Theme, theme, widget};
 use apply::Apply;
 use iced::{Alignment, Background, Color, Length};
 use iced_core::{Border, Shadow};

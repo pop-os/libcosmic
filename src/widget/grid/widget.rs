@@ -6,8 +6,8 @@ use derive_setters::Setters;
 use iced_core::event::{self, Event};
 use iced_core::widget::{Operation, Tree};
 use iced_core::{
-    layout, mouse, overlay, renderer, Alignment, Clipboard, Layout, Length, Padding, Rectangle,
-    Shell, Vector, Widget,
+    Alignment, Clipboard, Layout, Length, Padding, Rectangle, Shell, Vector, Widget, layout, mouse,
+    overlay, renderer,
 };
 
 /// Responsively generates rows and columns of widgets based on its dimmensions.

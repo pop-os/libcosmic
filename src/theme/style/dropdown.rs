@@ -1,8 +1,8 @@
 // Copyright 2023 System76 <info@system76.com>
 // SPDX-License-Identifier: MPL-2.0
 
-use crate::widget::dropdown;
 use crate::Theme;
+use crate::widget::dropdown;
 use iced::{Background, Color};
 
 impl dropdown::menu::StyleSheet for Theme {

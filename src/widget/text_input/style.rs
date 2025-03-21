@@ -4,7 +4,7 @@
 
 //! Change the appearance of a text input.
 
-use iced_core::{border::Radius, Background, Color};
+use iced_core::{Background, Color, border::Radius};
 
 /// The appearance of a text input.
 #[derive(Debug, Clone, Copy)]

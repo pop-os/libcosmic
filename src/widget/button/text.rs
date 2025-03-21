@@ -4,7 +4,7 @@
 use super::{Builder, ButtonClass};
 use crate::widget::{icon, row, tooltip};
 use crate::{Apply, Element};
-use iced_core::{font::Weight, text::LineHeight, widget::Id, Alignment, Length, Padding};
+use iced_core::{Alignment, Length, Padding, font::Weight, text::LineHeight, widget::Id};
 use std::borrow::Cow;
 
 pub type Button<'a, Message> = Builder<'a, Message, Text>;

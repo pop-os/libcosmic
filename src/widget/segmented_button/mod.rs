@@ -79,14 +79,14 @@ mod style;
 mod vertical;
 mod widget;
 
-pub use self::horizontal::{horizontal, HorizontalSegmentedButton};
+pub use self::horizontal::{HorizontalSegmentedButton, horizontal};
 pub use self::model::{
     BuilderEntity, Entity, EntityMut, Model, ModelBuilder, MultiSelect, MultiSelectEntityMut,
     MultiSelectModel, Selectable, SingleSelect, SingleSelectEntityMut, SingleSelectModel,
 };
 pub use self::style::{Appearance, ItemAppearance, ItemStatusAppearance, StyleSheet};
-pub use self::vertical::{vertical, VerticalSegmentedButton};
-pub use self::widget::{focus, Id, SegmentedButton, SegmentedVariant};
+pub use self::vertical::{VerticalSegmentedButton, vertical};
+pub use self::widget::{Id, SegmentedButton, SegmentedVariant, focus};
 
 /// Associates extra data with an external secondary map.
 ///

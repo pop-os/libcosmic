@@ -5,10 +5,10 @@ pub mod item;
 pub mod section;
 
 pub use self::item::{flex_item, flex_item_row, item, item_row};
-pub use self::section::{section, Section};
+pub use self::section::{Section, section};
 
-use crate::widget::{column, Column};
-use crate::{theme, Element};
+use crate::widget::{Column, column};
+use crate::{Element, theme};
 
 /// A column with a predefined style for creating a settings panel
 #[must_use]

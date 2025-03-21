@@ -4,9 +4,8 @@
 //! A control for incremental adjustments of a value.
 
 use crate::{
-    theme,
+    Element, theme,
     widget::{button, column, container, icon, row, text},
-    Element,
 };
 use apply::Apply;
 use iced::{Alignment, Length};

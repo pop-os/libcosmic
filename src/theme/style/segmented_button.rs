@@ -6,7 +6,7 @@
 use crate::widget::segmented_button::{Appearance, ItemAppearance, StyleSheet};
 use crate::{theme::Theme, widget::segmented_button::ItemStatusAppearance};
 use cosmic_theme::{Component, Container};
-use iced_core::{border::Radius, Background};
+use iced_core::{Background, border::Radius};
 
 #[derive(Default)]
 pub enum SegmentedButton {
@@ -165,7 +165,7 @@ impl StyleSheet for Theme {
 mod horizontal {
     use crate::widget::segmented_button::{ItemAppearance, ItemStatusAppearance};
     use cosmic_theme::Component;
-    use iced_core::{border::Radius, Background};
+    use iced_core::{Background, border::Radius};
 
     pub fn selection_active(
         cosmic: &cosmic_theme::Theme,
@@ -252,7 +252,7 @@ pub fn hover(
 mod vertical {
     use crate::widget::segmented_button::{ItemAppearance, ItemStatusAppearance};
     use cosmic_theme::Component;
-    use iced_core::{border::Radius, Background};
+    use iced_core::{Background, border::Radius};
 
     pub fn selection_active(
         cosmic: &cosmic_theme::Theme,

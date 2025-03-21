@@ -6,12 +6,12 @@ use std::borrow::Cow;
 use std::collections::HashMap;
 use std::rc::Rc;
 
-use iced_widget::core::{renderer, Element};
+use iced_widget::core::{Element, renderer};
 
 use crate::iced_core::{Alignment, Length};
 use crate::widget::menu::action::MenuAction;
 use crate::widget::menu::key_bind::KeyBind;
-use crate::widget::{icon, Button};
+use crate::widget::{Button, icon};
 use crate::{theme, widget};
 
 /// Nested menu is essentially a tree of items, a menu is a collection of items

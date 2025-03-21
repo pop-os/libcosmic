@@ -4,16 +4,16 @@
 
 use super::menu::{self, Menu};
 use crate::widget::icon::{self, Handle};
-use crate::{surface, Element};
+use crate::{Element, surface};
 use derive_setters::Setters;
 use iced::window;
 use iced_core::event::{self, Event};
 use iced_core::text::{self, Paragraph, Text};
 use iced_core::widget::tree::{self, Tree};
-use iced_core::{alignment, keyboard, layout, mouse, overlay, renderer, svg, touch, Shadow};
 use iced_core::{
     Clipboard, Layout, Length, Padding, Pixels, Rectangle, Shell, Size, Vector, Widget,
 };
+use iced_core::{Shadow, alignment, keyboard, layout, mouse, overlay, renderer, svg, touch};
 use iced_widget::pick_list::{self, Catalog};
 use std::borrow::Cow;
 use std::ffi::OsStr;
@@ -149,10 +149,10 @@ where
 }
 
 impl<
-        S: AsRef<str> + Send + Sync + Clone + 'static,
-        Message: 'static + Clone,
-        AppMessage: 'static + Clone,
-    > Widget<Message, crate::Theme, crate::Renderer> for Dropdown<'_, S, Message, AppMessage>
+    S: AsRef<str> + Send + Sync + Clone + 'static,
+    Message: 'static + Clone,
+    AppMessage: 'static + Clone,
+> Widget<Message, crate::Theme, crate::Renderer> for Dropdown<'_, S, Message, AppMessage>
 where
     [S]: std::borrow::ToOwned,
 {
@@ -344,11 +344,11 @@ where
 }
 
 impl<
-        'a,
-        S: AsRef<str> + Send + Sync + Clone + 'static,
-        Message: 'static + std::clone::Clone,
-        AppMessage: 'static + std::clone::Clone,
-    > From<Dropdown<'a, S, Message, AppMessage>> for crate::Element<'a, Message>
+    'a,
+    S: AsRef<str> + Send + Sync + Clone + 'static,
+    Message: 'static + std::clone::Clone,
+    AppMessage: 'static + std::clone::Clone,
+> From<Dropdown<'a, S, Message, AppMessage>> for crate::Element<'a, Message>
 where
     [S]: std::borrow::ToOwned,
 {

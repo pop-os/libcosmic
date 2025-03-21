@@ -1,8 +1,8 @@
 use {
     crate::{
+        Element,
         iced::{Alignment, Length},
         widget::{self, horizontal_space},
-        Element,
     },
     license::License,
 };

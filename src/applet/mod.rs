@@ -2,22 +2,22 @@
 pub mod token;
 
 use crate::{
+    Application, Element, Renderer,
     app::iced_settings,
     cctk::sctk,
     iced::{
-        self,
+        self, Color, Length, Limits, Rectangle,
         alignment::{Horizontal, Vertical},
         widget::Container,
-        window, Color, Length, Limits, Rectangle,
+        window,
     },
     iced_widget,
-    theme::{self, system_dark, system_light, Button, THEME},
+    theme::{self, Button, THEME, system_dark, system_light},
     widget::{
         self,
-        autosize::{self, autosize, Autosize},
+        autosize::{self, Autosize, autosize},
         layer_container,
     },
-    Application, Element, Renderer,
 };
 pub use cosmic_panel_config;
 use cosmic_panel_config::{CosmicPanelBackground, PanelAnchor, PanelSize};

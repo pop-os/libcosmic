@@ -10,7 +10,7 @@ use std::sync::Arc;
 pub use named::{IconFallback, Named};
 
 mod handle;
-pub use handle::{from_path, from_raster_bytes, from_raster_pixels, from_svg_bytes, Data, Handle};
+pub use handle::{Data, Handle, from_path, from_raster_bytes, from_raster_pixels, from_svg_bytes};
 
 use crate::Element;
 use derive_setters::Setters;

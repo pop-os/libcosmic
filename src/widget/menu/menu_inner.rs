@@ -6,12 +6,11 @@ use crate::style::menu_bar::StyleSheet;
 
 use iced_core::{Border, Shadow};
 use iced_widget::core::{
-    event,
+    Clipboard, Layout, Length, Padding, Point, Rectangle, Shell, Size, Vector, event,
     layout::{Limits, Node},
     mouse::{self, Cursor},
     overlay, renderer, touch,
     widget::Tree,
-    Clipboard, Layout, Length, Padding, Point, Rectangle, Shell, Size, Vector,
 };
 
 /// The condition of when to close a menu

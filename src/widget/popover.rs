@@ -9,7 +9,7 @@ use iced_core::mouse;
 use iced_core::overlay;
 use iced_core::renderer;
 use iced_core::touch;
-use iced_core::widget::{tree, Operation, Tree};
+use iced_core::widget::{Operation, Tree, tree};
 use iced_core::{
     Clipboard, Element, Layout, Length, Point, Rectangle, Shell, Size, Vector, Widget,
 };

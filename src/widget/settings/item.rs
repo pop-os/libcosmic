@@ -4,12 +4,11 @@
 use std::borrow::Cow;
 
 use crate::{
-    theme,
-    widget::{column, container, flex_row, horizontal_space, row, text, FlexRow, Row},
-    Element,
+    Element, theme,
+    widget::{FlexRow, Row, column, container, flex_row, horizontal_space, row, text},
 };
 use derive_setters::Setters;
-use iced_core::{text::Wrapping, Length};
+use iced_core::{Length, text::Wrapping};
 use taffy::AlignContent;
 
 /// A settings item aligned in a row

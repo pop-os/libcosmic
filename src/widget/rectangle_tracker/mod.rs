@@ -1,8 +1,8 @@
 mod subscription;
 
+use iced::Vector;
 use iced::futures::channel::mpsc::UnboundedSender;
 use iced::widget::Container;
-use iced::Vector;
 pub use subscription::*;
 
 use iced_core::event::{self, Event};

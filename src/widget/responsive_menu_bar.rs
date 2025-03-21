@@ -3,8 +3,8 @@ use std::collections::HashMap;
 use apply::Apply;
 
 use crate::{
-    widget::{button, icon, responsive_container},
     Core, Element,
+    widget::{button, icon, responsive_container},
 };
 
 use super::menu;

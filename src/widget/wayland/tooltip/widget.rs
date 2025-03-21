@@ -16,14 +16,14 @@ use iced_runtime::core::widget::Id;
 use iced_core::event::{self, Event};
 use iced_core::renderer;
 use iced_core::touch;
-use iced_core::widget::tree::{self, Tree};
 use iced_core::widget::Operation;
-use iced_core::{layout, svg};
-use iced_core::{mouse, Border};
-use iced_core::{overlay, Shadow};
+use iced_core::widget::tree::{self, Tree};
 use iced_core::{
     Background, Clipboard, Color, Layout, Length, Padding, Point, Rectangle, Shell, Vector, Widget,
 };
+use iced_core::{Border, mouse};
+use iced_core::{Shadow, overlay};
+use iced_core::{layout, svg};
 
 pub use super::{Catalog, Style};
 
@@ -75,14 +75,14 @@ impl<'a, Message, TopLevelMessage> Tooltip<'a, Message, TopLevelMessage> {
         content: impl Into<crate::Element<'a, Message>>,
         settings: Option<
             impl Fn(Rectangle) -> iced_runtime::platform_specific::wayland::popup::SctkPopupSettings
-                + Send
-                + Sync
-                + 'static,
-        >,
-        view: impl Fn() -> crate::Element<'static, crate::Action<TopLevelMessage>>
             + Send
             + Sync
             + 'static,
+        >,
+        view: impl Fn() -> crate::Element<'static, crate::Action<TopLevelMessage>>
+        + Send
+        + Sync
+        + 'static,
         on_leave: Message,
         on_surface_action: impl Fn(crate::surface::Action) -> Message + 'static,
     ) -> Self {

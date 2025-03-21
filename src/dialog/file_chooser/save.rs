@@ -7,10 +7,10 @@
 //! example in our repository.
 
 #[cfg(feature = "xdg-portal")]
-pub use portal::{file, Response};
+pub use portal::{Response, file};
 
 #[cfg(feature = "rfd")]
-pub use rust_fd::{file, Response};
+pub use rust_fd::{Response, file};
 
 use super::Error;
 use std::path::PathBuf;

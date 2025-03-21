@@ -6,22 +6,22 @@ use std::{
 use iced::Vector;
 
 use crate::{
+    Element,
     iced::{
+        Event, Length, Rectangle,
         clipboard::{
             dnd::{self, DndAction, DndDestinationRectangle, DndEvent, OfferEvent},
             mime::AllowedMimeTypes,
         },
         event,
         id::Internal,
-        mouse, overlay, Event, Length, Rectangle,
+        mouse, overlay,
     },
     iced_core::{
-        self, layout,
-        widget::{tree, Tree},
-        Clipboard, Shell,
+        self, Clipboard, Shell, layout,
+        widget::{Tree, tree},
     },
     widget::{Id, Widget},
-    Element,
 };
 
 pub fn dnd_destination<'a, Message: 'static>(

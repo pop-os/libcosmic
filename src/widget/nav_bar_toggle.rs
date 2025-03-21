@@ -3,7 +3,7 @@
 
 //! A button for toggling the navigation side panel.
 
-use crate::{widget, Element};
+use crate::{Element, widget};
 use derive_setters::Setters;
 
 #[derive(Setters)]
