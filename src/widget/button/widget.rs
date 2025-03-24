@@ -724,12 +724,14 @@ pub fn update<'a, Message: Clone>(
     match event {
         Event::Mouse(mouse::Event::ButtonPressed(mouse::Button::Left))
         | Event::Touch(touch::Event::FingerPressed { .. }) => {
+            // Unfocus the button on clicks in case another widget was clicked.
+            let state = state();
+            state.unfocus();
+
             if on_press.is_some() || on_press_down.is_some() {
                 let bounds = layout.bounds();
 
                 if cursor.is_over(bounds) {
-                    let state = state();
-
                     state.is_pressed = true;
 
                     if let Some(on_press_down) = on_press_down {
