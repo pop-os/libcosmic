@@ -323,6 +323,10 @@ pub use spin_button::{SpinButton, spin_button, vertical as vertical_spin_button}
 
 pub mod tab_bar;
 
+pub mod table;
+#[doc(inline)]
+pub use table::{compact_table, table};
+
 pub mod text;
 #[doc(inline)]
 pub use text::{Text, text};
