@@ -647,14 +647,10 @@ where
             };
         }
 
-        if !state
-            .is_focused
-            .as_ref()
-            .map(|f| f.updated_at == LAST_FOCUS_UPDATE.with(|f| f.get()))
-            .unwrap_or_default()
-        {
-            state.unfocus();
-            // state.is_read_only = true;
+        if let Some(f) = state.is_focused.as_ref() {
+            if f.updated_at != LAST_FOCUS_UPDATE.with(|f| f.get()) {
+                state.unfocus();
+            }
         }
 
         self.is_read_only = state.is_read_only;
@@ -1787,7 +1783,6 @@ pub fn update<'a, Message: Clone + 'static>(
                             // Or to connect the text input to a button.
                             shell.publish(on_tab.clone());
                         } else {
-                            state.unfocus();
                             state.is_read_only = true;
 
                             if let Some(on_unfocus) = on_unfocus {
