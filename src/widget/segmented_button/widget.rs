@@ -936,6 +936,8 @@ where
 
                                 if can_activate {
                                     shell.publish(on_activate(key));
+                                    state.focused = true;
+                                    state.focused_item = Item::Tab(key);
                                     state.pressed_item = None;
                                     return event::Status::Captured;
                                 }
@@ -1022,6 +1024,8 @@ where
 
                                     if let Some(key) = activate_key {
                                         shell.publish(on_activate(key));
+                                        state.focused = true;
+                                        state.focused_item = Item::Tab(key);
                                         return event::Status::Captured;
                                     }
                                 }
