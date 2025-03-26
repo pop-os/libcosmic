@@ -650,6 +650,7 @@ where
         if let Some(f) = state.is_focused.as_ref() {
             if f.updated_at != LAST_FOCUS_UPDATE.with(|f| f.get()) {
                 state.unfocus();
+                state.emit_unfocus = true;
             }
         }
 
@@ -873,6 +874,16 @@ where
                         }
                     }
                 }
+            }
+        }
+
+        let state = tree.state.downcast_mut::<State>();
+
+        if let Some(on_unfocus) = self.on_unfocus.as_ref() {
+            if state.emit_unfocus {
+                state.emit_unfocus = false;
+                eprintln!("unfocus");
+                shell.publish(on_unfocus.clone());
             }
         }
 
@@ -1532,6 +1543,10 @@ pub fn update<'a, Message: Clone + 'static>(
                 return event::Status::Captured;
             } else {
                 state.unfocus();
+
+                if let Some(on_unfocus) = on_unfocus {
+                    shell.publish(on_unfocus.clone());
+                }
             }
         }
         Event::Mouse(mouse::Event::ButtonReleased(mouse::Button::Left))
@@ -2486,6 +2501,7 @@ pub struct State {
     pub dirty: bool,
     pub is_secure: bool,
     pub is_read_only: bool,
+    pub emit_unfocus: bool,
     select_on_focus: bool,
     is_focused: Option<Focus>,
     dragging_state: Option<DraggingState>,
@@ -2560,6 +2576,7 @@ impl State {
             label: crate::Plain::default(),
             helper_text: crate::Plain::default(),
             is_read_only,
+            emit_unfocus: false,
             is_focused: None,
             select_on_focus: false,
             dragging_state: None,
