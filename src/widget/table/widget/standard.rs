@@ -1,14 +1,13 @@
 use derive_setters::Setters;
 
 use crate::widget::table::model::{
+    Entity, Model,
     category::{ItemCategory, ItemInterface},
     selection::Selectable,
-    Entity, Model,
 };
 use crate::{
-    theme,
+    Apply, Element, theme,
     widget::{self, container, divider, menu},
-    Apply, Element,
 };
 use iced::{Alignment, Border, Length, Padding};
 
@@ -132,10 +131,12 @@ where
             .apply(Element::from);
         // Build the items
         let items_full = if val.model.items.is_empty() {
-            vec![divider::horizontal::default()
-                .apply(container)
-                .padding(val.divider_padding)
-                .apply(Element::from)]
+            vec![
+                divider::horizontal::default()
+                    .apply(container)
+                    .padding(val.divider_padding)
+                    .apply(Element::from),
+            ]
         } else {
             val.model
                 .iter()

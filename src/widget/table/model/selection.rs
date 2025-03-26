@@ -4,8 +4,8 @@
 //! Describes logic specific to the single-select and multi-select modes of a model.
 
 use super::{
-    category::{ItemCategory, ItemInterface},
     Entity, Model,
+    category::{ItemCategory, ItemInterface},
 };
 use std::collections::HashSet;
 
