@@ -1,7 +1,7 @@
 // Copyright 2022 System76 <info@system76.com>
 // SPDX-License-Identifier: MPL-2.0
 
-//! A widget showing a popup in an overlay positioned relative to another widget.
+//! A container which displays an overlay when a popup widget is attached.
 
 use iced_core::event::{self, Event};
 use iced_core::layout;
@@ -9,7 +9,7 @@ use iced_core::mouse;
 use iced_core::overlay;
 use iced_core::renderer;
 use iced_core::touch;
-use iced_core::widget::{Operation, Tree, tree};
+use iced_core::widget::{Operation, Tree};
 use iced_core::{
     Clipboard, Element, Layout, Length, Point, Rectangle, Shell, Size, Vector, Widget,
 };
@@ -30,6 +30,7 @@ pub enum Position {
     Point(Point),
 }
 
+/// A container which displays overlays when a popup widget is assigned.
 #[must_use]
 pub struct Popover<'a, Message, Renderer> {
     content: Element<'a, Message, crate::Theme, Renderer>,
@@ -50,29 +51,31 @@ impl<'a, Message, Renderer> Popover<'a, Message, Renderer> {
         }
     }
 
-    /// A modal popup interrupts user inputs and demands action.
+    /// A modal popup intercepts user inputs while a popup is active.
+    #[inline]
     pub fn modal(mut self, modal: bool) -> Self {
         self.modal = modal;
         self
     }
 
     /// Emitted when the popup is closed.
+    #[inline]
     pub fn on_close(mut self, on_close: Message) -> Self {
         self.on_close = Some(on_close);
         self
     }
 
+    #[inline]
     pub fn popup(mut self, popup: impl Into<Element<'a, Message, crate::Theme, Renderer>>) -> Self {
         self.popup = Some(popup.into());
         self
     }
 
+    #[inline]
     pub fn position(mut self, position: Position) -> Self {
         self.position = position;
         self
     }
-
-    // TODO More options for positioning similar to GdkPopup, xdg_popup
 }
 
 impl<Message: Clone, Renderer> Widget<Message, crate::Theme, Renderer>
@@ -80,14 +83,6 @@ impl<Message: Clone, Renderer> Widget<Message, crate::Theme, Renderer>
 where
     Renderer: iced_core::Renderer,
 {
-    fn tag(&self) -> tree::Tag {
-        tree::Tag::of::<State>()
-    }
-
-    fn state(&self) -> tree::State {
-        tree::State::new(State { is_open: true })
-    }
-
     fn children(&self) -> Vec<Tree> {
         if let Some(popup) = &self.popup {
             vec![Tree::new(&self.content), Tree::new(popup)]
@@ -114,7 +109,7 @@ where
         renderer: &Renderer,
         limits: &layout::Limits,
     ) -> layout::Node {
-        let tree = &mut tree.children[0];
+        let tree = content_tree_mut(tree);
         self.content.as_widget().layout(tree, renderer, limits)
     }
 
@@ -127,7 +122,7 @@ where
     ) {
         self.content
             .as_widget()
-            .operate(&mut tree.children[0], layout, renderer, operation);
+            .operate(content_tree_mut(tree), layout, renderer, operation);
     }
 
     fn on_event(
@@ -141,26 +136,25 @@ where
         shell: &mut Shell<'_, Message>,
         viewport: &Rectangle,
     ) -> event::Status {
-        if !self.modal
-            && matches!(
-                event,
-                Event::Mouse(mouse::Event::ButtonPressed(_))
-                    | Event::Touch(touch::Event::FingerPressed { .. })
-            )
-        {
-            let state = tree.state.downcast_mut::<State>();
-            let was_open = state.is_open;
-            state.is_open = cursor_position.is_over(layout.bounds());
-
-            if let Some(on_close) = self.on_close.clone() {
-                if was_open && !state.is_open {
+        if self.popup.is_some() {
+            if self.modal {
+                if matches!(event, Event::Mouse(_) | Event::Touch(_)) {
+                    return event::Status::Captured;
+                }
+            } else if let Some(on_close) = self.on_close.clone() {
+                if matches!(
+                    event,
+                    Event::Mouse(mouse::Event::ButtonPressed(_))
+                        | Event::Touch(touch::Event::FingerPressed { .. })
+                ) && !cursor_position.is_over(layout.bounds())
+                {
                     shell.publish(on_close);
                 }
             }
         }
 
         self.content.as_widget_mut().on_event(
-            &mut tree.children[0],
+            content_tree_mut(tree),
             event,
             layout,
             cursor_position,
@@ -179,8 +173,11 @@ where
         viewport: &Rectangle,
         renderer: &Renderer,
     ) -> mouse::Interaction {
+        if self.modal && self.popup.is_some() && cursor_position.is_over(layout.bounds()) {
+            return mouse::Interaction::None;
+        }
         self.content.as_widget().mouse_interaction(
-            &tree.children[0],
+            content_tree(tree),
             layout,
             cursor_position,
             viewport,
@@ -199,7 +196,7 @@ where
         viewport: &Rectangle,
     ) {
         self.content.as_widget().draw(
-            &tree.children[0],
+            content_tree(tree),
             renderer,
             theme,
             renderer_style,
@@ -216,10 +213,6 @@ where
         renderer: &Renderer,
         mut translation: Vector,
     ) -> Option<overlay::Element<'b, Message, crate::Theme, Renderer>> {
-        if !tree.state.downcast_mut::<State>().is_open {
-            return None;
-        }
-
         if let Some(popup) = &mut self.popup {
             let bounds = layout.bounds();
 
@@ -248,10 +241,11 @@ where
                 content: popup,
                 position: self.position,
                 pos: Point::new(translation.x, translation.y),
+                modal: self.modal,
             })))
         } else {
             self.content.as_widget_mut().overlay(
-                &mut tree.children[0],
+                content_tree_mut(tree),
                 layout,
                 renderer,
                 translation,
@@ -267,7 +261,7 @@ where
         dnd_rectangles: &mut iced_core::clipboard::DndDestinationRectangles,
     ) {
         self.content.as_widget().drag_destinations(
-            &tree.children[0],
+            content_tree(tree),
             layout,
             renderer,
             dnd_rectangles,
@@ -282,8 +276,9 @@ where
         state: &Tree,
         p: mouse::Cursor,
     ) -> iced_accessibility::A11yTree {
-        let c_state = &state.children[0];
-        self.content.as_widget().a11y_nodes(layout, c_state, p)
+        self.content
+            .as_widget()
+            .a11y_nodes(layout, content_tree(state), p)
     }
 }
 
@@ -303,6 +298,7 @@ pub struct Overlay<'a, 'b, Message, Renderer> {
     content: &'a mut Element<'b, Message, crate::Theme, Renderer>,
     position: Position,
     pos: Point,
+    modal: bool,
 }
 
 impl<Message, Renderer> overlay::Overlay<Message, crate::Theme, Renderer>
@@ -370,6 +366,13 @@ where
         clipboard: &mut dyn Clipboard,
         shell: &mut Shell<'_, Message>,
     ) -> event::Status {
+        if self.modal
+            && matches!(event, Event::Mouse(_) | Event::Touch(_))
+            && !cursor_position.is_over(layout.bounds())
+        {
+            return event::Status::Captured;
+        }
+
         self.content.as_widget_mut().on_event(
             self.tree,
             event,
@@ -389,6 +392,10 @@ where
         viewport: &Rectangle,
         renderer: &Renderer,
     ) -> mouse::Interaction {
+        if self.modal && !cursor_position.is_over(layout.bounds()) {
+            return mouse::Interaction::None;
+        }
+
         self.content.as_widget().mouse_interaction(
             self.tree,
             layout,
@@ -433,4 +440,14 @@ where
 #[derive(Debug, Default)]
 struct State {
     is_open: bool,
+}
+
+/// The first child in [`Popover::children`] is always the wrapped content.
+fn content_tree(tree: &Tree) -> &Tree {
+    &tree.children[0]
+}
+
+/// The first child in [`Popover::children`] is always the wrapped content.
+fn content_tree_mut(tree: &mut Tree) -> &mut Tree {
+    &mut tree.children[0]
 }
