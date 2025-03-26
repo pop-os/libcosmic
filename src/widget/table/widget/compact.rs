@@ -1,14 +1,13 @@
 use derive_setters::Setters;
 
 use crate::widget::table::model::{
+    Entity, Model,
     category::{ItemCategory, ItemInterface},
     selection::Selectable,
-    Entity, Model,
 };
 use crate::{
-    theme,
+    Apply, Element, theme,
     widget::{self, container, menu},
-    Apply, Element,
 };
 use iced::{Alignment, Border, Padding};
 

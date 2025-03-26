@@ -4,8 +4,8 @@
 use slotmap::{SecondaryMap, SparseSecondaryMap};
 
 use super::{
-    category::{ItemCategory, ItemInterface},
     Entity, Model, Selectable,
+    category::{ItemCategory, ItemInterface},
 };
 
 /// A newly-inserted item which may have additional actions applied to it.
