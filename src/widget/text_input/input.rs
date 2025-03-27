@@ -1684,7 +1684,8 @@ pub fn update<'a, Message: Clone + 'static>(
                     }
                 }
 
-                if let Some(text) = text {
+                // Capture keyboard inputs that should be submitted.
+                if let Some(c) = text.and_then(|t| t.chars().next().filter(|c| !c.is_control())) {
                     let Some(on_input) = on_input else {
                         return event::Status::Ignored;
                     };
@@ -1692,12 +1693,6 @@ pub fn update<'a, Message: Clone + 'static>(
                     state.is_pasting = None;
 
                     if !state.keyboard_modifiers.command() && !modifiers.control() {
-                        let c = text.chars().next().filter(|c| !c.is_control());
-
-                        let Some(c) = c else {
-                            return event::Status::Captured;
-                        };
-
                         let mut editor = Editor::new(unsecured_value, &mut state.cursor);
 
                         editor.insert(c);
