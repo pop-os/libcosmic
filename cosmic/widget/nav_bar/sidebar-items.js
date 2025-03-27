@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["nav_bar","nav_bar_dnd","nav_bar_style"],"struct":["NavBar"],"type":["Id","Model"]};
