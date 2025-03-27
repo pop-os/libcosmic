@@ -1303,6 +1303,7 @@ pub fn layout<Message>(
     layout::Node::with_children(limits.resolve(width, size.height, size), nodes)
 }
 
+// TODO: Merge into widget method since iced has done the same.
 /// Processes an [`Event`] and updates the [`State`] of a [`TextInput`]
 /// accordingly.
 #[allow(clippy::too_many_arguments)]
@@ -1579,7 +1580,12 @@ pub fn update<'a, Message: Clone + 'static>(
                 return event::Status::Captured;
             }
         }
-        Event::Keyboard(keyboard::Event::KeyPressed { key, text, .. }) => {
+        Event::Keyboard(keyboard::Event::KeyPressed {
+            key,
+            text,
+            physical_key,
+            ..
+        }) => {
             let state = state();
 
             if let Some(focus) = &mut state.is_focused {
@@ -1591,7 +1597,134 @@ pub fn update<'a, Message: Clone + 'static>(
                 focus.updated_at = Instant::now();
                 LAST_FOCUS_UPDATE.with(|x| x.set(focus.updated_at));
 
-                match key {
+                // Check if Ctrl+A/C/V/X was pressed.
+                if state.keyboard_modifiers.command() {
+                    match key.as_ref() {
+                        keyboard::Key::Character("c") => {
+                            if !is_secure {
+                                if let Some((start, end)) = state.cursor.selection(value) {
+                                    clipboard.write(
+                                        iced_core::clipboard::Kind::Standard,
+                                        value.select(start, end).to_string(),
+                                    );
+                                }
+                            }
+                        }
+                        // XXX if we want to allow cutting of secure text, we need to
+                        // update the cache and decide which value to cut
+                        keyboard::Key::Character("x") => {
+                            if !is_secure {
+                                if let Some((start, end)) = state.cursor.selection(value) {
+                                    clipboard.write(
+                                        iced_core::clipboard::Kind::Standard,
+                                        value.select(start, end).to_string(),
+                                    );
+                                }
+
+                                let mut editor = Editor::new(value, &mut state.cursor);
+                                editor.delete();
+                                let content = editor.contents();
+                                state.tracked_value = Value::new(&content);
+                                if let Some(on_input) = on_input {
+                                    let message = (on_input)(content);
+                                    shell.publish(message);
+                                }
+                            }
+                        }
+                        keyboard::Key::Character("v") => {
+                            let content = if let Some(content) = state.is_pasting.take() {
+                                content
+                            } else {
+                                let content: String = clipboard
+                                    .read(iced_core::clipboard::Kind::Standard)
+                                    .unwrap_or_default()
+                                    .chars()
+                                    .filter(|c| !c.is_control())
+                                    .collect();
+
+                                Value::new(&content)
+                            };
+
+                            let mut editor = Editor::new(unsecured_value, &mut state.cursor);
+
+                            editor.paste(content.clone());
+
+                            let contents = editor.contents();
+                            let unsecured_value = Value::new(&contents);
+                            state.tracked_value = unsecured_value.clone();
+
+                            if let Some(on_input) = on_input {
+                                let message = if let Some(paste) = &on_paste {
+                                    (paste)(contents)
+                                } else {
+                                    (on_input)(contents)
+                                };
+
+                                shell.publish(message);
+                            }
+
+                            state.is_pasting = Some(content);
+
+                            let value = if is_secure {
+                                unsecured_value.secure()
+                            } else {
+                                unsecured_value
+                            };
+
+                            update_cache(state, &value);
+                            return event::Status::Captured;
+                        }
+
+                        keyboard::Key::Character("a") => {
+                            state.cursor.select_all(value);
+                            return event::Status::Captured;
+                        }
+
+                        _ => {}
+                    }
+                }
+
+                if let Some(text) = text {
+                    let Some(on_input) = on_input else {
+                        return event::Status::Ignored;
+                    };
+
+                    state.is_pasting = None;
+
+                    if !state.keyboard_modifiers.command() && !modifiers.control() {
+                        let c = text.chars().next().filter(|c| !c.is_control());
+
+                        let Some(c) = c else {
+                            return event::Status::Captured;
+                        };
+
+                        let mut editor = Editor::new(unsecured_value, &mut state.cursor);
+
+                        editor.insert(c);
+
+                        let contents = editor.contents();
+                        let unsecured_value = Value::new(&contents);
+                        state.tracked_value = unsecured_value.clone();
+
+                        let message = (on_input)(contents);
+                        shell.publish(message);
+
+                        focus.updated_at = Instant::now();
+                        LAST_FOCUS_UPDATE.with(|x| x.set(focus.updated_at));
+
+                        let value = if is_secure {
+                            unsecured_value.secure()
+                        } else {
+                            unsecured_value
+                        };
+
+                        update_cache(state, &value);
+
+                        return event::Status::Captured;
+                    }
+                }
+
+                match key.as_ref() {
                     keyboard::Key::Named(keyboard::key::Named::Enter) => {
                         if let Some(on_submit) = on_submit {
                             shell.publish((on_submit)(unsecured_value.to_string()));
@@ -1698,90 +1831,6 @@ pub fn update<'a, Message: Clone + 'static>(
                             state.cursor.move_to(value.len());
                         }
                     }
-                    keyboard::Key::Character(ref c)
-                        if "c" == c && state.keyboard_modifiers.command() =>
-                    {
-                        if !is_secure {
-                            if let Some((start, end)) = state.cursor.selection(value) {
-                                clipboard.write(
-                                    iced_core::clipboard::Kind::Standard,
-                                    value.select(start, end).to_string(),
-                                );
-                            }
-                        }
-                    }
-                    // XXX if we want to allow cutting of secure text, we need to
-                    // update the cache and decide which value to cut
-                    keyboard::Key::Character(c)
-                        if "x" == c && state.keyboard_modifiers.command() =>
-                    {
-                        if !is_secure {
-                            if let Some((start, end)) = state.cursor.selection(value) {
-                                clipboard.write(
-                                    iced_core::clipboard::Kind::Standard,
-                                    value.select(start, end).to_string(),
-                                );
-                            }
-
-                            let mut editor = Editor::new(value, &mut state.cursor);
-                            editor.delete();
-                            let content = editor.contents();
-                            state.tracked_value = Value::new(&content);
-                            if let Some(on_input) = on_input {
-                                let message = (on_input)(content);
-                                shell.publish(message);
-                            }
-                        }
-                    }
-                    keyboard::Key::Character(c)
-                        if "v" == c && state.keyboard_modifiers.command() =>
-                    {
-                        let content = if let Some(content) = state.is_pasting.take() {
-                            content
-                        } else {
-                            let content: String = clipboard
-                                .read(iced_core::clipboard::Kind::Standard)
-                                .unwrap_or_default()
-                                .chars()
-                                .filter(|c| !c.is_control())
-                                .collect();
-
-                            Value::new(&content)
-                        };
-
-                        let mut editor = Editor::new(unsecured_value, &mut state.cursor);
-
-                        editor.paste(content.clone());
-
-                        let contents = editor.contents();
-                        let unsecured_value = Value::new(&contents);
-                        state.tracked_value = unsecured_value.clone();
-
-                        if let Some(on_input) = on_input {
-                            let message = if let Some(paste) = &on_paste {
-                                (paste)(contents)
-                            } else {
-                                (on_input)(contents)
-                            };
-
-                            shell.publish(message);
-                        }
-
-                        state.is_pasting = Some(content);
-
-                        let value = if is_secure {
-                            unsecured_value.secure()
-                        } else {
-                            unsecured_value
-                        };
-
-                        update_cache(state, &value);
-                    }
-                    keyboard::Key::Character(c)
-                        if "a" == c && state.keyboard_modifiers.command() =>
-                    {
-                        state.cursor.select_all(value);
-                    }
                     keyboard::Key::Named(keyboard::key::Named::Escape) => {
                         state.unfocus();
                         state.is_read_only = true;
@@ -1812,38 +1861,6 @@ pub fn update<'a, Message: Clone + 'static>(
                         keyboard::key::Named::ArrowUp | keyboard::key::Named::ArrowDown,
                     ) => {
                         return event::Status::Ignored;
-                    }
-                    keyboard::Key::Character(_)
-                    | keyboard::Key::Named(keyboard::key::Named::Space) => {
-                        if state.is_pasting.is_none()
-                            && !state.keyboard_modifiers.command()
-                            && !modifiers.control()
-                        {
-                            let mut editor = Editor::new(unsecured_value, &mut state.cursor);
-
-                            let character =
-                                text.unwrap_or_default().chars().next().unwrap_or_default();
-                            if !character.is_control() {
-                                editor.insert(character);
-                            }
-                            let contents = editor.contents();
-                            let unsecured_value = Value::new(&contents);
-                            state.tracked_value = unsecured_value.clone();
-                            if let Some(on_input) = on_input {
-                                let message = (on_input)(contents);
-                                shell.publish(message);
-                            }
-
-                            focus.updated_at = Instant::now();
-                            LAST_FOCUS_UPDATE.with(|x| x.set(focus.updated_at));
-
-                            let value = if is_secure {
-                                unsecured_value.secure()
-                            } else {
-                                unsecured_value
-                            };
-                            update_cache(state, &value);
-                        }
                     }
                     _ => {}
                 }
