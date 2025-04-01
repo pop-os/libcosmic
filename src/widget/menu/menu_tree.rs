@@ -240,7 +240,7 @@ where
         .enumerate()
         .flat_map(|(i, item)| {
             let mut trees = vec![];
-            let spacing = crate::theme::active().cosmic().spacing;
+            let spacing = crate::theme::spacing();
 
             match item {
                 MenuItem::Button(label, icon, action) => {

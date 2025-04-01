@@ -53,7 +53,7 @@ impl<'a, Message: Clone + 'static> ContextDrawer<'a, Message> {
                 space_m,
                 space_l,
                 ..
-            } = crate::theme::active().cosmic().spacing;
+            } = crate::theme::spacing();
 
             let horizontal_padding = if max_width < 392.0 { space_s } else { space_l };
 

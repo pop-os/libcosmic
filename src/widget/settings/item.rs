@@ -38,7 +38,7 @@ pub fn item<'a, Message: 'static>(
 #[allow(clippy::module_name_repetitions)]
 pub fn item_row<Message>(children: Vec<Element<Message>>) -> Row<Message> {
     row::with_children(children)
-        .spacing(theme::active().cosmic().space_xs())
+        .spacing(theme::spacing().space_xs)
         .align_y(iced::Alignment::Center)
 }
 
@@ -69,7 +69,7 @@ pub fn flex_item<'a, Message: 'static>(
 #[allow(clippy::module_name_repetitions)]
 pub fn flex_item_row<Message>(children: Vec<Element<Message>>) -> FlexRow<Message> {
     flex_row(children)
-        .spacing(theme::active().cosmic().space_xs())
+        .spacing(theme::spacing().space_xs)
         .min_item_width(200.0)
         .justify_items(iced::Alignment::Center)
         .justify_content(AlignContent::SpaceBetween)

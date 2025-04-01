@@ -18,7 +18,7 @@
 //!
 //! const REPOSITORY: &str = "https://github.com/pop-os/libcosmic";
 //!
-//! let cosmic_theme::Spacing { space_xxs, .. } = theme::active().cosmic().spacing;
+//! let cosmic_theme::Spacing { space_xxs, .. } = theme::spacing();
 //!
 //! let link = widget::button::link(REPOSITORY)
 //!     .on_press(Message::LaunchUrl(REPOSITORY))
@@ -364,7 +364,7 @@ pub mod tooltip {
         tooltip: impl Into<Element<'a, Message>>,
         position: Position,
     ) -> Tooltip<'a, Message> {
-        let xxs = crate::theme::active().cosmic().space_xxs();
+        let xxs = crate::theme::spacing().space_xxs;
 
         Tooltip::new(content, tooltip, position)
             .class(crate::theme::Container::Tooltip)

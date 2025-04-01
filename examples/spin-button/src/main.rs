@@ -131,7 +131,7 @@ impl Application for SpinButtonExamplApp {
     }
 
     fn view(&self) -> Element<Self::Message> {
-        let space_xs = cosmic::theme::active().cosmic().spacing.space_xs;
+        let space_xs = cosmic::theme::spacing().space_xs;
 
         let vert_spinner_row = iced::widget::row![
             spin_button::vertical(&self.i8_str, self.i8_num, 1, -5, 5, Message::UpdateI8),
