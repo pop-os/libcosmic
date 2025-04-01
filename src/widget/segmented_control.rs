@@ -20,9 +20,8 @@ pub fn horizontal<SelectionMode: Default, Message>(
 where
     Model<SelectionMode>: Selectable,
 {
-    let theme = crate::theme::active();
-    let space_s = theme.cosmic().space_s();
-    let space_xxs = theme.cosmic().space_xxs();
+    let space_s = crate::theme::spacing().space_s;
+    let space_xxs = crate::theme::spacing().space_xxs;
 
     segmented_button::horizontal(model)
         .button_alignment(iced::Alignment::Center)
@@ -46,9 +45,8 @@ where
     Model<SelectionMode>: Selectable,
     SelectionMode: Default,
 {
-    let theme = crate::theme::active();
-    let space_s = theme.cosmic().space_s();
-    let space_xxs = theme.cosmic().space_xxs();
+    let space_s = crate::theme::spacing().space_s;
+    let space_xxs = crate::theme::spacing().space_xxs;
 
     segmented_button::vertical(model)
         .button_alignment(iced::Alignment::Center)

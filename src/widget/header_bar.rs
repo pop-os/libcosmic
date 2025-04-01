@@ -292,7 +292,7 @@ impl<'a, Message: Clone + 'static> HeaderBar<'a, Message> {
             space_xxxs,
             space_xxs,
             ..
-        } = theme::active().cosmic().spacing;
+        } = theme::spacing();
 
         // Take ownership of the regions to be packed.
         let start = std::mem::take(&mut self.start);
@@ -434,7 +434,7 @@ impl<'a, Message: Clone + 'static> HeaderBar<'a, Message> {
                     .take()
                     .map(|m| icon!("window-close-symbolic", 16, m)),
             )
-            .spacing(theme::active().cosmic().space_xxs())
+            .spacing(theme::spacing().space_xxs)
             .apply(widget::container)
             .center_y(Length::Fill)
             .into()

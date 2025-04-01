@@ -57,7 +57,7 @@ where
     Message: Clone + 'static,
 {
     fn from(val: CompactTableView<'a, SelectionMode, Item, Category, Message>) -> Self {
-        let cosmic_theme::Spacing { space_xxxs, .. } = theme::active().cosmic().spacing;
+        let cosmic_theme::Spacing { space_xxxs, .. } = theme::spacing();
         val.model
             .iter()
             .map(|entity| {
@@ -193,7 +193,7 @@ where
             space_xxxs,
             space_xxs,
             ..
-        } = theme::active().cosmic().spacing;
+        } = theme::spacing();
 
         Self {
             model,

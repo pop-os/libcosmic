@@ -28,7 +28,7 @@ impl<Message: 'static> Default for ListColumn<'_, Message> {
     fn default() -> Self {
         let cosmic_theme::Spacing {
             space_xxs, space_m, ..
-        } = theme::active().cosmic().spacing;
+        } = theme::spacing();
 
         Self {
             spacing: 0,

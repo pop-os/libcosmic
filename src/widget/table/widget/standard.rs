@@ -264,7 +264,7 @@ where
             space_xxxs,
             space_xxs,
             ..
-        } = theme::active().cosmic().spacing;
+        } = theme::spacing();
 
         Self {
             model,
