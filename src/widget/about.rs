@@ -15,7 +15,7 @@ pub struct About {
     name: Option<String>,
     /// The application's icon name.
     icon: Option<String>,
-    /// The application’s version.
+    /// The application's version.
     version: Option<String>,
     /// Name of the application's author.
     author: Option<String>,
@@ -45,76 +45,61 @@ pub struct About {
     links: Vec<(String, String)>,
 }
 
+fn add_contributors(contributors: Vec<(&str, &str)>) -> Vec<(String, String)> {
+    contributors
+        .into_iter()
+        .map(|(name, email)| (name.to_string(), format!("mailto:{email}")))
+        .collect()
+}
+
 impl<'a> About {
     /// Artists who contributed to the application.
     pub fn artists(mut self, artists: impl Into<Vec<(&'a str, &'a str)>>) -> Self {
-        let artists: Vec<(&'a str, &'a str)> = artists.into();
-        self.artists = artists
-            .into_iter()
-            .map(|(k, v)| (k.to_string(), format!("mailto:{v}")))
-            .collect();
+        self.artists = add_contributors(artists.into());
         self
     }
 
     /// Designers who contributed to the application.
     pub fn designers(mut self, designers: impl Into<Vec<(&'a str, &'a str)>>) -> Self {
-        let designers: Vec<(&'a str, &'a str)> = designers.into();
-        self.designers = designers
-            .into_iter()
-            .map(|(k, v)| (k.to_string(), format!("mailto:{v}")))
-            .collect();
+        self.designers = add_contributors(designers.into());
         self
     }
 
     /// Developers who contributed to the application.
     pub fn developers(mut self, developers: impl Into<Vec<(&'a str, &'a str)>>) -> Self {
-        let developers: Vec<(&'a str, &'a str)> = developers.into();
-        self.developers = developers
-            .into_iter()
-            .map(|(k, v)| (k.to_string(), format!("mailto:{v}")))
-            .collect();
+        self.developers = add_contributors(developers.into());
         self
     }
 
     /// Documenters who contributed to the application.
     pub fn documenters(mut self, documenters: impl Into<Vec<(&'a str, &'a str)>>) -> Self {
-        let documenters: Vec<(&'a str, &'a str)> = documenters.into();
-        self.documenters = documenters
-            .into_iter()
-            .map(|(k, v)| (k.to_string(), format!("mailto:{v}")))
-            .collect();
+        self.documenters = add_contributors(documenters.into());
         self
     }
 
     /// Translators who contributed to the application.
     pub fn translators(mut self, translators: impl Into<Vec<(&'a str, &'a str)>>) -> Self {
-        let translators: Vec<(&'a str, &'a str)> = translators.into();
-        self.translators = translators
-            .into_iter()
-            .map(|(k, v)| (k.to_string(), format!("mailto:{v}")))
-            .collect();
+        self.translators = add_contributors(translators.into());
         self
     }
 
     /// Links associated with the application.
-    pub fn links<T: Into<String>>(mut self, links: impl Into<Vec<(T, &'a str)>>) -> Self {
-        let links: Vec<(T, &'a str)> = links.into();
+    pub fn links<K: Into<String>, V: Into<String>>(
+        mut self,
+        links: impl IntoIterator<Item = (K, V)>,
+    ) -> Self {
         self.links = links
             .into_iter()
-            .map(|(k, v)| (k.into(), v.to_string()))
+            .map(|(name, url)| (name.into(), url.into()))
             .collect();
         self
     }
 
     fn license_url(&self) -> Option<String> {
-        let license: &dyn License = match self.license.as_ref() {
-            Some(license) => license.parse().ok()?,
-            None => return None,
-        };
-
-        self.license
-            .as_ref()
-            .map(|_| format!("https://spdx.org/licenses/{}.html", license.id()))
+        self.license.as_ref().and_then(|license_str| {
+            let license: &dyn License = license_str.parse().ok()?;
+            Some(format!("https://spdx.org/licenses/{}.html", license.id()))
+        })
     }
 }
 
@@ -124,14 +109,12 @@ pub fn about<'a, Message: Clone + 'static>(
     on_url_press: impl Fn(String) -> Message,
 ) -> Element<'a, Message> {
     let cosmic_theme::Spacing {
-        space_xxs,
-        space_xs,
-        ..
-    } = crate::theme::active().cosmic().spacing;
+        space_xxs, space_m, ..
+    } = crate::theme::spacing();
 
     let section = |list: &'a Vec<(String, String)>, title: &'a str| {
         (!list.is_empty()).then_some({
-            let developers: Vec<Element<Message>> =
+            let items: Vec<Element<Message>> =
                 list.iter()
                     .map(|(name, url)| {
                         widget::button::custom(
@@ -141,16 +124,15 @@ pub fn about<'a, Message: Clone + 'static>(
                                 .push_maybe((!url.is_empty()).then_some(
                                     crate::widget::icon::from_name("link-symbolic").icon(),
                                 ))
-                                .padding(space_xxs)
                                 .align_y(Alignment::Center),
                         )
-                        .class(crate::theme::Button::Text)
+                        .class(crate::theme::Button::Link)
                         .on_press(on_url_press(url.clone()))
                         .width(Length::Fill)
                         .into()
                     })
                     .collect();
-            widget::settings::section().title(title).extend(developers)
+            widget::settings::section().title(title).extend(items)
         })
     };
 
@@ -159,15 +141,14 @@ pub fn about<'a, Message: Clone + 'static>(
         .icon
         .as_ref()
         .map(|icon| crate::desktop::IconSource::Name(icon.clone()).as_cosmic_icon());
-
+    let author = about.author.as_ref().map(widget::text::body);
+    let version = about.version.as_ref().map(widget::button::standard);
     let links_section = section(&about.links, "Links");
     let developers_section = section(&about.developers, "Developers");
     let designers_section = section(&about.designers, "Designers");
     let artists_section = section(&about.artists, "Artists");
     let translators_section = section(&about.translators, "Translators");
     let documenters_section = section(&about.documenters, "Documenters");
-    let author = about.author.as_ref().map(widget::text);
-    let version = about.version.as_ref().map(widget::button::standard);
     let license = about.license.as_ref().map(|license| {
         let url = about.license_url();
         widget::settings::section().title("License").add(
@@ -179,10 +160,9 @@ pub fn about<'a, Message: Clone + 'static>(
                         url.is_some()
                             .then_some(crate::widget::icon::from_name("link-symbolic").icon()),
                     )
-                    .padding(space_xxs)
                     .align_y(Alignment::Center),
             )
-            .class(crate::theme::Button::Text)
+            .class(crate::theme::Button::Link)
             .on_press(on_url_press(url.unwrap_or_default()))
             .width(Length::Fill),
         )
@@ -191,10 +171,15 @@ pub fn about<'a, Message: Clone + 'static>(
     let comments = about.comments.as_ref().map(widget::text::body);
 
     widget::column()
-        .push_maybe(application_icon)
-        .push_maybe(application_name)
-        .push_maybe(author)
-        .push_maybe(version)
+        .push(
+            widget::column()
+                .push_maybe(application_icon)
+                .push_maybe(application_name)
+                .push_maybe(author)
+                .push_maybe(version)
+                .align_x(Alignment::Center)
+                .spacing(space_xxs),
+        )
         .push_maybe(license)
         .push_maybe(links_section)
         .push_maybe(developers_section)
@@ -205,7 +190,7 @@ pub fn about<'a, Message: Clone + 'static>(
         .push_maybe(comments)
         .push_maybe(copyright)
         .align_x(Alignment::Center)
-        .spacing(space_xs)
+        .spacing(space_m)
         .width(Length::Fill)
         .into()
 }
