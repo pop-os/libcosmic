@@ -1,44 +1,29 @@
 #[cfg(not(windows))]
-pub use freedesktop_desktop_entry::DesktopEntry;
+pub use freedesktop_desktop_entry as fde;
 #[cfg(not(windows))]
 pub use mime::Mime;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 #[cfg(not(windows))]
 use std::{borrow::Cow, ffi::OsStr};
 
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub enum IconSource {
-    Name(String),
-    Path(PathBuf),
+pub trait IconSourceExt {
+    fn as_cosmic_icon(&self) -> crate::widget::icon::Icon;
 }
 
-impl IconSource {
-    pub fn from_unknown(icon: &str) -> Self {
-        let icon_path = Path::new(icon);
-        if icon_path.is_absolute() && icon_path.exists() {
-            Self::Path(icon_path.into())
-        } else {
-            Self::Name(icon.into())
-        }
-    }
-
-    pub fn as_cosmic_icon(&self) -> crate::widget::icon::Icon {
+impl IconSourceExt for fde::IconSource {
+    fn as_cosmic_icon(&self) -> crate::widget::icon::Icon {
         match self {
-            Self::Name(name) => crate::widget::icon::from_name(name.as_str())
+            fde::IconSource::Name(name) => crate::widget::icon::from_name(name.as_str())
                 .size(128)
                 .fallback(Some(crate::widget::icon::IconFallback::Names(vec![
                     "application-default".into(),
                     "application-x-executable".into(),
                 ])))
                 .into(),
-            Self::Path(path) => crate::widget::icon(crate::widget::icon::from_path(path.clone())),
+            fde::IconSource::Path(path) => {
+                crate::widget::icon(crate::widget::icon::from_path(path.clone()))
+            }
         }
-    }
-}
-
-impl Default for IconSource {
-    fn default() -> Self {
-        Self::Name("application-default".to_string())
     }
 }
 
@@ -56,7 +41,7 @@ pub struct DesktopEntryData {
     pub name: String,
     pub wm_class: Option<String>,
     pub exec: Option<String>,
-    pub icon: IconSource,
+    pub icon: fde::IconSource,
     pub path: Option<PathBuf>,
     pub categories: Vec<String>,
     pub desktop_actions: Vec<DesktopAction>,
@@ -66,127 +51,94 @@ pub struct DesktopEntryData {
 
 #[cfg(not(windows))]
 pub fn load_applications<'a>(
-    locale: impl Into<Option<&'a str>>,
+    locales: &'a [String],
     include_no_display: bool,
-) -> Vec<DesktopEntryData> {
-    load_applications_filtered(locale, |de| include_no_display || !de.no_display())
+) -> impl Iterator<Item = DesktopEntryData> + 'a {
+    fde::Iter::new(fde::default_paths())
+        .filter_map(move |p| fde::DesktopEntry::from_path(p, Some(locales)).ok())
+        .filter(move |de| include_no_display || !de.no_display())
+        .map(move |de| DesktopEntryData::from_desktop_entry(locales, de))
 }
 
+// Create an iterator which filters desktop entries by app IDs.
 #[cfg(not(windows))]
-pub fn app_id_or_fallback_matches(app_id: &str, entry: &DesktopEntryData) -> bool {
-    let lowercase_wm_class = entry.wm_class.as_ref().map(|s| s.to_lowercase());
-
-    app_id == entry.id
-        || Some(app_id.to_lowercase()) == lowercase_wm_class
-        || app_id.to_lowercase() == entry.name.to_lowercase()
-}
-
-#[cfg(not(windows))]
-pub fn load_applications_for_app_ids<'a, 'b>(
-    locale: impl Into<Option<&'a str>>,
-    app_ids: impl Iterator<Item = &'b str>,
+#[auto_enums::auto_enum(Iterator)]
+pub fn load_applications_for_app_ids<'a>(
+    iter: impl Iterator<Item = fde::DesktopEntry> + 'a,
+    locales: &'a [String],
+    app_ids: Vec<&'a str>,
     fill_missing_ones: bool,
     include_no_display: bool,
-) -> Vec<DesktopEntryData> {
-    let mut app_ids = app_ids.collect::<Vec<_>>();
-    let mut applications = load_applications_filtered(locale, |de| {
-        if !include_no_display && de.no_display() {
-            return false;
-        }
-        // If appid matches, or startup_wm_class matches...
-        if let Some(i) = app_ids.iter().position(|id| {
-            id == &de.appid
-                || id
-                    .to_lowercase()
-                    .eq(&de.startup_wm_class().unwrap_or_default().to_lowercase())
-        }) {
-            app_ids.remove(i);
-            true
-        // Fallback: If the name matches...
-        } else if let Some(i) = app_ids.iter().position(|id| {
-            de.name::<&str>(&[])
-                .map(|n| n.to_lowercase() == id.to_lowercase())
-                .unwrap_or_default()
-        }) {
-            app_ids.remove(i);
-            true
-        } else {
-            false
-        }
-    });
-    if fill_missing_ones {
-        applications.extend(app_ids.into_iter().map(|app_id| DesktopEntryData {
-            id: app_id.to_string(),
-            name: app_id.to_string(),
-            icon: IconSource::default(),
-            ..Default::default()
-        }));
-    }
-    applications
-}
+) -> impl Iterator<Item = DesktopEntryData> + 'a {
+    let app_ids = std::rc::Rc::new(std::cell::RefCell::new(app_ids));
+    let app_ids_ = app_ids.clone();
 
-#[cfg(not(windows))]
-pub fn load_applications_filtered<'a, F: FnMut(&DesktopEntry) -> bool>(
-    locale: impl Into<Option<&'a str>>,
-    mut filter: F,
-) -> Vec<DesktopEntryData> {
-    let locale = locale.into();
-    let locale_arr: Option<Vec<_>> = locale.map(|l| vec![l]);
-    freedesktop_desktop_entry::Iter::new(freedesktop_desktop_entry::default_paths())
-        .filter_map(|path| {
-            DesktopEntry::from_path(&path, locale_arr.as_deref())
-                .ok()
-                .and_then(|de| {
-                    if !filter(&de) {
-                        return None;
-                    }
+    let applications = iter
+        .filter(move |de| {
+            if !include_no_display && de.no_display() {
+                return false;
+            }
 
-                    Some(DesktopEntryData::from_desktop_entry(
-                        locale,
-                        path.clone(),
-                        de,
-                    ))
+            // Search by ID first
+            app_ids
+                .borrow()
+                .iter()
+                .position(|id| de.matches_id(fde::unicase::Ascii::new(*id)))
+                // Then fall back to search by name
+                .or_else(|| {
+                    app_ids
+                        .borrow()
+                        .iter()
+                        .position(|id| de.matches_name(fde::unicase::Ascii::new(*id)))
                 })
+                // Remove the app ID if found
+                .map(|i| {
+                    app_ids.borrow_mut().remove(i);
+                    true
+                })
+                .unwrap_or_default()
         })
-        .collect()
+        .map(move |de| DesktopEntryData::from_desktop_entry(locales, de));
+
+    if fill_missing_ones {
+        applications.chain(
+            std::iter::once_with(move || {
+                std::mem::take(&mut *app_ids_.borrow_mut())
+                    .into_iter()
+                    .map(|app_id| DesktopEntryData {
+                        id: app_id.to_string(),
+                        name: app_id.to_string(),
+                        icon: fde::IconSource::default(),
+                        ..Default::default()
+                    })
+            })
+            .flatten(),
+        )
+    } else {
+        applications
+    }
 }
 
 #[cfg(not(windows))]
-pub fn load_desktop_file<'a>(
-    locale: impl Into<Option<&'a str>>,
-    path: impl AsRef<Path>,
-) -> Option<DesktopEntryData> {
-    let path = path.as_ref();
-    let locale = locale.into();
-    let locale_arr: Option<Vec<_>> = locale.clone().map(|l| vec![l]);
-
-    DesktopEntry::from_path(&path, locale_arr.as_deref())
+pub fn load_desktop_file<'a>(locales: &'a [String], path: PathBuf) -> Option<DesktopEntryData> {
+    fde::DesktopEntry::from_path(path, Some(locales))
         .ok()
-        .map(|de| DesktopEntryData::from_desktop_entry(locale, PathBuf::from(path), de))
+        .map(|de| DesktopEntryData::from_desktop_entry(locales, de))
 }
 
 #[cfg(not(windows))]
 impl DesktopEntryData {
-    fn from_desktop_entry<'a>(
-        locale: impl Into<Option<&'a str>>,
-        path: impl Into<Option<PathBuf>>,
-        de: DesktopEntry,
+    pub fn from_desktop_entry<'a>(
+        locales: &'a [String],
+        de: fde::DesktopEntry,
     ) -> DesktopEntryData {
-        let locale = locale.into();
-        let locale_arr: Option<Vec<_>> = locale.map(|l| vec![l]);
         let name = de
-            .name(locale_arr.as_deref().unwrap_or_default())
+            .name(locales)
             .unwrap_or(Cow::Borrowed(&de.appid))
             .to_string();
 
         // check if absolute path exists and otherwise treat it as a name
-        let icon = de.icon().unwrap_or(&de.appid);
-        let icon_path = Path::new(icon);
-        let icon = if icon_path.is_absolute() && icon_path.exists() {
-            IconSource::Path(icon_path.into())
-        } else {
-            IconSource::Name(icon.into())
-        };
+        let icon = fde::IconSource::from_unknown(de.icon().unwrap_or(&de.appid));
 
         DesktopEntryData {
             id: de.appid.to_string(),
@@ -194,7 +146,6 @@ impl DesktopEntryData {
             exec: de.exec().map(ToString::to_string),
             name,
             icon,
-            path: path.into(),
             categories: de
                 .categories()
                 .unwrap_or_default()
@@ -207,11 +158,7 @@ impl DesktopEntryData {
                     actions
                         .into_iter()
                         .filter_map(|action| {
-                            let name = de.action_entry_localized(
-                                action,
-                                "Name",
-                                locale_arr.as_deref().unwrap_or_default(),
-                            );
+                            let name = de.action_entry_localized(action, "Name", locales);
                             let exec = de.action_entry(action, "Exec");
                             if let (Some(name), Some(exec)) = (name, exec) {
                                 Some(DesktopAction {
@@ -235,6 +182,7 @@ impl DesktopEntryData {
                 })
                 .unwrap_or_default(),
             prefers_dgpu: de.prefers_non_default_gpu(),
+            path: Some(de.path),
         }
     }
 }
