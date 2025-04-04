@@ -23,6 +23,7 @@ pub fn header_bar<'a, Message>() -> HeaderBar<'a, Message> {
         end: Vec::new(),
         density: None,
         focused: false,
+        maximized: false,
         on_double_click: None,
     }
 }
@@ -76,6 +77,9 @@ pub struct HeaderBar<'a, Message> {
 
     /// Focused state of the window
     focused: bool,
+
+    /// Maximized state of the window
+    maximized: bool,
 }
 
 impl<'a, Message: Clone + 'static> HeaderBar<'a, Message> {
@@ -302,10 +306,22 @@ impl<'a, Message: Clone + 'static> HeaderBar<'a, Message> {
         // Also packs the window controls at the very end.
         end.push(self.window_controls());
 
-        let height = match self.density.unwrap_or_else(crate::config::header_size) {
-            Density::Compact => 40.0,
-            Density::Spacious => 48.0,
-            Density::Standard => 48.0,
+        // Center content depending on window border
+        let padding = match self.density.unwrap_or_else(crate::config::header_size) {
+            Density::Compact => {
+                if self.maximized {
+                    [4, 8, 4, 8]
+                } else {
+                    [3, 7, 4, 7]
+                }
+            }
+            _ => {
+                if self.maximized {
+                    [8, 8, 8, 8]
+                } else {
+                    [7, 7, 8, 7]
+                }
+            }
         };
         let portion = ((start.len().max(end.len()) as f32 / center.len().max(1) as f32).round()
             as u16)
@@ -349,8 +365,8 @@ impl<'a, Message: Clone + 'static> HeaderBar<'a, Message> {
                     }),
             )
             .align_y(iced::Alignment::Center)
-            .height(Length::Fixed(height))
-            .padding([0, 8])
+            .height(Length::Fixed(32.0 + padding[0] as f32 + padding[2] as f32))
+            .padding(padding)
             .spacing(8)
             .apply(widget::container)
             .class(crate::theme::Container::HeaderBar {
@@ -424,11 +440,17 @@ impl<'a, Message: Clone + 'static> HeaderBar<'a, Message> {
                     .take()
                     .map(|m: Message| icon!("window-minimize-symbolic", 16, m)),
             )
-            .push_maybe(
-                self.on_maximize
-                    .take()
-                    .map(|m| icon!("window-maximize-symbolic", 16, m)),
-            )
+            .push_maybe(self.on_maximize.take().map(|m| {
+                icon!(
+                    if self.maximized {
+                        "window-restore-symbolic"
+                    } else {
+                        "window-maximize-symbolic"
+                    },
+                    16,
+                    m
+                )
+            }))
             .push_maybe(
                 self.on_close
                     .take()
