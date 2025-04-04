@@ -8,4 +8,7 @@ pub fn scrollable<'a, Message>(
     element: impl Into<Element<'a, Message>>,
 ) -> widget::Scrollable<'a, Message, crate::Theme, Renderer> {
     widget::scrollable(element)
+        .scroller_width(8.0)
+        .scrollbar_width(8.0)
+        .scrollbar_padding(8.0)
 }

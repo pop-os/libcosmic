@@ -541,23 +541,30 @@ impl<App: Application> ApplicationExt for App {
     fn view_main(&self) -> Element<crate::Action<Self::Message>> {
         let core = self.core();
         let is_condensed = core.is_condensed();
-        // TODO: More granularity might be needed for different resize border
-        // and window border handling of maximized and tiled windows
+        // TODO: More granularity might be needed for different window border
+        // handling of maximized and tiled windows
         let sharp_corners = core.window.sharp_corners;
         let content_container = core.window.content_container;
+        let show_context = core.window.show_context;
+        let context_is_overlay = core.window.context_is_overlay;
         let nav_bar_active = core.nav_bar_active();
         let focused = core
             .focused_window()
             .is_some_and(|i| Some(i) == self.core().main_window_id());
 
-        let main_content_padding = if content_container {
-            if nav_bar_active {
-                [0, 8, 8, 0]
-            } else {
-                [0, 8, 8, 8]
-            }
-        } else {
+        let border_padding = if sharp_corners { 8 } else { 7 };
+
+        let main_content_padding = if !content_container {
             [0, 0, 0, 0]
+        } else {
+            let right_padding = if show_context && !context_is_overlay {
+                0
+            } else {
+                border_padding
+            };
+            let left_padding = if nav_bar_active { 0 } else { border_padding };
+
+            [0, right_padding, 0, left_padding]
         };
 
         let content_row = crate::widget::row::with_children({
@@ -568,7 +575,16 @@ impl<App: Application> ApplicationExt for App {
                 .nav_bar()
                 .map(|nav| id_container(nav, iced_core::id::Id::new("COSMIC_nav_bar")))
             {
-                widgets.push(container(nav).padding([0, 8, 8, 8]).into());
+                widgets.push(
+                    container(nav)
+                        .padding([
+                            0,
+                            if is_condensed { border_padding } else { 8 },
+                            border_padding,
+                            border_padding,
+                        ])
+                        .into(),
+                );
                 true
             } else {
                 false
@@ -579,7 +595,7 @@ impl<App: Application> ApplicationExt for App {
 
                 //TODO: reduce duplication
                 let context_width = core.context_width(has_nav);
-                if core.window.context_is_overlay && core.window.show_context {
+                if context_is_overlay && show_context {
                     if let Some(context) = self.context_drawer() {
                         widgets.push(
                             crate::widget::context_drawer(
@@ -600,7 +616,7 @@ impl<App: Application> ApplicationExt for App {
                             })
                             .apply(container)
                             .padding(if content_container {
-                                [0, 8, 8, 0]
+                                [0, border_padding, border_padding, border_padding]
                             } else {
                                 [0, 0, 0, 0]
                             })
@@ -648,7 +664,7 @@ impl<App: Application> ApplicationExt for App {
                             })
                             .apply(container)
                             .padding(if content_container {
-                                [0, 8, 8, 0]
+                                [0, border_padding, border_padding, border_padding]
                             } else {
                                 [0, 0, 0, 0]
                             })
@@ -665,11 +681,15 @@ impl<App: Application> ApplicationExt for App {
         });
         let content_col = crate::widget::column::with_capacity(2)
             .push(content_row)
-            .push_maybe(
-                self.footer()
-                    .map(|footer| container(footer.map(crate::Action::App)).padding([0, 8, 8, 8])),
-            );
-        let content: Element<_> = if core.window.content_container {
+            .push_maybe(self.footer().map(|footer| {
+                container(footer.map(crate::Action::App)).padding([
+                    0,
+                    border_padding,
+                    border_padding,
+                    border_padding,
+                ])
+            }));
+        let content: Element<_> = if content_container {
             content_col
                 .apply(container)
                 .width(iced::Length::Fill)
@@ -692,6 +712,7 @@ impl<App: Application> ApplicationExt for App {
                 Some({
                     let mut header = crate::widget::header_bar()
                         .focused(focused)
+                        .maximized(sharp_corners)
                         .title(&core.window.header_title)
                         .on_drag(crate::Action::Cosmic(Action::Drag))
                         .on_right_click(crate::Action::Cosmic(Action::ShowWindowMenu))
