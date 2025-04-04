@@ -81,6 +81,7 @@ jobs:
           - "open-dialog"
           - "context-menu"
           - "nav-context"
+          - "about"
     runs-on: ubuntu-22.04
     steps:
       - name: Checkout sources
