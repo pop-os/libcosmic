@@ -546,7 +546,6 @@ impl<App: Application> ApplicationExt for App {
         let sharp_corners = core.window.sharp_corners;
         let content_container = core.window.content_container;
         let show_context = core.window.show_context;
-        let context_is_overlay = core.window.context_is_overlay;
         let nav_bar_active = core.nav_bar_active();
         let focused = core
             .focused_window()
@@ -557,11 +556,7 @@ impl<App: Application> ApplicationExt for App {
         let main_content_padding = if !content_container {
             [0, 0, 0, 0]
         } else {
-            let right_padding = if show_context && !context_is_overlay {
-                0
-            } else {
-                border_padding
-            };
+            let right_padding = if show_context { 0 } else { border_padding };
             let left_padding = if nav_bar_active { 0 } else { border_padding };
 
             [0, right_padding, 0, left_padding]
@@ -595,7 +590,7 @@ impl<App: Application> ApplicationExt for App {
 
                 //TODO: reduce duplication
                 let context_width = core.context_width(has_nav);
-                if context_is_overlay && show_context {
+                if core.window.context_is_overlay && show_context {
                     if let Some(context) = self.context_drawer() {
                         widgets.push(
                             crate::widget::context_drawer(
@@ -615,17 +610,11 @@ impl<App: Application> ApplicationExt for App {
                                 ))
                             })
                             .apply(container)
-                            .padding(if content_container {
-                                [0, border_padding, border_padding, border_padding]
-                            } else {
-                                [0, 0, 0, 0]
-                            })
+                            .padding([0, border_padding, 0, 0])
                             .apply(Element::from)
                             .map(crate::Action::App),
                         );
                     } else {
-                        //TODO: container and padding are temporary, until
-                        //the `resize_border` is moved to not cover window content
                         widgets.push(
                             container(main_content.map(crate::Action::App))
                                 .padding(main_content_padding)
@@ -634,8 +623,6 @@ impl<App: Application> ApplicationExt for App {
                     }
                 } else {
                     //TODO: hide content when out of space
-                    //TODO: container and padding are temporary, until
-                    //the `resize_border` is moved to not cover window content
                     widgets.push(
                         container(main_content.map(crate::Action::App))
                             .padding(main_content_padding)

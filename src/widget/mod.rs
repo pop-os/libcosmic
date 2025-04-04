@@ -308,10 +308,9 @@ pub mod row {
     }
 }
 
-mod scrollable;
+pub mod scrollable;
 #[doc(inline)]
-pub use scrollable::*;
-
+pub use scrollable::scrollable;
 pub mod segmented_button;
 pub mod segmented_control;
 
