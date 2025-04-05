@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["application"],"struct":["Appearance","Application"],"trait":["DefaultStyle","Title","Update","View"]};

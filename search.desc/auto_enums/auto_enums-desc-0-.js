@@ -1,0 +1,1 @@
+searchState.loadedDescShard("auto_enums", 0, "A library for to allow multiple return types by …\nAn attribute macro for to allow multiple return types by …\nAn attribute macro like a wrapper of <code>#[derive]</code>, …")

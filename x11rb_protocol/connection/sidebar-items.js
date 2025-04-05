@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["PollReply","ReplyFdKind"],"struct":["Connection"],"type":["BufWithFds","RawEventAndSeqNumber"]};
