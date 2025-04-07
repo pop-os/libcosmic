@@ -1,6 +1,7 @@
 use {
     crate::{
         Element,
+        desktop::{IconSourceExt, fde},
         iced::{Alignment, Length},
         widget::{self, horizontal_space},
     },
@@ -140,7 +141,7 @@ pub fn about<'a, Message: Clone + 'static>(
     let application_icon = about
         .icon
         .as_ref()
-        .map(|icon| crate::desktop::IconSource::Name(icon.clone()).as_cosmic_icon());
+        .map(|icon| fde::IconSource::Name(icon.clone()).as_cosmic_icon());
     let author = about.author.as_ref().map(widget::text::body);
     let version = about.version.as_ref().map(widget::button::standard);
     let links_section = section(&about.links, "Links");
