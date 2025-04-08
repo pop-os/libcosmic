@@ -349,14 +349,14 @@ where
     pub fn sort(&mut self, category: Category, ascending: bool) {
         match self.sort {
             Some((cat, asc)) if cat == category && asc == ascending => return,
-            Some((cat, asc)) if cat == category => self.order.make_contiguous().reverse(),
+            Some((cat, _)) if cat == category => self.order.make_contiguous().reverse(),
             _ => {
-                let items = &self.items;
                 self.order.make_contiguous().sort_by(|entity_a, entity_b| {
-                    let cmp = items
+                    let cmp = self
+                        .items
                         .get(*entity_a)
                         .unwrap()
-                        .compare(items.get(*entity_b).unwrap(), category);
+                        .compare(self.items.get(*entity_b).unwrap(), category);
                     if ascending { cmp } else { cmp.reverse() }
                 });
             }
