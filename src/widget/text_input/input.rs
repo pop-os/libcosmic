@@ -1686,7 +1686,7 @@ pub fn update<'a, Message: Clone + 'static>(
 
                 // Capture keyboard inputs that should be submitted.
                 if let Some(c) = text.and_then(|t| t.chars().next().filter(|c| !c.is_control())) {
-                    let Some(on_input) = on_input else {
+                    if state.is_read_only || (!manage_value && on_input.is_none()) {
                         return event::Status::Ignored;
                     };
 
@@ -1701,8 +1701,10 @@ pub fn update<'a, Message: Clone + 'static>(
                         let unsecured_value = Value::new(&contents);
                         state.tracked_value = unsecured_value.clone();
 
-                        let message = (on_input)(contents);
-                        shell.publish(message);
+                        if let Some(on_input) = on_input {
+                            let message = (on_input)(contents);
+                            shell.publish(message);
+                        }
 
                         focus.updated_at = Instant::now();
                         LAST_FOCUS_UPDATE.with(|x| x.set(focus.updated_at));
