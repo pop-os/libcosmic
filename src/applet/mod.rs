@@ -225,6 +225,7 @@ impl Context {
         tooltip: impl Into<Cow<'static, str>>,
         has_popup: bool,
         on_surface_action: impl Fn(crate::surface::Action) -> Message + 'static,
+        parent_id: Option<window::Id>,
     ) -> crate::widget::wayland::tooltip::widget::Tooltip<'a, Message, Message> {
         let window_id = *TOOLTIP_WINDOW_ID;
         let subsurface_id = TOOLTIP_ID.clone();
@@ -243,7 +244,7 @@ impl Context {
                 };
 
                 SctkPopupSettings {
-                    parent: window::Id::RESERVED,
+                    parent: parent_id.unwrap_or(window::Id::RESERVED),
                     id: window_id,
                     grab: false,
                     input_zone: Some(Rectangle::new(

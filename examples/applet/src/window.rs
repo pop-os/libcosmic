@@ -135,6 +135,7 @@ impl cosmic::Application for Window {
             "test",
             self.popup.is_some(),
             |a| Message::Surface(a),
+            None
         ))
     }
 
