@@ -347,19 +347,20 @@ where
 
     /// Sorts items in the model, this should be called before it is drawn after all items have been added for the view
     pub fn sort(&mut self, category: Category, ascending: bool) {
-        self.sort = Some((category, ascending));
-        let mut order: Vec<Entity> = self.order.iter().cloned().collect();
-        order.sort_by(|entity_a, entity_b| {
-            if ascending {
-                self.item(*entity_a)
-                    .unwrap()
-                    .compare(self.item(*entity_b).unwrap(), category)
-            } else {
-                self.item(*entity_b)
-                    .unwrap()
-                    .compare(self.item(*entity_a).unwrap(), category)
+        match self.sort {
+            Some((cat, asc)) if cat == category && asc == ascending => return,
+            Some((cat, _)) if cat == category => self.order.make_contiguous().reverse(),
+            _ => {
+                self.order.make_contiguous().sort_by(|entity_a, entity_b| {
+                    let cmp = self
+                        .items
+                        .get(*entity_a)
+                        .unwrap()
+                        .compare(self.items.get(*entity_b).unwrap(), category);
+                    if ascending { cmp } else { cmp.reverse() }
+                });
             }
-        });
-        self.order = order.into();
+        }
+        self.sort = Some((category, ascending));
     }
 }
