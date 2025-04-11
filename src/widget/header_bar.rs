@@ -441,15 +441,11 @@ impl<'a, Message: Clone + 'static> HeaderBar<'a, Message> {
                     .map(|m: Message| icon!("window-minimize-symbolic", 16, m)),
             )
             .push_maybe(self.on_maximize.take().map(|m| {
-                icon!(
-                    if self.maximized {
-                        "window-restore-symbolic"
-                    } else {
-                        "window-maximize-symbolic"
-                    },
-                    16,
-                    m
-                )
+                if self.maximized {
+                    icon!("window-restore-symbolic", 16, m)
+                } else {
+                    icon!("window-maximize-symbolic", 16, m)
+                }
             }))
             .push_maybe(
                 self.on_close
