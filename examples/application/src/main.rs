@@ -168,8 +168,10 @@ impl cosmic::Application for App {
             Message::ToggleHide => {
                 self.hidden = !self.hidden;
             }
-            Message::Surface(_) => {
-                // unimplemented!()
+            Message::Surface(a) => {
+                return cosmic::task::message(cosmic::Action::Cosmic(
+                    cosmic::app::Action::Surface(a),
+                ));
             }
             Message::Hi => {
                 dbg!("hi");
@@ -280,49 +282,49 @@ impl cosmic::Application for App {
         }
         #[cfg(feature = "wayland")]
         {
-            vec![cosmic::widget::responsive_menu_bar(
+            vec![cosmic::widget::responsive_menu_bar().into_element(
                 self.core(),
                 &self.keybinds,
                 MENU_ID.clone(),
                 Message::Surface,
                 vec![
                     (
-                        "hiiiiiiiiiiiiiiiiiii 1".into(),
-                        vec![menu::Item::Button("hi 1".into(), None, Action::Hi)],
+                        "hiiiiiiiiiiiiiiiiiii 1",
+                        vec![menu::Item::Button("hi 1", None, Action::Hi)],
                     ),
                     (
                         "hiiiiiiiiiiiiiiiiiii 2".into(),
                         vec![
-                            menu::Item::Button("hi 2".into(), None, Action::Hi),
-                            menu::Item::Button("hi 22".into(), None, Action::Hi),
+                            menu::Item::Button("hi 2", None, Action::Hi),
+                            menu::Item::Button("hi 22", None, Action::Hi),
                         ],
                     ),
                     (
                         "hiiiiiiiiiiiiiiiiiii 3".into(),
                         vec![
-                            menu::Item::Button("hi 3".into(), None, Action::Hi),
-                            menu::Item::Button("hi 33".into(), None, Action::Hi),
-                            menu::Item::Button("hi 333".into(), None, Action::Hi),
+                            menu::Item::Button("hi 3", None, Action::Hi),
+                            menu::Item::Button("hi 33", None, Action::Hi),
+                            menu::Item::Button("hi 333", None, Action::Hi),
                         ],
                     ),
                     (
                         "hiiiiiiiiiiiiiiiiiii 4".into(),
                         vec![
-                            menu::Item::Button("hi 4".into(), None, Action::Hi),
-                            menu::Item::Button("hi 44".into(), None, Action::Hi),
-                            menu::Item::Button("hi 444".into(), None, Action::Hi),
+                            menu::Item::Button("hi 4", None, Action::Hi),
+                            menu::Item::Button("hi 44", None, Action::Hi),
+                            menu::Item::Button("hi 444", None, Action::Hi),
                             menu::Item::Folder(
                                 "nest 4".into(),
                                 vec![
-                                    menu::Item::Button("hi 4".into(), None, Action::Hi),
-                                    menu::Item::Button("hi 44".into(), None, Action::Hi),
-                                    menu::Item::Button("hi 444".into(), None, Action::Hi),
+                                    menu::Item::Button("hi 4", None, Action::Hi),
+                                    menu::Item::Button("hi 44", None, Action::Hi),
+                                    menu::Item::Button("hi 444", None, Action::Hi),
                                     menu::Item::Folder(
                                         "nest 2 4".into(),
                                         vec![
-                                            menu::Item::Button("hi 4".into(), None, Action::Hi),
-                                            menu::Item::Button("hi 44".into(), None, Action::Hi),
-                                            menu::Item::Button("hi 444".into(), None, Action::Hi),
+                                            menu::Item::Button("hi 4", None, Action::Hi),
+                                            menu::Item::Button("hi 44", None, Action::Hi),
+                                            menu::Item::Button("hi 444", None, Action::Hi),
                                         ],
                                     ),
                                 ],

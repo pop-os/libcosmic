@@ -103,7 +103,7 @@ pub(crate) mod responsive_container;
 mod responsive_menu_bar;
 #[cfg(feature = "surface-message")]
 #[doc(inline)]
-pub use responsive_menu_bar::responsive_menu_bar;
+pub use responsive_menu_bar::{ResponsiveMenuBar, responsive_menu_bar};
 
 pub mod button;
 #[doc(inline)]
