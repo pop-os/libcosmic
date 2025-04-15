@@ -14,6 +14,7 @@ pub fn responsive_menu_bar() -> ResponsiveMenuBar {
 }
 
 pub struct ResponsiveMenuBar {
+    collapsed_item_width: ItemWidth,
     item_width: ItemWidth,
     item_height: ItemHeight,
     spacing: f32,
@@ -22,6 +23,7 @@ pub struct ResponsiveMenuBar {
 impl Default for ResponsiveMenuBar {
     fn default() -> ResponsiveMenuBar {
         ResponsiveMenuBar {
+            collapsed_item_width: ItemWidth::Static(84),
             item_width: ItemWidth::Uniform(150),
             item_height: ItemHeight::Uniform(30),
             spacing: 0.,
@@ -110,10 +112,17 @@ impl ResponsiveMenuBar {
                                 .into_iter()
                                 .map(|mt| menu::Item::Folder(mt.0, mt.1.into()))
                                 .collect(),
-                        ),
+                        )
+                        .into_iter()
+                        .map(|t| {
+                            t.width(match self.item_width {
+                                ItemWidth::Uniform(w) | ItemWidth::Static(w) => w,
+                            })
+                        })
+                        .collect(),
                     )])
                     .item_height(self.item_height)
-                    .item_width(self.item_width)
+                    .item_width(self.collapsed_item_width)
                     .spacing(self.spacing),
                     crate::widget::Id::new(format!("menu_bar_collapsed_{id}")),
                 ),
