@@ -61,8 +61,9 @@ where
         &mut self,
         _surface_message: crate::surface::Action,
     ) -> iced::Task<crate::Action<T::Message>> {
-        #[cfg(feature = "wayland")]
+        #[cfg(feature = "surface-message")]
         match _surface_message {
+            #[cfg(feature = "wayland")]
             crate::surface::Action::AppSubsurface(settings, view) => {
                 let Some(settings) = std::sync::Arc::try_unwrap(settings)
                                                                         .ok()
@@ -91,6 +92,7 @@ where
                     iced_winit::commands::subsurface::get_subsurface(settings(&mut self.app))
                 }
             }
+            #[cfg(feature = "wayland")]
             crate::surface::Action::Subsurface(settings, view) => {
                 let Some(settings) = std::sync::Arc::try_unwrap(settings)
                                                                         .ok()
@@ -117,6 +119,7 @@ where
                     iced_winit::commands::subsurface::get_subsurface(settings())
                 }
             }
+            #[cfg(feature = "wayland")]
             crate::surface::Action::AppPopup(settings, view) => {
                 let Some(settings) = std::sync::Arc::try_unwrap(settings)
                                                                         .ok()
@@ -162,6 +165,7 @@ where
                 core.menu_bars.insert(menu_bar, (limits, size));
                 iced::Task::none()
             }
+            #[cfg(feature = "wayland")]
             crate::surface::Action::Popup(settings, view) => {
                 let Some(settings) = std::sync::Arc::try_unwrap(settings)
                                                                         .ok()
@@ -192,9 +196,10 @@ where
             crate::surface::Action::Task(f) => {
                 f().map(|sm| crate::Action::Cosmic(Action::Surface(sm)))
             }
+            _ => iced::Task::none(),
         }
 
-        #[cfg(not(feature = "wayland"))]
+        #[cfg(not(feature = "surface-message"))]
         iced::Task::none()
     }
 
