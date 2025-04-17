@@ -71,6 +71,7 @@ impl cosmic::Application for App {
             .version("0.1.0")
             .author("System 76")
             .license("GPL-3.0-only")
+            //.license_url("https://www.some-custom-license-url.com")
             .developers([("Michael Murphy", "mmstick@system76.com")])
             .links([
                 ("Website", "https://system76.com/cosmic"),

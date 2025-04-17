@@ -26,6 +26,8 @@ pub struct About {
     copyright: Option<String>,
     /// The license name.
     license: Option<String>,
+    /// The license url. If None spdx.org url is used.
+    license_url: Option<String>,
     /// Artists who contributed to the application.
     #[setters(skip)]
     artists: Vec<(String, String)>,
@@ -96,10 +98,12 @@ impl<'a> About {
         self
     }
 
-    fn license_url(&self) -> Option<String> {
-        self.license.as_ref().and_then(|license_str| {
-            let license: &dyn License = license_str.parse().ok()?;
-            Some(format!("https://spdx.org/licenses/{}.html", license.id()))
+    fn get_license_url(&self) -> Option<String> {
+        self.license_url.clone().or_else(|| {
+            self.license.as_ref().and_then(|license_str| {
+                let license: &dyn License = license_str.parse().ok()?;
+                Some(format!("https://spdx.org/licenses/{}.html", license.id()))
+            })
         })
     }
 }
@@ -151,7 +155,7 @@ pub fn about<'a, Message: Clone + 'static>(
     let translators_section = section(&about.translators, "Translators");
     let documenters_section = section(&about.documenters, "Documenters");
     let license = about.license.as_ref().map(|license| {
-        let url = about.license_url();
+        let url = about.get_license_url();
         widget::settings::section().title("License").add(
             widget::button::custom(
                 widget::row()
