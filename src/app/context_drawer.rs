@@ -62,4 +62,22 @@ impl<'a, Message: Clone + 'static> ContextDrawer<'a, Message> {
         self.footer = Some(footer.into());
         self
     }
+
+    pub fn map<Out: Clone + 'static>(
+        mut self,
+        on_message: fn(Message) -> Out,
+    ) -> ContextDrawer<'a, Out> {
+        ContextDrawer {
+            title: self.title,
+            content: self.content.map(on_message),
+            header: self.header.map(|el| el.map(on_message)),
+            footer: self.footer.map(|el| el.map(on_message)),
+            on_close: on_message(self.on_close),
+            header_actions: self
+                .header_actions
+                .into_iter()
+                .map(|el| el.map(on_message))
+                .collect(),
+        }
+    }
 }

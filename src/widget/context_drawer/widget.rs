@@ -164,12 +164,27 @@ impl<'a, Message: Clone + 'static> ContextDrawer<'a, Message> {
     }
 
     /// Sets the [`Id`] of the [`ContextDrawer`].
+    #[inline]
     pub fn id(mut self, id: iced_core::widget::Id) -> Self {
         self.id = Some(id);
         self
     }
 
-    // Optionally assigns message to `on_close` event.
+    /// Map the message type of the context drawer to another
+    #[inline]
+    pub fn map<Out: Clone + 'static>(
+        mut self,
+        on_message: fn(Message) -> Out,
+    ) -> ContextDrawer<'a, Out> {
+        ContextDrawer {
+            id: self.id,
+            content: self.content.map(on_message),
+            drawer: self.drawer.map(on_message),
+            on_close: self.on_close.map(on_message),
+        }
+    }
+
+    /// Optionally assigns message to `on_close` event.
     #[inline]
     pub fn on_close_maybe(mut self, message: Option<Message>) -> Self {
         self.on_close = message;

@@ -10,6 +10,7 @@ mod action;
 pub use action::Action;
 use cosmic_config::CosmicConfigEntry;
 pub mod context_drawer;
+pub use context_drawer::{ContextDrawer, context_drawer};
 pub mod cosmic;
 #[cfg(all(feature = "winit", feature = "multi-window"))]
 pub(crate) mod multi_window;
@@ -22,7 +23,6 @@ use crate::prelude::*;
 use crate::theme::THEME;
 use crate::widget::{container, horizontal_space, id_container, menu, nav_bar, popover};
 use apply::Apply;
-use context_drawer::ContextDrawer;
 use iced::window;
 use iced::{Length, Subscription};
 pub use settings::Settings;
