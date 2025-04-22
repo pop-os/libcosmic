@@ -31,3 +31,7 @@ pub fn stream<X: Into<Y> + 'static, Y: 'static>(
 ) -> iced::Task<Y> {
     iced::Task::stream(stream.map(Into::into))
 }
+
+pub fn none<Y: 'static>() -> iced::Task<Y> {
+    iced::Task::none()
+}
