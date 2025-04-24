@@ -87,6 +87,7 @@ winit_wgpu = ["winit", "wgpu"]
 xdg-portal = ["ashpd"]
 qr_code = ["iced/qr_code"]
 markdown = ["iced/markdown"]
+highlighter = ["iced/highlighter"]
 async-std = [
     "dep:async-std",
     "ashpd/async-std",
