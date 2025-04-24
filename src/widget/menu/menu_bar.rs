@@ -7,26 +7,42 @@ use super::{
     },
     menu_tree::MenuTree,
 };
-use crate::style::menu_bar::StyleSheet;
+use crate::{
+    Renderer,
+    style::menu_bar::StyleSheet,
+    widget::{
+        RcWrapper,
+        dropdown::menu::{self, State},
+    },
+};
 
-use iced::{Point, Vector};
+use iced::{Point, Vector, window};
 use iced_core::Border;
 use iced_widget::core::{
     Alignment, Clipboard, Element, Layout, Length, Padding, Rectangle, Shell, Widget, event,
     layout::{Limits, Node},
     mouse::{self, Cursor},
-    overlay, renderer, touch,
+    overlay,
+    renderer::{self, Renderer as IcedRenderer},
+    touch,
     widget::{Tree, tree},
 };
 
 /// A `MenuBar` collects `MenuTree`s and handles all the layout, event processing, and drawing.
-pub fn menu_bar<Message, Renderer: iced_core::Renderer>(
-    menu_roots: Vec<MenuTree<Message, Renderer>>,
-) -> MenuBar<Message, Renderer> {
+pub fn menu_bar<Message>(menu_roots: Vec<MenuTree<Message>>) -> MenuBar<Message>
+where
+    Message: Clone + 'static,
+{
     MenuBar::new(menu_roots)
 }
 
+#[derive(Clone, Default)]
 pub(crate) struct MenuBarState {
+    pub(crate) inner: RcWrapper<MenuBarStateInner>,
+}
+
+pub(crate) struct MenuBarStateInner {
+    pub(crate) tree: Tree,
     pub(crate) pressed: bool,
     pub(crate) view_cursor: Cursor,
     pub(crate) open: bool,
@@ -35,7 +51,7 @@ pub(crate) struct MenuBarState {
     pub(crate) vertical_direction: Direction,
     pub(crate) menu_states: Vec<MenuState>,
 }
-impl MenuBarState {
+impl MenuBarStateInner {
     pub(super) fn get_trimmed_indices(&self) -> impl Iterator<Item = usize> + '_ {
         self.menu_states
             .iter()
@@ -49,9 +65,10 @@ impl MenuBarState {
         self.menu_states.clear();
     }
 }
-impl Default for MenuBarState {
+impl Default for MenuBarStateInner {
     fn default() -> Self {
         Self {
+            tree: Tree::empty(),
             pressed: false,
             view_cursor: Cursor::Available([-0.5, -0.5].into()),
             open: false,
@@ -63,11 +80,9 @@ impl Default for MenuBarState {
     }
 }
 
-pub(crate) fn menu_roots_children<Message, Renderer>(
-    menu_roots: &Vec<MenuTree<'_, Message, Renderer>>,
-) -> Vec<Tree>
+pub(crate) fn menu_roots_children<Message>(menu_roots: &Vec<MenuTree<Message>>) -> Vec<Tree>
 where
-    Renderer: renderer::Renderer,
+    Message: Clone + 'static,
 {
     /*
     menu bar
@@ -85,7 +100,7 @@ where
             let flat = root
                 .flattern()
                 .iter()
-                .map(|mt| Tree::new(mt.item.as_widget()))
+                .map(|mt| Tree::new(mt.item.clone()))
                 .collect();
             tree.children = flat;
             tree
@@ -94,11 +109,9 @@ where
 }
 
 #[allow(invalid_reference_casting)]
-pub(crate) fn menu_roots_diff<Message, Renderer>(
-    menu_roots: &mut Vec<MenuTree<'_, Message, Renderer>>,
-    tree: &mut Tree,
-) where
-    Renderer: renderer::Renderer,
+pub(crate) fn menu_roots_diff<Message>(menu_roots: &mut Vec<MenuTree<Message>>, tree: &mut Tree)
+where
+    Message: Clone + 'static,
 {
     if tree.children.len() > menu_roots.len() {
         tree.children.truncate(menu_roots.len());
@@ -112,7 +125,7 @@ pub(crate) fn menu_roots_diff<Message, Renderer>(
                 .flattern()
                 .iter()
                 .map(|mt| {
-                    let widget = mt.item.as_widget();
+                    let widget = &mt.item;
                     let widget_ptr = widget as *const dyn Widget<Message, crate::Theme, Renderer>;
                     let widget_ptr_mut =
                         widget_ptr as *mut dyn Widget<Message, crate::Theme, Renderer>;
@@ -130,7 +143,7 @@ pub(crate) fn menu_roots_diff<Message, Renderer>(
             let flat = root
                 .flattern()
                 .iter()
-                .map(|mt| Tree::new(mt.item.as_widget()))
+                .map(|mt| Tree::new(mt.item.clone()))
                 .collect();
             tree.children = flat;
             tree
@@ -141,10 +154,7 @@ pub(crate) fn menu_roots_diff<Message, Renderer>(
 
 /// A `MenuBar` collects `MenuTree`s and handles all the layout, event processing, and drawing.
 #[allow(missing_debug_implementations)]
-pub struct MenuBar<'a, Message, Renderer = crate::Renderer>
-where
-    Renderer: renderer::Renderer,
-{
+pub struct MenuBar<Message> {
     width: Length,
     height: Length,
     spacing: f32,
@@ -156,17 +166,20 @@ where
     item_width: ItemWidth,
     item_height: ItemHeight,
     path_highlight: Option<PathHighlight>,
-    menu_roots: Vec<MenuTree<'a, Message, Renderer>>,
+    menu_roots: Vec<MenuTree<Message>>,
     style: <crate::Theme as StyleSheet>::Style,
+    window_id: window::Id,
+    #[cfg(feature = "wayland")]
+    positioner: iced_runtime::platform_specific::wayland::popup::SctkPositioner,
 }
 
-impl<'a, Message, Renderer> MenuBar<'a, Message, Renderer>
+impl<Message> MenuBar<Message>
 where
-    Renderer: renderer::Renderer,
+    Message: Clone + 'static,
 {
     /// Creates a new [`MenuBar`] with the given menu roots
     #[must_use]
-    pub fn new(menu_roots: Vec<MenuTree<'a, Message, Renderer>>) -> Self {
+    pub fn new(menu_roots: Vec<MenuTree<Message>>) -> Self {
         let mut menu_roots = menu_roots;
         menu_roots.iter_mut().for_each(MenuTree::set_index);
 
@@ -188,6 +201,9 @@ where
             path_highlight: Some(PathHighlight::MenuActive),
             menu_roots,
             style: <crate::Theme as StyleSheet>::Style::default(),
+            window_id: window::Id::NONE,
+            #[cfg(feature = "wayland")]
+            positioner: iced_runtime::platform_specific::wayland::popup::SctkPositioner::default(),
         }
     }
 
@@ -278,10 +294,31 @@ where
         self.width = width;
         self
     }
+
+    #[cfg(feature = "wayland")]
+    pub fn with_positioner(
+        mut self,
+        positioner: iced_runtime::platform_specific::wayland::popup::SctkPositioner,
+    ) -> Self {
+        self.positioner = positioner;
+        self
+    }
+
+    pub fn window_id(mut self, id: window::Id) -> Self {
+        self.window_id = id;
+        self
+    }
+
+    pub fn window_id_maybe(mut self, id: Option<window::Id>) -> Self {
+        if let Some(id) = id {
+            self.window_id = id;
+        }
+        self
+    }
 }
-impl<Message, Renderer> Widget<Message, crate::Theme, Renderer> for MenuBar<'_, Message, Renderer>
+impl<Message> Widget<Message, crate::Theme, Renderer> for MenuBar<Message>
 where
-    Renderer: renderer::Renderer,
+    Message: Clone + 'static,
 {
     fn size(&self) -> iced_core::Size<Length> {
         iced_core::Size::new(self.width, self.height)
@@ -318,7 +355,7 @@ where
             .iter_mut()
             .map(|t| &mut t.children[0])
             .collect::<Vec<_>>();
-        flex::resolve(
+        flex::resolve_wrapper(
             &flex::Axis::Horizontal,
             renderer,
             &limits,
@@ -361,12 +398,14 @@ where
 
         match event {
             Mouse(ButtonReleased(Left)) | Touch(FingerLifted { .. } | FingerLost { .. }) => {
-                if state.menu_states.is_empty() && view_cursor.is_over(layout.bounds()) {
-                    state.view_cursor = view_cursor;
-                    state.open = true;
-                    // #[cfg(feature = "wayland")]
-                    // TODO emit Message to open menu
-                }
+                state.inner.with_data_mut(|state| {
+                    if state.menu_states.is_empty() && view_cursor.is_over(layout.bounds()) {
+                        state.view_cursor = view_cursor;
+                        state.open = true;
+                        // #[cfg(feature = "wayland")]
+                        // TODO emit Message to open menu
+                    }
+                });
             }
             _ => (),
         }
@@ -385,49 +424,51 @@ where
     ) {
         let state = tree.state.downcast_ref::<MenuBarState>();
         let cursor_pos = view_cursor.position().unwrap_or_default();
-        let position = if state.open && (cursor_pos.x < 0.0 || cursor_pos.y < 0.0) {
-            state.view_cursor
-        } else {
-            view_cursor
-        };
+        state.inner.with_data_mut(|state| {
+            let position = if state.open && (cursor_pos.x < 0.0 || cursor_pos.y < 0.0) {
+                state.view_cursor
+            } else {
+                view_cursor
+            };
 
-        // draw path highlight
-        if self.path_highlight.is_some() {
-            let styling = theme.appearance(&self.style);
-            if let Some(active) = state.active_root {
-                let active_bounds = layout
-                    .children()
-                    .nth(active)
-                    .expect("Active child not found in menu?")
-                    .bounds();
-                let path_quad = renderer::Quad {
-                    bounds: active_bounds,
-                    border: Border {
-                        radius: styling.bar_border_radius.into(),
-                        ..Default::default()
-                    },
-                    shadow: Default::default(),
-                };
+            // draw path highlight
+            if self.path_highlight.is_some() {
+                let styling = theme.appearance(&self.style);
+                if let Some(active) = state.active_root {
+                    let active_bounds = layout
+                        .children()
+                        .nth(active)
+                        .expect("Active child not found in menu?")
+                        .bounds();
+                    let path_quad = renderer::Quad {
+                        bounds: active_bounds,
+                        border: Border {
+                            radius: styling.bar_border_radius.into(),
+                            ..Default::default()
+                        },
+                        shadow: Default::default(),
+                    };
 
-                renderer.fill_quad(path_quad, styling.path);
+                    renderer.fill_quad(path_quad, styling.path);
+                }
             }
-        }
 
-        self.menu_roots
-            .iter()
-            .zip(&tree.children)
-            .zip(layout.children())
-            .for_each(|((root, t), lo)| {
-                root.item.as_widget().draw(
-                    &t.children[root.index],
-                    renderer,
-                    theme,
-                    style,
-                    lo,
-                    position,
-                    viewport,
-                );
-            });
+            self.menu_roots
+                .iter()
+                .zip(&tree.children)
+                .zip(layout.children())
+                .for_each(|((root, t), lo)| {
+                    root.item.draw(
+                        &t.children[root.index],
+                        renderer,
+                        theme,
+                        style,
+                        lo,
+                        position,
+                        viewport,
+                    );
+                });
+        });
     }
 
     fn overlay<'b>(
@@ -441,14 +482,14 @@ where
         // return None;
 
         let state = tree.state.downcast_ref::<MenuBarState>();
-        if !state.open {
+        if state.inner.with_data_mut(|state| !state.open) {
             return None;
-        }
+        };
 
         Some(
             Menu {
-                tree,
-                menu_roots: &mut self.menu_roots,
+                tree: state.clone(),
+                menu_roots: std::borrow::Cow::Borrowed(&mut self.menu_roots),
                 bounds_expand: self.bounds_expand,
                 menu_overlays_parent: false,
                 close_condition: self.close_condition,
@@ -459,27 +500,26 @@ where
                 cross_offset: self.cross_offset,
                 root_bounds_list: layout.children().map(|lo| lo.bounds()).collect(),
                 path_highlight: self.path_highlight,
-                style: &self.style,
+                style: std::borrow::Cow::Borrowed(&self.style),
                 position: Point::new(translation.x, translation.y),
             }
             .overlay(),
         )
     }
 }
-impl<'a, Message, Renderer> From<MenuBar<'a, Message, Renderer>>
-    for Element<'a, Message, crate::Theme, Renderer>
+
+impl<'a, Message> From<MenuBar<Message>> for Element<'a, Message, crate::Theme, Renderer>
 where
-    Message: 'a,
-    Renderer: 'a + renderer::Renderer,
+    Message: Clone + 'static,
 {
-    fn from(value: MenuBar<'a, Message, Renderer>) -> Self {
+    fn from(value: MenuBar<Message>) -> Self {
         Self::new(value)
     }
 }
 
 #[allow(unused_results, clippy::too_many_arguments)]
-fn process_root_events<Message, Renderer>(
-    menu_roots: &mut [MenuTree<'_, Message, Renderer>],
+fn process_root_events<Message>(
+    menu_roots: &mut [MenuTree<Message>],
     view_cursor: Cursor,
     tree: &mut Tree,
     event: &event::Event,
@@ -490,7 +530,6 @@ fn process_root_events<Message, Renderer>(
     viewport: &Rectangle,
 ) -> event::Status
 where
-    Renderer: renderer::Renderer,
 {
     menu_roots
         .iter_mut()
@@ -498,7 +537,7 @@ where
         .zip(layout.children())
         .map(|((root, t), lo)| {
             // assert!(t.tag == tree::Tag::stateless());
-            root.item.as_widget_mut().on_event(
+            root.item.on_event(
                 &mut t.children[root.index],
                 event.clone(),
                 lo,

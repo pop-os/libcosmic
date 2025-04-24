@@ -51,7 +51,7 @@ where
     #[setters(skip)]
     pub(super) on_item_mb_right: Option<Box<dyn Fn(Entity) -> Message + 'static>>,
     #[setters(skip)]
-    pub(super) item_context_builder: Box<dyn Fn(&Item) -> Option<Vec<menu::Tree<'a, Message>>>>,
+    pub(super) item_context_builder: Box<dyn Fn(&Item) -> Option<Vec<menu::Tree<Message>>>>,
     // Item DND
 
     // === Category Interaction ===
@@ -64,12 +64,11 @@ where
     #[setters(skip)]
     pub(super) on_category_mb_right: Option<Box<dyn Fn(Category) -> Message + 'static>>,
     #[setters(skip)]
-    pub(super) category_context_builder:
-        Box<dyn Fn(Category) -> Option<Vec<menu::Tree<'a, Message>>>>,
+    pub(super) category_context_builder: Box<dyn Fn(Category) -> Option<Vec<menu::Tree<Message>>>>,
 }
 
-impl<'a, SelectionMode, Item, Category, Message>
-    From<TableView<'a, SelectionMode, Item, Category, Message>> for Element<'a, Message>
+impl<SelectionMode, Item, Category, Message>
+    From<TableView<'static, SelectionMode, Item, Category, Message>> for Element<'static, Message>
 where
     Category: ItemCategory,
     Item: ItemInterface<Category>,
@@ -77,13 +76,13 @@ where
     SelectionMode: Default,
     Message: Clone + 'static,
 {
-    fn from(val: TableView<'a, SelectionMode, Item, Category, Message>) -> Self {
+    fn from(val: TableView<'static, SelectionMode, Item, Category, Message>) -> Self {
         // Header row
         let header_row = val
             .model
             .categories
             .iter()
-            .cloned()
+            .copied()
             .map(|category| {
                 let cat_context_tree = (val.category_context_builder)(category);
 
@@ -126,7 +125,7 @@ where
                     .apply(|mouse_area| widget::context_menu(mouse_area, cat_context_tree))
                     .apply(Element::from)
             })
-            .collect::<Vec<Element<'a, Message>>>()
+            .collect::<Vec<Element<'static, Message>>>()
             .apply(widget::row::with_children)
             .apply(Element::from);
         // Build the items
@@ -167,7 +166,7 @@ where
                                     .align_y(Alignment::Center)
                                     .apply(Element::from)
                             })
-                            .collect::<Vec<Element<'a, Message>>>()
+                            .collect::<Vec<Element<'static, Message>>>()
                             .apply(widget::row::with_children)
                             .apply(container)
                             .padding(val.item_padding)
@@ -235,12 +234,12 @@ where
                     ]
                 })
                 .flatten()
-                .collect::<Vec<Element<'a, Message>>>()
+                .collect::<Vec<Element<'static, Message>>>()
         };
         vec![vec![header_row], items_full]
             .into_iter()
             .flatten()
-            .collect::<Vec<Element<'a, Message>>>()
+            .collect::<Vec<Element<'static, Message>>>()
             .apply(widget::column::with_children)
             .width(val.width)
             .height(val.height)
@@ -328,7 +327,7 @@ where
 
     pub fn item_context<F>(mut self, context_menu_builder: F) -> Self
     where
-        F: Fn(&Item) -> Option<Vec<menu::Tree<'a, Message>>> + 'static,
+        F: Fn(&Item) -> Option<Vec<menu::Tree<Message>>> + 'static,
         Message: 'static,
     {
         self.item_context_builder = Box::new(context_menu_builder);
@@ -367,7 +366,7 @@ where
 
     pub fn category_context<F>(mut self, context_menu_builder: F) -> Self
     where
-        F: Fn(Category) -> Option<Vec<menu::Tree<'a, Message>>> + 'static,
+        F: Fn(Category) -> Option<Vec<menu::Tree<Message>>> + 'static,
         Message: 'static,
     {
         self.category_context_builder = Box::new(context_menu_builder);

@@ -1,4 +1,5 @@
 use std::{
+    borrow::Borrow,
     cell::RefCell,
     rc::Rc,
     thread::{self, ThreadId},
@@ -12,6 +13,12 @@ use iced_core::{Widget, id::Id, widget, widget::tree};
 pub struct RcWrapper<T> {
     pub(crate) data: Rc<RefCell<T>>,
     pub(crate) thread_id: ThreadId,
+}
+
+impl<T: Default> Default for RcWrapper<T> {
+    fn default() -> Self {
+        Self::new(T::default())
+    }
 }
 
 impl<T> Clone for RcWrapper<T> {
@@ -72,6 +79,12 @@ impl<M> RcElementWrapper<M> {
         RcElementWrapper {
             element: RcWrapper::new(element),
         }
+    }
+}
+
+impl<M: 'static> Borrow<dyn Widget<M, crate::Theme, crate::Renderer>> for RcElementWrapper<M> {
+    fn borrow(&self) -> &(dyn Widget<M, crate::Theme, crate::Renderer> + 'static) {
+        self
     }
 }
 
