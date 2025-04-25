@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 
 use apply::Apply;
+use iced::window;
 
 use crate::{
     Core, Element,
@@ -80,17 +81,23 @@ impl ResponsiveMenuBar {
                     menu::bar(
                         trees
                             .into_iter()
-                            .map(|mt| {
-                                menu::Tree::<_>::with_children(
-                                    menu::root(mt.0),
-                                    menu::items(key_binds, mt.1.into()),
-                                )
-                            })
+                            .map(
+                                |mt: (
+                                    std::borrow::Cow<'_, str>,
+                                    Vec<menu::Item<A, std::borrow::Cow<'_, str>>>,
+                                )| {
+                                    menu::Tree::<_>::with_children(
+                                        menu::root(mt.0),
+                                        menu::items(key_binds, mt.1.into()),
+                                    )
+                                },
+                            )
                             .collect(),
                     )
                     .item_width(self.item_width)
                     .item_height(self.item_height)
-                    .spacing(self.spacing),
+                    .spacing(self.spacing)
+                    .window_id_maybe(core.main_window_id()),
                     crate::widget::Id::new(format!("menu_bar_expanded_{id}")),
                 ),
                 id,
@@ -123,7 +130,8 @@ impl ResponsiveMenuBar {
                     )])
                     .item_height(self.item_height)
                     .item_width(self.collapsed_item_width)
-                    .spacing(self.spacing),
+                    .spacing(self.spacing)
+                    .window_id_maybe(core.main_window_id()),
                     crate::widget::Id::new(format!("menu_bar_collapsed_{id}")),
                 ),
                 id,

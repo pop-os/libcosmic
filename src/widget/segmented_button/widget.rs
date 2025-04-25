@@ -17,7 +17,7 @@ use iced::clipboard::mime::AllowedMimeTypes;
 use iced::touch::Finger;
 use iced::{
     Alignment, Background, Color, Event, Length, Padding, Rectangle, Size, Task, Vector, alignment,
-    event, keyboard, mouse, touch,
+    event, keyboard, mouse, touch, window,
 };
 use iced_core::mouse::ScrollDelta;
 use iced_core::text::{LineHeight, Renderer as TextRenderer, Shaping, Wrapping};
@@ -1615,6 +1615,9 @@ where
                 path_highlight: Some(PathHighlight::MenuActive),
                 style: std::borrow::Cow::Borrowed(&crate::theme::menu_bar::MenuBarStyle::Default),
                 position: Point::new(translation.x, translation.y),
+                is_overlay: true,
+                window_id: window::Id::NONE,
+                depth: 0,
             }
             .overlay(),
         )

@@ -1,6 +1,8 @@
 // From iced_aw, license MIT
 
 //! A widget that handles menu trees
+use std::collections::HashMap;
+
 use super::{
     menu_inner::{
         CloseCondition, Direction, ItemHeight, ItemWidth, Menu, MenuState, PathHighlight,
@@ -43,25 +45,30 @@ pub(crate) struct MenuBarState {
 
 pub(crate) struct MenuBarStateInner {
     pub(crate) tree: Tree,
+    pub(crate) popup_id: HashMap<window::Id, window::Id>,
     pub(crate) pressed: bool,
+    pub(crate) bar_pressed: bool,
     pub(crate) view_cursor: Cursor,
     pub(crate) open: bool,
-    pub(crate) active_root: Option<usize>,
+    pub(crate) active_root: HashMap<window::Id, Vec<usize>>,
     pub(crate) horizontal_direction: Direction,
     pub(crate) vertical_direction: Direction,
-    pub(crate) menu_states: Vec<MenuState>,
+    pub(crate) menu_states: HashMap<window::Id, Vec<MenuState>>,
 }
 impl MenuBarStateInner {
-    pub(super) fn get_trimmed_indices(&self) -> impl Iterator<Item = usize> + '_ {
+    pub(super) fn get_trimmed_indices(&self, id: &window::Id) -> impl Iterator<Item = usize> + '_ {
         self.menu_states
-            .iter()
+            .get(id)
+            .into_iter()
+            .map(|v| v.iter())
+            .flatten()
             .take_while(|ms| ms.index.is_some())
             .map(|ms| ms.index.expect("No indices were found in the menu state."))
     }
 
     pub(super) fn reset(&mut self) {
         self.open = false;
-        self.active_root = None;
+        self.active_root = HashMap::new();
         self.menu_states.clear();
     }
 }
@@ -72,10 +79,12 @@ impl Default for MenuBarStateInner {
             pressed: false,
             view_cursor: Cursor::Available([-0.5, -0.5].into()),
             open: false,
-            active_root: None,
+            active_root: HashMap::new(),
             horizontal_direction: Direction::Positive,
             vertical_direction: Direction::Positive,
-            menu_states: Vec::new(),
+            menu_states: HashMap::new(),
+            popup_id: HashMap::new(),
+            bar_pressed: false,
         }
     }
 }
@@ -171,6 +180,7 @@ pub struct MenuBar<Message> {
     window_id: window::Id,
     #[cfg(feature = "wayland")]
     positioner: iced_runtime::platform_specific::wayland::popup::SctkPositioner,
+    pub(crate) on_surface_action: Option<Box<dyn Fn(crate::surface::Action) -> Message>>,
 }
 
 impl<Message> MenuBar<Message>
@@ -182,7 +192,13 @@ where
     pub fn new(menu_roots: Vec<MenuTree<Message>>) -> Self {
         let mut menu_roots = menu_roots;
         menu_roots.iter_mut().for_each(MenuTree::set_index);
-
+        // println!("======================================================");
+        // for menu_root in &menu_roots {
+        //     dbg!(menu_root.index);
+        //     for inner_root in &menu_root.children {
+        //         dbg!(inner_root.index);
+        //     }
+        // }
         Self {
             width: Length::Shrink,
             height: Length::Shrink,
@@ -204,6 +220,7 @@ where
             window_id: window::Id::NONE,
             #[cfg(feature = "wayland")]
             positioner: iced_runtime::platform_specific::wayland::popup::SctkPositioner::default(),
+            on_surface_action: None,
         }
     }
 
@@ -315,6 +332,14 @@ where
         }
         self
     }
+
+    pub fn on_surface_action(
+        mut self,
+        handler: impl Fn(crate::surface::Action) -> Message + 'static,
+    ) -> Self {
+        self.on_surface_action = Some(Box::new(handler));
+        self
+    }
 }
 impl<Message> Widget<Message, crate::Theme, Renderer> for MenuBar<Message>
 where
@@ -325,7 +350,10 @@ where
     }
 
     fn diff(&mut self, tree: &mut Tree) {
-        menu_roots_diff(&mut self.menu_roots, tree);
+        let state = tree.state.downcast_mut::<MenuBarState>();
+        state
+            .inner
+            .with_data_mut(|inner| menu_roots_diff(&mut self.menu_roots, &mut inner.tree))
     }
 
     fn tag(&self) -> tree::Tag {
@@ -394,21 +422,38 @@ where
             viewport,
         );
 
-        let state = tree.state.downcast_mut::<MenuBarState>();
+        let my_state = tree.state.downcast_mut::<MenuBarState>();
 
-        match event {
-            Mouse(ButtonReleased(Left)) | Touch(FingerLifted { .. } | FingerLost { .. }) => {
-                state.inner.with_data_mut(|state| {
+        // XXX this should reset the state if there are no other copies of the state, which implies no dropdown menus open.
+        let reset = self.window_id != window::Id::NONE && my_state.inner.with_data(|d| d.open);
+
+        my_state.inner.with_data_mut(|state| {
+            if reset {
+                if let Some(popup_id) = state.popup_id.get(&self.window_id).copied() {
+                    dbg!("reset destroy");
+                    // TODO emit message
+                    if let Some(handler) = self.on_surface_action.as_ref() {
+                        shell.publish((handler)(crate::surface::Action::DestroyPopup(popup_id)));
+                        state.reset();
+                    }
+                }
+            }
+
+            let tree = &mut state.tree;
+
+            match event {
+                Mouse(ButtonReleased(Left)) | Touch(FingerLifted { .. } | FingerLost { .. }) => {
                     if state.menu_states.is_empty() && view_cursor.is_over(layout.bounds()) {
                         state.view_cursor = view_cursor;
                         state.open = true;
                         // #[cfg(feature = "wayland")]
                         // TODO emit Message to open menu
                     }
-                });
+                }
+                _ => (),
             }
-            _ => (),
-        }
+        });
+
         root_status
     }
 
@@ -434,10 +479,14 @@ where
             // draw path highlight
             if self.path_highlight.is_some() {
                 let styling = theme.appearance(&self.style);
-                if let Some(active) = state.active_root {
+                if let Some(active) = state
+                    .active_root
+                    .get(&self.window_id)
+                    .and_then(|active| active.get(0))
+                {
                     let active_bounds = layout
                         .children()
-                        .nth(active)
+                        .nth(*active)
                         .expect("Active child not found in menu?")
                         .bounds();
                     let path_quad = renderer::Quad {
@@ -489,7 +538,7 @@ where
         Some(
             Menu {
                 tree: state.clone(),
-                menu_roots: std::borrow::Cow::Borrowed(&mut self.menu_roots),
+                menu_roots: std::borrow::Cow::Owned(self.menu_roots.clone()),
                 bounds_expand: self.bounds_expand,
                 menu_overlays_parent: false,
                 close_condition: self.close_condition,
@@ -502,6 +551,9 @@ where
                 path_highlight: self.path_highlight,
                 style: std::borrow::Cow::Borrowed(&self.style),
                 position: Point::new(translation.x, translation.y),
+                is_overlay: false,
+                window_id: window::Id::NONE,
+                depth: 0,
             }
             .overlay(),
         )

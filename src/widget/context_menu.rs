@@ -8,7 +8,7 @@ use crate::widget::menu::{
 };
 use derive_setters::Setters;
 use iced::touch::Finger;
-use iced::{Event, Vector};
+use iced::{Event, Vector, window};
 use iced_core::widget::{Tree, Widget, tree};
 use iced_core::{Length, Point, Size, event, mouse, touch};
 use std::collections::HashSet;
@@ -257,6 +257,9 @@ impl<Message: 'static + Clone> Widget<Message, crate::Theme, crate::Renderer>
                 path_highlight: Some(PathHighlight::MenuActive),
                 style: std::borrow::Cow::Borrowed(&crate::theme::menu_bar::MenuBarStyle::Default),
                 position: Point::new(translation.x, translation.y),
+                is_overlay: true,
+                window_id: window::Id::NONE,
+                depth: 0,
             }
             .overlay(),
         )
