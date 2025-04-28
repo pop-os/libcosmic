@@ -454,14 +454,10 @@ impl<'a, Message: Clone + 'static> HeaderBar<'a, Message> {
 
                 #[cfg(not(target_os = "linux"))]
                 let icon = {
-                    widget::icon::from_svg_bytes(include_bytes!(concat!(
-                        "../../res/icons/",
-                        $name,
-                        ".svg"
-                    )))
-                    .symbolic(true)
-                    .apply(widget::button::icon)
-                    .padding(8)
+                    widget::icon::from_path(concat!("../../res/icons/", $name, ".svg").into())
+                        .symbolic(true)
+                        .apply(widget::button::icon)
+                        .padding(8)
                 };
 
                 icon.class(crate::theme::Button::HeaderBar)
