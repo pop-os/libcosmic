@@ -53,10 +53,18 @@ pub struct DesktopEntryData {
 pub fn load_applications<'a>(
     locales: &'a [String],
     include_no_display: bool,
+    only_show_in: Option<&'a str>,
 ) -> impl Iterator<Item = DesktopEntryData> + 'a {
     fde::Iter::new(fde::default_paths())
         .filter_map(move |p| fde::DesktopEntry::from_path(p, Some(locales)).ok())
-        .filter(move |de| include_no_display || !de.no_display())
+        .filter(move |de| {
+            (include_no_display || !de.no_display())
+                && !only_show_in.zip(de.only_show_in()).is_some_and(
+                    |(xdg_current_desktop, only_show_in)| {
+                        !only_show_in.contains(&xdg_current_desktop)
+                    },
+                )
+        })
         .map(move |de| DesktopEntryData::from_desktop_entry(locales, de))
 }
 
@@ -69,6 +77,7 @@ pub fn load_applications_for_app_ids<'a>(
     app_ids: Vec<&'a str>,
     fill_missing_ones: bool,
     include_no_display: bool,
+    only_show_in: Option<&'a str>,
 ) -> impl Iterator<Item = DesktopEntryData> + 'a {
     let app_ids = std::rc::Rc::new(std::cell::RefCell::new(app_ids));
     let app_ids_ = app_ids.clone();
@@ -76,6 +85,11 @@ pub fn load_applications_for_app_ids<'a>(
     let applications = iter
         .filter(move |de| {
             if !include_no_display && de.no_display() {
+                return false;
+            }
+            if only_show_in.zip(de.only_show_in()).is_some_and(
+                |(xdg_current_desktop, only_show_in)| !only_show_in.contains(&xdg_current_desktop),
+            ) {
                 return false;
             }
 
