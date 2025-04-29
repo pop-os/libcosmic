@@ -329,7 +329,7 @@ impl MenuState {
         // for mt in &menu_tree.children[start_index..=end_index] {
         //     dbg!(mt.index);
         // }
-        dbg!((start_index, end_index));
+        dbg!((start_index, end_index, menu_tree.len()));
 
         // viewport space children bounds
         let children_bounds = self.menu_bounds.children_bounds + overlay_offset;
@@ -360,7 +360,7 @@ impl MenuState {
                 }
 
                 mt.item
-                    .layout(&mut tree[mt.index], renderer, &limits)
+                    .layout(&mut tree[i], renderer, &limits)
                     .move_to(Point::new(0.0, position + self.scroll_offset))
             })
             .collect::<Vec<_>>();
@@ -469,21 +469,28 @@ impl<'b, Message: Clone + 'static> Menu<'b, Message> {
     pub(crate) fn overlay(self) -> overlay::Element<'b, Message, crate::Theme, crate::Renderer> {
         overlay::Element::new(Box::new(self))
     }
+
     fn layout(&mut self, renderer: &crate::Renderer, limits: Limits) -> Node {
-        // layout children
+        // layout children;
         let position = self.position;
         let mut intrinsic_size = Size::ZERO;
 
+        dbg!(self.depth);
+        let empty = Vec::new();
         self.tree.inner.with_data_mut(|data| {
             let overlay_offset = Point::ORIGIN - position;
             let tree_children = &mut data.tree.children;
+            dbg!(&data.active_root,);
             let children = data
                 .active_root
-                .get(&self.window_id)
+                .get(self.depth)
                 .cloned()
                 .map(|active_root| {
+                    if active_root.is_empty() || self.menu_roots.is_empty() {
+                        return (&empty, vec![]);
+                    }
                     let (active_tree, roots) = if self.depth > 0 {
-                        active_root.iter().skip(1).take(self.depth).fold(
+                        active_root.iter().take(self.depth).fold(
                             (
                                 &mut tree_children[active_root[0]].children,
                                 &self.menu_roots[active_root[0]].children,
@@ -491,7 +498,7 @@ impl<'b, Message: Clone + 'static> Menu<'b, Message> {
                             |(tree, mt), next_active_root| (tree, &mt[*next_active_root].children),
                         )
                     } else {
-                        (tree_children, self.menu_roots.as_ref())
+                        (tree_children, &self.menu_roots[active_root[0]].children)
                     };
 
                     dbg!(roots.len());
@@ -512,32 +519,41 @@ impl<'b, Message: Clone + 'static> Menu<'b, Message> {
                     //         }
                     //     }
                     // }
-                    data.menu_states[&self.window_id]
-                        .iter()
-                        .enumerate()
-                        .filter(|ms| self.is_overlay || ms.0 < active_root.len())
-                        .fold((roots, Vec::new()), |(menu_root, mut nodes), (_i, ms)| {
-                            dbg!(ms.index);
-                            let slice = ms.slice(limits.max(), overlay_offset, self.item_height);
-                            let _start_index = slice.start_index;
-                            let _end_index = slice.end_index;
-                            dbg!(&self.window_id, menu_root.len());
-                            let children_node =
-                                ms.layout(overlay_offset, slice, renderer, menu_root, active_tree);
-                            let node_size = children_node.size();
-                            // dbg!(node_size.height);
-                            intrinsic_size.height += node_size.height;
-                            intrinsic_size.width = intrinsic_size.width.max(node_size.width);
-                            nodes.push(children_node);
-                            // if popup just use len 1?
-                            // only the last menu can have a None active index
-                            // dbg!(ms.index);
-                            (
-                                ms.index
-                                    .map_or(menu_root, |active| &menu_root[active].children),
-                                nodes,
-                            )
-                        })
+                    if let Some(ms) = data.menu_states.get(self.depth + 1) {
+                        ms.iter()
+                            .enumerate()
+                            .filter(|ms| self.is_overlay || ms.0 < active_root.len())
+                            .fold((roots, Vec::new()), |(menu_root, mut nodes), (_i, ms)| {
+                                dbg!(ms.index);
+                                let slice =
+                                    ms.slice(limits.max(), overlay_offset, self.item_height);
+                                let _start_index = slice.start_index;
+                                let _end_index = slice.end_index;
+                                dbg!(&self.depth, &self.window_id, menu_root.len());
+                                let children_node = ms.layout(
+                                    overlay_offset,
+                                    slice,
+                                    renderer,
+                                    menu_root,
+                                    active_tree,
+                                );
+                                let node_size = children_node.size();
+                                // dbg!(node_size.height);
+                                intrinsic_size.height += node_size.height;
+                                intrinsic_size.width = intrinsic_size.width.max(node_size.width);
+                                nodes.push(children_node);
+                                // if popup just use len 1?
+                                // only the last menu can have a None active index
+                                // dbg!(ms.index);
+                                (
+                                    ms.index
+                                        .map_or(menu_root, |active| &menu_root[active].children),
+                                    nodes,
+                                )
+                            })
+                    } else {
+                        (&empty, vec![])
+                    }
                 })
                 .map(|(_, l)| l)
                 .unwrap_or_default();
@@ -592,6 +608,7 @@ impl<'b, Message: Clone + 'static> Menu<'b, Message> {
             overlay_offset,
         );
 
+        dbg!("init_root_menu");
         init_root_menu(
             self,
             renderer,
@@ -650,7 +667,7 @@ impl<'b, Message: Clone + 'static> Menu<'b, Message> {
                         .distance(view_cursor.position().unwrap_or_default())
                         < 2.0
                     {
-                        let is_inside = state.menu_states[&self.window_id]
+                        let is_inside = state.menu_states[self.depth + 1]
                             .iter()
                             .any(|ms| ms.menu_bounds.check_bounds.contains(overlay_cursor));
 
@@ -696,7 +713,7 @@ impl<'b, Message: Clone + 'static> Menu<'b, Message> {
         view_cursor: Cursor,
     ) {
         self.tree.inner.with_data(|state| {
-            let Some(active_root) = state.active_root.get(&self.window_id) else {
+            let Some(active_root) = state.active_root.get(self.depth) else {
                 // dbg!(self.window_id);
                 return;
             };
@@ -713,7 +730,7 @@ impl<'b, Message: Clone + 'static> Menu<'b, Message> {
 
             let styling = theme.appearance(&self.style);
             let (active_tree, roots) = if self.depth > 0 {
-                active_root.iter().skip(1).take(self.depth).fold(
+                active_root.iter().take(self.depth).fold(
                     (
                         &state.tree.children[active_root[0]].children,
                         &self.menu_roots[active_root[0]].children,
@@ -726,9 +743,7 @@ impl<'b, Message: Clone + 'static> Menu<'b, Message> {
             // let tree = &state.tree.children[active_root].children;
             // let root = &self.menu_roots[active_root];
 
-            let indices = state
-                .get_trimmed_indices(&self.window_id)
-                .collect::<Vec<_>>();
+            let indices = state.get_trimmed_indices(self.depth).collect::<Vec<_>>();
             // dbg!(
             //     self.window_id,
             //     state.menu_states[&self.window_id].len(),
@@ -736,7 +751,7 @@ impl<'b, Message: Clone + 'static> Menu<'b, Message> {
             //     root.children.len(),
             //     layout.bounds()
             // );
-            state.menu_states[&self.window_id]
+            state.menu_states[self.depth + 1]
                 .iter()
                 .zip(layout.children())
                 .enumerate()
@@ -893,7 +908,7 @@ pub(super) fn init_root_menu<Message: Clone>(
     menu.tree.inner.with_data_mut(|state| {
         if !(state
             .menu_states
-            .get(&menu.window_id)
+            .get(menu.depth + 1)
             .is_none_or(|s| s.is_empty())
             && (!menu.is_overlay || bar_bounds.contains(overlay_cursor)))
         {
@@ -901,48 +916,53 @@ pub(super) fn init_root_menu<Message: Clone>(
         }
 
         println!(
-            "init root menu {} {:?}",
-            menu.window_id, menu.root_bounds_list
+            "init root menu {} {} {:?}",
+            menu.depth, menu.window_id, &menu.root_bounds_list
         );
         dbg!(menu.menu_roots.len());
-        // dbg!(state
-        //     .menu_states
-        //     .get(&menu.window_id)
-        //     .is_none_or(|s| s.is_empty()));
-        // dbg!(menu
-        //     .menu_roots
-        //     .as_slice()
-        //     .iter()
-        //     .map(|r| r.index)
-        //     .collect::<Vec<_>>());
+        dbg!(
+            state
+                .menu_states
+                .get(menu.depth + 1)
+                .is_none_or(|s| s.is_empty())
+        );
+        dbg!(
+            menu.menu_roots
+                .as_slice()
+                .iter()
+                .map(|r| r.index)
+                .collect::<Vec<_>>()
+        );
 
-        // dbg!(state
-        //     .active_root
-        //     .get(&menu.window_id)
-        //     .into_iter()
-        //     .flatten()
-        //     .count()
-        //     .saturating_sub(1));
-        // let root = state
-        //     .active_root
-        //     .get(&menu.window_id)
-        //     .iter()
-        //     .map(|l| l.into_iter())
-        //     .flatten()
-        //     .take(
-        //         state
-        //             .active_root
-        //             .get(&menu.window_id)
-        //             .into_iter()
-        //             .flatten()
-        //             .count()
-        //             .saturating_sub(1),
-        //     )
-        //     .fold(menu.menu_roots.as_slice(), |m, i| {
-        //         dbg!(m.len());
-        //         m[*i].children.as_slice()
-        //     });
-        // dbg!(root.len());
+        dbg!(
+            state
+                .active_root
+                .get(menu.depth)
+                .into_iter()
+                .flatten()
+                .count()
+                .saturating_sub(1)
+        );
+        let root = state
+            .active_root
+            .get(menu.depth)
+            .iter()
+            .map(|l| l.into_iter())
+            .flatten()
+            .take(
+                state
+                    .active_root
+                    .get(menu.depth)
+                    .into_iter()
+                    .flatten()
+                    .count()
+                    .saturating_sub(1),
+            )
+            .fold(menu.menu_roots.as_slice(), |m, i| {
+                dbg!(m.len());
+                m[*i].children.as_slice()
+            });
+        dbg!(root.len());
 
         let mut set = false;
         for (i, (&root_bounds, mt)) in menu
@@ -955,7 +975,8 @@ pub(super) fn init_root_menu<Message: Clone>(
                 // dbg!("skipping menu with no children");
                 continue;
             }
-            // dbg!(i, root_bounds.contains(overlay_cursor));
+            dbg!(mt.children.len());
+            dbg!(i, root_bounds.contains(overlay_cursor));
             if root_bounds.contains(overlay_cursor) {
                 dbg!(root_bounds);
                 // dbg!(i, root_bounds, mt.width, mt.height);
@@ -992,18 +1013,20 @@ pub(super) fn init_root_menu<Message: Clone>(
                     menu.is_overlay,
                 );
                 set = true;
-                // dbg!(i);
-                // dbg!("inserting root menu state");
-                // dbg!(&menu_bounds.children_bounds);
-                // dbg!((&menu_bounds.child_positions));
-                state.active_root.insert(menu.window_id, vec![i]);
+                dbg!(i);
+
+                dbg!("inserting root menu state");
+                dbg!(&menu_bounds.children_bounds);
+                dbg!((&menu_bounds.child_positions));
+                state.active_root.insert(menu.depth, vec![i]);
                 // do we need to insert the rest now too?
                 let ms = MenuState {
                     index: None,
                     scroll_offset: 0.0,
                     menu_bounds,
                 };
-                let v = state.menu_states.entry(menu.window_id).or_default();
+                dbg!("pushing to menu states...");
+                let v = super::menu_bar::get_mut_or_default(&mut state.menu_states, menu.depth + 1);
                 v.push(ms);
 
                 // Hack to ensure menu opens properly
@@ -1014,6 +1037,7 @@ pub(super) fn init_root_menu<Message: Clone>(
         }
         if !set {
             dbg!(overlay_cursor);
+            panic!("huh");
         }
     });
 }
@@ -1033,7 +1057,7 @@ pub(super) fn init_root_popup_menu<Message>(
     menu.tree.inner.with_data_mut(|state| {
         if !(state
             .menu_states
-            .get(&menu.window_id)
+            .get(menu.depth + 1)
             .is_none_or(|s| s.is_empty())
             && (!menu.is_overlay || bar_bounds.contains(overlay_cursor)))
         {
@@ -1063,7 +1087,7 @@ pub(super) fn init_root_popup_menu<Message>(
         //     .count());
         let active_roots = state
             .active_root
-            .get(&menu.window_id)
+            .get(menu.depth)
             .cloned()
             .unwrap_or_default();
         dbg!(&active_roots);
@@ -1132,7 +1156,7 @@ pub(super) fn init_root_popup_menu<Message>(
                     scroll_offset: 0.0,
                     menu_bounds,
                 };
-                let v = state.menu_states.entry(menu.window_id).or_default();
+                let v = super::menu_bar::get_mut_or_default(&mut state.menu_states, menu.depth + 1);
                 v.push(ms);
 
                 // Hack to ensure menu opens properly
@@ -1167,11 +1191,11 @@ fn process_menu_events<'b, Message: std::clone::Clone>(
         Cow::Owned(o) => o.as_mut_slice(),
     };
     my_state.inner.with_data_mut(|state| {
-        let Some(active_root) = state.active_root.get(&window_id).cloned() else {
+        let Some(active_root) = state.active_root.get(menu.depth).cloned() else {
             return Status::Ignored;
         };
 
-        let indices = state.get_trimmed_indices(&window_id);
+        let indices = state.get_trimmed_indices(menu.depth);
 
         let indices = if is_overlay {
             indices.collect::<Vec<_>>()
@@ -1185,7 +1209,7 @@ fn process_menu_events<'b, Message: std::clone::Clone>(
 
         // get active item
         // let mt = indices.iter().fold(root | mt, &i | &mut mt.children[i]);
-        let (tree, mt) = active_root.iter().take(menu.depth).skip(1).fold(
+        let (tree, mt) = active_root.iter().take(menu.depth).fold(
             (
                 &mut state.tree.children[active_root[0]].children,
                 &mut menu_roots[active_root[0]],
@@ -1197,7 +1221,7 @@ fn process_menu_events<'b, Message: std::clone::Clone>(
         let tree = &mut tree[mt.index];
 
         // get layout
-        let last_ms = &state.menu_states[&window_id][indices.len() - 1];
+        let last_ms = &state.menu_states[menu.depth + 1][indices.len() - 1];
         let child_node = last_ms.layout_single(
             overlay_offset,
             last_ms.index.expect("missing index within menu state."),
@@ -1248,7 +1272,7 @@ where
     let mut new_menu_root = None;
 
     menu.tree.inner.with_data_mut(|state| {
-        let Some(active_root) = state.active_root.get(&menu.window_id).clone() else {
+        let Some(active_root) = state.active_root.get(menu.depth).clone() else {
             if is_overlay && !menu.bar_bounds.contains(overlay_cursor) {
                 state.reset();
             }
@@ -1266,13 +1290,13 @@ where
         // * remove invalid menus
         let mut prev_bounds = std::iter::once(menu.bar_bounds)
             .chain(
-                state.menu_states[&menu.window_id]
+                state.menu_states[menu.depth + 1]
                     [..state.menu_states.len().saturating_sub(1).min(1)]
                     .iter()
                     .map(|ms| ms.menu_bounds.children_bounds),
             )
             .collect::<Vec<_>>();
-        let menu_states = state.menu_states.get_mut(&menu.window_id).unwrap();
+        let menu_states = state.menu_states.get_mut(menu.depth + 1).unwrap();
 
         if menu.close_condition.leave {
             for i in (0..menu_states.len()).rev() {
@@ -1313,7 +1337,7 @@ where
         let Some(last_menu_state) = menu_states.last_mut() else {
             // no menus left
             // TODO do we want to avoid this for popups?
-            state.active_root.remove(&menu.window_id);
+            state.active_root.remove(menu.depth);
 
             // keep state.open when the cursor is still inside the menu bar
             // this allows the overlay to keep drawing when the cursor is
@@ -1351,7 +1375,7 @@ where
         //     |(tree, mr), next_active_root| (tree, &mr.children[*next_active_root]),
         // );
         let (active_tree, roots) = if menu.depth > 0 {
-            active_root.iter().skip(1).take(menu.depth).fold(
+            active_root.iter().take(menu.depth).fold(
                 (
                     &mut state.tree.children[active_root[0]].children,
                     &menu.menu_roots[active_root[0]].children,
@@ -1450,7 +1474,7 @@ where
                 new_menu_root = Some((new_index, ms.clone()));
             }
             if should_add {
-                let v = state.menu_states.entry(menu.window_id).or_default();
+                let v = super::menu_bar::get_mut_or_default(&mut state.menu_states, menu.depth);
                 v.push(ms);
             }
         }
@@ -1487,7 +1511,7 @@ where
                 (viewport_size.height - (children_bounds.y + children_bounds.height)).min(0.0);
             (max_offset, min_offset)
         };
-        let menu_states = state.menu_states.get_mut(&menu.window_id).unwrap();
+        let menu_states = state.menu_states.get_mut(menu.depth + 1).unwrap();
 
         // update
         if menu_states.is_empty() {

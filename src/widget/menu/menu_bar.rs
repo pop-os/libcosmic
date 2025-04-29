@@ -50,15 +50,15 @@ pub(crate) struct MenuBarStateInner {
     pub(crate) bar_pressed: bool,
     pub(crate) view_cursor: Cursor,
     pub(crate) open: bool,
-    pub(crate) active_root: HashMap<window::Id, Vec<usize>>,
+    pub(crate) active_root: Vec<Vec<usize>>,
     pub(crate) horizontal_direction: Direction,
     pub(crate) vertical_direction: Direction,
-    pub(crate) menu_states: HashMap<window::Id, Vec<MenuState>>,
+    pub(crate) menu_states: Vec<Vec<MenuState>>,
 }
 impl MenuBarStateInner {
-    pub(super) fn get_trimmed_indices(&self, id: &window::Id) -> impl Iterator<Item = usize> + '_ {
+    pub(super) fn get_trimmed_indices(&self, index: usize) -> impl Iterator<Item = usize> + '_ {
         self.menu_states
-            .get(id)
+            .get(index)
             .into_iter()
             .map(|v| v.iter())
             .flatten()
@@ -68,7 +68,7 @@ impl MenuBarStateInner {
 
     pub(super) fn reset(&mut self) {
         self.open = false;
-        self.active_root = HashMap::new();
+        self.active_root = Vec::new();
         self.menu_states.clear();
     }
 }
@@ -79,10 +79,10 @@ impl Default for MenuBarStateInner {
             pressed: false,
             view_cursor: Cursor::Available([-0.5, -0.5].into()),
             open: false,
-            active_root: HashMap::new(),
+            active_root: Vec::new(),
             horizontal_direction: Direction::Positive,
             vertical_direction: Direction::Positive,
-            menu_states: HashMap::new(),
+            menu_states: Vec::new(),
             popup_id: HashMap::new(),
             bar_pressed: false,
         }
@@ -158,6 +158,15 @@ where
             tree
         });
         tree.children.extend(extended);
+    }
+}
+
+pub fn get_mut_or_default<T: Default>(vec: &mut Vec<T>, index: usize) -> &mut T {
+    if index < vec.len() {
+        &mut vec[index]
+    } else {
+        vec.resize_with(index + 1, T::default);
+        &mut vec[index]
     }
 }
 
@@ -479,11 +488,7 @@ where
             // draw path highlight
             if self.path_highlight.is_some() {
                 let styling = theme.appearance(&self.style);
-                if let Some(active) = state
-                    .active_root
-                    .get(&self.window_id)
-                    .and_then(|active| active.get(0))
-                {
+                if let Some(active) = get_mut_or_default(&mut state.active_root, 0).get(0) {
                     let active_bounds = layout
                         .children()
                         .nth(*active)
@@ -527,11 +532,14 @@ where
         _renderer: &Renderer,
         translation: Vector,
     ) -> Option<overlay::Element<'b, Message, crate::Theme, Renderer>> {
-        // #[cfg(feature = "wayland")]
-        // return None;
+        //#[cfg(feature = "wayland")]
+        //return None;
 
         let state = tree.state.downcast_ref::<MenuBarState>();
-        if state.inner.with_data_mut(|state| !state.open) {
+        if state
+            .inner
+            .with_data_mut(|state| !state.open || state.active_root.is_empty())
+        {
             return None;
         };
 
