@@ -1406,28 +1406,6 @@ impl text_input::Catalog for Theme {
     }
 }
 
-// TODO card
-// impl crate::widget::card::style::StyleSheet for Theme {
-//     fn default(&self) -> crate::widget::card::style::Style {
-//         let cosmic = self.cosmic();
-
-//         match self.layer {
-//             cosmic_theme::Layer::Background => crate::widget::card::style::Style {
-//                 card_1: Background::Color(cosmic.background.component.hover.into()),
-//                 card_2: Background::Color(cosmic.background.component.pressed.into()),
-//             },
-//             cosmic_theme::Layer::Primary => crate::widget::card::style::Style {
-//                 card_1: Background::Color(cosmic.primary.component.hover.into()),
-//                 card_2: Background::Color(cosmic.primary.component.pressed.into()),
-//             },
-//             cosmic_theme::Layer::Secondary => crate::widget::card::style::Style {
-//                 card_1: Background::Color(cosmic.secondary.component.hover.into()),
-//                 card_2: Background::Color(cosmic.secondary.component.pressed.into()),
-//             },
-//         }
-//     }
-// }
-
 #[derive(Default)]
 pub enum TextEditor<'a> {
     #[default]
