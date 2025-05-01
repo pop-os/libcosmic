@@ -602,9 +602,6 @@ impl<T: Application> Cosmic<T> {
                 };
             }
             Action::SystemThemeModeChange(keys, mode) => {
-                if !keys.contains(&"is_dark") {
-                    return iced::Task::none();
-                }
                 if match THEME.lock().unwrap().theme_type {
                     ThemeType::System {
                         theme: _,
