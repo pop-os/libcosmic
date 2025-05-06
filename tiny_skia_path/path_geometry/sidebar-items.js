@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["chop_cubic_at2","chop_quad_at","find_cubic_max_curvature","find_unit_quad_roots","new_t_values","valid_unit_divide"],"struct":["CubicCoeff","QuadCoeff"]};
