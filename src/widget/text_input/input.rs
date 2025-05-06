@@ -699,8 +699,7 @@ where
 
             let size = self.size.unwrap_or_else(|| renderer.default_size().0);
 
-            let bounds = limits.max();
-
+            let bounds = limits.resolve(Length::Shrink, Length::Fill, Size::INFINITY);
             let value_paragraph = &mut state.value;
             let v = self.value.to_string();
             value_paragraph.update(Text {
@@ -716,7 +715,7 @@ where
                 vertical_alignment: alignment::Vertical::Center,
                 line_height: text::LineHeight::default(),
                 shaping: text::Shaping::Advanced,
-                wrapping: text::Wrapping::default(),
+                wrapping: text::Wrapping::None,
             });
 
             let Size { width, height } =
@@ -760,6 +759,7 @@ where
                     font,
                     iced::Pixels(size),
                     line_height,
+                    limits,
                 );
             }
             res
@@ -1141,7 +1141,7 @@ pub fn layout<Message>(
             vertical_alignment: alignment::Vertical::Center,
             line_height,
             shaping: text::Shaping::Advanced,
-            wrapping: text::Wrapping::default(),
+            wrapping: text::Wrapping::None,
         });
         let label_size = label_paragraph.min_bounds();
 
@@ -1194,9 +1194,7 @@ pub fn layout<Message>(
         let text_limits = limits
             .width(width)
             .height(line_height.to_absolute(text_size.into()));
-
-        let text_bounds = text_limits.resolve(width, Length::Shrink, Size::INFINITY);
-
+        let text_bounds = text_limits.resolve(Length::Shrink, Length::Shrink, Size::INFINITY);
         let text_node = layout::Node::new(
             text_bounds - Size::new(leading_icon_width + trailing_icon_width, 0.0),
         )
@@ -1250,7 +1248,7 @@ pub fn layout<Message>(
             .width(width)
             .height(text_input_height + padding.vertical())
             .shrink(padding);
-        let text_bounds = limits.resolve(width, Length::Shrink, Size::INFINITY);
+        let text_bounds = limits.resolve(Length::Shrink, Length::Shrink, Size::INFINITY);
 
         let text = layout::Node::new(text_bounds).move_to(Point::new(padding.left, padding.top));
 
@@ -1280,7 +1278,7 @@ pub fn layout<Message>(
             vertical_alignment: alignment::Vertical::Center,
             line_height: helper_text_line_height,
             shaping: text::Shaping::Advanced,
-            wrapping: text::Wrapping::default(),
+            wrapping: text::Wrapping::None,
         });
         let helper_text_size = helper_text_paragraph.min_bounds();
         let helper_text_node = layout::Node::new(helper_text_size).translate(helper_pos);
@@ -1339,7 +1337,15 @@ pub fn update<'a, Message: Clone + 'static>(
     manage_value: bool,
 ) -> event::Status {
     let update_cache = |state, value| {
-        replace_paragraph(state, layout, value, font, iced::Pixels(size), line_height);
+        replace_paragraph(
+            state,
+            layout,
+            value,
+            font,
+            iced::Pixels(size),
+            line_height,
+            &Limits::NONE.max_width(text_layout.bounds().width),
+        );
     };
 
     let mut secured_value = if is_secure {
@@ -2208,7 +2214,7 @@ pub fn draw<'a, Message>(
                 vertical_alignment: alignment::Vertical::Top,
                 line_height,
                 shaping: text::Shaping::Advanced,
-                wrapping: text::Wrapping::default(),
+                wrapping: text::Wrapping::None,
             },
             label_layout.bounds().position(),
             appearance.label_color,
@@ -2243,6 +2249,8 @@ pub fn draw<'a, Message>(
     let text = value.to_string();
     let font = font.unwrap_or_else(|| renderer.default_font());
     let size = size.unwrap_or_else(|| renderer.default_size().0);
+    let text_width = state.value.min_width();
+    let actual_width = text_width.max(text_bounds.width);
 
     let radius_0 = THEME.lock().unwrap().cosmic().corner_radii.radius_0.into();
     #[cfg(feature = "wayland")]
@@ -2264,7 +2272,6 @@ pub fn draw<'a, Message>(
                     || ((focus.now - focus.updated_at).as_millis() / CURSOR_BLINK_INTERVAL_MILLIS)
                         % 2
                         == 0;
-
                 if is_cursor_visible {
                     if dnd_icon {
                         (None, 0.0)
@@ -2273,7 +2280,12 @@ pub fn draw<'a, Message>(
                             Some((
                                 renderer::Quad {
                                     bounds: Rectangle {
-                                        x: text_bounds.x + text_value_width - offset,
+                                        x: text_bounds.x + text_value_width - offset
+                                            + if text_value_width < 0. {
+                                                actual_width
+                                            } else {
+                                                0.
+                                            },
                                         y: text_bounds.y,
                                         width: 1.0,
                                         height: text_bounds.height,
@@ -2310,7 +2322,6 @@ pub fn draw<'a, Message>(
                     measure_cursor_and_scroll_offset(value_paragraph.raw(), text_bounds, right);
 
                 let width = right_position - left_position;
-
                 if dnd_icon {
                     (None, 0.0)
                 } else {
@@ -2318,7 +2329,13 @@ pub fn draw<'a, Message>(
                         Some((
                             renderer::Quad {
                                 bounds: Rectangle {
-                                    x: text_bounds.x + left_position,
+                                    x: text_bounds.x
+                                        + left_position
+                                        + if left_position < 0. || right_position < 0. {
+                                            actual_width
+                                        } else {
+                                            0.
+                                        },
                                     y: text_bounds.y,
                                     width,
                                     height: text_bounds.height,
@@ -2349,8 +2366,6 @@ pub fn draw<'a, Message>(
         (None, 0.0)
     };
 
-    let text_width = state.value.min_width();
-
     let render = |renderer: &mut crate::Renderer| {
         if let Some((cursor, color)) = cursor {
             renderer.fill_quad(cursor, color);
@@ -2361,7 +2376,7 @@ pub fn draw<'a, Message>(
         let bounds = Rectangle {
             x: text_bounds.x - offset,
             y: text_bounds.center_y(),
-            width: f32::INFINITY,
+            width: actual_width,
             ..text_bounds
         };
         let color = if text.is_empty() {
@@ -2384,7 +2399,7 @@ pub fn draw<'a, Message>(
                 vertical_alignment: alignment::Vertical::Center,
                 line_height: text::LineHeight::default(),
                 shaping: text::Shaping::Advanced,
-                wrapping: text::Wrapping::default(),
+                wrapping: text::Wrapping::None,
             },
             bounds.position(),
             color,
@@ -2432,7 +2447,7 @@ pub fn draw<'a, Message>(
                 vertical_alignment: alignment::Vertical::Top,
                 line_height: helper_line_height,
                 shaping: text::Shaping::Advanced,
-                wrapping: text::Wrapping::default(),
+                wrapping: text::Wrapping::None,
             },
             helper_text_layout.bounds().position(),
             text_color,
@@ -2769,20 +2784,26 @@ fn replace_paragraph(
     font: <crate::Renderer as iced_core::text::Renderer>::Font,
     text_size: Pixels,
     line_height: text::LineHeight,
+    limits: &layout::Limits,
 ) {
     let mut children_layout = layout.children();
-    let text_bounds = children_layout.next().unwrap().bounds();
+    let text_bounds = children_layout.next().unwrap();
+    let bounds = limits.resolve(
+        Length::Shrink,
+        Length::Fill,
+        Size::new(0., text_bounds.bounds().height),
+    );
 
     state.value = crate::Plain::new(Text {
         font,
         line_height,
         content: &value.to_string(),
-        bounds: Size::new(f32::INFINITY, text_bounds.height),
+        bounds,
         size: text_size,
         horizontal_alignment: alignment::Horizontal::Left,
         vertical_alignment: alignment::Vertical::Top,
         shaping: text::Shaping::Advanced,
-        wrapping: text::Wrapping::default(),
+        wrapping: text::Wrapping::None,
     });
 }
 
