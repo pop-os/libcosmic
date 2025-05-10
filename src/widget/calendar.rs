@@ -15,12 +15,14 @@ pub fn calendar<M>(
     on_select: impl Fn(NaiveDate) -> M + 'static,
     on_prev: impl Fn() -> M + 'static,
     on_next: impl Fn() -> M + 'static,
+    first_day_of_week: Weekday
 ) -> Calendar<M> {
     Calendar {
         model,
         on_select: Box::new(on_select),
         on_prev: Box::new(on_prev),
         on_next: Box::new(on_next),
+        first_day_of_week
     }
 }
 
@@ -105,6 +107,7 @@ pub struct Calendar<'a, M> {
     on_select: Box<dyn Fn(NaiveDate) -> M>,
     on_prev: Box<dyn Fn() -> M>,
     on_next: Box<dyn Fn() -> M>,
+    first_day_of_week: Weekday
 }
 
 impl<'a, Message> From<Calendar<'a, Message>> for crate::Element<'a, Message>
@@ -130,7 +133,7 @@ where
         let mut calendar_grid: Grid<'_, Message> =
             grid().padding([0, 12].into()).width(Length::Fill);
 
-        let mut first_day_of_week = Weekday::Sun; // TODO: Configurable
+        let mut first_day_of_week = this.first_day_of_week;
         for _ in 0..7 {
             calendar_grid = calendar_grid.push(
                 text(first_day_of_week.to_string())
