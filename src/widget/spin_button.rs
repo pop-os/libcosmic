@@ -149,29 +149,33 @@ where
         }
     }
 }
+macro_rules! make_button {
+    ($spin_button:expr, $icon:expr, $operation:expr) => {{
+        #[cfg(target_os = "linux")]
+        let button = icon::from_name($icon);
+        
+        #[cfg(not(target_os = "linux"))]
+        let button = icon::from_svg_bytes(
+            include_bytes!(concat!["../../res/icons/", $icon ,".svg"])
+        ).symbolic(true);
+        
+        button.apply(button::icon)
+            .on_press(($spin_button.on_press)($operation(
+                $spin_button.value,
+                $spin_button.step,
+                $spin_button.min,
+                $spin_button.max,
+            )))
+    }};
+}
 
 fn horizontal_variant<T, Message>(spin_button: SpinButton<'_, T, Message>) -> Element<'_, Message>
 where
     Message: Clone + 'static,
     T: Copy + Sub<Output = T> + Add<Output = T> + PartialOrd,
 {
-    let decrement_button = icon::from_name("list-remove-symbolic")
-        .apply(button::icon)
-        .on_press((spin_button.on_press)(decrement::<T>(
-            spin_button.value,
-            spin_button.step,
-            spin_button.min,
-            spin_button.max,
-        )));
-
-    let increment_button = icon::from_name("list-add-symbolic")
-        .apply(button::icon)
-        .on_press((spin_button.on_press)(increment::<T>(
-            spin_button.value,
-            spin_button.step,
-            spin_button.min,
-            spin_button.max,
-        )));
+    let decrement_button = make_button!(spin_button, "list-remove-symbolic", decrement);
+    let increment_button = make_button!(spin_button, "list-add-symbolic", increment);
 
     let label = text::title4(spin_button.label)
         .apply(container)
@@ -193,23 +197,8 @@ where
     Message: Clone + 'static,
     T: Copy + Sub<Output = T> + Add<Output = T> + PartialOrd,
 {
-    let decrement_button = icon::from_name("list-remove-symbolic")
-        .apply(button::icon)
-        .on_press((spin_button.on_press)(decrement::<T>(
-            spin_button.value,
-            spin_button.step,
-            spin_button.min,
-            spin_button.max,
-        )));
-
-    let increment_button = icon::from_name("list-add-symbolic")
-        .apply(button::icon)
-        .on_press((spin_button.on_press)(increment::<T>(
-            spin_button.value,
-            spin_button.step,
-            spin_button.min,
-            spin_button.max,
-        )));
+    let decrement_button = make_button!(spin_button, "list-remove-symbolic", decrement);
+    let increment_button = make_button!(spin_button, "list-add-symbolic", increment);
 
     let label = text::title4(spin_button.label)
         .apply(container)
