@@ -53,6 +53,7 @@ pub(crate) struct MenuBarStateInner {
     pub(crate) active_root: Vec<Vec<usize>>,
     pub(crate) horizontal_direction: Direction,
     pub(crate) vertical_direction: Direction,
+    /// List of all menu states
     pub(crate) menu_states: Vec<Vec<MenuState>>,
 }
 impl MenuBarStateInner {
@@ -559,7 +560,7 @@ where
                 path_highlight: self.path_highlight,
                 style: std::borrow::Cow::Borrowed(&self.style),
                 position: Point::new(translation.x, translation.y),
-                is_overlay: false,
+                is_overlay: true,
                 window_id: window::Id::NONE,
                 depth: 0,
             }

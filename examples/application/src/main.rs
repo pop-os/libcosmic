@@ -7,11 +7,11 @@ use std::collections::HashMap;
 use std::sync::LazyLock;
 
 use cosmic::app::{Core, Settings, Task};
+use cosmic::iced::Length;
 use cosmic::iced::alignment::{Horizontal, Vertical};
 use cosmic::iced::widget::column;
-use cosmic::iced::Length;
 use cosmic::iced_core::Size;
-use cosmic::widget::icon::{from_name, Handle};
+use cosmic::widget::icon::{Handle, from_name};
 use cosmic::widget::menu::KeyBind;
 use cosmic::widget::{button, text};
 use cosmic::widget::{
@@ -20,7 +20,7 @@ use cosmic::widget::{
     menu::{self, action::MenuAction},
     nav_bar, responsive,
 };
-use cosmic::{executor, iced, ApplicationExt, Element};
+use cosmic::{ApplicationExt, Element, executor, iced};
 
 static MENU_ID: LazyLock<iced::id::Id> = LazyLock::new(|| iced::id::Id::new("menu_id"));
 
@@ -224,61 +224,63 @@ impl cosmic::Application for App {
         use cosmic::widget::menu::Tree;
         #[cfg(not(feature = "wayland"))]
         {
-            vec![cosmic::widget::menu::bar(vec![
-                Tree::with_children(
-                    menu::root("hiiiiiiiiiiiiiiiiiii 1"),
-                    menu::items(
-                        &self.keybinds,
-                        vec![menu::Item::Button("hi", None, Action::Hi)],
+            vec![
+                cosmic::widget::menu::bar(vec![
+                    Tree::with_children(
+                        menu::root("hiiiiiiiiiiiiiiiiiii 1"),
+                        menu::items(
+                            &self.keybinds,
+                            vec![menu::Item::Button("hi", None, Action::Hi)],
+                        ),
                     ),
-                ),
-                Tree::with_children(
-                    menu::root("hiiiiiiiiiiiiiiiiii 2"),
-                    menu::items(
-                        &self.keybinds,
-                        vec![menu::Item::Button("hi 2", None, Action::Hi)],
+                    Tree::with_children(
+                        menu::root("hiiiiiiiiiiiiiiiiii 2"),
+                        menu::items(
+                            &self.keybinds,
+                            vec![menu::Item::Button("hi 2", None, Action::Hi)],
+                        ),
                     ),
-                ),
-                Tree::with_children(
-                    menu::root("hiiiiiiiiiiiiiiiiiiiii 3"),
-                    menu::items(
-                        &self.keybinds,
-                        vec![
-                            menu::Item::Button("hi 3", None, Action::Hi),
-                            menu::Item::Button("hi 3 #2", None, Action::Hi),
-                        ],
+                    Tree::with_children(
+                        menu::root("hiiiiiiiiiiiiiiiiiiiii 3"),
+                        menu::items(
+                            &self.keybinds,
+                            vec![
+                                menu::Item::Button("hi 3", None, Action::Hi),
+                                menu::Item::Button("hi 3 #2", None, Action::Hi),
+                            ],
+                        ),
                     ),
-                ),
-                Tree::with_children(
-                    menu::root("hi 3"),
-                    menu::items(
-                        &self.keybinds,
-                        vec![
-                            menu::Item::Button("hi 3", None, Action::Hi),
-                            menu::Item::Button("hi 3 #2", None, Action::Hi),
-                            menu::Item::Button("hi 3 #3", None, Action::Hi),
-                        ],
+                    Tree::with_children(
+                        menu::root("hi 3"),
+                        menu::items(
+                            &self.keybinds,
+                            vec![
+                                menu::Item::Button("hi 3", None, Action::Hi),
+                                menu::Item::Button("hi 3 #2", None, Action::Hi),
+                                menu::Item::Button("hi 3 #3", None, Action::Hi),
+                            ],
+                        ),
                     ),
-                ),
-                Tree::with_children(
-                    menu::root("hi 4"),
-                    menu::items(
-                        &self.keybinds,
-                        vec![
-                            menu::Item::Folder(
-                                "hi 41 extra root",
-                                vec![menu::Item::Button("hi 3", None, Action::Hi)],
-                            ),
-                            menu::Item::Button("hi 42", None, Action::Hi),
-                            menu::Item::Button("hi 43", None, Action::Hi),
-                            menu::Item::Button("hi 44", None, Action::Hi),
-                            menu::Item::Button("hi 45", None, Action::Hi),
-                            menu::Item::Button("hi 46", None, Action::Hi),
-                        ],
+                    Tree::with_children(
+                        menu::root("hi 4"),
+                        menu::items(
+                            &self.keybinds,
+                            vec![
+                                menu::Item::Folder(
+                                    "hi 41 extra root",
+                                    vec![menu::Item::Button("hi 3", None, Action::Hi)],
+                                ),
+                                menu::Item::Button("hi 42", None, Action::Hi),
+                                menu::Item::Button("hi 43", None, Action::Hi),
+                                menu::Item::Button("hi 44", None, Action::Hi),
+                                menu::Item::Button("hi 45", None, Action::Hi),
+                                menu::Item::Button("hi 46", None, Action::Hi),
+                            ],
+                        ),
                     ),
-                ),
-            ])
-            .into()]
+                ])
+                .into(),
+            ]
         }
         #[cfg(feature = "wayland")]
         {
@@ -289,18 +291,21 @@ impl cosmic::Application for App {
                 Message::Surface,
                 vec![
                     (
-                        "hiiiiiiiiiiiiiiiiiii 1",
-                        vec![menu::Item::Button("hi 1", None, Action::Hi)],
+                        "hi 1".into(),
+                        vec![
+                            menu::Item::Button("hi 1".into(), None, Action::Hi),
+                            menu::Item::Button("hi 1 2".into(), None, Action::Hi),
+                        ],
                     ),
                     (
-                        "hiiiiiiiiiiiiiiiiiii 2".into(),
+                        "hi 2".into(),
                         vec![
                             menu::Item::Button("hi 2", None, Action::Hi),
                             menu::Item::Button("hi 22", None, Action::Hi),
                         ],
                     ),
                     (
-                        "hiiiiiiiiiiiiiiiiiii 3".into(),
+                        "hi 3".into(),
                         vec![
                             menu::Item::Button("hi 3", None, Action::Hi),
                             menu::Item::Button("hi 33", None, Action::Hi),
