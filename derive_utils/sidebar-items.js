@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["derive_trait"],"macro":["quick_derive"],"struct":["EnumData","EnumImpl"]};
