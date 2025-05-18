@@ -326,7 +326,6 @@ impl<'a, Message: Clone + 'static> HeaderBar<'a, Message> {
         let portion = ((start.len().max(end.len()) as f32 / center.len().max(1) as f32).round()
             as u16)
             .max(1);
-        let center_empty = center.is_empty() && self.title.is_empty();
         // Creates the headerbar widget.
         let mut widget = widget::row::with_capacity(3)
             // If elements exist in the start region, append them here.
@@ -340,17 +339,19 @@ impl<'a, Message: Clone + 'static> HeaderBar<'a, Message> {
             )
             // If elements exist in the center region, use them here.
             // This will otherwise use the title as a widget if a title was defined.
-            .push(if !center.is_empty() {
-                widget::row::with_children(center)
-                    .spacing(space_xxxs)
-                    .align_y(iced::Alignment::Center)
-                    .apply(widget::container)
-                    .center_x(Length::Fill)
-                    .into()
-            } else if self.title.is_empty() {
-                widget::horizontal_space().into()
+            .push_maybe(if !center.is_empty() {
+                Some(
+                    widget::row::with_children(center)
+                        .spacing(space_xxxs)
+                        .align_y(iced::Alignment::Center)
+                        .apply(widget::container)
+                        .center_x(Length::Fill)
+                        .into(),
+                )
+            } else if !self.title.is_empty() {
+                Some(self.title_widget())
             } else {
-                self.title_widget()
+                None
             })
             .push(
                 widget::row::with_children(end)
@@ -358,11 +359,7 @@ impl<'a, Message: Clone + 'static> HeaderBar<'a, Message> {
                     .align_y(iced::Alignment::Center)
                     .apply(widget::container)
                     .align_x(iced::Alignment::End)
-                    .width(if center_empty {
-                        Length::Fill
-                    } else {
-                        Length::FillPortion(portion)
-                    }),
+                    .width(Length::FillPortion(portion)),
             )
             .align_y(iced::Alignment::Center)
             .height(Length::Fixed(32.0 + padding[0] as f32 + padding[2] as f32))
