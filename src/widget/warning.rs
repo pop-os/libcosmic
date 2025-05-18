@@ -40,13 +40,12 @@ impl<'a, Message: 'static + Clone> Warning<'a, Message> {
             .on_press_maybe(self.on_close);
 
         #[cfg(not(target_os = "linux"))]
-        let close_button = icon::from_svg_bytes(
-            include_bytes!("../../res/icons/window-close-symbolic.svg")
-        )
-            .symbolic(true)
-            .apply(widget::button::icon)
-            .icon_size(16)
-            .on_press_maybe(self.on_close);
+        let close_button =
+            icon::from_svg_bytes(include_bytes!("../../res/icons/window-close-symbolic.svg"))
+                .symbolic(true)
+                .apply(widget::button::icon)
+                .icon_size(16)
+                .on_press_maybe(self.on_close);
 
         widget::row::with_capacity(2)
             .push(label)

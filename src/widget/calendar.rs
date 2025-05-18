@@ -15,14 +15,14 @@ pub fn calendar<M>(
     on_select: impl Fn(NaiveDate) -> M + 'static,
     on_prev: impl Fn() -> M + 'static,
     on_next: impl Fn() -> M + 'static,
-    first_day_of_week: Weekday
+    first_day_of_week: Weekday,
 ) -> Calendar<M> {
     Calendar {
         model,
         on_select: Box::new(on_select),
         on_prev: Box::new(on_prev),
         on_next: Box::new(on_next),
-        first_day_of_week
+        first_day_of_week,
     }
 }
 
@@ -107,7 +107,7 @@ pub struct Calendar<'a, M> {
     on_select: Box<dyn Fn(NaiveDate) -> M>,
     on_prev: Box<dyn Fn() -> M>,
     on_next: Box<dyn Fn() -> M>,
-    first_day_of_week: Weekday
+    first_day_of_week: Weekday,
 }
 
 impl<'a, Message> From<Calendar<'a, Message>> for crate::Element<'a, Message>
