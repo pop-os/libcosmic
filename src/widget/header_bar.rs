@@ -24,6 +24,7 @@ pub fn header_bar<'a, Message>() -> HeaderBar<'a, Message> {
         density: None,
         focused: false,
         maximized: false,
+        is_ssd: false,
         on_double_click: None,
     }
 }
@@ -80,6 +81,9 @@ pub struct HeaderBar<'a, Message> {
 
     /// Maximized state of the window
     maximized: bool,
+
+    /// HeaderBar used for server-side decorations
+    is_ssd: bool,
 }
 
 impl<'a, Message: Clone + 'static> HeaderBar<'a, Message> {
@@ -363,7 +367,7 @@ impl<'a, Message: Clone + 'static> HeaderBar<'a, Message> {
             )
             .align_y(iced::Alignment::Center)
             .height(Length::Fixed(32.0 + padding[0] as f32 + padding[2] as f32))
-            .padding(padding)
+            .padding(if self.is_ssd { [0, 8, 0, 8] } else { padding })
             .spacing(8)
             .apply(widget::container)
             .class(crate::theme::Container::HeaderBar {
