@@ -733,9 +733,8 @@ where
                         entity,
                     );
                 }
-                DndEvent::Offer(id, OfferEvent::Leave | OfferEvent::LeaveDestination)
-                    if Some(my_id) == *id =>
-                {
+                DndEvent::Offer(id, OfferEvent::LeaveDestination) if Some(my_id) != *id => {}
+                DndEvent::Offer(id, OfferEvent::Leave | OfferEvent::LeaveDestination) => {
                     if let Some(Some(entity)) = entity {
                         if let Some(on_dnd_leave) = self.on_dnd_leave.as_ref() {
                             shell.publish(on_dnd_leave(entity));

@@ -241,6 +241,11 @@ impl<'a, Message: 'static> DndDestination<'a, Message> {
             Internal::Set(_) => panic!("Invalid Id assigned to dnd destination."),
         }))
     }
+
+    pub fn id(mut self, id: Id) -> Self {
+        self.id = id;
+        self
+    }
 }
 
 impl<Message: 'static> Widget<Message, crate::Theme, crate::Renderer>
@@ -354,8 +359,12 @@ impl<Message: 'static> Widget<Message, crate::Theme, crate::Renderer>
                 }
                 return event::Status::Captured;
             }
-            Event::Dnd(DndEvent::Offer(id, OfferEvent::Leave)) if id == Some(my_id) => {
-                state.on_leave(self.on_leave.as_ref().map(std::convert::AsRef::as_ref));
+            Event::Dnd(DndEvent::Offer(id, OfferEvent::Leave)) => {
+                if let Some(msg) =
+                    state.on_leave(self.on_leave.as_ref().map(std::convert::AsRef::as_ref))
+                {
+                    shell.publish(msg);
+                }
 
                 if self.forward_drag_as_cursor {
                     let drag_cursor = mouse::Cursor::Unavailable;
@@ -403,7 +412,7 @@ impl<Message: 'static> Widget<Message, crate::Theme, crate::Renderer>
                 }
                 return event::Status::Captured;
             }
-            Event::Dnd(DndEvent::Offer(id, OfferEvent::LeaveDestination)) if id == Some(my_id) => {
+            Event::Dnd(DndEvent::Offer(id, OfferEvent::LeaveDestination)) => {
                 if let Some(msg) =
                     state.on_leave(self.on_leave.as_ref().map(std::convert::AsRef::as_ref))
                 {
