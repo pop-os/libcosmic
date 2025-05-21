@@ -1995,10 +1995,12 @@ pub fn update<'a, Message: Clone + 'static>(
             return event::Status::Ignored;
         }
         #[cfg(feature = "wayland")]
+        Event::Dnd(DndEvent::Offer(id, OfferEvent::LeaveDestination)) if Some(dnd_id) != id => {}
+        #[cfg(feature = "wayland")]
         Event::Dnd(DndEvent::Offer(
             rectangle,
             OfferEvent::Leave | OfferEvent::LeaveDestination,
-        )) if rectangle == Some(dnd_id) => {
+        )) => {
             cold();
             let state = state();
             // ASHLEY TODO we should be able to reset but for now we don't if we are handling a
