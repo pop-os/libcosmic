@@ -21,7 +21,7 @@ pub fn subscription<App: ApplicationExt>() -> Subscription<crate::Action<App::Me
         iced::stream::channel(10, move |mut output| async move {
             let mut single_instance: DbusActivation = DbusActivation::new();
             let mut rx = single_instance.rx();
-            if let Ok(builder) = zbus::ConnectionBuilder::session() {
+            if let Ok(builder) = zbus::connection::Builder::session() {
                 let path: String = format!("/{}", App::APP_ID.replace('.', "/"));
                 if let Ok(conn) = builder.build().await {
                     // XXX Setup done this way seems to be more reliable.
