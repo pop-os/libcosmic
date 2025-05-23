@@ -177,7 +177,7 @@ impl Context {
         matches!(self.anchor, PanelAnchor::Top | PanelAnchor::Bottom)
     }
 
-    pub fn icon_button_from_handle<'a, Message: 'static>(
+    pub fn icon_button_from_handle<'a, Message: Clone + 'static>(
         &self,
         icon: widget::icon::Handle,
     ) -> crate::widget::Button<'a, Message> {
@@ -206,7 +206,7 @@ impl Context {
         .class(Button::AppletIcon)
     }
 
-    pub fn icon_button<'a, Message: 'static>(
+    pub fn icon_button<'a, Message: Clone + 'static>(
         &self,
         icon_name: &'a str,
     ) -> crate::widget::Button<'a, Message> {
@@ -503,7 +503,7 @@ pub fn style() -> iced_runtime::Appearance {
     }
 }
 
-pub fn menu_button<'a, Message>(
+pub fn menu_button<'a, Message: Clone + 'a>(
     content: impl Into<Element<'a, Message>>,
 ) -> crate::widget::Button<'a, Message> {
     crate::widget::button::custom(content)

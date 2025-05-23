@@ -1,7 +1,7 @@
 use cosmic::app::{Core, Task};
 
 use cosmic::iced::window::Id;
-use cosmic::iced::Length;
+use cosmic::iced::{Length, Rectangle};
 use cosmic::iced_runtime::core::window;
 use cosmic::surface::action::{app_popup, destroy_popup};
 use cosmic::widget::{dropdown::popup_dropdown, list_column, settings, toggler};
@@ -85,50 +85,62 @@ impl cosmic::Application for Window {
     }
 
     fn view(&self) -> Element<Message> {
-        let btn = self.core.applet.icon_button("display-symbolic").on_press(
-            if let Some(id) = self.popup {
-                Message::Surface(destroy_popup(id))
-            } else {
-                Message::Surface(app_popup::<Window>(
-                    |state: &mut Window| {
-                        let new_id = Id::unique();
-                        state.popup = Some(new_id);
-                        let popup_settings = state.core.applet.get_popup_settings(
-                            state.core.main_window_id().unwrap(),
-                            new_id,
-                            None,
-                            None,
-                            None,
-                        );
+        let have_popup = self.popup.clone();
+        let btn = self
+            .core
+            .applet
+            .icon_button("display-symbolic")
+            .on_press_with_rectangle(move |offset, bounds| {
+                if let Some(id) = have_popup {
+                    Message::Surface(destroy_popup(id))
+                } else {
+                    Message::Surface(app_popup::<Window>(
+                        move |state: &mut Window| {
+                            let new_id = Id::unique();
+                            state.popup = Some(new_id);
+                            let mut popup_settings = state.core.applet.get_popup_settings(
+                                state.core.main_window_id().unwrap(),
+                                new_id,
+                                None,
+                                None,
+                                None,
+                            );
 
-                        popup_settings
-                    },
-                    Some(Box::new(move |state: &Window| {
-                        let content_list = list_column()
-                            .padding(5)
-                            .spacing(0)
-                            .add(settings::item(
-                                "Example row",
-                                cosmic::widget::container(
-                                    toggler(state.example_row)
-                                        .on_toggle(|value| Message::ToggleExampleRow(value)),
-                                )
-                                .height(Length::Fixed(50.)),
-                            ))
-                            .add(popup_dropdown(
-                                &["1", "asdf", "hello", "test"],
-                                state.selected,
-                                Message::Selected,
-                                state.popup.unwrap_or(Id::NONE),
-                                Message::Surface,
-                                |m| m,
-                            ));
-                        Element::from(state.core.applet.popup_container(content_list))
-                            .map(cosmic::Action::App)
-                    })),
-                ))
-            },
-        );
+                            popup_settings.positioner.anchor_rect = Rectangle {
+                                x: (bounds.x - offset.x) as i32,
+                                y: (bounds.y - offset.y) as i32,
+                                width: bounds.width as i32,
+                                height: bounds.height as i32,
+                            };
+
+                            popup_settings
+                        },
+                        Some(Box::new(move |state: &Window| {
+                            let content_list = list_column()
+                                .padding(5)
+                                .spacing(0)
+                                .add(settings::item(
+                                    "Example row",
+                                    cosmic::widget::container(
+                                        toggler(state.example_row)
+                                            .on_toggle(|value| Message::ToggleExampleRow(value)),
+                                    )
+                                    .height(Length::Fixed(50.)),
+                                ))
+                                .add(popup_dropdown(
+                                    &["1", "asdf", "hello", "test"],
+                                    state.selected,
+                                    Message::Selected,
+                                    state.popup.unwrap_or(Id::NONE),
+                                    Message::Surface,
+                                    |m| m,
+                                ));
+                            Element::from(state.core.applet.popup_container(content_list))
+                                .map(cosmic::Action::App)
+                        })),
+                    ))
+                }
+            });
 
         Element::from(self.core.applet.applet_tooltip::<Message>(
             btn,

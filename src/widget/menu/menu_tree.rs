@@ -142,9 +142,12 @@ where
     }
 }
 
-pub fn menu_button<'a, Message: 'a>(
+pub fn menu_button<'a, Message>(
     children: Vec<crate::Element<'a, Message>>,
-) -> crate::widget::Button<'a, Message> {
+) -> crate::widget::Button<'a, Message>
+where
+    Message: std::clone::Clone + 'a,
+{
     widget::button::custom(
         widget::Row::with_children(children)
             .align_y(Alignment::Center)
@@ -195,6 +198,7 @@ pub fn menu_root<'a, Message, Renderer: renderer::Renderer>(
 ) -> Button<'a, Message>
 where
     Element<'a, Message, crate::Theme, Renderer>: From<widget::Button<'a, Message>>,
+    Message: std::clone::Clone + 'a,
 {
     widget::button::custom(widget::text(label))
         .padding([4, 12])
@@ -215,7 +219,7 @@ pub fn menu_items<
     'a,
     A: MenuAction<Message = Message>,
     L: Into<Cow<'static, str>> + 'static,
-    Message: 'a,
+    Message,
     Renderer: renderer::Renderer + 'a,
 >(
     key_binds: &HashMap<KeyBind, A>,
@@ -223,6 +227,7 @@ pub fn menu_items<
 ) -> Vec<MenuTree<'a, Message, Renderer>>
 where
     Element<'a, Message, crate::Theme, Renderer>: From<widget::button::Button<'a, Message>>,
+    Message: 'a + Clone,
 {
     fn find_key<A: MenuAction>(action: &A, key_binds: &HashMap<KeyBind, A>) -> String {
         for (key_bind, key_action) in key_binds {

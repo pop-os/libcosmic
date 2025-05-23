@@ -44,12 +44,14 @@ use iced_core::{Length, Padding};
 use std::borrow::Cow;
 
 /// A button with a custom element for its content.
-pub fn custom<'a, Message>(content: impl Into<crate::Element<'a, Message>>) -> Button<'a, Message> {
+pub fn custom<'a, Message: Clone + 'a>(
+    content: impl Into<crate::Element<'a, Message>>,
+) -> Button<'a, Message> {
     Button::new(content.into())
 }
 
 /// An image button which may contain any widget as its content.
-pub fn custom_image_button<'a, Message>(
+pub fn custom_image_button<'a, Message: Clone + 'a>(
     content: impl Into<crate::Element<'a, Message>>,
     on_remove: Option<Message>,
 ) -> Button<'a, Message> {
