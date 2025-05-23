@@ -122,7 +122,11 @@ impl ColorPickerModel {
 
     /// Get a color picker button that displays the applied color
     ///
-    pub fn picker_button<'a, Message: 'static, T: Fn(ColorPickerUpdate) -> Message>(
+    pub fn picker_button<
+        'a,
+        Message: 'static + std::clone::Clone,
+        T: Fn(ColorPickerUpdate) -> Message,
+    >(
         &self,
         f: T,
         icon_portion: Option<u16>,
@@ -888,7 +892,7 @@ fn color_to_string(c: palette::Hsv, is_hex: bool) -> String {
 
 #[allow(clippy::too_many_lines)]
 /// A button for selecting a color from a color picker.
-pub fn color_button<'a, Message: 'static>(
+pub fn color_button<'a, Message: Clone + 'static>(
     on_press: Option<Message>,
     color: Option<Color>,
     icon_portion: Length,

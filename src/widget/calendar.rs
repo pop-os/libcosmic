@@ -191,7 +191,7 @@ where
     }
 }
 
-fn date_button<Message>(
+fn date_button<Message: Clone + 'static>(
     date: NaiveDate,
     is_currently_viewed_month: bool,
     is_currently_selected_day: bool,

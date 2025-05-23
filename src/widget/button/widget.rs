@@ -47,8 +47,8 @@ pub struct Button<'a, Message> {
     #[cfg(feature = "a11y")]
     label: Option<Vec<iced_accessibility::accesskit::NodeId>>,
     content: crate::Element<'a, Message>,
-    on_press: Option<Message>,
-    on_press_down: Option<Message>,
+    on_press: Option<Box<dyn Fn(Vector, Rectangle) -> Message + 'a>>,
+    on_press_down: Option<Box<dyn Fn(Vector, Rectangle) -> Message + 'a>>,
     width: Length,
     height: Length,
     padding: Padding,
@@ -58,7 +58,7 @@ pub struct Button<'a, Message> {
     force_enabled: bool,
 }
 
-impl<'a, Message> Button<'a, Message> {
+impl<'a, Message: Clone + 'a> Button<'a, Message> {
     /// Creates a new [`Button`] with the given content.
     pub(super) fn new(content: impl Into<crate::Element<'a, Message>>) -> Self {
         Self {
@@ -150,7 +150,19 @@ impl<'a, Message> Button<'a, Message> {
     /// Unless `on_press` or `on_press_down` is called, the [`Button`] will be disabled.
     #[inline]
     pub fn on_press(mut self, on_press: Message) -> Self {
-        self.on_press = Some(on_press);
+        self.on_press = Some(Box::new(move |_, _| on_press.clone()));
+        self
+    }
+
+    /// Sets the message that will be produced when the [`Button`] is pressed and released.
+    ///
+    /// Unless `on_press` or `on_press_down` is called, the [`Button`] will be disabled.
+    #[inline]
+    pub fn on_press_with_rectangle(
+        mut self,
+        on_press: impl Fn(Vector, Rectangle) -> Message + 'a,
+    ) -> Self {
+        self.on_press = Some(Box::new(on_press));
         self
     }
 
@@ -159,7 +171,19 @@ impl<'a, Message> Button<'a, Message> {
     /// Unless `on_press` or `on_press_down` is called, the [`Button`] will be disabled.
     #[inline]
     pub fn on_press_down(mut self, on_press: Message) -> Self {
-        self.on_press_down = Some(on_press);
+        self.on_press_down = Some(Box::new(move |_, _| on_press.clone()));
+        self
+    }
+
+    /// Sets the message that will be produced when the [`Button`] is pressed,
+    ///
+    /// Unless `on_press` or `on_press_down` is called, the [`Button`] will be disabled.
+    #[inline]
+    pub fn on_press_down_with_rectange(
+        mut self,
+        on_press: impl Fn(Vector, Rectangle) -> Message + 'a,
+    ) -> Self {
+        self.on_press_down = Some(Box::new(on_press));
         self
     }
 
@@ -169,7 +193,49 @@ impl<'a, Message> Button<'a, Message> {
     /// If `None`, the [`Button`] will be disabled.
     #[inline]
     pub fn on_press_maybe(mut self, on_press: Option<Message>) -> Self {
-        self.on_press = on_press;
+        if let Some(m) = on_press {
+            self.on_press(m)
+        } else {
+            self.on_press = None;
+            self
+        }
+    }
+
+    /// Sets the message that will be produced when the [`Button`] is pressed and released.
+    ///
+    /// Unless `on_press` or `on_press_down` is called, the [`Button`] will be disabled.
+    #[inline]
+    pub fn on_press_maybe_with_rectangle(
+        mut self,
+        on_press: impl Fn(Vector, Rectangle) -> Message + 'a,
+    ) -> Self {
+        self.on_press = Some(Box::new(on_press));
+        self
+    }
+
+    /// Sets the message that will be produced when the [`Button`] is pressed,
+    /// if `Some`.
+    ///
+    /// If `None`, the [`Button`] will be disabled.
+    #[inline]
+    pub fn on_press_down_maybe(mut self, on_press: Option<Message>) -> Self {
+        if let Some(m) = on_press {
+            self.on_press(m)
+        } else {
+            self.on_press_down = None;
+            self
+        }
+    }
+
+    /// Sets the message that will be produced when the [`Button`] is pressed and released.
+    ///
+    /// Unless `on_press` or `on_press_down` is called, the [`Button`] will be disabled.
+    #[inline]
+    pub fn on_press_down_maybe_with_rectangle(
+        mut self,
+        on_press: impl Fn(Vector, Rectangle) -> Message + 'a,
+    ) -> Self {
+        self.on_press_down = Some(Box::new(on_press));
         self
     }
 
@@ -350,8 +416,8 @@ impl<'a, Message: 'a + Clone> Widget<Message, crate::Theme, crate::Renderer>
             layout,
             cursor,
             shell,
-            &self.on_press,
-            &self.on_press_down,
+            self.on_press.as_deref(),
+            self.on_press_down.as_deref(),
             || tree.state.downcast_mut::<State>(),
         )
     }
@@ -710,15 +776,15 @@ impl State {
 
 /// Processes the given [`Event`] and updates the [`State`] of a [`Button`]
 /// accordingly.
-#[allow(clippy::needless_pass_by_value)]
+#[allow(clippy::needless_pass_by_value, clippy::too_many_arguments)]
 pub fn update<'a, Message: Clone>(
     _id: Id,
     event: Event,
     layout: Layout<'_>,
     cursor: mouse::Cursor,
     shell: &mut Shell<'_, Message>,
-    on_press: &Option<Message>,
-    on_press_down: &Option<Message>,
+    on_press: Option<&dyn Fn(Vector, Rectangle) -> Message>,
+    on_press_down: Option<&dyn Fn(Vector, Rectangle) -> Message>,
     state: impl FnOnce() -> &'a mut State,
 ) -> event::Status {
     match event {
@@ -735,7 +801,8 @@ pub fn update<'a, Message: Clone>(
                     state.is_pressed = true;
 
                     if let Some(on_press_down) = on_press_down {
-                        shell.publish(on_press_down.clone());
+                        let msg = (on_press_down)(layout.virtual_offset(), layout.bounds());
+                        shell.publish(msg);
                     }
 
                     return event::Status::Captured;
@@ -753,7 +820,8 @@ pub fn update<'a, Message: Clone>(
                     let bounds = layout.bounds();
 
                     if cursor.is_over(bounds) {
-                        shell.publish(on_press);
+                        let msg = (on_press)(layout.virtual_offset(), layout.bounds());
+                        shell.publish(msg);
                     }
 
                     return event::Status::Captured;
@@ -771,7 +839,9 @@ pub fn update<'a, Message: Clone>(
             .then(|| on_press.clone())
             {
                 state.is_pressed = false;
-                shell.publish(on_press);
+                let msg = (on_press)(layout.virtual_offset(), layout.bounds());
+
+                shell.publish(msg);
             }
             return event::Status::Captured;
         }
@@ -780,7 +850,9 @@ pub fn update<'a, Message: Clone>(
                 let state = state();
                 if state.is_focused && key == keyboard::Key::Named(keyboard::key::Named::Enter) {
                     state.is_pressed = true;
-                    shell.publish(on_press);
+                    let msg = (on_press)(layout.virtual_offset(), layout.bounds());
+
+                    shell.publish(msg);
                     return event::Status::Captured;
                 }
             }
