@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["bottom","bottom_left","bottom_right","color","left","radius","right","rounded","top","top_left","top_right","width"],"struct":["Border","Radius"]};

@@ -1,0 +1,53 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="This crate provides a library for decoding valid ITU-T Rec. T.851 (09/2005) ITU-T T.81 (JPEG-1) or JPEG images."><title>zune_jpeg - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../static.files/rustdoc-6c3ea77c.css"><meta name="rustdoc-vars" data-root-path="../" data-static-root-path="../static.files/" data-current-crate="zune_jpeg" data-themes="" data-resource-suffix="" data-rustdoc-version="1.86.0 (05f9846f8 2025-03-31)" data-channel="1.86.0" data-search-js="search-581efc7a.js" data-settings-js="settings-6dad6058.js" ><script src="../static.files/storage-3a5871a4.js"></script><script defer src="../crates.js"></script><script defer src="../static.files/main-4d63596a.js"></script><noscript><link rel="stylesheet" href="../static.files/noscript-893ab5e7.css"></noscript><link rel="alternate icon" type="image/png" href="../static.files/favicon-32x32-6580c154.png"><link rel="icon" type="image/svg+xml" href="../static.files/favicon-044be391.svg"></head><body class="rustdoc mod crate"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle" title="show sidebar"></button></nav><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../zune_jpeg/index.html">zune_<wbr>jpeg</a><span class="version">0.4.14</span></h2></div><div class="sidebar-elems"><ul class="block"><li><a id="all-types" href="all.html">All Items</a></li></ul><section id="rustdoc-toc"><h3><a href="#">Sections</a></h3><ul class="block top-toc"><li><a href="#features" title="Features">Features</a></li><li><a href="#usage" title="Usage">Usage</a></li><li><a href="#examples" title="Examples">Examples</a><ul><li><a href="#decode-a-jpeg-file-with-default-arguments" title="Decode a JPEG file with default arguments.">Decode a JPEG file with default arguments.</a></li><li><a href="#decode-a-jpeg-file-to-rgba-format" title="Decode a JPEG file to RGBA format">Decode a JPEG file to RGBA format</a></li><li><a href="#decode-an-image-and-get-its-width-and-height" title="Decode an image and get it’s width and height.">Decode an image and get it’s width and height.</a></li></ul></li><li><a href="#crate-features" title="Crate features.">Crate features.</a></li></ul><h3><a href="#reexports">Crate Items</a></h3><ul class="block"><li><a href="#reexports" title="Re-exports">Re-exports</a></li><li><a href="#modules" title="Modules">Modules</a></li><li><a href="#structs" title="Structs">Structs</a></li></ul></section><div id="rustdoc-modnav"></div></div></nav><div class="sidebar-resizer"></div><main><div class="width-limiter"><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><h1>Crate <span>zune_jpeg</span><button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"><a class="src" href="../src/zune_jpeg/lib.rs.html#9-130">Source</a> </span></div><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>This crate provides a library for decoding valid
+ITU-T Rec. T.851 (09/2005) ITU-T T.81 (JPEG-1) or JPEG images.</p>
+<h2 id="features"><a class="doc-anchor" href="#features">§</a>Features</h2>
+<ul>
+<li>SSE and AVX accelerated functions to speed up certain decoding operations</li>
+<li>FAST and accurate 32 bit IDCT algorithm</li>
+<li>Fast color convert functions</li>
+<li>RGBA and RGBX (4-Channel) color conversion functions</li>
+<li>YCbCr to Luma(Grayscale) conversion.</li>
+</ul>
+<h2 id="usage"><a class="doc-anchor" href="#usage">§</a>Usage</h2>
+<p>Add zune-jpeg to the dependencies in the project Cargo.toml</p>
+<div class="example-wrap"><pre class="language-toml"><code>[dependencies]
+zune_jpeg = &quot;0.3&quot;</code></pre></div><h2 id="examples"><a class="doc-anchor" href="#examples">§</a>Examples</h2><h3 id="decode-a-jpeg-file-with-default-arguments"><a class="doc-anchor" href="#decode-a-jpeg-file-with-default-arguments">§</a>Decode a JPEG file with default arguments.</h3>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code> <span class="kw">use </span>std::fs::read;
+ <span class="kw">use </span>zune_jpeg::JpegDecoder;
+ <span class="kw">let </span>file_contents = read(<span class="string">"a_jpeg.file"</span>).unwrap();
+ <span class="kw">let </span><span class="kw-2">mut </span>decoder = JpegDecoder::new(<span class="kw-2">&amp;</span>file_contents);
+ <span class="kw">let </span><span class="kw-2">mut </span>pixels = decoder.decode().unwrap();</code></pre></div>
+<h3 id="decode-a-jpeg-file-to-rgba-format"><a class="doc-anchor" href="#decode-a-jpeg-file-to-rgba-format">§</a>Decode a JPEG file to RGBA format</h3>
+<ul>
+<li>Other (limited) supported formats are and  BGR, BGRA</li>
+</ul>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code> <span class="kw">use </span>zune_core::colorspace::ColorSpace;
+ <span class="kw">use </span>zune_core::options::DecoderOptions;
+ <span class="kw">use </span>zune_jpeg::JpegDecoder;
+
+ <span class="kw">let </span><span class="kw-2">mut </span>options = DecoderOptions::default().jpeg_set_out_colorspace(ColorSpace::RGBA);
+
+ <span class="kw">let </span><span class="kw-2">mut </span>decoder = JpegDecoder::new_with_options(<span class="kw-2">&amp;</span>[],options);
+ <span class="kw">let </span>pixels = decoder.decode().unwrap();</code></pre></div>
+<h3 id="decode-an-image-and-get-its-width-and-height"><a class="doc-anchor" href="#decode-an-image-and-get-its-width-and-height">§</a>Decode an image and get it’s width and height.</h3>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code> <span class="kw">use </span>zune_jpeg::JpegDecoder;
+
+ <span class="kw">let </span><span class="kw-2">mut </span>decoder = JpegDecoder::new(<span class="kw-2">&amp;</span>[]);
+ decoder.decode_headers().unwrap();
+ <span class="kw">let </span>image_info = decoder.info().unwrap();
+ <span class="macro">println!</span>(<span class="string">"{},{}"</span>,image_info.width,image_info.height)</code></pre></div>
+<h2 id="crate-features"><a class="doc-anchor" href="#crate-features">§</a>Crate features.</h2>
+<p>This crate tries to be as minimal as possible while being extensible
+enough to handle the complexities arising from parsing different types
+of jpeg images.</p>
+<p>Safety is a top concern that is why we provide both static ways to disable unsafe code,
+disabling x86 feature, and dynamic ,by using <a href="https://docs.rs/zune-core/0.2.1/zune_core/options/struct.DecoderOptions.html#method.set_use_unsafe"><code>DecoderOptions::set_use_unsafe(false)</code></a>,
+both of these disable platform specific optimizations, which reduce the speed of decompression.</p>
+<p>Please do note that careful consideration has been taken to ensure that the unsafe paths
+are only unsafe because they depend on platform specific intrinsics, hence no need to disable them</p>
+<p>The crate tries to decode as many images as possible, as a best effort, even those violating the standard
+, this means a lot of images may  get silent warnings and wrong output, but if you are sure you will be handling
+images that follow the spec, set <code>ZuneJpegOptions::set_strict</code> to true.</p>
+</div></details><h2 id="reexports" class="section-header">Re-exports<a href="#reexports" class="anchor">§</a></h2><dl class="item-table reexports"><dt id="reexport.zune_core"><code>pub use <a class="mod" href="../zune_core/index.html" title="mod zune_core">zune_core</a>;</code></dt></dl><h2 id="modules" class="section-header">Modules<a href="#modules" class="anchor">§</a></h2><dl class="item-table"><dt><a class="mod" href="errors/index.html" title="mod zune_jpeg::errors">errors</a></dt><dd>Contains most common errors that may be encountered in decoding a Decoder
+image</dd></dl><h2 id="structs" class="section-header">Structs<a href="#structs" class="anchor">§</a></h2><dl class="item-table"><dt><a class="struct" href="struct.ImageInfo.html" title="struct zune_jpeg::ImageInfo">Image<wbr>Info</a></dt><dd>A struct representing Image Information</dd><dt><a class="struct" href="struct.JpegDecoder.html" title="struct zune_jpeg::JpegDecoder">Jpeg<wbr>Decoder</a></dt><dd>A JPEG Decoder Instance.</dd></dl></section></div></main></body></html>
