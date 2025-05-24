@@ -431,6 +431,17 @@ impl Context {
             Size::PanelSize(PanelSize::M) => crate::widget::text::title4,
             Size::PanelSize(PanelSize::S) => crate::widget::text::body,
             Size::PanelSize(PanelSize::XS) => crate::widget::text::body,
+            Size::PanelSize(PanelSize::Custom(s)) => {
+                if s >= 80 {
+                    crate::widget::text::title2
+                } else if s >= 64 {
+                    crate::widget::text::title3
+                } else if s >= 48 {
+                    crate::widget::text::title4
+                } else {
+                    crate::widget::text::body
+                }
+            }
             Size::Hardcoded(_) => crate::widget::text,
         };
         t(msg).font(crate::font::default())
