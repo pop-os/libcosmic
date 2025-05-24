@@ -34,9 +34,9 @@ where
     #[setters(skip)]
     on_selected: Arc<dyn Fn(usize) -> Message + Send + Sync>,
     #[setters(skip)]
-    selections: &'a [S],
+    selections: Cow<'a, [S]>,
     #[setters]
-    icons: &'a [icon::Handle],
+    icons: Cow<'a, [icon::Handle]>,
     #[setters(skip)]
     selected: Option<usize>,
     #[setters(into)]
@@ -73,14 +73,14 @@ where
     /// Creates a new [`Dropdown`] with the given list of selections, the current
     /// selected value, and the message to produce when an option is selected.
     pub fn new(
-        selections: &'a [S],
+        selections: Cow<'a, [S]>,
         selected: Option<usize>,
         on_selected: impl Fn(usize) -> Message + 'static + Send + Sync,
     ) -> Self {
         Self {
             on_selected: Arc::new(on_selected),
             selections,
-            icons: &[],
+            icons: Cow::Borrowed(&[]),
             selected,
             width: Length::Shrink,
             gap: Self::DEFAULT_GAP,
@@ -246,12 +246,12 @@ where
             self.positioner.clone(),
             self.on_selected.clone(),
             self.selected,
-            self.selections,
+            &self.selections,
             || tree.state.downcast_mut::<State>(),
             self.window_id,
             self.on_surface_action.clone(),
             self.action_map.clone(),
-            self.icons,
+            &self.icons,
             self.gap,
             self.padding,
             self.text_size,
@@ -322,8 +322,8 @@ where
             self.text_size.unwrap_or(14.0),
             self.text_line_height,
             self.font,
-            self.selections,
-            self.icons,
+            &self.selections,
+            &self.icons,
             self.selected,
             self.on_selected.as_ref(),
             translation,

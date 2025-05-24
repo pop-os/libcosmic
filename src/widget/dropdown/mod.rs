@@ -4,6 +4,8 @@
 
 //! Displays a list of options in a popover menu on select.
 
+use std::borrow::Cow;
+
 pub mod menu;
 use iced_core::window;
 pub use menu::Menu;
@@ -17,14 +19,15 @@ use crate::surface;
 
 /// Displays a list of options in a popover menu on select.
 pub fn dropdown<
+    'a,
     S: AsRef<str> + std::clone::Clone + Send + Sync + 'static,
     Message: 'static + Clone,
 >(
-    selections: &[S],
+    selections: impl Into<Cow<'a, [S]>>,
     selected: Option<usize>,
     on_selected: impl Fn(usize) -> Message + Send + Sync + 'static,
-) -> Dropdown<'_, S, Message, Message> {
-    Dropdown::new(selections, selected, on_selected)
+) -> Dropdown<'a, S, Message, Message> {
+    Dropdown::new(selections.into(), selected, on_selected)
 }
 
 /// Displays a list of options in a popover menu on select.
@@ -35,7 +38,7 @@ pub fn popup_dropdown<
     Message: 'static + Clone,
     AppMessage: 'static + Clone,
 >(
-    selections: &'a [S],
+    selections: impl Into<Cow<'a, [S]>>,
     selected: Option<usize>,
     on_selected: impl Fn(usize) -> Message + Send + Sync + 'static,
     _parent_id: window::Id,
@@ -43,7 +46,7 @@ pub fn popup_dropdown<
     _map_action: impl Fn(Message) -> AppMessage + Send + Sync + 'static,
 ) -> Dropdown<'a, S, Message, AppMessage> {
     let dropdown: Dropdown<'_, S, Message, AppMessage> =
-        Dropdown::new(selections, selected, on_selected);
+        Dropdown::new(selections.into(), selected, on_selected);
 
     #[cfg(all(feature = "winit", feature = "wayland"))]
     let dropdown = dropdown.with_popup(_parent_id, _on_surface_action, _map_action);
