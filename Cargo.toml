@@ -105,7 +105,7 @@ auto_enums = "0.8.7"
 cctk = { git = "https://github.com/pop-os/cosmic-protocols", package = "cosmic-client-toolkit", rev = "178eb0b", optional = true }
 chrono = "0.4.40"
 cosmic-config = { path = "cosmic-config" }
-cosmic-settings-daemon = { git = "https://github.com/pop-os/dbus-settings-bindings", optional = true }
+cosmic-settings-daemon = { git = "https://github.com/pop-os/dbus-settings-bindings", rev = "0eee63a96c8b1f6555ca797b5c12545c372b1a1b", optional = true }
 css-color = "0.2.8"
 derive_setters = "0.1.6"
 futures = "0.3"
@@ -185,7 +185,8 @@ path = "./iced/wgpu"
 optional = true
 
 [dependencies.cosmic-panel-config]
-git = "https://github.com/pop-os/cosmic-panel"
+git = "https://github.com/ryanabx/cosmic-panel"
+branch = "custom-panel-size"
 optional = true
 
 [dependencies.ron]

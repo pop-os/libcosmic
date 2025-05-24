@@ -10,7 +10,7 @@ macro = ["cosmic-config-derive"]
 subscription = ["iced_futures"]
 
 [dependencies]
-cosmic-settings-daemon = { git = "https://github.com/pop-os/dbus-settings-bindings", optional = true }
+cosmic-settings-daemon = { git = "https://github.com/pop-os/dbus-settings-bindings", rev = "0eee63a96c8b1f6555ca797b5c12545c372b1a1b", optional = true }
 zbus = { version = "4.4.0", default-features = false, optional = true }
 atomicwrites = { git = "https://github.com/jackpot51/rust-atomicwrites" }
 calloop = { version = "0.14.2", optional = true }
