@@ -37,7 +37,7 @@ static TOOLTIP_WINDOW_ID: LazyLock<window::Id> = LazyLock::new(window::Id::uniqu
 
 #[derive(Debug, Clone)]
 pub struct Context {
-    pub size: Size,
+    pub size: PanelSize,
     pub anchor: PanelAnchor,
     pub background: CosmicPanelBackground,
     pub output_name: String,
@@ -47,12 +47,6 @@ pub struct Context {
     pub suggested_bounds: Option<iced::Size>,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub enum Size {
-    // (width, height)
-    Hardcoded((u16, u16)),
-    PanelSize(PanelSize),
-}
 #[derive(Clone, Debug, PartialEq)]
 pub enum PanelType {
     Panel,
@@ -83,12 +77,10 @@ impl From<String> for PanelType {
 impl Default for Context {
     fn default() -> Self {
         Self {
-            size: Size::PanelSize(
-                std::env::var("COSMIC_PANEL_SIZE")
-                    .ok()
-                    .and_then(|size| ron::from_str(size.as_str()).ok())
-                    .unwrap_or(PanelSize::S),
-            ),
+            size: std::env::var("COSMIC_PANEL_SIZE")
+                .ok()
+                .and_then(|size| ron::from_str(size.as_str()).ok())
+                .unwrap_or(PanelSize::S),
             anchor: std::env::var("COSMIC_PANEL_ANCHOR")
                 .ok()
                 .and_then(|size| ron::from_str(size.as_str()).ok())
@@ -107,13 +99,8 @@ impl Default for Context {
 impl Context {
     #[must_use]
     pub fn suggested_size(&self, is_symbolic: bool) -> (u16, u16) {
-        match &self.size {
-            Size::PanelSize(size) => {
-                let s = size.get_applet_icon_size(is_symbolic) as u16;
-                (s, s)
-            }
-            Size::Hardcoded((width, height)) => (*width, *height),
-        }
+        let s = self.size.get_applet_icon_size(is_symbolic) as u16;
+        (s, s)
     }
 
     #[must_use]
@@ -141,15 +128,12 @@ impl Context {
 
     #[must_use]
     pub fn suggested_padding(&self, is_symbolic: bool) -> u16 {
-        match &self.size {
-            Size::PanelSize(size) => size.get_applet_padding(is_symbolic),
-            Size::Hardcoded(_) => 8,
-        }
+        self.size.get_applet_padding(is_symbolic)
     }
 
     // Set the default window size. Helper for application init with hardcoded size.
-    pub fn window_size(&mut self, width: u16, height: u16) {
-        self.size = Size::Hardcoded((width, height));
+    pub fn window_size(&mut self, width: u32) {
+        self.size = PanelSize::Custom(width);
     }
 
     #[allow(clippy::cast_precision_loss)]
@@ -425,26 +409,23 @@ impl Context {
 
     pub fn text<'a>(&self, msg: impl Into<Cow<'a, str>>) -> crate::widget::Text<'a, crate::Theme> {
         let msg = msg.into();
-        let t = match self.size {
-            Size::Hardcoded(_) => crate::widget::text,
-            Size::PanelSize(ref s) => {
-                let size = s.get_applet_icon_size_with_padding(false);
 
-                let size_threshold_small = PanelSize::S.get_applet_icon_size_with_padding(false);
-                let size_threshold_medium = PanelSize::M.get_applet_icon_size_with_padding(false);
-                let size_threshold_large = PanelSize::L.get_applet_icon_size_with_padding(false);
+        let size = self.size.get_applet_icon_size_with_padding(false);
 
-                if size <= size_threshold_small {
-                    crate::widget::text::body
-                } else if size <= size_threshold_medium {
-                    crate::widget::text::title4
-                } else if size <= size_threshold_large {
-                    crate::widget::text::title3
-                } else {
-                    crate::widget::text::title2
-                }
-            }
+        let size_threshold_small = PanelSize::S.get_applet_icon_size_with_padding(false);
+        let size_threshold_medium = PanelSize::M.get_applet_icon_size_with_padding(false);
+        let size_threshold_large = PanelSize::L.get_applet_icon_size_with_padding(false);
+
+        let t = if size <= size_threshold_small {
+            crate::widget::text::body
+        } else if size <= size_threshold_medium {
+            crate::widget::text::title4
+        } else if size <= size_threshold_large {
+            crate::widget::text::title3
+        } else {
+            crate::widget::text::title2
         };
+
         t(msg).font(crate::font::default())
     }
 }
