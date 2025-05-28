@@ -15,6 +15,7 @@ use crate::{
     widget::{
         RcWrapper,
         dropdown::menu::{self, State},
+        menu::menu_inner::init_root_menu,
     },
 };
 
@@ -57,6 +58,7 @@ pub(crate) struct MenuBarStateInner {
     pub(crate) menu_states: Vec<Vec<MenuState>>,
 }
 impl MenuBarStateInner {
+    /// get the list of indices hovered for the menu
     pub(super) fn get_trimmed_indices(&self, index: usize) -> impl Iterator<Item = usize> + '_ {
         self.menu_states
             .get(index)
@@ -188,7 +190,7 @@ pub struct MenuBar<Message> {
     menu_roots: Vec<MenuTree<Message>>,
     style: <crate::Theme as StyleSheet>::Style,
     window_id: window::Id,
-    #[cfg(feature = "wayland")]
+    #[cfg(all(feature = "wayland", feature = "winit"))]
     positioner: iced_runtime::platform_specific::wayland::popup::SctkPositioner,
     pub(crate) on_surface_action: Option<Box<dyn Fn(crate::surface::Action) -> Message>>,
 }
@@ -228,7 +230,7 @@ where
             menu_roots,
             style: <crate::Theme as StyleSheet>::Style::default(),
             window_id: window::Id::NONE,
-            #[cfg(feature = "wayland")]
+            #[cfg(all(feature = "wayland", feature = "winit"))]
             positioner: iced_runtime::platform_specific::wayland::popup::SctkPositioner::default(),
             on_surface_action: None,
         }
@@ -322,7 +324,8 @@ where
         self
     }
 
-    #[cfg(feature = "wayland")]
+    #[cfg(all(feature = "wayland", feature = "winit"))]
+
     pub fn with_positioner(
         mut self,
         positioner: iced_runtime::platform_specific::wayland::popup::SctkPositioner,
@@ -405,6 +408,7 @@ where
         )
     }
 
+    #[allow(clippy::too_many_lines)]
     fn on_event(
         &mut self,
         tree: &mut Tree,
@@ -441,28 +445,170 @@ where
             if reset {
                 if let Some(popup_id) = state.popup_id.get(&self.window_id).copied() {
                     dbg!("reset destroy");
-                    // TODO emit message
                     if let Some(handler) = self.on_surface_action.as_ref() {
                         shell.publish((handler)(crate::surface::Action::DestroyPopup(popup_id)));
                         state.reset();
                     }
                 }
             }
+        });
 
-            let tree = &mut state.tree;
+        // let tree: &mut _ = &mut state.tree;
 
-            match event {
-                Mouse(ButtonReleased(Left)) | Touch(FingerLifted { .. } | FingerLost { .. }) => {
+        match event {
+            Mouse(ButtonReleased(Left)) | Touch(FingerLifted { .. } | FingerLost { .. }) => {
+                my_state.inner.with_data_mut(|state| {
                     if state.menu_states.is_empty() && view_cursor.is_over(layout.bounds()) {
                         state.view_cursor = view_cursor;
                         state.open = true;
-                        // #[cfg(feature = "wayland")]
-                        // TODO emit Message to open menu
                     }
+                });
+                #[cfg(all(feature = "wayland", feature = "winit"))]
+
+                dbg!(
+                    self.window_id != window::Id::NONE,
+                    self.on_surface_action.is_some()
+                );
+                // TODO emit Message to open menu
+                if self.window_id != window::Id::NONE && self.on_surface_action.is_some() {
+                    use crate::surface::action::destroy_popup;
+                    use iced_runtime::platform_specific::wayland::popup::{
+                        SctkPopupSettings, SctkPositioner,
+                    };
+
+                    let surface_action = self.on_surface_action.as_ref().unwrap();
+                    let old_active_root = my_state.inner.with_data(|state| {
+                        state
+                            .active_root
+                            .get(0)
+                            .filter(|r| r.len() == 1)
+                            .map(|r| r[0])
+                    });
+
+                    // if position is not on menu bar button skip.
+                    let position = view_cursor.position();
+                    let hovered_root = layout
+                        .children()
+                        .position(|lo| view_cursor.is_over(lo.bounds()));
+                    dbg!(old_active_root);
+                    // TODO why exit here?
+                    // if hovered_root
+                    //     .zip(old_active_root.as_ref())
+                    //     .is_none_or(|r| r.0 != *r.1)
+                    // {
+                    //     panic!();
+                    // }
+
+                    let (id, root_list) = my_state.inner.with_data_mut(|state| {
+                        if let Some(id) = state.popup_id.get(&self.window_id).copied() {
+                            // close existing popups
+                            state.menu_states.clear();
+                            state.active_root.clear();
+                            shell.publish(surface_action(destroy_popup(id)));
+                            state.view_cursor = view_cursor;
+                            (id, layout.children().map(|lo| lo.bounds()).collect())
+                        } else {
+                            (
+                                window::Id::unique(),
+                                layout.children().map(|lo| lo.bounds()).collect(),
+                            )
+                        }
+                    });
+
+                    let mut popup_menu: Menu<'static, _> = Menu {
+                        tree: my_state.clone(),
+                        menu_roots: std::borrow::Cow::Owned(self.menu_roots.clone()),
+                        bounds_expand: self.bounds_expand,
+                        menu_overlays_parent: false,
+                        close_condition: self.close_condition,
+                        item_width: self.item_width,
+                        item_height: self.item_height,
+                        bar_bounds: layout.bounds(),
+                        main_offset: self.main_offset,
+                        cross_offset: self.cross_offset,
+                        root_bounds_list: root_list,
+                        path_highlight: self.path_highlight,
+                        style: std::borrow::Cow::Owned(self.style.clone()),
+                        position: Point::new(0., 0.),
+                        is_overlay: false,
+                        window_id: id,
+                        depth: 0,
+                    };
+
+                    init_root_menu(
+                        &mut popup_menu,
+                        renderer,
+                        shell,
+                        view_cursor.position().unwrap(),
+                        viewport.size(),
+                        Vector::new(0., 0.),
+                        layout.bounds(),
+                        self.main_offset as f32,
+                    );
+                    let anchor_rect = my_state.inner.with_data(|state| {
+                        state.menu_states[0]
+                            .iter()
+                            .find(|s| s.index.is_none())
+                            .map(|s| s.menu_bounds.parent_bounds)
+                            .map_or_else(
+                                || {
+                                    let bounds = layout.bounds();
+                                    Rectangle {
+                                        x: bounds.x as i32,
+                                        y: bounds.y as i32,
+                                        width: bounds.width as i32,
+                                        height: bounds.height as i32,
+                                    }
+                                },
+                                |r| Rectangle {
+                                    x: r.x as i32,
+                                    y: r.y as i32,
+                                    width: r.width as i32,
+                                    height: r.height as i32,
+                                },
+                            )
+                    });
+
+                    let menu_node =
+                        popup_menu.layout(renderer, Limits::NONE.min_width(1.).min_height(1.));
+                    let popup_size = menu_node.size();
+                    let positioner = SctkPositioner {
+                        size: Some((popup_size.width.ceil() as u32 + 2, popup_size.height.ceil() as u32 + 2)),
+                        anchor_rect,
+                        anchor: cctk::wayland_protocols::xdg::shell::client::xdg_positioner::Anchor::BottomLeft,
+                        gravity:cctk::wayland_protocols::xdg::shell::client::xdg_positioner::Gravity::BottomRight,
+                        reactive: true,
+                        ..Default::default()
+                        };
+                    let parent = self.window_id;
+                    shell.publish((surface_action)(crate::surface::action::simple_popup(
+                        move || SctkPopupSettings {
+                            parent,
+                            id,
+                            positioner: positioner.clone(),
+                            parent_size: None,
+                            grab: true,
+                            close_with_children: true,
+                            input_zone: None,
+                        },
+                        Some(move || {
+                            Element::from(
+                                crate::widget::container(popup_menu.clone()).center(Length::Fill),
+                            )
+                            .map(crate::action::app)
+                        }),
+                    )));
                 }
-                _ => (),
             }
-        });
+            // Window(Focused) => {
+            //     if let Some(popup_id) = state.popup_id.get(&self.window_id).copied() {
+            //         dbg!("window focused");
+            //         shell.publish(Message::from(SurfaceMessage::DestroyPopup(popup_id)));
+            //     }
+            //     state.reset();
+            // }
+            _ => (),
+        }
 
         root_status
     }
@@ -533,8 +679,8 @@ where
         _renderer: &Renderer,
         translation: Vector,
     ) -> Option<overlay::Element<'b, Message, crate::Theme, Renderer>> {
-        //#[cfg(feature = "wayland")]
-        //return None;
+        #[cfg(all(feature = "wayland", feature = "winit"))]
+        return None;
 
         let state = tree.state.downcast_ref::<MenuBarState>();
         if state

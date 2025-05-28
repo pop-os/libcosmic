@@ -213,7 +213,7 @@ where
 pub fn menu_items<
     A: MenuAction<Message = Message>,
     L: Into<Cow<'static, str>> + 'static,
-    Message: 'static + std::clone::Clone,
+    Message: 'static + std::clone::Clone + std::fmt::Debug,
 >(
     key_binds: &HashMap<KeyBind, A>,
     children: Vec<MenuItem<A, L>>,
@@ -238,9 +238,10 @@ pub fn menu_items<
 
             match item {
                 MenuItem::Button(label, icon, action) => {
+                    let l: Cow<'static, str> = label.into();
                     let key = find_key(&action, key_binds);
                     let mut items = vec![
-                        widget::text(label).into(),
+                        widget::text(l.clone()).into(),
                         widget::horizontal_space().into(),
                         widget::text(key).into(),
                     ];
@@ -250,15 +251,18 @@ pub fn menu_items<
                         items.insert(1, widget::Space::with_width(spacing.space_xxs).into());
                     }
 
-                    let menu_button = menu_button(items).on_press(action.message());
+                    // dbg!("button with action...", action.message());
+                    let menu_button = menu_button(items).on_press(action.message()).description(l);
 
                     trees.push(MenuTree::<Message>::from(Element::from(menu_button)));
                 }
                 MenuItem::ButtonDisabled(label, icon, action) => {
+                    let l: Cow<'static, str> = label.into();
+
                     let key = find_key(&action, key_binds);
 
                     let mut items = vec![
-                        widget::text(label).into(),
+                        widget::text(l.clone()).into(),
                         widget::horizontal_space().into(),
                         widget::text(key).into(),
                     ];
@@ -268,7 +272,7 @@ pub fn menu_items<
                         items.insert(1, widget::Space::with_width(spacing.space_xxs).into());
                     }
 
-                    let menu_button = menu_button(items);
+                    let menu_button = menu_button(items).description((l.clone()));
 
                     trees.push(MenuTree::<Message>::from(Element::from(menu_button)));
                 }
@@ -305,16 +309,19 @@ pub fn menu_items<
                     )));
                 }
                 MenuItem::Folder(label, children) => {
+                    let l: Cow<'static, str> = label.into();
+
                     trees.push(MenuTree::<Message>::with_children(
                         RcElementWrapper::new(crate::Element::from(
                             menu_button::<'static, _>(vec![
-                                widget::text(label).into(),
+                                widget::text(l.clone()).into(),
                                 widget::horizontal_space().into(),
                                 widget::icon::from_name("pan-end-symbolic")
                                     .size(16)
                                     .icon()
                                     .into(),
                             ])
+                            .description(l.clone())
                             .class(
                                 // Menu folders have no on_press so they take on the disabled style by default
                                 if children.is_empty() {

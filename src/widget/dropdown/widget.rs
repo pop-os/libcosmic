@@ -536,15 +536,7 @@ pub fn update<
                     let on_close = surface::action::destroy_popup(id);
                     let on_surface_action_clone = on_surface_action.clone();
                     let translation = layout.virtual_offset();
-                    let get_popup_action = surface::action::simple_popup::<
-                        AppMessage,
-                        Box<
-                            dyn Fn() -> Element<'static, crate::Action<AppMessage>>
-                                + Send
-                                + Sync
-                                + 'static,
-                        >,
-                    >(
+                    let get_popup_action = surface::action::simple_popup::<AppMessage>(
                         move || {
                             SctkPopupSettings {
                             parent,
