@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["new","present","screenshot"],"struct":["Compositor","Surface"]};
