@@ -56,15 +56,15 @@ impl ResponsiveMenuBar {
     /// Will panic if the menu bar collapses without tracking the size
     pub fn into_element<
         'a,
-        Message: Clone + 'static,
-        A: menu::Action<Message = Message>,
+        Message: std::fmt::Debug + Clone + 'static,
+        A: menu::Action<Message = Message> + Clone,
         S: Into<std::borrow::Cow<'static, str>> + 'static,
     >(
         self,
         core: &Core,
         key_binds: &HashMap<menu::KeyBind, A>,
         id: crate::widget::Id,
-        action_message: impl Fn(crate::surface::Action) -> Message + 'static,
+        action_message: impl Fn(crate::surface::Action) -> Message + Clone + 'static,
         trees: Vec<(S, Vec<menu::Item<A, S>>)>,
     ) -> Element<'a, Message> {
         use crate::widget::id_container;
@@ -81,17 +81,14 @@ impl ResponsiveMenuBar {
                     menu::bar(
                         trees
                             .into_iter()
-                            .map(
-                                |mt: (
-                                    std::borrow::Cow<'_, str>,
-                                    Vec<menu::Item<A, std::borrow::Cow<'_, str>>>,
-                                )| {
-                                    menu::Tree::<_>::with_children(
+                            .map(|mt: (S, Vec<menu::Item<A, S>>)| {
+                                menu::Tree::<_>::with_children(
+                                    crate::widget::RcElementWrapper::new(Element::from(
                                         menu::root(mt.0),
-                                        menu::items(key_binds, mt.1.into()),
-                                    )
-                                },
-                            )
+                                    )),
+                                    menu::items(key_binds, mt.1.into()),
+                                )
+                            })
                             .collect(),
                     )
                     .item_width(self.item_width)
