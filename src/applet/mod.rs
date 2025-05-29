@@ -460,7 +460,7 @@ pub fn run<App: Application>(flags: App::Flags) -> iced::Result {
     let mut settings = helper.window_settings();
     settings.resizable = None;
 
-    #[cfg(target_env = "gnu")]
+    #[cfg(all(target_env = "gnu", not(target_os = "windows")))]
     if let Some(threshold) = settings.default_mmap_threshold {
         crate::malloc::limit_mmap_threshold(threshold);
     }

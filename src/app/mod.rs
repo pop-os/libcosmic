@@ -96,7 +96,7 @@ pub(crate) fn iced_settings<App: Application>(
 ///
 /// Returns error on application failure.
 pub fn run<App: Application>(settings: Settings, flags: App::Flags) -> iced::Result {
-    #[cfg(target_env = "gnu")]
+    #[cfg(all(target_env = "gnu", not(target_os = "windows")))]
     if let Some(threshold) = settings.default_mmap_threshold {
         crate::malloc::limit_mmap_threshold(threshold);
     }
