@@ -6,10 +6,10 @@ use cosmic::{
         ThemeBuilder,
     },
     font::load_fonts,
-    iced::{self, Application, Length, Subscription, Task},
+    iced::{self, Length, Subscription, Task},
     iced::{
         subscription,
-        widget::{self, column, container, horizontal_space, row, text},
+        widget::{self, column, horizontal_space, row, text},
         window::{self, close, drag, minimize, toggle_maximize},
     },
     iced_futures::event::listen_raw,
@@ -20,7 +20,7 @@ use cosmic::{
         button, container, header_bar, icon, nav_bar, nav_bar_toggle, scrollable, segmented_button,
         settings, warning,
     },
-    Element,
+    Application, Element,
 };
 use cosmic_time::{Instant, Timeline};
 use std::{
@@ -433,10 +433,10 @@ impl Application for Window {
             Message::ToggleNavBarCondensed => {
                 self.nav_bar_toggled_condensed = !self.nav_bar_toggled_condensed
             }
-            Message::Drag => return drag(self.core.main_window_id().unwrap()),
-            Message::Close => return close(self.core.main_window_id().unwrap()),
-            Message::Minimize => return minimize(self.core.main_window_id().unwrap(), true),
-            Message::Maximize => return toggle_maximize(self.core.main_window_id().unwrap()),
+            Message::Drag => return drag(self.core().main_window_id().unwrap()),
+            Message::Close => return close(self.core().main_window_id().unwrap()),
+            Message::Minimize => return minimize(self.core().main_window_id().unwrap(), true),
+            Message::Maximize => return toggle_maximize(self.core().main_window_id().unwrap()),
 
             Message::InputChanged => {}
 
