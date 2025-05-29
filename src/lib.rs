@@ -90,7 +90,7 @@ pub use iced_wgpu;
 pub mod icon_theme;
 pub mod keyboard_nav;
 
-#[cfg(target_env = "gnu")]
+#[cfg(all(target_env = "gnu", not(target_os = "windows")))]
 pub(crate) mod malloc;
 
 #[cfg(all(feature = "process", not(windows)))]

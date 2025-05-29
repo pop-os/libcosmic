@@ -215,7 +215,7 @@ where
             crate::Action::DbusActivation(message) => self.app.dbus_activation(message),
         };
 
-        #[cfg(target_env = "gnu")]
+        #[cfg(all(target_env = "gnu", not(target_os = "windows")))]
         crate::malloc::trim(0);
 
         message
@@ -397,7 +397,7 @@ where
             self.app.view().map(crate::Action::App)
         };
 
-        #[cfg(target_env = "gnu")]
+        #[cfg(all(target_env = "gnu", not(target_os = "windows")))]
         crate::malloc::trim(0);
 
         view
@@ -407,7 +407,7 @@ where
     pub fn view(&self) -> Element<crate::Action<T::Message>> {
         let view = self.app.view_main();
 
-        #[cfg(target_env = "gnu")]
+        #[cfg(all(target_env = "gnu", not(target_os = "windows")))]
         crate::malloc::trim(0);
 
         view
