@@ -1,4 +1,8 @@
-use crate::{Element, iced::Length, style, theme, widget};
+use crate::{
+    Element,
+    iced::{Length, Pixels},
+    style, theme, widget,
+};
 use std::borrow::Cow;
 
 pub fn dialog<'a, Message>() -> Dialog<'a, Message> {
@@ -13,6 +17,10 @@ pub struct Dialog<'a, Message> {
     primary_action: Option<Element<'a, Message>>,
     secondary_action: Option<Element<'a, Message>>,
     tertiary_action: Option<Element<'a, Message>>,
+    width: Option<Length>,
+    height: Option<Length>,
+    max_width: Option<Pixels>,
+    max_height: Option<Pixels>,
 }
 
 impl<Message> Default for Dialog<'_, Message> {
@@ -31,6 +39,10 @@ impl<'a, Message> Dialog<'a, Message> {
             primary_action: None,
             secondary_action: None,
             tertiary_action: None,
+            width: None,
+            height: None,
+            max_width: None,
+            max_height: None,
         }
     }
 
@@ -66,6 +78,26 @@ impl<'a, Message> Dialog<'a, Message> {
 
     pub fn tertiary_action(mut self, button: impl Into<Element<'a, Message>>) -> Self {
         self.tertiary_action = Some(button.into());
+        self
+    }
+
+    pub fn width(mut self, width: impl Into<Length>) -> Self {
+        self.width = Some(width.into());
+        self
+    }
+
+    pub fn height(mut self, height: impl Into<Length>) -> Self {
+        self.height = Some(height.into());
+        self
+    }
+
+    pub fn max_height(mut self, max_height: impl Into<Pixels>) -> Self {
+        self.max_height = Some(max_height.into());
+        self
+    }
+
+    pub fn max_width(mut self, max_width: impl Into<Pixels>) -> Self {
+        self.max_width = Some(max_width.into());
         self
     }
 }
@@ -123,14 +155,26 @@ impl<'a, Message: Clone + 'static> From<Dialog<'a, Message>> for Element<'a, Mes
             button_row = button_row.push(button);
         }
 
-        Element::from(
-            widget::container(
-                widget::column::with_children(vec![content_row.into(), button_row.into()])
-                    .spacing(space_l),
-            )
-            .class(style::Container::Dialog)
-            .padding(space_m)
-            .width(Length::Fixed(570.0)),
+        let mut container = widget::container(
+            widget::column::with_children(vec![content_row.into(), button_row.into()])
+                .spacing(space_l),
         )
+        .class(style::Container::Dialog)
+        .padding(space_m)
+        .width(dialog.width.unwrap_or(Length::Fixed(570.0)));
+
+        if let Some(height) = dialog.height {
+            container = container.height(height);
+        }
+
+        if let Some(max_width) = dialog.max_width {
+            container = container.max_width(max_width);
+        }
+
+        if let Some(max_height) = dialog.max_height {
+            container = container.max_height(max_height);
+        }
+
+        Element::from(container)
     }
 }
