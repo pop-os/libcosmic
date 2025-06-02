@@ -111,7 +111,12 @@ where
     Self: cosmic::Application,
 {
     fn update_title(&mut self) -> Task<Message> {
-        self.set_header_title(String::from("Calendar Demo"));
-        self.set_window_title(String::from("Calendar Demo"))
+        let title = "Calendar Demo";
+        self.set_header_title(title.to_owned());
+
+        self.core
+            .main_window_id()
+            .map(|window_id| self.set_window_title(title.into(), window_id))
+            .unwrap_or_else(Task::none)
     }
 }
