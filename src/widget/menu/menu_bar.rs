@@ -1,7 +1,7 @@
 // From iced_aw, license MIT
 
 //! A widget that handles menu trees
-use std::collections::HashMap;
+use std::{collections::HashMap, sync::Arc};
 
 use super::{
     menu_inner::{
@@ -12,6 +12,7 @@ use super::{
 use crate::{
     Renderer,
     style::menu_bar::StyleSheet,
+    surface::action::destroy_popup,
     widget::{
         RcWrapper,
         dropdown::menu::{self, State},
@@ -70,6 +71,7 @@ impl MenuBarStateInner {
     }
 
     pub(super) fn reset(&mut self) {
+        dbg!("reset");
         self.open = false;
         self.active_root = Vec::new();
         self.menu_states.clear();
@@ -192,7 +194,8 @@ pub struct MenuBar<Message> {
     window_id: window::Id,
     #[cfg(all(feature = "wayland", feature = "winit"))]
     positioner: iced_runtime::platform_specific::wayland::popup::SctkPositioner,
-    pub(crate) on_surface_action: Option<Box<dyn Fn(crate::surface::Action) -> Message>>,
+    pub(crate) on_surface_action:
+        Option<Arc<dyn Fn(crate::surface::Action) -> Message + Send + Sync + 'static>>,
 }
 
 impl<Message> MenuBar<Message>
@@ -348,9 +351,9 @@ where
 
     pub fn on_surface_action(
         mut self,
-        handler: impl Fn(crate::surface::Action) -> Message + 'static,
+        handler: impl Fn(crate::surface::Action) -> Message + Send + Sync + 'static,
     ) -> Self {
-        self.on_surface_action = Some(Box::new(handler));
+        self.on_surface_action = Some(Arc::new(handler));
         self
     }
 }
@@ -420,9 +423,10 @@ where
         shell: &mut Shell<'_, Message>,
         viewport: &Rectangle,
     ) -> event::Status {
-        use event::Event::{Mouse, Touch};
+        use event::Event::{Mouse, Touch, Window};
         use mouse::{Button::Left, Event::ButtonReleased};
         use touch::Event::{FingerLifted, FingerLost};
+        use window::Event::Focused;
 
         let root_status = process_root_events(
             &mut self.menu_roots,
@@ -439,12 +443,16 @@ where
         let my_state = tree.state.downcast_mut::<MenuBarState>();
 
         // XXX this should reset the state if there are no other copies of the state, which implies no dropdown menus open.
-        let reset = self.window_id != window::Id::NONE && my_state.inner.with_data(|d| d.open);
+        let reset = self.window_id != window::Id::NONE
+            && my_state
+                .inner
+                .with_data(|d| !d.open && !d.active_root.is_empty());
 
         my_state.inner.with_data_mut(|state| {
             if reset {
                 if let Some(popup_id) = state.popup_id.get(&self.window_id).copied() {
                     dbg!("reset destroy");
+
                     if let Some(handler) = self.on_surface_action.as_ref() {
                         shell.publish((handler)(crate::surface::Action::DestroyPopup(popup_id)));
                         state.reset();
@@ -457,13 +465,29 @@ where
 
         match event {
             Mouse(ButtonReleased(Left)) | Touch(FingerLifted { .. } | FingerLost { .. }) => {
-                my_state.inner.with_data_mut(|state| {
+                let create_popup = my_state.inner.with_data_mut(|state| {
+                    let mut create_popup = false;
                     if state.menu_states.is_empty() && view_cursor.is_over(layout.bounds()) {
                         state.view_cursor = view_cursor;
+                        dbg!(view_cursor.is_over(layout.bounds()));
                         state.open = true;
+                        create_popup = true;
+                    } else if let Some(id) = state.popup_id.remove(&self.window_id) {
+                        dbg!("destroy popup...");
+                        state.menu_states.clear();
+                        state.active_root.clear();
+                        let surface_action = self.on_surface_action.as_ref().unwrap();
+                        state.open = false;
+                        shell.publish(surface_action(destroy_popup(id)));
+                        state.view_cursor = view_cursor;
                     }
+                    create_popup
                 });
-                #[cfg(all(feature = "wayland", feature = "winit"))]
+                dbg!(create_popup);
+                if !create_popup {
+                    return root_status;
+                }
+                #[cfg(all(feature = "wayland", feature = "winit", feature = "surface-message"))]
 
                 dbg!(
                     self.window_id != window::Id::NONE,
@@ -533,6 +557,7 @@ where
                         is_overlay: false,
                         window_id: id,
                         depth: 0,
+                        on_surface_action: self.on_surface_action.clone(),
                     };
 
                     init_root_menu(
@@ -545,7 +570,8 @@ where
                         layout.bounds(),
                         self.main_offset as f32,
                     );
-                    let anchor_rect = my_state.inner.with_data(|state| {
+                    let anchor_rect = my_state.inner.with_data_mut(|state| {
+                        state.popup_id.insert(self.window_id, id);
                         state.menu_states[0]
                             .iter()
                             .find(|s| s.index.is_none())
@@ -601,11 +627,15 @@ where
                 }
             }
             // Window(Focused) => {
-            //     if let Some(popup_id) = state.popup_id.get(&self.window_id).copied() {
-            //         dbg!("window focused");
-            //         shell.publish(Message::from(SurfaceMessage::DestroyPopup(popup_id)));
-            //     }
-            //     state.reset();
+            //     my_state.inner.with_data_mut(|state| {
+            //         if let Some(popup_id) = state.popup_id.get(&self.window_id).copied() {
+            //             dbg!("window focused");
+            //             if let Some(handler) = self.on_surface_action.as_ref() {
+            //                 shell.publish((handler)(destroy_popup(popup_id)));
+            //                 state.reset();
+            //             }
+            //         }
+            //     });
             // }
             _ => (),
         }
@@ -635,7 +665,11 @@ where
             // draw path highlight
             if self.path_highlight.is_some() {
                 let styling = theme.appearance(&self.style);
-                if let Some(active) = get_mut_or_default(&mut state.active_root, 0).get(0) {
+                if let Some(active) = state
+                    .active_root
+                    .get(0)
+                    .and_then(|active_root| active_root.get(0))
+                {
                     let active_bounds = layout
                         .children()
                         .nth(*active)
@@ -679,13 +713,13 @@ where
         _renderer: &Renderer,
         translation: Vector,
     ) -> Option<overlay::Element<'b, Message, crate::Theme, Renderer>> {
-        #[cfg(all(feature = "wayland", feature = "winit"))]
+        // #[cfg(all(feature = "wayland", feature = "winit"))]
         return None;
 
         let state = tree.state.downcast_ref::<MenuBarState>();
         if state
             .inner
-            .with_data_mut(|state| !state.open || state.active_root.is_empty())
+            .with_data(|state| !state.open || state.active_root.is_empty())
         {
             return None;
         };
@@ -709,6 +743,7 @@ where
                 is_overlay: true,
                 window_id: window::Id::NONE,
                 depth: 0,
+                on_surface_action: self.on_surface_action.clone(),
             }
             .overlay(),
         )

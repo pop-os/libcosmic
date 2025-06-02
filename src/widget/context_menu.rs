@@ -260,6 +260,7 @@ impl<Message: 'static + Clone> Widget<Message, crate::Theme, crate::Renderer>
                 is_overlay: true,
                 window_id: window::Id::NONE,
                 depth: 0,
+                on_surface_action: None,
             }
             .overlay(),
         )

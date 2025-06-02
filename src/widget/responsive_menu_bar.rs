@@ -64,7 +64,7 @@ impl ResponsiveMenuBar {
         core: &Core,
         key_binds: &HashMap<menu::KeyBind, A>,
         id: crate::widget::Id,
-        action_message: impl Fn(crate::surface::Action) -> Message + Clone + 'static,
+        action_message: impl Fn(crate::surface::Action) -> Message + Send + Sync + Clone + 'static,
         trees: Vec<(S, Vec<menu::Item<A, S>>)>,
     ) -> Element<'a, Message> {
         use crate::widget::id_container;
