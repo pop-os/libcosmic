@@ -599,7 +599,7 @@ where
                             positioner: positioner.clone(),
                             parent_size: None,
                             grab: true,
-                            close_with_children: true,
+                            close_with_children: false,
                             input_zone: None,
                         },
                         Some(move || {
