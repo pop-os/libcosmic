@@ -7,11 +7,11 @@ use std::collections::HashMap;
 use std::sync::LazyLock;
 
 use cosmic::app::{Core, Settings, Task};
-use cosmic::iced::Length;
 use cosmic::iced::alignment::{Horizontal, Vertical};
 use cosmic::iced::widget::column;
+use cosmic::iced::Length;
 use cosmic::iced_core::Size;
-use cosmic::widget::icon::{Handle, from_name};
+use cosmic::widget::icon::{from_name, Handle};
 use cosmic::widget::menu::KeyBind;
 use cosmic::widget::{button, text};
 use cosmic::widget::{
@@ -20,7 +20,7 @@ use cosmic::widget::{
     menu::{self, action::MenuAction},
     nav_bar, responsive,
 };
-use cosmic::{ApplicationExt, Element, executor, iced};
+use cosmic::{executor, iced, ApplicationExt, Element};
 
 static MENU_ID: LazyLock<iced::id::Id> = LazyLock::new(|| iced::id::Id::new("menu_id"));
 
@@ -177,6 +177,7 @@ impl cosmic::Application for App {
                 self.hidden = !self.hidden;
             }
             Message::Surface(a) => {
+                dbg!("got action...");
                 return cosmic::task::message(cosmic::Action::Cosmic(
                     cosmic::app::Action::Surface(a),
                 ));
@@ -255,6 +256,21 @@ impl cosmic::Application for App {
                     vec![
                         menu::Item::Button("hi 21", None, Action::Hi),
                         menu::Item::Button("hi 22", None, Action::Hi2),
+                        menu::Item::Folder(
+                            "nest 3 2".into(),
+                            vec![
+                                menu::Item::Button("31", None, Action::Hi),
+                                menu::Item::Button("342", None, Action::Hi2),
+                                menu::Item::Button("3443", None, Action::Hi3),
+                                menu::Item::Folder(
+                                    "nest 4 2".into(),
+                                    vec![
+                                        menu::Item::Button("343", None, Action::Hi2),
+                                        menu::Item::Button("3444", None, Action::Hi),
+                                    ],
+                                ),
+                            ],
+                        ),
                     ],
                 ),
                 (

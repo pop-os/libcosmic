@@ -461,8 +461,6 @@ where
             }
         });
 
-        // let tree: &mut _ = &mut state.tree;
-
         match event {
             Mouse(ButtonReleased(Left)) | Touch(FingerLifted { .. } | FingerLost { .. }) => {
                 let create_popup = my_state.inner.with_data_mut(|state| {
@@ -483,16 +481,11 @@ where
                     }
                     create_popup
                 });
-                dbg!(create_popup);
+
                 if !create_popup {
                     return root_status;
                 }
                 #[cfg(all(feature = "wayland", feature = "winit", feature = "surface-message"))]
-
-                dbg!(
-                    self.window_id != window::Id::NONE,
-                    self.on_surface_action.is_some()
-                );
                 // TODO emit Message to open menu
                 if self.window_id != window::Id::NONE && self.on_surface_action.is_some() {
                     use crate::surface::action::destroy_popup;
@@ -514,14 +507,6 @@ where
                     let hovered_root = layout
                         .children()
                         .position(|lo| view_cursor.is_over(lo.bounds()));
-                    dbg!(old_active_root);
-                    // TODO why exit here?
-                    // if hovered_root
-                    //     .zip(old_active_root.as_ref())
-                    //     .is_none_or(|r| r.0 != *r.1)
-                    // {
-                    //     panic!();
-                    // }
 
                     let (id, root_list) = my_state.inner.with_data_mut(|state| {
                         if let Some(id) = state.popup_id.get(&self.window_id).copied() {
@@ -629,7 +614,6 @@ where
             // Window(Focused) => {
             //     my_state.inner.with_data_mut(|state| {
             //         if let Some(popup_id) = state.popup_id.get(&self.window_id).copied() {
-            //             dbg!("window focused");
             //             if let Some(handler) = self.on_surface_action.as_ref() {
             //                 shell.publish((handler)(destroy_popup(popup_id)));
             //                 state.reset();
@@ -713,7 +697,7 @@ where
         _renderer: &Renderer,
         translation: Vector,
     ) -> Option<overlay::Element<'b, Message, crate::Theme, Renderer>> {
-        // #[cfg(all(feature = "wayland", feature = "winit"))]
+        #[cfg(all(feature = "wayland", feature = "winit"))]
         return None;
 
         let state = tree.state.downcast_ref::<MenuBarState>();
