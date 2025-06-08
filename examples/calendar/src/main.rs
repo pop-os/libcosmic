@@ -3,7 +3,7 @@
 
 //! Calendar widget example
 
-use chrono::NaiveDate;
+use chrono::{NaiveDate, Weekday};
 use cosmic::app::{Core, Settings, Task};
 use cosmic::widget::calendar::CalendarModel;
 use cosmic::{executor, iced, ApplicationExt, Element};
@@ -92,6 +92,7 @@ impl cosmic::Application for App {
             |date| Message::DateSelected(date),
             || Message::PrevMonth,
             || Message::NextMonth,
+            Weekday::Sun,
         );
 
         content = content.push(calendar);
