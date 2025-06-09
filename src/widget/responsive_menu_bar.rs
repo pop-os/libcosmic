@@ -86,7 +86,7 @@ impl ResponsiveMenuBar {
                                     crate::widget::RcElementWrapper::new(Element::from(
                                         menu::root(mt.0),
                                     )),
-                                    menu::items(key_binds, mt.1.into()),
+                                    menu::items(key_binds, mt.1),
                                 )
                             })
                             .collect(),

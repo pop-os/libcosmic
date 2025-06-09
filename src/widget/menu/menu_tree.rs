@@ -252,7 +252,7 @@ pub fn menu_items<
                     }
 
                     // dbg!("button with action...", action.message());
-                    let menu_button = menu_button(items).on_press(action.message()).description(l);
+                    let menu_button = menu_button(items).on_press(action.message());
 
                     trees.push(MenuTree::<Message>::from(Element::from(menu_button)));
                 }
@@ -272,7 +272,7 @@ pub fn menu_items<
                         items.insert(1, widget::Space::with_width(spacing.space_xxs).into());
                     }
 
-                    let menu_button = menu_button(items).description((l.clone()));
+                    let menu_button = menu_button(items);
 
                     trees.push(MenuTree::<Message>::from(Element::from(menu_button)));
                 }
@@ -321,7 +321,6 @@ pub fn menu_items<
                                     .icon()
                                     .into(),
                             ])
-                            .description(l.clone())
                             .class(
                                 // Menu folders have no on_press so they take on the disabled style by default
                                 if children.is_empty() {
