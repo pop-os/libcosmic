@@ -44,7 +44,7 @@ where
     #[setters(skip)]
     pub(super) on_item_mb_right: Option<Box<dyn Fn(Entity) -> Message + 'static>>,
     #[setters(skip)]
-    pub(super) item_context_builder: Box<dyn Fn(&Item) -> Option<Vec<menu::Tree<'a, Message>>>>,
+    pub(super) item_context_builder: Box<dyn Fn(&Item) -> Option<Vec<menu::Tree<Message>>>>,
 }
 
 impl<'a, SelectionMode, Item, Category, Message>
@@ -97,7 +97,7 @@ where
                                                 ]
                                             })
                                             .flatten()
-                                            .collect::<Vec<Element<'a, Message>>>();
+                                            .collect::<Vec<Element<'static, Message>>>();
                                         elements.pop();
                                         elements
                                             .apply(widget::row::with_children)
@@ -247,7 +247,7 @@ where
 
     pub fn item_context<F>(mut self, context_menu_builder: F) -> Self
     where
-        F: Fn(&Item) -> Option<Vec<menu::Tree<'a, Message>>> + 'static,
+        F: Fn(&Item) -> Option<Vec<menu::Tree<Message>>> + 'static,
         Message: 'static,
     {
         self.item_context_builder = Box::new(context_menu_builder);

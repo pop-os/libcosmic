@@ -92,6 +92,7 @@ impl cosmic::Application for App {
             |date| Message::DateSelected(date),
             || Message::PrevMonth,
             || Message::NextMonth,
+            chrono::Weekday::Sun,
         );
 
         content = content.push(calendar);

@@ -93,7 +93,7 @@ impl cosmic::Application for App {
     /// Creates a view after each update.
     fn view(&self) -> Element<Self::Message> {
         let widget = cosmic::widget::context_menu(
-            cosmic::widget::button::text(&self.button_label).on_press(Message::Clicked),
+            cosmic::widget::button::text(self.button_label.to_string()).on_press(Message::Clicked),
             self.context_menu(),
         );
 

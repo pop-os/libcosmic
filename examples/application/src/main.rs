@@ -46,13 +46,19 @@ impl Page {
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum Action {
     Hi,
+    Hi2,
+    Hi3,
 }
 
 impl MenuAction for Action {
     type Message = Message;
 
     fn message(&self) -> Message {
-        Message::Hi
+        match self {
+            Action::Hi => Message::Hi,
+            Action::Hi2 => Message::Hi2,
+            Action::Hi3 => Message::Hi3,
+        }
     }
 }
 
@@ -86,6 +92,8 @@ pub enum Message {
     ToggleHide,
     Surface(cosmic::surface::Action),
     Hi,
+    Hi2,
+    Hi3,
 }
 
 /// The [`App`] stores application-specific state.
@@ -176,6 +184,12 @@ impl cosmic::Application for App {
             Message::Hi => {
                 dbg!("hi");
             }
+            Message::Hi2 => {
+                dbg!("hi 2");
+            }
+            Message::Hi3 => {
+                dbg!("hi 3");
+            }
         }
         Task::none()
     }
@@ -221,119 +235,80 @@ impl cosmic::Application for App {
     }
 
     fn header_start(&self) -> Vec<Element<Self::Message>> {
-        use cosmic::widget::menu::Tree;
-        #[cfg(not(feature = "wayland"))]
-        {
-            vec![cosmic::widget::menu::bar(vec![
-                Tree::with_children(
-                    menu::root("hiiiiiiiiiiiiiiiiiii 1"),
-                    menu::items(
-                        &self.keybinds,
-                        vec![menu::Item::Button("hi", None, Action::Hi)],
-                    ),
+        vec![cosmic::widget::responsive_menu_bar().into_element(
+            self.core(),
+            &self.keybinds,
+            MENU_ID.clone(),
+            Message::Surface,
+            vec![
+                (
+                    "hi 1".into(),
+                    vec![
+                        menu::Item::Button("hi 12", None, Action::Hi),
+                        menu::Item::Button("hi 13", None, Action::Hi2),
+                    ],
                 ),
-                Tree::with_children(
-                    menu::root("hiiiiiiiiiiiiiiiiii 2"),
-                    menu::items(
-                        &self.keybinds,
-                        vec![menu::Item::Button("hi 2", None, Action::Hi)],
-                    ),
+                (
+                    "hi 2".into(),
+                    vec![
+                        menu::Item::Button("hi 21", None, Action::Hi),
+                        menu::Item::Button("hi 22", None, Action::Hi2),
+                        menu::Item::Folder(
+                            "nest 3 2 >".into(),
+                            vec![
+                                menu::Item::Button("21", None, Action::Hi),
+                                menu::Item::Button("242", None, Action::Hi2),
+                                menu::Item::Button("2443", None, Action::Hi3),
+                                menu::Item::Folder(
+                                    "nest 4 2 >".into(),
+                                    vec![
+                                        menu::Item::Button("243", None, Action::Hi2),
+                                        menu::Item::Button("2444", None, Action::Hi),
+                                    ],
+                                ),
+                            ],
+                        ),
+                    ],
                 ),
-                Tree::with_children(
-                    menu::root("hiiiiiiiiiiiiiiiiiiiii 3"),
-                    menu::items(
-                        &self.keybinds,
-                        vec![
-                            menu::Item::Button("hi 3", None, Action::Hi),
-                            menu::Item::Button("hi 3 #2", None, Action::Hi),
-                        ],
-                    ),
+                (
+                    "hi 3".into(),
+                    vec![
+                        menu::Item::Button("hi 31", None, Action::Hi),
+                        menu::Item::Button("hi 332", None, Action::Hi2),
+                        menu::Item::Button("hi 3333", None, Action::Hi3),
+                        menu::Item::Button("hi 33334", None, Action::Hi3),
+                        menu::Item::Button("hi 333335", None, Action::Hi3),
+                        menu::Item::Button("hi 3333336", None, Action::Hi3),
+                    ],
                 ),
-                Tree::with_children(
-                    menu::root("hi 3"),
-                    menu::items(
-                        &self.keybinds,
-                        vec![
-                            menu::Item::Button("hi 3", None, Action::Hi),
-                            menu::Item::Button("hi 3 #2", None, Action::Hi),
-                            menu::Item::Button("hi 3 #3", None, Action::Hi),
-                        ],
-                    ),
+                (
+                    "hiiiiiiiiiiiiiiiiiii 4".into(),
+                    vec![
+                        menu::Item::Button("hi 4", None, Action::Hi),
+                        menu::Item::Button("hi 44", None, Action::Hi2),
+                        menu::Item::Button("hi 444", None, Action::Hi3),
+                        menu::Item::Folder(
+                            "nest 4 >".into(),
+                            vec![
+                                menu::Item::Button("hi 41", None, Action::Hi),
+                                menu::Item::Button("hi 442", None, Action::Hi2),
+                                menu::Item::Folder(
+                                    "nest 3 4 >".into(),
+                                    vec![
+                                        menu::Item::Button("hi 443", None, Action::Hi2),
+                                        menu::Item::Button("hi 4444", None, Action::Hi),
+                                        menu::Item::Button("hi 44444", None, Action::Hi3),
+                                        menu::Item::Button("hi 444445", None, Action::Hi3),
+                                        menu::Item::Button("hi 4444446", None, Action::Hi3),
+                                        menu::Item::Button("hi 44444447", None, Action::Hi3),
+                                    ],
+                                ),
+                            ],
+                        ),
+                    ],
                 ),
-                Tree::with_children(
-                    menu::root("hi 4"),
-                    menu::items(
-                        &self.keybinds,
-                        vec![
-                            menu::Item::Folder(
-                                "hi 41 extra root",
-                                vec![menu::Item::Button("hi 3", None, Action::Hi)],
-                            ),
-                            menu::Item::Button("hi 42", None, Action::Hi),
-                            menu::Item::Button("hi 43", None, Action::Hi),
-                            menu::Item::Button("hi 44", None, Action::Hi),
-                            menu::Item::Button("hi 45", None, Action::Hi),
-                            menu::Item::Button("hi 46", None, Action::Hi),
-                        ],
-                    ),
-                ),
-            ])
-            .into()]
-        }
-        #[cfg(feature = "wayland")]
-        {
-            vec![cosmic::widget::responsive_menu_bar().into_element(
-                self.core(),
-                &self.keybinds,
-                MENU_ID.clone(),
-                Message::Surface,
-                vec![
-                    (
-                        "hiiiiiiiiiiiiiiiiiii 1",
-                        vec![menu::Item::Button("hi 1", None, Action::Hi)],
-                    ),
-                    (
-                        "hiiiiiiiiiiiiiiiiiii 2".into(),
-                        vec![
-                            menu::Item::Button("hi 2", None, Action::Hi),
-                            menu::Item::Button("hi 22", None, Action::Hi),
-                        ],
-                    ),
-                    (
-                        "hiiiiiiiiiiiiiiiiiii 3".into(),
-                        vec![
-                            menu::Item::Button("hi 3", None, Action::Hi),
-                            menu::Item::Button("hi 33", None, Action::Hi),
-                            menu::Item::Button("hi 333", None, Action::Hi),
-                        ],
-                    ),
-                    (
-                        "hiiiiiiiiiiiiiiiiiii 4".into(),
-                        vec![
-                            menu::Item::Button("hi 4", None, Action::Hi),
-                            menu::Item::Button("hi 44", None, Action::Hi),
-                            menu::Item::Button("hi 444", None, Action::Hi),
-                            menu::Item::Folder(
-                                "nest 4".into(),
-                                vec![
-                                    menu::Item::Button("hi 4", None, Action::Hi),
-                                    menu::Item::Button("hi 44", None, Action::Hi),
-                                    menu::Item::Button("hi 444", None, Action::Hi),
-                                    menu::Item::Folder(
-                                        "nest 2 4".into(),
-                                        vec![
-                                            menu::Item::Button("hi 4", None, Action::Hi),
-                                            menu::Item::Button("hi 44", None, Action::Hi),
-                                            menu::Item::Button("hi 444", None, Action::Hi),
-                                        ],
-                                    ),
-                                ],
-                            ),
-                        ],
-                    ),
-                ],
-            )]
-        }
+            ],
+        )]
     }
 }
 

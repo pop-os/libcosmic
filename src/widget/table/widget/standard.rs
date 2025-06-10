@@ -51,7 +51,7 @@ where
     #[setters(skip)]
     pub(super) on_item_mb_right: Option<Box<dyn Fn(Entity) -> Message + 'static>>,
     #[setters(skip)]
-    pub(super) item_context_builder: Box<dyn Fn(&Item) -> Option<Vec<menu::Tree<'a, Message>>>>,
+    pub(super) item_context_builder: Box<dyn Fn(&Item) -> Option<Vec<menu::Tree<Message>>>>,
     // Item DND
 
     // === Category Interaction ===
@@ -64,8 +64,7 @@ where
     #[setters(skip)]
     pub(super) on_category_mb_right: Option<Box<dyn Fn(Category) -> Message + 'static>>,
     #[setters(skip)]
-    pub(super) category_context_builder:
-        Box<dyn Fn(Category) -> Option<Vec<menu::Tree<'a, Message>>>>,
+    pub(super) category_context_builder: Box<dyn Fn(Category) -> Option<Vec<menu::Tree<Message>>>>,
 }
 
 impl<'a, SelectionMode, Item, Category, Message>
@@ -83,7 +82,7 @@ where
             .model
             .categories
             .iter()
-            .cloned()
+            .copied()
             .map(|category| {
                 let cat_context_tree = (val.category_context_builder)(category);
 
@@ -167,7 +166,7 @@ where
                                     .align_y(Alignment::Center)
                                     .apply(Element::from)
                             })
-                            .collect::<Vec<Element<'a, Message>>>()
+                            .collect::<Vec<Element<'static, Message>>>()
                             .apply(widget::row::with_children)
                             .apply(container)
                             .padding(val.item_padding)
@@ -328,7 +327,7 @@ where
 
     pub fn item_context<F>(mut self, context_menu_builder: F) -> Self
     where
-        F: Fn(&Item) -> Option<Vec<menu::Tree<'a, Message>>> + 'static,
+        F: Fn(&Item) -> Option<Vec<menu::Tree<Message>>> + 'static,
         Message: 'static,
     {
         self.item_context_builder = Box::new(context_menu_builder);
@@ -367,7 +366,7 @@ where
 
     pub fn category_context<F>(mut self, context_menu_builder: F) -> Self
     where
-        F: Fn(Category) -> Option<Vec<menu::Tree<'a, Message>>> + 'static,
+        F: Fn(Category) -> Option<Vec<menu::Tree<Message>>> + 'static,
         Message: 'static,
     {
         self.category_context_builder = Box::new(context_menu_builder);

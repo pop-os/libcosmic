@@ -42,7 +42,7 @@ pub enum MenuBarStyle {
     #[default]
     Default,
     /// A [`Theme`] that uses a `Custom` palette.
-    Custom(Arc<dyn StyleSheet<Style = Theme>>),
+    Custom(Arc<dyn StyleSheet<Style = Theme> + Send + Sync>),
 }
 
 impl From<fn(&Theme) -> Appearance> for MenuBarStyle {
