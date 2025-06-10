@@ -19,7 +19,7 @@ use crate::{
     },
 };
 
-use iced::{Point, Vector, window};
+use iced::{Point, Shadow, Vector, window};
 use iced_core::Border;
 use iced_widget::core::{
     Alignment, Clipboard, Element, Layout, Length, Padding, Rectangle, Shell, Widget, event,
@@ -429,9 +429,9 @@ where
                 layout.bounds(),
                 self.main_offset as f32,
             );
-            let anchor_rect = my_state.inner.with_data_mut(|state| {
+            let (anchor_rect, gravity) = my_state.inner.with_data_mut(|state| {
                 state.popup_id.insert(self.window_id, id);
-                state
+                (state
                     .menu_states
                     .iter()
                     .find(|s| s.index.is_none())
@@ -452,19 +452,28 @@ where
                             width: r.width as i32,
                             height: r.height as i32,
                         },
-                    )
+                    ), match (state.horizontal_direction, state.vertical_direction) {
+                        (Direction::Positive, Direction::Positive) => cctk::wayland_protocols::xdg::shell::client::xdg_positioner::Gravity::BottomRight,
+                        (Direction::Positive, Direction::Negative) => cctk::wayland_protocols::xdg::shell::client::xdg_positioner::Gravity::TopRight,
+                        (Direction::Negative, Direction::Positive) => cctk::wayland_protocols::xdg::shell::client::xdg_positioner::Gravity::BottomLeft,
+                        (Direction::Negative, Direction::Negative) => cctk::wayland_protocols::xdg::shell::client::xdg_positioner::Gravity::TopLeft,
+                    })
             });
 
             let menu_node = popup_menu.layout(renderer, Limits::NONE.min_width(1.).min_height(1.));
             let popup_size = menu_node.size();
             let positioner = SctkPositioner {
-                        size: Some((popup_size.width.ceil() as u32 + 2, popup_size.height.ceil() as u32 + 2)),
-                        anchor_rect,
-                        anchor: cctk::wayland_protocols::xdg::shell::client::xdg_positioner::Anchor::BottomLeft,
-                        gravity:cctk::wayland_protocols::xdg::shell::client::xdg_positioner::Gravity::BottomRight,
-                        reactive: true,
-                        ..Default::default()
-                        };
+                size: Some((
+                    popup_size.width.ceil() as u32 + 2,
+                    popup_size.height.ceil() as u32 + 2,
+                )),
+                anchor_rect,
+                anchor:
+                    cctk::wayland_protocols::xdg::shell::client::xdg_positioner::Anchor::BottomLeft,
+                gravity,
+                reactive: true,
+                ..Default::default()
+            };
             let parent = self.window_id;
             shell.publish((surface_action)(crate::surface::action::simple_popup(
                 move || SctkPopupSettings {
@@ -496,7 +505,7 @@ where
         let state = tree.state.downcast_mut::<MenuBarState>();
         state
             .inner
-            .with_data_mut(|inner| menu_roots_diff(&mut self.menu_roots, &mut inner.tree))
+            .with_data_mut(|inner| menu_roots_diff(&mut self.menu_roots, &mut inner.tree));
     }
 
     fn tag(&self) -> tree::Tag {
@@ -550,10 +559,9 @@ where
         shell: &mut Shell<'_, Message>,
         viewport: &Rectangle,
     ) -> event::Status {
-        use event::Event::{Mouse, Touch, Window};
+        use event::Event::{Mouse, Touch};
         use mouse::{Button::Left, Event::ButtonReleased};
         use touch::Event::{FingerLifted, FingerLost};
-        use window::Event::Focused;
 
         let root_status = process_root_events(
             &mut self.menu_roots,
@@ -656,7 +664,7 @@ where
             // draw path highlight
             if self.path_highlight.is_some() {
                 let styling = theme.appearance(&self.style);
-                if let Some(active) = state.active_root.get(0) {
+                if let Some(active) = state.active_root.first() {
                     let active_bounds = layout
                         .children()
                         .nth(*active)
@@ -668,7 +676,7 @@ where
                             radius: styling.bar_border_radius.into(),
                             ..Default::default()
                         },
-                        shadow: Default::default(),
+                        shadow: Shadow::default(),
                     };
 
                     renderer.fill_quad(path_quad, styling.path);
@@ -734,7 +742,7 @@ where
     }
 }
 
-impl<'a, Message> From<MenuBar<Message>> for Element<'a, Message, crate::Theme, Renderer>
+impl<Message> From<MenuBar<Message>> for Element<'_, Message, crate::Theme, Renderer>
 where
     Message: Clone + 'static,
 {

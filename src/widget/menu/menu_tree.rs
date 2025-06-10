@@ -210,10 +210,11 @@ where
 ///
 /// # Returns
 /// - A vector of `MenuTree`.
+#[must_use]
 pub fn menu_items<
     A: MenuAction<Message = Message>,
     L: Into<Cow<'static, str>> + 'static,
-    Message: 'static + std::clone::Clone + std::fmt::Debug,
+    Message: 'static + std::clone::Clone,
 >(
     key_binds: &HashMap<KeyBind, A>,
     children: Vec<MenuItem<A, L>>,

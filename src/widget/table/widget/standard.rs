@@ -67,8 +67,8 @@ where
     pub(super) category_context_builder: Box<dyn Fn(Category) -> Option<Vec<menu::Tree<Message>>>>,
 }
 
-impl<SelectionMode, Item, Category, Message>
-    From<TableView<'static, SelectionMode, Item, Category, Message>> for Element<'static, Message>
+impl<'a, SelectionMode, Item, Category, Message>
+    From<TableView<'a, SelectionMode, Item, Category, Message>> for Element<'a, Message>
 where
     Category: ItemCategory,
     Item: ItemInterface<Category>,
@@ -76,7 +76,7 @@ where
     SelectionMode: Default,
     Message: Clone + 'static,
 {
-    fn from(val: TableView<'static, SelectionMode, Item, Category, Message>) -> Self {
+    fn from(val: TableView<'a, SelectionMode, Item, Category, Message>) -> Self {
         // Header row
         let header_row = val
             .model
@@ -125,7 +125,7 @@ where
                     .apply(|mouse_area| widget::context_menu(mouse_area, cat_context_tree))
                     .apply(Element::from)
             })
-            .collect::<Vec<Element<'static, Message>>>()
+            .collect::<Vec<Element<'a, Message>>>()
             .apply(widget::row::with_children)
             .apply(Element::from);
         // Build the items
@@ -234,12 +234,12 @@ where
                     ]
                 })
                 .flatten()
-                .collect::<Vec<Element<'static, Message>>>()
+                .collect::<Vec<Element<'a, Message>>>()
         };
         vec![vec![header_row], items_full]
             .into_iter()
             .flatten()
-            .collect::<Vec<Element<'static, Message>>>()
+            .collect::<Vec<Element<'a, Message>>>()
             .apply(widget::column::with_children)
             .width(val.width)
             .height(val.height)

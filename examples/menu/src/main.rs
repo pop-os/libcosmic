@@ -15,6 +15,7 @@ use cosmic::widget::menu::action::MenuAction;
 use cosmic::widget::menu::key_bind::KeyBind;
 use cosmic::widget::menu::key_bind::Modifier;
 use cosmic::widget::menu::{self, ItemHeight, ItemWidth};
+use cosmic::widget::RcElementWrapper;
 use cosmic::{executor, Element};
 
 /// Runs application with these settings
@@ -155,7 +156,7 @@ impl cosmic::Application for App {
 
 pub fn menu_bar<'a>(config: &Config, key_binds: &HashMap<KeyBind, Action>) -> Element<'a, Message> {
     menu::bar(vec![menu::Tree::with_children(
-        menu::root("File"),
+        RcElementWrapper::new(Element::from(menu::root("File"))),
         menu::items(
             key_binds,
             vec![

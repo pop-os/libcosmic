@@ -20,9 +20,9 @@ pub type MultiSelectTableView<'a, Item, Category, Message> =
     TableView<'a, MultiSelect, Item, Category, Message>;
 pub type MultiSelectModel<Item, Category> = Model<MultiSelect, Item, Category>;
 
-pub fn table<'a, SelectionMode, Item, Category, Message>(
-    model: &'a Model<SelectionMode, Item, Category>,
-) -> TableView<'a, SelectionMode, Item, Category, Message>
+pub fn table<SelectionMode, Item, Category, Message>(
+    model: &Model<SelectionMode, Item, Category>,
+) -> TableView<'_, SelectionMode, Item, Category, Message>
 where
     Message: Clone,
     SelectionMode: Default,
@@ -33,9 +33,9 @@ where
     TableView::new(model)
 }
 
-pub fn compact_table<'a, SelectionMode, Item, Category, Message>(
-    model: &'a Model<SelectionMode, Item, Category>,
-) -> CompactTableView<'a, SelectionMode, Item, Category, Message>
+pub fn compact_table<SelectionMode, Item, Category, Message>(
+    model: &Model<SelectionMode, Item, Category>,
+) -> CompactTableView<'_, SelectionMode, Item, Category, Message>
 where
     Message: Clone,
     SelectionMode: Default,

@@ -1,7 +1,6 @@
 use std::collections::HashMap;
 
 use apply::Apply;
-use iced::window;
 
 use crate::{
     Core, Element,
@@ -10,6 +9,7 @@ use crate::{
 
 use super::menu::{self, ItemHeight, ItemWidth};
 
+#[must_use]
 pub fn responsive_menu_bar() -> ResponsiveMenuBar {
     ResponsiveMenuBar::default()
 }
@@ -34,18 +34,21 @@ impl Default for ResponsiveMenuBar {
 
 impl ResponsiveMenuBar {
     /// Set the item width
+    #[must_use]
     pub fn item_width(mut self, item_width: ItemWidth) -> Self {
         self.item_width = item_width;
         self
     }
 
     /// Set the item height
+    #[must_use]
     pub fn item_height(mut self, item_height: ItemHeight) -> Self {
         self.item_height = item_height;
         self
     }
 
     /// Set the spacing
+    #[must_use]
     pub fn spacing(mut self, spacing: f32) -> Self {
         self.spacing = spacing;
         self
@@ -56,7 +59,7 @@ impl ResponsiveMenuBar {
     /// Will panic if the menu bar collapses without tracking the size
     pub fn into_element<
         'a,
-        Message: std::fmt::Debug + Clone + 'static,
+        Message: Clone + 'static,
         A: menu::Action<Message = Message> + Clone,
         S: Into<std::borrow::Cow<'static, str>> + 'static,
     >(

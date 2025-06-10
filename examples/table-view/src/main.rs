@@ -209,11 +209,11 @@ impl cosmic::Application for App {
             if size.width < 600.0 {
                 widget::compact_table(&self.table_model)
                     .on_item_left_click(Message::ItemSelect)
-                    .item_context(|item| {
+                    .item_context(move |item| {
                         Some(widget::menu::items(
                             &HashMap::new(),
                             vec![widget::menu::Item::Button(
-                                format!("Action on {}", item.name),
+                                format!("Action on {}", item.name.to_string()),
                                 None,
                                 Action::None,
                             )],

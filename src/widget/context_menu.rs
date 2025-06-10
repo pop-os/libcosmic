@@ -4,7 +4,7 @@
 //! A context menu is a menu in a graphical user interface that appears upon user interaction, such as a right-click mouse operation.
 
 use crate::widget::menu::{
-    self, CloseCondition, ItemHeight, ItemWidth, MenuBarState, PathHighlight,
+    self, CloseCondition, ItemHeight, ItemWidth, MenuBarState, PathHighlight, menu_roots_diff,
 };
 use derive_setters::Setters;
 use iced::touch::Finger;
@@ -12,8 +12,6 @@ use iced::{Event, Vector, window};
 use iced_core::widget::{Tree, Widget, tree};
 use iced_core::{Length, Point, Size, event, mouse, touch};
 use std::collections::HashSet;
-
-use super::dropdown::menu::State;
 
 /// A context menu is a menu in a graphical user interface that appears upon user interaction, such as a right-click mouse operation.
 pub fn context_menu<Message: 'static + Clone>(
@@ -60,7 +58,7 @@ impl<Message: 'static + Clone> Widget<Message, crate::Theme, crate::Renderer>
         tree::State::new(LocalState {
             context_cursor: Point::default(),
             fingers_pressed: Default::default(),
-            menu_state: Default::default(),
+            menu_bar_state: Default::default(),
         })
     }
 
@@ -72,7 +70,6 @@ impl<Message: 'static + Clone> Widget<Message, crate::Theme, crate::Renderer>
         // Assign the context menu's elements as this widget's children.
         if let Some(ref context_menu) = self.context_menu {
             let mut tree = Tree::empty();
-            tree.state = tree::State::new(MenuBarState::default());
             tree.children = context_menu
                 .iter()
                 .map(|root| {
@@ -95,6 +92,10 @@ impl<Message: 'static + Clone> Widget<Message, crate::Theme, crate::Renderer>
 
     fn diff(&mut self, tree: &mut Tree) {
         tree.children[0].diff(self.content.as_widget_mut());
+        let state = tree.state.downcast_mut::<LocalState>();
+        state.menu_bar_state.inner.with_data_mut(|inner| {
+            menu_roots_diff(self.context_menu.as_mut().unwrap(), &mut inner.tree);
+        });
 
         // if let Some(ref mut context_menus) = self.context_menu {
         //     for (menu, tree) in context_menus
@@ -188,9 +189,9 @@ impl<Message: 'static + Clone> Widget<Message, crate::Theme, crate::Renderer>
                 && (right_button_released(&event) || (touch_lifted(&event) && fingers_pressed == 2))
             {
                 state.context_cursor = cursor.position().unwrap_or_default();
-                let menu_state = tree.children[1].state.downcast_mut::<MenuBarState>();
+                let state = tree.state.downcast_mut::<LocalState>();
 
-                menu_state.inner.with_data_mut(|state| {
+                state.menu_bar_state.inner.with_data_mut(|state| {
                     state.open = true;
                     state.view_cursor = cursor;
                 });
@@ -219,18 +220,10 @@ impl<Message: 'static + Clone> Widget<Message, crate::Theme, crate::Renderer>
         translation: Vector,
     ) -> Option<iced_core::overlay::Element<'b, Message, crate::Theme, crate::Renderer>> {
         let state = tree.state.downcast_ref::<LocalState>();
-        let menu_state = state.menu_state.clone();
 
-        let Some(context_menu) = self.context_menu.as_mut() else {
-            return None;
-        };
+        let context_menu = self.context_menu.as_mut()?;
 
-        if !tree.children[1]
-            .state
-            .downcast_ref::<MenuBarState>()
-            .inner
-            .with_data(|state| state.open)
-        {
+        if !state.menu_bar_state.inner.with_data(|state| state.open) {
             return None;
         }
 
@@ -239,8 +232,8 @@ impl<Message: 'static + Clone> Widget<Message, crate::Theme, crate::Renderer>
         bounds.y = state.context_cursor.y;
         Some(
             crate::widget::menu::Menu {
-                tree: menu_state,
-                menu_roots: std::borrow::Cow::Borrowed(context_menu),
+                tree: state.menu_bar_state.clone(),
+                menu_roots: std::borrow::Cow::Owned(context_menu.clone()),
                 bounds_expand: 16,
                 menu_overlays_parent: true,
                 close_condition: CloseCondition {
@@ -301,5 +294,5 @@ fn touch_lifted(event: &Event) -> bool {
 pub struct LocalState {
     context_cursor: Point,
     fingers_pressed: HashSet<Finger>,
-    menu_state: MenuBarState,
+    menu_bar_state: MenuBarState,
 }

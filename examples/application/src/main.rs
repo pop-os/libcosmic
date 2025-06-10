@@ -177,7 +177,6 @@ impl cosmic::Application for App {
                 self.hidden = !self.hidden;
             }
             Message::Surface(a) => {
-                dbg!("got action...");
                 return cosmic::task::message(cosmic::Action::Cosmic(
                     cosmic::app::Action::Surface(a),
                 ));
@@ -236,8 +235,6 @@ impl cosmic::Application for App {
     }
 
     fn header_start(&self) -> Vec<Element<Self::Message>> {
-        use cosmic::widget::menu::Tree;
-
         vec![cosmic::widget::responsive_menu_bar().into_element(
             self.core(),
             &self.keybinds,
@@ -300,6 +297,10 @@ impl cosmic::Application for App {
                                     vec![
                                         menu::Item::Button("hi 443", None, Action::Hi2),
                                         menu::Item::Button("hi 4444", None, Action::Hi),
+                                        menu::Item::Button("hi 44444", None, Action::Hi3),
+                                        menu::Item::Button("hi 444445", None, Action::Hi3),
+                                        menu::Item::Button("hi 4444446", None, Action::Hi3),
+                                        menu::Item::Button("hi 44444447", None, Action::Hi3),
                                     ],
                                 ),
                             ],

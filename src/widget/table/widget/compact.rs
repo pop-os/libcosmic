@@ -47,9 +47,8 @@ where
     pub(super) item_context_builder: Box<dyn Fn(&Item) -> Option<Vec<menu::Tree<Message>>>>,
 }
 
-impl<SelectionMode, Item, Category, Message>
-    From<CompactTableView<'static, SelectionMode, Item, Category, Message>>
-    for Element<'static, Message>
+impl<'a, SelectionMode, Item, Category, Message>
+    From<CompactTableView<'a, SelectionMode, Item, Category, Message>> for Element<'a, Message>
 where
     Category: ItemCategory,
     Item: ItemInterface<Category>,
@@ -57,7 +56,7 @@ where
     SelectionMode: Default,
     Message: Clone + 'static,
 {
-    fn from(val: CompactTableView<'static, SelectionMode, Item, Category, Message>) -> Self {
+    fn from(val: CompactTableView<'a, SelectionMode, Item, Category, Message>) -> Self {
         let cosmic_theme::Spacing { space_xxxs, .. } = theme::spacing();
         val.model
             .iter()
@@ -172,7 +171,7 @@ where
                     )
                     .apply(Element::from)
             })
-            .collect::<Vec<Element<'static, Message>>>()
+            .collect::<Vec<Element<'a, Message>>>()
             .apply(widget::column::with_children)
             .spacing(val.item_spacing)
             .padding(val.element_padding)
