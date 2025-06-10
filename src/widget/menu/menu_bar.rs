@@ -375,13 +375,14 @@ where
             let hovered_root = layout
                 .children()
                 .position(|lo| view_cursor.is_over(lo.bounds()));
-
-            if old_active_root
-                .zip(hovered_root)
-                .is_some_and(|r| r.0 == r.1)
+            if hovered_root.is_none()
+                || old_active_root
+                    .zip(hovered_root)
+                    .is_some_and(|r| r.0 == r.1)
             {
                 return;
             }
+
             let (id, root_list) = my_state.inner.with_data_mut(|state| {
                 if let Some(id) = state.popup_id.get(&self.window_id).copied() {
                     // close existing popups
