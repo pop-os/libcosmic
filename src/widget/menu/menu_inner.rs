@@ -317,10 +317,7 @@ impl MenuState {
             upper_bound_rel,
         } = slice;
 
-        // assert_eq!(
-        //     menu_tree.children.len(),
-        //     self.menu_bounds.child_positions.len()
-        // );
+        debug_assert_eq!(menu_tree.len(), self.menu_bounds.child_positions.len());
 
         // viewport space children bounds
         let children_bounds = self.menu_bounds.children_bounds + overlay_offset;
@@ -470,7 +467,7 @@ impl<'b, Message: Clone + 'static> Menu<'b, Message> {
 
             let overlay_offset = Point::ORIGIN - position;
             let tree_children: &mut Vec<Tree> = &mut data.tree.children;
-            
+
             let children = (if self.is_overlay { 0 } else { self.depth }..=if self.is_overlay {
                 data.active_root.len() - 1
             } else {
@@ -480,23 +477,27 @@ impl<'b, Message: Clone + 'static> Menu<'b, Message> {
                     if self.menu_roots.is_empty() {
                         return (&empty, vec![]);
                     }
-                    let (active_tree, roots) = data.active_root[..=active_root]
-                        .iter()
-                        .skip(1)
-                        .fold(
+                    let (active_tree, roots) =
+                        data.active_root[..=active_root].iter().skip(1).fold(
                             (
                                 &mut tree_children[data.active_root[0]].children,
                                 &self.menu_roots[data.active_root[0]].children,
                             ),
-                            |(tree, mt), next_active_root| {
-                                (tree, &mt[*next_active_root].children)
-                            },
+                            |(tree, mt), next_active_root| (tree, &mt[*next_active_root].children),
                         );
 
-                        data.menu_states[if self.is_overlay {0} else {self.depth}..=if self.is_overlay{data.active_root.len() - 1} else {self.depth}].iter()
-                            .enumerate()
-                            .filter(|ms| self.is_overlay || ms.0 < 1)
-                            .fold((roots, Vec::new()), |(menu_root, mut nodes), (_i, ms)| {
+                    data.menu_states[if self.is_overlay { 0 } else { self.depth }
+                        ..=if self.is_overlay {
+                            data.active_root.len() - 1
+                        } else {
+                            self.depth
+                        }]
+                        .iter()
+                        .enumerate()
+                        .filter(|ms| self.is_overlay || ms.0 < 1)
+                        .fold(
+                            (roots, Vec::new()),
+                            |(menu_root, mut nodes), (_i, ms)| {
                                 let slice =
                                     ms.slice(limits.max(), overlay_offset, self.item_height);
                                 let _start_index = slice.start_index;
@@ -520,9 +521,12 @@ impl<'b, Message: Clone + 'static> Menu<'b, Message> {
                                         .map_or(menu_root, |active| &menu_root[active].children),
                                     nodes,
                                 )
-                            })
-                    
-                }).map(|(_, l)| l).next().unwrap_or_default();
+                            },
+                        )
+                })
+                .map(|(_, l)| l)
+                .next()
+                .unwrap_or_default();
 
             // overlay space viewport rectangle
             Node::with_children(
@@ -936,7 +940,6 @@ impl<Message: std::clone::Clone + 'static> Widget<Message, crate::Theme, crate::
                     .get(self.depth)
                     .cloned()
                     .unwrap_or_default();
-                
 
                 let root_bounds_list = layout
                     .children()
@@ -1022,13 +1025,17 @@ impl<Message: std::clone::Clone + 'static> Widget<Message, crate::Theme, crate::
 
             let popup_size = menu_node.size();
             let positioner = SctkPositioner {
-                            size: Some((popup_size.width.ceil() as u32 + 2, popup_size.height.ceil() as u32 + 2)),
-                            anchor_rect,
-                            anchor: cctk::wayland_protocols::xdg::shell::client::xdg_positioner::Anchor::TopRight,
-                            gravity,
-                            reactive: true,
-                            ..Default::default()
-                        };
+                size: Some((
+                    popup_size.width.ceil() as u32 + 2,
+                    popup_size.height.ceil() as u32 + 2,
+                )),
+                anchor_rect,
+                anchor:
+                    cctk::wayland_protocols::xdg::shell::client::xdg_positioner::Anchor::TopRight,
+                gravity,
+                reactive: true,
+                ..Default::default()
+            };
             let parent = self.window_id;
             shell.publish((self.on_surface_action.as_ref().unwrap())(
                 crate::surface::action::simple_popup(
@@ -1087,7 +1094,6 @@ pub(super) fn init_root_menu<Message: Clone>(
     main_offset: f32,
 ) {
     menu.tree.inner.with_data_mut(|state| {
-        
         if !(state.menu_states.get(menu.depth).is_none()
             && (!menu.is_overlay || bar_bounds.contains(overlay_cursor)))
             || menu.depth > 0
@@ -1331,7 +1337,6 @@ where
     let mut new_menu_root = None;
 
     menu.tree.inner.with_data_mut(|state| {
-        
 
         /* When overlay is running, cursor_position in any widget method will go negative
         but I still want Widget::draw() to react to cursor movement */
