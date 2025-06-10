@@ -85,7 +85,7 @@ pub fn simple_subsurface<Message: 'static, V>(
 /// Used to create a popup message from within a widget.
 #[cfg(all(feature = "wayland", feature = "winit"))]
 #[must_use]
-pub fn simple_popup<Message: 'static, V>(
+pub fn simple_popup<Message: 'static>(
     settings: impl Fn() -> iced_runtime::platform_specific::wayland::popup::SctkPopupSettings
     + Send
     + Sync

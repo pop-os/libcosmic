@@ -9,6 +9,7 @@ use crate::{
 
 use super::menu::{self, ItemHeight, ItemWidth};
 
+#[must_use]
 pub fn responsive_menu_bar() -> ResponsiveMenuBar {
     ResponsiveMenuBar::default()
 }
@@ -33,18 +34,21 @@ impl Default for ResponsiveMenuBar {
 
 impl ResponsiveMenuBar {
     /// Set the item width
+    #[must_use]
     pub fn item_width(mut self, item_width: ItemWidth) -> Self {
         self.item_width = item_width;
         self
     }
 
     /// Set the item height
+    #[must_use]
     pub fn item_height(mut self, item_height: ItemHeight) -> Self {
         self.item_height = item_height;
         self
     }
 
     /// Set the spacing
+    #[must_use]
     pub fn spacing(mut self, spacing: f32) -> Self {
         self.spacing = spacing;
         self
@@ -56,14 +60,14 @@ impl ResponsiveMenuBar {
     pub fn into_element<
         'a,
         Message: Clone + 'static,
-        A: menu::Action<Message = Message>,
+        A: menu::Action<Message = Message> + Clone,
         S: Into<std::borrow::Cow<'static, str>> + 'static,
     >(
         self,
         core: &Core,
         key_binds: &HashMap<menu::KeyBind, A>,
         id: crate::widget::Id,
-        action_message: impl Fn(crate::surface::Action) -> Message + 'static,
+        action_message: impl Fn(crate::surface::Action) -> Message + Send + Sync + Clone + 'static,
         trees: Vec<(S, Vec<menu::Item<A, S>>)>,
     ) -> Element<'a, Message> {
         use crate::widget::id_container;
@@ -80,17 +84,21 @@ impl ResponsiveMenuBar {
                     menu::bar(
                         trees
                             .into_iter()
-                            .map(|mt| {
+                            .map(|mt: (S, Vec<menu::Item<A, S>>)| {
                                 menu::Tree::<_>::with_children(
-                                    menu::root(mt.0),
-                                    menu::items(key_binds, mt.1.into()),
+                                    crate::widget::RcElementWrapper::new(Element::from(
+                                        menu::root(mt.0),
+                                    )),
+                                    menu::items(key_binds, mt.1),
                                 )
                             })
                             .collect(),
                     )
                     .item_width(self.item_width)
                     .item_height(self.item_height)
-                    .spacing(self.spacing),
+                    .spacing(self.spacing)
+                    .on_surface_action(action_message.clone())
+                    .window_id_maybe(core.main_window_id()),
                     crate::widget::Id::new(format!("menu_bar_expanded_{id}")),
                 ),
                 id,
@@ -123,7 +131,9 @@ impl ResponsiveMenuBar {
                     )])
                     .item_height(self.item_height)
                     .item_width(self.collapsed_item_width)
-                    .spacing(self.spacing),
+                    .spacing(self.spacing)
+                    .on_surface_action(action_message.clone())
+                    .window_id_maybe(core.main_window_id()),
                     crate::widget::Id::new(format!("menu_bar_collapsed_{id}")),
                 ),
                 id,

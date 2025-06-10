@@ -460,7 +460,6 @@ impl<'a, Message: 'a + Clone> Widget<Message, crate::Theme, crate::Renderer>
                 if !self.selected && matches!(self.style, crate::theme::Button::HeaderBar) {
                     headerbar_alpha = Some(0.8);
                 }
-
                 theme.hovered(state.is_focused, self.selected, &self.style)
             }
         } else {
