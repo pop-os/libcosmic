@@ -437,7 +437,11 @@ impl<'a, Message: 'a + Clone> Widget<Message, crate::Theme, crate::Renderer>
         if !viewport.intersects(&bounds) {
             return;
         }
-        let content_layout = layout.children().next().unwrap();
+
+        // FIXME: Why is there no content layout
+        let Some(content_layout) = layout.children().next() else {
+            return;
+        };
 
         let mut headerbar_alpha = None;
 
