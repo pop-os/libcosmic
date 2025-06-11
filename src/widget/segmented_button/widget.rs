@@ -935,7 +935,6 @@ where
                                 }
 
                                 if can_activate {
-                                    eprintln!("can activate focus");
                                     shell.publish(on_activate(key));
                                     state.focused = true;
                                     state.focused_item = Item::Tab(key);
@@ -1735,13 +1734,11 @@ impl operation::Focusable for LocalState {
     }
 
     fn focus(&mut self) {
-        eprintln!("focus");
         self.focused = true;
         self.focused_item = Item::Set;
     }
 
     fn unfocus(&mut self) {
-        eprintln!("unfocus");
         self.focused = false;
         self.focused_item = Item::None;
         self.show_context = None;

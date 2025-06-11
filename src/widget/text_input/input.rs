@@ -882,7 +882,6 @@ where
         if let Some(on_unfocus) = self.on_unfocus.as_ref() {
             if state.emit_unfocus {
                 state.emit_unfocus = false;
-                eprintln!("unfocus");
                 shell.publish(on_unfocus.clone());
             }
         }
