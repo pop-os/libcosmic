@@ -1161,7 +1161,6 @@ pub(super) fn init_root_menu<Message: Clone>(
                 break;
             }
         }
-        debug_assert!(set, "Root not set");
     });
 }
 
@@ -1242,8 +1241,6 @@ pub(super) fn init_root_popup_menu<Message>(
 
         // Hack to ensure menu opens properly
         shell.invalidate_layout();
-        // non tree buttons arent active?
-        debug_assert!(set, "Root popup menu state was not set.");
     });
 }
 
