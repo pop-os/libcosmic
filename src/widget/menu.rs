@@ -74,5 +74,5 @@ pub use menu_tree::{
 
 pub use crate::style::menu_bar::{Appearance, StyleSheet};
 pub(crate) use menu_bar::{menu_roots_children, menu_roots_diff};
-pub(crate) use menu_inner::Menu;
 pub use menu_inner::{CloseCondition, ItemHeight, ItemWidth, PathHighlight};
+pub(crate) use menu_inner::{Direction, Menu, init_root_menu};

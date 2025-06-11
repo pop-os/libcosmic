@@ -67,7 +67,7 @@ impl MenuBarStateInner {
             .map(|ms| ms.index.expect("No indices were found in the menu state."))
     }
 
-    pub(super) fn reset(&mut self) {
+    pub(crate) fn reset(&mut self) {
         self.open = false;
         self.active_root = Vec::new();
         self.menu_states.clear();

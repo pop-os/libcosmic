@@ -4,7 +4,8 @@
 //! A context menu is a menu in a graphical user interface that appears upon user interaction, such as a right-click mouse operation.
 
 use crate::widget::menu::{
-    self, CloseCondition, ItemHeight, ItemWidth, MenuBarState, PathHighlight, menu_roots_diff,
+    self, CloseCondition, Direction, ItemHeight, ItemWidth, MenuBarState, PathHighlight,
+    init_root_menu, menu_roots_diff,
 };
 use derive_setters::Setters;
 use iced::touch::Finger;
@@ -12,6 +13,7 @@ use iced::{Event, Vector, window};
 use iced_core::widget::{Tree, Widget, tree};
 use iced_core::{Length, Point, Size, event, mouse, touch};
 use std::collections::HashSet;
+use std::sync::Arc;
 
 /// A context menu is a menu in a graphical user interface that appears upon user interaction, such as a right-click mouse operation.
 pub fn context_menu<Message: 'static + Clone>(
@@ -27,6 +29,8 @@ pub fn context_menu<Message: 'static + Clone>(
                 menus,
             )]
         }),
+        window_id: window::Id::RESERVED,
+        on_surface_action: None,
     };
 
     if let Some(ref mut context_menu) = this.context_menu {
@@ -44,6 +48,156 @@ pub struct ContextMenu<'a, Message> {
     content: crate::Element<'a, Message>,
     #[setters(skip)]
     context_menu: Option<Vec<menu::Tree<Message>>>,
+    pub window_id: window::Id,
+    #[setters(skip)]
+    pub(crate) on_surface_action:
+        Option<Arc<dyn Fn(crate::surface::Action) -> Message + Send + Sync + 'static>>,
+}
+
+impl<Message: Clone + 'static> ContextMenu<'_, Message> {
+    #[cfg(all(feature = "wayland", feature = "winit", feature = "surface-message"))]
+    #[allow(clippy::too_many_lines)]
+    fn create_popup(
+        &mut self,
+        layout: iced_core::Layout<'_>,
+        view_cursor: iced_core::mouse::Cursor,
+        renderer: &crate::Renderer,
+        shell: &mut iced_core::Shell<'_, Message>,
+        viewport: &iced::Rectangle,
+        my_state: &mut LocalState,
+    ) {
+        if self.window_id != window::Id::NONE && self.on_surface_action.is_some() {
+            use crate::{surface::action::destroy_popup, widget::menu::Menu};
+            use iced_runtime::platform_specific::wayland::popup::{
+                SctkPopupSettings, SctkPositioner,
+            };
+
+            let mut bounds = layout.bounds();
+            bounds.x = my_state.context_cursor.x;
+            bounds.y = my_state.context_cursor.y;
+
+            let (id, root_list) = my_state.menu_bar_state.inner.with_data_mut(|state| {
+                if let Some(id) = state.popup_id.get(&self.window_id).copied() {
+                    // close existing popups
+                    state.menu_states.clear();
+                    state.active_root.clear();
+                    shell.publish(self.on_surface_action.as_ref().unwrap()(destroy_popup(id)));
+                    state.view_cursor = view_cursor;
+                    (
+                        id,
+                        layout.children().map(|lo| lo.bounds()).collect::<Vec<_>>(),
+                    )
+                } else {
+                    (
+                        window::Id::unique(),
+                        layout.children().map(|lo| lo.bounds()).collect(),
+                    )
+                }
+            });
+            let Some(context_menu) = self.context_menu.as_mut() else {
+                return;
+            };
+
+            let mut popup_menu: Menu<'static, _> = Menu {
+                tree: my_state.menu_bar_state.clone(),
+                menu_roots: std::borrow::Cow::Owned(context_menu.clone()),
+                bounds_expand: 16,
+                menu_overlays_parent: true,
+                close_condition: CloseCondition {
+                    leave: false,
+                    click_outside: true,
+                    click_inside: true,
+                },
+                item_width: ItemWidth::Uniform(240),
+                item_height: ItemHeight::Dynamic(40),
+                bar_bounds: bounds,
+                main_offset: -(bounds.height as i32),
+                cross_offset: 0,
+                root_bounds_list: vec![bounds],
+                path_highlight: Some(PathHighlight::MenuActive),
+                style: std::borrow::Cow::Owned(crate::theme::menu_bar::MenuBarStyle::Default),
+                position: Point::new(0., 0.),
+                is_overlay: false,
+                window_id: id,
+                depth: 0,
+                on_surface_action: self.on_surface_action.clone(),
+            };
+
+            init_root_menu(
+                &mut popup_menu,
+                renderer,
+                shell,
+                view_cursor.position().unwrap(),
+                viewport.size(),
+                Vector::new(0., 0.),
+                layout.bounds(),
+                -bounds.height,
+            );
+            let (anchor_rect, gravity) = my_state.menu_bar_state.inner.with_data_mut(|state| {
+                use iced::Rectangle;
+
+                state.popup_id.insert(self.window_id, id);
+                ({
+                    let pos = view_cursor.position().unwrap_or_default();
+                    Rectangle {
+                        x: pos.x as i32,
+                        y: pos.y as i32,
+                        width: 1,
+                        height: 1,
+                    }
+                },
+                match (state.horizontal_direction, state.vertical_direction) {
+                    (Direction::Positive, Direction::Positive) => cctk::wayland_protocols::xdg::shell::client::xdg_positioner::Gravity::BottomRight,
+                    (Direction::Positive, Direction::Negative) => cctk::wayland_protocols::xdg::shell::client::xdg_positioner::Gravity::TopRight,
+                    (Direction::Negative, Direction::Positive) => cctk::wayland_protocols::xdg::shell::client::xdg_positioner::Gravity::BottomLeft,
+                    (Direction::Negative, Direction::Negative) => cctk::wayland_protocols::xdg::shell::client::xdg_positioner::Gravity::TopLeft,
+                })
+            });
+
+            let menu_node =
+                popup_menu.layout(renderer, iced::Limits::NONE.min_width(1.).min_height(1.));
+            let popup_size = menu_node.size();
+            let positioner = SctkPositioner {
+                size: Some((
+                    popup_size.width.ceil() as u32 + 2,
+                    popup_size.height.ceil() as u32 + 2,
+                )),
+                anchor_rect,
+                anchor: cctk::wayland_protocols::xdg::shell::client::xdg_positioner::Anchor::None,
+                gravity: cctk::wayland_protocols::xdg::shell::client::xdg_positioner::Gravity::BottomRight,
+                reactive: true,
+                ..Default::default()
+            };
+            let parent = self.window_id;
+            shell.publish((self.on_surface_action.as_ref().unwrap())(
+                crate::surface::action::simple_popup(
+                    move || SctkPopupSettings {
+                        parent,
+                        id,
+                        positioner: positioner.clone(),
+                        parent_size: None,
+                        grab: true,
+                        close_with_children: false,
+                        input_zone: None,
+                    },
+                    Some(move || {
+                        crate::Element::from(
+                            crate::widget::container(popup_menu.clone()).center(Length::Fill),
+                        )
+                        .map(crate::action::app)
+                    }),
+                ),
+            ));
+        }
+    }
+
+    pub fn on_surface_action(
+        mut self,
+        handler: impl Fn(crate::surface::Action) -> Message + Send + Sync + 'static,
+    ) -> Self {
+        self.on_surface_action = Some(Arc::new(handler));
+        self
+    }
 }
 
 impl<Message: 'static + Clone> Widget<Message, crate::Theme, crate::Renderer>
@@ -155,6 +309,7 @@ impl<Message: 'static + Clone> Widget<Message, crate::Theme, crate::Renderer>
             .operate(&mut tree.children[0], layout, renderer, operation);
     }
 
+    #[allow(clippy::too_many_lines)]
     fn on_event(
         &mut self,
         tree: &mut Tree,
@@ -169,6 +324,25 @@ impl<Message: 'static + Clone> Widget<Message, crate::Theme, crate::Renderer>
         let state = tree.state.downcast_mut::<LocalState>();
         let bounds = layout.bounds();
 
+        // XXX this should reset the state if there are no other copies of the state, which implies no dropdown menus open.
+        let reset = self.window_id != window::Id::NONE
+            && state
+                .menu_bar_state
+                .inner
+                .with_data(|d| !d.open && !d.active_root.is_empty());
+
+        let open = state.menu_bar_state.inner.with_data_mut(|state| {
+            if reset {
+                if let Some(popup_id) = state.popup_id.get(&self.window_id).copied() {
+                    if let Some(handler) = self.on_surface_action.as_ref() {
+                        shell.publish((handler)(crate::surface::Action::DestroyPopup(popup_id)));
+                        state.reset();
+                    }
+                }
+            }
+            state.open
+        });
+
         if cursor.is_over(bounds) {
             let fingers_pressed = state.fingers_pressed.len();
 
@@ -181,6 +355,29 @@ impl<Message: 'static + Clone> Widget<Message, crate::Theme, crate::Renderer>
                     state.fingers_pressed.remove(&id);
                 }
 
+                Event::Window(window::Event::Focused) => {
+                    #[cfg(all(
+                        feature = "wayland",
+                        feature = "winit",
+                        feature = "surface-message"
+                    ))]
+                    state.menu_bar_state.inner.with_data_mut(|state| {
+                        if let Some(id) = state.popup_id.remove(&self.window_id) {
+                            state.menu_states.clear();
+                            state.active_root.clear();
+                            state.open = false;
+
+                            {
+                                let surface_action = self.on_surface_action.as_ref().unwrap();
+                                shell.publish(surface_action(
+                                    crate::surface::action::destroy_popup(id),
+                                ));
+                            }
+                            state.view_cursor = cursor;
+                        }
+                    });
+                }
+
                 _ => (),
             }
 
@@ -190,13 +387,64 @@ impl<Message: 'static + Clone> Widget<Message, crate::Theme, crate::Renderer>
             {
                 state.context_cursor = cursor.position().unwrap_or_default();
                 let state = tree.state.downcast_mut::<LocalState>();
-
                 state.menu_bar_state.inner.with_data_mut(|state| {
                     state.open = true;
                     state.view_cursor = cursor;
                 });
+                #[cfg(all(feature = "wayland", feature = "winit", feature = "surface-message"))]
+                self.create_popup(layout, cursor, renderer, shell, viewport, state);
 
                 return event::Status::Captured;
+            } else if right_button_released(&event)
+                || (touch_lifted(&event))
+                || left_button_released(&event)
+            {
+                #[cfg(all(feature = "wayland", feature = "winit", feature = "surface-message"))]
+                state.menu_bar_state.inner.with_data_mut(|state| {
+                    if let Some(id) = state.popup_id.remove(&self.window_id) {
+                        state.menu_states.clear();
+                        state.active_root.clear();
+                        state.open = false;
+
+                        {
+                            let surface_action = self.on_surface_action.as_ref().unwrap();
+
+                            shell
+                                .publish(surface_action(crate::surface::action::destroy_popup(id)));
+                        }
+                        state.view_cursor = cursor;
+                    }
+                });
+            }
+        } else if open {
+            match event {
+                Event::Mouse(mouse::Event::ButtonReleased(
+                    mouse::Button::Right | mouse::Button::Left,
+                ))
+                | Event::Touch(touch::Event::FingerLifted { .. }) => {
+                    #[cfg(all(
+                        feature = "wayland",
+                        feature = "winit",
+                        feature = "surface-message"
+                    ))]
+                    state.menu_bar_state.inner.with_data_mut(|state| {
+                        if let Some(id) = state.popup_id.remove(&self.window_id) {
+                            state.menu_states.clear();
+                            state.active_root.clear();
+                            state.open = false;
+
+                            {
+                                let surface_action = self.on_surface_action.as_ref().unwrap();
+
+                                shell.publish(surface_action(
+                                    crate::surface::action::destroy_popup(id),
+                                ));
+                            }
+                            state.view_cursor = cursor;
+                        }
+                    });
+                }
+                _ => (),
             }
         }
 
@@ -219,6 +467,11 @@ impl<Message: 'static + Clone> Widget<Message, crate::Theme, crate::Renderer>
         _renderer: &crate::Renderer,
         translation: Vector,
     ) -> Option<iced_core::overlay::Element<'b, Message, crate::Theme, crate::Renderer>> {
+        #[cfg(all(feature = "wayland", feature = "winit", feature = "surface-message"))]
+        if self.window_id != window::Id::NONE && self.on_surface_action.is_some() {
+            return None;
+        }
+
         let state = tree.state.downcast_ref::<LocalState>();
 
         let context_menu = self.context_menu.as_mut()?;
@@ -284,6 +537,13 @@ fn right_button_released(event: &Event) -> bool {
     matches!(
         event,
         Event::Mouse(mouse::Event::ButtonReleased(mouse::Button::Right,))
+    )
+}
+
+fn left_button_released(event: &Event) -> bool {
+    matches!(
+        event,
+        Event::Mouse(mouse::Event::ButtonReleased(mouse::Button::Left,))
     )
 }
 

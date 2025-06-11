@@ -297,7 +297,7 @@ impl MenuBounds {
 #[derive(Clone)]
 pub(crate) struct MenuState {
     /// The index of the active menu item
-    pub(super) index: Option<usize>,
+    pub(crate) index: Option<usize>,
     scroll_offset: f32,
     pub menu_bounds: MenuBounds,
 }
@@ -1083,7 +1083,7 @@ fn pad_rectangle(rect: Rectangle, padding: Padding) -> Rectangle {
 }
 
 #[allow(clippy::too_many_arguments)]
-pub(super) fn init_root_menu<Message: Clone>(
+pub(crate) fn init_root_menu<Message: Clone>(
     menu: &mut Menu<'_, Message>,
     renderer: &crate::Renderer,
     shell: &mut Shell<'_, Message>,
@@ -1102,7 +1102,6 @@ pub(super) fn init_root_menu<Message: Clone>(
             return;
         }
 
-        let mut set = false;
         for (i, (&root_bounds, mt)) in menu
             .root_bounds_list
             .iter()
@@ -1117,7 +1116,7 @@ pub(super) fn init_root_menu<Message: Clone>(
                 let view_center = viewport_size.width * 0.5;
                 let rb_center = root_bounds.center_x();
 
-                state.horizontal_direction = if rb_center > view_center {
+                state.horizontal_direction = if menu.is_overlay && rb_center > view_center {
                     Direction::Negative
                 } else {
                     Direction::Positive
@@ -1146,7 +1145,6 @@ pub(super) fn init_root_menu<Message: Clone>(
                     &mut state.tree.children[0].children,
                     menu.is_overlay,
                 );
-                set = true;
                 state.active_root.push(i);
                 let ms = MenuState {
                     index: None,
@@ -1186,7 +1184,6 @@ pub(super) fn init_root_popup_menu<Message>(
 
         let active_roots = &state.active_root[..=menu.depth];
 
-        let mut set = false;
         let mt = active_roots
             .iter()
             .skip(1)
@@ -1230,7 +1227,6 @@ pub(super) fn init_root_popup_menu<Message>(
         } else {
             Direction::Positive
         };
-        set = true;
 
         let ms = MenuState {
             index: None,
