@@ -935,6 +935,7 @@ where
                                 }
 
                                 if can_activate {
+                                    eprintln!("can activate focus");
                                     shell.publish(on_activate(key));
                                     state.focused = true;
                                     state.focused_item = Item::Tab(key);
@@ -1035,6 +1036,16 @@ where
                         }
                     }
                 }
+            }
+        } else if state.focused {
+            // Unfocus on clicks outside of the boundaries of the segmented button.
+            if let Event::Mouse(mouse::Event::ButtonPressed(mouse::Button::Left))
+            | Event::Touch(touch::Event::FingerPressed { .. }) = event
+            {
+                state.focused = true;
+                state.focused_item = Item::None;
+                state.pressed_item = None;
+                return event::Status::Ignored;
             }
         }
 
@@ -1724,11 +1735,13 @@ impl operation::Focusable for LocalState {
     }
 
     fn focus(&mut self) {
+        eprintln!("focus");
         self.focused = true;
         self.focused_item = Item::Set;
     }
 
     fn unfocus(&mut self) {
+        eprintln!("unfocus");
         self.focused = false;
         self.focused_item = Item::None;
         self.show_context = None;
