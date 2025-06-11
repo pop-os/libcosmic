@@ -27,9 +27,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 #[derive(Clone, Debug)]
 pub enum Message {
     Clicked,
-    ShowContext,
     WindowClose,
-    ShowWindowMenu,
+    Surface(cosmic::surface::Action),
     ToggleHideContent,
     WindowNew,
 }
@@ -85,7 +84,19 @@ impl cosmic::Application for App {
 
     /// Handle application events here.
     fn update(&mut self, message: Self::Message) -> Task<Self::Message> {
-        self.button_label = format!("Clicked {message:?}");
+        match message {
+            Message::Clicked => {
+                self.button_label = format!("Clicked {message:?}");
+            }
+            Message::Surface(action) => {
+                return cosmic::task::message(cosmic::Action::Cosmic(
+                    cosmic::app::Action::Surface(action),
+                ));
+            }
+            Message::WindowClose => {}
+            Message::ToggleHideContent => {}
+            Message::WindowNew => {}
+        }
 
         Task::none()
     }
@@ -95,7 +106,8 @@ impl cosmic::Application for App {
         let widget = cosmic::widget::context_menu(
             cosmic::widget::button::text(self.button_label.to_string()).on_press(Message::Clicked),
             self.context_menu(),
-        );
+        )
+        .on_surface_action(Message::Surface);
 
         let centered = cosmic::widget::container(widget)
             .width(iced::Length::Fill)
