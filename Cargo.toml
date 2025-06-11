@@ -40,6 +40,7 @@ rfd = ["dep:rfd"]
 # Enables desktop files helpers
 desktop = [
     "process",
+    "dep:cosmic-settings-config",
     "dep:freedesktop-desktop-entry",
     "dep:mime",
     "dep:shlex",
@@ -105,6 +106,7 @@ auto_enums = "0.8.7"
 cctk = { git = "https://github.com/pop-os/cosmic-protocols", package = "cosmic-client-toolkit", rev = "178eb0b", optional = true }
 chrono = "0.4.40"
 cosmic-config = { path = "cosmic-config" }
+cosmic-settings-config = { git = "https://github.com/pop-os/cosmic-settings-daemon", optional = true }
 cosmic-settings-daemon = { git = "https://github.com/pop-os/dbus-settings-bindings", optional = true }
 css-color = "0.2.8"
 derive_setters = "0.1.6"

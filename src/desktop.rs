@@ -47,6 +47,7 @@ pub struct DesktopEntryData {
     pub desktop_actions: Vec<DesktopAction>,
     pub mime_types: Vec<Mime>,
     pub prefers_dgpu: bool,
+    pub terminal: bool,
 }
 
 #[cfg(not(windows))]
@@ -196,6 +197,7 @@ impl DesktopEntryData {
                 })
                 .unwrap_or_default(),
             prefers_dgpu: de.prefers_non_default_gpu(),
+            terminal: de.terminal(),
             path: Some(de.path),
         }
     }
@@ -203,14 +205,36 @@ impl DesktopEntryData {
 
 #[cfg(not(windows))]
 #[cold]
-pub async fn spawn_desktop_exec<S, I, K, V>(exec: S, env_vars: I, app_id: Option<&str>)
-where
+pub async fn spawn_desktop_exec<S, I, K, V>(
+    exec: S,
+    env_vars: I,
+    app_id: Option<&str>,
+    terminal: bool,
+) where
     S: AsRef<str>,
     I: IntoIterator<Item = (K, V)>,
     K: AsRef<OsStr>,
     V: AsRef<OsStr>,
 {
-    let mut exec = shlex::Shlex::new(exec.as_ref());
+    let term_exec;
+
+    let exec_str = if terminal {
+        let term = cosmic_settings_config::shortcuts::context()
+            .ok()
+            .and_then(|config| {
+                cosmic_settings_config::shortcuts::system_actions(&config)
+                    .get(&cosmic_settings_config::shortcuts::action::System::Terminal)
+                    .cloned()
+            })
+            .unwrap_or_else(|| String::from("cosmic-term"));
+
+        term_exec = format!("{term} -- {}", exec.as_ref());
+        &term_exec
+    } else {
+        exec.as_ref()
+    };
+
+    let mut exec = shlex::Shlex::new(exec_str);
 
     let executable = match exec.next() {
         Some(executable) if !executable.contains('=') => executable,
