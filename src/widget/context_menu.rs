@@ -3,6 +3,8 @@
 
 //! A context menu is a menu in a graphical user interface that appears upon user interaction, such as a right-click mouse operation.
 
+#[cfg(all(feature = "wayland", feature = "winit", feature = "surface-message"))]
+use crate::app::cosmic::{WINDOWING_SYSTEM, WindowingSystem};
 use crate::widget::menu::{
     self, CloseCondition, Direction, ItemHeight, ItemWidth, MenuBarState, PathHighlight,
     init_root_menu, menu_roots_diff,
@@ -361,21 +363,23 @@ impl<Message: 'static + Clone> Widget<Message, crate::Theme, crate::Renderer>
                         feature = "winit",
                         feature = "surface-message"
                     ))]
-                    state.menu_bar_state.inner.with_data_mut(|state| {
-                        if let Some(id) = state.popup_id.remove(&self.window_id) {
-                            state.menu_states.clear();
-                            state.active_root.clear();
-                            state.open = false;
+                    if matches!(WINDOWING_SYSTEM.get(), Some(WindowingSystem::Wayland)) {
+                        state.menu_bar_state.inner.with_data_mut(|state| {
+                            if let Some(id) = state.popup_id.remove(&self.window_id) {
+                                state.menu_states.clear();
+                                state.active_root.clear();
+                                state.open = false;
 
-                            {
-                                let surface_action = self.on_surface_action.as_ref().unwrap();
-                                shell.publish(surface_action(
-                                    crate::surface::action::destroy_popup(id),
-                                ));
+                                {
+                                    let surface_action = self.on_surface_action.as_ref().unwrap();
+                                    shell.publish(surface_action(
+                                        crate::surface::action::destroy_popup(id),
+                                    ));
+                                }
+                                state.view_cursor = cursor;
                             }
-                            state.view_cursor = cursor;
-                        }
-                    });
+                        });
+                    }
                 }
 
                 _ => (),
@@ -392,7 +396,9 @@ impl<Message: 'static + Clone> Widget<Message, crate::Theme, crate::Renderer>
                     state.view_cursor = cursor;
                 });
                 #[cfg(all(feature = "wayland", feature = "winit", feature = "surface-message"))]
-                self.create_popup(layout, cursor, renderer, shell, viewport, state);
+                if matches!(WINDOWING_SYSTEM.get(), Some(WindowingSystem::Wayland)) {
+                    self.create_popup(layout, cursor, renderer, shell, viewport, state);
+                }
 
                 return event::Status::Captured;
             } else if right_button_released(&event)
@@ -400,33 +406,7 @@ impl<Message: 'static + Clone> Widget<Message, crate::Theme, crate::Renderer>
                 || left_button_released(&event)
             {
                 #[cfg(all(feature = "wayland", feature = "winit", feature = "surface-message"))]
-                state.menu_bar_state.inner.with_data_mut(|state| {
-                    if let Some(id) = state.popup_id.remove(&self.window_id) {
-                        state.menu_states.clear();
-                        state.active_root.clear();
-                        state.open = false;
-
-                        {
-                            let surface_action = self.on_surface_action.as_ref().unwrap();
-
-                            shell
-                                .publish(surface_action(crate::surface::action::destroy_popup(id)));
-                        }
-                        state.view_cursor = cursor;
-                    }
-                });
-            }
-        } else if open {
-            match event {
-                Event::Mouse(mouse::Event::ButtonReleased(
-                    mouse::Button::Right | mouse::Button::Left,
-                ))
-                | Event::Touch(touch::Event::FingerLifted { .. }) => {
-                    #[cfg(all(
-                        feature = "wayland",
-                        feature = "winit",
-                        feature = "surface-message"
-                    ))]
+                if matches!(WINDOWING_SYSTEM.get(), Some(WindowingSystem::Wayland)) {
                     state.menu_bar_state.inner.with_data_mut(|state| {
                         if let Some(id) = state.popup_id.remove(&self.window_id) {
                             state.menu_states.clear();
@@ -443,6 +423,37 @@ impl<Message: 'static + Clone> Widget<Message, crate::Theme, crate::Renderer>
                             state.view_cursor = cursor;
                         }
                     });
+                }
+            }
+        } else if open {
+            match event {
+                Event::Mouse(mouse::Event::ButtonReleased(
+                    mouse::Button::Right | mouse::Button::Left,
+                ))
+                | Event::Touch(touch::Event::FingerLifted { .. }) => {
+                    #[cfg(all(
+                        feature = "wayland",
+                        feature = "winit",
+                        feature = "surface-message"
+                    ))]
+                    if matches!(WINDOWING_SYSTEM.get(), Some(WindowingSystem::Wayland)) {
+                        state.menu_bar_state.inner.with_data_mut(|state| {
+                            if let Some(id) = state.popup_id.remove(&self.window_id) {
+                                state.menu_states.clear();
+                                state.active_root.clear();
+                                state.open = false;
+
+                                {
+                                    let surface_action = self.on_surface_action.as_ref().unwrap();
+
+                                    shell.publish(surface_action(
+                                        crate::surface::action::destroy_popup(id),
+                                    ));
+                                }
+                                state.view_cursor = cursor;
+                            }
+                        });
+                    }
                 }
                 _ => (),
             }
@@ -468,7 +479,10 @@ impl<Message: 'static + Clone> Widget<Message, crate::Theme, crate::Renderer>
         translation: Vector,
     ) -> Option<iced_core::overlay::Element<'b, Message, crate::Theme, crate::Renderer>> {
         #[cfg(all(feature = "wayland", feature = "winit", feature = "surface-message"))]
-        if self.window_id != window::Id::NONE && self.on_surface_action.is_some() {
+        if matches!(WINDOWING_SYSTEM.get(), Some(WindowingSystem::Wayland))
+            && self.window_id != window::Id::NONE
+            && self.on_surface_action.is_some()
+        {
             return None;
         }
 

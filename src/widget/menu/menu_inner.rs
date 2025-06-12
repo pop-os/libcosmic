@@ -4,6 +4,8 @@
 use std::{borrow::Cow, sync::Arc};
 
 use super::{menu_bar::MenuBarState, menu_tree::MenuTree};
+#[cfg(all(feature = "wayland", feature = "winit", feature = "surface-message"))]
+use crate::app::cosmic::{WINDOWING_SYSTEM, WindowingSystem};
 use crate::style::menu_bar::StyleSheet;
 
 use iced::window;
@@ -665,21 +667,24 @@ impl<'b, Message: Clone + 'static> Menu<'b, Message> {
                                 feature = "winit",
                                 feature = "surface-message"
                             ))]
-                            if let Some(handler) = self.on_surface_action.as_ref() {
-                                let mut root = self.window_id;
-                                let mut depth = self.depth;
-                                while let Some(parent) =
-                                    state.popup_id.iter().find(|(_, v)| **v == root)
-                                {
-                                    // parent of root popup is the window, so we stop.
-                                    if depth == 0 {
-                                        break;
+                            if matches!(WINDOWING_SYSTEM.get(), Some(WindowingSystem::Wayland)) {
+                                if let Some(handler) = self.on_surface_action.as_ref() {
+                                    let mut root = self.window_id;
+                                    let mut depth = self.depth;
+                                    while let Some(parent) =
+                                        state.popup_id.iter().find(|(_, v)| **v == root)
+                                    {
+                                        // parent of root popup is the window, so we stop.
+                                        if depth == 0 {
+                                            break;
+                                        }
+                                        root = *parent.0;
+                                        depth = depth.saturating_sub(1);
                                     }
-                                    root = *parent.0;
-                                    depth = depth.saturating_sub(1);
+                                    shell.publish((handler)(crate::surface::Action::DestroyPopup(
+                                        root,
+                                    )));
                                 }
-                                shell
-                                    .publish((handler)(crate::surface::Action::DestroyPopup(root)));
                             }
 
                             state.reset();
@@ -922,72 +927,73 @@ impl<Message: std::clone::Clone + 'static> Widget<Message, crate::Theme, crate::
         let (new_root, status) = self.on_event(event, layout, cursor, renderer, clipboard, shell);
 
         #[cfg(all(feature = "wayland", feature = "winit", feature = "surface-message"))]
-        if let Some((new_root, new_ms)) = new_root {
-            use iced_runtime::platform_specific::wayland::popup::{
-                SctkPopupSettings, SctkPositioner,
-            };
-            let overlay_offset = Point::ORIGIN - viewport.position();
-
-            let overlay_cursor = cursor.position().unwrap_or_default() - overlay_offset;
-
-            let Some((mut menu, popup_id)) = self.tree.inner.with_data_mut(|state| {
-                let popup_id = *state
-                    .popup_id
-                    .entry(self.window_id)
-                    .or_insert_with(window::Id::unique);
-                let active_roots = state
-                    .active_root
-                    .get(self.depth)
-                    .cloned()
-                    .unwrap_or_default();
-
-                let root_bounds_list = layout
-                    .children()
-                    .next()
-                    .unwrap()
-                    .children()
-                    .map(|lo| lo.bounds())
-                    .collect();
-
-                let mut popup_menu = Menu {
-                    tree: self.tree.clone(),
-                    menu_roots: Cow::Owned(Cow::into_owned(self.menu_roots.clone())),
-                    bounds_expand: self.bounds_expand,
-                    menu_overlays_parent: false,
-                    close_condition: self.close_condition,
-                    item_width: self.item_width,
-                    item_height: self.item_height,
-                    bar_bounds: layout.bounds(),
-                    main_offset: self.main_offset,
-                    cross_offset: self.cross_offset,
-                    root_bounds_list,
-                    path_highlight: self.path_highlight,
-                    style: Cow::Owned(Cow::into_owned(self.style.clone())),
-                    position: Point::new(0., 0.),
-                    is_overlay: false,
-                    window_id: popup_id,
-                    depth: self.depth + 1,
-                    on_surface_action: self.on_surface_action.clone(),
+        if matches!(WINDOWING_SYSTEM.get(), Some(WindowingSystem::Wayland)) {
+            if let Some((new_root, new_ms)) = new_root {
+                use iced_runtime::platform_specific::wayland::popup::{
+                    SctkPopupSettings, SctkPositioner,
                 };
+                let overlay_offset = Point::ORIGIN - viewport.position();
 
-                state.active_root.push(new_root);
+                let overlay_cursor = cursor.position().unwrap_or_default() - overlay_offset;
 
-                Some((popup_menu, popup_id))
-            }) else {
-                return status;
-            };
-            // XXX we push a new active root manually instead
-            init_root_popup_menu(
-                &mut menu,
-                renderer,
-                shell,
-                cursor.position().unwrap(),
-                layout.bounds().size(),
-                Vector::new(0., 0.),
-                layout.bounds(),
-                self.main_offset as f32,
-            );
-            let (anchor_rect, gravity) = self.tree.inner.with_data_mut(|state| {
+                let Some((mut menu, popup_id)) = self.tree.inner.with_data_mut(|state| {
+                    let popup_id = *state
+                        .popup_id
+                        .entry(self.window_id)
+                        .or_insert_with(window::Id::unique);
+                    let active_roots = state
+                        .active_root
+                        .get(self.depth)
+                        .cloned()
+                        .unwrap_or_default();
+
+                    let root_bounds_list = layout
+                        .children()
+                        .next()
+                        .unwrap()
+                        .children()
+                        .map(|lo| lo.bounds())
+                        .collect();
+
+                    let mut popup_menu = Menu {
+                        tree: self.tree.clone(),
+                        menu_roots: Cow::Owned(Cow::into_owned(self.menu_roots.clone())),
+                        bounds_expand: self.bounds_expand,
+                        menu_overlays_parent: false,
+                        close_condition: self.close_condition,
+                        item_width: self.item_width,
+                        item_height: self.item_height,
+                        bar_bounds: layout.bounds(),
+                        main_offset: self.main_offset,
+                        cross_offset: self.cross_offset,
+                        root_bounds_list,
+                        path_highlight: self.path_highlight,
+                        style: Cow::Owned(Cow::into_owned(self.style.clone())),
+                        position: Point::new(0., 0.),
+                        is_overlay: false,
+                        window_id: popup_id,
+                        depth: self.depth + 1,
+                        on_surface_action: self.on_surface_action.clone(),
+                    };
+
+                    state.active_root.push(new_root);
+
+                    Some((popup_menu, popup_id))
+                }) else {
+                    return status;
+                };
+                // XXX we push a new active root manually instead
+                init_root_popup_menu(
+                    &mut menu,
+                    renderer,
+                    shell,
+                    cursor.position().unwrap(),
+                    layout.bounds().size(),
+                    Vector::new(0., 0.),
+                    layout.bounds(),
+                    self.main_offset as f32,
+                );
+                let (anchor_rect, gravity) = self.tree.inner.with_data_mut(|state| {
                 (state
                     .menu_states
                     .get(self.depth + 1)
@@ -1016,15 +1022,15 @@ impl<Message: std::clone::Clone + 'static> Widget<Message, crate::Theme, crate::
                     })
             });
 
-            let menu_node = Widget::layout(
-                &menu,
-                &mut Tree::empty(),
-                renderer,
-                &Limits::NONE.min_width(1.).min_height(1.),
-            );
+                let menu_node = Widget::layout(
+                    &menu,
+                    &mut Tree::empty(),
+                    renderer,
+                    &Limits::NONE.min_width(1.).min_height(1.),
+                );
 
-            let popup_size = menu_node.size();
-            let positioner = SctkPositioner {
+                let popup_size = menu_node.size();
+                let positioner = SctkPositioner {
                 size: Some((
                     popup_size.width.ceil() as u32 + 2,
                     popup_size.height.ceil() as u32 + 2,
@@ -1036,28 +1042,29 @@ impl<Message: std::clone::Clone + 'static> Widget<Message, crate::Theme, crate::
                 reactive: true,
                 ..Default::default()
             };
-            let parent = self.window_id;
-            shell.publish((self.on_surface_action.as_ref().unwrap())(
-                crate::surface::action::simple_popup(
-                    move || SctkPopupSettings {
-                        parent,
-                        id: popup_id,
-                        positioner: positioner.clone(),
-                        parent_size: None,
-                        grab: true,
-                        close_with_children: false,
-                        input_zone: None,
-                    },
-                    Some(move || {
-                        crate::Element::from(
-                            crate::widget::container(menu.clone()).center(Length::Fill),
-                        )
-                        .map(crate::action::app)
-                    }),
-                ),
-            ));
+                let parent = self.window_id;
+                shell.publish((self.on_surface_action.as_ref().unwrap())(
+                    crate::surface::action::simple_popup(
+                        move || SctkPopupSettings {
+                            parent,
+                            id: popup_id,
+                            positioner: positioner.clone(),
+                            parent_size: None,
+                            grab: true,
+                            close_with_children: false,
+                            input_zone: None,
+                        },
+                        Some(move || {
+                            crate::Element::from(
+                                crate::widget::container(menu.clone()).center(Length::Fill),
+                            )
+                            .map(crate::action::app)
+                        }),
+                    ),
+                ));
 
-            return status;
+                return status;
+            }
         }
         status
     }
@@ -1460,14 +1467,12 @@ where
             .is_some_and(|i| *i != new_index && !active_menu[*i].children.is_empty());
 
         #[cfg(all(feature = "wayland", feature = "winit", feature = "surface-message"))]
-        {
-            if remove {
-                if let Some(id) = state.popup_id.remove(&menu.window_id) {
-                    state.active_root.truncate(menu.depth + 1);
-                    _shell.publish((menu.on_surface_action.as_ref().unwrap())({
-                        crate::surface::action::destroy_popup(id)
-                    }));
-                }
+        if matches!(WINDOWING_SYSTEM.get(), Some(WindowingSystem::Wayland)) && remove {
+            if let Some(id) = state.popup_id.remove(&menu.window_id) {
+                state.active_root.truncate(menu.depth + 1);
+                _shell.publish((menu.on_surface_action.as_ref().unwrap())({
+                    crate::surface::action::destroy_popup(id)
+                }));
             }
         }
         let item = &active_menu[new_index];

@@ -36,6 +36,8 @@ pub enum Action {
     NavBar(nav_bar::Id),
     /// Activates a context menu for an item from the nav bar.
     NavBarContext(nav_bar::Id),
+    /// A new window was opened.
+    Opened(iced::window::Id),
     /// Set scaling factor
     ScaleFactor(f32),
     /// Show the window menu
@@ -60,6 +62,8 @@ pub enum Action {
     ToolkitConfig(CosmicTk),
     /// Window focus lost
     Unfocus(iced::window::Id),
+    /// Windowing system initialized
+    WindowingSystemInitialized,
     /// Updates the window maximized state
     WindowMaximized(iced::window::Id, bool),
     /// Updates the tracked window geometry.
