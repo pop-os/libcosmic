@@ -1,0 +1,30 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Combines `serialize_as_array` and `deserialize_as_array` as a module for `#[serde(with = &#34;...&#34;)]`."><title>cosmic::cosmic_theme::palette::serde::as_array - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../../../../static.files/rustdoc-916cea96.css"><meta name="rustdoc-vars" data-root-path="../../../../../" data-static-root-path="../../../../../static.files/" data-current-crate="cosmic" data-themes="" data-resource-suffix="" data-rustdoc-version="1.87.0 (17067e9ac 2025-05-09)" data-channel="1.87.0" data-search-js="search-e7298875.js" data-settings-js="settings-d72f25bb.js" ><script src="../../../../../static.files/storage-82c7156e.js"></script><script defer src="../sidebar-items.js"></script><script defer src="../../../../../static.files/main-fb8c74a8.js"></script><noscript><link rel="stylesheet" href="../../../../../static.files/noscript-893ab5e7.css"></noscript><link rel="alternate icon" type="image/png" href="../../../../../static.files/favicon-32x32-6580c154.png"><link rel="icon" type="image/svg+xml" href="../../../../../static.files/favicon-044be391.svg"></head><body class="rustdoc mod"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle" title="show sidebar"></button></nav><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../../../../../cosmic/index.html">cosmic</a><span class="version">0.1.0</span></h2></div><div class="sidebar-elems"><section id="rustdoc-toc"><h2 class="location"><a href="#">Module as_<wbr>array</a></h2><h3><a href="#functions">Module Items</a></h3><ul class="block"><li><a href="#functions" title="Functions">Functions</a></li></ul></section><div id="rustdoc-modnav"><h2><a href="../index.html">In cosmic::<wbr>cosmic_<wbr>theme::<wbr>palette::<wbr>serde</a></h2></div></div></nav><div class="sidebar-resizer"></div><main><div class="width-limiter"><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><div class="rustdoc-breadcrumbs"><a href="../../../../index.html">cosmic</a>::<wbr><a href="../../../index.html">cosmic_theme</a>::<wbr><a href="../../index.html">palette</a>::<wbr><a href="../index.html">serde</a></div><h1>Module <span>as_array</span><button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"><a class="src" href="../../../../../src/palette/serde.rs.html#52">Source</a> </span></div><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Combines <a href="../fn.serialize_as_array.html" title="fn cosmic::cosmic_theme::palette::serde::serialize_as_array"><code>serialize_as_array</code></a> and <a href="../fn.deserialize_as_array.html" title="fn cosmic::cosmic_theme::palette::serde::deserialize_as_array"><code>deserialize_as_array</code></a> as a module for <code>#[serde(with = "...")]</code>.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>serde::{Serialize, Deserialize};
+<span class="kw">use </span>palette::{Srgb, Srgba};
+
+<span class="attr">#[derive(Serialize, Deserialize, PartialEq, Debug)]
+</span><span class="kw">struct </span>MyColors {
+    <span class="attr">#[serde(with = <span class="string">"palette::serde::as_array"</span>)]
+    </span>opaque: Srgb,
+    <span class="attr">#[serde(with = <span class="string">"palette::serde::as_array"</span>)]
+    </span>transparent: Srgba,
+}
+
+<span class="kw">let </span>my_colors = MyColors {
+    opaque: Srgb::new(<span class="number">0.6</span>, <span class="number">0.8</span>, <span class="number">0.3</span>),
+    transparent: Srgba::new(<span class="number">0.6</span>, <span class="number">0.8</span>, <span class="number">0.3</span>, <span class="number">0.5</span>),
+};
+
+<span class="kw">let </span>json = serde_json::to_string(<span class="kw-2">&amp;</span>my_colors).unwrap();
+
+<span class="macro">assert_eq!</span>(
+    json,
+    <span class="string">r#"{"opaque":[0.6,0.8,0.3],"transparent":[0.6,0.8,0.3,0.5]}"#
+</span>);
+
+<span class="macro">assert_eq!</span>(
+    serde_json::from_str::&lt;MyColors&gt;(<span class="kw-2">&amp;</span>json).unwrap(),
+    my_colors
+);</code></pre></div>
+</div></details><h2 id="functions" class="section-header">Functions<a href="#functions" class="anchor">§</a></h2><dl class="item-table"><dt><a class="fn" href="fn.deserialize.html" title="fn cosmic::cosmic_theme::palette::serde::as_array::deserialize">deserialize</a></dt><dd>Deserialize a value from an array of its components.</dd><dt><a class="fn" href="fn.serialize.html" title="fn cosmic::cosmic_theme::palette::serde::as_array::serialize">serialize</a></dt><dd>Serialize the value as an array of its components.</dd></dl></section></div></main></body></html>

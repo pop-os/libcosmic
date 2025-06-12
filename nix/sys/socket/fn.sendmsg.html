@@ -1,0 +1,35 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Send data in scatter-gather vectors to a socket, possibly accompanied by ancillary data. Optionally direct the message at the given address, as with sendto."><title>sendmsg in nix::sys::socket - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../../static.files/rustdoc-916cea96.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="nix" data-themes="" data-resource-suffix="" data-rustdoc-version="1.87.0 (17067e9ac 2025-05-09)" data-channel="1.87.0" data-search-js="search-e7298875.js" data-settings-js="settings-d72f25bb.js" ><script src="../../../static.files/storage-82c7156e.js"></script><script defer src="sidebar-items.js"></script><script defer src="../../../static.files/main-fb8c74a8.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-893ab5e7.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-6580c154.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-044be391.svg"></head><body class="rustdoc fn"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle" title="show sidebar"></button></nav><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../../../nix/index.html">nix</a><span class="version">0.26.4</span></h2></div><div class="sidebar-elems"><section id="rustdoc-toc"><h2 class="location"><a href="#">sendmsg</a></h2><h3><a href="#">Sections</a></h3><ul class="block top-toc"><li><a href="#examples" title="Examples">Examples</a></li></ul></section><div id="rustdoc-modnav"><h2><a href="index.html">In nix::<wbr>sys::<wbr>socket</a></h2></div></div></nav><div class="sidebar-resizer"></div><main><div class="width-limiter"><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><div class="rustdoc-breadcrumbs"><a href="../../index.html">nix</a>::<wbr><a href="../index.html">sys</a>::<wbr><a href="index.html">socket</a></div><h1>Function <span class="fn">sendmsg</span><button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"><a class="src" href="../../../src/nix/sys/socket/mod.rs.html#1475-1490">Source</a> </span></div><pre class="rust item-decl"><code>pub fn sendmsg&lt;S&gt;(
+    fd: <a class="type" href="https://doc.rust-lang.org/1.87.0/std/os/fd/raw/type.RawFd.html" title="type std::os::fd::raw::RawFd">RawFd</a>,
+    iov: &amp;[<a class="struct" href="https://doc.rust-lang.org/1.87.0/std/io/struct.IoSlice.html" title="struct std::io::IoSlice">IoSlice</a>&lt;'_&gt;],
+    cmsgs: &amp;[<a class="enum" href="enum.ControlMessage.html" title="enum nix::sys::socket::ControlMessage">ControlMessage</a>&lt;'_&gt;],
+    flags: <a class="struct" href="struct.MsgFlags.html" title="struct nix::sys::socket::MsgFlags">MsgFlags</a>,
+    addr: <a class="enum" href="https://doc.rust-lang.org/1.87.0/core/option/enum.Option.html" title="enum core::option::Option">Option</a>&lt;<a class="primitive" href="https://doc.rust-lang.org/1.87.0/std/primitive.reference.html">&amp;S</a>&gt;,
+) -&gt; <a class="type" href="../../type.Result.html" title="type nix::Result">Result</a>&lt;<a class="primitive" href="https://doc.rust-lang.org/1.87.0/std/primitive.usize.html">usize</a>&gt;<div class="where">where
+    S: <a class="trait" href="trait.SockaddrLike.html" title="trait nix::sys::socket::SockaddrLike">SockaddrLike</a>,</div></code></pre><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Send data in scatter-gather vectors to a socket, possibly accompanied
+by ancillary data. Optionally direct the message at the given address,
+as with sendto.</p>
+<p>Allocates if cmsgs is nonempty.</p>
+<h2 id="examples"><a class="doc-anchor" href="#examples">§</a>Examples</h2>
+<p>When not directing to any specific address, use <code>()</code> for the generic type</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">let </span>(fd1, fd2) = socketpair(AddressFamily::Unix, SockType::Stream, <span class="prelude-val">None</span>,
+    SockFlag::empty())
+    .unwrap();
+<span class="kw">let </span>(r, w) = pipe().unwrap();
+
+<span class="kw">let </span>iov = [IoSlice::new(<span class="string">b"hello"</span>)];
+<span class="kw">let </span>fds = [r];
+<span class="kw">let </span>cmsg = ControlMessage::ScmRights(<span class="kw-2">&amp;</span>fds);
+sendmsg::&lt;()&gt;(fd1, <span class="kw-2">&amp;</span>iov, <span class="kw-2">&amp;</span>[cmsg], MsgFlags::empty(), <span class="prelude-val">None</span>).unwrap();</code></pre></div>
+<p>When directing to a specific address, the generic type will be inferred.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">let </span>localhost = SockaddrIn::from_str(<span class="string">"1.2.3.4:8080"</span>).unwrap();
+<span class="kw">let </span>fd = socket(AddressFamily::Inet, SockType::Datagram, SockFlag::empty(),
+    <span class="prelude-val">None</span>).unwrap();
+<span class="kw">let </span>(r, w) = pipe().unwrap();
+
+<span class="kw">let </span>iov = [IoSlice::new(<span class="string">b"hello"</span>)];
+<span class="kw">let </span>fds = [r];
+<span class="kw">let </span>cmsg = ControlMessage::ScmRights(<span class="kw-2">&amp;</span>fds);
+sendmsg(fd, <span class="kw-2">&amp;</span>iov, <span class="kw-2">&amp;</span>[cmsg], MsgFlags::empty(), <span class="prelude-val">Some</span>(<span class="kw-2">&amp;</span>localhost)).unwrap();</code></pre></div>
+</div></details></section></div></main></body></html>

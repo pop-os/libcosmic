@@ -1,0 +1,24 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Core routines shared by all libraries"><title>zune_core - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../static.files/rustdoc-916cea96.css"><meta name="rustdoc-vars" data-root-path="../" data-static-root-path="../static.files/" data-current-crate="zune_core" data-themes="" data-resource-suffix="" data-rustdoc-version="1.87.0 (17067e9ac 2025-05-09)" data-channel="1.87.0" data-search-js="search-e7298875.js" data-settings-js="settings-d72f25bb.js" ><script src="../static.files/storage-82c7156e.js"></script><script defer src="../crates.js"></script><script defer src="../static.files/main-fb8c74a8.js"></script><noscript><link rel="stylesheet" href="../static.files/noscript-893ab5e7.css"></noscript><link rel="alternate icon" type="image/png" href="../static.files/favicon-32x32-6580c154.png"><link rel="icon" type="image/svg+xml" href="../static.files/favicon-044be391.svg"></head><body class="rustdoc mod crate"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle" title="show sidebar"></button></nav><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../zune_core/index.html">zune_<wbr>core</a><span class="version">0.4.12</span></h2></div><div class="sidebar-elems"><ul class="block"><li><a id="all-types" href="all.html">All Items</a></li></ul><section id="rustdoc-toc"><h3><a href="#">Sections</a></h3><ul class="block top-toc"><li><a href="#features" title="Features">Features</a></li></ul><h3><a href="#modules">Crate Items</a></h3><ul class="block"><li><a href="#modules" title="Modules">Modules</a></li></ul></section><div id="rustdoc-modnav"></div></div></nav><div class="sidebar-resizer"></div><main><div class="width-limiter"><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><h1>Crate <span>zune_core</span><button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"><a class="src" href="../src/zune_core/lib.rs.html#7-44">Source</a> </span></div><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Core routines shared by all libraries</p>
+<p>This crate provides a set of core routines shared
+by the decoders and encoders under <code>zune</code> umbrella</p>
+<p>It currently contains</p>
+<ul>
+<li>A bytestream reader and writer with endian aware reads and writes</li>
+<li>Colorspace and bit depth information shared by images</li>
+<li>Image decoder and encoder options</li>
+<li>A simple enum type to hold image decoding results.</li>
+</ul>
+<p>This library is <code>#[no_std]</code> with <code>alloc</code> feature needed for defining <code>Vec</code>
+which we need for storing decoded  bytes.</p>
+<h2 id="features"><a class="doc-anchor" href="#features">§</a>Features</h2>
+<ul>
+<li>
+<p><code>no_std</code>: Enables <code>#[no_std]</code> compilation support.</p>
+</li>
+<li>
+<p><code>serde</code>: Enables serializing of some of the data structures
+present in the crate</p>
+</li>
+</ul>
+</div></details><h2 id="modules" class="section-header">Modules<a href="#modules" class="anchor">§</a></h2><dl class="item-table"><dt><a class="mod" href="bit_depth/index.html" title="mod zune_core::bit_depth">bit_<wbr>depth</a></dt><dd>Image bit depth, information and manipulations</dd><dt><a class="mod" href="bytestream/index.html" title="mod zune_core::bytestream">bytestream</a></dt><dd>A simple implementation of a bytestream reader
+and writer.</dd><dt><a class="mod" href="colorspace/index.html" title="mod zune_core::colorspace">colorspace</a></dt><dd>Image Colorspace information and manipulation utilities.</dd><dt><a class="mod" href="log/index.html" title="mod zune_core::log">log</a></dt><dt><a class="mod" href="options/index.html" title="mod zune_core::options">options</a></dt><dd>Decoder and Encoder Options</dd><dt><a class="mod" href="result/index.html" title="mod zune_core::result">result</a></dt><dd>Decoding results for images</dd></dl></section></div></main></body></html>

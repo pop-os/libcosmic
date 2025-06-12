@@ -1,0 +1,95 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="A procedural macro helper for easily writing derives macros for enums."><title>derive_utils - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../static.files/rustdoc-916cea96.css"><meta name="rustdoc-vars" data-root-path="../" data-static-root-path="../static.files/" data-current-crate="derive_utils" data-themes="" data-resource-suffix="" data-rustdoc-version="1.87.0 (17067e9ac 2025-05-09)" data-channel="1.87.0" data-search-js="search-e7298875.js" data-settings-js="settings-d72f25bb.js" ><script src="../static.files/storage-82c7156e.js"></script><script defer src="../crates.js"></script><script defer src="../static.files/main-fb8c74a8.js"></script><noscript><link rel="stylesheet" href="../static.files/noscript-893ab5e7.css"></noscript><link rel="alternate icon" type="image/png" href="../static.files/favicon-32x32-6580c154.png"><link rel="icon" type="image/svg+xml" href="../static.files/favicon-044be391.svg"></head><body class="rustdoc mod crate"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle" title="show sidebar"></button></nav><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../derive_utils/index.html">derive_<wbr>utils</a><span class="version">0.15.0</span></h2></div><div class="sidebar-elems"><ul class="block"><li><a id="all-types" href="all.html">All Items</a></li></ul><section id="rustdoc-toc"><h3><a href="#">Sections</a></h3><ul class="block top-toc"><li><a href="#examples" title="Examples">Examples</a><ul><li><a href="#generated-code" title="Generated code">Generated code</a></li></ul></li><li><a href="#related-projects" title="Related Projects">Related Projects</a></li></ul><h3><a href="#macros">Crate Items</a></h3><ul class="block"><li><a href="#macros" title="Macros">Macros</a></li><li><a href="#structs" title="Structs">Structs</a></li><li><a href="#functions" title="Functions">Functions</a></li></ul></section><div id="rustdoc-modnav"></div></div></nav><div class="sidebar-resizer"></div><main><div class="width-limiter"><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><h1>Crate <span>derive_utils</span><button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"><a class="src" href="../src/derive_utils/lib.rs.html#3-226">Source</a> </span></div><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>A procedural macro helper for easily writing <a href="https://doc.rust-lang.org/reference/procedural-macros.html#derive-macros">derives macros</a> for enums.</p>
+<h3 id="examples"><a class="doc-anchor" href="#examples">§</a>Examples</h3>
+<p><a href="macro.quick_derive.html" title="macro derive_utils::quick_derive"><code>quick_derive!</code></a> macro make easy to write <a href="https://doc.rust-lang.org/reference/procedural-macros.html#derive-macros"><code>proc_macro_derive</code></a>
+like deriving trait to enum so long as all variants are implemented that trait.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>derive_utils::quick_derive;
+<span class="kw">use </span>proc_macro::TokenStream;
+
+<span class="attr">#[proc_macro_derive(Iterator)]
+</span><span class="kw">pub fn </span>derive_iterator(input: TokenStream) -&gt; TokenStream {
+    <span class="macro">quick_derive!</span> {
+        input,
+        <span class="comment">// trait path
+        </span>std::iter::Iterator,
+        <span class="comment">// trait definition
+        </span><span class="kw">trait </span>Iterator {
+            <span class="kw">type </span>Item;
+            <span class="kw">fn </span>next(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span>&lt;<span class="self">Self</span>::Item&gt;;
+            <span class="kw">fn </span>size_hint(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; (usize, <span class="prelude-ty">Option</span>&lt;usize&gt;);
+        }
+    }
+}
+
+<span class="attr">#[proc_macro_derive(ExactSizeIterator)]
+</span><span class="kw">pub fn </span>derive_exact_size_iterator(input: TokenStream) -&gt; TokenStream {
+    <span class="macro">quick_derive!</span> {
+        input,
+        <span class="comment">// trait path
+        </span>std::iter::ExactSizeIterator,
+        <span class="comment">// super trait's associated types
+        </span>&lt;Item&gt;,
+        <span class="comment">// trait definition
+        </span><span class="kw">trait </span>ExactSizeIterator: Iterator {
+            <span class="kw">fn </span>len(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; usize;
+        }
+    }
+}</code></pre></div>
+<h4 id="generated-code"><a class="doc-anchor" href="#generated-code">§</a>Generated code</h4>
+<p>When deriving for enum like the following:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="attr">#[derive(Iterator, ExactSizeIterator, Future)]
+</span><span class="kw">enum </span>Enum&lt;A, B&gt; {
+    A(A),
+    B(B),
+}</code></pre></div>
+<p>Code like this will be generated:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">enum </span>Enum&lt;A, B&gt; {
+    A(A),
+    B(B),
+}
+
+<span class="attr">#[automatically_derived]
+</span><span class="kw">impl</span>&lt;A, B&gt; std::iter::Iterator <span class="kw">for </span>Enum&lt;A, B&gt;
+<span class="kw">where
+    </span>A: std::iter::Iterator,
+    B: std::iter::Iterator&lt;Item = &lt;A <span class="kw">as </span>std::iter::Iterator&gt;::Item&gt;,
+{
+    <span class="kw">type </span>Item = &lt;A <span class="kw">as </span>std::iter::Iterator&gt;::Item;
+    <span class="kw">fn </span>next(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span>&lt;<span class="self">Self</span>::Item&gt; {
+        <span class="kw">match </span><span class="self">self </span>{
+            Enum::A(x) =&gt; x.next(),
+            Enum::B(x) =&gt; x.next(),
+        }
+    }
+    <span class="kw">fn </span>size_hint(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; (usize, <span class="prelude-ty">Option</span>&lt;usize&gt;) {
+        <span class="kw">match </span><span class="self">self </span>{
+            Enum::A(x) =&gt; x.size_hint(),
+            Enum::B(x) =&gt; x.size_hint(),
+        }
+    }
+}
+
+<span class="attr">#[automatically_derived]
+</span><span class="kw">impl</span>&lt;A, B&gt; std::iter::ExactSizeIterator <span class="kw">for </span>Enum&lt;A, B&gt;
+<span class="kw">where
+    </span>A: std::iter::ExactSizeIterator,
+    B: std::iter::ExactSizeIterator&lt;Item = &lt;A <span class="kw">as </span>Iterator&gt;::Item&gt;,
+{
+    <span class="kw">fn </span>len(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; usize {
+        <span class="kw">match </span><span class="self">self </span>{
+            Enum::A(x) =&gt; x.len(),
+            Enum::B(x) =&gt; x.len(),
+        }
+    }
+}</code></pre></div>
+<h3 id="related-projects"><a class="doc-anchor" href="#related-projects">§</a>Related Projects</h3>
+<ul>
+<li><a href="https://github.com/taiki-e/auto_enums">auto_enums</a>: A library for to allow multiple return types by automatically generated enum.</li>
+<li><a href="https://github.com/taiki-e/io-enum">io-enum</a>: #[derive(Read, Write, Seek, BufRead)] for enums.</li>
+<li><a href="https://github.com/taiki-e/iter-enum">iter-enum</a>: #[derive(Iterator, DoubleEndedIterator, ExactSizeIterator, FusedIterator, Extend)] for enums.</li>
+</ul>
+</div></details><h2 id="macros" class="section-header">Macros<a href="#macros" class="anchor">§</a></h2><dl class="item-table"><dt><a class="macro" href="macro.quick_derive.html" title="macro derive_utils::quick_derive">quick_<wbr>derive</a></dt><dd>A macro for making easy to write <code>proc_macro_derive</code> like deriving trait to
+enum so long as all variants are implemented that trait.</dd></dl><h2 id="structs" class="section-header">Structs<a href="#structs" class="anchor">§</a></h2><dl class="item-table"><dt><a class="struct" href="struct.EnumData.html" title="struct derive_utils::EnumData">Enum<wbr>Data</a></dt><dd>A structure to make trait implementation to enums more efficient.</dd><dt><a class="struct" href="struct.EnumImpl.html" title="struct derive_utils::EnumImpl">Enum<wbr>Impl</a></dt><dd>A builder for implementing a trait for enums.</dd></dl><h2 id="functions" class="section-header">Functions<a href="#functions" class="anchor">§</a></h2><dl class="item-table"><dt><a class="fn" href="fn.derive_trait.html" title="fn derive_utils::derive_trait">derive_<wbr>trait</a></dt><dd>A function for creating <code>proc_macro_derive</code> like deriving trait to enum so
+long as all variants are implemented that trait.</dd></dl></section></div></main></body></html>

@@ -1,0 +1,59 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Ini streaming parser"><title>ini_core - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../static.files/rustdoc-916cea96.css"><meta name="rustdoc-vars" data-root-path="../" data-static-root-path="../static.files/" data-current-crate="ini_core" data-themes="" data-resource-suffix="" data-rustdoc-version="1.87.0 (17067e9ac 2025-05-09)" data-channel="1.87.0" data-search-js="search-e7298875.js" data-settings-js="settings-d72f25bb.js" ><script src="../static.files/storage-82c7156e.js"></script><script defer src="../crates.js"></script><script defer src="../static.files/main-fb8c74a8.js"></script><noscript><link rel="stylesheet" href="../static.files/noscript-893ab5e7.css"></noscript><link rel="alternate icon" type="image/png" href="../static.files/favicon-32x32-6580c154.png"><link rel="icon" type="image/svg+xml" href="../static.files/favicon-044be391.svg"></head><body class="rustdoc mod crate"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle" title="show sidebar"></button></nav><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../ini_core/index.html">ini_<wbr>core</a><span class="version">0.2.0</span></h2></div><div class="sidebar-elems"><ul class="block"><li><a id="all-types" href="all.html">All Items</a></li></ul><section id="rustdoc-toc"><h3><a href="#">Sections</a></h3><ul class="block top-toc"><li><a href="#ini-streaming-parser" title="Ini streaming parser">Ini streaming parser</a><ul><li><a href="#examples" title="Examples">Examples</a></li><li><a href="#format" title="Format">Format</a></li></ul></li></ul><h3><a href="#structs">Crate Items</a></h3><ul class="block"><li><a href="#structs" title="Structs">Structs</a></li><li><a href="#enums" title="Enums">Enums</a></li><li><a href="#functions" title="Functions">Functions</a></li></ul></section><div id="rustdoc-modnav"></div></div></nav><div class="sidebar-resizer"></div><main><div class="width-limiter"><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><h1>Crate <span>ini_core</span><button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"><a class="src" href="../src/ini_core/lib.rs.html#1-354">Source</a> </span></div><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><h2 id="ini-streaming-parser"><a class="doc-anchor" href="#ini-streaming-parser">§</a>Ini streaming parser</h2>
+<p>Simple, straight forward, super fast, <code>no_std</code> compatible streaming INI parser.</p>
+<h3 id="examples"><a class="doc-anchor" href="#examples">§</a>Examples</h3>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>ini_core <span class="kw">as </span>ini;
+
+<span class="kw">let </span>document = <span class="string">"\
+[SECTION]
+;this is a comment
+Key=Value"</span>;
+
+<span class="kw">let </span>elements = [
+	ini::Item::SectionEnd,
+	ini::Item::Section(<span class="string">"SECTION"</span>),
+	ini::Item::Comment(<span class="string">"this is a comment"</span>),
+	ini::Item::Property(<span class="string">"Key"</span>, <span class="prelude-val">Some</span>(<span class="string">"Value"</span>)),
+	ini::Item::SectionEnd,
+];
+
+<span class="kw">for </span>(index, item) <span class="kw">in </span>ini::Parser::new(document).enumerate() {
+	<span class="macro">assert_eq!</span>(item, elements[index]);
+}</code></pre></div>
+<p>The <code>SectionEnd</code> pseudo element is returned before a new section and at the end of the document.
+This helps processing sections after their properties finished parsing.</p>
+<p>The parser is very much line-based, it will continue no matter what and return nonsense as an item:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>ini_core <span class="kw">as </span>ini;
+
+<span class="kw">let </span>document = <span class="string">"\
+[SECTION
+nonsense"</span>;
+
+<span class="kw">let </span>elements = [
+	ini::Item::SectionEnd,
+	ini::Item::Error(<span class="string">"[SECTION"</span>),
+	ini::Item::Property(<span class="string">"nonsense"</span>, <span class="prelude-val">None</span>),
+	ini::Item::SectionEnd,
+];
+
+<span class="kw">for </span>(index, item) <span class="kw">in </span>ini::Parser::new(document).enumerate() {
+	<span class="macro">assert_eq!</span>(item, elements[index]);
+}</code></pre></div>
+<p>Lines starting with <code>[</code> but contain either no closing <code>]</code> or a closing <code>]</code> not followed by a newline are returned as <a href="enum.Item.html#variant.Error" title="variant ini_core::Item::Error"><code>Item::Error</code></a>.
+Lines missing a <code>=</code> are returned as <a href="enum.Item.html#variant.Property" title="variant ini_core::Item::Property"><code>Item::Property</code></a> with <code>None</code> value. See below for more details.</p>
+<h3 id="format"><a class="doc-anchor" href="#format">§</a>Format</h3>
+<p>INI is not a well specified format, this parser tries to make as little assumptions as possible but it does make decisions.</p>
+<ul>
+<li>Newline is either <code>"\r\n"</code>, <code>"\n"</code> or <code>"\r"</code>. It can be mixed in a single document but this is not recommended.</li>
+<li>Section header is <code>"[" section "]" newline</code>. <code>section</code> can be anything except contain newlines.</li>
+<li>Property is <code>key "=" value newline</code>. <code>key</code> and <code>value</code> can be anything except contain newlines.</li>
+<li>Comment is <code>";" comment newline</code> and Blank is just <code>newline</code>. The comment character can be customized.</li>
+</ul>
+<p>Note that padding whitespace is not trimmed by default:</p>
+<ul>
+<li>Section <code>[ SECTION ]</code>’s name is <code>&lt;space&gt;SECTION&lt;space&gt;</code>.</li>
+<li>Property <code>KEY = VALUE</code> has key <code>KEY&lt;space&gt;</code> and value <code>&lt;space&gt;VALUE</code>.</li>
+<li>Comment <code>; comment</code>’s comment is <code>&lt;space&gt;comment</code>.</li>
+</ul>
+<p>No further processing of the input is done, eg. if escape sequences are necessary they must be processed by the caller.</p>
+</div></details><h2 id="structs" class="section-header">Structs<a href="#structs" class="anchor">§</a></h2><dl class="item-table"><dt><a class="struct" href="struct.Parser.html" title="struct ini_core::Parser">Parser</a></dt><dd>Ini streaming parser.</dd></dl><h2 id="enums" class="section-header">Enums<a href="#enums" class="anchor">§</a></h2><dl class="item-table"><dt><a class="enum" href="enum.Item.html" title="enum ini_core::Item">Item</a></dt><dd>Ini element.</dd></dl><h2 id="functions" class="section-header">Functions<a href="#functions" class="anchor">§</a></h2><dl class="item-table"><dt><a class="fn" href="fn.trim.html" title="fn ini_core::trim">trim</a></dt><dd>Trims ascii whitespace from the start and end of the string slice.</dd></dl></section></div></main></body></html>

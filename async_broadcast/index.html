@@ -1,0 +1,81 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Async broadcast channel"><title>async_broadcast - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../static.files/rustdoc-916cea96.css"><meta name="rustdoc-vars" data-root-path="../" data-static-root-path="../static.files/" data-current-crate="async_broadcast" data-themes="" data-resource-suffix="" data-rustdoc-version="1.87.0 (17067e9ac 2025-05-09)" data-channel="1.87.0" data-search-js="search-e7298875.js" data-settings-js="settings-d72f25bb.js" ><script src="../static.files/storage-82c7156e.js"></script><script defer src="../crates.js"></script><script defer src="../static.files/main-fb8c74a8.js"></script><noscript><link rel="stylesheet" href="../static.files/noscript-893ab5e7.css"></noscript><link rel="alternate icon" type="image/png" href="../static.files/favicon-32x32-6580c154.png"><link rel="icon" type="image/svg+xml" href="../static.files/favicon-044be391.svg"></head><body class="rustdoc mod crate"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle" title="show sidebar"></button></nav><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../async_broadcast/index.html">async_<wbr>broadcast</a><span class="version">0.5.1</span></h2></div><div class="sidebar-elems"><ul class="block"><li><a id="all-types" href="all.html">All Items</a></li></ul><section id="rustdoc-toc"><h3><a href="#">Sections</a></h3><ul class="block top-toc"><li><a href="#examples" title="Examples">Examples</a></li><li><a href="#difference-with-async-channel" title="Difference with `async-channel`">Difference with <code>async-channel</code></a></li><li><a href="#difference-with-other-broadcast-crates" title="Difference with other broadcast crates">Difference with other broadcast crates</a></li></ul><h3><a href="#structs">Crate Items</a></h3><ul class="block"><li><a href="#structs" title="Structs">Structs</a></li><li><a href="#enums" title="Enums">Enums</a></li><li><a href="#functions" title="Functions">Functions</a></li></ul></section><div id="rustdoc-modnav"></div></div></nav><div class="sidebar-resizer"></div><main><div class="width-limiter"><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><h1>Crate <span>async_broadcast</span><button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"><a class="src" href="../src/async_broadcast/lib.rs.html#1-1877">Source</a> </span></div><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Async broadcast channel</p>
+<p>An async multi-producer multi-consumer broadcast channel, where each consumer gets a clone of every
+message sent on the channel. For obvious reasons, the channel can only be used to broadcast types
+that implement <a href="https://doc.rust-lang.org/1.87.0/core/clone/trait.Clone.html" title="trait core::clone::Clone"><code>Clone</code></a>.</p>
+<p>A channel has the <a href="struct.Sender.html" title="struct async_broadcast::Sender"><code>Sender</code></a> and <a href="struct.Receiver.html" title="struct async_broadcast::Receiver"><code>Receiver</code></a> side. Both sides are cloneable and can be shared
+among multiple threads.</p>
+<p>When all <code>Sender</code>s or all <code>Receiver</code>s are dropped, the channel becomes closed. When a channel is
+closed, no more messages can be sent, but remaining messages can still be received.</p>
+<p>The channel can also be closed manually by calling <a href="struct.Sender.html#method.close" title="method async_broadcast::Sender::close"><code>Sender::close()</code></a> or <a href="struct.Receiver.html#method.close" title="method async_broadcast::Receiver::close"><code>Receiver::close()</code></a>.</p>
+<h3 id="examples"><a class="doc-anchor" href="#examples">§</a>Examples</h3>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>async_broadcast::{broadcast, TryRecvError};
+<span class="kw">use </span>futures_lite::{future::block_on, stream::StreamExt};
+
+block_on(<span class="kw">async move </span>{
+    <span class="kw">let </span>(s1, <span class="kw-2">mut </span>r1) = broadcast(<span class="number">2</span>);
+    <span class="kw">let </span>s2 = s1.clone();
+    <span class="kw">let </span><span class="kw-2">mut </span>r2 = r1.clone();
+
+    <span class="comment">// Send 2 messages from two different senders.
+    </span>s1.broadcast(<span class="number">7</span>).<span class="kw">await</span>.unwrap();
+    s2.broadcast(<span class="number">8</span>).<span class="kw">await</span>.unwrap();
+
+    <span class="comment">// Channel is now at capacity so sending more messages will result in an error.
+    </span><span class="macro">assert!</span>(s2.try_broadcast(<span class="number">9</span>).unwrap_err().is_full());
+    <span class="macro">assert!</span>(s1.try_broadcast(<span class="number">10</span>).unwrap_err().is_full());
+
+    <span class="comment">// We can use `recv` method of the `Stream` implementation to receive messages.
+    </span><span class="macro">assert_eq!</span>(r1.next().<span class="kw">await</span>.unwrap(), <span class="number">7</span>);
+    <span class="macro">assert_eq!</span>(r1.recv().<span class="kw">await</span>.unwrap(), <span class="number">8</span>);
+    <span class="macro">assert_eq!</span>(r2.next().<span class="kw">await</span>.unwrap(), <span class="number">7</span>);
+    <span class="macro">assert_eq!</span>(r2.recv().<span class="kw">await</span>.unwrap(), <span class="number">8</span>);
+
+    <span class="comment">// All receiver got all messages so channel is now empty.
+    </span><span class="macro">assert_eq!</span>(r1.try_recv(), <span class="prelude-val">Err</span>(TryRecvError::Empty));
+    <span class="macro">assert_eq!</span>(r2.try_recv(), <span class="prelude-val">Err</span>(TryRecvError::Empty));
+
+    <span class="comment">// Drop both senders, which closes the channel.
+    </span>drop(s1);
+    drop(s2);
+
+    <span class="macro">assert_eq!</span>(r1.try_recv(), <span class="prelude-val">Err</span>(TryRecvError::Closed));
+    <span class="macro">assert_eq!</span>(r2.try_recv(), <span class="prelude-val">Err</span>(TryRecvError::Closed));
+})</code></pre></div>
+<h3 id="difference-with-async-channel"><a class="doc-anchor" href="#difference-with-async-channel">§</a>Difference with <code>async-channel</code></h3>
+<p>This crate is similar to <a href="https://crates.io/crates/async-channel"><code>async-channel</code></a> in that they both provide an MPMC channel but the
+main difference being that in <code>async-channel</code>, each message sent on the channel is only received
+by one of the receivers. <code>async-broadcast</code> on the other hand, delivers each message to every
+receiver (IOW broadcast) by cloning it for each receiver.</p>
+<h3 id="difference-with-other-broadcast-crates"><a class="doc-anchor" href="#difference-with-other-broadcast-crates">§</a>Difference with other broadcast crates</h3>
+<ul>
+<li>
+<p><a href="https://crates.io/crates/broadcaster"><code>broadcaster</code></a>: The main difference would be that <code>broadcaster</code> doesn’t have a sender and
+receiver split and both sides use clones of the same BroadcastChannel instance. The messages
+are sent are sent to all channel clones. While this can work for many cases, the lack of
+sender and receiver split, means that often times, you’ll find yourself having to drain the
+channel on the sending side yourself.</p>
+</li>
+<li>
+<p><a href="https://crates.io/crates/postage"><code>postage</code></a>: this crate provides a <a href="https://docs.rs/postage/0.4.1/postage/broadcast/fn.channel.html">broadcast API</a> similar to <code>async_broadcast</code>. However,
+it:</p>
+<ul>
+<li>(at the time of this writing) duplicates <a href="https://crates.io/crates/futures">futures</a> API, which isn’t ideal.</li>
+<li>Does not support overflow mode nor has the concept of inactive receivers, so a slow or
+inactive receiver blocking the whole channel is not a solvable problem.</li>
+<li>Provides all kinds of channels, which is generally good but if you just need a broadcast
+channel, <code>async_broadcast</code> is probably a better choice.</li>
+</ul>
+</li>
+<li>
+<p><a href="https://docs.rs/tokio/1.6.0/tokio/sync"><code>tokio::sync</code></a>: Tokio’s <code>sync</code> module provides a <a href="https://docs.rs/tokio/1.6.0/tokio/sync/broadcast/index.html">broadcast channel</a> API. The differences
+here are:</p>
+<ul>
+<li>While this implementation does provide <a href="https://docs.rs/tokio/1.6.0/tokio/sync/broadcast/index.html#lagging">overflow mode</a>, it is the default behavior and not
+opt-in.</li>
+<li>There is no equivalent of inactive receivers.</li>
+<li>While it’s possible to build tokio with only the <code>sync</code> module, it comes with other APIs that
+you may not need.</li>
+</ul>
+</li>
+</ul>
+</div></details><h2 id="structs" class="section-header">Structs<a href="#structs" class="anchor">§</a></h2><dl class="item-table"><dt><a class="struct" href="struct.InactiveReceiver.html" title="struct async_broadcast::InactiveReceiver">Inactive<wbr>Receiver</a></dt><dd>An inactive  receiver.</dd><dt><a class="struct" href="struct.Receiver.html" title="struct async_broadcast::Receiver">Receiver</a></dt><dd>The receiving side of a channel.</dd><dt><a class="struct" href="struct.Recv.html" title="struct async_broadcast::Recv">Recv</a></dt><dd>A future returned by <a href="struct.Receiver.html#method.recv" title="method async_broadcast::Receiver::recv"><code>Receiver::recv()</code></a>.</dd><dt><a class="struct" href="struct.Send.html" title="struct async_broadcast::Send">Send</a></dt><dd>A future returned by <a href="struct.Sender.html#method.broadcast" title="method async_broadcast::Sender::broadcast"><code>Sender::broadcast()</code></a>.</dd><dt><a class="struct" href="struct.SendError.html" title="struct async_broadcast::SendError">Send<wbr>Error</a></dt><dd>An error returned from <a href="struct.Sender.html#method.broadcast" title="method async_broadcast::Sender::broadcast"><code>Sender::broadcast()</code></a>.</dd><dt><a class="struct" href="struct.Sender.html" title="struct async_broadcast::Sender">Sender</a></dt><dd>The sending side of the broadcast channel.</dd></dl><h2 id="enums" class="section-header">Enums<a href="#enums" class="anchor">§</a></h2><dl class="item-table"><dt><a class="enum" href="enum.RecvError.html" title="enum async_broadcast::RecvError">Recv<wbr>Error</a></dt><dd>An error returned from <a href="struct.Receiver.html#method.recv" title="method async_broadcast::Receiver::recv"><code>Receiver::recv()</code></a>.</dd><dt><a class="enum" href="enum.TryRecvError.html" title="enum async_broadcast::TryRecvError">TryRecv<wbr>Error</a></dt><dd>An error returned from <a href="struct.Receiver.html#method.try_recv" title="method async_broadcast::Receiver::try_recv"><code>Receiver::try_recv()</code></a>.</dd><dt><a class="enum" href="enum.TrySendError.html" title="enum async_broadcast::TrySendError">TrySend<wbr>Error</a></dt><dd>An error returned from <a href="struct.Sender.html#method.try_broadcast" title="method async_broadcast::Sender::try_broadcast"><code>Sender::try_broadcast()</code></a>.</dd></dl><h2 id="functions" class="section-header">Functions<a href="#functions" class="anchor">§</a></h2><dl class="item-table"><dt><a class="fn" href="fn.broadcast.html" title="fn async_broadcast::broadcast">broadcast</a></dt><dd>Create a new broadcast channel.</dd></dl></section></div></main></body></html>

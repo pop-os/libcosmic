@@ -1,0 +1,796 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="A library for to allow multiple return types by automatically generated enum."><title>auto_enums - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../static.files/rustdoc-916cea96.css"><meta name="rustdoc-vars" data-root-path="../" data-static-root-path="../static.files/" data-current-crate="auto_enums" data-themes="" data-resource-suffix="" data-rustdoc-version="1.87.0 (17067e9ac 2025-05-09)" data-channel="1.87.0" data-search-js="search-e7298875.js" data-settings-js="settings-d72f25bb.js" ><script src="../static.files/storage-82c7156e.js"></script><script defer src="../crates.js"></script><script defer src="../static.files/main-fb8c74a8.js"></script><noscript><link rel="stylesheet" href="../static.files/noscript-893ab5e7.css"></noscript><link rel="alternate icon" type="image/png" href="../static.files/favicon-32x32-6580c154.png"><link rel="icon" type="image/svg+xml" href="../static.files/favicon-044be391.svg"></head><body class="rustdoc mod crate"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle" title="show sidebar"></button></nav><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../auto_enums/index.html">auto_<wbr>enums</a><span class="version">0.8.7</span></h2></div><div class="sidebar-elems"><ul class="block"><li><a id="all-types" href="all.html">All Items</a></li></ul><section id="rustdoc-toc"><h3><a href="#">Sections</a></h3><ul class="block top-toc"><li><a href="#auto_enum" title="`#[auto_enum]`"><code>#[auto_enum]</code></a><ul><li><a href="#nested-armsbranches" title="Nested arms/branches">Nested arms/branches</a></li><li><a href="#recursion" title="Recursion">Recursion</a></li><li><a href="#positions-where-auto_enum-can-be-used" title="Positions where `#[auto_enum]` can be used.">Positions where <code>#[auto_enum]</code> can be used.</a></li><li><a href="#supported-syntax" title="Supported syntax">Supported syntax</a></li><li><a href="#expression-that-no-value-will-be-returned" title="Expression that no value will be returned">Expression that no value will be returned</a></li><li><a href="#expression-level-marker-marker-macro" title="Expression level marker (`marker!` macro)">Expression level marker (<code>marker!</code> macro)</a></li><li><a href="#rust-nightly" title="Rust Nightly">Rust Nightly</a></li></ul></li><li><a href="#enum_derive" title="`#[enum_derive]`"><code>#[enum_derive]</code></a></li><li><a href="#supported-traits" title="Supported traits">Supported traits</a><ul><li><a href="#the-standard-library-std-core" title="The standard library (`std`, `core`)">The standard library (<code>std</code>, <code>core</code>)</a></li><li><a href="#external-libraries" title="External libraries">External libraries</a></li><li><a href="#inherent-methods" title="Inherent methods">Inherent methods</a></li></ul></li><li><a href="#optional-features" title="Optional features">Optional features</a><ul><li><a href="#type_analysis-feature" title="`type_analysis` feature"><code>type_analysis</code> feature</a></li></ul></li><li><a href="#known-limitations" title="Known limitations">Known limitations</a><ul><li><a href="#related-projects" title="Related Projects">Related Projects</a></li></ul></li></ul><h3><a href="#attributes">Crate Items</a></h3><ul class="block"><li><a href="#attributes" title="Attribute Macros">Attribute Macros</a></li></ul></section><div id="rustdoc-modnav"></div></div></nav><div class="sidebar-resizer"></div><main><div class="width-limiter"><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><h1>Crate <span>auto_enums</span><button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"><a class="src" href="../src/auto_enums/lib.rs.html#3-925">Source</a> </span></div><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>A library for to allow multiple return types by automatically generated enum.</p>
+<p>This crate is a procedural macro implementation of the features discussions
+in <a href="https://github.com/rust-lang/rfcs/issues/2414">rust-lang/rfcs#2414</a>. This idea is also known as
+<a href="https://github.com/rust-lang/rfcs/issues/294">“Anonymous sum types”</a>.</p>
+<p>This library provides the following attribute macros:</p>
+<ul>
+<li>
+<p><code>#[auto_enum]</code></p>
+<p>Parses syntax, creates the enum, inserts variants, and passes specified
+traits to <code>#[enum_derive]</code>.</p>
+</li>
+<li>
+<p><code>#[enum_derive]</code></p>
+<p>Implements specified traits to the enum.</p>
+</li>
+</ul>
+<h2 id="auto_enum"><a class="doc-anchor" href="#auto_enum">§</a><code>#[auto_enum]</code></h2>
+<p><code>#[auto_enum]</code>’s basic feature is to wrap the value returned by the obvious
+branches (<code>match</code>, <code>if</code>, <code>return</code>, etc..) by an enum that implemented the
+specified traits.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>auto_enums::auto_enum;
+
+<span class="attr">#[auto_enum(Iterator)]
+</span><span class="kw">fn </span>foo(x: i32) -&gt; <span class="kw">impl </span>Iterator&lt;Item = i32&gt; {
+    <span class="kw">match </span>x {
+        <span class="number">0 </span>=&gt; <span class="number">1</span>..<span class="number">10</span>,
+        <span class="kw">_ </span>=&gt; <span class="macro">vec!</span>[<span class="number">5</span>, <span class="number">10</span>].into_iter(),
+    }
+}</code></pre></div>
+<p><code>#[auto_enum]</code> generates code in two stages.</p>
+<p>First, <code>#[auto_enum]</code> will do the following.</p>
+<ul>
+<li>parses syntax</li>
+<li>creates the enum</li>
+<li>inserts variants</li>
+</ul>
+<p>Code like this will be generated:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">fn </span>foo(x: i32) -&gt; <span class="kw">impl </span>Iterator&lt;Item = i32&gt; {
+    <span class="attr">#[::auto_enums::enum_derive(Iterator)]
+    </span><span class="kw">enum </span>__Enum1&lt;__T1, __T2&gt; {
+        __T1(__T1),
+        __T2(__T2),
+    }
+
+    <span class="kw">match </span>x {
+        <span class="number">0 </span>=&gt; __Enum1::__T1(<span class="number">1</span>..<span class="number">10</span>),
+        <span class="kw">_ </span>=&gt; __Enum1::__T2(<span class="macro">vec!</span>[<span class="number">5</span>, <span class="number">10</span>].into_iter()),
+    }
+}</code></pre></div>
+<p>Next, <code>#[enum_derive]</code> implements the specified traits.</p>
+<details>
+<summary>Code like this will be generated:</summary>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">fn </span>foo(x: i32) -&gt; <span class="kw">impl </span>Iterator&lt;Item = i32&gt; {
+    <span class="kw">enum </span>__Enum1&lt;__T1, __T2&gt; {
+        __T1(__T1),
+        __T2(__T2),
+    }
+
+    <span class="kw">impl</span>&lt;__T1, __T2&gt; ::core::iter::Iterator <span class="kw">for </span>__Enum1&lt;__T1, __T2&gt;
+    <span class="kw">where
+        </span>__T1: ::core::iter::Iterator,
+        __T2: ::core::iter::Iterator&lt;Item = &lt;__T1 <span class="kw">as </span>::core::iter::Iterator&gt;::Item&gt;,
+    {
+        <span class="kw">type </span>Item = &lt;__T1 <span class="kw">as </span>::core::iter::Iterator&gt;::Item;
+        <span class="attr">#[inline]
+        </span><span class="kw">fn </span>next(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; ::core::option::Option&lt;<span class="self">Self</span>::Item&gt; {
+            <span class="kw">match </span><span class="self">self </span>{
+                __Enum1::__T1(x) =&gt; x.next(),
+                __Enum1::__T2(x) =&gt; x.next(),
+            }
+        }
+        <span class="attr">#[inline]
+        </span><span class="kw">fn </span>size_hint(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; (usize, ::core::option::Option&lt;usize&gt;) {
+            <span class="kw">match </span><span class="self">self </span>{
+                __Enum1::__T1(x) =&gt; x.size_hint(),
+                __Enum1::__T2(x) =&gt; x.size_hint(),
+            }
+        }
+    }
+
+    <span class="kw">match </span>x {
+        <span class="number">0 </span>=&gt; __Enum1::__T1(<span class="number">1</span>..<span class="number">10</span>),
+        <span class="kw">_ </span>=&gt; __Enum1::__T2(<span class="macro">vec!</span>[<span class="number">5</span>, <span class="number">10</span>].into_iter()),
+    }
+}</code></pre></div>
+</details>
+<br>
+<h3 id="nested-armsbranches"><a class="doc-anchor" href="#nested-armsbranches">§</a>Nested arms/branches</h3>
+<p><code>#[auto_enum]</code> can also parse nested arms/branches by using the <code>#[nested]</code>
+attribute.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>auto_enums::auto_enum;
+
+<span class="attr">#[auto_enum(Iterator)]
+</span><span class="kw">fn </span>foo(x: i32) -&gt; <span class="kw">impl </span>Iterator&lt;Item = i32&gt; {
+    <span class="kw">match </span>x {
+        <span class="number">0 </span>=&gt; <span class="number">1</span>..<span class="number">10</span>,
+        <span class="attr">#[nested]
+        </span><span class="kw">_ </span>=&gt; <span class="kw">match </span>x {
+            <span class="number">1 </span>=&gt; <span class="macro">vec!</span>[<span class="number">5</span>, <span class="number">10</span>].into_iter(),
+            <span class="kw">_ </span>=&gt; <span class="number">0</span>..=x,
+        },
+    }
+}</code></pre></div>
+<p><code>#[nested]</code> can be used basically in the same place as <code>#[auto_enum]</code>,
+except that <code>#[nested]</code> cannot be used in functions.</p>
+<h3 id="recursion"><a class="doc-anchor" href="#recursion">§</a>Recursion</h3>
+<p>If an error due to recursion occurs, you need to box branches where recursion occurs.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>auto_enums::auto_enum;
+
+<span class="kw">struct </span>Type {
+    child: Vec&lt;Type&gt;,
+}
+
+<span class="kw">impl </span>Type {
+    <span class="attr">#[auto_enum(Iterator)]
+    </span><span class="kw">fn </span>method(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw">impl </span>Iterator&lt;Item = ()&gt; + <span class="lifetime">'_ </span>{
+        <span class="kw">if </span><span class="self">self</span>.child.is_empty() {
+            <span class="prelude-val">Some</span>(()).into_iter()
+        } <span class="kw">else </span>{
+            <span class="comment">// Boxing is only needed on branches where recursion occurs.
+            </span>Box::new(<span class="self">self</span>.child.iter().flat_map(|c| c.method())) <span class="kw">as </span>Box&lt;<span class="kw">dyn </span>Iterator&lt;Item = <span class="kw">_</span>&gt;&gt;
+        }
+    }
+}</code></pre></div>
+<h3 id="positions-where-auto_enum-can-be-used"><a class="doc-anchor" href="#positions-where-auto_enum-can-be-used">§</a>Positions where <code>#[auto_enum]</code> can be used.</h3>
+<p><code>#[auto_enum]</code> can be used in the following three places. However, since
+<a href="https://github.com/rust-lang/rust/issues/15701">stmt_expr_attributes</a> and <a href="https://github.com/rust-lang/rust/issues/54727">proc_macro_hygiene</a> are not stabilized, you need
+to use empty <code>#[auto_enum]</code> for functions except nightly.</p>
+<ul>
+<li>
+<p>functions</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>auto_enums::auto_enum;
+
+<span class="attr">#[auto_enum(Iterator)]
+</span><span class="kw">fn </span>func(x: i32) -&gt; <span class="kw">impl </span>Iterator&lt;Item=i32&gt; {
+    <span class="kw">if </span>x == <span class="number">0 </span>{
+        <span class="prelude-val">Some</span>(<span class="number">0</span>).into_iter()
+    } <span class="kw">else </span>{
+        <span class="number">0</span>..x
+    }
+}</code></pre></div>
+</li>
+<li>
+<p>expressions</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>auto_enums::auto_enum;
+
+<span class="attr">#[auto_enum] </span><span class="comment">// Nightly does not need an empty attribute to the function.
+</span><span class="kw">fn </span>expr(x: i32) -&gt; <span class="kw">impl </span>Iterator&lt;Item=i32&gt; {
+    <span class="attr">#[auto_enum(Iterator)]
+    </span><span class="kw">match </span>x {
+        <span class="number">0 </span>=&gt; <span class="prelude-val">Some</span>(<span class="number">0</span>).into_iter(),
+        <span class="kw">_ </span>=&gt; <span class="number">0</span>..x,
+    }
+}</code></pre></div>
+</li>
+<li>
+<p>let binding</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>auto_enums::auto_enum;
+
+<span class="attr">#[auto_enum] </span><span class="comment">// Nightly does not need an empty attribute to the function.
+</span><span class="kw">fn </span>let_binding(x: i32) -&gt; <span class="kw">impl </span>Iterator&lt;Item=i32&gt; {
+    <span class="attr">#[auto_enum(Iterator)]
+    </span><span class="kw">let </span>iter = <span class="kw">match </span>x {
+        <span class="number">0 </span>=&gt; <span class="prelude-val">Some</span>(<span class="number">0</span>).into_iter(),
+        <span class="kw">_ </span>=&gt; <span class="number">0</span>..x,
+    };
+    iter
+}</code></pre></div>
+</li>
+</ul>
+<h3 id="supported-syntax"><a class="doc-anchor" href="#supported-syntax">§</a>Supported syntax</h3>
+<ul>
+<li>
+<p><code>if</code> and <code>match</code></p>
+<p>Wrap each branch with a variant.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>auto_enums::auto_enum;
+
+<span class="comment">// if
+</span><span class="attr">#[auto_enum(Iterator)]
+</span><span class="kw">fn </span>expr_if(x: i32) -&gt; <span class="kw">impl </span>Iterator&lt;Item=i32&gt; {
+    <span class="kw">if </span>x == <span class="number">0 </span>{
+        <span class="prelude-val">Some</span>(<span class="number">0</span>).into_iter()
+    } <span class="kw">else </span>{
+        <span class="number">0</span>..x
+    }
+}
+
+<span class="comment">// match
+</span><span class="attr">#[auto_enum] </span><span class="comment">// Nightly does not need an empty attribute to the function.
+</span><span class="kw">fn </span>expr_match(x: i32) -&gt; <span class="kw">impl </span>Iterator&lt;Item=i32&gt; {
+    <span class="attr">#[auto_enum(Iterator)]
+    </span><span class="kw">let </span>iter = <span class="kw">match </span>x {
+        <span class="number">0 </span>=&gt; <span class="prelude-val">Some</span>(<span class="number">0</span>).into_iter(),
+        <span class="kw">_ </span>=&gt; <span class="number">0</span>..x,
+    };
+    iter
+}</code></pre></div>
+</li>
+<li>
+<p><code>loop</code></p>
+<p>Wrap each <code>break</code> with a variant. Nested loops and labeled <code>break</code> are
+also supported.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>auto_enums::auto_enum;
+
+<span class="attr">#[auto_enum(Iterator)]
+</span><span class="kw">fn </span>expr_loop(<span class="kw-2">mut </span>x: i32) -&gt; <span class="kw">impl </span>Iterator&lt;Item = i32&gt; {
+    <span class="kw">loop </span>{
+        <span class="kw">if </span>x &lt; <span class="number">0 </span>{
+            <span class="kw">break </span>x..<span class="number">0</span>;
+        } <span class="kw">else if </span>x % <span class="number">5 </span>== <span class="number">0 </span>{
+            <span class="kw">break </span><span class="number">0</span>..=x;
+        }
+        x -= <span class="number">1</span>;
+    }
+}</code></pre></div>
+</li>
+<li>
+<p><code>return</code> (in functions)</p>
+<p><code>#[auto_enum]</code> can parse the <code>return</code> in the scope.</p>
+<p>This analysis is valid only when the return type is <code>impl Trait</code>.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>auto_enums::auto_enum;
+
+<span class="comment">// return (in functions)
+</span><span class="attr">#[auto_enum(Iterator)]
+</span><span class="kw">fn </span>func(x: i32) -&gt; <span class="kw">impl </span>Iterator&lt;Item=i32&gt; {
+    <span class="kw">if </span>x == <span class="number">0 </span>{
+        <span class="kw">return </span><span class="prelude-val">Some</span>(<span class="number">0</span>).into_iter();
+    }
+
+    <span class="kw">if </span>x &gt; <span class="number">0 </span>{
+        <span class="number">0</span>..x
+    } <span class="kw">else </span>{
+        x..=<span class="number">0
+    </span>}
+}</code></pre></div>
+</li>
+<li>
+<p><code>return</code> (in closures)</p>
+<p><code>#[auto_enum]</code> can parse the <code>return</code> in the scope.</p>
+<p>This analysis is valid only when the following two conditions are satisfied.</p>
+<ul>
+<li><code>#[auto_enum]</code> must be used directly for that closure (or the let binding of the closure).</li>
+<li><code>?</code> operator not used in the scope.</li>
+</ul>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>auto_enums::auto_enum;
+
+<span class="comment">// return (in closures)
+</span><span class="attr">#[auto_enum] </span><span class="comment">// Nightly does not need an empty attribute to the function.
+</span><span class="kw">fn </span>closure() -&gt; <span class="kw">impl </span>Iterator&lt;Item=i32&gt; {
+    <span class="attr">#[auto_enum(Iterator)]
+    </span><span class="kw">let </span>f = |x| {
+        <span class="kw">if </span>x == <span class="number">0 </span>{
+            <span class="kw">return </span><span class="prelude-val">Some</span>(<span class="number">0</span>).into_iter();
+        }
+
+        <span class="kw">if </span>x &gt; <span class="number">0 </span>{
+            <span class="number">0</span>..x
+        } <span class="kw">else </span>{
+            x..=<span class="number">0
+        </span>}
+    };
+    f(<span class="number">1</span>)
+}</code></pre></div>
+</li>
+<li>
+<p><code>?</code> operator (in functions)</p>
+<p><code>#[auto_enum]</code> can parse the <code>?</code> operator in the scope.</p>
+<p>This analysis is valid only when the return type is <code>Result&lt;T, impl Trait&gt;</code>.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>auto_enums::auto_enum;
+<span class="kw">use </span>std::fmt::{Debug, Display};
+
+<span class="comment">// `?` operator (in functions)
+</span><span class="attr">#[auto_enum(Debug, Display)]
+</span><span class="kw">fn </span>func(x: i32) -&gt; <span class="prelude-ty">Result</span>&lt;i32, <span class="kw">impl </span>Debug + Display&gt; {
+    <span class="kw">if </span>x == <span class="number">0 </span>{
+        <span class="prelude-val">Err</span>(<span class="string">"`x` is zero"</span>)<span class="question-mark">?</span>;
+    }
+
+    <span class="comment">// The last branch of the function is not parsed.
+    </span><span class="kw">if </span>x &lt; <span class="number">0 </span>{
+        <span class="prelude-val">Err</span>(x)<span class="question-mark">?
+    </span>} <span class="kw">else </span>{
+        <span class="prelude-val">Ok</span>(x + <span class="number">1</span>)
+    }
+}</code></pre></div>
+<p><code>?</code> operator is expanded as follows:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">match </span>expr {
+    <span class="prelude-val">Ok</span>(val) =&gt; val,
+    <span class="prelude-val">Err</span>(err) =&gt; <span class="kw">return </span><span class="prelude-val">Err</span>(Enum::Variant(err)),
+}</code></pre></div>
+</li>
+<li>
+<p><code>?</code> operator (in closures)</p>
+<p><code>#[auto_enum]</code> can parse the <code>?</code> operator in the scope.</p>
+<p>However, <code>#[auto_enum]</code> must be used directly for that closure
+(or the let binding of the closure).</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>auto_enums::auto_enum;
+<span class="kw">use </span>std::fmt::{Debug, Display};
+
+<span class="comment">// `?` operator (in closures)
+</span><span class="attr">#[auto_enum] </span><span class="comment">// Nightly does not need an empty attribute to the function.
+</span><span class="kw">fn </span>closure() -&gt; <span class="prelude-ty">Result</span>&lt;i32, <span class="kw">impl </span>Debug + Display&gt; {
+    <span class="attr">#[auto_enum(Debug, Display)]
+    </span><span class="kw">let </span>f = |x| {
+        <span class="kw">if </span>x == <span class="number">0 </span>{
+            <span class="prelude-val">Err</span>(<span class="string">"`x` is zero"</span>)<span class="question-mark">?
+        </span>}
+
+        <span class="comment">// The last branch of the function is not interpreted as a branch.
+        </span><span class="kw">if </span>x &lt; <span class="number">0 </span>{
+            <span class="prelude-val">Err</span>(x)<span class="question-mark">?
+        </span>} <span class="kw">else </span>{
+            <span class="prelude-val">Ok</span>(x + <span class="number">1</span>)
+        }
+    };
+    f(<span class="number">1</span>)
+}</code></pre></div>
+</li>
+<li>
+<p>Block, unsafe block, method call, parentheses, and type ascription</p>
+<p>The following expressions are recursively searched until an <code>if</code>, <code>match</code>,
+<code>loop</code> or unsupported expression is found.</p>
+<ul>
+<li>blocks</li>
+<li>unsafe blocks</li>
+<li>method calls</li>
+<li>parentheses</li>
+<li>type ascriptions</li>
+</ul>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>auto_enums::auto_enum;
+
+<span class="comment">// block
+</span><span class="attr">#[auto_enum] </span><span class="comment">// Nightly does not need an empty attribute to the function.
+</span><span class="kw">fn </span>expr_block(x: i32) -&gt; <span class="kw">impl </span>Iterator&lt;Item=i32&gt; {
+    <span class="attr">#[auto_enum(Iterator)]
+    </span>{
+        <span class="kw">if </span>x == <span class="number">0 </span>{
+            <span class="prelude-val">Some</span>(<span class="number">0</span>).into_iter()
+        } <span class="kw">else </span>{
+            <span class="number">0</span>..x
+        }
+    }
+}
+
+<span class="comment">// method call
+</span><span class="attr">#[auto_enum] </span><span class="comment">// Nightly does not need an empty attribute to the function.
+</span><span class="kw">fn </span>expr_method(x: i32) -&gt; <span class="kw">impl </span>Iterator&lt;Item=i32&gt; {
+   <span class="attr">#[auto_enum(Iterator)]
+    </span><span class="kw">match </span>x {
+        <span class="number">0 </span>=&gt; <span class="prelude-val">Some</span>(<span class="number">0</span>).into_iter(),
+        <span class="kw">_ </span>=&gt; <span class="number">0</span>..x,
+    }.map(|y| y + <span class="number">1</span>)
+}
+
+<span class="comment">// parentheses
+</span><span class="attr">#[auto_enum(Iterator)]
+</span><span class="kw">fn </span>expr_parentheses(x: i32) -&gt; <span class="kw">impl </span>Iterator&lt;Item=i32&gt; {
+    (<span class="kw">if </span>x == <span class="number">0 </span>{ <span class="prelude-val">Some</span>(<span class="number">0</span>).into_iter() } <span class="kw">else </span>{ <span class="number">0</span>..x })
+}</code></pre></div>
+</li>
+</ul>
+<h3 id="expression-that-no-value-will-be-returned"><a class="doc-anchor" href="#expression-that-no-value-will-be-returned">§</a>Expression that no value will be returned</h3>
+<p>If the last expression of a branch is one of the following, it is
+interpreted that no value will be returned (variant assignment is skipped).</p>
+<ul>
+<li><code>panic!(..)</code></li>
+<li><code>unreachable!(..)</code></li>
+<li><code>return</code></li>
+<li><code>break</code></li>
+<li><code>continue</code></li>
+<li><code>None?</code></li>
+<li><code>Err(..)?</code></li>
+<li>Expression level marker (<code>marker!</code> macro).</li>
+<li>An item definition.</li>
+</ul>
+<p>Also, if the branch contains <code>#[nested]</code>, it is interpreted as returning
+an anonymous enum generated by <code>#[auto_enum]</code>, not a value.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>auto_enums::auto_enum;
+
+<span class="attr">#[auto_enum(Iterator)]
+</span><span class="kw">fn </span>foo(x: i32) -&gt; <span class="kw">impl </span>Iterator&lt;Item = i32&gt; {
+    <span class="kw">match </span>x {
+        <span class="number">0 </span>=&gt; <span class="number">1</span>..<span class="number">10</span>,
+        <span class="number">1 </span>=&gt; <span class="macro">panic!</span>(), <span class="comment">// variant assignment is skipped
+        </span><span class="kw">_ </span>=&gt; <span class="macro">vec!</span>[<span class="number">5</span>, <span class="number">10</span>].into_iter(),
+    }
+}</code></pre></div>
+<p>You can also skip that branch explicitly by <code>#[never]</code> attribute.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>auto_enums::auto_enum;
+
+<span class="attr">#[auto_enum(Iterator)]
+</span><span class="kw">fn </span>foo(x: i32) -&gt; <span class="kw">impl </span>Iterator&lt;Item = i32&gt; {
+    <span class="kw">match </span>x {
+        <span class="number">0 </span>=&gt; <span class="number">1</span>..<span class="number">10</span>,
+        <span class="attr">#[never]
+        </span><span class="number">1 </span>=&gt; <span class="kw">loop </span>{
+            <span class="macro">panic!</span>()
+        },
+        <span class="kw">_ </span>=&gt; <span class="macro">vec!</span>[<span class="number">5</span>, <span class="number">10</span>].into_iter(),
+    }
+}</code></pre></div>
+<h3 id="expression-level-marker-marker-macro"><a class="doc-anchor" href="#expression-level-marker-marker-macro">§</a>Expression level marker (<code>marker!</code> macro)</h3>
+<p><code>#[auto_enum]</code> replaces <code>marker!</code> macros with variants.
+If values of two or more are specified by <code>marker!</code> macros, <code>#[auto_enum]</code>
+can be used for unsupported expressions and statements.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>auto_enums::auto_enum;
+
+<span class="attr">#[auto_enum(Iterator)]
+</span><span class="kw">fn </span>foo(x: i32) -&gt; <span class="kw">impl </span>Iterator&lt;Item = i32&gt; {
+    <span class="kw">if </span>x &lt; <span class="number">0 </span>{
+        <span class="kw">return </span>x..=<span class="number">0</span>;
+    }
+    <span class="macro">marker!</span>(<span class="number">1</span>..<span class="number">10</span>)
+}</code></pre></div>
+<p>The default name of the macro is <code>"marker"</code>, but you can change it by
+<code>marker</code> option.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>auto_enums::auto_enum;
+
+<span class="attr">#[auto_enum(marker = bar, Iterator)]
+</span><span class="kw">fn </span>foo(x: i32) -&gt; <span class="kw">impl </span>Iterator&lt;Item = i32&gt; {
+    <span class="kw">if </span>x &lt; <span class="number">0 </span>{
+        <span class="kw">return </span>x..=<span class="number">0</span>;
+    }
+    <span class="macro">bar!</span>(<span class="number">1</span>..<span class="number">10</span>)
+}</code></pre></div>
+<h3 id="rust-nightly"><a class="doc-anchor" href="#rust-nightly">§</a>Rust Nightly</h3>
+<p>When using <code>#[auto_enum]</code> for expressions and statements, <code>#[auto_enum]</code> for
+function is unnecessary.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="comment">// Add this to your crate root:
+</span><span class="attr">#![feature(proc_macro_hygiene, stmt_expr_attributes)]</span></code></pre></div>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>auto_enums::auto_enum;
+
+<span class="kw">fn </span>foo(x: i32) -&gt; i32 {
+    <span class="attr">#[auto_enum(Iterator)]
+    </span><span class="kw">let </span>iter = <span class="kw">match </span>x {
+        <span class="number">0 </span>=&gt; <span class="number">1</span>..<span class="number">10</span>,
+        <span class="kw">_ </span>=&gt; <span class="macro">vec!</span>[<span class="number">5</span>, <span class="number">10</span>].into_iter(),
+    };
+
+    iter.fold(<span class="number">0</span>, |sum, x| sum + x)
+}</code></pre></div>
+<p>You can also return closures.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="comment">// Add this to your crate root:
+</span><span class="attr">#![feature(fn_traits, unboxed_closures)]</span></code></pre></div>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>auto_enums::auto_enum;
+
+<span class="attr">#[auto_enum(Fn)]
+</span><span class="kw">fn </span>foo(x: bool) -&gt; <span class="kw">impl </span>Fn(i32) -&gt; i32 {
+    <span class="kw">if </span>x {
+        |y| y + <span class="number">1
+    </span>} <span class="kw">else </span>{
+        |z| z - <span class="number">1
+    </span>}
+}</code></pre></div>
+<h2 id="enum_derive"><a class="doc-anchor" href="#enum_derive">§</a><code>#[enum_derive]</code></h2>
+<p><code>#[enum_derive]</code> implements the supported traits and passes unsupported
+traits to <code>#[derive]</code>.</p>
+<p>If you want to use traits that are not supported by <code>#[enum_derive]</code>, you
+can use another crate that provides <a href="https://doc.rust-lang.org/reference/procedural-macros.html#derive-macros">derives macros</a>, or
+you can define derives macros yourself (<a href="https://github.com/taiki-e/derive_utils">derive_utils</a> probably can help it).</p>
+<p>Basic usage of <code>#[enum_derive]</code></p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>auto_enums::enum_derive;
+
+<span class="comment">// `#[enum_derive]` implements `Iterator`, and `#[derive]` implements `Clone`.
+</span><span class="attr">#[enum_derive(Iterator, Clone)]
+</span><span class="kw">enum </span>Foo&lt;A, B&gt; {
+    A(A),
+    B(B),
+}</code></pre></div>
+<p><code>#[enum_derive]</code> adds the dependency of the specified trait if it is not
+specified.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>auto_enums::enum_derive;
+
+<span class="comment">// `#[enum_derive]` implements `Iterator` and `ExactSizeIterator`.
+</span><span class="attr">#[enum_derive(ExactSizeIterator)]
+</span><span class="kw">enum </span>Foo&lt;A, B&gt; {
+    A(A),
+    B(B),
+}</code></pre></div>
+<h2 id="supported-traits"><a class="doc-anchor" href="#supported-traits">§</a>Supported traits</h2>
+<p>Some traits support is disabled by default.
+Note that some traits have aliases.</p>
+<p><em>When using features that depend on unstable APIs, the <code>unstable</code> feature must be explicitly enabled</em></p>
+<h3 id="the-standard-library-std-core"><a class="doc-anchor" href="#the-standard-library-std-core">§</a>The standard library (<code>std</code>, <code>core</code>)</h3><h4 id="stdcoreiter"><a class="doc-anchor" href="#stdcoreiter">§</a><code>[std|core]::iter</code></h4>
+<ul>
+<li><a href="https://doc.rust-lang.org/std/iter/trait.Iterator.html"><code>Iterator</code></a> - <a href="https://github.com/taiki-e/auto_enums/blob/HEAD/tests/expand/std/iter/iterator.rs">example</a> | <a href="https://github.com/taiki-e/auto_enums/blob/HEAD/tests/expand/std/iter/iterator.expanded.rs">generated code</a></li>
+<li><a href="https://doc.rust-lang.org/std/iter/trait.DoubleEndedIterator.html"><code>DoubleEndedIterator</code></a> - <a href="https://github.com/taiki-e/auto_enums/blob/HEAD/tests/expand/std/iter/double_ended_iterator.rs">example</a> | <a href="https://github.com/taiki-e/auto_enums/blob/HEAD/tests/expand/std/iter/double_ended_iterator.expanded.rs">generated code</a></li>
+<li><a href="https://doc.rust-lang.org/std/iter/trait.ExactSizeIterator.html"><code>ExactSizeIterator</code></a> - <a href="https://github.com/taiki-e/auto_enums/blob/HEAD/tests/expand/std/iter/exact_size_iterator.rs">example</a> | <a href="https://github.com/taiki-e/auto_enums/blob/HEAD/tests/expand/std/iter/exact_size_iterator.expanded.rs">generated code</a></li>
+<li><a href="https://doc.rust-lang.org/std/iter/trait.FusedIterator.html"><code>FusedIterator</code></a> - <a href="https://github.com/taiki-e/auto_enums/blob/HEAD/tests/expand/std/iter/fused_iterator.rs">example</a> | <a href="https://github.com/taiki-e/auto_enums/blob/HEAD/tests/expand/std/iter/fused_iterator.expanded.rs">generated code</a></li>
+<li><a href="https://doc.rust-lang.org/std/iter/trait.Extend.html"><code>Extend</code></a> - <a href="https://github.com/taiki-e/auto_enums/blob/HEAD/tests/expand/std/iter/extend.rs">example</a> | <a href="https://github.com/taiki-e/auto_enums/blob/HEAD/tests/expand/std/iter/extend.expanded.rs">generated code</a></li>
+<li><a href="https://doc.rust-lang.org/std/iter/trait.TrustedLen.html"><code>TrustedLen</code></a> <em>(requires <code>"trusted_len"</code> and <code>"unstable"</code> crate features)</em> - <a href="https://github.com/taiki-e/auto_enums/blob/HEAD/tests/expand/std/iter/trusted_len.rs">example</a> | <a href="https://github.com/taiki-e/auto_enums/blob/HEAD/tests/expand/std/iter/trusted_len.expanded.rs">generated code</a></li>
+</ul>
+<p><em>See also <a href="https://github.com/taiki-e/iter-enum">iter-enum</a> crate.</em></p>
+<h4 id="stdcorefuture"><a class="doc-anchor" href="#stdcorefuture">§</a><code>[std|core]::future</code></h4>
+<ul>
+<li><a href="https://doc.rust-lang.org/std/future/trait.Future.html"><code>Future</code></a> - <a href="https://github.com/taiki-e/auto_enums/blob/HEAD/tests/expand/std/future.rs">example</a> | <a href="https://github.com/taiki-e/auto_enums/blob/HEAD/tests/expand/std/future.expanded.rs">generated code</a></li>
+</ul>
+<h4 id="stdio-requires-std-crate-feature"><a class="doc-anchor" href="#stdio-requires-std-crate-feature">§</a><code>std::io</code> <em>(requires <code>"std"</code> crate feature)</em></h4>
+<ul>
+<li><a href="https://doc.rust-lang.org/std/io/trait.Read.html"><code>Read</code></a> (alias: <code>io::Read</code>) - <a href="https://github.com/taiki-e/auto_enums/blob/HEAD/tests/expand/std/io/read.rs">example</a> | <a href="https://github.com/taiki-e/auto_enums/blob/HEAD/tests/expand/std/io/read.expanded.rs">generated code</a></li>
+<li><a href="https://doc.rust-lang.org/std/io/trait.BufRead.html"><code>BufRead</code></a> (alias: <code>io::BufRead</code>) - <a href="https://github.com/taiki-e/auto_enums/blob/HEAD/tests/expand/std/io/buf_read.rs">example</a> | <a href="https://github.com/taiki-e/auto_enums/blob/HEAD/tests/expand/std/io/buf_read.expanded.rs">generated code</a></li>
+<li><a href="https://doc.rust-lang.org/std/io/trait.Write.html"><code>Write</code></a> (alias: <code>io::Write</code>) - <a href="https://github.com/taiki-e/auto_enums/blob/HEAD/tests/expand/std/io/write.rs">example</a> | <a href="https://github.com/taiki-e/auto_enums/blob/HEAD/tests/expand/std/io/write.expanded.rs">generated code</a></li>
+<li><a href="https://doc.rust-lang.org/std/io/trait.Seek.html"><code>Seek</code></a> (alias: <code>io::Seek</code>) - <a href="https://github.com/taiki-e/auto_enums/blob/HEAD/tests/expand/std/io/seek.rs">example</a> | <a href="https://github.com/taiki-e/auto_enums/blob/HEAD/tests/expand/std/io/seek.expanded.rs">generated code</a></li>
+</ul>
+<p><em>See also <a href="https://github.com/taiki-e/io-enum">io-enum</a> crate.</em></p>
+<h4 id="stdcoreops"><a class="doc-anchor" href="#stdcoreops">§</a><code>[std|core]::ops</code></h4>
+<ul>
+<li><a href="https://doc.rust-lang.org/std/ops/trait.Deref.html"><code>Deref</code></a> <em>(requires <code>"ops"</code> crate feature)</em></li>
+<li><a href="https://doc.rust-lang.org/std/ops/trait.DerefMut.html"><code>DerefMut</code></a> <em>(requires <code>"ops"</code> crate feature)</em></li>
+<li><a href="https://doc.rust-lang.org/std/ops/trait.Index.html"><code>Index</code></a> <em>(requires <code>"ops"</code> crate feature)</em></li>
+<li><a href="https://doc.rust-lang.org/std/ops/trait.IndexMut.html"><code>IndexMut</code></a> <em>(requires <code>"ops"</code> crate feature)</em></li>
+<li><a href="https://doc.rust-lang.org/std/ops/trait.RangeBounds.html"><code>RangeBounds</code></a> <em>(requires <code>"ops"</code> crate feature)</em></li>
+<li><a href="https://doc.rust-lang.org/std/ops/trait.Fn.html"><code>Fn</code></a> <em>(requires <code>"fn_traits"</code> and <code>"unstable"</code> crate features)</em></li>
+<li><a href="https://doc.rust-lang.org/std/ops/trait.FnMut.html"><code>FnMut</code></a> <em>(requires <code>"fn_traits"</code> and <code>"unstable"</code> crate features)</em></li>
+<li><a href="https://doc.rust-lang.org/std/ops/trait.FnOnce.html"><code>FnOnce</code></a> <em>(requires <code>"fn_traits"</code> and <code>"unstable"</code> crate features)</em></li>
+<li><a href="https://doc.rust-lang.org/nightly/std/ops/trait.Coroutine.html"><code>Coroutine</code></a> <em>(requires <code>"coroutine_trait"</code> and <code>"unstable"</code> crate features)</em></li>
+</ul>
+<h4 id="stdcoreconvert"><a class="doc-anchor" href="#stdcoreconvert">§</a><code>[std|core]::convert</code></h4>
+<ul>
+<li><a href="https://doc.rust-lang.org/std/convert/trait.AsRef.html"><code>AsRef</code></a> <em>(requires <code>"convert"</code> crate feature)</em></li>
+<li><a href="https://doc.rust-lang.org/std/convert/trait.AsMut.html"><code>AsMut</code></a> <em>(requires <code>"convert"</code> crate feature)</em></li>
+</ul>
+<h4 id="stdcorefmt"><a class="doc-anchor" href="#stdcorefmt">§</a><code>[std|core]::fmt</code></h4>
+<ul>
+<li><a href="https://doc.rust-lang.org/std/fmt/trait.Debug.html"><code>Debug</code></a> (alias: <code>fmt::Debug</code>) - <a href="https://github.com/taiki-e/auto_enums/blob/HEAD/tests/expand/std/debug.rs">example</a> | <a href="https://github.com/taiki-e/auto_enums/blob/HEAD/tests/expand/std/debug.expanded.rs">generated code</a></li>
+<li><a href="https://doc.rust-lang.org/std/fmt/trait.Display.html"><code>Display</code></a> (alias: <code>fmt::Display</code>)</li>
+<li><a href="https://doc.rust-lang.org/std/fmt/trait.Binary.html"><code>fmt::Binary</code></a> <em>(requires <code>"fmt"</code> crate feature)</em></li>
+<li><a href="https://doc.rust-lang.org/std/fmt/trait.LowerExp.html"><code>fmt::LowerExp</code></a> <em>(requires <code>"fmt"</code> crate feature)</em></li>
+<li><a href="https://doc.rust-lang.org/std/fmt/trait.LowerHex.html"><code>fmt::LowerHex</code></a> <em>(requires <code>"fmt"</code> crate feature)</em></li>
+<li><a href="https://doc.rust-lang.org/std/fmt/trait.Octal.html"><code>fmt::Octal</code></a> <em>(requires <code>"fmt"</code> crate feature)</em></li>
+<li><a href="https://doc.rust-lang.org/std/fmt/trait.Pointer.html"><code>fmt::Pointer</code></a> <em>(requires <code>"fmt"</code> crate feature)</em></li>
+<li><a href="https://doc.rust-lang.org/std/fmt/trait.UpperExp.html"><code>fmt::UpperExp</code></a> <em>(requires <code>"fmt"</code> crate feature)</em></li>
+<li><a href="https://doc.rust-lang.org/std/fmt/trait.UpperHex.html"><code>fmt::UpperHex</code></a> <em>(requires <code>"fmt"</code> crate feature)</em></li>
+<li><a href="https://doc.rust-lang.org/std/fmt/trait.Write.html"><code>fmt::Write</code></a></li>
+</ul>
+<h4 id="stderror-requires-std-crate-feature"><a class="doc-anchor" href="#stderror-requires-std-crate-feature">§</a><code>std::error</code> <em>(requires <code>"std"</code> crate feature)</em></h4>
+<ul>
+<li><a href="https://doc.rust-lang.org/std/error/trait.Error.html"><code>Error</code></a> - <a href="https://github.com/taiki-e/auto_enums/blob/HEAD/tests/expand/std/error.rs">example</a> | <a href="https://github.com/taiki-e/auto_enums/blob/HEAD/tests/expand/std/error.expanded.rs">generated code</a></li>
+</ul>
+<h3 id="external-libraries"><a class="doc-anchor" href="#external-libraries">§</a>External libraries</h3>
+<p>You can use support for external library traits by activating each crate feature.</p>
+<p>To use support for external library traits, you need to use the path starting with the feature name. For example:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>auto_enums::auto_enum;
+<span class="kw">use </span>rayon::prelude::<span class="kw-2">*</span>;
+
+<span class="attr">#[auto_enum(rayon::ParallelIterator)] </span><span class="comment">// Note that this is not `#[auto_enum(ParallelIterator)]`
+</span><span class="kw">fn </span>func(x: i32) -&gt; <span class="kw">impl </span>ParallelIterator {
+    <span class="kw">match </span>x {
+        <span class="number">0 </span>=&gt; (<span class="number">1</span>..<span class="number">10</span>).into_par_iter(),
+        <span class="kw">_ </span>=&gt; <span class="macro">vec!</span>[<span class="number">5</span>, <span class="number">10</span>].into_par_iter(),
+    }
+}</code></pre></div>
+<h4 id="futures-v03-requires-futures03-crate-feature"><a class="doc-anchor" href="#futures-v03-requires-futures03-crate-feature">§</a><a href="https://docs.rs/futures/0.3">futures v0.3</a> <em>(requires <code>"futures03"</code> crate feature)</em></h4>
+<ul>
+<li><a href="https://docs.rs/futures/0.3/futures/stream/trait.Stream.html"><code>futures03::Stream</code></a> - <a href="https://github.com/taiki-e/auto_enums/blob/HEAD/tests/expand/external/futures/stream.rs">example</a> | <a href="https://github.com/taiki-e/auto_enums/blob/HEAD/tests/expand/external/futures/stream.expanded.rs">generated code</a></li>
+<li><a href="https://docs.rs/futures/0.3/futures/sink/trait.Sink.html"><code>futures03::Sink</code></a> - <a href="https://github.com/taiki-e/auto_enums/blob/HEAD/tests/expand/external/futures/sink.rs">example</a> | <a href="https://github.com/taiki-e/auto_enums/blob/HEAD/tests/expand/external/futures/sink.expanded.rs">generated code</a></li>
+<li><a href="https://docs.rs/futures/0.3/futures/io/trait.AsyncRead.html"><code>futures03::AsyncRead</code></a> - <a href="https://github.com/taiki-e/auto_enums/blob/HEAD/tests/expand/external/futures/async_read.rs">example</a> | <a href="https://github.com/taiki-e/auto_enums/blob/HEAD/tests/expand/external/futures/async_read.expanded.rs">generated code</a></li>
+<li><a href="https://docs.rs/futures/0.3/futures/io/trait.AsyncWrite.html"><code>futures03::AsyncWrite</code></a> - <a href="https://github.com/taiki-e/auto_enums/blob/HEAD/tests/expand/external/futures/async_write.rs">example</a> | <a href="https://github.com/taiki-e/auto_enums/blob/HEAD/tests/expand/external/futures/async_write.expanded.rs">generated code</a></li>
+<li><a href="https://docs.rs/futures/0.3/futures/io/trait.AsyncSeek.html"><code>futures03::AsyncSeek</code></a> - <a href="https://github.com/taiki-e/auto_enums/blob/HEAD/tests/expand/external/futures/async_seek.rs">example</a> | <a href="https://github.com/taiki-e/auto_enums/blob/HEAD/tests/expand/external/futures/async_seek.expanded.rs">generated code</a></li>
+<li><a href="https://docs.rs/futures/0.3/futures/io/trait.AsyncBufRead.html"><code>futures03::AsyncBufRead</code></a> - <a href="https://github.com/taiki-e/auto_enums/blob/HEAD/tests/expand/external/futures/async_buf_read.rs">example</a> | <a href="https://github.com/taiki-e/auto_enums/blob/HEAD/tests/expand/external/futures/async_buf_read.expanded.rs">generated code</a></li>
+</ul>
+<h4 id="futures-v01-requires-futures01-crate-feature"><a class="doc-anchor" href="#futures-v01-requires-futures01-crate-feature">§</a><a href="https://docs.rs/futures/0.1">futures v0.1</a> <em>(requires <code>"futures01"</code> crate feature)</em></h4>
+<ul>
+<li><a href="https://docs.rs/futures/0.1/futures/future/trait.Future.html"><code>futures01::Future</code></a></li>
+<li><a href="https://docs.rs/futures/0.1/futures/stream/trait.Stream.html"><code>futures01::Stream</code></a></li>
+<li><a href="https://docs.rs/futures/0.1/futures/sink/trait.Sink.html"><code>futures01::Sink</code></a></li>
+</ul>
+<h4 id="rayon-requires-rayon-crate-feature"><a class="doc-anchor" href="#rayon-requires-rayon-crate-feature">§</a><a href="https://docs.rs/rayon/1">rayon</a> <em>(requires <code>"rayon"</code> crate feature)</em></h4>
+<ul>
+<li><a href="https://docs.rs/rayon/1/rayon/iter/trait.ParallelIterator.html"><code>rayon::ParallelIterator</code></a> - <a href="https://github.com/taiki-e/auto_enums/blob/HEAD/tests/expand/external/rayon/parallel_iterator.rs">example</a> | <a href="https://github.com/taiki-e/auto_enums/blob/HEAD/tests/expand/external/rayon/parallel_iterator.expanded.rs">generated code</a></li>
+<li><a href="https://docs.rs/rayon/1/rayon/iter/trait.IndexedParallelIterator.html"><code>rayon::IndexedParallelIterator</code></a> - <a href="https://github.com/taiki-e/auto_enums/blob/HEAD/tests/expand/external/rayon/indexed_parallel_iterator.rs">example</a> | <a href="https://github.com/taiki-e/auto_enums/blob/HEAD/tests/expand/external/rayon/indexed_parallel_iterator.expanded.rs">generated code</a></li>
+<li><a href="https://docs.rs/rayon/1/rayon/iter/trait.ParallelExtend.html"><code>rayon::ParallelExtend</code></a> - <a href="https://github.com/taiki-e/auto_enums/blob/HEAD/tests/expand/external/rayon/parallel_extend.rs">example</a> | <a href="https://github.com/taiki-e/auto_enums/blob/HEAD/tests/expand/external/rayon/parallel_extend.expanded.rs">generated code</a></li>
+</ul>
+<h4 id="serde-requires-serde-crate-feature"><a class="doc-anchor" href="#serde-requires-serde-crate-feature">§</a><a href="https://docs.rs/serde/1">serde</a> <em>(requires <code>"serde"</code> crate feature)</em></h4>
+<ul>
+<li><a href="https://docs.rs/serde/1/serde/trait.Serialize.html"><code>serde::Serialize</code></a> - <a href="https://github.com/taiki-e/auto_enums/blob/HEAD/tests/expand/external/serde/serialize.rs">example</a> | <a href="https://github.com/taiki-e/auto_enums/blob/HEAD/tests/expand/external/serde/serialize.expanded.rs">generated code</a></li>
+</ul>
+<h4 id="tokio-v1-requires-tokio1-crate-feature"><a class="doc-anchor" href="#tokio-v1-requires-tokio1-crate-feature">§</a><a href="https://docs.rs/tokio/1">tokio v1</a> <em>(requires <code>"tokio1"</code> crate feature)</em></h4>
+<ul>
+<li><a href="https://docs.rs/tokio/1/tokio/io/trait.AsyncRead.html"><code>tokio1::AsyncRead</code></a> - <a href="https://github.com/taiki-e/auto_enums/blob/HEAD/tests/expand/external/tokio/async_read.rs">example</a> | <a href="https://github.com/taiki-e/auto_enums/blob/HEAD/tests/expand/external/tokio/async_read.expanded.rs">generated code</a></li>
+<li><a href="https://docs.rs/tokio/1/tokio/io/trait.AsyncWrite.html"><code>tokio1::AsyncWrite</code></a> - <a href="https://github.com/taiki-e/auto_enums/blob/HEAD/tests/expand/external/tokio/async_write.rs">example</a> | <a href="https://github.com/taiki-e/auto_enums/blob/HEAD/tests/expand/external/tokio/async_write.expanded.rs">generated code</a></li>
+<li><a href="https://docs.rs/tokio/1/tokio/io/trait.AsyncSeek.html"><code>tokio1::AsyncSeek</code></a> - <a href="https://github.com/taiki-e/auto_enums/blob/HEAD/tests/expand/external/tokio/async_seek.rs">example</a> | <a href="https://github.com/taiki-e/auto_enums/blob/HEAD/tests/expand/external/tokio/async_seek.expanded.rs">generated code</a></li>
+<li><a href="https://docs.rs/tokio/1/tokio/io/trait.AsyncBufRead.html"><code>tokio1::AsyncBufRead</code></a> - <a href="https://github.com/taiki-e/auto_enums/blob/HEAD/tests/expand/external/tokio/async_buf_read.rs">example</a> | <a href="https://github.com/taiki-e/auto_enums/blob/HEAD/tests/expand/external/tokio/async_buf_read.expanded.rs">generated code</a></li>
+</ul>
+<h4 id="tokio-v03-requires-tokio03-crate-feature"><a class="doc-anchor" href="#tokio-v03-requires-tokio03-crate-feature">§</a><a href="https://docs.rs/tokio/0.3">tokio v0.3</a> <em>(requires <code>"tokio03"</code> crate feature)</em></h4>
+<ul>
+<li><a href="https://docs.rs/tokio/0.3/tokio/io/trait.AsyncRead.html"><code>tokio03::AsyncRead</code></a></li>
+<li><a href="https://docs.rs/tokio/0.3/tokio/io/trait.AsyncWrite.html"><code>tokio03::AsyncWrite</code></a></li>
+<li><a href="https://docs.rs/tokio/0.3/tokio/io/trait.AsyncSeek.html"><code>tokio03::AsyncSeek</code></a></li>
+<li><a href="https://docs.rs/tokio/0.3/tokio/io/trait.AsyncBufRead.html"><code>tokio03::AsyncBufRead</code></a></li>
+</ul>
+<h4 id="tokio-v02-requires-tokio02-crate-feature"><a class="doc-anchor" href="#tokio-v02-requires-tokio02-crate-feature">§</a><a href="https://docs.rs/tokio/0.2">tokio v0.2</a> <em>(requires <code>"tokio02"</code> crate feature)</em></h4>
+<ul>
+<li><a href="https://docs.rs/tokio/0.2/tokio/io/trait.AsyncRead.html"><code>tokio02::AsyncRead</code></a></li>
+<li><a href="https://docs.rs/tokio/0.2/tokio/io/trait.AsyncWrite.html"><code>tokio02::AsyncWrite</code></a></li>
+<li><a href="https://docs.rs/tokio/0.2/tokio/io/trait.AsyncSeek.html"><code>tokio02::AsyncSeek</code></a></li>
+<li><a href="https://docs.rs/tokio/0.2/tokio/io/trait.AsyncBufRead.html"><code>tokio02::AsyncBufRead</code></a></li>
+</ul>
+<h4 id="tokio-v01-requires-tokio01-crate-feature"><a class="doc-anchor" href="#tokio-v01-requires-tokio01-crate-feature">§</a><a href="https://docs.rs/tokio/0.1">tokio v0.1</a> <em>(requires <code>"tokio01"</code> crate feature)</em></h4>
+<ul>
+<li><a href="https://docs.rs/tokio/0.1/tokio/io/trait.AsyncRead.html"><code>tokio01::AsyncRead</code></a></li>
+<li><a href="https://docs.rs/tokio/0.1/tokio/io/trait.AsyncWrite.html"><code>tokio01::AsyncWrite</code></a></li>
+</ul>
+<h4 id="http_body-v1-requires-http_body1-crate-feature"><a class="doc-anchor" href="#http_body-v1-requires-http_body1-crate-feature">§</a><a href="https://docs.rs/http-body/1">http_body v1</a> <em>(requires <code>"http_body1"</code> crate feature)</em></h4>
+<ul>
+<li><a href="https://docs.rs/http-body/1/http_body/trait.Body.html"><code>http_body1::Body</code></a> - <a href="https://github.com/taiki-e/auto_enums/blob/HEAD/tests/expand/external/http_body/body.rs">example</a> | <a href="https://github.com/taiki-e/auto_enums/blob/HEAD/tests/expand/external/http_body/body.expanded.rs">generated code</a></li>
+</ul>
+<h3 id="inherent-methods"><a class="doc-anchor" href="#inherent-methods">§</a>Inherent methods</h3>
+<p>These don’t derive traits, but derive inherent methods instead.</p>
+<ul>
+<li>
+<p><code>Transpose</code> <em>(requires <code>"transpose_methods"</code> crate feature)</em> - this derives the following conversion methods.</p>
+<ul>
+<li>
+<p><code>transpose</code> — convert from <code>enum&lt;Option&lt;T1&gt;,..&gt;</code> to <code>Option&lt;enum&lt;T1,..&gt;&gt;</code></p>
+</li>
+<li>
+<p><code>transpose</code> — convert from <code>enum&lt;Result&lt;T1, E1&gt;,..&gt;</code> to <code>Result&lt;enum&lt;T1,..&gt;, enum&lt;E1,..&gt;&gt;</code></p>
+</li>
+<li>
+<p><code>transpose_ok</code> — convert from <code>enum&lt;Result&lt;T1, E&gt;,..&gt;</code> to <code>Option&lt;enum&lt;T1,..&gt;, E&gt;</code></p>
+<p>Examples:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>auto_enums::auto_enum;
+<span class="kw">use </span>std::{fs::File, io, path::Path};
+
+<span class="attr">#[auto_enum(Transpose, Write)]
+</span><span class="kw">fn </span>output_stream(file: <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span>Path&gt;) -&gt; io::Result&lt;<span class="kw">impl </span>io::Write&gt; {
+    <span class="kw">match </span>file {
+        <span class="prelude-val">Some</span>(f) =&gt; File::create(f),
+        <span class="prelude-val">None </span>=&gt; <span class="prelude-val">Ok</span>(io::stdout()),
+    }.transpose_ok()
+}</code></pre></div>
+</li>
+<li>
+<p><code>transpose_err</code> — convert from <code>enum&lt;Result&lt;T, E1&gt;,..&gt;</code> to <code>Result&lt;T, enum&lt;E1,..&gt;&gt;</code></p>
+</li>
+</ul>
+</li>
+</ul>
+<h2 id="optional-features"><a class="doc-anchor" href="#optional-features">§</a>Optional features</h2>
+<ul>
+<li><strong><code>std</code></strong> <em>(enabled by default)</em>
+<ul>
+<li>Enable to use <code>std</code> library’s traits.</li>
+</ul>
+</li>
+<li><strong><code>ops</code></strong>
+<ul>
+<li>Enable to use <code>[std|core]::ops</code>’s <code>Deref</code>, <code>DerefMut</code>, <code>Index</code>, <code>IndexMut</code>, and <code>RangeBounds</code> traits.</li>
+</ul>
+</li>
+<li><strong><code>convert</code></strong>
+<ul>
+<li>Enable to use <code>[std|core]::convert</code>’s <code>AsRef</code> and <code>AsMut</code> traits.</li>
+</ul>
+</li>
+<li><strong><code>fmt</code></strong>
+<ul>
+<li>Enable to use <code>[std|core]::fmt</code>’s traits other than <code>Debug</code>, <code>Display</code> and <code>Write</code>.</li>
+</ul>
+</li>
+<li><strong><code>transpose_methods</code></strong>
+<ul>
+<li>Enable to use <code>transpose*</code> methods.</li>
+</ul>
+</li>
+<li><strong><code>futures03</code></strong>
+<ul>
+<li>Enable to use <a href="https://docs.rs/futures/0.3">futures v0.3</a> traits.</li>
+</ul>
+</li>
+<li><strong><code>futures01</code></strong>
+<ul>
+<li>Enable to use <a href="https://docs.rs/futures/0.1">futures v0.1</a> traits.</li>
+</ul>
+</li>
+<li><strong><code>rayon</code></strong>
+<ul>
+<li>Enable to use <a href="https://docs.rs/rayon/1">rayon</a> traits.</li>
+</ul>
+</li>
+<li><strong><code>serde</code></strong>
+<ul>
+<li>Enable to use <a href="https://docs.rs/serde/1">serde</a> traits.</li>
+</ul>
+</li>
+<li><strong><code>tokio1</code></strong>
+<ul>
+<li>Enable to use <a href="https://docs.rs/tokio/1">tokio v1</a> traits.</li>
+</ul>
+</li>
+<li><strong><code>tokio03</code></strong>
+<ul>
+<li>Enable to use <a href="https://docs.rs/tokio/0.3">tokio v0.3</a> traits.</li>
+</ul>
+</li>
+<li><strong><code>tokio02</code></strong>
+<ul>
+<li>Enable to use <a href="https://docs.rs/tokio/0.2">tokio v0.2</a> traits.</li>
+</ul>
+</li>
+<li><strong><code>tokio01</code></strong>
+<ul>
+<li>Enable to use <a href="https://docs.rs/tokio/0.1">tokio v0.1</a> traits.</li>
+</ul>
+</li>
+<li><strong><code>http_body1</code></strong>
+<ul>
+<li>Enable to use <a href="https://docs.rs/http-body/1">http_body v1</a> traits.</li>
+</ul>
+</li>
+<li><strong><code>coroutine_trait</code></strong>
+<ul>
+<li>Enable to use <code>[std|core]::ops::Coroutine</code> trait.</li>
+<li>Note that this feature is unstable and may cause incompatible changes between patch versions.</li>
+</ul>
+</li>
+<li><strong><code>fn_traits</code></strong>
+<ul>
+<li>Enable to use <code>[std|core]::ops</code>’s <code>Fn</code>, <code>FnMut</code>, and <code>FnOnce</code> traits.</li>
+<li>Note that this feature is unstable and may cause incompatible changes between patch versions.</li>
+</ul>
+</li>
+<li><strong><code>trusted_len</code></strong>
+<ul>
+<li>Enable to use <code>[std|core]::iter::TrustedLen</code> trait.</li>
+<li>Note that this feature is unstable and may cause incompatible changes between patch versions.</li>
+</ul>
+</li>
+</ul>
+<h3 id="type_analysis-feature"><a class="doc-anchor" href="#type_analysis-feature">§</a><code>type_analysis</code> feature</h3>
+<p>Analyze return type of function and <code>let</code> binding.</p>
+<p><em>Note that this feature is still experimental.</em></p>
+<p>Examples:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>auto_enums::auto_enum;
+
+<span class="attr">#[auto_enum] </span><span class="comment">// there is no need to specify std library's traits
+</span><span class="kw">fn </span>func1(x: i32) -&gt; <span class="kw">impl </span>Iterator&lt;Item = i32&gt; {
+    <span class="kw">match </span>x {
+        <span class="number">0 </span>=&gt; <span class="number">1</span>..<span class="number">10</span>,
+        <span class="kw">_ </span>=&gt; <span class="macro">vec!</span>[<span class="number">5</span>, <span class="number">10</span>].into_iter(),
+    }
+}
+
+<span class="attr">#[auto_enum]
+</span><span class="kw">fn </span>func2(x: i32) {
+    <span class="comment">// Unlike `feature(impl_trait_in_bindings)`, this works on stable compilers.
+    </span><span class="attr">#[auto_enum]
+    </span><span class="kw">let </span>iter: <span class="kw">impl </span>Iterator&lt;Item = i32&gt; = <span class="kw">match </span>x {
+        <span class="number">0 </span>=&gt; <span class="prelude-val">Some</span>(<span class="number">0</span>).into_iter(),
+        <span class="kw">_ </span>=&gt; <span class="number">0</span>..x,
+    };
+}</code></pre></div>
+<p>Please be careful if you return another traits with the same name.</p>
+<h2 id="known-limitations"><a class="doc-anchor" href="#known-limitations">§</a>Known limitations</h2>
+<ul>
+<li>There needs to explicitly specify the trait to be implemented (<code>type_analysis</code> crate feature reduces this limitation).</li>
+<li>There needs to be marker macros for unsupported expressions.</li>
+</ul>
+<h3 id="related-projects"><a class="doc-anchor" href="#related-projects">§</a>Related Projects</h3>
+<ul>
+<li><a href="https://github.com/taiki-e/derive_utils">derive_utils</a>: A procedural macro helper for easily writing <a href="https://doc.rust-lang.org/reference/procedural-macros.html#derive-macros">derives macros</a> for enums.</li>
+<li><a href="https://github.com/taiki-e/io-enum">io-enum</a>: #[derive(Read, Write, Seek, BufRead)] for enums.</li>
+<li><a href="https://github.com/taiki-e/iter-enum">iter-enum</a>: #[derive(Iterator, DoubleEndedIterator, ExactSizeIterator, Extend)] for enums.</li>
+</ul>
+</div></details><h2 id="attributes" class="section-header">Attribute Macros<a href="#attributes" class="anchor">§</a></h2><dl class="item-table"><dt><a class="attr" href="attr.auto_enum.html" title="attr auto_enums::auto_enum">auto_<wbr>enum</a></dt><dd>An attribute macro for to allow multiple return types by automatically generated enum.</dd><dt><a class="attr" href="attr.enum_derive.html" title="attr auto_enums::enum_derive">enum_<wbr>derive</a></dt><dd>An attribute macro like a wrapper of <code>#[derive]</code>, implementing
+the supported traits and passing unsupported traits to <code>#[derive]</code>.</dd></dl></section></div></main></body></html>
