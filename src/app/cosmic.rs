@@ -19,6 +19,65 @@ use iced::{Task, window};
 use iced_futures::event::listen_with;
 use palette::color_difference::EuclideanDistance;
 
+#[derive(Copy, Clone, Debug, Eq, PartialEq, Hash)]
+#[non_exhaustive]
+pub enum WindowingSystem {
+    UiKit,
+    AppKit,
+    Orbital,
+    OhosNdk,
+    Xlib,
+    Xcb,
+    Wayland,
+    Drm,
+    Gbm,
+    Win32,
+    WinRt,
+    Web,
+    WebCanvas,
+    WebOffscreenCanvas,
+    AndroidNdk,
+    Haiku,
+}
+
+pub(crate) static WINDOWING_SYSTEM: std::sync::OnceLock<WindowingSystem> =
+    std::sync::OnceLock::new();
+
+pub fn windowing_system() -> Option<WindowingSystem> {
+    WINDOWING_SYSTEM.get().copied()
+}
+
+fn init_windowing_system<M>(handle: raw_window_handle::WindowHandle) -> crate::Action<M> {
+    let raw: &raw_window_handle::RawWindowHandle = handle.as_ref();
+    let system = match raw {
+        window::raw_window_handle::RawWindowHandle::UiKit(_) => WindowingSystem::UiKit,
+        window::raw_window_handle::RawWindowHandle::AppKit(_) => WindowingSystem::AppKit,
+        window::raw_window_handle::RawWindowHandle::Orbital(_) => WindowingSystem::Orbital,
+        window::raw_window_handle::RawWindowHandle::OhosNdk(_) => WindowingSystem::OhosNdk,
+        window::raw_window_handle::RawWindowHandle::Xlib(_) => WindowingSystem::Xlib,
+        window::raw_window_handle::RawWindowHandle::Xcb(_) => WindowingSystem::Xcb,
+        window::raw_window_handle::RawWindowHandle::Wayland(_) => WindowingSystem::Wayland,
+        window::raw_window_handle::RawWindowHandle::Web(_) => WindowingSystem::Web,
+        window::raw_window_handle::RawWindowHandle::WebCanvas(_) => WindowingSystem::WebCanvas,
+        window::raw_window_handle::RawWindowHandle::WebOffscreenCanvas(_) => {
+            WindowingSystem::WebOffscreenCanvas
+        }
+        window::raw_window_handle::RawWindowHandle::AndroidNdk(_) => WindowingSystem::AndroidNdk,
+        window::raw_window_handle::RawWindowHandle::Haiku(_) => WindowingSystem::Haiku,
+        window::raw_window_handle::RawWindowHandle::Drm(_) => WindowingSystem::Drm,
+        window::raw_window_handle::RawWindowHandle::Gbm(_) => WindowingSystem::Gbm,
+        window::raw_window_handle::RawWindowHandle::Win32(_) => WindowingSystem::Win32,
+        window::raw_window_handle::RawWindowHandle::WinRt(_) => WindowingSystem::WinRt,
+        _ => {
+            tracing::warn!("Unknown windowing system: {raw:?}");
+            return crate::Action::Cosmic(Action::WindowingSystemInitialized);
+        }
+    };
+
+    _ = WINDOWING_SYSTEM.set(system);
+    crate::Action::Cosmic(Action::WindowingSystemInitialized)
+}
+
 #[derive(Default)]
 pub struct Cosmic<App: Application> {
     pub app: App,
@@ -41,10 +100,17 @@ where
             use iced_futures::futures::executor::block_on;
             core.settings_daemon = block_on(cosmic_config::dbus::settings_daemon_proxy()).ok();
         }
+        let id = core.main_window_id().unwrap_or(window::Id::RESERVED);
 
         let (model, command) = T::init(core, flags);
 
-        (Self::new(model), command)
+        (
+            Self::new(model),
+            Task::batch(vec![
+                command,
+                iced_runtime::window::run_with_handle(id, init_windowing_system),
+            ]),
+        )
     }
 
     #[cfg(not(feature = "multi-window"))]
@@ -57,6 +123,7 @@ where
         self.app.title(id).to_string()
     }
 
+    #[allow(clippy::too_many_lines)]
     pub fn surface_update(
         &mut self,
         _surface_message: crate::surface::Action,
@@ -254,6 +321,9 @@ where
             match event {
                 iced::Event::Window(window::Event::Resized(iced::Size { width, height })) => {
                     return Some(Action::WindowResize(id, width, height));
+                }
+                iced::Event::Window(window::Event::Opened { .. }) => {
+                    return Some(Action::Opened(id));
                 }
                 iced::Event::Window(window::Event::Closed) => {
                     return Some(Action::SurfaceClosed(id));
@@ -785,6 +855,9 @@ impl<T: Application> Cosmic<T> {
                 tracing::info!("Suggested bounds: {b:?}");
                 let core = self.app.core_mut();
                 core.applet.suggested_bounds = b;
+            }
+            Action::Opened(id) => {
+                return iced_runtime::window::run_with_handle(id, init_windowing_system);
             }
             _ => {}
         }

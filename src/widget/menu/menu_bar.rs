@@ -9,6 +9,8 @@ use super::{
     },
     menu_tree::MenuTree,
 };
+#[cfg(all(feature = "wayland", feature = "winit", feature = "surface-message"))]
+use crate::app::cosmic::{WINDOWING_SYSTEM, WindowingSystem};
 use crate::{
     Renderer,
     style::menu_bar::StyleSheet,
@@ -629,13 +631,17 @@ where
                     return event::Status::Ignored;
                 }
                 #[cfg(all(feature = "wayland", feature = "winit", feature = "surface-message"))]
-                self.create_popup(layout, view_cursor, renderer, shell, viewport, my_state);
+                if matches!(WINDOWING_SYSTEM.get(), Some(WindowingSystem::Wayland)) {
+                    self.create_popup(layout, view_cursor, renderer, shell, viewport, my_state);
+                }
             }
             Mouse(mouse::Event::CursorMoved { .. } | mouse::Event::CursorEntered)
                 if open && view_cursor.is_over(layout.bounds()) =>
             {
                 #[cfg(all(feature = "wayland", feature = "winit", feature = "surface-message"))]
-                self.create_popup(layout, view_cursor, renderer, shell, viewport, my_state);
+                if matches!(WINDOWING_SYSTEM.get(), Some(WindowingSystem::Wayland)) {
+                    self.create_popup(layout, view_cursor, renderer, shell, viewport, my_state);
+                }
             }
             _ => (),
         }
@@ -710,7 +716,12 @@ where
         translation: Vector,
     ) -> Option<overlay::Element<'b, Message, crate::Theme, Renderer>> {
         #[cfg(all(feature = "wayland", feature = "winit", feature = "surface-message"))]
-        return None;
+        if matches!(WINDOWING_SYSTEM.get(), Some(WindowingSystem::Wayland))
+            && self.on_surface_action.is_some()
+            && self.window_id != window::Id::NONE
+        {
+            return None;
+        }
 
         let state = tree.state.downcast_ref::<MenuBarState>();
         if state.inner.with_data(|state| !state.open) {
