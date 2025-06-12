@@ -17,12 +17,16 @@ fn impl_cosmic_config_entry_macro(ast: &syn::DeriveInput) -> TokenStream {
     let version = attributes
         .iter()
         .find_map(|attr| {
-            if attr.path.is_ident("version") {
-                match attr.parse_meta() {
-                    Ok(syn::Meta::NameValue(syn::MetaNameValue {
-                        lit: syn::Lit::Int(lit_int),
+            if attr.path().is_ident("version") {
+                match attr.meta {
+                    syn::Meta::NameValue(syn::MetaNameValue {
+                        value:
+                            syn::Expr::Lit(syn::ExprLit {
+                                lit: syn::Lit::Int(ref lit_int),
+                                ..
+                            }),
                         ..
-                    })) => Some(lit_int.base10_parse::<u64>().unwrap()),
+                    }) => Some(lit_int.base10_parse::<u64>().unwrap()),
                     _ => None,
                 }
             } else {
