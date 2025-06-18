@@ -1030,18 +1030,20 @@ impl<Message: std::clone::Clone + 'static> Widget<Message, crate::Theme, crate::
                 );
 
                 let popup_size = menu_node.size();
-                let positioner = SctkPositioner {
-                size: Some((
-                    popup_size.width.ceil() as u32 + 2,
-                    popup_size.height.ceil() as u32 + 2,
-                )),
-                anchor_rect,
-                anchor:
-                    cctk::wayland_protocols::xdg::shell::client::xdg_positioner::Anchor::TopRight,
-                gravity,
-                reactive: true,
-                ..Default::default()
-            };
+                let mut positioner = SctkPositioner {
+                    size: Some((
+                        popup_size.width.ceil() as u32 + 2,
+                        popup_size.height.ceil() as u32 + 2,
+                    )),
+                    anchor_rect,
+                    anchor:
+                        cctk::wayland_protocols::xdg::shell::client::xdg_positioner::Anchor::TopRight,
+                    gravity,
+                    reactive: true,
+                    ..Default::default()
+                };
+                // disable slide_x if it is set in the default
+                positioner.constraint_adjustment &= !(1 << 0);
                 let parent = self.window_id;
                 shell.publish((self.on_surface_action.as_ref().unwrap())(
                     crate::surface::action::simple_popup(
