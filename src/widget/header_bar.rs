@@ -307,6 +307,9 @@ impl<'a, Message: Clone + 'static> HeaderBar<'a, Message> {
         let center = std::mem::take(&mut self.center);
         let mut end = std::mem::take(&mut self.end);
 
+        let window_control_cnt = self.on_close.is_some() as usize
+            + self.on_maximize.is_some() as usize
+            + self.on_minimize.is_some() as usize;
         // Also packs the window controls at the very end.
         end.push(self.window_controls());
 
@@ -327,8 +330,9 @@ impl<'a, Message: Clone + 'static> HeaderBar<'a, Message> {
                 }
             }
         };
-        let portion = ((start.len().max(end.len()) as f32 / center.len().max(1) as f32).round()
-            as u16)
+        let portion = ((start.len().max(end.len() + window_control_cnt) as f32
+            / center.len().max(1) as f32)
+            .round() as u16)
             .max(1);
         // Creates the headerbar widget.
         let mut widget = widget::row::with_capacity(3)
