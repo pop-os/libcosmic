@@ -26,6 +26,7 @@ pub fn header_bar<'a, Message>() -> HeaderBar<'a, Message> {
         maximized: false,
         is_ssd: false,
         on_double_click: None,
+        is_condensed: false,
     }
 }
 
@@ -84,6 +85,9 @@ pub struct HeaderBar<'a, Message> {
 
     /// HeaderBar used for server-side decorations
     is_ssd: bool,
+
+    /// Whether the headerbar should be compact
+    is_condensed: bool,
 }
 
 impl<'a, Message: Clone + 'static> HeaderBar<'a, Message> {
@@ -294,6 +298,7 @@ impl<Message: Clone + 'static> Widget<Message, crate::Theme, crate::Renderer>
 }
 
 impl<'a, Message: Clone + 'static> HeaderBar<'a, Message> {
+    #[allow(clippy::too_many_lines)]
     /// Converts the headerbar builder into an Iced element.
     pub fn view(mut self) -> Element<'a, Message> {
         let Spacing {
@@ -330,10 +335,37 @@ impl<'a, Message: Clone + 'static> HeaderBar<'a, Message> {
                 }
             }
         };
-        let portion = ((start.len().max(end.len() + window_control_cnt) as f32
+
+        let acc_count = |v: &[Element<'a, Message>]| {
+            v.iter().fold(0, |acc, e| {
+                acc + match e.as_widget().size().width {
+                    Length::Fixed(w) if w > 30. => (w / 30.0).ceil() as usize,
+                    _ => 1,
+                }
+            })
+        };
+
+        let left_len = acc_count(&start);
+        let right_len = acc_count(&end);
+
+        let portion = ((left_len.max(right_len + window_control_cnt) as f32
             / center.len().max(1) as f32)
             .round() as u16)
             .max(1);
+        let (left_portion, right_portion) =
+            if center.is_empty() && (self.title.is_empty() || self.is_condensed) {
+                let left_to_right_ratio = left_len as f32 / right_len.max(1) as f32;
+                let right_to_left_ratio = right_len as f32 / left_len.max(1) as f32;
+                if right_to_left_ratio > 2. {
+                    (1, 2)
+                } else if left_to_right_ratio > 2. {
+                    (2, 1)
+                } else {
+                    (left_len as u16, (right_len + window_control_cnt) as u16)
+                }
+            } else {
+                (portion, portion)
+            };
         // Creates the headerbar widget.
         let mut widget = widget::row::with_capacity(3)
             // If elements exist in the start region, append them here.
@@ -343,7 +375,7 @@ impl<'a, Message: Clone + 'static> HeaderBar<'a, Message> {
                     .align_y(iced::Alignment::Center)
                     .apply(widget::container)
                     .align_x(iced::Alignment::Start)
-                    .width(Length::FillPortion(portion)),
+                    .width(Length::FillPortion(left_portion)),
             )
             // If elements exist in the center region, use them here.
             // This will otherwise use the title as a widget if a title was defined.
@@ -356,7 +388,7 @@ impl<'a, Message: Clone + 'static> HeaderBar<'a, Message> {
                         .center_x(Length::Fill)
                         .into(),
                 )
-            } else if !self.title.is_empty() {
+            } else if !self.title.is_empty() && !self.is_condensed {
                 Some(self.title_widget())
             } else {
                 None
@@ -367,7 +399,7 @@ impl<'a, Message: Clone + 'static> HeaderBar<'a, Message> {
                     .align_y(iced::Alignment::Center)
                     .apply(widget::container)
                     .align_x(iced::Alignment::End)
-                    .width(Length::FillPortion(portion)),
+                    .width(Length::FillPortion(right_portion)),
             )
             .align_y(iced::Alignment::Center)
             .height(Length::Fixed(32.0 + padding[0] as f32 + padding[2] as f32))
