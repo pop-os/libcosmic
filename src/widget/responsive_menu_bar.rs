@@ -24,7 +24,21 @@ pub struct ResponsiveMenuBar {
 impl Default for ResponsiveMenuBar {
     fn default() -> ResponsiveMenuBar {
         ResponsiveMenuBar {
-            collapsed_item_width: ItemWidth::Static(84),
+            collapsed_item_width: {
+                #[cfg(all(feature = "winit", feature = "wayland"))]
+                if matches!(
+                    crate::app::cosmic::WINDOWING_SYSTEM.get(),
+                    Some(crate::app::cosmic::WindowingSystem::Wayland)
+                ) {
+                    ItemWidth::Static(150)
+                } else {
+                    ItemWidth::Static(84)
+                }
+                #[cfg(not(all(feature = "winit", feature = "wayland")))]
+                {
+                    ItemWidth::Static(84)
+                }
+            },
             item_width: ItemWidth::Uniform(150),
             item_height: ItemHeight::Uniform(30),
             spacing: 0.,
