@@ -10,6 +10,7 @@ pub trait IconSourceExt {
     fn as_cosmic_icon(&self) -> crate::widget::icon::Icon;
 }
 
+#[cfg(not(windows))]
 impl IconSourceExt for fde::IconSource {
     fn as_cosmic_icon(&self) -> crate::widget::icon::Icon {
         match self {
