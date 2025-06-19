@@ -1,0 +1,324 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="iced is a cross-platform GUI library focused on simplicity and type-safety. Inspired by Elm."><title>cosmic::iced - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../static.files/rustdoc-916cea96.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="cosmic" data-themes="" data-resource-suffix="" data-rustdoc-version="1.87.0 (17067e9ac 2025-05-09)" data-channel="1.87.0" data-search-js="search-e7298875.js" data-settings-js="settings-d72f25bb.js" ><script src="../../static.files/storage-82c7156e.js"></script><script defer src="../../crates.js"></script><script defer src="../../static.files/main-fb8c74a8.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-893ab5e7.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-6580c154.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-044be391.svg"></head><body class="rustdoc mod crate"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle" title="show sidebar"></button></nav><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../../cosmic/index.html">cosmic</a><span class="version">0.1.0</span></h2></div><div class="sidebar-elems"><ul class="block"><li><a id="all-types" href="all.html">All Items</a></li></ul><section id="rustdoc-toc"><h3><a href="#">Sections</a></h3><ul class="block top-toc"><li><a href="#disclaimer" title="Disclaimer">Disclaimer</a></li><li><a href="#the-pocket-guide" title="The Pocket Guide">The Pocket Guide</a><ul><li><a href="#custom-state" title="Custom State">Custom State</a></li><li><a href="#widgets-and-elements" title="Widgets and Elements">Widgets and Elements</a></li><li><a href="#layout-1" title="Layout">Layout</a></li><li><a href="#sizing" title="Sizing">Sizing</a></li><li><a href="#theming" title="Theming">Theming</a></li><li><a href="#styling" title="Styling">Styling</a></li><li><a href="#concurrent-tasks" title="Concurrent Tasks">Concurrent Tasks</a></li><li><a href="#passive-subscriptions" title="Passive Subscriptions">Passive Subscriptions</a></li><li><a href="#scaling-applications" title="Scaling Applications">Scaling Applications</a></li></ul></li></ul><h3><a href="#modules">Crate Items</a></h3><ul class="block"><li><a href="#modules" title="Modules">Modules</a></li><li><a href="#macros" title="Macros">Macros</a></li><li><a href="#structs" title="Structs">Structs</a></li><li><a href="#enums" title="Enums">Enums</a></li><li><a href="#traits" title="Traits">Traits</a></li><li><a href="#functions" title="Functions">Functions</a></li><li><a href="#types" title="Type Aliases">Type Aliases</a></li></ul></section><div id="rustdoc-modnav"></div></div></nav><div class="sidebar-resizer"></div><main><div class="width-limiter"><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><div class="rustdoc-breadcrumbs"><a href="../index.html">cosmic</a></div><h1>Crate <span>iced</span><button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"><a class="src" href="../../src/iced/lib.rs.html#1-711">Source</a> </span></div><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>iced is a cross-platform GUI library focused on simplicity and type-safety.
+Inspired by <a href="https://elm-lang.org/">Elm</a>.</p>
+<h2 id="disclaimer"><a class="doc-anchor" href="#disclaimer">§</a>Disclaimer</h2>
+<p>iced is <strong>experimental</strong> software. If you expect the documentation to hold your hand
+as you learn the ropes, you are in for a frustrating experience.</p>
+<p>The library leverages Rust to its full extent: ownership, borrowing, lifetimes, futures,
+streams, first-class functions, trait bounds, closures, and more. This documentation
+is not meant to teach you any of these. Far from it, it will assume you have <strong>mastered</strong>
+all of them.</p>
+<p>Furthermore—just like Rust—iced is very unforgiving. It will not let you easily cut corners.
+The type signatures alone can be used to learn how to use most of the library.
+Everything is connected.</p>
+<p>Therefore, iced is easy to learn for <strong>advanced</strong> Rust programmers; but plenty of patient
+beginners have learned it and had a good time with it. Since it leverages a lot of what
+Rust has to offer in a type-safe way, it can be a great way to discover Rust itself.</p>
+<p>If you don’t like the sound of that, you expect to be spoonfed, or you feel frustrated
+and struggle to use the library; then I recommend you to wait patiently until <a href="https://book.iced.rs">the book</a>
+is finished.</p>
+<h2 id="the-pocket-guide"><a class="doc-anchor" href="#the-pocket-guide">§</a>The Pocket Guide</h2>
+<p>Start by calling <a href="fn.run.html" title="fn cosmic::iced::run"><code>run</code></a>:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">pub fn </span>main() -&gt; iced::Result {
+    iced::run(<span class="string">"A cool counter"</span>, update, view)
+}</code></pre></div>
+<p>Define an <code>update</code> function to <strong>change</strong> your state:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">fn </span>update(counter: <span class="kw-2">&amp;mut </span>u64, message: Message) {
+    <span class="kw">match </span>message {
+        Message::Increment =&gt; <span class="kw-2">*</span>counter += <span class="number">1</span>,
+    }
+}</code></pre></div>
+<p>Define a <code>view</code> function to <strong>display</strong> your state:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>iced::widget::{button, text};
+<span class="kw">use </span>iced::Element;
+
+<span class="kw">fn </span>view(counter: <span class="kw-2">&amp;</span>u64) -&gt; Element&lt;Message&gt; {
+    button(text(counter)).on_press(Message::Increment).into()
+}</code></pre></div>
+<p>And create a <code>Message</code> enum to <strong>connect</strong> <code>view</code> and <code>update</code> together:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="attr">#[derive(Debug, Clone)]
+</span><span class="kw">enum </span>Message {
+    Increment,
+}</code></pre></div>
+<h3 id="custom-state"><a class="doc-anchor" href="#custom-state">§</a>Custom State</h3>
+<p>You can define your own struct for your state:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="attr">#[derive(Default)]
+</span><span class="kw">struct </span>Counter {
+    value: u64,
+}</code></pre></div>
+<p>But you have to change <code>update</code> and <code>view</code> accordingly:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">fn </span>update(counter: <span class="kw-2">&amp;mut </span>Counter, message: Message) {
+    <span class="kw">match </span>message {
+        Message::Increment =&gt; counter.value += <span class="number">1</span>,
+    }
+}
+
+<span class="kw">fn </span>view(counter: <span class="kw-2">&amp;</span>Counter) -&gt; Element&lt;Message&gt; {
+    button(text(counter.value)).on_press(Message::Increment).into()
+}</code></pre></div>
+<h3 id="widgets-and-elements"><a class="doc-anchor" href="#widgets-and-elements">§</a>Widgets and Elements</h3>
+<p>The <code>view</code> function must return an <a href="type.Element.html" title="type cosmic::iced::Element"><code>Element</code></a>. An <a href="type.Element.html" title="type cosmic::iced::Element"><code>Element</code></a> is just a generic <a href="widget/index.html" title="mod cosmic::iced::widget"><code>widget</code></a>.</p>
+<p>The <a href="widget/index.html" title="mod cosmic::iced::widget"><code>widget</code></a> module contains a bunch of functions to help you build
+and use widgets.</p>
+<p>Widgets are configured using the builder pattern:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>iced::widget::{button, column, text};
+<span class="kw">use </span>iced::Element;
+
+<span class="kw">fn </span>view(counter: <span class="kw-2">&amp;</span>Counter) -&gt; Element&lt;Message&gt; {
+    <span class="macro">column!</span>[
+        text(counter.value).size(<span class="number">20</span>),
+        button(<span class="string">"Increment"</span>).on_press(Message::Increment),
+    ]
+    .spacing(<span class="number">10</span>)
+    .into()
+}</code></pre></div>
+<p>A widget can be turned into an <a href="type.Element.html" title="type cosmic::iced::Element"><code>Element</code></a> by calling <code>into</code>.</p>
+<p>Widgets and elements are generic over the message type they produce. The
+<a href="type.Element.html" title="type cosmic::iced::Element"><code>Element</code></a> returned by <code>view</code> must have the same <code>Message</code> type as
+your <code>update</code>.</p>
+<h3 id="layout-1"><a class="doc-anchor" href="#layout-1">§</a>Layout</h3>
+<p>There is no unified layout system in iced. Instead, each widget implements
+its own layout strategy.</p>
+<p>Building your layout will often consist in using a combination of
+<a href="../iced_widget/struct.Row.html" title="struct cosmic::iced_widget::Row">rows</a>, <a href="../iced_widget/struct.Column.html" title="struct cosmic::iced_widget::Column">columns</a>, and <a href="../widget/struct.Container.html" title="struct cosmic::widget::Container">containers</a>:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>iced::widget::{column, container, row};
+<span class="kw">use </span>iced::{Fill, Element};
+
+<span class="kw">fn </span>view(state: <span class="kw-2">&amp;</span>State) -&gt; Element&lt;Message&gt; {
+    container(
+        <span class="macro">column!</span>[
+            <span class="string">"Top"</span>,
+            <span class="macro">row!</span>[<span class="string">"Left"</span>, <span class="string">"Right"</span>].spacing(<span class="number">10</span>),
+            <span class="string">"Bottom"
+        </span>]
+        .spacing(<span class="number">10</span>)
+    )
+    .padding(<span class="number">10</span>)
+    .center_x(Fill)
+    .center_y(Fill)
+    .into()
+}</code></pre></div>
+<p>Rows and columns lay out their children horizontally and vertically,
+respectively. <a href="../iced_widget/struct.Column.html#method.spacing" title="method cosmic::iced_widget::Column::spacing">Spacing</a> can be easily added between elements.</p>
+<p>Containers position or align a single widget inside their bounds.</p>
+<h3 id="sizing"><a class="doc-anchor" href="#sizing">§</a>Sizing</h3>
+<p>The width and height of widgets can generally be defined using a <a href="enum.Length.html" title="enum cosmic::iced::Length"><code>Length</code></a>.</p>
+<ul>
+<li><a href="enum.Length.html#variant.Fill" title="variant cosmic::iced::Length::Fill"><code>Fill</code></a> will make the widget take all the available space in a given axis.</li>
+<li><a href="enum.Length.html#variant.Shrink" title="variant cosmic::iced::Length::Shrink"><code>Shrink</code></a> will make the widget use its intrinsic size.</li>
+</ul>
+<p>Most widgets use a <a href="enum.Length.html#variant.Shrink" title="variant cosmic::iced::Length::Shrink"><code>Shrink</code></a> sizing strategy by default, but will inherit
+a <a href="enum.Length.html#variant.Fill" title="variant cosmic::iced::Length::Fill"><code>Fill</code></a> strategy from their children.</p>
+<p>A fixed numeric <a href="enum.Length.html" title="enum cosmic::iced::Length"><code>Length</code></a> in <a href="struct.Pixels.html" title="struct cosmic::iced::Pixels"><code>Pixels</code></a> can also be used:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>iced::widget::container;
+<span class="kw">use </span>iced::Element;
+
+<span class="kw">fn </span>view(state: <span class="kw-2">&amp;</span>State) -&gt; Element&lt;Message&gt; {
+    container(<span class="string">"I am 300px tall!"</span>).height(<span class="number">300</span>).into()
+}</code></pre></div>
+<h3 id="theming"><a class="doc-anchor" href="#theming">§</a>Theming</h3>
+<p>The default <a href="enum.Theme.html" title="enum cosmic::iced::Theme"><code>Theme</code></a> of an application can be changed by defining a <code>theme</code>
+function and leveraging the <a href="struct.Application.html" title="struct cosmic::iced::Application"><code>Application</code></a> builder, instead of directly
+calling <a href="fn.run.html" title="fn cosmic::iced::run"><code>run</code></a>:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>iced::Theme;
+
+<span class="kw">pub fn </span>main() -&gt; iced::Result {
+    iced::application(<span class="string">"A cool application"</span>, update, view)
+        .theme(theme)
+        .run()
+}
+
+<span class="kw">fn </span>theme(state: <span class="kw-2">&amp;</span>State) -&gt; Theme {
+    Theme::TokyoNight
+}</code></pre></div>
+<p>The <code>theme</code> function takes the current state of the application, allowing the
+returned <a href="enum.Theme.html" title="enum cosmic::iced::Theme"><code>Theme</code></a> to be completely dynamic—just like <code>view</code>.</p>
+<p>There are a bunch of built-in <a href="enum.Theme.html" title="enum cosmic::iced::Theme"><code>Theme</code></a> variants at your disposal, but you can
+also <a href="enum.Theme.html#method.custom" title="associated function cosmic::iced::Theme::custom">create your own</a>.</p>
+<h3 id="styling"><a class="doc-anchor" href="#styling">§</a>Styling</h3>
+<p>As with layout, iced does not have a unified styling system. However, all
+of the built-in widgets follow the same styling approach.</p>
+<p>The appearance of a widget can be changed by calling its <code>style</code> method:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>iced::widget::container;
+<span class="kw">use </span>iced::Element;
+
+<span class="kw">fn </span>view(state: <span class="kw-2">&amp;</span>State) -&gt; Element&lt;Message&gt; {
+    container(<span class="string">"I am a rounded box!"</span>).style(container::rounded_box).into()
+}</code></pre></div>
+<p>The <code>style</code> method of a widget takes a closure that, given the current active
+<a href="enum.Theme.html" title="enum cosmic::iced::Theme"><code>Theme</code></a>, returns the widget style:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>iced::widget::button;
+<span class="kw">use </span>iced::{Element, Theme};
+
+<span class="kw">fn </span>view(state: <span class="kw-2">&amp;</span>State) -&gt; Element&lt;Message&gt; {
+    button(<span class="string">"I am a styled button!"</span>).style(|theme: <span class="kw-2">&amp;</span>Theme, status| {
+        <span class="kw">let </span>palette = theme.extended_palette();
+
+        <span class="kw">match </span>status {
+            button::Status::Active =&gt; {
+                button::Style::default()
+                   .with_background(palette.success.strong.color)
+            }
+            <span class="kw">_ </span>=&gt; button::primary(theme, status),
+        }
+    })
+    .into()
+}</code></pre></div>
+<p>Widgets that can be in multiple different states will also provide the closure
+with some <a href="../iced_widget/button/enum.Status.html" title="enum cosmic::iced_widget::button::Status"><code>Status</code></a>, allowing you to use a different style for each state.</p>
+<p>You can extract the <a href="enum.Theme.html#method.palette" title="method cosmic::iced::Theme::palette"><code>Palette</code></a> colors of a <a href="enum.Theme.html" title="enum cosmic::iced::Theme"><code>Theme</code></a> with the <a href="enum.Theme.html#method.palette" title="method cosmic::iced::Theme::palette"><code>palette</code></a> or
+<a href="enum.Theme.html#method.extended_palette" title="method cosmic::iced::Theme::extended_palette"><code>extended_palette</code></a> methods.</p>
+<p>Most widgets provide styling functions for your convenience in their respective modules;
+like <a href="../widget/container/fn.rounded_box.html" title="fn cosmic::widget::container::rounded_box"><code>container::rounded_box</code></a>, <a href="../iced_widget/button/fn.primary.html" title="fn cosmic::iced_widget::button::primary"><code>button::primary</code></a>, or <a href="../iced_widget/text/fn.danger.html" title="fn cosmic::iced_widget::text::danger"><code>text::danger</code></a>.</p>
+<h3 id="concurrent-tasks"><a class="doc-anchor" href="#concurrent-tasks">§</a>Concurrent Tasks</h3>
+<p>The <code>update</code> function can <em>optionally</em> return a <a href="../struct.Task.html" title="struct cosmic::Task"><code>Task</code></a>.</p>
+<p>A <a href="../struct.Task.html" title="struct cosmic::Task"><code>Task</code></a> can be leveraged to perform asynchronous work, like running a
+future or a stream:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>iced::Task;
+
+<span class="kw">struct </span>State {
+    weather: <span class="prelude-ty">Option</span>&lt;Weather&gt;,
+}
+
+<span class="kw">enum </span>Message {
+   FetchWeather,
+   WeatherFetched(Weather),
+}
+
+<span class="kw">fn </span>update(state: <span class="kw-2">&amp;mut </span>State, message: Message) -&gt; Task&lt;Message&gt; {
+    <span class="kw">match </span>message {
+        Message::FetchWeather =&gt; Task::perform(
+            fetch_weather(),
+            Message::WeatherFetched,
+        ),
+        Message::WeatherFetched(weather) =&gt; {
+            state.weather = <span class="prelude-val">Some</span>(weather);
+
+            Task::none()
+       }
+    }
+}
+
+<span class="kw">async fn </span>fetch_weather() -&gt; Weather {
+    <span class="comment">// ...
+</span>}</code></pre></div>
+<p>Tasks can also be used to interact with the iced runtime. Some modules
+expose functions that create tasks for different purposes—like <a href="window/index.html#functions" title="mod cosmic::iced::window">changing
+window settings</a>, <a href="../iced_widget/fn.focus_next.html" title="fn cosmic::iced_widget::focus_next">focusing a widget</a>, or
+<a href="../widget/container/fn.visible_bounds.html" title="fn cosmic::widget::container::visible_bounds">querying its visible bounds</a>.</p>
+<p>Like futures and streams, tasks expose <a href="../struct.Task.html#method.then" title="method cosmic::Task::then">a monadic interface</a>—but they can also be
+<a href="../struct.Task.html#method.map" title="method cosmic::Task::map">mapped</a>, <a href="../struct.Task.html#method.chain" title="method cosmic::Task::chain">chained</a>, <a href="../struct.Task.html#method.batch" title="associated function cosmic::Task::batch">batched</a>, <a href="../struct.Task.html#method.abortable" title="method cosmic::Task::abortable">canceled</a>,
+and more.</p>
+<h3 id="passive-subscriptions"><a class="doc-anchor" href="#passive-subscriptions">§</a>Passive Subscriptions</h3>
+<p>Applications can subscribe to passive sources of data—like time ticks or runtime events.</p>
+<p>You will need to define a <code>subscription</code> function and use the <a href="struct.Application.html" title="struct cosmic::iced::Application"><code>Application</code></a> builder:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>iced::window;
+<span class="kw">use </span>iced::{Size, Subscription};
+
+<span class="attr">#[derive(Debug)]
+</span><span class="kw">enum </span>Message {
+    WindowResized(Size),
+}
+
+<span class="kw">pub fn </span>main() -&gt; iced::Result {
+    iced::application(<span class="string">"A cool application"</span>, update, view)
+        .subscription(subscription)
+        .run()
+}
+
+<span class="kw">fn </span>subscription(state: <span class="kw-2">&amp;</span>State) -&gt; Subscription&lt;Message&gt; {
+    window::resize_events().map(|(_id, size)| Message::WindowResized(size))
+}</code></pre></div>
+<p>A <a href="struct.Subscription.html" title="struct cosmic::iced::Subscription"><code>Subscription</code></a> is <a href="struct.Subscription.html#the-lifetime-of-a-subscription" title="struct cosmic::iced::Subscription">a <em>declarative</em> builder of streams</a>
+that are not allowed to end on their own. Only the <code>subscription</code> function
+dictates the active subscriptions—just like <code>view</code> fully dictates the
+visible widgets of your user interface, at every moment.</p>
+<p>As with tasks, some modules expose convenient functions that build a <a href="struct.Subscription.html" title="struct cosmic::iced::Subscription"><code>Subscription</code></a> for you—like
+<a href="time/fn.every.html" title="fn cosmic::iced::time::every"><code>time::every</code></a> which can be used to listen to time, or <a href="keyboard/fn.on_key_press.html" title="fn cosmic::iced::keyboard::on_key_press"><code>keyboard::on_key_press</code></a> which will notify you
+of any key presses. But you can also create your own with <a href="struct.Subscription.html#method.run" title="associated function cosmic::iced::Subscription::run"><code>Subscription::run</code></a> and <a href="struct.Subscription.html#method.run_with_id" title="associated function cosmic::iced::Subscription::run_with_id"><code>run_with_id</code></a>.</p>
+<h3 id="scaling-applications"><a class="doc-anchor" href="#scaling-applications">§</a>Scaling Applications</h3>
+<p>The <code>update</code>, <code>view</code>, and <code>Message</code> triplet composes very nicely.</p>
+<p>A common pattern is to leverage this composability to split an
+application into different screens:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>contacts::Contacts;
+<span class="kw">use </span>conversation::Conversation;
+
+<span class="kw">use </span>iced::{Element, Task};
+
+<span class="kw">struct </span>State {
+    screen: Screen,
+}
+
+<span class="kw">enum </span>Screen {
+    Contacts(Contacts),
+    Conversation(Conversation),
+}
+
+<span class="kw">enum </span>Message {
+   Contacts(contacts::Message),
+   Conversation(conversation::Message)
+}
+
+<span class="kw">fn </span>update(state: <span class="kw-2">&amp;mut </span>State, message: Message) -&gt; Task&lt;Message&gt; {
+    <span class="kw">match </span>message {
+        Message::Contacts(message) =&gt; {
+            <span class="kw">if let </span>Screen::Contacts(contacts) = <span class="kw-2">&amp;mut </span>state.screen {
+                <span class="kw">let </span>action = contacts.update(message);
+
+                <span class="kw">match </span>action {
+                    contacts::Action::None =&gt; Task::none(),
+                    contacts::Action::Run(task) =&gt; task.map(Message::Contacts),
+                    contacts::Action::Chat(contact) =&gt; {
+                        <span class="kw">let </span>(conversation, task) = Conversation::new(contact);
+
+                        state.screen = Screen::Conversation(conversation);
+
+                        task.map(Message::Conversation)
+                    }
+                 }
+            } <span class="kw">else </span>{
+                Task::none()    
+            }
+        }
+        Message::Conversation(message) =&gt; {
+            <span class="kw">if let </span>Screen::Conversation(conversation) = <span class="kw-2">&amp;mut </span>state.screen {
+                conversation.update(message).map(Message::Conversation)
+            } <span class="kw">else </span>{
+                Task::none()    
+            }
+        }
+    }
+}
+
+<span class="kw">fn </span>view(state: <span class="kw-2">&amp;</span>State) -&gt; Element&lt;Message&gt; {
+    <span class="kw">match </span><span class="kw-2">&amp;</span>state.screen {
+        Screen::Contacts(contacts) =&gt; contacts.view().map(Message::Contacts),
+        Screen::Conversation(conversation) =&gt; conversation.view().map(Message::Conversation),
+    }
+}</code></pre></div>
+<p>The <code>update</code> method of a screen can return an <code>Action</code> enum that can be leveraged by the parent to
+execute a task or transition to a completely different screen altogether. The variants of <code>Action</code> can
+have associated data. For instance, in the example above, the <code>Conversation</code> screen is created when
+<code>Contacts::update</code> returns an <code>Action::Chat</code> with the selected contact.</p>
+<p>Effectively, this approach lets you “tell a story” to connect different screens together in a type safe
+way.</p>
+<p>Furthermore, functor methods like <a href="../struct.Task.html#method.map" title="method cosmic::Task::map"><code>Task::map</code></a>, <a href="../iced_core/struct.Element.html#method.map" title="method cosmic::iced_core::Element::map"><code>Element::map</code></a>, and <a href="struct.Subscription.html#method.map" title="method cosmic::iced::Subscription::map"><code>Subscription::map</code></a> make composition
+seamless.</p>
+</div></details><h2 id="modules" class="section-header">Modules<a href="#modules" class="anchor">§</a></h2><dl class="item-table"><dt><a class="mod" href="advanced/index.html" title="mod cosmic::iced::advanced">advanced</a></dt><dd>Leverage advanced concepts like custom widgets.</dd><dt><a class="mod" href="application/index.html" title="mod cosmic::iced::application">application</a></dt><dd>Create and run iced applications step by step.</dd><dt><a class="mod" href="clipboard/index.html" title="mod cosmic::iced::clipboard">clipboard</a></dt><dd>Access the clipboard.</dd><dt><a class="mod" href="daemon/index.html" title="mod cosmic::iced::daemon">daemon</a></dt><dd>Create and run daemons that run in the background.</dd><dt><a class="mod" href="event/index.html" title="mod cosmic::iced::event">event</a></dt><dd>Handle events of a user interface.</dd><dt><a class="mod" href="executor/index.html" title="mod cosmic::iced::executor">executor</a></dt><dd>Choose your preferred executor to power your application.</dd><dt><a class="mod" href="font/index.html" title="mod cosmic::iced::font">font</a></dt><dd>Load and use fonts.</dd><dt><a class="mod" href="keyboard/index.html" title="mod cosmic::iced::keyboard">keyboard</a></dt><dd>Listen and react to keyboard events.</dd><dt><a class="mod" href="mouse/index.html" title="mod cosmic::iced::mouse">mouse</a></dt><dd>Listen and react to mouse events.</dd><dt><a class="mod" href="overlay/index.html" title="mod cosmic::iced::overlay">overlay</a></dt><dd>Display interactive elements on top of other widgets.</dd><dt><a class="mod" href="platform_specific/index.html" title="mod cosmic::iced::platform_specific">platform_<wbr>specific</a></dt><dt><a class="mod" href="program/index.html" title="mod cosmic::iced::program">program</a></dt><dt><a class="mod" href="runtime/index.html" title="mod cosmic::iced::runtime">runtime</a></dt><dd>A renderer-agnostic native GUI runtime.</dd><dt><a class="mod" href="settings/index.html" title="mod cosmic::iced::settings">settings</a></dt><dd>Configure your application.</dd><dt><a class="mod" href="task/index.html" title="mod cosmic::iced::task">task</a></dt><dd>Create runtime tasks.</dd><dt><a class="mod" href="time/index.html" title="mod cosmic::iced::time">time</a></dt><dd>Listen and react to time.</dd><dt><a class="mod" href="touch/index.html" title="mod cosmic::iced::touch">touch</a></dt><dd>Listen and react to touch events.</dd><dt><a class="mod" href="widget/index.html" title="mod cosmic::iced::widget">widget</a></dt><dd>Use the built-in widgets or create your own.</dd><dt><a class="mod" href="window/index.html" title="mod cosmic::iced::window">window</a></dt><dd>Configure the window of your application in native platforms.</dd></dl><h2 id="macros" class="section-header">Macros<a href="#macros" class="anchor">§</a></h2><dl class="item-table"><dt><a class="macro" href="macro.color.html" title="macro cosmic::iced::color">color</a></dt><dd>Creates a <a href="struct.Color.html" title="struct cosmic::iced::Color"><code>Color</code></a> with shorter and cleaner syntax.</dd></dl><h2 id="structs" class="section-header">Structs<a href="#structs" class="anchor">§</a></h2><dl class="item-table"><dt><a class="struct" href="struct.Application.html" title="struct cosmic::iced::Application">Application</a></dt><dd>The underlying definition and configuration of an iced application.</dd><dt><a class="struct" href="struct.Border.html" title="struct cosmic::iced::Border">Border</a></dt><dd>A border.</dd><dt><a class="struct" href="struct.Color.html" title="struct cosmic::iced::Color">Color</a></dt><dd>A color in the <code>sRGB</code> color space.</dd><dt><a class="struct" href="struct.Daemon.html" title="struct cosmic::iced::Daemon">Daemon</a></dt><dd>The underlying definition and configuration of an iced daemon.</dd><dt><a class="struct" href="struct.Degrees.html" title="struct cosmic::iced::Degrees">Degrees</a></dt><dd>Degrees</dd><dt><a class="struct" href="struct.Font.html" title="struct cosmic::iced::Font">Font</a></dt><dd>A font.</dd><dt><a class="struct" href="struct.Limits.html" title="struct cosmic::iced::Limits">Limits</a></dt><dd>A set of size constraints for layouting.</dd><dt><a class="struct" href="struct.Padding.html" title="struct cosmic::iced::Padding">Padding</a></dt><dd>An amount of space to pad for each side of a box</dd><dt><a class="struct" href="struct.Pixels.html" title="struct cosmic::iced::Pixels">Pixels</a></dt><dd>An amount of logical pixels.</dd><dt><a class="struct" href="struct.Point.html" title="struct cosmic::iced::Point">Point</a></dt><dd>A 2D point.</dd><dt><a class="struct" href="struct.Radians.html" title="struct cosmic::iced::Radians">Radians</a></dt><dd>Radians</dd><dt><a class="struct" href="struct.Radius.html" title="struct cosmic::iced::Radius">Radius</a></dt><dd>The border radii for the corners of a graphics primitive in the order:
+top-left, top-right, bottom-right, bottom-left.</dd><dt><a class="struct" href="struct.Rectangle.html" title="struct cosmic::iced::Rectangle">Rectangle</a></dt><dd>An axis-aligned rectangle.</dd><dt><a class="struct" href="struct.Settings.html" title="struct cosmic::iced::Settings">Settings</a></dt><dd>The settings of an iced program.</dd><dt><a class="struct" href="struct.Shadow.html" title="struct cosmic::iced::Shadow">Shadow</a></dt><dd>A shadow.</dd><dt><a class="struct" href="struct.Size.html" title="struct cosmic::iced::Size">Size</a></dt><dd>An amount of space in 2 dimensions.</dd><dt><a class="struct" href="struct.Subscription.html" title="struct cosmic::iced::Subscription">Subscription</a></dt><dd>A request to listen to external events.</dd><dt><a class="struct" href="struct.Task.html" title="struct cosmic::iced::Task">Task</a></dt><dd>A set of concurrent actions to be performed by the iced runtime.</dd><dt><a class="struct" href="struct.Transformation.html" title="struct cosmic::iced::Transformation">Transformation</a></dt><dd>A 2D transformation matrix.</dd><dt><a class="struct" href="struct.Vector.html" title="struct cosmic::iced::Vector">Vector</a></dt><dd>A 2D vector.</dd></dl><h2 id="enums" class="section-header">Enums<a href="#enums" class="anchor">§</a></h2><dl class="item-table"><dt><a class="enum" href="enum.Alignment.html" title="enum cosmic::iced::Alignment">Alignment</a></dt><dd>Alignment on the axis of a container.</dd><dt><a class="enum" href="enum.Background.html" title="enum cosmic::iced::Background">Background</a></dt><dd>The background of some element.</dd><dt><a class="enum" href="enum.ContentFit.html" title="enum cosmic::iced::ContentFit">Content<wbr>Fit</a></dt><dd>The strategy used to fit the contents of a widget to its bounding box.</dd><dt><a class="enum" href="enum.Error.html" title="enum cosmic::iced::Error">Error</a></dt><dd>An error that occurred while running an application.</dd><dt><a class="enum" href="enum.Event.html" title="enum cosmic::iced::Event">Event</a></dt><dd>A user interface event.</dd><dt><a class="enum" href="enum.Gradient.html" title="enum cosmic::iced::Gradient">Gradient</a></dt><dd>A fill which transitions colors progressively along a direction, either linearly, radially (TBD),
+or conically (TBD).</dd><dt><a class="enum" href="enum.Length.html" title="enum cosmic::iced::Length">Length</a></dt><dd>The strategy used to fill space in a specific dimension.</dd><dt><a class="enum" href="enum.Rotation.html" title="enum cosmic::iced::Rotation">Rotation</a></dt><dd>The strategy used to rotate the content.</dd><dt><a class="enum" href="enum.Theme.html" title="enum cosmic::iced::Theme">Theme</a></dt><dd>A built-in theme.</dd></dl><h2 id="traits" class="section-header">Traits<a href="#traits" class="anchor">§</a></h2><dl class="item-table"><dt><a class="trait" href="trait.Executor.html" title="trait cosmic::iced::Executor">Executor</a></dt><dd>A type that can run futures.</dd><dt><a class="trait" href="trait.Program.html" title="trait cosmic::iced::Program">Program</a></dt><dd>The internal definition of a <a href="trait.Program.html" title="trait cosmic::iced::Program"><code>Program</code></a>.</dd></dl><h2 id="functions" class="section-header">Functions<a href="#functions" class="anchor">§</a></h2><dl class="item-table"><dt><a class="fn" href="fn.application.html" title="fn cosmic::iced::application">application</a></dt><dd>Creates an iced <a href="struct.Application.html" title="struct cosmic::iced::Application"><code>Application</code></a> given its title, update, and view logic.</dd><dt><a class="fn" href="fn.daemon.html" title="fn cosmic::iced::daemon">daemon</a></dt><dd>Creates an iced <a href="struct.Daemon.html" title="struct cosmic::iced::Daemon"><code>Daemon</code></a> given its title, update, and view logic.</dd><dt><a class="fn" href="fn.exit.html" title="fn cosmic::iced::exit">exit</a></dt><dd>Creates a <a href="../struct.Task.html" title="struct cosmic::Task"><code>Task</code></a> that exits the iced runtime.</dd><dt><a class="fn" href="fn.run.html" title="fn cosmic::iced::run">run</a></dt><dd>Runs a basic iced application with default <a href="struct.Settings.html" title="struct cosmic::iced::Settings"><code>Settings</code></a> given its title,
+update, and view logic.</dd></dl><h2 id="types" class="section-header">Type Aliases<a href="#types" class="anchor">§</a></h2><dl class="item-table"><dt><a class="type" href="type.Element.html" title="type cosmic::iced::Element">Element</a></dt><dd>A generic widget.</dd><dt><a class="type" href="type.Renderer.html" title="type cosmic::iced::Renderer">Renderer</a></dt><dd>The default graphics renderer for <a href="https://github.com/iced-rs/iced"><code>iced</code></a>.</dd><dt><a class="type" href="type.Result.html" title="type cosmic::iced::Result">Result</a></dt><dd>The result of running an iced program.</dd></dl></section></div></main></body></html>

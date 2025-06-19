@@ -1,0 +1,53 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Notify async tasks or threads."><title>event_listener - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../static.files/rustdoc-916cea96.css"><meta name="rustdoc-vars" data-root-path="../" data-static-root-path="../static.files/" data-current-crate="event_listener" data-themes="" data-resource-suffix="" data-rustdoc-version="1.87.0 (17067e9ac 2025-05-09)" data-channel="1.87.0" data-search-js="search-e7298875.js" data-settings-js="settings-d72f25bb.js" ><script src="../static.files/storage-82c7156e.js"></script><script defer src="../crates.js"></script><script defer src="../static.files/main-fb8c74a8.js"></script><noscript><link rel="stylesheet" href="../static.files/noscript-893ab5e7.css"></noscript><link rel="alternate icon" type="image/png" href="../static.files/favicon-32x32-6580c154.png"><link rel="icon" type="image/svg+xml" href="../static.files/favicon-044be391.svg"></head><body class="rustdoc mod crate"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle" title="show sidebar"></button></nav><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../event_listener/index.html">event_<wbr>listener</a><span class="version">2.5.3</span></h2></div><div class="sidebar-elems"><ul class="block"><li><a id="all-types" href="all.html">All Items</a></li></ul><section id="rustdoc-toc"><h3><a href="#">Sections</a></h3><ul class="block top-toc"><li><a href="#examples" title="Examples">Examples</a></li></ul><h3><a href="#structs">Crate Items</a></h3><ul class="block"><li><a href="#structs" title="Structs">Structs</a></li></ul></section><div id="rustdoc-modnav"></div></div></nav><div class="sidebar-resizer"></div><main><div class="width-limiter"><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><h1>Crate <span>event_listener</span><button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"><a class="src" href="../src/event_listener/lib.rs.html#1-997">Source</a> </span></div><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Notify async tasks or threads.</p>
+<p>This is a synchronization primitive similar to <a href="http://www.1024cores.net/home/lock-free-algorithms/eventcounts">eventcounts</a> invented by Dmitry Vyukov.</p>
+<p>You can use this crate to turn non-blocking data structures into async or blocking data
+structures. See a <a href="https://github.com/smol-rs/event-listener/blob/master/examples/mutex.rs">simple mutex</a> implementation that exposes an async and a blocking interface
+for acquiring locks.</p>
+<h2 id="examples"><a class="doc-anchor" href="#examples">§</a>Examples</h2>
+<p>Wait until another thread sets a boolean flag:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>std::sync::atomic::{AtomicBool, Ordering};
+<span class="kw">use </span>std::sync::Arc;
+<span class="kw">use </span>std::thread;
+<span class="kw">use </span>std::time::Duration;
+<span class="kw">use </span>std::usize;
+<span class="kw">use </span>event_listener::Event;
+
+<span class="kw">let </span>flag = Arc::new(AtomicBool::new(<span class="bool-val">false</span>));
+<span class="kw">let </span>event = Arc::new(Event::new());
+
+<span class="comment">// Spawn a thread that will set the flag after 1 second.
+</span>thread::spawn({
+    <span class="kw">let </span>flag = flag.clone();
+    <span class="kw">let </span>event = event.clone();
+    <span class="kw">move </span>|| {
+        <span class="comment">// Wait for a second.
+        </span>thread::sleep(Duration::from_secs(<span class="number">1</span>));
+
+        <span class="comment">// Set the flag.
+        </span>flag.store(<span class="bool-val">true</span>, Ordering::SeqCst);
+
+        <span class="comment">// Notify all listeners that the flag has been set.
+        </span>event.notify(usize::MAX);
+    }
+});
+
+<span class="comment">// Wait until the flag is set.
+</span><span class="kw">loop </span>{
+    <span class="comment">// Check the flag.
+    </span><span class="kw">if </span>flag.load(Ordering::SeqCst) {
+        <span class="kw">break</span>;
+    }
+
+    <span class="comment">// Start listening for events.
+    </span><span class="kw">let </span>listener = event.listen();
+
+    <span class="comment">// Check the flag again after creating the listener.
+    </span><span class="kw">if </span>flag.load(Ordering::SeqCst) {
+        <span class="kw">break</span>;
+    }
+
+    <span class="comment">// Wait for a notification and continue the loop.
+    </span>listener.wait();
+}</code></pre></div>
+</div></details><h2 id="structs" class="section-header">Structs<a href="#structs" class="anchor">§</a></h2><dl class="item-table"><dt><a class="struct" href="struct.Event.html" title="struct event_listener::Event">Event</a></dt><dd>A synchronization primitive for notifying async tasks and threads.</dd><dt><a class="struct" href="struct.EventListener.html" title="struct event_listener::EventListener">Event<wbr>Listener</a></dt><dd>A guard waiting for a notification from an <a href="struct.Event.html" title="struct event_listener::Event"><code>Event</code></a>.</dd></dl></section></div></main></body></html>

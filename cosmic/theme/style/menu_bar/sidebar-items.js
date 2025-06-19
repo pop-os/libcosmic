@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["MenuBarStyle"],"struct":["Appearance"],"trait":["StyleSheet"]};

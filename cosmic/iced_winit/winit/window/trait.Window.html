@@ -1,0 +1,670 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Represents a window."><title>Window in cosmic::iced_winit::winit::window - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../../../static.files/rustdoc-916cea96.css"><meta name="rustdoc-vars" data-root-path="../../../../" data-static-root-path="../../../../static.files/" data-current-crate="cosmic" data-themes="" data-resource-suffix="" data-rustdoc-version="1.87.0 (17067e9ac 2025-05-09)" data-channel="1.87.0" data-search-js="search-e7298875.js" data-settings-js="settings-d72f25bb.js" ><script src="../../../../static.files/storage-82c7156e.js"></script><script defer src="sidebar-items.js"></script><script defer src="../../../../static.files/main-fb8c74a8.js"></script><noscript><link rel="stylesheet" href="../../../../static.files/noscript-893ab5e7.css"></noscript><link rel="alternate icon" type="image/png" href="../../../../static.files/favicon-32x32-6580c154.png"><link rel="icon" type="image/svg+xml" href="../../../../static.files/favicon-044be391.svg"></head><body class="rustdoc trait"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle" title="show sidebar"></button></nav><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../../../../cosmic/index.html">cosmic</a><span class="version">0.1.0</span></h2></div><div class="sidebar-elems"><section id="rustdoc-toc"><h2 class="location"><a href="#">Window</a></h2><h3><a href="#">Sections</a></h3><ul class="block top-toc"><li><a href="#threading" title="Threading">Threading</a></li><li><a href="#platform-specific" title="Platform-specific">Platform-specific</a></li></ul><h3><a href="#required-methods">Required Methods</a></h3><ul class="block"><li><a href="#tymethod.available_monitors" title="available_monitors">available_monitors</a></li><li><a href="#tymethod.current_monitor" title="current_monitor">current_monitor</a></li><li><a href="#tymethod.drag_resize_window" title="drag_resize_window">drag_resize_window</a></li><li><a href="#tymethod.drag_window" title="drag_window">drag_window</a></li><li><a href="#tymethod.enabled_buttons" title="enabled_buttons">enabled_buttons</a></li><li><a href="#tymethod.focus_window" title="focus_window">focus_window</a></li><li><a href="#tymethod.fullscreen" title="fullscreen">fullscreen</a></li><li><a href="#tymethod.has_focus" title="has_focus">has_focus</a></li><li><a href="#tymethod.id" title="id">id</a></li><li><a href="#tymethod.inner_position" title="inner_position">inner_position</a></li><li><a href="#tymethod.is_decorated" title="is_decorated">is_decorated</a></li><li><a href="#tymethod.is_maximized" title="is_maximized">is_maximized</a></li><li><a href="#tymethod.is_minimized" title="is_minimized">is_minimized</a></li><li><a href="#tymethod.is_resizable" title="is_resizable">is_resizable</a></li><li><a href="#tymethod.is_visible" title="is_visible">is_visible</a></li><li><a href="#tymethod.outer_position" title="outer_position">outer_position</a></li><li><a href="#tymethod.outer_size" title="outer_size">outer_size</a></li><li><a href="#tymethod.pre_present_notify" title="pre_present_notify">pre_present_notify</a></li><li><a href="#tymethod.primary_monitor" title="primary_monitor">primary_monitor</a></li><li><a href="#tymethod.request_redraw" title="request_redraw">request_redraw</a></li><li><a href="#tymethod.request_surface_size" title="request_surface_size">request_surface_size</a></li><li><a href="#tymethod.request_user_attention" title="request_user_attention">request_user_attention</a></li><li><a href="#tymethod.reset_dead_keys" title="reset_dead_keys">reset_dead_keys</a></li><li><a href="#tymethod.rwh_06_display_handle" title="rwh_06_display_handle">rwh_06_display_handle</a></li><li><a href="#tymethod.rwh_06_window_handle" title="rwh_06_window_handle">rwh_06_window_handle</a></li><li><a href="#tymethod.scale_factor" title="scale_factor">scale_factor</a></li><li><a href="#tymethod.set_blur" title="set_blur">set_blur</a></li><li><a href="#tymethod.set_content_protected" title="set_content_protected">set_content_protected</a></li><li><a href="#tymethod.set_cursor" title="set_cursor">set_cursor</a></li><li><a href="#tymethod.set_cursor_grab" title="set_cursor_grab">set_cursor_grab</a></li><li><a href="#tymethod.set_cursor_hittest" title="set_cursor_hittest">set_cursor_hittest</a></li><li><a href="#tymethod.set_cursor_position" title="set_cursor_position">set_cursor_position</a></li><li><a href="#tymethod.set_cursor_visible" title="set_cursor_visible">set_cursor_visible</a></li><li><a href="#tymethod.set_decorations" title="set_decorations">set_decorations</a></li><li><a href="#tymethod.set_enabled_buttons" title="set_enabled_buttons">set_enabled_buttons</a></li><li><a href="#tymethod.set_fullscreen" title="set_fullscreen">set_fullscreen</a></li><li><a href="#tymethod.set_ime_allowed" title="set_ime_allowed">set_ime_allowed</a></li><li><a href="#tymethod.set_ime_cursor_area" title="set_ime_cursor_area">set_ime_cursor_area</a></li><li><a href="#tymethod.set_ime_purpose" title="set_ime_purpose">set_ime_purpose</a></li><li><a href="#tymethod.set_max_surface_size" title="set_max_surface_size">set_max_surface_size</a></li><li><a href="#tymethod.set_maximized" title="set_maximized">set_maximized</a></li><li><a href="#tymethod.set_min_surface_size" title="set_min_surface_size">set_min_surface_size</a></li><li><a href="#tymethod.set_minimized" title="set_minimized">set_minimized</a></li><li><a href="#tymethod.set_outer_position" title="set_outer_position">set_outer_position</a></li><li><a href="#tymethod.set_resizable" title="set_resizable">set_resizable</a></li><li><a href="#tymethod.set_surface_resize_increments" title="set_surface_resize_increments">set_surface_resize_increments</a></li><li><a href="#tymethod.set_theme" title="set_theme">set_theme</a></li><li><a href="#tymethod.set_title" title="set_title">set_title</a></li><li><a href="#tymethod.set_transparent" title="set_transparent">set_transparent</a></li><li><a href="#tymethod.set_visible" title="set_visible">set_visible</a></li><li><a href="#tymethod.set_window_icon" title="set_window_icon">set_window_icon</a></li><li><a href="#tymethod.set_window_level" title="set_window_level">set_window_level</a></li><li><a href="#tymethod.show_window_menu" title="show_window_menu">show_window_menu</a></li><li><a href="#tymethod.surface_resize_increments" title="surface_resize_increments">surface_resize_increments</a></li><li><a href="#tymethod.surface_size" title="surface_size">surface_size</a></li><li><a href="#tymethod.theme" title="theme">theme</a></li><li><a href="#tymethod.title" title="title">title</a></li></ul><h3><a href="#implementations">Methods</a></h3><ul class="block method"><li><a href="#method.default_attributes" title="default_attributes">default_attributes</a></li></ul><h3><a href="#trait-implementations">Trait Implementations</a></h3><ul class="block trait-implementation"><li><a href="#impl-Eq-for-dyn+Window" title="Eq">Eq</a></li><li><a href="#impl-HasDisplayHandle-for-dyn+Window" title="HasDisplayHandle">HasDisplayHandle</a></li><li><a href="#impl-HasWindowHandle-for-dyn+Window" title="HasWindowHandle">HasWindowHandle</a></li><li><a href="#impl-Hash-for-dyn+Window" title="Hash">Hash</a></li><li><a href="#impl-PartialEq-for-dyn+Window" title="PartialEq">PartialEq</a></li><li><a href="#impl-WindowExtStartupNotify-for-dyn+Window" title="WindowExtStartupNotify">WindowExtStartupNotify</a></li><li><a href="#impl-WindowExtWayland-for-dyn+Window" title="WindowExtWayland">WindowExtWayland</a></li><li><a href="#impl-WindowExtX11-for-dyn+Window" title="WindowExtX11">WindowExtX11</a></li></ul><h3><a href="#implementors">Implementors</a></h3></section><div id="rustdoc-modnav"><h2><a href="index.html">In cosmic::<wbr>iced_<wbr>winit::<wbr>winit::<wbr>window</a></h2></div></div></nav><div class="sidebar-resizer"></div><main><div class="width-limiter"><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><div class="rustdoc-breadcrumbs"><a href="../../../index.html">cosmic</a>::<wbr><a href="../../index.html">iced_winit</a>::<wbr><a href="../index.html">winit</a>::<wbr><a href="index.html">window</a></div><h1>Trait <span class="trait">Window</span><button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"><a class="src" href="../../../../src/winit/window.rs.html#450">Source</a> </span></div><pre class="rust item-decl"><code>pub trait Window:
+    AsAny
+    + <a class="trait" href="https://doc.rust-lang.org/1.87.0/core/marker/trait.Send.html" title="trait core::marker::Send">Send</a>
+    + <a class="trait" href="https://doc.rust-lang.org/1.87.0/core/marker/trait.Sync.html" title="trait core::marker::Sync">Sync</a> {
+<details class="toggle type-contents-toggle"><summary class="hideme"><span>Show 57 methods</span></summary>    // Required methods
+    fn <a href="#tymethod.id" class="fn">id</a>(&amp;self) -&gt; <a class="struct" href="struct.WindowId.html" title="struct cosmic::iced_winit::winit::window::WindowId">WindowId</a>;
+<span class="item-spacer"></span>    fn <a href="#tymethod.scale_factor" class="fn">scale_factor</a>(&amp;self) -&gt; <a class="primitive" href="https://doc.rust-lang.org/1.87.0/std/primitive.f64.html">f64</a>;
+<span class="item-spacer"></span>    fn <a href="#tymethod.request_redraw" class="fn">request_redraw</a>(&amp;self);
+<span class="item-spacer"></span>    fn <a href="#tymethod.pre_present_notify" class="fn">pre_present_notify</a>(&amp;self);
+<span class="item-spacer"></span>    fn <a href="#tymethod.reset_dead_keys" class="fn">reset_dead_keys</a>(&amp;self);
+<span class="item-spacer"></span>    fn <a href="#tymethod.inner_position" class="fn">inner_position</a>(&amp;self) -&gt; <a class="enum" href="https://doc.rust-lang.org/1.87.0/core/result/enum.Result.html" title="enum core::result::Result">Result</a>&lt;<a class="struct" href="../dpi/struct.PhysicalPosition.html" title="struct cosmic::iced_winit::winit::dpi::PhysicalPosition">PhysicalPosition</a>&lt;<a class="primitive" href="https://doc.rust-lang.org/1.87.0/std/primitive.i32.html">i32</a>&gt;, <a class="enum" href="../error/enum.RequestError.html" title="enum cosmic::iced_winit::winit::error::RequestError">RequestError</a>&gt;;
+<span class="item-spacer"></span>    fn <a href="#tymethod.outer_position" class="fn">outer_position</a>(&amp;self) -&gt; <a class="enum" href="https://doc.rust-lang.org/1.87.0/core/result/enum.Result.html" title="enum core::result::Result">Result</a>&lt;<a class="struct" href="../dpi/struct.PhysicalPosition.html" title="struct cosmic::iced_winit::winit::dpi::PhysicalPosition">PhysicalPosition</a>&lt;<a class="primitive" href="https://doc.rust-lang.org/1.87.0/std/primitive.i32.html">i32</a>&gt;, <a class="enum" href="../error/enum.RequestError.html" title="enum cosmic::iced_winit::winit::error::RequestError">RequestError</a>&gt;;
+<span class="item-spacer"></span>    fn <a href="#tymethod.set_outer_position" class="fn">set_outer_position</a>(&amp;self, position: <a class="enum" href="../dpi/enum.Position.html" title="enum cosmic::iced_winit::winit::dpi::Position">Position</a>);
+<span class="item-spacer"></span>    fn <a href="#tymethod.surface_size" class="fn">surface_size</a>(&amp;self) -&gt; <a class="struct" href="../dpi/struct.PhysicalSize.html" title="struct cosmic::iced_winit::winit::dpi::PhysicalSize">PhysicalSize</a>&lt;<a class="primitive" href="https://doc.rust-lang.org/1.87.0/std/primitive.u32.html">u32</a>&gt;;
+<span class="item-spacer"></span>    fn <a href="#tymethod.request_surface_size" class="fn">request_surface_size</a>(&amp;self, size: <a class="enum" href="../dpi/enum.Size.html" title="enum cosmic::iced_winit::winit::dpi::Size">Size</a>) -&gt; <a class="enum" href="https://doc.rust-lang.org/1.87.0/core/option/enum.Option.html" title="enum core::option::Option">Option</a>&lt;<a class="struct" href="../dpi/struct.PhysicalSize.html" title="struct cosmic::iced_winit::winit::dpi::PhysicalSize">PhysicalSize</a>&lt;<a class="primitive" href="https://doc.rust-lang.org/1.87.0/std/primitive.u32.html">u32</a>&gt;&gt;;
+<span class="item-spacer"></span>    fn <a href="#tymethod.outer_size" class="fn">outer_size</a>(&amp;self) -&gt; <a class="struct" href="../dpi/struct.PhysicalSize.html" title="struct cosmic::iced_winit::winit::dpi::PhysicalSize">PhysicalSize</a>&lt;<a class="primitive" href="https://doc.rust-lang.org/1.87.0/std/primitive.u32.html">u32</a>&gt;;
+<span class="item-spacer"></span>    fn <a href="#tymethod.set_min_surface_size" class="fn">set_min_surface_size</a>(&amp;self, min_size: <a class="enum" href="https://doc.rust-lang.org/1.87.0/core/option/enum.Option.html" title="enum core::option::Option">Option</a>&lt;<a class="enum" href="../dpi/enum.Size.html" title="enum cosmic::iced_winit::winit::dpi::Size">Size</a>&gt;);
+<span class="item-spacer"></span>    fn <a href="#tymethod.set_max_surface_size" class="fn">set_max_surface_size</a>(&amp;self, max_size: <a class="enum" href="https://doc.rust-lang.org/1.87.0/core/option/enum.Option.html" title="enum core::option::Option">Option</a>&lt;<a class="enum" href="../dpi/enum.Size.html" title="enum cosmic::iced_winit::winit::dpi::Size">Size</a>&gt;);
+<span class="item-spacer"></span>    fn <a href="#tymethod.surface_resize_increments" class="fn">surface_resize_increments</a>(&amp;self) -&gt; <a class="enum" href="https://doc.rust-lang.org/1.87.0/core/option/enum.Option.html" title="enum core::option::Option">Option</a>&lt;<a class="struct" href="../dpi/struct.PhysicalSize.html" title="struct cosmic::iced_winit::winit::dpi::PhysicalSize">PhysicalSize</a>&lt;<a class="primitive" href="https://doc.rust-lang.org/1.87.0/std/primitive.u32.html">u32</a>&gt;&gt;;
+<span class="item-spacer"></span>    fn <a href="#tymethod.set_surface_resize_increments" class="fn">set_surface_resize_increments</a>(&amp;self, increments: <a class="enum" href="https://doc.rust-lang.org/1.87.0/core/option/enum.Option.html" title="enum core::option::Option">Option</a>&lt;<a class="enum" href="../dpi/enum.Size.html" title="enum cosmic::iced_winit::winit::dpi::Size">Size</a>&gt;);
+<span class="item-spacer"></span>    fn <a href="#tymethod.set_title" class="fn">set_title</a>(&amp;self, title: &amp;<a class="primitive" href="https://doc.rust-lang.org/1.87.0/std/primitive.str.html">str</a>);
+<span class="item-spacer"></span>    fn <a href="#tymethod.set_transparent" class="fn">set_transparent</a>(&amp;self, transparent: <a class="primitive" href="https://doc.rust-lang.org/1.87.0/std/primitive.bool.html">bool</a>);
+<span class="item-spacer"></span>    fn <a href="#tymethod.set_blur" class="fn">set_blur</a>(&amp;self, blur: <a class="primitive" href="https://doc.rust-lang.org/1.87.0/std/primitive.bool.html">bool</a>);
+<span class="item-spacer"></span>    fn <a href="#tymethod.set_visible" class="fn">set_visible</a>(&amp;self, visible: <a class="primitive" href="https://doc.rust-lang.org/1.87.0/std/primitive.bool.html">bool</a>);
+<span class="item-spacer"></span>    fn <a href="#tymethod.is_visible" class="fn">is_visible</a>(&amp;self) -&gt; <a class="enum" href="https://doc.rust-lang.org/1.87.0/core/option/enum.Option.html" title="enum core::option::Option">Option</a>&lt;<a class="primitive" href="https://doc.rust-lang.org/1.87.0/std/primitive.bool.html">bool</a>&gt;;
+<span class="item-spacer"></span>    fn <a href="#tymethod.set_resizable" class="fn">set_resizable</a>(&amp;self, resizable: <a class="primitive" href="https://doc.rust-lang.org/1.87.0/std/primitive.bool.html">bool</a>);
+<span class="item-spacer"></span>    fn <a href="#tymethod.is_resizable" class="fn">is_resizable</a>(&amp;self) -&gt; <a class="primitive" href="https://doc.rust-lang.org/1.87.0/std/primitive.bool.html">bool</a>;
+<span class="item-spacer"></span>    fn <a href="#tymethod.set_enabled_buttons" class="fn">set_enabled_buttons</a>(&amp;self, buttons: <a class="struct" href="struct.WindowButtons.html" title="struct cosmic::iced_winit::winit::window::WindowButtons">WindowButtons</a>);
+<span class="item-spacer"></span>    fn <a href="#tymethod.enabled_buttons" class="fn">enabled_buttons</a>(&amp;self) -&gt; <a class="struct" href="struct.WindowButtons.html" title="struct cosmic::iced_winit::winit::window::WindowButtons">WindowButtons</a>;
+<span class="item-spacer"></span>    fn <a href="#tymethod.set_minimized" class="fn">set_minimized</a>(&amp;self, minimized: <a class="primitive" href="https://doc.rust-lang.org/1.87.0/std/primitive.bool.html">bool</a>);
+<span class="item-spacer"></span>    fn <a href="#tymethod.is_minimized" class="fn">is_minimized</a>(&amp;self) -&gt; <a class="enum" href="https://doc.rust-lang.org/1.87.0/core/option/enum.Option.html" title="enum core::option::Option">Option</a>&lt;<a class="primitive" href="https://doc.rust-lang.org/1.87.0/std/primitive.bool.html">bool</a>&gt;;
+<span class="item-spacer"></span>    fn <a href="#tymethod.set_maximized" class="fn">set_maximized</a>(&amp;self, maximized: <a class="primitive" href="https://doc.rust-lang.org/1.87.0/std/primitive.bool.html">bool</a>);
+<span class="item-spacer"></span>    fn <a href="#tymethod.is_maximized" class="fn">is_maximized</a>(&amp;self) -&gt; <a class="primitive" href="https://doc.rust-lang.org/1.87.0/std/primitive.bool.html">bool</a>;
+<span class="item-spacer"></span>    fn <a href="#tymethod.set_fullscreen" class="fn">set_fullscreen</a>(&amp;self, fullscreen: <a class="enum" href="https://doc.rust-lang.org/1.87.0/core/option/enum.Option.html" title="enum core::option::Option">Option</a>&lt;<a class="enum" href="enum.Fullscreen.html" title="enum cosmic::iced_winit::winit::window::Fullscreen">Fullscreen</a>&gt;);
+<span class="item-spacer"></span>    fn <a href="#tymethod.fullscreen" class="fn">fullscreen</a>(&amp;self) -&gt; <a class="enum" href="https://doc.rust-lang.org/1.87.0/core/option/enum.Option.html" title="enum core::option::Option">Option</a>&lt;<a class="enum" href="enum.Fullscreen.html" title="enum cosmic::iced_winit::winit::window::Fullscreen">Fullscreen</a>&gt;;
+<span class="item-spacer"></span>    fn <a href="#tymethod.set_decorations" class="fn">set_decorations</a>(&amp;self, decorations: <a class="primitive" href="https://doc.rust-lang.org/1.87.0/std/primitive.bool.html">bool</a>);
+<span class="item-spacer"></span>    fn <a href="#tymethod.is_decorated" class="fn">is_decorated</a>(&amp;self) -&gt; <a class="primitive" href="https://doc.rust-lang.org/1.87.0/std/primitive.bool.html">bool</a>;
+<span class="item-spacer"></span>    fn <a href="#tymethod.set_window_level" class="fn">set_window_level</a>(&amp;self, level: <a class="enum" href="enum.WindowLevel.html" title="enum cosmic::iced_winit::winit::window::WindowLevel">WindowLevel</a>);
+<span class="item-spacer"></span>    fn <a href="#tymethod.set_window_icon" class="fn">set_window_icon</a>(&amp;self, window_icon: <a class="enum" href="https://doc.rust-lang.org/1.87.0/core/option/enum.Option.html" title="enum core::option::Option">Option</a>&lt;<a class="struct" href="struct.Icon.html" title="struct cosmic::iced_winit::winit::window::Icon">Icon</a>&gt;);
+<span class="item-spacer"></span>    fn <a href="#tymethod.set_ime_cursor_area" class="fn">set_ime_cursor_area</a>(&amp;self, position: <a class="enum" href="../dpi/enum.Position.html" title="enum cosmic::iced_winit::winit::dpi::Position">Position</a>, size: <a class="enum" href="../dpi/enum.Size.html" title="enum cosmic::iced_winit::winit::dpi::Size">Size</a>);
+<span class="item-spacer"></span>    fn <a href="#tymethod.set_ime_allowed" class="fn">set_ime_allowed</a>(&amp;self, allowed: <a class="primitive" href="https://doc.rust-lang.org/1.87.0/std/primitive.bool.html">bool</a>);
+<span class="item-spacer"></span>    fn <a href="#tymethod.set_ime_purpose" class="fn">set_ime_purpose</a>(&amp;self, purpose: <a class="enum" href="enum.ImePurpose.html" title="enum cosmic::iced_winit::winit::window::ImePurpose">ImePurpose</a>);
+<span class="item-spacer"></span>    fn <a href="#tymethod.focus_window" class="fn">focus_window</a>(&amp;self);
+<span class="item-spacer"></span>    fn <a href="#tymethod.has_focus" class="fn">has_focus</a>(&amp;self) -&gt; <a class="primitive" href="https://doc.rust-lang.org/1.87.0/std/primitive.bool.html">bool</a>;
+<span class="item-spacer"></span>    fn <a href="#tymethod.request_user_attention" class="fn">request_user_attention</a>(&amp;self, request_type: <a class="enum" href="https://doc.rust-lang.org/1.87.0/core/option/enum.Option.html" title="enum core::option::Option">Option</a>&lt;<a class="enum" href="enum.UserAttentionType.html" title="enum cosmic::iced_winit::winit::window::UserAttentionType">UserAttentionType</a>&gt;);
+<span class="item-spacer"></span>    fn <a href="#tymethod.set_theme" class="fn">set_theme</a>(&amp;self, theme: <a class="enum" href="https://doc.rust-lang.org/1.87.0/core/option/enum.Option.html" title="enum core::option::Option">Option</a>&lt;<a class="enum" href="enum.Theme.html" title="enum cosmic::iced_winit::winit::window::Theme">Theme</a>&gt;);
+<span class="item-spacer"></span>    fn <a href="#tymethod.theme" class="fn">theme</a>(&amp;self) -&gt; <a class="enum" href="https://doc.rust-lang.org/1.87.0/core/option/enum.Option.html" title="enum core::option::Option">Option</a>&lt;<a class="enum" href="enum.Theme.html" title="enum cosmic::iced_winit::winit::window::Theme">Theme</a>&gt;;
+<span class="item-spacer"></span>    fn <a href="#tymethod.set_content_protected" class="fn">set_content_protected</a>(&amp;self, protected: <a class="primitive" href="https://doc.rust-lang.org/1.87.0/std/primitive.bool.html">bool</a>);
+<span class="item-spacer"></span>    fn <a href="#tymethod.title" class="fn">title</a>(&amp;self) -&gt; <a class="struct" href="https://doc.rust-lang.org/1.87.0/alloc/string/struct.String.html" title="struct alloc::string::String">String</a>;
+<span class="item-spacer"></span>    fn <a href="#tymethod.set_cursor" class="fn">set_cursor</a>(&amp;self, cursor: <a class="enum" href="enum.Cursor.html" title="enum cosmic::iced_winit::winit::window::Cursor">Cursor</a>);
+<span class="item-spacer"></span>    fn <a href="#tymethod.set_cursor_position" class="fn">set_cursor_position</a>(
+        &amp;self,
+        position: <a class="enum" href="../dpi/enum.Position.html" title="enum cosmic::iced_winit::winit::dpi::Position">Position</a>,
+    ) -&gt; <a class="enum" href="https://doc.rust-lang.org/1.87.0/core/result/enum.Result.html" title="enum core::result::Result">Result</a>&lt;<a class="primitive" href="https://doc.rust-lang.org/1.87.0/std/primitive.unit.html">()</a>, <a class="enum" href="../error/enum.RequestError.html" title="enum cosmic::iced_winit::winit::error::RequestError">RequestError</a>&gt;;
+<span class="item-spacer"></span>    fn <a href="#tymethod.set_cursor_grab" class="fn">set_cursor_grab</a>(&amp;self, mode: <a class="enum" href="enum.CursorGrabMode.html" title="enum cosmic::iced_winit::winit::window::CursorGrabMode">CursorGrabMode</a>) -&gt; <a class="enum" href="https://doc.rust-lang.org/1.87.0/core/result/enum.Result.html" title="enum core::result::Result">Result</a>&lt;<a class="primitive" href="https://doc.rust-lang.org/1.87.0/std/primitive.unit.html">()</a>, <a class="enum" href="../error/enum.RequestError.html" title="enum cosmic::iced_winit::winit::error::RequestError">RequestError</a>&gt;;
+<span class="item-spacer"></span>    fn <a href="#tymethod.set_cursor_visible" class="fn">set_cursor_visible</a>(&amp;self, visible: <a class="primitive" href="https://doc.rust-lang.org/1.87.0/std/primitive.bool.html">bool</a>);
+<span class="item-spacer"></span>    fn <a href="#tymethod.drag_window" class="fn">drag_window</a>(&amp;self) -&gt; <a class="enum" href="https://doc.rust-lang.org/1.87.0/core/result/enum.Result.html" title="enum core::result::Result">Result</a>&lt;<a class="primitive" href="https://doc.rust-lang.org/1.87.0/std/primitive.unit.html">()</a>, <a class="enum" href="../error/enum.RequestError.html" title="enum cosmic::iced_winit::winit::error::RequestError">RequestError</a>&gt;;
+<span class="item-spacer"></span>    fn <a href="#tymethod.drag_resize_window" class="fn">drag_resize_window</a>(
+        &amp;self,
+        direction: <a class="enum" href="enum.ResizeDirection.html" title="enum cosmic::iced_winit::winit::window::ResizeDirection">ResizeDirection</a>,
+    ) -&gt; <a class="enum" href="https://doc.rust-lang.org/1.87.0/core/result/enum.Result.html" title="enum core::result::Result">Result</a>&lt;<a class="primitive" href="https://doc.rust-lang.org/1.87.0/std/primitive.unit.html">()</a>, <a class="enum" href="../error/enum.RequestError.html" title="enum cosmic::iced_winit::winit::error::RequestError">RequestError</a>&gt;;
+<span class="item-spacer"></span>    fn <a href="#tymethod.show_window_menu" class="fn">show_window_menu</a>(&amp;self, position: <a class="enum" href="../dpi/enum.Position.html" title="enum cosmic::iced_winit::winit::dpi::Position">Position</a>);
+<span class="item-spacer"></span>    fn <a href="#tymethod.set_cursor_hittest" class="fn">set_cursor_hittest</a>(&amp;self, hittest: <a class="primitive" href="https://doc.rust-lang.org/1.87.0/std/primitive.bool.html">bool</a>) -&gt; <a class="enum" href="https://doc.rust-lang.org/1.87.0/core/result/enum.Result.html" title="enum core::result::Result">Result</a>&lt;<a class="primitive" href="https://doc.rust-lang.org/1.87.0/std/primitive.unit.html">()</a>, <a class="enum" href="../error/enum.RequestError.html" title="enum cosmic::iced_winit::winit::error::RequestError">RequestError</a>&gt;;
+<span class="item-spacer"></span>    fn <a href="#tymethod.current_monitor" class="fn">current_monitor</a>(&amp;self) -&gt; <a class="enum" href="https://doc.rust-lang.org/1.87.0/core/option/enum.Option.html" title="enum core::option::Option">Option</a>&lt;<a class="struct" href="../monitor/struct.MonitorHandle.html" title="struct cosmic::iced_winit::winit::monitor::MonitorHandle">MonitorHandle</a>&gt;;
+<span class="item-spacer"></span>    fn <a href="#tymethod.available_monitors" class="fn">available_monitors</a>(&amp;self) -&gt; <a class="struct" href="https://doc.rust-lang.org/1.87.0/alloc/boxed/struct.Box.html" title="struct alloc::boxed::Box">Box</a>&lt;dyn <a class="trait" href="https://doc.rust-lang.org/1.87.0/core/iter/traits/iterator/trait.Iterator.html" title="trait core::iter::traits::iterator::Iterator">Iterator</a>&lt;Item = <a class="struct" href="../monitor/struct.MonitorHandle.html" title="struct cosmic::iced_winit::winit::monitor::MonitorHandle">MonitorHandle</a>&gt;&gt;;
+<span class="item-spacer"></span>    fn <a href="#tymethod.primary_monitor" class="fn">primary_monitor</a>(&amp;self) -&gt; <a class="enum" href="https://doc.rust-lang.org/1.87.0/core/option/enum.Option.html" title="enum core::option::Option">Option</a>&lt;<a class="struct" href="../monitor/struct.MonitorHandle.html" title="struct cosmic::iced_winit::winit::monitor::MonitorHandle">MonitorHandle</a>&gt;;
+<span class="item-spacer"></span>    fn <a href="#tymethod.rwh_06_display_handle" class="fn">rwh_06_display_handle</a>(&amp;self) -&gt; &amp;dyn <a class="trait" href="../../../iced/window/raw_window_handle/trait.HasDisplayHandle.html" title="trait cosmic::iced::window::raw_window_handle::HasDisplayHandle">HasDisplayHandle</a>;
+<span class="item-spacer"></span>    fn <a href="#tymethod.rwh_06_window_handle" class="fn">rwh_06_window_handle</a>(&amp;self) -&gt; &amp;dyn <a class="trait" href="../../../iced/window/raw_window_handle/trait.HasWindowHandle.html" title="trait cosmic::iced::window::raw_window_handle::HasWindowHandle">HasWindowHandle</a>;
+</details>}</code></pre><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Represents a window.</p>
+<p>The window is closed when dropped.</p>
+<h3 id="threading"><a class="doc-anchor" href="#threading">§</a>Threading</h3>
+<p>This is <code>Send + Sync</code>, meaning that it can be freely used from other
+threads.</p>
+<p>However, some platforms (macOS, Web and iOS) only allow user interface
+interactions on the main thread, so on those platforms, if you use the
+window from a thread other than the main, the code is scheduled to run on
+the main thread, and your thread may be blocked until that completes.</p>
+<h3 id="platform-specific"><a class="doc-anchor" href="#platform-specific">§</a>Platform-specific</h3>
+<p><strong>Web:</strong> The <a href="trait.Window.html" title="trait cosmic::iced_winit::winit::window::Window"><code>Window</code></a>, which is represented by a <code>HTMLElementCanvas</code>, can
+not be closed by dropping the <a href="trait.Window.html" title="trait cosmic::iced_winit::winit::window::Window"><code>Window</code></a>.</p>
+</div></details><h2 id="required-methods" class="section-header">Required Methods<a href="#required-methods" class="anchor">§</a></h2><div class="methods"><details class="toggle method-toggle" open><summary><section id="tymethod.id" class="method"><a class="src rightside" href="../../../../src/winit/window.rs.html#452">Source</a><h4 class="code-header">fn <a href="#tymethod.id" class="fn">id</a>(&amp;self) -&gt; <a class="struct" href="struct.WindowId.html" title="struct cosmic::iced_winit::winit::window::WindowId">WindowId</a></h4></section></summary><div class="docblock"><p>Returns an identifier unique to the window.</p>
+</div></details><details class="toggle method-toggle" open><summary><section id="tymethod.scale_factor" class="method"><a class="src rightside" href="../../../../src/winit/window.rs.html#515">Source</a><h4 class="code-header">fn <a href="#tymethod.scale_factor" class="fn">scale_factor</a>(&amp;self) -&gt; <a class="primitive" href="https://doc.rust-lang.org/1.87.0/std/primitive.f64.html">f64</a></h4></section></summary><div class="docblock"><p>Returns the scale factor that can be used to map logical pixels to physical pixels, and
+vice versa.</p>
+<p>Note that this value can change depending on user action (for example if the window is
+moved to another screen); as such, tracking <a href="../event/enum.WindowEvent.html#variant.ScaleFactorChanged" title="variant cosmic::iced_winit::winit::event::WindowEvent::ScaleFactorChanged"><code>WindowEvent::ScaleFactorChanged</code></a> events is
+the most robust way to track the DPI you need to use to draw.</p>
+<p>This value may differ from <a href="../monitor/struct.MonitorHandle.html#method.scale_factor" title="method cosmic::iced_winit::winit::monitor::MonitorHandle::scale_factor"><code>MonitorHandle::scale_factor</code></a>.</p>
+<p>See the <a href="../dpi/index.html" title="mod cosmic::iced_winit::winit::dpi"><code>dpi</code></a> crate for more information.</p>
+<h6 id="platform-specific-1"><a class="doc-anchor" href="#platform-specific-1">§</a>Platform-specific</h6>
+<p>The scale factor is calculated differently on different platforms:</p>
+<ul>
+<li>
+<p><strong>Windows:</strong> On Windows 8 and 10, per-monitor scaling is readily configured by users from
+the display settings. While users are free to select any option they want, they’re only
+given a selection of “nice” scale factors, i.e. 1.0, 1.25, 1.5… on Windows 7. The scale
+factor is global and changing it requires logging out. See <a href="https://docs.microsoft.com/en-us/windows/win32/hidpi/high-dpi-desktop-application-development-on-windows">this article</a> for
+technical details.</p>
+</li>
+<li>
+<p><strong>macOS:</strong> Recent macOS versions allow the user to change the scaling factor for specific
+displays. When available, the user may pick a per-monitor scaling factor from a set of
+pre-defined settings. All “retina displays” have a scaling factor above 1.0 by default,
+but the specific value varies across devices.</p>
+</li>
+<li>
+<p><strong>X11:</strong> Many man-hours have been spent trying to figure out how to handle DPI in X11.
+Winit currently uses a three-pronged approach:</p>
+<ul>
+<li>Use the value in the <code>WINIT_X11_SCALE_FACTOR</code> environment variable if present.</li>
+<li>If not present, use the value set in <code>Xft.dpi</code> in Xresources.</li>
+<li>Otherwise, calculate the scale factor based on the millimeter monitor dimensions
+provided by XRandR.</li>
+</ul>
+<p>If <code>WINIT_X11_SCALE_FACTOR</code> is set to <code>randr</code>, it’ll ignore the <code>Xft.dpi</code> field and use
+the   XRandR scaling method. Generally speaking, you should try to configure the
+standard system   variables to do what you want before resorting to
+<code>WINIT_X11_SCALE_FACTOR</code>.</p>
+</li>
+<li>
+<p><strong>Wayland:</strong> The scale factor is suggested by the compositor for each window individually
+by using the wp-fractional-scale protocol if available. Falls back to integer-scale
+factors otherwise.</p>
+<p>The monitor scale factor may differ from the window scale factor.</p>
+</li>
+<li>
+<p><strong>iOS:</strong> Scale factors are set by Apple to the value that best suits the device, and range
+from <code>1.0</code> to <code>3.0</code>. See <a href="https://developer.apple.com/library/archive/documentation/DeviceInformation/Reference/iOSDeviceCompatibility/Displays/Displays.html">this article</a> and <a href="https://developer.apple.com/design/human-interface-guidelines/macos/icons-and-images/image-size-and-resolution/">this article</a> for more
+information.</p>
+<p>This uses the underlying <code>UIView</code>’s <a href="https://developer.apple.com/documentation/uikit/uiview/1622657-contentscalefactor?language=objc"><code>contentScaleFactor</code></a>.</p>
+</li>
+<li>
+<p><strong>Android:</strong> Scale factors are set by the manufacturer to the value that best suits the
+device, and range from <code>1.0</code> to <code>4.0</code>. See <a href="https://developer.android.com/training/multiscreen/screendensities">this article</a> for more information.</p>
+<p>This is currently unimplemented, and this function always returns 1.0.</p>
+</li>
+<li>
+<p><strong>Web:</strong> The scale factor is the ratio between CSS pixels and the physical device pixels.
+In other words, it is the value of <a href="https://developer.mozilla.org/en-US/docs/Web/API/Window/devicePixelRatio"><code>window.devicePixelRatio</code></a>. It is affected by
+both the screen scaling and the browser zoom level and can go below <code>1.0</code>.</p>
+</li>
+<li>
+<p><strong>Orbital:</strong> This is currently unimplemented, and this function always returns 1.0.</p>
+</li>
+</ul>
+</div></details><details class="toggle method-toggle" open><summary><section id="tymethod.request_redraw" class="method"><a class="src rightside" href="../../../../src/winit/window.rs.html#543">Source</a><h4 class="code-header">fn <a href="#tymethod.request_redraw" class="fn">request_redraw</a>(&amp;self)</h4></section></summary><div class="docblock"><p>Queues a <a href="../event/enum.WindowEvent.html#variant.RedrawRequested" title="variant cosmic::iced_winit::winit::event::WindowEvent::RedrawRequested"><code>WindowEvent::RedrawRequested</code></a> event to be emitted that aligns with the windowing
+system drawing loop.</p>
+<p>This is the <strong>strongly encouraged</strong> method of redrawing windows, as it can integrate with
+OS-requested redraws (e.g. when a window gets resized). To improve the event delivery
+consider using <a href="trait.Window.html#tymethod.pre_present_notify" title="method cosmic::iced_winit::winit::window::Window::pre_present_notify"><code>Window::pre_present_notify</code></a> as described in docs.</p>
+<p>Applications should always aim to redraw whenever they receive a <code>RedrawRequested</code> event.</p>
+<p>There are no strong guarantees about when exactly a <code>RedrawRequest</code> event will be emitted
+with respect to other events, since the requirements can vary significantly between
+windowing systems.</p>
+<p>However as the event aligns with the windowing system drawing loop, it may not arrive in
+same or even next event loop iteration.</p>
+<h6 id="platform-specific-2"><a class="doc-anchor" href="#platform-specific-2">§</a>Platform-specific</h6>
+<ul>
+<li><strong>Windows</strong> This API uses <code>RedrawWindow</code> to request a <code>WM_PAINT</code> message and
+<code>RedrawRequested</code> is emitted in sync with any <code>WM_PAINT</code> messages.</li>
+<li><strong>Wayland:</strong> The events are aligned with the frame callbacks when
+<a href="trait.Window.html#tymethod.pre_present_notify" title="method cosmic::iced_winit::winit::window::Window::pre_present_notify"><code>Window::pre_present_notify</code></a> is used.</li>
+<li><strong>Web:</strong> <a href="../event/enum.WindowEvent.html#variant.RedrawRequested" title="variant cosmic::iced_winit::winit::event::WindowEvent::RedrawRequested"><code>WindowEvent::RedrawRequested</code></a> will be aligned with the
+<code>requestAnimationFrame</code>.</li>
+</ul>
+</div></details><details class="toggle method-toggle" open><summary><section id="tymethod.pre_present_notify" class="method"><a class="src rightside" href="../../../../src/winit/window.rs.html#577">Source</a><h4 class="code-header">fn <a href="#tymethod.pre_present_notify" class="fn">pre_present_notify</a>(&amp;self)</h4></section></summary><div class="docblock"><p>Notify the windowing system before presenting to the window.</p>
+<p>You should call this event after your drawing operations, but before you submit
+the buffer to the display or commit your drawings. Doing so will help winit to properly
+schedule and make assumptions about its internal state. For example, it could properly
+throttle <a href="../event/enum.WindowEvent.html#variant.RedrawRequested" title="variant cosmic::iced_winit::winit::event::WindowEvent::RedrawRequested"><code>WindowEvent::RedrawRequested</code></a>.</p>
+<h6 id="example"><a class="doc-anchor" href="#example">§</a>Example</h6>
+<p>This example illustrates how it looks with OpenGL, but it applies to other graphics
+APIs and software rendering.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="comment">// Do the actual drawing with OpenGL.
+
+// Notify winit that we're about to submit buffer to the windowing system.
+</span>window.pre_present_notify();
+
+<span class="comment">// Submit buffer to the windowing system.
+</span>swap_buffers();</code></pre></div>
+<h6 id="platform-specific-3"><a class="doc-anchor" href="#platform-specific-3">§</a>Platform-specific</h6>
+<ul>
+<li><strong>Android / iOS / X11 / Web / Windows / macOS / Orbital:</strong> Unsupported.</li>
+<li><strong>Wayland:</strong> Schedules a frame callback to throttle <a href="../event/enum.WindowEvent.html#variant.RedrawRequested" title="variant cosmic::iced_winit::winit::event::WindowEvent::RedrawRequested"><code>WindowEvent::RedrawRequested</code></a>.</li>
+</ul>
+</div></details><details class="toggle method-toggle" open><summary><section id="tymethod.reset_dead_keys" class="method"><a class="src rightside" href="../../../../src/winit/window.rs.html#591">Source</a><h4 class="code-header">fn <a href="#tymethod.reset_dead_keys" class="fn">reset_dead_keys</a>(&amp;self)</h4></section></summary><div class="docblock"><p>Reset the dead key state of the keyboard.</p>
+<p>This is useful when a dead key is bound to trigger an action. Then
+this function can be called to reset the dead key state so that
+follow-up text input won’t be affected by the dead key.</p>
+<h6 id="platform-specific-4"><a class="doc-anchor" href="#platform-specific-4">§</a>Platform-specific</h6>
+<ul>
+<li><strong>Web, macOS:</strong> Does nothing</li>
+</ul>
+</div></details><details class="toggle method-toggle" open><summary><section id="tymethod.inner_position" class="method"><a class="src rightside" href="../../../../src/winit/window.rs.html#607">Source</a><h4 class="code-header">fn <a href="#tymethod.inner_position" class="fn">inner_position</a>(&amp;self) -&gt; <a class="enum" href="https://doc.rust-lang.org/1.87.0/core/result/enum.Result.html" title="enum core::result::Result">Result</a>&lt;<a class="struct" href="../dpi/struct.PhysicalPosition.html" title="struct cosmic::iced_winit::winit::dpi::PhysicalPosition">PhysicalPosition</a>&lt;<a class="primitive" href="https://doc.rust-lang.org/1.87.0/std/primitive.i32.html">i32</a>&gt;, <a class="enum" href="../error/enum.RequestError.html" title="enum cosmic::iced_winit::winit::error::RequestError">RequestError</a>&gt;</h4></section></summary><div class="docblock"><p>Returns the position of the top-left hand corner of the window’s client area relative to the
+top-left hand corner of the desktop.</p>
+<p>The same conditions that apply to <a href="trait.Window.html#tymethod.outer_position" title="method cosmic::iced_winit::winit::window::Window::outer_position"><code>Window::outer_position</code></a> apply to this method.</p>
+<h6 id="platform-specific-5"><a class="doc-anchor" href="#platform-specific-5">§</a>Platform-specific</h6>
+<ul>
+<li><strong>iOS:</strong> Returns the top left coordinates of the window’s <a href="https://developer.apple.com/documentation/uikit/uiview/2891103-safeareainsets?language=objc">safe area</a> in the screen space
+coordinate system.</li>
+<li><strong>Web:</strong> Returns the top-left coordinates relative to the viewport. <em>Note: this returns
+the same value as <a href="trait.Window.html#tymethod.outer_position" title="method cosmic::iced_winit::winit::window::Window::outer_position"><code>Window::outer_position</code></a>.</em></li>
+<li><strong>Android / Wayland:</strong> Always returns <a href="../error/enum.RequestError.html#variant.NotSupported" title="variant cosmic::iced_winit::winit::error::RequestError::NotSupported"><code>RequestError::NotSupported</code></a>.</li>
+</ul>
+</div></details><details class="toggle method-toggle" open><summary><section id="tymethod.outer_position" class="method"><a class="src rightside" href="../../../../src/winit/window.rs.html#625">Source</a><h4 class="code-header">fn <a href="#tymethod.outer_position" class="fn">outer_position</a>(&amp;self) -&gt; <a class="enum" href="https://doc.rust-lang.org/1.87.0/core/result/enum.Result.html" title="enum core::result::Result">Result</a>&lt;<a class="struct" href="../dpi/struct.PhysicalPosition.html" title="struct cosmic::iced_winit::winit::dpi::PhysicalPosition">PhysicalPosition</a>&lt;<a class="primitive" href="https://doc.rust-lang.org/1.87.0/std/primitive.i32.html">i32</a>&gt;, <a class="enum" href="../error/enum.RequestError.html" title="enum cosmic::iced_winit::winit::error::RequestError">RequestError</a>&gt;</h4></section></summary><div class="docblock"><p>Returns the position of the top-left hand corner of the window relative to the
+top-left hand corner of the desktop.</p>
+<p>Note that the top-left hand corner of the desktop is not necessarily the same as
+the screen. If the user uses a desktop with multiple monitors, the top-left hand corner
+of the desktop is the top-left hand corner of the monitor at the top-left of the desktop.</p>
+<p>The coordinates can be negative if the top-left hand corner of the window is outside
+of the visible screen region.</p>
+<h6 id="platform-specific-6"><a class="doc-anchor" href="#platform-specific-6">§</a>Platform-specific</h6>
+<ul>
+<li><strong>iOS:</strong> Returns the top left coordinates of the window in the screen space coordinate
+system.</li>
+<li><strong>Web:</strong> Returns the top-left coordinates relative to the viewport.</li>
+<li><strong>Android / Wayland:</strong> Always returns <a href="../error/enum.RequestError.html#variant.NotSupported" title="variant cosmic::iced_winit::winit::error::RequestError::NotSupported"><code>RequestError::NotSupported</code></a>.</li>
+</ul>
+</div></details><details class="toggle method-toggle" open><summary><section id="tymethod.set_outer_position" class="method"><a class="src rightside" href="../../../../src/winit/window.rs.html#653">Source</a><h4 class="code-header">fn <a href="#tymethod.set_outer_position" class="fn">set_outer_position</a>(&amp;self, position: <a class="enum" href="../dpi/enum.Position.html" title="enum cosmic::iced_winit::winit::dpi::Position">Position</a>)</h4></section></summary><div class="docblock"><p>Modifies the position of the window.</p>
+<p>See <a href="trait.Window.html#tymethod.outer_position" title="method cosmic::iced_winit::winit::window::Window::outer_position"><code>Window::outer_position</code></a> for more information about the coordinates.
+This automatically un-maximizes the window if it’s maximized.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="comment">// Specify the position in logical dimensions like this:
+</span>window.set_outer_position(LogicalPosition::new(<span class="number">400.0</span>, <span class="number">200.0</span>).into());
+
+<span class="comment">// Or specify the position in physical dimensions like this:
+</span>window.set_outer_position(PhysicalPosition::new(<span class="number">400</span>, <span class="number">200</span>).into());</code></pre></div>
+<h6 id="platform-specific-7"><a class="doc-anchor" href="#platform-specific-7">§</a>Platform-specific</h6>
+<ul>
+<li><strong>iOS:</strong> Sets the top left coordinates of the window in the screen space coordinate
+system.</li>
+<li><strong>Web:</strong> Sets the top-left coordinates relative to the viewport. Doesn’t account for CSS
+<a href="https://developer.mozilla.org/en-US/docs/Web/CSS/transform"><code>transform</code></a>.</li>
+<li><strong>Android / Wayland:</strong> Unsupported.</li>
+</ul>
+</div></details><details class="toggle method-toggle" open><summary><section id="tymethod.surface_size" class="method"><a class="src rightside" href="../../../../src/winit/window.rs.html#667">Source</a><h4 class="code-header">fn <a href="#tymethod.surface_size" class="fn">surface_size</a>(&amp;self) -&gt; <a class="struct" href="../dpi/struct.PhysicalSize.html" title="struct cosmic::iced_winit::winit::dpi::PhysicalSize">PhysicalSize</a>&lt;<a class="primitive" href="https://doc.rust-lang.org/1.87.0/std/primitive.u32.html">u32</a>&gt;</h4></section></summary><div class="docblock"><p>Returns the size of the window’s render-able surface.</p>
+<p>This is the dimensions you should pass to things like Wgpu or Glutin when configuring.</p>
+<h6 id="platform-specific-8"><a class="doc-anchor" href="#platform-specific-8">§</a>Platform-specific</h6>
+<ul>
+<li><strong>iOS:</strong> Returns the <code>PhysicalSize</code> of the window’s <a href="https://developer.apple.com/documentation/uikit/uiview/2891103-safeareainsets?language=objc">safe area</a> in screen space
+coordinates.</li>
+<li><strong>Web:</strong> Returns the size of the canvas element. Doesn’t account for CSS <a href="https://developer.mozilla.org/en-US/docs/Web/CSS/transform"><code>transform</code></a>.</li>
+</ul>
+</div></details><details class="toggle method-toggle" open><summary><section id="tymethod.request_surface_size" class="method"><a class="src rightside" href="../../../../src/winit/window.rs.html#704">Source</a><h4 class="code-header">fn <a href="#tymethod.request_surface_size" class="fn">request_surface_size</a>(&amp;self, size: <a class="enum" href="../dpi/enum.Size.html" title="enum cosmic::iced_winit::winit::dpi::Size">Size</a>) -&gt; <a class="enum" href="https://doc.rust-lang.org/1.87.0/core/option/enum.Option.html" title="enum core::option::Option">Option</a>&lt;<a class="struct" href="../dpi/struct.PhysicalSize.html" title="struct cosmic::iced_winit::winit::dpi::PhysicalSize">PhysicalSize</a>&lt;<a class="primitive" href="https://doc.rust-lang.org/1.87.0/std/primitive.u32.html">u32</a>&gt;&gt;</h4></section></summary><div class="docblock"><p>Request the new size for the surface.</p>
+<p>On platforms where the size is entirely controlled by the user the
+applied size will be returned immediately, resize event in such case
+may not be generated.</p>
+<p>On platforms where resizing is disallowed by the windowing system, the current surface size
+is returned immediately, and the user one is ignored.</p>
+<p>When <code>None</code> is returned, it means that the request went to the display system,
+and the actual size will be delivered later with the <a href="../event/enum.WindowEvent.html#variant.SurfaceResized" title="variant cosmic::iced_winit::winit::event::WindowEvent::SurfaceResized"><code>WindowEvent::SurfaceResized</code></a>.</p>
+<p>See <a href="trait.Window.html#tymethod.surface_size" title="method cosmic::iced_winit::winit::window::Window::surface_size"><code>Window::surface_size</code></a> for more information about the values.</p>
+<p>The request could automatically un-maximize the window if it’s maximized.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="comment">// Specify the size in logical dimensions like this:
+</span><span class="kw">let _ </span>= window.request_surface_size(LogicalSize::new(<span class="number">400.0</span>, <span class="number">200.0</span>).into());
+
+<span class="comment">// Or specify the size in physical dimensions like this:
+</span><span class="kw">let _ </span>= window.request_surface_size(PhysicalSize::new(<span class="number">400</span>, <span class="number">200</span>).into());</code></pre></div>
+<h6 id="platform-specific-9"><a class="doc-anchor" href="#platform-specific-9">§</a>Platform-specific</h6>
+<ul>
+<li><strong>Web:</strong> Sets the size of the canvas element. Doesn’t account for CSS <a href="https://developer.mozilla.org/en-US/docs/Web/CSS/transform"><code>transform</code></a>.</li>
+</ul>
+</div></details><details class="toggle method-toggle" open><summary><section id="tymethod.outer_size" class="method"><a class="src rightside" href="../../../../src/winit/window.rs.html#716">Source</a><h4 class="code-header">fn <a href="#tymethod.outer_size" class="fn">outer_size</a>(&amp;self) -&gt; <a class="struct" href="../dpi/struct.PhysicalSize.html" title="struct cosmic::iced_winit::winit::dpi::PhysicalSize">PhysicalSize</a>&lt;<a class="primitive" href="https://doc.rust-lang.org/1.87.0/std/primitive.u32.html">u32</a>&gt;</h4></section></summary><div class="docblock"><p>Returns the size of the entire window.</p>
+<p>These dimensions include window decorations like the title bar and borders. If you don’t
+want that (and you usually don’t), use <a href="trait.Window.html#tymethod.surface_size" title="method cosmic::iced_winit::winit::window::Window::surface_size"><code>Window::surface_size</code></a> instead.</p>
+<h6 id="platform-specific-10"><a class="doc-anchor" href="#platform-specific-10">§</a>Platform-specific</h6>
+<ul>
+<li><strong>iOS:</strong> Returns the <a href="../dpi/struct.PhysicalSize.html" title="struct cosmic::iced_winit::winit::dpi::PhysicalSize"><code>PhysicalSize</code></a> of the window in screen space coordinates.</li>
+<li><strong>Web:</strong> Returns the size of the canvas element. <em>Note: this returns the same value as
+<a href="trait.Window.html#tymethod.surface_size" title="method cosmic::iced_winit::winit::window::Window::surface_size"><code>Window::surface_size</code></a>.</em></li>
+</ul>
+</div></details><details class="toggle method-toggle" open><summary><section id="tymethod.set_min_surface_size" class="method"><a class="src rightside" href="../../../../src/winit/window.rs.html#735">Source</a><h4 class="code-header">fn <a href="#tymethod.set_min_surface_size" class="fn">set_min_surface_size</a>(&amp;self, min_size: <a class="enum" href="https://doc.rust-lang.org/1.87.0/core/option/enum.Option.html" title="enum core::option::Option">Option</a>&lt;<a class="enum" href="../dpi/enum.Size.html" title="enum cosmic::iced_winit::winit::dpi::Size">Size</a>&gt;)</h4></section></summary><div class="docblock"><p>Sets a minimum dimensions of the window’s surface.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="comment">// Specify the size in logical dimensions like this:
+</span>window.set_min_surface_size(<span class="prelude-val">Some</span>(LogicalSize::new(<span class="number">400.0</span>, <span class="number">200.0</span>).into()));
+
+<span class="comment">// Or specify the size in physical dimensions like this:
+</span>window.set_min_surface_size(<span class="prelude-val">Some</span>(PhysicalSize::new(<span class="number">400</span>, <span class="number">200</span>).into()));</code></pre></div>
+<h6 id="platform-specific-11"><a class="doc-anchor" href="#platform-specific-11">§</a>Platform-specific</h6>
+<ul>
+<li><strong>iOS / Android / Orbital:</strong> Unsupported.</li>
+</ul>
+</div></details><details class="toggle method-toggle" open><summary><section id="tymethod.set_max_surface_size" class="method"><a class="src rightside" href="../../../../src/winit/window.rs.html#754">Source</a><h4 class="code-header">fn <a href="#tymethod.set_max_surface_size" class="fn">set_max_surface_size</a>(&amp;self, max_size: <a class="enum" href="https://doc.rust-lang.org/1.87.0/core/option/enum.Option.html" title="enum core::option::Option">Option</a>&lt;<a class="enum" href="../dpi/enum.Size.html" title="enum cosmic::iced_winit::winit::dpi::Size">Size</a>&gt;)</h4></section></summary><div class="docblock"><p>Sets a maximum dimensions of the window’s surface.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="comment">// Specify the size in logical dimensions like this:
+</span>window.set_max_surface_size(<span class="prelude-val">Some</span>(LogicalSize::new(<span class="number">400.0</span>, <span class="number">200.0</span>).into()));
+
+<span class="comment">// Or specify the size in physical dimensions like this:
+</span>window.set_max_surface_size(<span class="prelude-val">Some</span>(PhysicalSize::new(<span class="number">400</span>, <span class="number">200</span>).into()));</code></pre></div>
+<h6 id="platform-specific-12"><a class="doc-anchor" href="#platform-specific-12">§</a>Platform-specific</h6>
+<ul>
+<li><strong>iOS / Android / Orbital:</strong> Unsupported.</li>
+</ul>
+</div></details><details class="toggle method-toggle" open><summary><section id="tymethod.surface_resize_increments" class="method"><a class="src rightside" href="../../../../src/winit/window.rs.html#761">Source</a><h4 class="code-header">fn <a href="#tymethod.surface_resize_increments" class="fn">surface_resize_increments</a>(&amp;self) -&gt; <a class="enum" href="https://doc.rust-lang.org/1.87.0/core/option/enum.Option.html" title="enum core::option::Option">Option</a>&lt;<a class="struct" href="../dpi/struct.PhysicalSize.html" title="struct cosmic::iced_winit::winit::dpi::PhysicalSize">PhysicalSize</a>&lt;<a class="primitive" href="https://doc.rust-lang.org/1.87.0/std/primitive.u32.html">u32</a>&gt;&gt;</h4></section></summary><div class="docblock"><p>Returns surface resize increments if any were set.</p>
+<h6 id="platform-specific-13"><a class="doc-anchor" href="#platform-specific-13">§</a>Platform-specific</h6>
+<ul>
+<li><strong>iOS / Android / Web / Wayland / Orbital:</strong> Always returns <a href="https://doc.rust-lang.org/1.87.0/core/option/enum.Option.html#variant.None" title="variant core::option::Option::None"><code>None</code></a>.</li>
+</ul>
+</div></details><details class="toggle method-toggle" open><summary><section id="tymethod.set_surface_resize_increments" class="method"><a class="src rightside" href="../../../../src/winit/window.rs.html#774">Source</a><h4 class="code-header">fn <a href="#tymethod.set_surface_resize_increments" class="fn">set_surface_resize_increments</a>(&amp;self, increments: <a class="enum" href="https://doc.rust-lang.org/1.87.0/core/option/enum.Option.html" title="enum core::option::Option">Option</a>&lt;<a class="enum" href="../dpi/enum.Size.html" title="enum cosmic::iced_winit::winit::dpi::Size">Size</a>&gt;)</h4></section></summary><div class="docblock"><p>Sets resize increments of the surface.</p>
+<p>This is a niche constraint hint usually employed by terminal emulators and other such apps
+that need “blocky” resizes.</p>
+<h6 id="platform-specific-14"><a class="doc-anchor" href="#platform-specific-14">§</a>Platform-specific</h6>
+<ul>
+<li><strong>macOS:</strong> Increments are converted to logical size and then macOS rounds them to whole
+numbers.</li>
+<li><strong>Wayland:</strong> Not implemented.</li>
+<li><strong>iOS / Android / Web / Orbital:</strong> Unsupported.</li>
+</ul>
+</div></details><details class="toggle method-toggle" open><summary><section id="tymethod.set_title" class="method"><a class="src rightside" href="../../../../src/winit/window.rs.html#781">Source</a><h4 class="code-header">fn <a href="#tymethod.set_title" class="fn">set_title</a>(&amp;self, title: &amp;<a class="primitive" href="https://doc.rust-lang.org/1.87.0/std/primitive.str.html">str</a>)</h4></section></summary><div class="docblock"><p>Modifies the title of the window.</p>
+<h6 id="platform-specific-15"><a class="doc-anchor" href="#platform-specific-15">§</a>Platform-specific</h6>
+<ul>
+<li><strong>iOS / Android:</strong> Unsupported.</li>
+</ul>
+</div></details><details class="toggle method-toggle" open><summary><section id="tymethod.set_transparent" class="method"><a class="src rightside" href="../../../../src/winit/window.rs.html#798">Source</a><h4 class="code-header">fn <a href="#tymethod.set_transparent" class="fn">set_transparent</a>(&amp;self, transparent: <a class="primitive" href="https://doc.rust-lang.org/1.87.0/std/primitive.bool.html">bool</a>)</h4></section></summary><div class="docblock"><p>Change the window transparency state.</p>
+<p>This is just a hint that may not change anything about
+the window transparency, however doing a mismatch between
+the content of your window and this hint may result in
+visual artifacts.</p>
+<p>The default value follows the <a href="struct.WindowAttributes.html#method.with_transparent" title="method cosmic::iced_winit::winit::window::WindowAttributes::with_transparent"><code>WindowAttributes::with_transparent</code></a>.</p>
+<h6 id="platform-specific-16"><a class="doc-anchor" href="#platform-specific-16">§</a>Platform-specific</h6>
+<ul>
+<li><strong>macOS:</strong> This will reset the window’s background color.</li>
+<li><strong>Web / iOS / Android:</strong> Unsupported.</li>
+<li><strong>X11:</strong> Can only be set while building the window, with
+<a href="struct.WindowAttributes.html#method.with_transparent" title="method cosmic::iced_winit::winit::window::WindowAttributes::with_transparent"><code>WindowAttributes::with_transparent</code></a>.</li>
+</ul>
+</div></details><details class="toggle method-toggle" open><summary><section id="tymethod.set_blur" class="method"><a class="src rightside" href="../../../../src/winit/window.rs.html#808">Source</a><h4 class="code-header">fn <a href="#tymethod.set_blur" class="fn">set_blur</a>(&amp;self, blur: <a class="primitive" href="https://doc.rust-lang.org/1.87.0/std/primitive.bool.html">bool</a>)</h4></section></summary><div class="docblock"><p>Change the window blur state.</p>
+<p>If <code>true</code>, this will make the transparent window background blurry.</p>
+<h6 id="platform-specific-17"><a class="doc-anchor" href="#platform-specific-17">§</a>Platform-specific</h6>
+<ul>
+<li><strong>Android / iOS / X11 / Web / Windows:</strong> Unsupported.</li>
+<li><strong>Wayland:</strong> Only works with org_kde_kwin_blur_manager protocol.</li>
+</ul>
+</div></details><details class="toggle method-toggle" open><summary><section id="tymethod.set_visible" class="method"><a class="src rightside" href="../../../../src/winit/window.rs.html#817">Source</a><h4 class="code-header">fn <a href="#tymethod.set_visible" class="fn">set_visible</a>(&amp;self, visible: <a class="primitive" href="https://doc.rust-lang.org/1.87.0/std/primitive.bool.html">bool</a>)</h4></section></summary><div class="docblock"><p>Modifies the window’s visibility.</p>
+<p>If <code>false</code>, this will hide the window. If <code>true</code>, this will show the window.</p>
+<h6 id="platform-specific-18"><a class="doc-anchor" href="#platform-specific-18">§</a>Platform-specific</h6>
+<ul>
+<li><strong>Android / Wayland / Web:</strong> Unsupported.</li>
+</ul>
+</div></details><details class="toggle method-toggle" open><summary><section id="tymethod.is_visible" class="method"><a class="src rightside" href="../../../../src/winit/window.rs.html#828">Source</a><h4 class="code-header">fn <a href="#tymethod.is_visible" class="fn">is_visible</a>(&amp;self) -&gt; <a class="enum" href="https://doc.rust-lang.org/1.87.0/core/option/enum.Option.html" title="enum core::option::Option">Option</a>&lt;<a class="primitive" href="https://doc.rust-lang.org/1.87.0/std/primitive.bool.html">bool</a>&gt;</h4></section></summary><div class="docblock"><p>Gets the window’s current visibility state.</p>
+<p><code>None</code> means it couldn’t be determined, so it is not recommended to use this to drive your
+rendering backend.</p>
+<h6 id="platform-specific-19"><a class="doc-anchor" href="#platform-specific-19">§</a>Platform-specific</h6>
+<ul>
+<li><strong>X11:</strong> Not implemented.</li>
+<li><strong>Wayland / iOS / Android / Web:</strong> Unsupported.</li>
+</ul>
+</div></details><details class="toggle method-toggle" open><summary><section id="tymethod.set_resizable" class="method"><a class="src rightside" href="../../../../src/winit/window.rs.html#845">Source</a><h4 class="code-header">fn <a href="#tymethod.set_resizable" class="fn">set_resizable</a>(&amp;self, resizable: <a class="primitive" href="https://doc.rust-lang.org/1.87.0/std/primitive.bool.html">bool</a>)</h4></section></summary><div class="docblock"><p>Sets whether the window is resizable or not.</p>
+<p>Note that making the window unresizable doesn’t exempt you from handling
+<a href="../event/enum.WindowEvent.html#variant.SurfaceResized" title="variant cosmic::iced_winit::winit::event::WindowEvent::SurfaceResized"><code>WindowEvent::SurfaceResized</code></a>, as that event can still be triggered by DPI scaling,
+entering fullscreen mode, etc. Also, the window could still be resized by calling
+<a href="trait.Window.html#tymethod.request_surface_size" title="method cosmic::iced_winit::winit::window::Window::request_surface_size"><code>Window::request_surface_size</code></a>.</p>
+<h6 id="platform-specific-20"><a class="doc-anchor" href="#platform-specific-20">§</a>Platform-specific</h6>
+<p>This only has an effect on desktop platforms.</p>
+<ul>
+<li><strong>X11:</strong> Due to a bug in XFCE, this has no effect on Xfwm.</li>
+<li><strong>iOS / Android / Web:</strong> Unsupported.</li>
+</ul>
+</div></details><details class="toggle method-toggle" open><summary><section id="tymethod.is_resizable" class="method"><a class="src rightside" href="../../../../src/winit/window.rs.html#853">Source</a><h4 class="code-header">fn <a href="#tymethod.is_resizable" class="fn">is_resizable</a>(&amp;self) -&gt; <a class="primitive" href="https://doc.rust-lang.org/1.87.0/std/primitive.bool.html">bool</a></h4></section></summary><div class="docblock"><p>Gets the window’s current resizable state.</p>
+<h6 id="platform-specific-21"><a class="doc-anchor" href="#platform-specific-21">§</a>Platform-specific</h6>
+<ul>
+<li><strong>X11:</strong> Not implemented.</li>
+<li><strong>iOS / Android / Web:</strong> Unsupported.</li>
+</ul>
+</div></details><details class="toggle method-toggle" open><summary><section id="tymethod.set_enabled_buttons" class="method"><a class="src rightside" href="../../../../src/winit/window.rs.html#861">Source</a><h4 class="code-header">fn <a href="#tymethod.set_enabled_buttons" class="fn">set_enabled_buttons</a>(&amp;self, buttons: <a class="struct" href="struct.WindowButtons.html" title="struct cosmic::iced_winit::winit::window::WindowButtons">WindowButtons</a>)</h4></section></summary><div class="docblock"><p>Sets the enabled window buttons.</p>
+<h6 id="platform-specific-22"><a class="doc-anchor" href="#platform-specific-22">§</a>Platform-specific</h6>
+<ul>
+<li><strong>Wayland / X11 / Orbital:</strong> Not implemented.</li>
+<li><strong>Web / iOS / Android:</strong> Unsupported.</li>
+</ul>
+</div></details><details class="toggle method-toggle" open><summary><section id="tymethod.enabled_buttons" class="method"><a class="src rightside" href="../../../../src/winit/window.rs.html#869">Source</a><h4 class="code-header">fn <a href="#tymethod.enabled_buttons" class="fn">enabled_buttons</a>(&amp;self) -&gt; <a class="struct" href="struct.WindowButtons.html" title="struct cosmic::iced_winit::winit::window::WindowButtons">WindowButtons</a></h4></section></summary><div class="docblock"><p>Gets the enabled window buttons.</p>
+<h6 id="platform-specific-23"><a class="doc-anchor" href="#platform-specific-23">§</a>Platform-specific</h6>
+<ul>
+<li><strong>Wayland / X11 / Orbital:</strong> Not implemented. Always returns <a href="struct.WindowButtons.html#method.all" title="associated function cosmic::iced_winit::winit::window::WindowButtons::all"><code>WindowButtons::all</code></a>.</li>
+<li><strong>Web / iOS / Android:</strong> Unsupported. Always returns <a href="struct.WindowButtons.html#method.all" title="associated function cosmic::iced_winit::winit::window::WindowButtons::all"><code>WindowButtons::all</code></a>.</li>
+</ul>
+</div></details><details class="toggle method-toggle" open><summary><section id="tymethod.set_minimized" class="method"><a class="src rightside" href="../../../../src/winit/window.rs.html#877">Source</a><h4 class="code-header">fn <a href="#tymethod.set_minimized" class="fn">set_minimized</a>(&amp;self, minimized: <a class="primitive" href="https://doc.rust-lang.org/1.87.0/std/primitive.bool.html">bool</a>)</h4></section></summary><div class="docblock"><p>Sets the window to minimized or back</p>
+<h6 id="platform-specific-24"><a class="doc-anchor" href="#platform-specific-24">§</a>Platform-specific</h6>
+<ul>
+<li><strong>iOS / Android / Web / Orbital:</strong> Unsupported.</li>
+<li><strong>Wayland:</strong> Un-minimize is unsupported.</li>
+</ul>
+</div></details><details class="toggle method-toggle" open><summary><section id="tymethod.is_minimized" class="method"><a class="src rightside" href="../../../../src/winit/window.rs.html#891">Source</a><h4 class="code-header">fn <a href="#tymethod.is_minimized" class="fn">is_minimized</a>(&amp;self) -&gt; <a class="enum" href="https://doc.rust-lang.org/1.87.0/core/option/enum.Option.html" title="enum core::option::Option">Option</a>&lt;<a class="primitive" href="https://doc.rust-lang.org/1.87.0/std/primitive.bool.html">bool</a>&gt;</h4></section></summary><div class="docblock"><p>Gets the window’s current minimized state.</p>
+<p><code>None</code> will be returned, if the minimized state couldn’t be determined.</p>
+<h6 id="note"><a class="doc-anchor" href="#note">§</a>Note</h6>
+<ul>
+<li>You shouldn’t stop rendering for minimized windows, however you could lower the fps.</li>
+</ul>
+<h6 id="platform-specific-25"><a class="doc-anchor" href="#platform-specific-25">§</a>Platform-specific</h6>
+<ul>
+<li><strong>Wayland</strong>: always <code>None</code>.</li>
+<li><strong>iOS / Android / Web / Orbital:</strong> Unsupported.</li>
+</ul>
+</div></details><details class="toggle method-toggle" open><summary><section id="tymethod.set_maximized" class="method"><a class="src rightside" href="../../../../src/winit/window.rs.html#898">Source</a><h4 class="code-header">fn <a href="#tymethod.set_maximized" class="fn">set_maximized</a>(&amp;self, maximized: <a class="primitive" href="https://doc.rust-lang.org/1.87.0/std/primitive.bool.html">bool</a>)</h4></section></summary><div class="docblock"><p>Sets the window to maximized or back.</p>
+<h6 id="platform-specific-26"><a class="doc-anchor" href="#platform-specific-26">§</a>Platform-specific</h6>
+<ul>
+<li><strong>iOS / Android / Web:</strong> Unsupported.</li>
+</ul>
+</div></details><details class="toggle method-toggle" open><summary><section id="tymethod.is_maximized" class="method"><a class="src rightside" href="../../../../src/winit/window.rs.html#905">Source</a><h4 class="code-header">fn <a href="#tymethod.is_maximized" class="fn">is_maximized</a>(&amp;self) -&gt; <a class="primitive" href="https://doc.rust-lang.org/1.87.0/std/primitive.bool.html">bool</a></h4></section></summary><div class="docblock"><p>Gets the window’s current maximized state.</p>
+<h6 id="platform-specific-27"><a class="doc-anchor" href="#platform-specific-27">§</a>Platform-specific</h6>
+<ul>
+<li><strong>iOS / Android / Web:</strong> Unsupported.</li>
+</ul>
+</div></details><details class="toggle method-toggle" open><summary><section id="tymethod.set_fullscreen" class="method"><a class="src rightside" href="../../../../src/winit/window.rs.html#934">Source</a><h4 class="code-header">fn <a href="#tymethod.set_fullscreen" class="fn">set_fullscreen</a>(&amp;self, fullscreen: <a class="enum" href="https://doc.rust-lang.org/1.87.0/core/option/enum.Option.html" title="enum core::option::Option">Option</a>&lt;<a class="enum" href="enum.Fullscreen.html" title="enum cosmic::iced_winit::winit::window::Fullscreen">Fullscreen</a>&gt;)</h4></section></summary><div class="docblock"><p>Sets the window to fullscreen or back.</p>
+<h6 id="platform-specific-28"><a class="doc-anchor" href="#platform-specific-28">§</a>Platform-specific</h6>
+<ul>
+<li>
+<p><strong>macOS:</strong> <a href="enum.Fullscreen.html#variant.Exclusive" title="variant cosmic::iced_winit::winit::window::Fullscreen::Exclusive"><code>Fullscreen::Exclusive</code></a> provides true exclusive mode with a video mode
+change. <em>Caveat!</em> macOS doesn’t provide task switching (or spaces!) while in exclusive
+fullscreen mode. This mode should be used when a video mode change is desired, but for a
+better user experience, borderless fullscreen might be preferred.</p>
+<p><a href="enum.Fullscreen.html#variant.Borderless" title="variant cosmic::iced_winit::winit::window::Fullscreen::Borderless"><code>Fullscreen::Borderless</code></a> provides a borderless fullscreen window on a
+separate space. This is the idiomatic way for fullscreen games to work
+on macOS. See <code>WindowExtMacOs::set_simple_fullscreen</code> if
+separate spaces are not preferred.</p>
+<p>The dock and the menu bar are disabled in exclusive fullscreen mode.</p>
+</li>
+<li>
+<p><strong>Wayland:</strong> Does not support exclusive fullscreen mode and will no-op a request.</p>
+</li>
+<li>
+<p><strong>Windows:</strong> Screen saver is disabled in fullscreen mode.</p>
+</li>
+<li>
+<p><strong>Android / Orbital:</strong> Unsupported.</p>
+</li>
+<li>
+<p><strong>Web:</strong> Passing a <a href="../monitor/struct.MonitorHandle.html" title="struct cosmic::iced_winit::winit::monitor::MonitorHandle"><code>MonitorHandle</code></a> or <a href="../monitor/struct.VideoModeHandle.html" title="struct cosmic::iced_winit::winit::monitor::VideoModeHandle"><code>VideoModeHandle</code></a> that was not created with
+detailed monitor permissions
+or calling without a <a href="https://developer.mozilla.org/en-US/docs/Glossary/Transient_activation">transient activation</a> does nothing.</p>
+</li>
+</ul>
+</div></details><details class="toggle method-toggle" open><summary><section id="tymethod.fullscreen" class="method"><a class="src rightside" href="../../../../src/winit/window.rs.html#943">Source</a><h4 class="code-header">fn <a href="#tymethod.fullscreen" class="fn">fullscreen</a>(&amp;self) -&gt; <a class="enum" href="https://doc.rust-lang.org/1.87.0/core/option/enum.Option.html" title="enum core::option::Option">Option</a>&lt;<a class="enum" href="enum.Fullscreen.html" title="enum cosmic::iced_winit::winit::window::Fullscreen">Fullscreen</a>&gt;</h4></section></summary><div class="docblock"><p>Gets the window’s current fullscreen state.</p>
+<h6 id="platform-specific-29"><a class="doc-anchor" href="#platform-specific-29">§</a>Platform-specific</h6>
+<ul>
+<li><strong>Android / Orbital:</strong> Will always return <code>None</code>.</li>
+<li><strong>Wayland:</strong> Can return <code>Borderless(None)</code> when there are no monitors.</li>
+<li><strong>Web:</strong> Can only return <code>None</code> or <code>Borderless(None)</code>.</li>
+</ul>
+</div></details><details class="toggle method-toggle" open><summary><section id="tymethod.set_decorations" class="method"><a class="src rightside" href="../../../../src/winit/window.rs.html#954">Source</a><h4 class="code-header">fn <a href="#tymethod.set_decorations" class="fn">set_decorations</a>(&amp;self, decorations: <a class="primitive" href="https://doc.rust-lang.org/1.87.0/std/primitive.bool.html">bool</a>)</h4></section></summary><div class="docblock"><p>Turn window decorations on or off.</p>
+<p>Enable/disable window decorations provided by the server or Winit.
+By default this is enabled. Note that fullscreen windows and windows on
+mobile and Web platforms naturally do not have decorations.</p>
+<h6 id="platform-specific-30"><a class="doc-anchor" href="#platform-specific-30">§</a>Platform-specific</h6>
+<ul>
+<li><strong>iOS / Android / Web:</strong> No effect.</li>
+</ul>
+</div></details><details class="toggle method-toggle" open><summary><section id="tymethod.is_decorated" class="method"><a class="src rightside" href="../../../../src/winit/window.rs.html#964">Source</a><h4 class="code-header">fn <a href="#tymethod.is_decorated" class="fn">is_decorated</a>(&amp;self) -&gt; <a class="primitive" href="https://doc.rust-lang.org/1.87.0/std/primitive.bool.html">bool</a></h4></section></summary><div class="docblock"><p>Gets the window’s current decorations state.</p>
+<p>Returns <code>true</code> when windows are decorated (server-side or by Winit).
+Also returns <code>true</code> when no decorations are required (mobile, Web).</p>
+<h6 id="platform-specific-31"><a class="doc-anchor" href="#platform-specific-31">§</a>Platform-specific</h6>
+<ul>
+<li><strong>iOS / Android / Web:</strong> Always returns <code>true</code>.</li>
+</ul>
+</div></details><details class="toggle method-toggle" open><summary><section id="tymethod.set_window_level" class="method"><a class="src rightside" href="../../../../src/winit/window.rs.html#971">Source</a><h4 class="code-header">fn <a href="#tymethod.set_window_level" class="fn">set_window_level</a>(&amp;self, level: <a class="enum" href="enum.WindowLevel.html" title="enum cosmic::iced_winit::winit::window::WindowLevel">WindowLevel</a>)</h4></section></summary><div class="docblock"><p>Change the window level.</p>
+<p>This is just a hint to the OS, and the system could ignore it.</p>
+<p>See <a href="enum.WindowLevel.html" title="enum cosmic::iced_winit::winit::window::WindowLevel"><code>WindowLevel</code></a> for details.</p>
+</div></details><details class="toggle method-toggle" open><summary><section id="tymethod.set_window_icon" class="method"><a class="src rightside" href="../../../../src/winit/window.rs.html#987">Source</a><h4 class="code-header">fn <a href="#tymethod.set_window_icon" class="fn">set_window_icon</a>(&amp;self, window_icon: <a class="enum" href="https://doc.rust-lang.org/1.87.0/core/option/enum.Option.html" title="enum core::option::Option">Option</a>&lt;<a class="struct" href="struct.Icon.html" title="struct cosmic::iced_winit::winit::window::Icon">Icon</a>&gt;)</h4></section></summary><div class="docblock"><p>Sets the window icon.</p>
+<p>On Windows and X11, this is typically the small icon in the top-left
+corner of the titlebar.</p>
+<h6 id="platform-specific-32"><a class="doc-anchor" href="#platform-specific-32">§</a>Platform-specific</h6>
+<ul>
+<li>
+<p><strong>iOS / Android / Web / Wayland / macOS / Orbital:</strong> Unsupported.</p>
+</li>
+<li>
+<p><strong>Windows:</strong> Sets <code>ICON_SMALL</code>. The base size for a window icon is 16x16, but it’s
+recommended to account for screen scaling and pick a multiple of that, i.e. 32x32.</p>
+</li>
+<li>
+<p><strong>X11:</strong> Has no universal guidelines for icon sizes, so you’re at the whims of the WM.
+That said, it’s usually in the same ballpark as on Windows.</p>
+</li>
+</ul>
+</div></details><details class="toggle method-toggle" open><summary><section id="tymethod.set_ime_cursor_area" class="method"><a class="src rightside" href="../../../../src/winit/window.rs.html#1029">Source</a><h4 class="code-header">fn <a href="#tymethod.set_ime_cursor_area" class="fn">set_ime_cursor_area</a>(&amp;self, position: <a class="enum" href="../dpi/enum.Position.html" title="enum cosmic::iced_winit::winit::dpi::Position">Position</a>, size: <a class="enum" href="../dpi/enum.Size.html" title="enum cosmic::iced_winit::winit::dpi::Size">Size</a>)</h4></section></summary><div class="docblock"><p>Set the IME cursor editing area, where the <code>position</code> is the top left corner of that area
+and <code>size</code> is the size of this area starting from the position. An example of such area
+could be a input field in the UI or line in the editor.</p>
+<p>The windowing system could place a candidate box close to that area, but try to not obscure
+the specified area, so the user input to it stays visible.</p>
+<p>The candidate box is the window / popup / overlay that allows you to select the desired
+characters. The look of this box may differ between input devices, even on the same
+platform.</p>
+<p>(Apple’s official term is “candidate window”, see their <a href="https://support.apple.com/guide/chinese-input-method/use-the-candidate-window-cim12992/104/mac/12.0">chinese</a> and <a href="https://support.apple.com/guide/japanese-input-method/use-the-candidate-window-jpim10262/6.3/mac/12.0">japanese</a> guides).</p>
+<h6 id="example-1"><a class="doc-anchor" href="#example-1">§</a>Example</h6>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="comment">// Specify the position in logical dimensions like this:
+</span>window.set_ime_cursor_area(
+    LogicalPosition::new(<span class="number">400.0</span>, <span class="number">200.0</span>).into(),
+    LogicalSize::new(<span class="number">100</span>, <span class="number">100</span>).into(),
+);
+
+<span class="comment">// Or specify the position in physical dimensions like this:
+</span>window.set_ime_cursor_area(
+    PhysicalPosition::new(<span class="number">400</span>, <span class="number">200</span>).into(),
+    PhysicalSize::new(<span class="number">100</span>, <span class="number">100</span>).into(),
+);</code></pre></div>
+<h6 id="platform-specific-33"><a class="doc-anchor" href="#platform-specific-33">§</a>Platform-specific</h6>
+<ul>
+<li><strong>X11:</strong> - area is not supported, only position.</li>
+<li><strong>iOS / Android / Web / Orbital:</strong> Unsupported.</li>
+</ul>
+</div></details><details class="toggle method-toggle" open><summary><section id="tymethod.set_ime_allowed" class="method"><a class="src rightside" href="../../../../src/winit/window.rs.html#1053">Source</a><h4 class="code-header">fn <a href="#tymethod.set_ime_allowed" class="fn">set_ime_allowed</a>(&amp;self, allowed: <a class="primitive" href="https://doc.rust-lang.org/1.87.0/std/primitive.bool.html">bool</a>)</h4></section></summary><div class="docblock"><p>Sets whether the window should get IME events</p>
+<p>When IME is allowed, the window will receive <a href="../event/enum.WindowEvent.html#variant.Ime" title="variant cosmic::iced_winit::winit::event::WindowEvent::Ime"><code>Ime</code></a> events, and during the
+preedit phase the window will NOT get <a href="../event/enum.WindowEvent.html#variant.KeyboardInput" title="variant cosmic::iced_winit::winit::event::WindowEvent::KeyboardInput"><code>KeyboardInput</code></a> events. The window
+should allow IME while it is expecting text input.</p>
+<p>When IME is not allowed, the window won’t receive <a href="../event/enum.WindowEvent.html#variant.Ime" title="variant cosmic::iced_winit::winit::event::WindowEvent::Ime"><code>Ime</code></a> events, and will
+receive <a href="../event/enum.WindowEvent.html#variant.KeyboardInput" title="variant cosmic::iced_winit::winit::event::WindowEvent::KeyboardInput"><code>KeyboardInput</code></a> events for every keypress instead. Not allowing
+IME is useful for games for example.</p>
+<p>IME is <strong>not</strong> allowed by default.</p>
+<h6 id="platform-specific-34"><a class="doc-anchor" href="#platform-specific-34">§</a>Platform-specific</h6>
+<ul>
+<li><strong>macOS:</strong> IME must be enabled to receive text-input where dead-key sequences are
+combined.</li>
+<li><strong>iOS:</strong> This will show / hide the soft keyboard.</li>
+<li><strong>Android / Web / Orbital:</strong> Unsupported.</li>
+<li><strong>X11</strong>: Enabling IME will disable dead keys reporting during compose.</li>
+</ul>
+</div></details><details class="toggle method-toggle" open><summary><section id="tymethod.set_ime_purpose" class="method"><a class="src rightside" href="../../../../src/winit/window.rs.html#1060">Source</a><h4 class="code-header">fn <a href="#tymethod.set_ime_purpose" class="fn">set_ime_purpose</a>(&amp;self, purpose: <a class="enum" href="enum.ImePurpose.html" title="enum cosmic::iced_winit::winit::window::ImePurpose">ImePurpose</a>)</h4></section></summary><div class="docblock"><p>Sets the IME purpose for the window using <a href="enum.ImePurpose.html" title="enum cosmic::iced_winit::winit::window::ImePurpose"><code>ImePurpose</code></a>.</p>
+<h6 id="platform-specific-35"><a class="doc-anchor" href="#platform-specific-35">§</a>Platform-specific</h6>
+<ul>
+<li><strong>iOS / Android / Web / Windows / X11 / macOS / Orbital:</strong> Unsupported.</li>
+</ul>
+</div></details><details class="toggle method-toggle" open><summary><section id="tymethod.focus_window" class="method"><a class="src rightside" href="../../../../src/winit/window.rs.html#1072">Source</a><h4 class="code-header">fn <a href="#tymethod.focus_window" class="fn">focus_window</a>(&amp;self)</h4></section></summary><div class="docblock"><p>Brings the window to the front and sets input focus. Has no effect if the window is
+already in focus, minimized, or not visible.</p>
+<p>This method steals input focus from other applications. Do not use this method unless
+you are certain that’s what the user wants. Focus stealing can cause an extremely disruptive
+user experience.</p>
+<h6 id="platform-specific-36"><a class="doc-anchor" href="#platform-specific-36">§</a>Platform-specific</h6>
+<ul>
+<li><strong>iOS / Android / Wayland / Orbital:</strong> Unsupported.</li>
+</ul>
+</div></details><details class="toggle method-toggle" open><summary><section id="tymethod.has_focus" class="method"><a class="src rightside" href="../../../../src/winit/window.rs.html#1079">Source</a><h4 class="code-header">fn <a href="#tymethod.has_focus" class="fn">has_focus</a>(&amp;self) -&gt; <a class="primitive" href="https://doc.rust-lang.org/1.87.0/std/primitive.bool.html">bool</a></h4></section></summary><div class="docblock"><p>Gets whether the window has keyboard focus.</p>
+<p>This queries the same state information as <a href="../event/enum.WindowEvent.html#variant.Focused" title="variant cosmic::iced_winit::winit::event::WindowEvent::Focused"><code>WindowEvent::Focused</code></a>.</p>
+</div></details><details class="toggle method-toggle" open><summary><section id="tymethod.request_user_attention" class="method"><a class="src rightside" href="../../../../src/winit/window.rs.html#1094">Source</a><h4 class="code-header">fn <a href="#tymethod.request_user_attention" class="fn">request_user_attention</a>(&amp;self, request_type: <a class="enum" href="https://doc.rust-lang.org/1.87.0/core/option/enum.Option.html" title="enum core::option::Option">Option</a>&lt;<a class="enum" href="enum.UserAttentionType.html" title="enum cosmic::iced_winit::winit::window::UserAttentionType">UserAttentionType</a>&gt;)</h4></section></summary><div class="docblock"><p>Requests user attention to the window, this has no effect if the application
+is already focused. How requesting for user attention manifests is platform dependent,
+see <a href="enum.UserAttentionType.html" title="enum cosmic::iced_winit::winit::window::UserAttentionType"><code>UserAttentionType</code></a> for details.</p>
+<p>Providing <code>None</code> will unset the request for user attention. Unsetting the request for
+user attention might not be done automatically by the WM when the window receives input.</p>
+<h6 id="platform-specific-37"><a class="doc-anchor" href="#platform-specific-37">§</a>Platform-specific</h6>
+<ul>
+<li><strong>iOS / Android / Web / Orbital:</strong> Unsupported.</li>
+<li><strong>macOS:</strong> <code>None</code> has no effect.</li>
+<li><strong>X11:</strong> Requests for user attention must be manually cleared.</li>
+<li><strong>Wayland:</strong> Requires <code>xdg_activation_v1</code> protocol, <code>None</code> has no effect.</li>
+</ul>
+</div></details><details class="toggle method-toggle" open><summary><section id="tymethod.set_theme" class="method"><a class="src rightside" href="../../../../src/winit/window.rs.html#1107">Source</a><h4 class="code-header">fn <a href="#tymethod.set_theme" class="fn">set_theme</a>(&amp;self, theme: <a class="enum" href="https://doc.rust-lang.org/1.87.0/core/option/enum.Option.html" title="enum core::option::Option">Option</a>&lt;<a class="enum" href="enum.Theme.html" title="enum cosmic::iced_winit::winit::window::Theme">Theme</a>&gt;)</h4></section></summary><div class="docblock"><p>Set or override the window theme.</p>
+<p>Specify <code>None</code> to reset the theme to the system default.</p>
+<h6 id="platform-specific-38"><a class="doc-anchor" href="#platform-specific-38">§</a>Platform-specific</h6>
+<ul>
+<li><strong>Wayland:</strong> Sets the theme for the client side decorations. Using <code>None</code> will use dbus to
+get the system preference.</li>
+<li><strong>X11:</strong> Sets <code>_GTK_THEME_VARIANT</code> hint to <code>dark</code> or <code>light</code> and if <code>None</code> is used, it
+will default to  <a href="enum.Theme.html#variant.Dark" title="variant cosmic::iced_winit::winit::window::Theme::Dark"><code>Theme::Dark</code></a>.</li>
+<li><strong>iOS / Android / Web / Orbital:</strong> Unsupported.</li>
+</ul>
+</div></details><details class="toggle method-toggle" open><summary><section id="tymethod.theme" class="method"><a class="src rightside" href="../../../../src/winit/window.rs.html#1117">Source</a><h4 class="code-header">fn <a href="#tymethod.theme" class="fn">theme</a>(&amp;self) -&gt; <a class="enum" href="https://doc.rust-lang.org/1.87.0/core/option/enum.Option.html" title="enum core::option::Option">Option</a>&lt;<a class="enum" href="enum.Theme.html" title="enum cosmic::iced_winit::winit::window::Theme">Theme</a>&gt;</h4></section></summary><div class="docblock"><p>Returns the current window theme.</p>
+<p>Returns <code>None</code> if it cannot be determined on the current platform.</p>
+<h6 id="platform-specific-39"><a class="doc-anchor" href="#platform-specific-39">§</a>Platform-specific</h6>
+<ul>
+<li><strong>iOS / Android / x11 / Orbital:</strong> Unsupported.</li>
+<li><strong>Wayland:</strong> Only returns theme overrides.</li>
+</ul>
+</div></details><details class="toggle method-toggle" open><summary><section id="tymethod.set_content_protected" class="method"><a class="src rightside" href="../../../../src/winit/window.rs.html#1128">Source</a><h4 class="code-header">fn <a href="#tymethod.set_content_protected" class="fn">set_content_protected</a>(&amp;self, protected: <a class="primitive" href="https://doc.rust-lang.org/1.87.0/std/primitive.bool.html">bool</a>)</h4></section></summary><div class="docblock"><p>Prevents the window contents from being captured by other apps.</p>
+<h6 id="platform-specific-40"><a class="doc-anchor" href="#platform-specific-40">§</a>Platform-specific</h6>
+<ul>
+<li><strong>macOS</strong>: if <code>false</code>, <a href="https://developer.apple.com/documentation/appkit/nswindowsharingtype/nswindowsharingnone"><code>NSWindowSharingNone</code></a> is used but doesn’t completely prevent all
+apps from reading the window content, for instance, QuickTime.</li>
+<li><strong>iOS / Android / x11 / Wayland / Web / Orbital:</strong> Unsupported.</li>
+</ul>
+</div></details><details class="toggle method-toggle" open><summary><section id="tymethod.title" class="method"><a class="src rightside" href="../../../../src/winit/window.rs.html#1135">Source</a><h4 class="code-header">fn <a href="#tymethod.title" class="fn">title</a>(&amp;self) -&gt; <a class="struct" href="https://doc.rust-lang.org/1.87.0/alloc/string/struct.String.html" title="struct alloc::string::String">String</a></h4></section></summary><div class="docblock"><p>Gets the current title of the window.</p>
+<h6 id="platform-specific-41"><a class="doc-anchor" href="#platform-specific-41">§</a>Platform-specific</h6>
+<ul>
+<li><strong>iOS / Android / x11 / Wayland / Web:</strong> Unsupported. Always returns an empty string.</li>
+</ul>
+</div></details><details class="toggle method-toggle" open><summary><section id="tymethod.set_cursor" class="method"><a class="src rightside" href="../../../../src/winit/window.rs.html#1144">Source</a><h4 class="code-header">fn <a href="#tymethod.set_cursor" class="fn">set_cursor</a>(&amp;self, cursor: <a class="enum" href="enum.Cursor.html" title="enum cosmic::iced_winit::winit::window::Cursor">Cursor</a>)</h4></section></summary><div class="docblock"><p>Modifies the cursor icon of the window.</p>
+<h6 id="platform-specific-42"><a class="doc-anchor" href="#platform-specific-42">§</a>Platform-specific</h6>
+<ul>
+<li><strong>iOS / Android / Orbital:</strong> Unsupported.</li>
+<li><strong>Web:</strong> Custom cursors have to be loaded and decoded first, until then the previous
+cursor is shown.</li>
+</ul>
+</div></details><details class="toggle method-toggle" open><summary><section id="tymethod.set_cursor_position" class="method"><a class="src rightside" href="../../../../src/winit/window.rs.html#1164">Source</a><h4 class="code-header">fn <a href="#tymethod.set_cursor_position" class="fn">set_cursor_position</a>(&amp;self, position: <a class="enum" href="../dpi/enum.Position.html" title="enum cosmic::iced_winit::winit::dpi::Position">Position</a>) -&gt; <a class="enum" href="https://doc.rust-lang.org/1.87.0/core/result/enum.Result.html" title="enum core::result::Result">Result</a>&lt;<a class="primitive" href="https://doc.rust-lang.org/1.87.0/std/primitive.unit.html">()</a>, <a class="enum" href="../error/enum.RequestError.html" title="enum cosmic::iced_winit::winit::error::RequestError">RequestError</a>&gt;</h4></section></summary><div class="docblock"><p>Changes the position of the cursor in window coordinates.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="comment">// Specify the position in logical dimensions like this:
+</span>window.set_cursor_position(LogicalPosition::new(<span class="number">400.0</span>, <span class="number">200.0</span>).into());
+
+<span class="comment">// Or specify the position in physical dimensions like this:
+</span>window.set_cursor_position(PhysicalPosition::new(<span class="number">400</span>, <span class="number">200</span>).into());</code></pre></div>
+<h6 id="platform-specific-43"><a class="doc-anchor" href="#platform-specific-43">§</a>Platform-specific</h6>
+<ul>
+<li><strong>Wayland</strong>: Cursor must be in <a href="enum.CursorGrabMode.html#variant.Locked" title="variant cosmic::iced_winit::winit::window::CursorGrabMode::Locked"><code>CursorGrabMode::Locked</code></a>.</li>
+<li><strong>iOS / Android / Web / Orbital:</strong> Always returns an <a href="../error/enum.RequestError.html#variant.NotSupported" title="variant cosmic::iced_winit::winit::error::RequestError::NotSupported"><code>RequestError::NotSupported</code></a>.</li>
+</ul>
+</div></details><details class="toggle method-toggle" open><summary><section id="tymethod.set_cursor_grab" class="method"><a class="src rightside" href="../../../../src/winit/window.rs.html#1181">Source</a><h4 class="code-header">fn <a href="#tymethod.set_cursor_grab" class="fn">set_cursor_grab</a>(&amp;self, mode: <a class="enum" href="enum.CursorGrabMode.html" title="enum cosmic::iced_winit::winit::window::CursorGrabMode">CursorGrabMode</a>) -&gt; <a class="enum" href="https://doc.rust-lang.org/1.87.0/core/result/enum.Result.html" title="enum core::result::Result">Result</a>&lt;<a class="primitive" href="https://doc.rust-lang.org/1.87.0/std/primitive.unit.html">()</a>, <a class="enum" href="../error/enum.RequestError.html" title="enum cosmic::iced_winit::winit::error::RequestError">RequestError</a>&gt;</h4></section></summary><div class="docblock"><p>Set grabbing <a href="enum.CursorGrabMode.html" title="enum cosmic::iced_winit::winit::window::CursorGrabMode">mode</a> on the cursor preventing it from leaving the window.</p>
+<h5 id="example-2"><a class="doc-anchor" href="#example-2">§</a>Example</h5>
+<p>First try confining the cursor, and if that fails, try locking it instead.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code>window
+    .set_cursor_grab(CursorGrabMode::Confined)
+    .or_else(|_e| window.set_cursor_grab(CursorGrabMode::Locked))
+    .unwrap();</code></pre></div>
+</div></details><details class="toggle method-toggle" open><summary><section id="tymethod.set_cursor_visible" class="method"><a class="src rightside" href="../../../../src/winit/window.rs.html#1195">Source</a><h4 class="code-header">fn <a href="#tymethod.set_cursor_visible" class="fn">set_cursor_visible</a>(&amp;self, visible: <a class="primitive" href="https://doc.rust-lang.org/1.87.0/std/primitive.bool.html">bool</a>)</h4></section></summary><div class="docblock"><p>Modifies the cursor’s visibility.</p>
+<p>If <code>false</code>, this will hide the cursor. If <code>true</code>, this will show the cursor.</p>
+<h6 id="platform-specific-44"><a class="doc-anchor" href="#platform-specific-44">§</a>Platform-specific</h6>
+<ul>
+<li><strong>Windows:</strong> The cursor is only hidden within the confines of the window.</li>
+<li><strong>X11:</strong> The cursor is only hidden within the confines of the window.</li>
+<li><strong>Wayland:</strong> The cursor is only hidden within the confines of the window.</li>
+<li><strong>macOS:</strong> The cursor is hidden as long as the window has input focus, even if the cursor
+is outside of the window.</li>
+<li><strong>iOS / Android:</strong> Unsupported.</li>
+</ul>
+</div></details><details class="toggle method-toggle" open><summary><section id="tymethod.drag_window" class="method"><a class="src rightside" href="../../../../src/winit/window.rs.html#1208">Source</a><h4 class="code-header">fn <a href="#tymethod.drag_window" class="fn">drag_window</a>(&amp;self) -&gt; <a class="enum" href="https://doc.rust-lang.org/1.87.0/core/result/enum.Result.html" title="enum core::result::Result">Result</a>&lt;<a class="primitive" href="https://doc.rust-lang.org/1.87.0/std/primitive.unit.html">()</a>, <a class="enum" href="../error/enum.RequestError.html" title="enum cosmic::iced_winit::winit::error::RequestError">RequestError</a>&gt;</h4></section></summary><div class="docblock"><p>Moves the window with the left mouse button until the button is released.</p>
+<p>There’s no guarantee that this will work unless the left mouse button was pressed
+immediately before this function is called.</p>
+<h6 id="platform-specific-45"><a class="doc-anchor" href="#platform-specific-45">§</a>Platform-specific</h6>
+<ul>
+<li><strong>X11:</strong> Un-grabs the cursor.</li>
+<li><strong>Wayland:</strong> Requires the cursor to be inside the window to be dragged.</li>
+<li><strong>macOS:</strong> May prevent the button release event to be triggered.</li>
+<li><strong>iOS / Android / Web:</strong> Always returns an <a href="../error/enum.RequestError.html#variant.NotSupported" title="variant cosmic::iced_winit::winit::error::RequestError::NotSupported"><code>RequestError::NotSupported</code></a>.</li>
+</ul>
+</div></details><details class="toggle method-toggle" open><summary><section id="tymethod.drag_resize_window" class="method"><a class="src rightside" href="../../../../src/winit/window.rs.html#1219">Source</a><h4 class="code-header">fn <a href="#tymethod.drag_resize_window" class="fn">drag_resize_window</a>(
+    &amp;self,
+    direction: <a class="enum" href="enum.ResizeDirection.html" title="enum cosmic::iced_winit::winit::window::ResizeDirection">ResizeDirection</a>,
+) -&gt; <a class="enum" href="https://doc.rust-lang.org/1.87.0/core/result/enum.Result.html" title="enum core::result::Result">Result</a>&lt;<a class="primitive" href="https://doc.rust-lang.org/1.87.0/std/primitive.unit.html">()</a>, <a class="enum" href="../error/enum.RequestError.html" title="enum cosmic::iced_winit::winit::error::RequestError">RequestError</a>&gt;</h4></section></summary><div class="docblock"><p>Resizes the window with the left mouse button until the button is released.</p>
+<p>There’s no guarantee that this will work unless the left mouse button was pressed
+immediately before this function is called.</p>
+<h6 id="platform-specific-46"><a class="doc-anchor" href="#platform-specific-46">§</a>Platform-specific</h6>
+<ul>
+<li><strong>macOS:</strong> Always returns an <a href="../error/enum.RequestError.html#variant.NotSupported" title="variant cosmic::iced_winit::winit::error::RequestError::NotSupported"><code>RequestError::NotSupported</code></a></li>
+<li><strong>iOS / Android / Web:</strong> Always returns an <a href="../error/enum.RequestError.html#variant.NotSupported" title="variant cosmic::iced_winit::winit::error::RequestError::NotSupported"><code>RequestError::NotSupported</code></a>.</li>
+</ul>
+</div></details><details class="toggle method-toggle" open><summary><section id="tymethod.show_window_menu" class="method"><a class="src rightside" href="../../../../src/winit/window.rs.html#1230">Source</a><h4 class="code-header">fn <a href="#tymethod.show_window_menu" class="fn">show_window_menu</a>(&amp;self, position: <a class="enum" href="../dpi/enum.Position.html" title="enum cosmic::iced_winit::winit::dpi::Position">Position</a>)</h4></section></summary><div class="docblock"><p>Show <a href="https://en.wikipedia.org/wiki/Common_menus_in_Microsoft_Windows#System_menu">window menu</a> at a specified position .</p>
+<p>This is the context menu that is normally shown when interacting with
+the title bar. This is useful when implementing custom decorations.</p>
+<h6 id="platform-specific-47"><a class="doc-anchor" href="#platform-specific-47">§</a>Platform-specific</h6>
+<p><strong>Android / iOS / macOS / Orbital / Wayland / Web / X11:</strong> Unsupported.</p>
+</div></details><details class="toggle method-toggle" open><summary><section id="tymethod.set_cursor_hittest" class="method"><a class="src rightside" href="../../../../src/winit/window.rs.html#1241">Source</a><h4 class="code-header">fn <a href="#tymethod.set_cursor_hittest" class="fn">set_cursor_hittest</a>(&amp;self, hittest: <a class="primitive" href="https://doc.rust-lang.org/1.87.0/std/primitive.bool.html">bool</a>) -&gt; <a class="enum" href="https://doc.rust-lang.org/1.87.0/core/result/enum.Result.html" title="enum core::result::Result">Result</a>&lt;<a class="primitive" href="https://doc.rust-lang.org/1.87.0/std/primitive.unit.html">()</a>, <a class="enum" href="../error/enum.RequestError.html" title="enum cosmic::iced_winit::winit::error::RequestError">RequestError</a>&gt;</h4></section></summary><div class="docblock"><p>Modifies whether the window catches cursor events.</p>
+<p>If <code>true</code>, the window will catch the cursor events. If <code>false</code>, events are passed through
+the window such that any other window behind it receives them. By default hittest is
+enabled.</p>
+<h6 id="platform-specific-48"><a class="doc-anchor" href="#platform-specific-48">§</a>Platform-specific</h6>
+<ul>
+<li><strong>iOS / Android / Web / Orbital:</strong> Always returns an <a href="../error/enum.RequestError.html#variant.NotSupported" title="variant cosmic::iced_winit::winit::error::RequestError::NotSupported"><code>RequestError::NotSupported</code></a>.</li>
+</ul>
+</div></details><details class="toggle method-toggle" open><summary><section id="tymethod.current_monitor" class="method"><a class="src rightside" href="../../../../src/winit/window.rs.html#1246">Source</a><h4 class="code-header">fn <a href="#tymethod.current_monitor" class="fn">current_monitor</a>(&amp;self) -&gt; <a class="enum" href="https://doc.rust-lang.org/1.87.0/core/option/enum.Option.html" title="enum core::option::Option">Option</a>&lt;<a class="struct" href="../monitor/struct.MonitorHandle.html" title="struct cosmic::iced_winit::winit::monitor::MonitorHandle">MonitorHandle</a>&gt;</h4></section></summary><div class="docblock"><p>Returns the monitor on which the window currently resides.</p>
+<p>Returns <code>None</code> if current monitor can’t be detected.</p>
+</div></details><details class="toggle method-toggle" open><summary><section id="tymethod.available_monitors" class="method"><a class="src rightside" href="../../../../src/winit/window.rs.html#1265">Source</a><h4 class="code-header">fn <a href="#tymethod.available_monitors" class="fn">available_monitors</a>(&amp;self) -&gt; <a class="struct" href="https://doc.rust-lang.org/1.87.0/alloc/boxed/struct.Box.html" title="struct alloc::boxed::Box">Box</a>&lt;dyn <a class="trait" href="https://doc.rust-lang.org/1.87.0/core/iter/traits/iterator/trait.Iterator.html" title="trait core::iter::traits::iterator::Iterator">Iterator</a>&lt;Item = <a class="struct" href="../monitor/struct.MonitorHandle.html" title="struct cosmic::iced_winit::winit::monitor::MonitorHandle">MonitorHandle</a>&gt;&gt;</h4></section></summary><div class="docblock"><p>Returns the list of all the monitors available on the system.</p>
+<p>This is the same as <a href="../event_loop/trait.ActiveEventLoop.html#tymethod.available_monitors" title="method cosmic::iced_winit::winit::event_loop::ActiveEventLoop::available_monitors"><code>ActiveEventLoop::available_monitors</code></a>, and is provided for
+convenience.</p>
+<h6 id="platform-specific-49"><a class="doc-anchor" href="#platform-specific-49">§</a>Platform-specific</h6>
+<p><strong>Web:</strong> Only returns the current monitor without
+detailed monitor permissions.</p>
+</div></details><details class="toggle method-toggle" open><summary><section id="tymethod.primary_monitor" class="method"><a class="src rightside" href="../../../../src/winit/window.rs.html#1285">Source</a><h4 class="code-header">fn <a href="#tymethod.primary_monitor" class="fn">primary_monitor</a>(&amp;self) -&gt; <a class="enum" href="https://doc.rust-lang.org/1.87.0/core/option/enum.Option.html" title="enum core::option::Option">Option</a>&lt;<a class="struct" href="../monitor/struct.MonitorHandle.html" title="struct cosmic::iced_winit::winit::monitor::MonitorHandle">MonitorHandle</a>&gt;</h4></section></summary><div class="docblock"><p>Returns the primary monitor of the system.</p>
+<p>Returns <code>None</code> if it can’t identify any monitor as a primary one.</p>
+<p>This is the same as <a href="../event_loop/trait.ActiveEventLoop.html#tymethod.primary_monitor" title="method cosmic::iced_winit::winit::event_loop::ActiveEventLoop::primary_monitor"><code>ActiveEventLoop::primary_monitor</code></a>, and is provided for convenience.</p>
+<h6 id="platform-specific-50"><a class="doc-anchor" href="#platform-specific-50">§</a>Platform-specific</h6>
+<ul>
+<li><strong>Wayland:</strong> Always returns <code>None</code>.</li>
+<li><strong>Web:</strong> Always returns <code>None</code> without
+detailed monitor permissions.</li>
+</ul>
+</div></details><details class="toggle method-toggle" open><summary><section id="tymethod.rwh_06_display_handle" class="method"><a class="src rightside" href="../../../../src/winit/window.rs.html#1289">Source</a><h4 class="code-header">fn <a href="#tymethod.rwh_06_display_handle" class="fn">rwh_06_display_handle</a>(&amp;self) -&gt; &amp;dyn <a class="trait" href="../../../iced/window/raw_window_handle/trait.HasDisplayHandle.html" title="trait cosmic::iced::window::raw_window_handle::HasDisplayHandle">HasDisplayHandle</a></h4></section></summary><div class="docblock"><p>Get the raw-window-handle v0.6 display handle.</p>
+</div></details><details class="toggle method-toggle" open><summary><section id="tymethod.rwh_06_window_handle" class="method"><a class="src rightside" href="../../../../src/winit/window.rs.html#1293">Source</a><h4 class="code-header">fn <a href="#tymethod.rwh_06_window_handle" class="fn">rwh_06_window_handle</a>(&amp;self) -&gt; &amp;dyn <a class="trait" href="../../../iced/window/raw_window_handle/trait.HasWindowHandle.html" title="trait cosmic::iced::window::raw_window_handle::HasWindowHandle">HasWindowHandle</a></h4></section></summary><div class="docblock"><p>Get the raw-window-handle v0.6 window handle.</p>
+</div></details></div><h2 id="implementations" class="section-header">Implementations<a href="#implementations" class="anchor">§</a></h2><div id="implementations-list"><details class="toggle implementors-toggle" open><summary><section id="impl-dyn+Window" class="impl"><a class="src rightside" href="../../../../src/winit/window.rs.html#1296">Source</a><a href="#impl-dyn+Window" class="anchor">§</a><h3 class="code-header">impl dyn <a class="trait" href="trait.Window.html" title="trait cosmic::iced_winit::winit::window::Window">Window</a></h3></section></summary><div class="impl-items"><details class="toggle method-toggle" open><summary><section id="method.default_attributes" class="method"><a class="src rightside" href="../../../../src/winit/window.rs.html#1299">Source</a><h4 class="code-header">pub fn <a href="#method.default_attributes" class="fn">default_attributes</a>() -&gt; <a class="struct" href="struct.WindowAttributes.html" title="struct cosmic::iced_winit::winit::window::WindowAttributes">WindowAttributes</a></h4></section></summary><div class="docblock"><p>Create a new <a href="struct.WindowAttributes.html" title="struct cosmic::iced_winit::winit::window::WindowAttributes"><code>WindowAttributes</code></a> which allows modifying the window’s attributes before
+creation.</p>
+</div></details></div></details></div><h2 id="trait-implementations" class="section-header">Trait Implementations<a href="#trait-implementations" class="anchor">§</a></h2><div id="trait-implementations-list"><details class="toggle implementors-toggle" open><summary><section id="impl-HasDisplayHandle-for-dyn+Window" class="impl"><a class="src rightside" href="../../../../src/winit/window.rs.html#1319">Source</a><a href="#impl-HasDisplayHandle-for-dyn+Window" class="anchor">§</a><h3 class="code-header">impl <a class="trait" href="../../../iced/window/raw_window_handle/trait.HasDisplayHandle.html" title="trait cosmic::iced::window::raw_window_handle::HasDisplayHandle">HasDisplayHandle</a> for dyn <a class="trait" href="trait.Window.html" title="trait cosmic::iced_winit::winit::window::Window">Window</a> + '_</h3></section></summary><div class="impl-items"><details class="toggle method-toggle" open><summary><section id="method.display_handle" class="method trait-impl"><a class="src rightside" href="../../../../src/winit/window.rs.html#1320">Source</a><a href="#method.display_handle" class="anchor">§</a><h4 class="code-header">fn <a href="../../../iced/window/raw_window_handle/trait.HasDisplayHandle.html#tymethod.display_handle" class="fn">display_handle</a>(&amp;self) -&gt; <a class="enum" href="https://doc.rust-lang.org/1.87.0/core/result/enum.Result.html" title="enum core::result::Result">Result</a>&lt;<a class="struct" href="../../../iced/window/raw_window_handle/struct.DisplayHandle.html" title="struct cosmic::iced::window::raw_window_handle::DisplayHandle">DisplayHandle</a>&lt;'_&gt;, <a class="enum" href="../../../iced/window/raw_window_handle/enum.HandleError.html" title="enum cosmic::iced::window::raw_window_handle::HandleError">HandleError</a>&gt;</h4></section></summary><div class='docblock'>Get a handle to the display controller of the windowing system.</div></details></div></details><details class="toggle implementors-toggle" open><summary><section id="impl-HasWindowHandle-for-dyn+Window" class="impl"><a class="src rightside" href="../../../../src/winit/window.rs.html#1326">Source</a><a href="#impl-HasWindowHandle-for-dyn+Window" class="anchor">§</a><h3 class="code-header">impl <a class="trait" href="../../../iced/window/raw_window_handle/trait.HasWindowHandle.html" title="trait cosmic::iced::window::raw_window_handle::HasWindowHandle">HasWindowHandle</a> for dyn <a class="trait" href="trait.Window.html" title="trait cosmic::iced_winit::winit::window::Window">Window</a> + '_</h3></section></summary><div class="impl-items"><details class="toggle method-toggle" open><summary><section id="method.window_handle" class="method trait-impl"><a class="src rightside" href="../../../../src/winit/window.rs.html#1327">Source</a><a href="#method.window_handle" class="anchor">§</a><h4 class="code-header">fn <a href="../../../iced/window/raw_window_handle/trait.HasWindowHandle.html#tymethod.window_handle" class="fn">window_handle</a>(&amp;self) -&gt; <a class="enum" href="https://doc.rust-lang.org/1.87.0/core/result/enum.Result.html" title="enum core::result::Result">Result</a>&lt;<a class="struct" href="../../../iced/window/raw_window_handle/struct.WindowHandle.html" title="struct cosmic::iced::window::raw_window_handle::WindowHandle">WindowHandle</a>&lt;'_&gt;, <a class="enum" href="../../../iced/window/raw_window_handle/enum.HandleError.html" title="enum cosmic::iced::window::raw_window_handle::HandleError">HandleError</a>&gt;</h4></section></summary><div class='docblock'>Get a handle to the window.</div></details></div></details><details class="toggle implementors-toggle" open><summary><section id="impl-Hash-for-dyn+Window" class="impl"><a class="src rightside" href="../../../../src/winit/window.rs.html#1312">Source</a><a href="#impl-Hash-for-dyn+Window" class="anchor">§</a><h3 class="code-header">impl <a class="trait" href="https://doc.rust-lang.org/1.87.0/core/hash/trait.Hash.html" title="trait core::hash::Hash">Hash</a> for dyn <a class="trait" href="trait.Window.html" title="trait cosmic::iced_winit::winit::window::Window">Window</a> + '_</h3></section></summary><div class="impl-items"><details class="toggle method-toggle" open><summary><section id="method.hash" class="method trait-impl"><a class="src rightside" href="../../../../src/winit/window.rs.html#1313">Source</a><a href="#method.hash" class="anchor">§</a><h4 class="code-header">fn <a href="https://doc.rust-lang.org/1.87.0/core/hash/trait.Hash.html#tymethod.hash" class="fn">hash</a>&lt;H&gt;(&amp;self, state: <a class="primitive" href="https://doc.rust-lang.org/1.87.0/std/primitive.reference.html">&amp;mut H</a>)<div class="where">where
+    H: <a class="trait" href="https://doc.rust-lang.org/1.87.0/core/hash/trait.Hasher.html" title="trait core::hash::Hasher">Hasher</a>,</div></h4></section></summary><div class='docblock'>Feeds this value into the given <a href="https://doc.rust-lang.org/1.87.0/core/hash/trait.Hasher.html" title="trait core::hash::Hasher"><code>Hasher</code></a>. <a href="https://doc.rust-lang.org/1.87.0/core/hash/trait.Hash.html#tymethod.hash">Read more</a></div></details></div></details><details class="toggle implementors-toggle" open><summary><section id="impl-PartialEq-for-dyn+Window" class="impl"><a class="src rightside" href="../../../../src/winit/window.rs.html#1304">Source</a><a href="#impl-PartialEq-for-dyn+Window" class="anchor">§</a><h3 class="code-header">impl <a class="trait" href="https://doc.rust-lang.org/1.87.0/core/cmp/trait.PartialEq.html" title="trait core::cmp::PartialEq">PartialEq</a> for dyn <a class="trait" href="trait.Window.html" title="trait cosmic::iced_winit::winit::window::Window">Window</a> + '_</h3></section></summary><div class="impl-items"><details class="toggle method-toggle" open><summary><section id="method.eq" class="method trait-impl"><a class="src rightside" href="../../../../src/winit/window.rs.html#1305">Source</a><a href="#method.eq" class="anchor">§</a><h4 class="code-header">fn <a href="https://doc.rust-lang.org/1.87.0/core/cmp/trait.PartialEq.html#tymethod.eq" class="fn">eq</a>(&amp;self, other: &amp;dyn <a class="trait" href="trait.Window.html" title="trait cosmic::iced_winit::winit::window::Window">Window</a>) -&gt; <a class="primitive" href="https://doc.rust-lang.org/1.87.0/std/primitive.bool.html">bool</a></h4></section></summary><div class='docblock'>Tests for <code>self</code> and <code>other</code> values to be equal, and is used by <code>==</code>.</div></details><details class="toggle method-toggle" open><summary><section id="method.ne" class="method trait-impl"><span class="rightside"><span class="since" title="Stable since Rust version 1.0.0">1.0.0</span> · <a class="src" href="https://doc.rust-lang.org/1.87.0/src/core/cmp.rs.html#262">Source</a></span><a href="#method.ne" class="anchor">§</a><h4 class="code-header">fn <a href="https://doc.rust-lang.org/1.87.0/core/cmp/trait.PartialEq.html#method.ne" class="fn">ne</a>(&amp;self, other: <a class="primitive" href="https://doc.rust-lang.org/1.87.0/std/primitive.reference.html">&amp;Rhs</a>) -&gt; <a class="primitive" href="https://doc.rust-lang.org/1.87.0/std/primitive.bool.html">bool</a></h4></section></summary><div class='docblock'>Tests for <code>!=</code>. The default implementation is almost always sufficient,
+and should not be overridden without very good reason.</div></details></div></details><details class="toggle implementors-toggle" open><summary><section id="impl-WindowExtStartupNotify-for-dyn+Window" class="impl"><a class="src rightside" href="../../../../src/winit/platform/startup_notify.rs.html#75">Source</a><a href="#impl-WindowExtStartupNotify-for-dyn+Window" class="anchor">§</a><h3 class="code-header">impl <a class="trait" href="../platform/startup_notify/trait.WindowExtStartupNotify.html" title="trait cosmic::iced_winit::winit::platform::startup_notify::WindowExtStartupNotify">WindowExtStartupNotify</a> for dyn <a class="trait" href="trait.Window.html" title="trait cosmic::iced_winit::winit::window::Window">Window</a> + '_</h3></section></summary><div class="impl-items"><details class="toggle method-toggle" open><summary><section id="method.request_activation_token" class="method trait-impl"><a class="src rightside" href="../../../../src/winit/platform/startup_notify.rs.html#76">Source</a><a href="#method.request_activation_token" class="anchor">§</a><h4 class="code-header">fn <a href="../platform/startup_notify/trait.WindowExtStartupNotify.html#tymethod.request_activation_token" class="fn">request_activation_token</a>(&amp;self) -&gt; <a class="enum" href="https://doc.rust-lang.org/1.87.0/core/result/enum.Result.html" title="enum core::result::Result">Result</a>&lt;<a class="struct" href="../event_loop/struct.AsyncRequestSerial.html" title="struct cosmic::iced_winit::winit::event_loop::AsyncRequestSerial">AsyncRequestSerial</a>, <a class="enum" href="../error/enum.RequestError.html" title="enum cosmic::iced_winit::winit::error::RequestError">RequestError</a>&gt;</h4></section></summary><div class='docblock'>Request a new activation token. <a href="../platform/startup_notify/trait.WindowExtStartupNotify.html#tymethod.request_activation_token">Read more</a></div></details></div></details><details class="toggle implementors-toggle" open><summary><section id="impl-WindowExtWayland-for-dyn+Window" class="impl"><a class="src rightside" href="../../../../src/winit/platform/wayland.rs.html#107">Source</a><a href="#impl-WindowExtWayland-for-dyn+Window" class="anchor">§</a><h3 class="code-header">impl <a class="trait" href="../platform/wayland/trait.WindowExtWayland.html" title="trait cosmic::iced_winit::winit::platform::wayland::WindowExtWayland">WindowExtWayland</a> for dyn <a class="trait" href="trait.Window.html" title="trait cosmic::iced_winit::winit::window::Window">Window</a> + '_</h3></section></summary><div class="impl-items"><section id="method.xdg_surface_handle" class="method trait-impl"><a class="src rightside" href="../../../../src/winit/platform/wayland.rs.html#108">Source</a><a href="#method.xdg_surface_handle" class="anchor">§</a><h4 class="code-header">fn <a href="../platform/wayland/trait.WindowExtWayland.html#tymethod.xdg_surface_handle" class="fn">xdg_surface_handle</a>(&amp;self) -&gt; <a class="enum" href="https://doc.rust-lang.org/1.87.0/core/option/enum.Option.html" title="enum core::option::Option">Option</a>&lt;&amp;dyn <a class="trait" href="../platform/wayland/trait.HasXdgSurfaceHandle.html" title="trait cosmic::iced_winit::winit::platform::wayland::HasXdgSurfaceHandle">HasXdgSurfaceHandle</a>&gt;</h4></section></div></details><section id="impl-Eq-for-dyn+Window" class="impl"><a class="src rightside" href="../../../../src/winit/window.rs.html#1310">Source</a><a href="#impl-Eq-for-dyn+Window" class="anchor">§</a><h3 class="code-header">impl <a class="trait" href="https://doc.rust-lang.org/1.87.0/core/cmp/trait.Eq.html" title="trait core::cmp::Eq">Eq</a> for dyn <a class="trait" href="trait.Window.html" title="trait cosmic::iced_winit::winit::window::Window">Window</a> + '_</h3></section><section id="impl-WindowExtX11-for-dyn+Window" class="impl"><a class="src rightside" href="../../../../src/winit/platform/x11.rs.html#143">Source</a><a href="#impl-WindowExtX11-for-dyn+Window" class="anchor">§</a><h3 class="code-header">impl <a class="trait" href="../platform/x11/trait.WindowExtX11.html" title="trait cosmic::iced_winit::winit::platform::x11::WindowExtX11">WindowExtX11</a> for dyn <a class="trait" href="trait.Window.html" title="trait cosmic::iced_winit::winit::window::Window">Window</a></h3></section></div><h2 id="implementors" class="section-header">Implementors<a href="#implementors" class="anchor">§</a></h2><div id="implementors-list"></div><script src="../../../../trait.impl/winit/window/trait.Window.js" async></script></section></div></main></body></html>

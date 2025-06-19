@@ -1,0 +1,320 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `/home/runner/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/libloading-0.8.8/src/safe.rs`."><title>safe.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../static.files/rustdoc-916cea96.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="libloading" data-themes="" data-resource-suffix="" data-rustdoc-version="1.87.0 (17067e9ac 2025-05-09)" data-channel="1.87.0" data-search-js="search-e7298875.js" data-settings-js="settings-d72f25bb.js" ><script src="../../static.files/storage-82c7156e.js"></script><script defer src="../../static.files/src-script-63605ae7.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-fb8c74a8.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-893ab5e7.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-6580c154.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-044be391.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer"></div><main><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><h1><div class="sub-heading">libloading/</div>safe.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap digits-3"><pre class="rust"><code><a href=#1 id=1 data-nosnippet>1</a><span class="attr">#[cfg(libloading_docs)]
+<a href=#2 id=2 data-nosnippet>2</a></span><span class="kw">use </span><span class="kw">super</span>::os::unix <span class="kw">as </span>imp; <span class="comment">// the implementation used here doesn't matter particularly much...
+<a href=#3 id=3 data-nosnippet>3</a></span><span class="attr">#[cfg(all(not(libloading_docs), unix))]
+<a href=#4 id=4 data-nosnippet>4</a></span><span class="kw">use </span><span class="kw">super</span>::os::unix <span class="kw">as </span>imp;
+<a href=#5 id=5 data-nosnippet>5</a><span class="attr">#[cfg(all(not(libloading_docs), windows))]
+<a href=#6 id=6 data-nosnippet>6</a></span><span class="kw">use </span><span class="kw">super</span>::os::windows <span class="kw">as </span>imp;
+<a href=#7 id=7 data-nosnippet>7</a><span class="kw">use </span><span class="kw">super</span>::Error;
+<a href=#8 id=8 data-nosnippet>8</a><span class="kw">use </span>std::ffi::OsStr;
+<a href=#9 id=9 data-nosnippet>9</a><span class="kw">use </span>std::fmt;
+<a href=#10 id=10 data-nosnippet>10</a><span class="kw">use </span>std::marker;
+<a href=#11 id=11 data-nosnippet>11</a><span class="kw">use </span>std::ops;
+<a href=#12 id=12 data-nosnippet>12</a><span class="kw">use </span>std::os::raw;
+<a href=#13 id=13 data-nosnippet>13</a>
+<a href=#14 id=14 data-nosnippet>14</a><span class="doccomment">/// A loaded dynamic library.
+<a href=#15 id=15 data-nosnippet>15</a></span><span class="attr">#[cfg_attr(libloading_docs, doc(cfg(any(unix, windows))))]
+<a href=#16 id=16 data-nosnippet>16</a></span><span class="kw">pub struct </span>Library(imp::Library);
+<a href=#17 id=17 data-nosnippet>17</a>
+<a href=#18 id=18 data-nosnippet>18</a><span class="kw">impl </span>Library {
+<a href=#19 id=19 data-nosnippet>19</a>    <span class="doccomment">/// Find and load a dynamic library.
+<a href=#20 id=20 data-nosnippet>20</a>    ///
+<a href=#21 id=21 data-nosnippet>21</a>    /// The `filename` argument may be either:
+<a href=#22 id=22 data-nosnippet>22</a>    ///
+<a href=#23 id=23 data-nosnippet>23</a>    /// * A library filename;
+<a href=#24 id=24 data-nosnippet>24</a>    /// * The absolute path to the library;
+<a href=#25 id=25 data-nosnippet>25</a>    /// * A relative (to the current working directory) path to the library.
+<a href=#26 id=26 data-nosnippet>26</a>    ///
+<a href=#27 id=27 data-nosnippet>27</a>    /// # Safety
+<a href=#28 id=28 data-nosnippet>28</a>    ///
+<a href=#29 id=29 data-nosnippet>29</a>    /// When a library is loaded, initialisation routines contained within it are executed.
+<a href=#30 id=30 data-nosnippet>30</a>    /// For the purposes of safety, the execution of these routines is conceptually the same calling an
+<a href=#31 id=31 data-nosnippet>31</a>    /// unknown foreign function and may impose arbitrary requirements on the caller for the call
+<a href=#32 id=32 data-nosnippet>32</a>    /// to be sound.
+<a href=#33 id=33 data-nosnippet>33</a>    ///
+<a href=#34 id=34 data-nosnippet>34</a>    /// Additionally, the callers of this function must also ensure that execution of the
+<a href=#35 id=35 data-nosnippet>35</a>    /// termination routines contained within the library is safe as well. These routines may be
+<a href=#36 id=36 data-nosnippet>36</a>    /// executed when the library is unloaded.
+<a href=#37 id=37 data-nosnippet>37</a>    ///
+<a href=#38 id=38 data-nosnippet>38</a>    /// # Thread-safety
+<a href=#39 id=39 data-nosnippet>39</a>    ///
+<a href=#40 id=40 data-nosnippet>40</a>    /// The implementation strives to be as MT-safe as sanely possible, however on certain
+<a href=#41 id=41 data-nosnippet>41</a>    /// platforms the underlying error-handling related APIs not always MT-safe. This library
+<a href=#42 id=42 data-nosnippet>42</a>    /// shares these limitations on those platforms. In particular, on certain UNIX targets
+<a href=#43 id=43 data-nosnippet>43</a>    /// `dlerror` is not MT-safe, resulting in garbage error messages in certain MT-scenarios.
+<a href=#44 id=44 data-nosnippet>44</a>    ///
+<a href=#45 id=45 data-nosnippet>45</a>    /// Calling this function from multiple threads is not MT-safe if used in conjunction with
+<a href=#46 id=46 data-nosnippet>46</a>    /// library filenames and the library search path is modified (`SetDllDirectory` function on
+<a href=#47 id=47 data-nosnippet>47</a>    /// Windows, `{DY,}LD_LIBRARY_PATH` environment variable on UNIX).
+<a href=#48 id=48 data-nosnippet>48</a>    ///
+<a href=#49 id=49 data-nosnippet>49</a>    /// # Platform-specific behaviour
+<a href=#50 id=50 data-nosnippet>50</a>    ///
+<a href=#51 id=51 data-nosnippet>51</a>    /// When a plain library filename is supplied, the locations in which the library is searched are
+<a href=#52 id=52 data-nosnippet>52</a>    /// platform specific and cannot be adjusted in a portable manner. See the documentation for
+<a href=#53 id=53 data-nosnippet>53</a>    /// the platform specific [`os::unix::Library::new`] and [`os::windows::Library::new`] methods
+<a href=#54 id=54 data-nosnippet>54</a>    /// for further information on library lookup behaviour.
+<a href=#55 id=55 data-nosnippet>55</a>    ///
+<a href=#56 id=56 data-nosnippet>56</a>    /// If the `filename` specifies a library filename without a path and with the extension omitted,
+<a href=#57 id=57 data-nosnippet>57</a>    /// the `.dll` extension is implicitly added on Windows.
+<a href=#58 id=58 data-nosnippet>58</a>    ///
+<a href=#59 id=59 data-nosnippet>59</a>    /// [`os::unix::Library::new`]: crate::os::unix::Library::new
+<a href=#60 id=60 data-nosnippet>60</a>    /// [`os::windows::Library::new`]: crate::os::windows::Library::new
+<a href=#61 id=61 data-nosnippet>61</a>    ///
+<a href=#62 id=62 data-nosnippet>62</a>    /// # Tips
+<a href=#63 id=63 data-nosnippet>63</a>    ///
+<a href=#64 id=64 data-nosnippet>64</a>    /// Distributing your dynamic libraries under a filename common to all platforms (e.g.
+<a href=#65 id=65 data-nosnippet>65</a>    /// `awesome.module`) allows you to avoid code which has to account for platform’s conventional
+<a href=#66 id=66 data-nosnippet>66</a>    /// library filenames.
+<a href=#67 id=67 data-nosnippet>67</a>    ///
+<a href=#68 id=68 data-nosnippet>68</a>    /// Strive to specify an absolute or at least a relative path to your library, unless
+<a href=#69 id=69 data-nosnippet>69</a>    /// system-wide libraries are being loaded. Platform-dependent library search locations
+<a href=#70 id=70 data-nosnippet>70</a>    /// combined with various quirks related to path-less filenames may cause flakiness in
+<a href=#71 id=71 data-nosnippet>71</a>    /// programs.
+<a href=#72 id=72 data-nosnippet>72</a>    ///
+<a href=#73 id=73 data-nosnippet>73</a>    /// # Examples
+<a href=#74 id=74 data-nosnippet>74</a>    ///
+<a href=#75 id=75 data-nosnippet>75</a>    /// ```no_run
+<a href=#76 id=76 data-nosnippet>76</a>    /// # use ::libloading::Library;
+<a href=#77 id=77 data-nosnippet>77</a>    /// // Any of the following are valid.
+<a href=#78 id=78 data-nosnippet>78</a>    /// unsafe {
+<a href=#79 id=79 data-nosnippet>79</a>    ///     let _ = Library::new("/path/to/awesome.module").unwrap();
+<a href=#80 id=80 data-nosnippet>80</a>    ///     let _ = Library::new("../awesome.module").unwrap();
+<a href=#81 id=81 data-nosnippet>81</a>    ///     let _ = Library::new("libsomelib.so.1").unwrap();
+<a href=#82 id=82 data-nosnippet>82</a>    /// }
+<a href=#83 id=83 data-nosnippet>83</a>    /// ```
+<a href=#84 id=84 data-nosnippet>84</a>    </span><span class="kw">pub unsafe fn </span>new&lt;P: AsRef&lt;OsStr&gt;&gt;(filename: P) -&gt; <span class="prelude-ty">Result</span>&lt;Library, Error&gt; {
+<a href=#85 id=85 data-nosnippet>85</a>        imp::Library::new(filename).map(From::from)
+<a href=#86 id=86 data-nosnippet>86</a>    }
+<a href=#87 id=87 data-nosnippet>87</a>
+<a href=#88 id=88 data-nosnippet>88</a>    <span class="doccomment">/// Get a pointer to a function or static variable by symbol name.
+<a href=#89 id=89 data-nosnippet>89</a>    ///
+<a href=#90 id=90 data-nosnippet>90</a>    /// The `symbol` may not contain any null bytes, with the exception of the last byte. Providing a
+<a href=#91 id=91 data-nosnippet>91</a>    /// null-terminated `symbol` may help to avoid an allocation.
+<a href=#92 id=92 data-nosnippet>92</a>    ///
+<a href=#93 id=93 data-nosnippet>93</a>    /// The symbol is interpreted as-is; no mangling is done. This means that symbols like `x::y` are
+<a href=#94 id=94 data-nosnippet>94</a>    /// most likely invalid.
+<a href=#95 id=95 data-nosnippet>95</a>    ///
+<a href=#96 id=96 data-nosnippet>96</a>    /// # Safety
+<a href=#97 id=97 data-nosnippet>97</a>    ///
+<a href=#98 id=98 data-nosnippet>98</a>    /// Users of this API must specify the correct type of the function or variable loaded.
+<a href=#99 id=99 data-nosnippet>99</a>    ///
+<a href=#100 id=100 data-nosnippet>100</a>    /// # Platform-specific behaviour
+<a href=#101 id=101 data-nosnippet>101</a>    ///
+<a href=#102 id=102 data-nosnippet>102</a>    /// The implementation of thread-local variables is extremely platform specific and uses of such
+<a href=#103 id=103 data-nosnippet>103</a>    /// variables that work on e.g. Linux may have unintended behaviour on other targets.
+<a href=#104 id=104 data-nosnippet>104</a>    ///
+<a href=#105 id=105 data-nosnippet>105</a>    /// On POSIX implementations where the `dlerror` function is not confirmed to be MT-safe (such
+<a href=#106 id=106 data-nosnippet>106</a>    /// as FreeBSD), this function will unconditionally return an error when the underlying `dlsym`
+<a href=#107 id=107 data-nosnippet>107</a>    /// call returns a null pointer. There are rare situations where `dlsym` returns a genuine null
+<a href=#108 id=108 data-nosnippet>108</a>    /// pointer without it being an error. If loading a null pointer is something you care about,
+<a href=#109 id=109 data-nosnippet>109</a>    /// consider using the [`os::unix::Library::get_singlethreaded`] call.
+<a href=#110 id=110 data-nosnippet>110</a>    ///
+<a href=#111 id=111 data-nosnippet>111</a>    /// [`os::unix::Library::get_singlethreaded`]: crate::os::unix::Library::get_singlethreaded
+<a href=#112 id=112 data-nosnippet>112</a>    ///
+<a href=#113 id=113 data-nosnippet>113</a>    /// # Examples
+<a href=#114 id=114 data-nosnippet>114</a>    ///
+<a href=#115 id=115 data-nosnippet>115</a>    /// Given a loaded library:
+<a href=#116 id=116 data-nosnippet>116</a>    ///
+<a href=#117 id=117 data-nosnippet>117</a>    /// ```no_run
+<a href=#118 id=118 data-nosnippet>118</a>    /// # use ::libloading::Library;
+<a href=#119 id=119 data-nosnippet>119</a>    /// let lib = unsafe {
+<a href=#120 id=120 data-nosnippet>120</a>    ///     Library::new("/path/to/awesome.module").unwrap()
+<a href=#121 id=121 data-nosnippet>121</a>    /// };
+<a href=#122 id=122 data-nosnippet>122</a>    /// ```
+<a href=#123 id=123 data-nosnippet>123</a>    ///
+<a href=#124 id=124 data-nosnippet>124</a>    /// Loading and using a function looks like this:
+<a href=#125 id=125 data-nosnippet>125</a>    ///
+<a href=#126 id=126 data-nosnippet>126</a>    /// ```no_run
+<a href=#127 id=127 data-nosnippet>127</a>    /// # use ::libloading::{Library, Symbol};
+<a href=#128 id=128 data-nosnippet>128</a>    /// # let lib = unsafe {
+<a href=#129 id=129 data-nosnippet>129</a>    /// #     Library::new("/path/to/awesome.module").unwrap()
+<a href=#130 id=130 data-nosnippet>130</a>    /// # };
+<a href=#131 id=131 data-nosnippet>131</a>    /// unsafe {
+<a href=#132 id=132 data-nosnippet>132</a>    ///     let awesome_function: Symbol&lt;unsafe extern fn(f64) -&gt; f64&gt; =
+<a href=#133 id=133 data-nosnippet>133</a>    ///         lib.get(b"awesome_function\0").unwrap();
+<a href=#134 id=134 data-nosnippet>134</a>    ///     awesome_function(0.42);
+<a href=#135 id=135 data-nosnippet>135</a>    /// }
+<a href=#136 id=136 data-nosnippet>136</a>    /// ```
+<a href=#137 id=137 data-nosnippet>137</a>    ///
+<a href=#138 id=138 data-nosnippet>138</a>    /// A static variable may also be loaded and inspected:
+<a href=#139 id=139 data-nosnippet>139</a>    ///
+<a href=#140 id=140 data-nosnippet>140</a>    /// ```no_run
+<a href=#141 id=141 data-nosnippet>141</a>    /// # use ::libloading::{Library, Symbol};
+<a href=#142 id=142 data-nosnippet>142</a>    /// # let lib = unsafe { Library::new("/path/to/awesome.module").unwrap() };
+<a href=#143 id=143 data-nosnippet>143</a>    /// unsafe {
+<a href=#144 id=144 data-nosnippet>144</a>    ///     let awesome_variable: Symbol&lt;*mut f64&gt; = lib.get(b"awesome_variable\0").unwrap();
+<a href=#145 id=145 data-nosnippet>145</a>    ///     **awesome_variable = 42.0;
+<a href=#146 id=146 data-nosnippet>146</a>    /// };
+<a href=#147 id=147 data-nosnippet>147</a>    /// ```
+<a href=#148 id=148 data-nosnippet>148</a>    </span><span class="kw">pub unsafe fn </span>get&lt;T&gt;(<span class="kw-2">&amp;</span><span class="self">self</span>, symbol: <span class="kw-2">&amp;</span>[u8]) -&gt; <span class="prelude-ty">Result</span>&lt;Symbol&lt;T&gt;, Error&gt; {
+<a href=#149 id=149 data-nosnippet>149</a>        <span class="self">self</span>.<span class="number">0</span>.get(symbol).map(|from| Symbol::from_raw(from, <span class="self">self</span>))
+<a href=#150 id=150 data-nosnippet>150</a>    }
+<a href=#151 id=151 data-nosnippet>151</a>
+<a href=#152 id=152 data-nosnippet>152</a>    <span class="doccomment">/// Unload the library.
+<a href=#153 id=153 data-nosnippet>153</a>    ///
+<a href=#154 id=154 data-nosnippet>154</a>    /// This method might be a no-op, depending on the flags with which the `Library` was opened,
+<a href=#155 id=155 data-nosnippet>155</a>    /// what library was opened or other platform specifics.
+<a href=#156 id=156 data-nosnippet>156</a>    ///
+<a href=#157 id=157 data-nosnippet>157</a>    /// You only need to call this if you are interested in handling any errors that may arise when
+<a href=#158 id=158 data-nosnippet>158</a>    /// library is unloaded. Otherwise the implementation of `Drop` for `Library` will close the
+<a href=#159 id=159 data-nosnippet>159</a>    /// library and ignore the errors were they arise.
+<a href=#160 id=160 data-nosnippet>160</a>    ///
+<a href=#161 id=161 data-nosnippet>161</a>    /// The underlying data structures may still get leaked if an error does occur.
+<a href=#162 id=162 data-nosnippet>162</a>    </span><span class="kw">pub fn </span>close(<span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;(), Error&gt; {
+<a href=#163 id=163 data-nosnippet>163</a>        <span class="self">self</span>.<span class="number">0</span>.close()
+<a href=#164 id=164 data-nosnippet>164</a>    }
+<a href=#165 id=165 data-nosnippet>165</a>}
+<a href=#166 id=166 data-nosnippet>166</a>
+<a href=#167 id=167 data-nosnippet>167</a><span class="kw">impl </span>fmt::Debug <span class="kw">for </span>Library {
+<a href=#168 id=168 data-nosnippet>168</a>    <span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>fmt::Formatter) -&gt; fmt::Result {
+<a href=#169 id=169 data-nosnippet>169</a>        <span class="self">self</span>.<span class="number">0</span>.fmt(f)
+<a href=#170 id=170 data-nosnippet>170</a>    }
+<a href=#171 id=171 data-nosnippet>171</a>}
+<a href=#172 id=172 data-nosnippet>172</a>
+<a href=#173 id=173 data-nosnippet>173</a><span class="kw">impl </span>From&lt;imp::Library&gt; <span class="kw">for </span>Library {
+<a href=#174 id=174 data-nosnippet>174</a>    <span class="kw">fn </span>from(lib: imp::Library) -&gt; Library {
+<a href=#175 id=175 data-nosnippet>175</a>        Library(lib)
+<a href=#176 id=176 data-nosnippet>176</a>    }
+<a href=#177 id=177 data-nosnippet>177</a>}
+<a href=#178 id=178 data-nosnippet>178</a>
+<a href=#179 id=179 data-nosnippet>179</a><span class="kw">impl </span>From&lt;Library&gt; <span class="kw">for </span>imp::Library {
+<a href=#180 id=180 data-nosnippet>180</a>    <span class="kw">fn </span>from(lib: Library) -&gt; imp::Library {
+<a href=#181 id=181 data-nosnippet>181</a>        lib.<span class="number">0
+<a href=#182 id=182 data-nosnippet>182</a>    </span>}
+<a href=#183 id=183 data-nosnippet>183</a>}
+<a href=#184 id=184 data-nosnippet>184</a>
+<a href=#185 id=185 data-nosnippet>185</a><span class="kw">unsafe impl </span>Send <span class="kw">for </span>Library {}
+<a href=#186 id=186 data-nosnippet>186</a><span class="kw">unsafe impl </span>Sync <span class="kw">for </span>Library {}
+<a href=#187 id=187 data-nosnippet>187</a>
+<a href=#188 id=188 data-nosnippet>188</a><span class="doccomment">/// Symbol from a library.
+<a href=#189 id=189 data-nosnippet>189</a>///
+<a href=#190 id=190 data-nosnippet>190</a>/// This type is a safeguard against using dynamically loaded symbols after a `Library` is
+<a href=#191 id=191 data-nosnippet>191</a>/// unloaded. The primary method to create an instance of a `Symbol` is via [`Library::get`].
+<a href=#192 id=192 data-nosnippet>192</a>///
+<a href=#193 id=193 data-nosnippet>193</a>/// The `Deref` trait implementation allows the use of `Symbol` as if it was a function or variable
+<a href=#194 id=194 data-nosnippet>194</a>/// itself, without taking care to “extract” the function or variable manually most of the time.
+<a href=#195 id=195 data-nosnippet>195</a>///
+<a href=#196 id=196 data-nosnippet>196</a>/// [`Library::get`]: Library::get
+<a href=#197 id=197 data-nosnippet>197</a></span><span class="attr">#[cfg_attr(libloading_docs, doc(cfg(any(unix, windows))))]
+<a href=#198 id=198 data-nosnippet>198</a></span><span class="kw">pub struct </span>Symbol&lt;<span class="lifetime">'lib</span>, T: <span class="lifetime">'lib</span>&gt; {
+<a href=#199 id=199 data-nosnippet>199</a>    inner: imp::Symbol&lt;T&gt;,
+<a href=#200 id=200 data-nosnippet>200</a>    pd: marker::PhantomData&lt;<span class="kw-2">&amp;</span><span class="lifetime">'lib </span>T&gt;,
+<a href=#201 id=201 data-nosnippet>201</a>}
+<a href=#202 id=202 data-nosnippet>202</a>
+<a href=#203 id=203 data-nosnippet>203</a><span class="kw">impl</span>&lt;<span class="lifetime">'lib</span>, T&gt; Symbol&lt;<span class="lifetime">'lib</span>, T&gt; {
+<a href=#204 id=204 data-nosnippet>204</a>    <span class="doccomment">/// Extract the wrapped `os::platform::Symbol`.
+<a href=#205 id=205 data-nosnippet>205</a>    ///
+<a href=#206 id=206 data-nosnippet>206</a>    /// # Safety
+<a href=#207 id=207 data-nosnippet>207</a>    ///
+<a href=#208 id=208 data-nosnippet>208</a>    /// Using this function relinquishes all the lifetime guarantees. It is up to the developer to
+<a href=#209 id=209 data-nosnippet>209</a>    /// ensure the resulting `Symbol` is not used past the lifetime of the `Library` this symbol
+<a href=#210 id=210 data-nosnippet>210</a>    /// was loaded from.
+<a href=#211 id=211 data-nosnippet>211</a>    ///
+<a href=#212 id=212 data-nosnippet>212</a>    /// # Examples
+<a href=#213 id=213 data-nosnippet>213</a>    ///
+<a href=#214 id=214 data-nosnippet>214</a>    /// ```no_run
+<a href=#215 id=215 data-nosnippet>215</a>    /// # use ::libloading::{Library, Symbol};
+<a href=#216 id=216 data-nosnippet>216</a>    /// unsafe {
+<a href=#217 id=217 data-nosnippet>217</a>    ///     let lib = Library::new("/path/to/awesome.module").unwrap();
+<a href=#218 id=218 data-nosnippet>218</a>    ///     let symbol: Symbol&lt;*mut u32&gt; = lib.get(b"symbol\0").unwrap();
+<a href=#219 id=219 data-nosnippet>219</a>    ///     let symbol = symbol.into_raw();
+<a href=#220 id=220 data-nosnippet>220</a>    /// }
+<a href=#221 id=221 data-nosnippet>221</a>    /// ```
+<a href=#222 id=222 data-nosnippet>222</a>    </span><span class="kw">pub unsafe fn </span>into_raw(<span class="self">self</span>) -&gt; imp::Symbol&lt;T&gt; {
+<a href=#223 id=223 data-nosnippet>223</a>        <span class="self">self</span>.inner
+<a href=#224 id=224 data-nosnippet>224</a>    }
+<a href=#225 id=225 data-nosnippet>225</a>
+<a href=#226 id=226 data-nosnippet>226</a>    <span class="doccomment">/// Wrap the `os::platform::Symbol` into this safe wrapper.
+<a href=#227 id=227 data-nosnippet>227</a>    ///
+<a href=#228 id=228 data-nosnippet>228</a>    /// Note that, in order to create association between the symbol and the library this symbol
+<a href=#229 id=229 data-nosnippet>229</a>    /// came from, this function requires a reference to the library.
+<a href=#230 id=230 data-nosnippet>230</a>    ///
+<a href=#231 id=231 data-nosnippet>231</a>    /// # Safety
+<a href=#232 id=232 data-nosnippet>232</a>    ///
+<a href=#233 id=233 data-nosnippet>233</a>    /// The `library` reference must be exactly the library `sym` was loaded from.
+<a href=#234 id=234 data-nosnippet>234</a>    ///
+<a href=#235 id=235 data-nosnippet>235</a>    /// # Examples
+<a href=#236 id=236 data-nosnippet>236</a>    ///
+<a href=#237 id=237 data-nosnippet>237</a>    /// ```no_run
+<a href=#238 id=238 data-nosnippet>238</a>    /// # use ::libloading::{Library, Symbol};
+<a href=#239 id=239 data-nosnippet>239</a>    /// unsafe {
+<a href=#240 id=240 data-nosnippet>240</a>    ///     let lib = Library::new("/path/to/awesome.module").unwrap();
+<a href=#241 id=241 data-nosnippet>241</a>    ///     let symbol: Symbol&lt;*mut u32&gt; = lib.get(b"symbol\0").unwrap();
+<a href=#242 id=242 data-nosnippet>242</a>    ///     let symbol = symbol.into_raw();
+<a href=#243 id=243 data-nosnippet>243</a>    ///     let symbol = Symbol::from_raw(symbol, &amp;lib);
+<a href=#244 id=244 data-nosnippet>244</a>    /// }
+<a href=#245 id=245 data-nosnippet>245</a>    /// ```
+<a href=#246 id=246 data-nosnippet>246</a>    </span><span class="kw">pub unsafe fn </span>from_raw&lt;L&gt;(sym: imp::Symbol&lt;T&gt;, library: <span class="kw-2">&amp;</span><span class="lifetime">'lib </span>L) -&gt; Symbol&lt;<span class="lifetime">'lib</span>, T&gt; {
+<a href=#247 id=247 data-nosnippet>247</a>        <span class="kw">let _ </span>= library; <span class="comment">// ignore here for documentation purposes.
+<a href=#248 id=248 data-nosnippet>248</a>        </span>Symbol {
+<a href=#249 id=249 data-nosnippet>249</a>            inner: sym,
+<a href=#250 id=250 data-nosnippet>250</a>            pd: marker::PhantomData,
+<a href=#251 id=251 data-nosnippet>251</a>        }
+<a href=#252 id=252 data-nosnippet>252</a>    }
+<a href=#253 id=253 data-nosnippet>253</a>
+<a href=#254 id=254 data-nosnippet>254</a>    <span class="doccomment">/// Try to convert the symbol into a raw pointer.
+<a href=#255 id=255 data-nosnippet>255</a>    /// Success depends on the platform. Currently, this fn always succeeds and returns some.
+<a href=#256 id=256 data-nosnippet>256</a>    ///
+<a href=#257 id=257 data-nosnippet>257</a>    /// # Safety
+<a href=#258 id=258 data-nosnippet>258</a>    ///
+<a href=#259 id=259 data-nosnippet>259</a>    /// Using this function relinquishes all the lifetime guarantees. It is up to the developer to
+<a href=#260 id=260 data-nosnippet>260</a>    /// ensure the resulting `Symbol` is not used past the lifetime of the `Library` this symbol
+<a href=#261 id=261 data-nosnippet>261</a>    /// was loaded from.
+<a href=#262 id=262 data-nosnippet>262</a>    </span><span class="kw">pub unsafe fn </span>try_as_raw_ptr(<span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span>&lt;<span class="kw-2">*mut </span>raw::c_void&gt; {
+<a href=#263 id=263 data-nosnippet>263</a>        <span class="prelude-val">Some</span>(
+<a href=#264 id=264 data-nosnippet>264</a>            <span class="attr">#[allow(unused_unsafe)] </span><span class="comment">// 1.56.0 compat
+<a href=#265 id=265 data-nosnippet>265</a>            </span><span class="kw">unsafe </span>{
+<a href=#266 id=266 data-nosnippet>266</a>                <span class="comment">// SAFE: the calling function has the same soundness invariants as this callee.
+<a href=#267 id=267 data-nosnippet>267</a>                </span><span class="self">self</span>.into_raw()
+<a href=#268 id=268 data-nosnippet>268</a>            }
+<a href=#269 id=269 data-nosnippet>269</a>            .as_raw_ptr(),
+<a href=#270 id=270 data-nosnippet>270</a>        )
+<a href=#271 id=271 data-nosnippet>271</a>    }
+<a href=#272 id=272 data-nosnippet>272</a>}
+<a href=#273 id=273 data-nosnippet>273</a>
+<a href=#274 id=274 data-nosnippet>274</a><span class="kw">impl</span>&lt;<span class="lifetime">'lib</span>, T&gt; Symbol&lt;<span class="lifetime">'lib</span>, <span class="prelude-ty">Option</span>&lt;T&gt;&gt; {
+<a href=#275 id=275 data-nosnippet>275</a>    <span class="doccomment">/// Lift Option out of the symbol.
+<a href=#276 id=276 data-nosnippet>276</a>    ///
+<a href=#277 id=277 data-nosnippet>277</a>    /// # Examples
+<a href=#278 id=278 data-nosnippet>278</a>    ///
+<a href=#279 id=279 data-nosnippet>279</a>    /// ```no_run
+<a href=#280 id=280 data-nosnippet>280</a>    /// # use ::libloading::{Library, Symbol};
+<a href=#281 id=281 data-nosnippet>281</a>    /// unsafe {
+<a href=#282 id=282 data-nosnippet>282</a>    ///     let lib = Library::new("/path/to/awesome.module").unwrap();
+<a href=#283 id=283 data-nosnippet>283</a>    ///     let symbol: Symbol&lt;Option&lt;*mut u32&gt;&gt; = lib.get(b"symbol\0").unwrap();
+<a href=#284 id=284 data-nosnippet>284</a>    ///     let symbol: Symbol&lt;*mut u32&gt; = symbol.lift_option().expect("static is not null");
+<a href=#285 id=285 data-nosnippet>285</a>    /// }
+<a href=#286 id=286 data-nosnippet>286</a>    /// ```
+<a href=#287 id=287 data-nosnippet>287</a>    </span><span class="kw">pub fn </span>lift_option(<span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span>&lt;Symbol&lt;<span class="lifetime">'lib</span>, T&gt;&gt; {
+<a href=#288 id=288 data-nosnippet>288</a>        <span class="self">self</span>.inner.lift_option().map(|is| Symbol {
+<a href=#289 id=289 data-nosnippet>289</a>            inner: is,
+<a href=#290 id=290 data-nosnippet>290</a>            pd: marker::PhantomData,
+<a href=#291 id=291 data-nosnippet>291</a>        })
+<a href=#292 id=292 data-nosnippet>292</a>    }
+<a href=#293 id=293 data-nosnippet>293</a>}
+<a href=#294 id=294 data-nosnippet>294</a>
+<a href=#295 id=295 data-nosnippet>295</a><span class="kw">impl</span>&lt;<span class="lifetime">'lib</span>, T&gt; Clone <span class="kw">for </span>Symbol&lt;<span class="lifetime">'lib</span>, T&gt; {
+<a href=#296 id=296 data-nosnippet>296</a>    <span class="kw">fn </span>clone(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; Symbol&lt;<span class="lifetime">'lib</span>, T&gt; {
+<a href=#297 id=297 data-nosnippet>297</a>        Symbol {
+<a href=#298 id=298 data-nosnippet>298</a>            inner: <span class="self">self</span>.inner.clone(),
+<a href=#299 id=299 data-nosnippet>299</a>            pd: marker::PhantomData,
+<a href=#300 id=300 data-nosnippet>300</a>        }
+<a href=#301 id=301 data-nosnippet>301</a>    }
+<a href=#302 id=302 data-nosnippet>302</a>}
+<a href=#303 id=303 data-nosnippet>303</a>
+<a href=#304 id=304 data-nosnippet>304</a><span class="comment">// FIXME: implement FnOnce for callable stuff instead.
+<a href=#305 id=305 data-nosnippet>305</a></span><span class="kw">impl</span>&lt;T&gt; ops::Deref <span class="kw">for </span>Symbol&lt;<span class="lifetime">'_</span>, T&gt; {
+<a href=#306 id=306 data-nosnippet>306</a>    <span class="kw">type </span>Target = T;
+<a href=#307 id=307 data-nosnippet>307</a>    <span class="kw">fn </span>deref(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span>T {
+<a href=#308 id=308 data-nosnippet>308</a>        ops::Deref::deref(<span class="kw-2">&amp;</span><span class="self">self</span>.inner)
+<a href=#309 id=309 data-nosnippet>309</a>    }
+<a href=#310 id=310 data-nosnippet>310</a>}
+<a href=#311 id=311 data-nosnippet>311</a>
+<a href=#312 id=312 data-nosnippet>312</a><span class="kw">impl</span>&lt;T&gt; fmt::Debug <span class="kw">for </span>Symbol&lt;<span class="lifetime">'_</span>, T&gt; {
+<a href=#313 id=313 data-nosnippet>313</a>    <span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>fmt::Formatter) -&gt; fmt::Result {
+<a href=#314 id=314 data-nosnippet>314</a>        <span class="self">self</span>.inner.fmt(f)
+<a href=#315 id=315 data-nosnippet>315</a>    }
+<a href=#316 id=316 data-nosnippet>316</a>}
+<a href=#317 id=317 data-nosnippet>317</a>
+<a href=#318 id=318 data-nosnippet>318</a><span class="kw">unsafe impl</span>&lt;T: Send&gt; Send <span class="kw">for </span>Symbol&lt;<span class="lifetime">'_</span>, T&gt; {}
+<a href=#319 id=319 data-nosnippet>319</a><span class="kw">unsafe impl</span>&lt;T: Sync&gt; Sync <span class="kw">for </span>Symbol&lt;<span class="lifetime">'_</span>, T&gt; {}
+<a href=#320 id=320 data-nosnippet>320</a></code></pre></div></section></main></body></html>

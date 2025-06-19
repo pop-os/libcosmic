@@ -1,0 +1,546 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `/home/runner/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/x11rb-0.13.1/src/protocol/shm.rs`."><title>shm.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../../static.files/rustdoc-916cea96.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="x11rb" data-themes="" data-resource-suffix="" data-rustdoc-version="1.87.0 (17067e9ac 2025-05-09)" data-channel="1.87.0" data-search-js="search-e7298875.js" data-settings-js="settings-d72f25bb.js" ><script src="../../../static.files/storage-82c7156e.js"></script><script defer src="../../../static.files/src-script-63605ae7.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-fb8c74a8.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-893ab5e7.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-6580c154.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-044be391.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer"></div><main><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><h1><div class="sub-heading">x11rb/protocol/</div>shm.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap digits-3"><pre class="rust"><code><a href=#1 id=1 data-nosnippet>1</a><span class="comment">// This file contains generated code. Do not edit directly.
+<a href=#2 id=2 data-nosnippet>2</a>// To regenerate this, run 'make'.
+<a href=#3 id=3 data-nosnippet>3</a>
+<a href=#4 id=4 data-nosnippet>4</a></span><span class="doccomment">//! Bindings to the `Shm` X11 extension.
+<a href=#5 id=5 data-nosnippet>5</a>
+<a href=#6 id=6 data-nosnippet>6</a></span><span class="attr">#![allow(clippy::too_many_arguments)]
+<a href=#7 id=7 data-nosnippet>7</a>
+<a href=#8 id=8 data-nosnippet>8</a>#[allow(unused_imports)]
+<a href=#9 id=9 data-nosnippet>9</a></span><span class="kw">use </span>std::borrow::Cow;
+<a href=#10 id=10 data-nosnippet>10</a><span class="attr">#[allow(unused_imports)]
+<a href=#11 id=11 data-nosnippet>11</a></span><span class="kw">use </span>std::convert::TryInto;
+<a href=#12 id=12 data-nosnippet>12</a><span class="attr">#[allow(unused_imports)]
+<a href=#13 id=13 data-nosnippet>13</a></span><span class="kw">use </span><span class="kw">crate</span>::utils::RawFdContainer;
+<a href=#14 id=14 data-nosnippet>14</a><span class="attr">#[allow(unused_imports)]
+<a href=#15 id=15 data-nosnippet>15</a></span><span class="kw">use </span><span class="kw">crate</span>::x11_utils::{Request, RequestHeader, Serialize, TryParse, TryParseFd};
+<a href=#16 id=16 data-nosnippet>16</a><span class="kw">use </span>std::io::IoSlice;
+<a href=#17 id=17 data-nosnippet>17</a><span class="kw">use </span><span class="kw">crate</span>::connection::RequestConnection;
+<a href=#18 id=18 data-nosnippet>18</a><span class="attr">#[allow(unused_imports)]
+<a href=#19 id=19 data-nosnippet>19</a></span><span class="kw">use </span><span class="kw">crate</span>::connection::Connection <span class="kw">as </span>X11Connection;
+<a href=#20 id=20 data-nosnippet>20</a><span class="attr">#[allow(unused_imports)]
+<a href=#21 id=21 data-nosnippet>21</a></span><span class="kw">use </span><span class="kw">crate</span>::cookie::{Cookie, CookieWithFds, VoidCookie};
+<a href=#22 id=22 data-nosnippet>22</a><span class="kw">use </span><span class="kw">crate</span>::errors::ConnectionError;
+<a href=#23 id=23 data-nosnippet>23</a><span class="attr">#[allow(unused_imports)]
+<a href=#24 id=24 data-nosnippet>24</a></span><span class="kw">use </span><span class="kw">crate</span>::errors::ReplyOrIdError;
+<a href=#25 id=25 data-nosnippet>25</a><span class="attr">#[allow(unused_imports)]
+<a href=#26 id=26 data-nosnippet>26</a></span><span class="kw">use </span><span class="kw">super</span>::xproto;
+<a href=#27 id=27 data-nosnippet>27</a>
+<a href=#28 id=28 data-nosnippet>28</a><span class="kw">pub use </span>x11rb_protocol::protocol::shm::<span class="kw-2">*</span>;
+<a href=#29 id=29 data-nosnippet>29</a>
+<a href=#30 id=30 data-nosnippet>30</a><span class="doccomment">/// Get the major opcode of this extension
+<a href=#31 id=31 data-nosnippet>31</a></span><span class="kw">fn </span>major_opcode&lt;Conn: RequestConnection + <span class="question-mark">?</span>Sized&gt;(conn: <span class="kw-2">&amp;</span>Conn) -&gt; <span class="prelude-ty">Result</span>&lt;u8, ConnectionError&gt; {
+<a href=#32 id=32 data-nosnippet>32</a>    <span class="kw">let </span>info = conn.extension_information(X11_EXTENSION_NAME)<span class="question-mark">?</span>;
+<a href=#33 id=33 data-nosnippet>33</a>    <span class="kw">let </span>info = info.ok_or(ConnectionError::UnsupportedExtension)<span class="question-mark">?</span>;
+<a href=#34 id=34 data-nosnippet>34</a>    <span class="prelude-val">Ok</span>(info.major_opcode)
+<a href=#35 id=35 data-nosnippet>35</a>}
+<a href=#36 id=36 data-nosnippet>36</a>
+<a href=#37 id=37 data-nosnippet>37</a><span class="doccomment">/// Query the version of the MIT-SHM extension..
+<a href=#38 id=38 data-nosnippet>38</a>///
+<a href=#39 id=39 data-nosnippet>39</a>/// This is used to determine the version of the MIT-SHM extension supported by the
+<a href=#40 id=40 data-nosnippet>40</a>/// X server.  Clients MUST NOT make other requests in this extension until a reply
+<a href=#41 id=41 data-nosnippet>41</a>/// to this requests indicates the X server supports them.
+<a href=#42 id=42 data-nosnippet>42</a></span><span class="kw">pub fn </span>query_version&lt;Conn&gt;(conn: <span class="kw-2">&amp;</span>Conn) -&gt; <span class="prelude-ty">Result</span>&lt;Cookie&lt;<span class="lifetime">'_</span>, Conn, QueryVersionReply&gt;, ConnectionError&gt;
+<a href=#43 id=43 data-nosnippet>43</a><span class="kw">where
+<a href=#44 id=44 data-nosnippet>44</a>    </span>Conn: RequestConnection + <span class="question-mark">?</span>Sized,
+<a href=#45 id=45 data-nosnippet>45</a>{
+<a href=#46 id=46 data-nosnippet>46</a>    <span class="kw">let </span>request0 = QueryVersionRequest;
+<a href=#47 id=47 data-nosnippet>47</a>    <span class="kw">let </span>(bytes, fds) = request0.serialize(major_opcode(conn)<span class="question-mark">?</span>);
+<a href=#48 id=48 data-nosnippet>48</a>    <span class="kw">let </span>slices = [IoSlice::new(<span class="kw-2">&amp;</span>bytes[<span class="number">0</span>])];
+<a href=#49 id=49 data-nosnippet>49</a>    <span class="macro">assert_eq!</span>(slices.len(), bytes.len());
+<a href=#50 id=50 data-nosnippet>50</a>    conn.send_request_with_reply(<span class="kw-2">&amp;</span>slices, fds)
+<a href=#51 id=51 data-nosnippet>51</a>}
+<a href=#52 id=52 data-nosnippet>52</a>
+<a href=#53 id=53 data-nosnippet>53</a><span class="doccomment">/// Attach a System V shared memory segment..
+<a href=#54 id=54 data-nosnippet>54</a>///
+<a href=#55 id=55 data-nosnippet>55</a>/// Attach a System V shared memory segment to the server.  This will fail unless
+<a href=#56 id=56 data-nosnippet>56</a>/// the server has permission to map the segment.  The client may destroy the segment
+<a href=#57 id=57 data-nosnippet>57</a>/// as soon as it receives a XCB_SHM_COMPLETION event with the shmseg value in this
+<a href=#58 id=58 data-nosnippet>58</a>/// request and with the appropriate serial number.
+<a href=#59 id=59 data-nosnippet>59</a>///
+<a href=#60 id=60 data-nosnippet>60</a>/// # Fields
+<a href=#61 id=61 data-nosnippet>61</a>///
+<a href=#62 id=62 data-nosnippet>62</a>/// * `shmseg` - A shared memory segment ID created with xcb_generate_id().
+<a href=#63 id=63 data-nosnippet>63</a>/// * `shmid` - The System V shared memory segment the server should map.
+<a href=#64 id=64 data-nosnippet>64</a>/// * `read_only` - True if the segment shall be mapped read only by the X11 server, otherwise false.
+<a href=#65 id=65 data-nosnippet>65</a></span><span class="kw">pub fn </span>attach&lt;Conn&gt;(conn: <span class="kw-2">&amp;</span>Conn, shmseg: Seg, shmid: u32, read_only: bool) -&gt; <span class="prelude-ty">Result</span>&lt;VoidCookie&lt;<span class="lifetime">'_</span>, Conn&gt;, ConnectionError&gt;
+<a href=#66 id=66 data-nosnippet>66</a><span class="kw">where
+<a href=#67 id=67 data-nosnippet>67</a>    </span>Conn: RequestConnection + <span class="question-mark">?</span>Sized,
+<a href=#68 id=68 data-nosnippet>68</a>{
+<a href=#69 id=69 data-nosnippet>69</a>    <span class="kw">let </span>request0 = AttachRequest {
+<a href=#70 id=70 data-nosnippet>70</a>        shmseg,
+<a href=#71 id=71 data-nosnippet>71</a>        shmid,
+<a href=#72 id=72 data-nosnippet>72</a>        read_only,
+<a href=#73 id=73 data-nosnippet>73</a>    };
+<a href=#74 id=74 data-nosnippet>74</a>    <span class="kw">let </span>(bytes, fds) = request0.serialize(major_opcode(conn)<span class="question-mark">?</span>);
+<a href=#75 id=75 data-nosnippet>75</a>    <span class="kw">let </span>slices = [IoSlice::new(<span class="kw-2">&amp;</span>bytes[<span class="number">0</span>])];
+<a href=#76 id=76 data-nosnippet>76</a>    <span class="macro">assert_eq!</span>(slices.len(), bytes.len());
+<a href=#77 id=77 data-nosnippet>77</a>    conn.send_request_without_reply(<span class="kw-2">&amp;</span>slices, fds)
+<a href=#78 id=78 data-nosnippet>78</a>}
+<a href=#79 id=79 data-nosnippet>79</a>
+<a href=#80 id=80 data-nosnippet>80</a><span class="doccomment">/// Destroys the specified shared memory segment..
+<a href=#81 id=81 data-nosnippet>81</a>///
+<a href=#82 id=82 data-nosnippet>82</a>/// Destroys the specified shared memory segment.  This will never fail unless the
+<a href=#83 id=83 data-nosnippet>83</a>/// segment number is incorrect.
+<a href=#84 id=84 data-nosnippet>84</a>///
+<a href=#85 id=85 data-nosnippet>85</a>/// # Fields
+<a href=#86 id=86 data-nosnippet>86</a>///
+<a href=#87 id=87 data-nosnippet>87</a>/// * `shmseg` - The segment to be destroyed.
+<a href=#88 id=88 data-nosnippet>88</a></span><span class="kw">pub fn </span>detach&lt;Conn&gt;(conn: <span class="kw-2">&amp;</span>Conn, shmseg: Seg) -&gt; <span class="prelude-ty">Result</span>&lt;VoidCookie&lt;<span class="lifetime">'_</span>, Conn&gt;, ConnectionError&gt;
+<a href=#89 id=89 data-nosnippet>89</a><span class="kw">where
+<a href=#90 id=90 data-nosnippet>90</a>    </span>Conn: RequestConnection + <span class="question-mark">?</span>Sized,
+<a href=#91 id=91 data-nosnippet>91</a>{
+<a href=#92 id=92 data-nosnippet>92</a>    <span class="kw">let </span>request0 = DetachRequest {
+<a href=#93 id=93 data-nosnippet>93</a>        shmseg,
+<a href=#94 id=94 data-nosnippet>94</a>    };
+<a href=#95 id=95 data-nosnippet>95</a>    <span class="kw">let </span>(bytes, fds) = request0.serialize(major_opcode(conn)<span class="question-mark">?</span>);
+<a href=#96 id=96 data-nosnippet>96</a>    <span class="kw">let </span>slices = [IoSlice::new(<span class="kw-2">&amp;</span>bytes[<span class="number">0</span>])];
+<a href=#97 id=97 data-nosnippet>97</a>    <span class="macro">assert_eq!</span>(slices.len(), bytes.len());
+<a href=#98 id=98 data-nosnippet>98</a>    conn.send_request_without_reply(<span class="kw-2">&amp;</span>slices, fds)
+<a href=#99 id=99 data-nosnippet>99</a>}
+<a href=#100 id=100 data-nosnippet>100</a>
+<a href=#101 id=101 data-nosnippet>101</a><span class="doccomment">/// Copy data from the shared memory to the specified drawable..
+<a href=#102 id=102 data-nosnippet>102</a>///
+<a href=#103 id=103 data-nosnippet>103</a>/// Copy data from the shared memory to the specified drawable.  The amount of bytes
+<a href=#104 id=104 data-nosnippet>104</a>/// written to the destination image is always equal to the number of bytes read
+<a href=#105 id=105 data-nosnippet>105</a>/// from the shared memory segment.
+<a href=#106 id=106 data-nosnippet>106</a>///
+<a href=#107 id=107 data-nosnippet>107</a>/// # Fields
+<a href=#108 id=108 data-nosnippet>108</a>///
+<a href=#109 id=109 data-nosnippet>109</a>/// * `drawable` - The drawable to draw to.
+<a href=#110 id=110 data-nosnippet>110</a>/// * `gc` - The graphics context to use.
+<a href=#111 id=111 data-nosnippet>111</a>/// * `total_width` - The total width of the source image.
+<a href=#112 id=112 data-nosnippet>112</a>/// * `total_height` - The total height of the source image.
+<a href=#113 id=113 data-nosnippet>113</a>/// * `src_x` - The source X coordinate of the sub-image to copy.
+<a href=#114 id=114 data-nosnippet>114</a>/// * `src_y` - The source Y coordinate of the sub-image to copy.
+<a href=#115 id=115 data-nosnippet>115</a>/// * `src_width` - The width, in source image coordinates, of the data to copy from the source.
+<a href=#116 id=116 data-nosnippet>116</a>/// The X server will use this to determine the amount of data to copy.  The amount
+<a href=#117 id=117 data-nosnippet>117</a>/// of the destination image that is overwritten is determined automatically.
+<a href=#118 id=118 data-nosnippet>118</a>/// * `src_height` - The height, in source image coordinates, of the data to copy from the source.
+<a href=#119 id=119 data-nosnippet>119</a>/// The X server will use this to determine the amount of data to copy.  The amount
+<a href=#120 id=120 data-nosnippet>120</a>/// of the destination image that is overwritten is determined automatically.
+<a href=#121 id=121 data-nosnippet>121</a>/// * `dst_x` - The X coordinate on the destination drawable to copy to.
+<a href=#122 id=122 data-nosnippet>122</a>/// * `dst_y` - The Y coordinate on the destination drawable to copy to.
+<a href=#123 id=123 data-nosnippet>123</a>/// * `depth` - The depth to use.
+<a href=#124 id=124 data-nosnippet>124</a>/// * `format` - The format of the image being drawn.  If it is XYBitmap, depth must be 1, or a
+<a href=#125 id=125 data-nosnippet>125</a>/// "BadMatch" error results.  The foreground pixel in the GC determines the source
+<a href=#126 id=126 data-nosnippet>126</a>/// for the one bits in the image, and the background pixel determines the source
+<a href=#127 id=127 data-nosnippet>127</a>/// for the zero bits.  For XYPixmap and ZPixmap, the depth must match the depth of
+<a href=#128 id=128 data-nosnippet>128</a>/// the drawable, or a "BadMatch" error results.
+<a href=#129 id=129 data-nosnippet>129</a>/// * `send_event` - True if the server should send an XCB_SHM_COMPLETION event when the blit
+<a href=#130 id=130 data-nosnippet>130</a>/// completes.
+<a href=#131 id=131 data-nosnippet>131</a>/// * `offset` - The offset that the source image starts at.
+<a href=#132 id=132 data-nosnippet>132</a></span><span class="kw">pub fn </span>put_image&lt;Conn&gt;(conn: <span class="kw-2">&amp;</span>Conn, drawable: xproto::Drawable, gc: xproto::Gcontext, total_width: u16, total_height: u16, src_x: u16, src_y: u16, src_width: u16, src_height: u16, dst_x: i16, dst_y: i16, depth: u8, format: u8, send_event: bool, shmseg: Seg, offset: u32) -&gt; <span class="prelude-ty">Result</span>&lt;VoidCookie&lt;<span class="lifetime">'_</span>, Conn&gt;, ConnectionError&gt;
+<a href=#133 id=133 data-nosnippet>133</a><span class="kw">where
+<a href=#134 id=134 data-nosnippet>134</a>    </span>Conn: RequestConnection + <span class="question-mark">?</span>Sized,
+<a href=#135 id=135 data-nosnippet>135</a>{
+<a href=#136 id=136 data-nosnippet>136</a>    <span class="kw">let </span>request0 = PutImageRequest {
+<a href=#137 id=137 data-nosnippet>137</a>        drawable,
+<a href=#138 id=138 data-nosnippet>138</a>        gc,
+<a href=#139 id=139 data-nosnippet>139</a>        total_width,
+<a href=#140 id=140 data-nosnippet>140</a>        total_height,
+<a href=#141 id=141 data-nosnippet>141</a>        src_x,
+<a href=#142 id=142 data-nosnippet>142</a>        src_y,
+<a href=#143 id=143 data-nosnippet>143</a>        src_width,
+<a href=#144 id=144 data-nosnippet>144</a>        src_height,
+<a href=#145 id=145 data-nosnippet>145</a>        dst_x,
+<a href=#146 id=146 data-nosnippet>146</a>        dst_y,
+<a href=#147 id=147 data-nosnippet>147</a>        depth,
+<a href=#148 id=148 data-nosnippet>148</a>        format,
+<a href=#149 id=149 data-nosnippet>149</a>        send_event,
+<a href=#150 id=150 data-nosnippet>150</a>        shmseg,
+<a href=#151 id=151 data-nosnippet>151</a>        offset,
+<a href=#152 id=152 data-nosnippet>152</a>    };
+<a href=#153 id=153 data-nosnippet>153</a>    <span class="kw">let </span>(bytes, fds) = request0.serialize(major_opcode(conn)<span class="question-mark">?</span>);
+<a href=#154 id=154 data-nosnippet>154</a>    <span class="kw">let </span>slices = [IoSlice::new(<span class="kw-2">&amp;</span>bytes[<span class="number">0</span>])];
+<a href=#155 id=155 data-nosnippet>155</a>    <span class="macro">assert_eq!</span>(slices.len(), bytes.len());
+<a href=#156 id=156 data-nosnippet>156</a>    conn.send_request_without_reply(<span class="kw-2">&amp;</span>slices, fds)
+<a href=#157 id=157 data-nosnippet>157</a>}
+<a href=#158 id=158 data-nosnippet>158</a>
+<a href=#159 id=159 data-nosnippet>159</a><span class="doccomment">/// Copies data from the specified drawable to the shared memory segment..
+<a href=#160 id=160 data-nosnippet>160</a>///
+<a href=#161 id=161 data-nosnippet>161</a>/// Copy data from the specified drawable to the shared memory segment.  The amount
+<a href=#162 id=162 data-nosnippet>162</a>/// of bytes written to the destination image is always equal to the number of bytes
+<a href=#163 id=163 data-nosnippet>163</a>/// read from the shared memory segment.
+<a href=#164 id=164 data-nosnippet>164</a>///
+<a href=#165 id=165 data-nosnippet>165</a>/// # Fields
+<a href=#166 id=166 data-nosnippet>166</a>///
+<a href=#167 id=167 data-nosnippet>167</a>/// * `drawable` - The drawable to copy the image out of.
+<a href=#168 id=168 data-nosnippet>168</a>/// * `x` - The X coordinate in the drawable to begin copying at.
+<a href=#169 id=169 data-nosnippet>169</a>/// * `y` - The Y coordinate in the drawable to begin copying at.
+<a href=#170 id=170 data-nosnippet>170</a>/// * `width` - The width of the image to copy.
+<a href=#171 id=171 data-nosnippet>171</a>/// * `height` - The height of the image to copy.
+<a href=#172 id=172 data-nosnippet>172</a>/// * `plane_mask` - A mask that determines which planes are used.
+<a href=#173 id=173 data-nosnippet>173</a>/// * `format` - The format to use for the copy (???).
+<a href=#174 id=174 data-nosnippet>174</a>/// * `shmseg` - The destination shared memory segment.
+<a href=#175 id=175 data-nosnippet>175</a>/// * `offset` - The offset in the shared memory segment to copy data to.
+<a href=#176 id=176 data-nosnippet>176</a></span><span class="kw">pub fn </span>get_image&lt;Conn&gt;(conn: <span class="kw-2">&amp;</span>Conn, drawable: xproto::Drawable, x: i16, y: i16, width: u16, height: u16, plane_mask: u32, format: u8, shmseg: Seg, offset: u32) -&gt; <span class="prelude-ty">Result</span>&lt;Cookie&lt;<span class="lifetime">'_</span>, Conn, GetImageReply&gt;, ConnectionError&gt;
+<a href=#177 id=177 data-nosnippet>177</a><span class="kw">where
+<a href=#178 id=178 data-nosnippet>178</a>    </span>Conn: RequestConnection + <span class="question-mark">?</span>Sized,
+<a href=#179 id=179 data-nosnippet>179</a>{
+<a href=#180 id=180 data-nosnippet>180</a>    <span class="kw">let </span>request0 = GetImageRequest {
+<a href=#181 id=181 data-nosnippet>181</a>        drawable,
+<a href=#182 id=182 data-nosnippet>182</a>        x,
+<a href=#183 id=183 data-nosnippet>183</a>        y,
+<a href=#184 id=184 data-nosnippet>184</a>        width,
+<a href=#185 id=185 data-nosnippet>185</a>        height,
+<a href=#186 id=186 data-nosnippet>186</a>        plane_mask,
+<a href=#187 id=187 data-nosnippet>187</a>        format,
+<a href=#188 id=188 data-nosnippet>188</a>        shmseg,
+<a href=#189 id=189 data-nosnippet>189</a>        offset,
+<a href=#190 id=190 data-nosnippet>190</a>    };
+<a href=#191 id=191 data-nosnippet>191</a>    <span class="kw">let </span>(bytes, fds) = request0.serialize(major_opcode(conn)<span class="question-mark">?</span>);
+<a href=#192 id=192 data-nosnippet>192</a>    <span class="kw">let </span>slices = [IoSlice::new(<span class="kw-2">&amp;</span>bytes[<span class="number">0</span>])];
+<a href=#193 id=193 data-nosnippet>193</a>    <span class="macro">assert_eq!</span>(slices.len(), bytes.len());
+<a href=#194 id=194 data-nosnippet>194</a>    conn.send_request_with_reply(<span class="kw-2">&amp;</span>slices, fds)
+<a href=#195 id=195 data-nosnippet>195</a>}
+<a href=#196 id=196 data-nosnippet>196</a>
+<a href=#197 id=197 data-nosnippet>197</a><span class="doccomment">/// Create a pixmap backed by shared memory..
+<a href=#198 id=198 data-nosnippet>198</a>///
+<a href=#199 id=199 data-nosnippet>199</a>/// Create a pixmap backed by shared memory.  Writes to the shared memory will be
+<a href=#200 id=200 data-nosnippet>200</a>/// reflected in the contents of the pixmap, and writes to the pixmap will be
+<a href=#201 id=201 data-nosnippet>201</a>/// reflected in the contents of the shared memory.
+<a href=#202 id=202 data-nosnippet>202</a>///
+<a href=#203 id=203 data-nosnippet>203</a>/// # Fields
+<a href=#204 id=204 data-nosnippet>204</a>///
+<a href=#205 id=205 data-nosnippet>205</a>/// * `pid` - A pixmap ID created with xcb_generate_id().
+<a href=#206 id=206 data-nosnippet>206</a>/// * `drawable` - The drawable to create the pixmap in.
+<a href=#207 id=207 data-nosnippet>207</a>/// * `width` - The width of the pixmap to create.  Must be nonzero, or a Value error results.
+<a href=#208 id=208 data-nosnippet>208</a>/// * `height` - The height of the pixmap to create.  Must be nonzero, or a Value error results.
+<a href=#209 id=209 data-nosnippet>209</a>/// * `depth` - The depth of the pixmap to create.  Must be nonzero, or a Value error results.
+<a href=#210 id=210 data-nosnippet>210</a>/// * `shmseg` - The shared memory segment to use to create the pixmap.
+<a href=#211 id=211 data-nosnippet>211</a>/// * `offset` - The offset in the segment to create the pixmap at.
+<a href=#212 id=212 data-nosnippet>212</a></span><span class="kw">pub fn </span>create_pixmap&lt;Conn&gt;(conn: <span class="kw-2">&amp;</span>Conn, pid: xproto::Pixmap, drawable: xproto::Drawable, width: u16, height: u16, depth: u8, shmseg: Seg, offset: u32) -&gt; <span class="prelude-ty">Result</span>&lt;VoidCookie&lt;<span class="lifetime">'_</span>, Conn&gt;, ConnectionError&gt;
+<a href=#213 id=213 data-nosnippet>213</a><span class="kw">where
+<a href=#214 id=214 data-nosnippet>214</a>    </span>Conn: RequestConnection + <span class="question-mark">?</span>Sized,
+<a href=#215 id=215 data-nosnippet>215</a>{
+<a href=#216 id=216 data-nosnippet>216</a>    <span class="kw">let </span>request0 = CreatePixmapRequest {
+<a href=#217 id=217 data-nosnippet>217</a>        pid,
+<a href=#218 id=218 data-nosnippet>218</a>        drawable,
+<a href=#219 id=219 data-nosnippet>219</a>        width,
+<a href=#220 id=220 data-nosnippet>220</a>        height,
+<a href=#221 id=221 data-nosnippet>221</a>        depth,
+<a href=#222 id=222 data-nosnippet>222</a>        shmseg,
+<a href=#223 id=223 data-nosnippet>223</a>        offset,
+<a href=#224 id=224 data-nosnippet>224</a>    };
+<a href=#225 id=225 data-nosnippet>225</a>    <span class="kw">let </span>(bytes, fds) = request0.serialize(major_opcode(conn)<span class="question-mark">?</span>);
+<a href=#226 id=226 data-nosnippet>226</a>    <span class="kw">let </span>slices = [IoSlice::new(<span class="kw-2">&amp;</span>bytes[<span class="number">0</span>])];
+<a href=#227 id=227 data-nosnippet>227</a>    <span class="macro">assert_eq!</span>(slices.len(), bytes.len());
+<a href=#228 id=228 data-nosnippet>228</a>    conn.send_request_without_reply(<span class="kw-2">&amp;</span>slices, fds)
+<a href=#229 id=229 data-nosnippet>229</a>}
+<a href=#230 id=230 data-nosnippet>230</a>
+<a href=#231 id=231 data-nosnippet>231</a><span class="doccomment">/// Create a shared memory segment.
+<a href=#232 id=232 data-nosnippet>232</a>///
+<a href=#233 id=233 data-nosnippet>233</a>/// Create a shared memory segment.  The file descriptor will be mapped at offset
+<a href=#234 id=234 data-nosnippet>234</a>/// zero, and the size will be obtained using fstat().  A zero size will result in a
+<a href=#235 id=235 data-nosnippet>235</a>/// Value error.
+<a href=#236 id=236 data-nosnippet>236</a>///
+<a href=#237 id=237 data-nosnippet>237</a>/// # Fields
+<a href=#238 id=238 data-nosnippet>238</a>///
+<a href=#239 id=239 data-nosnippet>239</a>/// * `shmseg` - A shared memory segment ID created with xcb_generate_id().
+<a href=#240 id=240 data-nosnippet>240</a>/// * `shm_fd` - The file descriptor the server should mmap().
+<a href=#241 id=241 data-nosnippet>241</a>/// * `read_only` - True if the segment shall be mapped read only by the X11 server, otherwise false.
+<a href=#242 id=242 data-nosnippet>242</a></span><span class="kw">pub fn </span>attach_fd&lt;Conn, A&gt;(conn: <span class="kw-2">&amp;</span>Conn, shmseg: Seg, shm_fd: A, read_only: bool) -&gt; <span class="prelude-ty">Result</span>&lt;VoidCookie&lt;<span class="lifetime">'_</span>, Conn&gt;, ConnectionError&gt;
+<a href=#243 id=243 data-nosnippet>243</a><span class="kw">where
+<a href=#244 id=244 data-nosnippet>244</a>    </span>Conn: RequestConnection + <span class="question-mark">?</span>Sized,
+<a href=#245 id=245 data-nosnippet>245</a>    A: Into&lt;RawFdContainer&gt;,
+<a href=#246 id=246 data-nosnippet>246</a>{
+<a href=#247 id=247 data-nosnippet>247</a>    <span class="kw">let </span>shm_fd: RawFdContainer = shm_fd.into();
+<a href=#248 id=248 data-nosnippet>248</a>    <span class="kw">let </span>request0 = AttachFdRequest {
+<a href=#249 id=249 data-nosnippet>249</a>        shmseg,
+<a href=#250 id=250 data-nosnippet>250</a>        shm_fd,
+<a href=#251 id=251 data-nosnippet>251</a>        read_only,
+<a href=#252 id=252 data-nosnippet>252</a>    };
+<a href=#253 id=253 data-nosnippet>253</a>    <span class="kw">let </span>(bytes, fds) = request0.serialize(major_opcode(conn)<span class="question-mark">?</span>);
+<a href=#254 id=254 data-nosnippet>254</a>    <span class="kw">let </span>slices = [IoSlice::new(<span class="kw-2">&amp;</span>bytes[<span class="number">0</span>])];
+<a href=#255 id=255 data-nosnippet>255</a>    <span class="macro">assert_eq!</span>(slices.len(), bytes.len());
+<a href=#256 id=256 data-nosnippet>256</a>    conn.send_request_without_reply(<span class="kw-2">&amp;</span>slices, fds)
+<a href=#257 id=257 data-nosnippet>257</a>}
+<a href=#258 id=258 data-nosnippet>258</a>
+<a href=#259 id=259 data-nosnippet>259</a><span class="doccomment">/// Asks the server to allocate a shared memory segment..
+<a href=#260 id=260 data-nosnippet>260</a>///
+<a href=#261 id=261 data-nosnippet>261</a>/// Asks the server to allocate a shared memory segment.  The server’s reply will
+<a href=#262 id=262 data-nosnippet>262</a>/// include a file descriptor for the client to pass to mmap().
+<a href=#263 id=263 data-nosnippet>263</a>///
+<a href=#264 id=264 data-nosnippet>264</a>/// # Fields
+<a href=#265 id=265 data-nosnippet>265</a>///
+<a href=#266 id=266 data-nosnippet>266</a>/// * `shmseg` - A shared memory segment ID created with xcb_generate_id().
+<a href=#267 id=267 data-nosnippet>267</a>/// * `size` - The size of the segment to create.
+<a href=#268 id=268 data-nosnippet>268</a>/// * `read_only` - True if the server should map the segment read-only; otherwise false.
+<a href=#269 id=269 data-nosnippet>269</a></span><span class="kw">pub fn </span>create_segment&lt;Conn&gt;(conn: <span class="kw-2">&amp;</span>Conn, shmseg: Seg, size: u32, read_only: bool) -&gt; <span class="prelude-ty">Result</span>&lt;CookieWithFds&lt;<span class="lifetime">'_</span>, Conn, CreateSegmentReply&gt;, ConnectionError&gt;
+<a href=#270 id=270 data-nosnippet>270</a><span class="kw">where
+<a href=#271 id=271 data-nosnippet>271</a>    </span>Conn: RequestConnection + <span class="question-mark">?</span>Sized,
+<a href=#272 id=272 data-nosnippet>272</a>{
+<a href=#273 id=273 data-nosnippet>273</a>    <span class="kw">let </span>request0 = CreateSegmentRequest {
+<a href=#274 id=274 data-nosnippet>274</a>        shmseg,
+<a href=#275 id=275 data-nosnippet>275</a>        size,
+<a href=#276 id=276 data-nosnippet>276</a>        read_only,
+<a href=#277 id=277 data-nosnippet>277</a>    };
+<a href=#278 id=278 data-nosnippet>278</a>    <span class="kw">let </span>(bytes, fds) = request0.serialize(major_opcode(conn)<span class="question-mark">?</span>);
+<a href=#279 id=279 data-nosnippet>279</a>    <span class="kw">let </span>slices = [IoSlice::new(<span class="kw-2">&amp;</span>bytes[<span class="number">0</span>])];
+<a href=#280 id=280 data-nosnippet>280</a>    <span class="macro">assert_eq!</span>(slices.len(), bytes.len());
+<a href=#281 id=281 data-nosnippet>281</a>    conn.send_request_with_reply_with_fds(<span class="kw-2">&amp;</span>slices, fds)
+<a href=#282 id=282 data-nosnippet>282</a>}
+<a href=#283 id=283 data-nosnippet>283</a>
+<a href=#284 id=284 data-nosnippet>284</a><span class="doccomment">/// Extension trait defining the requests of this extension.
+<a href=#285 id=285 data-nosnippet>285</a></span><span class="kw">pub trait </span>ConnectionExt: RequestConnection {
+<a href=#286 id=286 data-nosnippet>286</a>    <span class="doccomment">/// Query the version of the MIT-SHM extension..
+<a href=#287 id=287 data-nosnippet>287</a>    ///
+<a href=#288 id=288 data-nosnippet>288</a>    /// This is used to determine the version of the MIT-SHM extension supported by the
+<a href=#289 id=289 data-nosnippet>289</a>    /// X server.  Clients MUST NOT make other requests in this extension until a reply
+<a href=#290 id=290 data-nosnippet>290</a>    /// to this requests indicates the X server supports them.
+<a href=#291 id=291 data-nosnippet>291</a>    </span><span class="kw">fn </span>shm_query_version(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;Cookie&lt;<span class="lifetime">'_</span>, <span class="self">Self</span>, QueryVersionReply&gt;, ConnectionError&gt;
+<a href=#292 id=292 data-nosnippet>292</a>    {
+<a href=#293 id=293 data-nosnippet>293</a>        query_version(<span class="self">self</span>)
+<a href=#294 id=294 data-nosnippet>294</a>    }
+<a href=#295 id=295 data-nosnippet>295</a>    <span class="doccomment">/// Attach a System V shared memory segment..
+<a href=#296 id=296 data-nosnippet>296</a>    ///
+<a href=#297 id=297 data-nosnippet>297</a>    /// Attach a System V shared memory segment to the server.  This will fail unless
+<a href=#298 id=298 data-nosnippet>298</a>    /// the server has permission to map the segment.  The client may destroy the segment
+<a href=#299 id=299 data-nosnippet>299</a>    /// as soon as it receives a XCB_SHM_COMPLETION event with the shmseg value in this
+<a href=#300 id=300 data-nosnippet>300</a>    /// request and with the appropriate serial number.
+<a href=#301 id=301 data-nosnippet>301</a>    ///
+<a href=#302 id=302 data-nosnippet>302</a>    /// # Fields
+<a href=#303 id=303 data-nosnippet>303</a>    ///
+<a href=#304 id=304 data-nosnippet>304</a>    /// * `shmseg` - A shared memory segment ID created with xcb_generate_id().
+<a href=#305 id=305 data-nosnippet>305</a>    /// * `shmid` - The System V shared memory segment the server should map.
+<a href=#306 id=306 data-nosnippet>306</a>    /// * `read_only` - True if the segment shall be mapped read only by the X11 server, otherwise false.
+<a href=#307 id=307 data-nosnippet>307</a>    </span><span class="kw">fn </span>shm_attach(<span class="kw-2">&amp;</span><span class="self">self</span>, shmseg: Seg, shmid: u32, read_only: bool) -&gt; <span class="prelude-ty">Result</span>&lt;VoidCookie&lt;<span class="lifetime">'_</span>, <span class="self">Self</span>&gt;, ConnectionError&gt;
+<a href=#308 id=308 data-nosnippet>308</a>    {
+<a href=#309 id=309 data-nosnippet>309</a>        attach(<span class="self">self</span>, shmseg, shmid, read_only)
+<a href=#310 id=310 data-nosnippet>310</a>    }
+<a href=#311 id=311 data-nosnippet>311</a>    <span class="doccomment">/// Destroys the specified shared memory segment..
+<a href=#312 id=312 data-nosnippet>312</a>    ///
+<a href=#313 id=313 data-nosnippet>313</a>    /// Destroys the specified shared memory segment.  This will never fail unless the
+<a href=#314 id=314 data-nosnippet>314</a>    /// segment number is incorrect.
+<a href=#315 id=315 data-nosnippet>315</a>    ///
+<a href=#316 id=316 data-nosnippet>316</a>    /// # Fields
+<a href=#317 id=317 data-nosnippet>317</a>    ///
+<a href=#318 id=318 data-nosnippet>318</a>    /// * `shmseg` - The segment to be destroyed.
+<a href=#319 id=319 data-nosnippet>319</a>    </span><span class="kw">fn </span>shm_detach(<span class="kw-2">&amp;</span><span class="self">self</span>, shmseg: Seg) -&gt; <span class="prelude-ty">Result</span>&lt;VoidCookie&lt;<span class="lifetime">'_</span>, <span class="self">Self</span>&gt;, ConnectionError&gt;
+<a href=#320 id=320 data-nosnippet>320</a>    {
+<a href=#321 id=321 data-nosnippet>321</a>        detach(<span class="self">self</span>, shmseg)
+<a href=#322 id=322 data-nosnippet>322</a>    }
+<a href=#323 id=323 data-nosnippet>323</a>    <span class="doccomment">/// Copy data from the shared memory to the specified drawable..
+<a href=#324 id=324 data-nosnippet>324</a>    ///
+<a href=#325 id=325 data-nosnippet>325</a>    /// Copy data from the shared memory to the specified drawable.  The amount of bytes
+<a href=#326 id=326 data-nosnippet>326</a>    /// written to the destination image is always equal to the number of bytes read
+<a href=#327 id=327 data-nosnippet>327</a>    /// from the shared memory segment.
+<a href=#328 id=328 data-nosnippet>328</a>    ///
+<a href=#329 id=329 data-nosnippet>329</a>    /// # Fields
+<a href=#330 id=330 data-nosnippet>330</a>    ///
+<a href=#331 id=331 data-nosnippet>331</a>    /// * `drawable` - The drawable to draw to.
+<a href=#332 id=332 data-nosnippet>332</a>    /// * `gc` - The graphics context to use.
+<a href=#333 id=333 data-nosnippet>333</a>    /// * `total_width` - The total width of the source image.
+<a href=#334 id=334 data-nosnippet>334</a>    /// * `total_height` - The total height of the source image.
+<a href=#335 id=335 data-nosnippet>335</a>    /// * `src_x` - The source X coordinate of the sub-image to copy.
+<a href=#336 id=336 data-nosnippet>336</a>    /// * `src_y` - The source Y coordinate of the sub-image to copy.
+<a href=#337 id=337 data-nosnippet>337</a>    /// * `src_width` - The width, in source image coordinates, of the data to copy from the source.
+<a href=#338 id=338 data-nosnippet>338</a>    /// The X server will use this to determine the amount of data to copy.  The amount
+<a href=#339 id=339 data-nosnippet>339</a>    /// of the destination image that is overwritten is determined automatically.
+<a href=#340 id=340 data-nosnippet>340</a>    /// * `src_height` - The height, in source image coordinates, of the data to copy from the source.
+<a href=#341 id=341 data-nosnippet>341</a>    /// The X server will use this to determine the amount of data to copy.  The amount
+<a href=#342 id=342 data-nosnippet>342</a>    /// of the destination image that is overwritten is determined automatically.
+<a href=#343 id=343 data-nosnippet>343</a>    /// * `dst_x` - The X coordinate on the destination drawable to copy to.
+<a href=#344 id=344 data-nosnippet>344</a>    /// * `dst_y` - The Y coordinate on the destination drawable to copy to.
+<a href=#345 id=345 data-nosnippet>345</a>    /// * `depth` - The depth to use.
+<a href=#346 id=346 data-nosnippet>346</a>    /// * `format` - The format of the image being drawn.  If it is XYBitmap, depth must be 1, or a
+<a href=#347 id=347 data-nosnippet>347</a>    /// "BadMatch" error results.  The foreground pixel in the GC determines the source
+<a href=#348 id=348 data-nosnippet>348</a>    /// for the one bits in the image, and the background pixel determines the source
+<a href=#349 id=349 data-nosnippet>349</a>    /// for the zero bits.  For XYPixmap and ZPixmap, the depth must match the depth of
+<a href=#350 id=350 data-nosnippet>350</a>    /// the drawable, or a "BadMatch" error results.
+<a href=#351 id=351 data-nosnippet>351</a>    /// * `send_event` - True if the server should send an XCB_SHM_COMPLETION event when the blit
+<a href=#352 id=352 data-nosnippet>352</a>    /// completes.
+<a href=#353 id=353 data-nosnippet>353</a>    /// * `offset` - The offset that the source image starts at.
+<a href=#354 id=354 data-nosnippet>354</a>    </span><span class="kw">fn </span>shm_put_image(<span class="kw-2">&amp;</span><span class="self">self</span>, drawable: xproto::Drawable, gc: xproto::Gcontext, total_width: u16, total_height: u16, src_x: u16, src_y: u16, src_width: u16, src_height: u16, dst_x: i16, dst_y: i16, depth: u8, format: u8, send_event: bool, shmseg: Seg, offset: u32) -&gt; <span class="prelude-ty">Result</span>&lt;VoidCookie&lt;<span class="lifetime">'_</span>, <span class="self">Self</span>&gt;, ConnectionError&gt;
+<a href=#355 id=355 data-nosnippet>355</a>    {
+<a href=#356 id=356 data-nosnippet>356</a>        put_image(<span class="self">self</span>, drawable, gc, total_width, total_height, src_x, src_y, src_width, src_height, dst_x, dst_y, depth, format, send_event, shmseg, offset)
+<a href=#357 id=357 data-nosnippet>357</a>    }
+<a href=#358 id=358 data-nosnippet>358</a>    <span class="doccomment">/// Copies data from the specified drawable to the shared memory segment..
+<a href=#359 id=359 data-nosnippet>359</a>    ///
+<a href=#360 id=360 data-nosnippet>360</a>    /// Copy data from the specified drawable to the shared memory segment.  The amount
+<a href=#361 id=361 data-nosnippet>361</a>    /// of bytes written to the destination image is always equal to the number of bytes
+<a href=#362 id=362 data-nosnippet>362</a>    /// read from the shared memory segment.
+<a href=#363 id=363 data-nosnippet>363</a>    ///
+<a href=#364 id=364 data-nosnippet>364</a>    /// # Fields
+<a href=#365 id=365 data-nosnippet>365</a>    ///
+<a href=#366 id=366 data-nosnippet>366</a>    /// * `drawable` - The drawable to copy the image out of.
+<a href=#367 id=367 data-nosnippet>367</a>    /// * `x` - The X coordinate in the drawable to begin copying at.
+<a href=#368 id=368 data-nosnippet>368</a>    /// * `y` - The Y coordinate in the drawable to begin copying at.
+<a href=#369 id=369 data-nosnippet>369</a>    /// * `width` - The width of the image to copy.
+<a href=#370 id=370 data-nosnippet>370</a>    /// * `height` - The height of the image to copy.
+<a href=#371 id=371 data-nosnippet>371</a>    /// * `plane_mask` - A mask that determines which planes are used.
+<a href=#372 id=372 data-nosnippet>372</a>    /// * `format` - The format to use for the copy (???).
+<a href=#373 id=373 data-nosnippet>373</a>    /// * `shmseg` - The destination shared memory segment.
+<a href=#374 id=374 data-nosnippet>374</a>    /// * `offset` - The offset in the shared memory segment to copy data to.
+<a href=#375 id=375 data-nosnippet>375</a>    </span><span class="kw">fn </span>shm_get_image(<span class="kw-2">&amp;</span><span class="self">self</span>, drawable: xproto::Drawable, x: i16, y: i16, width: u16, height: u16, plane_mask: u32, format: u8, shmseg: Seg, offset: u32) -&gt; <span class="prelude-ty">Result</span>&lt;Cookie&lt;<span class="lifetime">'_</span>, <span class="self">Self</span>, GetImageReply&gt;, ConnectionError&gt;
+<a href=#376 id=376 data-nosnippet>376</a>    {
+<a href=#377 id=377 data-nosnippet>377</a>        get_image(<span class="self">self</span>, drawable, x, y, width, height, plane_mask, format, shmseg, offset)
+<a href=#378 id=378 data-nosnippet>378</a>    }
+<a href=#379 id=379 data-nosnippet>379</a>    <span class="doccomment">/// Create a pixmap backed by shared memory..
+<a href=#380 id=380 data-nosnippet>380</a>    ///
+<a href=#381 id=381 data-nosnippet>381</a>    /// Create a pixmap backed by shared memory.  Writes to the shared memory will be
+<a href=#382 id=382 data-nosnippet>382</a>    /// reflected in the contents of the pixmap, and writes to the pixmap will be
+<a href=#383 id=383 data-nosnippet>383</a>    /// reflected in the contents of the shared memory.
+<a href=#384 id=384 data-nosnippet>384</a>    ///
+<a href=#385 id=385 data-nosnippet>385</a>    /// # Fields
+<a href=#386 id=386 data-nosnippet>386</a>    ///
+<a href=#387 id=387 data-nosnippet>387</a>    /// * `pid` - A pixmap ID created with xcb_generate_id().
+<a href=#388 id=388 data-nosnippet>388</a>    /// * `drawable` - The drawable to create the pixmap in.
+<a href=#389 id=389 data-nosnippet>389</a>    /// * `width` - The width of the pixmap to create.  Must be nonzero, or a Value error results.
+<a href=#390 id=390 data-nosnippet>390</a>    /// * `height` - The height of the pixmap to create.  Must be nonzero, or a Value error results.
+<a href=#391 id=391 data-nosnippet>391</a>    /// * `depth` - The depth of the pixmap to create.  Must be nonzero, or a Value error results.
+<a href=#392 id=392 data-nosnippet>392</a>    /// * `shmseg` - The shared memory segment to use to create the pixmap.
+<a href=#393 id=393 data-nosnippet>393</a>    /// * `offset` - The offset in the segment to create the pixmap at.
+<a href=#394 id=394 data-nosnippet>394</a>    </span><span class="kw">fn </span>shm_create_pixmap(<span class="kw-2">&amp;</span><span class="self">self</span>, pid: xproto::Pixmap, drawable: xproto::Drawable, width: u16, height: u16, depth: u8, shmseg: Seg, offset: u32) -&gt; <span class="prelude-ty">Result</span>&lt;VoidCookie&lt;<span class="lifetime">'_</span>, <span class="self">Self</span>&gt;, ConnectionError&gt;
+<a href=#395 id=395 data-nosnippet>395</a>    {
+<a href=#396 id=396 data-nosnippet>396</a>        create_pixmap(<span class="self">self</span>, pid, drawable, width, height, depth, shmseg, offset)
+<a href=#397 id=397 data-nosnippet>397</a>    }
+<a href=#398 id=398 data-nosnippet>398</a>    <span class="doccomment">/// Create a shared memory segment.
+<a href=#399 id=399 data-nosnippet>399</a>    ///
+<a href=#400 id=400 data-nosnippet>400</a>    /// Create a shared memory segment.  The file descriptor will be mapped at offset
+<a href=#401 id=401 data-nosnippet>401</a>    /// zero, and the size will be obtained using fstat().  A zero size will result in a
+<a href=#402 id=402 data-nosnippet>402</a>    /// Value error.
+<a href=#403 id=403 data-nosnippet>403</a>    ///
+<a href=#404 id=404 data-nosnippet>404</a>    /// # Fields
+<a href=#405 id=405 data-nosnippet>405</a>    ///
+<a href=#406 id=406 data-nosnippet>406</a>    /// * `shmseg` - A shared memory segment ID created with xcb_generate_id().
+<a href=#407 id=407 data-nosnippet>407</a>    /// * `shm_fd` - The file descriptor the server should mmap().
+<a href=#408 id=408 data-nosnippet>408</a>    /// * `read_only` - True if the segment shall be mapped read only by the X11 server, otherwise false.
+<a href=#409 id=409 data-nosnippet>409</a>    </span><span class="kw">fn </span>shm_attach_fd&lt;A&gt;(<span class="kw-2">&amp;</span><span class="self">self</span>, shmseg: Seg, shm_fd: A, read_only: bool) -&gt; <span class="prelude-ty">Result</span>&lt;VoidCookie&lt;<span class="lifetime">'_</span>, <span class="self">Self</span>&gt;, ConnectionError&gt;
+<a href=#410 id=410 data-nosnippet>410</a>    <span class="kw">where
+<a href=#411 id=411 data-nosnippet>411</a>        </span>A: Into&lt;RawFdContainer&gt;,
+<a href=#412 id=412 data-nosnippet>412</a>    {
+<a href=#413 id=413 data-nosnippet>413</a>        attach_fd(<span class="self">self</span>, shmseg, shm_fd, read_only)
+<a href=#414 id=414 data-nosnippet>414</a>    }
+<a href=#415 id=415 data-nosnippet>415</a>    <span class="doccomment">/// Asks the server to allocate a shared memory segment..
+<a href=#416 id=416 data-nosnippet>416</a>    ///
+<a href=#417 id=417 data-nosnippet>417</a>    /// Asks the server to allocate a shared memory segment.  The server’s reply will
+<a href=#418 id=418 data-nosnippet>418</a>    /// include a file descriptor for the client to pass to mmap().
+<a href=#419 id=419 data-nosnippet>419</a>    ///
+<a href=#420 id=420 data-nosnippet>420</a>    /// # Fields
+<a href=#421 id=421 data-nosnippet>421</a>    ///
+<a href=#422 id=422 data-nosnippet>422</a>    /// * `shmseg` - A shared memory segment ID created with xcb_generate_id().
+<a href=#423 id=423 data-nosnippet>423</a>    /// * `size` - The size of the segment to create.
+<a href=#424 id=424 data-nosnippet>424</a>    /// * `read_only` - True if the server should map the segment read-only; otherwise false.
+<a href=#425 id=425 data-nosnippet>425</a>    </span><span class="kw">fn </span>shm_create_segment(<span class="kw-2">&amp;</span><span class="self">self</span>, shmseg: Seg, size: u32, read_only: bool) -&gt; <span class="prelude-ty">Result</span>&lt;CookieWithFds&lt;<span class="lifetime">'_</span>, <span class="self">Self</span>, CreateSegmentReply&gt;, ConnectionError&gt;
+<a href=#426 id=426 data-nosnippet>426</a>    {
+<a href=#427 id=427 data-nosnippet>427</a>        create_segment(<span class="self">self</span>, shmseg, size, read_only)
+<a href=#428 id=428 data-nosnippet>428</a>    }
+<a href=#429 id=429 data-nosnippet>429</a>}
+<a href=#430 id=430 data-nosnippet>430</a>
+<a href=#431 id=431 data-nosnippet>431</a><span class="kw">impl</span>&lt;C: RequestConnection + <span class="question-mark">?</span>Sized&gt; ConnectionExt <span class="kw">for </span>C {}
+<a href=#432 id=432 data-nosnippet>432</a>
+<a href=#433 id=433 data-nosnippet>433</a><span class="doccomment">/// A RAII-like wrapper around a [Seg].
+<a href=#434 id=434 data-nosnippet>434</a>///
+<a href=#435 id=435 data-nosnippet>435</a>/// Instances of this struct represent a Seg that is freed in `Drop`.
+<a href=#436 id=436 data-nosnippet>436</a>///
+<a href=#437 id=437 data-nosnippet>437</a>/// Any errors during `Drop` are silently ignored. Most likely an error here means that your
+<a href=#438 id=438 data-nosnippet>438</a>/// X11 connection is broken and later requests will also fail.
+<a href=#439 id=439 data-nosnippet>439</a></span><span class="attr">#[derive(Debug)]
+<a href=#440 id=440 data-nosnippet>440</a></span><span class="kw">pub struct </span>SegWrapper&lt;C: RequestConnection&gt;(C, Seg);
+<a href=#441 id=441 data-nosnippet>441</a>
+<a href=#442 id=442 data-nosnippet>442</a><span class="kw">impl</span>&lt;C: RequestConnection&gt; SegWrapper&lt;C&gt;
+<a href=#443 id=443 data-nosnippet>443</a>{
+<a href=#444 id=444 data-nosnippet>444</a>    <span class="doccomment">/// Assume ownership of the given resource and destroy it in `Drop`.
+<a href=#445 id=445 data-nosnippet>445</a>    </span><span class="kw">pub fn </span>for_seg(conn: C, id: Seg) -&gt; <span class="self">Self </span>{
+<a href=#446 id=446 data-nosnippet>446</a>        SegWrapper(conn, id)
+<a href=#447 id=447 data-nosnippet>447</a>    }
+<a href=#448 id=448 data-nosnippet>448</a>
+<a href=#449 id=449 data-nosnippet>449</a>    <span class="doccomment">/// Get the XID of the wrapped resource
+<a href=#450 id=450 data-nosnippet>450</a>    </span><span class="kw">pub fn </span>seg(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; Seg {
+<a href=#451 id=451 data-nosnippet>451</a>        <span class="self">self</span>.<span class="number">1
+<a href=#452 id=452 data-nosnippet>452</a>    </span>}
+<a href=#453 id=453 data-nosnippet>453</a>
+<a href=#454 id=454 data-nosnippet>454</a>    <span class="doccomment">/// Assume ownership of the XID of the wrapped resource
+<a href=#455 id=455 data-nosnippet>455</a>    ///
+<a href=#456 id=456 data-nosnippet>456</a>    /// This function destroys this wrapper without freeing the underlying resource.
+<a href=#457 id=457 data-nosnippet>457</a>    </span><span class="kw">pub fn </span>into_seg(<span class="self">self</span>) -&gt; Seg {
+<a href=#458 id=458 data-nosnippet>458</a>        <span class="kw">let </span>id = <span class="self">self</span>.<span class="number">1</span>;
+<a href=#459 id=459 data-nosnippet>459</a>        std::mem::forget(<span class="self">self</span>);
+<a href=#460 id=460 data-nosnippet>460</a>        id
+<a href=#461 id=461 data-nosnippet>461</a>    }
+<a href=#462 id=462 data-nosnippet>462</a>}
+<a href=#463 id=463 data-nosnippet>463</a>
+<a href=#464 id=464 data-nosnippet>464</a><span class="kw">impl</span>&lt;<span class="lifetime">'c</span>, C: X11Connection&gt; SegWrapper&lt;<span class="kw-2">&amp;</span><span class="lifetime">'c </span>C&gt;
+<a href=#465 id=465 data-nosnippet>465</a>{
+<a href=#466 id=466 data-nosnippet>466</a>    <span class="doccomment">/// Create a new Seg and return a Seg wrapper and a cookie.
+<a href=#467 id=467 data-nosnippet>467</a>    ///
+<a href=#468 id=468 data-nosnippet>468</a>    /// This is a thin wrapper around [attach] that allocates an id for the Seg.
+<a href=#469 id=469 data-nosnippet>469</a>    /// This function returns the resulting `SegWrapper` that owns the created Seg and frees
+<a href=#470 id=470 data-nosnippet>470</a>    /// it in `Drop`. This also returns a `VoidCookie` that comes from the call to
+<a href=#471 id=471 data-nosnippet>471</a>    /// [attach].
+<a href=#472 id=472 data-nosnippet>472</a>    ///
+<a href=#473 id=473 data-nosnippet>473</a>    /// Errors can come from the call to [X11Connection::generate_id] or [attach].
+<a href=#474 id=474 data-nosnippet>474</a>    </span><span class="kw">pub fn </span>attach_and_get_cookie(conn: <span class="kw-2">&amp;</span><span class="lifetime">'c </span>C, shmid: u32, read_only: bool) -&gt; <span class="prelude-ty">Result</span>&lt;(<span class="self">Self</span>, VoidCookie&lt;<span class="lifetime">'c</span>, C&gt;), ReplyOrIdError&gt;
+<a href=#475 id=475 data-nosnippet>475</a>    {
+<a href=#476 id=476 data-nosnippet>476</a>        <span class="kw">let </span>shmseg = conn.generate_id()<span class="question-mark">?</span>;
+<a href=#477 id=477 data-nosnippet>477</a>        <span class="kw">let </span>cookie = attach(conn, shmseg, shmid, read_only)<span class="question-mark">?</span>;
+<a href=#478 id=478 data-nosnippet>478</a>        <span class="prelude-val">Ok</span>((<span class="self">Self</span>::for_seg(conn, shmseg), cookie))
+<a href=#479 id=479 data-nosnippet>479</a>    }
+<a href=#480 id=480 data-nosnippet>480</a>}
+<a href=#481 id=481 data-nosnippet>481</a><span class="kw">impl</span>&lt;C: X11Connection&gt; SegWrapper&lt;C&gt;
+<a href=#482 id=482 data-nosnippet>482</a>{
+<a href=#483 id=483 data-nosnippet>483</a>    <span class="doccomment">/// Create a new Seg and return a Seg wrapper
+<a href=#484 id=484 data-nosnippet>484</a>    ///
+<a href=#485 id=485 data-nosnippet>485</a>    /// This is a thin wrapper around [attach] that allocates an id for the Seg.
+<a href=#486 id=486 data-nosnippet>486</a>    /// This function returns the resulting `SegWrapper` that owns the created Seg and frees
+<a href=#487 id=487 data-nosnippet>487</a>    /// it in `Drop`.
+<a href=#488 id=488 data-nosnippet>488</a>    ///
+<a href=#489 id=489 data-nosnippet>489</a>    /// Errors can come from the call to [X11Connection::generate_id] or [attach].
+<a href=#490 id=490 data-nosnippet>490</a>    </span><span class="kw">pub fn </span>attach(conn: C, shmid: u32, read_only: bool) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, ReplyOrIdError&gt;
+<a href=#491 id=491 data-nosnippet>491</a>    {
+<a href=#492 id=492 data-nosnippet>492</a>        <span class="kw">let </span>shmseg = conn.generate_id()<span class="question-mark">?</span>;
+<a href=#493 id=493 data-nosnippet>493</a>        <span class="kw">let _ </span>= attach(<span class="kw-2">&amp;</span>conn, shmseg, shmid, read_only)<span class="question-mark">?</span>;
+<a href=#494 id=494 data-nosnippet>494</a>        <span class="prelude-val">Ok</span>(<span class="self">Self</span>::for_seg(conn, shmseg))
+<a href=#495 id=495 data-nosnippet>495</a>    }
+<a href=#496 id=496 data-nosnippet>496</a>}
+<a href=#497 id=497 data-nosnippet>497</a>
+<a href=#498 id=498 data-nosnippet>498</a><span class="kw">impl</span>&lt;<span class="lifetime">'c</span>, C: X11Connection&gt; SegWrapper&lt;<span class="kw-2">&amp;</span><span class="lifetime">'c </span>C&gt;
+<a href=#499 id=499 data-nosnippet>499</a>{
+<a href=#500 id=500 data-nosnippet>500</a>    <span class="doccomment">/// Create a new Seg and return a Seg wrapper and a cookie.
+<a href=#501 id=501 data-nosnippet>501</a>    ///
+<a href=#502 id=502 data-nosnippet>502</a>    /// This is a thin wrapper around [attach_fd] that allocates an id for the Seg.
+<a href=#503 id=503 data-nosnippet>503</a>    /// This function returns the resulting `SegWrapper` that owns the created Seg and frees
+<a href=#504 id=504 data-nosnippet>504</a>    /// it in `Drop`. This also returns a `VoidCookie` that comes from the call to
+<a href=#505 id=505 data-nosnippet>505</a>    /// [attach_fd].
+<a href=#506 id=506 data-nosnippet>506</a>    ///
+<a href=#507 id=507 data-nosnippet>507</a>    /// Errors can come from the call to [X11Connection::generate_id] or [attach_fd].
+<a href=#508 id=508 data-nosnippet>508</a>    </span><span class="kw">pub fn </span>attach_fd_and_get_cookie&lt;A&gt;(conn: <span class="kw-2">&amp;</span><span class="lifetime">'c </span>C, shm_fd: A, read_only: bool) -&gt; <span class="prelude-ty">Result</span>&lt;(<span class="self">Self</span>, VoidCookie&lt;<span class="lifetime">'c</span>, C&gt;), ReplyOrIdError&gt;
+<a href=#509 id=509 data-nosnippet>509</a>    <span class="kw">where
+<a href=#510 id=510 data-nosnippet>510</a>        </span>A: Into&lt;RawFdContainer&gt;,
+<a href=#511 id=511 data-nosnippet>511</a>    {
+<a href=#512 id=512 data-nosnippet>512</a>        <span class="kw">let </span>shmseg = conn.generate_id()<span class="question-mark">?</span>;
+<a href=#513 id=513 data-nosnippet>513</a>        <span class="kw">let </span>cookie = attach_fd(conn, shmseg, shm_fd, read_only)<span class="question-mark">?</span>;
+<a href=#514 id=514 data-nosnippet>514</a>        <span class="prelude-val">Ok</span>((<span class="self">Self</span>::for_seg(conn, shmseg), cookie))
+<a href=#515 id=515 data-nosnippet>515</a>    }
+<a href=#516 id=516 data-nosnippet>516</a>}
+<a href=#517 id=517 data-nosnippet>517</a><span class="kw">impl</span>&lt;C: X11Connection&gt; SegWrapper&lt;C&gt;
+<a href=#518 id=518 data-nosnippet>518</a>{
+<a href=#519 id=519 data-nosnippet>519</a>    <span class="doccomment">/// Create a new Seg and return a Seg wrapper
+<a href=#520 id=520 data-nosnippet>520</a>    ///
+<a href=#521 id=521 data-nosnippet>521</a>    /// This is a thin wrapper around [attach_fd] that allocates an id for the Seg.
+<a href=#522 id=522 data-nosnippet>522</a>    /// This function returns the resulting `SegWrapper` that owns the created Seg and frees
+<a href=#523 id=523 data-nosnippet>523</a>    /// it in `Drop`.
+<a href=#524 id=524 data-nosnippet>524</a>    ///
+<a href=#525 id=525 data-nosnippet>525</a>    /// Errors can come from the call to [X11Connection::generate_id] or [attach_fd].
+<a href=#526 id=526 data-nosnippet>526</a>    </span><span class="kw">pub fn </span>attach_fd&lt;A&gt;(conn: C, shm_fd: A, read_only: bool) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, ReplyOrIdError&gt;
+<a href=#527 id=527 data-nosnippet>527</a>    <span class="kw">where
+<a href=#528 id=528 data-nosnippet>528</a>        </span>A: Into&lt;RawFdContainer&gt;,
+<a href=#529 id=529 data-nosnippet>529</a>    {
+<a href=#530 id=530 data-nosnippet>530</a>        <span class="kw">let </span>shmseg = conn.generate_id()<span class="question-mark">?</span>;
+<a href=#531 id=531 data-nosnippet>531</a>        <span class="kw">let _ </span>= attach_fd(<span class="kw-2">&amp;</span>conn, shmseg, shm_fd, read_only)<span class="question-mark">?</span>;
+<a href=#532 id=532 data-nosnippet>532</a>        <span class="prelude-val">Ok</span>(<span class="self">Self</span>::for_seg(conn, shmseg))
+<a href=#533 id=533 data-nosnippet>533</a>    }
+<a href=#534 id=534 data-nosnippet>534</a>}
+<a href=#535 id=535 data-nosnippet>535</a>
+<a href=#536 id=536 data-nosnippet>536</a><span class="kw">impl</span>&lt;C: RequestConnection&gt; From&lt;<span class="kw-2">&amp;</span>SegWrapper&lt;C&gt;&gt; <span class="kw">for </span>Seg {
+<a href=#537 id=537 data-nosnippet>537</a>    <span class="kw">fn </span>from(from: <span class="kw-2">&amp;</span>SegWrapper&lt;C&gt;) -&gt; <span class="self">Self </span>{
+<a href=#538 id=538 data-nosnippet>538</a>        from.<span class="number">1
+<a href=#539 id=539 data-nosnippet>539</a>    </span>}
+<a href=#540 id=540 data-nosnippet>540</a>}
+<a href=#541 id=541 data-nosnippet>541</a>
+<a href=#542 id=542 data-nosnippet>542</a><span class="kw">impl</span>&lt;C: RequestConnection&gt; Drop <span class="kw">for </span>SegWrapper&lt;C&gt; {
+<a href=#543 id=543 data-nosnippet>543</a>    <span class="kw">fn </span>drop(<span class="kw-2">&amp;mut </span><span class="self">self</span>) {
+<a href=#544 id=544 data-nosnippet>544</a>        <span class="kw">let _ </span>= detach(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="number">0</span>, <span class="self">self</span>.<span class="number">1</span>);
+<a href=#545 id=545 data-nosnippet>545</a>    }
+<a href=#546 id=546 data-nosnippet>546</a>}</code></pre></div></section></main></body></html>

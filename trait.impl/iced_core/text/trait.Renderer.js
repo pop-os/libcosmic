@@ -1,0 +1,9 @@
+(function() {
+    var implementors = Object.fromEntries([["cosmic",[]],["iced",[]],["iced_core",[]],["iced_renderer",[["impl&lt;A, B&gt; <a class=\"trait\" href=\"iced_core/text/trait.Renderer.html\" title=\"trait iced_core::text::Renderer\">Renderer</a> for <a class=\"enum\" href=\"iced_renderer/fallback/enum.Renderer.html\" title=\"enum iced_renderer::fallback::Renderer\">Renderer</a>&lt;A, B&gt;<div class=\"where\">where\n    A: <a class=\"trait\" href=\"iced_core/text/trait.Renderer.html\" title=\"trait iced_core::text::Renderer\">Renderer</a>,\n    B: <a class=\"trait\" href=\"iced_core/text/trait.Renderer.html\" title=\"trait iced_core::text::Renderer\">Renderer</a>&lt;Font = A::<a class=\"associatedtype\" href=\"iced_core/text/trait.Renderer.html#associatedtype.Font\" title=\"type iced_core::text::Renderer::Font\">Font</a>, Paragraph = A::<a class=\"associatedtype\" href=\"iced_core/text/trait.Renderer.html#associatedtype.Paragraph\" title=\"type iced_core::text::Renderer::Paragraph\">Paragraph</a>, Editor = A::<a class=\"associatedtype\" href=\"iced_core/text/trait.Renderer.html#associatedtype.Editor\" title=\"type iced_core::text::Renderer::Editor\">Editor</a>, Raw = A::<a class=\"associatedtype\" href=\"iced_core/text/trait.Renderer.html#associatedtype.Raw\" title=\"type iced_core::text::Renderer::Raw\">Raw</a>&gt;,</div>"]]],["iced_tiny_skia",[["impl <a class=\"trait\" href=\"iced_core/text/trait.Renderer.html\" title=\"trait iced_core::text::Renderer\">Renderer</a> for <a class=\"struct\" href=\"iced_tiny_skia/struct.Renderer.html\" title=\"struct iced_tiny_skia::Renderer\">Renderer</a>"]]]]);
+    if (window.register_implementors) {
+        window.register_implementors(implementors);
+    } else {
+        window.pending_implementors = implementors;
+    }
+})()
+//{"start":57,"fragment_lengths":[13,12,17,1258,272]}

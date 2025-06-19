@@ -1,0 +1,131 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Derive macro to add `Type` implementation to structs and enums."><title>Type in zvariant - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../static.files/rustdoc-916cea96.css"><meta name="rustdoc-vars" data-root-path="../" data-static-root-path="../static.files/" data-current-crate="zvariant" data-themes="" data-resource-suffix="" data-rustdoc-version="1.87.0 (17067e9ac 2025-05-09)" data-channel="1.87.0" data-search-js="search-e7298875.js" data-settings-js="settings-d72f25bb.js" ><script src="../static.files/storage-82c7156e.js"></script><script defer src="sidebar-items.js"></script><script defer src="../static.files/main-fb8c74a8.js"></script><noscript><link rel="stylesheet" href="../static.files/noscript-893ab5e7.css"></noscript><link rel="alternate icon" type="image/png" href="../static.files/favicon-32x32-6580c154.png"><link rel="icon" type="image/svg+xml" href="../static.files/favicon-044be391.svg"></head><body class="rustdoc derive"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle" title="show sidebar"></button><a class="logo-container" href="../zvariant/index.html"><img src="https://storage.googleapis.com/fdo-gitlab-uploads/project/avatar/3213/zbus-logomark.png" alt=""></a></nav><nav class="sidebar"><div class="sidebar-crate"><a class="logo-container" href="../zvariant/index.html"><img src="https://storage.googleapis.com/fdo-gitlab-uploads/project/avatar/3213/zbus-logomark.png" alt="logo"></a><h2><a href="../zvariant/index.html">zvariant</a><span class="version">3.15.2</span></h2></div><div class="sidebar-elems"><section id="rustdoc-toc"><h2 class="location"><a href="#">Type</a></h2><h3><a href="#">Sections</a></h3><ul class="block top-toc"><li><a href="#examples" title="Examples">Examples</a></li><li><a href="#custom-signatures" title="Custom signatures">Custom signatures</a></li></ul></section><div id="rustdoc-modnav"><h2 class="in-crate"><a href="index.html">In crate zvariant</a></h2></div></div></nav><div class="sidebar-resizer"></div><main><div class="width-limiter"><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><div class="rustdoc-breadcrumbs"><a href="index.html">zvariant</a></div><h1>Derive Macro <span class="derive">Type</span><button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"><a class="src" href="../src/zvariant_derive/lib.rs.html#166">Source</a> </span></div><pre class="rust item-decl"><code>#[derive(Type)]
+{
+    <span class="comment">// Attributes available to this derive:</span>
+    #[zvariant]
+}
+</code></pre><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Derive macro to add <a href="https://docs.rs/zvariant/2.10.0/zvariant/trait.Type.html"><code>Type</code></a> implementation to structs and enums.</p>
+<h2 id="examples"><a class="doc-anchor" href="#examples">§</a>Examples</h2>
+<p>For structs it works just like serde’s <a href="https://docs.serde.rs/serde/trait.Serialize.html"><code>Serialize</code></a> and <a href="https://docs.serde.rs/serde/de/trait.Deserialize.html"><code>Deserialize</code></a> macros:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>zvariant::{EncodingContext, from_slice, to_bytes, Type};
+<span class="kw">use </span>serde::{Deserialize, Serialize};
+<span class="kw">use </span>byteorder::LE;
+
+<span class="attr">#[derive(Deserialize, Serialize, Type, PartialEq, Debug)]
+</span><span class="kw">struct </span>Struct&lt;<span class="lifetime">'s</span>&gt; {
+    field1: u16,
+    field2: i64,
+    field3: <span class="kw-2">&amp;</span><span class="lifetime">'s </span>str,
+}
+
+<span class="macro">assert_eq!</span>(Struct::signature(), <span class="string">"(qxs)"</span>);
+<span class="kw">let </span>s = Struct {
+    field1: <span class="number">42</span>,
+    field2: i64::max_value(),
+    field3: <span class="string">"hello"</span>,
+};
+<span class="kw">let </span>ctxt = EncodingContext::&lt;LE&gt;::new_dbus(<span class="number">0</span>);
+<span class="kw">let </span>encoded = to_bytes(ctxt, <span class="kw-2">&amp;</span>s).unwrap();
+<span class="kw">let </span>decoded: Struct = from_slice(<span class="kw-2">&amp;</span>encoded, ctxt).unwrap();
+<span class="macro">assert_eq!</span>(decoded, s);</code></pre></div>
+<p>Same with enum, except that all variants of the enum must have the same number and types of
+fields (if any). If you want the encoding size of the (unit-type) enum to be dictated by
+<code>repr</code> attribute (like in the example below), you’ll also need <a href="https://crates.io/crates/serde_repr">serde_repr</a> crate.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>zvariant::{EncodingContext, from_slice, to_bytes, Type};
+<span class="kw">use </span>serde::{Deserialize, Serialize};
+<span class="kw">use </span>serde_repr::{Deserialize_repr, Serialize_repr};
+<span class="kw">use </span>byteorder::LE;
+
+<span class="attr">#[repr(u8)]
+#[derive(Deserialize_repr, Serialize_repr, Type, Debug, PartialEq)]
+</span><span class="kw">enum </span>Enum {
+    Variant1,
+    Variant2,
+}
+<span class="macro">assert_eq!</span>(Enum::signature(), u8::signature());
+<span class="kw">let </span>ctxt = EncodingContext::&lt;LE&gt;::new_dbus(<span class="number">0</span>);
+<span class="kw">let </span>encoded = to_bytes(ctxt, <span class="kw-2">&amp;</span>Enum::Variant2).unwrap();
+<span class="kw">let </span>decoded: Enum = from_slice(<span class="kw-2">&amp;</span>encoded, ctxt).unwrap();
+<span class="macro">assert_eq!</span>(decoded, Enum::Variant2);
+
+<span class="attr">#[repr(i64)]
+#[derive(Deserialize_repr, Serialize_repr, Type)]
+</span><span class="kw">enum </span>Enum2 {
+    Variant1,
+    Variant2,
+}
+<span class="macro">assert_eq!</span>(Enum2::signature(), i64::signature());
+
+<span class="comment">// w/o repr attribute, u32 representation is chosen
+</span><span class="attr">#[derive(Deserialize, Serialize, Type)]
+</span><span class="kw">enum </span>NoReprEnum {
+    Variant1,
+    Variant2,
+}
+<span class="macro">assert_eq!</span>(NoReprEnum::signature(), u32::signature());
+
+<span class="comment">// Not-unit enums are represented as a structure, with the first field being a u32 denoting the
+// variant and the second as the actual value.
+</span><span class="attr">#[derive(Deserialize, Serialize, Type)]
+</span><span class="kw">enum </span>NewType {
+    Variant1(f64),
+    Variant2(f64),
+}
+<span class="macro">assert_eq!</span>(NewType::signature(), <span class="string">"(ud)"</span>);
+
+<span class="attr">#[derive(Deserialize, Serialize, Type)]
+</span><span class="kw">enum </span>StructFields {
+    Variant1(u16, i64, <span class="kw-2">&amp;</span><span class="lifetime">'static </span>str),
+    Variant2 { field1: u16, field2: i64, field3: <span class="kw-2">&amp;</span><span class="lifetime">'static </span>str },
+}
+<span class="macro">assert_eq!</span>(StructFields::signature(), <span class="string">"(u(qxs))"</span>);</code></pre></div>
+<h2 id="custom-signatures"><a class="doc-anchor" href="#custom-signatures">§</a>Custom signatures</h2>
+<p>There are times when you’d find yourself wanting to specify a hardcoded signature yourself for
+the type. The <code>signature</code> attribute exists for this purpose. A typical use case is when you’d
+need to encode your type as a dictionary (signature <code>a{sv}</code>) type. For convenience, <code>dict</code> is
+an alias for <code>a{sv}</code>. Here is an example:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>zvariant::{SerializeDict, DeserializeDict, EncodingContext, from_slice, to_bytes, Type};
+<span class="kw">use </span>byteorder::LE;
+
+<span class="attr">#[derive(DeserializeDict, SerializeDict, Type, PartialEq, Debug)]
+</span><span class="comment">// `#[zvariant(signature = "a{sv}")]` would be the same.
+</span><span class="attr">#[zvariant(signature = <span class="string">"dict"</span>)]
+</span><span class="kw">struct </span>Struct {
+    field1: u16,
+    field2: i64,
+    field3: String,
+}
+
+<span class="macro">assert_eq!</span>(Struct::signature(), <span class="string">"a{sv}"</span>);
+<span class="kw">let </span>s = Struct {
+    field1: <span class="number">42</span>,
+    field2: i64::max_value(),
+    field3: <span class="string">"hello"</span>.to_string(),
+};
+<span class="kw">let </span>ctxt = EncodingContext::&lt;LE&gt;::new_dbus(<span class="number">0</span>);
+<span class="kw">let </span>encoded = to_bytes(ctxt, <span class="kw-2">&amp;</span>s).unwrap();
+<span class="kw">let </span>decoded: Struct = from_slice(<span class="kw-2">&amp;</span>encoded, ctxt).unwrap();
+<span class="macro">assert_eq!</span>(decoded, s);</code></pre></div>
+<p>Another common use for custom signatures is (de)serialization of unit enums as strings:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>zvariant::{EncodingContext, from_slice, to_bytes, Type};
+<span class="kw">use </span>serde::{Deserialize, Serialize};
+<span class="kw">use </span>byteorder::LE;
+
+<span class="attr">#[derive(Deserialize, Serialize, Type, PartialEq, Debug)]
+#[zvariant(signature = <span class="string">"s"</span>)]
+</span><span class="kw">enum </span>StrEnum {
+    Variant1,
+    Variant2,
+    Variant3,
+}
+
+<span class="macro">assert_eq!</span>(StrEnum::signature(), <span class="string">"s"</span>);
+<span class="kw">let </span>ctxt = EncodingContext::&lt;LE&gt;::new_dbus(<span class="number">0</span>);
+<span class="kw">let </span>encoded = to_bytes(ctxt, <span class="kw-2">&amp;</span>StrEnum::Variant2).unwrap();
+<span class="macro">assert_eq!</span>(encoded.len(), <span class="number">13</span>);
+<span class="kw">let </span>decoded: StrEnum = from_slice(<span class="kw-2">&amp;</span>encoded, ctxt).unwrap();
+<span class="macro">assert_eq!</span>(decoded, StrEnum::Variant2);</code></pre></div>
+</div></details></section></div></main></body></html>
