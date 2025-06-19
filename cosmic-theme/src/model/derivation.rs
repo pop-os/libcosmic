@@ -1,4 +1,4 @@
-use palette::Srgba;
+use palette::{Srgba, WithAlpha};
 use serde::{Deserialize, Serialize};
 
 use crate::composite::over;
@@ -27,9 +27,7 @@ impl Container {
         mut small_widget: Srgba,
         is_high_contrast: bool,
     ) -> Self {
-        let mut divider_c = on;
-        divider_c.alpha = if is_high_contrast { 0.5 } else { 0.2 };
-
+        let divider_c = on.with_alpha(if is_high_contrast { 0.5 } else { 0.2 });
         small_widget.alpha = 0.25;
 
         Self {
@@ -115,13 +113,11 @@ impl Component {
         hovered: Srgba,
         pressed: Srgba,
     ) -> Self {
-        let base: Srgba = base;
         let mut base_50 = base;
         base_50.alpha *= 0.5;
 
         let on_20 = neutral;
-        let mut on_50: Srgba = on_20;
-        on_50.alpha = 0.5;
+        let on_50 = on_20.with_alpha(0.5);
 
         Component {
             base,
@@ -151,8 +147,7 @@ impl Component {
         let mut component = Component::colored_component(base, overlay, accent, hovered, pressed);
         component.on = on_button;
 
-        let mut on_disabled = on_button;
-        on_disabled.alpha = 0.5;
+        let on_disabled = on_button.with_alpha(0.5);
         component.on_disabled = on_disabled;
 
         component
@@ -172,11 +167,8 @@ impl Component {
         let mut base_50 = base;
         base_50.alpha *= 0.5;
 
-        let mut on_20 = on_component;
-        let mut on_50 = on_20;
-
-        on_20.alpha = 0.2;
-        on_50.alpha = 0.5;
+        let on_20 = on_component.with_alpha(0.2);
+        let on_50 = on_20.with_alpha(0.5);
 
         let mut disabled_border = border;
         disabled_border.alpha *= 0.5;

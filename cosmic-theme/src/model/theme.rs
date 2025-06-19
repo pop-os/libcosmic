@@ -1,11 +1,13 @@
 use crate::{
     composite::over,
-    steps::{color_index, get_index, get_small_widget_color, get_surface_color, get_text, steps},
+    steps::{color_index, get_small_widget_color, get_surface_color, get_text, steps},
     Component, Container, CornerRadii, CosmicPalette, CosmicPaletteInner, Spacing, ThemeMode,
     DARK_PALETTE, LIGHT_PALETTE, NAME,
 };
 use cosmic_config::{Config, CosmicConfigEntry};
-use palette::{color_difference::Wcag21RelativeContrast, rgb::Rgb, IntoColor, Oklcha, Srgb, Srgba};
+use palette::{
+    color_difference::Wcag21RelativeContrast, rgb::Rgb, IntoColor, Oklcha, Srgb, Srgba, WithAlpha,
+};
 use serde::{Deserialize, Serialize};
 use std::num::NonZeroUsize;
 
@@ -309,9 +311,7 @@ impl Theme {
     #[inline]
     /// get @small_widget_divider
     pub fn small_widget_divider(&self) -> Srgba {
-        let mut neutral_9 = self.palette.neutral_9;
-        neutral_9.alpha = 0.2;
-        neutral_9
+        self.palette.neutral_9.with_alpha(0.2)
     }
 
     // Containers
@@ -1041,16 +1041,12 @@ impl ThemeBuilder {
         component_pressed_overlay.alpha = 0.2;
 
         // Standard button background is neutral 7 with 25% opacity
-        let button_bg = {
-            let mut color = control_steps_array[7];
-            color.alpha = 0.25;
-            color
-        };
+        let button_bg = control_steps_array[7].with_alpha(0.25);
 
-        let (mut button_hovered_overlay, mut button_pressed_overlay) =
-            (control_steps_array[5], control_steps_array[2]);
-        button_hovered_overlay.alpha = 0.2;
-        button_pressed_overlay.alpha = 0.5;
+        let (button_hovered_overlay, button_pressed_overlay) = (
+            control_steps_array[5].with_alpha(0.2),
+            control_steps_array[2].with_alpha(0.5),
+        );
 
         let bg_component = get_surface_color(bg_index, 8, &step_array, is_dark, &p_ref.neutral_2);
         let on_bg_component = get_text(
@@ -1288,10 +1284,7 @@ impl ThemeBuilder {
                     control_steps_array[8],
                 );
 
-                let mut on_50 = component.on;
-                on_50.alpha = 0.5;
-
-                component.on_disabled = over(on_50, component.base);
+                component.on_disabled = over(component.on.with_alpha(0.5), component.base);
                 component
             },
             success: Component::colored_component(
