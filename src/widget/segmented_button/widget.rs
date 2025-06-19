@@ -647,16 +647,9 @@ where
 
         // Diff the context menu
         if let Some(context_menu) = &mut self.context_menu {
-            if tree.children.is_empty() {
-                let mut child_tree = Tree::empty();
-                child_tree.state = tree::State::new(MenuBarState::default());
-                tree.children.push(child_tree);
-            } else {
-                tree.children.truncate(1);
-            }
-            menu_roots_diff(context_menu, &mut tree.children[0]);
-        } else {
-            tree.children.clear();
+            state.menu_state.inner.with_data_mut(|inner| {
+                menu_roots_diff(context_menu, &mut inner.tree);
+            });
         }
     }
 
@@ -954,9 +947,7 @@ where
                                     state.context_cursor =
                                         cursor_position.position().unwrap_or_default();
 
-                                    let menu_state =
-                                        tree.children[0].state.downcast_mut::<MenuBarState>();
-                                    menu_state.inner.with_data_mut(|data| {
+                                    state.menu_state.inner.with_data_mut(|data| {
                                         data.open = true;
                                         data.view_cursor = cursor_position;
                                     });
@@ -1593,22 +1584,17 @@ where
             return None;
         };
 
-        if !tree.children[0]
-            .state
-            .downcast_ref::<MenuBarState>()
-            .inner
-            .with_data(|data| data.open)
-        {
+        if !menu_state.inner.with_data(|data| data.open) {
+            // If the menu is not open, we don't need to show it.
             return None;
         }
-
         bounds.x = state.context_cursor.x;
         bounds.y = state.context_cursor.y;
 
         Some(
             crate::widget::menu::Menu {
                 tree: menu_state,
-                menu_roots: std::borrow::Cow::Borrowed(context_menu),
+                menu_roots: std::borrow::Cow::Owned(context_menu.clone()),
                 bounds_expand: 16,
                 menu_overlays_parent: true,
                 close_condition: CloseCondition {
@@ -1619,7 +1605,7 @@ where
                 item_width: ItemWidth::Uniform(240),
                 item_height: ItemHeight::Dynamic(40),
                 bar_bounds: bounds,
-                main_offset: -(bounds.height as i32),
+                main_offset: -bounds.height as i32,
                 cross_offset: 0,
                 root_bounds_list: vec![bounds],
                 path_highlight: Some(PathHighlight::MenuActive),
