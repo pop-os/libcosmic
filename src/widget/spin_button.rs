@@ -219,8 +219,6 @@ where
 #[allow(clippy::trivially_copy_pass_by_ref)]
 fn container_style(theme: &crate::Theme) -> iced_widget::container::Style {
     let cosmic_theme = &theme.cosmic();
-    let mut neutral_10 = cosmic_theme.palette.neutral_10;
-    neutral_10.alpha = 0.1;
     let accent = &cosmic_theme.accent;
     let corners = &cosmic_theme.corner_radii;
     let border = if theme.theme_type.is_high_contrast() {

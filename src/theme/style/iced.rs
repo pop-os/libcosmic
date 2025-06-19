@@ -16,6 +16,7 @@ use iced::{
 };
 use iced_core::{Background, Border, Color, Shadow, Vector};
 use iced_widget::{pane_grid::Highlight, text_editor, text_input};
+use palette::WithAlpha;
 use std::rc::Rc;
 
 pub mod application {
@@ -720,9 +721,8 @@ impl slider::Catalog for Theme {
                         border_radius: cosmic.corner_radii.radius_m.into(),
                     };
                     appearance.handle.border_width = 3.0;
-                    let mut border_color = self.cosmic().palette.neutral_10;
-                    border_color.alpha = 0.1;
-                    appearance.handle.border_color = border_color.into();
+                    appearance.handle.border_color =
+                        self.cosmic().palette.neutral_10.with_alpha(0.1).into();
                     appearance
                 }
                 Slider::Custom { hovered, .. } => hovered(self),
@@ -736,15 +736,12 @@ impl slider::Catalog for Theme {
                             border_radius: cosmic.corner_radii.radius_m.into(),
                         };
                         appearance.handle.border_width = 3.0;
-                        let mut border_color = self.cosmic().palette.neutral_10;
-                        border_color.alpha = 0.1;
-                        appearance.handle.border_color = border_color.into();
+                        appearance.handle.border_color =
+                            self.cosmic().palette.neutral_10.with_alpha(0.1).into();
                         appearance
                     };
-                    let mut border_color = self.cosmic().palette.neutral_10;
-                    border_color.alpha = 0.2;
-                    style.handle.border_color = border_color.into();
-
+                    style.handle.border_color =
+                        self.cosmic().palette.neutral_10.with_alpha(0.2).into();
                     style
                 }
                 Slider::Custom { dragging, .. } => dragging(self),
@@ -824,8 +821,6 @@ impl radio::Catalog for Theme {
 
     fn style(&self, class: &Self::Class<'_>, status: radio::Status) -> radio::Style {
         let theme = self.cosmic();
-        let mut neutral_10 = theme.palette.neutral_10;
-        neutral_10.alpha = 0.1;
 
         match status {
             radio::Status::Active { is_selected } => radio::Style {
@@ -850,7 +845,7 @@ impl radio::Catalog for Theme {
                     Color::from(theme.accent.base).into()
                 } else {
                     // TODO: this seems to be defined weirdly in FIGMA
-                    Color::from(neutral_10).into()
+                    Color::from(theme.palette.neutral_10.with_alpha(0.1)).into()
                 },
                 dot_color: theme.accent.on.into(),
                 border_width: 1.0,
@@ -877,8 +872,7 @@ impl toggler::Catalog for Theme {
     fn style(&self, class: &Self::Class<'_>, status: toggler::Status) -> toggler::Style {
         let cosmic = self.cosmic();
         const HANDLE_MARGIN: f32 = 2.0;
-        let mut neutral_10 = cosmic.palette.neutral_10;
-        neutral_10.alpha = 0.1;
+        let neutral_10 = cosmic.palette.neutral_10.with_alpha(0.1);
 
         let mut active = toggler::Style {
             background: if matches!(status, toggler::Status::Active { is_toggled: true }) {
@@ -1098,8 +1092,7 @@ impl scrollable::Catalog for Theme {
         match status {
             scrollable::Status::Active => {
                 let cosmic = self.cosmic();
-                let mut neutral_5 = cosmic.palette.neutral_5;
-                neutral_5.alpha = 0.7;
+                let neutral_5 = cosmic.palette.neutral_5.with_alpha(0.7);
                 let mut a = scrollable::Style {
                     container: iced_container::transparent(self),
                     vertical_rail: scrollable::Rail {
@@ -1134,8 +1127,7 @@ impl scrollable::Catalog for Theme {
                 };
 
                 if matches!(class, Scrollable::Permanent) {
-                    let mut neutral_3 = cosmic.palette.neutral_3;
-                    neutral_3.alpha = 0.7;
+                    let neutral_3 = cosmic.palette.neutral_3.with_alpha(0.7);
                     a.horizontal_rail.background = Some(Background::Color(neutral_3.into()));
                     a.vertical_rail.background = Some(Background::Color(neutral_3.into()));
                 }
@@ -1145,14 +1137,12 @@ impl scrollable::Catalog for Theme {
             // TODO handle vertical / horizontal
             scrollable::Status::Hovered { .. } | scrollable::Status::Dragged { .. } => {
                 let cosmic = self.cosmic();
-                let mut neutral_5 = cosmic.palette.neutral_5;
-                neutral_5.alpha = 0.7;
+                let neutral_5 = cosmic.palette.neutral_5.with_alpha(0.7);
 
                 // TODO hover
 
                 // if is_mouse_over_scrollbar {
-                //     let mut hover_overlay = cosmic.palette.neutral_0;
-                //     hover_overlay.alpha = 0.2;
+                //     let hover_overlay = cosmic.palette.neutral_0.with_alpha(0.2);
                 //     neutral_5 = over(hover_overlay, neutral_5);
                 // }
                 let mut a: scrollable::Style = scrollable::Style {
@@ -1189,8 +1179,7 @@ impl scrollable::Catalog for Theme {
                 };
 
                 if matches!(class, Scrollable::Permanent) {
-                    let mut neutral_3 = cosmic.palette.neutral_3;
-                    neutral_3.alpha = 0.7;
+                    let neutral_3 = cosmic.palette.neutral_3.with_alpha(0.7);
                     a.horizontal_rail.background = Some(Background::Color(neutral_3.into()));
                     a.vertical_rail.background = Some(Background::Color(neutral_3.into()));
                 }
@@ -1289,13 +1278,11 @@ impl text_input::Catalog for Theme {
 
     fn style(&self, class: &Self::Class<'_>, status: text_input::Status) -> text_input::Style {
         let palette = self.cosmic();
-        let mut bg = palette.palette.neutral_7;
-        bg.alpha = 0.25;
+        let bg = palette.palette.neutral_7.with_alpha(0.25);
 
-        let mut neutral_9 = palette.palette.neutral_9;
+        let neutral_9 = palette.palette.neutral_9;
         let value = neutral_9.into();
-        neutral_9.alpha = 0.7;
-        let placeholder = neutral_9.into();
+        let placeholder = neutral_9.with_alpha(0.7).into();
         let selection = palette.accent.base.into();
 
         let mut appearance = match class {
@@ -1327,8 +1314,7 @@ impl text_input::Catalog for Theme {
         match status {
             text_input::Status::Active => appearance,
             text_input::Status::Hovered => {
-                let mut bg = palette.palette.neutral_7;
-                bg.alpha = 0.25;
+                let bg = palette.palette.neutral_7.with_alpha(0.25);
 
                 match class {
                     TextInput::Default => text_input::Style {
@@ -1357,8 +1343,7 @@ impl text_input::Catalog for Theme {
                 }
             }
             text_input::Status::Focused => {
-                let mut bg = palette.palette.neutral_7;
-                bg.alpha = 0.25;
+                let bg = palette.palette.neutral_7.with_alpha(0.25);
 
                 match class {
                     TextInput::Default => text_input::Style {
@@ -1433,9 +1418,7 @@ impl iced_widget::text_editor::Catalog for Theme {
 
         let selection = cosmic.accent.base.into();
         let value = cosmic.palette.neutral_9.into();
-        let mut placeholder = cosmic.palette.neutral_9;
-        placeholder.alpha = 0.7;
-        let placeholder = placeholder.into();
+        let placeholder = cosmic.palette.neutral_9.with_alpha(0.7).into();
         let icon = cosmic.background.on.into();
 
         match status {
