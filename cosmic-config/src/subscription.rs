@@ -1,13 +1,14 @@
 use iced_futures::futures::{SinkExt, Stream};
 use iced_futures::{futures::channel::mpsc, stream};
 use notify::RecommendedWatcher;
+use notify_debouncer_full::{Debouncer, RecommendedCache};
 use std::{borrow::Cow, hash::Hash};
 
 use crate::{Config, CosmicConfigEntry};
 
 pub enum ConfigState<T> {
     Init(Cow<'static, str>, u64, bool),
-    Waiting(T, RecommendedWatcher, mpsc::Receiver<Vec<String>>, Config),
+    Waiting(T, Debouncer<RecommendedWatcher, RecommendedCache>, mpsc::Receiver<Vec<String>>, Config),
     Failed,
 }
 

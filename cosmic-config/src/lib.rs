@@ -1,15 +1,15 @@
 //! Integrations for cosmic-config — the cosmic configuration system.
 
 use notify::{
-    event::{EventKind, ModifyKind},
-    Watcher,
+    event::{EventKind, ModifyKind}, RecommendedWatcher, Watcher
 };
+use notify_debouncer_full::{DebouncedEvent, Debouncer, RecommendedCache};
 use serde::{de::DeserializeOwned, Serialize};
 use std::{
     fmt, fs,
     io::Write,
     path::{Path, PathBuf},
-    sync::Mutex,
+    sync::Mutex, time::Duration,
 };
 
 #[cfg(feature = "subscription")]
@@ -244,7 +244,7 @@ impl Config {
     // This may end up being an mpsc channel instead of a function
     // See EventHandler in the notify crate: https://docs.rs/notify/latest/notify/trait.EventHandler.html
     // Having a callback allows for any application abstraction to be used
-    pub fn watch<F>(&self, f: F) -> Result<notify::RecommendedWatcher, Error>
+    pub fn watch<F>(&self, f: F) -> Result<Debouncer<RecommendedWatcher, RecommendedCache>, Error>
     // Argument is an array of all keys that changed in that specific transaction
     //TODO: simplify F requirements
     where
@@ -256,10 +256,11 @@ impl Config {
         };
         let user_path_clone = user_path.clone();
         let mut watcher =
-            notify::recommended_watcher(move |event_res: Result<notify::Event, notify::Error>| {
-                match &event_res {
-                    Ok(event) => {
-                        match &event.kind {
+            notify_debouncer_full::new_debouncer(Duration::from_secs(1), None, move |event_res: Result<Vec<DebouncedEvent>, Vec<notify::Error>>| {
+                match event_res {
+                    Ok(events) => {
+                        for event in events {
+                            match &event.event.kind {
                             EventKind::Access(_) | EventKind::Modify(ModifyKind::Metadata(_)) => {
                                 // Data not mutated
                                 return;
@@ -287,8 +288,9 @@ impl Config {
                         if !keys.is_empty() {
                             f(&watch_config, &keys);
                         }
+                        }
                     }
-                    Err(_err) => {
+                    Err(_errs) => {
                         //TODO: handle errors
                     }
                 }
