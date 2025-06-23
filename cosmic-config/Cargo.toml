@@ -26,7 +26,6 @@ dirs.workspace = true
 tokio = { version = "1.44", optional = true, features = ["time"] }
 async-std = { version = "1.13", optional = true }
 tracing = "0.1"
-notify-debouncer-full = "0.5.0"
 
 [target.'cfg(unix)'.dependencies]
 xdg = "2.5"
