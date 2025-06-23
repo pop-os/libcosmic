@@ -1,7 +1,8 @@
 //! Integrations for cosmic-config — the cosmic configuration system.
 
 use notify::{
-    event::{EventKind, ModifyKind}, RecommendedWatcher, Watcher
+    event::{EventKind, ModifyKind},
+    RecommendedWatcher, Watcher,
 };
 use notify_debouncer_full::{DebouncedEvent, Debouncer, RecommendedCache};
 use serde::{de::DeserializeOwned, Serialize};
@@ -9,7 +10,8 @@ use std::{
     fmt, fs,
     io::Write,
     path::{Path, PathBuf},
-    sync::Mutex, time::Duration,
+    sync::Mutex,
+    time::Duration,
 };
 
 #[cfg(feature = "subscription")]
@@ -255,46 +257,50 @@ impl Config {
             return Err(Error::NoConfigDirectory);
         };
         let user_path_clone = user_path.clone();
-        let mut watcher =
-            notify_debouncer_full::new_debouncer(Duration::from_secs(1), None, move |event_res: Result<Vec<DebouncedEvent>, Vec<notify::Error>>| {
+        let mut watcher = notify_debouncer_full::new_debouncer(
+            Duration::from_secs(1),
+            None,
+            move |event_res: Result<Vec<DebouncedEvent>, Vec<notify::Error>>| {
                 match event_res {
                     Ok(events) => {
                         for event in events {
                             match &event.event.kind {
-                            EventKind::Access(_) | EventKind::Modify(ModifyKind::Metadata(_)) => {
-                                // Data not mutated
-                                return;
+                                EventKind::Access(_)
+                                | EventKind::Modify(ModifyKind::Metadata(_)) => {
+                                    // Data not mutated
+                                    return;
+                                }
+                                _ => {}
                             }
-                            _ => {}
-                        }
 
-                        let mut keys = Vec::new();
-                        for path in &event.paths {
-                            match path.strip_prefix(&user_path_clone) {
-                                Ok(key_path) => {
-                                    if let Some(key) = key_path.to_str() {
-                                        // Skip any .atomicwrite temporary files
-                                        if key.starts_with(".atomicwrite") {
-                                            continue;
+                            let mut keys = Vec::new();
+                            for path in &event.paths {
+                                match path.strip_prefix(&user_path_clone) {
+                                    Ok(key_path) => {
+                                        if let Some(key) = key_path.to_str() {
+                                            // Skip any .atomicwrite temporary files
+                                            if key.starts_with(".atomicwrite") {
+                                                continue;
+                                            }
+                                            keys.push(key.to_string());
                                         }
-                                        keys.push(key.to_string());
+                                    }
+                                    Err(_err) => {
+                                        //TODO: handle errors
                                     }
                                 }
-                                Err(_err) => {
-                                    //TODO: handle errors
-                                }
                             }
-                        }
-                        if !keys.is_empty() {
-                            f(&watch_config, &keys);
-                        }
+                            if !keys.is_empty() {
+                                f(&watch_config, &keys);
+                            }
                         }
                     }
                     Err(_errs) => {
                         //TODO: handle errors
                     }
                 }
-            })?;
+            },
+        )?;
         watcher.watch(user_path, notify::RecursiveMode::NonRecursive)?;
         Ok(watcher)
     }

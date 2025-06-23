@@ -85,33 +85,33 @@ pub fn is_high_contrast() -> bool {
     active_type().is_high_contrast()
 }
 
-/// Watches for changes to the system's theme preference.
-#[cold]
-pub fn subscription(is_dark: bool) -> Subscription<crate::theme::Theme> {
-    config_subscription::<_, crate::cosmic_theme::Theme>(
-        (
-            std::any::TypeId::of::<crate::cosmic_theme::Theme>(),
-            is_dark,
-        ),
-        if is_dark {
-            cosmic_theme::DARK_THEME_ID
-        } else {
-            cosmic_theme::LIGHT_THEME_ID
-        }
-        .into(),
-        crate::cosmic_theme::Theme::VERSION,
-    )
-    .map(|res| {
-        for error in res.errors.into_iter().filter(cosmic_config::Error::is_err) {
-            tracing::error!(
-                ?error,
-                "error while watching system theme preference changes"
-            );
-        }
+// /// Watches for changes to the system's theme preference.
+// #[cold]
+// pub fn subscription(is_dark: bool) -> Subscription<crate::theme::Theme> {
+//     config_subscription::<_, crate::cosmic_theme::Theme>(
+//         (
+//             std::any::TypeId::of::<crate::cosmic_theme::Theme>(),
+//             is_dark,
+//         ),
+//         if is_dark {
+//             cosmic_theme::DARK_THEME_ID
+//         } else {
+//             cosmic_theme::LIGHT_THEME_ID
+//         }
+//         .into(),
+//         crate::cosmic_theme::Theme::VERSION,
+//     )
+//     .map(|res| {
+//         for error in res.errors.into_iter().filter(cosmic_config::Error::is_err) {
+//             tracing::error!(
+//                 ?error,
+//                 "error while watching system theme preference changes"
+//             );
+//         }
 
-        Theme::system(Arc::new(res.config))
-    })
-}
+//         Theme::system(Arc::new(res.config))
+//     })
+// }
 
 pub fn system_dark() -> Theme {
     let Ok(helper) = crate::cosmic_theme::Theme::dark_config() else {

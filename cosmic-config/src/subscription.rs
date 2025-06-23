@@ -8,7 +8,12 @@ use crate::{Config, CosmicConfigEntry};
 
 pub enum ConfigState<T> {
     Init(Cow<'static, str>, u64, bool),
-    Waiting(T, Debouncer<RecommendedWatcher, RecommendedCache>, mpsc::Receiver<Vec<String>>, Config),
+    Waiting(
+        T,
+        Debouncer<RecommendedWatcher, RecommendedCache>,
+        mpsc::Receiver<Vec<String>>,
+        Config,
+    ),
     Failed,
 }
 
