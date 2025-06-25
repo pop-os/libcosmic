@@ -781,7 +781,7 @@ impl<'b, Message: Clone + 'static> Menu<'b, Message> {
                             // println!("color: {:?}\n", styling.background);
                             let menu_quad = renderer::Quad {
                                 bounds: pad_rectangle(
-                                    children_bounds,
+                                    children_bounds.intersection(&viewport).unwrap_or_default(),
                                     styling.background_expand.into(),
                                 ),
                                 border: Border {
@@ -800,7 +800,10 @@ impl<'b, Message: Clone + 'static> Menu<'b, Message> {
                                     .nth(active.saturating_sub(start_index))
                                 {
                                     let path_quad = renderer::Quad {
-                                        bounds: active_layout.bounds(),
+                                        bounds: active_layout
+                                            .bounds()
+                                            .intersection(&viewport)
+                                            .unwrap_or_default(),
                                         border: Border {
                                             radius: styling.menu_border_radius.into(),
                                             ..Default::default()
@@ -824,7 +827,10 @@ impl<'b, Message: Clone + 'static> Menu<'b, Message> {
                                             style,
                                             clo,
                                             view_cursor,
-                                            &children_layout.bounds(),
+                                            &children_layout
+                                                .bounds()
+                                                .intersection(&viewport)
+                                                .unwrap_or_default(),
                                         );
                                     });
                             }
