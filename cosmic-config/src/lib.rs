@@ -256,13 +256,12 @@ impl Config {
             return Err(Error::NoConfigDirectory);
         };
         let user_path_clone = user_path.clone();
-        let mut watcher = notify::recommended_watcher(
-            move |event_res: Result<notify::Event, notify::Error>| {
+        let mut watcher =
+            notify::recommended_watcher(move |event_res: Result<notify::Event, notify::Error>| {
                 match event_res {
                     Ok(event) => {
                         match &event.kind {
-                            EventKind::Access(_)
-                            | EventKind::Modify(ModifyKind::Metadata(_)) => {
+                            EventKind::Access(_) | EventKind::Modify(ModifyKind::Metadata(_)) => {
                                 // Data not mutated
                                 return;
                             }
@@ -294,8 +293,7 @@ impl Config {
                         //TODO: handle errors
                     }
                 }
-            },
-        )?;
+            })?;
         watcher.watch(user_path, notify::RecursiveMode::Recursive)?;
         Ok(watcher)
     }
