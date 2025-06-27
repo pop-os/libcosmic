@@ -6,6 +6,7 @@ use std::borrow::Cow;
 use std::collections::HashMap;
 use std::rc::Rc;
 
+use iced::advanced::widget::text::Style as TextStyle;
 use iced_widget::core::{Element, renderer};
 
 use crate::iced_core::{Alignment, Length};
@@ -228,6 +229,15 @@ pub fn menu_items<
         String::new()
     }
 
+    fn key_style(theme: &crate::Theme) -> TextStyle {
+        let mut color = theme.cosmic().background.component.on;
+        color.alpha *= 0.75;
+        TextStyle {
+            color: Some(color.into()),
+        }
+    }
+    let key_class = theme::Text::Custom(key_style);
+
     let size = children.len();
 
     children
@@ -244,7 +254,7 @@ pub fn menu_items<
                     let mut items = vec![
                         widget::text(l.clone()).into(),
                         widget::horizontal_space().into(),
-                        widget::text(key).into(),
+                        widget::text(key).class(key_class).into(),
                     ];
 
                     if let Some(icon) = icon {
@@ -265,7 +275,7 @@ pub fn menu_items<
                     let mut items = vec![
                         widget::text(l.clone()).into(),
                         widget::horizontal_space().into(),
-                        widget::text(key).into(),
+                        widget::text(key).class(key_class).into(),
                     ];
 
                     if let Some(icon) = icon {
@@ -297,7 +307,7 @@ pub fn menu_items<
                         widget::Space::with_width(spacing.space_xxs).into(),
                         widget::text(label).align_x(iced::Alignment::Start).into(),
                         widget::horizontal_space().into(),
-                        widget::text(key).into(),
+                        widget::text(key).class(key_class).into(),
                     ];
 
                     if let Some(icon) = icon {
