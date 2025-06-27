@@ -21,7 +21,7 @@ use crate::{
 };
 pub use cosmic_panel_config;
 use cosmic_panel_config::{CosmicPanelBackground, PanelAnchor, PanelSize};
-use iced_core::{Layout, Padding, Shadow};
+use iced_core::{Padding, Shadow};
 use iced_widget::runtime::platform_specific::wayland::popup::{SctkPopupSettings, SctkPositioner};
 use sctk::reexports::protocols::xdg::shell::client::xdg_positioner::{Anchor, Gravity};
 use std::{borrow::Cow, num::NonZeroU32, rc::Rc, sync::LazyLock, time::Duration};
@@ -39,6 +39,7 @@ static TOOLTIP_WINDOW_ID: LazyLock<window::Id> = LazyLock::new(window::Id::uniqu
 pub struct Context {
     pub size: Size,
     pub anchor: PanelAnchor,
+    pub spacing: u32,
     pub background: CosmicPanelBackground,
     pub output_name: String,
     pub panel_type: PanelType,
@@ -93,6 +94,10 @@ impl Default for Context {
                 .ok()
                 .and_then(|size| ron::from_str(size.as_str()).ok())
                 .unwrap_or(PanelAnchor::Top),
+            spacing: std::env::var("COSMIC_PANEL_SPACING")
+                .ok()
+                .and_then(|size| ron::from_str(size.as_str()).ok())
+                .unwrap_or(4),
             background: std::env::var("COSMIC_PANEL_BACKGROUND")
                 .ok()
                 .and_then(|size| ron::from_str(size.as_str()).ok())
