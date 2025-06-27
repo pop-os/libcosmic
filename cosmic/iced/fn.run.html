@@ -1,0 +1,36 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Runs a basic iced application with default `Settings` given its title, update, and view logic."><title>run in cosmic::iced - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../static.files/rustdoc-916cea96.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="cosmic" data-themes="" data-resource-suffix="" data-rustdoc-version="1.87.0 (17067e9ac 2025-05-09)" data-channel="1.87.0" data-search-js="search-e7298875.js" data-settings-js="settings-d72f25bb.js" ><script src="../../static.files/storage-82c7156e.js"></script><script defer src="sidebar-items.js"></script><script defer src="../../static.files/main-fb8c74a8.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-893ab5e7.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-6580c154.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-044be391.svg"></head><body class="rustdoc fn"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle" title="show sidebar"></button></nav><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../../cosmic/index.html">cosmic</a><span class="version">0.1.0</span></h2></div><div class="sidebar-elems"><section id="rustdoc-toc"><h2 class="location"><a href="#">run</a></h2><h3><a href="#">Sections</a></h3><ul class="block top-toc"><li><a href="#example" title="Example">Example</a></li></ul></section><div id="rustdoc-modnav"><h2><a href="index.html">In cosmic::<wbr>iced</a></h2></div></div></nav><div class="sidebar-resizer"></div><main><div class="width-limiter"><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><div class="rustdoc-breadcrumbs"><a href="../index.html">cosmic</a>::<wbr><a href="index.html">iced</a></div><h1>Function <span class="fn">run</span><button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"><a class="src" href="../../src/iced/lib.rs.html#698-708">Source</a> </span></div><pre class="rust item-decl"><code>pub fn run&lt;State, Message, Theme, Renderer&gt;(
+    title: impl <a class="trait" href="application/trait.Title.html" title="trait cosmic::iced::application::Title">Title</a>&lt;State&gt; + 'static,
+    update: impl <a class="trait" href="application/trait.Update.html" title="trait cosmic::iced::application::Update">Update</a>&lt;State, Message&gt; + 'static,
+    view: impl for&lt;'a&gt; <a class="trait" href="application/trait.View.html" title="trait cosmic::iced::application::View">View</a>&lt;'a, State, Message, Theme, Renderer&gt; + 'static,
+) -&gt; <a class="enum" href="https://doc.rust-lang.org/1.87.0/core/result/enum.Result.html" title="enum core::result::Result">Result</a>&lt;<a class="primitive" href="https://doc.rust-lang.org/1.87.0/std/primitive.unit.html">()</a>, <a class="enum" href="enum.Error.html" title="enum cosmic::iced::Error">Error</a>&gt;<div class="where">where
+    State: <a class="trait" href="https://doc.rust-lang.org/1.87.0/core/default/trait.Default.html" title="trait core::default::Default">Default</a> + 'static,
+    Message: <a class="trait" href="https://doc.rust-lang.org/1.87.0/core/fmt/trait.Debug.html" title="trait core::fmt::Debug">Debug</a> + <a class="trait" href="https://doc.rust-lang.org/1.87.0/core/marker/trait.Send.html" title="trait core::marker::Send">Send</a> + 'static,
+    Theme: <a class="trait" href="https://doc.rust-lang.org/1.87.0/core/default/trait.Default.html" title="trait core::default::Default">Default</a> + <a class="trait" href="../iced_runtime/trait.DefaultStyle.html" title="trait cosmic::iced_runtime::DefaultStyle">DefaultStyle</a> + 'static,
+    Renderer: <a class="trait" href="program/trait.Renderer.html" title="trait cosmic::iced::program::Renderer">Renderer</a> + 'static,</div></code></pre><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Runs a basic iced application with default <a href="struct.Settings.html" title="struct cosmic::iced::Settings"><code>Settings</code></a> given its title,
+update, and view logic.</p>
+<p>This is equivalent to chaining <a href="fn.application.html" title="fn cosmic::iced::application"><code>application()</code></a> with <a href="struct.Application.html#method.run" title="method cosmic::iced::Application::run"><code>Application::run</code></a>.</p>
+<h2 id="example"><a class="doc-anchor" href="#example">§</a>Example</h2>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>iced::widget::{button, column, text, Column};
+
+<span class="kw">pub fn </span>main() -&gt; iced::Result {
+    iced::run(<span class="string">"A counter"</span>, update, view)
+}
+
+<span class="attr">#[derive(Debug, Clone)]
+</span><span class="kw">enum </span>Message {
+    Increment,
+}
+
+<span class="kw">fn </span>update(value: <span class="kw-2">&amp;mut </span>u64, message: Message) {
+    <span class="kw">match </span>message {
+        Message::Increment =&gt; <span class="kw-2">*</span>value += <span class="number">1</span>,
+    }
+}
+
+<span class="kw">fn </span>view(value: <span class="kw-2">&amp;</span>u64) -&gt; Column&lt;Message&gt; {
+    <span class="macro">column!</span>[
+        text(value),
+        button(<span class="string">"+"</span>).on_press(Message::Increment),
+    ]
+}</code></pre></div>
+</div></details></section></div></main></body></html>

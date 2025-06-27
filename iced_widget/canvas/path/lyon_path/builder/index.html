@@ -1,0 +1,69 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Path building utilities."><title>iced_widget::canvas::path::lyon_path::builder - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../../../../static.files/rustdoc-916cea96.css"><meta name="rustdoc-vars" data-root-path="../../../../../" data-static-root-path="../../../../../static.files/" data-current-crate="iced_widget" data-themes="" data-resource-suffix="" data-rustdoc-version="1.87.0 (17067e9ac 2025-05-09)" data-channel="1.87.0" data-search-js="search-e7298875.js" data-settings-js="settings-d72f25bb.js" ><script src="../../../../../static.files/storage-82c7156e.js"></script><script defer src="../sidebar-items.js"></script><script defer src="../../../../../static.files/main-fb8c74a8.js"></script><noscript><link rel="stylesheet" href="../../../../../static.files/noscript-893ab5e7.css"></noscript><link rel="alternate icon" type="image/png" href="../../../../../static.files/favicon-32x32-6580c154.png"><link rel="icon" type="image/svg+xml" href="../../../../../static.files/favicon-044be391.svg"></head><body class="rustdoc mod"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle" title="show sidebar"></button><a class="logo-container" href="../../../../../iced_widget/index.html"><img src="https://raw.githubusercontent.com/iced-rs/iced/9ab6923e943f784985e9ef9ca28b10278297225d/docs/logo.svg" alt=""></a></nav><nav class="sidebar"><div class="sidebar-crate"><a class="logo-container" href="../../../../../iced_widget/index.html"><img src="https://raw.githubusercontent.com/iced-rs/iced/9ab6923e943f784985e9ef9ca28b10278297225d/docs/logo.svg" alt="logo"></a><h2><a href="../../../../../iced_widget/index.html">iced_<wbr>widget</a><span class="version">0.14.0-dev</span></h2></div><div class="sidebar-elems"><section id="rustdoc-toc"><h2 class="location"><a href="#">Module builder</a></h2><h3><a href="#">Sections</a></h3><ul class="block top-toc"><li><a href="#pathbuilder-or-svgpathbuilder" title="`PathBuilder` or `SvgPathBuilder`"><code>PathBuilder</code> or <code>SvgPathBuilder</code></a></li><li><a href="#examples" title="Examples">Examples</a></li></ul><h3><a href="#structs">Module Items</a></h3><ul class="block"><li><a href="#structs" title="Structs">Structs</a></li><li><a href="#traits" title="Traits">Traits</a></li></ul></section><div id="rustdoc-modnav"><h2><a href="../index.html">In iced_<wbr>widget::<wbr>canvas::<wbr>path::<wbr>lyon_<wbr>path</a></h2></div></div></nav><div class="sidebar-resizer"></div><main><div class="width-limiter"><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><div class="rustdoc-breadcrumbs"><a href="../../../../index.html">iced_widget</a>::<wbr><a href="../../../index.html">canvas</a>::<wbr><a href="../../index.html">path</a>::<wbr><a href="../index.html">lyon_path</a></div><h1>Module <span>builder</span><button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"><a class="src" href="../../../../../src/lyon_path/lib.rs.html#55">Source</a> </span></div><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Path building utilities.</p>
+<h3 id="pathbuilder-or-svgpathbuilder"><a class="doc-anchor" href="#pathbuilder-or-svgpathbuilder">§</a><code>PathBuilder</code> or <code>SvgPathBuilder</code></h3>
+<p>Path can be built via either of two abstractions:</p>
+<ul>
+<li><a href="trait.PathBuilder.html">PathBuilder</a> is a simple and efficient interface which
+does not deal with any ambiguous cases.</li>
+<li><a href="trait.SvgPathBuilder.html">SvgPathBuilder</a> is a higher-level interface that
+follows SVG’s specification, removing the the burden of dealing with special cases
+from the user at a run-time cost.</li>
+</ul>
+<p><code>SvgPathBuilder</code> may be a better choice when interactive with SVG, or dealing with arbitrary
+input. <code>PathBuilder</code>. <code>PathBuilder</code> is probably a more useful trait to implement when creating
+a new path data structure since all <code>PathBuilder</code> implementations automatically get an
+<code>SvgPathBuilder</code> adapter (see the <code>with_svg</code> method). It may also make sense to use the
+<code>PathBuilder</code> API when following a specification that behaves like SVG paths or when no
+performance can be traded for convenience.</p>
+<h3 id="examples"><a class="doc-anchor" href="#examples">§</a>Examples</h3>
+<p>The following example shows how to create a simple path using the
+<a href="trait.PathBuilder.html">PathBuilder</a> interface.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>lyon_path::{Path, geom::point};
+
+<span class="kw">let </span><span class="kw-2">mut </span>builder = Path::builder();
+
+<span class="comment">// All sub-paths *must* have be contained in a begin/end pair.
+</span>builder.begin(point(<span class="number">0.0</span>, <span class="number">0.0</span>));
+builder.line_to(point(<span class="number">1.0</span>, <span class="number">0.0</span>));
+builder.quadratic_bezier_to(point(<span class="number">2.0</span>, <span class="number">0.0</span>), point(<span class="number">2.0</span>, <span class="number">1.0</span>));
+builder.end(<span class="bool-val">false</span>);
+
+builder.begin(point(<span class="number">10.0</span>, <span class="number">0.0</span>));
+builder.cubic_bezier_to(point(<span class="number">12.0</span>, <span class="number">2.0</span>), point(<span class="number">11.0</span>, <span class="number">2.0</span>), point(<span class="number">5.0</span>, <span class="number">0.0</span>));
+builder.close(); <span class="comment">// close() is equivalent to end(true).
+
+</span><span class="kw">let </span>path = builder.build();</code></pre></div>
+<p>The same path can be built using the <code>SvgPathBuilder</code> API:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>lyon_path::{Path, geom::{point, vector}, builder::SvgPathBuilder};
+
+<span class="comment">// Use the SVG adapter.
+</span><span class="kw">let </span><span class="kw-2">mut </span>builder = Path::builder().with_svg();
+
+<span class="comment">// All sub-paths *must* have be contained in a begin/end pair.
+</span>builder.move_to(point(<span class="number">0.0</span>, <span class="number">0.0</span>));
+builder.line_to(point(<span class="number">1.0</span>, <span class="number">0.0</span>));
+builder.quadratic_bezier_to(point(<span class="number">2.0</span>, <span class="number">0.0</span>), point(<span class="number">2.0</span>, <span class="number">1.0</span>));
+<span class="comment">// No need to explicitly end a sub-path.
+
+</span>builder.move_to(point(<span class="number">10.0</span>, <span class="number">0.0</span>));
+builder.relative_cubic_bezier_to(vector(<span class="number">2.0</span>, <span class="number">2.0</span>), vector(<span class="number">1.0</span>, <span class="number">2.0</span>), vector(-<span class="number">5.0</span>, <span class="number">0.0</span>));
+builder.close();
+
+<span class="kw">let </span>path = builder.build();</code></pre></div>
+<p>Implementors of the <code>PathBuilder</code> trait automatically gain access to a few other adapters.
+For example a builder that approximates curves with a sequence of line segments:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>lyon_path::{Path, geom::point};
+
+<span class="kw">let </span>tolerance = <span class="number">0.05</span>;<span class="comment">// maximum distance between a curve and its approximation.
+</span><span class="kw">let </span><span class="kw-2">mut </span>builder = Path::builder().flattened(tolerance);
+
+builder.begin(point(<span class="number">0.0</span>, <span class="number">0.0</span>));
+builder.quadratic_bezier_to(point(<span class="number">1.0</span>, <span class="number">0.0</span>), point(<span class="number">1.0</span>, <span class="number">1.0</span>));
+builder.end(<span class="bool-val">true</span>);
+
+<span class="comment">// The resulting path contains only Begin, Line and End events.
+</span><span class="kw">let </span>path = builder.build();</code></pre></div>
+</div></details><h2 id="structs" class="section-header">Structs<a href="#structs" class="anchor">§</a></h2><dl class="item-table"><dt><a class="struct" href="struct.BorderRadii.html" title="struct iced_widget::canvas::path::lyon_path::builder::BorderRadii">Border<wbr>Radii</a></dt><dd>The radius of each corner of a rounded rectangle.</dd><dt><a class="struct" href="struct.Flattened.html" title="struct iced_widget::canvas::path::lyon_path::builder::Flattened">Flattened</a></dt><dd>A Builder that approximates curves with successions of line segments.</dd><dt><a class="struct" href="struct.NoAttributes.html" title="struct iced_widget::canvas::path::lyon_path::builder::NoAttributes">NoAttributes</a></dt><dd>A convenience wrapper for <code>PathBuilder</code> without custom attributes.</dd><dt><a class="struct" href="struct.Transformed.html" title="struct iced_widget::canvas::path::lyon_path::builder::Transformed">Transformed</a></dt><dd>Builds a path with a transformation applied.</dd><dt><a class="struct" href="struct.WithSvg.html" title="struct iced_widget::canvas::path::lyon_path::builder::WithSvg">WithSvg</a></dt><dd>Implements an SVG-like building interface on top of a PathBuilder.</dd></dl><h2 id="traits" class="section-header">Traits<a href="#traits" class="anchor">§</a></h2><dl class="item-table"><dt><a class="trait" href="trait.Build.html" title="trait iced_widget::canvas::path::lyon_path::builder::Build">Build</a></dt><dd>Builds a path.</dd><dt><a class="trait" href="trait.PathBuilder.html" title="trait iced_widget::canvas::path::lyon_path::builder::PathBuilder">Path<wbr>Builder</a></dt><dd>The base path building interface.</dd><dt><a class="trait" href="trait.SvgPathBuilder.html" title="trait iced_widget::canvas::path::lyon_path::builder::SvgPathBuilder">SvgPath<wbr>Builder</a></dt><dd>A path building interface that tries to stay close to SVG’s path specification.
+<a href="https://svgwg.org/specs/paths/">https://svgwg.org/specs/paths/</a></dd></dl></section></div></main></body></html>

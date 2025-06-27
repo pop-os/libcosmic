@@ -1,0 +1,56 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Types for the RGB color space, including spaces and standards."><title>palette::rgb - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../static.files/rustdoc-916cea96.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="palette" data-themes="" data-resource-suffix="" data-rustdoc-version="1.87.0 (17067e9ac 2025-05-09)" data-channel="1.87.0" data-search-js="search-e7298875.js" data-settings-js="settings-d72f25bb.js" ><script src="../../static.files/storage-82c7156e.js"></script><script defer src="../sidebar-items.js"></script><script defer src="../../static.files/main-fb8c74a8.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-893ab5e7.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-6580c154.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-044be391.svg"></head><body class="rustdoc mod"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle" title="show sidebar"></button></nav><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../../palette/index.html">palette</a><span class="version">0.7.6</span></h2></div><div class="sidebar-elems"><section id="rustdoc-toc"><h2 class="location"><a href="#">Module rgb</a></h2><h3><a href="#">Sections</a></h3><ul class="block top-toc"><li><a href="#linear-and-non-linear-rgb" title="Linear And Non-linear RGB">Linear And Non-linear RGB</a></li></ul><h3><a href="#modules">Module Items</a></h3><ul class="block"><li><a href="#modules" title="Modules">Modules</a></li><li><a href="#structs" title="Structs">Structs</a></li><li><a href="#enums" title="Enums">Enums</a></li><li><a href="#traits" title="Traits">Traits</a></li><li><a href="#types" title="Type Aliases">Type Aliases</a></li></ul></section><div id="rustdoc-modnav"><h2 class="in-crate"><a href="../index.html">In crate palette</a></h2></div></div></nav><div class="sidebar-resizer"></div><main><div class="width-limiter"><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><div class="rustdoc-breadcrumbs"><a href="../index.html">palette</a></div><h1>Module <span>rgb</span><button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"><a class="src" href="../../src/palette/rgb.rs.html#1-280">Source</a> </span></div><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Types for the RGB color space, including spaces and standards.</p>
+<h2 id="linear-and-non-linear-rgb"><a class="doc-anchor" href="#linear-and-non-linear-rgb">§</a>Linear And Non-linear RGB</h2>
+<p>Colors in images are often “gamma corrected”, or converted using some
+non-linear transfer function into a format like sRGB before being stored or
+displayed. This is done as a compression method and to prevent banding; it’s
+also a bit of a legacy from the ages of the CRT monitors, where the output
+from the electron gun was non-linear. The problem is that these formats are
+<em>non-linear color spaces</em>, which means that many operations that you may
+want to perform on colors (addition, subtraction, multiplication, linear
+interpolation, etc.) will work unexpectedly when performed in such a
+non-linear color space. Thus, the compression has to be reverted to restore
+linearity and ensure that many operations on the colors behave as expected.</p>
+<p>But, even when colors <em>are</em> ‘linear’, there is yet more to explore.</p>
+<p>The most common way that colors are defined, especially for computer
+storage, is in terms of so-called <em>tristimulus values</em>, meaning that all
+colors can be represented as a vector of three values.
+The reason colors can generally be stored as only a three-dimensional
+vector, and not an <em>N</em>-dimensional one, where <em>N</em> is some number of possible
+wavelengths of light, is because our eyes contain only three types of cones.
+Each of these cones has its own sensitivity curve in response to the
+wavelengths of visible light, giving us three “dimensions” of sensitivity to color.
+These cones are often called the L, M, and S (for long, medium, and short)
+cones, and their sensitivity curves <em>roughly</em> position them as most
+sensitive to “red”, “green”, and “blue” parts of the spectrum. As such, we
+can choose only three values to represent any possible color that a human is
+able to see. An interesting consequence of this is that humans can see two
+different objects which are emitting <em>completely different actual light
+spectra</em> as the <em>exact same perceptual color</em> so long as those wavelengths,
+when transformed by the sensitivity curves of our cones, end up resulting in
+the same L, M, and S values sent to our brains.</p>
+<p>A <strong>color space</strong> (which simply refers to a set of standards by which we map
+a set of arbitrary values to real-world colors) which uses tristimulus
+values is often defined in terms of</p>
+<ol>
+<li>Its <strong>primaries</strong></li>
+<li>Its <strong>reference white</strong> or <strong>white point</strong></li>
+</ol>
+<p>The <strong>primaries</strong> together represent the total <em>gamut</em> (i.e. displayable
+range of colors) of that color space. The <strong>white point</strong> defines a
+concrete tristimulus value that corresponds to a real, physical white
+reflecting object being lit by a known light source and observed by the
+‘standard observer’ (i.e. a standardized model of human color perception).</p>
+<p>The informal “RGB” color space is such a tristimulus color space, since it
+is defined by three values, but it is underspecified since we don’t know
+which primaries are being used (i.e. how exactly are the canonical “red”,
+“green”, and “blue” defined?), nor its white point. In most cases, when
+people talk about “RGB” or “Linear RGB” colors, what they are <em>actually</em>
+talking about is the “Linear sRGB” color space, which uses the primaries and
+white point defined in the sRGB standard, but which <em>does not</em> have the
+(non-linear) sRGB <em>transfer function</em> applied.</p>
+<p>Palette takes these details into account and encodes them as type
+parameters, with sRGB as the default. The goal is to make it easy to use
+colors correctly and still allow advanced users a high degree of
+flexibility.</p>
+</div></details><h2 id="modules" class="section-header">Modules<a href="#modules" class="anchor">§</a></h2><dl class="item-table"><dt><a class="mod" href="channels/index.html" title="mod palette::rgb::channels">channels</a></dt><dd>Channel orders for packed RGBA types.</dd></dl><h2 id="structs" class="section-header">Structs<a href="#structs" class="anchor">§</a></h2><dl class="item-table"><dt><a class="struct" href="struct.Iter.html" title="struct palette::rgb::Iter">Iter</a></dt><dd>An iterator for <a href="struct.Rgb.html" title="struct palette::rgb::Rgb"><code>Rgb</code></a> values.</dd><dt><a class="struct" href="struct.Rgb.html" title="struct palette::rgb::Rgb">Rgb</a></dt><dd>Generic RGB.</dd></dl><h2 id="enums" class="section-header">Enums<a href="#enums" class="anchor">§</a></h2><dl class="item-table"><dt><a class="enum" href="enum.FromHexError.html" title="enum palette::rgb::FromHexError">From<wbr>HexError</a></dt><dd>Error type for parsing a string of hexadecimal characters to an <code>Rgb</code> color.</dd></dl><h2 id="traits" class="section-header">Traits<a href="#traits" class="anchor">§</a></h2><dl class="item-table"><dt><a class="trait" href="trait.Primaries.html" title="trait palette::rgb::Primaries">Primaries</a></dt><dd>Represents the red, green and blue primaries of an RGB space.</dd><dt><a class="trait" href="trait.RgbSpace.html" title="trait palette::rgb::RgbSpace">RgbSpace</a></dt><dd>A set of primaries and a white point.</dd><dt><a class="trait" href="trait.RgbStandard.html" title="trait palette::rgb::RgbStandard">RgbStandard</a></dt><dd>An RGB space and a transfer function.</dd></dl><h2 id="types" class="section-header">Type Aliases<a href="#types" class="anchor">§</a></h2><dl class="item-table"><dt><a class="type" href="type.GammaSrgb.html" title="type palette::rgb::GammaSrgb">Gamma<wbr>Srgb</a></dt><dd>Gamma 2.2 encoded sRGB.</dd><dt><a class="type" href="type.GammaSrgba.html" title="type palette::rgb::GammaSrgba">Gamma<wbr>Srgba</a></dt><dd>Gamma 2.2 encoded sRGB with an alpha component.</dd><dt><a class="type" href="type.LinSrgb.html" title="type palette::rgb::LinSrgb">LinSrgb</a></dt><dd>Linear sRGB.</dd><dt><a class="type" href="type.LinSrgba.html" title="type palette::rgb::LinSrgba">LinSrgba</a></dt><dd>Linear sRGB with an alpha component.</dd><dt><a class="type" href="type.PackedAbgr.html" title="type palette::rgb::PackedAbgr">Packed<wbr>Abgr</a></dt><dd>A packed representation of RGBA in ABGR order.</dd><dt><a class="type" href="type.PackedArgb.html" title="type palette::rgb::PackedArgb">Packed<wbr>Argb</a></dt><dd>A packed representation of RGBA in ARGB order.</dd><dt><a class="type" href="type.PackedBgra.html" title="type palette::rgb::PackedBgra">Packed<wbr>Bgra</a></dt><dd>A packed representation of RGBA in BGRA order.</dd><dt><a class="type" href="type.PackedRgba.html" title="type palette::rgb::PackedRgba">Packed<wbr>Rgba</a></dt><dd>A packed representation of RGBA in RGBA order.</dd><dt><a class="type" href="type.Rgba.html" title="type palette::rgb::Rgba">Rgba</a></dt><dd>Generic RGB with an alpha component. See the <a href="../struct.Alpha.html#Rgba" title="struct palette::Alpha"><code>Rgba</code> implementation in
+<code>Alpha</code></a>.</dd><dt><a class="type" href="type.Srgb.html" title="type palette::rgb::Srgb">Srgb</a></dt><dd>Non-linear sRGB, the most common RGB input/output format.</dd><dt><a class="type" href="type.Srgba.html" title="type palette::rgb::Srgba">Srgba</a></dt><dd>Non-linear sRGB with an alpha component.</dd></dl></section></div></main></body></html>

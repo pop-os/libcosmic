@@ -1,0 +1,43 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Cast from a `Vec` of color components to a `Vec` of colors."><title>try_from_component_vec in palette::cast - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../static.files/rustdoc-916cea96.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="palette" data-themes="" data-resource-suffix="" data-rustdoc-version="1.87.0 (17067e9ac 2025-05-09)" data-channel="1.87.0" data-search-js="search-e7298875.js" data-settings-js="settings-d72f25bb.js" ><script src="../../static.files/storage-82c7156e.js"></script><script defer src="sidebar-items.js"></script><script defer src="../../static.files/main-fb8c74a8.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-893ab5e7.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-6580c154.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-044be391.svg"></head><body class="rustdoc fn"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle" title="show sidebar"></button></nav><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../../palette/index.html">palette</a><span class="version">0.7.6</span></h2></div><div class="sidebar-elems"><section id="rustdoc-toc"><h2 class="location"><a href="#">try_<wbr>from_<wbr>component_<wbr>vec</a></h2><h3><a href="#">Sections</a></h3><ul class="block top-toc"><li><a href="#errors" title="Errors">Errors</a></li><li><a href="#examples" title="Examples">Examples</a></li></ul></section><div id="rustdoc-modnav"><h2><a href="index.html">In palette::<wbr>cast</a></h2></div></div></nav><div class="sidebar-resizer"></div><main><div class="width-limiter"><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><div class="rustdoc-breadcrumbs"><a href="../index.html">palette</a>::<wbr><a href="index.html">cast</a></div><h1>Function <span class="fn">try_from_component_vec</span><button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"><a class="src" href="../../src/palette/cast/array.rs.html#1384-1420">Source</a> </span></div><pre class="rust item-decl"><code>pub fn try_from_component_vec&lt;T&gt;(
+    values: <a class="struct" href="https://doc.rust-lang.org/1.87.0/alloc/vec/struct.Vec.html" title="struct alloc::vec::Vec">Vec</a>&lt;&lt;T::<a class="associatedtype" href="trait.ArrayCast.html#associatedtype.Array" title="type palette::cast::ArrayCast::Array">Array</a> as <a class="trait" href="../trait.ArrayExt.html" title="trait palette::ArrayExt">ArrayExt</a>&gt;::<a class="associatedtype" href="../trait.ArrayExt.html#associatedtype.Item" title="type palette::ArrayExt::Item">Item</a>&gt;,
+) -&gt; <a class="enum" href="https://doc.rust-lang.org/1.87.0/core/result/enum.Result.html" title="enum core::result::Result">Result</a>&lt;<a class="struct" href="https://doc.rust-lang.org/1.87.0/alloc/vec/struct.Vec.html" title="struct alloc::vec::Vec">Vec</a>&lt;T&gt;, <a class="struct" href="struct.VecCastError.html" title="struct palette::cast::VecCastError">VecCastError</a>&lt;&lt;T::<a class="associatedtype" href="trait.ArrayCast.html#associatedtype.Array" title="type palette::cast::ArrayCast::Array">Array</a> as <a class="trait" href="../trait.ArrayExt.html" title="trait palette::ArrayExt">ArrayExt</a>&gt;::<a class="associatedtype" href="../trait.ArrayExt.html#associatedtype.Item" title="type palette::ArrayExt::Item">Item</a>&gt;&gt;<div class="where">where
+    T: <a class="trait" href="trait.ArrayCast.html" title="trait palette::cast::ArrayCast">ArrayCast</a>,</div></code></pre><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Cast from a <code>Vec</code> of color components to a <code>Vec</code> of colors.</p>
+<h3 id="errors"><a class="doc-anchor" href="#errors">§</a>Errors</h3>
+<p>The cast will return an error if the length or capacity of the input <code>Vec</code>
+is not a multiple of the color’s array length.</p>
+<h3 id="examples"><a class="doc-anchor" href="#examples">§</a>Examples</h3>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>palette::{cast, Srgb};
+
+<span class="kw">let </span>components = <span class="macro">vec!</span>[<span class="number">64</span>, <span class="number">139</span>, <span class="number">10</span>, <span class="number">93</span>, <span class="number">18</span>, <span class="number">214</span>];
+<span class="macro">assert_eq!</span>(
+    cast::try_from_component_vec::&lt;Srgb&lt;u8&gt;&gt;(components),
+    <span class="prelude-val">Ok</span>(<span class="macro">vec!</span>[Srgb::new(<span class="number">64u8</span>, <span class="number">139</span>, <span class="number">10</span>), Srgb::new(<span class="number">93</span>, <span class="number">18</span>, <span class="number">214</span>)])
+)</code></pre></div>
+<p>This produces an error due to the incorrect length:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>palette::{cast, Srgb};
+
+<span class="comment">// Not a multiple of 3:
+</span><span class="kw">let </span>components = <span class="macro">vec!</span>[<span class="number">64</span>, <span class="number">139</span>, <span class="number">10</span>, <span class="number">93</span>, <span class="number">18</span>];
+
+<span class="kw">if let </span><span class="prelude-val">Err</span>(error) = cast::try_from_component_vec::&lt;Srgb&lt;u8&gt;&gt;(components) {
+    <span class="comment">// We get the original values back on error:
+    </span><span class="macro">assert_eq!</span>(error.values, <span class="macro">vec!</span>[<span class="number">64</span>, <span class="number">139</span>, <span class="number">10</span>, <span class="number">93</span>, <span class="number">18</span>]);
+} <span class="kw">else </span>{
+    <span class="macro">unreachable!</span>();
+}</code></pre></div>
+<p>This produces an error due to the incorrect capacity:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>palette::{cast, Srgb};
+
+<span class="kw">let </span><span class="kw-2">mut </span>components = <span class="macro">vec!</span>[<span class="number">64</span>, <span class="number">139</span>, <span class="number">10</span>, <span class="number">93</span>, <span class="number">18</span>, <span class="number">214</span>];
+components.reserve_exact(<span class="number">2</span>); <span class="comment">// Not a multiple of 3
+
+</span><span class="kw">if let </span><span class="prelude-val">Err</span>(error) = cast::try_from_component_vec::&lt;Srgb&lt;u8&gt;&gt;(components) {
+    <span class="comment">// We get the original values back on error:
+    </span><span class="macro">assert_eq!</span>(error.values, <span class="macro">vec!</span>[<span class="number">64</span>, <span class="number">139</span>, <span class="number">10</span>, <span class="number">93</span>, <span class="number">18</span>, <span class="number">214</span>]);
+    <span class="macro">assert_eq!</span>(error.values.capacity(), <span class="number">8</span>);
+} <span class="kw">else </span>{
+    <span class="macro">unreachable!</span>();
+}</code></pre></div>
+</div></details></section></div></main></body></html>

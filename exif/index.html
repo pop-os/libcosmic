@@ -1,0 +1,49 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="This is a pure-Rust library to parse Exif data."><title>exif - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../static.files/rustdoc-916cea96.css"><meta name="rustdoc-vars" data-root-path="../" data-static-root-path="../static.files/" data-current-crate="exif" data-themes="" data-resource-suffix="" data-rustdoc-version="1.87.0 (17067e9ac 2025-05-09)" data-channel="1.87.0" data-search-js="search-e7298875.js" data-settings-js="settings-d72f25bb.js" ><script src="../static.files/storage-82c7156e.js"></script><script defer src="../crates.js"></script><script defer src="../static.files/main-fb8c74a8.js"></script><noscript><link rel="stylesheet" href="../static.files/noscript-893ab5e7.css"></noscript><link rel="alternate icon" type="image/png" href="../static.files/favicon-32x32-6580c154.png"><link rel="icon" type="image/svg+xml" href="../static.files/favicon-044be391.svg"></head><body class="rustdoc mod crate"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle" title="show sidebar"></button></nav><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../exif/index.html">exif</a><span class="version">0.5.5</span></h2></div><div class="sidebar-elems"><ul class="block"><li><a id="all-types" href="all.html">All Items</a></li></ul><section id="rustdoc-toc"><h3><a href="#">Sections</a></h3><ul class="block top-toc"><li><a href="#examples" title="Examples">Examples</a></li><li><a href="#upgrade-guide" title="Upgrade Guide">Upgrade Guide</a></li></ul><h3><a href="#modules">Crate Items</a></h3><ul class="block"><li><a href="#modules" title="Modules">Modules</a></li><li><a href="#structs" title="Structs">Structs</a></li><li><a href="#enums" title="Enums">Enums</a></li><li><a href="#functions" title="Functions">Functions</a></li></ul></section><div id="rustdoc-modnav"></div></div></nav><div class="sidebar-resizer"></div><main><div class="width-limiter"><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><h1>Crate <span>exif</span><button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"><a class="src" href="../src/exif/lib.rs.html#27-122">Source</a> </span></div><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>This is a pure-Rust library to parse Exif data.</p>
+<p>This library parses Exif attributes in a raw Exif data block.
+It can also read Exif data directly from some image formats
+including TIFF, JPEG, HEIF, PNG, and WebP.</p>
+<h2 id="examples"><a class="doc-anchor" href="#examples">§</a>Examples</h2>
+<p>To parse Exif attributes in an image file,
+use <code>Reader::read_from_container</code>.
+To convert a field value to a string, use <code>Field::display_value</code>.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">for </span>path <span class="kw">in </span><span class="kw-2">&amp;</span>[<span class="string">"tests/exif.jpg"</span>, <span class="string">"tests/exif.tif"</span>] {
+    <span class="kw">let </span>file = std::fs::File::open(path)<span class="question-mark">?</span>;
+    <span class="kw">let </span><span class="kw-2">mut </span>bufreader = std::io::BufReader::new(<span class="kw-2">&amp;</span>file);
+    <span class="kw">let </span>exifreader = exif::Reader::new();
+    <span class="kw">let </span>exif = exifreader.read_from_container(<span class="kw-2">&amp;mut </span>bufreader)<span class="question-mark">?</span>;
+    <span class="kw">for </span>f <span class="kw">in </span>exif.fields() {
+        <span class="macro">println!</span>(<span class="string">"{} {} {}"</span>,
+                 f.tag, f.ifd_num, f.display_value().with_unit(<span class="kw-2">&amp;</span>exif));
+    }
+}</code></pre></div>
+<p>To process a field value programmatically in your application,
+use the value itself (associated value of enum <code>Value</code>)
+rather than a stringified one.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="comment">// Orientation is stored as a SHORT.  You could match `orientation.value`
+// against `Value::Short`, but the standard recommends that readers
+// should accept BYTE, SHORT, or LONG values for any unsigned integer
+// field.  `Value::get_uint` is provided for that purpose.
+</span><span class="kw">match </span>exif.get_field(Tag::Orientation, In::PRIMARY) {
+    <span class="prelude-val">Some</span>(orientation) =&gt;
+        <span class="kw">match </span>orientation.value.get_uint(<span class="number">0</span>) {
+            <span class="prelude-val">Some</span>(v @ <span class="number">1</span>..=<span class="number">8</span>) =&gt; <span class="macro">println!</span>(<span class="string">"Orientation {}"</span>, v),
+            <span class="kw">_ </span>=&gt; <span class="macro">eprintln!</span>(<span class="string">"Orientation value is broken"</span>),
+        },
+    <span class="prelude-val">None </span>=&gt; <span class="macro">eprintln!</span>(<span class="string">"Orientation tag is missing"</span>),
+}
+<span class="comment">// XResolution is stored as a RATIONAL.
+</span><span class="kw">match </span>exif.get_field(Tag::XResolution, In::PRIMARY) {
+    <span class="prelude-val">Some</span>(xres) =&gt;
+        <span class="kw">match </span>xres.value {
+            Value::Rational(<span class="kw-2">ref </span>v) <span class="kw">if </span>!v.is_empty() =&gt;
+                <span class="macro">println!</span>(<span class="string">"XResolution {}"</span>, v[<span class="number">0</span>]),
+            <span class="kw">_ </span>=&gt; <span class="macro">eprintln!</span>(<span class="string">"XResolution value is broken"</span>),
+        },
+    <span class="prelude-val">None </span>=&gt; <span class="macro">eprintln!</span>(<span class="string">"XResolution tag is missing"</span>),
+}</code></pre></div>
+<h2 id="upgrade-guide"><a class="doc-anchor" href="#upgrade-guide">§</a>Upgrade Guide</h2>
+<p>See the <a href="doc/upgrade/index.html">upgrade guide</a> for API incompatibilities.</p>
+</div></details><h2 id="modules" class="section-header">Modules<a href="#modules" class="anchor">§</a></h2><dl class="item-table"><dt><a class="mod" href="doc/index.html" title="mod exif::doc">doc</a></dt><dd>Documentation</dd><dt><a class="mod" href="experimental/index.html" title="mod exif::experimental">experimental</a></dt><dd>The interfaces in this module are experimental and unstable.</dd></dl><h2 id="structs" class="section-header">Structs<a href="#structs" class="anchor">§</a></h2><dl class="item-table"><dt><a class="struct" href="struct.DateTime.html" title="struct exif::DateTime">Date<wbr>Time</a></dt><dd>A struct used to parse a DateTime field.</dd><dt><a class="struct" href="struct.Exif.html" title="struct exif::Exif">Exif</a></dt><dd>A struct that holds the parsed Exif attributes.</dd><dt><a class="struct" href="struct.Field.html" title="struct exif::Field">Field</a></dt><dd>A TIFF/Exif field.</dd><dt><a class="struct" href="struct.In.html" title="struct exif::In">In</a></dt><dd>An IFD number.</dd><dt><a class="struct" href="struct.Rational.html" title="struct exif::Rational">Rational</a></dt><dd>An unsigned rational number, which is a pair of 32-bit unsigned integers.</dd><dt><a class="struct" href="struct.Reader.html" title="struct exif::Reader">Reader</a></dt><dd>A struct to parse the Exif attributes and
+create an <code>Exif</code> instance that holds the results.</dd><dt><a class="struct" href="struct.SRational.html" title="struct exif::SRational">SRational</a></dt><dd>A signed rational number, which is a pair of 32-bit signed integers.</dd><dt><a class="struct" href="struct.Tag.html" title="struct exif::Tag">Tag</a></dt><dd>A tag of a TIFF/Exif field.</dd></dl><h2 id="enums" class="section-header">Enums<a href="#enums" class="anchor">§</a></h2><dl class="item-table"><dt><a class="enum" href="enum.Context.html" title="enum exif::Context">Context</a></dt><dd>An enum that indicates how a tag number is interpreted.</dd><dt><a class="enum" href="enum.Error.html" title="enum exif::Error">Error</a></dt><dd>An error returned when parsing of Exif data fails.</dd><dt><a class="enum" href="enum.Value.html" title="enum exif::Value">Value</a></dt><dd>A type and values of a TIFF/Exif field.</dd></dl><h2 id="functions" class="section-header">Functions<a href="#functions" class="anchor">§</a></h2><dl class="item-table"><dt><a class="fn" href="fn.get_exif_attr_from_jpeg.html" title="fn exif::get_exif_attr_from_jpeg">get_<wbr>exif_<wbr>attr_<wbr>from_<wbr>jpeg</a></dt><dd>Get the Exif attribute information segment from a JPEG file.</dd><dt><a class="fn" href="fn.parse_exif.html" title="fn exif::parse_exif">parse_<wbr>exif</a></dt><dd>Parse the Exif attributes in the TIFF format.</dd></dl></section></div></main></body></html>

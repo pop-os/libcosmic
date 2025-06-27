@@ -1,0 +1,65 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Utilities for binding globals with `wl_registry` in delegates."><title>smithay_client_toolkit::registry - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../static.files/rustdoc-916cea96.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="smithay_client_toolkit" data-themes="" data-resource-suffix="" data-rustdoc-version="1.87.0 (17067e9ac 2025-05-09)" data-channel="1.87.0" data-search-js="search-e7298875.js" data-settings-js="settings-d72f25bb.js" ><script src="../../static.files/storage-82c7156e.js"></script><script defer src="../sidebar-items.js"></script><script defer src="../../static.files/main-fb8c74a8.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-893ab5e7.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-6580c154.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-044be391.svg"></head><body class="rustdoc mod"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle" title="show sidebar"></button></nav><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../../smithay_client_toolkit/index.html">smithay_<wbr>client_<wbr>toolkit</a><span class="version">0.19.2</span></h2></div><div class="sidebar-elems"><section id="rustdoc-toc"><h2 class="location"><a href="#">Module registry</a></h2><h3><a href="#">Sections</a></h3><ul class="block top-toc"><li><a href="#sample-implementation-of-registryhandler" title="Sample implementation of `RegistryHandler`">Sample implementation of <code>RegistryHandler</code></a></li></ul><h3><a href="#structs">Module Items</a></h3><ul class="block"><li><a href="#structs" title="Structs">Structs</a></li><li><a href="#enums" title="Enums">Enums</a></li><li><a href="#traits" title="Traits">Traits</a></li></ul></section><div id="rustdoc-modnav"><h2 class="in-crate"><a href="../index.html">In crate smithay_<wbr>client_<wbr>toolkit</a></h2></div></div></nav><div class="sidebar-resizer"></div><main><div class="width-limiter"><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><div class="rustdoc-breadcrumbs"><a href="../index.html">smithay_client_toolkit</a></div><h1>Module <span>registry</span><button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"><a class="src" href="../../src/smithay_client_toolkit/registry.rs.html#1-543">Source</a> </span></div><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Utilities for binding globals with <a href="../../wayland_client/protocol/wl_registry/index.html" title="mod wayland_client::protocol::wl_registry"><code>wl_registry</code></a> in delegates.</p>
+<p>This module is based around the <a href="trait.RegistryHandler.html" title="trait smithay_client_toolkit::registry::RegistryHandler"><code>RegistryHandler</code></a> trait and <a href="struct.RegistryState.html" title="struct smithay_client_toolkit::registry::RegistryState"><code>RegistryState</code></a>.</p>
+<p><a href="struct.RegistryState.html" title="struct smithay_client_toolkit::registry::RegistryState"><code>RegistryState</code></a> provides an interface to bind globals regularly, creating an object with each new
+instantiation or caching bound globals to prevent duplicate object instances from being created. Binding
+a global regularly is accomplished through <a href="struct.RegistryState.html#method.bind_one" title="method smithay_client_toolkit::registry::RegistryState::bind_one"><code>RegistryState::bind_one</code></a>.</p>
+<p>The <a href="../macro.delegate_registry.html" title="macro smithay_client_toolkit::delegate_registry"><code>delegate_registry</code></a> macro is used to implement handling for <a href="../../wayland_client/protocol/wl_registry/index.html" title="mod wayland_client::protocol::wl_registry"><code>wl_registry</code></a>.</p>
+<h3 id="sample-implementation-of-registryhandler"><a class="doc-anchor" href="#sample-implementation-of-registryhandler">§</a>Sample implementation of <a href="trait.RegistryHandler.html" title="trait smithay_client_toolkit::registry::RegistryHandler"><code>RegistryHandler</code></a></h3>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>smithay_client_toolkit::reexports::client::{
+    Connection, Dispatch, QueueHandle,
+    delegate_dispatch,
+    globals::GlobalList,
+    protocol::wl_output,
+};
+
+<span class="kw">use </span>smithay_client_toolkit::registry::{
+    GlobalProxy, ProvidesRegistryState, RegistryHandler, RegistryState,
+};
+
+<span class="kw">struct </span>ExampleApp {
+    <span class="doccomment">/// The registry state is needed to use the global abstractions.
+    </span>registry_state: RegistryState,
+    <span class="doccomment">/// This is a type we want to delegate global handling to.
+    </span>delegate_that_wants_registry: Delegate,
+}
+
+<span class="doccomment">/// The delegate a global should be provided to.
+</span><span class="kw">struct </span>Delegate {
+    outputs: Vec&lt;wl_output::WlOutput&gt;,
+}
+
+<span class="comment">// When implementing RegistryHandler, you must be able to dispatch any type you could bind using the registry state.
+</span><span class="kw">impl</span>&lt;D&gt; RegistryHandler&lt;D&gt; <span class="kw">for </span>Delegate
+<span class="kw">where
+    </span><span class="comment">// In order to bind a global, you must statically assert the global may be handled with the data type.
+    </span>D: Dispatch&lt;wl_output::WlOutput, ()&gt;
+        <span class="comment">// ProvidesRegistryState provides a function to access the RegistryState within the impl.
+        </span>+ ProvidesRegistryState
+        <span class="comment">// We need some way to access our part of the application's state.  This uses AsMut,
+        // but you may prefer to create your own trait to avoid making .as_mut() ambiguous.
+        </span>+ AsMut&lt;Delegate&gt;
+        + <span class="lifetime">'static</span>,
+{
+  <span class="doccomment">/// New global added after initial enumeration.
+   </span><span class="kw">fn </span>new_global(
+       data: <span class="kw-2">&amp;mut </span>D,
+       conn: <span class="kw-2">&amp;</span>Connection,
+       qh: <span class="kw-2">&amp;</span>QueueHandle&lt;D&gt;,
+       name: u32,
+       interface: <span class="kw-2">&amp;</span>str,
+       version: u32,
+   ) {
+        <span class="kw">if </span>interface == <span class="string">"wl_output" </span>{
+            <span class="comment">// Bind `wl_output` with newest version from 1 to 4 the compositor supports
+            </span><span class="kw">let </span>output = data.registry().bind_specific(qh, name, <span class="number">1</span>..=<span class="number">4</span>, ()).unwrap();
+            data.as_mut().outputs.push(output);
+        }
+
+        <span class="comment">// You could either handle errors here or when attempting to use the interface.  Most
+        // Wayland protocols are optional, so if your application can function without a
+        // protocol it should try to do so; the From impl of GlobalProxy is written to make
+        // this straightforward.
+    </span>}
+}</code></pre></div>
+</div></details><h2 id="structs" class="section-header">Structs<a href="#structs" class="anchor">§</a></h2><dl class="item-table"><dt><a class="struct" href="struct.RegistryState.html" title="struct smithay_client_toolkit::registry::RegistryState">Registry<wbr>State</a></dt><dd>State object associated with the registry handling for smithay’s client toolkit.</dd><dt><a class="struct" href="struct.SimpleGlobal.html" title="struct smithay_client_toolkit::registry::SimpleGlobal">Simple<wbr>Global</a></dt></dl><h2 id="enums" class="section-header">Enums<a href="#enums" class="anchor">§</a></h2><dl class="item-table"><dt><a class="enum" href="enum.GlobalProxy.html" title="enum smithay_client_toolkit::registry::GlobalProxy">Global<wbr>Proxy</a></dt><dd>A helper for storing a bound global.</dd></dl><h2 id="traits" class="section-header">Traits<a href="#traits" class="anchor">§</a></h2><dl class="item-table"><dt><a class="trait" href="trait.ProvidesRegistryState.html" title="trait smithay_client_toolkit::registry::ProvidesRegistryState">Provides<wbr>Registry<wbr>State</a></dt><dd>Trait which asserts a data type may provide a mutable reference to the registry state.</dd><dt><a class="trait" href="trait.RegistryHandler.html" title="trait smithay_client_toolkit::registry::RegistryHandler">Registry<wbr>Handler</a></dt><dd>A trait implemented by modular parts of a smithay’s client toolkit and protocol delegates that may be used
+to receive notification of a global being created or destroyed.</dd></dl></section></div></main></body></html>

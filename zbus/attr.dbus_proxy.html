@@ -1,0 +1,177 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Attribute macro for defining D-Bus proxies (using `zbus::Proxy` and `zbus::blocking::Proxy`)."><title>dbus_proxy in zbus - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../static.files/rustdoc-916cea96.css"><meta name="rustdoc-vars" data-root-path="../" data-static-root-path="../static.files/" data-current-crate="zbus" data-themes="" data-resource-suffix="" data-rustdoc-version="1.87.0 (17067e9ac 2025-05-09)" data-channel="1.87.0" data-search-js="search-e7298875.js" data-settings-js="settings-d72f25bb.js" ><script src="../static.files/storage-82c7156e.js"></script><script defer src="sidebar-items.js"></script><script defer src="../static.files/main-fb8c74a8.js"></script><noscript><link rel="stylesheet" href="../static.files/noscript-893ab5e7.css"></noscript><link rel="alternate icon" type="image/png" href="../static.files/favicon-32x32-6580c154.png"><link rel="icon" type="image/svg+xml" href="../static.files/favicon-044be391.svg"></head><body class="rustdoc attr"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle" title="show sidebar"></button><a class="logo-container" href="../zbus/index.html"><img src="https://storage.googleapis.com/fdo-gitlab-uploads/project/avatar/3213/zbus-logomark.png" alt=""></a></nav><nav class="sidebar"><div class="sidebar-crate"><a class="logo-container" href="../zbus/index.html"><img src="https://storage.googleapis.com/fdo-gitlab-uploads/project/avatar/3213/zbus-logomark.png" alt="logo"></a><h2><a href="../zbus/index.html">zbus</a><span class="version">3.15.2</span></h2></div><div class="sidebar-elems"><section id="rustdoc-toc"><h2 class="location"><a href="#">dbus_<wbr>proxy</a></h2><h3><a href="#">Sections</a></h3><ul class="block top-toc"><li><a href="#signals" title="Signals">Signals</a></li><li><a href="#example" title="Example">Example</a></li></ul></section><div id="rustdoc-modnav"><h2 class="in-crate"><a href="index.html">In crate zbus</a></h2></div></div></nav><div class="sidebar-resizer"></div><main><div class="width-limiter"><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><div class="rustdoc-breadcrumbs"><a href="index.html">zbus</a></div><h1>Attribute Macro <span class="attr">dbus_proxy</span><button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"><a class="src" href="../src/zbus_macros/lib.rs.html#197">Source</a> </span></div><pre class="rust item-decl"><code>#[dbus_proxy]</code></pre><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Attribute macro for defining D-Bus proxies (using <a href="https://docs.rs/zbus/3.0.0/zbus/struct.Proxy.html"><code>zbus::Proxy</code></a> and
+<a href="https://docs.rs/zbus/3.0.0/zbus/blocking/struct.Proxy.html"><code>zbus::blocking::Proxy</code></a>).</p>
+<p>The macro must be applied on a <code>trait T</code>. Two matching <code>impl T</code> will provide an asynchronous
+Proxy implementation, named <code>TraitNameProxy</code> and a blocking one, named <code>TraitNameProxyBlocking</code>.
+The proxy instances can be created with the associated <code>new()</code> or <code>builder()</code> methods. The
+former doesn’t take any argument and uses the default service name and path. The later allows
+you to specify non-default proxy arguments.</p>
+<p>The following attributes are supported:</p>
+<ul>
+<li>
+<p><code>interface</code> - the name of the D-Bus interface this proxy is for.</p>
+</li>
+<li>
+<p><code>default_service</code> - the default service this proxy should connect to.</p>
+</li>
+<li>
+<p><code>default_path</code> - The default object path the method calls will be sent on and signals will be
+sent for by the target service.</p>
+</li>
+<li>
+<p><code>gen_async</code> - Whether or not to generate the asynchronous Proxy type.</p>
+</li>
+<li>
+<p><code>gen_blocking</code> - Whether or not to generate the blocking Proxy type. If set to <code>false</code>, the
+asynchronous proxy type will take the name <code>TraitNameProxy</code> (i-e no <code>Async</code> prefix).</p>
+</li>
+<li>
+<p><code>async_name</code> - Specify the exact name of the asynchronous proxy type.</p>
+</li>
+<li>
+<p><code>blocking_name</code> - Specify the exact name of the blocking proxy type.</p>
+</li>
+<li>
+<p><code>assume_defaults</code> - whether to auto-generate values for <code>default_path</code> and <code>default_service</code>
+if none are specified (default: <code>true</code>). <code>dbus_proxy</code> currently generates a warning if neither
+this attribute nor one of the default values are specified. A future release will change the
+default to <code>false</code>. Please make sure to explicitly set either this attribute or the default
+values, according to your needs.</p>
+</li>
+</ul>
+<p>Each trait method will be expanded to call to the associated D-Bus remote interface.</p>
+<p>Trait methods accept <code>dbus_proxy</code> attributes:</p>
+<ul>
+<li>
+<p><code>name</code> - override the D-Bus name (pascal case form by default)</p>
+</li>
+<li>
+<p><code>property</code> - expose the method as a property. If the method takes an argument, it must be a
+setter, with a <code>set_</code> prefix. Otherwise, it’s a getter. Additional sub-attributes exists to
+control specific property behaviors:</p>
+<ul>
+<li><code>emits_changed_signal</code> - specifies how property changes are signaled. Valid values are those
+documented in <a href="https://dbus.freedesktop.org/doc/dbus-specification.html#introspection-format">DBus specifications</a>:
+<ul>
+<li><code>"true"</code> - (default) change signal is always emitted with the value included. This uses
+the default caching behavior of the proxy, and generates a listener method for the change
+signal.</li>
+<li><code>"invalidates"</code> - change signal is emitted, but the value is not included in the signal.
+This has the same behavior as <code>"true"</code>.</li>
+<li><code>"const"</code> - property never changes, thus no signal is ever emitted for it. This uses the
+default caching behavior of the proxy, but does not generate a listener method for the
+change signal.</li>
+<li><code>"false"</code> - change signal is not (guaranteed to be) emitted if the property changes. This
+disables property value caching, and does not generate a listener method for the change
+signal.</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<p><code>signal</code> - declare a signal just like a D-Bus method. Read the <a href="#signals">Signals</a> section
+below for details.</p>
+</li>
+<li>
+<p><code>no_reply</code> - declare a method call that does not wait for a reply.</p>
+</li>
+<li>
+<p><code>no_autostart</code> - declare a method call that will not trigger the bus to automatically launch
+the destination service if it is not already running.</p>
+</li>
+<li>
+<p><code>allow_interactive_auth</code> - declare a method call that is allowed to trigger an interactive
+prompt for authorization or confirmation from the receiver.</p>
+</li>
+<li>
+<p><code>object</code> - methods that returns an <a href="https://docs.rs/zvariant/2.10.0/zvariant/struct.ObjectPath.html"><code>ObjectPath</code></a> can be annotated with the <code>object</code> attribute
+to specify the proxy object to be constructed from the returned <a href="https://docs.rs/zvariant/2.10.0/zvariant/struct.ObjectPath.html"><code>ObjectPath</code></a>.</p>
+</li>
+<li>
+<p><code>async_object</code> - if the assumptions made by <code>object</code> attribute about naming of the
+asynchronous proxy type, don’t fit your bill, you can use this to specify its exact name.</p>
+</li>
+<li>
+<p><code>blocking_object</code> - if the assumptions made by <code>object</code> attribute about naming of the blocking
+proxy type, don’t fit your bill, you can use this to specify its exact name.</p>
+<p>NB: Any doc comments provided shall be appended to the ones added by the macro.</p>
+</li>
+</ul>
+<h2 id="signals"><a class="doc-anchor" href="#signals">§</a>Signals</h2>
+<p>For each signal method declared, this macro will provide a method, named <code>receive_&lt;method_name&gt;</code>
+to create a <a href="https://docs.rs/zbus/3.0.0/zbus/struct.SignalStream.html"><code>zbus::SignalStream</code></a> (<a href="https://docs.rs/zbus/3.0.0/zbus/blocking/struct.SignalIterator.html"><code>zbus::blocking::SignalIterator</code></a> for the blocking proxy)
+wrapper, named <code>&lt;SignalName&gt;Stream</code> (<code>&lt;SignalName&gt;Iterator</code> for the blocking proxy) that yield
+a <a href="https://docs.rs/zbus/3.0.0/zbus/struct.Message.html"><code>zbus::Message</code></a> wrapper, named <code>&lt;SignalName&gt;</code>. This wrapper provides type safe access to the
+signal arguments. It also implements <code>Deref&lt;Target = Message&gt;</code> to allow easy access to the
+underlying <a href="https://docs.rs/zbus/3.0.0/zbus/struct.Message.html"><code>zbus::Message</code></a>.</p>
+<h2 id="example"><a class="doc-anchor" href="#example">§</a>Example</h2>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>zbus_macros::dbus_proxy;
+<span class="kw">use </span>zbus::{blocking::Connection, <span class="prelude-ty">Result</span>, fdo, zvariant::Value};
+<span class="kw">use </span>futures_util::stream::StreamExt;
+<span class="kw">use </span>async_io::block_on;
+
+<span class="attr">#[dbus_proxy(
+    interface = <span class="string">"org.test.SomeIface"</span>,
+    default_service = <span class="string">"org.test.SomeService"</span>,
+    default_path = <span class="string">"/org/test/SomeObject"
+</span>)]
+</span><span class="kw">trait </span>SomeIface {
+    <span class="kw">fn </span>do_this(<span class="kw-2">&amp;</span><span class="self">self</span>, with: <span class="kw-2">&amp;</span>str, some: u32, arg: <span class="kw-2">&amp;</span>Value&lt;<span class="lifetime">'_</span>&gt;) -&gt; <span class="prelude-ty">Result</span>&lt;bool&gt;;
+
+    <span class="attr">#[dbus_proxy(property)]
+    </span><span class="kw">fn </span>a_property(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; fdo::Result&lt;String&gt;;
+
+    <span class="attr">#[dbus_proxy(property)]
+    </span><span class="kw">fn </span>set_a_property(<span class="kw-2">&amp;</span><span class="self">self</span>, a_property: <span class="kw-2">&amp;</span>str) -&gt; fdo::Result&lt;()&gt;;
+
+    <span class="attr">#[dbus_proxy(signal)]
+    </span><span class="kw">fn </span>some_signal(<span class="kw-2">&amp;</span><span class="self">self</span>, arg1: <span class="kw-2">&amp;</span>str, arg2: u32) -&gt; fdo::Result&lt;()&gt;;
+
+    <span class="attr">#[dbus_proxy(object = <span class="string">"SomeOtherIface"</span>, blocking_object = <span class="string">"SomeOtherInterfaceBlock"</span>)]
+    </span><span class="comment">// The method will return a `SomeOtherIfaceProxy` or `SomeOtherIfaceProxyBlock`, depending
+    // on whether it is called on `SomeIfaceProxy` or `SomeIfaceProxyBlocking`, respectively.
+    //
+    // NB: We explicitly specified the exact name of the blocking proxy type. If we hadn't,
+    // `SomeOtherIfaceProxyBlock` would have been assumed and expected. We could also specify
+    // the specific name of the asynchronous proxy types, using the `async_object` attribute.
+    </span><span class="kw">fn </span>some_method(<span class="kw-2">&amp;</span><span class="self">self</span>, arg1: <span class="kw-2">&amp;</span>str);
+}
+
+<span class="attr">#[dbus_proxy(
+    interface = <span class="string">"org.test.SomeOtherIface"</span>,
+    default_service = <span class="string">"org.test.SomeOtherService"</span>,
+    blocking_name = <span class="string">"SomeOtherInterfaceBlock"</span>,
+)]
+</span><span class="kw">trait </span>SomeOtherIface {}
+
+<span class="kw">let </span>connection = Connection::session()<span class="question-mark">?</span>;
+<span class="comment">// Use `builder` to override the default arguments, `new` otherwise.
+</span><span class="kw">let </span>proxy = SomeIfaceProxyBlocking::builder(<span class="kw-2">&amp;</span>connection)
+               .destination(<span class="string">"org.another.Service"</span>)<span class="question-mark">?
+               </span>.cache_properties(zbus::CacheProperties::No)
+               .build()<span class="question-mark">?</span>;
+<span class="kw">let _ </span>= proxy.do_this(<span class="string">"foo"</span>, <span class="number">32</span>, <span class="kw-2">&amp;</span>Value::new(<span class="bool-val">true</span>));
+<span class="kw">let _ </span>= proxy.set_a_property(<span class="string">"val"</span>);
+
+<span class="kw">let </span>signal = proxy.receive_some_signal()<span class="question-mark">?</span>.next().unwrap();
+<span class="kw">let </span>args = signal.args()<span class="question-mark">?</span>;
+<span class="macro">println!</span>(<span class="string">"arg1: {}, arg2: {}"</span>, args.arg1(), args.arg2());
+
+<span class="comment">// Now the same again, but asynchronous.
+</span>block_on(<span class="kw">async move </span>{
+    <span class="kw">let </span>proxy = SomeIfaceProxy::builder(<span class="kw-2">&amp;</span>connection.into())
+                   .cache_properties(zbus::CacheProperties::No)
+                   .build()
+                   .<span class="kw">await
+                   </span>.unwrap();
+    <span class="kw">let _ </span>= proxy.do_this(<span class="string">"foo"</span>, <span class="number">32</span>, <span class="kw-2">&amp;</span>Value::new(<span class="bool-val">true</span>)).<span class="kw">await</span>;
+    <span class="kw">let _ </span>= proxy.set_a_property(<span class="string">"val"</span>).<span class="kw">await</span>;
+
+    <span class="kw">let </span>signal = proxy.receive_some_signal().<span class="kw">await</span><span class="question-mark">?</span>.next().<span class="kw">await</span>.unwrap();
+    <span class="kw">let </span>args = signal.args()<span class="question-mark">?</span>;
+    <span class="macro">println!</span>(<span class="string">"arg1: {}, arg2: {}"</span>, args.arg1(), args.arg2());
+
+    <span class="prelude-val">Ok</span>::&lt;(), zbus::Error&gt;(())
+})<span class="question-mark">?</span>;
+</code></pre></div>
+<p><a href="https://docs.rs/zbus_polkit/1.0.0/zbus_polkit/policykit1/index.html"><code>zbus_polkit</code></a> is a good example of how to bind a real D-Bus API.</p>
+</div></details></section></div></main></body></html>
