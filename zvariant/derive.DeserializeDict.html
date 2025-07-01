@@ -1,0 +1,53 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Adds `Deserialize` implementation to structs to be deserialized from `a{sv}` type."><title>DeserializeDict in zvariant - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../static.files/rustdoc-916cea96.css"><meta name="rustdoc-vars" data-root-path="../" data-static-root-path="../static.files/" data-current-crate="zvariant" data-themes="" data-resource-suffix="" data-rustdoc-version="1.87.0 (17067e9ac 2025-05-09)" data-channel="1.87.0" data-search-js="search-e7298875.js" data-settings-js="settings-d72f25bb.js" ><script src="../static.files/storage-82c7156e.js"></script><script defer src="sidebar-items.js"></script><script defer src="../static.files/main-fb8c74a8.js"></script><noscript><link rel="stylesheet" href="../static.files/noscript-893ab5e7.css"></noscript><link rel="alternate icon" type="image/png" href="../static.files/favicon-32x32-6580c154.png"><link rel="icon" type="image/svg+xml" href="../static.files/favicon-044be391.svg"></head><body class="rustdoc derive"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle" title="show sidebar"></button><a class="logo-container" href="../zvariant/index.html"><img src="https://storage.googleapis.com/fdo-gitlab-uploads/project/avatar/3213/zbus-logomark.png" alt=""></a></nav><nav class="sidebar"><div class="sidebar-crate"><a class="logo-container" href="../zvariant/index.html"><img src="https://storage.googleapis.com/fdo-gitlab-uploads/project/avatar/3213/zbus-logomark.png" alt="logo"></a><h2><a href="../zvariant/index.html">zvariant</a><span class="version">3.15.2</span></h2></div><div class="sidebar-elems"><section id="rustdoc-toc"><h2 class="location"><a href="#">Deserialize<wbr>Dict</a></h2><h3><a href="#">Sections</a></h3><ul class="block top-toc"><li><a href="#examples" title="Examples">Examples</a></li><li><a href="#auto-renaming-fields" title="Auto renaming fields">Auto renaming fields</a></li></ul></section><div id="rustdoc-modnav"><h2 class="in-crate"><a href="index.html">In crate zvariant</a></h2></div></div></nav><div class="sidebar-resizer"></div><main><div class="width-limiter"><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><div class="rustdoc-breadcrumbs"><a href="index.html">zvariant</a></div><h1>Derive Macro <span class="derive">DeserializeDict</span><button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"><a class="src" href="../src/zvariant_derive/lib.rs.html#316">Source</a> </span></div><pre class="rust item-decl"><code>#[derive(DeserializeDict)]
+{
+    <span class="comment">// Attributes available to this derive:</span>
+    #[zvariant]
+}
+</code></pre><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Adds <a href="https://docs.serde.rs/serde/de/trait.Deserialize.html"><code>Deserialize</code></a> implementation to structs to be deserialized from <code>a{sv}</code> type.</p>
+<p>This macro deserializes a D-Bus dictionary type as a struct, where keys are strings and values
+are generic values. Such dictionary types are very commonly used with
+<a href="https://dbus.freedesktop.org/doc/dbus-specification.html#standard-interfaces-properties">D-Bus</a>
+and GVariant.</p>
+<h2 id="examples"><a class="doc-anchor" href="#examples">§</a>Examples</h2>
+<p>For structs it works just like serde’s <a href="https://docs.serde.rs/serde/de/trait.Deserialize.html"><code>Deserialize</code></a> macros:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>zvariant::{DeserializeDict, Type};
+
+<span class="attr">#[derive(DeserializeDict, Type)]
+#[zvariant(signature = <span class="string">"a{sv}"</span>)]
+#[allow(unused)]
+</span><span class="kw">struct </span>Struct {
+    field1: u16,
+    <span class="attr">#[zvariant(rename = <span class="string">"another-name"</span>)]
+    </span>field2: i64,
+    optional_field: <span class="prelude-ty">Option</span>&lt;String&gt;,
+}</code></pre></div>
+<p>The deserialized D-Bus dictionary <code>{"field1": Value::U16(42), "another-name": Value::I64(77)}</code>
+will be <code>Struct {42, 77, None}</code>.</p>
+<h2 id="auto-renaming-fields"><a class="doc-anchor" href="#auto-renaming-fields">§</a>Auto renaming fields</h2>
+<p>The macro supports specifying a Serde-like <code>#[zvariant(rename_all = "case")]</code> attribute on
+structures. The attribute allows to rename all the fields from snake case to another case
+automatically:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>zvariant::{SerializeDict, Type};
+
+<span class="attr">#[derive(SerializeDict, Type)]
+#[zvariant(signature = <span class="string">"a{sv}"</span>, rename_all = <span class="string">"PascalCase"</span>)]
+</span><span class="kw">struct </span>Struct {
+    field1: u16,
+    <span class="attr">#[zvariant(rename = <span class="string">"another-name"</span>)]
+    </span>field2: i64,
+    optional_field: <span class="prelude-ty">Option</span>&lt;String&gt;,
+}</code></pre></div>
+<p>It’s still possible to specify custom names for individual fields using the
+<code>#[zvariant(rename = "another-name")]</code> attribute even when the <code>rename_all</code> attribute is
+present.</p>
+<p>Currently the macro supports the following values for <code>case</code>:</p>
+<ul>
+<li><code>"lowercase"</code></li>
+<li><code>"UPPERCASE"</code></li>
+<li><code>"PascalCase"</code></li>
+<li><code>"camelCase"</code></li>
+<li><code>"snake_case"</code></li>
+</ul>
+</div></details></section></div></main></body></html>

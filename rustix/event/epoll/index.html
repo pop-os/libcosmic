@@ -1,0 +1,68 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Linux `epoll` support."><title>rustix::event::epoll - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../../static.files/rustdoc-916cea96.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="rustix" data-themes="" data-resource-suffix="" data-rustdoc-version="1.87.0 (17067e9ac 2025-05-09)" data-channel="1.87.0" data-search-js="search-e7298875.js" data-settings-js="settings-d72f25bb.js" ><script src="../../../static.files/storage-82c7156e.js"></script><script defer src="../sidebar-items.js"></script><script defer src="../../../static.files/main-fb8c74a8.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-893ab5e7.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-6580c154.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-044be391.svg"></head><body class="rustdoc mod"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle" title="show sidebar"></button></nav><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../../../rustix/index.html">rustix</a><span class="version">1.0.7</span></h2></div><div class="sidebar-elems"><section id="rustdoc-toc"><h2 class="location"><a href="#">Module epoll</a></h2><h3><a href="#">Sections</a></h3><ul class="block top-toc"><li><a href="#examples" title="Examples">Examples</a></li></ul><h3><a href="#structs">Module Items</a></h3><ul class="block"><li><a href="#structs" title="Structs">Structs</a></li><li><a href="#functions" title="Functions">Functions</a></li><li><a href="#unions" title="Unions">Unions</a></li></ul></section><div id="rustdoc-modnav"><h2><a href="../index.html">In rustix::<wbr>event</a></h2></div></div></nav><div class="sidebar-resizer"></div><main><div class="width-limiter"><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><div class="rustdoc-breadcrumbs"><a href="../../index.html">rustix</a>::<wbr><a href="../index.html">event</a></div><h1>Module <span>epoll</span><button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"><a class="src" href="../../../src/rustix/event/epoll.rs.html#1-347">Source</a> </span></div><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Linux <code>epoll</code> support.</p>
+<h2 id="examples"><a class="doc-anchor" href="#examples">§</a>Examples</h2>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>rustix::buffer::spare_capacity;
+<span class="kw">use </span>rustix::event::epoll;
+<span class="kw">use </span>rustix::fd::AsFd;
+<span class="kw">use </span>rustix::io::{ioctl_fionbio, read, write};
+<span class="kw">use </span>rustix::net::{
+    accept, bind, listen, socket, AddressFamily, Ipv4Addr, SocketAddrV4, SocketType,
+};
+<span class="kw">use </span>std::collections::HashMap;
+<span class="kw">use </span>std::os::unix::io::AsRawFd;
+
+<span class="comment">// Create a socket and listen on it.
+</span><span class="kw">let </span>listen_sock = socket(AddressFamily::INET, SocketType::STREAM, <span class="prelude-val">None</span>)<span class="question-mark">?</span>;
+bind(<span class="kw-2">&amp;</span>listen_sock, <span class="kw-2">&amp;</span>SocketAddrV4::new(Ipv4Addr::LOCALHOST, <span class="number">0</span>))<span class="question-mark">?</span>;
+listen(<span class="kw-2">&amp;</span>listen_sock, <span class="number">1</span>)<span class="question-mark">?</span>;
+
+<span class="comment">// Create an epoll object. Using `Owning` here means the epoll object will
+// take ownership of the file descriptors registered with it.
+</span><span class="kw">let </span>epoll = epoll::create(epoll::CreateFlags::CLOEXEC)<span class="question-mark">?</span>;
+
+<span class="comment">// Register the socket with the epoll object.
+</span>epoll::add(
+    <span class="kw-2">&amp;</span>epoll,
+    <span class="kw-2">&amp;</span>listen_sock,
+    epoll::EventData::new_u64(<span class="number">1</span>),
+    epoll::EventFlags::IN,
+)<span class="question-mark">?</span>;
+
+<span class="comment">// Keep track of the sockets we've opened.
+</span><span class="kw">let </span><span class="kw-2">mut </span>next_id = epoll::EventData::new_u64(<span class="number">2</span>);
+<span class="kw">let </span><span class="kw-2">mut </span>sockets = HashMap::new();
+
+<span class="comment">// Process events.
+</span><span class="kw">let </span><span class="kw-2">mut </span>event_list = Vec::with_capacity(<span class="number">4</span>);
+<span class="kw">loop </span>{
+    epoll::wait(<span class="kw-2">&amp;</span>epoll, spare_capacity(<span class="kw-2">&amp;mut </span>event_list), <span class="prelude-val">None</span>)<span class="question-mark">?</span>;
+    <span class="kw">for </span>event <span class="kw">in </span>event_list.drain(..) {
+        <span class="kw">let </span>target = event.data;
+        <span class="kw">if </span>target.u64() == <span class="number">1 </span>{
+            <span class="comment">// Accept a new connection, set it to non-blocking, and
+            // register to be notified when it's ready to write to.
+            </span><span class="kw">let </span>conn_sock = accept(<span class="kw-2">&amp;</span>listen_sock)<span class="question-mark">?</span>;
+            ioctl_fionbio(<span class="kw-2">&amp;</span>conn_sock, <span class="bool-val">true</span>)<span class="question-mark">?</span>;
+            epoll::add(
+                <span class="kw-2">&amp;</span>epoll,
+                <span class="kw-2">&amp;</span>conn_sock,
+                next_id,
+                epoll::EventFlags::OUT | epoll::EventFlags::ET,
+            )<span class="question-mark">?</span>;
+
+            <span class="comment">// Keep track of the socket.
+            </span>sockets.insert(next_id, conn_sock);
+            next_id = epoll::EventData::new_u64(next_id.u64() + <span class="number">1</span>);
+        } <span class="kw">else </span>{
+            <span class="comment">// Write a message to the stream and then unregister it.
+            </span><span class="kw">let </span>target = sockets.remove(<span class="kw-2">&amp;</span>target).unwrap();
+            write(<span class="kw-2">&amp;</span>target, <span class="string">b"hello\n"</span>)<span class="question-mark">?</span>;
+            <span class="kw">let _ </span>= epoll::delete(<span class="kw-2">&amp;</span>epoll, <span class="kw-2">&amp;</span>target)<span class="question-mark">?</span>;
+        }
+    }
+}</code></pre></div>
+</div></details><h2 id="structs" class="section-header">Structs<a href="#structs" class="anchor">§</a></h2><dl class="item-table"><dt><a class="struct" href="struct.CreateFlags.html" title="struct rustix::event::epoll::CreateFlags">Create<wbr>Flags</a></dt><dd><code>EPOLL_*</code> for use with <a href="fn.create.html" title="fn rustix::event::epoll::create"><code>epoll::create</code></a>.</dd><dt><a class="struct" href="struct.Event.html" title="struct rustix::event::epoll::Event">Event</a></dt><dd>A record of an event that occurred.</dd><dt><a class="struct" href="struct.EventFlags.html" title="struct rustix::event::epoll::EventFlags">Event<wbr>Flags</a></dt><dd><code>EPOLL*</code> for use with <a href="fn.add.html" title="fn rustix::event::epoll::add"><code>epoll::add</code></a>.</dd></dl><h2 id="functions" class="section-header">Functions<a href="#functions" class="anchor">§</a></h2><dl class="item-table"><dt><a class="fn" href="fn.add.html" title="fn rustix::event::epoll::add">add</a></dt><dd><code>epoll_ctl(self, EPOLL_CTL_ADD, data, event)</code>—Adds an element to an epoll
+object.</dd><dt><a class="fn" href="fn.create.html" title="fn rustix::event::epoll::create">create</a></dt><dd><code>epoll_create1(flags)</code>—Creates a new epoll object.</dd><dt><a class="fn" href="fn.delete.html" title="fn rustix::event::epoll::delete">delete</a></dt><dd><code>epoll_ctl(self, EPOLL_CTL_DEL, target, NULL)</code>—Removes an element in a
+given epoll object.</dd><dt><a class="fn" href="fn.modify.html" title="fn rustix::event::epoll::modify">modify</a></dt><dd><code>epoll_ctl(self, EPOLL_CTL_MOD, target, event)</code>—Modifies an element in a
+given epoll object.</dd><dt><a class="fn" href="fn.wait.html" title="fn rustix::event::epoll::wait">wait</a></dt><dd><code>epoll_wait(self, events, timeout)</code>—Waits for registered events of
+interest.</dd></dl><h2 id="unions" class="section-header">Unions<a href="#unions" class="anchor">§</a></h2><dl class="item-table"><dt><a class="union" href="union.EventData.html" title="union rustix::event::epoll::EventData">Event<wbr>Data</a></dt><dd>Data associated with an <a href="struct.Event.html" title="struct rustix::event::epoll::Event"><code>epoll::Event</code></a>. This can either be a 64-bit
+integer value or a pointer which preserves pointer provenance.</dd></dl></section></div></main></body></html>

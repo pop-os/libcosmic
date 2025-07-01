@@ -1,0 +1,45 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Small crate implementing fast conversion between linear float and 8-bit sRGB."><title>fast_srgb8 - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../static.files/rustdoc-916cea96.css"><meta name="rustdoc-vars" data-root-path="../" data-static-root-path="../static.files/" data-current-crate="fast_srgb8" data-themes="" data-resource-suffix="" data-rustdoc-version="1.87.0 (17067e9ac 2025-05-09)" data-channel="1.87.0" data-search-js="search-e7298875.js" data-settings-js="settings-d72f25bb.js" ><script src="../static.files/storage-82c7156e.js"></script><script defer src="../crates.js"></script><script defer src="../static.files/main-fb8c74a8.js"></script><noscript><link rel="stylesheet" href="../static.files/noscript-893ab5e7.css"></noscript><link rel="alternate icon" type="image/png" href="../static.files/favicon-32x32-6580c154.png"><link rel="icon" type="image/svg+xml" href="../static.files/favicon-044be391.svg"></head><body class="rustdoc mod crate"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle" title="show sidebar"></button></nav><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../fast_srgb8/index.html">fast_<wbr>srgb8</a><span class="version">1.0.0</span></h2></div><div class="sidebar-elems"><ul class="block"><li><a id="all-types" href="all.html">All Items</a></li></ul><section id="rustdoc-toc"><h3><a href="#">Sections</a></h3><ul class="block top-toc"><li><a href="#benefits" title="Benefits">Benefits</a></li></ul><h3><a href="#functions">Crate Items</a></h3><ul class="block"><li><a href="#functions" title="Functions">Functions</a></li></ul></section><div id="rustdoc-modnav"></div></div></nav><div class="sidebar-resizer"></div><main><div class="width-limiter"><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><h1>Crate <span>fast_srgb8</span><button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"><a class="src" href="../src/fast_srgb8/lib.rs.html#1-470">Source</a> </span></div><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Small crate implementing fast conversion between linear float and 8-bit
+sRGB.</p>
+<ul>
+<li>
+<p><a href="fn.f32_to_srgb8.html" title="fn fast_srgb8::f32_to_srgb8"><code>f32_to_srgb8</code></a>: Convert f32 to an sRGB u8. Meets all the requirements of
+<a href="https://microsoft.github.io/DirectX-Specs/d3d/archive/D3D11_3_FunctionalSpec.htm#FLOATtoSRGB">the most relevent public
+spec</a>
+which includes:</p>
+<ul>
+<li>Maximum error of 0.6 ULP (on integer side) — Note that in practice
+this is a higher max error than the naive implementation will give
+you, so for applications like scientific or medical imaging, perhaps
+this is less acceptable. That said, for normal graphics work, this
+should be fine.</li>
+<li>Monotonic across the 0.0..=1.0 range. (If <code>f32_to_srgb8(a) &gt; f32_to_srgb8(b)</code>, then <code>a &gt; b</code>)</li>
+<li>All possible outputs are achievable (round-trips with
+<a href="fn.srgb8_to_f32.html" title="fn fast_srgb8::srgb8_to_f32"><code>srgb8_to_f32</code></a>).</li>
+</ul>
+</li>
+<li>
+<p><a href="fn.f32x4_to_srgb8.html" title="fn fast_srgb8::f32x4_to_srgb8"><code>f32x4_to_srgb8</code></a>: Produces results identical to calling <a href="fn.f32_to_srgb8.html" title="fn fast_srgb8::f32_to_srgb8"><code>f32_to_srgb8</code></a>
+4 times in a row. On targets where we have a SIMD implementation
+(currently SSE2-enabled x86 and x86_64), this will use that. Otherwise, it
+will just call <code>f32_to_srgb8</code> four times in a row, and return the results.</p>
+</li>
+<li>
+<p><a href="fn.srgb8_to_f32.html" title="fn fast_srgb8::srgb8_to_f32"><code>srgb8_to_f32</code></a>: Inverse operation of <a href="fn.f32_to_srgb8.html" title="fn fast_srgb8::f32_to_srgb8"><code>f32_to_srgb8</code></a>. Uses the standard
+technique of a 256-item lookup table.</p>
+</li>
+</ul>
+<h3 id="benefits"><a class="doc-anchor" href="#benefits">§</a>Benefits</h3>
+<ul>
+<li>Large performance improvments over the naive implementation (see
+<a href="github.com/thomcc/fast-srgb8">README.md</a> for benchmarks)</li>
+<li>Supports <code>no_std</code> (normally this is tricky, as these operations require
+<code>powf</code> naively, which is not available to libcore)</li>
+<li>No dependencies.</li>
+<li>SIMD support for conversion to sRGB (conversion from sRGB is already ~20x
+faster than naive impl, and would probably be slower in SIMD, so for now
+it’s not implemented).</li>
+<li>Consistent and correct (according to at least one relevant spec) handling
+of edge cases, such as NaN/Inf/etc.</li>
+<li>Exhaustive checking of all inputs for correctness (in tests).</li>
+</ul>
+</div></details><h2 id="functions" class="section-header">Functions<a href="#functions" class="anchor">§</a></h2><dl class="item-table"><dt><a class="fn" href="fn.f32_to_srgb8.html" title="fn fast_srgb8::f32_to_srgb8">f32_<wbr>to_<wbr>srgb8</a></dt><dd>Converts linear f32 RGB component to an 8-bit sRGB value.</dd><dt><a class="fn" href="fn.f32x4_to_srgb8.html" title="fn fast_srgb8::f32x4_to_srgb8">f32x4_<wbr>to_<wbr>srgb8</a></dt><dd>Performs 4 simultaneous calls to <a href="fn.f32_to_srgb8.html" title="fn fast_srgb8::f32_to_srgb8"><code>f32_to_srgb8</code></a>, and returns 4 results.</dd><dt><a class="fn" href="fn.srgb8_to_f32.html" title="fn fast_srgb8::srgb8_to_f32">srgb8_<wbr>to_<wbr>f32</a></dt><dd>Convert from a 8-bit sRGB component to a linear f32.</dd></dl></section></div></main></body></html>

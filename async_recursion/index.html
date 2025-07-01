@@ -1,0 +1,72 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="async-recursion macro"><title>async_recursion - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../static.files/rustdoc-916cea96.css"><meta name="rustdoc-vars" data-root-path="../" data-static-root-path="../static.files/" data-current-crate="async_recursion" data-themes="" data-resource-suffix="" data-rustdoc-version="1.87.0 (17067e9ac 2025-05-09)" data-channel="1.87.0" data-search-js="search-e7298875.js" data-settings-js="settings-d72f25bb.js" ><script src="../static.files/storage-82c7156e.js"></script><script defer src="../crates.js"></script><script defer src="../static.files/main-fb8c74a8.js"></script><noscript><link rel="stylesheet" href="../static.files/noscript-893ab5e7.css"></noscript><link rel="alternate icon" type="image/png" href="../static.files/favicon-32x32-6580c154.png"><link rel="icon" type="image/svg+xml" href="../static.files/favicon-044be391.svg"></head><body class="rustdoc mod crate"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle" title="show sidebar"></button></nav><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../async_recursion/index.html">async_<wbr>recursion</a><span class="version">1.1.1</span></h2></div><div class="sidebar-elems"><ul class="block"><li><a id="all-types" href="all.html">All Items</a></li></ul><section id="rustdoc-toc"><h3><a href="#">Sections</a></h3><ul class="block top-toc"><li><a href="#async-recursion-macro" title="async-recursion macro">async-recursion macro</a><ul><li><a href="#motivation" title="Motivation">Motivation</a></li><li><a href="#example" title="Example">Example</a></li><li><a href="#send-option" title="?Send option">?Send option</a></li><li><a href="#sync-option" title="Sync option">Sync option</a></li></ul></li></ul><h3><a href="#attributes">Crate Items</a></h3><ul class="block"><li><a href="#attributes" title="Attribute Macros">Attribute Macros</a></li></ul></section><div id="rustdoc-modnav"></div></div></nav><div class="sidebar-resizer"></div><main><div class="width-limiter"><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><h1>Crate <span>async_recursion</span><button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"><a class="src" href="../src/async_recursion/lib.rs.html#1-115">Source</a> </span></div><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><h2 id="async-recursion-macro"><a class="doc-anchor" href="#async-recursion-macro">§</a>async-recursion macro</h2>
+<p><a href="https://crates.io/crates/async-recursion"><img src="https://img.shields.io/crates/v/async-recursion" alt="Latest version" /></a>
+<a href="https://crates.io/crates/async-recursion"><img src="https://img.shields.io/crates/d/async_recursion" alt="crates.io downloads" /></a>
+<a href="https://github.com/dcchut/async-recursion/actions"><img src="https://img.shields.io/github/actions/workflow/status/dcchut/async-recursion/ci.yml?branch=master" alt="Build Status" /></a>
+<img src="https://img.shields.io/crates/l/async-recursion" alt="Apache/MIT2.0 License" /></p>
+<p>Procedural macro for recursive async functions.</p>
+<ul>
+<li><a href="https://docs.rs/async-recursion/">Documentation</a></li>
+<li>Cargo package: <a href="https://crates.io/crates/async-recursion">async-recursion</a></li>
+</ul>
+<h3 id="motivation"><a class="doc-anchor" href="#motivation">§</a>Motivation</h3>
+<p>Consider the following recursive implementation of the fibonacci numbers:</p>
+
+<div class="example-wrap compile_fail"><a href="#" class="tooltip" title="This example deliberately fails to compile">ⓘ</a><pre class="rust rust-example-rendered"><code><span class="kw">async fn </span>fib(n : u32) -&gt; u32 {
+   <span class="kw">match </span>n {
+       <span class="number">0 </span>| <span class="number">1 </span>=&gt; <span class="number">1</span>,
+       <span class="kw">_ </span>=&gt; fib(n-<span class="number">1</span>).<span class="kw">await </span>+ fib(n-<span class="number">2</span>).<span class="kw">await
+   </span>}
+}</code></pre></div>
+<p>The compiler helpfully tells us that:</p>
+<div class="example-wrap"><pre class="language-console"><code>error[E0733]: recursion in an `async fn` requires boxing
+--&gt; src/main.rs:1:26
+  |
+1 | async fn fib(n : u32) -&gt; u32 {
+  |                          ^^^ recursive `async fn`
+  |
+  = note: a recursive `async fn` must be rewritten to return a boxed `dyn Future`.
+  = note: consider using the `async_recursion` crate: https://crates.io/crates/async_recursion</code></pre></div>
+<p>This crate provides an attribute macro to automatically convert an async function
+to one returning a boxed <a href="https://doc.rust-lang.org/1.87.0/core/future/future/trait.Future.html" title="trait core::future::future::Future"><code>Future</code></a>.</p>
+<h3 id="example"><a class="doc-anchor" href="#example">§</a>Example</h3>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>async_recursion::async_recursion;
+
+<span class="attr">#[async_recursion]
+</span><span class="kw">async fn </span>fib(n : u32) -&gt; u32 {
+   <span class="kw">match </span>n {
+       <span class="number">0 </span>| <span class="number">1 </span>=&gt; <span class="number">1</span>,
+       <span class="kw">_ </span>=&gt; fib(n-<span class="number">1</span>).<span class="kw">await </span>+ fib(n-<span class="number">2</span>).<span class="kw">await
+   </span>}
+}</code></pre></div>
+<h3 id="send-option"><a class="doc-anchor" href="#send-option">§</a>?Send option</h3>
+<p>The returned [<code>Future</code>] has a <a href="https://doc.rust-lang.org/1.87.0/core/marker/trait.Send.html" title="trait core::marker::Send"><code>Send</code></a> bound to make sure it can be sent between threads.
+If this is undesirable you can mark that the bound should be left out like so:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code>
+<span class="attr">#[async_recursion(<span class="question-mark">?</span>Send)]
+</span><span class="kw">async fn </span>returned_future_is_not_send() {
+    <span class="comment">// ...
+</span>}</code></pre></div>
+<h3 id="sync-option"><a class="doc-anchor" href="#sync-option">§</a>Sync option</h3>
+<p>The returned [<code>Future</code>] doesn’t have a <a href="https://doc.rust-lang.org/1.87.0/core/marker/trait.Sync.html" title="trait core::marker::Sync"><code>Sync</code></a> bound as it is usually not required.
+You can include a <a href="https://doc.rust-lang.org/1.87.0/core/marker/trait.Sync.html" title="trait core::marker::Sync"><code>Sync</code></a> bound as follows:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code>
+<span class="attr">#[async_recursion(Sync)]
+</span><span class="kw">async fn </span>returned_future_is_send_and_sync() {
+    <span class="comment">// ...
+</span>}</code></pre></div>
+<p>In detail:</p>
+<ul>
+<li><code>#[async_recursion]</code> modifies your function to return a boxed [<code>Future</code>] with a <a href="https://doc.rust-lang.org/1.87.0/core/marker/trait.Send.html" title="trait core::marker::Send"><code>Send</code></a> bound.</li>
+<li><code>#[async_recursion(?Send)]</code> modifies your function to return a boxed [<code>Future</code>] <em>without</em> a <a href="https://doc.rust-lang.org/1.87.0/core/marker/trait.Send.html" title="trait core::marker::Send"><code>Send</code></a> bound.</li>
+<li><code>#[async_recursion(Sync)]</code> modifies your function to return a boxed [<code>Future</code>] with <a href="https://doc.rust-lang.org/1.87.0/core/marker/trait.Send.html" title="trait core::marker::Send"><code>Send</code></a> and <a href="https://doc.rust-lang.org/1.87.0/core/marker/trait.Sync.html" title="trait core::marker::Sync"><code>Sync</code></a> bounds.</li>
+</ul>
+<h4 id="license"><a class="doc-anchor" href="#license">§</a>License</h4>
+<p>Licensed under either of</p>
+<ul>
+<li>Apache License, Version 2.0 (<a href="http://www.apache.org/licenses/LICENSE-2.0">http://www.apache.org/licenses/LICENSE-2.0</a>)</li>
+<li>MIT license (<a href="http://opensource.org/licenses/MIT">http://opensource.org/licenses/MIT</a>)</li>
+</ul>
+<p>at your option.</p>
+</div></details><h2 id="attributes" class="section-header">Attribute Macros<a href="#attributes" class="anchor">§</a></h2><dl class="item-table"><dt><a class="attr" href="attr.async_recursion.html" title="attr async_recursion::async_recursion">async_<wbr>recursion</a></dt></dl></section></div></main></body></html>

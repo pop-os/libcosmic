@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"derive":["DeserializeDict","OwnedValue","SerializeDict","Type","TypeDict","Value"]};

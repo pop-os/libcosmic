@@ -1,0 +1,88 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Path-based metadata to serialize with a value."><title>ron::ser::path_meta - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../../static.files/rustdoc-916cea96.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="ron" data-themes="" data-resource-suffix="" data-rustdoc-version="1.87.0 (17067e9ac 2025-05-09)" data-channel="1.87.0" data-search-js="search-e7298875.js" data-settings-js="settings-d72f25bb.js" ><script src="../../../static.files/storage-82c7156e.js"></script><script defer src="../sidebar-items.js"></script><script defer src="../../../static.files/main-fb8c74a8.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-893ab5e7.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-6580c154.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-044be391.svg"></head><body class="rustdoc mod"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle" title="show sidebar"></button></nav><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../../../ron/index.html">ron</a><span class="version">0.9.0</span></h2></div><div class="sidebar-elems"><section id="rustdoc-toc"><h2 class="location"><a href="#">Module path_<wbr>meta</a></h2><h3><a href="#">Sections</a></h3><ul class="block top-toc"><li><a href="#example" title="Example">Example</a></li><li><a href="#identical-paths" title="Identical paths">Identical paths</a></li></ul><h3><a href="#structs">Module Items</a></h3><ul class="block"><li><a href="#structs" title="Structs">Structs</a></li></ul></section><div id="rustdoc-modnav"><h2><a href="../index.html">In ron::<wbr>ser</a></h2></div></div></nav><div class="sidebar-resizer"></div><main><div class="width-limiter"><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><div class="rustdoc-breadcrumbs"><a href="../../index.html">ron</a>::<wbr><a href="../index.html">ser</a></div><h1>Module <span>path_meta</span><button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"><a class="src" href="../../../src/ron/ser/path_meta.rs.html#1-360">Source</a> </span></div><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Path-based metadata to serialize with a value.</p>
+<p>Path-based in this context means that the metadata is linked
+to the data in a relative and hierarchical fashion by tracking
+the current absolute path of the field being serialized.</p>
+<h2 id="example"><a class="doc-anchor" href="#example">§</a>Example</h2>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code>
+<span class="attr">#[derive(serde::Serialize)]
+</span><span class="kw">struct </span>Creature {
+    seconds_since_existing: usize,
+    linked: <span class="prelude-ty">Option</span>&lt;Box&lt;<span class="self">Self</span>&gt;&gt;,
+}
+
+<span class="kw">let </span><span class="kw-2">mut </span>config = PrettyConfig::default();
+
+config
+    .path_meta
+    <span class="comment">// The path meta defaults to no root structure,
+    // so we either provide a prebuilt one or initialize
+    // an empty one to build.
+    </span>.get_or_insert_with(Field::empty)
+    .build_fields(|fields| {
+        fields
+            <span class="comment">// Get or insert the named field
+            </span>.field(<span class="string">"seconds_since_existing"</span>)
+            .with_doc(<span class="string">"Outer seconds_since_existing"</span>);
+        fields
+            .field(<span class="string">"linked"</span>)
+            <span class="comment">// Doc metadata is serialized preceded by three forward slashes and a space for each line
+            </span>.with_doc(<span class="string">"Optional.\nProvide another creature to be wrapped."</span>)
+            <span class="comment">// Even though it's another Creature, the fields have different paths, so they are addressed separately.
+            </span>.build_fields(|fields| {
+                fields
+                    .field(<span class="string">"seconds_since_existing"</span>)
+                    .with_doc(<span class="string">"Inner seconds_since_existing"</span>);
+            });
+    });
+
+<span class="kw">let </span>value = Creature {
+    seconds_since_existing: <span class="number">0</span>,
+    linked: <span class="prelude-val">Some</span>(Box::new(Creature {
+        seconds_since_existing: <span class="number">0</span>,
+        linked: <span class="prelude-val">None</span>,
+    })),
+};
+
+<span class="kw">let </span>s = ron::ser::to_string_pretty(<span class="kw-2">&amp;</span>value, config).unwrap();
+
+<span class="macro">assert_eq!</span>(s, <span class="string">r#"(
+    /// Outer seconds_since_existing
+    seconds_since_existing: 0,
+    /// Optional.
+    /// Provide another creature to be wrapped.
+    linked: Some((
+        /// Inner seconds_since_existing
+        seconds_since_existing: 0,
+        linked: None,
+    )),
+)"#</span>);</code></pre></div>
+<h2 id="identical-paths"><a class="doc-anchor" href="#identical-paths">§</a>Identical paths</h2>
+<p>Especially in enums and tuples it’s possible for fields
+to share a path, thus being unable to be addressed separately.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">enum </span>Kind {
+    A {
+        field: (),
+    },  <span class="comment">// ^
+        // cannot be addressed separately because they have the same path
+    </span>B { <span class="comment">// v
+        </span>field: (),
+    },
+}</code></pre></div>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">struct </span>A {
+    field: (),
+}
+
+<span class="kw">struct </span>B {
+    field: (),
+}
+
+<span class="kw">type </span>Value = (
+    A,
+ <span class="comment">// ^
+ // These are different types, but they share the path `field`
+ // v
+    </span>B,
+);</code></pre></div>
+</div></details><h2 id="structs" class="section-header">Structs<a href="#structs" class="anchor">§</a></h2><dl class="item-table"><dt><a class="struct" href="struct.Field.html" title="struct ron::ser::path_meta::Field">Field</a></dt><dd>The metadata and inner <a href="struct.Fields.html" title="struct ron::ser::path_meta::Fields"><code>Fields</code></a> of a field.</dd><dt><a class="struct" href="struct.Fields.html" title="struct ron::ser::path_meta::Fields">Fields</a></dt><dd>Mapping of names to <a href="struct.Field.html" title="struct ron::ser::path_meta::Field"><code>Field</code></a>s.</dd></dl></section></div></main></body></html>
