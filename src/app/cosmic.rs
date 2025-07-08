@@ -452,11 +452,11 @@ where
         if let Some(v) = self.surface_views.get(&id) {
             return v(&self.app);
         }
-        if !self
+        if self
             .app
             .core()
             .main_window_id()
-            .is_some_and(|main_id| main_id == id)
+            .is_none_or(|main_id| main_id != id)
         {
             return self.app.view_window(id).map(crate::Action::App);
         }
