@@ -1,0 +1,485 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `/home/runner/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/libloading-0.8.8/src/os/unix/mod.rs`."><title>mod.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../../../static.files/rustdoc-916cea96.css"><meta name="rustdoc-vars" data-root-path="../../../../" data-static-root-path="../../../../static.files/" data-current-crate="libloading" data-themes="" data-resource-suffix="" data-rustdoc-version="1.87.0 (17067e9ac 2025-05-09)" data-channel="1.87.0" data-search-js="search-e7298875.js" data-settings-js="settings-d72f25bb.js" ><script src="../../../../static.files/storage-82c7156e.js"></script><script defer src="../../../../static.files/src-script-63605ae7.js"></script><script defer src="../../../../src-files.js"></script><script defer src="../../../../static.files/main-fb8c74a8.js"></script><noscript><link rel="stylesheet" href="../../../../static.files/noscript-893ab5e7.css"></noscript><link rel="alternate icon" type="image/png" href="../../../../static.files/favicon-32x32-6580c154.png"><link rel="icon" type="image/svg+xml" href="../../../../static.files/favicon-044be391.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer"></div><main><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><h1><div class="sub-heading">libloading/os/unix/</div>mod.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap digits-3"><pre class="rust"><code><a href=#1 id=1 data-nosnippet>1</a><span class="comment">// A hack for docs.rs to build documentation that has both windows and linux documentation in the
+<a href=#2 id=2 data-nosnippet>2</a>// same rustdoc build visible.
+<a href=#3 id=3 data-nosnippet>3</a></span><span class="attr">#[cfg(all(libloading_docs, not(unix)))]
+<a href=#4 id=4 data-nosnippet>4</a></span><span class="kw">mod </span>unix_imports {}
+<a href=#5 id=5 data-nosnippet>5</a><span class="attr">#[cfg(any(not(libloading_docs), unix))]
+<a href=#6 id=6 data-nosnippet>6</a></span><span class="kw">mod </span>unix_imports {
+<a href=#7 id=7 data-nosnippet>7</a>    <span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">use </span>std::os::unix::ffi::OsStrExt;
+<a href=#8 id=8 data-nosnippet>8</a>}
+<a href=#9 id=9 data-nosnippet>9</a>
+<a href=#10 id=10 data-nosnippet>10</a><span class="kw">pub use </span><span class="self">self</span>::consts::<span class="kw-2">*</span>;
+<a href=#11 id=11 data-nosnippet>11</a><span class="kw">use </span><span class="self">self</span>::unix_imports::<span class="kw-2">*</span>;
+<a href=#12 id=12 data-nosnippet>12</a><span class="kw">use </span>std::ffi::{CStr, OsStr};
+<a href=#13 id=13 data-nosnippet>13</a><span class="kw">use </span>std::os::raw;
+<a href=#14 id=14 data-nosnippet>14</a><span class="kw">use </span>std::{fmt, marker, mem, ptr};
+<a href=#15 id=15 data-nosnippet>15</a><span class="kw">use </span>util::{cstr_cow_from_bytes, ensure_compatible_types};
+<a href=#16 id=16 data-nosnippet>16</a>
+<a href=#17 id=17 data-nosnippet>17</a><span class="kw">mod </span>consts;
+<a href=#18 id=18 data-nosnippet>18</a>
+<a href=#19 id=19 data-nosnippet>19</a><span class="doccomment">/// Run code and handle errors reported by `dlerror`.
+<a href=#20 id=20 data-nosnippet>20</a>///
+<a href=#21 id=21 data-nosnippet>21</a>/// This function first executes the `closure` function containing calls to the functions that
+<a href=#22 id=22 data-nosnippet>22</a>/// report their errors via `dlerror`. This closure may return either `None` or `Some(*)` to
+<a href=#23 id=23 data-nosnippet>23</a>/// further affect operation of this function.
+<a href=#24 id=24 data-nosnippet>24</a>///
+<a href=#25 id=25 data-nosnippet>25</a>/// In case the `closure` returns `None`, `with_dlerror` inspects the `dlerror`. `dlerror` may
+<a href=#26 id=26 data-nosnippet>26</a>/// decide to not provide any error description, in which case `Err(None)` is returned to the
+<a href=#27 id=27 data-nosnippet>27</a>/// caller. Otherwise the `error` callback is invoked to allow inspection and conversion of the
+<a href=#28 id=28 data-nosnippet>28</a>/// error message. The conversion result is returned as `Err(Some(Error))`.
+<a href=#29 id=29 data-nosnippet>29</a>///
+<a href=#30 id=30 data-nosnippet>30</a>/// If the operations that report their errors via `dlerror` were all successful, `closure` should
+<a href=#31 id=31 data-nosnippet>31</a>/// return `Some(T)` instead. In this case `dlerror` is not inspected at all.
+<a href=#32 id=32 data-nosnippet>32</a>///
+<a href=#33 id=33 data-nosnippet>33</a>/// # Notes
+<a href=#34 id=34 data-nosnippet>34</a>///
+<a href=#35 id=35 data-nosnippet>35</a>/// The whole `dlerror` handling scheme is done via setting and querying some global state. For
+<a href=#36 id=36 data-nosnippet>36</a>/// that reason it is not safe to use dynamic library loading in MT-capable environment at all.
+<a href=#37 id=37 data-nosnippet>37</a>/// Only in POSIX 2008+TC1 a thread-local state was allowed for `dlerror`, making the dl* family of
+<a href=#38 id=38 data-nosnippet>38</a>/// functions possibly MT-safe, depending on the implementation of `dlerror`.
+<a href=#39 id=39 data-nosnippet>39</a>///
+<a href=#40 id=40 data-nosnippet>40</a>/// In practice (as of 2020-04-01) most of the widely used targets use a thread-local for error
+<a href=#41 id=41 data-nosnippet>41</a>/// state and have been doing so for a long time.
+<a href=#42 id=42 data-nosnippet>42</a></span><span class="kw">pub fn </span>with_dlerror&lt;T, F, Error&gt;(closure: F, error: <span class="kw">fn</span>(<span class="kw-2">&amp;</span>CStr) -&gt; Error) -&gt; <span class="prelude-ty">Result</span>&lt;T, <span class="prelude-ty">Option</span>&lt;Error&gt;&gt;
+<a href=#43 id=43 data-nosnippet>43</a><span class="kw">where
+<a href=#44 id=44 data-nosnippet>44</a>    </span>F: FnOnce() -&gt; <span class="prelude-ty">Option</span>&lt;T&gt;,
+<a href=#45 id=45 data-nosnippet>45</a>{
+<a href=#46 id=46 data-nosnippet>46</a>    <span class="comment">// We used to guard all uses of dl* functions with our own mutex. This made them safe to use in
+<a href=#47 id=47 data-nosnippet>47</a>    // MT programs provided the only way a program used dl* was via this library. However, it also
+<a href=#48 id=48 data-nosnippet>48</a>    // had a number of downsides or cases where it failed to handle the problems. For instance,
+<a href=#49 id=49 data-nosnippet>49</a>    // if any other library called `dlerror` internally concurrently with `libloading` things would
+<a href=#50 id=50 data-nosnippet>50</a>    // still go awry.
+<a href=#51 id=51 data-nosnippet>51</a>    //
+<a href=#52 id=52 data-nosnippet>52</a>    // On platforms where `dlerror` is still MT-unsafe, `dlsym` (`Library::get`) can spuriously
+<a href=#53 id=53 data-nosnippet>53</a>    // succeed and return a null pointer for a symbol when the actual symbol look-up operation
+<a href=#54 id=54 data-nosnippet>54</a>    // fails. Instances where the actual symbol _could_ be `NULL` are platform specific. For
+<a href=#55 id=55 data-nosnippet>55</a>    // instance on GNU glibc based-systems (an excerpt from dlsym(3)):
+<a href=#56 id=56 data-nosnippet>56</a>    //
+<a href=#57 id=57 data-nosnippet>57</a>    // &gt; The value of a symbol returned by dlsym() will never be NULL if the shared object is the
+<a href=#58 id=58 data-nosnippet>58</a>    // &gt; result of normal compilation,  since  a  global  symbol is never placed at the NULL
+<a href=#59 id=59 data-nosnippet>59</a>    // &gt; address. There are nevertheless cases where a lookup using dlsym() may return NULL as the
+<a href=#60 id=60 data-nosnippet>60</a>    // &gt; value of a symbol. For example, the symbol value may be  the  result of a GNU indirect
+<a href=#61 id=61 data-nosnippet>61</a>    // &gt; function (IFUNC) resolver function that returns NULL as the resolved value.
+<a href=#62 id=62 data-nosnippet>62</a>
+<a href=#63 id=63 data-nosnippet>63</a>    // While we could could call `dlerror` here to clear the previous error value, only the `dlsym`
+<a href=#64 id=64 data-nosnippet>64</a>    // call depends on it being cleared beforehand and only in some cases too. We will instead
+<a href=#65 id=65 data-nosnippet>65</a>    // clear the error inside the dlsym binding instead.
+<a href=#66 id=66 data-nosnippet>66</a>    //
+<a href=#67 id=67 data-nosnippet>67</a>    // In all the other cases, clearing the error here will only be hiding misuse of these bindings
+<a href=#68 id=68 data-nosnippet>68</a>    // or a bug in implementation of dl* family of functions.
+<a href=#69 id=69 data-nosnippet>69</a>    </span>closure().ok_or_else(|| <span class="kw">unsafe </span>{
+<a href=#70 id=70 data-nosnippet>70</a>        <span class="comment">// This code will only get executed if the `closure` returns `None`.
+<a href=#71 id=71 data-nosnippet>71</a>        </span><span class="kw">let </span>dlerror_str = dlerror();
+<a href=#72 id=72 data-nosnippet>72</a>        <span class="kw">if </span>dlerror_str.is_null() {
+<a href=#73 id=73 data-nosnippet>73</a>            <span class="comment">// In non-dlsym case this may happen when there’re bugs in our bindings or there’s
+<a href=#74 id=74 data-nosnippet>74</a>            // non-libloading user of libdl; possibly in another thread.
+<a href=#75 id=75 data-nosnippet>75</a>            </span><span class="prelude-val">None
+<a href=#76 id=76 data-nosnippet>76</a>        </span>} <span class="kw">else </span>{
+<a href=#77 id=77 data-nosnippet>77</a>            <span class="comment">// You can’t even rely on error string being static here; call to subsequent dlerror
+<a href=#78 id=78 data-nosnippet>78</a>            // may invalidate or overwrite the error message. Why couldn’t they simply give up the
+<a href=#79 id=79 data-nosnippet>79</a>            // ownership over the message?
+<a href=#80 id=80 data-nosnippet>80</a>            // TODO: should do locale-aware conversion here. OTOH Rust doesn’t seem to work well in
+<a href=#81 id=81 data-nosnippet>81</a>            // any system that uses non-utf8 locale, so I doubt there’s a problem here.
+<a href=#82 id=82 data-nosnippet>82</a>            </span><span class="prelude-val">Some</span>(error(CStr::from_ptr(dlerror_str)))
+<a href=#83 id=83 data-nosnippet>83</a>            <span class="comment">// Since we do a copy of the error string above, maybe we should call dlerror again to
+<a href=#84 id=84 data-nosnippet>84</a>            // let libdl know it may free its copy of the string now?
+<a href=#85 id=85 data-nosnippet>85</a>        </span>}
+<a href=#86 id=86 data-nosnippet>86</a>    })
+<a href=#87 id=87 data-nosnippet>87</a>}
+<a href=#88 id=88 data-nosnippet>88</a>
+<a href=#89 id=89 data-nosnippet>89</a><span class="doccomment">/// A platform-specific counterpart of the cross-platform [`Library`](crate::Library).
+<a href=#90 id=90 data-nosnippet>90</a></span><span class="kw">pub struct </span>Library {
+<a href=#91 id=91 data-nosnippet>91</a>    handle: <span class="kw-2">*mut </span>raw::c_void,
+<a href=#92 id=92 data-nosnippet>92</a>}
+<a href=#93 id=93 data-nosnippet>93</a>
+<a href=#94 id=94 data-nosnippet>94</a><span class="kw">unsafe impl </span>Send <span class="kw">for </span>Library {}
+<a href=#95 id=95 data-nosnippet>95</a>
+<a href=#96 id=96 data-nosnippet>96</a><span class="comment">// That being said... this section in the volume 2 of POSIX.1-2008 states:
+<a href=#97 id=97 data-nosnippet>97</a>//
+<a href=#98 id=98 data-nosnippet>98</a>// &gt; All functions defined by this volume of POSIX.1-2008 shall be thread-safe, except that the
+<a href=#99 id=99 data-nosnippet>99</a>// &gt; following functions need not be thread-safe.
+<a href=#100 id=100 data-nosnippet>100</a>//
+<a href=#101 id=101 data-nosnippet>101</a>// With notable absence of any dl* function other than dlerror in the list. By “this volume”
+<a href=#102 id=102 data-nosnippet>102</a>// I suppose they refer precisely to the “volume 2”. dl* family of functions are specified
+<a href=#103 id=103 data-nosnippet>103</a>// by this same volume, so the conclusion is indeed that dl* functions are required by POSIX
+<a href=#104 id=104 data-nosnippet>104</a>// to be thread-safe. Great!
+<a href=#105 id=105 data-nosnippet>105</a>//
+<a href=#106 id=106 data-nosnippet>106</a>// See for more details:
+<a href=#107 id=107 data-nosnippet>107</a>//
+<a href=#108 id=108 data-nosnippet>108</a>//  * https://github.com/nagisa/rust_libloading/pull/17
+<a href=#109 id=109 data-nosnippet>109</a>//  * http://pubs.opengroup.org/onlinepubs/9699919799/functions/V2_chap02.html#tag_15_09_01
+<a href=#110 id=110 data-nosnippet>110</a></span><span class="kw">unsafe impl </span>Sync <span class="kw">for </span>Library {}
+<a href=#111 id=111 data-nosnippet>111</a>
+<a href=#112 id=112 data-nosnippet>112</a><span class="kw">impl </span>Library {
+<a href=#113 id=113 data-nosnippet>113</a>    <span class="doccomment">/// Find and eagerly load a shared library (module).
+<a href=#114 id=114 data-nosnippet>114</a>    ///
+<a href=#115 id=115 data-nosnippet>115</a>    /// If the `filename` contains a [path separator], the `filename` is interpreted as a `path` to
+<a href=#116 id=116 data-nosnippet>116</a>    /// a file. Otherwise, platform-specific algorithms are employed to find a library with a
+<a href=#117 id=117 data-nosnippet>117</a>    /// matching file name.
+<a href=#118 id=118 data-nosnippet>118</a>    ///
+<a href=#119 id=119 data-nosnippet>119</a>    /// This is equivalent to &lt;code&gt;[Library::open](filename, [RTLD_LAZY] | [RTLD_LOCAL])&lt;/code&gt;.
+<a href=#120 id=120 data-nosnippet>120</a>    ///
+<a href=#121 id=121 data-nosnippet>121</a>    /// [path separator]: std::path::MAIN_SEPARATOR
+<a href=#122 id=122 data-nosnippet>122</a>    ///
+<a href=#123 id=123 data-nosnippet>123</a>    /// # Safety
+<a href=#124 id=124 data-nosnippet>124</a>    ///
+<a href=#125 id=125 data-nosnippet>125</a>    /// When a library is loaded, initialisation routines contained within the library are executed.
+<a href=#126 id=126 data-nosnippet>126</a>    /// For the purposes of safety, the execution of these routines is conceptually the same calling an
+<a href=#127 id=127 data-nosnippet>127</a>    /// unknown foreign function and may impose arbitrary requirements on the caller for the call
+<a href=#128 id=128 data-nosnippet>128</a>    /// to be sound.
+<a href=#129 id=129 data-nosnippet>129</a>    ///
+<a href=#130 id=130 data-nosnippet>130</a>    /// Additionally, the callers of this function must also ensure that execution of the
+<a href=#131 id=131 data-nosnippet>131</a>    /// termination routines contained within the library is safe as well. These routines may be
+<a href=#132 id=132 data-nosnippet>132</a>    /// executed when the library is unloaded.
+<a href=#133 id=133 data-nosnippet>133</a>    </span><span class="attr">#[inline]
+<a href=#134 id=134 data-nosnippet>134</a>    </span><span class="kw">pub unsafe fn </span>new&lt;P: AsRef&lt;OsStr&gt;&gt;(filename: P) -&gt; <span class="prelude-ty">Result</span>&lt;Library, <span class="kw">crate</span>::Error&gt; {
+<a href=#135 id=135 data-nosnippet>135</a>        Library::open(<span class="prelude-val">Some</span>(filename), RTLD_LAZY | RTLD_LOCAL)
+<a href=#136 id=136 data-nosnippet>136</a>    }
+<a href=#137 id=137 data-nosnippet>137</a>
+<a href=#138 id=138 data-nosnippet>138</a>    <span class="doccomment">/// Load the `Library` representing the current executable.
+<a href=#139 id=139 data-nosnippet>139</a>    ///
+<a href=#140 id=140 data-nosnippet>140</a>    /// [`Library::get`] calls of the returned `Library` will look for symbols in following
+<a href=#141 id=141 data-nosnippet>141</a>    /// locations in order:
+<a href=#142 id=142 data-nosnippet>142</a>    ///
+<a href=#143 id=143 data-nosnippet>143</a>    /// 1. The original program image;
+<a href=#144 id=144 data-nosnippet>144</a>    /// 2. Any executable object files (e.g. shared libraries) loaded at program startup;
+<a href=#145 id=145 data-nosnippet>145</a>    /// 3. Any executable object files loaded at runtime (e.g. via other `Library::new` calls or via
+<a href=#146 id=146 data-nosnippet>146</a>    ///    calls to the `dlopen` function).
+<a href=#147 id=147 data-nosnippet>147</a>    ///
+<a href=#148 id=148 data-nosnippet>148</a>    /// Note that the behaviour of a `Library` loaded with this method is different from that of
+<a href=#149 id=149 data-nosnippet>149</a>    /// Libraries loaded with [`os::windows::Library::this`].
+<a href=#150 id=150 data-nosnippet>150</a>    ///
+<a href=#151 id=151 data-nosnippet>151</a>    /// This is equivalent to &lt;code&gt;[Library::open](None, [RTLD_LAZY] | [RTLD_LOCAL])&lt;/code&gt;.
+<a href=#152 id=152 data-nosnippet>152</a>    ///
+<a href=#153 id=153 data-nosnippet>153</a>    /// [`os::windows::Library::this`]: crate::os::windows::Library::this
+<a href=#154 id=154 data-nosnippet>154</a>    </span><span class="attr">#[inline]
+<a href=#155 id=155 data-nosnippet>155</a>    </span><span class="kw">pub fn </span>this() -&gt; Library {
+<a href=#156 id=156 data-nosnippet>156</a>        <span class="kw">unsafe </span>{
+<a href=#157 id=157 data-nosnippet>157</a>            <span class="comment">// SAFE: this does not load any new shared library images, no danger in it executing
+<a href=#158 id=158 data-nosnippet>158</a>            // initialiser routines.
+<a href=#159 id=159 data-nosnippet>159</a>            </span>Library::open(<span class="prelude-val">None</span>::&lt;<span class="kw-2">&amp;</span>OsStr&gt;, RTLD_LAZY | RTLD_LOCAL).expect(<span class="string">"this should never fail"</span>)
+<a href=#160 id=160 data-nosnippet>160</a>        }
+<a href=#161 id=161 data-nosnippet>161</a>    }
+<a href=#162 id=162 data-nosnippet>162</a>
+<a href=#163 id=163 data-nosnippet>163</a>    <span class="doccomment">/// Find and load an executable object file (shared library).
+<a href=#164 id=164 data-nosnippet>164</a>    ///
+<a href=#165 id=165 data-nosnippet>165</a>    /// See documentation for [`Library::this`] for further description of the behaviour
+<a href=#166 id=166 data-nosnippet>166</a>    /// when the `filename` is `None`. Otherwise see [`Library::new`].
+<a href=#167 id=167 data-nosnippet>167</a>    ///
+<a href=#168 id=168 data-nosnippet>168</a>    /// Corresponds to `dlopen(filename, flags)`.
+<a href=#169 id=169 data-nosnippet>169</a>    ///
+<a href=#170 id=170 data-nosnippet>170</a>    /// # Safety
+<a href=#171 id=171 data-nosnippet>171</a>    ///
+<a href=#172 id=172 data-nosnippet>172</a>    /// When a library is loaded, initialisation routines contained within the library are executed.
+<a href=#173 id=173 data-nosnippet>173</a>    /// For the purposes of safety, the execution of these routines is conceptually the same calling an
+<a href=#174 id=174 data-nosnippet>174</a>    /// unknown foreign function and may impose arbitrary requirements on the caller for the call
+<a href=#175 id=175 data-nosnippet>175</a>    /// to be sound.
+<a href=#176 id=176 data-nosnippet>176</a>    ///
+<a href=#177 id=177 data-nosnippet>177</a>    /// Additionally, the callers of this function must also ensure that execution of the
+<a href=#178 id=178 data-nosnippet>178</a>    /// termination routines contained within the library is safe as well. These routines may be
+<a href=#179 id=179 data-nosnippet>179</a>    /// executed when the library is unloaded.
+<a href=#180 id=180 data-nosnippet>180</a>    </span><span class="kw">pub unsafe fn </span>open&lt;P&gt;(filename: <span class="prelude-ty">Option</span>&lt;P&gt;, flags: raw::c_int) -&gt; <span class="prelude-ty">Result</span>&lt;Library, <span class="kw">crate</span>::Error&gt;
+<a href=#181 id=181 data-nosnippet>181</a>    <span class="kw">where
+<a href=#182 id=182 data-nosnippet>182</a>        </span>P: AsRef&lt;OsStr&gt;,
+<a href=#183 id=183 data-nosnippet>183</a>    {
+<a href=#184 id=184 data-nosnippet>184</a>        <span class="kw">let </span>filename = <span class="kw">match </span>filename {
+<a href=#185 id=185 data-nosnippet>185</a>            <span class="prelude-val">None </span>=&gt; <span class="prelude-val">None</span>,
+<a href=#186 id=186 data-nosnippet>186</a>            <span class="prelude-val">Some</span>(<span class="kw-2">ref </span>f) =&gt; <span class="prelude-val">Some</span>(cstr_cow_from_bytes(f.as_ref().as_bytes())<span class="question-mark">?</span>),
+<a href=#187 id=187 data-nosnippet>187</a>        };
+<a href=#188 id=188 data-nosnippet>188</a>        with_dlerror(
+<a href=#189 id=189 data-nosnippet>189</a>            <span class="kw">move </span>|| {
+<a href=#190 id=190 data-nosnippet>190</a>                <span class="kw">let </span>result = dlopen(
+<a href=#191 id=191 data-nosnippet>191</a>                    <span class="kw">match </span>filename {
+<a href=#192 id=192 data-nosnippet>192</a>                        <span class="prelude-val">None </span>=&gt; ptr::null(),
+<a href=#193 id=193 data-nosnippet>193</a>                        <span class="prelude-val">Some</span>(<span class="kw-2">ref </span>f) =&gt; f.as_ptr(),
+<a href=#194 id=194 data-nosnippet>194</a>                    },
+<a href=#195 id=195 data-nosnippet>195</a>                    flags,
+<a href=#196 id=196 data-nosnippet>196</a>                );
+<a href=#197 id=197 data-nosnippet>197</a>                <span class="comment">// ensure filename lives until dlopen completes
+<a href=#198 id=198 data-nosnippet>198</a>                </span>drop(filename);
+<a href=#199 id=199 data-nosnippet>199</a>                <span class="kw">if </span>result.is_null() {
+<a href=#200 id=200 data-nosnippet>200</a>                    <span class="prelude-val">None
+<a href=#201 id=201 data-nosnippet>201</a>                </span>} <span class="kw">else </span>{
+<a href=#202 id=202 data-nosnippet>202</a>                    <span class="prelude-val">Some</span>(Library { handle: result })
+<a href=#203 id=203 data-nosnippet>203</a>                }
+<a href=#204 id=204 data-nosnippet>204</a>            },
+<a href=#205 id=205 data-nosnippet>205</a>            |desc| <span class="kw">crate</span>::Error::DlOpen { desc: desc.into() },
+<a href=#206 id=206 data-nosnippet>206</a>        )
+<a href=#207 id=207 data-nosnippet>207</a>        .map_err(|e| e.unwrap_or(<span class="kw">crate</span>::Error::DlOpenUnknown))
+<a href=#208 id=208 data-nosnippet>208</a>    }
+<a href=#209 id=209 data-nosnippet>209</a>
+<a href=#210 id=210 data-nosnippet>210</a>    <span class="kw">unsafe fn </span>get_impl&lt;T, F&gt;(<span class="kw-2">&amp;</span><span class="self">self</span>, symbol: <span class="kw-2">&amp;</span>[u8], on_null: F) -&gt; <span class="prelude-ty">Result</span>&lt;Symbol&lt;T&gt;, <span class="kw">crate</span>::Error&gt;
+<a href=#211 id=211 data-nosnippet>211</a>    <span class="kw">where
+<a href=#212 id=212 data-nosnippet>212</a>        </span>F: FnOnce() -&gt; <span class="prelude-ty">Result</span>&lt;Symbol&lt;T&gt;, <span class="kw">crate</span>::Error&gt;,
+<a href=#213 id=213 data-nosnippet>213</a>    {
+<a href=#214 id=214 data-nosnippet>214</a>        ensure_compatible_types::&lt;T, <span class="kw-2">*mut </span>raw::c_void&gt;()<span class="question-mark">?</span>;
+<a href=#215 id=215 data-nosnippet>215</a>        <span class="kw">let </span>symbol = cstr_cow_from_bytes(symbol)<span class="question-mark">?</span>;
+<a href=#216 id=216 data-nosnippet>216</a>        <span class="comment">// `dlsym` may return nullptr in two cases: when a symbol genuinely points to a null
+<a href=#217 id=217 data-nosnippet>217</a>        // pointer or the symbol cannot be found. In order to detect this case a double dlerror
+<a href=#218 id=218 data-nosnippet>218</a>        // pattern must be used, which is, sadly, a little bit racy.
+<a href=#219 id=219 data-nosnippet>219</a>        //
+<a href=#220 id=220 data-nosnippet>220</a>        // We try to leave as little space as possible for this to occur, but we can’t exactly
+<a href=#221 id=221 data-nosnippet>221</a>        // fully prevent it.
+<a href=#222 id=222 data-nosnippet>222</a>        </span><span class="kw">let </span>result = with_dlerror(
+<a href=#223 id=223 data-nosnippet>223</a>            || {
+<a href=#224 id=224 data-nosnippet>224</a>                dlerror();
+<a href=#225 id=225 data-nosnippet>225</a>                <span class="kw">let </span>symbol = dlsym(<span class="self">self</span>.handle, symbol.as_ptr());
+<a href=#226 id=226 data-nosnippet>226</a>                <span class="kw">if </span>symbol.is_null() {
+<a href=#227 id=227 data-nosnippet>227</a>                    <span class="prelude-val">None
+<a href=#228 id=228 data-nosnippet>228</a>                </span>} <span class="kw">else </span>{
+<a href=#229 id=229 data-nosnippet>229</a>                    <span class="prelude-val">Some</span>(Symbol {
+<a href=#230 id=230 data-nosnippet>230</a>                        pointer: symbol,
+<a href=#231 id=231 data-nosnippet>231</a>                        pd: marker::PhantomData,
+<a href=#232 id=232 data-nosnippet>232</a>                    })
+<a href=#233 id=233 data-nosnippet>233</a>                }
+<a href=#234 id=234 data-nosnippet>234</a>            },
+<a href=#235 id=235 data-nosnippet>235</a>            |desc| <span class="kw">crate</span>::Error::DlSym { desc: desc.into() },
+<a href=#236 id=236 data-nosnippet>236</a>        );
+<a href=#237 id=237 data-nosnippet>237</a>        <span class="kw">match </span>result {
+<a href=#238 id=238 data-nosnippet>238</a>            <span class="prelude-val">Err</span>(<span class="prelude-val">None</span>) =&gt; on_null(),
+<a href=#239 id=239 data-nosnippet>239</a>            <span class="prelude-val">Err</span>(<span class="prelude-val">Some</span>(e)) =&gt; <span class="prelude-val">Err</span>(e),
+<a href=#240 id=240 data-nosnippet>240</a>            <span class="prelude-val">Ok</span>(x) =&gt; <span class="prelude-val">Ok</span>(x),
+<a href=#241 id=241 data-nosnippet>241</a>        }
+<a href=#242 id=242 data-nosnippet>242</a>    }
+<a href=#243 id=243 data-nosnippet>243</a>
+<a href=#244 id=244 data-nosnippet>244</a>    <span class="doccomment">/// Get a pointer to a function or static variable by symbol name.
+<a href=#245 id=245 data-nosnippet>245</a>    ///
+<a href=#246 id=246 data-nosnippet>246</a>    /// The `symbol` may not contain any null bytes, with the exception of the last byte. Providing a
+<a href=#247 id=247 data-nosnippet>247</a>    /// null terminated `symbol` may help to avoid an allocation.
+<a href=#248 id=248 data-nosnippet>248</a>    ///
+<a href=#249 id=249 data-nosnippet>249</a>    /// Symbol is interpreted as-is; no mangling is done. This means that symbols like `x::y` are
+<a href=#250 id=250 data-nosnippet>250</a>    /// most likely invalid.
+<a href=#251 id=251 data-nosnippet>251</a>    ///
+<a href=#252 id=252 data-nosnippet>252</a>    /// # Safety
+<a href=#253 id=253 data-nosnippet>253</a>    ///
+<a href=#254 id=254 data-nosnippet>254</a>    /// Users of this API must specify the correct type of the function or variable loaded. Using a
+<a href=#255 id=255 data-nosnippet>255</a>    /// `Symbol` with a wrong type is undefined.
+<a href=#256 id=256 data-nosnippet>256</a>    ///
+<a href=#257 id=257 data-nosnippet>257</a>    /// # Platform-specific behaviour
+<a href=#258 id=258 data-nosnippet>258</a>    ///
+<a href=#259 id=259 data-nosnippet>259</a>    /// Implementation of thread local variables is extremely platform specific and uses of such
+<a href=#260 id=260 data-nosnippet>260</a>    /// variables that work on e.g. Linux may have unintended behaviour on other targets.
+<a href=#261 id=261 data-nosnippet>261</a>    ///
+<a href=#262 id=262 data-nosnippet>262</a>    /// On POSIX implementations where the `dlerror` function is not confirmed to be MT-safe (such
+<a href=#263 id=263 data-nosnippet>263</a>    /// as FreeBSD), this function will unconditionally return an error when the underlying `dlsym`
+<a href=#264 id=264 data-nosnippet>264</a>    /// call returns a null pointer. There are rare situations where `dlsym` returns a genuine null
+<a href=#265 id=265 data-nosnippet>265</a>    /// pointer without it being an error. If loading a null pointer is something you care about,
+<a href=#266 id=266 data-nosnippet>266</a>    /// consider using the [`Library::get_singlethreaded`] call.
+<a href=#267 id=267 data-nosnippet>267</a>    </span><span class="attr">#[inline(always)]
+<a href=#268 id=268 data-nosnippet>268</a>    </span><span class="kw">pub unsafe fn </span>get&lt;T&gt;(<span class="kw-2">&amp;</span><span class="self">self</span>, symbol: <span class="kw-2">&amp;</span>[u8]) -&gt; <span class="prelude-ty">Result</span>&lt;Symbol&lt;T&gt;, <span class="kw">crate</span>::Error&gt; {
+<a href=#269 id=269 data-nosnippet>269</a>        <span class="kw">extern crate </span>cfg_if;
+<a href=#270 id=270 data-nosnippet>270</a>        <span class="macro">cfg_if::cfg_if!</span> {
+<a href=#271 id=271 data-nosnippet>271</a>            <span class="comment">// These targets are known to have MT-safe `dlerror`.
+<a href=#272 id=272 data-nosnippet>272</a>            </span><span class="kw">if </span><span class="attr">#[cfg(any(
+<a href=#273 id=273 data-nosnippet>273</a>                target_os = <span class="string">"linux"</span>,
+<a href=#274 id=274 data-nosnippet>274</a>                target_os = <span class="string">"android"</span>,
+<a href=#275 id=275 data-nosnippet>275</a>                target_os = <span class="string">"openbsd"</span>,
+<a href=#276 id=276 data-nosnippet>276</a>                target_os = <span class="string">"macos"</span>,
+<a href=#277 id=277 data-nosnippet>277</a>                target_os = <span class="string">"ios"</span>,
+<a href=#278 id=278 data-nosnippet>278</a>                target_os = <span class="string">"solaris"</span>,
+<a href=#279 id=279 data-nosnippet>279</a>                target_os = <span class="string">"illumos"</span>,
+<a href=#280 id=280 data-nosnippet>280</a>                target_os = <span class="string">"redox"</span>,
+<a href=#281 id=281 data-nosnippet>281</a>                target_os = <span class="string">"fuchsia"</span>,
+<a href=#282 id=282 data-nosnippet>282</a>                target_os = <span class="string">"cygwin"</span>,
+<a href=#283 id=283 data-nosnippet>283</a>            ))] </span>{
+<a href=#284 id=284 data-nosnippet>284</a>                <span class="self">self</span>.get_singlethreaded(symbol)
+<a href=#285 id=285 data-nosnippet>285</a>            } <span class="kw">else </span>{
+<a href=#286 id=286 data-nosnippet>286</a>                <span class="self">self</span>.get_impl(symbol, || <span class="prelude-val">Err</span>(<span class="kw">crate</span>::Error::DlSymUnknown))
+<a href=#287 id=287 data-nosnippet>287</a>            }
+<a href=#288 id=288 data-nosnippet>288</a>        }
+<a href=#289 id=289 data-nosnippet>289</a>    }
+<a href=#290 id=290 data-nosnippet>290</a>
+<a href=#291 id=291 data-nosnippet>291</a>    <span class="doccomment">/// Get a pointer to function or static variable by symbol name.
+<a href=#292 id=292 data-nosnippet>292</a>    ///
+<a href=#293 id=293 data-nosnippet>293</a>    /// The `symbol` may not contain any null bytes, with the exception of the last byte. Providing a
+<a href=#294 id=294 data-nosnippet>294</a>    /// null terminated `symbol` may help to avoid an allocation.
+<a href=#295 id=295 data-nosnippet>295</a>    ///
+<a href=#296 id=296 data-nosnippet>296</a>    /// Symbol is interpreted as-is; no mangling is done. This means that symbols like `x::y` are
+<a href=#297 id=297 data-nosnippet>297</a>    /// most likely invalid.
+<a href=#298 id=298 data-nosnippet>298</a>    ///
+<a href=#299 id=299 data-nosnippet>299</a>    /// # Safety
+<a href=#300 id=300 data-nosnippet>300</a>    ///
+<a href=#301 id=301 data-nosnippet>301</a>    /// Users of this API must specify the correct type of the function or variable loaded.
+<a href=#302 id=302 data-nosnippet>302</a>    ///
+<a href=#303 id=303 data-nosnippet>303</a>    /// It is up to the user of this library to ensure that no other calls to an MT-unsafe
+<a href=#304 id=304 data-nosnippet>304</a>    /// implementation of `dlerror` occur during the execution of this function. Failing that, the
+<a href=#305 id=305 data-nosnippet>305</a>    /// behaviour of this function is not defined.
+<a href=#306 id=306 data-nosnippet>306</a>    ///
+<a href=#307 id=307 data-nosnippet>307</a>    /// # Platform-specific behaviour
+<a href=#308 id=308 data-nosnippet>308</a>    ///
+<a href=#309 id=309 data-nosnippet>309</a>    /// The implementation of thread-local variables is extremely platform specific and uses of such
+<a href=#310 id=310 data-nosnippet>310</a>    /// variables that work on e.g. Linux may have unintended behaviour on other targets.
+<a href=#311 id=311 data-nosnippet>311</a>    </span><span class="attr">#[inline(always)]
+<a href=#312 id=312 data-nosnippet>312</a>    </span><span class="kw">pub unsafe fn </span>get_singlethreaded&lt;T&gt;(<span class="kw-2">&amp;</span><span class="self">self</span>, symbol: <span class="kw-2">&amp;</span>[u8]) -&gt; <span class="prelude-ty">Result</span>&lt;Symbol&lt;T&gt;, <span class="kw">crate</span>::Error&gt; {
+<a href=#313 id=313 data-nosnippet>313</a>        <span class="self">self</span>.get_impl(symbol, || {
+<a href=#314 id=314 data-nosnippet>314</a>            <span class="prelude-val">Ok</span>(Symbol {
+<a href=#315 id=315 data-nosnippet>315</a>                pointer: ptr::null_mut(),
+<a href=#316 id=316 data-nosnippet>316</a>                pd: marker::PhantomData,
+<a href=#317 id=317 data-nosnippet>317</a>            })
+<a href=#318 id=318 data-nosnippet>318</a>        })
+<a href=#319 id=319 data-nosnippet>319</a>    }
+<a href=#320 id=320 data-nosnippet>320</a>
+<a href=#321 id=321 data-nosnippet>321</a>    <span class="doccomment">/// Convert the `Library` to a raw handle.
+<a href=#322 id=322 data-nosnippet>322</a>    ///
+<a href=#323 id=323 data-nosnippet>323</a>    /// The handle returned by this function shall be usable with APIs which accept handles
+<a href=#324 id=324 data-nosnippet>324</a>    /// as returned by `dlopen`.
+<a href=#325 id=325 data-nosnippet>325</a>    </span><span class="kw">pub fn </span>into_raw(<span class="self">self</span>) -&gt; <span class="kw-2">*mut </span>raw::c_void {
+<a href=#326 id=326 data-nosnippet>326</a>        <span class="kw">let </span>handle = <span class="self">self</span>.handle;
+<a href=#327 id=327 data-nosnippet>327</a>        mem::forget(<span class="self">self</span>);
+<a href=#328 id=328 data-nosnippet>328</a>        handle
+<a href=#329 id=329 data-nosnippet>329</a>    }
+<a href=#330 id=330 data-nosnippet>330</a>
+<a href=#331 id=331 data-nosnippet>331</a>    <span class="doccomment">/// Convert a raw handle returned by `dlopen`-family of calls to a `Library`.
+<a href=#332 id=332 data-nosnippet>332</a>    ///
+<a href=#333 id=333 data-nosnippet>333</a>    /// # Safety
+<a href=#334 id=334 data-nosnippet>334</a>    ///
+<a href=#335 id=335 data-nosnippet>335</a>    /// The pointer shall be a result of a successful call of the `dlopen`-family of functions or a
+<a href=#336 id=336 data-nosnippet>336</a>    /// pointer previously returned by `Library::into_raw` call. It must be valid to call `dlclose`
+<a href=#337 id=337 data-nosnippet>337</a>    /// with this pointer as an argument.
+<a href=#338 id=338 data-nosnippet>338</a>    </span><span class="kw">pub unsafe fn </span>from_raw(handle: <span class="kw-2">*mut </span>raw::c_void) -&gt; Library {
+<a href=#339 id=339 data-nosnippet>339</a>        Library { handle }
+<a href=#340 id=340 data-nosnippet>340</a>    }
+<a href=#341 id=341 data-nosnippet>341</a>
+<a href=#342 id=342 data-nosnippet>342</a>    <span class="doccomment">/// Unload the library.
+<a href=#343 id=343 data-nosnippet>343</a>    ///
+<a href=#344 id=344 data-nosnippet>344</a>    /// This method might be a no-op, depending on the flags with which the `Library` was opened,
+<a href=#345 id=345 data-nosnippet>345</a>    /// what library was opened or other platform specifics.
+<a href=#346 id=346 data-nosnippet>346</a>    ///
+<a href=#347 id=347 data-nosnippet>347</a>    /// You only need to call this if you are interested in handling any errors that may arise when
+<a href=#348 id=348 data-nosnippet>348</a>    /// library is unloaded. Otherwise the implementation of `Drop` for `Library` will close the
+<a href=#349 id=349 data-nosnippet>349</a>    /// library and ignore the errors were they arise.
+<a href=#350 id=350 data-nosnippet>350</a>    ///
+<a href=#351 id=351 data-nosnippet>351</a>    /// The underlying data structures may still get leaked if an error does occur.
+<a href=#352 id=352 data-nosnippet>352</a>    </span><span class="kw">pub fn </span>close(<span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;(), <span class="kw">crate</span>::Error&gt; {
+<a href=#353 id=353 data-nosnippet>353</a>        <span class="kw">let </span>result = with_dlerror(
+<a href=#354 id=354 data-nosnippet>354</a>            || {
+<a href=#355 id=355 data-nosnippet>355</a>                <span class="kw">if unsafe </span>{ dlclose(<span class="self">self</span>.handle) } == <span class="number">0 </span>{
+<a href=#356 id=356 data-nosnippet>356</a>                    <span class="prelude-val">Some</span>(())
+<a href=#357 id=357 data-nosnippet>357</a>                } <span class="kw">else </span>{
+<a href=#358 id=358 data-nosnippet>358</a>                    <span class="prelude-val">None
+<a href=#359 id=359 data-nosnippet>359</a>                </span>}
+<a href=#360 id=360 data-nosnippet>360</a>            },
+<a href=#361 id=361 data-nosnippet>361</a>            |desc| <span class="kw">crate</span>::Error::DlClose { desc: desc.into() },
+<a href=#362 id=362 data-nosnippet>362</a>        )
+<a href=#363 id=363 data-nosnippet>363</a>        .map_err(|e| e.unwrap_or(<span class="kw">crate</span>::Error::DlCloseUnknown));
+<a href=#364 id=364 data-nosnippet>364</a>        <span class="comment">// While the library is not free'd yet in case of an error, there is no reason to try
+<a href=#365 id=365 data-nosnippet>365</a>        // dropping it again, because all that will do is try calling `dlclose` again. only
+<a href=#366 id=366 data-nosnippet>366</a>        // this time it would ignore the return result, which we already seen failing…
+<a href=#367 id=367 data-nosnippet>367</a>        </span>std::mem::forget(<span class="self">self</span>);
+<a href=#368 id=368 data-nosnippet>368</a>        result
+<a href=#369 id=369 data-nosnippet>369</a>    }
+<a href=#370 id=370 data-nosnippet>370</a>}
+<a href=#371 id=371 data-nosnippet>371</a>
+<a href=#372 id=372 data-nosnippet>372</a><span class="kw">impl </span>Drop <span class="kw">for </span>Library {
+<a href=#373 id=373 data-nosnippet>373</a>    <span class="kw">fn </span>drop(<span class="kw-2">&amp;mut </span><span class="self">self</span>) {
+<a href=#374 id=374 data-nosnippet>374</a>        <span class="kw">unsafe </span>{
+<a href=#375 id=375 data-nosnippet>375</a>            dlclose(<span class="self">self</span>.handle);
+<a href=#376 id=376 data-nosnippet>376</a>        }
+<a href=#377 id=377 data-nosnippet>377</a>    }
+<a href=#378 id=378 data-nosnippet>378</a>}
+<a href=#379 id=379 data-nosnippet>379</a>
+<a href=#380 id=380 data-nosnippet>380</a><span class="kw">impl </span>fmt::Debug <span class="kw">for </span>Library {
+<a href=#381 id=381 data-nosnippet>381</a>    <span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>fmt::Formatter) -&gt; fmt::Result {
+<a href=#382 id=382 data-nosnippet>382</a>        f.write_str(<span class="kw-2">&amp;</span><span class="macro">format!</span>(<span class="string">"Library@{:p}"</span>, <span class="self">self</span>.handle))
+<a href=#383 id=383 data-nosnippet>383</a>    }
+<a href=#384 id=384 data-nosnippet>384</a>}
+<a href=#385 id=385 data-nosnippet>385</a>
+<a href=#386 id=386 data-nosnippet>386</a><span class="doccomment">/// Symbol from a library.
+<a href=#387 id=387 data-nosnippet>387</a>///
+<a href=#388 id=388 data-nosnippet>388</a>/// A major difference compared to the cross-platform `Symbol` is that this does not ensure that the
+<a href=#389 id=389 data-nosnippet>389</a>/// `Symbol` does not outlive the `Library` it comes from.
+<a href=#390 id=390 data-nosnippet>390</a></span><span class="kw">pub struct </span>Symbol&lt;T&gt; {
+<a href=#391 id=391 data-nosnippet>391</a>    pointer: <span class="kw-2">*mut </span>raw::c_void,
+<a href=#392 id=392 data-nosnippet>392</a>    pd: marker::PhantomData&lt;T&gt;,
+<a href=#393 id=393 data-nosnippet>393</a>}
+<a href=#394 id=394 data-nosnippet>394</a>
+<a href=#395 id=395 data-nosnippet>395</a><span class="kw">impl</span>&lt;T&gt; Symbol&lt;T&gt; {
+<a href=#396 id=396 data-nosnippet>396</a>    <span class="doccomment">/// Convert the loaded `Symbol` into a raw pointer.
+<a href=#397 id=397 data-nosnippet>397</a>    </span><span class="kw">pub fn </span>into_raw(<span class="self">self</span>) -&gt; <span class="kw-2">*mut </span>raw::c_void {
+<a href=#398 id=398 data-nosnippet>398</a>        <span class="self">self</span>.pointer
+<a href=#399 id=399 data-nosnippet>399</a>    }
+<a href=#400 id=400 data-nosnippet>400</a>
+<a href=#401 id=401 data-nosnippet>401</a>    <span class="doccomment">/// Convert the loaded `Symbol` into a raw pointer.
+<a href=#402 id=402 data-nosnippet>402</a>    /// For unix this does the same as into_raw.
+<a href=#403 id=403 data-nosnippet>403</a>    </span><span class="kw">pub fn </span>as_raw_ptr(<span class="self">self</span>) -&gt; <span class="kw-2">*mut </span>raw::c_void {
+<a href=#404 id=404 data-nosnippet>404</a>        <span class="self">self</span>.pointer
+<a href=#405 id=405 data-nosnippet>405</a>    }
+<a href=#406 id=406 data-nosnippet>406</a>}
+<a href=#407 id=407 data-nosnippet>407</a>
+<a href=#408 id=408 data-nosnippet>408</a><span class="kw">impl</span>&lt;T&gt; Symbol&lt;<span class="prelude-ty">Option</span>&lt;T&gt;&gt; {
+<a href=#409 id=409 data-nosnippet>409</a>    <span class="doccomment">/// Lift Option out of the symbol.
+<a href=#410 id=410 data-nosnippet>410</a>    </span><span class="kw">pub fn </span>lift_option(<span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span>&lt;Symbol&lt;T&gt;&gt; {
+<a href=#411 id=411 data-nosnippet>411</a>        <span class="kw">if </span><span class="self">self</span>.pointer.is_null() {
+<a href=#412 id=412 data-nosnippet>412</a>            <span class="prelude-val">None
+<a href=#413 id=413 data-nosnippet>413</a>        </span>} <span class="kw">else </span>{
+<a href=#414 id=414 data-nosnippet>414</a>            <span class="prelude-val">Some</span>(Symbol {
+<a href=#415 id=415 data-nosnippet>415</a>                pointer: <span class="self">self</span>.pointer,
+<a href=#416 id=416 data-nosnippet>416</a>                pd: marker::PhantomData,
+<a href=#417 id=417 data-nosnippet>417</a>            })
+<a href=#418 id=418 data-nosnippet>418</a>        }
+<a href=#419 id=419 data-nosnippet>419</a>    }
+<a href=#420 id=420 data-nosnippet>420</a>}
+<a href=#421 id=421 data-nosnippet>421</a>
+<a href=#422 id=422 data-nosnippet>422</a><span class="kw">unsafe impl</span>&lt;T: Send&gt; Send <span class="kw">for </span>Symbol&lt;T&gt; {}
+<a href=#423 id=423 data-nosnippet>423</a><span class="kw">unsafe impl</span>&lt;T: Sync&gt; Sync <span class="kw">for </span>Symbol&lt;T&gt; {}
+<a href=#424 id=424 data-nosnippet>424</a>
+<a href=#425 id=425 data-nosnippet>425</a><span class="kw">impl</span>&lt;T&gt; Clone <span class="kw">for </span>Symbol&lt;T&gt; {
+<a href=#426 id=426 data-nosnippet>426</a>    <span class="kw">fn </span>clone(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; Symbol&lt;T&gt; {
+<a href=#427 id=427 data-nosnippet>427</a>        Symbol { ..<span class="kw-2">*</span><span class="self">self </span>}
+<a href=#428 id=428 data-nosnippet>428</a>    }
+<a href=#429 id=429 data-nosnippet>429</a>}
+<a href=#430 id=430 data-nosnippet>430</a>
+<a href=#431 id=431 data-nosnippet>431</a><span class="kw">impl</span>&lt;T&gt; ::std::ops::Deref <span class="kw">for </span>Symbol&lt;T&gt; {
+<a href=#432 id=432 data-nosnippet>432</a>    <span class="kw">type </span>Target = T;
+<a href=#433 id=433 data-nosnippet>433</a>    <span class="kw">fn </span>deref(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span>T {
+<a href=#434 id=434 data-nosnippet>434</a>        <span class="kw">unsafe </span>{
+<a href=#435 id=435 data-nosnippet>435</a>            <span class="comment">// Additional reference level for a dereference on `deref` return value.
+<a href=#436 id=436 data-nosnippet>436</a>            </span><span class="kw-2">&amp;*</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.pointer <span class="kw">as </span><span class="kw-2">*const *mut </span><span class="kw">_ as </span><span class="kw-2">*const </span>T)
+<a href=#437 id=437 data-nosnippet>437</a>        }
+<a href=#438 id=438 data-nosnippet>438</a>    }
+<a href=#439 id=439 data-nosnippet>439</a>}
+<a href=#440 id=440 data-nosnippet>440</a>
+<a href=#441 id=441 data-nosnippet>441</a><span class="kw">impl</span>&lt;T&gt; fmt::Debug <span class="kw">for </span>Symbol&lt;T&gt; {
+<a href=#442 id=442 data-nosnippet>442</a>    <span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>fmt::Formatter) -&gt; fmt::Result {
+<a href=#443 id=443 data-nosnippet>443</a>        <span class="kw">unsafe </span>{
+<a href=#444 id=444 data-nosnippet>444</a>            <span class="kw">let </span><span class="kw-2">mut </span>info = mem::MaybeUninit::&lt;DlInfo&gt;::uninit();
+<a href=#445 id=445 data-nosnippet>445</a>            <span class="kw">if </span>dladdr(<span class="self">self</span>.pointer, info.as_mut_ptr()) != <span class="number">0 </span>{
+<a href=#446 id=446 data-nosnippet>446</a>                <span class="kw">let </span>info = info.assume_init();
+<a href=#447 id=447 data-nosnippet>447</a>                <span class="kw">if </span>info.dli_sname.is_null() {
+<a href=#448 id=448 data-nosnippet>448</a>                    f.write_str(<span class="kw-2">&amp;</span><span class="macro">format!</span>(
+<a href=#449 id=449 data-nosnippet>449</a>                        <span class="string">"Symbol@{:p} from {:?}"</span>,
+<a href=#450 id=450 data-nosnippet>450</a>                        <span class="self">self</span>.pointer,
+<a href=#451 id=451 data-nosnippet>451</a>                        CStr::from_ptr(info.dli_fname)
+<a href=#452 id=452 data-nosnippet>452</a>                    ))
+<a href=#453 id=453 data-nosnippet>453</a>                } <span class="kw">else </span>{
+<a href=#454 id=454 data-nosnippet>454</a>                    f.write_str(<span class="kw-2">&amp;</span><span class="macro">format!</span>(
+<a href=#455 id=455 data-nosnippet>455</a>                        <span class="string">"Symbol {:?}@{:p} from {:?}"</span>,
+<a href=#456 id=456 data-nosnippet>456</a>                        CStr::from_ptr(info.dli_sname),
+<a href=#457 id=457 data-nosnippet>457</a>                        <span class="self">self</span>.pointer,
+<a href=#458 id=458 data-nosnippet>458</a>                        CStr::from_ptr(info.dli_fname)
+<a href=#459 id=459 data-nosnippet>459</a>                    ))
+<a href=#460 id=460 data-nosnippet>460</a>                }
+<a href=#461 id=461 data-nosnippet>461</a>            } <span class="kw">else </span>{
+<a href=#462 id=462 data-nosnippet>462</a>                f.write_str(<span class="kw-2">&amp;</span><span class="macro">format!</span>(<span class="string">"Symbol@{:p}"</span>, <span class="self">self</span>.pointer))
+<a href=#463 id=463 data-nosnippet>463</a>            }
+<a href=#464 id=464 data-nosnippet>464</a>        }
+<a href=#465 id=465 data-nosnippet>465</a>    }
+<a href=#466 id=466 data-nosnippet>466</a>}
+<a href=#467 id=467 data-nosnippet>467</a>
+<a href=#468 id=468 data-nosnippet>468</a><span class="comment">// Platform specific things
+<a href=#469 id=469 data-nosnippet>469</a></span><span class="attr">#[cfg_attr(any(target_os = <span class="string">"linux"</span>, target_os = <span class="string">"android"</span>), link(name = <span class="string">"dl"</span>))]
+<a href=#470 id=470 data-nosnippet>470</a>#[cfg_attr(any(target_os = <span class="string">"freebsd"</span>, target_os = <span class="string">"dragonfly"</span>), link(name = <span class="string">"c"</span>))]
+<a href=#471 id=471 data-nosnippet>471</a></span><span class="kw">extern </span><span class="string">"C" </span>{
+<a href=#472 id=472 data-nosnippet>472</a>    <span class="kw">fn </span>dlopen(filename: <span class="kw-2">*const </span>raw::c_char, flags: raw::c_int) -&gt; <span class="kw-2">*mut </span>raw::c_void;
+<a href=#473 id=473 data-nosnippet>473</a>    <span class="kw">fn </span>dlclose(handle: <span class="kw-2">*mut </span>raw::c_void) -&gt; raw::c_int;
+<a href=#474 id=474 data-nosnippet>474</a>    <span class="kw">fn </span>dlsym(handle: <span class="kw-2">*mut </span>raw::c_void, symbol: <span class="kw-2">*const </span>raw::c_char) -&gt; <span class="kw-2">*mut </span>raw::c_void;
+<a href=#475 id=475 data-nosnippet>475</a>    <span class="kw">fn </span>dlerror() -&gt; <span class="kw-2">*mut </span>raw::c_char;
+<a href=#476 id=476 data-nosnippet>476</a>    <span class="kw">fn </span>dladdr(addr: <span class="kw-2">*mut </span>raw::c_void, info: <span class="kw-2">*mut </span>DlInfo) -&gt; raw::c_int;
+<a href=#477 id=477 data-nosnippet>477</a>}
+<a href=#478 id=478 data-nosnippet>478</a>
+<a href=#479 id=479 data-nosnippet>479</a><span class="attr">#[repr(C)]
+<a href=#480 id=480 data-nosnippet>480</a></span><span class="kw">struct </span>DlInfo {
+<a href=#481 id=481 data-nosnippet>481</a>    dli_fname: <span class="kw-2">*const </span>raw::c_char,
+<a href=#482 id=482 data-nosnippet>482</a>    dli_fbase: <span class="kw-2">*mut </span>raw::c_void,
+<a href=#483 id=483 data-nosnippet>483</a>    dli_sname: <span class="kw-2">*const </span>raw::c_char,
+<a href=#484 id=484 data-nosnippet>484</a>    dli_saddr: <span class="kw-2">*mut </span>raw::c_void,
+<a href=#485 id=485 data-nosnippet>485</a>}</code></pre></div></section></main></body></html>

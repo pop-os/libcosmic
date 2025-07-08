@@ -1,0 +1,502 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `/home/runner/.cargo/git/checkouts/taffy-bd4586f5551dc460/7781c70/src/style/mod.rs`."><title>mod.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../../static.files/rustdoc-916cea96.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="taffy" data-themes="" data-resource-suffix="" data-rustdoc-version="1.87.0 (17067e9ac 2025-05-09)" data-channel="1.87.0" data-search-js="search-e7298875.js" data-settings-js="settings-d72f25bb.js" ><script src="../../../static.files/storage-82c7156e.js"></script><script defer src="../../../static.files/src-script-63605ae7.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-fb8c74a8.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-893ab5e7.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-6580c154.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-044be391.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer"></div><main><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><h1><div class="sub-heading">taffy/style/</div>mod.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap digits-3"><pre class="rust"><code><a href=#1 id=1 data-nosnippet>1</a><span class="doccomment">//! A typed representation of [CSS style properties](https://css-tricks.com/snippets/css/a-guide-to-flexbox/) in Rust. Used as input to layout computation.
+<a href=#2 id=2 data-nosnippet>2</a></span><span class="kw">mod </span>alignment;
+<a href=#3 id=3 data-nosnippet>3</a><span class="kw">mod </span>dimension;
+<a href=#4 id=4 data-nosnippet>4</a>
+<a href=#5 id=5 data-nosnippet>5</a><span class="attr">#[cfg(feature = <span class="string">"flexbox"</span>)]
+<a href=#6 id=6 data-nosnippet>6</a></span><span class="kw">mod </span>flex;
+<a href=#7 id=7 data-nosnippet>7</a>
+<a href=#8 id=8 data-nosnippet>8</a><span class="kw">pub use </span><span class="self">self</span>::alignment::{AlignContent, AlignItems, AlignSelf, JustifyContent, JustifyItems, JustifySelf};
+<a href=#9 id=9 data-nosnippet>9</a><span class="kw">pub use </span><span class="self">self</span>::dimension::{AvailableSpace, Dimension, LengthPercentage, LengthPercentageAuto};
+<a href=#10 id=10 data-nosnippet>10</a>
+<a href=#11 id=11 data-nosnippet>11</a><span class="attr">#[cfg(feature = <span class="string">"flexbox"</span>)]
+<a href=#12 id=12 data-nosnippet>12</a></span><span class="kw">pub use </span><span class="self">self</span>::flex::{FlexDirection, FlexWrap};
+<a href=#13 id=13 data-nosnippet>13</a>
+<a href=#14 id=14 data-nosnippet>14</a><span class="attr">#[cfg(feature = <span class="string">"grid"</span>)]
+<a href=#15 id=15 data-nosnippet>15</a></span><span class="kw">mod </span>grid;
+<a href=#16 id=16 data-nosnippet>16</a><span class="attr">#[cfg(feature = <span class="string">"grid"</span>)]
+<a href=#17 id=17 data-nosnippet>17</a></span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">use </span><span class="self">self</span>::grid::{GenericGridPlacement, OriginZeroGridPlacement};
+<a href=#18 id=18 data-nosnippet>18</a><span class="attr">#[cfg(feature = <span class="string">"grid"</span>)]
+<a href=#19 id=19 data-nosnippet>19</a></span><span class="kw">pub use </span><span class="self">self</span>::grid::{
+<a href=#20 id=20 data-nosnippet>20</a>    GridAutoFlow, GridPlacement, GridTrackRepetition, MaxTrackSizingFunction, MinTrackSizingFunction,
+<a href=#21 id=21 data-nosnippet>21</a>    NonRepeatedTrackSizingFunction, TrackSizingFunction,
+<a href=#22 id=22 data-nosnippet>22</a>};
+<a href=#23 id=23 data-nosnippet>23</a><span class="kw">use </span><span class="kw">crate</span>::geometry::{Point, Rect, Size};
+<a href=#24 id=24 data-nosnippet>24</a>
+<a href=#25 id=25 data-nosnippet>25</a><span class="attr">#[cfg(feature = <span class="string">"grid"</span>)]
+<a href=#26 id=26 data-nosnippet>26</a></span><span class="kw">use </span><span class="kw">crate</span>::geometry::Line;
+<a href=#27 id=27 data-nosnippet>27</a><span class="attr">#[cfg(feature = <span class="string">"serde"</span>)]
+<a href=#28 id=28 data-nosnippet>28</a></span><span class="kw">use </span><span class="kw">crate</span>::style_helpers;
+<a href=#29 id=29 data-nosnippet>29</a><span class="attr">#[cfg(feature = <span class="string">"grid"</span>)]
+<a href=#30 id=30 data-nosnippet>30</a></span><span class="kw">use </span><span class="kw">crate</span>::util::sys::GridTrackVec;
+<a href=#31 id=31 data-nosnippet>31</a>
+<a href=#32 id=32 data-nosnippet>32</a><span class="doccomment">/// Sets the layout used for the children of this node
+<a href=#33 id=33 data-nosnippet>33</a>///
+<a href=#34 id=34 data-nosnippet>34</a>/// The default values depends on on which feature flags are enabled. The order of precedence is: Flex, Grid, Block, None.
+<a href=#35 id=35 data-nosnippet>35</a></span><span class="attr">#[derive(Copy, Clone, PartialEq, Eq, Debug)]
+<a href=#36 id=36 data-nosnippet>36</a>#[cfg_attr(feature = <span class="string">"serde"</span>, derive(Serialize, Deserialize))]
+<a href=#37 id=37 data-nosnippet>37</a></span><span class="kw">pub enum </span>Display {
+<a href=#38 id=38 data-nosnippet>38</a>    <span class="doccomment">/// The children will follow the block layout algorithm
+<a href=#39 id=39 data-nosnippet>39</a>    </span><span class="attr">#[cfg(feature = <span class="string">"block_layout"</span>)]
+<a href=#40 id=40 data-nosnippet>40</a>    </span>Block,
+<a href=#41 id=41 data-nosnippet>41</a>    <span class="doccomment">/// The children will follow the flexbox layout algorithm
+<a href=#42 id=42 data-nosnippet>42</a>    </span><span class="attr">#[cfg(feature = <span class="string">"flexbox"</span>)]
+<a href=#43 id=43 data-nosnippet>43</a>    </span>Flex,
+<a href=#44 id=44 data-nosnippet>44</a>    <span class="doccomment">/// The children will follow the CSS Grid layout algorithm
+<a href=#45 id=45 data-nosnippet>45</a>    </span><span class="attr">#[cfg(feature = <span class="string">"grid"</span>)]
+<a href=#46 id=46 data-nosnippet>46</a>    </span>Grid,
+<a href=#47 id=47 data-nosnippet>47</a>    <span class="doccomment">/// The children will not be laid out, and will follow absolute positioning
+<a href=#48 id=48 data-nosnippet>48</a>    </span><span class="prelude-val">None</span>,
+<a href=#49 id=49 data-nosnippet>49</a>}
+<a href=#50 id=50 data-nosnippet>50</a>
+<a href=#51 id=51 data-nosnippet>51</a><span class="kw">impl </span>Display {
+<a href=#52 id=52 data-nosnippet>52</a>    <span class="doccomment">/// The default of Display.
+<a href=#53 id=53 data-nosnippet>53</a>    </span><span class="attr">#[cfg(feature = <span class="string">"flexbox"</span>)]
+<a href=#54 id=54 data-nosnippet>54</a>    </span><span class="kw">pub const </span>DEFAULT: Display = Display::Flex;
+<a href=#55 id=55 data-nosnippet>55</a>
+<a href=#56 id=56 data-nosnippet>56</a>    <span class="doccomment">/// The default of Display.
+<a href=#57 id=57 data-nosnippet>57</a>    </span><span class="attr">#[cfg(all(feature = <span class="string">"grid"</span>, not(feature = <span class="string">"flexbox"</span>)))]
+<a href=#58 id=58 data-nosnippet>58</a>    </span><span class="kw">pub const </span>DEFAULT: Display = Display::Grid;
+<a href=#59 id=59 data-nosnippet>59</a>
+<a href=#60 id=60 data-nosnippet>60</a>    <span class="doccomment">/// The default of Display.
+<a href=#61 id=61 data-nosnippet>61</a>    </span><span class="attr">#[cfg(all(feature = <span class="string">"block_layout"</span>, not(feature = <span class="string">"flexbox"</span>), not(feature = <span class="string">"grid"</span>)))]
+<a href=#62 id=62 data-nosnippet>62</a>    </span><span class="kw">pub const </span>DEFAULT: Display = Display::Block;
+<a href=#63 id=63 data-nosnippet>63</a>
+<a href=#64 id=64 data-nosnippet>64</a>    <span class="doccomment">/// The default of Display.
+<a href=#65 id=65 data-nosnippet>65</a>    </span><span class="attr">#[cfg(all(not(feature = <span class="string">"flexbox"</span>), not(feature = <span class="string">"grid"</span>), not(feature = <span class="string">"block_layout"</span>)))]
+<a href=#66 id=66 data-nosnippet>66</a>    </span><span class="kw">pub const </span>DEFAULT: Display = Display::None;
+<a href=#67 id=67 data-nosnippet>67</a>}
+<a href=#68 id=68 data-nosnippet>68</a>
+<a href=#69 id=69 data-nosnippet>69</a><span class="kw">impl </span>core::fmt::Display <span class="kw">for </span>Display {
+<a href=#70 id=70 data-nosnippet>70</a>    <span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>core::fmt::Formatter&lt;<span class="lifetime">'_</span>&gt;) -&gt; core::fmt::Result {
+<a href=#71 id=71 data-nosnippet>71</a>        <span class="kw">match </span><span class="self">self </span>{
+<a href=#72 id=72 data-nosnippet>72</a>            Display::None =&gt; <span class="macro">write!</span>(f, <span class="string">"NONE"</span>),
+<a href=#73 id=73 data-nosnippet>73</a>            <span class="attr">#[cfg(feature = <span class="string">"block_layout"</span>)]
+<a href=#74 id=74 data-nosnippet>74</a>            </span>Display::Block =&gt; <span class="macro">write!</span>(f, <span class="string">"BLOCK"</span>),
+<a href=#75 id=75 data-nosnippet>75</a>            <span class="attr">#[cfg(feature = <span class="string">"flexbox"</span>)]
+<a href=#76 id=76 data-nosnippet>76</a>            </span>Display::Flex =&gt; <span class="macro">write!</span>(f, <span class="string">"FLEX"</span>),
+<a href=#77 id=77 data-nosnippet>77</a>            <span class="attr">#[cfg(feature = <span class="string">"grid"</span>)]
+<a href=#78 id=78 data-nosnippet>78</a>            </span>Display::Grid =&gt; <span class="macro">write!</span>(f, <span class="string">"GRID"</span>),
+<a href=#79 id=79 data-nosnippet>79</a>        }
+<a href=#80 id=80 data-nosnippet>80</a>    }
+<a href=#81 id=81 data-nosnippet>81</a>}
+<a href=#82 id=82 data-nosnippet>82</a>
+<a href=#83 id=83 data-nosnippet>83</a><span class="kw">impl </span>Default <span class="kw">for </span>Display {
+<a href=#84 id=84 data-nosnippet>84</a>    <span class="kw">fn </span>default() -&gt; <span class="self">Self </span>{
+<a href=#85 id=85 data-nosnippet>85</a>        <span class="self">Self</span>::DEFAULT
+<a href=#86 id=86 data-nosnippet>86</a>    }
+<a href=#87 id=87 data-nosnippet>87</a>}
+<a href=#88 id=88 data-nosnippet>88</a>
+<a href=#89 id=89 data-nosnippet>89</a><span class="doccomment">/// The positioning strategy for this item.
+<a href=#90 id=90 data-nosnippet>90</a>///
+<a href=#91 id=91 data-nosnippet>91</a>/// This controls both how the origin is determined for the [`Style::position`] field,
+<a href=#92 id=92 data-nosnippet>92</a>/// and whether or not the item will be controlled by flexbox's layout algorithm.
+<a href=#93 id=93 data-nosnippet>93</a>///
+<a href=#94 id=94 data-nosnippet>94</a>/// WARNING: this enum follows the behavior of [CSS's `position` property](https://developer.mozilla.org/en-US/docs/Web/CSS/position),
+<a href=#95 id=95 data-nosnippet>95</a>/// which can be unintuitive.
+<a href=#96 id=96 data-nosnippet>96</a>///
+<a href=#97 id=97 data-nosnippet>97</a>/// [`Position::Relative`] is the default value, in contrast to the default behavior in CSS.
+<a href=#98 id=98 data-nosnippet>98</a></span><span class="attr">#[derive(Copy, Clone, PartialEq, Eq, Debug)]
+<a href=#99 id=99 data-nosnippet>99</a>#[cfg_attr(feature = <span class="string">"serde"</span>, derive(Serialize, Deserialize))]
+<a href=#100 id=100 data-nosnippet>100</a></span><span class="kw">pub enum </span>Position {
+<a href=#101 id=101 data-nosnippet>101</a>    <span class="doccomment">/// The offset is computed relative to the final position given by the layout algorithm.
+<a href=#102 id=102 data-nosnippet>102</a>    /// Offsets do not affect the position of any other items; they are effectively a correction factor applied at the end.
+<a href=#103 id=103 data-nosnippet>103</a>    </span>Relative,
+<a href=#104 id=104 data-nosnippet>104</a>    <span class="doccomment">/// The offset is computed relative to this item's closest positioned ancestor, if any.
+<a href=#105 id=105 data-nosnippet>105</a>    /// Otherwise, it is placed relative to the origin.
+<a href=#106 id=106 data-nosnippet>106</a>    /// No space is created for the item in the page layout, and its size will not be altered.
+<a href=#107 id=107 data-nosnippet>107</a>    ///
+<a href=#108 id=108 data-nosnippet>108</a>    /// WARNING: to opt-out of layouting entirely, you must use [`Display::None`] instead on your [`Style`] object.
+<a href=#109 id=109 data-nosnippet>109</a>    </span>Absolute,
+<a href=#110 id=110 data-nosnippet>110</a>}
+<a href=#111 id=111 data-nosnippet>111</a>
+<a href=#112 id=112 data-nosnippet>112</a><span class="kw">impl </span>Default <span class="kw">for </span>Position {
+<a href=#113 id=113 data-nosnippet>113</a>    <span class="kw">fn </span>default() -&gt; <span class="self">Self </span>{
+<a href=#114 id=114 data-nosnippet>114</a>        <span class="self">Self</span>::Relative
+<a href=#115 id=115 data-nosnippet>115</a>    }
+<a href=#116 id=116 data-nosnippet>116</a>}
+<a href=#117 id=117 data-nosnippet>117</a>
+<a href=#118 id=118 data-nosnippet>118</a><span class="doccomment">/// How children overflowing their container should affect layout
+<a href=#119 id=119 data-nosnippet>119</a>///
+<a href=#120 id=120 data-nosnippet>120</a>/// In CSS the primary effect of this property is to control whether contents of a parent container that overflow that container should
+<a href=#121 id=121 data-nosnippet>121</a>/// be displayed anyway, be clipped, or trigger the container to become a scroll container. However it also has secondary effects on layout,
+<a href=#122 id=122 data-nosnippet>122</a>/// the main ones being:
+<a href=#123 id=123 data-nosnippet>123</a>///
+<a href=#124 id=124 data-nosnippet>124</a>///   - The automatic minimum size Flexbox/CSS Grid items with non-`Visible` overflow is `0` rather than being content based
+<a href=#125 id=125 data-nosnippet>125</a>///   - `Overflow::Scroll` nodes have space in the layout reserved for a scrollbar (width controlled by the `scrollbar_width` property)
+<a href=#126 id=126 data-nosnippet>126</a>///
+<a href=#127 id=127 data-nosnippet>127</a>/// In Taffy, we only implement the layout related secondary effects as we are not concerned with drawing/painting. The amount of space reserved for
+<a href=#128 id=128 data-nosnippet>128</a>/// a scrollbar is controlled by the `scrollbar_width` property. If this is `0` then `Scroll` behaves identically to `Hidden`.
+<a href=#129 id=129 data-nosnippet>129</a>///
+<a href=#130 id=130 data-nosnippet>130</a>/// &lt;https://developer.mozilla.org/en-US/docs/Web/CSS/overflow&gt;
+<a href=#131 id=131 data-nosnippet>131</a></span><span class="attr">#[derive(Copy, Clone, PartialEq, Eq, Debug, Default)]
+<a href=#132 id=132 data-nosnippet>132</a>#[cfg_attr(feature = <span class="string">"serde"</span>, derive(Serialize, Deserialize))]
+<a href=#133 id=133 data-nosnippet>133</a></span><span class="kw">pub enum </span>Overflow {
+<a href=#134 id=134 data-nosnippet>134</a>    <span class="doccomment">/// The automatic minimum size of this node as a flexbox/grid item should be based on the size of its content.
+<a href=#135 id=135 data-nosnippet>135</a>    /// Content that overflows this node *should* contribute to the scroll region of its parent.
+<a href=#136 id=136 data-nosnippet>136</a>    </span><span class="attr">#[default]
+<a href=#137 id=137 data-nosnippet>137</a>    </span>Visible,
+<a href=#138 id=138 data-nosnippet>138</a>    <span class="doccomment">/// The automatic minimum size of this node as a flexbox/grid item should be based on the size of its content.
+<a href=#139 id=139 data-nosnippet>139</a>    /// Content that overflows this node should *not* contribute to the scroll region of its parent.
+<a href=#140 id=140 data-nosnippet>140</a>    </span>Clip,
+<a href=#141 id=141 data-nosnippet>141</a>    <span class="doccomment">/// The automatic minimum size of this node as a flexbox/grid item should be `0`.
+<a href=#142 id=142 data-nosnippet>142</a>    /// Content that overflows this node should *not* contribute to the scroll region of its parent.
+<a href=#143 id=143 data-nosnippet>143</a>    </span>Hidden,
+<a href=#144 id=144 data-nosnippet>144</a>    <span class="doccomment">/// The automatic minimum size of this node as a flexbox/grid item should be `0`. Additionally, space should be reserved
+<a href=#145 id=145 data-nosnippet>145</a>    /// for a scrollbar. The amount of space reserved is controlled by the `scrollbar_width` property.
+<a href=#146 id=146 data-nosnippet>146</a>    /// Content that overflows this node should *not* contribute to the scroll region of its parent.
+<a href=#147 id=147 data-nosnippet>147</a>    </span>Scroll,
+<a href=#148 id=148 data-nosnippet>148</a>}
+<a href=#149 id=149 data-nosnippet>149</a>
+<a href=#150 id=150 data-nosnippet>150</a><span class="kw">impl </span>Overflow {
+<a href=#151 id=151 data-nosnippet>151</a>    <span class="doccomment">/// Returns true for overflow modes that contain their contents (`Overflow::Hidden`, `Overflow::Scroll`, `Overflow::Auto`)
+<a href=#152 id=152 data-nosnippet>152</a>    /// or else false for overflow modes that allow their contains to spill (`Overflow::Visible`).
+<a href=#153 id=153 data-nosnippet>153</a>    </span><span class="attr">#[inline(always)]
+<a href=#154 id=154 data-nosnippet>154</a>    </span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>is_scroll_container(<span class="self">self</span>) -&gt; bool {
+<a href=#155 id=155 data-nosnippet>155</a>        <span class="kw">match </span><span class="self">self </span>{
+<a href=#156 id=156 data-nosnippet>156</a>            <span class="self">Self</span>::Visible | <span class="self">Self</span>::Clip =&gt; <span class="bool-val">false</span>,
+<a href=#157 id=157 data-nosnippet>157</a>            <span class="self">Self</span>::Hidden | <span class="self">Self</span>::Scroll =&gt; <span class="bool-val">true</span>,
+<a href=#158 id=158 data-nosnippet>158</a>        }
+<a href=#159 id=159 data-nosnippet>159</a>    }
+<a href=#160 id=160 data-nosnippet>160</a>
+<a href=#161 id=161 data-nosnippet>161</a>    <span class="doccomment">/// Returns `Some(0.0)` if the overflow mode would cause the automatic minimum size of a Flexbox or CSS Grid item
+<a href=#162 id=162 data-nosnippet>162</a>    /// to be `0`. Else returns None.
+<a href=#163 id=163 data-nosnippet>163</a>    </span><span class="attr">#[inline(always)]
+<a href=#164 id=164 data-nosnippet>164</a>    </span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>maybe_into_automatic_min_size(<span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span>&lt;f32&gt; {
+<a href=#165 id=165 data-nosnippet>165</a>        <span class="kw">match </span><span class="self">self</span>.is_scroll_container() {
+<a href=#166 id=166 data-nosnippet>166</a>            <span class="bool-val">true </span>=&gt; <span class="prelude-val">Some</span>(<span class="number">0.0</span>),
+<a href=#167 id=167 data-nosnippet>167</a>            <span class="bool-val">false </span>=&gt; <span class="prelude-val">None</span>,
+<a href=#168 id=168 data-nosnippet>168</a>        }
+<a href=#169 id=169 data-nosnippet>169</a>    }
+<a href=#170 id=170 data-nosnippet>170</a>}
+<a href=#171 id=171 data-nosnippet>171</a>
+<a href=#172 id=172 data-nosnippet>172</a><span class="doccomment">/// A typed representation of the CSS style information for a single node.
+<a href=#173 id=173 data-nosnippet>173</a>///
+<a href=#174 id=174 data-nosnippet>174</a>/// The most important idea in flexbox is the notion of a "main" and "cross" axis, which are always perpendicular to each other.
+<a href=#175 id=175 data-nosnippet>175</a>/// The orientation of these axes are controlled via the [`FlexDirection`] field of this struct.
+<a href=#176 id=176 data-nosnippet>176</a>///
+<a href=#177 id=177 data-nosnippet>177</a>/// This struct follows the [CSS equivalent](https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_Flexible_Box_Layout/Basic_Concepts_of_Flexbox) directly;
+<a href=#178 id=178 data-nosnippet>178</a>/// information about the behavior on the web should transfer directly.
+<a href=#179 id=179 data-nosnippet>179</a>///
+<a href=#180 id=180 data-nosnippet>180</a>/// Detailed information about the exact behavior of each of these fields
+<a href=#181 id=181 data-nosnippet>181</a>/// can be found on [MDN](https://developer.mozilla.org/en-US/docs/Web/CSS) by searching for the field name.
+<a href=#182 id=182 data-nosnippet>182</a>/// The distinction between margin, padding and border is explained well in
+<a href=#183 id=183 data-nosnippet>183</a>/// this [introduction to the box model](https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_Box_Model/Introduction_to_the_CSS_box_model).
+<a href=#184 id=184 data-nosnippet>184</a>///
+<a href=#185 id=185 data-nosnippet>185</a>/// If the behavior does not match the flexbox layout algorithm on the web, please file a bug!
+<a href=#186 id=186 data-nosnippet>186</a></span><span class="attr">#[derive(Clone, PartialEq, Debug)]
+<a href=#187 id=187 data-nosnippet>187</a>#[cfg_attr(feature = <span class="string">"serde"</span>, derive(Serialize, Deserialize))]
+<a href=#188 id=188 data-nosnippet>188</a>#[cfg_attr(feature = <span class="string">"serde"</span>, serde(default))]
+<a href=#189 id=189 data-nosnippet>189</a></span><span class="kw">pub struct </span>Style {
+<a href=#190 id=190 data-nosnippet>190</a>    <span class="doccomment">/// What layout strategy should be used?
+<a href=#191 id=191 data-nosnippet>191</a>    </span><span class="kw">pub </span>display: Display,
+<a href=#192 id=192 data-nosnippet>192</a>
+<a href=#193 id=193 data-nosnippet>193</a>    <span class="comment">// Overflow properties
+<a href=#194 id=194 data-nosnippet>194</a>    </span><span class="doccomment">/// How children overflowing their container should affect layout
+<a href=#195 id=195 data-nosnippet>195</a>    </span><span class="kw">pub </span>overflow: Point&lt;Overflow&gt;,
+<a href=#196 id=196 data-nosnippet>196</a>    <span class="doccomment">/// How much space (in points) should be reserved for the scrollbars of `Overflow::Scroll` and `Overflow::Auto` nodes.
+<a href=#197 id=197 data-nosnippet>197</a>    </span><span class="kw">pub </span>scrollbar_width: f32,
+<a href=#198 id=198 data-nosnippet>198</a>
+<a href=#199 id=199 data-nosnippet>199</a>    <span class="comment">// Position properties
+<a href=#200 id=200 data-nosnippet>200</a>    </span><span class="doccomment">/// What should the `position` value of this struct use as a base offset?
+<a href=#201 id=201 data-nosnippet>201</a>    </span><span class="kw">pub </span>position: Position,
+<a href=#202 id=202 data-nosnippet>202</a>    <span class="doccomment">/// How should the position of this element be tweaked relative to the layout defined?
+<a href=#203 id=203 data-nosnippet>203</a>    </span><span class="attr">#[cfg_attr(feature = <span class="string">"serde"</span>, serde(default = <span class="string">"style_helpers::auto"</span>))]
+<a href=#204 id=204 data-nosnippet>204</a>    </span><span class="kw">pub </span>inset: Rect&lt;LengthPercentageAuto&gt;,
+<a href=#205 id=205 data-nosnippet>205</a>
+<a href=#206 id=206 data-nosnippet>206</a>    <span class="comment">// Size properies
+<a href=#207 id=207 data-nosnippet>207</a>    </span><span class="doccomment">/// Sets the initial size of the item
+<a href=#208 id=208 data-nosnippet>208</a>    </span><span class="attr">#[cfg_attr(feature = <span class="string">"serde"</span>, serde(default = <span class="string">"style_helpers::auto"</span>))]
+<a href=#209 id=209 data-nosnippet>209</a>    </span><span class="kw">pub </span>size: Size&lt;Dimension&gt;,
+<a href=#210 id=210 data-nosnippet>210</a>    <span class="doccomment">/// Controls the minimum size of the item
+<a href=#211 id=211 data-nosnippet>211</a>    </span><span class="attr">#[cfg_attr(feature = <span class="string">"serde"</span>, serde(default = <span class="string">"style_helpers::auto"</span>))]
+<a href=#212 id=212 data-nosnippet>212</a>    </span><span class="kw">pub </span>min_size: Size&lt;Dimension&gt;,
+<a href=#213 id=213 data-nosnippet>213</a>    <span class="doccomment">/// Controls the maximum size of the item
+<a href=#214 id=214 data-nosnippet>214</a>    </span><span class="attr">#[cfg_attr(feature = <span class="string">"serde"</span>, serde(default = <span class="string">"style_helpers::auto"</span>))]
+<a href=#215 id=215 data-nosnippet>215</a>    </span><span class="kw">pub </span>max_size: Size&lt;Dimension&gt;,
+<a href=#216 id=216 data-nosnippet>216</a>    <span class="doccomment">/// Sets the preferred aspect ratio for the item
+<a href=#217 id=217 data-nosnippet>217</a>    ///
+<a href=#218 id=218 data-nosnippet>218</a>    /// The ratio is calculated as width divided by height.
+<a href=#219 id=219 data-nosnippet>219</a>    </span><span class="kw">pub </span>aspect_ratio: <span class="prelude-ty">Option</span>&lt;f32&gt;,
+<a href=#220 id=220 data-nosnippet>220</a>
+<a href=#221 id=221 data-nosnippet>221</a>    <span class="comment">// Spacing Properties
+<a href=#222 id=222 data-nosnippet>222</a>    </span><span class="doccomment">/// How large should the margin be on each side?
+<a href=#223 id=223 data-nosnippet>223</a>    </span><span class="attr">#[cfg_attr(feature = <span class="string">"serde"</span>, serde(default = <span class="string">"style_helpers::zero"</span>))]
+<a href=#224 id=224 data-nosnippet>224</a>    </span><span class="kw">pub </span>margin: Rect&lt;LengthPercentageAuto&gt;,
+<a href=#225 id=225 data-nosnippet>225</a>    <span class="doccomment">/// How large should the padding be on each side?
+<a href=#226 id=226 data-nosnippet>226</a>    </span><span class="attr">#[cfg_attr(feature = <span class="string">"serde"</span>, serde(default = <span class="string">"style_helpers::zero"</span>))]
+<a href=#227 id=227 data-nosnippet>227</a>    </span><span class="kw">pub </span>padding: Rect&lt;LengthPercentage&gt;,
+<a href=#228 id=228 data-nosnippet>228</a>    <span class="doccomment">/// How large should the border be on each side?
+<a href=#229 id=229 data-nosnippet>229</a>    </span><span class="attr">#[cfg_attr(feature = <span class="string">"serde"</span>, serde(default = <span class="string">"style_helpers::zero"</span>))]
+<a href=#230 id=230 data-nosnippet>230</a>    </span><span class="kw">pub </span>border: Rect&lt;LengthPercentage&gt;,
+<a href=#231 id=231 data-nosnippet>231</a>
+<a href=#232 id=232 data-nosnippet>232</a>    <span class="comment">// Alignment properties
+<a href=#233 id=233 data-nosnippet>233</a>    </span><span class="doccomment">/// How this node's children aligned in the cross/block axis?
+<a href=#234 id=234 data-nosnippet>234</a>    </span><span class="attr">#[cfg(any(feature = <span class="string">"flexbox"</span>, feature = <span class="string">"grid"</span>))]
+<a href=#235 id=235 data-nosnippet>235</a>    </span><span class="kw">pub </span>align_items: <span class="prelude-ty">Option</span>&lt;AlignItems&gt;,
+<a href=#236 id=236 data-nosnippet>236</a>    <span class="doccomment">/// How this node should be aligned in the cross/block axis
+<a href=#237 id=237 data-nosnippet>237</a>    /// Falls back to the parents [`AlignItems`] if not set
+<a href=#238 id=238 data-nosnippet>238</a>    </span><span class="attr">#[cfg(any(feature = <span class="string">"flexbox"</span>, feature = <span class="string">"grid"</span>))]
+<a href=#239 id=239 data-nosnippet>239</a>    </span><span class="kw">pub </span>align_self: <span class="prelude-ty">Option</span>&lt;AlignSelf&gt;,
+<a href=#240 id=240 data-nosnippet>240</a>    <span class="doccomment">/// How this node's children should be aligned in the inline axis
+<a href=#241 id=241 data-nosnippet>241</a>    </span><span class="attr">#[cfg(feature = <span class="string">"grid"</span>)]
+<a href=#242 id=242 data-nosnippet>242</a>    </span><span class="kw">pub </span>justify_items: <span class="prelude-ty">Option</span>&lt;AlignItems&gt;,
+<a href=#243 id=243 data-nosnippet>243</a>    <span class="doccomment">/// How this node should be aligned in the inline axis
+<a href=#244 id=244 data-nosnippet>244</a>    /// Falls back to the parents [`JustifyItems`] if not set
+<a href=#245 id=245 data-nosnippet>245</a>    </span><span class="attr">#[cfg(feature = <span class="string">"grid"</span>)]
+<a href=#246 id=246 data-nosnippet>246</a>    </span><span class="kw">pub </span>justify_self: <span class="prelude-ty">Option</span>&lt;AlignSelf&gt;,
+<a href=#247 id=247 data-nosnippet>247</a>    <span class="doccomment">/// How should content contained within this item be aligned in the cross/block axis
+<a href=#248 id=248 data-nosnippet>248</a>    </span><span class="attr">#[cfg(any(feature = <span class="string">"flexbox"</span>, feature = <span class="string">"grid"</span>))]
+<a href=#249 id=249 data-nosnippet>249</a>    </span><span class="kw">pub </span>align_content: <span class="prelude-ty">Option</span>&lt;AlignContent&gt;,
+<a href=#250 id=250 data-nosnippet>250</a>    <span class="doccomment">/// How should contained within this item be aligned in the main/inline axis
+<a href=#251 id=251 data-nosnippet>251</a>    </span><span class="attr">#[cfg(any(feature = <span class="string">"flexbox"</span>, feature = <span class="string">"grid"</span>))]
+<a href=#252 id=252 data-nosnippet>252</a>    </span><span class="kw">pub </span>justify_content: <span class="prelude-ty">Option</span>&lt;JustifyContent&gt;,
+<a href=#253 id=253 data-nosnippet>253</a>    <span class="doccomment">/// How large should the gaps between items in a grid or flex container be?
+<a href=#254 id=254 data-nosnippet>254</a>    </span><span class="attr">#[cfg(any(feature = <span class="string">"flexbox"</span>, feature = <span class="string">"grid"</span>))]
+<a href=#255 id=255 data-nosnippet>255</a>    #[cfg_attr(feature = <span class="string">"serde"</span>, serde(default = <span class="string">"style_helpers::zero"</span>))]
+<a href=#256 id=256 data-nosnippet>256</a>    </span><span class="kw">pub </span>gap: Size&lt;LengthPercentage&gt;,
+<a href=#257 id=257 data-nosnippet>257</a>
+<a href=#258 id=258 data-nosnippet>258</a>    <span class="comment">// Flexbox properies
+<a href=#259 id=259 data-nosnippet>259</a>    </span><span class="doccomment">/// Which direction does the main axis flow in?
+<a href=#260 id=260 data-nosnippet>260</a>    </span><span class="attr">#[cfg(feature = <span class="string">"flexbox"</span>)]
+<a href=#261 id=261 data-nosnippet>261</a>    </span><span class="kw">pub </span>flex_direction: FlexDirection,
+<a href=#262 id=262 data-nosnippet>262</a>    <span class="doccomment">/// Should elements wrap, or stay in a single line?
+<a href=#263 id=263 data-nosnippet>263</a>    </span><span class="attr">#[cfg(feature = <span class="string">"flexbox"</span>)]
+<a href=#264 id=264 data-nosnippet>264</a>    </span><span class="kw">pub </span>flex_wrap: FlexWrap,
+<a href=#265 id=265 data-nosnippet>265</a>    <span class="doccomment">/// Sets the initial main axis size of the item
+<a href=#266 id=266 data-nosnippet>266</a>    </span><span class="attr">#[cfg(feature = <span class="string">"flexbox"</span>)]
+<a href=#267 id=267 data-nosnippet>267</a>    </span><span class="kw">pub </span>flex_basis: Dimension,
+<a href=#268 id=268 data-nosnippet>268</a>    <span class="doccomment">/// The relative rate at which this item grows when it is expanding to fill space
+<a href=#269 id=269 data-nosnippet>269</a>    ///
+<a href=#270 id=270 data-nosnippet>270</a>    /// 0.0 is the default value, and this value must be positive.
+<a href=#271 id=271 data-nosnippet>271</a>    </span><span class="attr">#[cfg(feature = <span class="string">"flexbox"</span>)]
+<a href=#272 id=272 data-nosnippet>272</a>    </span><span class="kw">pub </span>flex_grow: f32,
+<a href=#273 id=273 data-nosnippet>273</a>    <span class="doccomment">/// The relative rate at which this item shrinks when it is contracting to fit into space
+<a href=#274 id=274 data-nosnippet>274</a>    ///
+<a href=#275 id=275 data-nosnippet>275</a>    /// 1.0 is the default value, and this value must be positive.
+<a href=#276 id=276 data-nosnippet>276</a>    </span><span class="attr">#[cfg(feature = <span class="string">"flexbox"</span>)]
+<a href=#277 id=277 data-nosnippet>277</a>    </span><span class="kw">pub </span>flex_shrink: f32,
+<a href=#278 id=278 data-nosnippet>278</a>
+<a href=#279 id=279 data-nosnippet>279</a>    <span class="comment">// Grid container properies
+<a href=#280 id=280 data-nosnippet>280</a>    </span><span class="doccomment">/// Defines the track sizing functions (widths) of the grid rows
+<a href=#281 id=281 data-nosnippet>281</a>    </span><span class="attr">#[cfg(feature = <span class="string">"grid"</span>)]
+<a href=#282 id=282 data-nosnippet>282</a>    </span><span class="kw">pub </span>grid_template_rows: GridTrackVec&lt;TrackSizingFunction&gt;,
+<a href=#283 id=283 data-nosnippet>283</a>    <span class="doccomment">/// Defines the track sizing functions (heights) of the grid columns
+<a href=#284 id=284 data-nosnippet>284</a>    </span><span class="attr">#[cfg(feature = <span class="string">"grid"</span>)]
+<a href=#285 id=285 data-nosnippet>285</a>    </span><span class="kw">pub </span>grid_template_columns: GridTrackVec&lt;TrackSizingFunction&gt;,
+<a href=#286 id=286 data-nosnippet>286</a>    <span class="doccomment">/// Defines the size of implicitly created rows
+<a href=#287 id=287 data-nosnippet>287</a>    </span><span class="attr">#[cfg(feature = <span class="string">"grid"</span>)]
+<a href=#288 id=288 data-nosnippet>288</a>    </span><span class="kw">pub </span>grid_auto_rows: GridTrackVec&lt;NonRepeatedTrackSizingFunction&gt;,
+<a href=#289 id=289 data-nosnippet>289</a>    <span class="doccomment">/// Defined the size of implicitly created columns
+<a href=#290 id=290 data-nosnippet>290</a>    </span><span class="attr">#[cfg(feature = <span class="string">"grid"</span>)]
+<a href=#291 id=291 data-nosnippet>291</a>    </span><span class="kw">pub </span>grid_auto_columns: GridTrackVec&lt;NonRepeatedTrackSizingFunction&gt;,
+<a href=#292 id=292 data-nosnippet>292</a>    <span class="doccomment">/// Controls how items get placed into the grid for auto-placed items
+<a href=#293 id=293 data-nosnippet>293</a>    </span><span class="attr">#[cfg(feature = <span class="string">"grid"</span>)]
+<a href=#294 id=294 data-nosnippet>294</a>    </span><span class="kw">pub </span>grid_auto_flow: GridAutoFlow,
+<a href=#295 id=295 data-nosnippet>295</a>
+<a href=#296 id=296 data-nosnippet>296</a>    <span class="comment">// Grid child properties
+<a href=#297 id=297 data-nosnippet>297</a>    </span><span class="doccomment">/// Defines which row in the grid the item should start and end at
+<a href=#298 id=298 data-nosnippet>298</a>    </span><span class="attr">#[cfg(feature = <span class="string">"grid"</span>)]
+<a href=#299 id=299 data-nosnippet>299</a>    </span><span class="kw">pub </span>grid_row: Line&lt;GridPlacement&gt;,
+<a href=#300 id=300 data-nosnippet>300</a>    <span class="doccomment">/// Defines which column in the grid the item should start and end at
+<a href=#301 id=301 data-nosnippet>301</a>    </span><span class="attr">#[cfg(feature = <span class="string">"grid"</span>)]
+<a href=#302 id=302 data-nosnippet>302</a>    </span><span class="kw">pub </span>grid_column: Line&lt;GridPlacement&gt;,
+<a href=#303 id=303 data-nosnippet>303</a>}
+<a href=#304 id=304 data-nosnippet>304</a>
+<a href=#305 id=305 data-nosnippet>305</a><span class="kw">impl </span>Style {
+<a href=#306 id=306 data-nosnippet>306</a>    <span class="doccomment">/// The [`Default`] layout, in a form that can be used in const functions
+<a href=#307 id=307 data-nosnippet>307</a>    </span><span class="kw">pub const </span>DEFAULT: Style = Style {
+<a href=#308 id=308 data-nosnippet>308</a>        display: Display::DEFAULT,
+<a href=#309 id=309 data-nosnippet>309</a>        overflow: Point { x: Overflow::Visible, y: Overflow::Visible },
+<a href=#310 id=310 data-nosnippet>310</a>        scrollbar_width: <span class="number">0.0</span>,
+<a href=#311 id=311 data-nosnippet>311</a>        position: Position::Relative,
+<a href=#312 id=312 data-nosnippet>312</a>        inset: Rect::auto(),
+<a href=#313 id=313 data-nosnippet>313</a>        margin: Rect::zero(),
+<a href=#314 id=314 data-nosnippet>314</a>        padding: Rect::zero(),
+<a href=#315 id=315 data-nosnippet>315</a>        border: Rect::zero(),
+<a href=#316 id=316 data-nosnippet>316</a>        size: Size::auto(),
+<a href=#317 id=317 data-nosnippet>317</a>        min_size: Size::auto(),
+<a href=#318 id=318 data-nosnippet>318</a>        max_size: Size::auto(),
+<a href=#319 id=319 data-nosnippet>319</a>        aspect_ratio: <span class="prelude-val">None</span>,
+<a href=#320 id=320 data-nosnippet>320</a>        <span class="attr">#[cfg(any(feature = <span class="string">"flexbox"</span>, feature = <span class="string">"grid"</span>))]
+<a href=#321 id=321 data-nosnippet>321</a>        </span>gap: Size::zero(),
+<a href=#322 id=322 data-nosnippet>322</a>        <span class="comment">// Aligment
+<a href=#323 id=323 data-nosnippet>323</a>        </span><span class="attr">#[cfg(any(feature = <span class="string">"flexbox"</span>, feature = <span class="string">"grid"</span>))]
+<a href=#324 id=324 data-nosnippet>324</a>        </span>align_items: <span class="prelude-val">None</span>,
+<a href=#325 id=325 data-nosnippet>325</a>        <span class="attr">#[cfg(any(feature = <span class="string">"flexbox"</span>, feature = <span class="string">"grid"</span>))]
+<a href=#326 id=326 data-nosnippet>326</a>        </span>align_self: <span class="prelude-val">None</span>,
+<a href=#327 id=327 data-nosnippet>327</a>        <span class="attr">#[cfg(feature = <span class="string">"grid"</span>)]
+<a href=#328 id=328 data-nosnippet>328</a>        </span>justify_items: <span class="prelude-val">None</span>,
+<a href=#329 id=329 data-nosnippet>329</a>        <span class="attr">#[cfg(feature = <span class="string">"grid"</span>)]
+<a href=#330 id=330 data-nosnippet>330</a>        </span>justify_self: <span class="prelude-val">None</span>,
+<a href=#331 id=331 data-nosnippet>331</a>        <span class="attr">#[cfg(any(feature = <span class="string">"flexbox"</span>, feature = <span class="string">"grid"</span>))]
+<a href=#332 id=332 data-nosnippet>332</a>        </span>align_content: <span class="prelude-val">None</span>,
+<a href=#333 id=333 data-nosnippet>333</a>        <span class="attr">#[cfg(any(feature = <span class="string">"flexbox"</span>, feature = <span class="string">"grid"</span>))]
+<a href=#334 id=334 data-nosnippet>334</a>        </span>justify_content: <span class="prelude-val">None</span>,
+<a href=#335 id=335 data-nosnippet>335</a>        <span class="comment">// Flexbox
+<a href=#336 id=336 data-nosnippet>336</a>        </span><span class="attr">#[cfg(feature = <span class="string">"flexbox"</span>)]
+<a href=#337 id=337 data-nosnippet>337</a>        </span>flex_direction: FlexDirection::Row,
+<a href=#338 id=338 data-nosnippet>338</a>        <span class="attr">#[cfg(feature = <span class="string">"flexbox"</span>)]
+<a href=#339 id=339 data-nosnippet>339</a>        </span>flex_wrap: FlexWrap::NoWrap,
+<a href=#340 id=340 data-nosnippet>340</a>        <span class="attr">#[cfg(feature = <span class="string">"flexbox"</span>)]
+<a href=#341 id=341 data-nosnippet>341</a>        </span>flex_grow: <span class="number">0.0</span>,
+<a href=#342 id=342 data-nosnippet>342</a>        <span class="attr">#[cfg(feature = <span class="string">"flexbox"</span>)]
+<a href=#343 id=343 data-nosnippet>343</a>        </span>flex_shrink: <span class="number">1.0</span>,
+<a href=#344 id=344 data-nosnippet>344</a>        <span class="attr">#[cfg(feature = <span class="string">"flexbox"</span>)]
+<a href=#345 id=345 data-nosnippet>345</a>        </span>flex_basis: Dimension::Auto,
+<a href=#346 id=346 data-nosnippet>346</a>        <span class="comment">// Grid
+<a href=#347 id=347 data-nosnippet>347</a>        </span><span class="attr">#[cfg(feature = <span class="string">"grid"</span>)]
+<a href=#348 id=348 data-nosnippet>348</a>        </span>grid_template_rows: GridTrackVec::new(),
+<a href=#349 id=349 data-nosnippet>349</a>        <span class="attr">#[cfg(feature = <span class="string">"grid"</span>)]
+<a href=#350 id=350 data-nosnippet>350</a>        </span>grid_template_columns: GridTrackVec::new(),
+<a href=#351 id=351 data-nosnippet>351</a>        <span class="attr">#[cfg(feature = <span class="string">"grid"</span>)]
+<a href=#352 id=352 data-nosnippet>352</a>        </span>grid_auto_rows: GridTrackVec::new(),
+<a href=#353 id=353 data-nosnippet>353</a>        <span class="attr">#[cfg(feature = <span class="string">"grid"</span>)]
+<a href=#354 id=354 data-nosnippet>354</a>        </span>grid_auto_columns: GridTrackVec::new(),
+<a href=#355 id=355 data-nosnippet>355</a>        <span class="attr">#[cfg(feature = <span class="string">"grid"</span>)]
+<a href=#356 id=356 data-nosnippet>356</a>        </span>grid_auto_flow: GridAutoFlow::Row,
+<a href=#357 id=357 data-nosnippet>357</a>        <span class="attr">#[cfg(feature = <span class="string">"grid"</span>)]
+<a href=#358 id=358 data-nosnippet>358</a>        </span>grid_row: Line { start: GridPlacement::Auto, end: GridPlacement::Auto },
+<a href=#359 id=359 data-nosnippet>359</a>        <span class="attr">#[cfg(feature = <span class="string">"grid"</span>)]
+<a href=#360 id=360 data-nosnippet>360</a>        </span>grid_column: Line { start: GridPlacement::Auto, end: GridPlacement::Auto },
+<a href=#361 id=361 data-nosnippet>361</a>    };
+<a href=#362 id=362 data-nosnippet>362</a>}
+<a href=#363 id=363 data-nosnippet>363</a>
+<a href=#364 id=364 data-nosnippet>364</a><span class="kw">impl </span>Default <span class="kw">for </span>Style {
+<a href=#365 id=365 data-nosnippet>365</a>    <span class="kw">fn </span>default() -&gt; <span class="self">Self </span>{
+<a href=#366 id=366 data-nosnippet>366</a>        Style::DEFAULT
+<a href=#367 id=367 data-nosnippet>367</a>    }
+<a href=#368 id=368 data-nosnippet>368</a>}
+<a href=#369 id=369 data-nosnippet>369</a>
+<a href=#370 id=370 data-nosnippet>370</a><span class="attr">#[cfg(test)]
+<a href=#371 id=371 data-nosnippet>371</a></span><span class="kw">mod </span>tests {
+<a href=#372 id=372 data-nosnippet>372</a>    <span class="kw">use </span><span class="kw">super</span>::Style;
+<a href=#373 id=373 data-nosnippet>373</a>    <span class="kw">use </span><span class="kw">crate</span>::geometry::<span class="kw-2">*</span>;
+<a href=#374 id=374 data-nosnippet>374</a>
+<a href=#375 id=375 data-nosnippet>375</a>    <span class="attr">#[test]
+<a href=#376 id=376 data-nosnippet>376</a>    </span><span class="kw">fn </span>defaults_match() {
+<a href=#377 id=377 data-nosnippet>377</a>        <span class="attr">#[cfg(feature = <span class="string">"grid"</span>)]
+<a href=#378 id=378 data-nosnippet>378</a>        </span><span class="kw">use </span><span class="kw">super</span>::GridPlacement;
+<a href=#379 id=379 data-nosnippet>379</a>
+<a href=#380 id=380 data-nosnippet>380</a>        <span class="kw">let </span>old_defaults = Style {
+<a href=#381 id=381 data-nosnippet>381</a>            display: Default::default(),
+<a href=#382 id=382 data-nosnippet>382</a>            overflow: Default::default(),
+<a href=#383 id=383 data-nosnippet>383</a>            scrollbar_width: <span class="number">0.0</span>,
+<a href=#384 id=384 data-nosnippet>384</a>            position: Default::default(),
+<a href=#385 id=385 data-nosnippet>385</a>            <span class="attr">#[cfg(feature = <span class="string">"flexbox"</span>)]
+<a href=#386 id=386 data-nosnippet>386</a>            </span>flex_direction: Default::default(),
+<a href=#387 id=387 data-nosnippet>387</a>            <span class="attr">#[cfg(feature = <span class="string">"flexbox"</span>)]
+<a href=#388 id=388 data-nosnippet>388</a>            </span>flex_wrap: Default::default(),
+<a href=#389 id=389 data-nosnippet>389</a>            <span class="attr">#[cfg(any(feature = <span class="string">"flexbox"</span>, feature = <span class="string">"grid"</span>))]
+<a href=#390 id=390 data-nosnippet>390</a>            </span>align_items: Default::default(),
+<a href=#391 id=391 data-nosnippet>391</a>            <span class="attr">#[cfg(any(feature = <span class="string">"flexbox"</span>, feature = <span class="string">"grid"</span>))]
+<a href=#392 id=392 data-nosnippet>392</a>            </span>align_self: Default::default(),
+<a href=#393 id=393 data-nosnippet>393</a>            <span class="attr">#[cfg(feature = <span class="string">"grid"</span>)]
+<a href=#394 id=394 data-nosnippet>394</a>            </span>justify_items: Default::default(),
+<a href=#395 id=395 data-nosnippet>395</a>            <span class="attr">#[cfg(feature = <span class="string">"grid"</span>)]
+<a href=#396 id=396 data-nosnippet>396</a>            </span>justify_self: Default::default(),
+<a href=#397 id=397 data-nosnippet>397</a>            <span class="attr">#[cfg(any(feature = <span class="string">"flexbox"</span>, feature = <span class="string">"grid"</span>))]
+<a href=#398 id=398 data-nosnippet>398</a>            </span>align_content: Default::default(),
+<a href=#399 id=399 data-nosnippet>399</a>            <span class="attr">#[cfg(any(feature = <span class="string">"flexbox"</span>, feature = <span class="string">"grid"</span>))]
+<a href=#400 id=400 data-nosnippet>400</a>            </span>justify_content: Default::default(),
+<a href=#401 id=401 data-nosnippet>401</a>            inset: Rect::auto(),
+<a href=#402 id=402 data-nosnippet>402</a>            margin: Rect::zero(),
+<a href=#403 id=403 data-nosnippet>403</a>            padding: Rect::zero(),
+<a href=#404 id=404 data-nosnippet>404</a>            border: Rect::zero(),
+<a href=#405 id=405 data-nosnippet>405</a>            gap: Size::zero(),
+<a href=#406 id=406 data-nosnippet>406</a>            <span class="attr">#[cfg(feature = <span class="string">"flexbox"</span>)]
+<a href=#407 id=407 data-nosnippet>407</a>            </span>flex_grow: <span class="number">0.0</span>,
+<a href=#408 id=408 data-nosnippet>408</a>            <span class="attr">#[cfg(feature = <span class="string">"flexbox"</span>)]
+<a href=#409 id=409 data-nosnippet>409</a>            </span>flex_shrink: <span class="number">1.0</span>,
+<a href=#410 id=410 data-nosnippet>410</a>            <span class="attr">#[cfg(feature = <span class="string">"flexbox"</span>)]
+<a href=#411 id=411 data-nosnippet>411</a>            </span>flex_basis: <span class="kw">super</span>::Dimension::Auto,
+<a href=#412 id=412 data-nosnippet>412</a>            size: Size::auto(),
+<a href=#413 id=413 data-nosnippet>413</a>            min_size: Size::auto(),
+<a href=#414 id=414 data-nosnippet>414</a>            max_size: Size::auto(),
+<a href=#415 id=415 data-nosnippet>415</a>            aspect_ratio: Default::default(),
+<a href=#416 id=416 data-nosnippet>416</a>            <span class="attr">#[cfg(feature = <span class="string">"grid"</span>)]
+<a href=#417 id=417 data-nosnippet>417</a>            </span>grid_template_rows: Default::default(),
+<a href=#418 id=418 data-nosnippet>418</a>            <span class="attr">#[cfg(feature = <span class="string">"grid"</span>)]
+<a href=#419 id=419 data-nosnippet>419</a>            </span>grid_template_columns: Default::default(),
+<a href=#420 id=420 data-nosnippet>420</a>            <span class="attr">#[cfg(feature = <span class="string">"grid"</span>)]
+<a href=#421 id=421 data-nosnippet>421</a>            </span>grid_auto_rows: Default::default(),
+<a href=#422 id=422 data-nosnippet>422</a>            <span class="attr">#[cfg(feature = <span class="string">"grid"</span>)]
+<a href=#423 id=423 data-nosnippet>423</a>            </span>grid_auto_columns: Default::default(),
+<a href=#424 id=424 data-nosnippet>424</a>            <span class="attr">#[cfg(feature = <span class="string">"grid"</span>)]
+<a href=#425 id=425 data-nosnippet>425</a>            </span>grid_auto_flow: Default::default(),
+<a href=#426 id=426 data-nosnippet>426</a>            <span class="attr">#[cfg(feature = <span class="string">"grid"</span>)]
+<a href=#427 id=427 data-nosnippet>427</a>            </span>grid_row: Line { start: GridPlacement::Auto, end: GridPlacement::Auto },
+<a href=#428 id=428 data-nosnippet>428</a>            <span class="attr">#[cfg(feature = <span class="string">"grid"</span>)]
+<a href=#429 id=429 data-nosnippet>429</a>            </span>grid_column: Line { start: GridPlacement::Auto, end: GridPlacement::Auto },
+<a href=#430 id=430 data-nosnippet>430</a>        };
+<a href=#431 id=431 data-nosnippet>431</a>
+<a href=#432 id=432 data-nosnippet>432</a>        <span class="macro">assert_eq!</span>(Style::DEFAULT, Style::default());
+<a href=#433 id=433 data-nosnippet>433</a>        <span class="macro">assert_eq!</span>(Style::DEFAULT, old_defaults);
+<a href=#434 id=434 data-nosnippet>434</a>    }
+<a href=#435 id=435 data-nosnippet>435</a>
+<a href=#436 id=436 data-nosnippet>436</a>    <span class="comment">// NOTE: Please feel free the update the sizes in this test as required. This test is here to prevent unintentional size changes
+<a href=#437 id=437 data-nosnippet>437</a>    // and to serve as accurate up-to-date documentation on the sizes.
+<a href=#438 id=438 data-nosnippet>438</a>    </span><span class="attr">#[test]
+<a href=#439 id=439 data-nosnippet>439</a>    </span><span class="kw">fn </span>style_sizes() {
+<a href=#440 id=440 data-nosnippet>440</a>        <span class="kw">use super</span>::<span class="kw-2">*</span>;
+<a href=#441 id=441 data-nosnippet>441</a>
+<a href=#442 id=442 data-nosnippet>442</a>        <span class="kw">fn </span>assert_type_size&lt;T&gt;(expected_size: usize) {
+<a href=#443 id=443 data-nosnippet>443</a>            <span class="kw">let </span>name = ::core::any::type_name::&lt;T&gt;();
+<a href=#444 id=444 data-nosnippet>444</a>            <span class="kw">let </span>name = name.replace(<span class="string">"taffy::geometry::"</span>, <span class="string">""</span>);
+<a href=#445 id=445 data-nosnippet>445</a>            <span class="kw">let </span>name = name.replace(<span class="string">"taffy::style::dimension::"</span>, <span class="string">""</span>);
+<a href=#446 id=446 data-nosnippet>446</a>            <span class="kw">let </span>name = name.replace(<span class="string">"taffy::style::alignment::"</span>, <span class="string">""</span>);
+<a href=#447 id=447 data-nosnippet>447</a>            <span class="kw">let </span>name = name.replace(<span class="string">"taffy::style::flex::"</span>, <span class="string">""</span>);
+<a href=#448 id=448 data-nosnippet>448</a>            <span class="kw">let </span>name = name.replace(<span class="string">"taffy::style::grid::"</span>, <span class="string">""</span>);
+<a href=#449 id=449 data-nosnippet>449</a>
+<a href=#450 id=450 data-nosnippet>450</a>            <span class="macro">assert_eq!</span>(
+<a href=#451 id=451 data-nosnippet>451</a>                ::core::mem::size_of::&lt;T&gt;(),
+<a href=#452 id=452 data-nosnippet>452</a>                expected_size,
+<a href=#453 id=453 data-nosnippet>453</a>                <span class="string">"Expected {} for be {} byte(s) but it was {} byte(s)"</span>,
+<a href=#454 id=454 data-nosnippet>454</a>                name,
+<a href=#455 id=455 data-nosnippet>455</a>                expected_size,
+<a href=#456 id=456 data-nosnippet>456</a>                ::core::mem::size_of::&lt;T&gt;(),
+<a href=#457 id=457 data-nosnippet>457</a>            );
+<a href=#458 id=458 data-nosnippet>458</a>        }
+<a href=#459 id=459 data-nosnippet>459</a>
+<a href=#460 id=460 data-nosnippet>460</a>        <span class="comment">// Display and Position
+<a href=#461 id=461 data-nosnippet>461</a>        </span>assert_type_size::&lt;Display&gt;(<span class="number">1</span>);
+<a href=#462 id=462 data-nosnippet>462</a>        assert_type_size::&lt;Position&gt;(<span class="number">1</span>);
+<a href=#463 id=463 data-nosnippet>463</a>        assert_type_size::&lt;Overflow&gt;(<span class="number">1</span>);
+<a href=#464 id=464 data-nosnippet>464</a>
+<a href=#465 id=465 data-nosnippet>465</a>        <span class="comment">// Dimensions and aggregations of Dimensions
+<a href=#466 id=466 data-nosnippet>466</a>        </span>assert_type_size::&lt;f32&gt;(<span class="number">4</span>);
+<a href=#467 id=467 data-nosnippet>467</a>        assert_type_size::&lt;LengthPercentage&gt;(<span class="number">8</span>);
+<a href=#468 id=468 data-nosnippet>468</a>        assert_type_size::&lt;LengthPercentageAuto&gt;(<span class="number">8</span>);
+<a href=#469 id=469 data-nosnippet>469</a>        assert_type_size::&lt;Dimension&gt;(<span class="number">8</span>);
+<a href=#470 id=470 data-nosnippet>470</a>        assert_type_size::&lt;Size&lt;LengthPercentage&gt;&gt;(<span class="number">16</span>);
+<a href=#471 id=471 data-nosnippet>471</a>        assert_type_size::&lt;Size&lt;LengthPercentageAuto&gt;&gt;(<span class="number">16</span>);
+<a href=#472 id=472 data-nosnippet>472</a>        assert_type_size::&lt;Size&lt;Dimension&gt;&gt;(<span class="number">16</span>);
+<a href=#473 id=473 data-nosnippet>473</a>        assert_type_size::&lt;Rect&lt;LengthPercentage&gt;&gt;(<span class="number">32</span>);
+<a href=#474 id=474 data-nosnippet>474</a>        assert_type_size::&lt;Rect&lt;LengthPercentageAuto&gt;&gt;(<span class="number">32</span>);
+<a href=#475 id=475 data-nosnippet>475</a>        assert_type_size::&lt;Rect&lt;Dimension&gt;&gt;(<span class="number">32</span>);
+<a href=#476 id=476 data-nosnippet>476</a>
+<a href=#477 id=477 data-nosnippet>477</a>        <span class="comment">// Alignment
+<a href=#478 id=478 data-nosnippet>478</a>        </span>assert_type_size::&lt;AlignContent&gt;(<span class="number">1</span>);
+<a href=#479 id=479 data-nosnippet>479</a>        assert_type_size::&lt;AlignItems&gt;(<span class="number">1</span>);
+<a href=#480 id=480 data-nosnippet>480</a>        assert_type_size::&lt;<span class="prelude-ty">Option</span>&lt;AlignItems&gt;&gt;(<span class="number">1</span>);
+<a href=#481 id=481 data-nosnippet>481</a>
+<a href=#482 id=482 data-nosnippet>482</a>        <span class="comment">// Flexbox Container
+<a href=#483 id=483 data-nosnippet>483</a>        </span>assert_type_size::&lt;FlexDirection&gt;(<span class="number">1</span>);
+<a href=#484 id=484 data-nosnippet>484</a>        assert_type_size::&lt;FlexWrap&gt;(<span class="number">1</span>);
+<a href=#485 id=485 data-nosnippet>485</a>
+<a href=#486 id=486 data-nosnippet>486</a>        <span class="comment">// CSS Grid Container
+<a href=#487 id=487 data-nosnippet>487</a>        </span>assert_type_size::&lt;GridAutoFlow&gt;(<span class="number">1</span>);
+<a href=#488 id=488 data-nosnippet>488</a>        assert_type_size::&lt;MinTrackSizingFunction&gt;(<span class="number">8</span>);
+<a href=#489 id=489 data-nosnippet>489</a>        assert_type_size::&lt;MaxTrackSizingFunction&gt;(<span class="number">12</span>);
+<a href=#490 id=490 data-nosnippet>490</a>        assert_type_size::&lt;NonRepeatedTrackSizingFunction&gt;(<span class="number">20</span>);
+<a href=#491 id=491 data-nosnippet>491</a>        assert_type_size::&lt;TrackSizingFunction&gt;(<span class="number">32</span>);
+<a href=#492 id=492 data-nosnippet>492</a>        assert_type_size::&lt;Vec&lt;NonRepeatedTrackSizingFunction&gt;&gt;(<span class="number">24</span>);
+<a href=#493 id=493 data-nosnippet>493</a>        assert_type_size::&lt;Vec&lt;TrackSizingFunction&gt;&gt;(<span class="number">24</span>);
+<a href=#494 id=494 data-nosnippet>494</a>
+<a href=#495 id=495 data-nosnippet>495</a>        <span class="comment">// CSS Grid Item
+<a href=#496 id=496 data-nosnippet>496</a>        </span>assert_type_size::&lt;GridPlacement&gt;(<span class="number">4</span>);
+<a href=#497 id=497 data-nosnippet>497</a>        assert_type_size::&lt;Line&lt;GridPlacement&gt;&gt;(<span class="number">8</span>);
+<a href=#498 id=498 data-nosnippet>498</a>
+<a href=#499 id=499 data-nosnippet>499</a>        <span class="comment">// Overall
+<a href=#500 id=500 data-nosnippet>500</a>        </span>assert_type_size::&lt;Style&gt;(<span class="number">352</span>);
+<a href=#501 id=501 data-nosnippet>501</a>    }
+<a href=#502 id=502 data-nosnippet>502</a>}</code></pre></div></section></main></body></html>

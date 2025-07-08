@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["DeviceEvent","ElementState","Event","Force","Ime","MouseButton","MouseScrollDelta","StartCause","TouchPhase","WindowEvent"],"struct":["DeviceId","FingerId","KeyEvent","Modifiers","RawKeyEvent","SurfaceSizeWriter","Touch"],"type":["AxisId","ButtonId"]};

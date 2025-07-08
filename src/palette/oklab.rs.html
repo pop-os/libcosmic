@@ -1,0 +1,713 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `/home/runner/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/palette-0.7.6/src/oklab.rs`."><title>oklab.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../static.files/rustdoc-916cea96.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="palette" data-themes="" data-resource-suffix="" data-rustdoc-version="1.87.0 (17067e9ac 2025-05-09)" data-channel="1.87.0" data-search-js="search-e7298875.js" data-settings-js="settings-d72f25bb.js" ><script src="../../static.files/storage-82c7156e.js"></script><script defer src="../../static.files/src-script-63605ae7.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-fb8c74a8.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-893ab5e7.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-6580c154.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-044be391.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer"></div><main><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><h1><div class="sub-heading">palette/</div>oklab.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap digits-3"><pre class="rust"><code><a href=#1 id=1 data-nosnippet>1</a><span class="doccomment">//! Types for the Oklab color space.
+<a href=#2 id=2 data-nosnippet>2</a>
+<a href=#3 id=3 data-nosnippet>3</a></span><span class="kw">use </span>core::{any::TypeId, fmt::Debug, ops::Mul};
+<a href=#4 id=4 data-nosnippet>4</a>
+<a href=#5 id=5 data-nosnippet>5</a><span class="kw">pub use </span>alpha::Oklaba;
+<a href=#6 id=6 data-nosnippet>6</a>
+<a href=#7 id=7 data-nosnippet>7</a><span class="kw">use crate</span>::{
+<a href=#8 id=8 data-nosnippet>8</a>    angle::RealAngle,
+<a href=#9 id=9 data-nosnippet>9</a>    bool_mask::HasBoolMask,
+<a href=#10 id=10 data-nosnippet>10</a>    convert::{FromColorUnclamped, IntoColorUnclamped},
+<a href=#11 id=11 data-nosnippet>11</a>    encoding::{IntoLinear, Srgb},
+<a href=#12 id=12 data-nosnippet>12</a>    matrix::multiply_xyz,
+<a href=#13 id=13 data-nosnippet>13</a>    num::{Arithmetics, Cbrt, Hypot, MinMax, One, Powi, Real, Sqrt, Trigonometry, Zero},
+<a href=#14 id=14 data-nosnippet>14</a>    ok_utils::{toe_inv, ChromaValues, LC, ST},
+<a href=#15 id=15 data-nosnippet>15</a>    rgb::{Rgb, RgbSpace, RgbStandard},
+<a href=#16 id=16 data-nosnippet>16</a>    white_point::D65,
+<a href=#17 id=17 data-nosnippet>17</a>    LinSrgb, Mat3, Okhsl, Okhsv, Oklch, Xyz,
+<a href=#18 id=18 data-nosnippet>18</a>};
+<a href=#19 id=19 data-nosnippet>19</a>
+<a href=#20 id=20 data-nosnippet>20</a><span class="kw">pub use </span><span class="self">self</span>::properties::Iter;
+<a href=#21 id=21 data-nosnippet>21</a>
+<a href=#22 id=22 data-nosnippet>22</a><span class="attr">#[cfg(feature = <span class="string">"random"</span>)]
+<a href=#23 id=23 data-nosnippet>23</a></span><span class="kw">pub use </span><span class="self">self</span>::random::UniformOklab;
+<a href=#24 id=24 data-nosnippet>24</a>
+<a href=#25 id=25 data-nosnippet>25</a><span class="kw">mod </span>alpha;
+<a href=#26 id=26 data-nosnippet>26</a><span class="kw">mod </span>properties;
+<a href=#27 id=27 data-nosnippet>27</a><span class="attr">#[cfg(feature = <span class="string">"random"</span>)]
+<a href=#28 id=28 data-nosnippet>28</a></span><span class="kw">mod </span>random;
+<a href=#29 id=29 data-nosnippet>29</a><span class="attr">#[cfg(test)]
+<a href=#30 id=30 data-nosnippet>30</a>#[cfg(feature = <span class="string">"approx"</span>)]
+<a href=#31 id=31 data-nosnippet>31</a></span><span class="kw">mod </span>visual_eq;
+<a href=#32 id=32 data-nosnippet>32</a>
+<a href=#33 id=33 data-nosnippet>33</a><span class="comment">// Using recalculated matrix values from
+<a href=#34 id=34 data-nosnippet>34</a>// https://github.com/LeaVerou/color.js/blob/master/src/spaces/oklab.js
+<a href=#35 id=35 data-nosnippet>35</a>//
+<a href=#36 id=36 data-nosnippet>36</a>// see https://github.com/w3c/csswg-drafts/issues/6642#issuecomment-943521484
+<a href=#37 id=37 data-nosnippet>37</a>// and the following https://github.com/w3c/csswg-drafts/issues/6642#issuecomment-945714988
+<a href=#38 id=38 data-nosnippet>38</a>
+<a href=#39 id=39 data-nosnippet>39</a></span><span class="doccomment">/// XYZ to LSM transformation matrix
+<a href=#40 id=40 data-nosnippet>40</a></span><span class="attr">#[rustfmt::skip]
+<a href=#41 id=41 data-nosnippet>41</a></span><span class="kw">fn </span>m1&lt;T: Real&gt;() -&gt; Mat3&lt;T&gt; {
+<a href=#42 id=42 data-nosnippet>42</a>    [
+<a href=#43 id=43 data-nosnippet>43</a>        T::from_f64(<span class="number">0.8190224432164319</span>), T::from_f64(<span class="number">0.3619062562801221</span>), T::from_f64(-<span class="number">0.12887378261216414</span>),
+<a href=#44 id=44 data-nosnippet>44</a>        T::from_f64(<span class="number">0.0329836671980271</span>), T::from_f64(<span class="number">0.9292868468965546</span>), T::from_f64(<span class="number">0.03614466816999844</span>),
+<a href=#45 id=45 data-nosnippet>45</a>        T::from_f64(<span class="number">0.048177199566046255</span>), T::from_f64(<span class="number">0.26423952494422764</span>), T::from_f64(<span class="number">0.6335478258136937</span>),
+<a href=#46 id=46 data-nosnippet>46</a>    ]
+<a href=#47 id=47 data-nosnippet>47</a>}
+<a href=#48 id=48 data-nosnippet>48</a>
+<a href=#49 id=49 data-nosnippet>49</a><span class="doccomment">/// LMS to XYZ transformation matrix
+<a href=#50 id=50 data-nosnippet>50</a></span><span class="attr">#[rustfmt::skip]
+<a href=#51 id=51 data-nosnippet>51</a></span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>m1_inv&lt;T: Real&gt;() -&gt; Mat3&lt;T&gt; {
+<a href=#52 id=52 data-nosnippet>52</a>    [
+<a href=#53 id=53 data-nosnippet>53</a>        T::from_f64(<span class="number">1.2268798733741557</span>), T::from_f64(-<span class="number">0.5578149965554813</span>), T::from_f64(<span class="number">0.28139105017721583</span>),
+<a href=#54 id=54 data-nosnippet>54</a>        T::from_f64(-<span class="number">0.04057576262431372</span>), T::from_f64(<span class="number">1.1122868293970594</span>), T::from_f64(-<span class="number">0.07171106666151701</span>),
+<a href=#55 id=55 data-nosnippet>55</a>        T::from_f64(-<span class="number">0.07637294974672142</span>), T::from_f64(-<span class="number">0.4214933239627914</span>), T::from_f64(<span class="number">1.5869240244272418</span>),
+<a href=#56 id=56 data-nosnippet>56</a>    ]
+<a href=#57 id=57 data-nosnippet>57</a>}
+<a href=#58 id=58 data-nosnippet>58</a>
+<a href=#59 id=59 data-nosnippet>59</a><span class="doccomment">/// LMS to Oklab transformation matrix
+<a href=#60 id=60 data-nosnippet>60</a></span><span class="attr">#[rustfmt::skip]
+<a href=#61 id=61 data-nosnippet>61</a></span><span class="kw">fn </span>m2&lt;T: Real&gt;() -&gt; Mat3&lt;T&gt; {
+<a href=#62 id=62 data-nosnippet>62</a>    [
+<a href=#63 id=63 data-nosnippet>63</a>        T::from_f64(<span class="number">0.2104542553</span>), T::from_f64(<span class="number">0.7936177850</span>), T::from_f64(-<span class="number">0.0040720468</span>),
+<a href=#64 id=64 data-nosnippet>64</a>        T::from_f64(<span class="number">1.9779984951</span>), T::from_f64(-<span class="number">2.4285922050</span>), T::from_f64(<span class="number">0.4505937099</span>),
+<a href=#65 id=65 data-nosnippet>65</a>        T::from_f64(<span class="number">0.0259040371</span>), T::from_f64(<span class="number">0.7827717662</span>), T::from_f64(-<span class="number">0.8086757660</span>),
+<a href=#66 id=66 data-nosnippet>66</a>    ]
+<a href=#67 id=67 data-nosnippet>67</a>}
+<a href=#68 id=68 data-nosnippet>68</a>
+<a href=#69 id=69 data-nosnippet>69</a><span class="doccomment">/// Oklab to LMS transformation matrix
+<a href=#70 id=70 data-nosnippet>70</a></span><span class="attr">#[rustfmt::skip]
+<a href=#71 id=71 data-nosnippet>71</a>#[allow(clippy::excessive_precision)]
+<a href=#72 id=72 data-nosnippet>72</a></span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>m2_inv&lt;T: Real&gt;() -&gt; Mat3&lt;T&gt; {
+<a href=#73 id=73 data-nosnippet>73</a>    [
+<a href=#74 id=74 data-nosnippet>74</a>        T::from_f64(<span class="number">0.99999999845051981432</span>), T::from_f64(<span class="number">0.39633779217376785678</span>), T::from_f64(<span class="number">0.21580375806075880339</span>),
+<a href=#75 id=75 data-nosnippet>75</a>        T::from_f64(<span class="number">1.0000000088817607767</span>), T::from_f64(-<span class="number">0.1055613423236563494</span>), T::from_f64(-<span class="number">0.063854174771705903402</span>),
+<a href=#76 id=76 data-nosnippet>76</a>        T::from_f64(<span class="number">1.0000000546724109177</span>), T::from_f64(-<span class="number">0.089484182094965759684</span>), T::from_f64(-<span class="number">1.2914855378640917399</span>),
+<a href=#77 id=77 data-nosnippet>77</a>    ]
+<a href=#78 id=78 data-nosnippet>78</a>}
+<a href=#79 id=79 data-nosnippet>79</a>
+<a href=#80 id=80 data-nosnippet>80</a><span class="doccomment">/// The [Oklab color space](https://bottosson.github.io/posts/oklab/).
+<a href=#81 id=81 data-nosnippet>81</a>///
+<a href=#82 id=82 data-nosnippet>82</a>/// # Characteristics
+<a href=#83 id=83 data-nosnippet>83</a>/// `Oklab` is a *perceptual* color space. It does not relate to an output
+<a href=#84 id=84 data-nosnippet>84</a>/// device (a monitor or printer) but instead relates to the [CIE standard
+<a href=#85 id=85 data-nosnippet>85</a>/// observer](https://en.wikipedia.org/wiki/CIE_1931_color_space#CIE_standard_observer)
+<a href=#86 id=86 data-nosnippet>86</a>/// -- an averaging of the results of color matching experiments under
+<a href=#87 id=87 data-nosnippet>87</a>/// laboratory conditions.
+<a href=#88 id=88 data-nosnippet>88</a>///
+<a href=#89 id=89 data-nosnippet>89</a>/// `Oklab` is a uniform color space ([Compare to the HSV color
+<a href=#90 id=90 data-nosnippet>90</a>/// space](https://bottosson.github.io/posts/oklab/#comparing-oklab-to-hsv)). It
+<a href=#91 id=91 data-nosnippet>91</a>/// is useful for things like:
+<a href=#92 id=92 data-nosnippet>92</a>/// * Turning an image grayscale, while keeping the perceived lightness the same
+<a href=#93 id=93 data-nosnippet>93</a>/// * Increasing the saturation of colors, while maintaining perceived hue and
+<a href=#94 id=94 data-nosnippet>94</a>///   lightness
+<a href=#95 id=95 data-nosnippet>95</a>/// * Creating smooth and uniform looking transitions between colors
+<a href=#96 id=96 data-nosnippet>96</a>///
+<a href=#97 id=97 data-nosnippet>97</a>/// `Oklab`'s structure is similar to [L\*a\*b\*](crate::Lab). It is based on
+<a href=#98 id=98 data-nosnippet>98</a>/// the [opponent color model of human
+<a href=#99 id=99 data-nosnippet>99</a>/// vision](https://en.wikipedia.org/wiki/Opponent_process), where red and green
+<a href=#100 id=100 data-nosnippet>100</a>/// form an opponent pair, and blue and yellow form an opponent pair.
+<a href=#101 id=101 data-nosnippet>101</a>///
+<a href=#102 id=102 data-nosnippet>102</a>/// `Oklab` uses [D65](https://en.wikipedia.org/wiki/Illuminant_D65)'s
+<a href=#103 id=103 data-nosnippet>103</a>/// whitepoint -- daylight illumination, which is also used by sRGB, rec2020 and
+<a href=#104 id=104 data-nosnippet>104</a>/// Display P3 color spaces -- and assumes normal well-lit viewing conditions,
+<a href=#105 id=105 data-nosnippet>105</a>/// to which the eye is adapted. Thus `Oklab`s lightness `l` technically is a
+<a href=#106 id=106 data-nosnippet>106</a>/// measure of relative brightness -- a subjective measure -- not relative
+<a href=#107 id=107 data-nosnippet>107</a>/// luminance. The lightness is scale/exposure-independend, i.e. independent of
+<a href=#108 id=108 data-nosnippet>108</a>/// the actual luminance of the color, as displayed by some medium, and even for
+<a href=#109 id=109 data-nosnippet>109</a>/// blindingly bright colors or very bright or dark viewing conditions assumes,
+<a href=#110 id=110 data-nosnippet>110</a>/// that the eye is adapted to the color's luminance and the hue and chroma are
+<a href=#111 id=111 data-nosnippet>111</a>/// perceived linearly.
+<a href=#112 id=112 data-nosnippet>112</a>///
+<a href=#113 id=113 data-nosnippet>113</a>///
+<a href=#114 id=114 data-nosnippet>114</a>/// `Oklab`'s chroma is unlimited. Thus it can represent colors of any color
+<a href=#115 id=115 data-nosnippet>115</a>/// space (including HDR). `l` is in the range `0.0 .. 1.0` and `a` and `b` are
+<a href=#116 id=116 data-nosnippet>116</a>/// unbounded.
+<a href=#117 id=117 data-nosnippet>117</a>///
+<a href=#118 id=118 data-nosnippet>118</a>/// # Conversions
+<a href=#119 id=119 data-nosnippet>119</a>/// [`Oklch`] is a cylindrical form of `Oklab`.
+<a href=#120 id=120 data-nosnippet>120</a>///
+<a href=#121 id=121 data-nosnippet>121</a>/// `Oklab` colors converted from valid (i.e. clamped) `sRGB` will be in the
+<a href=#122 id=122 data-nosnippet>122</a>/// `sRGB` gamut.
+<a href=#123 id=123 data-nosnippet>123</a>///
+<a href=#124 id=124 data-nosnippet>124</a>/// [`Okhsv`], [`Okhwb`][crate::Okhsv] and [`Okhsl`] reference the `sRGB` gamut.
+<a href=#125 id=125 data-nosnippet>125</a>/// The transformation from `Oklab` to one of them is based on the assumption,
+<a href=#126 id=126 data-nosnippet>126</a>/// that the transformed `Oklab` value is within `sRGB`.
+<a href=#127 id=127 data-nosnippet>127</a>///
+<a href=#128 id=128 data-nosnippet>128</a>/// `Okhsv`, `Okhwb` and `Okhsl` are not applicable to HDR, which also come with
+<a href=#129 id=129 data-nosnippet>129</a>/// color spaces with wider gamuts. They require [additional
+<a href=#130 id=130 data-nosnippet>130</a>/// research](https://bottosson.github.io/posts/colorpicker/#ideas-for-future-work).
+<a href=#131 id=131 data-nosnippet>131</a>///
+<a href=#132 id=132 data-nosnippet>132</a>/// When a `Oklab` color is converted from [`Srgb`](crate::rgb::Srgb) or a
+<a href=#133 id=133 data-nosnippet>133</a>/// equivalent color space, e.g. [`Hsv`][crate::Hsv], [`Okhsv`],
+<a href=#134 id=134 data-nosnippet>134</a>/// [`Hsl`][crate::Hsl], [`Okhsl`], [`Hwb`][crate::Hwb],
+<a href=#135 id=135 data-nosnippet>135</a>/// [`Okhwb`][crate::Okhwb], it's lightness will be relative to the (user
+<a href=#136 id=136 data-nosnippet>136</a>/// controlled) maximum contrast and luminance of the display device, to which
+<a href=#137 id=137 data-nosnippet>137</a>/// the eye is assumed to be adapted.
+<a href=#138 id=138 data-nosnippet>138</a>///
+<a href=#139 id=139 data-nosnippet>139</a>/// # Clamping
+<a href=#140 id=140 data-nosnippet>140</a>/// [`Clamp`][crate::Clamp]ing will only clamp `l`. Clamping does not guarantee
+<a href=#141 id=141 data-nosnippet>141</a>/// the color to be inside the perceptible or any display-dependent color space
+<a href=#142 id=142 data-nosnippet>142</a>/// (like *sRGB*).
+<a href=#143 id=143 data-nosnippet>143</a>///
+<a href=#144 id=144 data-nosnippet>144</a>/// To ensure a color is within the *sRGB* gamut, it can first be converted to
+<a href=#145 id=145 data-nosnippet>145</a>/// `Okhsv`, clamped there and converted it back to `Oklab`.
+<a href=#146 id=146 data-nosnippet>146</a>///
+<a href=#147 id=147 data-nosnippet>147</a>/// ```
+<a href=#148 id=148 data-nosnippet>148</a>/// # use approx::assert_abs_diff_eq;
+<a href=#149 id=149 data-nosnippet>149</a>/// # use palette::{convert::FromColorUnclamped,IsWithinBounds, LinSrgb, Okhsv, Oklab};
+<a href=#150 id=150 data-nosnippet>150</a>/// # use palette::Clamp;
+<a href=#151 id=151 data-nosnippet>151</a>/// // Display P3 yellow according to https://colorjs.io/apps/convert/?color=color(display-p3%201%201%200)&amp;precision=17
+<a href=#152 id=152 data-nosnippet>152</a>/// let oklab = Oklab::from_color_unclamped(LinSrgb::new(1.0, 1.0, -0.098273600140966));
+<a href=#153 id=153 data-nosnippet>153</a>/// let okhsv: Okhsv&lt;f64&gt; = Okhsv::from_color_unclamped(oklab);
+<a href=#154 id=154 data-nosnippet>154</a>/// assert!(!okhsv.is_within_bounds());
+<a href=#155 id=155 data-nosnippet>155</a>/// let clamped_okhsv = okhsv.clamp();
+<a href=#156 id=156 data-nosnippet>156</a>/// assert!(clamped_okhsv.is_within_bounds());
+<a href=#157 id=157 data-nosnippet>157</a>/// let linsrgb = LinSrgb::from_color_unclamped(clamped_okhsv);
+<a href=#158 id=158 data-nosnippet>158</a>/// let  expected = LinSrgb::new(1.0, 0.9876530763223166, 0.0);
+<a href=#159 id=159 data-nosnippet>159</a>/// assert_abs_diff_eq!(expected, linsrgb, epsilon = 0.02);
+<a href=#160 id=160 data-nosnippet>160</a>/// ```
+<a href=#161 id=161 data-nosnippet>161</a>/// Since the conversion contains a gamut mapping, it will map the color to one
+<a href=#162 id=162 data-nosnippet>162</a>/// of the perceptually closest locations in the `sRGB` gamut. Gamut mapping --
+<a href=#163 id=163 data-nosnippet>163</a>/// unlike clamping -- is an expensive operation. To get computationally cheaper
+<a href=#164 id=164 data-nosnippet>164</a>/// (and perceptually much worse) results, convert directly to [`Srgb`] and
+<a href=#165 id=165 data-nosnippet>165</a>/// clamp there.
+<a href=#166 id=166 data-nosnippet>166</a>///
+<a href=#167 id=167 data-nosnippet>167</a>/// # Lightening / Darkening
+<a href=#168 id=168 data-nosnippet>168</a>/// [`Lighten`](crate::Lighten)ing and [`Darken`](crate::Darken)ing will change
+<a href=#169 id=169 data-nosnippet>169</a>/// `l`, as expected. However, either operation may leave an implicit color
+<a href=#170 id=170 data-nosnippet>170</a>/// space (the percetible or a display dependent color space like *sRGB*).
+<a href=#171 id=171 data-nosnippet>171</a>///
+<a href=#172 id=172 data-nosnippet>172</a>/// To ensure a color is within the *sRGB* gamut, first convert it to `Okhsl`,
+<a href=#173 id=173 data-nosnippet>173</a>/// lighten/darken it there and convert it back to `Oklab`.
+<a href=#174 id=174 data-nosnippet>174</a>
+<a href=#175 id=175 data-nosnippet>175</a></span><span class="attr">#[derive(Debug, Copy, Clone, ArrayCast, FromColorUnclamped, WithAlpha)]
+<a href=#176 id=176 data-nosnippet>176</a>#[cfg_attr(feature = <span class="string">"serializing"</span>, derive(Serialize, Deserialize))]
+<a href=#177 id=177 data-nosnippet>177</a>#[palette(
+<a href=#178 id=178 data-nosnippet>178</a>    palette_internal,
+<a href=#179 id=179 data-nosnippet>179</a>    white_point = <span class="string">"D65"</span>,
+<a href=#180 id=180 data-nosnippet>180</a>    component = <span class="string">"T"</span>,
+<a href=#181 id=181 data-nosnippet>181</a>    skip_derives(Oklab, Oklch, Okhsv, Okhsl, Xyz, Rgb)
+<a href=#182 id=182 data-nosnippet>182</a>)]
+<a href=#183 id=183 data-nosnippet>183</a>#[repr(C)]
+<a href=#184 id=184 data-nosnippet>184</a></span><span class="kw">pub struct </span>Oklab&lt;T = f32&gt; {
+<a href=#185 id=185 data-nosnippet>185</a>    <span class="doccomment">/// `l` is the lightness of the color. `0` gives absolute black and `1` gives the
+<a href=#186 id=186 data-nosnippet>186</a>    /// full white point luminance of the display medium.
+<a href=#187 id=187 data-nosnippet>187</a>    ///
+<a href=#188 id=188 data-nosnippet>188</a>    /// [`D65` (normalized with Y=1, i.e. white according to the adaption of the
+<a href=#189 id=189 data-nosnippet>189</a>    /// eye) transforms to
+<a href=#190 id=190 data-nosnippet>190</a>    /// L=1,a=0,b=0](https://bottosson.github.io/posts/oklab/#how-oklab-was-derived).
+<a href=#191 id=191 data-nosnippet>191</a>    /// However intermediate values differ from those of CIELab non-linearly.
+<a href=#192 id=192 data-nosnippet>192</a>    </span><span class="kw">pub </span>l: T,
+<a href=#193 id=193 data-nosnippet>193</a>
+<a href=#194 id=194 data-nosnippet>194</a>    <span class="doccomment">/// `a` changes the hue from reddish to greenish, when moving from positive
+<a href=#195 id=195 data-nosnippet>195</a>    /// to negative values and becomes more intense with larger absolute values.
+<a href=#196 id=196 data-nosnippet>196</a>    ///
+<a href=#197 id=197 data-nosnippet>197</a>    /// The exact orientation is determined by `b`
+<a href=#198 id=198 data-nosnippet>198</a>    </span><span class="kw">pub </span>a: T,
+<a href=#199 id=199 data-nosnippet>199</a>
+<a href=#200 id=200 data-nosnippet>200</a>    <span class="doccomment">/// `b` changes the hue from yellowish to blueish, when moving from positive
+<a href=#201 id=201 data-nosnippet>201</a>    /// to negative values and becomes more intense with larger absolute values.
+<a href=#202 id=202 data-nosnippet>202</a>    ///
+<a href=#203 id=203 data-nosnippet>203</a>    /// [Positive b is oriented to the same yellow color as
+<a href=#204 id=204 data-nosnippet>204</a>    /// CAM16](https://bottosson.github.io/posts/oklab/#how-oklab-was-derived)
+<a href=#205 id=205 data-nosnippet>205</a>    </span><span class="kw">pub </span>b: T,
+<a href=#206 id=206 data-nosnippet>206</a>}
+<a href=#207 id=207 data-nosnippet>207</a>
+<a href=#208 id=208 data-nosnippet>208</a><span class="kw">impl</span>&lt;T&gt; Oklab&lt;T&gt; {
+<a href=#209 id=209 data-nosnippet>209</a>    <span class="doccomment">/// Create an Oklab color.
+<a href=#210 id=210 data-nosnippet>210</a>    </span><span class="kw">pub const fn </span>new(l: T, a: T, b: T) -&gt; <span class="self">Self </span>{
+<a href=#211 id=211 data-nosnippet>211</a>        <span class="self">Self </span>{ l, a, b }
+<a href=#212 id=212 data-nosnippet>212</a>    }
+<a href=#213 id=213 data-nosnippet>213</a>
+<a href=#214 id=214 data-nosnippet>214</a>    <span class="doccomment">/// Convert to a `(L, a, b)` tuple.
+<a href=#215 id=215 data-nosnippet>215</a>    </span><span class="kw">pub fn </span>into_components(<span class="self">self</span>) -&gt; (T, T, T) {
+<a href=#216 id=216 data-nosnippet>216</a>        (<span class="self">self</span>.l, <span class="self">self</span>.a, <span class="self">self</span>.b)
+<a href=#217 id=217 data-nosnippet>217</a>    }
+<a href=#218 id=218 data-nosnippet>218</a>
+<a href=#219 id=219 data-nosnippet>219</a>    <span class="doccomment">/// Convert from a `(L, a, b)` tuple.
+<a href=#220 id=220 data-nosnippet>220</a>    </span><span class="kw">pub fn </span>from_components((l, a, b): (T, T, T)) -&gt; <span class="self">Self </span>{
+<a href=#221 id=221 data-nosnippet>221</a>        <span class="self">Self</span>::new(l, a, b)
+<a href=#222 id=222 data-nosnippet>222</a>    }
+<a href=#223 id=223 data-nosnippet>223</a>}
+<a href=#224 id=224 data-nosnippet>224</a>
+<a href=#225 id=225 data-nosnippet>225</a><span class="comment">// component bounds
+<a href=#226 id=226 data-nosnippet>226</a>// For `Oklab` in general a and b are unbounded.
+<a href=#227 id=227 data-nosnippet>227</a>// In the sRGB gamut `Oklab`s chroma (and thus a and b) are bounded.
+<a href=#228 id=228 data-nosnippet>228</a></span><span class="kw">impl</span>&lt;T&gt; Oklab&lt;T&gt;
+<a href=#229 id=229 data-nosnippet>229</a><span class="kw">where
+<a href=#230 id=230 data-nosnippet>230</a>    </span>T: Zero + One,
+<a href=#231 id=231 data-nosnippet>231</a>{
+<a href=#232 id=232 data-nosnippet>232</a>    <span class="doccomment">/// Return the `l` value minimum.
+<a href=#233 id=233 data-nosnippet>233</a>    </span><span class="kw">pub fn </span>min_l() -&gt; T {
+<a href=#234 id=234 data-nosnippet>234</a>        T::zero()
+<a href=#235 id=235 data-nosnippet>235</a>    }
+<a href=#236 id=236 data-nosnippet>236</a>
+<a href=#237 id=237 data-nosnippet>237</a>    <span class="doccomment">/// Return the `l` value maximum.
+<a href=#238 id=238 data-nosnippet>238</a>    </span><span class="kw">pub fn </span>max_l() -&gt; T {
+<a href=#239 id=239 data-nosnippet>239</a>        T::one()
+<a href=#240 id=240 data-nosnippet>240</a>    }
+<a href=#241 id=241 data-nosnippet>241</a>}
+<a href=#242 id=242 data-nosnippet>242</a>
+<a href=#243 id=243 data-nosnippet>243</a><span class="macro">impl_reference_component_methods!</span>(Oklab, [l, a, b]);
+<a href=#244 id=244 data-nosnippet>244</a><span class="macro">impl_struct_of_arrays_methods!</span>(Oklab, [l, a, b]);
+<a href=#245 id=245 data-nosnippet>245</a>
+<a href=#246 id=246 data-nosnippet>246</a><span class="kw">impl</span>&lt;T&gt; Oklab&lt;T&gt;
+<a href=#247 id=247 data-nosnippet>247</a><span class="kw">where
+<a href=#248 id=248 data-nosnippet>248</a>    </span>T: Hypot + Clone,
+<a href=#249 id=249 data-nosnippet>249</a>{
+<a href=#250 id=250 data-nosnippet>250</a>    <span class="doccomment">/// Returns the chroma.
+<a href=#251 id=251 data-nosnippet>251</a>    </span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>get_chroma(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; T {
+<a href=#252 id=252 data-nosnippet>252</a>        T::hypot(<span class="self">self</span>.a.clone(), <span class="self">self</span>.b.clone())
+<a href=#253 id=253 data-nosnippet>253</a>    }
+<a href=#254 id=254 data-nosnippet>254</a>}
+<a href=#255 id=255 data-nosnippet>255</a>
+<a href=#256 id=256 data-nosnippet>256</a><span class="kw">impl</span>&lt;T&gt; FromColorUnclamped&lt;Oklab&lt;T&gt;&gt; <span class="kw">for </span>Oklab&lt;T&gt; {
+<a href=#257 id=257 data-nosnippet>257</a>    <span class="kw">fn </span>from_color_unclamped(color: <span class="self">Self</span>) -&gt; <span class="self">Self </span>{
+<a href=#258 id=258 data-nosnippet>258</a>        color
+<a href=#259 id=259 data-nosnippet>259</a>    }
+<a href=#260 id=260 data-nosnippet>260</a>}
+<a href=#261 id=261 data-nosnippet>261</a>
+<a href=#262 id=262 data-nosnippet>262</a><span class="kw">impl</span>&lt;T&gt; FromColorUnclamped&lt;Xyz&lt;D65, T&gt;&gt; <span class="kw">for </span>Oklab&lt;T&gt;
+<a href=#263 id=263 data-nosnippet>263</a><span class="kw">where
+<a href=#264 id=264 data-nosnippet>264</a>    </span>T: Real + Cbrt + Arithmetics,
+<a href=#265 id=265 data-nosnippet>265</a>{
+<a href=#266 id=266 data-nosnippet>266</a>    <span class="kw">fn </span>from_color_unclamped(color: Xyz&lt;D65, T&gt;) -&gt; <span class="self">Self </span>{
+<a href=#267 id=267 data-nosnippet>267</a>        <span class="kw">let </span>m1 = m1();
+<a href=#268 id=268 data-nosnippet>268</a>        <span class="kw">let </span>m2 = m2();
+<a href=#269 id=269 data-nosnippet>269</a>
+<a href=#270 id=270 data-nosnippet>270</a>        <span class="kw">let </span>Xyz {
+<a href=#271 id=271 data-nosnippet>271</a>            x: l, y: m, z: s, ..
+<a href=#272 id=272 data-nosnippet>272</a>        } = multiply_xyz(m1, color.with_white_point());
+<a href=#273 id=273 data-nosnippet>273</a>
+<a href=#274 id=274 data-nosnippet>274</a>        <span class="kw">let </span>l_m_s_ = Xyz::new(l.cbrt(), m.cbrt(), s.cbrt());
+<a href=#275 id=275 data-nosnippet>275</a>
+<a href=#276 id=276 data-nosnippet>276</a>        <span class="kw">let </span>Xyz {
+<a href=#277 id=277 data-nosnippet>277</a>            x: l, y: a, z: b, ..
+<a href=#278 id=278 data-nosnippet>278</a>        } = multiply_xyz(m2, l_m_s_);
+<a href=#279 id=279 data-nosnippet>279</a>
+<a href=#280 id=280 data-nosnippet>280</a>        <span class="self">Self</span>::new(l, a, b)
+<a href=#281 id=281 data-nosnippet>281</a>    }
+<a href=#282 id=282 data-nosnippet>282</a>}
+<a href=#283 id=283 data-nosnippet>283</a>
+<a href=#284 id=284 data-nosnippet>284</a><span class="kw">fn </span>linear_srgb_to_oklab&lt;T&gt;(c: LinSrgb&lt;T&gt;) -&gt; Oklab&lt;T&gt;
+<a href=#285 id=285 data-nosnippet>285</a><span class="kw">where
+<a href=#286 id=286 data-nosnippet>286</a>    </span>T: Real + Arithmetics + Cbrt + Copy,
+<a href=#287 id=287 data-nosnippet>287</a>{
+<a href=#288 id=288 data-nosnippet>288</a>    <span class="kw">let </span>l = T::from_f64(<span class="number">0.4122214708</span>) * c.red
+<a href=#289 id=289 data-nosnippet>289</a>        + T::from_f64(<span class="number">0.5363325363</span>) * c.green
+<a href=#290 id=290 data-nosnippet>290</a>        + T::from_f64(<span class="number">0.0514459929</span>) * c.blue;
+<a href=#291 id=291 data-nosnippet>291</a>    <span class="kw">let </span>m = T::from_f64(<span class="number">0.2119034982</span>) * c.red
+<a href=#292 id=292 data-nosnippet>292</a>        + T::from_f64(<span class="number">0.6806995451</span>) * c.green
+<a href=#293 id=293 data-nosnippet>293</a>        + T::from_f64(<span class="number">0.1073969566</span>) * c.blue;
+<a href=#294 id=294 data-nosnippet>294</a>    <span class="kw">let </span>s = T::from_f64(<span class="number">0.0883024619</span>) * c.red
+<a href=#295 id=295 data-nosnippet>295</a>        + T::from_f64(<span class="number">0.2817188376</span>) * c.green
+<a href=#296 id=296 data-nosnippet>296</a>        + T::from_f64(<span class="number">0.6299787005</span>) * c.blue;
+<a href=#297 id=297 data-nosnippet>297</a>
+<a href=#298 id=298 data-nosnippet>298</a>    <span class="kw">let </span>l_ = l.cbrt();
+<a href=#299 id=299 data-nosnippet>299</a>    <span class="kw">let </span>m_ = m.cbrt();
+<a href=#300 id=300 data-nosnippet>300</a>    <span class="kw">let </span>s_ = s.cbrt();
+<a href=#301 id=301 data-nosnippet>301</a>
+<a href=#302 id=302 data-nosnippet>302</a>    Oklab::new(
+<a href=#303 id=303 data-nosnippet>303</a>        T::from_f64(<span class="number">0.2104542553</span>) * l_ + T::from_f64(<span class="number">0.7936177850</span>) * m_
+<a href=#304 id=304 data-nosnippet>304</a>            - T::from_f64(<span class="number">0.0040720468</span>) * s_,
+<a href=#305 id=305 data-nosnippet>305</a>        T::from_f64(<span class="number">1.9779984951</span>) * l_ - T::from_f64(<span class="number">2.4285922050</span>) * m_
+<a href=#306 id=306 data-nosnippet>306</a>            + T::from_f64(<span class="number">0.4505937099</span>) * s_,
+<a href=#307 id=307 data-nosnippet>307</a>        T::from_f64(<span class="number">0.0259040371</span>) * l_ + T::from_f64(<span class="number">0.7827717662</span>) * m_
+<a href=#308 id=308 data-nosnippet>308</a>            - T::from_f64(<span class="number">0.8086757660</span>) * s_,
+<a href=#309 id=309 data-nosnippet>309</a>    )
+<a href=#310 id=310 data-nosnippet>310</a>}
+<a href=#311 id=311 data-nosnippet>311</a>
+<a href=#312 id=312 data-nosnippet>312</a><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>oklab_to_linear_srgb&lt;T&gt;(c: Oklab&lt;T&gt;) -&gt; LinSrgb&lt;T&gt;
+<a href=#313 id=313 data-nosnippet>313</a><span class="kw">where
+<a href=#314 id=314 data-nosnippet>314</a>    </span>T: Real + Arithmetics + Copy,
+<a href=#315 id=315 data-nosnippet>315</a>{
+<a href=#316 id=316 data-nosnippet>316</a>    <span class="kw">let </span>l_ = c.l + T::from_f64(<span class="number">0.3963377774</span>) * c.a + T::from_f64(<span class="number">0.2158037573</span>) * c.b;
+<a href=#317 id=317 data-nosnippet>317</a>    <span class="kw">let </span>m_ = c.l - T::from_f64(<span class="number">0.1055613458</span>) * c.a - T::from_f64(<span class="number">0.0638541728</span>) * c.b;
+<a href=#318 id=318 data-nosnippet>318</a>    <span class="kw">let </span>s_ = c.l - T::from_f64(<span class="number">0.0894841775</span>) * c.a - T::from_f64(<span class="number">1.2914855480</span>) * c.b;
+<a href=#319 id=319 data-nosnippet>319</a>
+<a href=#320 id=320 data-nosnippet>320</a>    <span class="kw">let </span>l = l_ * l_ * l_;
+<a href=#321 id=321 data-nosnippet>321</a>    <span class="kw">let </span>m = m_ * m_ * m_;
+<a href=#322 id=322 data-nosnippet>322</a>    <span class="kw">let </span>s = s_ * s_ * s_;
+<a href=#323 id=323 data-nosnippet>323</a>
+<a href=#324 id=324 data-nosnippet>324</a>    LinSrgb::new(
+<a href=#325 id=325 data-nosnippet>325</a>        T::from_f64(<span class="number">4.0767416621</span>) * l - T::from_f64(<span class="number">3.3077115913</span>) * m
+<a href=#326 id=326 data-nosnippet>326</a>            + T::from_f64(<span class="number">0.2309699292</span>) * s,
+<a href=#327 id=327 data-nosnippet>327</a>        T::from_f64(-<span class="number">1.2684380046</span>) * l + T::from_f64(<span class="number">2.6097574011</span>) * m
+<a href=#328 id=328 data-nosnippet>328</a>            - T::from_f64(<span class="number">0.3413193965</span>) * s,
+<a href=#329 id=329 data-nosnippet>329</a>        T::from_f64(-<span class="number">0.0041960863</span>) * l - T::from_f64(<span class="number">0.7034186147</span>) * m
+<a href=#330 id=330 data-nosnippet>330</a>            + T::from_f64(<span class="number">1.7076147010</span>) * s,
+<a href=#331 id=331 data-nosnippet>331</a>    )
+<a href=#332 id=332 data-nosnippet>332</a>}
+<a href=#333 id=333 data-nosnippet>333</a>
+<a href=#334 id=334 data-nosnippet>334</a><span class="kw">impl</span>&lt;S, T&gt; FromColorUnclamped&lt;Rgb&lt;S, T&gt;&gt; <span class="kw">for </span>Oklab&lt;T&gt;
+<a href=#335 id=335 data-nosnippet>335</a><span class="kw">where
+<a href=#336 id=336 data-nosnippet>336</a>    </span>T: Real + Cbrt + Arithmetics + Copy,
+<a href=#337 id=337 data-nosnippet>337</a>    S: RgbStandard,
+<a href=#338 id=338 data-nosnippet>338</a>    S::TransferFn: IntoLinear&lt;T, T&gt;,
+<a href=#339 id=339 data-nosnippet>339</a>    S::Space: RgbSpace&lt;WhitePoint = D65&gt; + <span class="lifetime">'static</span>,
+<a href=#340 id=340 data-nosnippet>340</a>    Xyz&lt;D65, T&gt;: FromColorUnclamped&lt;Rgb&lt;S, T&gt;&gt;,
+<a href=#341 id=341 data-nosnippet>341</a>{
+<a href=#342 id=342 data-nosnippet>342</a>    <span class="kw">fn </span>from_color_unclamped(rgb: Rgb&lt;S, T&gt;) -&gt; <span class="self">Self </span>{
+<a href=#343 id=343 data-nosnippet>343</a>        <span class="kw">if </span>TypeId::of::&lt;&lt;S <span class="kw">as </span>RgbStandard&gt;::Space&gt;() == TypeId::of::&lt;Srgb&gt;() {
+<a href=#344 id=344 data-nosnippet>344</a>            <span class="comment">// Use direct sRGB to Oklab conversion
+<a href=#345 id=345 data-nosnippet>345</a>            // Rounding errors are likely a contributing factor to differences.
+<a href=#346 id=346 data-nosnippet>346</a>            // Also the conversion via XYZ doesn't use pre-defined matrices (yet)
+<a href=#347 id=347 data-nosnippet>347</a>            </span>linear_srgb_to_oklab(rgb.into_linear().reinterpret_as())
+<a href=#348 id=348 data-nosnippet>348</a>        } <span class="kw">else </span>{
+<a href=#349 id=349 data-nosnippet>349</a>            <span class="comment">// Convert via XYZ
+<a href=#350 id=350 data-nosnippet>350</a>            </span>Xyz::from_color_unclamped(rgb).into_color_unclamped()
+<a href=#351 id=351 data-nosnippet>351</a>        }
+<a href=#352 id=352 data-nosnippet>352</a>    }
+<a href=#353 id=353 data-nosnippet>353</a>}
+<a href=#354 id=354 data-nosnippet>354</a>
+<a href=#355 id=355 data-nosnippet>355</a><span class="kw">impl</span>&lt;T&gt; FromColorUnclamped&lt;Oklch&lt;T&gt;&gt; <span class="kw">for </span>Oklab&lt;T&gt;
+<a href=#356 id=356 data-nosnippet>356</a><span class="kw">where
+<a href=#357 id=357 data-nosnippet>357</a>    </span>T: RealAngle + Zero + MinMax + Trigonometry + Mul&lt;Output = T&gt; + Clone,
+<a href=#358 id=358 data-nosnippet>358</a>{
+<a href=#359 id=359 data-nosnippet>359</a>    <span class="kw">fn </span>from_color_unclamped(color: Oklch&lt;T&gt;) -&gt; <span class="self">Self </span>{
+<a href=#360 id=360 data-nosnippet>360</a>        <span class="kw">let </span>(a, b) = color.hue.into_cartesian();
+<a href=#361 id=361 data-nosnippet>361</a>        <span class="kw">let </span>chroma = color.chroma.max(T::zero());
+<a href=#362 id=362 data-nosnippet>362</a>
+<a href=#363 id=363 data-nosnippet>363</a>        Oklab {
+<a href=#364 id=364 data-nosnippet>364</a>            l: color.l,
+<a href=#365 id=365 data-nosnippet>365</a>            a: a * chroma.clone(),
+<a href=#366 id=366 data-nosnippet>366</a>            b: b * chroma,
+<a href=#367 id=367 data-nosnippet>367</a>        }
+<a href=#368 id=368 data-nosnippet>368</a>    }
+<a href=#369 id=369 data-nosnippet>369</a>}
+<a href=#370 id=370 data-nosnippet>370</a>
+<a href=#371 id=371 data-nosnippet>371</a><span class="doccomment">/// # See
+<a href=#372 id=372 data-nosnippet>372</a>/// See [`okhsl_to_srgb`](https://bottosson.github.io/posts/colorpicker/#hsl-2)
+<a href=#373 id=373 data-nosnippet>373</a></span><span class="kw">impl</span>&lt;T&gt; FromColorUnclamped&lt;Okhsl&lt;T&gt;&gt; <span class="kw">for </span>Oklab&lt;T&gt;
+<a href=#374 id=374 data-nosnippet>374</a><span class="kw">where
+<a href=#375 id=375 data-nosnippet>375</a>    </span>T: RealAngle
+<a href=#376 id=376 data-nosnippet>376</a>        + One
+<a href=#377 id=377 data-nosnippet>377</a>        + Zero
+<a href=#378 id=378 data-nosnippet>378</a>        + Arithmetics
+<a href=#379 id=379 data-nosnippet>379</a>        + Sqrt
+<a href=#380 id=380 data-nosnippet>380</a>        + MinMax
+<a href=#381 id=381 data-nosnippet>381</a>        + PartialOrd
+<a href=#382 id=382 data-nosnippet>382</a>        + HasBoolMask&lt;Mask = bool&gt;
+<a href=#383 id=383 data-nosnippet>383</a>        + Powi
+<a href=#384 id=384 data-nosnippet>384</a>        + Cbrt
+<a href=#385 id=385 data-nosnippet>385</a>        + Trigonometry
+<a href=#386 id=386 data-nosnippet>386</a>        + Clone,
+<a href=#387 id=387 data-nosnippet>387</a>    Oklab&lt;T&gt;: IntoColorUnclamped&lt;LinSrgb&lt;T&gt;&gt;,
+<a href=#388 id=388 data-nosnippet>388</a>{
+<a href=#389 id=389 data-nosnippet>389</a>    <span class="kw">fn </span>from_color_unclamped(hsl: Okhsl&lt;T&gt;) -&gt; <span class="self">Self </span>{
+<a href=#390 id=390 data-nosnippet>390</a>        <span class="kw">let </span>h = hsl.hue;
+<a href=#391 id=391 data-nosnippet>391</a>        <span class="kw">let </span>s = hsl.saturation;
+<a href=#392 id=392 data-nosnippet>392</a>        <span class="kw">let </span>l = hsl.lightness;
+<a href=#393 id=393 data-nosnippet>393</a>
+<a href=#394 id=394 data-nosnippet>394</a>        <span class="kw">if </span>l == T::one() {
+<a href=#395 id=395 data-nosnippet>395</a>            <span class="kw">return </span>Oklab::new(T::one(), T::zero(), T::zero());
+<a href=#396 id=396 data-nosnippet>396</a>        } <span class="kw">else if </span>l == T::zero() {
+<a href=#397 id=397 data-nosnippet>397</a>            <span class="kw">return </span>Oklab::new(T::zero(), T::zero(), T::zero());
+<a href=#398 id=398 data-nosnippet>398</a>        }
+<a href=#399 id=399 data-nosnippet>399</a>
+<a href=#400 id=400 data-nosnippet>400</a>        <span class="kw">let </span>(a_, b_) = h.into_cartesian();
+<a href=#401 id=401 data-nosnippet>401</a>        <span class="kw">let </span>oklab_lightness = toe_inv(l);
+<a href=#402 id=402 data-nosnippet>402</a>
+<a href=#403 id=403 data-nosnippet>403</a>        <span class="kw">let </span>cs = ChromaValues::from_normalized(oklab_lightness.clone(), a_.clone(), b_.clone());
+<a href=#404 id=404 data-nosnippet>404</a>
+<a href=#405 id=405 data-nosnippet>405</a>        <span class="comment">// Interpolate the three values for C so that:
+<a href=#406 id=406 data-nosnippet>406</a>        // At s=0: dC/ds = cs.zero, C = 0
+<a href=#407 id=407 data-nosnippet>407</a>        // At s=0.8: C = cs.mid
+<a href=#408 id=408 data-nosnippet>408</a>        // At s=1.0: C = cs.max
+<a href=#409 id=409 data-nosnippet>409</a>
+<a href=#410 id=410 data-nosnippet>410</a>        </span><span class="kw">let </span>mid = T::from_f64(<span class="number">0.8</span>);
+<a href=#411 id=411 data-nosnippet>411</a>        <span class="kw">let </span>mid_inv = T::from_f64(<span class="number">1.25</span>);
+<a href=#412 id=412 data-nosnippet>412</a>
+<a href=#413 id=413 data-nosnippet>413</a>        <span class="kw">let </span>chroma = <span class="kw">if </span>s &lt; mid {
+<a href=#414 id=414 data-nosnippet>414</a>            <span class="kw">let </span>t = mid_inv * s;
+<a href=#415 id=415 data-nosnippet>415</a>
+<a href=#416 id=416 data-nosnippet>416</a>            <span class="kw">let </span>k_1 = mid * cs.zero;
+<a href=#417 id=417 data-nosnippet>417</a>            <span class="kw">let </span>k_2 = T::one() - k_1.clone() / cs.mid;
+<a href=#418 id=418 data-nosnippet>418</a>
+<a href=#419 id=419 data-nosnippet>419</a>            t.clone() * k_1 / (T::one() - k_2 * t)
+<a href=#420 id=420 data-nosnippet>420</a>        } <span class="kw">else </span>{
+<a href=#421 id=421 data-nosnippet>421</a>            <span class="kw">let </span>t = (s - <span class="kw-2">&amp;</span>mid) / (T::one() - <span class="kw-2">&amp;</span>mid);
+<a href=#422 id=422 data-nosnippet>422</a>
+<a href=#423 id=423 data-nosnippet>423</a>            <span class="kw">let </span>k_0 = cs.mid.clone();
+<a href=#424 id=424 data-nosnippet>424</a>            <span class="kw">let </span>k_1 = (T::one() - mid) * <span class="kw-2">&amp;</span>cs.mid * <span class="kw-2">&amp;</span>cs.mid * <span class="kw-2">&amp;</span>mid_inv * mid_inv / cs.zero;
+<a href=#425 id=425 data-nosnippet>425</a>            <span class="kw">let </span>k_2 = T::one() - k_1.clone() / (cs.max - cs.mid);
+<a href=#426 id=426 data-nosnippet>426</a>
+<a href=#427 id=427 data-nosnippet>427</a>            k_0 + t.clone() * k_1 / (T::one() - k_2 * t)
+<a href=#428 id=428 data-nosnippet>428</a>        };
+<a href=#429 id=429 data-nosnippet>429</a>
+<a href=#430 id=430 data-nosnippet>430</a>        Oklab::new(oklab_lightness, chroma.clone() * a_, chroma * b_)
+<a href=#431 id=431 data-nosnippet>431</a>    }
+<a href=#432 id=432 data-nosnippet>432</a>}
+<a href=#433 id=433 data-nosnippet>433</a>
+<a href=#434 id=434 data-nosnippet>434</a><span class="kw">impl</span>&lt;T&gt; FromColorUnclamped&lt;Okhsv&lt;T&gt;&gt; <span class="kw">for </span>Oklab&lt;T&gt;
+<a href=#435 id=435 data-nosnippet>435</a><span class="kw">where
+<a href=#436 id=436 data-nosnippet>436</a>    </span>T: RealAngle
+<a href=#437 id=437 data-nosnippet>437</a>        + PartialOrd
+<a href=#438 id=438 data-nosnippet>438</a>        + HasBoolMask&lt;Mask = bool&gt;
+<a href=#439 id=439 data-nosnippet>439</a>        + MinMax
+<a href=#440 id=440 data-nosnippet>440</a>        + Powi
+<a href=#441 id=441 data-nosnippet>441</a>        + Arithmetics
+<a href=#442 id=442 data-nosnippet>442</a>        + Clone
+<a href=#443 id=443 data-nosnippet>443</a>        + One
+<a href=#444 id=444 data-nosnippet>444</a>        + Zero
+<a href=#445 id=445 data-nosnippet>445</a>        + Cbrt
+<a href=#446 id=446 data-nosnippet>446</a>        + Trigonometry,
+<a href=#447 id=447 data-nosnippet>447</a>    Oklab&lt;T&gt;: IntoColorUnclamped&lt;LinSrgb&lt;T&gt;&gt;,
+<a href=#448 id=448 data-nosnippet>448</a>{
+<a href=#449 id=449 data-nosnippet>449</a>    <span class="kw">fn </span>from_color_unclamped(hsv: Okhsv&lt;T&gt;) -&gt; <span class="self">Self </span>{
+<a href=#450 id=450 data-nosnippet>450</a>        <span class="kw">if </span>hsv.value == T::zero() {
+<a href=#451 id=451 data-nosnippet>451</a>            <span class="comment">// pure black
+<a href=#452 id=452 data-nosnippet>452</a>            </span><span class="kw">return </span><span class="self">Self </span>{
+<a href=#453 id=453 data-nosnippet>453</a>                l: T::zero(),
+<a href=#454 id=454 data-nosnippet>454</a>                a: T::zero(),
+<a href=#455 id=455 data-nosnippet>455</a>                b: T::zero(),
+<a href=#456 id=456 data-nosnippet>456</a>            };
+<a href=#457 id=457 data-nosnippet>457</a>        }
+<a href=#458 id=458 data-nosnippet>458</a>
+<a href=#459 id=459 data-nosnippet>459</a>        <span class="kw">if </span>hsv.saturation == T::zero() {
+<a href=#460 id=460 data-nosnippet>460</a>            <span class="comment">// totally desaturated color -- the triangle is just the 0-chroma-line
+<a href=#461 id=461 data-nosnippet>461</a>            </span><span class="kw">let </span>l = toe_inv(hsv.value);
+<a href=#462 id=462 data-nosnippet>462</a>            <span class="kw">return </span><span class="self">Self </span>{
+<a href=#463 id=463 data-nosnippet>463</a>                l,
+<a href=#464 id=464 data-nosnippet>464</a>                a: T::zero(),
+<a href=#465 id=465 data-nosnippet>465</a>                b: T::zero(),
+<a href=#466 id=466 data-nosnippet>466</a>            };
+<a href=#467 id=467 data-nosnippet>467</a>        }
+<a href=#468 id=468 data-nosnippet>468</a>
+<a href=#469 id=469 data-nosnippet>469</a>        <span class="kw">let </span>h_radians = hsv.hue.into_raw_radians();
+<a href=#470 id=470 data-nosnippet>470</a>        <span class="kw">let </span>a_ = T::cos(h_radians.clone());
+<a href=#471 id=471 data-nosnippet>471</a>        <span class="kw">let </span>b_ = T::sin(h_radians);
+<a href=#472 id=472 data-nosnippet>472</a>
+<a href=#473 id=473 data-nosnippet>473</a>        <span class="kw">let </span>cusp = LC::find_cusp(a_.clone(), b_.clone());
+<a href=#474 id=474 data-nosnippet>474</a>        <span class="kw">let </span>cusp: ST&lt;T&gt; = cusp.into();
+<a href=#475 id=475 data-nosnippet>475</a>        <span class="kw">let </span>s_0 = T::from_f64(<span class="number">0.5</span>);
+<a href=#476 id=476 data-nosnippet>476</a>        <span class="kw">let </span>k = T::one() - s_0.clone() / cusp.s;
+<a href=#477 id=477 data-nosnippet>477</a>
+<a href=#478 id=478 data-nosnippet>478</a>        <span class="comment">// first we compute L and V as if the gamut is a perfect triangle
+<a href=#479 id=479 data-nosnippet>479</a>
+<a href=#480 id=480 data-nosnippet>480</a>        // L, C, when v == 1:
+<a href=#481 id=481 data-nosnippet>481</a>        </span><span class="kw">let </span>l_v = T::one()
+<a href=#482 id=482 data-nosnippet>482</a>            - hsv.saturation.clone() * s_0.clone()
+<a href=#483 id=483 data-nosnippet>483</a>                / (s_0.clone() + <span class="kw-2">&amp;</span>cusp.t - cusp.t.clone() * <span class="kw-2">&amp;</span>k * <span class="kw-2">&amp;</span>hsv.saturation);
+<a href=#484 id=484 data-nosnippet>484</a>        <span class="kw">let </span>c_v =
+<a href=#485 id=485 data-nosnippet>485</a>            hsv.saturation.clone() * <span class="kw-2">&amp;</span>cusp.t * <span class="kw-2">&amp;</span>s_0 / (s_0 + <span class="kw-2">&amp;</span>cusp.t - cusp.t * k * hsv.saturation);
+<a href=#486 id=486 data-nosnippet>486</a>
+<a href=#487 id=487 data-nosnippet>487</a>        <span class="comment">// then we compensate for both toe and the curved top part of the triangle:
+<a href=#488 id=488 data-nosnippet>488</a>        </span><span class="kw">let </span>l_vt = toe_inv(l_v.clone());
+<a href=#489 id=489 data-nosnippet>489</a>        <span class="kw">let </span>c_vt = c_v.clone() * <span class="kw-2">&amp;</span>l_vt / <span class="kw-2">&amp;</span>l_v;
+<a href=#490 id=490 data-nosnippet>490</a>
+<a href=#491 id=491 data-nosnippet>491</a>        <span class="kw">let </span><span class="kw-2">mut </span>lightness = hsv.value.clone() * l_v;
+<a href=#492 id=492 data-nosnippet>492</a>        <span class="kw">let </span><span class="kw-2">mut </span>chroma = hsv.value * c_v;
+<a href=#493 id=493 data-nosnippet>493</a>        <span class="kw">let </span>lightness_new = toe_inv(lightness.clone());
+<a href=#494 id=494 data-nosnippet>494</a>        chroma = chroma * <span class="kw-2">&amp;</span>lightness_new / lightness;
+<a href=#495 id=495 data-nosnippet>495</a>        <span class="comment">// the values may be outside the normal range
+<a href=#496 id=496 data-nosnippet>496</a>        </span><span class="kw">let </span>rgb_scale: LinSrgb&lt;T&gt; =
+<a href=#497 id=497 data-nosnippet>497</a>            Oklab::new(l_vt, a_.clone() * <span class="kw-2">&amp;</span>c_vt, b_.clone() * c_vt).into_color_unclamped();
+<a href=#498 id=498 data-nosnippet>498</a>        <span class="kw">let </span>lightness_scale_factor = T::cbrt(
+<a href=#499 id=499 data-nosnippet>499</a>            T::one()
+<a href=#500 id=500 data-nosnippet>500</a>                / T::max(
+<a href=#501 id=501 data-nosnippet>501</a>                    T::max(rgb_scale.red, rgb_scale.green),
+<a href=#502 id=502 data-nosnippet>502</a>                    T::max(rgb_scale.blue, T::zero()),
+<a href=#503 id=503 data-nosnippet>503</a>                ),
+<a href=#504 id=504 data-nosnippet>504</a>        );
+<a href=#505 id=505 data-nosnippet>505</a>
+<a href=#506 id=506 data-nosnippet>506</a>        lightness = lightness_new * <span class="kw-2">&amp;</span>lightness_scale_factor;
+<a href=#507 id=507 data-nosnippet>507</a>        chroma = chroma * lightness_scale_factor;
+<a href=#508 id=508 data-nosnippet>508</a>
+<a href=#509 id=509 data-nosnippet>509</a>        Oklab::new(lightness, chroma.clone() * a_, chroma * b_)
+<a href=#510 id=510 data-nosnippet>510</a>    }
+<a href=#511 id=511 data-nosnippet>511</a>}
+<a href=#512 id=512 data-nosnippet>512</a>
+<a href=#513 id=513 data-nosnippet>513</a><span class="macro">impl_tuple_conversion!</span>(Oklab <span class="kw">as </span>(T, T, T));
+<a href=#514 id=514 data-nosnippet>514</a>
+<a href=#515 id=515 data-nosnippet>515</a><span class="kw">impl</span>&lt;T&gt; HasBoolMask <span class="kw">for </span>Oklab&lt;T&gt;
+<a href=#516 id=516 data-nosnippet>516</a><span class="kw">where
+<a href=#517 id=517 data-nosnippet>517</a>    </span>T: HasBoolMask,
+<a href=#518 id=518 data-nosnippet>518</a>{
+<a href=#519 id=519 data-nosnippet>519</a>    <span class="kw">type </span>Mask = T::Mask;
+<a href=#520 id=520 data-nosnippet>520</a>}
+<a href=#521 id=521 data-nosnippet>521</a>
+<a href=#522 id=522 data-nosnippet>522</a><span class="kw">impl</span>&lt;T&gt; Default <span class="kw">for </span>Oklab&lt;T&gt;
+<a href=#523 id=523 data-nosnippet>523</a><span class="kw">where
+<a href=#524 id=524 data-nosnippet>524</a>    </span>T: Zero,
+<a href=#525 id=525 data-nosnippet>525</a>{
+<a href=#526 id=526 data-nosnippet>526</a>    <span class="kw">fn </span>default() -&gt; <span class="self">Self </span>{
+<a href=#527 id=527 data-nosnippet>527</a>        <span class="self">Self</span>::new(T::zero(), T::zero(), T::zero())
+<a href=#528 id=528 data-nosnippet>528</a>    }
+<a href=#529 id=529 data-nosnippet>529</a>}
+<a href=#530 id=530 data-nosnippet>530</a>
+<a href=#531 id=531 data-nosnippet>531</a><span class="attr">#[cfg(feature = <span class="string">"bytemuck"</span>)]
+<a href=#532 id=532 data-nosnippet>532</a></span><span class="kw">unsafe impl</span>&lt;T&gt; bytemuck::Zeroable <span class="kw">for </span>Oklab&lt;T&gt; <span class="kw">where </span>T: bytemuck::Zeroable {}
+<a href=#533 id=533 data-nosnippet>533</a>
+<a href=#534 id=534 data-nosnippet>534</a><span class="attr">#[cfg(feature = <span class="string">"bytemuck"</span>)]
+<a href=#535 id=535 data-nosnippet>535</a></span><span class="kw">unsafe impl</span>&lt;T&gt; bytemuck::Pod <span class="kw">for </span>Oklab&lt;T&gt; <span class="kw">where </span>T: bytemuck::Pod {}
+<a href=#536 id=536 data-nosnippet>536</a>
+<a href=#537 id=537 data-nosnippet>537</a><span class="attr">#[cfg(test)]
+<a href=#538 id=538 data-nosnippet>538</a></span><span class="kw">mod </span>test {
+<a href=#539 id=539 data-nosnippet>539</a>    <span class="kw">use </span><span class="kw">crate</span>::Oklab;
+<a href=#540 id=540 data-nosnippet>540</a>
+<a href=#541 id=541 data-nosnippet>541</a>    <span class="macro">test_convert_into_from_xyz!</span>(Oklab);
+<a href=#542 id=542 data-nosnippet>542</a>
+<a href=#543 id=543 data-nosnippet>543</a>    <span class="attr">#[cfg(feature = <span class="string">"approx"</span>)]
+<a href=#544 id=544 data-nosnippet>544</a>    </span><span class="kw">mod </span>conversion {
+<a href=#545 id=545 data-nosnippet>545</a>        <span class="kw">use </span>core::str::FromStr;
+<a href=#546 id=546 data-nosnippet>546</a>
+<a href=#547 id=547 data-nosnippet>547</a>        <span class="kw">use crate</span>::{
+<a href=#548 id=548 data-nosnippet>548</a>            convert::FromColorUnclamped, rgb::Rgb, visual::VisuallyEqual, white_point::D65,
+<a href=#549 id=549 data-nosnippet>549</a>            FromColor, Lab, LinSrgb, Oklab, Srgb,
+<a href=#550 id=550 data-nosnippet>550</a>        };
+<a href=#551 id=551 data-nosnippet>551</a>
+<a href=#552 id=552 data-nosnippet>552</a>        <span class="doccomment">/// Asserts that, for any color space, the lightness of pure white is converted to `l == 1.0`
+<a href=#553 id=553 data-nosnippet>553</a>        </span><span class="attr">#[test]
+<a href=#554 id=554 data-nosnippet>554</a>        </span><span class="kw">fn </span>lightness_of_white_is_one() {
+<a href=#555 id=555 data-nosnippet>555</a>            <span class="kw">let </span>rgb: Srgb&lt;f64&gt; = Rgb::from_str(<span class="string">"#ffffff"</span>).unwrap().into_format();
+<a href=#556 id=556 data-nosnippet>556</a>            <span class="kw">let </span>lin_rgb = LinSrgb::from_color_unclamped(rgb);
+<a href=#557 id=557 data-nosnippet>557</a>            <span class="kw">let </span>oklab = Oklab::from_color_unclamped(lin_rgb);
+<a href=#558 id=558 data-nosnippet>558</a>            <span class="macro">println!</span>(<span class="string">"white {rgb:?} == {oklab:?}"</span>);
+<a href=#559 id=559 data-nosnippet>559</a>            <span class="macro">assert_abs_diff_eq!</span>(oklab.l, <span class="number">1.0</span>, epsilon = <span class="number">1e-7</span>);
+<a href=#560 id=560 data-nosnippet>560</a>            <span class="macro">assert_abs_diff_eq!</span>(oklab.a, <span class="number">0.0</span>, epsilon = <span class="number">1e-7</span>);
+<a href=#561 id=561 data-nosnippet>561</a>            <span class="macro">assert_abs_diff_eq!</span>(oklab.b, <span class="number">0.0</span>, epsilon = <span class="number">1e-7</span>);
+<a href=#562 id=562 data-nosnippet>562</a>
+<a href=#563 id=563 data-nosnippet>563</a>            <span class="kw">let </span>lab: Lab&lt;D65, f64&gt; = Lab::from_components((<span class="number">100.0</span>, <span class="number">0.0</span>, <span class="number">0.0</span>));
+<a href=#564 id=564 data-nosnippet>564</a>            <span class="kw">let </span>rgb: Srgb&lt;f64&gt; = Srgb::from_color_unclamped(lab);
+<a href=#565 id=565 data-nosnippet>565</a>            <span class="kw">let </span>oklab = Oklab::from_color_unclamped(lab);
+<a href=#566 id=566 data-nosnippet>566</a>            <span class="macro">println!</span>(<span class="string">"white {lab:?} == {rgb:?} == {oklab:?}"</span>);
+<a href=#567 id=567 data-nosnippet>567</a>            <span class="macro">assert_abs_diff_eq!</span>(oklab.l, <span class="number">1.0</span>, epsilon = <span class="number">1e-4</span>);
+<a href=#568 id=568 data-nosnippet>568</a>            <span class="macro">assert_abs_diff_eq!</span>(oklab.a, <span class="number">0.0</span>, epsilon = <span class="number">1e-4</span>);
+<a href=#569 id=569 data-nosnippet>569</a>            <span class="macro">assert_abs_diff_eq!</span>(oklab.b, <span class="number">0.0</span>, epsilon = <span class="number">1e-4</span>);
+<a href=#570 id=570 data-nosnippet>570</a>        }
+<a href=#571 id=571 data-nosnippet>571</a>
+<a href=#572 id=572 data-nosnippet>572</a>        <span class="attr">#[test]
+<a href=#573 id=573 data-nosnippet>573</a>        </span><span class="kw">fn </span>blue_srgb() {
+<a href=#574 id=574 data-nosnippet>574</a>            <span class="comment">// use f64 to be comparable to javascript
+<a href=#575 id=575 data-nosnippet>575</a>            </span><span class="kw">let </span>rgb: Srgb&lt;f64&gt; = Rgb::from_str(<span class="string">"#0000ff"</span>).unwrap().into_format();
+<a href=#576 id=576 data-nosnippet>576</a>            <span class="kw">let </span>lin_rgb = LinSrgb::from_color_unclamped(rgb);
+<a href=#577 id=577 data-nosnippet>577</a>            <span class="kw">let </span>oklab = Oklab::from_color_unclamped(lin_rgb);
+<a href=#578 id=578 data-nosnippet>578</a>
+<a href=#579 id=579 data-nosnippet>579</a>            <span class="comment">// values from Ok Color Picker, which seems to use  Björn Ottosson's original
+<a href=#580 id=580 data-nosnippet>580</a>            // algorithm (from the direct srgb2oklab conversion, not via the XYZ color space)
+<a href=#581 id=581 data-nosnippet>581</a>            </span><span class="macro">assert_abs_diff_eq!</span>(oklab.l, <span class="number">0.4520137183853429</span>, epsilon = <span class="number">1e-9</span>);
+<a href=#582 id=582 data-nosnippet>582</a>            <span class="macro">assert_abs_diff_eq!</span>(oklab.a, -<span class="number">0.03245698416876397</span>, epsilon = <span class="number">1e-9</span>);
+<a href=#583 id=583 data-nosnippet>583</a>            <span class="macro">assert_abs_diff_eq!</span>(oklab.b, -<span class="number">0.3115281476783751</span>, epsilon = <span class="number">1e-9</span>);
+<a href=#584 id=584 data-nosnippet>584</a>        }
+<a href=#585 id=585 data-nosnippet>585</a>
+<a href=#586 id=586 data-nosnippet>586</a>        <span class="attr">#[test]
+<a href=#587 id=587 data-nosnippet>587</a>        </span><span class="kw">fn </span>red() {
+<a href=#588 id=588 data-nosnippet>588</a>            <span class="kw">let </span>a = Oklab::from_color(LinSrgb::new(<span class="number">1.0</span>, <span class="number">0.0</span>, <span class="number">0.0</span>));
+<a href=#589 id=589 data-nosnippet>589</a>            <span class="comment">// from https://github.com/bottosson/bottosson.github.io/blob/master/misc/ok_color.h
+<a href=#590 id=590 data-nosnippet>590</a>            </span><span class="kw">let </span>b = Oklab::new(<span class="number">0.6279553606145516</span>, <span class="number">0.22486306106597395</span>, <span class="number">0.1258462985307351</span>);
+<a href=#591 id=591 data-nosnippet>591</a>            <span class="macro">assert!</span>(Oklab::visually_eq(a, b, <span class="number">1e-8</span>));
+<a href=#592 id=592 data-nosnippet>592</a>        }
+<a href=#593 id=593 data-nosnippet>593</a>
+<a href=#594 id=594 data-nosnippet>594</a>        <span class="attr">#[test]
+<a href=#595 id=595 data-nosnippet>595</a>        </span><span class="kw">fn </span>green() {
+<a href=#596 id=596 data-nosnippet>596</a>            <span class="kw">let </span>a = Oklab::from_color(LinSrgb::new(<span class="number">0.0</span>, <span class="number">1.0</span>, <span class="number">0.0</span>));
+<a href=#597 id=597 data-nosnippet>597</a>            <span class="comment">// from https://github.com/bottosson/bottosson.github.io/blob/master/misc/ok_color.h
+<a href=#598 id=598 data-nosnippet>598</a>            </span><span class="kw">let </span>b = Oklab::new(
+<a href=#599 id=599 data-nosnippet>599</a>                <span class="number">0.8664396115356694</span>,
+<a href=#600 id=600 data-nosnippet>600</a>                -<span class="number">0.23388757418790812</span>,
+<a href=#601 id=601 data-nosnippet>601</a>                <span class="number">0.17949847989672985</span>,
+<a href=#602 id=602 data-nosnippet>602</a>            );
+<a href=#603 id=603 data-nosnippet>603</a>            <span class="macro">assert!</span>(Oklab::visually_eq(a, b, <span class="number">1e-8</span>));
+<a href=#604 id=604 data-nosnippet>604</a>        }
+<a href=#605 id=605 data-nosnippet>605</a>
+<a href=#606 id=606 data-nosnippet>606</a>        <span class="attr">#[test]
+<a href=#607 id=607 data-nosnippet>607</a>        </span><span class="kw">fn </span>blue() {
+<a href=#608 id=608 data-nosnippet>608</a>            <span class="kw">let </span>a = Oklab::from_color(LinSrgb::new(<span class="number">0.0</span>, <span class="number">0.0</span>, <span class="number">1.0</span>));
+<a href=#609 id=609 data-nosnippet>609</a>            <span class="macro">println!</span>(<span class="string">"Oklab blue: {:?}"</span>, a);
+<a href=#610 id=610 data-nosnippet>610</a>            <span class="comment">// from https://github.com/bottosson/bottosson.github.io/blob/master/misc/ok_color.h
+<a href=#611 id=611 data-nosnippet>611</a>            </span><span class="kw">let </span>b = Oklab::new(<span class="number">0.4520137183853429</span>, -<span class="number">0.0324569841687640</span>, -<span class="number">0.3115281476783751</span>);
+<a href=#612 id=612 data-nosnippet>612</a>            <span class="macro">assert!</span>(Oklab::visually_eq(a, b, <span class="number">1e-8</span>));
+<a href=#613 id=613 data-nosnippet>613</a>        }
+<a href=#614 id=614 data-nosnippet>614</a>    }
+<a href=#615 id=615 data-nosnippet>615</a>
+<a href=#616 id=616 data-nosnippet>616</a>    <span class="attr">#[cfg(feature = <span class="string">"approx"</span>)]
+<a href=#617 id=617 data-nosnippet>617</a>    </span><span class="kw">mod </span>visually_eq {
+<a href=#618 id=618 data-nosnippet>618</a>        <span class="kw">use crate</span>::{visual::VisuallyEqual, Oklab};
+<a href=#619 id=619 data-nosnippet>619</a>
+<a href=#620 id=620 data-nosnippet>620</a>        <span class="attr">#[test]
+<a href=#621 id=621 data-nosnippet>621</a>        </span><span class="kw">fn </span>black_eq_different_black() {
+<a href=#622 id=622 data-nosnippet>622</a>            <span class="macro">assert!</span>(Oklab::visually_eq(
+<a href=#623 id=623 data-nosnippet>623</a>                Oklab::new(<span class="number">0.0</span>, <span class="number">1.0</span>, <span class="number">0.0</span>),
+<a href=#624 id=624 data-nosnippet>624</a>                Oklab::new(<span class="number">0.0</span>, <span class="number">0.0</span>, <span class="number">1.0</span>),
+<a href=#625 id=625 data-nosnippet>625</a>                <span class="number">1e-8
+<a href=#626 id=626 data-nosnippet>626</a>            </span>));
+<a href=#627 id=627 data-nosnippet>627</a>        }
+<a href=#628 id=628 data-nosnippet>628</a>
+<a href=#629 id=629 data-nosnippet>629</a>        <span class="attr">#[test]
+<a href=#630 id=630 data-nosnippet>630</a>        </span><span class="kw">fn </span>white_eq_different_white() {
+<a href=#631 id=631 data-nosnippet>631</a>            <span class="macro">assert!</span>(Oklab::visually_eq(
+<a href=#632 id=632 data-nosnippet>632</a>                Oklab::new(<span class="number">1.0</span>, <span class="number">1.0</span>, <span class="number">0.0</span>),
+<a href=#633 id=633 data-nosnippet>633</a>                Oklab::new(<span class="number">1.0</span>, <span class="number">0.0</span>, <span class="number">1.0</span>),
+<a href=#634 id=634 data-nosnippet>634</a>                <span class="number">1e-8
+<a href=#635 id=635 data-nosnippet>635</a>            </span>));
+<a href=#636 id=636 data-nosnippet>636</a>        }
+<a href=#637 id=637 data-nosnippet>637</a>
+<a href=#638 id=638 data-nosnippet>638</a>        <span class="attr">#[test]
+<a href=#639 id=639 data-nosnippet>639</a>        </span><span class="kw">fn </span>white_ne_black() {
+<a href=#640 id=640 data-nosnippet>640</a>            <span class="macro">assert!</span>(!Oklab::visually_eq(
+<a href=#641 id=641 data-nosnippet>641</a>                Oklab::new(<span class="number">1.0</span>, <span class="number">1.0</span>, <span class="number">0.0</span>),
+<a href=#642 id=642 data-nosnippet>642</a>                Oklab::new(<span class="number">0.0</span>, <span class="number">0.0</span>, <span class="number">1.0</span>),
+<a href=#643 id=643 data-nosnippet>643</a>                <span class="number">1e-8
+<a href=#644 id=644 data-nosnippet>644</a>            </span>));
+<a href=#645 id=645 data-nosnippet>645</a>            <span class="macro">assert!</span>(!Oklab::visually_eq(
+<a href=#646 id=646 data-nosnippet>646</a>                Oklab::new(<span class="number">1.0</span>, <span class="number">1.0</span>, <span class="number">0.0</span>),
+<a href=#647 id=647 data-nosnippet>647</a>                Oklab::new(<span class="number">0.0</span>, <span class="number">1.0</span>, <span class="number">0.0</span>),
+<a href=#648 id=648 data-nosnippet>648</a>                <span class="number">1e-8
+<a href=#649 id=649 data-nosnippet>649</a>            </span>));
+<a href=#650 id=650 data-nosnippet>650</a>        }
+<a href=#651 id=651 data-nosnippet>651</a>
+<a href=#652 id=652 data-nosnippet>652</a>        <span class="attr">#[test]
+<a href=#653 id=653 data-nosnippet>653</a>        </span><span class="kw">fn </span>non_bw_neq_different_non_bw() {
+<a href=#654 id=654 data-nosnippet>654</a>            <span class="macro">assert!</span>(!Oklab::visually_eq(
+<a href=#655 id=655 data-nosnippet>655</a>                Oklab::new(<span class="number">0.3</span>, <span class="number">1.0</span>, <span class="number">0.0</span>),
+<a href=#656 id=656 data-nosnippet>656</a>                Oklab::new(<span class="number">0.3</span>, <span class="number">0.0</span>, <span class="number">1.0</span>),
+<a href=#657 id=657 data-nosnippet>657</a>                <span class="number">1e-8
+<a href=#658 id=658 data-nosnippet>658</a>            </span>));
+<a href=#659 id=659 data-nosnippet>659</a>        }
+<a href=#660 id=660 data-nosnippet>660</a>    }
+<a href=#661 id=661 data-nosnippet>661</a>
+<a href=#662 id=662 data-nosnippet>662</a>    <span class="attr">#[test]
+<a href=#663 id=663 data-nosnippet>663</a>    </span><span class="kw">fn </span>ranges() {
+<a href=#664 id=664 data-nosnippet>664</a>        <span class="macro">assert_ranges!</span> {
+<a href=#665 id=665 data-nosnippet>665</a>            Oklab&lt;f64&gt;;
+<a href=#666 id=666 data-nosnippet>666</a>            clamped {
+<a href=#667 id=667 data-nosnippet>667</a>                l: <span class="number">0.0 </span>=&gt; <span class="number">1.0
+<a href=#668 id=668 data-nosnippet>668</a>                </span><span class="comment">// a and b are unbounded --&gt; not part of test
+<a href=#669 id=669 data-nosnippet>669</a>            </span>}
+<a href=#670 id=670 data-nosnippet>670</a>            clamped_min {}
+<a href=#671 id=671 data-nosnippet>671</a>            unclamped {}
+<a href=#672 id=672 data-nosnippet>672</a>        };
+<a href=#673 id=673 data-nosnippet>673</a>    }
+<a href=#674 id=674 data-nosnippet>674</a>
+<a href=#675 id=675 data-nosnippet>675</a>    <span class="attr">#[test]
+<a href=#676 id=676 data-nosnippet>676</a>    </span><span class="kw">fn </span>check_min_max_components() {
+<a href=#677 id=677 data-nosnippet>677</a>        <span class="macro">assert_eq!</span>(Oklab::&lt;f32&gt;::min_l(), <span class="number">0.0</span>);
+<a href=#678 id=678 data-nosnippet>678</a>        <span class="macro">assert_eq!</span>(Oklab::&lt;f32&gt;::max_l(), <span class="number">1.0</span>);
+<a href=#679 id=679 data-nosnippet>679</a>    }
+<a href=#680 id=680 data-nosnippet>680</a>
+<a href=#681 id=681 data-nosnippet>681</a>    <span class="macro">struct_of_arrays_tests!</span>(
+<a href=#682 id=682 data-nosnippet>682</a>        Oklab[l, a, b],
+<a href=#683 id=683 data-nosnippet>683</a>        <span class="kw">super</span>::Oklaba::new(<span class="number">0.1f32</span>, <span class="number">0.2</span>, <span class="number">0.3</span>, <span class="number">0.4</span>),
+<a href=#684 id=684 data-nosnippet>684</a>        <span class="kw">super</span>::Oklaba::new(<span class="number">0.2</span>, <span class="number">0.3</span>, <span class="number">0.4</span>, <span class="number">0.5</span>),
+<a href=#685 id=685 data-nosnippet>685</a>        <span class="kw">super</span>::Oklaba::new(<span class="number">0.3</span>, <span class="number">0.4</span>, <span class="number">0.5</span>, <span class="number">0.6</span>)
+<a href=#686 id=686 data-nosnippet>686</a>    );
+<a href=#687 id=687 data-nosnippet>687</a>
+<a href=#688 id=688 data-nosnippet>688</a>    <span class="attr">#[cfg(feature = <span class="string">"serializing"</span>)]
+<a href=#689 id=689 data-nosnippet>689</a>    #[test]
+<a href=#690 id=690 data-nosnippet>690</a>    </span><span class="kw">fn </span>serialize() {
+<a href=#691 id=691 data-nosnippet>691</a>        <span class="kw">let </span>serialized = ::serde_json::to_string(<span class="kw-2">&amp;</span>Oklab::new(<span class="number">0.3</span>, <span class="number">0.8</span>, <span class="number">0.1</span>)).unwrap();
+<a href=#692 id=692 data-nosnippet>692</a>
+<a href=#693 id=693 data-nosnippet>693</a>        <span class="macro">assert_eq!</span>(serialized, <span class="string">r#"{"l":0.3,"a":0.8,"b":0.1}"#</span>);
+<a href=#694 id=694 data-nosnippet>694</a>    }
+<a href=#695 id=695 data-nosnippet>695</a>
+<a href=#696 id=696 data-nosnippet>696</a>    <span class="attr">#[cfg(feature = <span class="string">"serializing"</span>)]
+<a href=#697 id=697 data-nosnippet>697</a>    #[test]
+<a href=#698 id=698 data-nosnippet>698</a>    </span><span class="kw">fn </span>deserialize() {
+<a href=#699 id=699 data-nosnippet>699</a>        <span class="kw">let </span>deserialized: Oklab = ::serde_json::from_str(<span class="string">r#"{"l":0.3,"a":0.8,"b":0.1}"#</span>).unwrap();
+<a href=#700 id=700 data-nosnippet>700</a>
+<a href=#701 id=701 data-nosnippet>701</a>        <span class="macro">assert_eq!</span>(deserialized, Oklab::new(<span class="number">0.3</span>, <span class="number">0.8</span>, <span class="number">0.1</span>));
+<a href=#702 id=702 data-nosnippet>702</a>    }
+<a href=#703 id=703 data-nosnippet>703</a>
+<a href=#704 id=704 data-nosnippet>704</a>    <span class="macro">test_uniform_distribution!</span> {
+<a href=#705 id=705 data-nosnippet>705</a>        Oklab {
+<a href=#706 id=706 data-nosnippet>706</a>            l: (<span class="number">0.0</span>, <span class="number">1.0</span>),
+<a href=#707 id=707 data-nosnippet>707</a>            a: (-<span class="number">1.0</span>, <span class="number">1.0</span>),
+<a href=#708 id=708 data-nosnippet>708</a>            b: (-<span class="number">1.0</span>, <span class="number">1.0</span>)
+<a href=#709 id=709 data-nosnippet>709</a>        },
+<a href=#710 id=710 data-nosnippet>710</a>        min: Oklab::new(<span class="number">0.0</span>, -<span class="number">1.0</span>, -<span class="number">1.0</span>),
+<a href=#711 id=711 data-nosnippet>711</a>        max: Oklab::new(<span class="number">1.0</span>, <span class="number">1.0</span>, <span class="number">1.0</span>)
+<a href=#712 id=712 data-nosnippet>712</a>    }
+<a href=#713 id=713 data-nosnippet>713</a>}</code></pre></div></section></main></body></html>
