@@ -356,9 +356,9 @@ impl<'a, Message: Clone + 'static> HeaderBar<'a, Message> {
             if center.is_empty() && (self.title.is_empty() || self.is_condensed) {
                 let left_to_right_ratio = left_len as f32 / right_len.max(1) as f32;
                 let right_to_left_ratio = right_len as f32 / left_len.max(1) as f32;
-                if right_to_left_ratio > 2. {
+                if right_to_left_ratio > 2. || left_len < 1 {
                     (1, 2)
-                } else if left_to_right_ratio > 2. {
+                } else if left_to_right_ratio > 2. || right_len < 1 {
                     (2, 1)
                 } else {
                     (left_len as u16, (right_len + window_control_cnt) as u16)
