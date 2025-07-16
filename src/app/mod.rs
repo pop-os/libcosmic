@@ -548,8 +548,9 @@ impl<App: Application> ApplicationExt for App {
         let show_context = core.window.show_context;
         let nav_bar_active = core.nav_bar_active();
         let focused = core
-            .focused_window()
-            .is_some_and(|i| Some(i) == self.core().main_window_id());
+            .focus_chain()
+            .iter()
+            .any(|i| Some(*i) == self.core().main_window_id());
 
         let border_padding = if sharp_corners { 8 } else { 7 };
 

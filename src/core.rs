@@ -64,7 +64,7 @@ pub struct Core {
     scale_factor: f32,
 
     /// Window focus state
-    pub(super) focused_window: Option<window::Id>,
+    pub(super) focused_window: Vec<window::Id>,
 
     pub(super) theme_sub_counter: u64,
     /// Last known system theme
@@ -141,7 +141,7 @@ impl Default for Core {
                 height: 0.,
                 width: 0.,
             },
-            focused_window: None,
+            focused_window: Vec::new(),
             #[cfg(feature = "applet")]
             applet: crate::applet::Context::default(),
             #[cfg(feature = "single-instance")]
@@ -384,8 +384,15 @@ impl Core {
     /// Get the current focused window if it exists
     #[must_use]
     #[inline]
-    pub const fn focused_window(&self) -> Option<window::Id> {
-        self.focused_window
+    pub fn focused_window(&self) -> Option<window::Id> {
+        self.focused_window.last().copied()
+    }
+
+    /// Get the current focus chain of windows
+    #[must_use]
+    #[inline]
+    pub fn focus_chain(&self) -> &[window::Id] {
+        &self.focused_window
     }
 
     /// Whether the application should use a dark theme, according to the system
