@@ -10,7 +10,6 @@ use std::{
     io::Write,
     path::{Path, PathBuf},
     sync::Mutex,
-    time::Duration,
 };
 
 #[cfg(feature = "subscription")]
