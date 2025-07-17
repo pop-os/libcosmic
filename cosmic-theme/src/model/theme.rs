@@ -100,6 +100,10 @@ pub struct Theme {
     /// accent text colors
     /// If None, accent base color is the accent text color.
     pub accent_text: Option<Srgba>,
+    /// control tint color
+    pub control_tint: Option<Srgb>,
+    /// text tint color
+    pub text_tint: Option<Srgb>,
 }
 
 impl Default for Theme {
@@ -162,6 +166,109 @@ impl Theme {
     /// Convert the theme to a high-contrast variant
     pub fn to_high_contrast(&self) -> Self {
         todo!();
+    }
+
+    #[must_use]
+    #[allow(clippy::doc_markdown)]
+    #[inline]
+    /// get control_0 color
+    pub fn control_0(&self) -> Srgba {
+        self.tint_neutral(self.palette.neutral_0)
+    }
+
+    #[must_use]
+    #[allow(clippy::doc_markdown)]
+    #[inline]
+    /// get control_1 color
+    pub fn control_1(&self) -> Srgba {
+        self.tint_neutral(self.palette.neutral_1)
+    }
+
+    #[must_use]
+    #[allow(clippy::doc_markdown)]
+    #[inline]
+    /// get control_2 color
+    pub fn control_2(&self) -> Srgba {
+        self.tint_neutral(self.palette.neutral_2)
+    }
+
+    #[must_use]
+    #[allow(clippy::doc_markdown)]
+    #[inline]
+    /// get control_3 color
+    pub fn control_3(&self) -> Srgba {
+        self.tint_neutral(self.palette.neutral_3)
+    }
+
+    #[must_use]
+    #[allow(clippy::doc_markdown)]
+    #[inline]
+    /// get control_3 color
+    pub fn control_4(&self) -> Srgba {
+        self.tint_neutral(self.palette.neutral_4)
+    }
+
+    #[must_use]
+    #[allow(clippy::doc_markdown)]
+    #[inline]
+    /// get control_3 color
+    pub fn control_5(&self) -> Srgba {
+        self.tint_neutral(self.palette.neutral_5)
+    }
+
+    #[must_use]
+    #[allow(clippy::doc_markdown)]
+    #[inline]
+    /// get control_3 color
+    pub fn control_6(&self) -> Srgba {
+        self.tint_neutral(self.palette.neutral_6)
+    }
+
+    #[must_use]
+    #[allow(clippy::doc_markdown)]
+    #[inline]
+    /// get control_3 color
+    pub fn control_7(&self) -> Srgba {
+        self.tint_neutral(self.palette.neutral_7)
+    }
+
+    #[must_use]
+    #[allow(clippy::doc_markdown)]
+    #[inline]
+    /// get control_3 color
+    pub fn control_8(&self) -> Srgba {
+        self.tint_neutral(self.palette.neutral_8)
+    }
+
+    #[must_use]
+    #[allow(clippy::doc_markdown)]
+    #[inline]
+    /// get control_3 color
+    pub fn control_9(&self) -> Srgba {
+        self.tint_neutral(self.palette.neutral_9)
+    }
+
+    #[must_use]
+    #[allow(clippy::doc_markdown)]
+    #[inline]
+    /// get control_3 color
+    pub fn control_10(&self) -> Srgba {
+        self.tint_neutral(self.palette.neutral_10)
+    }
+
+    #[must_use]
+    #[allow(clippy::doc_markdown)]
+    #[inline]
+    /// get @accent_color
+    fn tint_neutral(&self, neutral: Srgba) -> Srgba {
+        let Some(tint) = self.control_tint else {
+            return neutral;
+        };
+        let mut oklch_neutral: Oklcha = neutral.into_color();
+        let oklch_tint: Oklcha = tint.into_color();
+        oklch_neutral.hue = oklch_tint.hue;
+        oklch_neutral.chroma = oklch_tint.chroma;
+        oklch_neutral.into_color()
     }
 
     // TODO convenient getter functions for each named color variable
@@ -897,25 +1004,15 @@ impl ThemeBuilder {
 
         let text_steps_array = text_tint.map(|c| steps(c, NonZeroUsize::new(100).unwrap()));
 
-        if let Some(neutral_tint) = neutral_tint {
+        let control_steps_array = if let Some(neutral_tint) = neutral_tint {
             let mut neutral_steps_arr = steps(neutral_tint, NonZeroUsize::new(11).unwrap());
             if !is_dark {
                 neutral_steps_arr.reverse();
             }
-
-            let p = palette.as_mut();
-            p.neutral_0 = neutral_steps_arr[0];
-            p.neutral_1 = neutral_steps_arr[1];
-            p.neutral_2 = neutral_steps_arr[2];
-            p.neutral_3 = neutral_steps_arr[3];
-            p.neutral_4 = neutral_steps_arr[4];
-            p.neutral_5 = neutral_steps_arr[5];
-            p.neutral_6 = neutral_steps_arr[6];
-            p.neutral_7 = neutral_steps_arr[7];
-            p.neutral_8 = neutral_steps_arr[8];
-            p.neutral_9 = neutral_steps_arr[9];
-            p.neutral_10 = neutral_steps_arr[10];
-        }
+            neutral_steps_arr
+        } else {
+            steps(palette.as_ref().neutral_2, NonZeroUsize::new(11).unwrap())
+        };
 
         let p_ref = palette.as_ref();
 
@@ -934,9 +1031,9 @@ impl ThemeBuilder {
         let bg_index = color_index(bg, step_array.len());
 
         let mut component_hovered_overlay = if bg_index < 91 {
-            p_ref.neutral_10
+            control_steps_array[10]
         } else {
-            p_ref.neutral_0
+            control_steps_array[0]
         };
         component_hovered_overlay.alpha = 0.1;
 
@@ -945,13 +1042,13 @@ impl ThemeBuilder {
 
         // Standard button background is neutral 7 with 25% opacity
         let button_bg = {
-            let mut color = p_ref.neutral_7;
+            let mut color = control_steps_array[7];
             color.alpha = 0.25;
             color
         };
 
         let (mut button_hovered_overlay, mut button_pressed_overlay) =
-            (p_ref.neutral_5, p_ref.neutral_2);
+            (control_steps_array[5], control_steps_array[2]);
         button_hovered_overlay.alpha = 0.2;
         button_pressed_overlay.alpha = 0.5;
 
@@ -959,7 +1056,7 @@ impl ThemeBuilder {
         let on_bg_component = get_text(
             color_index(bg_component, step_array.len()),
             &step_array,
-            &p_ref.neutral_8,
+            &control_steps_array[8],
             text_steps_array.as_deref(),
         );
 
@@ -967,17 +1064,17 @@ impl ThemeBuilder {
             let container_bg = if let Some(primary_container_bg_color) = primary_container_bg {
                 primary_container_bg_color
             } else {
-                get_surface_color(bg_index, 5, &step_array, is_dark, &p_ref.neutral_1)
+                get_surface_color(bg_index, 5, &step_array, is_dark, &control_steps_array[1])
             };
 
             let base_index: usize = color_index(container_bg, step_array.len());
             let component_base =
-                get_surface_color(base_index, 6, &step_array, is_dark, &p_ref.neutral_3);
+                get_surface_color(base_index, 6, &step_array, is_dark, &control_steps_array[3]);
 
             component_hovered_overlay = if base_index < 91 {
-                p_ref.neutral_10
+                control_steps_array[10]
             } else {
-                p_ref.neutral_0
+                control_steps_array[0]
             };
             component_hovered_overlay.alpha = 0.1;
 
@@ -991,22 +1088,22 @@ impl ThemeBuilder {
                     get_text(
                         color_index(component_base, step_array.len()),
                         &step_array,
-                        &p_ref.neutral_8,
+                        &control_steps_array[8],
                         text_steps_array.as_deref(),
                     ),
                     component_hovered_overlay,
                     component_pressed_overlay,
                     is_high_contrast,
-                    p_ref.neutral_8,
+                    control_steps_array[8],
                 ),
                 container_bg,
                 get_text(
                     base_index,
                     &step_array,
-                    &p_ref.neutral_8,
+                    &control_steps_array[8],
                     text_steps_array.as_deref(),
                 ),
-                get_small_widget_color(base_index, 5, &neutral_steps, &p_ref.neutral_6),
+                get_small_widget_color(base_index, 5, &neutral_steps, &control_steps_array[6]),
                 is_high_contrast,
             );
 
@@ -1072,16 +1169,16 @@ impl ThemeBuilder {
                     component_hovered_overlay,
                     component_pressed_overlay,
                     is_high_contrast,
-                    p_ref.neutral_8,
+                    control_steps_array[8],
                 ),
                 bg,
                 get_text(
                     bg_index,
                     &step_array,
-                    &p_ref.neutral_8,
+                    &control_steps_array[8],
                     text_steps_array.as_deref(),
                 ),
-                get_small_widget_color(bg_index, 5, &neutral_steps, &p_ref.neutral_6),
+                get_small_widget_color(bg_index, 5, &neutral_steps, &control_steps_array[6]),
                 is_high_contrast,
             ),
             primary,
@@ -1089,17 +1186,17 @@ impl ThemeBuilder {
                 let container_bg = if let Some(secondary_container_bg) = secondary_container_bg {
                     secondary_container_bg
                 } else {
-                    get_surface_color(bg_index, 10, &step_array, is_dark, &p_ref.neutral_2)
+                    get_surface_color(bg_index, 10, &step_array, is_dark, &control_steps_array[2])
                 };
 
                 let base_index = color_index(container_bg, step_array.len());
                 let secondary_component =
-                    get_surface_color(base_index, 3, &step_array, is_dark, &p_ref.neutral_4);
+                    get_surface_color(base_index, 3, &step_array, is_dark, &control_steps_array[4]);
 
                 component_hovered_overlay = if base_index < 91 {
-                    p_ref.neutral_10
+                    control_steps_array[10]
                 } else {
-                    p_ref.neutral_0
+                    control_steps_array[0]
                 };
                 component_hovered_overlay.alpha = 0.1;
 
@@ -1113,36 +1210,36 @@ impl ThemeBuilder {
                         get_text(
                             color_index(secondary_component, step_array.len()),
                             &step_array,
-                            &p_ref.neutral_8,
+                            &control_steps_array[8],
                             text_steps_array.as_deref(),
                         ),
                         component_hovered_overlay,
                         component_pressed_overlay,
                         is_high_contrast,
-                        p_ref.neutral_8,
+                        control_steps_array[8],
                     ),
                     container_bg,
                     get_text(
                         base_index,
                         &step_array,
-                        &p_ref.neutral_8,
+                        &control_steps_array[8],
                         text_steps_array.as_deref(),
                     ),
-                    get_small_widget_color(base_index, 5, &neutral_steps, &p_ref.neutral_6),
+                    get_small_widget_color(base_index, 5, &neutral_steps, &control_steps_array[6]),
                     is_high_contrast,
                 )
             },
             accent: Component::colored_component(
                 accent,
-                p_ref.neutral_0,
+                control_steps_array[0],
                 accent,
                 button_hovered_overlay,
                 button_pressed_overlay,
             ),
             accent_button: Component::colored_button(
                 accent,
-                p_ref.neutral_1,
-                p_ref.neutral_0,
+                control_steps_array[1],
+                control_steps_array[0],
                 accent,
                 button_hovered_overlay,
                 button_pressed_overlay,
@@ -1154,19 +1251,19 @@ impl ThemeBuilder {
                 button_hovered_overlay,
                 button_pressed_overlay,
                 is_high_contrast,
-                p_ref.neutral_8,
+                control_steps_array[8],
             ),
             destructive: Component::colored_component(
                 destructive,
-                p_ref.neutral_0,
+                control_steps_array[0],
                 accent,
                 button_hovered_overlay,
                 button_pressed_overlay,
             ),
             destructive_button: Component::colored_button(
                 destructive,
-                p_ref.neutral_1,
-                p_ref.neutral_0,
+                control_steps_array[1],
+                control_steps_array[0],
                 accent,
                 button_hovered_overlay,
                 button_pressed_overlay,
@@ -1174,11 +1271,11 @@ impl ThemeBuilder {
             icon_button: Component::component(
                 Srgba::new(0.0, 0.0, 0.0, 0.0),
                 accent,
-                p_ref.neutral_8,
+                control_steps_array[8],
                 button_hovered_overlay,
                 button_pressed_overlay,
                 is_high_contrast,
-                p_ref.neutral_8,
+                control_steps_array[8],
             ),
             link_button: {
                 let mut component = Component::component(
@@ -1188,7 +1285,7 @@ impl ThemeBuilder {
                     Srgba::new(0.0, 0.0, 0.0, 0.0),
                     Srgba::new(0.0, 0.0, 0.0, 0.0),
                     is_high_contrast,
-                    p_ref.neutral_8,
+                    control_steps_array[8],
                 );
 
                 let mut on_50 = component.on;
@@ -1199,15 +1296,15 @@ impl ThemeBuilder {
             },
             success: Component::colored_component(
                 success,
-                p_ref.neutral_0,
+                control_steps_array[0],
                 accent,
                 button_hovered_overlay,
                 button_pressed_overlay,
             ),
             success_button: Component::colored_button(
                 success,
-                p_ref.neutral_1,
-                p_ref.neutral_0,
+                control_steps_array[1],
+                control_steps_array[0],
                 accent,
                 button_hovered_overlay,
                 button_pressed_overlay,
@@ -1219,19 +1316,19 @@ impl ThemeBuilder {
                 button_hovered_overlay,
                 button_pressed_overlay,
                 is_high_contrast,
-                p_ref.neutral_8,
+                control_steps_array[8],
             ),
             warning: Component::colored_component(
                 warning,
-                p_ref.neutral_0,
+                control_steps_array[0],
                 accent,
                 button_hovered_overlay,
                 button_pressed_overlay,
             ),
             warning_button: Component::colored_button(
                 warning,
-                p_ref.neutral_10,
-                p_ref.neutral_0,
+                control_steps_array[10],
+                control_steps_array[0],
                 accent,
                 button_hovered_overlay,
                 button_pressed_overlay,
@@ -1246,6 +1343,8 @@ impl ThemeBuilder {
             window_hint,
             is_frosted,
             accent_text,
+            control_tint: neutral_tint,
+            text_tint,
         };
         theme.spacing = spacing;
         theme.corner_radii = corner_radii;
