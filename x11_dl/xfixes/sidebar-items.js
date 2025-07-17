@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"struct":["XFixesCursorImage","XFixesCursorNotifyEvent","XFixesSelectionNotifyEvent","Xlib"],"type":["PointerBarrier","XserverRegion"]};

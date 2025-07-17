@@ -1,0 +1,1 @@
+searchState.loadedDescShard("zbus_macros", 0, "zbus_macros\nDerive macro for implementing <code>zbus::DBusError</code> trait.\nAttribute macro for implementing a D-Bus interface.\nAttribute macro for defining D-Bus proxies (using …")
