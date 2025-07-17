@@ -132,29 +132,6 @@ pub struct CosmicPaletteInner {
     /// A wider spread of dark colors for more general use.
     pub neutral_10: Srgba,
 
-    /// Tinted control colors.
-    pub control_0: Srgba,
-    /// Tinted control colors.
-    pub control_1: Srgba,
-    /// Tinted control colors.
-    pub control_2: Srgba,
-    /// Tinted control colors.
-    pub control_3: Srgba,
-    /// Tinted control colors.
-    pub control_4: Srgba,
-    /// Tinted control colors.
-    pub control_5: Srgba,
-    /// Tinted control colors.
-    pub control_6: Srgba,
-    /// Tinted control colors.
-    pub control_7: Srgba,
-    /// Tinted control colors.
-    pub control_8: Srgba,
-    /// Tinted control colors.
-    pub control_9: Srgba,
-    /// Tinted control colors.
-    pub control_10: Srgba,
-
     /// Potential Accent Color Combos
     pub accent_blue: Srgba,
     /// Potential Accent Color Combos
