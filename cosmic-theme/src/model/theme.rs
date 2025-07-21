@@ -1277,7 +1277,7 @@ impl ThemeBuilder {
                 let mut component = Component::component(
                     Srgba::new(0.0, 0.0, 0.0, 0.0),
                     accent,
-                    accent,
+                    accent_text.unwrap_or(accent),
                     Srgba::new(0.0, 0.0, 0.0, 0.0),
                     Srgba::new(0.0, 0.0, 0.0, 0.0),
                     is_high_contrast,
@@ -1305,7 +1305,7 @@ impl ThemeBuilder {
             text_button: Component::component(
                 Srgba::new(0.0, 0.0, 0.0, 0.0),
                 accent,
-                accent,
+                accent_text.unwrap_or(accent),
                 button_hovered_overlay,
                 button_pressed_overlay,
                 is_high_contrast,

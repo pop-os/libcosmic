@@ -262,7 +262,6 @@ pub fn menu_items<
                         items.insert(1, widget::Space::with_width(spacing.space_xxs).into());
                     }
 
-                    // dbg!("button with action...", action.message());
                     let menu_button = menu_button(items).on_press(action.message());
 
                     trees.push(MenuTree::<Message>::from(Element::from(menu_button)));
@@ -296,7 +295,7 @@ pub fn menu_items<
                                 .icon()
                                 .class(theme::Svg::Custom(Rc::new(|theme| {
                                     iced_widget::svg::Style {
-                                        color: Some(theme.cosmic().accent_color().into()),
+                                        color: Some(theme.cosmic().accent_text_color().into()),
                                     }
                                 })))
                                 .width(Length::Fixed(16.0))
