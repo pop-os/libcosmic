@@ -44,6 +44,12 @@ pub fn subscription<App: ApplicationExt>() -> Subscription<crate::Action<App::Me
                         std::process::exit(1);
                     }
 
+                    output
+                        .send(crate::Action::Cosmic(crate::app::Action::DbusConnection(
+                            conn.clone(),
+                        )))
+                        .await;
+
                     #[cfg(feature = "smol")]
                     let handle = {
                         std::thread::spawn(move || {

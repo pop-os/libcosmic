@@ -755,6 +755,11 @@ impl<T: Application> Cosmic<T> {
                 }
             }
 
+            #[cfg(feature = "single-instance")]
+            Action::DbusConnection(conn) => {
+                return self.app.dbus_connection(conn);
+            }
+
             #[cfg(feature = "xdg-portal")]
             Action::DesktopSettings(crate::theme::portal::Desktop::ColorScheme(s)) => {
                 use ashpd::desktop::settings::ColorScheme;

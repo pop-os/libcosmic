@@ -437,6 +437,14 @@ where
     fn dbus_activation(&mut self, msg: crate::dbus_activation::Message) -> Task<Self::Message> {
         Task::none()
     }
+
+    /// Invoked on connect to dbus session socket used for dbus activation
+    ///
+    /// Can be used to expose custom interfaces on the same owned name.
+    #[cfg(feature = "single-instance")]
+    fn dbus_connection(&mut self, conn: zbus::Connection) -> Task<Self::Message> {
+        Task::none()
+    }
 }
 
 /// Methods automatically derived for all types implementing [`Application`].
