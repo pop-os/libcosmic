@@ -21,7 +21,7 @@ impl dropdown::menu::StyleSheet for Theme {
             hovered_text_color: cosmic.on_bg_color().into(),
             hovered_background: Background::Color(cosmic.primary.component.hover.into()),
 
-            selected_text_color: cosmic.accent.base.into(),
+            selected_text_color: cosmic.accent_text_color().into(),
             selected_background: Background::Color(cosmic.primary.component.hover.into()),
 
             description_color: cosmic.primary.component.on_disabled.into(),

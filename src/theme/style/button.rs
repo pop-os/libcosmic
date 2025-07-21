@@ -99,7 +99,7 @@ pub fn appearance(
 
         Button::Image => {
             appearance.background = None;
-            appearance.text_color = Some(cosmic.accent.base.into());
+            appearance.text_color = Some(cosmic.accent_text_color().into());
             appearance.icon_color = Some(cosmic.accent.base.into());
 
             corner_radii = &cosmic.corner_radii.radius_s;
@@ -119,7 +119,7 @@ pub fn appearance(
         Button::Link => {
             appearance.background = None;
             appearance.icon_color = Some(cosmic.accent.base.into());
-            appearance.text_color = Some(cosmic.accent.base.into());
+            appearance.text_color = Some(cosmic.accent_text_color().into());
             corner_radii = &cosmic.corner_radii.radius_0;
         }
 
@@ -156,7 +156,7 @@ pub fn appearance(
                 appearance.background =
                     Some(Background::Color(cosmic.primary.component.hover.into()));
                 appearance.icon_color = Some(cosmic.accent.base.into());
-                appearance.text_color = Some(cosmic.accent.base.into());
+                appearance.text_color = Some(cosmic.accent_text_color().into());
             } else {
                 appearance.background = Some(Background::Color(background));
                 appearance.icon_color = icon;
@@ -203,7 +203,7 @@ impl Catalog for crate::Theme {
                 Button::Icon | Button::IconVertical | Button::HeaderBar
             ) && selected
             {
-                Some(self.cosmic().accent_color().into())
+                Some(self.cosmic().accent_text_color().into())
             } else {
                 Some(component.on.into())
             };
@@ -249,7 +249,7 @@ impl Catalog for crate::Theme {
                     Button::Icon | Button::IconVertical | Button::HeaderBar
                 ) && selected
                 {
-                    Some(self.cosmic().accent_color().into())
+                    Some(self.cosmic().accent_text_color().into())
                 } else {
                     Some(component.on.into())
                 };
@@ -270,7 +270,7 @@ impl Catalog for crate::Theme {
                 Button::Icon | Button::IconVertical | Button::HeaderBar
             ) && selected
             {
-                Some(self.cosmic().accent_color().into())
+                Some(self.cosmic().accent_text_color().into())
             } else {
                 Some(component.on.into())
             };

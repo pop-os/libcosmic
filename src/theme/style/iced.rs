@@ -156,8 +156,8 @@ impl Button {
             Self::Positive => &cosmic.success_button,
             Self::Destructive => &cosmic.destructive_button,
             Self::Text => &cosmic.text_button,
-            Self::Link => &cosmic.accent_button,
-            Self::LinkActive => &cosmic.accent_button,
+            Self::Link => &cosmic.link_button,
+            Self::LinkActive => &cosmic.link_button,
             Self::Transparent => &TRANSPARENT_COMPONENT,
             Self::Deactivated => &theme.current_container().component,
             Self::Card => &theme.current_container().component,
@@ -190,6 +190,7 @@ impl iced_checkbox::Catalog for Theme {
         Checkbox::default()
     }
 
+    #[allow(clippy::too_many_lines)]
     fn style(
         &self,
         class: &Self::Class<'_>,
@@ -208,7 +209,7 @@ impl iced_checkbox::Catalog for Theme {
                         background: Background::Color(if is_checked {
                             cosmic.accent.base.into()
                         } else {
-                            cosmic.button.base.into()
+                            cosmic.background.small_widget.into()
                         }),
                         icon_color: cosmic.accent.on.into(),
                         border: Border {
@@ -217,7 +218,7 @@ impl iced_checkbox::Catalog for Theme {
                             color: if is_checked {
                                 cosmic.accent.base
                             } else {
-                                cosmic.button.border
+                                cosmic.palette.neutral_8
                             }
                             .into(),
                         },
@@ -251,7 +252,7 @@ impl iced_checkbox::Catalog for Theme {
                             color: if is_checked {
                                 cosmic.success.base
                             } else {
-                                cosmic.button.border
+                                cosmic.palette.neutral_8
                             }
                             .into(),
                         },
@@ -504,7 +505,7 @@ impl iced_container::Catalog for Theme {
             Container::HeaderBar { focused } => {
                 let (icon_color, text_color) = if *focused {
                     (
-                        Color::from(cosmic.accent.base),
+                        Color::from(cosmic.accent_text_color()),
                         Color::from(cosmic.background.on),
                     )
                 } else {
@@ -667,9 +668,9 @@ impl slider::Catalog for Theme {
                     (
                         cosmic.accent_text_color(),
                         if is_dark {
-                            cosmic.palette.neutral_6
+                            cosmic.palette.neutral_5
                         } else {
-                            cosmic.palette.neutral_4
+                            cosmic.palette.neutral_3
                         },
                     )
                 } else {
@@ -828,15 +829,14 @@ impl radio::Catalog for Theme {
                     Color::from(theme.accent.base).into()
                 } else {
                     // TODO: this seems to be defined weirdly in FIGMA
-                    Color::from(theme.background.base).into()
+                    Color::from(theme.background.small_widget).into()
                 },
                 dot_color: theme.accent.on.into(),
                 border_width: 1.0,
                 border_color: if is_selected {
                     Color::from(theme.accent.base)
                 } else {
-                    // TODO: this seems to be defined weirdly in FIGMA
-                    Color::from(theme.palette.neutral_7)
+                    Color::from(theme.palette.neutral_8)
                 },
                 text_color: None,
             },
@@ -844,8 +844,7 @@ impl radio::Catalog for Theme {
                 background: if is_selected {
                     Color::from(theme.accent.base).into()
                 } else {
-                    // TODO: this seems to be defined weirdly in FIGMA
-                    Color::from(theme.palette.neutral_10.with_alpha(0.1)).into()
+                    Color::from(theme.background.small_widget.with_alpha(0.2)).into()
                 },
                 dot_color: theme.accent.on.into(),
                 border_width: 1.0,
@@ -878,7 +877,11 @@ impl toggler::Catalog for Theme {
             background: if matches!(status, toggler::Status::Active { is_toggled: true }) {
                 cosmic.accent.base.into()
             } else {
-                cosmic.palette.neutral_5.into()
+                if cosmic.is_dark {
+                    cosmic.palette.neutral_6.into()
+                } else {
+                    cosmic.palette.neutral_5.into()
+                }
             },
             foreground: cosmic.palette.neutral_2.into(),
             border_radius: cosmic.radius_xl().into(),
@@ -900,7 +903,14 @@ impl toggler::Catalog for Theme {
                     background: if is_active {
                         over(neutral_10, cosmic.accent_color())
                     } else {
-                        over(neutral_10, cosmic.palette.neutral_5)
+                        over(
+                            neutral_10,
+                            if cosmic.is_dark {
+                                cosmic.palette.neutral_6
+                            } else {
+                                cosmic.palette.neutral_5
+                            },
+                        )
                     }
                     .into(),
                     ..active
@@ -1092,7 +1102,8 @@ impl scrollable::Catalog for Theme {
         match status {
             scrollable::Status::Active => {
                 let cosmic = self.cosmic();
-                let neutral_5 = cosmic.palette.neutral_5.with_alpha(0.7);
+                let mut neutral_5 = cosmic.palette.neutral_5.with_alpha(0.7);
+                let mut neutral_6 = cosmic.palette.neutral_6.with_alpha(0.7);
                 let mut a = scrollable::Style {
                     container: iced_container::transparent(self),
                     vertical_rail: scrollable::Rail {
@@ -1102,7 +1113,11 @@ impl scrollable::Catalog for Theme {
                         },
                         background: None,
                         scroller: scrollable::Scroller {
-                            color: neutral_5.into(),
+                            color: if cosmic.is_dark {
+                                neutral_6.into()
+                            } else {
+                                neutral_5.into()
+                            },
                             border: Border {
                                 radius: cosmic.corner_radii.radius_s.into(),
                                 ..Default::default()
@@ -1116,7 +1131,11 @@ impl scrollable::Catalog for Theme {
                         },
                         background: None,
                         scroller: scrollable::Scroller {
-                            color: neutral_5.into(),
+                            color: if cosmic.is_dark {
+                                neutral_6.into()
+                            } else {
+                                neutral_5.into()
+                            },
                             border: Border {
                                 radius: cosmic.corner_radii.radius_s.into(),
                                 ..Default::default()
@@ -1137,9 +1156,9 @@ impl scrollable::Catalog for Theme {
             // TODO handle vertical / horizontal
             scrollable::Status::Hovered { .. } | scrollable::Status::Dragged { .. } => {
                 let cosmic = self.cosmic();
-                let neutral_5 = cosmic.palette.neutral_5.with_alpha(0.7);
-
-                // TODO hover
+                let mut neutral_5 = cosmic.palette.neutral_5.with_alpha(0.7);
+                let mut neutral_6 = cosmic.palette.neutral_6.with_alpha(0.7);
+                let mut neutral_3 = cosmic.palette.neutral_3;
 
                 // if is_mouse_over_scrollbar {
                 //     let hover_overlay = cosmic.palette.neutral_0.with_alpha(0.2);
@@ -1154,7 +1173,11 @@ impl scrollable::Catalog for Theme {
                         },
                         background: None,
                         scroller: scrollable::Scroller {
-                            color: neutral_5.into(),
+                            color: if cosmic.is_dark {
+                                neutral_6.into()
+                            } else {
+                                neutral_5.into()
+                            },
                             border: Border {
                                 radius: cosmic.corner_radii.radius_s.into(),
                                 ..Default::default()
@@ -1168,7 +1191,11 @@ impl scrollable::Catalog for Theme {
                         },
                         background: None,
                         scroller: scrollable::Scroller {
-                            color: neutral_5.into(),
+                            color: if cosmic.is_dark {
+                                neutral_6.into()
+                            } else {
+                                neutral_5.into()
+                            },
                             border: Border {
                                 radius: cosmic.corner_radii.radius_s.into(),
                                 ..Default::default()
@@ -1179,9 +1206,13 @@ impl scrollable::Catalog for Theme {
                 };
 
                 if matches!(class, Scrollable::Permanent) {
-                    let neutral_3 = cosmic.palette.neutral_3.with_alpha(0.7);
-                    a.horizontal_rail.background = Some(Background::Color(neutral_3.into()));
-                    a.vertical_rail.background = Some(Background::Color(neutral_3.into()));
+                    let small_widget_container =
+                        cosmic.background.small_widget.clone().with_alpha(0.7);
+
+                    a.horizontal_rail.background =
+                        Some(Background::Color(small_widget_container.into()));
+                    a.vertical_rail.background =
+                        Some(Background::Color(small_widget_container.into()));
                 }
 
                 a
@@ -1250,7 +1281,7 @@ impl iced_widget::text::Catalog for Theme {
     fn style(&self, class: &Self::Class<'_>) -> iced_widget::text::Style {
         match class {
             Text::Accent => iced_widget::text::Style {
-                color: Some(self.cosmic().accent.base.into()),
+                color: Some(self.cosmic().accent_text_color().into()),
             },
             Text::Default => iced_widget::text::Style { color: None },
             Text::Color(c) => iced_widget::text::Style { color: Some(*c) },
@@ -1278,7 +1309,7 @@ impl text_input::Catalog for Theme {
 
     fn style(&self, class: &Self::Class<'_>, status: text_input::Status) -> text_input::Style {
         let palette = self.cosmic();
-        let bg = palette.palette.neutral_7.with_alpha(0.25);
+        let mut bg = palette.background.small_widget.with_alpha(0.25);
 
         let neutral_9 = palette.palette.neutral_9;
         let value = neutral_9.into();
@@ -1314,7 +1345,7 @@ impl text_input::Catalog for Theme {
         match status {
             text_input::Status::Active => appearance,
             text_input::Status::Hovered => {
-                let bg = palette.palette.neutral_7.with_alpha(0.25);
+                let mut bg = palette.background.small_widget.with_alpha(0.25);
 
                 match class {
                     TextInput::Default => text_input::Style {
@@ -1343,7 +1374,7 @@ impl text_input::Catalog for Theme {
                 }
             }
             text_input::Status::Focused => {
-                let bg = palette.palette.neutral_7.with_alpha(0.25);
+                let mut bg = palette.background.small_widget.with_alpha(0.25);
 
                 match class {
                     TextInput::Default => text_input::Style {

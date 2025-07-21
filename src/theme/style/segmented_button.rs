@@ -192,7 +192,7 @@ mod horizontal {
                 border_radius: Radius::from([rad_0[0], rad_m[1], rad_m[2], rad_0[3]]),
                 ..Default::default()
             },
-            text_color: cosmic.accent.base.into(),
+            text_color: cosmic.accent_text_color().into(),
         }
     }
 
@@ -218,7 +218,7 @@ mod horizontal {
                 border_bottom: Some((4.0, cosmic.accent.base.into())),
                 ..Default::default()
             },
-            text_color: cosmic.accent.base.into(),
+            text_color: cosmic.accent_text_color().into(),
         }
     }
 }
@@ -231,7 +231,7 @@ pub fn focus(
     let color = container.small_widget;
     ItemStatusAppearance {
         background: Some(Background::Color(color.into())),
-        text_color: cosmic.accent.base.into(),
+        text_color: cosmic.accent_text_color().into(),
         ..*default
     }
 }
@@ -242,9 +242,7 @@ pub fn hover(
     default: &ItemStatusAppearance,
 ) -> ItemStatusAppearance {
     ItemStatusAppearance {
-        background: Some(Background::Color(
-            cosmic.palette.neutral_8.with_alpha(0.2).into(),
-        )),
+        background: Some(Background::Color(component.hover.with_alpha(0.2).into())),
         text_color: cosmic.accent.base.into(),
         ..*default
     }
@@ -279,7 +277,7 @@ mod vertical {
                 border_radius: Radius::from([rad_0[0], rad_0[1], rad_m[2], rad_m[3]]),
                 ..Default::default()
             },
-            text_color: cosmic.accent.base.into(),
+            text_color: cosmic.accent_text_color().into(),
         }
     }
 
@@ -300,7 +298,7 @@ mod vertical {
                 border_radius: cosmic.corner_radii.radius_m.into(),
                 ..Default::default()
             },
-            text_color: cosmic.accent.base.into(),
+            text_color: cosmic.accent_text_color().into(),
         }
     }
 }
