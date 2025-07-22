@@ -11,7 +11,7 @@ use crate::widget::menu::{
 };
 use derive_setters::Setters;
 use iced::touch::Finger;
-use iced::{Event, Vector, window};
+use iced::{Event, Vector, keyboard, window};
 use iced_core::widget::{Tree, Widget, tree};
 use iced_core::{Length, Point, Size, event, mouse, touch};
 use std::collections::HashSet;
@@ -31,6 +31,7 @@ pub fn context_menu<'a, Message: 'static + Clone>(
                 menus,
             )]
         }),
+        close_on_escape: true,
         window_id: window::Id::RESERVED,
         on_surface_action: None,
     };
@@ -51,6 +52,7 @@ pub struct ContextMenu<'a, Message> {
     #[setters(skip)]
     context_menu: Option<Vec<menu::Tree<Message>>>,
     pub window_id: window::Id,
+    pub close_on_escape: bool,
     #[setters(skip)]
     pub(crate) on_surface_action:
         Option<Arc<dyn Fn(crate::surface::Action) -> Message + Send + Sync + 'static>>,
@@ -344,7 +346,31 @@ impl<Message: 'static + Clone> Widget<Message, crate::Theme, crate::Renderer>
             }
             state.open
         });
+        if matches!(
+            event,
+            Event::Keyboard(keyboard::Event::KeyPressed {
+                key: keyboard::Key::Named(keyboard::key::Named::Escape),
+                ..
+            })
+        ) {
+            state.menu_bar_state.inner.with_data_mut(|state| {
+                state.menu_states.clear();
+                state.active_root.clear();
+                state.open = false;
 
+                #[cfg(all(feature = "wayland", feature = "winit", feature = "surface-message"))]
+                if matches!(WINDOWING_SYSTEM.get(), Some(WindowingSystem::Wayland)) {
+                    if let Some(id) = state.popup_id.remove(&self.window_id) {
+                        {
+                            let surface_action = self.on_surface_action.as_ref().unwrap();
+                            shell
+                                .publish(surface_action(crate::surface::action::destroy_popup(id)));
+                        }
+                        state.view_cursor = cursor;
+                    }
+                }
+            });
+        }
         if cursor.is_over(bounds) {
             let fingers_pressed = state.fingers_pressed.len();
 
