@@ -18,11 +18,11 @@ use std::collections::HashSet;
 use std::sync::Arc;
 
 /// A context menu is a menu in a graphical user interface that appears upon user interaction, such as a right-click mouse operation.
-pub fn context_menu<Message: 'static + Clone>(
-    content: impl Into<crate::Element<'static, Message>> + 'static,
+pub fn context_menu<'a, Message: 'static + Clone>(
+    content: impl Into<crate::Element<'a, Message>>,
     // on_context: Message,
     context_menu: Option<Vec<menu::Tree<Message>>>,
-) -> ContextMenu<'static, Message> {
+) -> ContextMenu<'a, Message> {
     let mut this = ContextMenu {
         content: content.into(),
         context_menu: context_menu.map(|menus| {
@@ -539,10 +539,8 @@ impl<Message: 'static + Clone> Widget<Message, crate::Theme, crate::Renderer>
     }
 }
 
-impl<'a, Message: Clone + 'static> From<ContextMenu<'static, Message>>
-    for crate::Element<'static, Message>
-{
-    fn from(widget: ContextMenu<'static, Message>) -> Self {
+impl<'a, Message: Clone + 'static> From<ContextMenu<'a, Message>> for crate::Element<'a, Message> {
+    fn from(widget: ContextMenu<'a, Message>) -> Self {
         Self::new(widget)
     }
 }
