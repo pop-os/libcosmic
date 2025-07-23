@@ -118,7 +118,7 @@ pub fn appearance(
 
         Button::Link => {
             appearance.background = None;
-            appearance.icon_color = Some(cosmic.accent.base.into());
+            appearance.icon_color = Some(cosmic.accent_text_color().into());
             appearance.text_color = Some(cosmic.accent_text_color().into());
             corner_radii = &cosmic.corner_radii.radius_0;
         }
