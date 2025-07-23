@@ -243,7 +243,7 @@ pub fn hover(
 ) -> ItemStatusAppearance {
     ItemStatusAppearance {
         background: Some(Background::Color(component.hover.with_alpha(0.2).into())),
-        text_color: cosmic.accent.base.into(),
+        text_color: cosmic.accent_text_color().into(),
         ..*default
     }
 }

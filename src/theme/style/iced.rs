@@ -766,7 +766,7 @@ impl menu::Catalog for Theme {
                 radius: cosmic.corner_radii.radius_m.into(),
                 ..Default::default()
             },
-            selected_text_color: cosmic.accent.base.into(),
+            selected_text_color: cosmic.accent_text_color().into(),
             selected_background: Background::Color(cosmic.background.component.hover.into()),
         }
     }
