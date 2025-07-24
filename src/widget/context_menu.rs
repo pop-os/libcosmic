@@ -5,6 +5,7 @@
 
 #[cfg(all(feature = "wayland", feature = "winit", feature = "surface-message"))]
 use crate::app::cosmic::{WINDOWING_SYSTEM, WindowingSystem};
+use crate::surface;
 use crate::widget::menu::{
     self, CloseCondition, Direction, ItemHeight, ItemWidth, MenuBarState, PathHighlight,
     init_root_menu, menu_roots_diff,
@@ -22,7 +23,7 @@ pub fn context_menu<Message: 'static + Clone>(
     content: impl Into<crate::Element<'static, Message>> + 'static,
     // on_context: Message,
     context_menu: Option<Vec<menu::Tree<Message>>>,
-) -> ContextMenu<'static, Message> {
+) -> ContextMenu<'static, Message, Message> {
     let mut this = ContextMenu {
         content: content.into(),
         context_menu: context_menu.map(|menus| {
@@ -33,7 +34,40 @@ pub fn context_menu<Message: 'static + Clone>(
         }),
         window_id: window::Id::RESERVED,
         on_surface_action: None,
+        action_map: None,
     };
+
+    if let Some(ref mut context_menu) = this.context_menu {
+        context_menu.iter_mut().for_each(menu::Tree::set_index);
+    }
+
+    this
+}
+
+/// A context menu is a menu in a graphical user interface that appears upon user interaction, such as a right-click mouse operation.
+pub fn context_menu_popup<Message: 'static + Clone, AppMessage: 'static + Clone>(
+    content: impl Into<crate::Element<'static, Message>> + 'static,
+    // on_context: Message,
+    context_menu: Option<Vec<menu::Tree<Message>>>,
+    _parent_id: window::Id,
+    _on_surface_action: impl Fn(surface::Action) -> Message + Send + Sync + 'static,
+    _map_action: impl Fn(Message) -> AppMessage + Send + Sync + 'static,
+) -> ContextMenu<'static, Message, AppMessage> {
+    let mut this: ContextMenu<'_, Message, AppMessage> = ContextMenu {
+        content: content.into(),
+        context_menu: context_menu.map(|menus| {
+            vec![menu::Tree::with_children(
+                crate::Element::from(crate::widget::row::<'static, Message>()),
+                menus,
+            )]
+        }),
+        window_id: window::Id::RESERVED,
+        on_surface_action: None,
+        action_map: None,
+    };
+
+    #[cfg(all(feature = "winit", feature = "wayland"))]
+    let mut this = this.with_popup(_parent_id, _on_surface_action, _map_action);
 
     if let Some(ref mut context_menu) = this.context_menu {
         context_menu.iter_mut().for_each(menu::Tree::set_index);
@@ -45,7 +79,7 @@ pub fn context_menu<Message: 'static + Clone>(
 /// A context menu is a menu in a graphical user interface that appears upon user interaction, such as a right-click mouse operation.
 #[derive(Setters)]
 #[must_use]
-pub struct ContextMenu<'a, Message> {
+pub struct ContextMenu<'a, Message, AppMessage> {
     #[setters(skip)]
     content: crate::Element<'a, Message>,
     #[setters(skip)]
@@ -54,9 +88,13 @@ pub struct ContextMenu<'a, Message> {
     #[setters(skip)]
     pub(crate) on_surface_action:
         Option<Arc<dyn Fn(crate::surface::Action) -> Message + Send + Sync + 'static>>,
+    #[setters(skip)]
+    pub action_map: Option<Arc<dyn Fn(Message) -> AppMessage + 'static + Send + Sync>>,
 }
 
-impl<Message: Clone + 'static> ContextMenu<'_, Message> {
+impl<'a, Message: Clone + 'static, AppMessage: Clone + 'static>
+    ContextMenu<'a, Message, AppMessage>
+{
     #[cfg(all(feature = "wayland", feature = "winit", feature = "surface-message"))]
     #[allow(clippy::too_many_lines)]
     fn create_popup(
@@ -68,7 +106,10 @@ impl<Message: Clone + 'static> ContextMenu<'_, Message> {
         viewport: &iced::Rectangle,
         my_state: &mut LocalState,
     ) {
-        if self.window_id != window::Id::NONE && self.on_surface_action.is_some() {
+        if self.window_id != window::Id::NONE
+            && self.on_surface_action.is_some()
+            && self.action_map.is_some()
+        {
             use crate::{surface::action::destroy_popup, widget::menu::Menu};
             use iced_runtime::platform_specific::wayland::popup::{
                 SctkPopupSettings, SctkPositioner,
@@ -171,6 +212,7 @@ impl<Message: Clone + 'static> ContextMenu<'_, Message> {
                 ..Default::default()
             };
             let parent = self.window_id;
+            let action_map = self.action_map.clone().unwrap();
             shell.publish((self.on_surface_action.as_ref().unwrap())(
                 crate::surface::action::simple_popup(
                     move || SctkPopupSettings {
@@ -183,27 +225,44 @@ impl<Message: Clone + 'static> ContextMenu<'_, Message> {
                         input_zone: None,
                     },
                     Some(move || {
+                        let action_map = action_map.clone();
                         crate::Element::from(
                             crate::widget::container(popup_menu.clone()).center(Length::Fill),
                         )
-                        .map(crate::action::app)
+                        .map(move |m| crate::Action::App(action_map.clone()(m)))
                     }),
                 ),
             ));
         }
     }
 
-    pub fn on_surface_action(
+    #[cfg(all(feature = "winit", feature = "wayland"))]
+    /// Handle dropdown requests for popup creation.
+    /// Intended to be used with [`crate::app::message::get_popup`]
+    pub fn with_popup<NewAppMessage>(
         mut self,
-        handler: impl Fn(crate::surface::Action) -> Message + Send + Sync + 'static,
-    ) -> Self {
-        self.on_surface_action = Some(Arc::new(handler));
-        self
+        parent_id: window::Id,
+        on_surface_action: impl Fn(surface::Action) -> Message + Send + Sync + 'static,
+        action_map: impl Fn(Message) -> NewAppMessage + Send + Sync + 'static,
+    ) -> ContextMenu<'a, Message, NewAppMessage> {
+        let Self {
+            content,
+            context_menu,
+            ..
+        } = self;
+        let new = ContextMenu::<'a, Message, NewAppMessage> {
+            content,
+            context_menu,
+            on_surface_action: Some(Arc::new(on_surface_action)),
+            action_map: Some(Arc::new(action_map)),
+            window_id: parent_id,
+        };
+        new
     }
 }
 
-impl<Message: 'static + Clone> Widget<Message, crate::Theme, crate::Renderer>
-    for ContextMenu<'_, Message>
+impl<Message: 'static + Clone, AppMessage: 'static + Clone>
+    Widget<Message, crate::Theme, crate::Renderer> for ContextMenu<'_, Message, AppMessage>
 {
     fn tag(&self) -> tree::Tag {
         tree::Tag::of::<LocalState>()
@@ -539,10 +598,10 @@ impl<Message: 'static + Clone> Widget<Message, crate::Theme, crate::Renderer>
     }
 }
 
-impl<'a, Message: Clone + 'static> From<ContextMenu<'static, Message>>
-    for crate::Element<'static, Message>
+impl<'a, Message: Clone + 'static, AppMessage: Clone + 'static>
+    From<ContextMenu<'static, Message, AppMessage>> for crate::Element<'static, Message>
 {
-    fn from(widget: ContextMenu<'static, Message>) -> Self {
+    fn from(widget: ContextMenu<'static, Message, AppMessage>) -> Self {
         Self::new(widget)
     }
 }
