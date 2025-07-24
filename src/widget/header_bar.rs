@@ -7,7 +7,7 @@ use apply::Apply;
 use derive_setters::Setters;
 use iced::Length;
 use iced_core::{Vector, Widget, widget::tree};
-use std::borrow::Cow;
+use std::{borrow::Cow, cmp};
 
 #[must_use]
 pub fn header_bar<'a, Message>() -> HeaderBar<'a, Message> {
@@ -366,6 +366,7 @@ impl<'a, Message: Clone + 'static> HeaderBar<'a, Message> {
             } else {
                 (portion, portion)
             };
+        let title_portion = cmp::max(left_portion, right_portion) * 2;
         // Creates the headerbar widget.
         let mut widget = widget::row::with_capacity(3)
             // If elements exist in the start region, append them here.
@@ -389,7 +390,7 @@ impl<'a, Message: Clone + 'static> HeaderBar<'a, Message> {
                         .into(),
                 )
             } else if !self.title.is_empty() && !self.is_condensed {
-                Some(self.title_widget())
+                Some(self.title_widget(title_portion))
             } else {
                 None
             })
@@ -431,13 +432,13 @@ impl<'a, Message: Clone + 'static> HeaderBar<'a, Message> {
         widget.into()
     }
 
-    fn title_widget(&mut self) -> Element<'a, Message> {
+    fn title_widget(&mut self, title_portion: u16) -> Element<'a, Message> {
         let mut title = Cow::default();
         std::mem::swap(&mut title, &mut self.title);
 
         widget::text::heading(title)
             .apply(widget::container)
-            .center(Length::Fill)
+            .center(Length::FillPortion(title_portion))
             .into()
     }
 
