@@ -690,10 +690,11 @@ impl<T: Application> Cosmic<T> {
                 let mut cmds = vec![self.app.system_theme_mode_update(&keys, &mode)];
 
                 let core = self.app.core_mut();
-                let prev_is_dark = core.system_is_dark();
                 core.system_theme_mode = mode;
                 let is_dark = core.system_is_dark();
-                let changed = prev_is_dark != is_dark;
+                let changed = core.system_theme_mode.is_dark != is_dark
+                    || core.portal_is_dark != Some(is_dark)
+                    || core.system_theme.cosmic().is_dark != is_dark;
                 if changed {
                     core.theme_sub_counter += 1;
                     let mut new_theme = if is_dark {
@@ -784,10 +785,13 @@ impl<T: Application> Cosmic<T> {
                     ColorScheme::PreferLight => Some(false),
                 };
                 let core = self.app.core_mut();
-                let prev_is_dark = core.system_is_dark();
+
                 core.portal_is_dark = is_dark;
                 let is_dark = core.system_is_dark();
-                let changed = prev_is_dark != is_dark;
+                let changed = core.system_theme_mode.is_dark != is_dark
+                    || core.portal_is_dark != Some(is_dark)
+                    || core.system_theme.cosmic().is_dark != is_dark;
+
                 if changed {
                     core.theme_sub_counter += 1;
                     let new_theme = if is_dark {
