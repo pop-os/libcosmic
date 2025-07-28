@@ -1,7 +1,6 @@
 use {
     crate::{
         Element,
-        desktop::{IconSourceExt, fde},
         iced::{Alignment, Length},
         widget::{self, horizontal_space},
     },
@@ -15,7 +14,7 @@ pub struct About {
     /// The application's name.
     name: Option<String>,
     /// The application's icon name.
-    icon: Option<String>,
+    icon: Option<widget::icon::Handle>,
     /// The application's version.
     version: Option<String>,
     /// Name of the application's author.
@@ -138,10 +137,7 @@ pub fn about<'a, Message: Clone + 'static>(
     };
 
     let application_name = about.name.as_ref().map(widget::text::title3);
-    let application_icon = about
-        .icon
-        .as_ref()
-        .map(|icon| fde::IconSource::Name(icon.clone()).as_cosmic_icon());
+    let application_icon = about.icon.as_ref().map(|i| i.clone().icon());
     let author = about.author.as_ref().map(widget::text::body);
     let version = about.version.as_ref().map(widget::button::standard);
     let links_section = section(&about.links, "Links");

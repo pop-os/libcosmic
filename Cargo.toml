@@ -12,7 +12,7 @@ default = ["multi-window", "a11y"]
 # Accessibility support
 a11y = ["iced/a11y", "iced_accessibility"]
 # Enable about widget
-about = ["desktop", "dep:license"]
+about = ["dep:license"]
 # Builds support for animated images
 animated-image = ["dep:async-fs", "image/gif", "tokio?/io-util", "tokio?/fs"]
 # XXX autosize should not be used on winit windows unless dialogs
