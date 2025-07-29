@@ -6,6 +6,7 @@
 use crate::ext::ColorExt;
 use crate::widget::text_input::{Appearance, StyleSheet};
 use iced_core::Color;
+use palette::WithAlpha;
 
 #[derive(Default)]
 pub enum TextInput {
@@ -31,8 +32,7 @@ impl StyleSheet for crate::Theme {
         let palette = self.cosmic();
         let container = self.current_container();
 
-        let mut background: Color = container.component.base.into();
-        background.a = 0.25;
+        let background: Color = container.small_widget.with_alpha(0.25).into();
 
         let corner = palette.corner_radii;
         let label_color = palette.palette.neutral_9;
@@ -125,7 +125,7 @@ impl StyleSheet for crate::Theme {
         let palette = self.cosmic();
         let container = self.current_container();
 
-        let mut background: Color = container.component.base.into();
+        let mut background: Color = container.small_widget.into();
         background.a = 0.25;
 
         let corner = palette.corner_radii;
@@ -188,7 +188,7 @@ impl StyleSheet for crate::Theme {
         let palette = self.cosmic();
         let container = self.current_container();
 
-        let mut background: Color = container.component.base.into();
+        let mut background: Color = container.small_widget.into();
         background.a = 0.25;
 
         let corner = palette.corner_radii;
@@ -283,7 +283,7 @@ impl StyleSheet for crate::Theme {
         let palette = self.cosmic();
         let container = self.current_container();
 
-        let mut background: Color = container.component.base.into();
+        let mut background: Color = container.small_widget.into();
         background.a = 0.25;
 
         let corner = palette.corner_radii;
