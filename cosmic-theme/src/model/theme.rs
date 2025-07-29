@@ -957,7 +957,7 @@ impl ThemeBuilder {
     /// build the theme
     pub fn build(self) -> Theme {
         let Self {
-            mut palette,
+            palette,
             spacing,
             corner_radii,
             neutral_tint,
@@ -1063,6 +1063,7 @@ impl ThemeBuilder {
                 get_surface_color(bg_index, 5, &step_array, is_dark, &control_steps_array[1])
             };
 
+            let step_array = steps(container_bg, NonZeroUsize::new(100).unwrap());
             let base_index: usize = color_index(container_bg, step_array.len());
             let component_base =
                 get_surface_color(base_index, 6, &step_array, is_dark, &control_steps_array[3]);
@@ -1185,6 +1186,7 @@ impl ThemeBuilder {
                     get_surface_color(bg_index, 10, &step_array, is_dark, &control_steps_array[2])
                 };
 
+                let step_array = steps(container_bg, NonZeroUsize::new(100).unwrap());
                 let base_index = color_index(container_bg, step_array.len());
                 let secondary_component =
                     get_surface_color(base_index, 3, &step_array, is_dark, &control_steps_array[4]);

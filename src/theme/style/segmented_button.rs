@@ -177,9 +177,7 @@ mod horizontal {
         let rad_0 = cosmic.corner_radii.radius_0;
 
         ItemStatusAppearance {
-            background: Some(Background::Color(
-                cosmic.palette.neutral_5.with_alpha(0.2).into(),
-            )),
+            background: Some(Background::Color(component.selected_state_color().into())),
             first: ItemAppearance {
                 border_radius: Radius::from([rad_m[0], rad_0[1], rad_0[2], rad_m[3]]),
                 ..Default::default()
