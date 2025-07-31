@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["base","danger","default","draw","layout","primary","secondary","success"],"struct":["State","Style","Text"],"trait":["Catalog"],"type":["StyleFn"]};
