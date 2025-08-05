@@ -91,7 +91,7 @@ markdown = ["iced/markdown"]
 highlighter = ["iced/highlighter"]
 async-std = [
     "dep:async-std",
-    "ashpd/async-std",
+    "ashpd?/async-std",
     "rfd?/async-std",
     "zbus?/async-io",
     "iced/async-std",
