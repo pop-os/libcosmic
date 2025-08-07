@@ -75,7 +75,14 @@ pub(crate) fn iced_settings<App: Application>(
         window_settings.resize_border = border_size as u32;
         window_settings.resizable = true;
     }
-    window_settings.decorations = !settings.client_decorations;
+
+    core.window.client_decorations = if cfg!(any(target_os = "windows", target_os = "macos")) {
+        settings.client_decorations || crate::config::client_decorations()
+    } else {
+        settings.client_decorations && crate::config::client_decorations()
+    };
+    window_settings.decorations = !core.window.client_decorations;
+
     window_settings.size = settings.size;
     let min_size = settings.size_limits.min();
     if min_size != iced::Size::ZERO {
@@ -549,7 +556,7 @@ impl<App: Application> ApplicationExt for App {
     fn view_main(&self) -> Element<'_, crate::Action<Self::Message>> {
         let core = self.core();
         let is_condensed = core.is_condensed();
-        let sharp_corners = core.window.sharp_corners;
+        let sharp_corners = core.window.sharp_corners || !core.window.client_decorations;
         let maximized = core.window.is_maximized;
         let content_container = core.window.content_container;
         let show_context = core.window.show_context;
@@ -713,7 +720,6 @@ impl<App: Application> ApplicationExt for App {
                         .maximized(maximized)
                         .sharp_corners(sharp_corners)
                         .transparent(content_container)
-                        .title(&core.window.header_title)
                         .on_drag(crate::Action::Cosmic(Action::Drag))
                         .on_right_click(crate::Action::Cosmic(Action::ShowWindowMenu))
                         .on_double_click(crate::Action::Cosmic(Action::Maximize))
@@ -731,19 +737,23 @@ impl<App: Application> ApplicationExt for App {
 
                         header = header.start(toggle);
                     }
+                    if core.window.client_decorations {
+                        header = header.title(&core.window.header_title);
+                        
+                        if core.window.show_close {
+                            header = header.on_close(crate::Action::Cosmic(Action::Close));
+                        }
 
-                    if core.window.show_close {
-                        header = header.on_close(crate::Action::Cosmic(Action::Close));
+                        if core.window.show_maximize && crate::config::show_maximize() {
+                            header = header.on_maximize(crate::Action::Cosmic(Action::Maximize));
+                        }
+
+                        if core.window.show_minimize && crate::config::show_minimize() {
+                            header = header.on_minimize(crate::Action::Cosmic(Action::Minimize));
+                        }
+
                     }
-
-                    if core.window.show_maximize && crate::config::show_maximize() {
-                        header = header.on_maximize(crate::Action::Cosmic(Action::Maximize));
-                    }
-
-                    if core.window.show_minimize && crate::config::show_minimize() {
-                        header = header.on_minimize(crate::Action::Cosmic(Action::Minimize));
-                    }
-
+                   
                     for element in self.header_start() {
                         header = header.start(element.map(crate::Action::App));
                     }

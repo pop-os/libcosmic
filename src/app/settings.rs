@@ -83,6 +83,9 @@ impl Default for Settings {
             #[cfg(feature = "wayland")]
             autosize: false,
             no_main_window: false,
+            #[cfg(any(target_os = "windows", target_os = "macos"))]
+            client_decorations: false,
+            #[cfg(target_os = "linux")]
             client_decorations: true,
             debug: false,
             default_font: font::default(),
