@@ -36,6 +36,8 @@ where
     Model<SelectionMode>: Selectable,
     SelectionMode: Default,
 {
+    const VERTICAL: bool = false;
+
     fn variant_appearance(
         theme: &crate::Theme,
         style: &crate::theme::SegmentedButton,

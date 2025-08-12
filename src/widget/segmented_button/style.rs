@@ -1,31 +1,24 @@
 // Copyright 2022 System76 <info@system76.com>
 // SPDX-License-Identifier: MPL-2.0
 
-use iced_core::{Background, Color, border::Radius};
+use iced::Border;
+use iced_core::{Background, Color};
 
 /// Appearance of the segmented button.
 #[derive(Default, Clone, Copy)]
 pub struct Appearance {
     pub background: Option<Background>,
-    pub border_radius: Radius,
-    pub border_bottom: Option<(f32, Color)>,
-    pub border_end: Option<(f32, Color)>,
-    pub border_start: Option<(f32, Color)>,
-    pub border_top: Option<(f32, Color)>,
+    pub border: Border,
+    pub active_width: f32,
     pub active: ItemStatusAppearance,
     pub inactive: ItemStatusAppearance,
     pub hover: ItemStatusAppearance,
-    pub focus: ItemStatusAppearance,
 }
 
 /// Appearance of an item in the segmented button.
 #[derive(Default, Clone, Copy)]
 pub struct ItemAppearance {
-    pub border_radius: Radius,
-    pub border_bottom: Option<(f32, Color)>,
-    pub border_end: Option<(f32, Color)>,
-    pub border_start: Option<(f32, Color)>,
-    pub border_top: Option<(f32, Color)>,
+    pub border: Border,
 }
 
 /// Appearance of an item based on its status.

@@ -29,7 +29,6 @@ where
         .button_height(44)
         .button_padding([space_s, space_xs, space_s, space_xs])
         .style(crate::theme::SegmentedButton::TabBar)
-        .font_active(Some(crate::font::semibold()))
 }
 
 /// A collection of tabs for developing a tabbed interface.
@@ -52,5 +51,4 @@ where
         .button_height(44)
         .button_padding([space_s, space_xs, space_s, space_xs])
         .style(crate::theme::SegmentedButton::TabBar)
-        .font_active(Some(crate::font::semibold()))
 }

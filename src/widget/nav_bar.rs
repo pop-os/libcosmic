@@ -149,7 +149,7 @@ impl<'a, Message: Clone + 'static> From<NavBar<'a, Message>>
             .button_padding([space_s, space_xxs, space_s, space_xxs])
             .button_spacing(space_xxs)
             .spacing(space_xxs)
-            .style(crate::theme::SegmentedButton::TabBar)
+            .style(crate::theme::SegmentedButton::NavBar)
             .apply(container)
             .padding(space_xxs)
             .apply(scrollable)

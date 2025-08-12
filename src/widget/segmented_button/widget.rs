@@ -22,11 +22,12 @@ use iced::{
 use iced_core::mouse::ScrollDelta;
 use iced_core::text::{LineHeight, Renderer as TextRenderer, Shaping, Wrapping};
 use iced_core::widget::{self, operation, tree};
-use iced_core::{Border, Gradient, Point, Renderer as IcedRenderer, Shadow, Text};
+use iced_core::{Border, Point, Renderer as IcedRenderer, Shadow, Text};
 use iced_core::{Clipboard, Layout, Shell, Widget, layout, renderer, widget::Tree};
 use iced_runtime::{Action, task};
 use slotmap::{Key, SecondaryMap};
 use std::borrow::Cow;
+use std::cell::LazyCell;
 use std::collections::HashSet;
 use std::collections::hash_map::DefaultHasher;
 use std::hash::{Hash, Hasher};
@@ -46,6 +47,8 @@ pub enum ItemBounds {
 
 /// Isolates variant-specific behaviors from [`SegmentedButton`].
 pub trait SegmentedVariant {
+    const VERTICAL: bool;
+
     /// Get the appearance for this variant of the widget.
     fn variant_appearance(
         theme: &crate::Theme,
@@ -107,11 +110,11 @@ where
     /// Spacing for each indent.
     pub(super) indent_spacing: u16,
     /// Desired font for active tabs.
-    pub(super) font_active: Option<crate::font::Font>,
+    pub(super) font_active: crate::font::Font,
     /// Desired font for hovered tabs.
-    pub(super) font_hovered: Option<crate::font::Font>,
+    pub(super) font_hovered: crate::font::Font,
     /// Desired font for inactive tabs.
-    pub(super) font_inactive: Option<crate::font::Font>,
+    pub(super) font_inactive: crate::font::Font,
     /// Size of the font.
     pub(super) font_size: f32,
     /// Desired width of the widget.
@@ -175,9 +178,9 @@ where
             minimum_button_width: u16::MIN,
             maximum_button_width: u16::MAX,
             indent_spacing: 16,
-            font_active: None,
-            font_hovered: None,
-            font_inactive: None,
+            font_active: crate::font::semibold(),
+            font_hovered: crate::font::semibold(),
+            font_inactive: crate::font::default(),
             font_size: 14.0,
             height: Length::Shrink,
             width: Length::Fill,
@@ -603,16 +606,16 @@ where
 
         for key in self.model.order.iter().copied() {
             if let Some(text) = self.model.text.get(key) {
-                let (font, button_state) =
-                    if self.model.is_active(key) || self.button_is_focused(state, key) {
-                        (self.font_active, 0)
-                    } else if self.button_is_hovered(state, key) {
-                        (self.font_hovered, 1)
-                    } else {
-                        (self.font_inactive, 2)
-                    };
+                let (font, button_state) = if self.button_is_focused(state, key) {
+                    (self.font_active, 0)
+                } else if state.show_context.is_some() || self.button_is_hovered(state, key) {
+                    (self.font_hovered, 1)
+                } else if self.model.is_active(key) {
+                    (self.font_active, 2)
+                } else {
+                    (self.font_inactive, 3)
+                };
 
-                let font = font.unwrap_or_else(crate::font::default);
                 let mut hasher = DefaultHasher::new();
                 text.hash(&mut hasher);
                 font.hash(&mut hasher);
@@ -1171,47 +1174,15 @@ where
         let bounds: Rectangle = layout.bounds();
         let button_amount = self.model.items.len();
 
-        // Modifies alpha color when `on_activate` is unset.
-        let apply_alpha = |mut c: Color| {
-            if self.on_activate.is_none() {
-                c.a /= 2.0;
-            }
-
-            c
-        };
-
-        // Maps `apply_alpha` to background color.
-        let bg_with_alpha = |mut b| {
-            match &mut b {
-                Background::Color(c) => {
-                    *c = apply_alpha(*c);
-                }
-
-                Background::Gradient(g) => {
-                    let Gradient::Linear(l) = g;
-                    for c in &mut l.stops {
-                        let Some(stop) = c else {
-                            continue;
-                        };
-                        stop.color = apply_alpha(stop.color);
-                    }
-                }
-            }
-            b
-        };
-
         // Draw the background, if a background was defined.
         if let Some(background) = appearance.background {
             renderer.fill_quad(
                 renderer::Quad {
                     bounds,
-                    border: Border {
-                        radius: appearance.border_radius,
-                        ..Border::default()
-                    },
+                    border: appearance.border,
                     shadow: Shadow::default(),
                 },
-                bg_with_alpha(background),
+                background,
             );
         }
 
@@ -1222,7 +1193,7 @@ where
             // Previous tab button
             let mut background_appearance =
                 if self.on_activate.is_some() && Item::PrevButton == state.focused_item {
-                    Some(appearance.focus)
+                    Some(appearance.active)
                 } else if self.on_activate.is_some() && Item::PrevButton == state.hovered {
                     Some(appearance.hover)
                 } else {
@@ -1241,7 +1212,7 @@ where
                     },
                     background_appearance
                         .background
-                        .map_or(Background::Color(Color::TRANSPARENT), bg_with_alpha),
+                        .unwrap_or(Background::Color(Color::TRANSPARENT)),
                 );
             }
 
@@ -1251,13 +1222,11 @@ where
                 style,
                 cursor,
                 viewport,
-                apply_alpha(if state.buttons_offset == 0 {
+                if state.buttons_offset == 0 {
                     appearance.inactive.text_color
-                } else if let Item::PrevButton = state.focused_item {
-                    appearance.focus.text_color
                 } else {
                     appearance.active.text_color
-                }),
+                },
                 Rectangle {
                     x: tab_bounds.x + 8.0,
                     y: tab_bounds.y + f32::from(self.button_height) / 4.0,
@@ -1272,7 +1241,7 @@ where
             // Next tab button
             background_appearance =
                 if self.on_activate.is_some() && Item::NextButton == state.focused_item {
-                    Some(appearance.focus)
+                    Some(appearance.active)
                 } else if self.on_activate.is_some() && Item::NextButton == state.hovered {
                     Some(appearance.hover)
                 } else {
@@ -1301,13 +1270,13 @@ where
                 style,
                 cursor,
                 viewport,
-                apply_alpha(if self.next_tab_sensitive(state) {
+                if self.next_tab_sensitive(state) {
                     appearance.active.text_color
                 } else if let Item::NextButton = state.focused_item {
-                    appearance.focus.text_color
+                    appearance.active.text_color
                 } else {
                     appearance.inactive.text_color
-                }),
+                },
                 Rectangle {
                     x: tab_bounds.x + 8.0,
                     y: tab_bounds.y + f32::from(self.button_height) / 4.0,
@@ -1349,22 +1318,23 @@ where
 
             let center_y = bounds.center_y();
 
-            let menu_open = !tree.children.is_empty()
-                && tree.children[0]
-                    .state
-                    .downcast_ref::<MenuBarState>()
-                    .inner
-                    .with_data(|data| data.open);
+            let menu_open = || {
+                state.show_context == Some(key)
+                    && !tree.children.is_empty()
+                    && tree.children[0]
+                        .state
+                        .downcast_ref::<MenuBarState>()
+                        .inner
+                        .with_data(|data| data.open)
+            };
 
             let key_is_active = self.model.is_active(key);
-            let key_is_hovered = self.button_is_hovered(state, key);
-            let key_has_context_menu_open = menu_open && state.show_context == Some(key);
-            let status_appearance = if self.button_is_focused(state, key) {
-                appearance.focus
+            let key_is_focused = self.button_is_focused(state, key);
+            let key_is_hovered = LazyCell::new(|| self.button_is_hovered(state, key));
+            let status_appearance = if *key_is_hovered || menu_open() {
+                appearance.hover
             } else if key_is_active {
                 appearance.active
-            } else if key_is_hovered || key_has_context_menu_open {
-                appearance.hover
             } else {
                 appearance.inactive
             };
@@ -1378,29 +1348,45 @@ where
             };
 
             // Render the background of the button.
-            if status_appearance.background.is_some() {
+            if key_is_focused || status_appearance.background.is_some() {
                 renderer.fill_quad(
                     renderer::Quad {
                         bounds,
-                        border: Border {
-                            radius: button_appearance.border_radius,
-                            ..Default::default()
+                        border: if key_is_focused {
+                            Border {
+                                width: 1.0,
+                                color: appearance.active.text_color,
+                                radius: button_appearance.border.radius,
+                            }
+                        } else {
+                            button_appearance.border
                         },
                         shadow: Shadow::default(),
                     },
                     status_appearance
                         .background
-                        .map_or(Background::Color(Color::TRANSPARENT), bg_with_alpha),
+                        .unwrap_or(Background::Color(Color::TRANSPARENT)),
                 );
             }
 
-            // Draw the bottom border defined for this button.
-            if let Some((width, background)) = button_appearance.border_bottom {
-                let mut bounds = bounds;
-                bounds.y = bounds.y + bounds.height - width;
-                bounds.height = width;
-
+            // Draw the active hint on tabs
+            if appearance.active_width > 0.0 {
                 let rad_0 = THEME.lock().unwrap().cosmic().corner_radii.radius_0;
+                let active_width = if key_is_active {
+                    appearance.active_width
+                } else {
+                    1.0
+                };
+                let mut bounds = bounds;
+
+                if Self::VERTICAL {
+                    bounds.x += bounds.height - active_width;
+                    bounds.width = active_width;
+                } else {
+                    bounds.y += bounds.height - active_width;
+                    bounds.height = active_width;
+                }
+
                 renderer.fill_quad(
                     renderer::Quad {
                         bounds,
@@ -1410,7 +1396,7 @@ where
                         },
                         shadow: Shadow::default(),
                     },
-                    bg_with_alpha(background.into()),
+                    appearance.active.text_color,
                 );
             }
 
@@ -1455,7 +1441,7 @@ where
                     style,
                     cursor,
                     viewport,
-                    apply_alpha(status_appearance.text_color),
+                    status_appearance.text_color,
                     Rectangle {
                         width,
                         height: width,
@@ -1470,7 +1456,7 @@ where
                 if key_is_active {
                     if let crate::theme::SegmentedButton::Control = self.style {
                         let mut image_bounds = bounds;
-                        image_bounds.y = center_y - 16.0 / 2.0;
+                        image_bounds.y = center_y - 8.0;
 
                         draw_icon::<Message>(
                             renderer,
@@ -1478,7 +1464,7 @@ where
                             style,
                             cursor,
                             viewport,
-                            apply_alpha(status_appearance.text_color),
+                            status_appearance.text_color,
                             Rectangle {
                                 width: 16.0,
                                 height: 16.0,
@@ -1505,7 +1491,7 @@ where
 
             // Whether to show the close button on this tab.
             let show_close_button =
-                (key_is_active || !self.show_close_icon_on_hover || key_is_hovered)
+                (key_is_active || !self.show_close_icon_on_hover || *key_is_hovered)
                     && self.model.is_closable(key);
 
             // Width of the icon used by the close button, which we will subtract from the text bounds.
@@ -1527,7 +1513,7 @@ where
                 renderer.fill_paragraph(
                     state.paragraphs[key].raw(),
                     bounds.position(),
-                    apply_alpha(status_appearance.text_color),
+                    status_appearance.text_color,
                     Rectangle {
                         x: bounds.x,
                         width: bounds.width,
@@ -1546,7 +1532,7 @@ where
                     style,
                     cursor,
                     viewport,
-                    apply_alpha(status_appearance.text_color),
+                    status_appearance.text_color,
                     close_button_bounds,
                     self.close_icon.clone(),
                 );
