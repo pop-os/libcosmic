@@ -57,23 +57,32 @@ impl<'a, Message: Clone + 'static> ContextDrawer<'a, Message> {
 
             let horizontal_padding = if max_width < 392.0 { space_s } else { space_l };
 
+            let title =
+                title.map(|title| text::heading(title).width(Length::FillPortion(3)).center());
+
+            let close_width = if title.is_some() {
+                Length::FillPortion(1)
+            } else {
+                Length::Shrink
+            };
+
             let header_row = row::with_capacity(3)
                 .width(Length::Fixed(480.0))
                 .align_y(Alignment::Center)
-                .push(
-                    row::with_children(header_actions)
-                        .spacing(space_xxs)
-                        .width(Length::FillPortion(1)),
-                )
-                .push_maybe(
-                    title.map(|title| text::heading(title).width(Length::FillPortion(1)).center()),
-                )
+                .push(row::with_children(header_actions).spacing(space_xxs).width(
+                    if title.is_some() {
+                        Length::FillPortion(1)
+                    } else {
+                        Length::Fill
+                    },
+                ))
+                .push_maybe(title)
                 .push(
                     button::text("Close")
                         .trailing_icon(icon::from_name("go-next-symbolic"))
                         .on_press(on_close)
                         .apply(container)
-                        .width(Length::FillPortion(1))
+                        .width(close_width)
                         .align_x(Alignment::End),
                 );
             let header = column::with_capacity(2)
