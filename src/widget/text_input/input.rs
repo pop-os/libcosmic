@@ -2654,6 +2654,8 @@ impl State {
     /// Unfocuses the [`TextInput`].
     #[cold]
     pub(super) fn unfocus(&mut self) {
+        self.move_cursor_to_front();
+        self.last_click = None;
         self.is_focused = None;
         self.dragging_state = None;
         self.is_pasting = None;
