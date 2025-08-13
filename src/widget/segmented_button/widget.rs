@@ -21,19 +21,25 @@ use iced::{
 };
 use iced_core::mouse::ScrollDelta;
 use iced_core::text::{LineHeight, Renderer as TextRenderer, Shaping, Wrapping};
+use iced_core::widget::operation::Focusable;
 use iced_core::widget::{self, operation, tree};
 use iced_core::{Border, Point, Renderer as IcedRenderer, Shadow, Text};
 use iced_core::{Clipboard, Layout, Shell, Widget, layout, renderer, widget::Tree};
 use iced_runtime::{Action, task};
 use slotmap::{Key, SecondaryMap};
 use std::borrow::Cow;
-use std::cell::LazyCell;
+use std::cell::{Cell, LazyCell};
 use std::collections::HashSet;
 use std::collections::hash_map::DefaultHasher;
 use std::hash::{Hash, Hasher};
 use std::marker::PhantomData;
 use std::mem;
 use std::time::{Duration, Instant};
+
+thread_local! {
+    // Prevents two segmented buttons from being focused at the same time.
+    static LAST_FOCUS_UPDATE: LazyCell<Cell<Instant>> = LazyCell::new(|| Cell::new(Instant::now()));
+}
 
 /// A command that focuses a segmented item stored in a widget.
 pub fn focus<Message: 'static>(id: Id) -> Task<Message> {
@@ -521,7 +527,9 @@ where
     }
 
     fn button_is_focused(&self, state: &LocalState, key: Entity) -> bool {
-        self.on_activate.is_some() && Item::Tab(key) == state.focused_item
+        state.focused.is_some()
+            && self.on_activate.is_some()
+            && Item::Tab(key) == state.focused_item
     }
 
     fn button_is_hovered(&self, state: &LocalState, key: Entity) -> bool {
@@ -636,7 +644,7 @@ where
                     horizontal_alignment: alignment::Horizontal::Left,
                     vertical_alignment: alignment::Vertical::Center,
                     shaping: Shaping::Advanced,
-                    wrapping: Wrapping::default(),
+                    wrapping: Wrapping::None,
                     line_height: self.line_height,
                 };
 
@@ -653,6 +661,13 @@ where
             state.menu_state.inner.with_data_mut(|inner| {
                 menu_roots_diff(context_menu, &mut inner.tree);
             });
+        }
+
+        // Unfocus if another segmented control was focused.
+        if let Some(f) = state.focused.as_ref() {
+            if f.updated_at != LAST_FOCUS_UPDATE.with(|f| f.get()) {
+                state.unfocus();
+            }
         }
     }
 
@@ -911,8 +926,7 @@ where
                         if let Event::Mouse(mouse::Event::ButtonReleased(_))
                         | Event::Touch(touch::Event::FingerLifted { .. }) = event
                         {
-                            state.focused = false;
-                            state.focused_item = Item::None;
+                            state.unfocus();
                         }
 
                         if let Some(on_activate) = self.on_activate.as_ref() {
@@ -932,7 +946,7 @@ where
 
                                 if can_activate {
                                     shell.publish(on_activate(key));
-                                    state.focused = true;
+                                    state.set_focused();
                                     state.focused_item = Item::Tab(key);
                                     state.pressed_item = None;
                                     return event::Status::Captured;
@@ -1020,7 +1034,7 @@ where
 
                                     if let Some(key) = activate_key {
                                         shell.publish(on_activate(key));
-                                        state.focused = true;
+                                        state.set_focused();
                                         state.focused_item = Item::Tab(key);
                                         return event::Status::Captured;
                                     }
@@ -1030,19 +1044,18 @@ where
                     }
                 }
             }
-        } else if state.focused {
+        } else if state.is_focused() {
             // Unfocus on clicks outside of the boundaries of the segmented button.
             if let Event::Mouse(mouse::Event::ButtonPressed(mouse::Button::Left))
             | Event::Touch(touch::Event::FingerPressed { .. }) = event
             {
-                state.focused = true;
-                state.focused_item = Item::None;
+                state.unfocus();
                 state.pressed_item = None;
                 return event::Status::Ignored;
             }
         }
 
-        if state.focused {
+        if state.is_focused() {
             if let Event::Keyboard(keyboard::Event::KeyPressed {
                 key: keyboard::Key::Named(keyboard::key::Named::Tab),
                 modifiers,
@@ -1650,6 +1663,12 @@ where
     }
 }
 
+#[derive(Debug, Clone, Copy)]
+struct Focus {
+    updated_at: Instant,
+    now: Instant,
+}
+
 /// State that is maintained by each individual widget.
 pub struct LocalState {
     /// Menu state
@@ -1661,7 +1680,7 @@ pub struct LocalState {
     /// Whether buttons need to be collapsed to preserve minimum width
     pub(super) collapsed: bool,
     /// If the widget is focused or not.
-    focused: bool,
+    focused: Option<Focus>,
     /// The key inside the widget that is currently focused.
     focused_item: Item,
     /// The ID of the button that is being hovered. Defaults to null.
@@ -1700,18 +1719,32 @@ enum Item {
     Tab(Entity),
 }
 
+impl LocalState {
+    fn set_focused(&mut self) {
+        let now = Instant::now();
+        LAST_FOCUS_UPDATE.with(|x| x.set(now));
+
+        self.focused = Some(Focus {
+            updated_at: now,
+            now,
+        });
+    }
+}
+
 impl operation::Focusable for LocalState {
     fn is_focused(&self) -> bool {
-        self.focused
+        self.focused.map_or(false, |f| {
+            f.updated_at == LAST_FOCUS_UPDATE.with(|f| f.get())
+        })
     }
 
     fn focus(&mut self) {
-        self.focused = true;
+        self.set_focused();
         self.focused_item = Item::Set;
     }
 
     fn unfocus(&mut self) {
-        self.focused = false;
+        self.focused = None;
         self.focused_item = Item::None;
         self.show_context = None;
     }
