@@ -521,27 +521,6 @@ impl<'a, Message: 'a + Clone> Widget<Message, crate::Theme, crate::Renderer>
 
                 let c_rad = THEME.lock().unwrap().cosmic().corner_radii;
 
-                // NOTE: Workaround to round the border of the unselected, unhovered image.
-                if !self.selected && !is_mouse_over {
-                    let mut bounds = bounds;
-                    bounds.x -= 2.0;
-                    bounds.y -= 2.0;
-                    bounds.width += 4.0;
-                    bounds.height += 4.0;
-                    renderer.fill_quad(
-                        renderer::Quad {
-                            bounds,
-                            border: Border {
-                                width: 2.0,
-                                color: crate::theme::active().current_container().base.into(),
-                                radius: 9.0.into(),
-                            },
-                            shadow: Shadow::default(),
-                        },
-                        Color::TRANSPARENT,
-                    );
-                }
-
                 if self.selected {
                     renderer.fill_quad(
                         Quad {
@@ -961,25 +940,10 @@ pub fn draw<Renderer: iced_core::Renderer, Theme>(
 
         let mut clipped_bounds = viewport_bounds.intersection(&bounds).unwrap_or_default();
         clipped_bounds.height += styling.border_width;
+        clipped_bounds.width += 1.0;
 
+        // Finish by drawing the border above the contents.
         renderer.with_layer(clipped_bounds, |renderer| {
-            // NOTE: Workaround to round the border of the hovered/selected image.
-            if is_image {
-                renderer.fill_quad(
-                    renderer::Quad {
-                        bounds,
-                        border: Border {
-                            width: styling.border_width,
-                            color: crate::theme::active().current_container().base.into(),
-                            radius: 0.0.into(),
-                        },
-                        shadow: Shadow::default(),
-                    },
-                    Color::TRANSPARENT,
-                );
-            }
-
-            // Finish by drawing the border above the contents.
             renderer.fill_quad(
                 renderer::Quad {
                     bounds,
@@ -992,7 +956,7 @@ pub fn draw<Renderer: iced_core::Renderer, Theme>(
                 },
                 Color::TRANSPARENT,
             );
-        });
+        })
     } else {
         draw_contents(renderer, styling);
     }
