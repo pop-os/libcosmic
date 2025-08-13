@@ -55,27 +55,35 @@ impl<'a, Message: Clone + 'static> ContextDrawer<'a, Message> {
                 ..
             } = crate::theme::spacing();
 
-            let horizontal_padding = if max_width < 392.0 { space_s } else { space_l };
-
-            let title =
-                title.map(|title| text::heading(title).width(Length::FillPortion(3)).center());
-
-            let close_width = if title.is_some() {
-                Length::FillPortion(1)
+            let (horizontal_padding, title_portion, side_portion) = if max_width < 392.0 {
+                (space_s, 1, 1)
             } else {
-                Length::Shrink
+                (space_l, 2, 1)
+            };
+
+            let title = title.map(|title| {
+                text::heading(title)
+                    .width(Length::FillPortion(title_portion))
+                    .center()
+            });
+
+            let (actions_width, close_width) = if title.is_some() {
+                (
+                    Length::FillPortion(side_portion),
+                    Length::FillPortion(side_portion),
+                )
+            } else {
+                (Length::Fill, Length::Shrink)
             };
 
             let header_row = row::with_capacity(3)
                 .width(Length::Fixed(480.0))
                 .align_y(Alignment::Center)
-                .push(row::with_children(header_actions).spacing(space_xxs).width(
-                    if title.is_some() {
-                        Length::FillPortion(1)
-                    } else {
-                        Length::Fill
-                    },
-                ))
+                .push(
+                    row::with_children(header_actions)
+                        .spacing(space_xxs)
+                        .width(actions_width),
+                )
                 .push_maybe(title)
                 .push(
                     button::text("Close")
