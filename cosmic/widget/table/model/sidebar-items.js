@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"mod":["category","entity","selection"],"struct":["Entity","Model"]};

@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["pread","preadv","pwrite","pwritev","readv","writev"],"struct":["IoVec","RemoteIoVec"]};

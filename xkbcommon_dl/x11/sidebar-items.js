@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"constant":["XKB_X11_MIN_MAJOR_XKB_VERSION","XKB_X11_MIN_MINOR_XKB_VERSION"],"enum":["xkb_x11_setup_xkb_extension_flags"],"fn":["xkbcommon_x11_handle","xkbcommon_x11_option"],"struct":["XkbCommonX11"],"type":["xcb_connection_t"]};
