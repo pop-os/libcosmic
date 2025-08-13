@@ -541,6 +541,10 @@ where
                 .is_some_and(|id| id.data.is_some_and(|d| d == key))
     }
 
+    fn button_is_pressed(&self, state: &LocalState, key: Entity) -> bool {
+        state.pressed_item == Some(Item::Tab(key))
+    }
+
     /// Returns the drag id of the destination.
     ///
     /// # Panics
@@ -923,28 +927,15 @@ where
                             }
                         }
 
-                        if let Event::Mouse(mouse::Event::ButtonReleased(_))
-                        | Event::Touch(touch::Event::FingerLifted { .. }) = event
-                        {
+                        if is_lifted(&event) {
                             state.unfocus();
                         }
 
                         if let Some(on_activate) = self.on_activate.as_ref() {
-                            if let Event::Mouse(mouse::Event::ButtonPressed(mouse::Button::Left))
-                            | Event::Touch(touch::Event::FingerPressed { .. }) = event
-                            {
+                            if is_pressed(&event) {
                                 state.pressed_item = Some(Item::Tab(key));
-                            } else if let Event::Mouse(mouse::Event::ButtonReleased(
-                                mouse::Button::Left,
-                            ))
-                            | Event::Touch(touch::Event::FingerLifted { .. }) = event
-                            {
-                                let mut can_activate = true;
-                                if state.pressed_item != Some(Item::Tab(key)) {
-                                    can_activate = false;
-                                }
-
-                                if can_activate {
+                            } else if is_lifted(&event) {
+                                if self.button_is_pressed(state, key) {
                                     shell.publish(on_activate(key));
                                     state.set_focused();
                                     state.focused_item = Item::Tab(key);
@@ -1046,13 +1037,13 @@ where
             }
         } else if state.is_focused() {
             // Unfocus on clicks outside of the boundaries of the segmented button.
-            if let Event::Mouse(mouse::Event::ButtonPressed(mouse::Button::Left))
-            | Event::Touch(touch::Event::FingerPressed { .. }) = event
-            {
+            if is_pressed(&event) {
                 state.unfocus();
                 state.pressed_item = None;
                 return event::Status::Ignored;
             }
+        } else if is_lifted(&event) {
+            state.pressed_item = None;
         }
 
         if state.is_focused() {
@@ -1343,8 +1334,10 @@ where
 
             let key_is_active = self.model.is_active(key);
             let key_is_focused = self.button_is_focused(state, key);
-            let key_is_hovered = LazyCell::new(|| self.button_is_hovered(state, key));
-            let status_appearance = if *key_is_hovered || menu_open() {
+            let key_is_hovered = self.button_is_hovered(state, key);
+            let status_appearance = if self.button_is_pressed(state, key) && key_is_hovered {
+                appearance.pressed
+            } else if key_is_hovered || menu_open() {
                 appearance.hover
             } else if key_is_active {
                 appearance.active
@@ -1504,7 +1497,7 @@ where
 
             // Whether to show the close button on this tab.
             let show_close_button =
-                (key_is_active || !self.show_close_icon_on_hover || *key_is_hovered)
+                (key_is_active || !self.show_close_icon_on_hover || key_is_hovered)
                     && self.model.is_closable(key);
 
             // Width of the icon used by the close button, which we will subtract from the text bounds.
@@ -1853,6 +1846,22 @@ fn right_button_released(event: &Event) -> bool {
     matches!(
         event,
         Event::Mouse(mouse::Event::ButtonReleased(mouse::Button::Right,))
+    )
+}
+
+fn is_pressed(event: &Event) -> bool {
+    matches!(
+        event,
+        Event::Mouse(mouse::Event::ButtonPressed(mouse::Button::Left))
+            | Event::Touch(touch::Event::FingerPressed { .. })
+    )
+}
+
+fn is_lifted(event: &Event) -> bool {
+    matches!(
+        event,
+        Event::Mouse(mouse::Event::ButtonReleased(mouse::Button::Left,))
+            | Event::Touch(touch::Event::FingerLifted { .. })
     )
 }
 

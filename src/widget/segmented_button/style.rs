@@ -13,6 +13,7 @@ pub struct Appearance {
     pub active: ItemStatusAppearance,
     pub inactive: ItemStatusAppearance,
     pub hover: ItemStatusAppearance,
+    pub pressed: ItemStatusAppearance,
 }
 
 /// Appearance of an item in the segmented button.

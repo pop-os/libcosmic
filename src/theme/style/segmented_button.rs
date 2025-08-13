@@ -63,6 +63,7 @@ impl StyleSheet for Theme {
                         text_color: container.component.on.into(),
                     },
                     hover: hover(cosmic, &active, 0.2),
+                    pressed: hover(cosmic, &active, 0.15),
                     active,
                     ..Default::default()
                 }
@@ -117,6 +118,7 @@ impl StyleSheet for Theme {
                         text_color: container.component.on.into(),
                     },
                     hover: hover(cosmic, &active, 0.2),
+                    pressed: hover(cosmic, &active, 0.15),
                     active,
                     ..Default::default()
                 }
@@ -169,6 +171,7 @@ mod horizontal {
                 text_color: container.component.on.into(),
             },
             hover: super::hover(cosmic, &active, 0.3),
+            pressed: super::hover(cosmic, &active, 0.25),
             active,
             ..Default::default()
         }
@@ -262,6 +265,7 @@ mod vertical {
                 ..active
             },
             hover: super::hover(cosmic, &active, 0.3),
+            pressed: super::hover(cosmic, &active, 0.25),
             active,
             ..Default::default()
         }
