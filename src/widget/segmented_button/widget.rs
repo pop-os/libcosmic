@@ -600,6 +600,7 @@ where
             collapsed: Default::default(),
             focused: Default::default(),
             focused_item: Default::default(),
+            focused_visible: false,
             hovered: Default::default(),
             known_length: Default::default(),
             middle_clicked: Default::default(),
@@ -1053,6 +1054,7 @@ where
                 ..
             }) = event
             {
+                state.focused_visible = true;
                 return if modifiers.shift() {
                     self.focus_previous(state)
                 } else {
@@ -1333,7 +1335,7 @@ where
             };
 
             let key_is_active = self.model.is_active(key);
-            let key_is_focused = self.button_is_focused(state, key);
+            let key_is_focused = state.focused_visible && self.button_is_focused(state, key);
             let key_is_hovered = self.button_is_hovered(state, key);
             let status_appearance = if self.button_is_pressed(state, key) && key_is_hovered {
                 appearance.pressed
@@ -1672,6 +1674,8 @@ pub struct LocalState {
     pub(super) buttons_offset: usize,
     /// Whether buttons need to be collapsed to preserve minimum width
     pub(super) collapsed: bool,
+    /// Visibility of focus state
+    focused_visible: bool,
     /// If the widget is focused or not.
     focused: Option<Focus>,
     /// The key inside the widget that is currently focused.
@@ -1733,12 +1737,14 @@ impl operation::Focusable for LocalState {
 
     fn focus(&mut self) {
         self.set_focused();
+        self.focused_visible = true;
         self.focused_item = Item::Set;
     }
 
     fn unfocus(&mut self) {
         self.focused = None;
         self.focused_item = Item::None;
+        self.focused_visible = false;
         self.show_context = None;
     }
 }
