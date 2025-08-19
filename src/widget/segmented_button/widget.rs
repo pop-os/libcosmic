@@ -1412,21 +1412,27 @@ where
                     if let crate::theme::SegmentedButton::FileNav = self.style {
                         if indent > 1 {
                             indent_padding = 7.0;
-                            renderer.fill_quad(
-                                renderer::Quad {
-                                    bounds: Rectangle {
-                                        x: bounds.x - self.indent_spacing as f32 + indent_padding,
-                                        width: 1.0,
-                                        ..bounds
+
+                            for level in 1..indent {
+                                renderer.fill_quad(
+                                    renderer::Quad {
+                                        bounds: Rectangle {
+                                            x: bounds.x
+                                                - (level as f32 * self.indent_spacing as f32)
+                                                + indent_padding,
+                                            width: 1.0,
+                                            ..bounds
+                                        },
+                                        border: Border {
+                                            radius: rad_0.into(),
+                                            ..Default::default()
+                                        },
+                                        shadow: Shadow::default(),
                                     },
-                                    border: Border {
-                                        radius: rad_0.into(),
-                                        ..Default::default()
-                                    },
-                                    shadow: Shadow::default(),
-                                },
-                                divider_background,
-                            );
+                                    divider_background,
+                                );
+                            }
+
                             indent_padding += 4.0;
                         }
                     }
