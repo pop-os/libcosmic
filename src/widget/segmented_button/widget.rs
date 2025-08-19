@@ -619,20 +619,19 @@ where
 
         for key in self.model.order.iter().copied() {
             if let Some(text) = self.model.text.get(key) {
-                let (font, button_state) = if self.button_is_focused(state, key) {
-                    (self.font_active, 0)
+                let font = if self.button_is_focused(state, key) {
+                    self.font_active
                 } else if state.show_context.is_some() || self.button_is_hovered(state, key) {
-                    (self.font_hovered, 1)
+                    self.font_hovered
                 } else if self.model.is_active(key) {
-                    (self.font_active, 2)
+                    self.font_active
                 } else {
-                    (self.font_inactive, 3)
+                    self.font_inactive
                 };
 
                 let mut hasher = DefaultHasher::new();
                 text.hash(&mut hasher);
                 font.hash(&mut hasher);
-                button_state.hash(&mut hasher);
                 let text_hash = hasher.finish();
 
                 if let Some(prev_hash) = state.text_hashes.insert(key, text_hash) {
@@ -1293,6 +1292,15 @@ where
             );
         }
 
+        let rad_0 = THEME.lock().unwrap().cosmic().corner_radii.radius_0;
+
+        let divider_background = Background::Color(
+            crate::theme::active()
+                .cosmic()
+                .primary_component_divider()
+                .into(),
+        );
+
         // Draw each of the items in the widget.
         let mut nth = 0;
         self.variant_bounds(state, bounds).for_each(move |item| {
@@ -1337,7 +1345,7 @@ where
             let key_is_active = self.model.is_active(key);
             let key_is_focused = state.focused_visible && self.button_is_focused(state, key);
             let key_is_hovered = self.button_is_hovered(state, key);
-            let status_appearance = if self.button_is_pressed(state, key) && key_is_hovered {
+            let status_appearance = if self.button_is_pressed(state, key) {
                 appearance.pressed
             } else if key_is_hovered || menu_open() {
                 appearance.hover
@@ -1355,11 +1363,87 @@ where
                 status_appearance.middle
             };
 
+            // Draw the active hint on tabs
+            if appearance.active_width > 0.0 {
+                let active_width = if key_is_active {
+                    appearance.active_width
+                } else {
+                    1.0
+                };
+
+                renderer.fill_quad(
+                    renderer::Quad {
+                        bounds: if Self::VERTICAL {
+                            Rectangle {
+                                x: bounds.x + bounds.width - active_width,
+                                width: active_width,
+                                ..bounds
+                            }
+                        } else {
+                            Rectangle {
+                                y: bounds.y + bounds.height - active_width,
+                                height: active_width,
+                                ..bounds
+                            }
+                        },
+                        border: Border {
+                            radius: rad_0.into(),
+                            ..Default::default()
+                        },
+                        shadow: Shadow::default(),
+                    },
+                    appearance.active.text_color,
+                );
+            }
+
+            let original_bounds = bounds;
+            bounds.x += f32::from(self.button_padding[0]);
+            bounds.width -= f32::from(self.button_padding[0]) - f32::from(self.button_padding[2]);
+            let mut indent_padding = 0.0;
+
+            // Adjust bounds by indent
+            if let Some(indent) = self.model.indent(key) {
+                if indent > 0 {
+                    let adjustment = f32::from(indent) * f32::from(self.indent_spacing);
+                    bounds.x += adjustment;
+                    bounds.width -= adjustment;
+
+                    // Draw indent line
+                    if let crate::theme::SegmentedButton::FileNav = self.style {
+                        if indent > 1 {
+                            indent_padding = 7.0;
+                            renderer.fill_quad(
+                                renderer::Quad {
+                                    bounds: Rectangle {
+                                        x: bounds.x - self.indent_spacing as f32 + indent_padding,
+                                        width: 1.0,
+                                        ..bounds
+                                    },
+                                    border: Border {
+                                        radius: rad_0.into(),
+                                        ..Default::default()
+                                    },
+                                    shadow: Shadow::default(),
+                                },
+                                divider_background,
+                            );
+                            indent_padding += 4.0;
+                        }
+                    }
+                }
+            }
+
             // Render the background of the button.
             if key_is_focused || status_appearance.background.is_some() {
                 renderer.fill_quad(
                     renderer::Quad {
-                        bounds,
+                        bounds: Rectangle {
+                            x: bounds.x - f32::from(self.button_padding[0]) + indent_padding,
+                            width: bounds.width + f32::from(self.button_padding[0])
+                                - f32::from(self.button_padding[2])
+                                - indent_padding,
+                            ..bounds
+                        },
                         border: if key_is_focused {
                             Border {
                                 width: 1.0,
@@ -1375,49 +1459,6 @@ where
                         .background
                         .unwrap_or(Background::Color(Color::TRANSPARENT)),
                 );
-            }
-
-            // Draw the active hint on tabs
-            if appearance.active_width > 0.0 {
-                let rad_0 = THEME.lock().unwrap().cosmic().corner_radii.radius_0;
-                let active_width = if key_is_active {
-                    appearance.active_width
-                } else {
-                    1.0
-                };
-                let mut bounds = bounds;
-
-                if Self::VERTICAL {
-                    bounds.x += bounds.height - active_width;
-                    bounds.width = active_width;
-                } else {
-                    bounds.y += bounds.height - active_width;
-                    bounds.height = active_width;
-                }
-
-                renderer.fill_quad(
-                    renderer::Quad {
-                        bounds,
-                        border: Border {
-                            radius: rad_0.into(),
-                            ..Default::default()
-                        },
-                        shadow: Shadow::default(),
-                    },
-                    appearance.active.text_color,
-                );
-            }
-
-            let original_bounds = bounds;
-
-            bounds.x += f32::from(self.button_padding[0]);
-            bounds.width -= f32::from(self.button_padding[0]) - f32::from(self.button_padding[2]);
-
-            // Adjust bounds by indent
-            if let Some(indent) = self.model.indent(key) {
-                let adjustment = f32::from(indent) * f32::from(self.indent_spacing);
-                bounds.x += adjustment;
-                bounds.width -= adjustment;
             }
 
             // Align contents of the button to the requested `button_alignment`.

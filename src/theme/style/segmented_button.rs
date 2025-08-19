@@ -18,6 +18,8 @@ pub enum SegmentedButton {
     Control,
     /// Navigation bar style
     NavBar,
+    /// File browser
+    FileNav,
     /// Or implement any custom theme of your liking.
     Custom(Box<dyn Fn(&Theme) -> Appearance>),
 }
@@ -69,7 +71,7 @@ impl StyleSheet for Theme {
                 }
             }
 
-            SegmentedButton::NavBar => Appearance {
+            SegmentedButton::NavBar | SegmentedButton::FileNav => Appearance {
                 active_width: 0.0,
                 ..horizontal::tab_bar(cosmic, container)
             },
@@ -124,7 +126,7 @@ impl StyleSheet for Theme {
                 }
             }
 
-            SegmentedButton::NavBar => Appearance {
+            SegmentedButton::NavBar | SegmentedButton::FileNav => Appearance {
                 active_width: 0.0,
                 ..vertical::tab_bar(cosmic, container)
             },

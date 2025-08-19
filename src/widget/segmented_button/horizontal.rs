@@ -67,7 +67,7 @@ where
                 / num as f32;
         }
 
-        let segmetned_control = matches!(self.style, crate::theme::SegmentedButton::Control);
+        let is_control = matches!(self.style, crate::theme::SegmentedButton::Control);
 
         Box::new(
             self.model
@@ -93,7 +93,7 @@ where
                     let button_bounds = ItemBounds::Button(key, layout_bounds);
                     let mut divider = None;
 
-                    if self.dividers && segmetned_control && nth + 1 < num {
+                    if self.dividers && is_control && nth + 1 < num {
                         divider = Some(ItemBounds::Divider(
                             Rectangle {
                                 width: 1.0,
@@ -143,7 +143,7 @@ where
             let max_size = limits.height(Length::Fixed(max_height)).resolve(
                 Length::Fill,
                 max_height,
-                Size::new(f32::MAX, max_height),
+                Size::new(limits.max().width, max_height),
             );
 
             let mut visible_width = 0.0;
@@ -152,7 +152,7 @@ where
             for (button_size, _actual_size) in &state.internal_layout {
                 visible_width += button_size.width;
 
-                if max_size.width >= visible_width {
+                if max_size.width - spacing >= visible_width {
                     state.buttons_visible += 1;
                 } else {
                     visible_width = max_size.width - max_height;
