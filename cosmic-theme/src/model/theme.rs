@@ -1004,15 +1004,14 @@ impl ThemeBuilder {
 
         let text_steps_array = text_tint.map(|c| steps(c, NonZeroUsize::new(100).unwrap()));
 
-        let control_steps_array = if let Some(neutral_tint) = neutral_tint {
-            let mut neutral_steps_arr = steps(neutral_tint, NonZeroUsize::new(11).unwrap());
-            if !is_dark {
-                neutral_steps_arr.reverse();
-            }
-            neutral_steps_arr
+        let mut control_steps_array = if let Some(neutral_tint) = neutral_tint {
+            steps(neutral_tint, NonZeroUsize::new(11).unwrap())
         } else {
             steps(palette.as_ref().neutral_2, NonZeroUsize::new(11).unwrap())
         };
+        if !is_dark {
+            control_steps_array.reverse();
+        }
 
         let p_ref = palette.as_ref();
 
