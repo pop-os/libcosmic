@@ -137,7 +137,13 @@ pub fn about<'a, Message: Clone + 'static>(
     };
 
     let application_name = about.name.as_ref().map(widget::text::title3);
-    let application_icon = about.icon.as_ref().map(|i| i.clone().icon());
+    let application_icon = about.icon.as_ref().map(|i| {
+        i.clone()
+            .icon()
+            .content_fit(iced::ContentFit::Contain)
+            .width(Length::Fixed(128.))
+            .height(Length::Fixed(128.))
+    });
     let author = about.author.as_ref().map(widget::text::body);
     let version = about.version.as_ref().map(widget::button::standard);
     let links_section = section(&about.links, "Links");
