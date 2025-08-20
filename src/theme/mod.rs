@@ -18,9 +18,6 @@ use iced_runtime::{Appearance, DefaultStyle};
 use std::sync::{Arc, Mutex};
 pub use style::*;
 
-#[cfg(feature = "dbus-config")]
-use cosmic_config::dbus;
-
 pub type CosmicColor = ::palette::rgb::Srgba;
 pub type CosmicComponent = cosmic_theme::Component;
 pub type CosmicTheme = cosmic_theme::Theme;

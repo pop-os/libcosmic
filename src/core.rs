@@ -89,7 +89,7 @@ pub struct Core {
     #[cfg(feature = "single-instance")]
     pub(crate) single_instance: bool,
 
-    #[cfg(feature = "dbus-config")]
+    #[cfg(all(feature = "dbus-config", target_os = "linux"))]
     pub(crate) settings_daemon: Option<cosmic_settings_daemon::CosmicSettingsDaemonProxy<'static>>,
 
     pub(crate) main_window: Option<window::Id>,
@@ -146,7 +146,7 @@ impl Default for Core {
             applet: crate::applet::Context::default(),
             #[cfg(feature = "single-instance")]
             single_instance: false,
-            #[cfg(feature = "dbus-config")]
+            #[cfg(all(feature = "dbus-config", target_os = "linux"))]
             settings_daemon: None,
             portal_is_dark: None,
             portal_accent: None,
@@ -353,7 +353,7 @@ impl Core {
         &self,
         config_id: &'static str,
     ) -> iced::Subscription<cosmic_config::Update<T>> {
-        #[cfg(feature = "dbus-config")]
+        #[cfg(all(feature = "dbus-config", target_os = "linux"))]
         if let Some(settings_daemon) = self.settings_daemon.clone() {
             return cosmic_config::dbus::watcher_subscription(settings_daemon, config_id, false);
         }
@@ -370,7 +370,7 @@ impl Core {
         &self,
         state_id: &'static str,
     ) -> iced::Subscription<cosmic_config::Update<T>> {
-        #[cfg(feature = "dbus-config")]
+        #[cfg(all(feature = "dbus-config", target_os = "linux"))]
         if let Some(settings_daemon) = self.settings_daemon.clone() {
             return cosmic_config::dbus::watcher_subscription(settings_daemon, state_id, true);
         }
