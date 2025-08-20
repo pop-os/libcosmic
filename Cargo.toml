@@ -8,7 +8,7 @@ rust-version = "1.85"
 name = "cosmic"
 
 [features]
-default = ["multi-window", "a11y"]
+default = ["dbus-config", "multi-window", "a11y"]
 # Accessibility support
 a11y = ["iced/a11y", "iced_accessibility"]
 # Enable about widget
@@ -27,8 +27,8 @@ applet = [
     "multi-window",
 ]
 applet-token = ["applet"]
-# Use the cosmic-settings-daemon for config handling
-dbus-config = ["cosmic-config/dbus", "dep:zbus", "cosmic-settings-daemon"]
+# Use the cosmic-settings-daemon for config handling on Linux targets
+dbus-config = []
 # Debug features
 debug = ["iced/debug"]
 # Enables pipewire support in ashpd, if ashpd is enabled
@@ -107,7 +107,6 @@ cctk = { git = "https://github.com/pop-os/cosmic-protocols", package = "cosmic-c
 chrono = "0.4.40"
 cosmic-config = { path = "cosmic-config" }
 cosmic-settings-config = { git = "https://github.com/pop-os/cosmic-settings-daemon", optional = true }
-cosmic-settings-daemon = { git = "https://github.com/pop-os/dbus-settings-bindings", optional = true }
 css-color = "0.2.8"
 derive_setters = "0.1.6"
 futures = "0.3"
@@ -134,6 +133,12 @@ tracing = "0.1.41"
 unicode-segmentation = "1.12"
 url = "2.5.4"
 zbus = { version = "5.7.1", default-features = false, optional = true }
+
+# Enable DBus feature on Linux targets
+[target.'cfg(target_os = "linux")'.dependencies]
+cosmic-config = { path = "cosmic-config", features = ["dbus"] }
+cosmic-settings-daemon = { git = "https://github.com/pop-os/dbus-settings-bindings" }
+zbus = { version = "5.7.1", default-features = false }
 
 [target.'cfg(unix)'.dependencies]
 freedesktop-icons = { package = "cosmic-freedesktop-icons", git = "https://github.com/pop-os/freedesktop-icons" }

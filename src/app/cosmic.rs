@@ -101,7 +101,7 @@ where
     pub fn init(
         (mut core, flags): (Core, T::Flags),
     ) -> (Self, iced::Task<crate::Action<T::Message>>) {
-        #[cfg(feature = "dbus-config")]
+        #[cfg(all(feature = "dbus-config", target_os = "linux"))]
         {
             use iced_futures::futures::executor::block_on;
             core.settings_daemon = block_on(cosmic_config::dbus::settings_daemon_proxy()).ok();
