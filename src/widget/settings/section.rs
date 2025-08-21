@@ -8,10 +8,7 @@ use std::borrow::Cow;
 /// A section within a settings view column.
 #[deprecated(note = "use `settings::section().title()` instead")]
 pub fn view_section<'a, Message: 'static>(title: impl Into<Cow<'a, str>>) -> Section<'a, Message> {
-    Section {
-        title: title.into(),
-        children: ListColumn::default(),
-    }
+    section().title(title)
 }
 
 /// A section within a settings view column.
@@ -22,21 +19,26 @@ pub fn section<'a, Message: 'static>() -> Section<'a, Message> {
 /// A section with a pre-defined list column.
 pub fn with_column<Message: 'static>(children: ListColumn<'_, Message>) -> Section<'_, Message> {
     Section {
-        title: Cow::Borrowed(""),
+        header: None,
         children,
     }
 }
 
 #[must_use]
 pub struct Section<'a, Message> {
-    title: Cow<'a, str>,
+    header: Option<Element<'a, Message>>,
     children: ListColumn<'a, Message>,
 }
 
 impl<'a, Message: 'static> Section<'a, Message> {
     /// Define an optional title for the section.
     pub fn title(mut self, title: impl Into<Cow<'a, str>>) -> Self {
-        self.title = title.into();
+        self.header(text::heading(title.into()))
+    }
+
+    /// Define an optional custom header for the section.
+    pub fn header(mut self, header: impl Into<Element<'a, Message>>) -> Self {
+        self.header = Some(header.into());
         self
     }
 
@@ -69,11 +71,7 @@ impl<'a, Message: 'static> From<Section<'a, Message>> for Element<'a, Message> {
     fn from(data: Section<'a, Message>) -> Self {
         column::with_capacity(2)
             .spacing(8)
-            .push_maybe(if data.title.is_empty() {
-                None
-            } else {
-                Some(text::heading(data.title))
-            })
+            .push_maybe(data.header)
             .push(data.children)
             .into()
     }
