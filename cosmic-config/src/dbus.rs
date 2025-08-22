@@ -156,8 +156,16 @@ fn watcher_stream<T: CosmicConfigEntry + Send + Sync + Default + 'static + Clone
             let mut config = match T::get_entry(&cosmic_config) {
                 Ok(config) => config,
                 Err((errors, default)) => {
-                    if !errors.is_empty() {
-                        eprintln!("Error getting config: {config_id} {errors:?}");
+                    for why in &errors {
+                        if why.is_err() {
+                            if let crate::Error::GetKey(_, err) = &why {
+                                if err.kind() == std::io::ErrorKind::NotFound {
+                                    // No system default config installed; don't error
+                                    continue;
+                                }
+                            }
+                            tracing::error!("error getting config: {config_id} {why}");
+                        }
                     }
                     default
                 }
@@ -171,7 +179,7 @@ fn watcher_stream<T: CosmicConfigEntry + Send + Sync + Default + 'static + Clone
                 })
                 .await
             {
-                eprintln!("Failed to send config: {err}");
+                tracing::error!("Failed to send config: {err}");
             }
 
             loop {
@@ -211,7 +219,7 @@ fn watcher_stream<T: CosmicConfigEntry + Send + Sync + Default + 'static + Clone
                         })
                         .await
                     {
-                        eprintln!("Failed to send config update: {err}");
+                        tracing::error!("Failed to send config update: {err}");
                     }
                 }
             }
