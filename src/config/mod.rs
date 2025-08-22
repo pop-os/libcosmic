@@ -25,6 +25,12 @@ pub static COSMIC_TK: LazyLock<RwLock<CosmicTk>> = LazyLock::new(|| {
             .map(|c| {
                 CosmicTk::get_entry(&c).unwrap_or_else(|(errors, mode)| {
                     for why in errors.into_iter().filter(cosmic_config::Error::is_err) {
+                        if let cosmic_config::Error::GetKey(_, err) = &why {
+                            if err.kind() == std::io::ErrorKind::NotFound {
+                                // No system default config installed; don't error
+                                continue;
+                            }
+                        }
                         tracing::error!(?why, "CosmicTk config entry error");
                     }
                     mode
