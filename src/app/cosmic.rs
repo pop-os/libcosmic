@@ -369,6 +369,12 @@ where
                         .into_iter()
                         .filter(cosmic_config::Error::is_err)
                     {
+                        if let cosmic_config::Error::GetKey(_, err) = &why {
+                            if err.kind() == std::io::ErrorKind::NotFound {
+                                // No system default config installed; don't error
+                                continue;
+                            }
+                        }
                         tracing::error!(?why, "cosmic toolkit config update error");
                     }
 
