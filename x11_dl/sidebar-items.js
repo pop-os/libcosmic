@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"mod":["dpms","error","glx","keysym","sync","xcursor","xf86vmode","xfixes","xft","xinerama","xinput","xinput2","xlib","xlib_xcb","xmd","xmu","xpresent","xrandr","xrecord","xrender","xshm","xss","xt","xtest"]};

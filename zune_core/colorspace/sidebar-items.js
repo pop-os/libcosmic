@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["ColorCharacteristics","ColorSpace"],"static":["ALL_COLORSPACES"]};
