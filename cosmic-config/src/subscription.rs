@@ -5,12 +5,18 @@ use std::{borrow::Cow, hash::Hash};
 
 use crate::{Config, CosmicConfigEntry};
 
+/// Represents the state of a configuration watcher.
+#[derive(Debug)]
 pub enum ConfigState<T> {
+    /// Initial state before the configuration is loaded.
     Init(Cow<'static, str>, u64, bool),
+    /// Waiting for updates, holding current config and watcher.
     Waiting(T, RecommendedWatcher, mpsc::Receiver<Vec<String>>, Config),
-    Failed,
+    /// Permanent failure state.
+    Failed(String),
 }
 
+#[derive(Debug)]
 pub enum ConfigUpdate<T> {
     Update(crate::Update<T>),
     Failed,
@@ -48,7 +54,6 @@ fn watcher_stream<T: 'static + Send + Sync + PartialEq + Clone + CosmicConfigEnt
     stream::channel(100, move |mut output| {
         let config_id = config_id.clone();
         async move {
-            let config_id = config_id.clone();
             let mut state = ConfigState::Init(config_id, config_version, is_state);
 
             loop {
@@ -72,13 +77,13 @@ async fn start_listening<T: 'static + Send + Sync + PartialEq + Clone + CosmicCo
             } else {
                 Config::new(&config_id, version)
             }) else {
-                return ConfigState::Failed;
+                return ConfigState::Failed("failed to create config".into());
             };
             let Ok(watcher) = config.watch(move |_helper, keys| {
                 let mut tx = tx.clone();
                 let _ = tx.try_send(keys.to_vec());
             }) else {
-                return ConfigState::Failed;
+                return ConfigState::Failed("failed to create watcher".into());
             };
 
             match T::get_entry(&config) {
@@ -88,7 +93,7 @@ async fn start_listening<T: 'static + Send + Sync + PartialEq + Clone + CosmicCo
                         keys: Vec::new(),
                         config: t.clone(),
                     };
-                    _ = output.send(update).await;
+                    let _ = output.send(update).await;
                     ConfigState::Waiting(t, watcher, rx, config)
                 }
                 Err((errors, t)) => {
@@ -97,7 +102,7 @@ async fn start_listening<T: 'static + Send + Sync + PartialEq + Clone + CosmicCo
                         keys: Vec::new(),
                         config: t.clone(),
                     };
-                    _ = output.send(update).await;
+                    let _ = output.send(update).await;
                     ConfigState::Waiting(t, watcher, rx, config)
                 }
             }
@@ -107,7 +112,7 @@ async fn start_listening<T: 'static + Send + Sync + PartialEq + Clone + CosmicCo
                 let (errors, changed) = conf_data.update_keys(&config, &keys);
 
                 if !changed.is_empty() {
-                    _ = output
+                    let _ = output
                         .send(crate::Update {
                             errors,
                             keys: changed,
@@ -117,7 +122,7 @@ async fn start_listening<T: 'static + Send + Sync + PartialEq + Clone + CosmicCo
                 }
                 ConfigState::Waiting(conf_data, watcher, rx, config)
             }
-            None => ConfigState::Failed,
+            None => ConfigState::Failed("channel closed".into()),
         },
         ConfigState::Failed => pending().await,
     }
