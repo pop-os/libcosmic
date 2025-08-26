@@ -168,7 +168,7 @@ impl Component {
         base_50.alpha *= 0.5;
 
         let on_20 = on_component.with_alpha(0.2);
-        let on_50 = on_20.with_alpha(0.5);
+        let on_65 = on_20.with_alpha(0.65);
 
         let mut disabled_border = border;
         disabled_border.alpha *= 0.5;
@@ -192,10 +192,10 @@ impl Component {
             },
             selected_text: accent,
             focus: accent,
-            divider: if is_high_contrast { on_50 } else { on_20 },
+            divider: if is_high_contrast { on_65 } else { on_20 },
             on: on_component,
             disabled: base_50,
-            on_disabled: on_50,
+            on_disabled: on_65,
             border,
             disabled_border,
         }
