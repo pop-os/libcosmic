@@ -4,16 +4,10 @@ use palette::Srgba;
 pub fn over<A: Into<Srgba>, B: Into<Srgba>>(a: A, b: B) -> Srgba {
     let a = a.into();
     let b = b.into();
-    let o_a = (alpha_over(a.alpha, b.alpha)).max(0.0).min(1.0);
-    let o_r = (c_over(a.red, b.red, a.alpha, b.alpha, o_a))
-        .max(0.0)
-        .min(1.0);
-    let o_g = (c_over(a.green, b.green, a.alpha, b.alpha, o_a))
-        .max(0.0)
-        .min(1.0);
-    let o_b = (c_over(a.blue, b.blue, a.alpha, b.alpha, o_a))
-        .max(0.0)
-        .min(1.0);
+    let o_a = (alpha_over(a.alpha, b.alpha)).clamp(0.0, 1.0);
+    let o_r = (c_over(a.red, b.red, a.alpha, b.alpha, o_a)).clamp(0.0, 1.0);
+    let o_g = (c_over(a.green, b.green, a.alpha, b.alpha, o_a)).clamp(0.0, 1.0);
+    let o_b = (c_over(a.blue, b.blue, a.alpha, b.alpha, o_a)).clamp(0.0, 1.0);
 
     Srgba::new(o_r, o_g, o_b, o_a)
 }

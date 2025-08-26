@@ -194,8 +194,8 @@ impl Component {
             focus: accent,
             divider: if is_high_contrast { on_50 } else { on_20 },
             on: on_component,
-            disabled: over(base_50, base),
-            on_disabled: over(on_50, base),
+            disabled: base_50,
+            on_disabled: on_50,
             border,
             disabled_border,
         }
