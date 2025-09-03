@@ -140,9 +140,7 @@ impl Config {
     pub fn system(name: &str, version: u64) -> Result<Self, Error> {
         let path = sanitize_name(name)?.join(format!("v{version}"));
         #[cfg(unix)]
-        let system_path = xdg::BaseDirectories::with_prefix("cosmic")
-            .map_err(std::io::Error::from)?
-            .find_data_file(path);
+        let system_path = xdg::BaseDirectories::with_prefix("cosmic").find_data_file(path);
 
         #[cfg(windows)]
         let system_path =
@@ -164,9 +162,7 @@ impl Config {
 
         // Search data file, which provides default (e.g. /usr/share)
         #[cfg(unix)]
-        let system_path = xdg::BaseDirectories::with_prefix("cosmic")
-            .map_err(std::io::Error::from)?
-            .find_data_file(&path);
+        let system_path = xdg::BaseDirectories::with_prefix("cosmic").find_data_file(&path);
 
         #[cfg(windows)]
         let system_path =
