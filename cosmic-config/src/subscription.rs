@@ -62,7 +62,7 @@ async fn start_listening<T: 'static + Send + Sync + PartialEq + Clone + CosmicCo
     state: ConfigState<T>,
     output: &mut mpsc::Sender<crate::Update<T>>,
 ) -> ConfigState<T> {
-    use iced_futures::futures::{future::pending, StreamExt};
+    use iced_futures::futures::{StreamExt, future::pending};
 
     match state {
         ConfigState::Init(config_id, version, is_state) => {

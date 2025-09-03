@@ -1,12 +1,12 @@
 use crate::{
+    Component, Container, CornerRadii, CosmicPalette, CosmicPaletteInner, DARK_PALETTE,
+    LIGHT_PALETTE, NAME, Spacing, ThemeMode,
     composite::over,
     steps::{color_index, get_small_widget_color, get_surface_color, get_text, steps},
-    Component, Container, CornerRadii, CosmicPalette, CosmicPaletteInner, Spacing, ThemeMode,
-    DARK_PALETTE, LIGHT_PALETTE, NAME,
 };
 use cosmic_config::{Config, CosmicConfigEntry};
 use palette::{
-    color_difference::Wcag21RelativeContrast, rgb::Rgb, IntoColor, Oklcha, Srgb, Srgba, WithAlpha,
+    IntoColor, Oklcha, Srgb, Srgba, WithAlpha, color_difference::Wcag21RelativeContrast, rgb::Rgb,
 };
 use serde::{Deserialize, Serialize};
 use std::num::NonZeroUsize;

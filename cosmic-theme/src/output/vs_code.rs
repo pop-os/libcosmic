@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::Theme;
 
-use super::{to_hex, OutputError};
+use super::{OutputError, to_hex};
 
 /// Represents the workbench.colorCustomizations section of a VS Code settings.json file
 #[derive(Debug, Clone, Serialize, Deserialize)]

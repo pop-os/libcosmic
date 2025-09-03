@@ -15,33 +15,37 @@ use cosmic_theme::Spacing;
 use cosmic_theme::ThemeMode;
 use iced_futures::Subscription;
 use iced_runtime::{Appearance, DefaultStyle};
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, LazyLock, Mutex};
 pub use style::*;
 
 pub type CosmicColor = ::palette::rgb::Srgba;
 pub type CosmicComponent = cosmic_theme::Component;
 pub type CosmicTheme = cosmic_theme::Theme;
 
-lazy_static::lazy_static! {
-    pub static ref COSMIC_DARK: CosmicTheme = CosmicTheme::dark_default();
-    pub static ref COSMIC_HC_DARK: CosmicTheme = CosmicTheme::high_contrast_dark_default();
-    pub static ref COSMIC_LIGHT: CosmicTheme = CosmicTheme::light_default();
-    pub static ref COSMIC_HC_LIGHT: CosmicTheme = CosmicTheme::high_contrast_light_default();
-    pub static ref TRANSPARENT_COMPONENT: Component = Component {
-        base: CosmicColor::new(0.0, 0.0, 0.0, 0.0),
-        hover: CosmicColor::new(0.0, 0.0, 0.0, 0.0),
-        pressed: CosmicColor::new(0.0, 0.0, 0.0, 0.0),
-        selected: CosmicColor::new(0.0, 0.0, 0.0, 0.0),
-        selected_text: CosmicColor::new(0.0, 0.0, 0.0, 0.0),
-        focus: CosmicColor::new(0.0, 0.0, 0.0, 0.0),
-        disabled: CosmicColor::new(0.0, 0.0, 0.0, 0.0),
-        on: CosmicColor::new(0.0, 0.0, 0.0, 0.0),
-        on_disabled: CosmicColor::new(0.0, 0.0, 0.0, 0.0),
-        divider: CosmicColor::new(0.0, 0.0, 0.0, 0.0),
-        border: CosmicColor::new(0.0, 0.0, 0.0, 0.0),
-        disabled_border: CosmicColor::new(0.0, 0.0, 0.0, 0.0),
-    };
-}
+pub static COSMIC_DARK: LazyLock<CosmicTheme> = LazyLock::new(|| CosmicTheme::dark_default());
+
+pub static COSMIC_HC_DARK: LazyLock<CosmicTheme> =
+    LazyLock::new(|| CosmicTheme::high_contrast_dark_default());
+
+pub static COSMIC_LIGHT: LazyLock<CosmicTheme> = LazyLock::new(|| CosmicTheme::light_default());
+
+pub static COSMIC_HC_LIGHT: LazyLock<CosmicTheme> =
+    LazyLock::new(|| CosmicTheme::high_contrast_light_default());
+
+pub static TRANSPARENT_COMPONENT: LazyLock<Component> = LazyLock::new(|| Component {
+    base: CosmicColor::new(0.0, 0.0, 0.0, 0.0),
+    hover: CosmicColor::new(0.0, 0.0, 0.0, 0.0),
+    pressed: CosmicColor::new(0.0, 0.0, 0.0, 0.0),
+    selected: CosmicColor::new(0.0, 0.0, 0.0, 0.0),
+    selected_text: CosmicColor::new(0.0, 0.0, 0.0, 0.0),
+    focus: CosmicColor::new(0.0, 0.0, 0.0, 0.0),
+    disabled: CosmicColor::new(0.0, 0.0, 0.0, 0.0),
+    on: CosmicColor::new(0.0, 0.0, 0.0, 0.0),
+    on_disabled: CosmicColor::new(0.0, 0.0, 0.0, 0.0),
+    divider: CosmicColor::new(0.0, 0.0, 0.0, 0.0),
+    border: CosmicColor::new(0.0, 0.0, 0.0, 0.0),
+    disabled_border: CosmicColor::new(0.0, 0.0, 0.0, 0.0),
+});
 
 pub(crate) static THEME: Mutex<Theme> = Mutex::new(Theme {
     theme_type: ThemeType::Dark,

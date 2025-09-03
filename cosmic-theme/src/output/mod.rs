@@ -1,4 +1,4 @@
-use palette::{rgb::Rgba, Srgba};
+use palette::{Srgba, rgb::Rgba};
 use thiserror::Error;
 
 use crate::Theme;

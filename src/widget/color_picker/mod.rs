@@ -6,6 +6,7 @@
 use std::borrow::Cow;
 use std::iter;
 use std::rc::Rc;
+use std::sync::LazyLock;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::{Duration, Instant};
 
@@ -26,7 +27,6 @@ use iced_core::{
 
 use iced_widget::slider::HandleShape;
 use iced_widget::{Row, canvas, column, horizontal_space, row, scrollable, vertical_space};
-use lazy_static::lazy_static;
 use palette::{FromColor, RgbHue};
 
 use super::divider::horizontal;
@@ -38,17 +38,17 @@ use super::{Icon, button, segmented_control, text, text_input, tooltip};
 pub use ColorPickerModel as Model;
 
 // TODO is this going to look correct enough?
-lazy_static! {
-    pub static ref HSV_RAINBOW: Vec<iced::Color> = (0u16..8)
-        .map(
-            |h| iced::Color::from(palette::Srgba::from_color(palette::Hsv::new_srgb_const(
+pub static HSV_RAINBOW: LazyLock<Vec<Color>> = LazyLock::new(|| {
+    (0u16..8)
+        .map(|h| {
+            Color::from(palette::Srgba::from_color(palette::Hsv::new_srgb_const(
                 RgbHue::new(f32::from(h) * 360.0 / 7.0),
                 1.0,
-                1.0
+                1.0,
             )))
-        )
-        .collect();
-}
+        })
+        .collect()
+});
 
 const MAX_RECENT: usize = 20;
 
