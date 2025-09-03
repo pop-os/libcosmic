@@ -7,6 +7,7 @@ use std::cmp;
 
 use crate::iced_core::{Alignment, Length, Padding};
 use crate::widget::{Grid, button, column, grid, icon, row, text};
+use apply::Apply;
 use chrono::{Datelike, Days, Local, Months, NaiveDate, Weekday};
 
 /// A widget that displays an interactive calendar.
@@ -115,19 +116,32 @@ where
     Message: Clone + 'static,
 {
     fn from(this: Calendar<'a, Message>) -> Self {
+        macro_rules! icon {
+            ($name:expr, $on_press:expr) => {{
+                #[cfg(target_os = "linux")]
+                let icon = {
+                    icon::from_name($name)
+                        .apply(button::icon)
+                };
+                #[cfg(not(target_os = "linux"))]
+                let icon = {
+                    icon::from_svg_bytes(include_bytes!(concat!(
+                        "../../res/icons/",
+                        $name,
+                        ".svg"
+                    )))
+                    .symbolic(true)
+                    .apply(button::icon)
+                };
+                icon.padding([0, 12])
+                    .on_press($on_press)
+            }};
+        }
         let date = text(this.model.visible.format("%B %Y").to_string()).size(18);
 
         let month_controls = row::with_capacity(2)
-            .push(
-                button::icon(icon::from_name("go-previous-symbolic"))
-                    .padding([0, 12])
-                    .on_press((this.on_prev)()),
-            )
-            .push(
-                button::icon(icon::from_name("go-next-symbolic"))
-                    .padding([0, 12])
-                    .on_press((this.on_next)()),
-            );
+            .push(icon!("go-previous-symbolic", (this.on_prev)()))
+            .push(icon!("go-next-symbolic", (this.on_next)()));
 
         // Calender
         let mut calendar_grid: Grid<'_, Message> =
