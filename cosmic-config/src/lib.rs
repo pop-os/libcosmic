@@ -1,10 +1,10 @@
 //! Integrations for cosmic-config — the cosmic configuration system.
 
 use notify::{
-    event::{EventKind, ModifyKind, RenameMode},
     RecommendedWatcher, Watcher,
+    event::{EventKind, ModifyKind, RenameMode},
 };
-use serde::{de::DeserializeOwned, Serialize};
+use serde::{Serialize, de::DeserializeOwned};
 use std::{
     fmt, fs,
     io::Write,

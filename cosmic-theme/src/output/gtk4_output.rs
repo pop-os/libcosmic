@@ -1,5 +1,5 @@
-use crate::{composite::over, steps::steps, Component, Theme};
-use palette::{rgb::Rgba, Darken, IntoColor, Lighten, Srgba, WithAlpha};
+use crate::{Component, Theme, composite::over, steps::steps};
+use palette::{Darken, IntoColor, Lighten, Srgba, WithAlpha, rgb::Rgba};
 use std::{
     fs::{self, File},
     io::{self, Write},
@@ -7,7 +7,7 @@ use std::{
     path::Path,
 };
 
-use super::{to_rgba, OutputError};
+use super::{OutputError, to_rgba};
 
 impl Theme {
     #[must_use]

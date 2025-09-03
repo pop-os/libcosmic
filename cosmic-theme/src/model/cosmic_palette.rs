@@ -1,15 +1,14 @@
-use lazy_static::lazy_static;
 use palette::Srgba;
 use serde::{Deserialize, Serialize};
+use std::sync::LazyLock;
 
-lazy_static! {
-    /// built in light palette
-    pub static ref LIGHT_PALETTE: CosmicPalette =
-        ron::from_str(include_str!("light.ron")).unwrap();
-    /// built in dark palette
-    pub static ref DARK_PALETTE: CosmicPalette =
-        ron::from_str(include_str!("dark.ron")).unwrap();
-}
+/// built-in light palette
+pub static LIGHT_PALETTE: LazyLock<CosmicPalette> =
+    LazyLock::new(|| ron::from_str(include_str!("light.ron")).unwrap());
+
+/// built-in dark palette
+pub static DARK_PALETTE: LazyLock<CosmicPalette> =
+    LazyLock::new(|| ron::from_str(include_str!("dark.ron")).unwrap());
 
 /// Palette type
 #[derive(Clone, Debug, Deserialize, Serialize, PartialEq)]

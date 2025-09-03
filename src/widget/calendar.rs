@@ -119,22 +119,14 @@ where
         macro_rules! icon {
             ($name:expr, $on_press:expr) => {{
                 #[cfg(target_os = "linux")]
-                let icon = {
-                    icon::from_name($name)
-                        .apply(button::icon)
-                };
+                let icon = { icon::from_name($name).apply(button::icon) };
                 #[cfg(not(target_os = "linux"))]
                 let icon = {
-                    icon::from_svg_bytes(include_bytes!(concat!(
-                        "../../res/icons/",
-                        $name,
-                        ".svg"
-                    )))
-                    .symbolic(true)
-                    .apply(button::icon)
+                    icon::from_svg_bytes(include_bytes!(concat!("../../res/icons/", $name, ".svg")))
+                        .symbolic(true)
+                        .apply(button::icon)
                 };
-                icon.padding([0, 12])
-                    .on_press($on_press)
+                icon.padding([0, 12]).on_press($on_press)
             }};
         }
         let date = text(this.model.visible.format("%B %Y").to_string()).size(18);

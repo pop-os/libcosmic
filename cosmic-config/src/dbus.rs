@@ -4,8 +4,9 @@ use crate::{CosmicConfigEntry, Update};
 use cosmic_settings_daemon::{Changed, ConfigProxy, CosmicSettingsDaemonProxy};
 use futures_util::SinkExt;
 use iced_futures::{
-    futures::{self, future::pending, Stream, StreamExt},
-    stream, Subscription,
+    Subscription,
+    futures::{self, Stream, StreamExt, future::pending},
+    stream,
 };
 
 pub async fn settings_daemon_proxy() -> zbus::Result<CosmicSettingsDaemonProxy<'static>> {

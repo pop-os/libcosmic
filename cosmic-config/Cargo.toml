@@ -1,7 +1,7 @@
 [package]
 name = "cosmic-config"
 version = "0.1.0"
-edition = "2021"
+edition = "2024"
 
 [features]
 default = ["macro", "subscription"]
@@ -20,7 +20,6 @@ serde = "1.0.219"
 cosmic-config-derive = { path = "../cosmic-config-derive/", optional = true }
 iced = { path = "../iced/", default-features = false, optional = true }
 iced_futures = { path = "../iced/futures/", default-features = false, optional = true }
-once_cell = "1.21.3"
 futures-util = { version = "0.3", optional = true }
 dirs.workspace = true
 tokio = { version = "1.47", optional = true, features = ["time"] }
