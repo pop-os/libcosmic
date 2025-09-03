@@ -18,15 +18,15 @@ no-default = []
 palette = { version = "0.7.6", features = ["serializing"] }
 almost = "0.2"
 serde = { version = "1.0.219", features = ["derive"] }
-serde_json = { version = "1.0.140", optional = true, features = [
+serde_json = { version = "1.0.143", optional = true, features = [
     "preserve_order",
 ] }
-ron = "0.9.0"
+ron = "0.11.0"
 lazy_static = "1.5.0"
-csscolorparser = { version = "0.7.0", features = ["serde"] }
+csscolorparser = { version = "0.7.2", features = ["serde"] }
 cosmic-config = { path = "../cosmic-config/", default-features = false, features = [
     "subscription",
     "macro",
 ] }
 dirs.workspace = true
-thiserror = "2.0.12"
+thiserror = "2.0.16"
