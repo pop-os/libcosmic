@@ -1,12 +1,10 @@
 // Copyright 2023 System76 <info@system76.com>
 // SPDX-License-Identifier: MPL-2.0
 
-use std::borrow::Cow;
-
-use crate::widget::{LayerContainer, button, column, container, icon, row, scrollable, text};
-use crate::{Apply, Element, Renderer, Theme};
-
 use super::overlay::Overlay;
+use crate::widget::{LayerContainer, button, column, container, icon, row, scrollable, text};
+use crate::{Apply, Element, Renderer, Theme, fl};
+use std::borrow::Cow;
 
 use iced_core::Alignment;
 use iced_core::event::{self, Event};
@@ -86,7 +84,7 @@ impl<'a, Message: Clone + 'static> ContextDrawer<'a, Message> {
                 )
                 .push_maybe(title)
                 .push(
-                    button::text("Close")
+                    button::text(fl!("close"))
                         .trailing_icon(icon::from_name("go-next-symbolic"))
                         .on_press(on_close)
                         .apply(container)
