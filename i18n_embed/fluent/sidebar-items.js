@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["NegotiationStrategy"],"macro":["fluent_language_loader"],"struct":["FluentLanguageLoader"]};
