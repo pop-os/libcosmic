@@ -75,16 +75,12 @@ impl Icon {
 
     #[must_use]
     pub fn size(mut self, size: u16) -> Self {
-        match &self.handle.data {
-            // ensures correct icon size variant selection
-            Data::Name(named) => {
-                let mut new_named = named.clone();
-                new_named.size = Some(size);
-                self.handle = new_named.handle();
-            }
-            _ => {
-                self.size = size;
-            }
+        self.size = size;
+        // ensures correct icon size variant selection
+        if let Data::Name(named) = &self.handle.data {
+            let mut new_named = named.clone();
+            new_named.size = Some(size);
+            self.handle = new_named.handle();
         }
         self
     }
