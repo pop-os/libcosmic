@@ -104,7 +104,7 @@ async-fs = { version = "2.1", optional = true }
 async-std = { version = "1.13", optional = true }
 auto_enums = "0.8.7"
 cctk = { git = "https://github.com/pop-os/cosmic-protocols", package = "cosmic-client-toolkit", rev = "6254f50", optional = true }
-chrono = "0.4.41"
+chrono = "0.4.42"
 cosmic-config = { path = "cosmic-config" }
 cosmic-settings-config = { git = "https://github.com/pop-os/cosmic-settings-daemon", optional = true }
 # Internationalization
@@ -129,7 +129,7 @@ raw-window-handle = "0.6"
 rfd = { version = "0.15.4", default-features = false, features = [
     "xdg-portal",
 ], optional = true }
-rustix = { version = "1.0", features = ["pipe", "process"], optional = true }
+rustix = { version = "1.1", features = ["pipe", "process"], optional = true }
 serde = { version = "1.0.219", features = ["derive"] }
 slotmap = "1.0.7"
 smol = { version = "2.0.2", optional = true }
@@ -138,13 +138,13 @@ tokio = { version = "1.47.1", optional = true }
 tracing = "0.1.41"
 unicode-segmentation = "1.12"
 url = "2.5.7"
-zbus = { version = "5.10.0", default-features = false, optional = true }
+zbus = { version = "5.11.0", default-features = false, optional = true }
 
 # Enable DBus feature on Linux targets
 [target.'cfg(target_os = "linux")'.dependencies]
 cosmic-config = { path = "cosmic-config", features = ["dbus"] }
 cosmic-settings-daemon = { git = "https://github.com/pop-os/dbus-settings-bindings" }
-zbus = { version = "5.10.0", default-features = false }
+zbus = { version = "5.11.0", default-features = false }
 
 [target.'cfg(unix)'.dependencies]
 freedesktop-icons = { package = "cosmic-freedesktop-icons", git = "https://github.com/pop-os/freedesktop-icons" }

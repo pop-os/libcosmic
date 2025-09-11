@@ -11,7 +11,7 @@ subscription = ["iced_futures"]
 
 [dependencies]
 cosmic-settings-daemon = { git = "https://github.com/pop-os/dbus-settings-bindings", optional = true }
-zbus = { version = "5.10.0", default-features = false, optional = true }
+zbus = { version = "5.11.0", default-features = false, optional = true }
 atomicwrites = { git = "https://github.com/jackpot51/rust-atomicwrites" }
 calloop = { version = "0.14.3", optional = true }
 notify = "8.2.0"
