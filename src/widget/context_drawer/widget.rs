@@ -61,8 +61,8 @@ impl<'a, Message: Clone + 'static> ContextDrawer<'a, Message> {
 
             let title = title.map(|title| {
                 text::heading(title)
-                    .width(Length::FillPortion(title_portion))
-                    .center()
+                    .apply(container)
+                    .center_x(Length::FillPortion(title_portion))
             });
 
             let (actions_width, close_width) = if title.is_some() {
