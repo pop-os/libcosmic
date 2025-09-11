@@ -591,7 +591,10 @@ where
         // Unfocus text input if it becomes disabled
         if self.on_input.is_none() && !self.manage_value {
             state.last_click = None;
-            state.is_focused = None;
+            state.is_focused = state.is_focused.map(|mut f| {
+                f.focused = false;
+                f
+            });
             state.is_pasting = None;
             state.dragging_state = None;
         }
@@ -628,18 +631,19 @@ where
             state.dirty = true;
         }
 
-        if self.always_active && state.is_focused.is_none() {
+        if self.always_active && !state.is_focused() {
             let now = Instant::now();
             LAST_FOCUS_UPDATE.with(|x| x.set(now));
             state.is_focused = Some(Focus {
                 updated_at: now,
                 now,
+                focused: true,
             });
         }
 
         // if the previous state was at the end of the text, keep it there
         let old_value = Value::new(&old_value);
-        if state.is_focused.is_some() {
+        if state.is_focused() {
             if let cursor::State::Index(index) = state.cursor.state(&old_value) {
                 if index == old_value.len() {
                     state.cursor.move_to(self.value.len());
@@ -647,7 +651,7 @@ where
             };
         }
 
-        if let Some(f) = state.is_focused.as_ref() {
+        if let Some(f) = state.is_focused.as_ref().filter(|f| f.focused) {
             if f.updated_at != LAST_FOCUS_UPDATE.with(|f| f.get()) {
                 state.unfocus();
                 state.emit_unfocus = true;
@@ -838,9 +842,12 @@ where
         if self.is_editable_variant {
             if let Some(ref on_edit) = self.on_toggle_edit {
                 let state = tree.state.downcast_mut::<State>();
-                if !state.is_read_only && state.is_focused.is_none() {
+                if !state.is_read_only && state.is_focused.is_some_and(|f| !f.focused) {
                     state.is_read_only = true;
                     shell.publish((on_edit)(false));
+                } else if state.is_focused() && state.is_read_only {
+                    state.is_read_only = false;
+                    shell.publish((on_edit)(true));
                 }
             }
         }
@@ -1392,6 +1399,7 @@ pub fn update<'a, Message: Clone + 'static>(
                         state.is_focused = Some(Focus {
                             updated_at: now,
                             now,
+                            focused: true,
                         });
                     }
 
@@ -1520,7 +1528,7 @@ pub fn update<'a, Message: Clone + 'static>(
                 }
 
                 // Focus on click of the text input, and ensure that the input is writable.
-                if state.is_focused.is_none()
+                if !state.is_focused()
                     && matches!(state.dragging_state, None | Some(DraggingState::Selection))
                 {
                     if let Some(on_focus) = on_focus {
@@ -1541,6 +1549,7 @@ pub fn update<'a, Message: Clone + 'static>(
                     state.is_focused = Some(Focus {
                         updated_at: now,
                         now,
+                        focused: true,
                     });
                 }
 
@@ -1592,8 +1601,7 @@ pub fn update<'a, Message: Clone + 'static>(
             ..
         }) => {
             let state = state();
-
-            if let Some(focus) = &mut state.is_focused {
+            if let Some(focus) = state.is_focused.as_mut().filter(|f| f.focused) {
                 if state.is_read_only || (!manage_value && on_input.is_none()) {
                     return event::Status::Ignored;
                 };
@@ -1873,7 +1881,7 @@ pub fn update<'a, Message: Clone + 'static>(
         Event::Keyboard(keyboard::Event::KeyReleased { key, .. }) => {
             let state = state();
 
-            if state.is_focused.is_some() {
+            if state.is_focused() {
                 match key {
                     keyboard::Key::Character(c) if "v" == c => {
                         state.is_pasting = None;
@@ -1897,7 +1905,7 @@ pub fn update<'a, Message: Clone + 'static>(
         Event::Window(window::Event::RedrawRequested(now)) => {
             let state = state();
 
-            if let Some(focus) = &mut state.is_focused {
+            if let Some(focus) = state.is_focused.as_mut().filter(|f| f.focused) {
                 focus.now = now;
 
                 let millis_until_redraw = CURSOR_BLINK_INTERVAL_MILLIS
@@ -2258,12 +2266,15 @@ pub fn draw<'a, Message>(
     let handling_dnd_offer = !matches!(state.dnd_offer, DndOfferState::None);
     #[cfg(not(feature = "wayland"))]
     let handling_dnd_offer = false;
-    let (cursor, offset) = if let Some(focus) = &state.is_focused.or_else(|| {
-        handling_dnd_offer.then(|| Focus {
-            updated_at: Instant::now(),
-            now: Instant::now(),
-        })
-    }) {
+    let (cursor, offset) = if let Some(focus) =
+        state.is_focused.filter(|f| f.focused).or_else(|| {
+            let now = Instant::now();
+            handling_dnd_offer.then(|| Focus {
+                updated_at: now,
+                now,
+                focused: true,
+            })
+        }) {
         match state.cursor.state(value) {
             cursor::State::Index(position) => {
                 let (text_value_width, offset) =
@@ -2547,6 +2558,7 @@ pub struct State {
 struct Focus {
     updated_at: Instant,
     now: Instant,
+    focused: bool,
 }
 
 impl State {
@@ -2565,6 +2577,7 @@ impl State {
                 Focus {
                     updated_at: now,
                     now,
+                    focused: true,
                 }
             }),
             select_on_focus,
@@ -2623,7 +2636,7 @@ impl State {
     #[inline]
     #[must_use]
     pub fn is_focused(&self) -> bool {
-        self.is_focused.is_some()
+        self.is_focused.is_some_and(|f| f.focused)
     }
 
     /// Returns the [`Cursor`] of the [`TextInput`].
@@ -2642,6 +2655,7 @@ impl State {
         self.is_focused = Some(Focus {
             updated_at: now,
             now,
+            focused: true,
         });
 
         if self.select_on_focus {
@@ -2656,7 +2670,10 @@ impl State {
     pub(super) fn unfocus(&mut self) {
         self.move_cursor_to_front();
         self.last_click = None;
-        self.is_focused = None;
+        self.is_focused = self.is_focused.map(|mut f| {
+            f.focused = false;
+            f
+        });
         self.dragging_state = None;
         self.is_pasting = None;
         self.keyboard_modifiers = keyboard::Modifiers::default();
