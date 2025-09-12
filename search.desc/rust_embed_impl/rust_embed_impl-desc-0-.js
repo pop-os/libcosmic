@@ -1,0 +1,1 @@
+searchState.loadedDescShard("rust_embed_impl", 0, "")

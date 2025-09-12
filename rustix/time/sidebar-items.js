@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["ClockId","DynamicClockId","TimerfdClockId"],"fn":["clock_getres","clock_gettime","clock_gettime_dynamic","clock_settime","timerfd_create","timerfd_gettime","timerfd_settime"],"struct":["Itimerspec","TimerfdFlags","TimerfdTimerFlags","Timespec"],"type":["Nsecs","Secs"]};
