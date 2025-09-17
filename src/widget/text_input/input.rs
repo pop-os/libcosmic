@@ -638,6 +638,7 @@ where
                 updated_at: now,
                 now,
                 focused: true,
+                needs_update: false,
             });
         }
 
@@ -838,7 +839,7 @@ where
         let size = self.size.unwrap_or_else(|| renderer.default_size().0);
         let line_height = self.line_height;
 
-        // Disables editing of the editable variant when clicking outside of it.
+        // Disables editing of the editable variant when clicking outside of, or for tab focus changes.
         if self.is_editable_variant {
             if let Some(ref on_edit) = self.on_toggle_edit {
                 let state = tree.state.downcast_mut::<State>();
@@ -848,6 +849,11 @@ where
                 } else if state.is_focused() && state.is_read_only {
                     state.is_read_only = false;
                     shell.publish((on_edit)(true));
+                } else if let Some(f) = state.is_focused.as_mut().filter(|f| f.needs_update) {
+                    // TODO do we want to just move this to on_focus or on_unfocus for all inputs?
+                    f.needs_update = false;
+                    state.is_read_only = true;
+                    shell.publish((on_edit)(f.focused));
                 }
             }
         }
@@ -1400,6 +1406,7 @@ pub fn update<'a, Message: Clone + 'static>(
                             updated_at: now,
                             now,
                             focused: true,
+                            needs_update: false,
                         });
                     }
 
@@ -1550,6 +1557,7 @@ pub fn update<'a, Message: Clone + 'static>(
                         updated_at: now,
                         now,
                         focused: true,
+                        needs_update: false,
                     });
                 }
 
@@ -2270,6 +2278,7 @@ pub fn draw<'a, Message>(
         state.is_focused.filter(|f| f.focused).or_else(|| {
             let now = Instant::now();
             handling_dnd_offer.then(|| Focus {
+                needs_update: false,
                 updated_at: now,
                 now,
                 focused: true,
@@ -2559,6 +2568,7 @@ struct Focus {
     updated_at: Instant,
     now: Instant,
     focused: bool,
+    needs_update: bool,
 }
 
 impl State {
@@ -2578,6 +2588,7 @@ impl State {
                     updated_at: now,
                     now,
                     focused: true,
+                    needs_update: false,
                 }
             }),
             select_on_focus,
@@ -2656,6 +2667,7 @@ impl State {
             updated_at: now,
             now,
             focused: true,
+            needs_update: false,
         });
 
         if self.select_on_focus {
@@ -2672,6 +2684,7 @@ impl State {
         self.last_click = None;
         self.is_focused = self.is_focused.map(|mut f| {
             f.focused = false;
+            f.needs_update = false;
             f
         });
         self.dragging_state = None;
@@ -2724,11 +2737,17 @@ impl operation::Focusable for State {
     #[inline]
     fn focus(&mut self) {
         Self::focus(self);
+        if let Some(focus) = self.is_focused.as_mut() {
+            focus.needs_update = true;
+        }
     }
 
     #[inline]
     fn unfocus(&mut self) {
         Self::unfocus(self);
+        if let Some(focus) = self.is_focused.as_mut() {
+            focus.needs_update = true;
+        }
     }
 }
 
