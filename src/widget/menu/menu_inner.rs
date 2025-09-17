@@ -4,7 +4,12 @@
 use std::{borrow::Cow, sync::Arc};
 
 use super::{menu_bar::MenuBarState, menu_tree::MenuTree};
-#[cfg(all(feature = "wayland", feature = "winit", feature = "surface-message"))]
+#[cfg(all(
+    feature = "multi-window",
+    feature = "wayland",
+    feature = "winit",
+    feature = "surface-message"
+))]
 use crate::app::cosmic::{WINDOWING_SYSTEM, WindowingSystem};
 use crate::style::menu_bar::StyleSheet;
 
@@ -663,6 +668,7 @@ impl<'b, Message: Clone + 'static> Menu<'b, Message> {
 
                         if needs_reset {
                             #[cfg(all(
+                                feature = "multi-window",
                                 feature = "wayland",
                                 feature = "winit",
                                 feature = "surface-message"
@@ -932,7 +938,12 @@ impl<Message: std::clone::Clone + 'static> Widget<Message, crate::Theme, crate::
     ) -> event::Status {
         let (new_root, status) = self.on_event(event, layout, cursor, renderer, clipboard, shell);
 
-        #[cfg(all(feature = "wayland", feature = "winit", feature = "surface-message"))]
+        #[cfg(all(
+            feature = "multi-window",
+            feature = "wayland",
+            feature = "winit",
+            feature = "surface-message"
+        ))]
         if matches!(WINDOWING_SYSTEM.get(), Some(WindowingSystem::Wayland)) {
             if let Some((new_root, new_ms)) = new_root {
                 use iced_runtime::platform_specific::wayland::popup::{
@@ -1177,7 +1188,12 @@ pub(crate) fn init_root_menu<Message: Clone>(
     });
 }
 
-#[cfg(all(feature = "wayland", feature = "winit", feature = "surface-message"))]
+#[cfg(all(
+    feature = "multi-window",
+    feature = "wayland",
+    feature = "winit",
+    feature = "surface-message"
+))]
 pub(super) fn init_root_popup_menu<Message>(
     menu: &mut Menu<'_, Message>,
     renderer: &crate::Renderer,
@@ -1474,7 +1490,7 @@ where
             .as_ref()
             .is_some_and(|i| *i != new_index && !active_menu[*i].children.is_empty());
 
-        #[cfg(all(feature = "wayland", feature = "winit", feature = "surface-message"))]
+        #[cfg(all(feature = "multi-window", feature = "wayland", feature = "winit", feature = "surface-message"))]
         if matches!(WINDOWING_SYSTEM.get(), Some(WindowingSystem::Wayland)) && remove {
             if let Some(id) = state.popup_id.remove(&menu.window_id) {
                 state.active_root.truncate(menu.depth + 1);
