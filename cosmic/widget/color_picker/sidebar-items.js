@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["ColorPickerUpdate"],"fn":["color_button"],"static":["HSV_RAINBOW"],"struct":["ColorPicker","ColorPickerBuilder","ColorPickerModel","Model","State"]};

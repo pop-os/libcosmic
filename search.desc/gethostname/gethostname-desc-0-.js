@@ -1,0 +1,1 @@
+searchState.loadedDescShard("gethostname", 0, "gethostname() for all platforms.\nGet the standard host name for the current machine.")
