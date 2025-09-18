@@ -38,6 +38,7 @@ pub struct Window {
     pub show_close: bool,
     pub show_maximize: bool,
     pub show_minimize: bool,
+    pub client_decorations: bool,
     height: f32,
     width: f32,
 }
@@ -138,6 +139,7 @@ impl Default for Core {
                 show_maximize: true,
                 show_minimize: true,
                 show_window_menu: false,
+                client_decorations: true,
                 height: 0.,
                 width: 0.,
             },
