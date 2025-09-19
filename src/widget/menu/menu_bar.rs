@@ -9,7 +9,12 @@ use super::{
     },
     menu_tree::MenuTree,
 };
-#[cfg(all(feature = "wayland", feature = "winit", feature = "surface-message"))]
+#[cfg(all(
+    feature = "multi-window",
+    feature = "wayland",
+    feature = "winit",
+    feature = "surface-message"
+))]
 use crate::app::cosmic::{WINDOWING_SYSTEM, WindowingSystem};
 use crate::{
     Renderer,
@@ -190,7 +195,7 @@ pub struct MenuBar<Message> {
     menu_roots: Vec<MenuTree<Message>>,
     style: <crate::Theme as StyleSheet>::Style,
     window_id: window::Id,
-    #[cfg(all(feature = "wayland", feature = "winit"))]
+    #[cfg(all(feature = "multi-window", feature = "wayland", feature = "winit"))]
     positioner: iced_runtime::platform_specific::wayland::popup::SctkPositioner,
     pub(crate) on_surface_action:
         Option<Arc<dyn Fn(crate::surface::Action) -> Message + Send + Sync + 'static>>,
@@ -225,7 +230,7 @@ where
             menu_roots,
             style: <crate::Theme as StyleSheet>::Style::default(),
             window_id: window::Id::NONE,
-            #[cfg(all(feature = "wayland", feature = "winit"))]
+            #[cfg(all(feature = "multi-window", feature = "wayland", feature = "winit"))]
             positioner: iced_runtime::platform_specific::wayland::popup::SctkPositioner::default(),
             on_surface_action: None,
         }
@@ -319,7 +324,7 @@ where
         self
     }
 
-    #[cfg(all(feature = "wayland", feature = "winit"))]
+    #[cfg(all(feature = "multi-window", feature = "wayland", feature = "winit"))]
     pub fn with_positioner(
         mut self,
         positioner: iced_runtime::platform_specific::wayland::popup::SctkPositioner,
@@ -351,7 +356,12 @@ where
         self
     }
 
-    #[cfg(all(feature = "wayland", feature = "winit", feature = "surface-message"))]
+    #[cfg(all(
+        feature = "multi-window",
+        feature = "wayland",
+        feature = "winit",
+        feature = "surface-message"
+    ))]
     #[allow(clippy::too_many_lines)]
     fn create_popup(
         &mut self,
@@ -630,7 +640,12 @@ where
                 if !create_popup {
                     return event::Status::Ignored;
                 }
-                #[cfg(all(feature = "wayland", feature = "winit", feature = "surface-message"))]
+                #[cfg(all(
+                    feature = "multi-window",
+                    feature = "wayland",
+                    feature = "winit",
+                    feature = "surface-message"
+                ))]
                 if matches!(WINDOWING_SYSTEM.get(), Some(WindowingSystem::Wayland)) {
                     self.create_popup(layout, view_cursor, renderer, shell, viewport, my_state);
                 }
@@ -638,7 +653,12 @@ where
             Mouse(mouse::Event::CursorMoved { .. } | mouse::Event::CursorEntered)
                 if open && view_cursor.is_over(layout.bounds()) =>
             {
-                #[cfg(all(feature = "wayland", feature = "winit", feature = "surface-message"))]
+                #[cfg(all(
+                    feature = "multi-window",
+                    feature = "wayland",
+                    feature = "winit",
+                    feature = "surface-message"
+                ))]
                 if matches!(WINDOWING_SYSTEM.get(), Some(WindowingSystem::Wayland)) {
                     self.create_popup(layout, view_cursor, renderer, shell, viewport, my_state);
                 }
@@ -715,7 +735,12 @@ where
         _renderer: &Renderer,
         translation: Vector,
     ) -> Option<overlay::Element<'b, Message, crate::Theme, Renderer>> {
-        #[cfg(all(feature = "wayland", feature = "winit", feature = "surface-message"))]
+        #[cfg(all(
+            feature = "multi-window",
+            feature = "wayland",
+            feature = "winit",
+            feature = "surface-message"
+        ))]
         if matches!(WINDOWING_SYSTEM.get(), Some(WindowingSystem::Wayland))
             && self.on_surface_action.is_some()
             && self.window_id != window::Id::NONE
