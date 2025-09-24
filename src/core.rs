@@ -97,6 +97,9 @@ pub struct Core {
     pub(crate) exit_on_main_window_closed: bool,
 
     pub(crate) menu_bars: HashMap<crate::widget::Id, (Limits, Size)>,
+
+    #[cfg(feature = "wayland")]
+    pub(crate) sync_window_border_radii_to_theme: bool,
 }
 
 impl Default for Core {
@@ -154,6 +157,8 @@ impl Default for Core {
             main_window: None,
             exit_on_main_window_closed: true,
             menu_bars: HashMap::new(),
+            #[cfg(feature = "wayland")]
+            sync_window_border_radii_to_theme: true
         }
     }
 }
@@ -475,5 +480,16 @@ impl Core {
         };
 
         crate::command::toggle_maximize(id)
+    }
+
+    // TODO should we emit tasks setting the corner radius or unsetting it if this is changed?
+    #[cfg(feature = "wayland")]
+    pub fn set_sync_window_border_radii_to_theme(&mut self, sync: bool) {
+        self.sync_window_border_radii_to_theme = sync;
+    }
+
+    #[cfg(feature = "wayland")]
+    pub fn sync_window_border_radii_to_theme(&self) -> bool {
+        self.sync_window_border_radii_to_theme
     }
 }

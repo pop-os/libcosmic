@@ -5,6 +5,7 @@ use super::Action;
 #[cfg(feature = "winit")]
 use crate::Application;
 
+use iced::window;
 use std::{any::Any, sync::Arc};
 
 /// Used to produce a destroy popup message from within a widget.
@@ -19,6 +20,90 @@ pub fn destroy_popup(id: iced_core::window::Id) -> Action {
 pub fn destroy_subsurface(id: iced_core::window::Id) -> Action {
     Action::DestroySubsurface(id)
 }
+
+#[cfg(feature = "wayland")]
+#[must_use]
+pub fn destroy_window(id: iced_core::window::Id) -> Action {
+    Action::DestroyWindow(id)
+}
+
+#[cfg(all(feature = "wayland", feature = "winit"))]
+#[must_use]
+pub fn app_window<App: Application>(
+    settings: impl Fn(&mut App) -> window::Settings
+        + Send
+        + Sync
+        + 'static,
+    view: Option<
+        Box<
+            dyn for<'a> Fn(&'a App) -> crate::Element<'a, crate::Action<App::Message>>
+                + Send
+                + Sync
+                + 'static,
+        >,
+    >,
+) -> (window::Id, Action) {
+    let id = window::Id::unique();
+
+    let boxed: Box<
+        dyn Fn(&mut App) -> window::Settings
+            + Send
+            + Sync
+            + 'static,
+    > = Box::new(settings);
+    let boxed: Box<dyn Any + Send + Sync + 'static> = Box::new(boxed);
+
+    (
+        id,
+        Action::AppWindow(
+            id,
+            Arc::new(boxed),
+            view.map(|view| {
+                let boxed: Box<dyn Any + Send + Sync + 'static> = Box::new(view);
+                Arc::new(boxed)
+            }),
+        )
+    )
+}
+
+/// Used to create a window message from within a widget.
+#[cfg(all(feature = "wayland", feature = "winit"))]
+#[must_use]
+pub fn simple_window<Message: 'static>(
+    settings: impl Fn() -> window::Settings
+        + Send
+        + Sync
+        + 'static,
+    view: Option<
+        impl Fn() -> crate::Element<'static, crate::Action<Message>> + Send + Sync + 'static,
+    >,
+) -> (window::Id, Action) {
+    let id = window::Id::unique();
+
+    let boxed: Box<
+        dyn Fn() -> window::Settings
+            + Send
+            + Sync
+            + 'static,
+    > = Box::new(settings);
+    let boxed: Box<dyn Any + Send + Sync + 'static> = Box::new(boxed);
+
+    (
+        id,
+        Action::Window(
+            id,
+            Arc::new(boxed),
+            view.map(|view| {
+                let boxed: Box<
+                    dyn Fn() -> crate::Element<'static, crate::Action<Message>> + Send + Sync + 'static,
+                > = Box::new(view);
+                let boxed: Box<dyn Any + Send + Sync + 'static> = Box::new(boxed);
+                Arc::new(boxed)
+            }),
+        )
+    )
+}
+
 
 #[cfg(all(feature = "wayland", feature = "winit"))]
 #[must_use]
