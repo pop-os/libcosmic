@@ -6,4 +6,4 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-libcosmic = { path = "../..", features = ["debug", "winit", "tokio", "single-instance", "multi-window", "dbus-config", "wgpu"] }
+libcosmic = { path = "../..", features = ["debug", "winit", "tokio", "single-instance", "multi-window", "dbus-config", "wgpu", "wayland"] }

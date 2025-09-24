@@ -103,7 +103,7 @@ ashpd = { version = "0.12.0", default-features = false, optional = true }
 async-fs = { version = "2.1", optional = true }
 async-std = { version = "1.13", optional = true }
 auto_enums = "0.8.7"
-cctk = { git = "https://github.com/pop-os/cosmic-protocols", package = "cosmic-client-toolkit", rev = "6254f50", optional = true }
+cctk = { git = "https://github.com/pop-os/cosmic-protocols", package = "cosmic-client-toolkit", rev = "633beb0", optional = true }
 chrono = "0.4.42"
 cosmic-config = { path = "cosmic-config" }
 cosmic-settings-config = { git = "https://github.com/pop-os/cosmic-settings-daemon", optional = true }
@@ -229,6 +229,6 @@ libcosmic = { path = "./" }
 
 # FIXME update winit deps where necessary to use this
 # [patch.crates-io]
-# [patch."https://github.com/pop-os/winit.git"]
-# winit = { git = "https://github.com/rust-windowing/winit.git", rev = "241b7a80bba96c91fa3901729cd5dec66abb9be4" }
-# winit = { path = "../../winit" }
+[patch."https://github.com/pop-os/winit.git"]
+winit = { git = "https://github.com/pop-os/winit.git//", branch = "xdg-toplevel" }
+# winit = { path = "../winit" }

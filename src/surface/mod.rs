@@ -36,6 +36,22 @@ pub enum Action {
     ),
     /// Destroy a subsurface with a view function
     DestroyPopup(iced::window::Id),
+
+    /// Create a window with a view function accepting the App as a parameter
+    AppWindow(
+        iced::window::Id,
+        std::sync::Arc<Box<dyn std::any::Any + Send + Sync>>,
+        Option<std::sync::Arc<Box<dyn std::any::Any + Send + Sync>>>,
+    ),
+    /// Create a window with a view function
+    Window(
+        iced::window::Id,
+        std::sync::Arc<Box<dyn std::any::Any + Send + Sync>>,
+        Option<std::sync::Arc<Box<dyn std::any::Any + Send + Sync>>>,
+    ),
+    /// Destroy a window
+    DestroyWindow(iced::window::Id),
+
     /// Responsive menu bar update
     ResponsiveMenuBar {
         /// Id of the menu bar
@@ -80,6 +96,15 @@ impl std::fmt::Debug for Action {
                 .field("size", size)
                 .finish(),
             Self::Ignore => write!(f, "Ignore"),
+            Self::AppWindow(id, arg0, arg1) => {
+                f.debug_tuple("AppWindow").field(id).field(arg0).field(arg1).finish()
+            }
+            Self::Window(id, arg0, arg1) => {
+                f.debug_tuple("Window").field(id).field(arg0).field(arg1).finish()
+            }
+            Self::DestroyWindow(arg0) => {
+                f.debug_tuple("DestroyWindow").field(arg0).finish()
+            }
             Self::Task(_) => f.debug_tuple("Future").finish(),
         }
     }
