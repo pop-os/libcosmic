@@ -96,15 +96,19 @@ impl std::fmt::Debug for Action {
                 .field("size", size)
                 .finish(),
             Self::Ignore => write!(f, "Ignore"),
-            Self::AppWindow(id, arg0, arg1) => {
-                f.debug_tuple("AppWindow").field(id).field(arg0).field(arg1).finish()
-            }
-            Self::Window(id, arg0, arg1) => {
-                f.debug_tuple("Window").field(id).field(arg0).field(arg1).finish()
-            }
-            Self::DestroyWindow(arg0) => {
-                f.debug_tuple("DestroyWindow").field(arg0).finish()
-            }
+            Self::AppWindow(id, arg0, arg1) => f
+                .debug_tuple("AppWindow")
+                .field(id)
+                .field(arg0)
+                .field(arg1)
+                .finish(),
+            Self::Window(id, arg0, arg1) => f
+                .debug_tuple("Window")
+                .field(id)
+                .field(arg0)
+                .field(arg1)
+                .finish(),
+            Self::DestroyWindow(arg0) => f.debug_tuple("DestroyWindow").field(arg0).finish(),
             Self::Task(_) => f.debug_tuple("Future").finish(),
         }
     }

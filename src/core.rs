@@ -158,7 +158,7 @@ impl Default for Core {
             exit_on_main_window_closed: true,
             menu_bars: HashMap::new(),
             #[cfg(feature = "wayland")]
-            sync_window_border_radii_to_theme: true
+            sync_window_border_radii_to_theme: true,
         }
     }
 }

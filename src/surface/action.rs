@@ -30,10 +30,7 @@ pub fn destroy_window(id: iced_core::window::Id) -> Action {
 #[cfg(all(feature = "wayland", feature = "winit"))]
 #[must_use]
 pub fn app_window<App: Application>(
-    settings: impl Fn(&mut App) -> window::Settings
-        + Send
-        + Sync
-        + 'static,
+    settings: impl Fn(&mut App) -> window::Settings + Send + Sync + 'static,
     view: Option<
         Box<
             dyn for<'a> Fn(&'a App) -> crate::Element<'a, crate::Action<App::Message>>
@@ -45,12 +42,8 @@ pub fn app_window<App: Application>(
 ) -> (window::Id, Action) {
     let id = window::Id::unique();
 
-    let boxed: Box<
-        dyn Fn(&mut App) -> window::Settings
-            + Send
-            + Sync
-            + 'static,
-    > = Box::new(settings);
+    let boxed: Box<dyn Fn(&mut App) -> window::Settings + Send + Sync + 'static> =
+        Box::new(settings);
     let boxed: Box<dyn Any + Send + Sync + 'static> = Box::new(boxed);
 
     (
@@ -62,7 +55,7 @@ pub fn app_window<App: Application>(
                 let boxed: Box<dyn Any + Send + Sync + 'static> = Box::new(view);
                 Arc::new(boxed)
             }),
-        )
+        ),
     )
 }
 
@@ -70,22 +63,14 @@ pub fn app_window<App: Application>(
 #[cfg(all(feature = "wayland", feature = "winit"))]
 #[must_use]
 pub fn simple_window<Message: 'static>(
-    settings: impl Fn() -> window::Settings
-        + Send
-        + Sync
-        + 'static,
+    settings: impl Fn() -> window::Settings + Send + Sync + 'static,
     view: Option<
         impl Fn() -> crate::Element<'static, crate::Action<Message>> + Send + Sync + 'static,
     >,
 ) -> (window::Id, Action) {
     let id = window::Id::unique();
 
-    let boxed: Box<
-        dyn Fn() -> window::Settings
-            + Send
-            + Sync
-            + 'static,
-    > = Box::new(settings);
+    let boxed: Box<dyn Fn() -> window::Settings + Send + Sync + 'static> = Box::new(settings);
     let boxed: Box<dyn Any + Send + Sync + 'static> = Box::new(boxed);
 
     (
@@ -95,15 +80,17 @@ pub fn simple_window<Message: 'static>(
             Arc::new(boxed),
             view.map(|view| {
                 let boxed: Box<
-                    dyn Fn() -> crate::Element<'static, crate::Action<Message>> + Send + Sync + 'static,
+                    dyn Fn() -> crate::Element<'static, crate::Action<Message>>
+                        + Send
+                        + Sync
+                        + 'static,
                 > = Box::new(view);
                 let boxed: Box<dyn Any + Send + Sync + 'static> = Box::new(boxed);
                 Arc::new(boxed)
             }),
-        )
+        ),
     )
 }
-
 
 #[cfg(all(feature = "wayland", feature = "winit"))]
 #[must_use]
