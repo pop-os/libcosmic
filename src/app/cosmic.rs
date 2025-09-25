@@ -426,6 +426,12 @@ where
                         ) => {
                             return Some(Action::SuggestedBounds(b));
                         }
+                        #[cfg(feature = "wayland")]
+                        wayland::Event::Window(iced::event::wayland::WindowEvent::WindowState(
+                            s,
+                        )) => {
+                            return Some(Action::WindowState(id, s));
+                        }
                         _ => (),
                     }
                 }
@@ -588,6 +594,7 @@ impl<T: Application> Cosmic<T> {
     fn cosmic_update(&mut self, message: Action) -> iced::Task<crate::Action<T::Message>> {
         match message {
             Action::WindowMaximized(id, maximized) => {
+                #[cfg(not(feature = "wayland"))]
                 if self
                     .app
                     .core()
@@ -634,6 +641,24 @@ impl<T: Application> Cosmic<T> {
                             | WindowState::TILED_TOP
                             | WindowState::TILED_BOTTOM,
                     );
+                }
+                if self.app.core().sync_window_border_radii_to_theme() {
+                    use iced_runtime::platform_specific::wayland::CornerRadius;
+                    use iced_winit::platform_specific::commands::corner_radius::corner_radius;
+
+                    let theme = THEME.lock().unwrap();
+                    let t = theme.cosmic();
+                    let radii = t.radius_s().map(|x| if x < 4.0 { x } else { x + 4.0 });
+                    let cur_rad = CornerRadius {
+                        top_left: radii[0].round() as u32,
+                        top_right: radii[1].round() as u32,
+                        bottom_right: radii[2].round() as u32,
+                        bottom_left: radii[3].round() as u32,
+                    };
+                    let rounded = !self.app.core().window.sharp_corners;
+                    return Task::batch(vec![
+                        corner_radius(id, rounded.then_some(cur_rad)).discard(),
+                    ]);
                 }
             }
 

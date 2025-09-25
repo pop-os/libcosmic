@@ -395,6 +395,7 @@ pub enum Container<'a> {
     Dropdown,
     HeaderBar {
         focused: bool,
+        sharp_corners: bool,
     },
     List,
     Primary,
@@ -507,7 +508,10 @@ impl iced_container::Catalog for Theme {
                 }
             }
 
-            Container::HeaderBar { focused } => {
+            Container::HeaderBar {
+                focused,
+                sharp_corners,
+            } => {
                 let (icon_color, text_color) = if *focused {
                     (
                         Color::from(cosmic.accent_text_color()),
@@ -526,8 +530,16 @@ impl iced_container::Catalog for Theme {
                     background: Some(iced::Background::Color(cosmic.background.base.into())),
                     border: Border {
                         radius: [
-                            window_corner_radius[0],
-                            window_corner_radius[1],
+                            if *sharp_corners {
+                                cosmic.corner_radii.radius_0[0]
+                            } else {
+                                window_corner_radius[0]
+                            },
+                            if *sharp_corners {
+                                cosmic.corner_radii.radius_0[1]
+                            } else {
+                                window_corner_radius[1]
+                            },
                             cosmic.corner_radii.radius_0[2],
                             cosmic.corner_radii.radius_0[3],
                         ]
