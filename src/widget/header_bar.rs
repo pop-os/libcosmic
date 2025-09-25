@@ -409,6 +409,7 @@ impl<'a, Message: Clone + 'static> HeaderBar<'a, Message> {
             .apply(widget::container)
             .class(crate::theme::Container::HeaderBar {
                 focused: self.focused,
+                sharp_corners: self.maximized,
             })
             .center_y(Length::Shrink)
             .apply(widget::mouse_area);

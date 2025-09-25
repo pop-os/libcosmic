@@ -759,16 +759,25 @@ impl<App: Application> ApplicationExt for App {
                         header
                             .apply(container)
                             .class(crate::theme::Container::custom(move |theme| {
+                                let cosmic = theme.cosmic();
                                 container::Style {
                                     background: Some(iced::Background::Color(
-                                        theme.cosmic().background.base.into(),
+                                        cosmic.background.base.into(),
                                     )),
                                     border: iced::Border {
                                         radius: [
-                                            window_corner_radius[0] - 1.0,
-                                            window_corner_radius[1] - 1.0,
-                                            theme.cosmic().radius_0()[2],
-                                            theme.cosmic().radius_0()[3],
+                                            if sharp_corners {
+                                                cosmic.radius_0()[0]
+                                            } else {
+                                                window_corner_radius[0] - 1.0
+                                            },
+                                            if sharp_corners {
+                                                cosmic.radius_0()[1]
+                                            } else {
+                                                window_corner_radius[1] - 1.0
+                                            },
+                                            cosmic.radius_0()[2],
+                                            cosmic.radius_0()[3],
                                         ]
                                         .into(),
                                         ..Default::default()
