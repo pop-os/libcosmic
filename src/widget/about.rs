@@ -1,10 +1,7 @@
-use {
-    crate::{
-        Element, fl,
-        iced::{Alignment, Length},
-        widget::{self, horizontal_space},
-    },
-    license::License,
+use crate::{
+    Element, fl,
+    iced::{Alignment, Length},
+    widget::{self, horizontal_space},
 };
 
 #[derive(Debug, Default, Clone, derive_setters::Setters)]
@@ -96,21 +93,12 @@ impl<'a> About {
             .collect();
         self
     }
-
-    fn get_license_url(&self) -> Option<String> {
-        self.license_url.clone().or_else(|| {
-            self.license.as_ref().and_then(|license_str| {
-                let license: &dyn License = license_str.parse().ok()?;
-                Some(format!("https://spdx.org/licenses/{}.html", license.id()))
-            })
-        })
-    }
 }
 
 /// Constructs the widget for the about section.
 pub fn about<'a, Message: Clone + 'static>(
     about: &'a About,
-    on_url_press: impl Fn(String) -> Message,
+    on_url_press: impl Fn(&'a str) -> Message + 'a,
 ) -> Element<'a, Message> {
     let cosmic_theme::Spacing {
         space_xxs, space_m, ..
@@ -131,7 +119,7 @@ pub fn about<'a, Message: Clone + 'static>(
                                 .align_y(Alignment::Center),
                         )
                         .class(crate::theme::Button::Link)
-                        .on_press(on_url_press(url.clone()))
+                        .on_press(on_url_press(url))
                         .width(Length::Fill)
                         .into()
                     })
@@ -157,7 +145,7 @@ pub fn about<'a, Message: Clone + 'static>(
     let translators_section = section(&about.translators, fl!("translators"));
     let documenters_section = section(&about.documenters, fl!("documenters"));
     let license = about.license.as_ref().map(|license| {
-        let url = about.get_license_url();
+        let url = about.license_url.as_deref();
         widget::settings::section().title(fl!("license")).add(
             widget::button::custom(
                 widget::row()

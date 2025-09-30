@@ -12,7 +12,7 @@ default = ["dbus-config", "multi-window", "a11y"]
 # Accessibility support
 a11y = ["iced/a11y", "iced_accessibility"]
 # Enable about widget
-about = ["dep:license"]
+about = []
 # Builds support for animated images
 animated-image = ["dep:async-fs", "image/gif", "tokio?/io-util", "tokio?/fs"]
 # XXX autosize should not be used on winit windows unless dialogs
@@ -122,7 +122,6 @@ image = { version = "0.25.8", default-features = false, features = [
     "png",
 ] }
 libc = { version = "0.2.175", optional = true }
-license = { version = "3.7.0", optional = true }
 mime = { version = "0.3.17", optional = true }
 palette = "0.7.6"
 raw-window-handle = "0.6"
