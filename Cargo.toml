@@ -133,6 +133,7 @@ serde = { version = "1.0.219", features = ["derive"] }
 slotmap = "1.0.7"
 smol = { version = "2.0.2", optional = true }
 thiserror = "2.0.16"
+taffy = { version = "0.9.1", features = ["grid"] }
 tokio = { version = "1.47.1", optional = true }
 tracing = "0.1.41"
 unicode-segmentation = "1.12"
@@ -204,11 +205,6 @@ optional = true
 [dependencies.ron]
 version = "0.11"
 optional = true
-
-[dependencies.taffy]
-git = "https://github.com/DioxusLabs/taffy"
-rev = "7781c70"
-features = ["grid"]
 
 [workspace]
 members = [

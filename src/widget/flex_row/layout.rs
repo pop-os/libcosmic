@@ -44,7 +44,7 @@ pub fn resolve<Message>(
 
         min_size: taffy::geometry::Size {
             width: length(max_size.width),
-            height: Dimension::Auto,
+            height: Dimension::auto(),
         },
 
         align_items,
@@ -71,7 +71,7 @@ pub fn resolve<Message>(
         let c_size = child_widget.size();
         let (width, flex_grow, justify_self) = match c_size.width {
             Length::Fill | Length::FillPortion(_) => {
-                (Dimension::Auto, 1.0, Some(AlignItems::Stretch))
+                (Dimension::auto(), 1.0, Some(AlignItems::Stretch))
             }
             _ => (length(size.width), 0.0, None),
         };
@@ -82,15 +82,15 @@ pub fn resolve<Message>(
             min_size: taffy::geometry::Size {
                 width: match min_item_width {
                     Some(width) => length(size.width.min(width)),
-                    None => Dimension::Auto,
+                    None => Dimension::auto(),
                 },
-                height: Dimension::Auto,
+                height: Dimension::auto(),
             },
 
             size: taffy::geometry::Size {
                 width,
                 height: match c_size.height {
-                    Length::Fill | Length::FillPortion(_) => Dimension::Auto,
+                    Length::Fill | Length::FillPortion(_) => Dimension::auto(),
                     _ => length(size.height),
                 },
             },
