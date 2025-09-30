@@ -229,6 +229,6 @@ libcosmic = { path = "./" }
 
 # FIXME update winit deps where necessary to use this
 # [patch.crates-io]
-[patch."https://github.com/pop-os/winit.git"]
-winit = { git = "https://github.com/pop-os/winit.git//", branch = "xdg-toplevel" }
+# [patch."https://github.com/pop-os/winit.git"]
+# winit = { git = "https://github.com/pop-os/winit.git//", branch = "xdg-toplevel" }
 # winit = { path = "../winit" }
