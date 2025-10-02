@@ -13,7 +13,7 @@ A platform toolkit based on iced for creating applets and applications for the C
 
 ## Dependencies
 
-While libcosmic is written entirely in Rust, some of its dependencies may require shared system library headers to be installed. On Pop!_OS, the following dependencies are all that's necessary compile a typical COSMIC project:
+While libcosmic is written entirely in Rust, some of its dependencies may require shared system library headers to be installed. On Pop!_OS, the following dependencies are all that's necessary to compile a typical COSMIC project:
 
 ```sh
 sudo apt install cargo cmake just libexpat1-dev libfontconfig-dev libfreetype-dev libxkbcommon-dev pkgconf
