@@ -24,6 +24,7 @@ pub fn header_bar<'a, Message>() -> HeaderBar<'a, Message> {
         density: None,
         focused: false,
         maximized: false,
+        sharp_corners: false,
         is_ssd: false,
         on_double_click: None,
         is_condensed: false,
@@ -82,6 +83,9 @@ pub struct HeaderBar<'a, Message> {
 
     /// Maximized state of the window
     maximized: bool,
+
+    /// Whether the corners of the window should be sharp
+    sharp_corners: bool,
 
     /// HeaderBar used for server-side decorations
     is_ssd: bool,
@@ -409,7 +413,7 @@ impl<'a, Message: Clone + 'static> HeaderBar<'a, Message> {
             .apply(widget::container)
             .class(crate::theme::Container::HeaderBar {
                 focused: self.focused,
-                sharp_corners: self.maximized,
+                sharp_corners: self.sharp_corners,
             })
             .center_y(Length::Shrink)
             .apply(widget::mouse_area);
