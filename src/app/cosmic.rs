@@ -657,7 +657,21 @@ impl<T: Application> Cosmic<T> {
                     };
                     let rounded = !self.app.core().window.sharp_corners;
                     return Task::batch(vec![
-                        corner_radius(id, rounded.then_some(cur_rad)).discard(),
+                        corner_radius(
+                            id,
+                            if rounded {
+                                Some(cur_rad)
+                            } else {
+                                let rad_0 = t.radius_0();
+                                Some(CornerRadius {
+                                    top_left: rad_0[0].round() as u32,
+                                    top_right: rad_0[1].round() as u32,
+                                    bottom_right: rad_0[2].round() as u32,
+                                    bottom_left: rad_0[3].round() as u32,
+                                })
+                            },
+                        )
+                        .discard(),
                     ]);
                 }
             }
@@ -792,19 +806,63 @@ impl<T: Application> Cosmic<T> {
                                 .main_window_id()
                                 .unwrap_or(window::Id::RESERVED);
                             let mut cmds = vec![
-                                corner_radius(main_window_id, rounded.then_some(cur_rad)).discard(),
+                                corner_radius(
+                                    main_window_id,
+                                    if rounded {
+                                        Some(cur_rad)
+                                    } else {
+                                        let rad_0 = t.radius_0();
+                                        Some(CornerRadius {
+                                            top_left: rad_0[0].round() as u32,
+                                            top_right: rad_0[1].round() as u32,
+                                            bottom_right: rad_0[2].round() as u32,
+                                            bottom_left: rad_0[3].round() as u32,
+                                        })
+                                    },
+                                )
+                                .discard(),
                             ];
                             // Update radius for each tracked view with the window surface type
                             for (id, (_, surface_type, _)) in self.surface_views.iter() {
                                 if let SurfaceIdWrapper::Window(_) = surface_type {
                                     cmds.push(
-                                        corner_radius(*id, rounded.then_some(cur_rad)).discard(),
+                                        corner_radius(
+                                            *id,
+                                            if rounded {
+                                                Some(cur_rad)
+                                            } else {
+                                                let rad_0 = t.radius_0();
+                                                Some(CornerRadius {
+                                                    top_left: rad_0[0].round() as u32,
+                                                    top_right: rad_0[1].round() as u32,
+                                                    bottom_right: rad_0[2].round() as u32,
+                                                    bottom_left: rad_0[3].round() as u32,
+                                                })
+                                            },
+                                        )
+                                        .discard(),
                                     );
                                 }
                             }
                             // Update radius for all tracked windows
                             for id in self.tracked_windows.iter() {
-                                cmds.push(corner_radius(*id, rounded.then_some(cur_rad)).discard());
+                                cmds.push(
+                                    corner_radius(
+                                        *id,
+                                        if rounded {
+                                            Some(cur_rad)
+                                        } else {
+                                            let rad_0 = t.radius_0();
+                                            Some(CornerRadius {
+                                                top_left: rad_0[0].round() as u32,
+                                                top_right: rad_0[1].round() as u32,
+                                                bottom_right: rad_0[2].round() as u32,
+                                                bottom_left: rad_0[3].round() as u32,
+                                            })
+                                        },
+                                    )
+                                    .discard(),
+                                );
                             }
 
                             return Task::batch(cmds);
@@ -894,22 +952,62 @@ impl<T: Application> Cosmic<T> {
                                     .main_window_id()
                                     .unwrap_or(window::Id::RESERVED);
                                 let mut cmds = vec![
-                                    corner_radius(main_window_id, rounded.then_some(cur_rad))
-                                        .discard(),
+                                    corner_radius(
+                                        main_window_id,
+                                        if rounded {
+                                            Some(cur_rad)
+                                        } else {
+                                            let rad_0 = t.radius_0();
+                                            Some(CornerRadius {
+                                                top_left: rad_0[0].round() as u32,
+                                                top_right: rad_0[1].round() as u32,
+                                                bottom_right: rad_0[2].round() as u32,
+                                                bottom_left: rad_0[3].round() as u32,
+                                            })
+                                        },
+                                    )
+                                    .discard(),
                                 ];
                                 // Update radius for each tracked view with the window surface type
                                 for (id, (_, surface_type, _)) in self.surface_views.iter() {
                                     if let SurfaceIdWrapper::Window(_) = surface_type {
                                         cmds.push(
-                                            corner_radius(*id, rounded.then_some(cur_rad))
-                                                .discard(),
+                                            corner_radius(
+                                                *id,
+                                                if rounded {
+                                                    Some(cur_rad)
+                                                } else {
+                                                    let rad_0 = t.radius_0();
+                                                    Some(CornerRadius {
+                                                        top_left: rad_0[0].round() as u32,
+                                                        top_right: rad_0[1].round() as u32,
+                                                        bottom_right: rad_0[2].round() as u32,
+                                                        bottom_left: rad_0[3].round() as u32,
+                                                    })
+                                                },
+                                            )
+                                            .discard(),
                                         );
                                     }
                                 }
                                 // Update radius for all tracked windows
                                 for id in self.tracked_windows.iter() {
                                     cmds.push(
-                                        corner_radius(*id, rounded.then_some(cur_rad)).discard(),
+                                        corner_radius(
+                                            *id,
+                                            if rounded {
+                                                Some(cur_rad)
+                                            } else {
+                                                let rad_0 = t.radius_0();
+                                                Some(CornerRadius {
+                                                    top_left: rad_0[0].round() as u32,
+                                                    top_right: rad_0[1].round() as u32,
+                                                    bottom_right: rad_0[2].round() as u32,
+                                                    bottom_left: rad_0[3].round() as u32,
+                                                })
+                                            },
+                                        )
+                                        .discard(),
                                     );
                                 }
 
@@ -1120,7 +1218,21 @@ impl<T: Application> Cosmic<T> {
                     let rounded = !self.app.core().window.sharp_corners;
 
                     return Task::batch(vec![
-                        corner_radius(id, rounded.then_some(cur_rad)).discard(),
+                        corner_radius(
+                            id,
+                            if rounded {
+                                Some(cur_rad)
+                            } else {
+                                let rad_0 = t.radius_0();
+                                Some(CornerRadius {
+                                    top_left: rad_0[0].round() as u32,
+                                    top_right: rad_0[1].round() as u32,
+                                    bottom_right: rad_0[2].round() as u32,
+                                    bottom_left: rad_0[3].round() as u32,
+                                })
+                            },
+                        )
+                        .discard(),
                         iced_runtime::window::run_with_handle(id, init_windowing_system),
                     ]);
                 }
