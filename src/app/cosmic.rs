@@ -93,6 +93,7 @@ pub struct Cosmic<App: Application> {
         ),
     >,
     pub tracked_windows: HashSet<window::Id>,
+    pub opened_surfaces: HashMap<window::Id, u32>,
 }
 
 impl<T: Application> Cosmic<T>
@@ -161,6 +162,7 @@ where
                     }
                 }) {
                     let settings = settings(&mut self.app);
+
                     self.get_subsurface(settings, *view)
                 } else {
                     iced_winit::commands::subsurface::get_subsurface(settings(&mut self.app))
@@ -188,6 +190,7 @@ where
                         }
                 }) {
                     let settings = settings();
+
                     self.get_subsurface(settings, Box::new(move |_| view()))
                 } else {
                     iced_winit::commands::subsurface::get_subsurface(settings())
@@ -292,6 +295,8 @@ where
                     }
                 }) {
                     let settings = settings(&mut self.app);
+                    self.tracked_windows.insert(id);
+
                     self.get_window(id, settings, *view)
                 } else {
                     let settings = settings(&mut self.app);
@@ -327,6 +332,8 @@ where
                         }
                 }) {
                     let settings = settings();
+                    self.tracked_windows.insert(id);
+
                     self.get_window(id, settings, Box::new(move |_| view()))
                 } else {
                     let settings = settings();
@@ -1035,9 +1042,15 @@ impl<T: Application> Cosmic<T> {
             Action::Surface(action) => return self.surface_update(action),
 
             Action::SurfaceClosed(id) => {
-                #[cfg(feature = "wayland")]
-                self.surface_views.remove(&id);
-                self.tracked_windows.remove(&id);
+                if self.opened_surfaces.get_mut(&id).is_some_and(|v| {
+                    *v = v.saturating_sub(1);
+                    *v == 0
+                }) {
+                    self.opened_surfaces.remove(&id);
+                    #[cfg(feature = "wayland")]
+                    self.surface_views.remove(&id);
+                    self.tracked_windows.remove(&id);
+                }
 
                 let mut ret = if let Some(msg) = self.app.on_close_requested(id) {
                     self.app.update(msg)
@@ -1201,7 +1214,6 @@ impl<T: Application> Cosmic<T> {
                 core.applet.suggested_bounds = b;
             }
             Action::Opened(id) => {
-                self.tracked_windows.insert(id);
                 #[cfg(feature = "wayland")]
                 if self.app.core().sync_window_border_radii_to_theme() {
                     use iced_runtime::platform_specific::wayland::CornerRadius;
@@ -1254,6 +1266,7 @@ impl<App: Application> Cosmic<App> {
             #[cfg(feature = "wayland")]
             surface_views: HashMap::new(),
             tracked_windows: HashSet::new(),
+            opened_surfaces: HashMap::new(),
         }
     }
 
@@ -1268,6 +1281,7 @@ impl<App: Application> Cosmic<App> {
     ) -> Task<crate::Action<App::Message>> {
         use iced_winit::commands::subsurface::get_subsurface;
 
+        *self.opened_surfaces.entry(settings.id).or_insert_with(|| 0) += 1;
         self.surface_views.insert(
             settings.id,
             (
@@ -1289,7 +1303,7 @@ impl<App: Application> Cosmic<App> {
         >,
     ) -> Task<crate::Action<App::Message>> {
         use iced_winit::commands::popup::get_popup;
-
+        *self.opened_surfaces.entry(settings.id).or_insert_with(|| 0) += 1;
         self.surface_views.insert(
             settings.id,
             (
@@ -1312,7 +1326,7 @@ impl<App: Application> Cosmic<App> {
         >,
     ) -> Task<crate::Action<App::Message>> {
         use iced_winit::SurfaceIdWrapper;
-
+        *self.opened_surfaces.entry(id.clone()).or_insert_with(|| 0) += 1;
         self.surface_views.insert(
             id.clone(),
             (
