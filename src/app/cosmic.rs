@@ -542,7 +542,7 @@ where
     }
 
     #[cfg(feature = "multi-window")]
-    pub fn view(&self, id: window::Id) -> Element<crate::Action<T::Message>> {
+    pub fn view(&self, id: window::Id) -> Element<'_, crate::Action<T::Message>> {
         #[cfg(feature = "wayland")]
         if let Some((_, _, v)) = self.surface_views.get(&id) {
             return v(&self.app);
@@ -641,6 +641,8 @@ impl<T: Application> Cosmic<T> {
                             | WindowState::TILED_TOP
                             | WindowState::TILED_BOTTOM,
                     );
+                    self.app.core_mut().window.is_maximized =
+                        state.intersects(WindowState::MAXIMIZED | WindowState::FULLSCREEN);
                 }
                 if self.app.core().sync_window_border_radii_to_theme() {
                     use iced_runtime::platform_specific::wayland::CornerRadius;

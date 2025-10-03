@@ -148,7 +148,7 @@ impl iced_button::Catalog for Theme {
 impl Button {
     #[allow(clippy::trivially_copy_pass_by_ref)]
     #[allow(clippy::match_same_arms)]
-    fn cosmic<'a>(&'a self, theme: &'a Theme) -> &CosmicComponent {
+    fn cosmic<'a>(&'a self, theme: &'a Theme) -> &'a CosmicComponent {
         let cosmic = theme.cosmic();
         match self {
             Self::Primary => &cosmic.accent_button,
