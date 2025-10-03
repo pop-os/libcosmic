@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["MimeType","Text"],"fn":["normalize_to_lf"],"static":["ALLOWED_TEXT_MIME_TYPES"],"struct":["Error"],"trait":["AllowedMimeTypes","AsMimeTypes"]};

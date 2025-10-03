@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["WindowEvents"],"struct":["ActivateEvent","CloseEvent","CreateEvent","DeactivateEvent","DesktopCreateEvent","DesktopDestroyEvent","DestroyEvent","LowerEvent","MaximizeEvent","MinimizeEvent","MoveEvent","PropertyChangeEvent","RaiseEvent","ReparentEvent","ResizeEvent","RestoreEvent","RestyleEvent","ShadeEvent","UUshadeEvent"]};
