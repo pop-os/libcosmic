@@ -5,3 +5,4 @@ developers = Arendajad
 artists = Kunstnikud
 translators = Tõlkijad
 documenters = Dokumenteerijad
+designers = Kujundajad
