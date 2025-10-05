@@ -66,9 +66,7 @@ impl<S, Item: PartialEq> Model<S, Item> {
     }
 
     pub(super) fn next(&self) -> Option<&(S, Item)> {
-        let Some(item) = self.selected.as_ref() else {
-            return None;
-        };
+        let item = self.selected.as_ref()?;
 
         let mut next = false;
         for list in &self.lists {

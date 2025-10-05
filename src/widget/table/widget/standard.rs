@@ -139,13 +139,13 @@ where
         } else {
             val.model
                 .iter()
-                .map(move |entity| {
+                .flat_map(move |entity| {
                     let item = val.model.item(entity).unwrap();
                     let categories = &val.model.categories;
                     let selected = val.model.is_active(entity);
-                    let item_context = (val.item_context_builder)(&item);
+                    let item_context = (val.item_context_builder)(item);
 
-                    vec![
+                    [
                         divider::horizontal::default()
                             .apply(container)
                             .padding(val.divider_padding)
@@ -233,13 +233,11 @@ where
                             .apply(Element::from),
                     ]
                 })
-                .flatten()
                 .collect::<Vec<Element<'a, Message>>>()
         };
-        vec![vec![header_row], items_full]
-            .into_iter()
-            .flatten()
-            .collect::<Vec<Element<'a, Message>>>()
+        let mut elements = items_full;
+        elements.insert(0, header_row);
+        elements
             .apply(widget::column::with_children)
             .width(val.width)
             .height(val.height)
@@ -272,7 +270,7 @@ where
             width: Length::Fill,
             height: Length::Shrink,
 
-            item_padding: Padding::from(space_xxs).into(),
+            item_padding: Padding::from(space_xxs),
             item_spacing: 0,
             icon_spacing: space_xxxs,
             icon_size: 24,

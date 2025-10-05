@@ -136,7 +136,7 @@ pub fn load_applications_for_app_ids<'a>(
 }
 
 #[cfg(not(windows))]
-pub fn load_desktop_file<'a>(locales: &'a [String], path: PathBuf) -> Option<DesktopEntryData> {
+pub fn load_desktop_file(locales: &[String], path: PathBuf) -> Option<DesktopEntryData> {
     fde::DesktopEntry::from_path(path, Some(locales))
         .ok()
         .map(|de| DesktopEntryData::from_desktop_entry(locales, de))
@@ -144,10 +144,7 @@ pub fn load_desktop_file<'a>(locales: &'a [String], path: PathBuf) -> Option<Des
 
 #[cfg(not(windows))]
 impl DesktopEntryData {
-    pub fn from_desktop_entry<'a>(
-        locales: &'a [String],
-        de: fde::DesktopEntry,
-    ) -> DesktopEntryData {
+    pub fn from_desktop_entry(locales: &[String], de: fde::DesktopEntry) -> DesktopEntryData {
         let name = de
             .name(locales)
             .unwrap_or(Cow::Borrowed(&de.appid))

@@ -293,11 +293,9 @@ impl<Message: Clone + 'static> Widget<Message, crate::Theme, crate::Renderer>
     ) -> iced_accessibility::A11yTree {
         let c_layout = layout.children().next().unwrap();
         let c_state = &state.children[0];
-        let ret = self
-            .header_bar_inner
+        self.header_bar_inner
             .as_widget()
-            .a11y_nodes(c_layout, c_state, p);
-        ret
+            .a11y_nodes(c_layout, c_state, p)
     }
 }
 

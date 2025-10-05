@@ -221,7 +221,7 @@ where
     /// let id = model.insert().text("Item A").icon("custom-icon").id();
     /// ```
     #[must_use]
-    pub fn insert(&mut self, item: Item) -> EntityMut<SelectionMode, Item, Category> {
+    pub fn insert(&mut self, item: Item) -> EntityMut<'_, SelectionMode, Item, Category> {
         let id = self.items.insert(item);
         self.order.push_back(id);
         EntityMut { model: self, id }
@@ -244,7 +244,7 @@ where
     /// ```
     #[must_use]
     pub fn is_enabled(&self, id: Entity) -> bool {
-        self.active.get(id).map_or(false, |e| *e)
+        self.active.get(id).is_some_and(|e| *e)
     }
 
     /// Iterates across items in the model in the order that they are displayed.
@@ -288,9 +288,7 @@ where
     /// }
     /// ```
     pub fn position_set(&mut self, id: Entity, position: u16) -> Option<usize> {
-        let Some(index) = self.position(id) else {
-            return None;
-        };
+        let index = self.position(id)?;
 
         self.order.remove(index as usize);
 

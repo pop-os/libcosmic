@@ -63,7 +63,7 @@ where
             .map(|entity| {
                 let item = val.model.item(entity).unwrap();
                 let selected = val.model.is_active(entity);
-                let context_menu = (val.item_context_builder)(&item);
+                let context_menu = (val.item_context_builder)(item);
 
                 widget::column()
                     .spacing(val.item_spacing)
@@ -89,14 +89,13 @@ where
                                             .categories
                                             .iter()
                                             .skip_while(|cat| **cat != Category::default())
-                                            .map(|category| {
-                                                vec![
+                                            .flat_map(|category| {
+                                                [
                                                     widget::text::caption(item.get_text(*category))
                                                         .apply(Element::from),
                                                     widget::text::caption("-").apply(Element::from),
                                                 ]
                                             })
-                                            .flatten()
                                             .collect::<Vec<Element<'static, Message>>>();
                                         elements.pop();
                                         elements
@@ -201,7 +200,7 @@ where
 
             divider_padding: Padding::from(0).left(space_xxxs).right(space_xxxs),
 
-            item_padding: Padding::from(space_xxs).into(),
+            item_padding: Padding::from(space_xxs),
             item_spacing: 0,
             icon_size: 48,
 
