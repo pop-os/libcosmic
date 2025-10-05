@@ -546,7 +546,6 @@ where
     }
 
     /// Get the layout node of the actual text input
-
     fn text_layout<'b>(&'a self, layout: Layout<'b>) -> Layout<'b> {
         if self.dnd_icon {
             layout
@@ -1389,8 +1388,8 @@ pub fn update<'a, Message: Clone + 'static>(
 
             if let Some(cursor_position) = click_position {
                 // Check if the edit button was clicked.
-                if state.dragging_state == None
-                    && edit_button_layout.map_or(false, |l| cursor.is_over(l.bounds()))
+                if state.dragging_state.is_none()
+                    && edit_button_layout.is_some_and(|l| cursor.is_over(l.bounds()))
                 {
                     if is_editable_variant {
                         state.is_read_only = !state.is_read_only;
@@ -2277,7 +2276,7 @@ pub fn draw<'a, Message>(
     let (cursor, offset) = if let Some(focus) =
         state.is_focused.filter(|f| f.focused).or_else(|| {
             let now = Instant::now();
-            handling_dnd_offer.then(|| Focus {
+            handling_dnd_offer.then_some(Focus {
                 needs_update: false,
                 updated_at: now,
                 now,

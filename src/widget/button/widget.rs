@@ -793,7 +793,7 @@ pub fn update<'a, Message: Clone>(
         }
         Event::Mouse(mouse::Event::ButtonReleased(mouse::Button::Left))
         | Event::Touch(touch::Event::FingerLifted { .. }) => {
-            if let Some(on_press) = on_press.clone() {
+            if let Some(on_press) = on_press {
                 let state = state();
 
                 if state.is_pressed {
@@ -816,9 +816,9 @@ pub fn update<'a, Message: Clone>(
         #[cfg(feature = "a11y")]
         Event::A11y(event_id, iced_accessibility::accesskit::ActionRequest { action, .. }) => {
             let state = state();
-            if let Some(Some(on_press)) = (event_id == event_id
-                && matches!(action, iced_accessibility::accesskit::Action::Default))
-            .then(|| on_press.clone())
+            if let Some(on_press) = matches!(action, iced_accessibility::accesskit::Action::Default)
+                .then_some(on_press)
+                .flatten()
             {
                 state.is_pressed = false;
                 let msg = (on_press)(layout.virtual_offset(), layout.bounds());
@@ -828,7 +828,7 @@ pub fn update<'a, Message: Clone>(
             return event::Status::Captured;
         }
         Event::Keyboard(keyboard::Event::KeyPressed { key, .. }) => {
-            if let Some(on_press) = on_press.clone() {
+            if let Some(on_press) = on_press {
                 let state = state();
                 if state.is_focused && key == keyboard::Key::Named(keyboard::key::Named::Enter) {
                     state.is_pressed = true;

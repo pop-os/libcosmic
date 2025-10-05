@@ -233,7 +233,7 @@ impl ColorPickerModel {
     pub fn builder<Message>(
         &self,
         on_update: fn(ColorPickerUpdate) -> Message,
-    ) -> ColorPickerBuilder<Message> {
+    ) -> ColorPickerBuilder<'_, Message> {
         ColorPickerBuilder {
             model: &self.segmented_model,
             active_color: self.active_color,

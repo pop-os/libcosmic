@@ -93,7 +93,7 @@ pub fn get_text(
 
     let index = get_index(base_index, 70, step_array.len(), is_dark)
         .or_else(|| get_index(base_index, 50, step_array.len(), is_dark))
-        .unwrap_or_else(|| if is_dark { 99 } else { 0 });
+        .unwrap_or(if is_dark { 99 } else { 0 });
 
     *step_array.get(index).unwrap_or(fallback)
 }

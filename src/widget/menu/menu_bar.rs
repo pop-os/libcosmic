@@ -97,7 +97,7 @@ impl Default for MenuBarStateInner {
     }
 }
 
-pub(crate) fn menu_roots_children<Message>(menu_roots: &Vec<MenuTree<Message>>) -> Vec<Tree>
+pub(crate) fn menu_roots_children<Message>(menu_roots: &[MenuTree<Message>]) -> Vec<Tree>
 where
     Message: Clone + 'static,
 {
@@ -126,7 +126,7 @@ where
 }
 
 #[allow(invalid_reference_casting)]
-pub(crate) fn menu_roots_diff<Message>(menu_roots: &mut Vec<MenuTree<Message>>, tree: &mut Tree)
+pub(crate) fn menu_roots_diff<Message>(menu_roots: &mut [MenuTree<Message>], tree: &mut Tree)
 where
     Message: Clone + 'static,
 {
@@ -381,7 +381,7 @@ where
             let surface_action = self.on_surface_action.as_ref().unwrap();
             let old_active_root = my_state
                 .inner
-                .with_data(|state| state.active_root.get(0).copied());
+                .with_data(|state| state.active_root.first().copied());
 
             // if position is not on menu bar button skip.
             let hovered_root = layout

@@ -131,7 +131,7 @@ impl<'a, Message: 'static> Item<'a, Message> {
             contents.push(text(self.title).width(Length::Fill).into());
         }
 
-        contents.push(widget.into());
+        contents.push(widget);
         contents
     }
 

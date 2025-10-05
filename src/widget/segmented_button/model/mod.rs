@@ -292,7 +292,7 @@ where
     /// ```
     #[must_use]
     #[inline]
-    pub fn insert(&mut self) -> EntityMut<SelectionMode> {
+    pub fn insert(&mut self) -> EntityMut<'_, SelectionMode> {
         let id = self.items.insert(Settings::default());
         self.order.push_back(id);
         EntityMut { model: self, id }
@@ -447,7 +447,11 @@ where
     ///     println!("{:?} had text {}", id, old_text)
     /// }
     /// ```
-    pub fn text_set(&mut self, id: Entity, text: impl Into<Cow<'static, str>>) -> Option<Cow<str>> {
+    pub fn text_set(
+        &mut self,
+        id: Entity,
+        text: impl Into<Cow<'static, str>>,
+    ) -> Option<Cow<'_, str>> {
         if !self.contains_item(id) {
             return None;
         }

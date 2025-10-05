@@ -119,7 +119,7 @@ impl<Message: Clone + 'static> MenuTree<Message> {
             });
 
             mt.children.iter().for_each(|c| {
-                rec(&c, flat);
+                rec(c, flat);
             });
         }
 

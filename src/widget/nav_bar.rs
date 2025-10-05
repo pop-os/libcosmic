@@ -26,7 +26,7 @@ pub type Model = segmented_button::SingleSelectModel;
 pub fn nav_bar<Message: Clone + 'static>(
     model: &segmented_button::SingleSelectModel,
     on_activate: fn(segmented_button::Entity) -> Message,
-) -> NavBar<Message> {
+) -> NavBar<'_, Message> {
     NavBar {
         segmented_button: segmented_button::vertical(model).on_activate(on_activate),
     }
@@ -41,7 +41,7 @@ pub fn nav_bar_dnd<Message, D: AllowedMimeTypes>(
     on_dnd_leave: impl Fn(segmented_button::Entity) -> Message + 'static,
     on_dnd_drop: impl Fn(segmented_button::Entity, Option<D>, DndAction) -> Message + 'static,
     id: DragId,
-) -> NavBar<Message>
+) -> NavBar<'_, Message>
 where
     Message: Clone + 'static,
 {

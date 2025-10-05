@@ -152,13 +152,11 @@ pub fn about<'a, Message: Clone + 'static>(
     let artists_section = section(&about.artists, fl!("artists"));
     let translators_section = section(&about.translators, fl!("translators"));
     let documenters_section = section(&about.documenters, fl!("documenters"));
-    let license_section = about.license.as_ref().and_then(|license| {
+    let license_section = about.license.as_ref().map(|license| {
         let url = about.license_url.as_deref().unwrap_or_default();
-        Some(
-            widget::settings::section()
-                .title(fl!("license"))
-                .add(section_button(license, url)),
-        )
+        widget::settings::section()
+            .title(fl!("license"))
+            .add(section_button(license, url))
     });
     let copyright = about.copyright.as_ref().map(widget::text::body);
     let comments = about.comments.as_ref().map(widget::text::body);

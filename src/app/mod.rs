@@ -420,10 +420,10 @@ where
     }
 
     /// Constructs the view for the main window.
-    fn view(&self) -> Element<Self::Message>;
+    fn view(&self) -> Element<'_, Self::Message>;
 
     /// Constructs views for other windows.
-    fn view_window(&self, id: window::Id) -> Element<Self::Message> {
+    fn view_window(&self, id: window::Id) -> Element<'_, Self::Message> {
         panic!("no view for window {id:?}");
     }
 

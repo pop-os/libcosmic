@@ -114,7 +114,7 @@ where
 
         (
             Self::new(model),
-            Task::batch(vec![
+            Task::batch([
                 command,
                 iced_runtime::window::run_with_handle(id, init_windowing_system),
             ]),
@@ -665,23 +665,21 @@ impl<T: Application> Cosmic<T> {
                         bottom_left: radii[3].round() as u32,
                     };
                     let rounded = !self.app.core().window.sharp_corners;
-                    return Task::batch(vec![
-                        corner_radius(
-                            id,
-                            if rounded {
-                                Some(cur_rad)
-                            } else {
-                                let rad_0 = t.radius_0();
-                                Some(CornerRadius {
-                                    top_left: rad_0[0].round() as u32,
-                                    top_right: rad_0[1].round() as u32,
-                                    bottom_right: rad_0[2].round() as u32,
-                                    bottom_left: rad_0[3].round() as u32,
-                                })
-                            },
-                        )
-                        .discard(),
-                    ]);
+                    return Task::batch([corner_radius(
+                        id,
+                        if rounded {
+                            Some(cur_rad)
+                        } else {
+                            let rad_0 = t.radius_0();
+                            Some(CornerRadius {
+                                top_left: rad_0[0].round() as u32,
+                                top_right: rad_0[1].round() as u32,
+                                bottom_right: rad_0[2].round() as u32,
+                                bottom_left: rad_0[3].round() as u32,
+                            })
+                        },
+                    )
+                    .discard()]);
                 }
             }
 
@@ -1061,7 +1059,7 @@ impl<T: Application> Cosmic<T> {
                 if core.exit_on_main_window_closed
                     && core.main_window_id().is_some_and(|m_id| id == m_id)
                 {
-                    ret = Task::batch(vec![iced::exit::<crate::Action<T::Message>>()]);
+                    ret = Task::batch([iced::exit::<crate::Action<T::Message>>()]);
                 }
                 return ret;
             }
@@ -1231,7 +1229,7 @@ impl<T: Application> Cosmic<T> {
                     // TODO do we need per window sharp corners?
                     let rounded = !self.app.core().window.sharp_corners;
 
-                    return Task::batch(vec![
+                    return Task::batch([
                         corner_radius(
                             id,
                             if rounded {
@@ -1326,9 +1324,9 @@ impl<App: Application> Cosmic<App> {
         >,
     ) -> Task<crate::Action<App::Message>> {
         use iced_winit::SurfaceIdWrapper;
-        *self.opened_surfaces.entry(id.clone()).or_insert_with(|| 0) += 1;
+        *self.opened_surfaces.entry(id).or_insert(0) += 1;
         self.surface_views.insert(
-            id.clone(),
+            id,
             (
                 None, // TODO parent for window, platform specific option maybe?
                 SurfaceIdWrapper::Window(id),

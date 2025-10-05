@@ -17,7 +17,7 @@ pub fn calendar<M>(
     on_prev: impl Fn() -> M + 'static,
     on_next: impl Fn() -> M + 'static,
     first_day_of_week: Weekday,
-) -> Calendar<M> {
+) -> Calendar<'_, M> {
     Calendar {
         model,
         on_select: Box::new(on_select),
