@@ -391,7 +391,7 @@ where
     pub fn style(&self, theme: &Theme) -> iced_runtime::Appearance {
         if let Some(style) = self.app.style() {
             style
-        } else if self.app.core().window.sharp_corners {
+        } else if self.app.core().window.is_maximized {
             let theme = THEME.lock().unwrap();
             crate::style::iced::application::appearance(theme.borrow())
         } else {
