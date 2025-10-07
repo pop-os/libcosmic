@@ -5,3 +5,4 @@ designers = Diseñadores
 artists = Artistas
 translators = Traductores
 documenters = Documentadores
+close = Cerrar
