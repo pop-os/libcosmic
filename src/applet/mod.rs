@@ -124,13 +124,19 @@ impl Context {
     #[must_use]
     pub fn suggested_window_size(&self) -> (NonZeroU32, NonZeroU32) {
         let suggested = self.suggested_size(true);
-        let applet_padding = self.suggested_padding(true);
+        let (applet_padding_major_axis, applet_padding_minor_axis) = self.suggested_padding(true);
+        let (horizontal_padding, vertical_padding) = if self.is_horizontal() {
+            (applet_padding_major_axis, applet_padding_minor_axis)
+        } else {
+            (applet_padding_minor_axis, applet_padding_major_axis)
+        };
+
         let configured_width = self
             .suggested_bounds
             .as_ref()
             .and_then(|c| NonZeroU32::new(c.width as u32)) // TODO: should this be physical size instead of logical?
             .unwrap_or_else(|| {
-                NonZeroU32::new(suggested.0 as u32 + applet_padding as u32 * 2).unwrap()
+                NonZeroU32::new(suggested.0 as u32 + horizontal_padding as u32 * 2).unwrap()
             });
 
         let configured_height = self
@@ -138,17 +144,20 @@ impl Context {
             .as_ref()
             .and_then(|c| NonZeroU32::new(c.height as u32))
             .unwrap_or_else(|| {
-                NonZeroU32::new(suggested.1 as u32 + applet_padding as u32 * 2).unwrap()
+                NonZeroU32::new(suggested.1 as u32 + vertical_padding as u32 * 2).unwrap()
             });
         info!("{configured_height:?}");
         (configured_width, configured_height)
     }
 
     #[must_use]
-    pub fn suggested_padding(&self, is_symbolic: bool) -> u16 {
+    pub fn suggested_padding(&self, is_symbolic: bool) -> (u16, u16) {
         match &self.size {
-            Size::PanelSize(size) => size.get_applet_padding(is_symbolic),
-            Size::Hardcoded(_) => 8,
+            Size::PanelSize(size) => (
+                size.get_applet_shrinkable_padding(is_symbolic),
+                size.get_applet_padding(is_symbolic),
+            ),
+            Size::Hardcoded(_) => (12, 8),
         }
     }
 
@@ -160,9 +169,15 @@ impl Context {
     #[allow(clippy::cast_precision_loss)]
     pub fn window_settings(&self) -> crate::app::Settings {
         let (width, height) = self.suggested_size(true);
-        let applet_padding = self.suggested_padding(true);
-        let width = f32::from(width) + applet_padding as f32 * 2.;
-        let height = f32::from(height) + applet_padding as f32 * 2.;
+        let (applet_padding_major_axis, applet_padding_minor_axis) = self.suggested_padding(true);
+        let (horizontal_padding, vertical_padding) = if self.is_horizontal() {
+            (applet_padding_major_axis, applet_padding_minor_axis)
+        } else {
+            (applet_padding_minor_axis, applet_padding_major_axis)
+        };
+
+        let width = f32::from(width) + horizontal_padding as f32 * 2.;
+        let height = f32::from(height) + vertical_padding as f32 * 2.;
         let mut settings = crate::app::Settings::default()
             .size(iced_core::Size::new(width, height))
             .size_limits(Limits::NONE.min_height(height).min_width(width))
@@ -187,8 +202,12 @@ impl Context {
         icon: widget::icon::Handle,
     ) -> crate::widget::Button<'a, Message> {
         let suggested = self.suggested_size(icon.symbolic);
-        let applet_padding = self.suggested_padding(icon.symbolic);
-
+        let (applet_padding_major_axis, applet_padding_minor_axis) = self.suggested_padding(true);
+        let (horizontal_padding, vertical_padding) = if self.is_horizontal() {
+            (applet_padding_major_axis, applet_padding_minor_axis)
+        } else {
+            (applet_padding_minor_axis, applet_padding_major_axis)
+        };
         let symbolic = icon.symbolic;
 
         crate::widget::button::custom(
@@ -206,8 +225,8 @@ impl Context {
             )
             .center(Length::Fill),
         )
-        .width(Length::Fixed((suggested.0 + 2 * applet_padding) as f32))
-        .height(Length::Fixed((suggested.1 + 2 * applet_padding) as f32))
+        .width(Length::Fixed((suggested.0 + 2 * horizontal_padding) as f32))
+        .height(Length::Fixed((suggested.1 + 2 * vertical_padding) as f32))
         .class(Button::AppletIcon)
     }
 
@@ -345,7 +364,12 @@ impl Context {
         height_padding: Option<i32>,
     ) -> SctkPopupSettings {
         let (width, height) = self.suggested_size(true);
-        let applet_padding = self.suggested_padding(true);
+        let (applet_padding_major_axis, applet_padding_minor_axis) = self.suggested_padding(true);
+        let (horizontal_padding, vertical_padding) = if self.is_horizontal() {
+            (applet_padding_major_axis, applet_padding_minor_axis)
+        } else {
+            (applet_padding_minor_axis, applet_padding_major_axis)
+        };
         let pixel_offset = 4;
         let (offset, anchor, gravity) = match self.anchor {
             PanelAnchor::Left => ((pixel_offset, 0), Anchor::Right, Gravity::Right),
@@ -364,8 +388,10 @@ impl Context {
                 anchor_rect: Rectangle {
                     x: 0,
                     y: 0,
-                    width: width_padding.unwrap_or(applet_padding as i32) * 2 + i32::from(width),
-                    height: height_padding.unwrap_or(applet_padding as i32) * 2 + i32::from(height),
+                    width: width_padding.unwrap_or(horizontal_padding as i32) * 2
+                        + i32::from(width),
+                    height: height_padding.unwrap_or(vertical_padding as i32) * 2
+                        + i32::from(height),
                 },
                 reactive: true,
                 constraint_adjustment: 15, // slide_y, slide_x, flip_x, flip_y
