@@ -45,6 +45,18 @@ impl<'a, Message: Clone + 'static> ContextDrawer<'a, Message> {
             on_close: Message,
             max_width: f32,
         ) -> Element<'a, Message> {
+            macro_rules! icon {
+                ($name:expr) => {{
+                    #[cfg(target_os = "linux")]
+                    let icon = { icon::from_name($name) };
+                    #[cfg(not(target_os = "linux"))]
+                    let icon = {
+                        icon::from_svg_bytes(include_bytes!(concat!("../../../res/icons/", $name, ".svg")))
+                            .symbolic(true)
+                    };
+                    icon
+                }};
+            }
             let cosmic_theme::Spacing {
                 space_xxs,
                 space_s,
@@ -85,7 +97,7 @@ impl<'a, Message: Clone + 'static> ContextDrawer<'a, Message> {
                 .push_maybe(title)
                 .push(
                     button::text(fl!("close"))
-                        .trailing_icon(icon::from_name("go-next-symbolic"))
+                        .trailing_icon(icon!("go-next-symbolic"))
                         .on_press(on_close)
                         .apply(container)
                         .width(close_width)
