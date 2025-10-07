@@ -22,7 +22,7 @@ pub type VerticalSegmentedButton<'a, SelectionMode, Message> =
 /// For details on the model, see the [`segmented_button`](super) module for more details.
 pub fn vertical<SelectionMode, Message>(
     model: &Model<SelectionMode>,
-) -> SegmentedButton<Vertical, SelectionMode, Message>
+) -> SegmentedButton<'_, Vertical, SelectionMode, Message>
 where
     Model<SelectionMode>: Selectable,
     SelectionMode: Default,

@@ -673,8 +673,8 @@ pub(super) enum OptionElement<'a, S, Item> {
 }
 
 impl<S, Message> Model<S, Message> {
-    pub(super) fn elements(&self) -> impl Iterator<Item = OptionElement<S, Message>> + '_ {
-        let iterator = self.lists.iter().flat_map(|list| {
+    pub(super) fn elements(&self) -> impl Iterator<Item = OptionElement<'_, S, Message>> + '_ {
+        self.lists.iter().flat_map(|list| {
             let description = list
                 .description
                 .as_ref()
@@ -686,9 +686,7 @@ impl<S, Message> Model<S, Message> {
             description
                 .chain(options)
                 .chain(std::iter::once(OptionElement::Separator))
-        });
-
-        iterator
+        })
     }
 
     fn element_heights(
@@ -709,7 +707,7 @@ impl<S, Message> Model<S, Message> {
         text_line_height: f32,
         offset: f32,
         height: f32,
-    ) -> impl Iterator<Item = (OptionElement<S, Message>, f32)> + '_ {
+    ) -> impl Iterator<Item = (OptionElement<'_, S, Message>, f32)> + '_ {
         let heights = self.element_heights(padding_vertical, text_line_height);
 
         let mut current = 0.0;

@@ -120,6 +120,12 @@ impl Dialog {
     }
 }
 
+impl Default for Dialog {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 #[cfg(feature = "xdg-portal")]
 mod portal {
     use super::Dialog;

@@ -814,7 +814,7 @@ pub struct ThemeBuilder {
 impl Default for ThemeBuilder {
     fn default() -> Self {
         Self {
-            palette: DARK_PALETTE.to_owned().into(),
+            palette: DARK_PALETTE.to_owned(),
             spacing: Spacing::default(),
             corner_radii: CornerRadii::default(),
             neutral_tint: Default::default(),
@@ -1077,7 +1077,7 @@ impl ThemeBuilder {
             component_pressed_overlay = component_hovered_overlay;
             component_pressed_overlay.alpha = 0.2;
 
-            let container = Container::new(
+            Container::new(
                 Component::component(
                     component_base,
                     accent,
@@ -1101,9 +1101,7 @@ impl ThemeBuilder {
                 ),
                 get_small_widget_color(base_index, 5, &neutral_steps, &control_steps_array[6]),
                 is_high_contrast,
-            );
-
-            container
+            )
         };
 
         let accent_text = if is_dark {

@@ -435,7 +435,7 @@ impl MenuState {
 pub(crate) struct Menu<'b, Message: std::clone::Clone> {
     pub(crate) tree: MenuBarState,
     // Flattened menu tree
-    pub(crate) menu_roots: Cow<'b, Vec<MenuTree<Message>>>,
+    pub(crate) menu_roots: Cow<'b, [MenuTree<Message>]>,
     pub(crate) bounds_expand: u16,
     /// Allows menu overlay items to overlap the parent
     pub(crate) menu_overlays_parent: bool,
@@ -740,7 +740,7 @@ impl<'b, Message: Clone + 'static> Menu<'b, Message> {
             let styling = theme.appearance(&self.style);
             let roots = active_root.iter().skip(1).fold(
                 &self.menu_roots[active_root[0]].children,
-                |mt, next_active_root| (&mt[*next_active_root].children),
+                |mt, next_active_root| &mt[*next_active_root].children,
             );
             let indices = state.get_trimmed_indices(self.depth).collect::<Vec<_>>();
             state.menu_states[if self.is_overlay { 0 } else { self.depth }..=if self.is_overlay {

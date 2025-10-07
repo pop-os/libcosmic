@@ -22,15 +22,15 @@ pub type CosmicColor = ::palette::rgb::Srgba;
 pub type CosmicComponent = cosmic_theme::Component;
 pub type CosmicTheme = cosmic_theme::Theme;
 
-pub static COSMIC_DARK: LazyLock<CosmicTheme> = LazyLock::new(|| CosmicTheme::dark_default());
+pub static COSMIC_DARK: LazyLock<CosmicTheme> = LazyLock::new(CosmicTheme::dark_default);
 
 pub static COSMIC_HC_DARK: LazyLock<CosmicTheme> =
-    LazyLock::new(|| CosmicTheme::high_contrast_dark_default());
+    LazyLock::new(CosmicTheme::high_contrast_dark_default);
 
-pub static COSMIC_LIGHT: LazyLock<CosmicTheme> = LazyLock::new(|| CosmicTheme::light_default());
+pub static COSMIC_LIGHT: LazyLock<CosmicTheme> = LazyLock::new(CosmicTheme::light_default);
 
 pub static COSMIC_HC_LIGHT: LazyLock<CosmicTheme> =
-    LazyLock::new(|| CosmicTheme::high_contrast_light_default());
+    LazyLock::new(CosmicTheme::high_contrast_light_default);
 
 pub static TRANSPARENT_COMPONENT: LazyLock<Component> = LazyLock::new(|| Component {
     base: CosmicColor::new(0.0, 0.0, 0.0, 0.0),

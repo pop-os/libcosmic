@@ -93,7 +93,7 @@ async fn start_listening<T: 'static + Send + Sync + PartialEq + Clone + CosmicCo
                 }
                 Err((errors, t)) => {
                     let update = crate::Update {
-                        errors: errors,
+                        errors,
                         keys: Vec::new(),
                         config: t.clone(),
                     };

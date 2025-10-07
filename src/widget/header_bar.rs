@@ -24,6 +24,7 @@ pub fn header_bar<'a, Message>() -> HeaderBar<'a, Message> {
         density: None,
         focused: false,
         maximized: false,
+        sharp_corners: false,
         is_ssd: false,
         on_double_click: None,
         is_condensed: false,
@@ -82,6 +83,9 @@ pub struct HeaderBar<'a, Message> {
 
     /// Maximized state of the window
     maximized: bool,
+
+    /// Whether the corners of the window should be sharp
+    sharp_corners: bool,
 
     /// HeaderBar used for server-side decorations
     is_ssd: bool,
@@ -289,11 +293,9 @@ impl<Message: Clone + 'static> Widget<Message, crate::Theme, crate::Renderer>
     ) -> iced_accessibility::A11yTree {
         let c_layout = layout.children().next().unwrap();
         let c_state = &state.children[0];
-        let ret = self
-            .header_bar_inner
+        self.header_bar_inner
             .as_widget()
-            .a11y_nodes(c_layout, c_state, p);
-        ret
+            .a11y_nodes(c_layout, c_state, p)
     }
 }
 
@@ -409,7 +411,7 @@ impl<'a, Message: Clone + 'static> HeaderBar<'a, Message> {
             .apply(widget::container)
             .class(crate::theme::Container::HeaderBar {
                 focused: self.focused,
-                sharp_corners: self.maximized,
+                sharp_corners: self.sharp_corners,
             })
             .center_y(Length::Shrink)
             .apply(widget::mouse_area);

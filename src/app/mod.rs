@@ -287,37 +287,37 @@ where
 
     /// Displays a context drawer on the side of the application window when `Some`.
     /// Use the [`ApplicationExt::set_show_context`] function for this to take effect.
-    fn context_drawer(&self) -> Option<ContextDrawer<Self::Message>> {
+    fn context_drawer(&self) -> Option<ContextDrawer<'_, Self::Message>> {
         None
     }
 
     /// Displays a dialog in the center of the application window when `Some`.
-    fn dialog(&self) -> Option<Element<Self::Message>> {
+    fn dialog(&self) -> Option<Element<'_, Self::Message>> {
         None
     }
 
     /// Displays a footer at the bottom of the application window when `Some`.
-    fn footer(&self) -> Option<Element<Self::Message>> {
+    fn footer(&self) -> Option<Element<'_, Self::Message>> {
         None
     }
 
     /// Attaches elements to the start section of the header.
-    fn header_start(&self) -> Vec<Element<Self::Message>> {
+    fn header_start(&self) -> Vec<Element<'_, Self::Message>> {
         Vec::new()
     }
 
     /// Attaches elements to the center of the header.
-    fn header_center(&self) -> Vec<Element<Self::Message>> {
+    fn header_center(&self) -> Vec<Element<'_, Self::Message>> {
         Vec::new()
     }
 
     /// Attaches elements to the end section of the header.
-    fn header_end(&self) -> Vec<Element<Self::Message>> {
+    fn header_end(&self) -> Vec<Element<'_, Self::Message>> {
         Vec::new()
     }
 
     /// Allows overriding the default nav bar widget.
-    fn nav_bar(&self) -> Option<Element<crate::Action<Self::Message>>> {
+    fn nav_bar(&self) -> Option<Element<'_, crate::Action<Self::Message>>> {
         if !self.core().nav_bar_active() {
             return None;
         }
@@ -420,10 +420,10 @@ where
     }
 
     /// Constructs the view for the main window.
-    fn view(&self) -> Element<Self::Message>;
+    fn view(&self) -> Element<'_, Self::Message>;
 
     /// Constructs views for other windows.
-    fn view_window(&self, id: window::Id) -> Element<Self::Message> {
+    fn view_window(&self, id: window::Id) -> Element<'_, Self::Message> {
         panic!("no view for window {id:?}");
     }
 
@@ -485,7 +485,7 @@ pub trait ApplicationExt: Application {
     fn set_window_title(&mut self, title: String, id: window::Id) -> Task<Self::Message>;
 
     /// View template for the main window.
-    fn view_main(&self) -> Element<crate::Action<Self::Message>>;
+    fn view_main(&self) -> Element<'_, crate::Action<Self::Message>>;
 
     fn watch_config<T: CosmicConfigEntry + Send + Sync + Default + 'static + Clone + PartialEq>(
         &self,
@@ -546,12 +546,11 @@ impl<App: Application> ApplicationExt for App {
 
     #[allow(clippy::too_many_lines)]
     /// Creates the view for the main window.
-    fn view_main(&self) -> Element<crate::Action<Self::Message>> {
+    fn view_main(&self) -> Element<'_, crate::Action<Self::Message>> {
         let core = self.core();
         let is_condensed = core.is_condensed();
-        // TODO: More granularity might be needed for different window border
-        // handling of maximized and tiled windows
         let sharp_corners = core.window.sharp_corners;
+        let maximized = core.window.is_maximized;
         let content_container = core.window.content_container;
         let show_context = core.window.show_context;
         let nav_bar_active = core.nav_bar_active();
@@ -560,7 +559,7 @@ impl<App: Application> ApplicationExt for App {
             .iter()
             .any(|i| Some(*i) == self.core().main_window_id());
 
-        let border_padding = if sharp_corners { 8 } else { 7 };
+        let border_padding = if maximized { 8 } else { 7 };
 
         let main_content_padding = if !content_container {
             [0, 0, 0, 0]
@@ -698,17 +697,22 @@ impl<App: Application> ApplicationExt for App {
         };
 
         // Ensures visually aligned radii for content and window corners
-        let window_corner_radius = crate::theme::active()
-            .cosmic()
-            .radius_s()
-            .map(|x| if x < 4.0 { x } else { x + 4.0 });
+        let window_corner_radius = if sharp_corners {
+            crate::theme::active().cosmic().radius_0()
+        } else {
+            crate::theme::active()
+                .cosmic()
+                .radius_s()
+                .map(|x| if x < 4.0 { x } else { x + 4.0 })
+        };
 
         let view_column = crate::widget::column::with_capacity(2)
             .push_maybe(if core.window.show_headerbar {
                 Some({
                     let mut header = crate::widget::header_bar()
                         .focused(focused)
-                        .maximized(sharp_corners)
+                        .maximized(maximized)
+                        .sharp_corners(sharp_corners)
                         .title(&core.window.header_title)
                         .on_drag(crate::Action::Cosmic(Action::Drag))
                         .on_right_click(crate::Action::Cosmic(Action::ShowWindowMenu))
@@ -766,16 +770,8 @@ impl<App: Application> ApplicationExt for App {
                                     )),
                                     border: iced::Border {
                                         radius: [
-                                            if sharp_corners {
-                                                cosmic.radius_0()[0]
-                                            } else {
-                                                window_corner_radius[0] - 1.0
-                                            },
-                                            if sharp_corners {
-                                                cosmic.radius_0()[1]
-                                            } else {
-                                                window_corner_radius[1] - 1.0
-                                            },
+                                            (window_corner_radius[0] - 1.0).max(0.0),
+                                            (window_corner_radius[1] - 1.0).max(0.0),
                                             cosmic.radius_0()[2],
                                             cosmic.radius_0()[3],
                                         ]
@@ -794,7 +790,7 @@ impl<App: Application> ApplicationExt for App {
             // The content element contains every element beneath the header.
             .push(content)
             .apply(container)
-            .padding(if sharp_corners { 0 } else { 1 })
+            .padding(if maximized { 0 } else { 1 })
             .class(crate::theme::Container::custom(move |theme| {
                 container::Style {
                     background: if content_container {
@@ -806,7 +802,7 @@ impl<App: Application> ApplicationExt for App {
                     },
                     border: iced::Border {
                         color: theme.cosmic().bg_divider().into(),
-                        width: if sharp_corners { 0.0 } else { 1.0 },
+                        width: if maximized { 0.0 } else { 1.0 },
                         radius: window_corner_radius.into(),
                     },
                     ..Default::default()

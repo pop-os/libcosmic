@@ -148,7 +148,7 @@ impl iced_button::Catalog for Theme {
 impl Button {
     #[allow(clippy::trivially_copy_pass_by_ref)]
     #[allow(clippy::match_same_arms)]
-    fn cosmic<'a>(&'a self, theme: &'a Theme) -> &CosmicComponent {
+    fn cosmic<'a>(&'a self, theme: &'a Theme) -> &'a CosmicComponent {
         let cosmic = theme.cosmic();
         match self {
             Self::Primary => &cosmic.accent_button,
@@ -898,12 +898,10 @@ impl toggler::Catalog for Theme {
         let mut active = toggler::Style {
             background: if matches!(status, toggler::Status::Active { is_toggled: true }) {
                 cosmic.accent.base.into()
+            } else if cosmic.is_dark {
+                cosmic.palette.neutral_6.into()
             } else {
-                if cosmic.is_dark {
-                    cosmic.palette.neutral_6.into()
-                } else {
-                    cosmic.palette.neutral_5.into()
-                }
+                cosmic.palette.neutral_5.into()
             },
             foreground: cosmic.palette.neutral_2.into(),
             border_radius: cosmic.radius_xl().into(),
@@ -1166,11 +1164,7 @@ impl scrollable::Catalog for Theme {
                     },
                     gap: None,
                 };
-                let small_widget_container = self
-                    .current_container()
-                    .small_widget
-                    .clone()
-                    .with_alpha(0.7);
+                let small_widget_container = self.current_container().small_widget.with_alpha(0.7);
 
                 if matches!(class, Scrollable::Permanent) {
                     a.horizontal_rail.background =
@@ -1233,11 +1227,8 @@ impl scrollable::Catalog for Theme {
                 };
 
                 if matches!(class, Scrollable::Permanent) {
-                    let small_widget_container = self
-                        .current_container()
-                        .small_widget
-                        .clone()
-                        .with_alpha(0.7);
+                    let small_widget_container =
+                        self.current_container().small_widget.with_alpha(0.7);
 
                     a.horizontal_rail.background =
                         Some(Background::Color(small_widget_container.into()));

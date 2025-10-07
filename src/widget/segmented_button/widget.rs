@@ -263,7 +263,7 @@ where
 
     /// Check if an item is enabled.
     fn is_enabled(&self, key: Entity) -> bool {
-        self.model.items.get(key).map_or(false, |item| item.enabled)
+        self.model.items.get(key).is_some_and(|item| item.enabled)
     }
 
     /// Handle the dnd drop event.
@@ -987,7 +987,7 @@ where
                         let current = Instant::now();
 
                         // Permit successive scroll wheel events only after a given delay.
-                        if state.wheel_timestamp.map_or(true, |previous| {
+                        if state.wheel_timestamp.is_none_or(|previous| {
                             current.duration_since(previous) > Duration::from_millis(250)
                         }) {
                             state.wheel_timestamp = Some(current);
@@ -1607,23 +1607,16 @@ where
         let state = tree.state.downcast_ref::<LocalState>();
         let menu_state = state.menu_state.clone();
 
-        let Some(entity) = state.show_context else {
-            return None;
-        };
+        let entity = state.show_context?;
 
-        let bounds = self
-            .variant_bounds(state, layout.bounds())
-            .find_map(|item| match item {
-                ItemBounds::Button(e, bounds) if e == entity => Some(bounds),
-                _ => None,
-            });
-        let Some(mut bounds) = bounds else {
-            return None;
-        };
+        let mut bounds =
+            self.variant_bounds(state, layout.bounds())
+                .find_map(|item| match item {
+                    ItemBounds::Button(e, bounds) if e == entity => Some(bounds),
+                    _ => None,
+                })?;
 
-        let Some(context_menu) = self.context_menu.as_mut() else {
-            return None;
-        };
+        let context_menu = self.context_menu.as_mut()?;
 
         if !menu_state.inner.with_data(|data| data.open) {
             // If the menu is not open, we don't need to show it.
@@ -1777,9 +1770,8 @@ impl LocalState {
 
 impl operation::Focusable for LocalState {
     fn is_focused(&self) -> bool {
-        self.focused.map_or(false, |f| {
-            f.updated_at == LAST_FOCUS_UPDATE.with(|f| f.get())
-        })
+        self.focused
+            .is_some_and(|f| f.updated_at == LAST_FOCUS_UPDATE.with(|f| f.get()))
     }
 
     fn focus(&mut self) {
