@@ -211,6 +211,7 @@ pub struct TextInput<'a, Message> {
     always_active: bool,
     /// The text input tracks and manages the input value in its state.
     manage_value: bool,
+    drag_threshold: f32,
 }
 
 impl<'a, Message> TextInput<'a, Message>
@@ -259,6 +260,7 @@ where
             helper_text: None,
             always_active: false,
             manage_value: false,
+            drag_threshold: 20.0,
         }
     }
 
@@ -556,6 +558,12 @@ where
         } else {
             layout.children().next().unwrap()
         }
+    }
+
+    /// Set the drag threshold.
+    pub fn drag_threshold(mut self, drag_threshold: f32) -> Self {
+        self.drag_threshold = drag_threshold;
+        self
     }
 }
 
@@ -926,6 +934,7 @@ where
             line_height,
             layout,
             self.manage_value,
+            self.drag_threshold,
         )
     }
 
@@ -1346,6 +1355,7 @@ pub fn update<'a, Message: Clone + 'static>(
     line_height: text::LineHeight,
     layout: Layout<'_>,
     manage_value: bool,
+    drag_threshold: f32,
 ) -> event::Status {
     let update_cache = |state, value| {
         replace_paragraph(
@@ -1424,84 +1434,39 @@ pub fn update<'a, Message: Clone + 'static>(
                 ) {
                     #[cfg(feature = "wayland")]
                     (None, click::Kind::Single, cursor::State::Selection { start, end }) => {
-                        // if something is already selected, we can start a drag and drop for a
-                        // single click that is on top of the selected text
-                        // is the click on selected text?
+                        let left = start.min(end);
+                        let right = end.max(start);
 
-                        if on_input.is_some() || manage_value {
-                            let left = start.min(end);
-                            let right = end.max(start);
+                        let (left_position, _left_offset) = measure_cursor_and_scroll_offset(
+                            state.value.raw(),
+                            text_layout.bounds(),
+                            left,
+                        );
 
-                            let (left_position, _left_offset) = measure_cursor_and_scroll_offset(
-                                state.value.raw(),
-                                text_layout.bounds(),
-                                left,
-                            );
+                        let (right_position, _right_offset) = measure_cursor_and_scroll_offset(
+                            state.value.raw(),
+                            text_layout.bounds(),
+                            right,
+                        );
 
-                            let (right_position, _right_offset) = measure_cursor_and_scroll_offset(
-                                state.value.raw(),
-                                text_layout.bounds(),
-                                right,
-                            );
+                        let width = right_position - left_position;
+                        let selection_bounds = Rectangle {
+                            x: text_layout.bounds().x + left_position,
+                            y: text_layout.bounds().y,
+                            width,
+                            height: text_layout.bounds().height,
+                        };
 
-                            let width = right_position - left_position;
-                            let selection_bounds = Rectangle {
-                                x: text_layout.bounds().x + left_position,
-                                y: text_layout.bounds().y,
-                                width,
-                                height: text_layout.bounds().height,
-                            };
-
-                            if cursor.is_over(selection_bounds) {
-                                // XXX never start a dnd if the input is secure
-                                if is_secure {
-                                    return event::Status::Ignored;
-                                }
-                                let input_text =
-                                    state.selected_text(&value.to_string()).unwrap_or_default();
-                                state.dragging_state = Some(DraggingState::Dnd(
-                                    DndAction::empty(),
-                                    input_text.clone(),
-                                ));
-                                let mut editor = Editor::new(unsecured_value, &mut state.cursor);
-                                editor.delete();
-
-                                let contents = editor.contents();
-                                let unsecured_value = Value::new(&contents);
-                                state.tracked_value = unsecured_value.clone();
-                                if let Some(on_input) = on_input {
-                                    let message = (on_input)(contents);
-                                    shell.publish(message);
-                                }
-                                if let Some(on_start_dnd) = on_start_dnd_source {
-                                    shell.publish(on_start_dnd(state.clone()));
-                                }
-                                let state_clone = state.clone();
-
-                                iced_core::clipboard::start_dnd(
-                                    clipboard,
-                                    false,
-                                    id.map(iced_core::clipboard::DndSource::Widget),
-                                    Some(iced_core::clipboard::IconSurface::new(
-                                        Element::from(
-                                            TextInput::<'static, ()>::new("", input_text.clone())
-                                                .dnd_icon(true),
-                                        ),
-                                        iced_core::widget::tree::State::new(state_clone),
-                                        Vector::ZERO,
-                                    )),
-                                    Box::new(TextInputString(input_text)),
-                                    DndAction::Move,
-                                );
-
-                                update_cache(state, &unsecured_value);
-                            } else {
-                                update_cache(state, value);
-                                state.setting_selection(value, text_layout.bounds(), target);
-                            }
-                        } else {
-                            state.setting_selection(value, text_layout.bounds(), target);
+                        if cursor.is_over(selection_bounds) && (on_input.is_some() || manage_value)
+                        {
+                            state.dragging_state = Some(DraggingState::PrepareDnd(cursor_position));
+                            return event::Status::Captured;
                         }
+                        // clear selection and place cursor at click position
+                        update_cache(state, value);
+                        state.setting_selection(value, text_layout.bounds(), target);
+                        state.dragging_state = None;
+                        return event::Status::Captured;
                     }
                     (None, click::Kind::Single, _) => {
                         state.setting_selection(value, text_layout.bounds(), target);
@@ -1575,6 +1540,15 @@ pub fn update<'a, Message: Clone + 'static>(
         | Event::Touch(touch::Event::FingerLifted { .. } | touch::Event::FingerLost { .. }) => {
             cold();
             let state = state();
+            #[cfg(feature = "wayland")]
+            if matches!(state.dragging_state, Some(DraggingState::PrepareDnd(_))) {
+                // clear selection and place cursor at click position
+                update_cache(state, value);
+                if let Some(position) = cursor.position_over(layout.bounds()) {
+                    let target = position.x - text_layout.bounds().x;
+                    state.setting_selection(value, text_layout.bounds(), target);
+                }
+            }
             state.dragging_state = None;
 
             return if cursor.is_over(layout.bounds()) {
@@ -1597,6 +1571,58 @@ pub fn update<'a, Message: Clone + 'static>(
                 state
                     .cursor
                     .select_range(state.cursor.start(value), position);
+
+                return event::Status::Captured;
+            }
+            #[cfg(feature = "wayland")]
+            if let Some(DraggingState::PrepareDnd(start_position)) = state.dragging_state {
+                let distance = ((position.x - start_position.x).powi(2)
+                    + (position.y - start_position.y).powi(2))
+                .sqrt();
+
+                if distance >= drag_threshold {
+                    if is_secure {
+                        return event::Status::Ignored;
+                    }
+
+                    let input_text = state.selected_text(&value.to_string()).unwrap_or_default();
+                    state.dragging_state =
+                        Some(DraggingState::Dnd(DndAction::empty(), input_text.clone()));
+                    let mut editor = Editor::new(unsecured_value, &mut state.cursor);
+                    editor.delete();
+
+                    let contents = editor.contents();
+                    let unsecured_value = Value::new(&contents);
+                    state.tracked_value = unsecured_value.clone();
+                    if let Some(on_input) = on_input {
+                        let message = (on_input)(contents);
+                        shell.publish(message);
+                    }
+                    if let Some(on_start_dnd) = on_start_dnd_source {
+                        shell.publish(on_start_dnd(state.clone()));
+                    }
+                    let state_clone = state.clone();
+
+                    iced_core::clipboard::start_dnd(
+                        clipboard,
+                        false,
+                        id.map(iced_core::clipboard::DndSource::Widget),
+                        Some(iced_core::clipboard::IconSurface::new(
+                            Element::from(
+                                TextInput::<'static, ()>::new("", input_text.clone())
+                                    .dnd_icon(true),
+                            ),
+                            iced_core::widget::tree::State::new(state_clone),
+                            Vector::ZERO,
+                        )),
+                        Box::new(TextInputString(input_text)),
+                        DndAction::Move,
+                    );
+
+                    update_cache(state, &unsecured_value);
+                } else {
+                    state.dragging_state = Some(DraggingState::PrepareDnd(start_position));
+                }
 
                 return event::Status::Captured;
             }
@@ -2519,9 +2545,11 @@ impl AsMimeTypes for TextInputString {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq)]
 pub(crate) enum DraggingState {
     Selection,
+    #[cfg(feature = "wayland")]
+    PrepareDnd(Point),
     #[cfg(feature = "wayland")]
     Dnd(DndAction, String),
 }
