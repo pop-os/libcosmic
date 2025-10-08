@@ -1,9 +1,8 @@
 # Context Drawer
 close = Закрити
-
 # About
 license = Ліцензія
-links = Лінки
+links = Посилання
 developers = Розробники
 designers = Дизайнери
 artists = Митці

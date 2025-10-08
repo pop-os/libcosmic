@@ -1,0 +1,2 @@
+close = Lukk
+license = Lisens
