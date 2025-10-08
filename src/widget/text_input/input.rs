@@ -876,21 +876,19 @@ where
                 // Enable custom buttons defined on the trailing icon position to be handled.
                 if !self.is_editable_variant {
                     if let Some(trailing_layout) = trailing_icon_layout {
-                        if cursor_position.is_over(trailing_layout.bounds()) {
-                            let res = trailing_icon.as_widget_mut().on_event(
-                                tree,
-                                event.clone(),
-                                trailing_layout,
-                                cursor_position,
-                                renderer,
-                                clipboard,
-                                shell,
-                                viewport,
-                            );
+                        let res = trailing_icon.as_widget_mut().on_event(
+                            tree,
+                            event.clone(),
+                            trailing_layout,
+                            cursor_position,
+                            renderer,
+                            clipboard,
+                            shell,
+                            viewport,
+                        );
 
-                            if res == event::Status::Captured {
-                                return res;
-                            }
+                        if res == event::Status::Captured {
+                            return res;
                         }
                     }
                 }
