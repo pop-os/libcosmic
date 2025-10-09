@@ -5,6 +5,6 @@ license = Ліцензія
 links = Посилання
 developers = Розробники
 designers = Дизайнери
-artists = Митці
+artists = Художники
 translators = Перекладачі
 documenters = Документатори
