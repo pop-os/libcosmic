@@ -1,0 +1,69 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Find the crate name from the current `Cargo.toml`."><title>find_crate - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../static.files/rustdoc-aa0817cf.css"><meta name="rustdoc-vars" data-root-path="../" data-static-root-path="../static.files/" data-current-crate="find_crate" data-themes="" data-resource-suffix="" data-rustdoc-version="1.90.0 (1159e78c4 2025-09-14)" data-channel="1.90.0" data-search-js="search-fa3e91e5.js" data-settings-js="settings-5514c975.js" ><script src="../static.files/storage-68b7e25d.js"></script><script defer src="../crates.js"></script><script defer src="../static.files/main-eebb9057.js"></script><noscript><link rel="stylesheet" href="../static.files/noscript-32bb7600.css"></noscript><link rel="alternate icon" type="image/png" href="../static.files/favicon-32x32-6580c154.png"><link rel="icon" type="image/svg+xml" href="../static.files/favicon-044be391.svg"></head><body class="rustdoc mod crate"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle" title="show sidebar"></button></nav><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../find_crate/index.html">find_<wbr>crate</a><span class="version">0.6.3</span></h2></div><div class="sidebar-elems"><ul class="block"><li><a id="all-types" href="all.html">All Items</a></li></ul><section id="rustdoc-toc"><h3><a href="#">Sections</a></h3><ul class="block top-toc"><li><a href="#examples" title="Examples">Examples</a></li><li><a href="#alternatives" title="Alternatives">Alternatives</a></li></ul><h3><a href="#structs">Crate Items</a></h3><ul class="block"><li><a href="#structs" title="Structs">Structs</a></li><li><a href="#enums" title="Enums">Enums</a></li><li><a href="#functions" title="Functions">Functions</a></li></ul></section><div id="rustdoc-modnav"></div></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><div class="width-limiter"><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><h1>Crate <span>find_crate</span><button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"><a class="src" href="../src/find_crate/lib.rs.html#1-432">Source</a> </span></div><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Find the crate name from the current <code>Cargo.toml</code>.</p>
+<p>When writing declarative macros, <code>$crate</code> representing the current crate is
+very useful, but procedural macros do not have this. If you know the current
+name of the crate you want to use, you can do the same thing as <code>$crate</code>.
+This crate provides the features to make it easy.</p>
+<h2 id="examples"><a class="doc-anchor" href="#examples">§</a>Examples</h2>
+<p><a href="fn.find_crate.html" title="fn find_crate::find_crate"><code>find_crate</code></a> gets the crate name from the current <code>Cargo.toml</code>.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>find_crate::find_crate;
+<span class="kw">use </span>proc_macro2::{Ident, Span, TokenStream};
+<span class="kw">use </span>quote::quote;
+
+<span class="kw">fn </span>import() -&gt; TokenStream {
+    <span class="kw">let </span>name = find_crate(|s| s == <span class="string">"foo"</span>).unwrap().name;
+    <span class="kw">let </span>name = Ident::new(<span class="kw-2">&amp;</span>name, Span::call_site());
+    <span class="comment">// If your proc-macro crate is 2018 edition, use `quote!(use #name as _foo;)` instead.
+    </span><span class="macro">quote!</span>(<span class="kw">extern crate </span>#name <span class="kw">as </span>_foo;)
+}</code></pre></div>
+<p>As in this example, it is easy to handle cases where proc-macro is exported
+from multiple crates.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>find_crate::find_crate;
+<span class="kw">use </span>proc_macro2::{Ident, Span, TokenStream};
+<span class="kw">use </span>quote::quote;
+
+<span class="kw">fn </span>import() -&gt; TokenStream {
+    <span class="kw">let </span>name = find_crate(|s| s == <span class="string">"foo" </span>|| s == <span class="string">"foo-core"</span>).unwrap().name;
+    <span class="kw">let </span>name = Ident::new(<span class="kw-2">&amp;</span>name, Span::call_site());
+    <span class="comment">// If your proc-macro crate is 2018 edition, use `quote!(use #name as _foo;)` instead.
+    </span><span class="macro">quote!</span>(<span class="kw">extern crate </span>#name <span class="kw">as </span>_foo;)
+}</code></pre></div>
+<p>Using <a href="struct.Manifest.html" title="struct find_crate::Manifest"><code>Manifest</code></a> to search for multiple crates. It is much more efficient
+than using <a href="fn.find_crate.html" title="fn find_crate::find_crate"><code>find_crate</code></a> for each crate.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>find_crate::Manifest;
+<span class="kw">use </span>proc_macro2::{Ident, Span, TokenStream};
+<span class="kw">use </span>quote::{format_ident, quote};
+
+<span class="kw">const </span>CRATE_NAMES: <span class="kw-2">&amp;</span>[<span class="kw-2">&amp;</span>[<span class="kw-2">&amp;</span>str]] = <span class="kw-2">&amp;</span>[
+    <span class="kw-2">&amp;</span>[<span class="string">"foo"</span>, <span class="string">"foo-core"</span>],
+    <span class="kw-2">&amp;</span>[<span class="string">"bar"</span>, <span class="string">"bar-util"</span>, <span class="string">"bar-core"</span>],
+    <span class="kw-2">&amp;</span>[<span class="string">"baz"</span>],
+];
+
+<span class="kw">fn </span>imports() -&gt; TokenStream {
+    <span class="kw">let </span><span class="kw-2">mut </span>tts = TokenStream::new();
+    <span class="kw">let </span>manifest = Manifest::new().unwrap();
+
+    <span class="kw">for </span>names <span class="kw">in </span>CRATE_NAMES {
+        <span class="kw">let </span>name = manifest.find(|s| names.iter().any(|x| s == <span class="kw-2">*</span>x)).unwrap().name;
+        <span class="kw">let </span>name = Ident::new(<span class="kw-2">&amp;</span>name, Span::call_site());
+        <span class="kw">let </span>import_name = <span class="macro">format_ident!</span>(<span class="string">"_{}"</span>, names[<span class="number">0</span>]);
+        <span class="comment">// If your proc-macro crate is 2018 edition, use `quote!(use #name as #import_name;)` instead.
+        </span>tts.extend(<span class="macro">quote!</span>(<span class="kw">extern crate </span>#name <span class="kw">as </span>#import_name;));
+    }
+    tts
+}</code></pre></div>
+<p>By default it will be searched from <code>dependencies</code> and <code>dev-dependencies</code>.
+Also, <a href="fn.find_crate.html" title="fn find_crate::find_crate"><code>find_crate</code></a> and <a href="struct.Manifest.html#method.new" title="associated function find_crate::Manifest::new"><code>Manifest::new</code></a> read <code>Cargo.toml</code> in
+<a href="https://doc.rust-lang.org/cargo/reference/environment-variables.html#environment-variables-cargo-sets-for-crates"><code>CARGO_MANIFEST_DIR</code></a> as manifest.</p>
+<h2 id="alternatives"><a class="doc-anchor" href="#alternatives">§</a>Alternatives</h2>
+<p>If you write function-like procedural macros, <a href="https://github.com/rust-lang/futures-rs/pull/2124">you can combine it with
+declarative macros to support both crate renaming and macro
+re-exporting.</a></p>
+<p>This crate is intended to provide more powerful features such as support
+for multiple crate names and versions. For general purposes,
+<a href="https://github.com/bkchr/proc-macro-crate">proc-macro-crate</a>, which provides a simpler API, may be easier to use.</p>
+</div></details><h2 id="structs" class="section-header">Structs<a href="#structs" class="anchor">§</a></h2><dl class="item-table"><dt><a class="struct" href="struct.Manifest.html" title="struct find_crate::Manifest">Manifest</a></dt><dd>The manifest of cargo.</dd><dt><a class="struct" href="struct.Package.html" title="struct find_crate::Package">Package</a></dt><dd>The package data. This has information on the current package name,
+original package name, and specified version.</dd></dl><h2 id="enums" class="section-header">Enums<a href="#enums" class="anchor">§</a></h2><dl class="item-table"><dt><a class="enum" href="enum.Dependencies.html" title="enum find_crate::Dependencies">Dependencies</a></dt><dd>The kind of dependencies to be searched.</dd><dt><a class="enum" href="enum.Error.html" title="enum find_crate::Error">Error</a></dt><dd>An error that occurred when getting manifest.</dd></dl><h2 id="functions" class="section-header">Functions<a href="#functions" class="anchor">§</a></h2><dl class="item-table"><dt><a class="fn" href="fn.find_crate.html" title="fn find_crate::find_crate">find_<wbr>crate</a></dt><dd>Find the crate name from the current <code>Cargo.toml</code>.</dd></dl></section></div></main></body></html>

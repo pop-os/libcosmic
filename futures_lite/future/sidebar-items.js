@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["block_on","fuse","or","poll_fn","poll_once","race","race_with_seed","try_zip","yield_now","zip"],"struct":["CatchUnwind","Fuse","Or","PollFn","PollOnce","Race","TryZip","YieldNow","Zip"],"trait":["FutureExt"],"type":["Boxed","BoxedLocal"]};

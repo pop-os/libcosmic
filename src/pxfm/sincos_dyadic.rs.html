@@ -1,0 +1,558 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `/home/runner/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/pxfm-0.1.25/src/sincos_dyadic.rs`."><title>sincos_dyadic.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../static.files/rustdoc-aa0817cf.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="pxfm" data-themes="" data-resource-suffix="" data-rustdoc-version="1.90.0 (1159e78c4 2025-09-14)" data-channel="1.90.0" data-search-js="search-fa3e91e5.js" data-settings-js="settings-5514c975.js" ><script src="../../static.files/storage-68b7e25d.js"></script><script defer src="../../static.files/src-script-813739b1.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-eebb9057.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-32bb7600.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-6580c154.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-044be391.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><h1><div class="sub-heading">pxfm/</div>sincos_dyadic.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap digits-3"><pre class="rust"><code><a href=#1 id=1 data-nosnippet>1</a><span class="comment">/*
+<a href=#2 id=2 data-nosnippet>2</a> * // Copyright (c) Radzivon Bartoshyk 6/2025. All rights reserved.
+<a href=#3 id=3 data-nosnippet>3</a> * //
+<a href=#4 id=4 data-nosnippet>4</a> * // Redistribution and use in source and binary forms, with or without modification,
+<a href=#5 id=5 data-nosnippet>5</a> * // are permitted provided that the following conditions are met:
+<a href=#6 id=6 data-nosnippet>6</a> * //
+<a href=#7 id=7 data-nosnippet>7</a> * // 1.  Redistributions of source code must retain the above copyright notice, this
+<a href=#8 id=8 data-nosnippet>8</a> * // list of conditions and the following disclaimer.
+<a href=#9 id=9 data-nosnippet>9</a> * //
+<a href=#10 id=10 data-nosnippet>10</a> * // 2.  Redistributions in binary form must reproduce the above copyright notice,
+<a href=#11 id=11 data-nosnippet>11</a> * // this list of conditions and the following disclaimer in the documentation
+<a href=#12 id=12 data-nosnippet>12</a> * // and/or other materials provided with the distribution.
+<a href=#13 id=13 data-nosnippet>13</a> * //
+<a href=#14 id=14 data-nosnippet>14</a> * // 3.  Neither the name of the copyright holder nor the names of its
+<a href=#15 id=15 data-nosnippet>15</a> * // contributors may be used to endorse or promote products derived from
+<a href=#16 id=16 data-nosnippet>16</a> * // this software without specific prior written permission.
+<a href=#17 id=17 data-nosnippet>17</a> * //
+<a href=#18 id=18 data-nosnippet>18</a> * // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+<a href=#19 id=19 data-nosnippet>19</a> * // AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+<a href=#20 id=20 data-nosnippet>20</a> * // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+<a href=#21 id=21 data-nosnippet>21</a> * // DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+<a href=#22 id=22 data-nosnippet>22</a> * // FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+<a href=#23 id=23 data-nosnippet>23</a> * // DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+<a href=#24 id=24 data-nosnippet>24</a> * // SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+<a href=#25 id=25 data-nosnippet>25</a> * // CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+<a href=#26 id=26 data-nosnippet>26</a> * // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+<a href=#27 id=27 data-nosnippet>27</a> * // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+<a href=#28 id=28 data-nosnippet>28</a> */
+<a href=#29 id=29 data-nosnippet>29</a></span><span class="kw">use </span><span class="kw">crate</span>::dyadic_float::{DyadicFloat128, DyadicSign};
+<a href=#30 id=30 data-nosnippet>30</a><span class="kw">use </span><span class="kw">crate</span>::rounding::CpuRound;
+<a href=#31 id=31 data-nosnippet>31</a><span class="kw">use </span><span class="kw">crate</span>::sincos_reduce_tables::ONE_TWENTY_EIGHT_OVER_PI;
+<a href=#32 id=32 data-nosnippet>32</a>
+<a href=#33 id=33 data-nosnippet>33</a><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>range_reduction_small_f128(x: f64) -&gt; DyadicFloat128 {
+<a href=#34 id=34 data-nosnippet>34</a>    <span class="kw">const </span>PI_OVER_128_F128: DyadicFloat128 = DyadicFloat128 {
+<a href=#35 id=35 data-nosnippet>35</a>        sign: DyadicSign::Pos,
+<a href=#36 id=36 data-nosnippet>36</a>        exponent: -<span class="number">133</span>,
+<a href=#37 id=37 data-nosnippet>37</a>        mantissa: <span class="number">0xc90f_daa2_2168_c234_c4c6_628b_80dc_1cd1_u128</span>,
+<a href=#38 id=38 data-nosnippet>38</a>    };
+<a href=#39 id=39 data-nosnippet>39</a>    <span class="kw">const </span>ONE_TWENTY_EIGHT_OVER_PI_D: f64 = f64::from_bits(<span class="number">0x40445f306dc9c883</span>);
+<a href=#40 id=40 data-nosnippet>40</a>    <span class="kw">let </span>prod_hi = x * ONE_TWENTY_EIGHT_OVER_PI_D;
+<a href=#41 id=41 data-nosnippet>41</a>    <span class="kw">let </span>kd = prod_hi.cpu_round();
+<a href=#42 id=42 data-nosnippet>42</a>
+<a href=#43 id=43 data-nosnippet>43</a>    <span class="kw">let </span>mk_f128 = DyadicFloat128::new_from_f64(-kd);
+<a href=#44 id=44 data-nosnippet>44</a>    <span class="kw">let </span>x_f128 = DyadicFloat128::new_from_f64(x);
+<a href=#45 id=45 data-nosnippet>45</a>    <span class="kw">let </span>over_pi3 = ONE_TWENTY_EIGHT_OVER_PI[<span class="number">3</span>];
+<a href=#46 id=46 data-nosnippet>46</a>    <span class="kw">let </span>p_hi = x_f128.quick_mul(<span class="kw-2">&amp;</span>DyadicFloat128::new_from_f64(f64::from_bits(over_pi3.<span class="number">0</span>)));
+<a href=#47 id=47 data-nosnippet>47</a>    <span class="kw">let </span>p_mid = x_f128.quick_mul(<span class="kw-2">&amp;</span>DyadicFloat128::new_from_f64(f64::from_bits(over_pi3.<span class="number">1</span>)));
+<a href=#48 id=48 data-nosnippet>48</a>    <span class="kw">let </span>p_lo = x_f128.quick_mul(<span class="kw-2">&amp;</span>DyadicFloat128::new_from_f64(f64::from_bits(over_pi3.<span class="number">2</span>)));
+<a href=#49 id=49 data-nosnippet>49</a>    <span class="kw">let </span>s_hi = p_hi.quick_add(<span class="kw-2">&amp;</span>mk_f128);
+<a href=#50 id=50 data-nosnippet>50</a>    <span class="kw">let </span>s_lo = p_mid.quick_add(<span class="kw-2">&amp;</span>p_lo);
+<a href=#51 id=51 data-nosnippet>51</a>    <span class="kw">let </span>y = s_hi.quick_add(<span class="kw-2">&amp;</span>s_lo);
+<a href=#52 id=52 data-nosnippet>52</a>    y.quick_mul(<span class="kw-2">&amp;</span>PI_OVER_128_F128)
+<a href=#53 id=53 data-nosnippet>53</a>}
+<a href=#54 id=54 data-nosnippet>54</a>
+<a href=#55 id=55 data-nosnippet>55</a><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>range_reduction_small_f128_f128(x: DyadicFloat128) -&gt; (DyadicFloat128, i64) {
+<a href=#56 id=56 data-nosnippet>56</a>    <span class="kw">const </span>PI_OVER_128_F128: DyadicFloat128 = DyadicFloat128 {
+<a href=#57 id=57 data-nosnippet>57</a>        sign: DyadicSign::Pos,
+<a href=#58 id=58 data-nosnippet>58</a>        exponent: -<span class="number">133</span>,
+<a href=#59 id=59 data-nosnippet>59</a>        mantissa: <span class="number">0xc90f_daa2_2168_c234_c4c6_628b_80dc_1cd1_u128</span>,
+<a href=#60 id=60 data-nosnippet>60</a>    };
+<a href=#61 id=61 data-nosnippet>61</a>    <span class="kw">const </span>ONE_TWENTY_EIGHT_OVER_PI_D: f64 = f64::from_bits(<span class="number">0x40445f306dc9c883</span>);
+<a href=#62 id=62 data-nosnippet>62</a>    <span class="kw">let </span>prod_hi = x.fast_as_f64() * ONE_TWENTY_EIGHT_OVER_PI_D;
+<a href=#63 id=63 data-nosnippet>63</a>    <span class="kw">let </span>kd = prod_hi.cpu_round();
+<a href=#64 id=64 data-nosnippet>64</a>
+<a href=#65 id=65 data-nosnippet>65</a>    <span class="kw">let </span>mk_f128 = DyadicFloat128::new_from_f64(-kd);
+<a href=#66 id=66 data-nosnippet>66</a>    <span class="kw">let </span>over_pi3 = ONE_TWENTY_EIGHT_OVER_PI[<span class="number">3</span>];
+<a href=#67 id=67 data-nosnippet>67</a>    <span class="kw">let </span>p_hi = x.quick_mul(<span class="kw-2">&amp;</span>DyadicFloat128::new_from_f64(f64::from_bits(over_pi3.<span class="number">0</span>)));
+<a href=#68 id=68 data-nosnippet>68</a>    <span class="kw">let </span>p_mid = x.quick_mul(<span class="kw-2">&amp;</span>DyadicFloat128::new_from_f64(f64::from_bits(over_pi3.<span class="number">1</span>)));
+<a href=#69 id=69 data-nosnippet>69</a>    <span class="kw">let </span>p_lo = x.quick_mul(<span class="kw-2">&amp;</span>DyadicFloat128::new_from_f64(f64::from_bits(over_pi3.<span class="number">2</span>)));
+<a href=#70 id=70 data-nosnippet>70</a>    <span class="kw">let </span>p_lo_lo = x.quick_mul(<span class="kw-2">&amp;</span>DyadicFloat128::new_from_f64(f64::from_bits(over_pi3.<span class="number">3</span>)));
+<a href=#71 id=71 data-nosnippet>71</a>    <span class="kw">let </span>s_hi = p_hi.quick_add(<span class="kw-2">&amp;</span>mk_f128);
+<a href=#72 id=72 data-nosnippet>72</a>    <span class="kw">let </span>s_lo = p_mid.quick_add(<span class="kw-2">&amp;</span>p_lo);
+<a href=#73 id=73 data-nosnippet>73</a>    <span class="kw">let </span>y = (s_hi + s_lo) + p_lo_lo;
+<a href=#74 id=74 data-nosnippet>74</a>    (y.quick_mul(<span class="kw-2">&amp;</span>PI_OVER_128_F128), kd <span class="kw">as </span>i64)
+<a href=#75 id=75 data-nosnippet>75</a>}
+<a href=#76 id=76 data-nosnippet>76</a>
+<a href=#77 id=77 data-nosnippet>77</a><span class="comment">// pub(crate) fn range_reduction_small_f128_f128(x: DyadicFloat128) -&gt; (DyadicFloat128, u64) {
+<a href=#78 id=78 data-nosnippet>78</a>//     const PI_OVER_128_F128: DyadicFloat128 = DyadicFloat128 {
+<a href=#79 id=79 data-nosnippet>79</a>//         sign: DyadicSign::Pos,
+<a href=#80 id=80 data-nosnippet>80</a>//         exponent: -133,
+<a href=#81 id=81 data-nosnippet>81</a>//         mantissa: 0xc90f_daa2_2168_c234_c4c6_628b_80dc_1cd1_u128,
+<a href=#82 id=82 data-nosnippet>82</a>//     };
+<a href=#83 id=83 data-nosnippet>83</a>//     const ONE_TWENTY_EIGHT_OVER_PI_D: f64 = f64::from_bits(0x40445f306dc9c883);
+<a href=#84 id=84 data-nosnippet>84</a>//     let prod_hi = x.fast_as_f64() * ONE_TWENTY_EIGHT_OVER_PI_D;
+<a href=#85 id=85 data-nosnippet>85</a>//     let kd = prod_hi.round();
+<a href=#86 id=86 data-nosnippet>86</a>//
+<a href=#87 id=87 data-nosnippet>87</a>//     let mk_f128 = DyadicFloat128::new_from_f64(-kd);
+<a href=#88 id=88 data-nosnippet>88</a>//     let over_pi3 = ONE_TWENTY_EIGHT_OVER_PI[3];
+<a href=#89 id=89 data-nosnippet>89</a>//     let p_hi = x.quick_mul(&amp;DyadicFloat128::new_from_f64(f64::from_bits(over_pi3.0)));
+<a href=#90 id=90 data-nosnippet>90</a>//     let p_mid = x.quick_mul(&amp;DyadicFloat128::new_from_f64(f64::from_bits(over_pi3.1)));
+<a href=#91 id=91 data-nosnippet>91</a>//     let p_lo = x.quick_mul(&amp;DyadicFloat128::new_from_f64(f64::from_bits(over_pi3.2)));
+<a href=#92 id=92 data-nosnippet>92</a>//     let p_lo_lo = x.quick_mul(&amp;DyadicFloat128::new_from_f64(f64::from_bits(over_pi3.3)));
+<a href=#93 id=93 data-nosnippet>93</a>//     let s_hi = p_hi.quick_add(&amp;mk_f128);
+<a href=#94 id=94 data-nosnippet>94</a>//     let s_lo = p_mid.quick_add(&amp;p_lo);
+<a href=#95 id=95 data-nosnippet>95</a>//     let s_lo_lo = p_lo_lo.quick_add(&amp;p_lo_lo);
+<a href=#96 id=96 data-nosnippet>96</a>//     let y = s_hi.quick_add(&amp;s_lo).quick_add(&amp;s_lo_lo);
+<a href=#97 id=97 data-nosnippet>97</a>//     (y.quick_mul(&amp;PI_OVER_128_F128), (kd as i64) as u64)
+<a href=#98 id=98 data-nosnippet>98</a>// }
+<a href=#99 id=99 data-nosnippet>99</a>
+<a href=#100 id=100 data-nosnippet>100</a></span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">struct </span>SinCosDyadic {
+<a href=#101 id=101 data-nosnippet>101</a>    <span class="kw">pub</span>(<span class="kw">crate</span>) v_sin: DyadicFloat128,
+<a href=#102 id=102 data-nosnippet>102</a>    <span class="kw">pub</span>(<span class="kw">crate</span>) v_cos: DyadicFloat128,
+<a href=#103 id=103 data-nosnippet>103</a>}
+<a href=#104 id=104 data-nosnippet>104</a>
+<a href=#105 id=105 data-nosnippet>105</a><span class="attr">#[cold]
+<a href=#106 id=106 data-nosnippet>106</a></span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>sincos_eval_dyadic(u: <span class="kw-2">&amp;</span>DyadicFloat128) -&gt; SinCosDyadic {
+<a href=#107 id=107 data-nosnippet>107</a>    <span class="kw">let </span>u_sq = u.quick_mul(u);
+<a href=#108 id=108 data-nosnippet>108</a>
+<a href=#109 id=109 data-nosnippet>109</a>    <span class="comment">// sin(u) ~ x - x^3/3! + x^5/5! - x^7/7! + x^9/9! - x^11/11! + x^13/13!
+<a href=#110 id=110 data-nosnippet>110</a>    </span><span class="kw">static </span>SIN_COEFFS: [DyadicFloat128; <span class="number">7</span>] = [
+<a href=#111 id=111 data-nosnippet>111</a>        DyadicFloat128 {
+<a href=#112 id=112 data-nosnippet>112</a>            sign: DyadicSign::Pos,
+<a href=#113 id=113 data-nosnippet>113</a>            exponent: -<span class="number">127</span>,
+<a href=#114 id=114 data-nosnippet>114</a>            mantissa: <span class="number">0x80000000_00000000_00000000_00000000_u128</span>,
+<a href=#115 id=115 data-nosnippet>115</a>        }, <span class="comment">// 1
+<a href=#116 id=116 data-nosnippet>116</a>        </span>DyadicFloat128 {
+<a href=#117 id=117 data-nosnippet>117</a>            sign: DyadicSign::Neg,
+<a href=#118 id=118 data-nosnippet>118</a>            exponent: -<span class="number">130</span>,
+<a href=#119 id=119 data-nosnippet>119</a>            mantissa: <span class="number">0xaaaaaaaa_aaaaaaaa_aaaaaaaa_aaaaaaab_u128</span>,
+<a href=#120 id=120 data-nosnippet>120</a>        }, <span class="comment">// -1/3!
+<a href=#121 id=121 data-nosnippet>121</a>        </span>DyadicFloat128 {
+<a href=#122 id=122 data-nosnippet>122</a>            sign: DyadicSign::Pos,
+<a href=#123 id=123 data-nosnippet>123</a>            exponent: -<span class="number">134</span>,
+<a href=#124 id=124 data-nosnippet>124</a>            mantissa: <span class="number">0x88888888_88888888_88888888_88888889_u128</span>,
+<a href=#125 id=125 data-nosnippet>125</a>        }, <span class="comment">// 1/5!
+<a href=#126 id=126 data-nosnippet>126</a>        </span>DyadicFloat128 {
+<a href=#127 id=127 data-nosnippet>127</a>            sign: DyadicSign::Neg,
+<a href=#128 id=128 data-nosnippet>128</a>            exponent: -<span class="number">140</span>,
+<a href=#129 id=129 data-nosnippet>129</a>            mantissa: <span class="number">0xd00d00d0_0d00d00d_00d00d00_d00d00d0_u128</span>,
+<a href=#130 id=130 data-nosnippet>130</a>        }, <span class="comment">// -1/7!
+<a href=#131 id=131 data-nosnippet>131</a>        </span>DyadicFloat128 {
+<a href=#132 id=132 data-nosnippet>132</a>            sign: DyadicSign::Pos,
+<a href=#133 id=133 data-nosnippet>133</a>            exponent: -<span class="number">146</span>,
+<a href=#134 id=134 data-nosnippet>134</a>            mantissa: <span class="number">0xb8ef1d2a_b6399c7d_560e4472_800b8ef2_u128</span>,
+<a href=#135 id=135 data-nosnippet>135</a>        }, <span class="comment">// 1/9!
+<a href=#136 id=136 data-nosnippet>136</a>        </span>DyadicFloat128 {
+<a href=#137 id=137 data-nosnippet>137</a>            sign: DyadicSign::Neg,
+<a href=#138 id=138 data-nosnippet>138</a>            exponent: -<span class="number">153</span>,
+<a href=#139 id=139 data-nosnippet>139</a>            mantissa: <span class="number">0xd7322b3f_aa271c7f_3a3f25c1_bee38f10_u128</span>,
+<a href=#140 id=140 data-nosnippet>140</a>        }, <span class="comment">// -1/11!
+<a href=#141 id=141 data-nosnippet>141</a>        </span>DyadicFloat128 {
+<a href=#142 id=142 data-nosnippet>142</a>            sign: DyadicSign::Pos,
+<a href=#143 id=143 data-nosnippet>143</a>            exponent: -<span class="number">160</span>,
+<a href=#144 id=144 data-nosnippet>144</a>            mantissa: <span class="number">0xb092309d_43684be5_1c198e91_d7b4269e_u128</span>,
+<a href=#145 id=145 data-nosnippet>145</a>        }, <span class="comment">// 1/13!
+<a href=#146 id=146 data-nosnippet>146</a>    </span>];
+<a href=#147 id=147 data-nosnippet>147</a>
+<a href=#148 id=148 data-nosnippet>148</a>    <span class="comment">// cos(u) ~ 1 - x^2/2 + x^4/4! - x^6/6! + x^8/8! - x^10/10! + x^12/12!
+<a href=#149 id=149 data-nosnippet>149</a>    </span><span class="kw">static </span>COS_COEFFS: [DyadicFloat128; <span class="number">7</span>] = [
+<a href=#150 id=150 data-nosnippet>150</a>        DyadicFloat128 {
+<a href=#151 id=151 data-nosnippet>151</a>            sign: DyadicSign::Pos,
+<a href=#152 id=152 data-nosnippet>152</a>            exponent: -<span class="number">127</span>,
+<a href=#153 id=153 data-nosnippet>153</a>            mantissa: <span class="number">0x80000000_00000000_00000000_00000000_u128</span>,
+<a href=#154 id=154 data-nosnippet>154</a>        }, <span class="comment">// 1.0
+<a href=#155 id=155 data-nosnippet>155</a>        </span>DyadicFloat128 {
+<a href=#156 id=156 data-nosnippet>156</a>            sign: DyadicSign::Neg,
+<a href=#157 id=157 data-nosnippet>157</a>            exponent: -<span class="number">128</span>,
+<a href=#158 id=158 data-nosnippet>158</a>            mantissa: <span class="number">0x80000000_00000000_00000000_00000000_u128</span>,
+<a href=#159 id=159 data-nosnippet>159</a>        }, <span class="comment">// 1/2
+<a href=#160 id=160 data-nosnippet>160</a>        </span>DyadicFloat128 {
+<a href=#161 id=161 data-nosnippet>161</a>            sign: DyadicSign::Pos,
+<a href=#162 id=162 data-nosnippet>162</a>            exponent: -<span class="number">132</span>,
+<a href=#163 id=163 data-nosnippet>163</a>            mantissa: <span class="number">0xaaaaaaaa_aaaaaaaa_aaaaaaaa_aaaaaaab_u128</span>,
+<a href=#164 id=164 data-nosnippet>164</a>        }, <span class="comment">// 1/4!
+<a href=#165 id=165 data-nosnippet>165</a>        </span>DyadicFloat128 {
+<a href=#166 id=166 data-nosnippet>166</a>            sign: DyadicSign::Neg,
+<a href=#167 id=167 data-nosnippet>167</a>            exponent: -<span class="number">137</span>,
+<a href=#168 id=168 data-nosnippet>168</a>            mantissa: <span class="number">0xb60b60b6_0b60b60b_60b60b60_b60b60b6_u128</span>,
+<a href=#169 id=169 data-nosnippet>169</a>        }, <span class="comment">// 1/6!
+<a href=#170 id=170 data-nosnippet>170</a>        </span>DyadicFloat128 {
+<a href=#171 id=171 data-nosnippet>171</a>            sign: DyadicSign::Pos,
+<a href=#172 id=172 data-nosnippet>172</a>            exponent: -<span class="number">143</span>,
+<a href=#173 id=173 data-nosnippet>173</a>            mantissa: <span class="number">0xd00d00d0_0d00d00d_00d00d00_d00d00d0_u128</span>,
+<a href=#174 id=174 data-nosnippet>174</a>        }, <span class="comment">// 1/8!
+<a href=#175 id=175 data-nosnippet>175</a>        </span>DyadicFloat128 {
+<a href=#176 id=176 data-nosnippet>176</a>            sign: DyadicSign::Neg,
+<a href=#177 id=177 data-nosnippet>177</a>            exponent: -<span class="number">149</span>,
+<a href=#178 id=178 data-nosnippet>178</a>            mantissa: <span class="number">0x93f27dbb_c4fae397_780b69f5_333c725b_u128</span>,
+<a href=#179 id=179 data-nosnippet>179</a>        }, <span class="comment">// 1/10!
+<a href=#180 id=180 data-nosnippet>180</a>        </span>DyadicFloat128 {
+<a href=#181 id=181 data-nosnippet>181</a>            sign: DyadicSign::Pos,
+<a href=#182 id=182 data-nosnippet>182</a>            exponent: -<span class="number">156</span>,
+<a href=#183 id=183 data-nosnippet>183</a>            mantissa: <span class="number">0x8f76c77f_c6c4bdaa_26d4c3d6_7f425f60_u128</span>,
+<a href=#184 id=184 data-nosnippet>184</a>        }, <span class="comment">// 1/12!
+<a href=#185 id=185 data-nosnippet>185</a>    </span>];
+<a href=#186 id=186 data-nosnippet>186</a>
+<a href=#187 id=187 data-nosnippet>187</a>    <span class="kw">let </span><span class="kw-2">mut </span>sin_u = SIN_COEFFS[<span class="number">6</span>];
+<a href=#188 id=188 data-nosnippet>188</a>    <span class="kw">for </span>i <span class="kw">in </span>(<span class="number">0</span>..<span class="number">7</span>).rev() {
+<a href=#189 id=189 data-nosnippet>189</a>        sin_u = sin_u * u_sq + SIN_COEFFS[i];
+<a href=#190 id=190 data-nosnippet>190</a>    }
+<a href=#191 id=191 data-nosnippet>191</a>    sin_u = sin_u * <span class="kw-2">*</span>u;
+<a href=#192 id=192 data-nosnippet>192</a>
+<a href=#193 id=193 data-nosnippet>193</a>    <span class="kw">let </span><span class="kw-2">mut </span>cos_u = COS_COEFFS[<span class="number">6</span>];
+<a href=#194 id=194 data-nosnippet>194</a>    <span class="kw">for </span>i <span class="kw">in </span>(<span class="number">0</span>..<span class="number">7</span>).rev() {
+<a href=#195 id=195 data-nosnippet>195</a>        cos_u = cos_u * u_sq + COS_COEFFS[i];
+<a href=#196 id=196 data-nosnippet>196</a>    }
+<a href=#197 id=197 data-nosnippet>197</a>
+<a href=#198 id=198 data-nosnippet>198</a>    SinCosDyadic {
+<a href=#199 id=199 data-nosnippet>199</a>        v_sin: sin_u,
+<a href=#200 id=200 data-nosnippet>200</a>        v_cos: cos_u,
+<a href=#201 id=201 data-nosnippet>201</a>    }
+<a href=#202 id=202 data-nosnippet>202</a>}
+<a href=#203 id=203 data-nosnippet>203</a>
+<a href=#204 id=204 data-nosnippet>204</a><span class="comment">/*
+<a href=#205 id=205 data-nosnippet>205</a>   Sage math:
+<a href=#206 id=206 data-nosnippet>206</a>   # Sin K PI over 128
+<a href=#207 id=207 data-nosnippet>207</a>   R = RealField(128)
+<a href=#208 id=208 data-nosnippet>208</a>   π = R.pi()
+<a href=#209 id=209 data-nosnippet>209</a>
+<a href=#210 id=210 data-nosnippet>210</a>   def format_hex(value):
+<a href=#211 id=211 data-nosnippet>211</a>       l = hex(value)[2:]
+<a href=#212 id=212 data-nosnippet>212</a>       n = 4
+<a href=#213 id=213 data-nosnippet>213</a>       x = [l[i:i + n] for i in range(0, len(l), n)]
+<a href=#214 id=214 data-nosnippet>214</a>       return "0x" + "_".join(x) + "_u128"
+<a href=#215 id=215 data-nosnippet>215</a>
+<a href=#216 id=216 data-nosnippet>216</a>   def print_dyadic(value):
+<a href=#217 id=217 data-nosnippet>217</a>       (s, m, e) = RealField(128)(value).sign_mantissa_exponent();
+<a href=#218 id=218 data-nosnippet>218</a>       print("DyadicFloat128 {")
+<a href=#219 id=219 data-nosnippet>219</a>       print(f"    sign: DyadicSign::{'Pos' if s &gt;= 0 else 'Neg'},")
+<a href=#220 id=220 data-nosnippet>220</a>       print(f"    exponent: {e},")
+<a href=#221 id=221 data-nosnippet>221</a>       print(f"    mantissa: {format_hex(m)},")
+<a href=#222 id=222 data-nosnippet>222</a>       print("},")
+<a href=#223 id=223 data-nosnippet>223</a>
+<a href=#224 id=224 data-nosnippet>224</a>   # Generate array entries
+<a href=#225 id=225 data-nosnippet>225</a>   print("pub(crate) static SIN_K_PI_OVER_128_F128: [DyadicFloat128; 65] = [")
+<a href=#226 id=226 data-nosnippet>226</a>   for k in range(65):
+<a href=#227 id=227 data-nosnippet>227</a>       value = R(k) * π / 128
+<a href=#228 id=228 data-nosnippet>228</a>       print_dyadic(value.sin())
+<a href=#229 id=229 data-nosnippet>229</a>
+<a href=#230 id=230 data-nosnippet>230</a>   print("];")
+<a href=#231 id=231 data-nosnippet>231</a>*/
+<a href=#232 id=232 data-nosnippet>232</a></span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">static </span>SIN_K_PI_OVER_128_F128: [DyadicFloat128; <span class="number">65</span>] = [
+<a href=#233 id=233 data-nosnippet>233</a>    DyadicFloat128 {
+<a href=#234 id=234 data-nosnippet>234</a>        sign: DyadicSign::Pos,
+<a href=#235 id=235 data-nosnippet>235</a>        exponent: <span class="number">0</span>,
+<a href=#236 id=236 data-nosnippet>236</a>        mantissa: <span class="number">0x0_u128</span>,
+<a href=#237 id=237 data-nosnippet>237</a>    },
+<a href=#238 id=238 data-nosnippet>238</a>    DyadicFloat128 {
+<a href=#239 id=239 data-nosnippet>239</a>        sign: DyadicSign::Pos,
+<a href=#240 id=240 data-nosnippet>240</a>        exponent: -<span class="number">133</span>,
+<a href=#241 id=241 data-nosnippet>241</a>        mantissa: <span class="number">0xc90a_afbd_1b33_efc9_c539_edcb_fda0_cf2c_u128</span>,
+<a href=#242 id=242 data-nosnippet>242</a>    },
+<a href=#243 id=243 data-nosnippet>243</a>    DyadicFloat128 {
+<a href=#244 id=244 data-nosnippet>244</a>        sign: DyadicSign::Pos,
+<a href=#245 id=245 data-nosnippet>245</a>        exponent: -<span class="number">132</span>,
+<a href=#246 id=246 data-nosnippet>246</a>        mantissa: <span class="number">0xc8fb_2f88_6ec0_9f37_6a17_954b_2b7c_5171_u128</span>,
+<a href=#247 id=247 data-nosnippet>247</a>    },
+<a href=#248 id=248 data-nosnippet>248</a>    DyadicFloat128 {
+<a href=#249 id=249 data-nosnippet>249</a>        sign: DyadicSign::Pos,
+<a href=#250 id=250 data-nosnippet>250</a>        exponent: -<span class="number">131</span>,
+<a href=#251 id=251 data-nosnippet>251</a>        mantissa: <span class="number">0x96a9_0496_70cf_ae65_f775_7409_4d3c_35c4_u128</span>,
+<a href=#252 id=252 data-nosnippet>252</a>    },
+<a href=#253 id=253 data-nosnippet>253</a>    DyadicFloat128 {
+<a href=#254 id=254 data-nosnippet>254</a>        sign: DyadicSign::Pos,
+<a href=#255 id=255 data-nosnippet>255</a>        exponent: -<span class="number">131</span>,
+<a href=#256 id=256 data-nosnippet>256</a>        mantissa: <span class="number">0xc8bd_35e1_4da1_5f0e_c739_6c89_4bbf_7389_u128</span>,
+<a href=#257 id=257 data-nosnippet>257</a>    },
+<a href=#258 id=258 data-nosnippet>258</a>    DyadicFloat128 {
+<a href=#259 id=259 data-nosnippet>259</a>        sign: DyadicSign::Pos,
+<a href=#260 id=260 data-nosnippet>260</a>        exponent: -<span class="number">131</span>,
+<a href=#261 id=261 data-nosnippet>261</a>        mantissa: <span class="number">0xfab2_72b5_4b98_71a2_7047_29ae_56d7_8a37_u128</span>,
+<a href=#262 id=262 data-nosnippet>262</a>    },
+<a href=#263 id=263 data-nosnippet>263</a>    DyadicFloat128 {
+<a href=#264 id=264 data-nosnippet>264</a>        sign: DyadicSign::Pos,
+<a href=#265 id=265 data-nosnippet>265</a>        exponent: -<span class="number">130</span>,
+<a href=#266 id=266 data-nosnippet>266</a>        mantissa: <span class="number">0x9640_8374_7309_d113_000a_89a1_1e07_c1ff_u128</span>,
+<a href=#267 id=267 data-nosnippet>267</a>    },
+<a href=#268 id=268 data-nosnippet>268</a>    DyadicFloat128 {
+<a href=#269 id=269 data-nosnippet>269</a>        sign: DyadicSign::Pos,
+<a href=#270 id=270 data-nosnippet>270</a>        exponent: -<span class="number">130</span>,
+<a href=#271 id=271 data-nosnippet>271</a>        mantissa: <span class="number">0xaf10_a224_59fe_32a6_3fee_f3bb_58b1_f10d_u128</span>,
+<a href=#272 id=272 data-nosnippet>272</a>    },
+<a href=#273 id=273 data-nosnippet>273</a>    DyadicFloat128 {
+<a href=#274 id=274 data-nosnippet>274</a>        sign: DyadicSign::Pos,
+<a href=#275 id=275 data-nosnippet>275</a>        exponent: -<span class="number">130</span>,
+<a href=#276 id=276 data-nosnippet>276</a>        mantissa: <span class="number">0xc7c5_c1e3_4d30_55b2_5cc8_c00e_4fcc_d850_u128</span>,
+<a href=#277 id=277 data-nosnippet>277</a>    },
+<a href=#278 id=278 data-nosnippet>278</a>    DyadicFloat128 {
+<a href=#279 id=279 data-nosnippet>279</a>        sign: DyadicSign::Pos,
+<a href=#280 id=280 data-nosnippet>280</a>        exponent: -<span class="number">130</span>,
+<a href=#281 id=281 data-nosnippet>281</a>        mantissa: <span class="number">0xe05c_1353_f27b_17e5_0ebc_61ad_e6ca_83cc_u128</span>,
+<a href=#282 id=282 data-nosnippet>282</a>    },
+<a href=#283 id=283 data-nosnippet>283</a>    DyadicFloat128 {
+<a href=#284 id=284 data-nosnippet>284</a>        sign: DyadicSign::Pos,
+<a href=#285 id=285 data-nosnippet>285</a>        exponent: -<span class="number">130</span>,
+<a href=#286 id=286 data-nosnippet>286</a>        mantissa: <span class="number">0xf8cf_cbd9_0af8_d57a_4221_dc4b_a772_598d_u128</span>,
+<a href=#287 id=287 data-nosnippet>287</a>    },
+<a href=#288 id=288 data-nosnippet>288</a>    DyadicFloat128 {
+<a href=#289 id=289 data-nosnippet>289</a>        sign: DyadicSign::Pos,
+<a href=#290 id=290 data-nosnippet>290</a>        exponent: -<span class="number">129</span>,
+<a href=#291 id=291 data-nosnippet>291</a>        mantissa: <span class="number">0x888e_9315_8fb3_bb04_9841_56f5_5334_4306_u128</span>,
+<a href=#292 id=292 data-nosnippet>292</a>    },
+<a href=#293 id=293 data-nosnippet>293</a>    DyadicFloat128 {
+<a href=#294 id=294 data-nosnippet>294</a>        sign: DyadicSign::Pos,
+<a href=#295 id=295 data-nosnippet>295</a>        exponent: -<span class="number">129</span>,
+<a href=#296 id=296 data-nosnippet>296</a>        mantissa: <span class="number">0x94a0_3176_acf8_2d45_ae4b_a773_da6b_f754_u128</span>,
+<a href=#297 id=297 data-nosnippet>297</a>    },
+<a href=#298 id=298 data-nosnippet>298</a>    DyadicFloat128 {
+<a href=#299 id=299 data-nosnippet>299</a>        sign: DyadicSign::Pos,
+<a href=#300 id=300 data-nosnippet>300</a>        exponent: -<span class="number">129</span>,
+<a href=#301 id=301 data-nosnippet>301</a>        mantissa: <span class="number">0xa09a_e4a0_bb30_0a19_2f89_5f44_a303_cc0b_u128</span>,
+<a href=#302 id=302 data-nosnippet>302</a>    },
+<a href=#303 id=303 data-nosnippet>303</a>    DyadicFloat128 {
+<a href=#304 id=304 data-nosnippet>304</a>        sign: DyadicSign::Pos,
+<a href=#305 id=305 data-nosnippet>305</a>        exponent: -<span class="number">129</span>,
+<a href=#306 id=306 data-nosnippet>306</a>        mantissa: <span class="number">0xac7c_d3ad_58fe_e7f0_811f_9539_84ef_f83e_u128</span>,
+<a href=#307 id=307 data-nosnippet>307</a>    },
+<a href=#308 id=308 data-nosnippet>308</a>    DyadicFloat128 {
+<a href=#309 id=309 data-nosnippet>309</a>        sign: DyadicSign::Pos,
+<a href=#310 id=310 data-nosnippet>310</a>        exponent: -<span class="number">129</span>,
+<a href=#311 id=311 data-nosnippet>311</a>        mantissa: <span class="number">0xb844_2987_d22c_f576_9cc3_ef36_746d_e3b8_u128</span>,
+<a href=#312 id=312 data-nosnippet>312</a>    },
+<a href=#313 id=313 data-nosnippet>313</a>    DyadicFloat128 {
+<a href=#314 id=314 data-nosnippet>314</a>        sign: DyadicSign::Pos,
+<a href=#315 id=315 data-nosnippet>315</a>        exponent: -<span class="number">129</span>,
+<a href=#316 id=316 data-nosnippet>316</a>        mantissa: <span class="number">0xc3ef_1535_754b_168d_3122_c2a5_9efd_dc37_u128</span>,
+<a href=#317 id=317 data-nosnippet>317</a>    },
+<a href=#318 id=318 data-nosnippet>318</a>    DyadicFloat128 {
+<a href=#319 id=319 data-nosnippet>319</a>        sign: DyadicSign::Pos,
+<a href=#320 id=320 data-nosnippet>320</a>        exponent: -<span class="number">129</span>,
+<a href=#321 id=321 data-nosnippet>321</a>        mantissa: <span class="number">0xcf7b_ca1d_476c_516d_a812_90bd_baad_62e4_u128</span>,
+<a href=#322 id=322 data-nosnippet>322</a>    },
+<a href=#323 id=323 data-nosnippet>323</a>    DyadicFloat128 {
+<a href=#324 id=324 data-nosnippet>324</a>        sign: DyadicSign::Pos,
+<a href=#325 id=325 data-nosnippet>325</a>        exponent: -<span class="number">129</span>,
+<a href=#326 id=326 data-nosnippet>326</a>        mantissa: <span class="number">0xdae8_804f_0ae6_015b_362c_b974_182e_3030_u128</span>,
+<a href=#327 id=327 data-nosnippet>327</a>    },
+<a href=#328 id=328 data-nosnippet>328</a>    DyadicFloat128 {
+<a href=#329 id=329 data-nosnippet>329</a>        sign: DyadicSign::Pos,
+<a href=#330 id=330 data-nosnippet>330</a>        exponent: -<span class="number">129</span>,
+<a href=#331 id=331 data-nosnippet>331</a>        mantissa: <span class="number">0xe633_74c9_8e22_f0b4_2872_ce1b_fc7a_d1cc_u128</span>,
+<a href=#332 id=332 data-nosnippet>332</a>    },
+<a href=#333 id=333 data-nosnippet>333</a>    DyadicFloat128 {
+<a href=#334 id=334 data-nosnippet>334</a>        sign: DyadicSign::Pos,
+<a href=#335 id=335 data-nosnippet>335</a>        exponent: -<span class="number">129</span>,
+<a href=#336 id=336 data-nosnippet>336</a>        mantissa: <span class="number">0xf15a_e9c0_37b1_d8f0_6c48_e9e3_420b_0f1d_u128</span>,
+<a href=#337 id=337 data-nosnippet>337</a>    },
+<a href=#338 id=338 data-nosnippet>338</a>    DyadicFloat128 {
+<a href=#339 id=339 data-nosnippet>339</a>        sign: DyadicSign::Pos,
+<a href=#340 id=340 data-nosnippet>340</a>        exponent: -<span class="number">129</span>,
+<a href=#341 id=341 data-nosnippet>341</a>        mantissa: <span class="number">0xfc5d_26df_c4d5_cfda_27c0_7c91_1290_b8d1_u128</span>,
+<a href=#342 id=342 data-nosnippet>342</a>    },
+<a href=#343 id=343 data-nosnippet>343</a>    DyadicFloat128 {
+<a href=#344 id=344 data-nosnippet>344</a>        sign: DyadicSign::Pos,
+<a href=#345 id=345 data-nosnippet>345</a>        exponent: -<span class="number">128</span>,
+<a href=#346 id=346 data-nosnippet>346</a>        mantissa: <span class="number">0x839c_3cc9_17ff_6cb4_bfd7_9717_f288_0abf_u128</span>,
+<a href=#347 id=347 data-nosnippet>347</a>    },
+<a href=#348 id=348 data-nosnippet>348</a>    DyadicFloat128 {
+<a href=#349 id=349 data-nosnippet>349</a>        sign: DyadicSign::Pos,
+<a href=#350 id=350 data-nosnippet>350</a>        exponent: -<span class="number">128</span>,
+<a href=#351 id=351 data-nosnippet>351</a>        mantissa: <span class="number">0x88f5_9aa0_da59_1421_b892_ca83_61d8_c84c_u128</span>,
+<a href=#352 id=352 data-nosnippet>352</a>    },
+<a href=#353 id=353 data-nosnippet>353</a>    DyadicFloat128 {
+<a href=#354 id=354 data-nosnippet>354</a>        sign: DyadicSign::Pos,
+<a href=#355 id=355 data-nosnippet>355</a>        exponent: -<span class="number">128</span>,
+<a href=#356 id=356 data-nosnippet>356</a>        mantissa: <span class="number">0x8e39_d9cd_7346_4364_bba4_cfec_bff5_4868_u128</span>,
+<a href=#357 id=357 data-nosnippet>357</a>    },
+<a href=#358 id=358 data-nosnippet>358</a>    DyadicFloat128 {
+<a href=#359 id=359 data-nosnippet>359</a>        sign: DyadicSign::Pos,
+<a href=#360 id=360 data-nosnippet>360</a>        exponent: -<span class="number">128</span>,
+<a href=#361 id=361 data-nosnippet>361</a>        mantissa: <span class="number">0x9368_2a66_e896_f544_b178_2191_1e71_c16e_u128</span>,
+<a href=#362 id=362 data-nosnippet>362</a>    },
+<a href=#363 id=363 data-nosnippet>363</a>    DyadicFloat128 {
+<a href=#364 id=364 data-nosnippet>364</a>        sign: DyadicSign::Pos,
+<a href=#365 id=365 data-nosnippet>365</a>        exponent: -<span class="number">128</span>,
+<a href=#366 id=366 data-nosnippet>366</a>        mantissa: <span class="number">0x987f_bfe7_0b81_a708_19ce_c845_ac87_a5c6_u128</span>,
+<a href=#367 id=367 data-nosnippet>367</a>    },
+<a href=#368 id=368 data-nosnippet>368</a>    DyadicFloat128 {
+<a href=#369 id=369 data-nosnippet>369</a>        sign: DyadicSign::Pos,
+<a href=#370 id=370 data-nosnippet>370</a>        exponent: -<span class="number">128</span>,
+<a href=#371 id=371 data-nosnippet>371</a>        mantissa: <span class="number">0x9d7f_d149_0285_c9e3_e25e_3954_9638_ae67_u128</span>,
+<a href=#372 id=372 data-nosnippet>372</a>    },
+<a href=#373 id=373 data-nosnippet>373</a>    DyadicFloat128 {
+<a href=#374 id=374 data-nosnippet>374</a>        sign: DyadicSign::Pos,
+<a href=#375 id=375 data-nosnippet>375</a>        exponent: -<span class="number">128</span>,
+<a href=#376 id=376 data-nosnippet>376</a>        mantissa: <span class="number">0xa267_9928_48ee_b0c0_3b51_67ee_359a_234e_u128</span>,
+<a href=#377 id=377 data-nosnippet>377</a>    },
+<a href=#378 id=378 data-nosnippet>378</a>    DyadicFloat128 {
+<a href=#379 id=379 data-nosnippet>379</a>        sign: DyadicSign::Pos,
+<a href=#380 id=380 data-nosnippet>380</a>        exponent: -<span class="number">128</span>,
+<a href=#381 id=381 data-nosnippet>381</a>        mantissa: <span class="number">0xa736_55df_1f2f_489e_149f_6e75_9934_68a2_u128</span>,
+<a href=#382 id=382 data-nosnippet>382</a>    },
+<a href=#383 id=383 data-nosnippet>383</a>    DyadicFloat128 {
+<a href=#384 id=384 data-nosnippet>384</a>        sign: DyadicSign::Pos,
+<a href=#385 id=385 data-nosnippet>385</a>        exponent: -<span class="number">128</span>,
+<a href=#386 id=386 data-nosnippet>386</a>        mantissa: <span class="number">0xabeb_49a4_6764_fd15_1bec_da80_89c1_a94c_u128</span>,
+<a href=#387 id=387 data-nosnippet>387</a>    },
+<a href=#388 id=388 data-nosnippet>388</a>    DyadicFloat128 {
+<a href=#389 id=389 data-nosnippet>389</a>        sign: DyadicSign::Pos,
+<a href=#390 id=390 data-nosnippet>390</a>        exponent: -<span class="number">128</span>,
+<a href=#391 id=391 data-nosnippet>391</a>        mantissa: <span class="number">0xb085_baa8_e966_f6da_e4ca_d00d_5c94_bcd1_u128</span>,
+<a href=#392 id=392 data-nosnippet>392</a>    },
+<a href=#393 id=393 data-nosnippet>393</a>    DyadicFloat128 {
+<a href=#394 id=394 data-nosnippet>394</a>        sign: DyadicSign::Pos,
+<a href=#395 id=395 data-nosnippet>395</a>        exponent: -<span class="number">128</span>,
+<a href=#396 id=396 data-nosnippet>396</a>        mantissa: <span class="number">0xb504_f333_f9de_6484_597d_89b3_754a_be9f_u128</span>,
+<a href=#397 id=397 data-nosnippet>397</a>    },
+<a href=#398 id=398 data-nosnippet>398</a>    DyadicFloat128 {
+<a href=#399 id=399 data-nosnippet>399</a>        sign: DyadicSign::Pos,
+<a href=#400 id=400 data-nosnippet>400</a>        exponent: -<span class="number">128</span>,
+<a href=#401 id=401 data-nosnippet>401</a>        mantissa: <span class="number">0xb968_41bf_7ffc_b21a_9de1_e3b2_2b8b_f4db_u128</span>,
+<a href=#402 id=402 data-nosnippet>402</a>    },
+<a href=#403 id=403 data-nosnippet>403</a>    DyadicFloat128 {
+<a href=#404 id=404 data-nosnippet>404</a>        sign: DyadicSign::Pos,
+<a href=#405 id=405 data-nosnippet>405</a>        exponent: -<span class="number">128</span>,
+<a href=#406 id=406 data-nosnippet>406</a>        mantissa: <span class="number">0xbdae_f913_557d_76f0_ac85_320f_528d_6d5c_u128</span>,
+<a href=#407 id=407 data-nosnippet>407</a>    },
+<a href=#408 id=408 data-nosnippet>408</a>    DyadicFloat128 {
+<a href=#409 id=409 data-nosnippet>409</a>        sign: DyadicSign::Pos,
+<a href=#410 id=410 data-nosnippet>410</a>        exponent: -<span class="number">128</span>,
+<a href=#411 id=411 data-nosnippet>411</a>        mantissa: <span class="number">0xc1d8_705f_fcbb_6e90_bdf0_715c_b8b2_0bd7_u128</span>,
+<a href=#412 id=412 data-nosnippet>412</a>    },
+<a href=#413 id=413 data-nosnippet>413</a>    DyadicFloat128 {
+<a href=#414 id=414 data-nosnippet>414</a>        sign: DyadicSign::Pos,
+<a href=#415 id=415 data-nosnippet>415</a>        exponent: -<span class="number">128</span>,
+<a href=#416 id=416 data-nosnippet>416</a>        mantissa: <span class="number">0xc5e4_0358_a8ba_05a7_43da_25d9_9267_326b_u128</span>,
+<a href=#417 id=417 data-nosnippet>417</a>    },
+<a href=#418 id=418 data-nosnippet>418</a>    DyadicFloat128 {
+<a href=#419 id=419 data-nosnippet>419</a>        sign: DyadicSign::Pos,
+<a href=#420 id=420 data-nosnippet>420</a>        exponent: -<span class="number">128</span>,
+<a href=#421 id=421 data-nosnippet>421</a>        mantissa: <span class="number">0xc9d1_124c_931f_da7a_8335_241b_e169_3225_u128</span>,
+<a href=#422 id=422 data-nosnippet>422</a>    },
+<a href=#423 id=423 data-nosnippet>423</a>    DyadicFloat128 {
+<a href=#424 id=424 data-nosnippet>424</a>        sign: DyadicSign::Pos,
+<a href=#425 id=425 data-nosnippet>425</a>        exponent: -<span class="number">128</span>,
+<a href=#426 id=426 data-nosnippet>426</a>        mantissa: <span class="number">0xcd9f_023f_9c3a_059e_23af_31db_7179_a4a9_u128</span>,
+<a href=#427 id=427 data-nosnippet>427</a>    },
+<a href=#428 id=428 data-nosnippet>428</a>    DyadicFloat128 {
+<a href=#429 id=429 data-nosnippet>429</a>        sign: DyadicSign::Pos,
+<a href=#430 id=430 data-nosnippet>430</a>        exponent: -<span class="number">128</span>,
+<a href=#431 id=431 data-nosnippet>431</a>        mantissa: <span class="number">0xd14d_3d02_313c_0eed_744f_ea20_e8ab_ef92_u128</span>,
+<a href=#432 id=432 data-nosnippet>432</a>    },
+<a href=#433 id=433 data-nosnippet>433</a>    DyadicFloat128 {
+<a href=#434 id=434 data-nosnippet>434</a>        sign: DyadicSign::Pos,
+<a href=#435 id=435 data-nosnippet>435</a>        exponent: -<span class="number">128</span>,
+<a href=#436 id=436 data-nosnippet>436</a>        mantissa: <span class="number">0xd4db_3148_750d_1819_f630_e8b6_dac8_3e68_u128</span>,
+<a href=#437 id=437 data-nosnippet>437</a>    },
+<a href=#438 id=438 data-nosnippet>438</a>    DyadicFloat128 {
+<a href=#439 id=439 data-nosnippet>439</a>        sign: DyadicSign::Pos,
+<a href=#440 id=440 data-nosnippet>440</a>        exponent: -<span class="number">128</span>,
+<a href=#441 id=441 data-nosnippet>441</a>        mantissa: <span class="number">0xd848_52c0_a80f_fcdb_24b9_fe00_6635_74a4_u128</span>,
+<a href=#442 id=442 data-nosnippet>442</a>    },
+<a href=#443 id=443 data-nosnippet>443</a>    DyadicFloat128 {
+<a href=#444 id=444 data-nosnippet>444</a>        sign: DyadicSign::Pos,
+<a href=#445 id=445 data-nosnippet>445</a>        exponent: -<span class="number">128</span>,
+<a href=#446 id=446 data-nosnippet>446</a>        mantissa: <span class="number">0xdb94_1a28_cb71_ec87_2c19_b632_53da_43fb_u128</span>,
+<a href=#447 id=447 data-nosnippet>447</a>    },
+<a href=#448 id=448 data-nosnippet>448</a>    DyadicFloat128 {
+<a href=#449 id=449 data-nosnippet>449</a>        sign: DyadicSign::Pos,
+<a href=#450 id=450 data-nosnippet>450</a>        exponent: -<span class="number">128</span>,
+<a href=#451 id=451 data-nosnippet>451</a>        mantissa: <span class="number">0xdebe_0563_7ca9_4cfb_4b19_aa71_fec3_ae6c_u128</span>,
+<a href=#452 id=452 data-nosnippet>452</a>    },
+<a href=#453 id=453 data-nosnippet>453</a>    DyadicFloat128 {
+<a href=#454 id=454 data-nosnippet>454</a>        sign: DyadicSign::Pos,
+<a href=#455 id=455 data-nosnippet>455</a>        exponent: -<span class="number">128</span>,
+<a href=#456 id=456 data-nosnippet>456</a>        mantissa: <span class="number">0xe1c5_978c_05ed_8691_f4e8_a837_2f8c_5810_u128</span>,
+<a href=#457 id=457 data-nosnippet>457</a>    },
+<a href=#458 id=458 data-nosnippet>458</a>    DyadicFloat128 {
+<a href=#459 id=459 data-nosnippet>459</a>        sign: DyadicSign::Pos,
+<a href=#460 id=460 data-nosnippet>460</a>        exponent: -<span class="number">128</span>,
+<a href=#461 id=461 data-nosnippet>461</a>        mantissa: <span class="number">0xe4aa_5909_a08f_a7b4_1227_85ae_67f5_515c_u128</span>,
+<a href=#462 id=462 data-nosnippet>462</a>    },
+<a href=#463 id=463 data-nosnippet>463</a>    DyadicFloat128 {
+<a href=#464 id=464 data-nosnippet>464</a>        sign: DyadicSign::Pos,
+<a href=#465 id=465 data-nosnippet>465</a>        exponent: -<span class="number">128</span>,
+<a href=#466 id=466 data-nosnippet>466</a>        mantissa: <span class="number">0xe76b_d7a1_e63b_9786_1251_2952_9d48_a92f_u128</span>,
+<a href=#467 id=467 data-nosnippet>467</a>    },
+<a href=#468 id=468 data-nosnippet>468</a>    DyadicFloat128 {
+<a href=#469 id=469 data-nosnippet>469</a>        sign: DyadicSign::Pos,
+<a href=#470 id=470 data-nosnippet>470</a>        exponent: -<span class="number">128</span>,
+<a href=#471 id=471 data-nosnippet>471</a>        mantissa: <span class="number">0xea09_a68a_6e49_cd62_15ad_45b4_a1b5_e823_u128</span>,
+<a href=#472 id=472 data-nosnippet>472</a>    },
+<a href=#473 id=473 data-nosnippet>473</a>    DyadicFloat128 {
+<a href=#474 id=474 data-nosnippet>474</a>        sign: DyadicSign::Pos,
+<a href=#475 id=475 data-nosnippet>475</a>        exponent: -<span class="number">128</span>,
+<a href=#476 id=476 data-nosnippet>476</a>        mantissa: <span class="number">0xec83_5e79_946a_3145_7e61_0231_ac1d_6181_u128</span>,
+<a href=#477 id=477 data-nosnippet>477</a>    },
+<a href=#478 id=478 data-nosnippet>478</a>    DyadicFloat128 {
+<a href=#479 id=479 data-nosnippet>479</a>        sign: DyadicSign::Pos,
+<a href=#480 id=480 data-nosnippet>480</a>        exponent: -<span class="number">128</span>,
+<a href=#481 id=481 data-nosnippet>481</a>        mantissa: <span class="number">0xeed8_9db6_6611_e307_86f8_c20f_b664_b01b_u128</span>,
+<a href=#482 id=482 data-nosnippet>482</a>    },
+<a href=#483 id=483 data-nosnippet>483</a>    DyadicFloat128 {
+<a href=#484 id=484 data-nosnippet>484</a>        sign: DyadicSign::Pos,
+<a href=#485 id=485 data-nosnippet>485</a>        exponent: -<span class="number">128</span>,
+<a href=#486 id=486 data-nosnippet>486</a>        mantissa: <span class="number">0xf109_0827_b437_25fd_6712_7db3_5b28_7315_u128</span>,
+<a href=#487 id=487 data-nosnippet>487</a>    },
+<a href=#488 id=488 data-nosnippet>488</a>    DyadicFloat128 {
+<a href=#489 id=489 data-nosnippet>489</a>        sign: DyadicSign::Pos,
+<a href=#490 id=490 data-nosnippet>490</a>        exponent: -<span class="number">128</span>,
+<a href=#491 id=491 data-nosnippet>491</a>        mantissa: <span class="number">0xf314_4762_4708_8f74_a548_6bdc_455d_56a3_u128</span>,
+<a href=#492 id=492 data-nosnippet>492</a>    },
+<a href=#493 id=493 data-nosnippet>493</a>    DyadicFloat128 {
+<a href=#494 id=494 data-nosnippet>494</a>        sign: DyadicSign::Pos,
+<a href=#495 id=495 data-nosnippet>495</a>        exponent: -<span class="number">128</span>,
+<a href=#496 id=496 data-nosnippet>496</a>        mantissa: <span class="number">0xf4fa_0ab6_316e_d2ec_163c_5c7f_03b7_18c5_u128</span>,
+<a href=#497 id=497 data-nosnippet>497</a>    },
+<a href=#498 id=498 data-nosnippet>498</a>    DyadicFloat128 {
+<a href=#499 id=499 data-nosnippet>499</a>        sign: DyadicSign::Pos,
+<a href=#500 id=500 data-nosnippet>500</a>        exponent: -<span class="number">128</span>,
+<a href=#501 id=501 data-nosnippet>501</a>        mantissa: <span class="number">0xf6ba_073b_424b_19e8_2c79_1f59_cc1f_fc23_u128</span>,
+<a href=#502 id=502 data-nosnippet>502</a>    },
+<a href=#503 id=503 data-nosnippet>503</a>    DyadicFloat128 {
+<a href=#504 id=504 data-nosnippet>504</a>        sign: DyadicSign::Pos,
+<a href=#505 id=505 data-nosnippet>505</a>        exponent: -<span class="number">128</span>,
+<a href=#506 id=506 data-nosnippet>506</a>        mantissa: <span class="number">0xf853_f7dc_9186_b952_c7ad_c6b4_9888_91ba_u128</span>,
+<a href=#507 id=507 data-nosnippet>507</a>    },
+<a href=#508 id=508 data-nosnippet>508</a>    DyadicFloat128 {
+<a href=#509 id=509 data-nosnippet>509</a>        sign: DyadicSign::Pos,
+<a href=#510 id=510 data-nosnippet>510</a>        exponent: -<span class="number">128</span>,
+<a href=#511 id=511 data-nosnippet>511</a>        mantissa: <span class="number">0xf9c7_9d63_272c_4628_4504_ae08_d19b_2981_u128</span>,
+<a href=#512 id=512 data-nosnippet>512</a>    },
+<a href=#513 id=513 data-nosnippet>513</a>    DyadicFloat128 {
+<a href=#514 id=514 data-nosnippet>514</a>        sign: DyadicSign::Pos,
+<a href=#515 id=515 data-nosnippet>515</a>        exponent: -<span class="number">128</span>,
+<a href=#516 id=516 data-nosnippet>516</a>        mantissa: <span class="number">0xfb14_be7f_bae5_8156_2172_a361_fd2a_722f_u128</span>,
+<a href=#517 id=517 data-nosnippet>517</a>    },
+<a href=#518 id=518 data-nosnippet>518</a>    DyadicFloat128 {
+<a href=#519 id=519 data-nosnippet>519</a>        sign: DyadicSign::Pos,
+<a href=#520 id=520 data-nosnippet>520</a>        exponent: -<span class="number">128</span>,
+<a href=#521 id=521 data-nosnippet>521</a>        mantissa: <span class="number">0xfc3b_27d3_8a5d_49ab_2567_78ff_cb5c_1769_u128</span>,
+<a href=#522 id=522 data-nosnippet>522</a>    },
+<a href=#523 id=523 data-nosnippet>523</a>    DyadicFloat128 {
+<a href=#524 id=524 data-nosnippet>524</a>        sign: DyadicSign::Pos,
+<a href=#525 id=525 data-nosnippet>525</a>        exponent: -<span class="number">128</span>,
+<a href=#526 id=526 data-nosnippet>526</a>        mantissa: <span class="number">0xfd3a_abf8_4528_b50b_eae6_bd95_1c1d_abbd_u128</span>,
+<a href=#527 id=527 data-nosnippet>527</a>    },
+<a href=#528 id=528 data-nosnippet>528</a>    DyadicFloat128 {
+<a href=#529 id=529 data-nosnippet>529</a>        sign: DyadicSign::Pos,
+<a href=#530 id=530 data-nosnippet>530</a>        exponent: -<span class="number">128</span>,
+<a href=#531 id=531 data-nosnippet>531</a>        mantissa: <span class="number">0xfe13_2387_0cfe_9a3d_90cd_1d95_9db6_74ef_u128</span>,
+<a href=#532 id=532 data-nosnippet>532</a>    },
+<a href=#533 id=533 data-nosnippet>533</a>    DyadicFloat128 {
+<a href=#534 id=534 data-nosnippet>534</a>        sign: DyadicSign::Pos,
+<a href=#535 id=535 data-nosnippet>535</a>        exponent: -<span class="number">128</span>,
+<a href=#536 id=536 data-nosnippet>536</a>        mantissa: <span class="number">0xfec4_6d1e_8929_2cf0_4139_0efd_c726_e9ef_u128</span>,
+<a href=#537 id=537 data-nosnippet>537</a>    },
+<a href=#538 id=538 data-nosnippet>538</a>    DyadicFloat128 {
+<a href=#539 id=539 data-nosnippet>539</a>        sign: DyadicSign::Pos,
+<a href=#540 id=540 data-nosnippet>540</a>        exponent: -<span class="number">128</span>,
+<a href=#541 id=541 data-nosnippet>541</a>        mantissa: <span class="number">0xff4e_6d68_0c41_d0a9_0f66_8633_f1ab_858a_u128</span>,
+<a href=#542 id=542 data-nosnippet>542</a>    },
+<a href=#543 id=543 data-nosnippet>543</a>    DyadicFloat128 {
+<a href=#544 id=544 data-nosnippet>544</a>        sign: DyadicSign::Pos,
+<a href=#545 id=545 data-nosnippet>545</a>        exponent: -<span class="number">128</span>,
+<a href=#546 id=546 data-nosnippet>546</a>        mantissa: <span class="number">0xffb1_0f1b_cb6b_ef1d_421e_8eda_af59_453e_u128</span>,
+<a href=#547 id=547 data-nosnippet>547</a>    },
+<a href=#548 id=548 data-nosnippet>548</a>    DyadicFloat128 {
+<a href=#549 id=549 data-nosnippet>549</a>        sign: DyadicSign::Pos,
+<a href=#550 id=550 data-nosnippet>550</a>        exponent: -<span class="number">128</span>,
+<a href=#551 id=551 data-nosnippet>551</a>        mantissa: <span class="number">0xffec_4304_2668_65d9_5657_5523_6696_1732_u128</span>,
+<a href=#552 id=552 data-nosnippet>552</a>    },
+<a href=#553 id=553 data-nosnippet>553</a>    DyadicFloat128 {
+<a href=#554 id=554 data-nosnippet>554</a>        sign: DyadicSign::Pos,
+<a href=#555 id=555 data-nosnippet>555</a>        exponent: -<span class="number">127</span>,
+<a href=#556 id=556 data-nosnippet>556</a>        mantissa: <span class="number">0x8000_0000_0000_0000_0000_0000_0000_0000_u128</span>,
+<a href=#557 id=557 data-nosnippet>557</a>    },
+<a href=#558 id=558 data-nosnippet>558</a>];</code></pre></div></section></main></body></html>

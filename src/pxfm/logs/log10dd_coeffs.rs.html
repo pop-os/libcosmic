@@ -1,0 +1,230 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `/home/runner/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/pxfm-0.1.25/src/logs/log10dd_coeffs.rs`."><title>log10dd_coeffs.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../../static.files/rustdoc-aa0817cf.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="pxfm" data-themes="" data-resource-suffix="" data-rustdoc-version="1.90.0 (1159e78c4 2025-09-14)" data-channel="1.90.0" data-search-js="search-fa3e91e5.js" data-settings-js="settings-5514c975.js" ><script src="../../../static.files/storage-68b7e25d.js"></script><script defer src="../../../static.files/src-script-813739b1.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-eebb9057.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-32bb7600.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-6580c154.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-044be391.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><h1><div class="sub-heading">pxfm/logs/</div>log10dd_coeffs.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap digits-3"><pre class="rust"><code><a href=#1 id=1 data-nosnippet>1</a><span class="comment">/*
+<a href=#2 id=2 data-nosnippet>2</a> * // Copyright (c) Radzivon Bartoshyk 8/2025. All rights reserved.
+<a href=#3 id=3 data-nosnippet>3</a> * //
+<a href=#4 id=4 data-nosnippet>4</a> * // Redistribution and use in source and binary forms, with or without modification,
+<a href=#5 id=5 data-nosnippet>5</a> * // are permitted provided that the following conditions are met:
+<a href=#6 id=6 data-nosnippet>6</a> * //
+<a href=#7 id=7 data-nosnippet>7</a> * // 1.  Redistributions of source code must retain the above copyright notice, this
+<a href=#8 id=8 data-nosnippet>8</a> * // list of conditions and the following disclaimer.
+<a href=#9 id=9 data-nosnippet>9</a> * //
+<a href=#10 id=10 data-nosnippet>10</a> * // 2.  Redistributions in binary form must reproduce the above copyright notice,
+<a href=#11 id=11 data-nosnippet>11</a> * // this list of conditions and the following disclaimer in the documentation
+<a href=#12 id=12 data-nosnippet>12</a> * // and/or other materials provided with the distribution.
+<a href=#13 id=13 data-nosnippet>13</a> * //
+<a href=#14 id=14 data-nosnippet>14</a> * // 3.  Neither the name of the copyright holder nor the names of its
+<a href=#15 id=15 data-nosnippet>15</a> * // contributors may be used to endorse or promote products derived from
+<a href=#16 id=16 data-nosnippet>16</a> * // this software without specific prior written permission.
+<a href=#17 id=17 data-nosnippet>17</a> * //
+<a href=#18 id=18 data-nosnippet>18</a> * // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+<a href=#19 id=19 data-nosnippet>19</a> * // AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+<a href=#20 id=20 data-nosnippet>20</a> * // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+<a href=#21 id=21 data-nosnippet>21</a> * // DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+<a href=#22 id=22 data-nosnippet>22</a> * // FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+<a href=#23 id=23 data-nosnippet>23</a> * // DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+<a href=#24 id=24 data-nosnippet>24</a> * // SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+<a href=#25 id=25 data-nosnippet>25</a> * // CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+<a href=#26 id=26 data-nosnippet>26</a> * // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+<a href=#27 id=27 data-nosnippet>27</a> * // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+<a href=#28 id=28 data-nosnippet>28</a> */
+<a href=#29 id=29 data-nosnippet>29</a>
+<a href=#30 id=30 data-nosnippet>30</a></span><span class="doccomment">/**
+<a href=#31 id=31 data-nosnippet>31</a>Generated by SageMath:
+<a href=#32 id=32 data-nosnippet>32</a>
+<a href=#33 id=33 data-nosnippet>33</a>```python
+<a href=#34 id=34 data-nosnippet>34</a>values = POW_INVERSE
+<a href=#35 id=35 data-nosnippet>35</a>R = RealField(150)
+<a href=#36 id=36 data-nosnippet>36</a>
+<a href=#37 id=37 data-nosnippet>37</a>def hex_to_float(h):
+<a href=#38 id=38 data-nosnippet>38</a>    return struct.unpack('&gt;d', struct.pack('&gt;Q', h))[0]
+<a href=#39 id=39 data-nosnippet>39</a>
+<a href=#40 id=40 data-nosnippet>40</a>real_array = [R(hex_to_float(h)) for h in values]
+<a href=#41 id=41 data-nosnippet>41</a>
+<a href=#42 id=42 data-nosnippet>42</a>for r in real_array:
+<a href=#43 id=43 data-nosnippet>43</a>    print_double_double("", -RealField(180)(r).log10())
+<a href=#44 id=44 data-nosnippet>44</a>
+<a href=#45 id=45 data-nosnippet>45</a>```
+<a href=#46 id=46 data-nosnippet>46</a>**/
+<a href=#47 id=47 data-nosnippet>47</a></span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">static </span>LOG10_NEG_DD: [(u64, u64); <span class="number">182</span>] = [
+<a href=#48 id=48 data-nosnippet>48</a>    (<span class="number">0xbc0b420b9b202edd</span>, <span class="number">0xbfc31b3055c47118</span>),
+<a href=#49 id=49 data-nosnippet>49</a>    (<span class="number">0xbc662219537667a2</span>, <span class="number">0xbfc2cc20b1734279</span>),
+<a href=#50 id=50 data-nosnippet>50</a>    (<span class="number">0xbc4386d677ad2ead</span>, <span class="number">0xbfc27c9ffae729c1</span>),
+<a href=#51 id=51 data-nosnippet>51</a>    (<span class="number">0x3c6fb908b0ca4062</span>, <span class="number">0xbfc22cacece26ead</span>),
+<a href=#52 id=52 data-nosnippet>52</a>    (<span class="number">0xbc61b4170b1c73f0</span>, <span class="number">0xbfc1dc463ca41df8</span>),
+<a href=#53 id=53 data-nosnippet>53</a>    (<span class="number">0x3c5d6679f737585c</span>, <span class="number">0xbfc18b6a99c7f679</span>),
+<a href=#54 id=54 data-nosnippet>54</a>    (<span class="number">0x3c6c6397435bc5b6</span>, <span class="number">0xbfc162d082ac9d10</span>),
+<a href=#55 id=55 data-nosnippet>55</a>    (<span class="number">0x3c4b8c4f1b08949b</span>, <span class="number">0xbfc11142f0811357</span>),
+<a href=#56 id=56 data-nosnippet>56</a>    (<span class="number">0xbc5e17a06836db63</span>, <span class="number">0xbfc0bf3d0937c41c</span>),
+<a href=#57 id=57 data-nosnippet>57</a>    (<span class="number">0xbc65163143f60061</span>, <span class="number">0xbfc06cbd67a6c3b6</span>),
+<a href=#58 id=58 data-nosnippet>58</a>    (<span class="number">0xbc6c5e9d9a0e1fd9</span>, <span class="number">0xbfc019c2a064b486</span>),
+<a href=#59 id=59 data-nosnippet>59</a>    (<span class="number">0x3c5ec7f2dac60a5c</span>, <span class="number">0xbfbf8c9683468191</span>),
+<a href=#60 id=60 data-nosnippet>60</a>    (<span class="number">0x3c54a69937a2d705</span>, <span class="number">0xbfbf38c0c8325d86</span>),
+<a href=#61 id=61 data-nosnippet>61</a>    (<span class="number">0x3c53cbb5a6ee659b</span>, <span class="number">0xbfbe9056bcb315e8</span>),
+<a href=#62 id=62 data-nosnippet>62</a>    (<span class="number">0x3c51bf355bb72ca1</span>, <span class="number">0xbfbde6ec0f392b05</span>),
+<a href=#63 id=63 data-nosnippet>63</a>    (<span class="number">0x3c5ce84c9eaee37a</span>, <span class="number">0xbfbd91d5866aa99c</span>),
+<a href=#64 id=64 data-nosnippet>64</a>    (<span class="number">0x3c26f0603909a181</span>, <span class="number">0xbfbce6e41e463da5</span>),
+<a href=#65 id=65 data-nosnippet>65</a>    (<span class="number">0x3c58b9190212e5ba</span>, <span class="number">0xbfbc3aea4a5c6eff</span>),
+<a href=#66 id=66 data-nosnippet>66</a>    (<span class="number">0x3c2446d00b829ad4</span>, <span class="number">0xbfbb8de4d3ab3d98</span>),
+<a href=#67 id=67 data-nosnippet>67</a>    (<span class="number">0x3c5aa2aeaa7bc18d</span>, <span class="number">0xbfbb36fcb5f8be8a</span>),
+<a href=#68 id=68 data-nosnippet>68</a>    (<span class="number">0x3c5dd366189ac022</span>, <span class="number">0xbfba885fa2d6151e</span>),
+<a href=#69 id=69 data-nosnippet>69</a>    (<span class="number">0x3c4ebf33e9410429</span>, <span class="number">0xbfba30a9d609efea</span>),
+<a href=#70 id=70 data-nosnippet>70</a>    (<span class="number">0xbc5c81cca3dd9b7b</span>, <span class="number">0xbfb9806d9414a209</span>),
+<a href=#71 id=71 data-nosnippet>71</a>    (<span class="number">0x3c5935d381a0844f</span>, <span class="number">0xbfb8cf183886480d</span>),
+<a href=#72 id=72 data-nosnippet>72</a>    (<span class="number">0x3c3666804e99aabc</span>, <span class="number">0xbfb8760307d355ab</span>),
+<a href=#73 id=73 data-nosnippet>73</a>    (<span class="number">0xbc21064a1f6dc0c5</span>, <span class="number">0xbfb7c30164a60836</span>),
+<a href=#74 id=74 data-nosnippet>74</a>    (<span class="number">0x3c5ac4c370ae3c1d</span>, <span class="number">0xbfb769140a2526fd</span>),
+<a href=#75 id=75 data-nosnippet>75</a>    (<span class="number">0xbc5643835531d8ee</span>, <span class="number">0xbfb6b45df6f3e2c9</span>),
+<a href=#76 id=76 data-nosnippet>76</a>    (<span class="number">0x3c59d9c8eaf88500</span>, <span class="number">0xbfb659944f8ba02d</span>),
+<a href=#77 id=77 data-nosnippet>77</a>    (<span class="number">0xbc48cb0dc78c3961</span>, <span class="number">0xbfb5a32167b32f02</span>),
+<a href=#78 id=78 data-nosnippet>78</a>    (<span class="number">0x3c5e1bcfb0476f5d</span>, <span class="number">0xbfb5477731973e85</span>),
+<a href=#79 id=79 data-nosnippet>79</a>    (<span class="number">0xbc5782120ed9fd02</span>, <span class="number">0xbfb48f3ed1df48fb</span>),
+<a href=#80 id=80 data-nosnippet>80</a>    (<span class="number">0x3c51960cbdfcb2d3</span>, <span class="number">0xbfb432afab5dd3ff</span>),
+<a href=#81 id=81 data-nosnippet>81</a>    (<span class="number">0x3c4a83d8a6eb8e2e</span>, <span class="number">0xbfb3d5d335c53179</span>),
+<a href=#82 id=82 data-nosnippet>82</a>    (<span class="number">0xbbfb420b9b202edd</span>, <span class="number">0xbfb31b3055c47118</span>),
+<a href=#83 id=83 data-nosnippet>83</a>    (<span class="number">0xbc59f5fa977fa091</span>, <span class="number">0xbfb2bd68e4621371</span>),
+<a href=#84 id=84 data-nosnippet>84</a>    (<span class="number">0x3c5c2f24fb8a820d</span>, <span class="number">0xbfb200eb639a3173</span>),
+<a href=#85 id=85 data-nosnippet>85</a>    (<span class="number">0x3c4f990c2c07d3b5</span>, <span class="number">0xbfb1a23445501816</span>),
+<a href=#86 id=86 data-nosnippet>86</a>    (<span class="number">0x3c4114d5dc0b3275</span>, <span class="number">0xbfb1432c31917d08</span>),
+<a href=#87 id=87 data-nosnippet>87</a>    (<span class="number">0x3c3ccc49eb0a89d8</span>, <span class="number">0xbfb08426fcdb1ee7</span>),
+<a href=#88 id=88 data-nosnippet>88</a>    (<span class="number">0x3c35943d4373d44a</span>, <span class="number">0xbfb02428c1f08016</span>),
+<a href=#89 id=89 data-nosnippet>89</a>    (<span class="number">0x3c31436f936096a0</span>, <span class="number">0xbfaf87aebb43ce06</span>),
+<a href=#90 id=90 data-nosnippet>90</a>    (<span class="number">0x3c4d4d643174a412</span>, <span class="number">0xbfae0471aa1868f5</span>),
+<a href=#91 id=91 data-nosnippet>91</a>    (<span class="number">0x3c47f9dc537bfbfb</span>, <span class="number">0xbfad41d5164facb4</span>),
+<a href=#92 id=92 data-nosnippet>92</a>    (<span class="number">0x3c4073b6859dc799</span>, <span class="number">0xbfac7e8d993509f9</span>),
+<a href=#93 id=93 data-nosnippet>93</a>    (<span class="number">0x3c46487d64961833</span>, <span class="number">0xbfaaf5f92b00e610</span>),
+<a href=#94 id=94 data-nosnippet>94</a>    (<span class="number">0x3c3ebf33e9410429</span>, <span class="number">0xbfaa30a9d609efea</span>),
+<a href=#95 id=95 data-nosnippet>95</a>    (<span class="number">0x3c41c8c309cdac54</span>, <span class="number">0xbfa96aaacfefcf3c</span>),
+<a href=#96 id=96 data-nosnippet>96</a>    (<span class="number">0x3c4b144b06126f68</span>, <span class="number">0xbfa8a3fadeb847f4</span>),
+<a href=#97 id=97 data-nosnippet>97</a>    (<span class="number">0x3c38f0f77fcff1d9</span>, <span class="number">0xbfa71483427d2a99</span>),
+<a href=#98 id=98 data-nosnippet>98</a>    (<span class="number">0xbc2eff9decc696f6</span>, <span class="number">0xbfa64bb912d65c07</span>),
+<a href=#99 id=99 data-nosnippet>99</a>    (<span class="number">0xbc4efd454f7ea69a</span>, <span class="number">0xbfa58238eeb353da</span>),
+<a href=#100 id=100 data-nosnippet>100</a>    (<span class="number">0xbc443795bbf70657</span>, <span class="number">0xbfa4b8018b21ed4f</span>),
+<a href=#101 id=101 data-nosnippet>101</a>    (<span class="number">0x3c492b9251ee5832</span>, <span class="number">0xbfa32167c82bdcda</span>),
+<a href=#102 id=102 data-nosnippet>102</a>    (<span class="number">0x3c4ff894a084ae68</span>, <span class="number">0xbfa25502c0fc314c</span>),
+<a href=#103 id=103 data-nosnippet>103</a>    (<span class="number">0xbc49adc1c7f97f4a</span>, <span class="number">0xbfa187e12aad8077</span>),
+<a href=#104 id=104 data-nosnippet>104</a>    (<span class="number">0xbc35f1d45244f437</span>, <span class="number">0xbfa0ba01a8170000</span>),
+<a href=#105 id=105 data-nosnippet>105</a>    (<span class="number">0x3c3e7ffa709828ef</span>, <span class="number">0xbf9fd6c5b0851c4c</span>),
+<a href=#106 id=106 data-nosnippet>106</a>    (<span class="number">0xbc0af3eb3b443356</span>, <span class="number">0xbf9e3806acbd058f</span>),
+<a href=#107 id=107 data-nosnippet>107</a>    (<span class="number">0x3c36487d64961833</span>, <span class="number">0xbf9af5f92b00e610</span>),
+<a href=#108 id=108 data-nosnippet>108</a>    (<span class="number">0x3c1f21279ca1bd16</span>, <span class="number">0xbf9952a4f22c5ae9</span>),
+<a href=#109 id=109 data-nosnippet>109</a>    (<span class="number">0xbc1b980714c596a3</span>, <span class="number">0xbf97adc3df3b1ff8</span>),
+<a href=#110 id=110 data-nosnippet>110</a>    (<span class="number">0xbc36ea248137e395</span>, <span class="number">0xbf960753003a94ef</span>),
+<a href=#111 id=111 data-nosnippet>111</a>    (<span class="number">0xbc3dda7897a55eb5</span>, <span class="number">0xbf945f4f5acb8be0</span>),
+<a href=#112 id=112 data-nosnippet>112</a>    (<span class="number">0xbc15bcd6d3458191</span>, <span class="number">0xbf92b5b5ec0209d3</span>),
+<a href=#113 id=113 data-nosnippet>113</a>    (<span class="number">0x3c37b9fd5428084f</span>, <span class="number">0xbf910a83a8446c78</span>),
+<a href=#114 id=114 data-nosnippet>114</a>    (<span class="number">0xbc1b57b9aec33450</span>, <span class="number">0xbf8ebb6af653e2ee</span>),
+<a href=#115 id=115 data-nosnippet>115</a>    (<span class="number">0xbbff2e9fe367a511</span>, <span class="number">0xbf8b5e908eb13790</span>),
+<a href=#116 id=116 data-nosnippet>116</a>    (<span class="number">0xbc28d4a223a5f7c9</span>, <span class="number">0xbf87fe71ccc4e6b0</span>),
+<a href=#117 id=117 data-nosnippet>117</a>    (<span class="number">0x3c18f207a6d0d0b1</span>, <span class="number">0xbf849b0851443684</span>),
+<a href=#118 id=118 data-nosnippet>118</a>    (<span class="number">0x3c29383502395c53</span>, <span class="number">0xbf81344daa2d7553</span>),
+<a href=#119 id=119 data-nosnippet>119</a>    (<span class="number">0x3c03b252df477a75</span>, <span class="number">0xbf7b9476a4fcd10f</span>),
+<a href=#120 id=120 data-nosnippet>120</a>    (<span class="number">0xbbefb495d6440f14</span>, <span class="number">0xbf74b99563d2a1bd</span>),
+<a href=#121 id=121 data-nosnippet>121</a>    (<span class="number">0xbc09706ea523f0a5</span>, <span class="number">0xbf6bafd47221ed26</span>),
+<a href=#122 id=122 data-nosnippet>122</a>    (<span class="number">0x0000000000000000</span>, <span class="number">0x0000000000000000</span>),
+<a href=#123 id=123 data-nosnippet>123</a>    (<span class="number">0x0000000000000000</span>, <span class="number">0x0000000000000000</span>),
+<a href=#124 id=124 data-nosnippet>124</a>    (<span class="number">0x3c0dcbdc594292c0</span>, <span class="number">0x3f64e84e793a474a</span>),
+<a href=#125 id=125 data-nosnippet>125</a>    (<span class="number">0x3c11e6c1240ced74</span>, <span class="number">0x3f7175085ab85ff0</span>),
+<a href=#126 id=126 data-nosnippet>126</a>    (<span class="number">0x3c0e1d6052707e0e</span>, <span class="number">0x3f787cff9d9147a5</span>),
+<a href=#127 id=127 data-nosnippet>127</a>    (<span class="number">0xbbee4f45b8df7d67</span>, <span class="number">0x3f7f8c1b6b0c8d4e</span>),
+<a href=#128 id=128 data-nosnippet>128</a>    (<span class="number">0x3c22495d8b8e25b7</span>, <span class="number">0x3f8351352a8e733f</span>),
+<a href=#129 id=129 data-nosnippet>129</a>    (<span class="number">0x3c1bc0294772c57f</span>, <span class="number">0x3f86dffd8d3bbf70</span>),
+<a href=#130 id=130 data-nosnippet>130</a>    (<span class="number">0xbc2b41d4e4ac05d4</span>, <span class="number">0x3f8a726e53a6056e</span>),
+<a href=#131 id=131 data-nosnippet>131</a>    (<span class="number">0xbc28d01e8ac8a78b</span>, <span class="number">0x3f8c3d0837784c41</span>),
+<a href=#132 id=132 data-nosnippet>132</a>    (<span class="number">0x3c27d5b73769b64c</span>, <span class="number">0x3f8fd503c3904f1d</span>),
+<a href=#133 id=133 data-nosnippet>133</a>    (<span class="number">0xbbd646ebcccb6894</span>, <span class="number">0x3f91b85d6044e9ae</span>),
+<a href=#134 id=134 data-nosnippet>134</a>    (<span class="number">0x3c37b38a223627b5</span>, <span class="number">0x3f93881a7b818f9e</span>),
+<a href=#135 id=135 data-nosnippet>135</a>    (<span class="number">0x3c0521ad5fa98432</span>, <span class="number">0x3f9559bd2406c3ba</span>),
+<a href=#136 id=136 data-nosnippet>136</a>    (<span class="number">0xbc29fc37c4e4e576</span>, <span class="number">0x3f972d4956ca2067</span>),
+<a href=#137 id=137 data-nosnippet>137</a>    (<span class="number">0x3c3c830373882139</span>, <span class="number">0x3f9817c846828bbd</span>),
+<a href=#138 id=138 data-nosnippet>138</a>    (<span class="number">0x3c0be24ddca8b835</span>, <span class="number">0x3f99ee3a5e9f57e8</span>),
+<a href=#139 id=139 data-nosnippet>139</a>    (<span class="number">0x3c0999ccc6d592f0</span>, <span class="number">0x3f9bc6a03117eb97</span>),
+<a href=#140 id=140 data-nosnippet>140</a>    (<span class="number">0xbc34a65cdeb626ca</span>, <span class="number">0x3f9da0fde8038de9</span>),
+<a href=#141 id=141 data-nosnippet>141</a>    (<span class="number">0xbc29dc1111e3b44c</span>, <span class="number">0x3f9f7d57badb4ee8</span>),
+<a href=#142 id=142 data-nosnippet>142</a>    (<span class="number">0x3c47db4db93811b8</span>, <span class="number">0x3fa0362241e638ec</span>),
+<a href=#143 id=143 data-nosnippet>143</a>    (<span class="number">0xbc3f6975f23b8a99</span>, <span class="number">0x3fa125d0432ea20e</span>),
+<a href=#144 id=144 data-nosnippet>144</a>    (<span class="number">0x3c463610c66f42b2</span>, <span class="number">0x3fa21681b5c8c213</span>),
+<a href=#145 id=145 data-nosnippet>145</a>    (<span class="number">0x3c3c756ef644213d</span>, <span class="number">0x3fa28f3c69912a74</span>),
+<a href=#146 id=146 data-nosnippet>146</a>    (<span class="number">0xbc11b16a272d4ddf</span>, <span class="number">0x3fa381772a00e604</span>),
+<a href=#147 id=147 data-nosnippet>147</a>    (<span class="number">0xbc2197beb0be1c78</span>, <span class="number">0x3fa474baeb77e904</span>),
+<a href=#148 id=148 data-nosnippet>148</a>    (<span class="number">0xbc0978c592e6c139</span>, <span class="number">0x3fa4eec0e2458f30</span>),
+<a href=#149 id=149 data-nosnippet>149</a>    (<span class="number">0x3c2bb9cd2fb75402</span>, <span class="number">0x3fa5e3966b7e9295</span>),
+<a href=#150 id=150 data-nosnippet>150</a>    (<span class="number">0x3c377b340fa390ec</span>, <span class="number">0x3fa6d97ab3ba5e10</span>),
+<a href=#151 id=151 data-nosnippet>151</a>    (<span class="number">0x3c3ea90ccf791593</span>, <span class="number">0x3fa754d31b1b179c</span>),
+<a href=#152 id=152 data-nosnippet>152</a>    (<span class="number">0x3c454596cc7150a8</span>, <span class="number">0x3fa84c51ebee8d15</span>),
+<a href=#153 id=153 data-nosnippet>153</a>    (<span class="number">0xbc476df54932f73e</span>, <span class="number">0x3fa944e56a0d3450</span>),
+<a href=#154 id=154 data-nosnippet>154</a>    (<span class="number">0xbc286148dd4cfbf5</span>, <span class="number">0x3fa9c197abf00dd7</span>),
+<a href=#155 id=155 data-nosnippet>155</a>    (<span class="number">0xbc397d2cb982dac2</span>, <span class="number">0x3faabbcebd84fca0</span>),
+<a href=#156 id=156 data-nosnippet>156</a>    (<span class="number">0x3c36591c969ff97b</span>, <span class="number">0x3fab39542ba23d73</span>),
+<a href=#157 id=157 data-nosnippet>157</a>    (<span class="number">0xbc40859ccb55560e</span>, <span class="number">0x3fac3534628016dd</span>),
+<a href=#158 id=158 data-nosnippet>158</a>    (<span class="number">0x3c4a5aca518d962e</span>, <span class="number">0x3facb38fccd8bfdb</span>),
+<a href=#159 id=159 data-nosnippet>159</a>    (<span class="number">0x3c396e1e0dda0b3d</span>, <span class="number">0x3fadb11ed766abf4</span>),
+<a href=#160 id=160 data-nosnippet>160</a>    (<span class="number">0x3c332de632195123</span>, <span class="number">0x3fae30531c76c34a</span>),
+<a href=#161 id=161 data-nosnippet>161</a>    (<span class="number">0xbc23a73e99099cbd</span>, <span class="number">0x3faf2f96c6754aee</span>),
+<a href=#162 id=162 data-nosnippet>162</a>    (<span class="number">0x3c262f731cfeb27b</span>, <span class="number">0x3fafafa6d397efdb</span>),
+<a href=#163 id=163 data-nosnippet>163</a>    (<span class="number">0xbc4e0c43230184dc</span>, <span class="number">0x3fb0585283764178</span>),
+<a href=#164 id=164 data-nosnippet>164</a>    (<span class="number">0x3c5466dc013d46a9</span>, <span class="number">0x3fb098c9ec61b3ff</span>),
+<a href=#165 id=165 data-nosnippet>165</a>    (<span class="number">0xbc5cae3496ce9852</span>, <span class="number">0x3fb11a294f2569f6</span>),
+<a href=#166 id=166 data-nosnippet>166</a>    (<span class="number">0xbc56a232c37f20c5</span>, <span class="number">0x3fb15b11a094a1aa</span>),
+<a href=#167 id=167 data-nosnippet>167</a>    (<span class="number">0xbc4f587e7a233c80</span>, <span class="number">0x3fb1dd5460c8b16f</span>),
+<a href=#168 id=168 data-nosnippet>168</a>    (<span class="number">0x3c5a0dec3a5a500c</span>, <span class="number">0x3fb21eaf28f57941</span>),
+<a href=#169 id=169 data-nosnippet>169</a>    (<span class="number">0x3c585a155bb65408</span>, <span class="number">0x3fb2a1d86b49f1e2</span>),
+<a href=#170 id=170 data-nosnippet>170</a>    (<span class="number">0xbc5aef53f2ecddb9</span>, <span class="number">0x3fb2e3a740b7800f</span>),
+<a href=#171 id=171 data-nosnippet>171</a>    (<span class="number">0xbc5de49ddb15fb04</span>, <span class="number">0x3fb367ba3aaa1883</span>),
+<a href=#172 id=172 data-nosnippet>172</a>    (<span class="number">0xbc5514fb6a33e70f</span>, <span class="number">0x3fb3a9febc60540a</span>),
+<a href=#173 id=173 data-nosnippet>173</a>    (<span class="number">0x3c5c4c753d98645a</span>, <span class="number">0x3fb3ec6ad5407868</span>),
+<a href=#174 id=174 data-nosnippet>174</a>    (<span class="number">0x3c2ce8e795b6ed98</span>, <span class="number">0x3fb471ba8a7de2b7</span>),
+<a href=#175 id=175 data-nosnippet>175</a>    (<span class="number">0xbc54f0487863efe6</span>, <span class="number">0x3fb4b49e86b11e5f</span>),
+<a href=#176 id=176 data-nosnippet>176</a>    (<span class="number">0x3c4bc478d6071be0</span>, <span class="number">0x3fb53adfb462ce16</span>),
+<a href=#177 id=177 data-nosnippet>177</a>    (<span class="number">0xbc187decde1893f1</span>, <span class="number">0x3fb57e3d47c3af7b</span>),
+<a href=#178 id=178 data-nosnippet>178</a>    (<span class="number">0x3c481f647ea24688</span>, <span class="number">0x3fb5c1c3c5557799</span>),
+<a href=#179 id=179 data-nosnippet>179</a>    (<span class="number">0x3c5ad1738d96af06</span>, <span class="number">0x3fb6494c46ac6e4d</span>),
+<a href=#180 id=180 data-nosnippet>180</a>    (<span class="number">0x3c54c74f6a7880e3</span>, <span class="number">0x3fb68d4eaf26d7ee</span>),
+<a href=#181 id=181 data-nosnippet>181</a>    (<span class="number">0xbc52a2d69cfac78f</span>, <span class="number">0x3fb6d17acb3e5f5e</span>),
+<a href=#182 id=182 data-nosnippet>182</a>    (<span class="number">0x3c4e4ba167ee73dd</span>, <span class="number">0x3fb75a50ebb1624a</span>),
+<a href=#183 id=183 data-nosnippet>183</a>    (<span class="number">0x3c57e469fe31a42f</span>, <span class="number">0x3fb79efb57b0f803</span>),
+<a href=#184 id=184 data-nosnippet>184</a>    (<span class="number">0xbc4d12e032a3b7af</span>, <span class="number">0x3fb7e3d04697b704</span>),
+<a href=#185 id=185 data-nosnippet>185</a>    (<span class="number">0xbc53f06091db6450</span>, <span class="number">0x3fb828cfed29a215</span>),
+<a href=#186 id=186 data-nosnippet>186</a>    (<span class="number">0x3c4da13d5c8cb232</span>, <span class="number">0x3fb8b350364c6257</span>),
+<a href=#187 id=187 data-nosnippet>187</a>    (<span class="number">0x3be2034e6320e8c0</span>, <span class="number">0x3fb8f8d144557bdf</span>),
+<a href=#188 id=188 data-nosnippet>188</a>    (<span class="number">0xbc5d0d01941798b6</span>, <span class="number">0x3fb93e7de0fc3e80</span>),
+<a href=#189 id=189 data-nosnippet>189</a>    (<span class="number">0xbc562d3ed69292b0</span>, <span class="number">0x3fb9ca5aa1729f45</span>),
+<a href=#190 id=190 data-nosnippet>190</a>    (<span class="number">0x3c5ba75ea17687d3</span>, <span class="number">0x3fba108b33edb005</span>),
+<a href=#191 id=191 data-nosnippet>191</a>    (<span class="number">0xbc3113a1fc340179</span>, <span class="number">0x3fba56e8325f5c87</span>),
+<a href=#192 id=192 data-nosnippet>192</a>    (<span class="number">0xbc4f648977febad9</span>, <span class="number">0x3fba9d71d5258484</span>),
+<a href=#193 id=193 data-nosnippet>193</a>    (<span class="number">0x3c45689de26b43ff</span>, <span class="number">0x3fbb2b0beb419ad0</span>),
+<a href=#194 id=194 data-nosnippet>194</a>    (<span class="number">0xbc5a8267d18975f3</span>, <span class="number">0x3fbb721cd17157e3</span>),
+<a href=#195 id=195 data-nosnippet>195</a>    (<span class="number">0xbc5cb0a198331caf</span>, <span class="number">0x3fbbb95b41ab5ce6</span>),
+<a href=#196 id=196 data-nosnippet>196</a>    (<span class="number">0xbc5b1e2e67b6f4bf</span>, <span class="number">0x3fbc00c7767225cb</span>),
+<a href=#197 id=197 data-nosnippet>197</a>    (<span class="number">0xbc5b6b51fca7a9a5</span>, <span class="number">0x3fbc4861aab93a23</span>),
+<a href=#198 id=198 data-nosnippet>198</a>    (<span class="number">0xbc58f377e27bbe25</span>, <span class="number">0x3fbcd820ffd278f3</span>),
+<a href=#199 id=199 data-nosnippet>199</a>    (<span class="number">0xbc5667bf89866cca</span>, <span class="number">0x3fbd204698cb42bd</span>),
+<a href=#200 id=200 data-nosnippet>200</a>    (<span class="number">0xbc1100072d011b81</span>, <span class="number">0x3fbd689b2193f133</span>),
+<a href=#201 id=201 data-nosnippet>201</a>    (<span class="number">0x3c496e1e0dda0b3d</span>, <span class="number">0x3fbdb11ed766abf4</span>),
+<a href=#202 id=202 data-nosnippet>202</a>    (<span class="number">0x3c55c6bc5d06e932</span>, <span class="number">0x3fbdf9d1f7f5b674</span>),
+<a href=#203 id=203 data-nosnippet>203</a>    (<span class="number">0xbc5e018e5642e2ef</span>, <span class="number">0x3fbe42b4c16caaf3</span>),
+<a href=#204 id=204 data-nosnippet>204</a>    (<span class="number">0xbc20a89525f3e005</span>, <span class="number">0x3fbed50a4a26eafc</span>),
+<a href=#205 id=205 data-nosnippet>205</a>    (<span class="number">0x3c50955b9d99c1b8</span>, <span class="number">0x3fbf1e7d882b689a</span>),
+<a href=#206 id=206 data-nosnippet>206</a>    (<span class="number">0xbc5c42f76e4345b0</span>, <span class="number">0x3fbf68216c9cc727</span>),
+<a href=#207 id=207 data-nosnippet>207</a>    (<span class="number">0xbc46749ac407ee87</span>, <span class="number">0x3fbfb1f6381856f4</span>),
+<a href=#208 id=208 data-nosnippet>208</a>    (<span class="number">0x3c5d60df12c2e13d</span>, <span class="number">0x3fbffbfc2bbc7803</span>),
+<a href=#209 id=209 data-nosnippet>209</a>    (<span class="number">0x3c4ef8dd8b73f78d</span>, <span class="number">0x3fc02319c494f951</span>),
+<a href=#210 id=210 data-nosnippet>210</a>    (<span class="number">0x3c5f318aa3021710</span>, <span class="number">0x3fc0484e4942aa43</span>),
+<a href=#211 id=211 data-nosnippet>211</a>    (<span class="number">0xbc6a12a1c0cb3d7f</span>, <span class="number">0x3fc093025a19976c</span>),
+<a href=#212 id=212 data-nosnippet>212</a>    (<span class="number">0xbc609801174f88fd</span>, <span class="number">0x3fc0b88229b71227</span>),
+<a href=#213 id=213 data-nosnippet>213</a>    (<span class="number">0x3c65b619c844d28b</span>, <span class="number">0x3fc0de1b56356b04</span>),
+<a href=#214 id=214 data-nosnippet>214</a>    (<span class="number">0x3c4dbdf176a1440a</span>, <span class="number">0x3fc103ce01fae223</span>),
+<a href=#215 id=215 data-nosnippet>215</a>    (<span class="number">0xbc6ce6c847a6598d</span>, <span class="number">0x3fc1299a4fb3e306</span>),
+<a href=#216 id=216 data-nosnippet>216</a>    (<span class="number">0xbc61f5da9e930834</span>, <span class="number">0x3fc14f806253c3ed</span>),
+<a href=#217 id=217 data-nosnippet>217</a>    (<span class="number">0x3c5ac676f20a87ab</span>, <span class="number">0x3fc175805d1587c1</span>),
+<a href=#218 id=218 data-nosnippet>218</a>    (<span class="number">0xbc6e785b3b894bd7</span>, <span class="number">0x3fc19b9a637ca295</span>),
+<a href=#219 id=219 data-nosnippet>219</a>    (<span class="number">0xbc5db924be9633b4</span>, <span class="number">0x3fc1c1ce9955c0c6</span>),
+<a href=#220 id=220 data-nosnippet>220</a>    (<span class="number">0x3c6db81c3374e59e</span>, <span class="number">0x3fc1e81d22b790d4</span>),
+<a href=#221 id=221 data-nosnippet>221</a>    (<span class="number">0xbc67299601268298</span>, <span class="number">0x3fc20e8624038fed</span>),
+<a href=#222 id=222 data-nosnippet>222</a>    (<span class="number">0x3c6ea54c137b0aea</span>, <span class="number">0x3fc23509c1e6d937</span>),
+<a href=#223 id=223 data-nosnippet>223</a>    (<span class="number">0x3c50349d03e16325</span>, <span class="number">0x3fc25ba8215af7fc</span>),
+<a href=#224 id=224 data-nosnippet>224</a>    (<span class="number">0x3c6557d4cdeffe3f</span>, <span class="number">0x3fc2826167a6bc9c</span>),
+<a href=#225 id=225 data-nosnippet>225</a>    (<span class="number">0xbc1f613823fd2a19</span>, <span class="number">0x3fc2a935ba5f1479</span>),
+<a href=#226 id=226 data-nosnippet>226</a>    (<span class="number">0xbc63dda694b5fe22</span>, <span class="number">0x3fc2d0253f67e4cb</span>),
+<a href=#227 id=227 data-nosnippet>227</a>    (<span class="number">0xbc4c7972ce5f8b57</span>, <span class="number">0x3fc2f7301cf4e87b</span>),
+<a href=#228 id=228 data-nosnippet>228</a>    (<span class="number">0x3c54b79d1957630a</span>, <span class="number">0x3fc31e56798a910a</span>),
+<a href=#229 id=229 data-nosnippet>229</a>    (<span class="number">0xbc654fd6eb7d970e</span>, <span class="number">0x3fc345987bfeea91</span>),
+<a href=#230 id=230 data-nosnippet>230</a>];</code></pre></div></section></main></body></html>

@@ -1,0 +1,1 @@
+searchState.loadedDescShard("i18n_embed_fl", 0, "A macro to obtain localized messages and optionally their …")

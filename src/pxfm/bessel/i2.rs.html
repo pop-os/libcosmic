@@ -1,0 +1,587 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `/home/runner/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/pxfm-0.1.25/src/bessel/i2.rs`."><title>i2.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../../static.files/rustdoc-aa0817cf.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="pxfm" data-themes="" data-resource-suffix="" data-rustdoc-version="1.90.0 (1159e78c4 2025-09-14)" data-channel="1.90.0" data-search-js="search-fa3e91e5.js" data-settings-js="settings-5514c975.js" ><script src="../../../static.files/storage-68b7e25d.js"></script><script defer src="../../../static.files/src-script-813739b1.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-eebb9057.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-32bb7600.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-6580c154.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-044be391.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><h1><div class="sub-heading">pxfm/bessel/</div>i2.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap digits-3"><pre class="rust"><code><a href=#1 id=1 data-nosnippet>1</a><span class="comment">/*
+<a href=#2 id=2 data-nosnippet>2</a> * // Copyright (c) Radzivon Bartoshyk 8/2025. All rights reserved.
+<a href=#3 id=3 data-nosnippet>3</a> * //
+<a href=#4 id=4 data-nosnippet>4</a> * // Redistribution and use in source and binary forms, with or without modification,
+<a href=#5 id=5 data-nosnippet>5</a> * // are permitted provided that the following conditions are met:
+<a href=#6 id=6 data-nosnippet>6</a> * //
+<a href=#7 id=7 data-nosnippet>7</a> * // 1.  Redistributions of source code must retain the above copyright notice, this
+<a href=#8 id=8 data-nosnippet>8</a> * // list of conditions and the following disclaimer.
+<a href=#9 id=9 data-nosnippet>9</a> * //
+<a href=#10 id=10 data-nosnippet>10</a> * // 2.  Redistributions in binary form must reproduce the above copyright notice,
+<a href=#11 id=11 data-nosnippet>11</a> * // this list of conditions and the following disclaimer in the documentation
+<a href=#12 id=12 data-nosnippet>12</a> * // and/or other materials provided with the distribution.
+<a href=#13 id=13 data-nosnippet>13</a> * //
+<a href=#14 id=14 data-nosnippet>14</a> * // 3.  Neither the name of the copyright holder nor the names of its
+<a href=#15 id=15 data-nosnippet>15</a> * // contributors may be used to endorse or promote products derived from
+<a href=#16 id=16 data-nosnippet>16</a> * // this software without specific prior written permission.
+<a href=#17 id=17 data-nosnippet>17</a> * //
+<a href=#18 id=18 data-nosnippet>18</a> * // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+<a href=#19 id=19 data-nosnippet>19</a> * // AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+<a href=#20 id=20 data-nosnippet>20</a> * // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+<a href=#21 id=21 data-nosnippet>21</a> * // DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+<a href=#22 id=22 data-nosnippet>22</a> * // FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+<a href=#23 id=23 data-nosnippet>23</a> * // DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+<a href=#24 id=24 data-nosnippet>24</a> * // SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+<a href=#25 id=25 data-nosnippet>25</a> * // CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+<a href=#26 id=26 data-nosnippet>26</a> * // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+<a href=#27 id=27 data-nosnippet>27</a> * // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+<a href=#28 id=28 data-nosnippet>28</a> */
+<a href=#29 id=29 data-nosnippet>29</a></span><span class="kw">use </span><span class="kw">crate</span>::bessel::i0::bessel_rsqrt_hard;
+<a href=#30 id=30 data-nosnippet>30</a><span class="kw">use </span><span class="kw">crate</span>::bessel::i0_exp;
+<a href=#31 id=31 data-nosnippet>31</a><span class="kw">use </span><span class="kw">crate</span>::common::f_fmla;
+<a href=#32 id=32 data-nosnippet>32</a><span class="kw">use </span><span class="kw">crate</span>::double_double::DoubleDouble;
+<a href=#33 id=33 data-nosnippet>33</a><span class="kw">use </span><span class="kw">crate</span>::dyadic_float::{DyadicFloat128, DyadicSign};
+<a href=#34 id=34 data-nosnippet>34</a><span class="kw">use </span><span class="kw">crate</span>::exponents::rational128_exp;
+<a href=#35 id=35 data-nosnippet>35</a>
+<a href=#36 id=36 data-nosnippet>36</a><span class="doccomment">/// Modified bessel of the first kind of order 2
+<a href=#37 id=37 data-nosnippet>37</a></span><span class="kw">pub fn </span>f_i2(x: f64) -&gt; f64 {
+<a href=#38 id=38 data-nosnippet>38</a>    <span class="kw">let </span>ux = x.to_bits().wrapping_shl(<span class="number">1</span>);
+<a href=#39 id=39 data-nosnippet>39</a>
+<a href=#40 id=40 data-nosnippet>40</a>    <span class="kw">if </span>ux &gt;= <span class="number">0x7ffu64 </span>&lt;&lt; <span class="number">53 </span>|| ux == <span class="number">0 </span>{
+<a href=#41 id=41 data-nosnippet>41</a>        <span class="comment">// |x| == 0, |x| == inf, x == NaN
+<a href=#42 id=42 data-nosnippet>42</a>        </span><span class="kw">if </span>ux == <span class="number">0 </span>{
+<a href=#43 id=43 data-nosnippet>43</a>            <span class="comment">// |x| == 0
+<a href=#44 id=44 data-nosnippet>44</a>            </span><span class="kw">return </span><span class="number">0.</span>;
+<a href=#45 id=45 data-nosnippet>45</a>        }
+<a href=#46 id=46 data-nosnippet>46</a>        <span class="kw">if </span>x.is_infinite() {
+<a href=#47 id=47 data-nosnippet>47</a>            <span class="kw">return </span>f64::INFINITY;
+<a href=#48 id=48 data-nosnippet>48</a>        }
+<a href=#49 id=49 data-nosnippet>49</a>        <span class="kw">return </span>x + f64::NAN; <span class="comment">// x = NaN
+<a href=#50 id=50 data-nosnippet>50</a>    </span>}
+<a href=#51 id=51 data-nosnippet>51</a>
+<a href=#52 id=52 data-nosnippet>52</a>    <span class="kw">let </span>xb = x.to_bits() &amp; <span class="number">0x7fff_ffff_ffff_ffffu64</span>;
+<a href=#53 id=53 data-nosnippet>53</a>
+<a href=#54 id=54 data-nosnippet>54</a>    <span class="kw">if </span>xb &lt; <span class="number">0x401f000000000000u64 </span>{
+<a href=#55 id=55 data-nosnippet>55</a>        <span class="comment">// |x| &lt; 7.75
+<a href=#56 id=56 data-nosnippet>56</a>        </span><span class="kw">if </span>xb &lt;= <span class="number">0x3cb0000000000000u64 </span>{
+<a href=#57 id=57 data-nosnippet>57</a>            <span class="comment">// |x| &lt;= f64::EPSILON
+<a href=#58 id=58 data-nosnippet>58</a>            // Power series of I2(x) ~ x^2/8 + O(x^4)
+<a href=#59 id=59 data-nosnippet>59</a>            </span><span class="kw">const </span>R: f64 = <span class="number">1. </span>/ <span class="number">8.</span>;
+<a href=#60 id=60 data-nosnippet>60</a>            <span class="kw">let </span>x2 = x * x * R;
+<a href=#61 id=61 data-nosnippet>61</a>            <span class="kw">return </span>x2;
+<a href=#62 id=62 data-nosnippet>62</a>        }
+<a href=#63 id=63 data-nosnippet>63</a>        <span class="kw">return </span>i2_small(f64::from_bits(xb));
+<a href=#64 id=64 data-nosnippet>64</a>    }
+<a href=#65 id=65 data-nosnippet>65</a>
+<a href=#66 id=66 data-nosnippet>66</a>    <span class="kw">if </span>xb &gt;= <span class="number">0x40864feaeefb23b8 </span>{
+<a href=#67 id=67 data-nosnippet>67</a>        <span class="comment">// x &gt;= 713.9897136326099
+<a href=#68 id=68 data-nosnippet>68</a>        </span><span class="kw">return </span>f64::INFINITY;
+<a href=#69 id=69 data-nosnippet>69</a>    }
+<a href=#70 id=70 data-nosnippet>70</a>
+<a href=#71 id=71 data-nosnippet>71</a>    i2_asympt(f64::from_bits(xb))
+<a href=#72 id=72 data-nosnippet>72</a>}
+<a href=#73 id=73 data-nosnippet>73</a>
+<a href=#74 id=74 data-nosnippet>74</a><span class="doccomment">/**
+<a href=#75 id=75 data-nosnippet>75</a>Computes
+<a href=#76 id=76 data-nosnippet>76</a>I2(x) = x^2 * R(x^2)
+<a href=#77 id=77 data-nosnippet>77</a>
+<a href=#78 id=78 data-nosnippet>78</a>Generated by Wolfram Mathematica:
+<a href=#79 id=79 data-nosnippet>79</a>
+<a href=#80 id=80 data-nosnippet>80</a>```text
+<a href=#81 id=81 data-nosnippet>81</a>&lt;&lt;FunctionApproximations`
+<a href=#82 id=82 data-nosnippet>82</a>ClearAll["Global`*"]
+<a href=#83 id=83 data-nosnippet>83</a>f[x_]:=BesselI[2,x]/x^2
+<a href=#84 id=84 data-nosnippet>84</a>g[z_]:=f[Sqrt[z]]
+<a href=#85 id=85 data-nosnippet>85</a>{err,approx}=MiniMaxApproximation[g[z],{z,{0.000000000001,7.75},11,11},WorkingPrecision-&gt;75]
+<a href=#86 id=86 data-nosnippet>86</a>poly=Numerator[approx][[1]];
+<a href=#87 id=87 data-nosnippet>87</a>coeffs=CoefficientList[poly,z];
+<a href=#88 id=88 data-nosnippet>88</a>TableForm[Table[Row[{"'",NumberForm[coeffs[[i+1]],{50,50},ExponentFunction-&gt;(Null&amp;)],"',"}],{i,0,Length[coeffs]-1}]]
+<a href=#89 id=89 data-nosnippet>89</a>poly=Denominator[approx][[1]];
+<a href=#90 id=90 data-nosnippet>90</a>coeffs=CoefficientList[poly,z];
+<a href=#91 id=91 data-nosnippet>91</a>TableForm[Table[Row[{"'",NumberForm[coeffs[[i+1]],{50,50},ExponentFunction-&gt;(Null&amp;)],"',"}],{i,0,Length[coeffs]-1}]]
+<a href=#92 id=92 data-nosnippet>92</a>```
+<a href=#93 id=93 data-nosnippet>93</a>**/
+<a href=#94 id=94 data-nosnippet>94</a></span><span class="attr">#[inline]
+<a href=#95 id=95 data-nosnippet>95</a></span><span class="kw">fn </span>i2_small(x: f64) -&gt; f64 {
+<a href=#96 id=96 data-nosnippet>96</a>    <span class="kw">const </span>P: [(u64, u64); <span class="number">12</span>] = [
+<a href=#97 id=97 data-nosnippet>97</a>        (<span class="number">0x0000000000000000</span>, <span class="number">0x3fc0000000000000</span>),
+<a href=#98 id=98 data-nosnippet>98</a>        (<span class="number">0x3c247833fda9de9a</span>, <span class="number">0x3f8387c6e72a1b5f</span>),
+<a href=#99 id=99 data-nosnippet>99</a>        (<span class="number">0xbbccaf0be91261a6</span>, <span class="number">0x3f30ba88efff56fa</span>),
+<a href=#100 id=100 data-nosnippet>100</a>        (<span class="number">0x3b57c911bfebe1d7</span>, <span class="number">0x3ecc62e53d061300</span>),
+<a href=#101 id=101 data-nosnippet>101</a>        (<span class="number">0x3af3b963f26a3d05</span>, <span class="number">0x3e5bb090327a14e1</span>),
+<a href=#102 id=102 data-nosnippet>102</a>        (<span class="number">0x3a898bff9d40e030</span>, <span class="number">0x3de0d29c3d37e5b5</span>),
+<a href=#103 id=103 data-nosnippet>103</a>        (<span class="number">0xb9f2f63c80d377db</span>, <span class="number">0x3d5a9e365f1bf6e0</span>),
+<a href=#104 id=104 data-nosnippet>104</a>        (<span class="number">0xb965e6d78e1c2b65</span>, <span class="number">0x3ccbf7ef0929b813</span>),
+<a href=#105 id=105 data-nosnippet>105</a>        (<span class="number">0xb8da83d7d40e7310</span>, <span class="number">0x3c33737520046f4d</span>),
+<a href=#106 id=106 data-nosnippet>106</a>        (<span class="number">0xb83f811d5aa3f36e</span>, <span class="number">0x3b91506558dab318</span>),
+<a href=#107 id=107 data-nosnippet>107</a>        (<span class="number">0xb78e601bf5c998c3</span>, <span class="number">0x3ae2013b3e858bd1</span>),
+<a href=#108 id=108 data-nosnippet>108</a>        (<span class="number">0xb6c8185c51734ed8</span>, <span class="number">0x3a20cc277a5051ba</span>),
+<a href=#109 id=109 data-nosnippet>109</a>    ];
+<a href=#110 id=110 data-nosnippet>110</a>    <span class="kw">let </span>x_sqr = DoubleDouble::from_exact_mult(x, x);
+<a href=#111 id=111 data-nosnippet>111</a>    <span class="kw">let </span>x2 = x_sqr * x_sqr;
+<a href=#112 id=112 data-nosnippet>112</a>    <span class="kw">let </span>x4 = x2 * x2;
+<a href=#113 id=113 data-nosnippet>113</a>    <span class="kw">let </span>x8 = x4 * x4;
+<a href=#114 id=114 data-nosnippet>114</a>
+<a href=#115 id=115 data-nosnippet>115</a>    <span class="kw">let </span>e0 = DoubleDouble::mul_add_f64(
+<a href=#116 id=116 data-nosnippet>116</a>        x_sqr,
+<a href=#117 id=117 data-nosnippet>117</a>        DoubleDouble::from_bit_pair(P[<span class="number">1</span>]),
+<a href=#118 id=118 data-nosnippet>118</a>        f64::from_bits(<span class="number">0x3fc0000000000000</span>),
+<a href=#119 id=119 data-nosnippet>119</a>    );
+<a href=#120 id=120 data-nosnippet>120</a>    <span class="kw">let </span>e1 = DoubleDouble::mul_add(
+<a href=#121 id=121 data-nosnippet>121</a>        x_sqr,
+<a href=#122 id=122 data-nosnippet>122</a>        DoubleDouble::from_bit_pair(P[<span class="number">3</span>]),
+<a href=#123 id=123 data-nosnippet>123</a>        DoubleDouble::from_bit_pair(P[<span class="number">2</span>]),
+<a href=#124 id=124 data-nosnippet>124</a>    );
+<a href=#125 id=125 data-nosnippet>125</a>    <span class="kw">let </span>e2 = DoubleDouble::mul_add(
+<a href=#126 id=126 data-nosnippet>126</a>        x_sqr,
+<a href=#127 id=127 data-nosnippet>127</a>        DoubleDouble::from_bit_pair(P[<span class="number">5</span>]),
+<a href=#128 id=128 data-nosnippet>128</a>        DoubleDouble::from_bit_pair(P[<span class="number">4</span>]),
+<a href=#129 id=129 data-nosnippet>129</a>    );
+<a href=#130 id=130 data-nosnippet>130</a>    <span class="kw">let </span>e3 = DoubleDouble::mul_add(
+<a href=#131 id=131 data-nosnippet>131</a>        x_sqr,
+<a href=#132 id=132 data-nosnippet>132</a>        DoubleDouble::from_bit_pair(P[<span class="number">7</span>]),
+<a href=#133 id=133 data-nosnippet>133</a>        DoubleDouble::from_bit_pair(P[<span class="number">6</span>]),
+<a href=#134 id=134 data-nosnippet>134</a>    );
+<a href=#135 id=135 data-nosnippet>135</a>    <span class="kw">let </span>e4 = DoubleDouble::mul_add(
+<a href=#136 id=136 data-nosnippet>136</a>        x_sqr,
+<a href=#137 id=137 data-nosnippet>137</a>        DoubleDouble::from_bit_pair(P[<span class="number">9</span>]),
+<a href=#138 id=138 data-nosnippet>138</a>        DoubleDouble::from_bit_pair(P[<span class="number">8</span>]),
+<a href=#139 id=139 data-nosnippet>139</a>    );
+<a href=#140 id=140 data-nosnippet>140</a>    <span class="kw">let </span>e5 = DoubleDouble::mul_add(
+<a href=#141 id=141 data-nosnippet>141</a>        x_sqr,
+<a href=#142 id=142 data-nosnippet>142</a>        DoubleDouble::from_bit_pair(P[<span class="number">11</span>]),
+<a href=#143 id=143 data-nosnippet>143</a>        DoubleDouble::from_bit_pair(P[<span class="number">10</span>]),
+<a href=#144 id=144 data-nosnippet>144</a>    );
+<a href=#145 id=145 data-nosnippet>145</a>
+<a href=#146 id=146 data-nosnippet>146</a>    <span class="kw">let </span>f0 = DoubleDouble::mul_add(x2, e1, e0);
+<a href=#147 id=147 data-nosnippet>147</a>    <span class="kw">let </span>f1 = DoubleDouble::mul_add(x2, e3, e2);
+<a href=#148 id=148 data-nosnippet>148</a>    <span class="kw">let </span>f2 = DoubleDouble::mul_add(x2, e5, e4);
+<a href=#149 id=149 data-nosnippet>149</a>
+<a href=#150 id=150 data-nosnippet>150</a>    <span class="kw">let </span>g0 = DoubleDouble::mul_add(x4, f1, f0);
+<a href=#151 id=151 data-nosnippet>151</a>
+<a href=#152 id=152 data-nosnippet>152</a>    <span class="kw">let </span>p_num = DoubleDouble::mul_add(x8, f2, g0);
+<a href=#153 id=153 data-nosnippet>153</a>
+<a href=#154 id=154 data-nosnippet>154</a>    <span class="kw">const </span>Q: [(u64, u64); <span class="number">12</span>] = [
+<a href=#155 id=155 data-nosnippet>155</a>        (<span class="number">0x0000000000000000</span>, <span class="number">0x3ff0000000000000</span>),
+<a href=#156 id=156 data-nosnippet>156</a>        (<span class="number">0xbc0ba42af56ed76b</span>, <span class="number">0xbf7cd8e6e2b39f60</span>),
+<a href=#157 id=157 data-nosnippet>157</a>        (<span class="number">0x3b90697aa005e598</span>, <span class="number">0x3efa0260394e1a3d</span>),
+<a href=#158 id=158 data-nosnippet>158</a>        (<span class="number">0xbb0c7ccde1f63c82</span>, <span class="number">0xbe6f1766ec64e492</span>),
+<a href=#159 id=159 data-nosnippet>159</a>        (<span class="number">0x3a63f18409bc336f</span>, <span class="number">0x3ddb80b6b5abad98</span>),
+<a href=#160 id=160 data-nosnippet>160</a>        (<span class="number">0xb9e0cd49f22132fe</span>, <span class="number">0xbd42ff9b55d553da</span>),
+<a href=#161 id=161 data-nosnippet>161</a>        (<span class="number">0xb934bfe64905d309</span>, <span class="number">0x3ca50814fa258ebc</span>),
+<a href=#162 id=162 data-nosnippet>162</a>        (<span class="number">0x38a1e35c2d6860f4</span>, <span class="number">0xbc02c4f2faca2195</span>),
+<a href=#163 id=163 data-nosnippet>163</a>        (<span class="number">0xb7ff39e268277e4e</span>, <span class="number">0x3b5aa545a2c1f16d</span>),
+<a href=#164 id=164 data-nosnippet>164</a>        (<span class="number">0xb71053f58545760c</span>, <span class="number">0xbaacde4c133d42d1</span>),
+<a href=#165 id=165 data-nosnippet>165</a>        (<span class="number">0xb68d0c2ccab0ae5b</span>, <span class="number">0x39f5a965b92b06bc</span>),
+<a href=#166 id=166 data-nosnippet>166</a>        (<span class="number">0xb5dc35bda16bee7b</span>, <span class="number">0xb931375b1c9cfbc7</span>),
+<a href=#167 id=167 data-nosnippet>167</a>    ];
+<a href=#168 id=168 data-nosnippet>168</a>
+<a href=#169 id=169 data-nosnippet>169</a>    <span class="kw">let </span>e0 = DoubleDouble::mul_add_f64(
+<a href=#170 id=170 data-nosnippet>170</a>        x_sqr,
+<a href=#171 id=171 data-nosnippet>171</a>        DoubleDouble::from_bit_pair(Q[<span class="number">1</span>]),
+<a href=#172 id=172 data-nosnippet>172</a>        f64::from_bits(<span class="number">0x3ff0000000000000</span>),
+<a href=#173 id=173 data-nosnippet>173</a>    );
+<a href=#174 id=174 data-nosnippet>174</a>    <span class="kw">let </span>e1 = DoubleDouble::mul_add(
+<a href=#175 id=175 data-nosnippet>175</a>        x_sqr,
+<a href=#176 id=176 data-nosnippet>176</a>        DoubleDouble::from_bit_pair(Q[<span class="number">3</span>]),
+<a href=#177 id=177 data-nosnippet>177</a>        DoubleDouble::from_bit_pair(Q[<span class="number">2</span>]),
+<a href=#178 id=178 data-nosnippet>178</a>    );
+<a href=#179 id=179 data-nosnippet>179</a>    <span class="kw">let </span>e2 = DoubleDouble::mul_add(
+<a href=#180 id=180 data-nosnippet>180</a>        x_sqr,
+<a href=#181 id=181 data-nosnippet>181</a>        DoubleDouble::from_bit_pair(Q[<span class="number">5</span>]),
+<a href=#182 id=182 data-nosnippet>182</a>        DoubleDouble::from_bit_pair(Q[<span class="number">4</span>]),
+<a href=#183 id=183 data-nosnippet>183</a>    );
+<a href=#184 id=184 data-nosnippet>184</a>    <span class="kw">let </span>e3 = DoubleDouble::mul_add(
+<a href=#185 id=185 data-nosnippet>185</a>        x_sqr,
+<a href=#186 id=186 data-nosnippet>186</a>        DoubleDouble::from_bit_pair(Q[<span class="number">7</span>]),
+<a href=#187 id=187 data-nosnippet>187</a>        DoubleDouble::from_bit_pair(Q[<span class="number">6</span>]),
+<a href=#188 id=188 data-nosnippet>188</a>    );
+<a href=#189 id=189 data-nosnippet>189</a>    <span class="kw">let </span>e4 = DoubleDouble::mul_add(
+<a href=#190 id=190 data-nosnippet>190</a>        x_sqr,
+<a href=#191 id=191 data-nosnippet>191</a>        DoubleDouble::from_bit_pair(Q[<span class="number">9</span>]),
+<a href=#192 id=192 data-nosnippet>192</a>        DoubleDouble::from_bit_pair(Q[<span class="number">8</span>]),
+<a href=#193 id=193 data-nosnippet>193</a>    );
+<a href=#194 id=194 data-nosnippet>194</a>    <span class="kw">let </span>e5 = DoubleDouble::mul_add(
+<a href=#195 id=195 data-nosnippet>195</a>        x_sqr,
+<a href=#196 id=196 data-nosnippet>196</a>        DoubleDouble::from_bit_pair(Q[<span class="number">11</span>]),
+<a href=#197 id=197 data-nosnippet>197</a>        DoubleDouble::from_bit_pair(Q[<span class="number">10</span>]),
+<a href=#198 id=198 data-nosnippet>198</a>    );
+<a href=#199 id=199 data-nosnippet>199</a>
+<a href=#200 id=200 data-nosnippet>200</a>    <span class="kw">let </span>f0 = DoubleDouble::mul_add(x2, e1, e0);
+<a href=#201 id=201 data-nosnippet>201</a>    <span class="kw">let </span>f1 = DoubleDouble::mul_add(x2, e3, e2);
+<a href=#202 id=202 data-nosnippet>202</a>    <span class="kw">let </span>f2 = DoubleDouble::mul_add(x2, e5, e4);
+<a href=#203 id=203 data-nosnippet>203</a>
+<a href=#204 id=204 data-nosnippet>204</a>    <span class="kw">let </span>g0 = DoubleDouble::mul_add(x4, f1, f0);
+<a href=#205 id=205 data-nosnippet>205</a>
+<a href=#206 id=206 data-nosnippet>206</a>    <span class="kw">let </span>p_den = DoubleDouble::mul_add(x8, f2, g0);
+<a href=#207 id=207 data-nosnippet>207</a>
+<a href=#208 id=208 data-nosnippet>208</a>    <span class="kw">let </span>p = DoubleDouble::div(p_num, p_den);
+<a href=#209 id=209 data-nosnippet>209</a>    DoubleDouble::quick_mult(p, x_sqr).to_f64()
+<a href=#210 id=210 data-nosnippet>210</a>}
+<a href=#211 id=211 data-nosnippet>211</a>
+<a href=#212 id=212 data-nosnippet>212</a><span class="doccomment">/**
+<a href=#213 id=213 data-nosnippet>213</a>Asymptotic expansion for I2.
+<a href=#214 id=214 data-nosnippet>214</a>I2(x)=R(1/x)*Exp(x)/sqrt(x)
+<a href=#215 id=215 data-nosnippet>215</a>
+<a href=#216 id=216 data-nosnippet>216</a>Generated in Wolfram:
+<a href=#217 id=217 data-nosnippet>217</a>```text
+<a href=#218 id=218 data-nosnippet>218</a>&lt;&lt;FunctionApproximations`
+<a href=#219 id=219 data-nosnippet>219</a>ClearAll["Global`*"]
+<a href=#220 id=220 data-nosnippet>220</a>f[x_]:=Sqrt[x] Exp[-x] BesselI[2,x]
+<a href=#221 id=221 data-nosnippet>221</a>g[z_]:=f[1/z]
+<a href=#222 id=222 data-nosnippet>222</a>{err,approx}=MiniMaxApproximation[g[z],{z,{1/714.0,1/7.5},11,11},WorkingPrecision-&gt;120]
+<a href=#223 id=223 data-nosnippet>223</a>poly=Numerator[approx][[1]];
+<a href=#224 id=224 data-nosnippet>224</a>coeffs=CoefficientList[poly,z];
+<a href=#225 id=225 data-nosnippet>225</a>TableForm[Table[Row[{"'",NumberForm[coeffs[[i+1]],{50,50},ExponentFunction-&gt;(Null&amp;)],"',"}],{i,0,Length[coeffs]-1}]]
+<a href=#226 id=226 data-nosnippet>226</a>poly=Denominator[approx][[1]];
+<a href=#227 id=227 data-nosnippet>227</a>coeffs=CoefficientList[poly,z];
+<a href=#228 id=228 data-nosnippet>228</a>TableForm[Table[Row[{"'",NumberForm[coeffs[[i+1]],{50,50},ExponentFunction-&gt;(Null&amp;)],"',"}],{i,0,Length[coeffs]-1}]]
+<a href=#229 id=229 data-nosnippet>229</a>```
+<a href=#230 id=230 data-nosnippet>230</a>**/
+<a href=#231 id=231 data-nosnippet>231</a></span><span class="attr">#[inline]
+<a href=#232 id=232 data-nosnippet>232</a></span><span class="kw">fn </span>i2_asympt(x: f64) -&gt; f64 {
+<a href=#233 id=233 data-nosnippet>233</a>    <span class="kw">let </span>dx = x;
+<a href=#234 id=234 data-nosnippet>234</a>    <span class="kw">let </span>recip = DoubleDouble::from_quick_recip(x);
+<a href=#235 id=235 data-nosnippet>235</a>    <span class="kw">const </span>P: [(u64, u64); <span class="number">12</span>] = [
+<a href=#236 id=236 data-nosnippet>236</a>        (<span class="number">0x3c718bb28ebc5f4e</span>, <span class="number">0x3fd9884533d43650</span>),
+<a href=#237 id=237 data-nosnippet>237</a>        (<span class="number">0x3c96e15a87b6e1d1</span>, <span class="number">0xc0350acc9e5cb0f9</span>),
+<a href=#238 id=238 data-nosnippet>238</a>        (<span class="number">0xbd20b212a79e08f5</span>, <span class="number">0x40809251af67598a</span>),
+<a href=#239 id=239 data-nosnippet>239</a>        (<span class="number">0xbd563b7397df3a54</span>, <span class="number">0xc0bfc09ede682c8b</span>),
+<a href=#240 id=240 data-nosnippet>240</a>        (<span class="number">0xbd5eb872cb057d91</span>, <span class="number">0x40f44253a9e1e1ab</span>),
+<a href=#241 id=241 data-nosnippet>241</a>        (<span class="number">0x3d7614735e566fc5</span>, <span class="number">0xc121cbcd96dc8765</span>),
+<a href=#242 id=242 data-nosnippet>242</a>        (<span class="number">0xbddc4f8df2010026</span>, <span class="number">0x4145a592e8ec74ad</span>),
+<a href=#243 id=243 data-nosnippet>243</a>        (<span class="number">0x3dea227617b678a7</span>, <span class="number">0xc161df96fb6a9df9</span>),
+<a href=#244 id=244 data-nosnippet>244</a>        (<span class="number">0x3e17c9690d906194</span>, <span class="number">0x41732c71397757f8</span>),
+<a href=#245 id=245 data-nosnippet>245</a>        (<span class="number">0x3e0638226ce0b938</span>, <span class="number">0xc178893fde0e6ed7</span>),
+<a href=#246 id=246 data-nosnippet>246</a>        (<span class="number">0xbe09d8dc4e7930ce</span>, <span class="number">0x417066abe24b31df</span>),
+<a href=#247 id=247 data-nosnippet>247</a>        (<span class="number">0xbde152007ee29e54</span>, <span class="number">0xc150531da3f31b16</span>),
+<a href=#248 id=248 data-nosnippet>248</a>    ];
+<a href=#249 id=249 data-nosnippet>249</a>
+<a href=#250 id=250 data-nosnippet>250</a>    <span class="kw">let </span>x2 = DoubleDouble::quick_mult(recip, recip);
+<a href=#251 id=251 data-nosnippet>251</a>    <span class="kw">let </span>x4 = DoubleDouble::quick_mult(x2, x2);
+<a href=#252 id=252 data-nosnippet>252</a>    <span class="kw">let </span>x8 = DoubleDouble::quick_mult(x4, x4);
+<a href=#253 id=253 data-nosnippet>253</a>
+<a href=#254 id=254 data-nosnippet>254</a>    <span class="kw">let </span>e0 = DoubleDouble::mul_add(
+<a href=#255 id=255 data-nosnippet>255</a>        recip,
+<a href=#256 id=256 data-nosnippet>256</a>        DoubleDouble::from_bit_pair(P[<span class="number">1</span>]),
+<a href=#257 id=257 data-nosnippet>257</a>        DoubleDouble::from_bit_pair(P[<span class="number">0</span>]),
+<a href=#258 id=258 data-nosnippet>258</a>    );
+<a href=#259 id=259 data-nosnippet>259</a>    <span class="kw">let </span>e1 = DoubleDouble::mul_add(
+<a href=#260 id=260 data-nosnippet>260</a>        recip,
+<a href=#261 id=261 data-nosnippet>261</a>        DoubleDouble::from_bit_pair(P[<span class="number">3</span>]),
+<a href=#262 id=262 data-nosnippet>262</a>        DoubleDouble::from_bit_pair(P[<span class="number">2</span>]),
+<a href=#263 id=263 data-nosnippet>263</a>    );
+<a href=#264 id=264 data-nosnippet>264</a>    <span class="kw">let </span>e2 = DoubleDouble::mul_add(
+<a href=#265 id=265 data-nosnippet>265</a>        recip,
+<a href=#266 id=266 data-nosnippet>266</a>        DoubleDouble::from_bit_pair(P[<span class="number">5</span>]),
+<a href=#267 id=267 data-nosnippet>267</a>        DoubleDouble::from_bit_pair(P[<span class="number">4</span>]),
+<a href=#268 id=268 data-nosnippet>268</a>    );
+<a href=#269 id=269 data-nosnippet>269</a>    <span class="kw">let </span>e3 = DoubleDouble::mul_add(
+<a href=#270 id=270 data-nosnippet>270</a>        recip,
+<a href=#271 id=271 data-nosnippet>271</a>        DoubleDouble::from_bit_pair(P[<span class="number">7</span>]),
+<a href=#272 id=272 data-nosnippet>272</a>        DoubleDouble::from_bit_pair(P[<span class="number">6</span>]),
+<a href=#273 id=273 data-nosnippet>273</a>    );
+<a href=#274 id=274 data-nosnippet>274</a>    <span class="kw">let </span>e4 = DoubleDouble::mul_add(
+<a href=#275 id=275 data-nosnippet>275</a>        recip,
+<a href=#276 id=276 data-nosnippet>276</a>        DoubleDouble::from_bit_pair(P[<span class="number">9</span>]),
+<a href=#277 id=277 data-nosnippet>277</a>        DoubleDouble::from_bit_pair(P[<span class="number">8</span>]),
+<a href=#278 id=278 data-nosnippet>278</a>    );
+<a href=#279 id=279 data-nosnippet>279</a>    <span class="kw">let </span>e5 = DoubleDouble::mul_add(
+<a href=#280 id=280 data-nosnippet>280</a>        recip,
+<a href=#281 id=281 data-nosnippet>281</a>        DoubleDouble::from_bit_pair(P[<span class="number">11</span>]),
+<a href=#282 id=282 data-nosnippet>282</a>        DoubleDouble::from_bit_pair(P[<span class="number">10</span>]),
+<a href=#283 id=283 data-nosnippet>283</a>    );
+<a href=#284 id=284 data-nosnippet>284</a>
+<a href=#285 id=285 data-nosnippet>285</a>    <span class="kw">let </span>f0 = DoubleDouble::mul_add(x2, e1, e0);
+<a href=#286 id=286 data-nosnippet>286</a>    <span class="kw">let </span>f1 = DoubleDouble::mul_add(x2, e3, e2);
+<a href=#287 id=287 data-nosnippet>287</a>    <span class="kw">let </span>f2 = DoubleDouble::mul_add(x2, e5, e4);
+<a href=#288 id=288 data-nosnippet>288</a>
+<a href=#289 id=289 data-nosnippet>289</a>    <span class="kw">let </span>g0 = DoubleDouble::mul_add(x4, f1, f0);
+<a href=#290 id=290 data-nosnippet>290</a>
+<a href=#291 id=291 data-nosnippet>291</a>    <span class="kw">let </span>p_num = DoubleDouble::mul_add(x8, f2, g0);
+<a href=#292 id=292 data-nosnippet>292</a>
+<a href=#293 id=293 data-nosnippet>293</a>    <span class="kw">const </span>Q: [(u64, u64); <span class="number">12</span>] = [
+<a href=#294 id=294 data-nosnippet>294</a>        (<span class="number">0x0000000000000000</span>, <span class="number">0x3ff0000000000000</span>),
+<a href=#295 id=295 data-nosnippet>295</a>        (<span class="number">0xbcd0d33e9e73b503</span>, <span class="number">0xc0496f5a09751d50</span>),
+<a href=#296 id=296 data-nosnippet>296</a>        (<span class="number">0x3d2f9c44a069dc4b</span>, <span class="number">0x40934427187ac370</span>),
+<a href=#297 id=297 data-nosnippet>297</a>        (<span class="number">0xbd69e2e5a3618381</span>, <span class="number">0xc0d19983f74fdf52</span>),
+<a href=#298 id=298 data-nosnippet>298</a>        (<span class="number">0x3d88c69a62ae8b44</span>, <span class="number">0x410524fcaa71e85a</span>),
+<a href=#299 id=299 data-nosnippet>299</a>        (<span class="number">0xbdc0345b806dd0bf</span>, <span class="number">0xc13120daf531b66b</span>),
+<a href=#300 id=300 data-nosnippet>300</a>        (<span class="number">0xbdd35875712fff6f</span>, <span class="number">0x4152943a4f9f1c7f</span>),
+<a href=#301 id=301 data-nosnippet>301</a>        (<span class="number">0xbdf8dd50e92553fd</span>, <span class="number">0xc169b83aeede08ea</span>),
+<a href=#302 id=302 data-nosnippet>302</a>        (<span class="number">0x3e0800ecaa77f79e</span>, <span class="number">0x41746c61554a08ce</span>),
+<a href=#303 id=303 data-nosnippet>303</a>        (<span class="number">0x3dd74fbc32c5f696</span>, <span class="number">0xc16ba2febd1932a3</span>),
+<a href=#304 id=304 data-nosnippet>304</a>        (<span class="number">0x3dc23eb2c943b539</span>, <span class="number">0x413574ae68b6b378</span>),
+<a href=#305 id=305 data-nosnippet>305</a>        (<span class="number">0xbd95d86c5c94cd65</span>, <span class="number">0xc104adac99eaa90c</span>),
+<a href=#306 id=306 data-nosnippet>306</a>    ];
+<a href=#307 id=307 data-nosnippet>307</a>
+<a href=#308 id=308 data-nosnippet>308</a>    <span class="kw">let </span>e0 = DoubleDouble::mul_add_f64(
+<a href=#309 id=309 data-nosnippet>309</a>        recip,
+<a href=#310 id=310 data-nosnippet>310</a>        DoubleDouble::from_bit_pair(Q[<span class="number">1</span>]),
+<a href=#311 id=311 data-nosnippet>311</a>        f64::from_bits(<span class="number">0x3ff0000000000000</span>),
+<a href=#312 id=312 data-nosnippet>312</a>    );
+<a href=#313 id=313 data-nosnippet>313</a>    <span class="kw">let </span>e1 = DoubleDouble::mul_add(
+<a href=#314 id=314 data-nosnippet>314</a>        recip,
+<a href=#315 id=315 data-nosnippet>315</a>        DoubleDouble::from_bit_pair(Q[<span class="number">3</span>]),
+<a href=#316 id=316 data-nosnippet>316</a>        DoubleDouble::from_bit_pair(Q[<span class="number">2</span>]),
+<a href=#317 id=317 data-nosnippet>317</a>    );
+<a href=#318 id=318 data-nosnippet>318</a>    <span class="kw">let </span>e2 = DoubleDouble::mul_add(
+<a href=#319 id=319 data-nosnippet>319</a>        recip,
+<a href=#320 id=320 data-nosnippet>320</a>        DoubleDouble::from_bit_pair(Q[<span class="number">5</span>]),
+<a href=#321 id=321 data-nosnippet>321</a>        DoubleDouble::from_bit_pair(Q[<span class="number">4</span>]),
+<a href=#322 id=322 data-nosnippet>322</a>    );
+<a href=#323 id=323 data-nosnippet>323</a>    <span class="kw">let </span>e3 = DoubleDouble::mul_add(
+<a href=#324 id=324 data-nosnippet>324</a>        recip,
+<a href=#325 id=325 data-nosnippet>325</a>        DoubleDouble::from_bit_pair(Q[<span class="number">7</span>]),
+<a href=#326 id=326 data-nosnippet>326</a>        DoubleDouble::from_bit_pair(Q[<span class="number">6</span>]),
+<a href=#327 id=327 data-nosnippet>327</a>    );
+<a href=#328 id=328 data-nosnippet>328</a>    <span class="kw">let </span>e4 = DoubleDouble::mul_add(
+<a href=#329 id=329 data-nosnippet>329</a>        recip,
+<a href=#330 id=330 data-nosnippet>330</a>        DoubleDouble::from_bit_pair(Q[<span class="number">9</span>]),
+<a href=#331 id=331 data-nosnippet>331</a>        DoubleDouble::from_bit_pair(Q[<span class="number">8</span>]),
+<a href=#332 id=332 data-nosnippet>332</a>    );
+<a href=#333 id=333 data-nosnippet>333</a>    <span class="kw">let </span>e5 = DoubleDouble::mul_add(
+<a href=#334 id=334 data-nosnippet>334</a>        recip,
+<a href=#335 id=335 data-nosnippet>335</a>        DoubleDouble::from_bit_pair(Q[<span class="number">11</span>]),
+<a href=#336 id=336 data-nosnippet>336</a>        DoubleDouble::from_bit_pair(Q[<span class="number">10</span>]),
+<a href=#337 id=337 data-nosnippet>337</a>    );
+<a href=#338 id=338 data-nosnippet>338</a>
+<a href=#339 id=339 data-nosnippet>339</a>    <span class="kw">let </span>f0 = DoubleDouble::mul_add(x2, e1, e0);
+<a href=#340 id=340 data-nosnippet>340</a>    <span class="kw">let </span>f1 = DoubleDouble::mul_add(x2, e3, e2);
+<a href=#341 id=341 data-nosnippet>341</a>    <span class="kw">let </span>f2 = DoubleDouble::mul_add(x2, e5, e4);
+<a href=#342 id=342 data-nosnippet>342</a>
+<a href=#343 id=343 data-nosnippet>343</a>    <span class="kw">let </span>g0 = DoubleDouble::mul_add(x4, f1, f0);
+<a href=#344 id=344 data-nosnippet>344</a>
+<a href=#345 id=345 data-nosnippet>345</a>    <span class="kw">let </span>p_den = DoubleDouble::mul_add(x8, f2, g0);
+<a href=#346 id=346 data-nosnippet>346</a>
+<a href=#347 id=347 data-nosnippet>347</a>    <span class="kw">let </span>z = DoubleDouble::div(p_num, p_den);
+<a href=#348 id=348 data-nosnippet>348</a>
+<a href=#349 id=349 data-nosnippet>349</a>    <span class="kw">let </span><span class="kw-2">mut </span>e = i0_exp(dx * <span class="number">0.5</span>);
+<a href=#350 id=350 data-nosnippet>350</a>    e = DoubleDouble::from_exact_add(e.hi, e.lo);
+<a href=#351 id=351 data-nosnippet>351</a>    <span class="kw">let </span>r_sqrt = DoubleDouble::from_rsqrt_fast(dx);
+<a href=#352 id=352 data-nosnippet>352</a>    <span class="kw">let </span>r = DoubleDouble::quick_mult(z * r_sqrt * e, e);
+<a href=#353 id=353 data-nosnippet>353</a>    <span class="kw">let </span>err = f_fmla(
+<a href=#354 id=354 data-nosnippet>354</a>        r.hi,
+<a href=#355 id=355 data-nosnippet>355</a>        f64::from_bits(<span class="number">0x3c40000000000000</span>), <span class="comment">// 2^-59
+<a href=#356 id=356 data-nosnippet>356</a>        </span>f64::from_bits(<span class="number">0x3ba0000000000000</span>), <span class="comment">// 2^-69
+<a href=#357 id=357 data-nosnippet>357</a>    </span>);
+<a href=#358 id=358 data-nosnippet>358</a>    <span class="kw">let </span>up = r.hi + (r.lo + err);
+<a href=#359 id=359 data-nosnippet>359</a>    <span class="kw">let </span>lb = r.hi + (r.lo - err);
+<a href=#360 id=360 data-nosnippet>360</a>    <span class="kw">if </span>up == lb {
+<a href=#361 id=361 data-nosnippet>361</a>        <span class="kw">return </span>r.to_f64();
+<a href=#362 id=362 data-nosnippet>362</a>    }
+<a href=#363 id=363 data-nosnippet>363</a>    i2_asympt_hard(x)
+<a href=#364 id=364 data-nosnippet>364</a>}
+<a href=#365 id=365 data-nosnippet>365</a>
+<a href=#366 id=366 data-nosnippet>366</a><span class="doccomment">/**
+<a href=#367 id=367 data-nosnippet>367</a>Asymptotic expansion for I2.
+<a href=#368 id=368 data-nosnippet>368</a>I2(x)=R(1/x)*Exp(x)/sqrt(x)
+<a href=#369 id=369 data-nosnippet>369</a>
+<a href=#370 id=370 data-nosnippet>370</a>Generated in Wolfram:
+<a href=#371 id=371 data-nosnippet>371</a>```text
+<a href=#372 id=372 data-nosnippet>372</a>&lt;&lt;FunctionApproximations`
+<a href=#373 id=373 data-nosnippet>373</a>ClearAll["Global`*"]
+<a href=#374 id=374 data-nosnippet>374</a>f[x_]:=Sqrt[x] Exp[-x] BesselI[2,x]
+<a href=#375 id=375 data-nosnippet>375</a>g[z_]:=f[1/z]
+<a href=#376 id=376 data-nosnippet>376</a>{err,approx}=MiniMaxApproximation[g[z],{z,{1/714.0,1/7.5},15,15},WorkingPrecision-&gt;120]
+<a href=#377 id=377 data-nosnippet>377</a>poly=Numerator[approx][[1]];
+<a href=#378 id=378 data-nosnippet>378</a>coeffs=CoefficientList[poly,z];
+<a href=#379 id=379 data-nosnippet>379</a>TableForm[Table[Row[{"'",NumberForm[coeffs[[i+1]],{50,50},ExponentFunction-&gt;(Null&amp;)],"',"}],{i,0,Length[coeffs]-1}]]
+<a href=#380 id=380 data-nosnippet>380</a>poly=Denominator[approx][[1]];
+<a href=#381 id=381 data-nosnippet>381</a>coeffs=CoefficientList[poly,z];
+<a href=#382 id=382 data-nosnippet>382</a>TableForm[Table[Row[{"'",NumberForm[coeffs[[i+1]],{50,50},ExponentFunction-&gt;(Null&amp;)],"',"}],{i,0,Length[coeffs]-1}]]
+<a href=#383 id=383 data-nosnippet>383</a>```
+<a href=#384 id=384 data-nosnippet>384</a>**/
+<a href=#385 id=385 data-nosnippet>385</a></span><span class="attr">#[cold]
+<a href=#386 id=386 data-nosnippet>386</a>#[inline(never)]
+<a href=#387 id=387 data-nosnippet>387</a></span><span class="kw">fn </span>i2_asympt_hard(x: f64) -&gt; f64 {
+<a href=#388 id=388 data-nosnippet>388</a>    <span class="kw">static </span>P: [DyadicFloat128; <span class="number">16</span>] = [
+<a href=#389 id=389 data-nosnippet>389</a>        DyadicFloat128 {
+<a href=#390 id=390 data-nosnippet>390</a>            sign: DyadicSign::Pos,
+<a href=#391 id=391 data-nosnippet>391</a>            exponent: -<span class="number">129</span>,
+<a href=#392 id=392 data-nosnippet>392</a>            mantissa: <span class="number">0xcc42299e_a1b28468_3bb16645_ba1dc793_u128</span>,
+<a href=#393 id=393 data-nosnippet>393</a>        },
+<a href=#394 id=394 data-nosnippet>394</a>        DyadicFloat128 {
+<a href=#395 id=395 data-nosnippet>395</a>            sign: DyadicSign::Neg,
+<a href=#396 id=396 data-nosnippet>396</a>            exponent: -<span class="number">123</span>,
+<a href=#397 id=397 data-nosnippet>397</a>            mantissa: <span class="number">0xe202abf7_de10e93f_2a2e6a0f_af69c788_u128</span>,
+<a href=#398 id=398 data-nosnippet>398</a>        },
+<a href=#399 id=399 data-nosnippet>399</a>        DyadicFloat128 {
+<a href=#400 id=400 data-nosnippet>400</a>            sign: DyadicSign::Pos,
+<a href=#401 id=401 data-nosnippet>401</a>            exponent: -<span class="number">118</span>,
+<a href=#402 id=402 data-nosnippet>402</a>            mantissa: <span class="number">0xf70296c3_ad33bde6_866cfd01_0e846cfc_u128</span>,
+<a href=#403 id=403 data-nosnippet>403</a>        },
+<a href=#404 id=404 data-nosnippet>404</a>        DyadicFloat128 {
+<a href=#405 id=405 data-nosnippet>405</a>            sign: DyadicSign::Neg,
+<a href=#406 id=406 data-nosnippet>406</a>            exponent: -<span class="number">113</span>,
+<a href=#407 id=407 data-nosnippet>407</a>            mantissa: <span class="number">0xa83df971_736c4e6c_1a35479b_ad6d9172_u128</span>,
+<a href=#408 id=408 data-nosnippet>408</a>        },
+<a href=#409 id=409 data-nosnippet>409</a>        DyadicFloat128 {
+<a href=#410 id=410 data-nosnippet>410</a>            sign: DyadicSign::Pos,
+<a href=#411 id=411 data-nosnippet>411</a>            exponent: -<span class="number">109</span>,
+<a href=#412 id=412 data-nosnippet>412</a>            mantissa: <span class="number">0x9baa2015_9c5ca461_0aff0b62_54a70fdb_u128</span>,
+<a href=#413 id=413 data-nosnippet>413</a>        },
+<a href=#414 id=414 data-nosnippet>414</a>        DyadicFloat128 {
+<a href=#415 id=415 data-nosnippet>415</a>            sign: DyadicSign::Neg,
+<a href=#416 id=416 data-nosnippet>416</a>            exponent: -<span class="number">106</span>,
+<a href=#417 id=417 data-nosnippet>417</a>            mantissa: <span class="number">0xc70af95d_f95d14ad_1094ea1b_e46b2d2f_u128</span>,
+<a href=#418 id=418 data-nosnippet>418</a>        },
+<a href=#419 id=419 data-nosnippet>419</a>        DyadicFloat128 {
+<a href=#420 id=420 data-nosnippet>420</a>            sign: DyadicSign::Pos,
+<a href=#421 id=421 data-nosnippet>421</a>            exponent: -<span class="number">103</span>,
+<a href=#422 id=422 data-nosnippet>422</a>            mantissa: <span class="number">0xa838fb48_e79fb706_642da604_6a73b4f8_u128</span>,
+<a href=#423 id=423 data-nosnippet>423</a>        },
+<a href=#424 id=424 data-nosnippet>424</a>        DyadicFloat128 {
+<a href=#425 id=425 data-nosnippet>425</a>            sign: DyadicSign::Neg,
+<a href=#426 id=426 data-nosnippet>426</a>            exponent: -<span class="number">101</span>,
+<a href=#427 id=427 data-nosnippet>427</a>            mantissa: <span class="number">0x8fe29f37_02b1e876_39e88664_1c8b3b5d_u128</span>,
+<a href=#428 id=428 data-nosnippet>428</a>        },
+<a href=#429 id=429 data-nosnippet>429</a>        DyadicFloat128 {
+<a href=#430 id=430 data-nosnippet>430</a>            sign: DyadicSign::Neg,
+<a href=#431 id=431 data-nosnippet>431</a>            exponent: -<span class="number">100</span>,
+<a href=#432 id=432 data-nosnippet>432</a>            mantissa: <span class="number">0xc8e9a474_0a03f93a_16d2e7a9_627eba4e_u128</span>,
+<a href=#433 id=433 data-nosnippet>433</a>        },
+<a href=#434 id=434 data-nosnippet>434</a>        DyadicFloat128 {
+<a href=#435 id=435 data-nosnippet>435</a>            sign: DyadicSign::Pos,
+<a href=#436 id=436 data-nosnippet>436</a>            exponent: -<span class="number">95</span>,
+<a href=#437 id=437 data-nosnippet>437</a>            mantissa: <span class="number">0x8807d1f6_6d646a08_8c7e8900_12d6a5ed_u128</span>,
+<a href=#438 id=438 data-nosnippet>438</a>        },
+<a href=#439 id=439 data-nosnippet>439</a>        DyadicFloat128 {
+<a href=#440 id=440 data-nosnippet>440</a>            sign: DyadicSign::Neg,
+<a href=#441 id=441 data-nosnippet>441</a>            exponent: -<span class="number">93</span>,
+<a href=#442 id=442 data-nosnippet>442</a>            mantissa: <span class="number">0xe5c25026_97518024_36878256_fd81c08f_u128</span>,
+<a href=#443 id=443 data-nosnippet>443</a>        },
+<a href=#444 id=444 data-nosnippet>444</a>        DyadicFloat128 {
+<a href=#445 id=445 data-nosnippet>445</a>            sign: DyadicSign::Pos,
+<a href=#446 id=446 data-nosnippet>446</a>            exponent: -<span class="number">91</span>,
+<a href=#447 id=447 data-nosnippet>447</a>            mantissa: <span class="number">0xeaa075f0_f5151bed_95ec612f_ab9834a7_u128</span>,
+<a href=#448 id=448 data-nosnippet>448</a>        },
+<a href=#449 id=449 data-nosnippet>449</a>        DyadicFloat128 {
+<a href=#450 id=450 data-nosnippet>450</a>            sign: DyadicSign::Neg,
+<a href=#451 id=451 data-nosnippet>451</a>            exponent: -<span class="number">89</span>,
+<a href=#452 id=452 data-nosnippet>452</a>            mantissa: <span class="number">0x9b267222_82d5c666_348d7d1d_0fedfba4_u128</span>,
+<a href=#453 id=453 data-nosnippet>453</a>        },
+<a href=#454 id=454 data-nosnippet>454</a>        DyadicFloat128 {
+<a href=#455 id=455 data-nosnippet>455</a>            sign: DyadicSign::Pos,
+<a href=#456 id=456 data-nosnippet>456</a>            exponent: -<span class="number">88</span>,
+<a href=#457 id=457 data-nosnippet>457</a>            mantissa: <span class="number">0x81b45c4c_3e828396_1d5bdede_869c3b84_u128</span>,
+<a href=#458 id=458 data-nosnippet>458</a>        },
+<a href=#459 id=459 data-nosnippet>459</a>        DyadicFloat128 {
+<a href=#460 id=460 data-nosnippet>460</a>            sign: DyadicSign::Neg,
+<a href=#461 id=461 data-nosnippet>461</a>            exponent: -<span class="number">89</span>,
+<a href=#462 id=462 data-nosnippet>462</a>            mantissa: <span class="number">0xf4495d43_4bc8dba6_42bdb5d6_c8ba2c9c_u128</span>,
+<a href=#463 id=463 data-nosnippet>463</a>        },
+<a href=#464 id=464 data-nosnippet>464</a>        DyadicFloat128 {
+<a href=#465 id=465 data-nosnippet>465</a>            sign: DyadicSign::Pos,
+<a href=#466 id=466 data-nosnippet>466</a>            exponent: -<span class="number">90</span>,
+<a href=#467 id=467 data-nosnippet>467</a>            mantissa: <span class="number">0xc9b29546_0c226270_bb428035_587b6d6a_u128</span>,
+<a href=#468 id=468 data-nosnippet>468</a>        },
+<a href=#469 id=469 data-nosnippet>469</a>    ];
+<a href=#470 id=470 data-nosnippet>470</a>    <span class="kw">static </span>Q: [DyadicFloat128; <span class="number">16</span>] = [
+<a href=#471 id=471 data-nosnippet>471</a>        DyadicFloat128 {
+<a href=#472 id=472 data-nosnippet>472</a>            sign: DyadicSign::Pos,
+<a href=#473 id=473 data-nosnippet>473</a>            exponent: -<span class="number">127</span>,
+<a href=#474 id=474 data-nosnippet>474</a>            mantissa: <span class="number">0x80000000_00000000_00000000_00000000_u128</span>,
+<a href=#475 id=475 data-nosnippet>475</a>        },
+<a href=#476 id=476 data-nosnippet>476</a>        DyadicFloat128 {
+<a href=#477 id=477 data-nosnippet>477</a>            sign: DyadicSign::Neg,
+<a href=#478 id=478 data-nosnippet>478</a>            exponent: -<span class="number">121</span>,
+<a href=#479 id=479 data-nosnippet>479</a>            mantissa: <span class="number">0x89e18bae_ca9629a1_26927ba2_fbdd66ab_u128</span>,
+<a href=#480 id=480 data-nosnippet>480</a>        },
+<a href=#481 id=481 data-nosnippet>481</a>        DyadicFloat128 {
+<a href=#482 id=482 data-nosnippet>482</a>            sign: DyadicSign::Pos,
+<a href=#483 id=483 data-nosnippet>483</a>            exponent: -<span class="number">116</span>,
+<a href=#484 id=484 data-nosnippet>484</a>            mantissa: <span class="number">0x92a90fc2_e905f634_4946e8a0_dd8e3874_u128</span>,
+<a href=#485 id=485 data-nosnippet>485</a>        },
+<a href=#486 id=486 data-nosnippet>486</a>        DyadicFloat128 {
+<a href=#487 id=487 data-nosnippet>487</a>            sign: DyadicSign::Neg,
+<a href=#488 id=488 data-nosnippet>488</a>            exponent: -<span class="number">112</span>,
+<a href=#489 id=489 data-nosnippet>489</a>            mantissa: <span class="number">0xc1742696_d29e3846_3e183737_29db8b68_u128</span>,
+<a href=#490 id=490 data-nosnippet>490</a>        },
+<a href=#491 id=491 data-nosnippet>491</a>        DyadicFloat128 {
+<a href=#492 id=492 data-nosnippet>492</a>            sign: DyadicSign::Pos,
+<a href=#493 id=493 data-nosnippet>493</a>            exponent: -<span class="number">108</span>,
+<a href=#494 id=494 data-nosnippet>494</a>            mantissa: <span class="number">0xabf61cc0_236a0e90_2572113d_fa339591_u128</span>,
+<a href=#495 id=495 data-nosnippet>495</a>        },
+<a href=#496 id=496 data-nosnippet>496</a>        DyadicFloat128 {
+<a href=#497 id=497 data-nosnippet>497</a>            sign: DyadicSign::Neg,
+<a href=#498 id=498 data-nosnippet>498</a>            exponent: -<span class="number">105</span>,
+<a href=#499 id=499 data-nosnippet>499</a>            mantissa: <span class="number">0xcff0fe90_dac1b08e_9a5740ae_b2984fc1_u128</span>,
+<a href=#500 id=500 data-nosnippet>500</a>        },
+<a href=#501 id=501 data-nosnippet>501</a>        DyadicFloat128 {
+<a href=#502 id=502 data-nosnippet>502</a>            sign: DyadicSign::Pos,
+<a href=#503 id=503 data-nosnippet>503</a>            exponent: -<span class="number">102</span>,
+<a href=#504 id=504 data-nosnippet>504</a>            mantissa: <span class="number">0x9ff36729_e407c538_cfcea3a7_63f39043_u128</span>,
+<a href=#505 id=505 data-nosnippet>505</a>        },
+<a href=#506 id=506 data-nosnippet>506</a>        DyadicFloat128 {
+<a href=#507 id=507 data-nosnippet>507</a>            sign: DyadicSign::Neg,
+<a href=#508 id=508 data-nosnippet>508</a>            exponent: -<span class="number">101</span>,
+<a href=#509 id=509 data-nosnippet>509</a>            mantissa: <span class="number">0xc86ff6a3_9b803a31_d385e9ea_83f9d751_u128</span>,
+<a href=#510 id=510 data-nosnippet>510</a>        },
+<a href=#511 id=511 data-nosnippet>511</a>        DyadicFloat128 {
+<a href=#512 id=512 data-nosnippet>512</a>            sign: DyadicSign::Neg,
+<a href=#513 id=513 data-nosnippet>513</a>            exponent: -<span class="number">98</span>,
+<a href=#514 id=514 data-nosnippet>514</a>            mantissa: <span class="number">0xb4a125b1_6cab70f3_0f314558_708843df_u128</span>,
+<a href=#515 id=515 data-nosnippet>515</a>        },
+<a href=#516 id=516 data-nosnippet>516</a>        DyadicFloat128 {
+<a href=#517 id=517 data-nosnippet>517</a>            sign: DyadicSign::Pos,
+<a href=#518 id=518 data-nosnippet>518</a>            exponent: -<span class="number">94</span>,
+<a href=#519 id=519 data-nosnippet>519</a>            mantissa: <span class="number">0x9670fd33_f83bcaa7_85cf2d82_c0bf8cd5_u128</span>,
+<a href=#520 id=520 data-nosnippet>520</a>        },
+<a href=#521 id=521 data-nosnippet>521</a>        DyadicFloat128 {
+<a href=#522 id=522 data-nosnippet>522</a>            sign: DyadicSign::Neg,
+<a href=#523 id=523 data-nosnippet>523</a>            exponent: -<span class="number">92</span>,
+<a href=#524 id=524 data-nosnippet>524</a>            mantissa: <span class="number">0xd70b4ea5_32fedb9d_78a3c047_05e650f4_u128</span>,
+<a href=#525 id=525 data-nosnippet>525</a>        },
+<a href=#526 id=526 data-nosnippet>526</a>        DyadicFloat128 {
+<a href=#527 id=527 data-nosnippet>527</a>            sign: DyadicSign::Pos,
+<a href=#528 id=528 data-nosnippet>528</a>            exponent: -<span class="number">90</span>,
+<a href=#529 id=529 data-nosnippet>529</a>            mantissa: <span class="number">0xb9c7904c_3f97b633_c2c0ad9b_ad573ede_u128</span>,
+<a href=#530 id=530 data-nosnippet>530</a>        },
+<a href=#531 id=531 data-nosnippet>531</a>        DyadicFloat128 {
+<a href=#532 id=532 data-nosnippet>532</a>            sign: DyadicSign::Neg,
+<a href=#533 id=533 data-nosnippet>533</a>            exponent: -<span class="number">89</span>,
+<a href=#534 id=534 data-nosnippet>534</a>            mantissa: <span class="number">0xc2023c21_5155e9fe_6fb17bb2_c865becd_u128</span>,
+<a href=#535 id=535 data-nosnippet>535</a>        },
+<a href=#536 id=536 data-nosnippet>536</a>        DyadicFloat128 {
+<a href=#537 id=537 data-nosnippet>537</a>            sign: DyadicSign::Pos,
+<a href=#538 id=538 data-nosnippet>538</a>            exponent: -<span class="number">89</span>,
+<a href=#539 id=539 data-nosnippet>539</a>            mantissa: <span class="number">0xd9400a5e_27c58803_22948cf3_6154ac49_u128</span>,
+<a href=#540 id=540 data-nosnippet>540</a>        },
+<a href=#541 id=541 data-nosnippet>541</a>        DyadicFloat128 {
+<a href=#542 id=542 data-nosnippet>542</a>            sign: DyadicSign::Neg,
+<a href=#543 id=543 data-nosnippet>543</a>            exponent: -<span class="number">90</span>,
+<a href=#544 id=544 data-nosnippet>544</a>            mantissa: <span class="number">0x87aa272d_6a9700b4_449a9db8_1a93b0ee_u128</span>,
+<a href=#545 id=545 data-nosnippet>545</a>        },
+<a href=#546 id=546 data-nosnippet>546</a>        DyadicFloat128 {
+<a href=#547 id=547 data-nosnippet>547</a>            sign: DyadicSign::Neg,
+<a href=#548 id=548 data-nosnippet>548</a>            exponent: -<span class="number">93</span>,
+<a href=#549 id=549 data-nosnippet>549</a>            mantissa: <span class="number">0xd1a86655_5b259611_dfc7affc_6ffb0e20_u128</span>,
+<a href=#550 id=550 data-nosnippet>550</a>        },
+<a href=#551 id=551 data-nosnippet>551</a>    ];
+<a href=#552 id=552 data-nosnippet>552</a>
+<a href=#553 id=553 data-nosnippet>553</a>    <span class="kw">let </span>recip = DyadicFloat128::accurate_reciprocal(x);
+<a href=#554 id=554 data-nosnippet>554</a>
+<a href=#555 id=555 data-nosnippet>555</a>    <span class="kw">let </span><span class="kw-2">mut </span>p_num = P[<span class="number">15</span>];
+<a href=#556 id=556 data-nosnippet>556</a>    <span class="kw">for </span>i <span class="kw">in </span>(<span class="number">0</span>..<span class="number">15</span>).rev() {
+<a href=#557 id=557 data-nosnippet>557</a>        p_num = recip * p_num + P[i];
+<a href=#558 id=558 data-nosnippet>558</a>    }
+<a href=#559 id=559 data-nosnippet>559</a>    <span class="kw">let </span><span class="kw-2">mut </span>p_den = Q[<span class="number">15</span>];
+<a href=#560 id=560 data-nosnippet>560</a>    <span class="kw">for </span>i <span class="kw">in </span>(<span class="number">0</span>..<span class="number">15</span>).rev() {
+<a href=#561 id=561 data-nosnippet>561</a>        p_den = recip * p_den + Q[i];
+<a href=#562 id=562 data-nosnippet>562</a>    }
+<a href=#563 id=563 data-nosnippet>563</a>    <span class="kw">let </span>z = p_num * p_den.reciprocal();
+<a href=#564 id=564 data-nosnippet>564</a>    <span class="kw">let </span>r_sqrt = bessel_rsqrt_hard(x, recip);
+<a href=#565 id=565 data-nosnippet>565</a>    <span class="kw">let </span>f_exp = rational128_exp(x);
+<a href=#566 id=566 data-nosnippet>566</a>    (z * r_sqrt * f_exp).fast_as_f64()
+<a href=#567 id=567 data-nosnippet>567</a>}
+<a href=#568 id=568 data-nosnippet>568</a>
+<a href=#569 id=569 data-nosnippet>569</a><span class="attr">#[cfg(test)]
+<a href=#570 id=570 data-nosnippet>570</a></span><span class="kw">mod </span>tests {
+<a href=#571 id=571 data-nosnippet>571</a>    <span class="kw">use super</span>::<span class="kw-2">*</span>;
+<a href=#572 id=572 data-nosnippet>572</a>
+<a href=#573 id=573 data-nosnippet>573</a>    <span class="attr">#[test]
+<a href=#574 id=574 data-nosnippet>574</a>    </span><span class="kw">fn </span>test_i2() {
+<a href=#575 id=575 data-nosnippet>575</a>        <span class="macro">assert_eq!</span>(f_i2(<span class="number">7.750000000757874</span>), <span class="number">257.0034362785801</span>);
+<a href=#576 id=576 data-nosnippet>576</a>        <span class="macro">assert_eq!</span>(f_i2(<span class="number">7.482812501363189</span>), <span class="number">198.26765887136534</span>);
+<a href=#577 id=577 data-nosnippet>577</a>        <span class="macro">assert_eq!</span>(f_i2(-<span class="number">7.750000000757874</span>), <span class="number">257.0034362785801</span>);
+<a href=#578 id=578 data-nosnippet>578</a>        <span class="macro">assert_eq!</span>(f_i2(-<span class="number">7.482812501363189</span>), <span class="number">198.26765887136534</span>);
+<a href=#579 id=579 data-nosnippet>579</a>        <span class="macro">assert!</span>(f_i2(f64::NAN).is_nan());
+<a href=#580 id=580 data-nosnippet>580</a>        <span class="macro">assert_eq!</span>(f_i2(f64::INFINITY), f64::INFINITY);
+<a href=#581 id=581 data-nosnippet>581</a>        <span class="macro">assert_eq!</span>(f_i2(f64::NEG_INFINITY), f64::INFINITY);
+<a href=#582 id=582 data-nosnippet>582</a>        <span class="macro">assert_eq!</span>(f_i2(<span class="number">0.01</span>), <span class="number">1.2500104166992188e-5</span>);
+<a href=#583 id=583 data-nosnippet>583</a>        <span class="macro">assert_eq!</span>(f_i2(-<span class="number">0.01</span>), <span class="number">1.2500104166992188e-5</span>);
+<a href=#584 id=584 data-nosnippet>584</a>        <span class="macro">assert_eq!</span>(f_i2(-<span class="number">9.01</span>), <span class="number">872.9250699638584</span>);
+<a href=#585 id=585 data-nosnippet>585</a>        <span class="macro">assert_eq!</span>(f_i2(<span class="number">9.01</span>), <span class="number">872.9250699638584</span>);
+<a href=#586 id=586 data-nosnippet>586</a>    }
+<a href=#587 id=587 data-nosnippet>587</a>}</code></pre></div></section></main></body></html>
