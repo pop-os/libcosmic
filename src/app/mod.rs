@@ -742,14 +742,14 @@ impl<App: Application> ApplicationExt for App {
             content_col
                 .apply(crate::widget::container)
                 .padding([0, 8, 8, 8])
-                .width(iced::Length::Fill)
-                .height(iced::Length::Fill)
                 .style(crate::theme::Container::WindowBackground)
-                .apply(|w| id_container(w, iced_core::id::Id::new("COSMIC_content_container")))
-                .into()
         } else {
-            content_col.into()
-        };
+            content_col.apply(crate::widget::container)
+        }
+        .width(iced::Length::Fill)
+        .height(iced::Length::Fill)
+        .apply(|w| id_container(w, iced_core::id::Id::new("COSMIC_content_container")))
+        .into();
 
         let view_column = crate::widget::column::with_capacity(2)
             .push_maybe(if core.window.show_headerbar {
