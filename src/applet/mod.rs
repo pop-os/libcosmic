@@ -1,6 +1,7 @@
 #[cfg(feature = "applet-token")]
 pub mod token;
 
+use crate::app::cosmic;
 use crate::{
     Application, Element, Renderer,
     app::iced_settings,
@@ -27,7 +28,9 @@ use sctk::reexports::protocols::xdg::shell::client::xdg_positioner::{Anchor, Gra
 use std::{borrow::Cow, num::NonZeroU32, rc::Rc, sync::LazyLock, time::Duration};
 use tracing::info;
 
-use crate::app::cosmic;
+pub mod column;
+pub mod row;
+
 static AUTOSIZE_ID: LazyLock<iced::id::Id> =
     LazyLock::new(|| iced::id::Id::new("cosmic-applet-autosize"));
 static AUTOSIZE_MAIN_ID: LazyLock<iced::id::Id> =
