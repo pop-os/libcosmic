@@ -199,15 +199,14 @@ impl<Message> iced_core::Overlay<Message, crate::Theme, crate::Renderer> for Ove
         )
         .width(self.width);
 
-        let mut node = self.container.layout(self.state, renderer, &limits);
+        let node = self.container.layout(self.state, renderer, &limits);
 
-        node = node.clone().move_to(if space_below > space_above {
+        let node_size = node.size();
+        node.move_to(if space_below > space_above {
             position + Vector::new(0.0, self.target_height)
         } else {
-            position - Vector::new(0.0, node.size().height)
-        });
-
-        node
+            position - Vector::new(0.0, node_size.height)
+        })
     }
 
     fn on_event(
@@ -513,7 +512,7 @@ where
                 OptionElement::Option((option, item)) => {
                     let (color, font) = if self.selected_option.as_ref() == Some(&item) {
                         let item_x = bounds.x + appearance.border_width;
-                        let item_width = bounds.width - appearance.border_width * 2.0;
+                        let item_width = appearance.border_width.mul_add(-2.0, bounds.width);
 
                         bounds = Rectangle {
                             x: item_x,
@@ -551,7 +550,7 @@ where
                         (appearance.selected_text_color, crate::font::semibold())
                     } else if self.hovered_option.as_ref() == Some(item) {
                         let item_x = bounds.x + appearance.border_width;
-                        let item_width = bounds.width - appearance.border_width * 2.0;
+                        let item_width = appearance.border_width.mul_add(-2.0, bounds.width);
 
                         bounds = Rectangle {
                             x: item_x,

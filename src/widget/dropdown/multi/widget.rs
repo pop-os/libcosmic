@@ -432,44 +432,46 @@ pub fn overlay<'a, S: AsRef<str>, Message: 'a, Item: Clone + PartialEq + 'static
                 };
 
             let mut desc_count = 0;
-            selections
-                .elements()
-                .map(|element| match element {
-                    super::menu::OptionElement::Description(desc) => {
-                        let paragraph = if state.descriptions.len() > desc_count {
-                            &mut state.descriptions[desc_count]
-                        } else {
-                            state.descriptions.push(crate::Plain::default());
-                            state.descriptions.last_mut().unwrap()
-                        };
-                        desc_count += 1;
-                        measure(desc.as_ref(), paragraph, description_line_height)
-                    }
+            padding.horizontal().mul_add(
+                2.0,
+                selections
+                    .elements()
+                    .map(|element| match element {
+                        super::menu::OptionElement::Description(desc) => {
+                            let paragraph = if state.descriptions.len() > desc_count {
+                                &mut state.descriptions[desc_count]
+                            } else {
+                                state.descriptions.push(crate::Plain::default());
+                                state.descriptions.last_mut().unwrap()
+                            };
+                            desc_count += 1;
+                            measure(desc.as_ref(), paragraph, description_line_height)
+                        }
 
-                    super::menu::OptionElement::Option((option, item)) => {
-                        let selection_index = state.selections.iter().position(|(i, _)| i == item);
+                        super::menu::OptionElement::Option((option, item)) => {
+                            let selection_index =
+                                state.selections.iter().position(|(i, _)| i == item);
 
-                        let selection_index = match selection_index {
-                            Some(index) => index,
-                            None => {
-                                state
-                                    .selections
-                                    .push((item.clone(), crate::Plain::default()));
-                                state.selections.len() - 1
-                            }
-                        };
+                            let selection_index = match selection_index {
+                                Some(index) => index,
+                                None => {
+                                    state
+                                        .selections
+                                        .push((item.clone(), crate::Plain::default()));
+                                    state.selections.len() - 1
+                                }
+                            };
 
-                        let paragraph = &mut state.selections[selection_index].1;
+                            let paragraph = &mut state.selections[selection_index].1;
 
-                        measure(option.as_ref(), paragraph, text_line_height)
-                    }
+                            measure(option.as_ref(), paragraph, text_line_height)
+                        }
 
-                    super::menu::OptionElement::Separator => 1.0,
-                })
-                .fold(0.0, |next, current| current.max(next))
-                + gap
+                        super::menu::OptionElement::Separator => 1.0,
+                    })
+                    .fold(0.0, |next, current| current.max(next)),
+            ) + gap
                 + 16.0
-                + (padding.horizontal() * 2.0)
         })
         .padding(padding)
         .text_size(text_size);
