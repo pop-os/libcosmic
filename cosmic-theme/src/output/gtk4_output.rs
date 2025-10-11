@@ -148,7 +148,7 @@ impl Theme {
     #[cold]
     pub fn write_gtk4(&self) -> Result<(), OutputError> {
         let css_str = self.as_gtk4();
-        let Some(config_dir) = dirs::config_dir() else {
+        let Some(mut config_dir) = dirs::config_dir() else {
             return Err(OutputError::MissingConfigDir);
         };
 
@@ -158,7 +158,7 @@ impl Theme {
             "light.css"
         };
 
-        let config_dir = config_dir.join("gtk-4.0").join("cosmic");
+        config_dir.extend(["gtk-4.0", "cosmic"]);
         if !config_dir.exists() {
             std::fs::create_dir_all(&config_dir).map_err(OutputError::Io)?;
         }
@@ -181,23 +181,20 @@ impl Theme {
             return Err(OutputError::MissingConfigDir);
         };
 
-        let gtk4 = config_dir.join("gtk-4.0");
-        let gtk3 = config_dir.join("gtk-3.0");
+        let mut gtk4 = config_dir.join("gtk-4.0");
+        let mut gtk3 = config_dir.join("gtk-3.0");
 
         fs::create_dir_all(&gtk4).map_err(OutputError::Io)?;
         fs::create_dir_all(&gtk3).map_err(OutputError::Io)?;
 
         let cosmic_css_dir = gtk4.join("cosmic");
-        let cosmic_css =
-            cosmic_css_dir
-                .clone()
-                .join(if is_dark { "dark.css" } else { "light.css" });
+        let cosmic_css = cosmic_css_dir.join(if is_dark { "dark.css" } else { "light.css" });
 
-        let gtk4_dest = gtk4.join("gtk.css");
-        let gtk3_dest = gtk3.join("gtk.css");
+        gtk4.push("gtk.css");
+        gtk3.push("gtk.css");
 
         #[cfg(target_family = "unix")]
-        for gtk_dest in [&gtk4_dest, &gtk3_dest] {
+        for gtk_dest in [&gtk4, &gtk3] {
             use std::os::unix::fs::symlink;
             Self::backup_non_cosmic_css(gtk_dest, &cosmic_css_dir).map_err(OutputError::Io)?;
 

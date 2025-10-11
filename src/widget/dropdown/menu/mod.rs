@@ -477,8 +477,8 @@ where
                 if cursor.is_over(layout.bounds()) {
                     if let Some(index) = *hovered_guard {
                         shell.publish((self.on_selected)(index));
-                        if let Some(close_on_selected) = self.close_on_selected.clone() {
-                            shell.publish(close_on_selected);
+                        if let Some(close_on_selected) = self.close_on_selected.as_ref() {
+                            shell.publish(close_on_selected.clone());
                         }
                         return event::Status::Captured;
                     }
@@ -521,8 +521,8 @@ where
 
                     if let Some(index) = *hovered_guard {
                         shell.publish((self.on_selected)(index));
-                        if let Some(close_on_selected) = self.close_on_selected.clone() {
-                            shell.publish(close_on_selected);
+                        if let Some(close_on_selected) = self.close_on_selected.as_ref() {
+                            shell.publish(close_on_selected.clone());
                         }
                         return event::Status::Captured;
                     }

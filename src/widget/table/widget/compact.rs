@@ -170,7 +170,6 @@ where
                     )
                     .apply(Element::from)
             })
-            .collect::<Vec<Element<'a, Message>>>()
             .apply(widget::column::with_children)
             .spacing(val.item_spacing)
             .padding(val.element_padding)

@@ -361,8 +361,12 @@ impl Core {
         config_id: &'static str,
     ) -> iced::Subscription<cosmic_config::Update<T>> {
         #[cfg(all(feature = "dbus-config", target_os = "linux"))]
-        if let Some(settings_daemon) = self.settings_daemon.clone() {
-            return cosmic_config::dbus::watcher_subscription(settings_daemon, config_id, false);
+        if let Some(settings_daemon) = self.settings_daemon.as_ref() {
+            return cosmic_config::dbus::watcher_subscription(
+                settings_daemon.clone(),
+                config_id,
+                false,
+            );
         }
         cosmic_config::config_subscription(
             std::any::TypeId::of::<T>(),
@@ -378,8 +382,12 @@ impl Core {
         state_id: &'static str,
     ) -> iced::Subscription<cosmic_config::Update<T>> {
         #[cfg(all(feature = "dbus-config", target_os = "linux"))]
-        if let Some(settings_daemon) = self.settings_daemon.clone() {
-            return cosmic_config::dbus::watcher_subscription(settings_daemon, state_id, true);
+        if let Some(settings_daemon) = self.settings_daemon.as_ref() {
+            return cosmic_config::dbus::watcher_subscription(
+                settings_daemon.clone(),
+                state_id,
+                true,
+            );
         }
         cosmic_config::config_subscription(
             std::any::TypeId::of::<T>(),

@@ -147,12 +147,14 @@ pub mod column {
     #[must_use]
     /// A pre-allocated [`column`].
     pub fn with_capacity<'a, Message>(capacity: usize) -> Column<'a, Message> {
-        Column::with_children(Vec::with_capacity(capacity))
+        Column::with_capacity(capacity)
     }
 
     #[must_use]
-    /// A [`column`] that will be assigned a [`Vec`] of children.
-    pub fn with_children<Message>(children: Vec<crate::Element<Message>>) -> Column<Message> {
+    /// A [`column`] that will be assigned an [`Iterator`] of children.
+    pub fn with_children<'a, Message>(
+        children: impl IntoIterator<Item = crate::Element<'a, Message>>,
+    ) -> Column<'a, Message> {
         Column::with_children(children)
     }
 }
@@ -298,12 +300,14 @@ pub mod row {
     #[must_use]
     /// A pre-allocated [`row`].
     pub fn with_capacity<'a, Message>(capacity: usize) -> Row<'a, Message> {
-        Row::with_children(Vec::with_capacity(capacity))
+        Row::with_capacity(capacity)
     }
 
     #[must_use]
-    /// A [`row`] that will be assigned a [`Vec`] of children.
-    pub fn with_children<Message>(children: Vec<crate::Element<Message>>) -> Row<Message> {
+    /// A [`row`] that will be assigned an [`Iterator`] of children.
+    pub fn with_children<'a, Message>(
+        children: impl IntoIterator<Item = crate::Element<'a, Message>>,
+    ) -> Row<'a, Message> {
         Row::with_children(children)
     }
 }

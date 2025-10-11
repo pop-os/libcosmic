@@ -76,7 +76,7 @@ impl From<String> for PanelType {
         match value.as_str() {
             "Panel" => PanelType::Panel,
             "Dock" => PanelType::Dock,
-            other => PanelType::Other(other.to_string()),
+            _ => PanelType::Other(value),
         }
     }
 }
@@ -470,8 +470,8 @@ pub fn run<App: Application>(flags: App::Flags) -> iced::Result {
         crate::malloc::limit_mmap_threshold(threshold);
     }
 
-    if let Some(icon_theme) = settings.default_icon_theme.clone() {
-        crate::icon_theme::set_default(icon_theme);
+    if let Some(icon_theme) = settings.default_icon_theme.as_ref() {
+        crate::icon_theme::set_default(icon_theme.clone());
     }
 
     THEME

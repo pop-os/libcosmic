@@ -179,8 +179,8 @@ where
             ));
         }
 
-        let content_list = column::with_children(vec![
-            row::with_children(vec![
+        let content_list = column::with_children([
+            row::with_children([
                 date.into(),
                 crate::widget::Space::with_width(Length::Fill).into(),
                 month_controls.into(),

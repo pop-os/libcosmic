@@ -521,8 +521,8 @@ pub fn draw<'a, S, Item: Clone + PartialEq + 'static>(
         style.background,
     );
 
-    if let Some(handle) = state.icon.clone() {
-        let svg_handle = iced_core::Svg::new(handle).color(style.text_color);
+    if let Some(handle) = state.icon.as_ref() {
+        let svg_handle = iced_core::Svg::new(handle.clone()).color(style.text_color);
         svg::Renderer::draw_svg(
             renderer,
             svg_handle,
