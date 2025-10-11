@@ -144,7 +144,7 @@ where
     Message: std::clone::Clone + 'a,
 {
     widget::button::custom(
-        widget::Row::with_children(children)
+        widget::Row::from_vec(children)
             .align_y(Alignment::Center)
             .height(Length::Fill)
             .width(Length::Fill),
@@ -252,7 +252,7 @@ pub fn menu_items<
                     let l: Cow<'static, str> = label.into();
                     let key = find_key(&action, key_binds);
                     let mut items = vec![
-                        widget::text(l.clone()).into(),
+                        widget::text(l).into(),
                         widget::horizontal_space().into(),
                         widget::text(key).class(key_class).into(),
                     ];
@@ -272,7 +272,7 @@ pub fn menu_items<
                     let key = find_key(&action, key_binds);
 
                     let mut items = vec![
-                        widget::text(l.clone()).into(),
+                        widget::text(l).into(),
                         widget::horizontal_space().into(),
                         widget::text(key).class(key_class).into(),
                     ];

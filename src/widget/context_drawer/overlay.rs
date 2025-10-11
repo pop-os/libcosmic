@@ -33,7 +33,7 @@ where
             .layout(self.tree, renderer, &limits);
         let node_size = node.size();
 
-        node.clone().move_to(Point {
+        node.move_to(Point {
             x: if bounds.width > node_size.width - 8.0 {
                 bounds.width - node_size.width - 8.0
             } else {

@@ -156,8 +156,7 @@ impl<'a, Message: Clone + 'static> From<Dialog<'a, Message>> for Element<'a, Mes
         }
 
         let mut container = widget::container(
-            widget::column::with_children(vec![content_row.into(), button_row.into()])
-                .spacing(space_l),
+            widget::column::with_children([content_row.into(), button_row.into()]).spacing(space_l),
         )
         .class(style::Container::Dialog)
         .padding(space_m)

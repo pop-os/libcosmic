@@ -274,7 +274,7 @@ where
         self.on_dnd_drop = Some(Box::new(move |entity, data, mime, action| {
             dnd_drop_handler(entity, D::try_from((data, mime)).ok(), action)
         }));
-        self.mimes = D::allowed().iter().cloned().collect();
+        self.mimes = D::allowed().into_owned();
         self
     }
 
@@ -1417,8 +1417,8 @@ where
                                 renderer.fill_quad(
                                     renderer::Quad {
                                         bounds: Rectangle {
-                                            x: bounds.x
-                                                - (level as f32 * self.indent_spacing as f32)
+                                            x: (level as f32)
+                                                .mul_add(-(self.indent_spacing as f32), bounds.x)
                                                 + indent_padding,
                                             width: 1.0,
                                             ..bounds
@@ -1865,7 +1865,7 @@ fn draw_icon<Message: 'static>(
     });
 
     Widget::<Message, crate::Theme, Renderer>::draw(
-        Element::<Message>::from(icon.clone()).as_widget(),
+        Element::<Message>::from(icon).as_widget(),
         &Tree::empty(),
         renderer,
         theme,

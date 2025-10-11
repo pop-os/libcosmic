@@ -370,7 +370,7 @@ impl MenuState {
         let limits = Limits::new(Size::ZERO, self.menu_bounds.child_sizes[index]);
         let parent_offset = children_bounds.position() - Point::ORIGIN;
         let node = menu_tree.item.layout(tree, renderer, &limits);
-        node.clone().move_to(Point::new(
+        node.move_to(Point::new(
             parent_offset.x,
             parent_offset.y + position + self.scroll_offset,
         ))
@@ -1653,7 +1653,7 @@ fn get_children_layout<Message>(
     let child_sizes: Vec<Size> = match item_height {
         ItemHeight::Uniform(u) => {
             let count = menu_tree.children.len();
-            (0..count).map(|_| Size::new(width, f32::from(u))).collect()
+            vec![Size::new(width, f32::from(u)); count]
         }
         ItemHeight::Static(s) => menu_tree
             .children

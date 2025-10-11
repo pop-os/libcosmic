@@ -269,8 +269,9 @@ impl Theme {
     #[cold]
     pub fn apply_vs_code(self) -> Result<(), OutputError> {
         let vs_theme = VsTheme::from(self);
-        let config_dir = dirs::config_dir().ok_or(OutputError::MissingConfigDir)?;
-        let vs_code_dir = config_dir.join("Code").join("User");
+        let mut config_dir = dirs::config_dir().ok_or(OutputError::MissingConfigDir)?;
+        config_dir.extend(["Code", "User"]);
+        let vs_code_dir = config_dir;
         if !vs_code_dir.exists() {
             std::fs::create_dir_all(&vs_code_dir).map_err(OutputError::Io)?;
         }
@@ -292,9 +293,9 @@ impl Theme {
 
     #[cold]
     pub fn reset_vs_code() -> Result<(), OutputError> {
-        let config_dir = dirs::config_dir().ok_or(OutputError::MissingConfigDir)?;
-        let vs_code_dir = config_dir.join("Code").join("User");
-        let settings_file = vs_code_dir.join("settings.json");
+        let mut config_dir = dirs::config_dir().ok_or(OutputError::MissingConfigDir)?;
+        config_dir.extend(["Code", "User", "settings.json"]);
+        let settings_file = config_dir;
         // just remove the json entry for workbench.colorCustomizations
         let settings = std::fs::read_to_string(&settings_file).unwrap_or_default();
         let mut settings: serde_json::Value = serde_json::from_str(&settings).unwrap_or_default();

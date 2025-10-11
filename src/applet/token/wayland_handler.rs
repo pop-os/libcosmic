@@ -162,8 +162,8 @@ pub(crate) fn wayland_handler(
         exit: false,
         tx,
         seat_state: SeatState::new(&globals, &qh),
-        queue_handle: qh.clone(),
         activation_state: ActivationState::bind::<AppData>(&globals, &qh).ok(),
+        queue_handle: qh,
         registry_state,
     };
 

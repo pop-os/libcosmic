@@ -455,21 +455,16 @@ where
                     // TODO get global colors from some cache?
                     // TODO how to handle overflow? should this use a grid widget for the list or a horizontal scroll and a limit for the max?
                     crate::widget::scrollable(
-                        Row::with_children(
-                            self.recent_colors
-                                .iter()
-                                .map(|c| {
-                                    let initial_srgb = palette::Srgb::from(*c);
-                                    let hsv = palette::Hsv::from_color(initial_srgb);
-                                    color_button(
-                                        Some(on_update(ColorPickerUpdate::ActiveColor(hsv))),
-                                        Some(*c),
-                                        Length::FillPortion(12),
-                                    )
-                                    .into()
-                                })
-                                .collect::<Vec<_>>(),
-                        )
+                        Row::with_children(self.recent_colors.iter().map(|c| {
+                            let initial_srgb = palette::Srgb::from(*c);
+                            let hsv = palette::Hsv::from_color(initial_srgb);
+                            color_button(
+                                Some(on_update(ColorPickerUpdate::ActiveColor(hsv))),
+                                Some(*c),
+                                Length::FillPortion(12),
+                            )
+                            .into()
+                        }))
                         .padding([0.0, 0.0, f32::from(spacing.space_m), 0.0])
                         .spacing(spacing.space_xxs),
                     )

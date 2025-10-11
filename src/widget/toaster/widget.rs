@@ -199,7 +199,7 @@ where
     fn layout(&mut self, renderer: &Renderer, bounds: Size) -> Node {
         let limits = Limits::new(Size::ZERO, bounds);
 
-        let mut node = self
+        let node = self
             .element
             .as_widget()
             .layout(self.state, renderer, &limits);
@@ -211,9 +211,7 @@ where
             bounds.height - (node.size().height + offset),
         );
 
-        node.move_to_mut(position);
-
-        node
+        node.move_to(position)
     }
 
     fn draw(

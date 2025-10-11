@@ -113,10 +113,7 @@ pub fn about<'a, Message: Clone + 'static>(
 
     let section = |list: &'a Vec<(String, String)>, title: String| {
         (!list.is_empty()).then_some({
-            let items: Vec<Element<Message>> = list
-                .iter()
-                .map(|(name, url)| section_button(name, url))
-                .collect();
+            let items = list.iter().map(|(name, url)| section_button(name, url));
             widget::settings::section().title(title).extend(items)
         })
     };

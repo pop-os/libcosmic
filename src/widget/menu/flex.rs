@@ -200,16 +200,16 @@ where
 
         let (x, y) = axis.pack(main, pad.1);
 
-        let node_ = node.clone().move_to(Point::new(x, y));
+        node.move_to_mut(Point::new(x, y));
 
-        let node_ = match axis {
-            Axis::Horizontal => node_.align(Alignment::Start, align_items, Size::new(0.0, cross)),
-            Axis::Vertical => node_.align(align_items, Alignment::Start, Size::new(cross, 0.0)),
+        match axis {
+            Axis::Horizontal => {
+                node.align_mut(Alignment::Start, align_items, Size::new(0.0, cross))
+            }
+            Axis::Vertical => node.align_mut(align_items, Alignment::Start, Size::new(cross, 0.0)),
         };
 
-        let size = node_.bounds().size();
-
-        *node = node_;
+        let size = node.bounds().size();
 
         main += axis.main(size);
     }
@@ -367,16 +367,16 @@ pub fn resolve_wrapper<'a, Message>(
 
         let (x, y) = axis.pack(main, pad.1);
 
-        let node_ = node.clone().move_to(Point::new(x, y));
+        node.move_to_mut(Point::new(x, y));
 
-        let node_ = match axis {
-            Axis::Horizontal => node_.align(Alignment::Start, align_items, Size::new(0.0, cross)),
-            Axis::Vertical => node_.align(align_items, Alignment::Start, Size::new(cross, 0.0)),
+        match axis {
+            Axis::Horizontal => {
+                node.align_mut(Alignment::Start, align_items, Size::new(0.0, cross))
+            }
+            Axis::Vertical => node.align_mut(align_items, Alignment::Start, Size::new(cross, 0.0)),
         };
 
-        let size = node_.bounds().size();
-
-        *node = node_;
+        let size = node.bounds().size();
 
         main += axis.main(size);
     }

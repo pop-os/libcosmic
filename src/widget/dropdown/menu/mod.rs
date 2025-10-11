@@ -204,7 +204,7 @@ impl<'a, Message: Clone + 'a> Overlay<'a, Message> {
             .with_data_mut(|tree| tree.diff(&mut container as &mut dyn Widget<_, _, _>));
 
         Self {
-            state: state.tree.clone(),
+            state: state.tree,
             container,
             width,
             target_height,
@@ -234,10 +234,11 @@ impl<'a, Message: Clone + 'a> Overlay<'a, Message> {
             .state
             .with_data_mut(|tree| self.container.layout(tree, renderer, &limits));
 
-        node.clone().move_to(if space_below > space_above {
+        let node_size = node.size();
+        node.move_to(if space_below > space_above {
             self.position + Vector::new(0.0, self.target_height)
         } else {
-            self.position - Vector::new(0.0, node.size().height)
+            self.position - Vector::new(0.0, node_size.height)
         })
     }
 
@@ -477,8 +478,8 @@ where
                 if cursor.is_over(layout.bounds()) {
                     if let Some(index) = *hovered_guard {
                         shell.publish((self.on_selected)(index));
-                        if let Some(close_on_selected) = self.close_on_selected.clone() {
-                            shell.publish(close_on_selected);
+                        if let Some(close_on_selected) = self.close_on_selected.as_ref() {
+                            shell.publish(close_on_selected.clone());
                         }
                         return event::Status::Captured;
                     }
@@ -521,8 +522,8 @@ where
 
                     if let Some(index) = *hovered_guard {
                         shell.publish((self.on_selected)(index));
-                        if let Some(close_on_selected) = self.close_on_selected.clone() {
-                            shell.publish(close_on_selected);
+                        if let Some(close_on_selected) = self.close_on_selected.as_ref() {
+                            shell.publish(close_on_selected.clone());
                         }
                         return event::Status::Captured;
                     }

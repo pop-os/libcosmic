@@ -156,7 +156,7 @@ pub fn resolve<Message>(
                 _ => (),
             }
 
-            *node = node.clone().move_to(Point {
+            node.move_to_mut(Point {
                 x: leaf_layout.location.x,
                 y: leaf_layout.location.y,
             });

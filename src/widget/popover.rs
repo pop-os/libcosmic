@@ -141,14 +141,14 @@ where
                 if matches!(event, Event::Mouse(_) | Event::Touch(_)) {
                     return event::Status::Captured;
                 }
-            } else if let Some(on_close) = self.on_close.clone() {
+            } else if let Some(on_close) = self.on_close.as_ref() {
                 if matches!(
                     event,
                     Event::Mouse(mouse::Event::ButtonPressed(_))
                         | Event::Touch(touch::Event::FingerPressed { .. })
                 ) && !cursor_position.is_over(layout.bounds())
                 {
-                    shell.publish(on_close);
+                    shell.publish(on_close.clone());
                 }
             }
         }
