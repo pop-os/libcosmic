@@ -204,7 +204,7 @@ impl<'a, Message: Clone + 'a> Overlay<'a, Message> {
             .with_data_mut(|tree| tree.diff(&mut container as &mut dyn Widget<_, _, _>));
 
         Self {
-            state: state.tree.clone(),
+            state: state.tree,
             container,
             width,
             target_height,
@@ -234,10 +234,11 @@ impl<'a, Message: Clone + 'a> Overlay<'a, Message> {
             .state
             .with_data_mut(|tree| self.container.layout(tree, renderer, &limits));
 
-        node.clone().move_to(if space_below > space_above {
+        let node_size = node.size();
+        node.move_to(if space_below > space_above {
             self.position + Vector::new(0.0, self.target_height)
         } else {
-            self.position - Vector::new(0.0, node.size().height)
+            self.position - Vector::new(0.0, node_size.height)
         })
     }
 

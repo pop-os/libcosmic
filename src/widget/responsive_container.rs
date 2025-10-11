@@ -168,7 +168,7 @@ where
 
         self.content.as_widget_mut().on_event(
             &mut tree.children[0],
-            event.clone(),
+            event,
             layout
                 .children()
                 .next()

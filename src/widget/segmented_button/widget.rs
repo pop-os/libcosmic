@@ -1417,8 +1417,8 @@ where
                                 renderer.fill_quad(
                                     renderer::Quad {
                                         bounds: Rectangle {
-                                            x: bounds.x
-                                                - (level as f32 * self.indent_spacing as f32)
+                                            x: (level as f32)
+                                                .mul_add(-(self.indent_spacing as f32), bounds.x)
                                                 + indent_padding,
                                             width: 1.0,
                                             ..bounds
