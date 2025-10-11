@@ -170,11 +170,10 @@ impl Config {
                 .map(|x| x.join("COSMIC").join(&path));
 
         // Get libcosmic user configuration directory
-        let cosmic_user_path = dirs::config_dir()
-            .ok_or(Error::NoConfigDirectory)?
-            .join("cosmic");
+        let mut user_path = dirs::config_dir().ok_or(Error::NoConfigDirectory)?;
+        user_path.push("cosmic");
+        user_path.push(path);
 
-        let user_path = cosmic_user_path.join(path);
         // Create new configuration directory if not found.
         fs::create_dir_all(&user_path)?;
 
@@ -190,9 +189,9 @@ impl Config {
         // Look for [name]/v[version]
         let path = sanitize_name(name)?.join(format!("v{version}"));
 
-        let cosmic_user_path = custom_path.join("cosmic");
-
-        let user_path = cosmic_user_path.join(path);
+        let mut user_path = custom_path;
+        user_path.push("cosmic");
+        user_path.push(path);
         // Create new configuration directory if not found.
         fs::create_dir_all(&user_path)?;
 
@@ -213,11 +212,9 @@ impl Config {
         let path = sanitize_name(name)?.join(format!("v{}", version));
 
         // Get libcosmic user state directory
-        let cosmic_user_path = dirs::state_dir()
-            .ok_or(Error::NoConfigDirectory)?
-            .join("cosmic");
-
-        let user_path = cosmic_user_path.join(path);
+        let mut user_path = dirs::state_dir().ok_or(Error::NoConfigDirectory)?;
+        user_path.push("cosmic");
+        user_path.push(path);
         // Create new state directory if not found.
         fs::create_dir_all(&user_path)?;
 

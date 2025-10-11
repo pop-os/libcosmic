@@ -760,14 +760,14 @@ where
             if state.dirty {
                 state.dirty = false;
                 let value = if self.is_secure {
-                    self.value.secure()
+                    &self.value.secure()
                 } else {
-                    self.value.clone()
+                    &self.value
                 };
                 replace_paragraph(
                     state,
                     Layout::new(&res),
-                    &value,
+                    value,
                     font,
                     iced::Pixels(size),
                     line_height,
@@ -2022,7 +2022,7 @@ pub fn update<'a, Message: Clone + 'static>(
             if let DndOfferState::HandlingOffer(mime_types, _action) = state.dnd_offer.clone() {
                 let Some(mime_type) = SUPPORTED_TEXT_MIME_TYPES
                     .iter()
-                    .find(|m| mime_types.contains(&(**m).to_string()))
+                    .find(|&&m| mime_types.iter().any(|t| t == m))
                 else {
                     state.dnd_offer = DndOfferState::None;
                     return event::Status::Captured;
@@ -2057,7 +2057,7 @@ pub fn update<'a, Message: Clone + 'static>(
         {
             cold();
             let state = state();
-            if let DndOfferState::Dropped = state.dnd_offer.clone() {
+            if matches!(&state.dnd_offer, DndOfferState::Dropped) {
                 state.dnd_offer = DndOfferState::None;
                 if !SUPPORTED_TEXT_MIME_TYPES.contains(&mime_type.as_str()) || data.is_empty() {
                     return event::Status::Captured;
@@ -2536,7 +2536,7 @@ impl AsMimeTypes for TextInputString {
 
     fn as_bytes(&self, mime_type: &str) -> Option<Cow<'static, [u8]>> {
         if SUPPORTED_TEXT_MIME_TYPES.contains(&mime_type) {
-            Some(Cow::Owned(self.0.clone().as_bytes().to_vec()))
+            Some(Cow::Owned(self.0.clone().into_bytes()))
         } else {
             None
         }

@@ -125,7 +125,6 @@ where
                     .apply(|mouse_area| widget::context_menu(mouse_area, cat_context_tree))
                     .apply(Element::from)
             })
-            .collect::<Vec<Element<'a, Message>>>()
             .apply(widget::row::with_children)
             .apply(Element::from);
         // Build the items
@@ -166,7 +165,6 @@ where
                                     .align_y(Alignment::Center)
                                     .apply(Element::from)
                             })
-                            .collect::<Vec<Element<'static, Message>>>()
                             .apply(widget::row::with_children)
                             .apply(container)
                             .padding(val.item_padding)

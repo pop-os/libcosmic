@@ -1653,7 +1653,7 @@ fn get_children_layout<Message>(
     let child_sizes: Vec<Size> = match item_height {
         ItemHeight::Uniform(u) => {
             let count = menu_tree.children.len();
-            (0..count).map(|_| Size::new(width, f32::from(u))).collect()
+            vec![Size::new(width, f32::from(u)); count]
         }
         ItemHeight::Static(s) => menu_tree
             .children
