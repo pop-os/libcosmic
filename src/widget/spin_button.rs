@@ -178,7 +178,7 @@ where
     let decrement_button = make_button!(spin_button, "list-remove-symbolic", decrement);
     let increment_button = make_button!(spin_button, "list-add-symbolic", increment);
 
-    let label = text::title4(spin_button.label)
+    let label = text::body(spin_button.label)
         .apply(container)
         .center_x(Length::Fixed(48.0))
         .align_y(Alignment::Center);
@@ -201,7 +201,7 @@ where
     let decrement_button = make_button!(spin_button, "list-remove-symbolic", decrement);
     let increment_button = make_button!(spin_button, "list-add-symbolic", increment);
 
-    let label = text::title4(spin_button.label)
+    let label = text::body(spin_button.label)
         .apply(container)
         .center_x(Length::Fixed(48.0))
         .align_y(Alignment::Center);
