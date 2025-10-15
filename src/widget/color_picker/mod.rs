@@ -50,6 +50,24 @@ pub static HSV_RAINBOW: LazyLock<Vec<Color>> = LazyLock::new(|| {
         .collect()
 });
 
+fn hsv_rainbow(low_hue: f32, high_hue: f32) -> Vec<ColorStop> {
+    let mut colors = Vec::new();
+    let steps: u8 = 7;
+    let step_size = (high_hue - low_hue) / f32::from(steps);
+    for i in 0..=steps {
+        let hue = low_hue + step_size * f32::from(i);
+        colors.push(ColorStop {
+            color: Color::from(palette::Srgba::from_color(palette::Hsv::new_srgb_const(
+                RgbHue::new(hue),
+                1.0,
+                1.0,
+            ))),
+            offset: f32::from(i) / f32::from(steps),
+        });
+    }
+    colors
+}
+
 const MAX_RECENT: usize = 20;
 
 #[derive(Debug, Clone)]
@@ -290,37 +308,9 @@ where
         copied_to_clipboard_label: T,
     ) -> ColorPicker<'a, Message> {
         fn rail_backgrounds(hue: f32) -> (Background, Background) {
-            let pivot = hue * 7.0 / 360.;
+            let low_range = hsv_rainbow(0., hue);
+            let high_range = hsv_rainbow(hue, 360.);
 
-            let low_end = pivot.floor() as usize;
-            let high_start = pivot.ceil() as usize;
-            let pivot_color = palette::Hsv::new_srgb(RgbHue::new(hue), 1.0, 1.0);
-            let low_range = HSV_RAINBOW[0..=low_end]
-                .iter()
-                .enumerate()
-                .map(|(i, color)| ColorStop {
-                    color: *color,
-                    offset: i as f32 / pivot.max(0.0001),
-                })
-                .chain(iter::once(ColorStop {
-                    color: iced::Color::from(palette::Srgba::from_color(pivot_color)),
-                    offset: 1.,
-                }))
-                .collect::<Vec<_>>();
-            let high_range = iter::once(ColorStop {
-                color: iced::Color::from(palette::Srgba::from_color(pivot_color)),
-                offset: 0.,
-            })
-            .chain(
-                HSV_RAINBOW[high_start..]
-                    .iter()
-                    .enumerate()
-                    .map(|(i, color)| ColorStop {
-                        color: *color,
-                        offset: (i as f32 + (1. - pivot.fract())) / (7. - pivot).max(0.0001),
-                    }),
-            )
-            .collect::<Vec<_>>();
             (
                 Background::Gradient(iced::Gradient::Linear(
                     Linear::new(Radians(90.0)).add_stops(low_range),
