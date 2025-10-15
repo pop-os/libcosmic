@@ -325,6 +325,7 @@ where
             .zip(&mut tree.children)
             .zip(layout.children())
             .map(|(((i, child), state), c_layout)| {
+                let mut cursor_virtual = cursor;
                 if matches!(
                     event,
                     Event::Mouse(mouse::Event::CursorMoved { .. } | mouse::Event::CursorEntered)
@@ -335,6 +336,8 @@ where
                 ) && cursor.is_over(c_layout.bounds())
                 {
                     my_state.hovered = Some(i);
+                } else if my_state.hovered.is_some_and(|h| i == h) {
+                    cursor_virtual = mouse::Cursor::Unavailable;
                 }
 
                 child.as_widget_mut().on_event(
