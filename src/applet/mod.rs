@@ -8,7 +8,7 @@ use crate::{
     cctk::sctk,
     iced::{
         self, Color, Length, Limits, Rectangle,
-        alignment::{Horizontal, Vertical},
+        alignment::{Alignment, Horizontal, Vertical},
         widget::Container,
         window,
     },
@@ -17,12 +17,16 @@ use crate::{
     widget::{
         self,
         autosize::{self, Autosize, autosize},
-        layer_container,
+        column::Column,
+        horizontal_space, layer_container,
+        row::Row,
+        vertical_space,
     },
 };
 pub use cosmic_panel_config;
 use cosmic_panel_config::{CosmicPanelBackground, PanelAnchor, PanelSize};
 use iced_core::{Padding, Shadow};
+use iced_widget::Text;
 use iced_widget::runtime::platform_specific::wayland::popup::{SctkPopupSettings, SctkPositioner};
 use sctk::reexports::protocols::xdg::shell::client::xdg_positioner::{Anchor, Gravity};
 use std::{borrow::Cow, num::NonZeroU32, rc::Rc, sync::LazyLock, time::Duration};
@@ -49,6 +53,8 @@ pub struct Context {
     /// Includes the configured size of the window.
     /// This can be used by apples to handle overflow themselves.
     pub suggested_bounds: Option<iced::Size>,
+    /// Ratio of overlap for applet padding.
+    pub padding_overlap: f32,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -107,6 +113,10 @@ impl Default for Context {
                 .unwrap_or(CosmicPanelBackground::ThemeDefault),
             output_name: std::env::var("COSMIC_PANEL_OUTPUT").unwrap_or_default(),
             panel_type: PanelType::from(std::env::var("COSMIC_PANEL_NAME").unwrap_or_default()),
+            padding_overlap: str::parse(
+                &std::env::var("COSMIC_PANEL_PADDING_OVERLAP").unwrap_or_default(),
+            )
+            .unwrap_or(0.0),
             suggested_bounds: None,
         }
     }
@@ -212,25 +222,76 @@ impl Context {
             (applet_padding_minor_axis, applet_padding_major_axis)
         };
         let symbolic = icon.symbolic;
+        let icon = widget::icon(icon)
+            .class(if symbolic {
+                theme::Svg::Custom(Rc::new(|theme| crate::iced_widget::svg::Style {
+                    color: Some(theme.cosmic().background.on.into()),
+                }))
+            } else {
+                theme::Svg::default()
+            })
+            .width(Length::Fixed(suggested.0 as f32))
+            .height(Length::Fixed(suggested.1 as f32));
+        self.button_from_element(icon, symbolic)
+    }
 
+    pub fn button_from_element<'a, Message: Clone + 'static>(
+        &self,
+        content: impl Into<Element<'a, Message>>,
+        use_symbolic_size: bool,
+    ) -> crate::widget::Button<'a, Message> {
+        let suggested = self.suggested_size(use_symbolic_size);
+        let (applet_padding_major_axis, applet_padding_minor_axis) = self.suggested_padding(true);
+        let (horizontal_padding, vertical_padding) = if self.is_horizontal() {
+            (applet_padding_major_axis, applet_padding_minor_axis)
+        } else {
+            (applet_padding_minor_axis, applet_padding_major_axis)
+        };
+
+        crate::widget::button::custom(layer_container(content).center(Length::Fill))
+            .width(Length::Fixed((suggested.0 + 2 * horizontal_padding) as f32))
+            .height(Length::Fixed((suggested.1 + 2 * vertical_padding) as f32))
+            .class(Button::AppletIcon)
+    }
+
+    pub fn text_button<'a, Message: Clone + 'static>(
+        &self,
+        text: impl Into<Text<'a, crate::Theme, crate::Renderer>>,
+        message: Message,
+    ) -> crate::widget::Button<'a, Message> {
+        let text = text.into();
+        let suggested = self.suggested_size(true);
+
+        let (applet_padding_major_axis, applet_padding_minor_axis) = self.suggested_padding(true);
+        let (horizontal_padding, vertical_padding) = if self.is_horizontal() {
+            (applet_padding_major_axis, applet_padding_minor_axis)
+        } else {
+            (applet_padding_minor_axis, applet_padding_major_axis)
+        };
         crate::widget::button::custom(
-            layer_container(
-                widget::icon(icon)
-                    .class(if symbolic {
-                        theme::Svg::Custom(Rc::new(|theme| crate::iced_widget::svg::Style {
-                            color: Some(theme.cosmic().background.on.into()),
-                        }))
-                    } else {
-                        theme::Svg::default()
-                    })
-                    .width(Length::Fixed(suggested.0 as f32))
-                    .height(Length::Fixed(suggested.1 as f32)),
-            )
-            .center(Length::Fill),
+            Row::with_children(vec![
+                Column::with_children(vec![
+                    Text::from(text).into(),
+                    horizontal_space()
+                        .width(Length::Fixed(
+                            (suggested.0 as f32 + 2. * horizontal_padding as f32),
+                        ))
+                        .width(Length::Shrink)
+                        .height(Length::Shrink)
+                        .into(),
+                ])
+                .align_x(Alignment::Center)
+                .into(),
+                vertical_space()
+                    .height(Length::Fixed(
+                        (suggested.1 as f32 + 2. * vertical_padding as f32),
+                    ))
+                    .into(),
+            ])
+            .align_y(Alignment::Center),
         )
-        .width(Length::Fixed((suggested.0 + 2 * horizontal_padding) as f32))
-        .height(Length::Fixed((suggested.1 + 2 * vertical_padding) as f32))
-        .class(Button::AppletIcon)
+        .on_press_down(message)
+        .class(crate::theme::Button::AppletIcon)
     }
 
     pub fn icon_button<'a, Message: Clone + 'static>(
