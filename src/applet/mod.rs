@@ -269,28 +269,15 @@ impl Context {
             (applet_padding_minor_axis, applet_padding_major_axis)
         };
         crate::widget::button::custom(
-            Row::with_children(vec![
-                Column::with_children(vec![
-                    Text::from(text).into(),
-                    horizontal_space()
-                        .width(Length::Fixed(
-                            (suggested.0 as f32 + 2. * horizontal_padding as f32),
-                        ))
-                        .width(Length::Shrink)
-                        .height(Length::Shrink)
-                        .into(),
-                ])
-                .align_x(Alignment::Center)
-                .into(),
-                vertical_space()
-                    .height(Length::Fixed(
-                        (suggested.1 as f32 + 2. * vertical_padding as f32),
-                    ))
-                    .into(),
-            ])
-            .align_y(Alignment::Center),
+            layer_container(
+                Text::from(text)
+                    .height(Length::Fill)
+                    .align_y(Alignment::Center),
+            )
+            .center_y(Length::Fixed(f32::from(suggested.1 + 2 * vertical_padding))),
         )
         .on_press_down(message)
+        .padding([0, horizontal_padding])
         .class(crate::theme::Button::AppletIcon)
     }
 
