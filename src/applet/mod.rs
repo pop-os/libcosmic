@@ -252,10 +252,10 @@ impl Context {
                     parent: parent_id.unwrap_or(window::Id::RESERVED),
                     id: window_id,
                     grab: false,
-                    input_zone: Some(Rectangle::new(
+                    input_zone: Some(vec![Rectangle::new(
                         iced::Point::new(-1000., -1000.),
                         iced::Size::default(),
-                    )),
+                    )]),
                     positioner: SctkPositioner {
                         size: None,
                         size_limits: Limits::NONE.min_width(1.).min_height(1.),
