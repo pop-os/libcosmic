@@ -656,7 +656,7 @@ where
                 if index == old_value.len() {
                     state.cursor.move_to(self.value.len());
                 }
-            };
+            }
         }
 
         if let Some(f) = state.is_focused.as_ref().filter(|f| f.focused) {
@@ -2687,6 +2687,7 @@ impl State {
     pub fn focus(&mut self) {
         let now = Instant::now();
         LAST_FOCUS_UPDATE.with(|x| x.set(now));
+        let was_focused = self.is_focused.is_some_and(|f| f.focused);
         self.is_read_only = false;
         self.is_focused = Some(Focus {
             updated_at: now,
@@ -2695,6 +2696,9 @@ impl State {
             needs_update: false,
         });
 
+        if was_focused {
+            return;
+        }
         if self.select_on_focus {
             self.select_all()
         } else {
