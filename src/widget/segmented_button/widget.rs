@@ -1054,10 +1054,12 @@ where
             }) = event
             {
                 state.focused_visible = true;
-                return if modifiers.shift() {
+                return if modifiers == keyboard::Modifiers::SHIFT {
                     self.focus_previous(state)
-                } else {
+                } else if modifiers.is_empty() {
                     self.focus_next(state)
+                } else {
+                    event::Status::Ignored
                 };
             }
 
