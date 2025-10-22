@@ -1,6 +1,5 @@
 # Context Drawer
 close = Zavřít
-
 # About
 license = Licence
 links = Odkazy

@@ -1,6 +1,5 @@
 # Context Drawer
 close = Zamknij
-
 # About
 license = Licencja
 links = Linki
