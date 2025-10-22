@@ -108,6 +108,8 @@ pub mod task;
 
 pub mod theme;
 
+pub mod scroll;
+
 #[doc(inline)]
 pub use theme::{Theme, style};
 
