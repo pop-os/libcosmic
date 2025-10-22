@@ -336,7 +336,17 @@ where
                 ) && cursor.is_over(c_layout.bounds())
                 {
                     my_state.hovered = Some(i);
-                } else if my_state.hovered.is_some_and(|h| i == h) {
+                    return child.as_widget_mut().on_event(
+                        state,
+                        event.clone(),
+                        c_layout.with_virtual_offset(layout.virtual_offset()),
+                        cursor_virtual,
+                        renderer,
+                        clipboard,
+                        shell,
+                        viewport,
+                    );
+                } else if my_state.hovered.is_some_and(|h| i != h) {
                     cursor_virtual = mouse::Cursor::Unavailable;
                 }
 
@@ -344,7 +354,7 @@ where
                     state,
                     event.clone(),
                     c_layout.with_virtual_offset(layout.virtual_offset()),
-                    cursor,
+                    cursor_virtual,
                     renderer,
                     clipboard,
                     shell,
@@ -390,18 +400,21 @@ where
         viewport: &Rectangle,
     ) {
         if let Some(clipped_viewport) = layout.bounds().intersection(viewport) {
+            let my_state = tree.state.downcast_ref::<State>();
+
             let viewport = if self.clip {
                 &clipped_viewport
             } else {
                 viewport
             };
 
-            for ((child, state), c_layout) in self
+            for (i, ((child, state), c_layout)) in self
                 .children
                 .iter()
                 .zip(&tree.children)
                 .zip(layout.children())
                 .filter(|(_, layout)| layout.bounds().intersects(viewport))
+                .enumerate()
             {
                 child.as_widget().draw(
                     state,
@@ -409,7 +422,11 @@ where
                     theme,
                     style,
                     c_layout.with_virtual_offset(layout.virtual_offset()),
-                    cursor,
+                    if my_state.hovered.is_some_and(|h| i == h) {
+                        cursor
+                    } else {
+                        mouse::Cursor::Unavailable
+                    },
                     viewport,
                 );
             }
