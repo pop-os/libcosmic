@@ -359,7 +359,7 @@ impl<Message: 'static> Widget<Message, crate::Theme, crate::Renderer>
                 }
                 return event::Status::Captured;
             }
-            Event::Dnd(DndEvent::Offer(id, OfferEvent::Leave)) => {
+            Event::Dnd(DndEvent::Offer(_, OfferEvent::Leave)) => {
                 if let Some(msg) =
                     state.on_leave(self.on_leave.as_ref().map(std::convert::AsRef::as_ref))
                 {
@@ -380,7 +380,7 @@ impl<Message: 'static> Widget<Message, crate::Theme, crate::Renderer>
                         viewport,
                     );
                 }
-                return event::Status::Captured;
+                return event::Status::Ignored;
             }
             Event::Dnd(DndEvent::Offer(id, OfferEvent::Motion { x, y })) if id == Some(my_id) => {
                 if let Some(msg) = state.on_motion(
@@ -412,13 +412,13 @@ impl<Message: 'static> Widget<Message, crate::Theme, crate::Renderer>
                 }
                 return event::Status::Captured;
             }
-            Event::Dnd(DndEvent::Offer(id, OfferEvent::LeaveDestination)) => {
+            Event::Dnd(DndEvent::Offer(_, OfferEvent::LeaveDestination)) => {
                 if let Some(msg) =
                     state.on_leave(self.on_leave.as_ref().map(std::convert::AsRef::as_ref))
                 {
                     shell.publish(msg);
                 }
-                return event::Status::Captured;
+                return event::Status::Ignored;
             }
             Event::Dnd(DndEvent::Offer(id, OfferEvent::Drop)) if id == Some(my_id) => {
                 if let Some(msg) =
