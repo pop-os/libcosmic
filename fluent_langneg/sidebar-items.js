@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["convert_vec_str_to_langids","convert_vec_str_to_langids_lossy"],"mod":["accepted_languages","negotiate"]};

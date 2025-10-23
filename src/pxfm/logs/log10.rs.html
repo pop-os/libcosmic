@@ -1,0 +1,500 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `/home/runner/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/pxfm-0.1.25/src/logs/log10.rs`."><title>log10.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../../static.files/rustdoc-aa0817cf.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="pxfm" data-themes="" data-resource-suffix="" data-rustdoc-version="1.90.0 (1159e78c4 2025-09-14)" data-channel="1.90.0" data-search-js="search-fa3e91e5.js" data-settings-js="settings-5514c975.js" ><script src="../../../static.files/storage-68b7e25d.js"></script><script defer src="../../../static.files/src-script-813739b1.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-eebb9057.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-32bb7600.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-6580c154.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-044be391.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><h1><div class="sub-heading">pxfm/logs/</div>log10.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap digits-3"><pre class="rust"><code><a href=#1 id=1 data-nosnippet>1</a><span class="comment">/*
+<a href=#2 id=2 data-nosnippet>2</a> * // Copyright (c) Radzivon Bartoshyk 7/2025. All rights reserved.
+<a href=#3 id=3 data-nosnippet>3</a> * //
+<a href=#4 id=4 data-nosnippet>4</a> * // Redistribution and use in source and binary forms, with or without modification,
+<a href=#5 id=5 data-nosnippet>5</a> * // are permitted provided that the following conditions are met:
+<a href=#6 id=6 data-nosnippet>6</a> * //
+<a href=#7 id=7 data-nosnippet>7</a> * // 1.  Redistributions of source code must retain the above copyright notice, this
+<a href=#8 id=8 data-nosnippet>8</a> * // list of conditions and the following disclaimer.
+<a href=#9 id=9 data-nosnippet>9</a> * //
+<a href=#10 id=10 data-nosnippet>10</a> * // 2.  Redistributions in binary form must reproduce the above copyright notice,
+<a href=#11 id=11 data-nosnippet>11</a> * // this list of conditions and the following disclaimer in the documentation
+<a href=#12 id=12 data-nosnippet>12</a> * // and/or other materials provided with the distribution.
+<a href=#13 id=13 data-nosnippet>13</a> * //
+<a href=#14 id=14 data-nosnippet>14</a> * // 3.  Neither the name of the copyright holder nor the names of its
+<a href=#15 id=15 data-nosnippet>15</a> * // contributors may be used to endorse or promote products derived from
+<a href=#16 id=16 data-nosnippet>16</a> * // this software without specific prior written permission.
+<a href=#17 id=17 data-nosnippet>17</a> * //
+<a href=#18 id=18 data-nosnippet>18</a> * // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+<a href=#19 id=19 data-nosnippet>19</a> * // AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+<a href=#20 id=20 data-nosnippet>20</a> * // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+<a href=#21 id=21 data-nosnippet>21</a> * // DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+<a href=#22 id=22 data-nosnippet>22</a> * // FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+<a href=#23 id=23 data-nosnippet>23</a> * // DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+<a href=#24 id=24 data-nosnippet>24</a> * // SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+<a href=#25 id=25 data-nosnippet>25</a> * // CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+<a href=#26 id=26 data-nosnippet>26</a> * // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+<a href=#27 id=27 data-nosnippet>27</a> * // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+<a href=#28 id=28 data-nosnippet>28</a> */
+<a href=#29 id=29 data-nosnippet>29</a></span><span class="kw">use </span><span class="kw">crate</span>::common::{f_fmla, min_normal_f64};
+<a href=#30 id=30 data-nosnippet>30</a><span class="kw">use </span><span class="kw">crate</span>::double_double::DoubleDouble;
+<a href=#31 id=31 data-nosnippet>31</a><span class="kw">use </span><span class="kw">crate</span>::logs::log2::LOG_COEFFS;
+<a href=#32 id=32 data-nosnippet>32</a><span class="kw">use </span><span class="kw">crate</span>::logs::log10dd::log10_dd;
+<a href=#33 id=33 data-nosnippet>33</a><span class="kw">use </span><span class="kw">crate</span>::logs::log10td::log10_td;
+<a href=#34 id=34 data-nosnippet>34</a><span class="kw">use </span><span class="kw">crate</span>::polyeval::f_polyeval4;
+<a href=#35 id=35 data-nosnippet>35</a>
+<a href=#36 id=36 data-nosnippet>36</a><span class="comment">// Generated by SageMath with:
+<a href=#37 id=37 data-nosnippet>37</a>// print("[")
+<a href=#38 id=38 data-nosnippet>38</a>// for i in range(128):
+<a href=#39 id=39 data-nosnippet>39</a>//     R = RealField(200)
+<a href=#40 id=40 data-nosnippet>40</a>//     r = R(2)**(-8) * ( R(2)**8 * (R(1) - R(2)**(-8)) / (R(1) + R(i)*R(2)**-7) ).ceil()
+<a href=#41 id=41 data-nosnippet>41</a>//     b = float((r.log10()*R(2)**43).round() * R(2)**-43)
+<a href=#42 id=42 data-nosnippet>42</a>//     c = (r.log10() - R(b))
+<a href=#43 id=43 data-nosnippet>43</a>//     if i == 0 or i == 127:
+<a href=#44 id=44 data-nosnippet>44</a>//         print("(", double_to_hex(0), ",", double_to_hex(0), "),")
+<a href=#45 id=45 data-nosnippet>45</a>//     else:
+<a href=#46 id=46 data-nosnippet>46</a>//         print("(", double_to_hex(-c), ",", double_to_hex(-b), "),")
+<a href=#47 id=47 data-nosnippet>47</a>// print("];")
+<a href=#48 id=48 data-nosnippet>48</a>// static LOG10_R_DD: [(u64, u64); 128] = [
+<a href=#49 id=49 data-nosnippet>49</a>//     (0x0000000000000000, 0x0000000000000000),
+<a href=#50 id=50 data-nosnippet>50</a>//     (0xbd16079e5269431b, 0x3f6be76bd77c0000),
+<a href=#51 id=51 data-nosnippet>51</a>//     (0xbcffac7d2ae08e4f, 0x3f7c03a80ae60000),
+<a href=#52 id=52 data-nosnippet>52</a>//     (0x3d2fabf59b5d80b8, 0x3f851824c7580000),
+<a href=#53 id=53 data-nosnippet>53</a>//     (0x3d2310272fe17537, 0x3f8c3d0837780000),
+<a href=#54 id=54 data-nosnippet>54</a>//     (0xbd165201646ebccd, 0x3f91b85d60450000),
+<a href=#55 id=55 data-nosnippet>55</a>//     (0xbd2e22fab794a816, 0x3f9559bd24070000),
+<a href=#56 id=56 data-nosnippet>56</a>//     (0x3d2421bab5f034a4, 0x3f9902c31d628000),
+<a href=#57 id=57 data-nosnippet>57</a>//     (0x3d2fedb4b594a31b, 0x3f9cb38fccd88000),
+<a href=#58 id=58 data-nosnippet>58</a>//     (0xbd026ac877784097, 0x3f9e8eeb09f30000),
+<a href=#59 id=59 data-nosnippet>59</a>//     (0xbd2df23ed2ebe477, 0x3fa125d0432ec000),
+<a href=#60 id=60 data-nosnippet>60</a>//     (0xbd000c12f7a1b586, 0x3fa30838cdc30000),
+<a href=#61 id=61 data-nosnippet>61</a>//     (0x3d083662f181f53f, 0x3fa3faf7c6630000),
+<a href=#62 id=62 data-nosnippet>62</a>//     (0x3d22951bb9cd2fb7, 0x3fa5e3966b7e8000),
+<a href=#63 id=63 data-nosnippet>63</a>//     (0x3d1fae96a708581e, 0x3fa7d070145f4000),
+<a href=#64 id=64 data-nosnippet>64</a>//     (0x3d20744e2ea4f128, 0x3fa8c878eeb04000),
+<a href=#65 id=65 data-nosnippet>65</a>//     (0xbcfb0197d2cb982e, 0x3faabbcebd850000),
+<a href=#66 id=66 data-nosnippet>66</a>//     (0xbd2b1aad42a57f54, 0x3fabb7209d1e4000),
+<a href=#67 id=67 data-nosnippet>67</a>//     (0xbd240bcd23c3e44c, 0x3fadb11ed766c000),
+<a href=#68 id=68 data-nosnippet>68</a>//     (0xbcf626d2c723bf3b, 0x3faeafd05035c000),
+<a href=#69 id=69 data-nosnippet>69</a>//     (0x3cf77c3e779b9fcf, 0x3fb0585283764000),
+<a href=#70 id=70 data-nosnippet>70</a>//     (0x3cef3735158d42c3, 0x3fb0d966cc650000),
+<a href=#71 id=71 data-nosnippet>71</a>//     (0xbd2d227d61f9e88d, 0x3fb1dd5460c8c000),
+<a href=#72 id=72 data-nosnippet>72</a>//     (0xbcdf74be7c4de292, 0x3fb2603072a26000),
+<a href=#73 id=73 data-nosnippet>73</a>//     (0xbd1df5de49ddb160, 0x3fb367ba3aaa2000),
+<a href=#74 id=74 data-nosnippet>74</a>//     (0xbd1e5e3b38ac267a, 0x3fb3ec6ad5408000),
+<a href=#75 id=75 data-nosnippet>75</a>//     (0x3d275da8a5871b9a, 0x3fb4f7aad9bbc000),
+<a href=#76 id=76 data-nosnippet>76</a>//     (0x3d2ef5f3c10990f4, 0x3fb57e3d47c3a000),
+<a href=#77 id=77 data-nosnippet>77</a>//     (0x3d17c3cf23a17d9f, 0x3fb605735ee98000),
+<a href=#78 id=78 data-nosnippet>78</a>//     (0xbd141149840eaa65, 0x3fb715d0ce368000),
+<a href=#79 id=79 data-nosnippet>79</a>//     (0xbd1ff281b9601ce6, 0x3fb79efb57b10000),
+<a href=#80 id=80 data-nosnippet>80</a>//     (0x3d00a581f3edc493, 0x3fb828cfed29a000),
+<a href=#81 id=81 data-nosnippet>81</a>//     (0xbcf80743406505e6, 0x3fb93e7de0fc4000),
+<a href=#82 id=82 data-nosnippet>82</a>//     (0xbce76b169f6b4949, 0x3fb9ca5aa172a000),
+<a href=#83 id=83 data-nosnippet>83</a>//     (0xbd0bc8889d0fe1a0, 0x3fba56e8325f6000),
+<a href=#84 id=84 data-nosnippet>84</a>//     (0xbd25e950adf89934, 0x3fbae4285509a000),
+<a href=#85 id=85 data-nosnippet>85</a>//     (0xbd203ad4133e8c4c, 0x3fbb721cd1716000),
+<a href=#86 id=86 data-nosnippet>86</a>//     (0xbd2ddd18dedb6656, 0x3fbc902a19e66000),
+<a href=#87 id=87 data-nosnippet>87</a>//     (0x3d05e533080ecf32, 0x3fbd204698cb4000),
+<a href=#88 id=88 data-nosnippet>88</a>//     (0x3d27e865b8783768, 0x3fbdb11ed766a000),
+<a href=#89 id=89 data-nosnippet>89</a>//     (0x3d25e50ff38d4de9, 0x3fbe42b4c16ca000),
+<a href=#90 id=90 data-nosnippet>90</a>//     (0x3d25f7ef576ada0c, 0x3fbed50a4a26e000),
+<a href=#91 id=91 data-nosnippet>91</a>//     (0xbd1ff229f20ed3d2, 0x3fbffbfc2bbc8000),
+<a href=#92 id=92 data-nosnippet>92</a>//     (0xbd26f30673aae7ef, 0x3fc0484e4942b000),
+<a href=#93 id=93 data-nosnippet>93</a>//     (0x3d2dae5ed5e3f34c, 0x3fc093025a199000),
+<a href=#94 id=94 data-nosnippet>94</a>//     (0xbd23eea49e637bb3, 0x3fc0de1b56357000),
+<a href=#95 id=95 data-nosnippet>95</a>//     (0x3d182c6326f70b35, 0x3fc1299a4fb3e000),
+<a href=#96 id=96 data-nosnippet>96</a>//     (0x3d2f04d633b79054, 0x3fc175805d158000),
+<a href=#97 id=97 data-nosnippet>97</a>//     (0x3cf8b891b6d05a73, 0x3fc1c1ce9955c000),
+<a href=#98 id=98 data-nosnippet>98</a>//     (0xbcc35ca658049a0a, 0x3fc20e8624039000),
+<a href=#99 id=99 data-nosnippet>99</a>//     (0x3d2ff081a4e81f0b, 0x3fc25ba8215af000),
+<a href=#100 id=100 data-nosnippet>100</a>//     (0x3d21e3f04f63ee01, 0x3fc2a935ba5f1000),
+<a href=#101 id=101 data-nosnippet>101</a>//     (0xbd2e1471e5cb397e, 0x3fc2f7301cf4f000),
+<a href=#102 id=102 data-nosnippet>102</a>//     (0xbd25bd54fd6eb7d9, 0x3fc345987bfef000),
+<a href=#103 id=103 data-nosnippet>103</a>//     (0x3d1fe93f791a7264, 0x3fc394700f795000),
+<a href=#104 id=104 data-nosnippet>104</a>//     (0xbd28aebce3ec8738, 0x3fc3e3b814974000),
+<a href=#105 id=105 data-nosnippet>105</a>//     (0x3d2b0722aa2559f2, 0x3fc43371cde07000),
+<a href=#106 id=106 data-nosnippet>106</a>//     (0xbd1bcb784188a058, 0x3fc4839e83507000),
+<a href=#107 id=107 data-nosnippet>107</a>//     (0x3d220ca9a2bcc728, 0x3fc4d43f8275a000),
+<a href=#108 id=108 data-nosnippet>108</a>//     (0x3d2bb95ec8fd8f68, 0x3fc525561e925000),
+<a href=#109 id=109 data-nosnippet>109</a>//     (0x3cf4e036062e2e73, 0x3fc576e3b0bde000),
+<a href=#110 id=110 data-nosnippet>110</a>//     (0xbcce560b5e7a02b4, 0x3fc5c8e998073000),
+<a href=#111 id=111 data-nosnippet>111</a>//     (0x3ce1e472c751a4c0, 0x3fc61b6939983000),
+<a href=#112 id=112 data-nosnippet>112</a>//     (0xbcf1116ad28239b0, 0x3fc66e6400da4000),
+<a href=#113 id=113 data-nosnippet>113</a>//     (0x3d19ad1d9e405fb9, 0x3fc6c1db5f9bb000),
+<a href=#114 id=114 data-nosnippet>114</a>//     (0x3d19ad1d9e405fb9, 0x3fc6c1db5f9bb000),
+<a href=#115 id=115 data-nosnippet>115</a>//     (0xbd241149840eaa65, 0x3fc715d0ce368000),
+<a href=#116 id=116 data-nosnippet>116</a>//     (0x3d2bfb1de334b1cb, 0x3fc76a45cbb7e000),
+<a href=#117 id=117 data-nosnippet>117</a>//     (0xbcf9fc01708d86e7, 0x3fc7bf3bde09a000),
+<a href=#118 id=118 data-nosnippet>118</a>//     (0x3d24adaf7fe992b6, 0x3fc814b4921bd000),
+<a href=#119 id=119 data-nosnippet>119</a>//     (0xbd1c0b434f5d2b7a, 0x3fc86ab17c10c000),
+<a href=#120 id=120 data-nosnippet>120</a>//     (0xbd1c0b434f5d2b7a, 0x3fc86ab17c10c000),
+<a href=#121 id=121 data-nosnippet>121</a>//     (0x3d24c7acd659652f, 0x3fc8c13437695000),
+<a href=#122 id=122 data-nosnippet>122</a>//     (0x3d23e99da1b485cf, 0x3fc9183e67339000),
+<a href=#123 id=123 data-nosnippet>123</a>//     (0xbd1fb7d8e74e02a0, 0x3fc96fd1b63a0000),
+<a href=#124 id=124 data-nosnippet>124</a>//     (0x3d17c9690248757e, 0x3fc9c7efd734a000),
+<a href=#125 id=125 data-nosnippet>125</a>//     (0xbcb0cee0ed4ca7e9, 0x3fca209a84fbd000),
+<a href=#126 id=126 data-nosnippet>126</a>//     (0xbcb0cee0ed4ca7e9, 0x3fca209a84fbd000),
+<a href=#127 id=127 data-nosnippet>127</a>//     (0x3d0d924eb1fec6c5, 0x3fca79d382bc2000),
+<a href=#128 id=128 data-nosnippet>128</a>//     (0x3cefe6eb5a4df1df, 0x3fcad39c9c2c6000),
+<a href=#129 id=129 data-nosnippet>129</a>//     (0x3d14c9cce6dd603b, 0x3fcb2df7a5c50000),
+<a href=#130 id=130 data-nosnippet>130</a>//     (0x3d14c9cce6dd603b, 0x3fcb2df7a5c50000),
+<a href=#131 id=131 data-nosnippet>131</a>//     (0xbd2a01b9bb0ebf1b, 0x3fcb88e67cf98000),
+<a href=#132 id=132 data-nosnippet>132</a>//     (0x3d22ee896e06dbe8, 0x3fcbe46b08735000),
+<a href=#133 id=133 data-nosnippet>133</a>//     (0xbceff2381071d23e, 0x3fcc4087384f5000),
+<a href=#134 id=134 data-nosnippet>134</a>//     (0xbceff2381071d23e, 0x3fcc4087384f5000),
+<a href=#135 id=135 data-nosnippet>135</a>//     (0xbd22f9fd61140aa6, 0x3fcc9d3d065c6000),
+<a href=#136 id=136 data-nosnippet>136</a>//     (0xbd22386ad8b819b8, 0x3fccfa8e765cc000),
+<a href=#137 id=137 data-nosnippet>137</a>//     (0xbd22386ad8b819b8, 0x3fccfa8e765cc000),
+<a href=#138 id=138 data-nosnippet>138</a>//     (0x3d2d63da3ac9f0d5, 0x3fcd587d96494000),
+<a href=#139 id=139 data-nosnippet>139</a>//     (0x3d2fcc16f3ba09cb, 0x3fcdb70c7e96e000),
+<a href=#140 id=140 data-nosnippet>140</a>//     (0x3d2fcc16f3ba09cb, 0x3fcdb70c7e96e000),
+<a href=#141 id=141 data-nosnippet>141</a>//     (0xbd2cc52c1ba2d838, 0x3fce163d527e7000),
+<a href=#142 id=142 data-nosnippet>142</a>//     (0x3d1f97877007c127, 0x3fce76124046b000),
+<a href=#143 id=143 data-nosnippet>143</a>//     (0x3d1f97877007c127, 0x3fce76124046b000),
+<a href=#144 id=144 data-nosnippet>144</a>//     (0x3d0fbd42fdc335fd, 0x3fced68d81919000),
+<a href=#145 id=145 data-nosnippet>145</a>//     (0xbd2cbc0789055864, 0x3fcf37b15bab1000),
+<a href=#146 id=146 data-nosnippet>146</a>//     (0xbd2cbc0789055864, 0x3fcf37b15bab1000),
+<a href=#147 id=147 data-nosnippet>147</a>//     (0x3d22737df7f29668, 0x3fcf99801fdb7000),
+<a href=#148 id=148 data-nosnippet>148</a>//     (0xbd2ff229f20ed3d2, 0x3fcffbfc2bbc8000),
+<a href=#149 id=149 data-nosnippet>149</a>//     (0xbd2ff229f20ed3d2, 0x3fcffbfc2bbc8000),
+<a href=#150 id=150 data-nosnippet>150</a>//     (0x3d100809c16ae3ec, 0x3fd02f93f4c87000),
+<a href=#151 id=151 data-nosnippet>151</a>//     (0xbd2aa1358e87a6b4, 0x3fd06182e84fd800),
+<a href=#152 id=152 data-nosnippet>152</a>//     (0xbd2aa1358e87a6b4, 0x3fd06182e84fd800),
+<a href=#153 id=153 data-nosnippet>153</a>//     (0xbcff171b2c5f2274, 0x3fd093cc32c91000),
+<a href=#154 id=154 data-nosnippet>154</a>//     (0xbcff171b2c5f2274, 0x3fd093cc32c91000),
+<a href=#155 id=155 data-nosnippet>155</a>//     (0xbd242d6ae59e7d9c, 0x3fd0c6711d6ac000),
+<a href=#156 id=156 data-nosnippet>156</a>//     (0x3d2eac1871dbdbbf, 0x3fd0f972f87ff000),
+<a href=#157 id=157 data-nosnippet>157</a>//     (0x3d2eac1871dbdbbf, 0x3fd0f972f87ff000),
+<a href=#158 id=158 data-nosnippet>158</a>//     (0x3d1feed957c16a44, 0x3fd12cd31b9c9800),
+<a href=#159 id=159 data-nosnippet>159</a>//     (0x3d1feed957c16a44, 0x3fd12cd31b9c9800),
+<a href=#160 id=160 data-nosnippet>160</a>//     (0x3d1a6023a51d15b6, 0x3fd16092e5d3a800),
+<a href=#161 id=161 data-nosnippet>161</a>//     (0x3d2cefc5208422d8, 0x3fd194b3bdef6800),
+<a href=#162 id=162 data-nosnippet>162</a>//     (0x3d2cefc5208422d8, 0x3fd194b3bdef6800),
+<a href=#163 id=163 data-nosnippet>163</a>//     (0xbc81d4f1e8c2daff, 0x3fd1c93712abc800),
+<a href=#164 id=164 data-nosnippet>164</a>//     (0xbc81d4f1e8c2daff, 0x3fd1c93712abc800),
+<a href=#165 id=165 data-nosnippet>165</a>//     (0x3d140eb9b53054c3, 0x3fd1fe1e5af2c000),
+<a href=#166 id=166 data-nosnippet>166</a>//     (0x3d140eb9b53054c3, 0x3fd1fe1e5af2c000),
+<a href=#167 id=167 data-nosnippet>167</a>//     (0x3d29bbc8038401fc, 0x3fd2336b161b3000),
+<a href=#168 id=168 data-nosnippet>168</a>//     (0x3d29bbc8038401fc, 0x3fd2336b161b3000),
+<a href=#169 id=169 data-nosnippet>169</a>//     (0x3cf09ca54daae9f9, 0x3fd2691ecc29f000),
+<a href=#170 id=170 data-nosnippet>170</a>//     (0x3cf09ca54daae9f9, 0x3fd2691ecc29f000),
+<a href=#171 id=171 data-nosnippet>171</a>//     (0x3cf2b528446968a4, 0x3fd29f3b0e155800),
+<a href=#172 id=172 data-nosnippet>172</a>//     (0x3cf2b528446968a4, 0x3fd29f3b0e155800),
+<a href=#173 id=173 data-nosnippet>173</a>//     (0xbd14548507c3dd04, 0x3fd2d5c1760b8800),
+<a href=#174 id=174 data-nosnippet>174</a>//     (0xbd14548507c3dd04, 0x3fd2d5c1760b8800),
+<a href=#175 id=175 data-nosnippet>175</a>//     (0xbd1db59b99249f3a, 0x3fd30cb3a7bb3800),
+<a href=#176 id=176 data-nosnippet>176</a>//     (0x0000000000000000, 0x0000000000000000),
+<a href=#177 id=177 data-nosnippet>177</a>// ];
+<a href=#178 id=178 data-nosnippet>178</a>
+<a href=#179 id=179 data-nosnippet>179</a>// Generated by Sollya with:
+<a href=#180 id=180 data-nosnippet>180</a>// for i from 0 to 127 do {
+<a href=#181 id=181 data-nosnippet>181</a>//     r = 2^-8 * ceil( 2^8 * (1 - 2^(-8)) / (1 + i*2^-7) );
+<a href=#182 id=182 data-nosnippet>182</a>//     b = nearestint(log(r)*2^43) * 2^-43;
+<a href=#183 id=183 data-nosnippet>183</a>//     c = round(log(r) - b, D, RN);
+<a href=#184 id=184 data-nosnippet>184</a>//     print("{", -c, ",", -b, "},");
+<a href=#185 id=185 data-nosnippet>185</a>//   };
+<a href=#186 id=186 data-nosnippet>186</a>// We replace LOG_R[0] with log10(1.0) == 0.0
+<a href=#187 id=187 data-nosnippet>187</a></span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">static </span>LOG_R_DD: [(u64, u64); <span class="number">128</span>] = [
+<a href=#188 id=188 data-nosnippet>188</a>    (<span class="number">0x0000000000000000</span>, <span class="number">0x0000000000000000</span>),
+<a href=#189 id=189 data-nosnippet>189</a>    (<span class="number">0xbd10c76b999d2be8</span>, <span class="number">0x3f80101575890000</span>),
+<a href=#190 id=190 data-nosnippet>190</a>    (<span class="number">0xbd23dc5b06e2f7d2</span>, <span class="number">0x3f90205658938000</span>),
+<a href=#191 id=191 data-nosnippet>191</a>    (<span class="number">0xbd2aa0ba325a0c34</span>, <span class="number">0x3f98492528c90000</span>),
+<a href=#192 id=192 data-nosnippet>192</a>    (<span class="number">0x3d0111c05cf1d753</span>, <span class="number">0x3fa0415d89e74000</span>),
+<a href=#193 id=193 data-nosnippet>193</a>    (<span class="number">0xbd2c167375bdfd28</span>, <span class="number">0x3fa466aed42e0000</span>),
+<a href=#194 id=194 data-nosnippet>194</a>    (<span class="number">0xbd197995d05a267d</span>, <span class="number">0x3fa894aa149fc000</span>),
+<a href=#195 id=195 data-nosnippet>195</a>    (<span class="number">0xbd1a68f247d82807</span>, <span class="number">0x3faccb73cdddc000</span>),
+<a href=#196 id=196 data-nosnippet>196</a>    (<span class="number">0xbd17e5dd7009902c</span>, <span class="number">0x3fb08598b59e4000</span>),
+<a href=#197 id=197 data-nosnippet>197</a>    (<span class="number">0xbd25325d560d9e9b</span>, <span class="number">0x3fb1973bd1466000</span>),
+<a href=#198 id=198 data-nosnippet>198</a>    (<span class="number">0x3d2cc85ea5db4ed7</span>, <span class="number">0x3fb3bdf5a7d1e000</span>),
+<a href=#199 id=199 data-nosnippet>199</a>    (<span class="number">0xbd2c69063c5d1d1e</span>, <span class="number">0x3fb5e95a4d97a000</span>),
+<a href=#200 id=200 data-nosnippet>200</a>    (<span class="number">0x3cec1e8da99ded32</span>, <span class="number">0x3fb700d30aeac000</span>),
+<a href=#201 id=201 data-nosnippet>201</a>    (<span class="number">0x3d23115c3abd47da</span>, <span class="number">0x3fb9335e5d594000</span>),
+<a href=#202 id=202 data-nosnippet>202</a>    (<span class="number">0xbd1390802bf768e5</span>, <span class="number">0x3fbb6ac88dad6000</span>),
+<a href=#203 id=203 data-nosnippet>203</a>    (<span class="number">0x3d2646d1c65aacd3</span>, <span class="number">0x3fbc885801bc4000</span>),
+<a href=#204 id=204 data-nosnippet>204</a>    (<span class="number">0xbd2dc068afe645e0</span>, <span class="number">0x3fbec739830a2000</span>),
+<a href=#205 id=205 data-nosnippet>205</a>    (<span class="number">0xbd2534d64fa10afd</span>, <span class="number">0x3fbfe89139dbe000</span>),
+<a href=#206 id=206 data-nosnippet>206</a>    (<span class="number">0x3d21ef78ce2d07f2</span>, <span class="number">0x3fc1178e8227e000</span>),
+<a href=#207 id=207 data-nosnippet>207</a>    (<span class="number">0x3d2ca78e44389934</span>, <span class="number">0x3fc1aa2b7e23f000</span>),
+<a href=#208 id=208 data-nosnippet>208</a>    (<span class="number">0x3d039d6ccb81b4a1</span>, <span class="number">0x3fc2d1610c868000</span>),
+<a href=#209 id=209 data-nosnippet>209</a>    (<span class="number">0x3cc62fa8234b7289</span>, <span class="number">0x3fc365fcb0159000</span>),
+<a href=#210 id=210 data-nosnippet>210</a>    (<span class="number">0x3d25837954fdb678</span>, <span class="number">0x3fc4913d8333b000</span>),
+<a href=#211 id=211 data-nosnippet>211</a>    (<span class="number">0x3d2633e8e5697dc7</span>, <span class="number">0x3fc527e5e4a1b000</span>),
+<a href=#212 id=212 data-nosnippet>212</a>    (<span class="number">0x3d19cf8b2c3c2e78</span>, <span class="number">0x3fc6574ebe8c1000</span>),
+<a href=#213 id=213 data-nosnippet>213</a>    (<span class="number">0xbd25118de59c21e1</span>, <span class="number">0x3fc6f0128b757000</span>),
+<a href=#214 id=214 data-nosnippet>214</a>    (<span class="number">0x3d1e0ddb9a631e83</span>, <span class="number">0x3fc823c16551a000</span>),
+<a href=#215 id=215 data-nosnippet>215</a>    (<span class="number">0xbd073d54aae92cd1</span>, <span class="number">0x3fc8beafeb390000</span>),
+<a href=#216 id=216 data-nosnippet>216</a>    (<span class="number">0x3d07f22858a0ff6f</span>, <span class="number">0x3fc95a5adcf70000</span>),
+<a href=#217 id=217 data-nosnippet>217</a>    (<span class="number">0xbd28724350562169</span>, <span class="number">0x3fca93ed3c8ae000</span>),
+<a href=#218 id=218 data-nosnippet>218</a>    (<span class="number">0xbd0c358d4eace1aa</span>, <span class="number">0x3fcb31d8575bd000</span>),
+<a href=#219 id=219 data-nosnippet>219</a>    (<span class="number">0xbd2d4bc4595412b6</span>, <span class="number">0x3fcbd087383be000</span>),
+<a href=#220 id=220 data-nosnippet>220</a>    (<span class="number">0xbd084a7e75b6f6e4</span>, <span class="number">0x3fcd1037f2656000</span>),
+<a href=#221 id=221 data-nosnippet>221</a>    (<span class="number">0xbd2aff2af715b035</span>, <span class="number">0x3fcdb13db0d49000</span>),
+<a href=#222 id=222 data-nosnippet>222</a>    (<span class="number">0x3cc212276041f430</span>, <span class="number">0x3fce530effe71000</span>),
+<a href=#223 id=223 data-nosnippet>223</a>    (<span class="number">0xbcca211565bb8e11</span>, <span class="number">0x3fcef5ade4dd0000</span>),
+<a href=#224 id=224 data-nosnippet>224</a>    (<span class="number">0x3d1bcbecca0cdf30</span>, <span class="number">0x3fcf991c6cb3b000</span>),
+<a href=#225 id=225 data-nosnippet>225</a>    (<span class="number">0x3cf89cdb16ed4e91</span>, <span class="number">0x3fd07138604d5800</span>),
+<a href=#226 id=226 data-nosnippet>226</a>    (<span class="number">0x3d27188b163ceae9</span>, <span class="number">0x3fd0c42d67616000</span>),
+<a href=#227 id=227 data-nosnippet>227</a>    (<span class="number">0xbd2c210e63a5f01c</span>, <span class="number">0x3fd1178e8227e800</span>),
+<a href=#228 id=228 data-nosnippet>228</a>    (<span class="number">0x3d2b9acdf7a51681</span>, <span class="number">0x3fd16b5ccbacf800</span>),
+<a href=#229 id=229 data-nosnippet>229</a>    (<span class="number">0x3d2ca6ed5147bdb7</span>, <span class="number">0x3fd1bf99635a6800</span>),
+<a href=#230 id=230 data-nosnippet>230</a>    (<span class="number">0x3d2c93c1df5bb3b6</span>, <span class="number">0x3fd269621134d800</span>),
+<a href=#231 id=231 data-nosnippet>231</a>    (<span class="number">0x3d2a9cfa4a5004f4</span>, <span class="number">0x3fd2bef07cdc9000</span>),
+<a href=#232 id=232 data-nosnippet>232</a>    (<span class="number">0xbd28e27ad3213cb8</span>, <span class="number">0x3fd314f1e1d36000</span>),
+<a href=#233 id=233 data-nosnippet>233</a>    (<span class="number">0x3d116ecdb0f177c8</span>, <span class="number">0x3fd36b6776be1000</span>),
+<a href=#234 id=234 data-nosnippet>234</a>    (<span class="number">0x3d183b54b606bd5c</span>, <span class="number">0x3fd3c25277333000</span>),
+<a href=#235 id=235 data-nosnippet>235</a>    (<span class="number">0x3d08e436ec90e09d</span>, <span class="number">0x3fd419b423d5e800</span>),
+<a href=#236 id=236 data-nosnippet>236</a>    (<span class="number">0xbd2f27ce0967d675</span>, <span class="number">0x3fd4718dc271c800</span>),
+<a href=#237 id=237 data-nosnippet>237</a>    (<span class="number">0xbd2e20891b0ad8a4</span>, <span class="number">0x3fd4c9e09e173000</span>),
+<a href=#238 id=238 data-nosnippet>238</a>    (<span class="number">0x3d2ebe708164c759</span>, <span class="number">0x3fd522ae0738a000</span>),
+<a href=#239 id=239 data-nosnippet>239</a>    (<span class="number">0x3d1fadedee5d40ef</span>, <span class="number">0x3fd57bf753c8d000</span>),
+<a href=#240 id=240 data-nosnippet>240</a>    (<span class="number">0xbd0a0b2a08a465dc</span>, <span class="number">0x3fd5d5bddf596000</span>),
+<a href=#241 id=241 data-nosnippet>241</a>    (<span class="number">0xbd2db623e731ae00</span>, <span class="number">0x3fd630030b3ab000</span>),
+<a href=#242 id=242 data-nosnippet>242</a>    (<span class="number">0x3d20a0d32756eba0</span>, <span class="number">0x3fd68ac83e9c6800</span>),
+<a href=#243 id=243 data-nosnippet>243</a>    (<span class="number">0x3d1721657c222d87</span>, <span class="number">0x3fd6e60ee6af1800</span>),
+<a href=#244 id=244 data-nosnippet>244</a>    (<span class="number">0x3d2d8b0949dc60b3</span>, <span class="number">0x3fd741d876c67800</span>),
+<a href=#245 id=245 data-nosnippet>245</a>    (<span class="number">0x3d29ec7d2efd1778</span>, <span class="number">0x3fd79e26687cf800</span>),
+<a href=#246 id=246 data-nosnippet>246</a>    (<span class="number">0xbd272090c812566a</span>, <span class="number">0x3fd7fafa3bd81800</span>),
+<a href=#247 id=247 data-nosnippet>247</a>    (<span class="number">0x3d2fd56f3333778a</span>, <span class="number">0x3fd85855776dc800</span>),
+<a href=#248 id=248 data-nosnippet>248</a>    (<span class="number">0xbd205ae1e5e70470</span>, <span class="number">0x3fd8b639a88b3000</span>),
+<a href=#249 id=249 data-nosnippet>249</a>    (<span class="number">0xbd1766b52ee6307d</span>, <span class="number">0x3fd914a8635bf800</span>),
+<a href=#250 id=250 data-nosnippet>250</a>    (<span class="number">0xbd152313a502d9f0</span>, <span class="number">0x3fd973a343135800</span>),
+<a href=#251 id=251 data-nosnippet>251</a>    (<span class="number">0xbd26279e10d0c0b0</span>, <span class="number">0x3fd9d32bea15f000</span>),
+<a href=#252 id=252 data-nosnippet>252</a>    (<span class="number">0x3d23c6457f9d79f5</span>, <span class="number">0x3fda33440224f800</span>),
+<a href=#253 id=253 data-nosnippet>253</a>    (<span class="number">0x3d23c6457f9d79f5</span>, <span class="number">0x3fda33440224f800</span>),
+<a href=#254 id=254 data-nosnippet>254</a>    (<span class="number">0x3d1e36f2bea77a5d</span>, <span class="number">0x3fda93ed3c8ad800</span>),
+<a href=#255 id=255 data-nosnippet>255</a>    (<span class="number">0xbd217cc552774458</span>, <span class="number">0x3fdaf5295248d000</span>),
+<a href=#256 id=256 data-nosnippet>256</a>    (<span class="number">0x3d1095252d841995</span>, <span class="number">0x3fdb56fa04462800</span>),
+<a href=#257 id=257 data-nosnippet>257</a>    (<span class="number">0x3d27d85bf40a666d</span>, <span class="number">0x3fdbb9611b80e000</span>),
+<a href=#258 id=258 data-nosnippet>258</a>    (<span class="number">0x3d2cec807fe8e180</span>, <span class="number">0x3fdc1c60693fa000</span>),
+<a href=#259 id=259 data-nosnippet>259</a>    (<span class="number">0x3d2cec807fe8e180</span>, <span class="number">0x3fdc1c60693fa000</span>),
+<a href=#260 id=260 data-nosnippet>260</a>    (<span class="number">0xbd29b6ddc15249ae</span>, <span class="number">0x3fdc7ff9c7455800</span>),
+<a href=#261 id=261 data-nosnippet>261</a>    (<span class="number">0xbd0797c33ec7a6b0</span>, <span class="number">0x3fdce42f18064800</span>),
+<a href=#262 id=262 data-nosnippet>262</a>    (<span class="number">0x3d235bafe9a767a8</span>, <span class="number">0x3fdd490246def800</span>),
+<a href=#263 id=263 data-nosnippet>263</a>    (<span class="number">0xbd1ea42d60dc616a</span>, <span class="number">0x3fddae75484c9800</span>),
+<a href=#264 id=264 data-nosnippet>264</a>    (<span class="number">0xbd1326b207322938</span>, <span class="number">0x3fde148a1a272800</span>),
+<a href=#265 id=265 data-nosnippet>265</a>    (<span class="number">0xbd1326b207322938</span>, <span class="number">0x3fde148a1a272800</span>),
+<a href=#266 id=266 data-nosnippet>266</a>    (<span class="number">0xbd2465505372bd08</span>, <span class="number">0x3fde7b42c3ddb000</span>),
+<a href=#267 id=267 data-nosnippet>267</a>    (<span class="number">0x3d2f27f45a470251</span>, <span class="number">0x3fdee2a156b41000</span>),
+<a href=#268 id=268 data-nosnippet>268</a>    (<span class="number">0x3d12cde56f014a8b</span>, <span class="number">0x3fdf4aa7ee031800</span>),
+<a href=#269 id=269 data-nosnippet>269</a>    (<span class="number">0x3d12cde56f014a8b</span>, <span class="number">0x3fdf4aa7ee031800</span>),
+<a href=#270 id=270 data-nosnippet>270</a>    (<span class="number">0x3d0085fa3c164935</span>, <span class="number">0x3fdfb358af7a4800</span>),
+<a href=#271 id=271 data-nosnippet>271</a>    (<span class="number">0xbd053ba3b1727b1c</span>, <span class="number">0x3fe00e5ae5b20800</span>),
+<a href=#272 id=272 data-nosnippet>272</a>    (<span class="number">0xbd04c45fe79539e0</span>, <span class="number">0x3fe04360be760400</span>),
+<a href=#273 id=273 data-nosnippet>273</a>    (<span class="number">0xbd04c45fe79539e0</span>, <span class="number">0x3fe04360be760400</span>),
+<a href=#274 id=274 data-nosnippet>274</a>    (<span class="number">0x3d26812241edf5fd</span>, <span class="number">0x3fe078bf0533c400</span>),
+<a href=#275 id=275 data-nosnippet>275</a>    (<span class="number">0x3d1f486b887e7e27</span>, <span class="number">0x3fe0ae76e2d05400</span>),
+<a href=#276 id=276 data-nosnippet>276</a>    (<span class="number">0x3d1f486b887e7e27</span>, <span class="number">0x3fe0ae76e2d05400</span>),
+<a href=#277 id=277 data-nosnippet>277</a>    (<span class="number">0x3d1c299807801742</span>, <span class="number">0x3fe0e4898611cc00</span>),
+<a href=#278 id=278 data-nosnippet>278</a>    (<span class="number">0xbd258647bb9ddcb2</span>, <span class="number">0x3fe11af823c75c00</span>),
+<a href=#279 id=279 data-nosnippet>279</a>    (<span class="number">0xbd258647bb9ddcb2</span>, <span class="number">0x3fe11af823c75c00</span>),
+<a href=#280 id=280 data-nosnippet>280</a>    (<span class="number">0xbd2edd97a293ae49</span>, <span class="number">0x3fe151c3f6f29800</span>),
+<a href=#281 id=281 data-nosnippet>281</a>    (<span class="number">0x3d14cc4ef8ab4650</span>, <span class="number">0x3fe188ee40f23c00</span>),
+<a href=#282 id=282 data-nosnippet>282</a>    (<span class="number">0x3d14cc4ef8ab4650</span>, <span class="number">0x3fe188ee40f23c00</span>),
+<a href=#283 id=283 data-nosnippet>283</a>    (<span class="number">0x3cccacdeed70e667</span>, <span class="number">0x3fe1c07849ae6000</span>),
+<a href=#284 id=284 data-nosnippet>284</a>    (<span class="number">0xbd2a7242c9fe81d3</span>, <span class="number">0x3fe1f8635fc61800</span>),
+<a href=#285 id=285 data-nosnippet>285</a>    (<span class="number">0xbd2a7242c9fe81d3</span>, <span class="number">0x3fe1f8635fc61800</span>),
+<a href=#286 id=286 data-nosnippet>286</a>    (<span class="number">0x3d12fc066e48667b</span>, <span class="number">0x3fe230b0d8bebc00</span>),
+<a href=#287 id=287 data-nosnippet>287</a>    (<span class="number">0xbd0b61f105226250</span>, <span class="number">0x3fe269621134dc00</span>),
+<a href=#288 id=288 data-nosnippet>288</a>    (<span class="number">0xbd0b61f105226250</span>, <span class="number">0x3fe269621134dc00</span>),
+<a href=#289 id=289 data-nosnippet>289</a>    (<span class="number">0x3d206d2be797882d</span>, <span class="number">0x3fe2a2786d0ec000</span>),
+<a href=#290 id=290 data-nosnippet>290</a>    (<span class="number">0xbd17a6e507b9dc11</span>, <span class="number">0x3fe2dbf557b0e000</span>),
+<a href=#291 id=291 data-nosnippet>291</a>    (<span class="number">0xbd17a6e507b9dc11</span>, <span class="number">0x3fe2dbf557b0e000</span>),
+<a href=#292 id=292 data-nosnippet>292</a>    (<span class="number">0xbd274e93c5a0ed9c</span>, <span class="number">0x3fe315da44340800</span>),
+<a href=#293 id=293 data-nosnippet>293</a>    (<span class="number">0xbd274e93c5a0ed9c</span>, <span class="number">0x3fe315da44340800</span>),
+<a href=#294 id=294 data-nosnippet>294</a>    (<span class="number">0x3d10b83f9527e6ac</span>, <span class="number">0x3fe35028ad9d8c00</span>),
+<a href=#295 id=295 data-nosnippet>295</a>    (<span class="number">0xbd218b7abb5569a4</span>, <span class="number">0x3fe38ae217197800</span>),
+<a href=#296 id=296 data-nosnippet>296</a>    (<span class="number">0xbd218b7abb5569a4</span>, <span class="number">0x3fe38ae217197800</span>),
+<a href=#297 id=297 data-nosnippet>297</a>    (<span class="number">0xbd02b7367cfe13c2</span>, <span class="number">0x3fe3c6080c36c000</span>),
+<a href=#298 id=298 data-nosnippet>298</a>    (<span class="number">0xbd02b7367cfe13c2</span>, <span class="number">0x3fe3c6080c36c000</span>),
+<a href=#299 id=299 data-nosnippet>299</a>    (<span class="number">0xbd26ce7930f0c74c</span>, <span class="number">0x3fe4019c2125cc00</span>),
+<a href=#300 id=300 data-nosnippet>300</a>    (<span class="number">0xbcfd984f481051f7</span>, <span class="number">0x3fe43d9ff2f92400</span>),
+<a href=#301 id=301 data-nosnippet>301</a>    (<span class="number">0xbcfd984f481051f7</span>, <span class="number">0x3fe43d9ff2f92400</span>),
+<a href=#302 id=302 data-nosnippet>302</a>    (<span class="number">0xbd22cb6af94d60aa</span>, <span class="number">0x3fe47a1527e8a400</span>),
+<a href=#303 id=303 data-nosnippet>303</a>    (<span class="number">0xbd22cb6af94d60aa</span>, <span class="number">0x3fe47a1527e8a400</span>),
+<a href=#304 id=304 data-nosnippet>304</a>    (<span class="number">0x3cef7115ed4c541c</span>, <span class="number">0x3fe4b6fd6f970c00</span>),
+<a href=#305 id=305 data-nosnippet>305</a>    (<span class="number">0x3cef7115ed4c541c</span>, <span class="number">0x3fe4b6fd6f970c00</span>),
+<a href=#306 id=306 data-nosnippet>306</a>    (<span class="number">0xbd2e6c516d93b8fb</span>, <span class="number">0x3fe4f45a835a5000</span>),
+<a href=#307 id=307 data-nosnippet>307</a>    (<span class="number">0xbd2e6c516d93b8fb</span>, <span class="number">0x3fe4f45a835a5000</span>),
+<a href=#308 id=308 data-nosnippet>308</a>    (<span class="number">0x3d05ccc45d257531</span>, <span class="number">0x3fe5322e26867800</span>),
+<a href=#309 id=309 data-nosnippet>309</a>    (<span class="number">0x3d05ccc45d257531</span>, <span class="number">0x3fe5322e26867800</span>),
+<a href=#310 id=310 data-nosnippet>310</a>    (<span class="number">0x3d09980bff3303dd</span>, <span class="number">0x3fe5707a26bb8c00</span>),
+<a href=#311 id=311 data-nosnippet>311</a>    (<span class="number">0x3d09980bff3303dd</span>, <span class="number">0x3fe5707a26bb8c00</span>),
+<a href=#312 id=312 data-nosnippet>312</a>    (<span class="number">0x3d2dfa63ac10c9fb</span>, <span class="number">0x3fe5af405c364800</span>),
+<a href=#313 id=313 data-nosnippet>313</a>    (<span class="number">0x3d2dfa63ac10c9fb</span>, <span class="number">0x3fe5af405c364800</span>),
+<a href=#314 id=314 data-nosnippet>314</a>    (<span class="number">0x3d2202380cda46be</span>, <span class="number">0x3fe5ee82aa241800</span>),
+<a href=#315 id=315 data-nosnippet>315</a>    (<span class="number">0x0000000000000000</span>, <span class="number">0x0000000000000000</span>),
+<a href=#316 id=316 data-nosnippet>316</a>];
+<a href=#317 id=317 data-nosnippet>317</a>
+<a href=#318 id=318 data-nosnippet>318</a><span class="doccomment">/// Logarithm of base 10
+<a href=#319 id=319 data-nosnippet>319</a>///
+<a href=#320 id=320 data-nosnippet>320</a>/// Max found ULP 0.5
+<a href=#321 id=321 data-nosnippet>321</a></span><span class="kw">pub fn </span>f_log10(x: f64) -&gt; f64 {
+<a href=#322 id=322 data-nosnippet>322</a>    <span class="kw">let </span><span class="kw-2">mut </span>x_u = x.to_bits();
+<a href=#323 id=323 data-nosnippet>323</a>
+<a href=#324 id=324 data-nosnippet>324</a>    <span class="kw">const </span>E_BIAS: u64 = (<span class="number">1u64 </span>&lt;&lt; (<span class="number">11 </span>- <span class="number">1u64</span>)) - <span class="number">1u64</span>;
+<a href=#325 id=325 data-nosnippet>325</a>
+<a href=#326 id=326 data-nosnippet>326</a>    <span class="kw">let </span><span class="kw-2">mut </span>x_e: i64 = -(E_BIAS <span class="kw">as </span>i64);
+<a href=#327 id=327 data-nosnippet>327</a>
+<a href=#328 id=328 data-nosnippet>328</a>    <span class="kw">const </span>MAX_NORMAL: u64 = f64::to_bits(f64::MAX);
+<a href=#329 id=329 data-nosnippet>329</a>
+<a href=#330 id=330 data-nosnippet>330</a>    <span class="kw">if </span>x_u == <span class="number">1f64</span>.to_bits() {
+<a href=#331 id=331 data-nosnippet>331</a>        <span class="comment">// log2(1.0) = +0.0
+<a href=#332 id=332 data-nosnippet>332</a>        </span><span class="kw">return </span><span class="number">0.0</span>;
+<a href=#333 id=333 data-nosnippet>333</a>    }
+<a href=#334 id=334 data-nosnippet>334</a>    <span class="kw">if </span>x_u &lt; min_normal_f64().to_bits() || x_u &gt; MAX_NORMAL {
+<a href=#335 id=335 data-nosnippet>335</a>        <span class="kw">if </span>x == <span class="number">0.0 </span>{
+<a href=#336 id=336 data-nosnippet>336</a>            <span class="kw">return </span>f64::NEG_INFINITY;
+<a href=#337 id=337 data-nosnippet>337</a>        }
+<a href=#338 id=338 data-nosnippet>338</a>        <span class="kw">if </span>x &lt; <span class="number">0. </span>|| x.is_nan() {
+<a href=#339 id=339 data-nosnippet>339</a>            <span class="kw">return </span>f64::NAN;
+<a href=#340 id=340 data-nosnippet>340</a>        }
+<a href=#341 id=341 data-nosnippet>341</a>        <span class="kw">if </span>x.is_infinite() || x.is_nan() {
+<a href=#342 id=342 data-nosnippet>342</a>            <span class="kw">return </span>x + x;
+<a href=#343 id=343 data-nosnippet>343</a>        }
+<a href=#344 id=344 data-nosnippet>344</a>        <span class="comment">// Normalize denormal inputs.
+<a href=#345 id=345 data-nosnippet>345</a>        </span>x_u = (x * f64::from_bits(<span class="number">0x4330000000000000</span>)).to_bits();
+<a href=#346 id=346 data-nosnippet>346</a>        x_e -= <span class="number">52</span>;
+<a href=#347 id=347 data-nosnippet>347</a>    }
+<a href=#348 id=348 data-nosnippet>348</a>
+<a href=#349 id=349 data-nosnippet>349</a>    <span class="comment">// log2(x) = log2(2^x_e * x_m)
+<a href=#350 id=350 data-nosnippet>350</a>    //         = x_e + log2(x_m)
+<a href=#351 id=351 data-nosnippet>351</a>    // Range reduction for log2(x_m):
+<a href=#352 id=352 data-nosnippet>352</a>    // For each x_m, we would like to find r such that:
+<a href=#353 id=353 data-nosnippet>353</a>    //   -2^-8 &lt;= r * x_m - 1 &lt; 2^-7
+<a href=#354 id=354 data-nosnippet>354</a>    </span><span class="kw">let </span>shifted = (x_u &gt;&gt; <span class="number">45</span>) <span class="kw">as </span>i64;
+<a href=#355 id=355 data-nosnippet>355</a>    <span class="kw">let </span>index = shifted &amp; <span class="number">0x7F</span>;
+<a href=#356 id=356 data-nosnippet>356</a>    <span class="kw">let </span>r = f64::from_bits(<span class="kw">crate</span>::logs::log2::LOG_RANGE_REDUCTION[index <span class="kw">as </span>usize]);
+<a href=#357 id=357 data-nosnippet>357</a>
+<a href=#358 id=358 data-nosnippet>358</a>    <span class="comment">// Add unbiased exponent. Add an extra 1 if the 8 leading fractional bits are
+<a href=#359 id=359 data-nosnippet>359</a>    // all 1's.
+<a href=#360 id=360 data-nosnippet>360</a>    </span>x_e = x_e.wrapping_add(x_u.wrapping_add(<span class="number">1u64 </span>&lt;&lt; <span class="number">45</span>).wrapping_shr(<span class="number">52</span>) <span class="kw">as </span>i64);
+<a href=#361 id=361 data-nosnippet>361</a>    <span class="kw">let </span>e_x = x_e <span class="kw">as </span>f64;
+<a href=#362 id=362 data-nosnippet>362</a>
+<a href=#363 id=363 data-nosnippet>363</a>    <span class="kw">const </span>LOG_2_HI: f64 = f64::from_bits(<span class="number">0x3fe62e42fefa3800</span>);
+<a href=#364 id=364 data-nosnippet>364</a>    <span class="kw">const </span>LOG_2_LO: f64 = f64::from_bits(<span class="number">0x3d2ef35793c76730</span>);
+<a href=#365 id=365 data-nosnippet>365</a>
+<a href=#366 id=366 data-nosnippet>366</a>    <span class="kw">let </span>log_r_dd = LOG_R_DD[index <span class="kw">as </span>usize];
+<a href=#367 id=367 data-nosnippet>367</a>
+<a href=#368 id=368 data-nosnippet>368</a>    <span class="comment">// hi is exact
+<a href=#369 id=369 data-nosnippet>369</a>    </span><span class="kw">let </span>hi = f_fmla(e_x, LOG_2_HI, f64::from_bits(log_r_dd.<span class="number">1</span>));
+<a href=#370 id=370 data-nosnippet>370</a>    <span class="comment">// lo errors ~ e_x * LSB(LOG_2_LO) + LSB(LOG_R[index].lo) + rounding err
+<a href=#371 id=371 data-nosnippet>371</a>    //           &lt;= 2 * (e_x * LSB(LOG_2_LO) + LSB(LOG_R[index].lo))
+<a href=#372 id=372 data-nosnippet>372</a>    </span><span class="kw">let </span>lo = f_fmla(e_x, LOG_2_LO, f64::from_bits(log_r_dd.<span class="number">0</span>));
+<a href=#373 id=373 data-nosnippet>373</a>
+<a href=#374 id=374 data-nosnippet>374</a>    <span class="comment">// Set m = 1.mantissa.
+<a href=#375 id=375 data-nosnippet>375</a>    </span><span class="kw">let </span>x_m = (x_u &amp; <span class="number">0x000F_FFFF_FFFF_FFFFu64</span>) | <span class="number">0x3FF0_0000_0000_0000u64</span>;
+<a href=#376 id=376 data-nosnippet>376</a>    <span class="kw">let </span>m = f64::from_bits(x_m);
+<a href=#377 id=377 data-nosnippet>377</a>
+<a href=#378 id=378 data-nosnippet>378</a>    <span class="kw">let </span>u;
+<a href=#379 id=379 data-nosnippet>379</a>    <span class="attr">#[cfg(any(
+<a href=#380 id=380 data-nosnippet>380</a>        all(
+<a href=#381 id=381 data-nosnippet>381</a>            any(target_arch = <span class="string">"x86"</span>, target_arch = <span class="string">"x86_64"</span>),
+<a href=#382 id=382 data-nosnippet>382</a>            target_feature = <span class="string">"fma"
+<a href=#383 id=383 data-nosnippet>383</a>        </span>),
+<a href=#384 id=384 data-nosnippet>384</a>        target_arch = <span class="string">"aarch64"
+<a href=#385 id=385 data-nosnippet>385</a>    </span>))]
+<a href=#386 id=386 data-nosnippet>386</a>    </span>{
+<a href=#387 id=387 data-nosnippet>387</a>        u = f_fmla(r, m, -<span class="number">1.0</span>); <span class="comment">// exact   
+<a href=#388 id=388 data-nosnippet>388</a>    </span>}
+<a href=#389 id=389 data-nosnippet>389</a>    <span class="attr">#[cfg(not(any(
+<a href=#390 id=390 data-nosnippet>390</a>        all(
+<a href=#391 id=391 data-nosnippet>391</a>            any(target_arch = <span class="string">"x86"</span>, target_arch = <span class="string">"x86_64"</span>),
+<a href=#392 id=392 data-nosnippet>392</a>            target_feature = <span class="string">"fma"
+<a href=#393 id=393 data-nosnippet>393</a>        </span>),
+<a href=#394 id=394 data-nosnippet>394</a>        target_arch = <span class="string">"aarch64"
+<a href=#395 id=395 data-nosnippet>395</a>    </span>)))]
+<a href=#396 id=396 data-nosnippet>396</a>    </span>{
+<a href=#397 id=397 data-nosnippet>397</a>        <span class="kw">use </span><span class="kw">crate</span>::logs::log2::LOG_CD;
+<a href=#398 id=398 data-nosnippet>398</a>        <span class="kw">let </span>c_m = x_m &amp; <span class="number">0x3FFF_E000_0000_0000u64</span>;
+<a href=#399 id=399 data-nosnippet>399</a>        <span class="kw">let </span>c = f64::from_bits(c_m);
+<a href=#400 id=400 data-nosnippet>400</a>        u = f_fmla(r, m - c, f64::from_bits(LOG_CD[index <span class="kw">as </span>usize])); <span class="comment">// exact
+<a href=#401 id=401 data-nosnippet>401</a>    </span>}
+<a href=#402 id=402 data-nosnippet>402</a>
+<a href=#403 id=403 data-nosnippet>403</a>    <span class="kw">let </span>u_sq = u * u;
+<a href=#404 id=404 data-nosnippet>404</a>    <span class="comment">// Degree-7 minimax polynomial
+<a href=#405 id=405 data-nosnippet>405</a>    </span><span class="kw">let </span>p0 = f_fmla(
+<a href=#406 id=406 data-nosnippet>406</a>        u,
+<a href=#407 id=407 data-nosnippet>407</a>        f64::from_bits(LOG_COEFFS[<span class="number">1</span>]),
+<a href=#408 id=408 data-nosnippet>408</a>        f64::from_bits(LOG_COEFFS[<span class="number">0</span>]),
+<a href=#409 id=409 data-nosnippet>409</a>    );
+<a href=#410 id=410 data-nosnippet>410</a>    <span class="kw">let </span>p1 = f_fmla(
+<a href=#411 id=411 data-nosnippet>411</a>        u,
+<a href=#412 id=412 data-nosnippet>412</a>        f64::from_bits(LOG_COEFFS[<span class="number">3</span>]),
+<a href=#413 id=413 data-nosnippet>413</a>        f64::from_bits(LOG_COEFFS[<span class="number">2</span>]),
+<a href=#414 id=414 data-nosnippet>414</a>    );
+<a href=#415 id=415 data-nosnippet>415</a>    <span class="kw">let </span>p2 = f_fmla(
+<a href=#416 id=416 data-nosnippet>416</a>        u,
+<a href=#417 id=417 data-nosnippet>417</a>        f64::from_bits(LOG_COEFFS[<span class="number">5</span>]),
+<a href=#418 id=418 data-nosnippet>418</a>        f64::from_bits(LOG_COEFFS[<span class="number">4</span>]),
+<a href=#419 id=419 data-nosnippet>419</a>    );
+<a href=#420 id=420 data-nosnippet>420</a>    <span class="kw">let </span>p = f_polyeval4(u_sq, lo, p0, p1, p2);
+<a href=#421 id=421 data-nosnippet>421</a>
+<a href=#422 id=422 data-nosnippet>422</a>    <span class="comment">// Exact sum:
+<a href=#423 id=423 data-nosnippet>423</a>    //   r1.hi + r1.lo = e_x * log(2)_hi - log(r)_hi + u
+<a href=#424 id=424 data-nosnippet>424</a>    </span><span class="kw">let </span><span class="kw-2">mut </span>r1 = DoubleDouble::from_exact_add(hi, u);
+<a href=#425 id=425 data-nosnippet>425</a>    r1.lo += p;
+<a href=#426 id=426 data-nosnippet>426</a>
+<a href=#427 id=427 data-nosnippet>427</a>    <span class="comment">// Quick double-double multiplication:
+<a href=#428 id=428 data-nosnippet>428</a>    //   r2.hi + r2.lo ~ r1 * log10(e),
+<a href=#429 id=429 data-nosnippet>429</a>    // with error bounded by:
+<a href=#430 id=430 data-nosnippet>430</a>    //   4*ulp( ulp(r2.hi) )
+<a href=#431 id=431 data-nosnippet>431</a>    </span><span class="kw">const </span>LOG10_E: DoubleDouble = DoubleDouble::new(
+<a href=#432 id=432 data-nosnippet>432</a>        f64::from_bits(<span class="number">0x3c695355baaafad3</span>),
+<a href=#433 id=433 data-nosnippet>433</a>        f64::from_bits(<span class="number">0x3fdbcb7b1526e50e</span>),
+<a href=#434 id=434 data-nosnippet>434</a>    );
+<a href=#435 id=435 data-nosnippet>435</a>    <span class="kw">let </span>r2 = DoubleDouble::quick_mult(r1, LOG10_E);
+<a href=#436 id=436 data-nosnippet>436</a>
+<a href=#437 id=437 data-nosnippet>437</a>    <span class="kw">const </span>HI_ERR: f64 = f64::from_bits(<span class="number">0x3aa0000000000000</span>);
+<a href=#438 id=438 data-nosnippet>438</a>
+<a href=#439 id=439 data-nosnippet>439</a>    <span class="comment">// Extra errors from P is from using x^2 to reduce evaluation latency.
+<a href=#440 id=440 data-nosnippet>440</a>    </span><span class="kw">const </span>P_ERR: f64 = f64::from_bits(<span class="number">0x3cc0000000000000</span>);
+<a href=#441 id=441 data-nosnippet>441</a>
+<a href=#442 id=442 data-nosnippet>442</a>    <span class="comment">// Technicallly error of r1.lo is bounded by:
+<a href=#443 id=443 data-nosnippet>443</a>    //    |hi|*ulp(log(2)_lo) + C*ulp(u^2)
+<a href=#444 id=444 data-nosnippet>444</a>    // To simplify the error computation a bit, we replace |hi|*ulp(log(2)_lo)
+<a href=#445 id=445 data-nosnippet>445</a>    // with the upper bound: 2^11 * ulp(log(2)_lo) = 2^-85.
+<a href=#446 id=446 data-nosnippet>446</a>    // Total error is bounded by ~ C * ulp(u^2) + 2^-85.
+<a href=#447 id=447 data-nosnippet>447</a>    </span><span class="kw">let </span>err = f_fmla(u_sq, P_ERR, HI_ERR);
+<a href=#448 id=448 data-nosnippet>448</a>
+<a href=#449 id=449 data-nosnippet>449</a>    <span class="comment">// Lower bound from the result
+<a href=#450 id=450 data-nosnippet>450</a>    </span><span class="kw">let </span>left = r2.hi + (r2.lo - err);
+<a href=#451 id=451 data-nosnippet>451</a>    <span class="comment">// Upper bound from the result
+<a href=#452 id=452 data-nosnippet>452</a>    </span><span class="kw">let </span>right = r2.hi + (r2.lo + err);
+<a href=#453 id=453 data-nosnippet>453</a>
+<a href=#454 id=454 data-nosnippet>454</a>    <span class="comment">// Ziv's test if fast pass is accurate enough.
+<a href=#455 id=455 data-nosnippet>455</a>    </span><span class="kw">if </span>left == right {
+<a href=#456 id=456 data-nosnippet>456</a>        <span class="kw">return </span>left;
+<a href=#457 id=457 data-nosnippet>457</a>    }
+<a href=#458 id=458 data-nosnippet>458</a>
+<a href=#459 id=459 data-nosnippet>459</a>    log10_dd_accurate(x)
+<a href=#460 id=460 data-nosnippet>460</a>}
+<a href=#461 id=461 data-nosnippet>461</a>
+<a href=#462 id=462 data-nosnippet>462</a><span class="attr">#[cold]
+<a href=#463 id=463 data-nosnippet>463</a>#[inline(never)]
+<a href=#464 id=464 data-nosnippet>464</a></span><span class="kw">fn </span>log10_dd_accurate(x: f64) -&gt; f64 {
+<a href=#465 id=465 data-nosnippet>465</a>    <span class="kw">let </span>r = log10_dd(x);
+<a href=#466 id=466 data-nosnippet>466</a>    <span class="kw">let </span>err = f_fmla(
+<a href=#467 id=467 data-nosnippet>467</a>        r.hi,
+<a href=#468 id=468 data-nosnippet>468</a>        f64::from_bits(<span class="number">0x3b50000000000000</span>), <span class="comment">// 2^-74
+<a href=#469 id=469 data-nosnippet>469</a>        </span>f64::from_bits(<span class="number">0x3990000000000000</span>), <span class="comment">// 2^-102
+<a href=#470 id=470 data-nosnippet>470</a>    </span>);
+<a href=#471 id=471 data-nosnippet>471</a>    <span class="kw">let </span>ub = r.hi + (r.lo + err);
+<a href=#472 id=472 data-nosnippet>472</a>    <span class="kw">let </span>lb = r.hi + (r.lo - err);
+<a href=#473 id=473 data-nosnippet>473</a>    <span class="kw">if </span>ub == lb {
+<a href=#474 id=474 data-nosnippet>474</a>        <span class="kw">return </span>r.to_f64();
+<a href=#475 id=475 data-nosnippet>475</a>    }
+<a href=#476 id=476 data-nosnippet>476</a>    log10_dd_accurate_slow(x)
+<a href=#477 id=477 data-nosnippet>477</a>}
+<a href=#478 id=478 data-nosnippet>478</a>
+<a href=#479 id=479 data-nosnippet>479</a><span class="attr">#[cold]
+<a href=#480 id=480 data-nosnippet>480</a>#[inline(never)]
+<a href=#481 id=481 data-nosnippet>481</a></span><span class="kw">fn </span>log10_dd_accurate_slow(x: f64) -&gt; f64 {
+<a href=#482 id=482 data-nosnippet>482</a>    log10_td(x).to_f64()
+<a href=#483 id=483 data-nosnippet>483</a>}
+<a href=#484 id=484 data-nosnippet>484</a>
+<a href=#485 id=485 data-nosnippet>485</a><span class="attr">#[cfg(test)]
+<a href=#486 id=486 data-nosnippet>486</a></span><span class="kw">mod </span>tests {
+<a href=#487 id=487 data-nosnippet>487</a>    <span class="kw">use super</span>::<span class="kw-2">*</span>;
+<a href=#488 id=488 data-nosnippet>488</a>
+<a href=#489 id=489 data-nosnippet>489</a>    <span class="attr">#[test]
+<a href=#490 id=490 data-nosnippet>490</a>    </span><span class="kw">fn </span>test_log10d() {
+<a href=#491 id=491 data-nosnippet>491</a>        <span class="macro">assert_eq!</span>(f_log10(<span class="number">0.35</span>), -<span class="number">0.4559319556497244</span>);
+<a href=#492 id=492 data-nosnippet>492</a>        <span class="macro">assert_eq!</span>(f_log10(<span class="number">0.9</span>), -<span class="number">0.045757490560675115</span>);
+<a href=#493 id=493 data-nosnippet>493</a>        <span class="macro">assert_eq!</span>(f_log10(<span class="number">10.</span>), <span class="number">1.</span>);
+<a href=#494 id=494 data-nosnippet>494</a>        <span class="macro">assert_eq!</span>(f_log10(<span class="number">0.</span>), f64::NEG_INFINITY);
+<a href=#495 id=495 data-nosnippet>495</a>        <span class="macro">assert!</span>(f_log10(-<span class="number">1.</span>).is_nan());
+<a href=#496 id=496 data-nosnippet>496</a>        <span class="macro">assert!</span>(f_log10(f64::NAN).is_nan());
+<a href=#497 id=497 data-nosnippet>497</a>        <span class="macro">assert!</span>(f_log10(f64::NEG_INFINITY).is_nan());
+<a href=#498 id=498 data-nosnippet>498</a>        <span class="macro">assert_eq!</span>(f_log10(f64::INFINITY), f64::INFINITY);
+<a href=#499 id=499 data-nosnippet>499</a>    }
+<a href=#500 id=500 data-nosnippet>500</a>}</code></pre></div></section></main></body></html>

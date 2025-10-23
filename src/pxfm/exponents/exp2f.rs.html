@@ -1,0 +1,323 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `/home/runner/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/pxfm-0.1.25/src/exponents/exp2f.rs`."><title>exp2f.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../../static.files/rustdoc-aa0817cf.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="pxfm" data-themes="" data-resource-suffix="" data-rustdoc-version="1.90.0 (1159e78c4 2025-09-14)" data-channel="1.90.0" data-search-js="search-fa3e91e5.js" data-settings-js="settings-5514c975.js" ><script src="../../../static.files/storage-68b7e25d.js"></script><script defer src="../../../static.files/src-script-813739b1.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-eebb9057.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-32bb7600.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-6580c154.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-044be391.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><h1><div class="sub-heading">pxfm/exponents/</div>exp2f.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap digits-3"><pre class="rust"><code><a href=#1 id=1 data-nosnippet>1</a><span class="comment">/*
+<a href=#2 id=2 data-nosnippet>2</a> * // Copyright (c) Radzivon Bartoshyk 7/2025. All rights reserved.
+<a href=#3 id=3 data-nosnippet>3</a> * //
+<a href=#4 id=4 data-nosnippet>4</a> * // Redistribution and use in source and binary forms, with or without modification,
+<a href=#5 id=5 data-nosnippet>5</a> * // are permitted provided that the following conditions are met:
+<a href=#6 id=6 data-nosnippet>6</a> * //
+<a href=#7 id=7 data-nosnippet>7</a> * // 1.  Redistributions of source code must retain the above copyright notice, this
+<a href=#8 id=8 data-nosnippet>8</a> * // list of conditions and the following disclaimer.
+<a href=#9 id=9 data-nosnippet>9</a> * //
+<a href=#10 id=10 data-nosnippet>10</a> * // 2.  Redistributions in binary form must reproduce the above copyright notice,
+<a href=#11 id=11 data-nosnippet>11</a> * // this list of conditions and the following disclaimer in the documentation
+<a href=#12 id=12 data-nosnippet>12</a> * // and/or other materials provided with the distribution.
+<a href=#13 id=13 data-nosnippet>13</a> * //
+<a href=#14 id=14 data-nosnippet>14</a> * // 3.  Neither the name of the copyright holder nor the names of its
+<a href=#15 id=15 data-nosnippet>15</a> * // contributors may be used to endorse or promote products derived from
+<a href=#16 id=16 data-nosnippet>16</a> * // this software without specific prior written permission.
+<a href=#17 id=17 data-nosnippet>17</a> * //
+<a href=#18 id=18 data-nosnippet>18</a> * // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+<a href=#19 id=19 data-nosnippet>19</a> * // AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+<a href=#20 id=20 data-nosnippet>20</a> * // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+<a href=#21 id=21 data-nosnippet>21</a> * // DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+<a href=#22 id=22 data-nosnippet>22</a> * // FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+<a href=#23 id=23 data-nosnippet>23</a> * // DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+<a href=#24 id=24 data-nosnippet>24</a> * // SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+<a href=#25 id=25 data-nosnippet>25</a> * // CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+<a href=#26 id=26 data-nosnippet>26</a> * // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+<a href=#27 id=27 data-nosnippet>27</a> * // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+<a href=#28 id=28 data-nosnippet>28</a> */
+<a href=#29 id=29 data-nosnippet>29</a></span><span class="kw">use </span><span class="kw">crate</span>::common::{f_fmla, f_fmlaf, pow2if};
+<a href=#30 id=30 data-nosnippet>30</a><span class="kw">use </span><span class="kw">crate</span>::polyeval::f_polyeval6;
+<a href=#31 id=31 data-nosnippet>31</a><span class="kw">use </span><span class="kw">crate</span>::rounding::CpuRound;
+<a href=#32 id=32 data-nosnippet>32</a><span class="kw">use </span>std::hint::black_box;
+<a href=#33 id=33 data-nosnippet>33</a>
+<a href=#34 id=34 data-nosnippet>34</a><span class="kw">const </span>TBLSIZE: usize = <span class="number">64</span>;
+<a href=#35 id=35 data-nosnippet>35</a>
+<a href=#36 id=36 data-nosnippet>36</a><span class="attr">#[repr(align(<span class="number">64</span>))]
+<a href=#37 id=37 data-nosnippet>37</a></span><span class="kw">struct </span>Exp2Table([(u32, u32); TBLSIZE]);
+<a href=#38 id=38 data-nosnippet>38</a>
+<a href=#39 id=39 data-nosnippet>39</a><span class="attr">#[rustfmt::skip]
+<a href=#40 id=40 data-nosnippet>40</a></span><span class="kw">static </span>EXP2FT: Exp2Table = Exp2Table([(<span class="number">0x3F3504F3</span>, <span class="number">0xB2D4175E</span>),(<span class="number">0x3F36FD92</span>, <span class="number">0x3268D5EF</span>),(<span class="number">0x3F38FBAF</span>, <span class="number">0xB30E8719</span>),(<span class="number">0x3F3AFF5B</span>, <span class="number">0x3319E7DA</span>),(<span class="number">0x3F3D08A4</span>, <span class="number">0x333CD82F</span>),(<span class="number">0x3F3F179A</span>, <span class="number">0x330E1902</span>),(<span class="number">0x3F412C4D</span>, <span class="number">0x32CCF4D7</span>),(<span class="number">0x3F4346CD</span>, <span class="number">0x328F330E</span>),(<span class="number">0x3F45672A</span>, <span class="number">0xB201B5B7</span>),(<span class="number">0x3F478D75</span>, <span class="number">0x32CCCE34</span>),(<span class="number">0x3F49B9BE</span>, <span class="number">0x335E937C</span>),(<span class="number">0x3F4BEC15</span>, <span class="number">0x2FF41909</span>),(<span class="number">0x3F4E248C</span>, <span class="number">0xB21760EA</span>),(<span class="number">0x3F506334</span>, <span class="number">0x3283628B</span>),(<span class="number">0x3F52A81E</span>, <span class="number">0x3340F500</span>),(<span class="number">0x3F54F35B</span>, <span class="number">0x331202BD</span>),(<span class="number">0x3F5744FD</span>, <span class="number">0x32B66A3E</span>),(<span class="number">0x3F599D16</span>, <span class="number">0x32D0D9B1</span>),(<span class="number">0x3F5BFBB8</span>, <span class="number">0x332ED93F</span>),(<span class="number">0x3F5E60F5</span>, <span class="number">0x3350A709</span>),(<span class="number">0x3F60CCDF</span>, <span class="number">0x32025744</span>),(<span class="number">0x3F633F89</span>, <span class="number">0xB33A7C4D</span>),(<span class="number">0x3F65B907</span>, <span class="number">0x321DA4E9</span>),(<span class="number">0x3F68396A</span>, <span class="number">0xB2FF36A7</span>),(<span class="number">0x3F6AC0C7</span>, <span class="number">0x3217E40E</span>),(<span class="number">0x3F6D4F30</span>, <span class="number">0xB2400CBB</span>),(<span class="number">0x3F6FE4BA</span>, <span class="number">0x331A2ACC</span>),(<span class="number">0x3F728177</span>, <span class="number">0xB2B7D3E5</span>),(<span class="number">0x3F75257D</span>, <span class="number">0xB1FED2BE</span>),(<span class="number">0x3F77D0DF</span>, <span class="number">0xB32B73BA</span>),(<span class="number">0x3F7A83B3</span>, <span class="number">0x32579081</span>),(<span class="number">0x3F7D3E0C</span>, <span class="number">0xB19726B5</span>),(<span class="number">0x3F800000</span>, <span class="number">0x00000000</span>),(<span class="number">0x3F8164D2</span>, <span class="number">0x320C09FB</span>),(<span class="number">0x3F82CD87</span>, <span class="number">0x3391E031</span>),(<span class="number">0x3F843A29</span>, <span class="number">0x33287EEF</span>),(<span class="number">0x3F85AAC3</span>, <span class="number">0xB38F6665</span>),(<span class="number">0x3F871F62</span>, <span class="number">0x339004AB</span>),(<span class="number">0x3F88980F</span>, <span class="number">0x33AC4561</span>),(<span class="number">0x3F8A14D5</span>, <span class="number">0xB39CDAEA</span>),(<span class="number">0x3F8B95C2</span>, <span class="number">0x32949D5C</span>),(<span class="number">0x3F8D1ADF</span>, <span class="number">0xB36F79FA</span>),(<span class="number">0x3F8EA43A</span>, <span class="number">0x33971DC2</span>),(<span class="number">0x3F9031DC</span>, <span class="number">0xB32BD022</span>),(<span class="number">0x3F91C3D3</span>, <span class="number">0xB3928952</span>),(<span class="number">0x3F935A2B</span>, <span class="number">0xB2EBFECF</span>),(<span class="number">0x3F94F4F0</span>, <span class="number">0x3357B8BB</span>),(<span class="number">0x3F96942D</span>, <span class="number">0xB307353B</span>),(<span class="number">0x3F9837F0</span>, <span class="number">0xB345DFE9</span>),(<span class="number">0x3F99E046</span>, <span class="number">0x3382A804</span>),(<span class="number">0x3F9B8D3A</span>, <span class="number">0x3326993E</span>),(<span class="number">0x3F9D3EDA</span>, <span class="number">0x3350A029</span>),(<span class="number">0x3F9EF532</span>, <span class="number">0xB3605F62</span>),(<span class="number">0x3FA0B051</span>, <span class="number">0xB210909B</span>),(<span class="number">0x3FA27043</span>, <span class="number">0xB0DDC369</span>),(<span class="number">0x3FA43516</span>, <span class="number">0x33385844</span>),(<span class="number">0x3FA5FED7</span>, <span class="number">0x33400757</span>),(<span class="number">0x3FA7CD94</span>, <span class="number">0x3325446E</span>),(<span class="number">0x3FA9A15B</span>, <span class="number">0x33237A50</span>),(<span class="number">0x3FAB7A3A</span>, <span class="number">0x33201CA4</span>),(<span class="number">0x3FAD583F</span>, <span class="number">0x32394687</span>),(<span class="number">0x3FAF3B79</span>, <span class="number">0x332E1225</span>),(<span class="number">0x3FB123F6</span>, <span class="number">0x33838969</span>),(<span class="number">0x3FB311C4</span>, <span class="number">0xB219F2BA</span>)]);
+<a href=#41 id=41 data-nosnippet>41</a>
+<a href=#42 id=42 data-nosnippet>42</a><span class="doccomment">/**
+<a href=#43 id=43 data-nosnippet>43</a>Generated by SageMath:
+<a href=#44 id=44 data-nosnippet>44</a>```python
+<a href=#45 id=45 data-nosnippet>45</a>print("[")
+<a href=#46 id=46 data-nosnippet>46</a>for k in range(64):
+<a href=#47 id=47 data-nosnippet>47</a>    k = RealField(150)(2)**(RealField(150)(k) / RealField(150)(64))
+<a href=#48 id=48 data-nosnippet>48</a>    print(double_to_hex(k) + ",")
+<a href=#49 id=49 data-nosnippet>49</a>print("];")
+<a href=#50 id=50 data-nosnippet>50</a>```
+<a href=#51 id=51 data-nosnippet>51</a>**/
+<a href=#52 id=52 data-nosnippet>52</a></span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">static </span>EXP2F_TABLE: [u64; <span class="number">64</span>] = [
+<a href=#53 id=53 data-nosnippet>53</a>    <span class="number">0x3ff0000000000000</span>,
+<a href=#54 id=54 data-nosnippet>54</a>    <span class="number">0x3ff02c9a3e778061</span>,
+<a href=#55 id=55 data-nosnippet>55</a>    <span class="number">0x3ff059b0d3158574</span>,
+<a href=#56 id=56 data-nosnippet>56</a>    <span class="number">0x3ff0874518759bc8</span>,
+<a href=#57 id=57 data-nosnippet>57</a>    <span class="number">0x3ff0b5586cf9890f</span>,
+<a href=#58 id=58 data-nosnippet>58</a>    <span class="number">0x3ff0e3ec32d3d1a2</span>,
+<a href=#59 id=59 data-nosnippet>59</a>    <span class="number">0x3ff11301d0125b51</span>,
+<a href=#60 id=60 data-nosnippet>60</a>    <span class="number">0x3ff1429aaea92de0</span>,
+<a href=#61 id=61 data-nosnippet>61</a>    <span class="number">0x3ff172b83c7d517b</span>,
+<a href=#62 id=62 data-nosnippet>62</a>    <span class="number">0x3ff1a35beb6fcb75</span>,
+<a href=#63 id=63 data-nosnippet>63</a>    <span class="number">0x3ff1d4873168b9aa</span>,
+<a href=#64 id=64 data-nosnippet>64</a>    <span class="number">0x3ff2063b88628cd6</span>,
+<a href=#65 id=65 data-nosnippet>65</a>    <span class="number">0x3ff2387a6e756238</span>,
+<a href=#66 id=66 data-nosnippet>66</a>    <span class="number">0x3ff26b4565e27cdd</span>,
+<a href=#67 id=67 data-nosnippet>67</a>    <span class="number">0x3ff29e9df51fdee1</span>,
+<a href=#68 id=68 data-nosnippet>68</a>    <span class="number">0x3ff2d285a6e4030b</span>,
+<a href=#69 id=69 data-nosnippet>69</a>    <span class="number">0x3ff306fe0a31b715</span>,
+<a href=#70 id=70 data-nosnippet>70</a>    <span class="number">0x3ff33c08b26416ff</span>,
+<a href=#71 id=71 data-nosnippet>71</a>    <span class="number">0x3ff371a7373aa9cb</span>,
+<a href=#72 id=72 data-nosnippet>72</a>    <span class="number">0x3ff3a7db34e59ff7</span>,
+<a href=#73 id=73 data-nosnippet>73</a>    <span class="number">0x3ff3dea64c123422</span>,
+<a href=#74 id=74 data-nosnippet>74</a>    <span class="number">0x3ff4160a21f72e2a</span>,
+<a href=#75 id=75 data-nosnippet>75</a>    <span class="number">0x3ff44e086061892d</span>,
+<a href=#76 id=76 data-nosnippet>76</a>    <span class="number">0x3ff486a2b5c13cd0</span>,
+<a href=#77 id=77 data-nosnippet>77</a>    <span class="number">0x3ff4bfdad5362a27</span>,
+<a href=#78 id=78 data-nosnippet>78</a>    <span class="number">0x3ff4f9b2769d2ca7</span>,
+<a href=#79 id=79 data-nosnippet>79</a>    <span class="number">0x3ff5342b569d4f82</span>,
+<a href=#80 id=80 data-nosnippet>80</a>    <span class="number">0x3ff56f4736b527da</span>,
+<a href=#81 id=81 data-nosnippet>81</a>    <span class="number">0x3ff5ab07dd485429</span>,
+<a href=#82 id=82 data-nosnippet>82</a>    <span class="number">0x3ff5e76f15ad2148</span>,
+<a href=#83 id=83 data-nosnippet>83</a>    <span class="number">0x3ff6247eb03a5585</span>,
+<a href=#84 id=84 data-nosnippet>84</a>    <span class="number">0x3ff6623882552225</span>,
+<a href=#85 id=85 data-nosnippet>85</a>    <span class="number">0x3ff6a09e667f3bcd</span>,
+<a href=#86 id=86 data-nosnippet>86</a>    <span class="number">0x3ff6dfb23c651a2f</span>,
+<a href=#87 id=87 data-nosnippet>87</a>    <span class="number">0x3ff71f75e8ec5f74</span>,
+<a href=#88 id=88 data-nosnippet>88</a>    <span class="number">0x3ff75feb564267c9</span>,
+<a href=#89 id=89 data-nosnippet>89</a>    <span class="number">0x3ff7a11473eb0187</span>,
+<a href=#90 id=90 data-nosnippet>90</a>    <span class="number">0x3ff7e2f336cf4e62</span>,
+<a href=#91 id=91 data-nosnippet>91</a>    <span class="number">0x3ff82589994cce13</span>,
+<a href=#92 id=92 data-nosnippet>92</a>    <span class="number">0x3ff868d99b4492ed</span>,
+<a href=#93 id=93 data-nosnippet>93</a>    <span class="number">0x3ff8ace5422aa0db</span>,
+<a href=#94 id=94 data-nosnippet>94</a>    <span class="number">0x3ff8f1ae99157736</span>,
+<a href=#95 id=95 data-nosnippet>95</a>    <span class="number">0x3ff93737b0cdc5e5</span>,
+<a href=#96 id=96 data-nosnippet>96</a>    <span class="number">0x3ff97d829fde4e50</span>,
+<a href=#97 id=97 data-nosnippet>97</a>    <span class="number">0x3ff9c49182a3f090</span>,
+<a href=#98 id=98 data-nosnippet>98</a>    <span class="number">0x3ffa0c667b5de565</span>,
+<a href=#99 id=99 data-nosnippet>99</a>    <span class="number">0x3ffa5503b23e255d</span>,
+<a href=#100 id=100 data-nosnippet>100</a>    <span class="number">0x3ffa9e6b5579fdbf</span>,
+<a href=#101 id=101 data-nosnippet>101</a>    <span class="number">0x3ffae89f995ad3ad</span>,
+<a href=#102 id=102 data-nosnippet>102</a>    <span class="number">0x3ffb33a2b84f15fb</span>,
+<a href=#103 id=103 data-nosnippet>103</a>    <span class="number">0x3ffb7f76f2fb5e47</span>,
+<a href=#104 id=104 data-nosnippet>104</a>    <span class="number">0x3ffbcc1e904bc1d2</span>,
+<a href=#105 id=105 data-nosnippet>105</a>    <span class="number">0x3ffc199bdd85529c</span>,
+<a href=#106 id=106 data-nosnippet>106</a>    <span class="number">0x3ffc67f12e57d14b</span>,
+<a href=#107 id=107 data-nosnippet>107</a>    <span class="number">0x3ffcb720dcef9069</span>,
+<a href=#108 id=108 data-nosnippet>108</a>    <span class="number">0x3ffd072d4a07897c</span>,
+<a href=#109 id=109 data-nosnippet>109</a>    <span class="number">0x3ffd5818dcfba487</span>,
+<a href=#110 id=110 data-nosnippet>110</a>    <span class="number">0x3ffda9e603db3285</span>,
+<a href=#111 id=111 data-nosnippet>111</a>    <span class="number">0x3ffdfc97337b9b5f</span>,
+<a href=#112 id=112 data-nosnippet>112</a>    <span class="number">0x3ffe502ee78b3ff6</span>,
+<a href=#113 id=113 data-nosnippet>113</a>    <span class="number">0x3ffea4afa2a490da</span>,
+<a href=#114 id=114 data-nosnippet>114</a>    <span class="number">0x3ffefa1bee615a27</span>,
+<a href=#115 id=115 data-nosnippet>115</a>    <span class="number">0x3fff50765b6e4540</span>,
+<a href=#116 id=116 data-nosnippet>116</a>    <span class="number">0x3fffa7c1819e90d8</span>,
+<a href=#117 id=117 data-nosnippet>117</a>];
+<a href=#118 id=118 data-nosnippet>118</a>
+<a href=#119 id=119 data-nosnippet>119</a><span class="comment">/* ULP 0.508 method
+<a href=#120 id=120 data-nosnippet>120</a>  let redux = f32::from_bits(0x4b400000) / TBLSIZE as f32;
+<a href=#121 id=121 data-nosnippet>121</a>
+<a href=#122 id=122 data-nosnippet>122</a>  let ui = f32::to_bits(d + redux);
+<a href=#123 id=123 data-nosnippet>123</a>  let mut i0 = ui;
+<a href=#124 id=124 data-nosnippet>124</a>  i0 = i0.wrapping_add(TBLSIZE as u32 / 2);
+<a href=#125 id=125 data-nosnippet>125</a>  let k = i0 / TBLSIZE as u32;
+<a href=#126 id=126 data-nosnippet>126</a>  i0 &amp;= TBLSIZE as u32 - 1;
+<a href=#127 id=127 data-nosnippet>127</a>  let mut uf = f32::from_bits(ui);
+<a href=#128 id=128 data-nosnippet>128</a>  uf -= redux;
+<a href=#129 id=129 data-nosnippet>129</a>
+<a href=#130 id=130 data-nosnippet>130</a>  let item = EXP2FT.0[i0 as usize];
+<a href=#131 id=131 data-nosnippet>131</a>  let z0: f32 = f32::from_bits(item.0);
+<a href=#132 id=132 data-nosnippet>132</a>  let z1: f32 = f32::from_bits(item.1);
+<a href=#133 id=133 data-nosnippet>133</a>
+<a href=#134 id=134 data-nosnippet>134</a>  let f: f32 = d - uf - z1;
+<a href=#135 id=135 data-nosnippet>135</a>
+<a href=#136 id=136 data-nosnippet>136</a>  let mut u = 0.055504108664458832;
+<a href=#137 id=137 data-nosnippet>137</a>  u = f_fmlaf(u, f, 0.24022650695908768);
+<a href=#138 id=138 data-nosnippet>138</a>  u = f_fmlaf(u, f, 0.69314718055994973);
+<a href=#139 id=139 data-nosnippet>139</a>  u *= f;
+<a href=#140 id=140 data-nosnippet>140</a>
+<a href=#141 id=141 data-nosnippet>141</a>  let i2 = pow2if(k as i32);
+<a href=#142 id=142 data-nosnippet>142</a>  f_fmlaf(u, z0, z0) * i2
+<a href=#143 id=143 data-nosnippet>143</a>*/
+<a href=#144 id=144 data-nosnippet>144</a>
+<a href=#145 id=145 data-nosnippet>145</a></span><span class="doccomment">/// Computing exp2f
+<a href=#146 id=146 data-nosnippet>146</a>///
+<a href=#147 id=147 data-nosnippet>147</a>/// ULP 0.4999994
+<a href=#148 id=148 data-nosnippet>148</a></span><span class="attr">#[inline]
+<a href=#149 id=149 data-nosnippet>149</a></span><span class="kw">pub fn </span>f_exp2f(x: f32) -&gt; f32 {
+<a href=#150 id=150 data-nosnippet>150</a>    <span class="kw">let </span><span class="kw-2">mut </span>t = x.to_bits();
+<a href=#151 id=151 data-nosnippet>151</a>
+<a href=#152 id=152 data-nosnippet>152</a>    <span class="kw">if </span>(t &amp; <span class="number">0xffff</span>) == <span class="number">0 </span>{
+<a href=#153 id=153 data-nosnippet>153</a>        <span class="comment">// x maybe integer
+<a href=#154 id=154 data-nosnippet>154</a>        </span><span class="kw">let </span>k: i32 = (((t &gt;&gt; <span class="number">23</span>) &amp; <span class="number">0xff</span>) <span class="kw">as </span>i32).wrapping_sub(<span class="number">127</span>); <span class="comment">// 2^k &lt;= |x| &lt; 2^(k+1)
+<a href=#155 id=155 data-nosnippet>155</a>        </span><span class="kw">if </span>k &gt;= <span class="number">0 </span>&amp;&amp; k &lt; <span class="number">9 </span>&amp;&amp; (t &lt;&lt; (<span class="number">9i32</span>.wrapping_add(k))) == <span class="number">0 </span>{
+<a href=#156 id=156 data-nosnippet>156</a>            <span class="comment">// x integer, with 1 &lt;= |x| &lt; 2^9
+<a href=#157 id=157 data-nosnippet>157</a>            </span><span class="kw">let </span>msk = (t <span class="kw">as </span>i32) &gt;&gt; <span class="number">31</span>;
+<a href=#158 id=158 data-nosnippet>158</a>            <span class="kw">let </span><span class="kw-2">mut </span>m: i32 = (((t &amp; <span class="number">0x7fffff</span>) | (<span class="number">1 </span>&lt;&lt; <span class="number">23</span>)) &gt;&gt; (<span class="number">23 </span>- k)) <span class="kw">as </span>i32;
+<a href=#159 id=159 data-nosnippet>159</a>            m = (m ^ msk).wrapping_sub(msk).wrapping_add(<span class="number">127</span>);
+<a href=#160 id=160 data-nosnippet>160</a>            <span class="kw">if </span>m &gt; <span class="number">0 </span>&amp;&amp; m &lt; <span class="number">255 </span>{
+<a href=#161 id=161 data-nosnippet>161</a>                t = (m <span class="kw">as </span>u32).wrapping_shl(<span class="number">23</span>);
+<a href=#162 id=162 data-nosnippet>162</a>                <span class="kw">return </span>f32::from_bits(t);
+<a href=#163 id=163 data-nosnippet>163</a>            } <span class="kw">else if </span>m &lt;= <span class="number">0 </span>&amp;&amp; m &gt; -<span class="number">23 </span>{
+<a href=#164 id=164 data-nosnippet>164</a>                t = <span class="number">1i32</span>.wrapping_shl(<span class="number">22i32</span>.wrapping_add(m) <span class="kw">as </span>u32) <span class="kw">as </span>u32;
+<a href=#165 id=165 data-nosnippet>165</a>                <span class="kw">return </span>f32::from_bits(t);
+<a href=#166 id=166 data-nosnippet>166</a>            }
+<a href=#167 id=167 data-nosnippet>167</a>        }
+<a href=#168 id=168 data-nosnippet>168</a>    }
+<a href=#169 id=169 data-nosnippet>169</a>    <span class="kw">let </span>ux = t.wrapping_shl(<span class="number">1</span>);
+<a href=#170 id=170 data-nosnippet>170</a>
+<a href=#171 id=171 data-nosnippet>171</a>    <span class="kw">if </span>ux &gt;= <span class="number">0x86000000u32 </span>|| ux &lt; <span class="number">0x65000000u32 </span>{
+<a href=#172 id=172 data-nosnippet>172</a>        <span class="comment">// |x| &gt;= 128 or x=nan or |x| &lt; 0x1p-26
+<a href=#173 id=173 data-nosnippet>173</a>        </span><span class="kw">if </span>ux &lt; <span class="number">0x65000000u32 </span>{
+<a href=#174 id=174 data-nosnippet>174</a>            <span class="kw">return </span><span class="number">1.0 </span>+ x;
+<a href=#175 id=175 data-nosnippet>175</a>        } <span class="comment">// |x| &lt; 0x1p-26
+<a href=#176 id=176 data-nosnippet>176</a>        // if x &lt; -149 or 128 &lt;= x is special
+<a href=#177 id=177 data-nosnippet>177</a>        </span><span class="kw">if </span>!(t &gt;= <span class="number">0xc3000000u32 </span>&amp;&amp; t &lt; <span class="number">0xc3150000u32</span>) {
+<a href=#178 id=178 data-nosnippet>178</a>            <span class="kw">if </span>ux &gt;= <span class="number">0xffu32 </span>&lt;&lt; <span class="number">24 </span>{
+<a href=#179 id=179 data-nosnippet>179</a>                <span class="comment">// x is inf or nan
+<a href=#180 id=180 data-nosnippet>180</a>                </span><span class="kw">if </span>ux &gt; (<span class="number">0xffu32 </span>&lt;&lt; <span class="number">24</span>) {
+<a href=#181 id=181 data-nosnippet>181</a>                    <span class="kw">return </span>x + x;
+<a href=#182 id=182 data-nosnippet>182</a>                } <span class="comment">// x = nan
+<a href=#183 id=183 data-nosnippet>183</a>                </span><span class="kw">static </span>IR: [f32; <span class="number">2</span>] = [f32::INFINITY, <span class="number">0.</span>];
+<a href=#184 id=184 data-nosnippet>184</a>                <span class="kw">return </span>IR[(t &gt;&gt; <span class="number">31</span>) <span class="kw">as </span>usize]; <span class="comment">// x = +-inf
+<a href=#185 id=185 data-nosnippet>185</a>            </span>}
+<a href=#186 id=186 data-nosnippet>186</a>            <span class="kw">if </span>t &gt;= <span class="number">0xc3150000u32 </span>{
+<a href=#187 id=187 data-nosnippet>187</a>                <span class="comment">// x &lt; -149
+<a href=#188 id=188 data-nosnippet>188</a>                </span><span class="kw">let </span>z = x;
+<a href=#189 id=189 data-nosnippet>189</a>                <span class="kw">let </span><span class="kw-2">mut </span>y = f_fmla(
+<a href=#190 id=190 data-nosnippet>190</a>                    z <span class="kw">as </span>f64 + <span class="number">149.</span>,
+<a href=#191 id=191 data-nosnippet>191</a>                    f64::from_bits(<span class="number">0x3690000000000000</span>),
+<a href=#192 id=192 data-nosnippet>192</a>                    f64::from_bits(<span class="number">0x36a0000000000000</span>),
+<a href=#193 id=193 data-nosnippet>193</a>                );
+<a href=#194 id=194 data-nosnippet>194</a>                y = y.max(f64::from_bits(<span class="number">0x3680000000000000</span>));
+<a href=#195 id=195 data-nosnippet>195</a>                <span class="kw">return </span>y <span class="kw">as </span>f32;
+<a href=#196 id=196 data-nosnippet>196</a>            }
+<a href=#197 id=197 data-nosnippet>197</a>            <span class="comment">// now x &gt;= 128
+<a href=#198 id=198 data-nosnippet>198</a>            </span><span class="kw">let </span>r = black_box(f64::from_bits(<span class="number">0x47e0000000000000</span>))
+<a href=#199 id=199 data-nosnippet>199</a>                * black_box(f64::from_bits(<span class="number">0x47e0000000000000</span>));
+<a href=#200 id=200 data-nosnippet>200</a>            <span class="kw">return </span>r <span class="kw">as </span>f32;
+<a href=#201 id=201 data-nosnippet>201</a>        }
+<a href=#202 id=202 data-nosnippet>202</a>    }
+<a href=#203 id=203 data-nosnippet>203</a>
+<a href=#204 id=204 data-nosnippet>204</a>    <span class="kw">if </span>ux &lt;= <span class="number">0x7a000000u32 </span>{
+<a href=#205 id=205 data-nosnippet>205</a>        <span class="comment">// |x| &lt; 1/32
+<a href=#206 id=206 data-nosnippet>206</a>
+<a href=#207 id=207 data-nosnippet>207</a>        // Generated by Sollya exp2 on range [-1/32;1/32]:
+<a href=#208 id=208 data-nosnippet>208</a>        // d = [-1/32, 1/32];
+<a href=#209 id=209 data-nosnippet>209</a>        // f_exp2f = (2^y - 1)/y;
+<a href=#210 id=210 data-nosnippet>210</a>        // Q = fpminimax(f_exp2f, 5, [|D...|], d, relative, floating);
+<a href=#211 id=211 data-nosnippet>211</a>
+<a href=#212 id=212 data-nosnippet>212</a>        // See ./notes/exp2f_small.sollya
+<a href=#213 id=213 data-nosnippet>213</a>        </span><span class="kw">const </span>C: [u64; <span class="number">6</span>] = [
+<a href=#214 id=214 data-nosnippet>214</a>            <span class="number">0x3fe62e42fefa39f3</span>,
+<a href=#215 id=215 data-nosnippet>215</a>            <span class="number">0x3fcebfbdff82c57b</span>,
+<a href=#216 id=216 data-nosnippet>216</a>            <span class="number">0x3fac6b08d6f2d7aa</span>,
+<a href=#217 id=217 data-nosnippet>217</a>            <span class="number">0x3f83b2ab6fc92f5d</span>,
+<a href=#218 id=218 data-nosnippet>218</a>            <span class="number">0x3f55d897cfe27125</span>,
+<a href=#219 id=219 data-nosnippet>219</a>            <span class="number">0x3f243090e61e6af1</span>,
+<a href=#220 id=220 data-nosnippet>220</a>        ];
+<a href=#221 id=221 data-nosnippet>221</a>        <span class="kw">let </span>xd = x <span class="kw">as </span>f64;
+<a href=#222 id=222 data-nosnippet>222</a>        <span class="kw">let </span>p = f_polyeval6(
+<a href=#223 id=223 data-nosnippet>223</a>            xd,
+<a href=#224 id=224 data-nosnippet>224</a>            f64::from_bits(C[<span class="number">0</span>]),
+<a href=#225 id=225 data-nosnippet>225</a>            f64::from_bits(C[<span class="number">1</span>]),
+<a href=#226 id=226 data-nosnippet>226</a>            f64::from_bits(C[<span class="number">2</span>]),
+<a href=#227 id=227 data-nosnippet>227</a>            f64::from_bits(C[<span class="number">3</span>]),
+<a href=#228 id=228 data-nosnippet>228</a>            f64::from_bits(C[<span class="number">4</span>]),
+<a href=#229 id=229 data-nosnippet>229</a>            f64::from_bits(C[<span class="number">5</span>]),
+<a href=#230 id=230 data-nosnippet>230</a>        );
+<a href=#231 id=231 data-nosnippet>231</a>        <span class="kw">return </span>f_fmla(p, xd, <span class="number">1.</span>) <span class="kw">as </span>f32;
+<a href=#232 id=232 data-nosnippet>232</a>    }
+<a href=#233 id=233 data-nosnippet>233</a>
+<a href=#234 id=234 data-nosnippet>234</a>    <span class="kw">let </span>x_d = x <span class="kw">as </span>f64;
+<a href=#235 id=235 data-nosnippet>235</a>    <span class="kw">let </span>kf = (x_d * <span class="number">64.</span>).cpu_round();
+<a href=#236 id=236 data-nosnippet>236</a>    <span class="kw">let </span>k = <span class="kw">unsafe </span>{ kf.to_int_unchecked::&lt;i32&gt;() }; <span class="comment">// it's already not indeterminate.
+<a href=#237 id=237 data-nosnippet>237</a>    // dx = lo = x - (hi + mid) = x - kf * 2^(-6)
+<a href=#238 id=238 data-nosnippet>238</a>    </span><span class="kw">let </span>dx = f_fmla(f64::from_bits(<span class="number">0xbf90000000000000</span>), kf, x_d);
+<a href=#239 id=239 data-nosnippet>239</a>
+<a href=#240 id=240 data-nosnippet>240</a>    <span class="kw">const </span>TABLE_BITS: u32 = <span class="number">6</span>;
+<a href=#241 id=241 data-nosnippet>241</a>    <span class="kw">const </span>TABLE_MASK: u64 = (<span class="number">1u64 </span>&lt;&lt; TABLE_BITS) - <span class="number">1</span>;
+<a href=#242 id=242 data-nosnippet>242</a>
+<a href=#243 id=243 data-nosnippet>243</a>    <span class="comment">// hi = floor(kf * 2^(-5))
+<a href=#244 id=244 data-nosnippet>244</a>    // exp_hi = shift hi to the exponent field of double precision.
+<a href=#245 id=245 data-nosnippet>245</a>    </span><span class="kw">let </span>exp_hi: i64 = ((k &gt;&gt; TABLE_BITS) <span class="kw">as </span>i64).wrapping_shl(<span class="number">52</span>);
+<a href=#246 id=246 data-nosnippet>246</a>
+<a href=#247 id=247 data-nosnippet>247</a>    <span class="comment">// mh = 2^hi * 2^mid
+<a href=#248 id=248 data-nosnippet>248</a>    // mh_bits = bit field of mh
+<a href=#249 id=249 data-nosnippet>249</a>    </span><span class="kw">let </span>mh_bits = (EXP2F_TABLE[((k <span class="kw">as </span>u64) &amp; TABLE_MASK) <span class="kw">as </span>usize] <span class="kw">as </span>i64).wrapping_add(exp_hi);
+<a href=#250 id=250 data-nosnippet>250</a>    <span class="kw">let </span>mh = f64::from_bits(mh_bits <span class="kw">as </span>u64);
+<a href=#251 id=251 data-nosnippet>251</a>
+<a href=#252 id=252 data-nosnippet>252</a>    <span class="comment">// Degree-4 polynomial approximating (2^x - 1)/x generated by Sollya with:
+<a href=#253 id=253 data-nosnippet>253</a>    // &gt; P = fpminimax((2^y - 1)/y, 4, [|D...|], [-1/64. 1/64]);
+<a href=#254 id=254 data-nosnippet>254</a>    // see ./notes/exp2f.sollya
+<a href=#255 id=255 data-nosnippet>255</a>    </span><span class="kw">const </span>C: [u64; <span class="number">5</span>] = [
+<a href=#256 id=256 data-nosnippet>256</a>        <span class="number">0x3fe62e42fefa39ef</span>,
+<a href=#257 id=257 data-nosnippet>257</a>        <span class="number">0x3fcebfbdff8131c4</span>,
+<a href=#258 id=258 data-nosnippet>258</a>        <span class="number">0x3fac6b08d7061695</span>,
+<a href=#259 id=259 data-nosnippet>259</a>        <span class="number">0x3f83b2b1bee74b2a</span>,
+<a href=#260 id=260 data-nosnippet>260</a>        <span class="number">0x3f55d88091198529</span>,
+<a href=#261 id=261 data-nosnippet>261</a>    ];
+<a href=#262 id=262 data-nosnippet>262</a>    <span class="kw">let </span>dx_sq = dx * dx;
+<a href=#263 id=263 data-nosnippet>263</a>    <span class="kw">let </span>c1 = f_fmla(dx, f64::from_bits(C[<span class="number">0</span>]), <span class="number">1.0</span>);
+<a href=#264 id=264 data-nosnippet>264</a>    <span class="kw">let </span>c2 = f_fmla(dx, f64::from_bits(C[<span class="number">2</span>]), f64::from_bits(C[<span class="number">1</span>]));
+<a href=#265 id=265 data-nosnippet>265</a>    <span class="kw">let </span>c3 = f_fmla(dx, f64::from_bits(C[<span class="number">4</span>]), f64::from_bits(C[<span class="number">3</span>]));
+<a href=#266 id=266 data-nosnippet>266</a>    <span class="kw">let </span>p = f_fmla(dx_sq, c3, c2);
+<a href=#267 id=267 data-nosnippet>267</a>    <span class="comment">// 2^x = 2^(hi + mid + lo)
+<a href=#268 id=268 data-nosnippet>268</a>    //     = 2^(hi + mid) * 2^lo
+<a href=#269 id=269 data-nosnippet>269</a>    //     ~ mh * (1 + lo * P(lo))
+<a href=#270 id=270 data-nosnippet>270</a>    //     = mh + (mh*lo) * P(lo)
+<a href=#271 id=271 data-nosnippet>271</a>    </span>f_fmla(p, dx_sq * mh, c1 * mh) <span class="kw">as </span>f32
+<a href=#272 id=272 data-nosnippet>272</a>}
+<a href=#273 id=273 data-nosnippet>273</a>
+<a href=#274 id=274 data-nosnippet>274</a><span class="attr">#[inline]
+<a href=#275 id=275 data-nosnippet>275</a></span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>dirty_exp2f(d: f32) -&gt; f32 {
+<a href=#276 id=276 data-nosnippet>276</a>    <span class="kw">let </span>redux = f32::from_bits(<span class="number">0x4b400000</span>) / TBLSIZE <span class="kw">as </span>f32;
+<a href=#277 id=277 data-nosnippet>277</a>
+<a href=#278 id=278 data-nosnippet>278</a>    <span class="kw">let </span>ui = f32::to_bits(d + redux);
+<a href=#279 id=279 data-nosnippet>279</a>    <span class="kw">let </span><span class="kw-2">mut </span>i0 = ui;
+<a href=#280 id=280 data-nosnippet>280</a>    i0 = i0.wrapping_add(TBLSIZE <span class="kw">as </span>u32 / <span class="number">2</span>);
+<a href=#281 id=281 data-nosnippet>281</a>    <span class="kw">let </span>k = i0 / TBLSIZE <span class="kw">as </span>u32;
+<a href=#282 id=282 data-nosnippet>282</a>    i0 &amp;= TBLSIZE <span class="kw">as </span>u32 - <span class="number">1</span>;
+<a href=#283 id=283 data-nosnippet>283</a>    <span class="kw">let </span><span class="kw-2">mut </span>uf = f32::from_bits(ui);
+<a href=#284 id=284 data-nosnippet>284</a>    uf -= redux;
+<a href=#285 id=285 data-nosnippet>285</a>
+<a href=#286 id=286 data-nosnippet>286</a>    <span class="kw">let </span>item = EXP2FT.<span class="number">0</span>[i0 <span class="kw">as </span>usize];
+<a href=#287 id=287 data-nosnippet>287</a>    <span class="kw">let </span>z0: f32 = f32::from_bits(item.<span class="number">0</span>);
+<a href=#288 id=288 data-nosnippet>288</a>
+<a href=#289 id=289 data-nosnippet>289</a>    <span class="kw">let </span>f: f32 = d - uf;
+<a href=#290 id=290 data-nosnippet>290</a>
+<a href=#291 id=291 data-nosnippet>291</a>    <span class="kw">let </span><span class="kw-2">mut </span>u = <span class="number">0.24022650695908768</span>;
+<a href=#292 id=292 data-nosnippet>292</a>    u = f_fmlaf(u, f, <span class="number">0.69314718055994973</span>);
+<a href=#293 id=293 data-nosnippet>293</a>    u <span class="kw-2">*</span>= f;
+<a href=#294 id=294 data-nosnippet>294</a>
+<a href=#295 id=295 data-nosnippet>295</a>    <span class="kw">let </span>i2 = pow2if(k <span class="kw">as </span>i32);
+<a href=#296 id=296 data-nosnippet>296</a>    f_fmlaf(u, z0, z0) * i2
+<a href=#297 id=297 data-nosnippet>297</a>}
+<a href=#298 id=298 data-nosnippet>298</a>
+<a href=#299 id=299 data-nosnippet>299</a><span class="attr">#[cfg(test)]
+<a href=#300 id=300 data-nosnippet>300</a></span><span class="kw">mod </span>tests {
+<a href=#301 id=301 data-nosnippet>301</a>    <span class="kw">use super</span>::<span class="kw-2">*</span>;
+<a href=#302 id=302 data-nosnippet>302</a>
+<a href=#303 id=303 data-nosnippet>303</a>    <span class="attr">#[test]
+<a href=#304 id=304 data-nosnippet>304</a>    </span><span class="kw">fn </span>test_exp2f() {
+<a href=#305 id=305 data-nosnippet>305</a>        <span class="macro">assert_eq!</span>(f_exp2f(<span class="number">1. </span>/ <span class="number">64.</span>), <span class="number">1.0108893</span>);
+<a href=#306 id=306 data-nosnippet>306</a>        <span class="macro">assert_eq!</span>(f_exp2f(<span class="number">2.0</span>), <span class="number">4.0</span>);
+<a href=#307 id=307 data-nosnippet>307</a>        <span class="macro">assert_eq!</span>(f_exp2f(<span class="number">3.0</span>), <span class="number">8.0</span>);
+<a href=#308 id=308 data-nosnippet>308</a>        <span class="macro">assert_eq!</span>(f_exp2f(<span class="number">4.0</span>), <span class="number">16.0</span>);
+<a href=#309 id=309 data-nosnippet>309</a>        <span class="macro">assert_eq!</span>(f_exp2f(<span class="number">10.0</span>), <span class="number">1024.0</span>);
+<a href=#310 id=310 data-nosnippet>310</a>        <span class="macro">assert_eq!</span>(f_exp2f(-<span class="number">10.0</span>), <span class="number">0.0009765625</span>);
+<a href=#311 id=311 data-nosnippet>311</a>        <span class="macro">assert!</span>(f_exp2f(f32::NAN).is_nan());
+<a href=#312 id=312 data-nosnippet>312</a>        <span class="macro">assert_eq!</span>(f_exp2f(-<span class="number">0.35</span>), <span class="number">0.7845841</span>);
+<a href=#313 id=313 data-nosnippet>313</a>        <span class="macro">assert_eq!</span>(f_exp2f(<span class="number">0.35</span>), <span class="number">1.2745606</span>);
+<a href=#314 id=314 data-nosnippet>314</a>        <span class="macro">assert!</span>(f_exp2f(f32::INFINITY).is_infinite());
+<a href=#315 id=315 data-nosnippet>315</a>        <span class="macro">assert_eq!</span>(f_exp2f(f32::NEG_INFINITY), <span class="number">0.0</span>);
+<a href=#316 id=316 data-nosnippet>316</a>    }
+<a href=#317 id=317 data-nosnippet>317</a>
+<a href=#318 id=318 data-nosnippet>318</a>    <span class="attr">#[test]
+<a href=#319 id=319 data-nosnippet>319</a>    </span><span class="kw">fn </span>test_dirty_exp2f() {
+<a href=#320 id=320 data-nosnippet>320</a>        <span class="macro">assert!</span>((dirty_exp2f(<span class="number">0.35f32</span>) - <span class="number">0.35f32</span>.exp2()).abs() &lt; <span class="number">1e-5</span>);
+<a href=#321 id=321 data-nosnippet>321</a>        <span class="macro">assert!</span>((dirty_exp2f(-<span class="number">0.6f32</span>) - (-<span class="number">0.6f32</span>).exp2()).abs() &lt; <span class="number">1e-5</span>);
+<a href=#322 id=322 data-nosnippet>322</a>    }
+<a href=#323 id=323 data-nosnippet>323</a>}</code></pre></div></section></main></body></html>

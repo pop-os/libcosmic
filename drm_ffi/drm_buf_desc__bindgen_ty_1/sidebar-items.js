@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"constant":["_DRM_AGP_BUFFER","_DRM_FB_BUFFER","_DRM_PAGE_ALIGN","_DRM_PCI_BUFFER_RO","_DRM_SG_BUFFER"],"type":["Type"]};

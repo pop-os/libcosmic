@@ -1,0 +1,78 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Abstract Syntax Tree representation of the Fluent Translation List."><title>fluent_syntax::ast - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../static.files/rustdoc-aa0817cf.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="fluent_syntax" data-themes="" data-resource-suffix="" data-rustdoc-version="1.90.0 (1159e78c4 2025-09-14)" data-channel="1.90.0" data-search-js="search-fa3e91e5.js" data-settings-js="settings-5514c975.js" ><script src="../../static.files/storage-68b7e25d.js"></script><script defer src="../sidebar-items.js"></script><script defer src="../../static.files/main-eebb9057.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-32bb7600.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-6580c154.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-044be391.svg"></head><body class="rustdoc mod"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle" title="show sidebar"></button></nav><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../../fluent_syntax/index.html">fluent_<wbr>syntax</a><span class="version">0.12.0</span></h2></div><div class="sidebar-elems"><section id="rustdoc-toc"><h2 class="location"><a href="#">Module ast</a></h2><h3><a href="#">Sections</a></h3><ul class="block top-toc"><li><a href="#example" title="Example">Example</a><ul><li><a href="#errors" title="Errors">Errors</a></li><li><a href="#white-space" title="White space">White space</a></li></ul></li></ul><h3><a href="#structs">Module Items</a></h3><ul class="block"><li><a href="#structs" title="Structs">Structs</a></li><li><a href="#enums" title="Enums">Enums</a></li></ul></section><div id="rustdoc-modnav"><h2 class="in-crate"><a href="../index.html">In crate fluent_<wbr>syntax</a></h2></div></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><div class="width-limiter"><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><div class="rustdoc-breadcrumbs"><a href="../index.html">fluent_syntax</a></div><h1>Module <span>ast</span><button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"><a class="src" href="../../src/fluent_syntax/ast/mod.rs.html#1-1459">Source</a> </span></div><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Abstract Syntax Tree representation of the Fluent Translation List.</p>
+<p>The AST of Fluent contains all nodes structures to represent a complete
+representation of the FTL resource.</p>
+<p>The tree preserves all semantic information and allow for round-trip
+of a canonically written FTL resource.</p>
+<p>The root node is called <a href="struct.Resource.html" title="struct fluent_syntax::ast::Resource"><code>Resource</code></a> and contains a list of <a href="enum.Entry.html" title="enum fluent_syntax::ast::Entry"><code>Entry</code></a> nodes
+representing all possible entries in the Fluent Translation List.</p>
+<h2 id="example"><a class="doc-anchor" href="#example">§</a>Example</h2>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>fluent_syntax::parser;
+<span class="kw">use </span>fluent_syntax::ast;
+
+<span class="kw">let </span>ftl = <span class="string">r#"
+
+# This is a message comment
+hello-world = Hello World!
+    .tooltip = Tooltip for you, { $userName }.
+
+"#</span>;
+
+<span class="kw">let </span>resource = parser::parse(ftl)
+    .expect(<span class="string">"Failed to parse an FTL resource."</span>);
+
+<span class="macro">assert_eq!</span>(
+    resource.body[<span class="number">0</span>],
+    ast::Entry::Message(
+        ast::Message {
+            id: ast::Identifier {
+                name: <span class="string">"hello-world"
+            </span>},
+            value: <span class="prelude-val">Some</span>(ast::Pattern {
+                elements: <span class="macro">vec!</span>[
+                    ast::PatternElement::TextElement {
+                        value: <span class="string">"Hello World!"
+                    </span>},
+                ]
+            }),
+            attributes: <span class="macro">vec!</span>[
+                ast::Attribute {
+                    id: ast::Identifier {
+                        name: <span class="string">"tooltip"
+                    </span>},
+                    value: ast::Pattern {
+                        elements: <span class="macro">vec!</span>[
+                            ast::PatternElement::TextElement {
+                                value: <span class="string">"Tooltip for you, "
+                            </span>},
+                            ast::PatternElement::Placeable {
+                                expression: ast::Expression::Inline(
+                                    ast::InlineExpression::VariableReference {
+                                        id: ast::Identifier {
+                                            name: <span class="string">"userName"
+                                        </span>}
+                                    }
+                                )
+                            },
+                            ast::PatternElement::TextElement {
+                                value: <span class="string">"."
+                            </span>},
+                        ]
+                    }
+                }
+            ],
+            comment: <span class="prelude-val">Some</span>(
+                ast::Comment {
+                    content: <span class="macro">vec!</span>[<span class="string">"This is a message comment"</span>]
+                }
+            )
+        }
+    ),
+);</code></pre></div>
+<h3 id="errors"><a class="doc-anchor" href="#errors">§</a>Errors</h3>
+<p>Fluent AST preserves blocks containing invalid syntax as <a href="enum.Entry.html#variant.Junk" title="variant fluent_syntax::ast::Entry::Junk"><code>Entry::Junk</code></a>.</p>
+<h3 id="white-space"><a class="doc-anchor" href="#white-space">§</a>White space</h3>
+<p>At the moment, AST does not preserve white space. In result only a
+canonical form of the AST is suitable for a round-trip.</p>
+</div></details><h2 id="structs" class="section-header">Structs<a href="#structs" class="anchor">§</a></h2><dl class="item-table"><dt><a class="struct" href="struct.Attribute.html" title="struct fluent_syntax::ast::Attribute">Attribute</a></dt><dd>Attribute represents a part of a <a href="struct.Message.html" title="struct fluent_syntax::ast::Message"><code>Message</code></a> or <a href="struct.Term.html" title="struct fluent_syntax::ast::Term"><code>Term</code></a>.</dd><dt><a class="struct" href="struct.CallArguments.html" title="struct fluent_syntax::ast::CallArguments">Call<wbr>Arguments</a></dt><dd>List of arguments for a <a href="enum.InlineExpression.html#variant.FunctionReference" title="variant fluent_syntax::ast::InlineExpression::FunctionReference"><code>FunctionReference</code></a> or a
+<a href="enum.InlineExpression.html#variant.TermReference" title="variant fluent_syntax::ast::InlineExpression::TermReference"><code>TermReference</code></a>.</dd><dt><a class="struct" href="struct.Comment.html" title="struct fluent_syntax::ast::Comment">Comment</a></dt><dd>Fluent <a href="struct.Comment.html" title="struct fluent_syntax::ast::Comment"><code>Comment</code></a>.</dd><dt><a class="struct" href="struct.Identifier.html" title="struct fluent_syntax::ast::Identifier">Identifier</a></dt><dd>Identifier is part of nodes such as <a href="struct.Message.html" title="struct fluent_syntax::ast::Message"><code>Message</code></a>, <a href="struct.Term.html" title="struct fluent_syntax::ast::Term"><code>Term</code></a> and <a href="struct.Attribute.html" title="struct fluent_syntax::ast::Attribute"><code>Attribute</code></a>.</dd><dt><a class="struct" href="struct.Message.html" title="struct fluent_syntax::ast::Message">Message</a></dt><dd>Message node represents the most common <a href="enum.Entry.html" title="enum fluent_syntax::ast::Entry"><code>Entry</code></a> in an FTL <a href="struct.Resource.html" title="struct fluent_syntax::ast::Resource"><code>Resource</code></a>.</dd><dt><a class="struct" href="struct.NamedArgument.html" title="struct fluent_syntax::ast::NamedArgument">Named<wbr>Argument</a></dt><dd>A key-value pair used in <a href="struct.CallArguments.html" title="struct fluent_syntax::ast::CallArguments"><code>CallArguments</code></a>.</dd><dt><a class="struct" href="struct.Pattern.html" title="struct fluent_syntax::ast::Pattern">Pattern</a></dt><dd>Pattern contains a value of a <a href="struct.Message.html" title="struct fluent_syntax::ast::Message"><code>Message</code></a>, <a href="struct.Term.html" title="struct fluent_syntax::ast::Term"><code>Term</code></a> or an <a href="struct.Attribute.html" title="struct fluent_syntax::ast::Attribute"><code>Attribute</code></a>.</dd><dt><a class="struct" href="struct.Resource.html" title="struct fluent_syntax::ast::Resource">Resource</a></dt><dd>Root node of a Fluent Translation List.</dd><dt><a class="struct" href="struct.Term.html" title="struct fluent_syntax::ast::Term">Term</a></dt><dd>A Fluent <a href="struct.Term.html" title="struct fluent_syntax::ast::Term"><code>Term</code></a>.</dd><dt><a class="struct" href="struct.Variant.html" title="struct fluent_syntax::ast::Variant">Variant</a></dt><dd>Variant is a single branch of a value in a <a href="enum.Expression.html#variant.Select" title="variant fluent_syntax::ast::Expression::Select"><code>Select</code></a> expression.</dd></dl><h2 id="enums" class="section-header">Enums<a href="#enums" class="anchor">§</a></h2><dl class="item-table"><dt><a class="enum" href="enum.Entry.html" title="enum fluent_syntax::ast::Entry">Entry</a></dt><dd>A top-level node representing an entry of a <a href="struct.Resource.html" title="struct fluent_syntax::ast::Resource"><code>Resource</code></a>.</dd><dt><a class="enum" href="enum.Expression.html" title="enum fluent_syntax::ast::Expression">Expression</a></dt><dd>An expression that is either a select expression or an inline expression.</dd><dt><a class="enum" href="enum.InlineExpression.html" title="enum fluent_syntax::ast::InlineExpression">Inline<wbr>Expression</a></dt><dd>A subset of expressions which can be used as <a href="enum.PatternElement.html#variant.Placeable" title="variant fluent_syntax::ast::PatternElement::Placeable"><code>Placeable</code></a>,
+<a href="enum.Expression.html#variant.Select" title="variant fluent_syntax::ast::Expression::Select"><code>selector</code></a>, or in <a href="struct.CallArguments.html" title="struct fluent_syntax::ast::CallArguments"><code>CallArguments</code></a>.</dd><dt><a class="enum" href="enum.PatternElement.html" title="enum fluent_syntax::ast::PatternElement">Pattern<wbr>Element</a></dt><dd><code>PatternElement</code> is an element of a <a href="struct.Pattern.html" title="struct fluent_syntax::ast::Pattern"><code>Pattern</code></a>.</dd><dt><a class="enum" href="enum.VariantKey.html" title="enum fluent_syntax::ast::VariantKey">Variant<wbr>Key</a></dt><dd>A key of a <a href="struct.Variant.html" title="struct fluent_syntax::ast::Variant"><code>Variant</code></a>.</dd></dl></section></div></main></body></html>

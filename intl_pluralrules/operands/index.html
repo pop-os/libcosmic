@@ -1,0 +1,41 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="A public AST module for plural rule representations. Plural operands in compliance with CLDR Plural Rules."><title>intl_pluralrules::operands - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../static.files/rustdoc-aa0817cf.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="intl_pluralrules" data-themes="" data-resource-suffix="" data-rustdoc-version="1.90.0 (1159e78c4 2025-09-14)" data-channel="1.90.0" data-search-js="search-fa3e91e5.js" data-settings-js="settings-5514c975.js" ><script src="../../static.files/storage-68b7e25d.js"></script><script defer src="../sidebar-items.js"></script><script defer src="../../static.files/main-eebb9057.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-32bb7600.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-6580c154.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-044be391.svg"></head><body class="rustdoc mod"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle" title="show sidebar"></button></nav><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../../intl_pluralrules/index.html">intl_<wbr>pluralrules</a><span class="version">7.0.2</span></h2></div><div class="sidebar-elems"><section id="rustdoc-toc"><h2 class="location"><a href="#">Module operands</a></h2><h3><a href="#">Sections</a></h3><ul class="block top-toc"><li><a href="#examples" title="Examples">Examples</a></li></ul><h3><a href="#structs">Module Items</a></h3><ul class="block"><li><a href="#structs" title="Structs">Structs</a></li></ul></section><div id="rustdoc-modnav"><h2 class="in-crate"><a href="../index.html">In crate intl_<wbr>pluralrules</a></h2></div></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><div class="width-limiter"><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><div class="rustdoc-breadcrumbs"><a href="../index.html">intl_pluralrules</a></div><h1>Module <span>operands</span><button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"><a class="src" href="../../src/intl_pluralrules/operands.rs.html#1-186">Source</a> </span></div><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>A public AST module for plural rule representations.
+Plural operands in compliance with <a href="https://unicode.org/reports/tr35/tr35-numbers.html#Language_Plural_Rules">CLDR Plural Rules</a>.</p>
+<p>See <a href="https://unicode.org/reports/tr35/tr35-numbers.html#Operands">full operands description</a>.</p>
+<h2 id="examples"><a class="doc-anchor" href="#examples">§</a>Examples</h2>
+<p>From int</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>std::convert::TryFrom;
+<span class="kw">use </span>intl_pluralrules::operands::<span class="kw-2">*</span>;
+<span class="macro">assert_eq!</span>(<span class="prelude-val">Ok</span>(PluralOperands {
+   n: <span class="number">2_f64</span>,
+   i: <span class="number">2</span>,
+   v: <span class="number">0</span>,
+   w: <span class="number">0</span>,
+   f: <span class="number">0</span>,
+   t: <span class="number">0</span>,
+}), PluralOperands::try_from(<span class="number">2</span>))</code></pre></div>
+<p>From float</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>std::convert::TryFrom;
+<span class="kw">use </span>intl_pluralrules::operands::<span class="kw-2">*</span>;
+<span class="macro">assert_eq!</span>(<span class="prelude-val">Ok</span>(PluralOperands {
+   n: <span class="number">1234.567_f64</span>,
+   i: <span class="number">1234</span>,
+   v: <span class="number">3</span>,
+   w: <span class="number">3</span>,
+   f: <span class="number">567</span>,
+   t: <span class="number">567</span>,
+}), PluralOperands::try_from(<span class="string">"-1234.567"</span>))</code></pre></div>
+<p>From &amp;str</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>std::convert::TryFrom;
+<span class="kw">use </span>intl_pluralrules::operands::<span class="kw-2">*</span>;
+<span class="macro">assert_eq!</span>(<span class="prelude-val">Ok</span>(PluralOperands {
+   n: <span class="number">123.45_f64</span>,
+   i: <span class="number">123</span>,
+   v: <span class="number">2</span>,
+   w: <span class="number">2</span>,
+   f: <span class="number">45</span>,
+   t: <span class="number">45</span>,
+}), PluralOperands::try_from(<span class="number">123.45</span>))</code></pre></div>
+</div></details><h2 id="structs" class="section-header">Structs<a href="#structs" class="anchor">§</a></h2><dl class="item-table"><dt><a class="struct" href="struct.PluralOperands.html" title="struct intl_pluralrules::operands::PluralOperands">Plural<wbr>Operands</a></dt><dd>A full plural operands representation of a number. See <a href="https://unicode.org/reports/tr35/tr35-numbers.html#Language_Plural_Rules">CLDR Plural Rules</a> for complete operands description.</dd></dl></section></div></main></body></html>
