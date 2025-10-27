@@ -5,11 +5,11 @@
 
 use std::cmp;
 
+use crate::fl;
 use crate::iced_core::{Alignment, Length, Padding};
 use crate::widget::{Grid, button, column, grid, icon, row, text};
 use apply::Apply;
 use chrono::{Datelike, Days, Local, Month, Months, NaiveDate, Weekday};
-use crate::fl;
 
 /// A widget that displays an interactive calendar.
 pub fn calendar<M>(
@@ -133,20 +133,20 @@ where
         macro_rules! translate_month {
             ($month:expr, $year:expr) => {{
                 match $month {
-                    chrono::Month::January => fl!("january", year=$year),
-                    chrono::Month::February => fl!("february", year=$year),
-                    chrono::Month::March => fl!("march", year=$year),
-                    chrono::Month::April => fl!("april", year=$year),
-                    chrono::Month::May => fl!("may", year=$year),
-                    chrono::Month::June => fl!("june", year=$year),
-                    chrono::Month::July => fl!("july", year=$year),
-                    chrono::Month::August => fl!("august", year=$year),
-                    chrono::Month::September => fl!("september", year=$year),
-                    chrono::Month::October => fl!("october", year=$year),
-                    chrono::Month::November => fl!("november", year=$year),
-                    chrono::Month::December => fl!("december", year=$year)
+                    chrono::Month::January => fl!("january", year = $year),
+                    chrono::Month::February => fl!("february", year = $year),
+                    chrono::Month::March => fl!("march", year = $year),
+                    chrono::Month::April => fl!("april", year = $year),
+                    chrono::Month::May => fl!("may", year = $year),
+                    chrono::Month::June => fl!("june", year = $year),
+                    chrono::Month::July => fl!("july", year = $year),
+                    chrono::Month::August => fl!("august", year = $year),
+                    chrono::Month::September => fl!("september", year = $year),
+                    chrono::Month::October => fl!("october", year = $year),
+                    chrono::Month::November => fl!("november", year = $year),
+                    chrono::Month::December => fl!("december", year = $year),
                 }
-            }}
+            }};
         }
         macro_rules! translate_weekday {
             ($weekday:expr) => {{
@@ -157,15 +157,17 @@ where
                     Weekday::Thu => fl!("thursday"),
                     Weekday::Fri => fl!("friday"),
                     Weekday::Sat => fl!("saturday"),
-                    Weekday::Sun => fl!("sunday")
+                    Weekday::Sun => fl!("sunday"),
                 }
-            }}
+            }};
         }
 
         let date = text(translate_month!(
             Month::try_from(this.model.visible.month() as u8)
                 .expect("Previously valid month is suddenly invalid"),
-            this.model.visible.year())).size(18);
+            this.model.visible.year()
+        ))
+        .size(18);
 
         let month_controls = row::with_capacity(2)
             .push(icon!("go-previous-symbolic", (this.on_prev)()))
