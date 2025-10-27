@@ -1629,22 +1629,27 @@ pub fn update<'a, Message: Clone + 'static>(
             key,
             text,
             physical_key,
+            modifiers,
             ..
         }) => {
             let state = state();
+            state.keyboard_modifiers = modifiers;
+
             if let Some(focus) = state.is_focused.as_mut().filter(|f| f.focused) {
                 if state.is_read_only || (!manage_value && on_input.is_none()) {
                     return event::Status::Ignored;
                 };
-
                 let modifiers = state.keyboard_modifiers;
                 focus.updated_at = Instant::now();
                 LAST_FOCUS_UPDATE.with(|x| x.set(focus.updated_at));
 
                 // Check if Ctrl+A/C/V/X was pressed.
-                if state.keyboard_modifiers.command() {
+                if state.keyboard_modifiers == keyboard::Modifiers::COMMAND
+                    || state.keyboard_modifiers
+                        == keyboard::Modifiers::COMMAND | keyboard::Modifiers::CAPS_LOCK
+                {
                     match key.as_ref() {
-                        keyboard::Key::Character("c") => {
+                        keyboard::Key::Character("c") | keyboard::Key::Character("C") => {
                             if !is_secure {
                                 if let Some((start, end)) = state.cursor.selection(value) {
                                     clipboard.write(
@@ -1656,7 +1661,7 @@ pub fn update<'a, Message: Clone + 'static>(
                         }
                         // XXX if we want to allow cutting of secure text, we need to
                         // update the cache and decide which value to cut
-                        keyboard::Key::Character("x") => {
+                        keyboard::Key::Character("x") | keyboard::Key::Character("X") => {
                             if !is_secure {
                                 if let Some((start, end)) = state.cursor.selection(value) {
                                     clipboard.write(
@@ -1675,7 +1680,7 @@ pub fn update<'a, Message: Clone + 'static>(
                                 }
                             }
                         }
-                        keyboard::Key::Character("v") => {
+                        keyboard::Key::Character("v") | keyboard::Key::Character("V") => {
                             let content = if let Some(content) = state.is_pasting.take() {
                                 content
                             } else {
@@ -1719,7 +1724,7 @@ pub fn update<'a, Message: Clone + 'static>(
                             return event::Status::Captured;
                         }
 
-                        keyboard::Key::Character("a") => {
+                        keyboard::Key::Character("a") | keyboard::Key::Character("A") => {
                             state.cursor.select_all(value);
                             return event::Status::Captured;
                         }
