@@ -1,6 +1,5 @@
 # Context Drawer
 close = Zamknij
-
 # About
 license = Licencja
 links = Linki
@@ -9,3 +8,22 @@ designers = Projektanci
 artists = Artyści
 translators = Tłumacze
 documenters = Dokumentaliści
+january = Styczeń { $year }
+february = Luty { $year }
+march = Marzec { $year }
+april = Kwiecień { $year }
+may = Maj { $year }
+june = Czerwiec { $year }
+july = Lipiec { $year }
+august = Sierpień { $year }
+september = Wrzesień { $year }
+october = Październik { $year }
+november = Listopad { $year }
+december = Grudzień { $year }
+monday = Pon
+tuesday = Wto
+wednesday = Śro
+thursday = Czw
+friday = Pią
+saturday = Sob
+sunday = Nie
