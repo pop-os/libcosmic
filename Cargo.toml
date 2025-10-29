@@ -219,6 +219,9 @@ exclude = ["iced"]
 [workspace.dependencies]
 dirs = "6.0.0"
 
+[dev-dependencies]
+tempfile = "3.13.0"
+
 
 [patch."https://github.com/pop-os/libcosmic"]
 libcosmic = { path = "./" }
