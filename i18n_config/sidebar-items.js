@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["I18nConfigError","WhyNotCrate"],"fn":["locate_crate_paths"],"struct":["Crate","CratePaths","FluentConfig","GettextConfig","I18nConfig"]};

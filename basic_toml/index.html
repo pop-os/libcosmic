@@ -1,0 +1,89 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="github crates-io docs-rs"><title>basic_toml - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../static.files/rustdoc-aa0817cf.css"><meta name="rustdoc-vars" data-root-path="../" data-static-root-path="../static.files/" data-current-crate="basic_toml" data-themes="" data-resource-suffix="" data-rustdoc-version="1.90.0 (1159e78c4 2025-09-14)" data-channel="1.90.0" data-search-js="search-fa3e91e5.js" data-settings-js="settings-5514c975.js" ><script src="../static.files/storage-68b7e25d.js"></script><script defer src="../crates.js"></script><script defer src="../static.files/main-eebb9057.js"></script><noscript><link rel="stylesheet" href="../static.files/noscript-32bb7600.css"></noscript><link rel="alternate icon" type="image/png" href="../static.files/favicon-32x32-6580c154.png"><link rel="icon" type="image/svg+xml" href="../static.files/favicon-044be391.svg"></head><body class="rustdoc mod crate"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle" title="show sidebar"></button></nav><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../basic_toml/index.html">basic_<wbr>toml</a><span class="version">0.1.10</span></h2></div><div class="sidebar-elems"><ul class="block"><li><a id="all-types" href="all.html">All Items</a></li></ul><section id="rustdoc-toc"><h3><a href="#">Sections</a></h3><ul class="block top-toc"><li><a href="#deserialization" title="Deserialization">Deserialization</a></li><li><a href="#serialization" title="Serialization">Serialization</a></li><li><a href="#spec-compatibility" title="Spec compatibility">Spec compatibility</a></li></ul><h3><a href="#structs">Crate Items</a></h3><ul class="block"><li><a href="#structs" title="Structs">Structs</a></li><li><a href="#functions" title="Functions">Functions</a></li></ul></section><div id="rustdoc-modnav"></div></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><div class="width-limiter"><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><h1>Crate <span>basic_toml</span><button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"><a class="src" href="../src/basic_toml/lib.rs.html#1-144">Source</a> </span></div><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p><a href="https://github.com/dtolnay/basic-toml"><img src="https://img.shields.io/badge/github-8da0cb?style=for-the-badge&amp;labelColor=555555&amp;logo=github" alt="github" /></a> <a href="https://crates.io/crates/basic-toml"><img src="https://img.shields.io/badge/crates.io-fc8d62?style=for-the-badge&amp;labelColor=555555&amp;logo=rust" alt="crates-io" /></a> <a href="https://docs.rs/basic-toml"><img src="https://img.shields.io/badge/docs.rs-66c2a5?style=for-the-badge&amp;labelColor=555555&amp;logo=docs.rs" alt="docs-rs" /></a></p>
+<br>
+<p>A library for parsing and producing data in <a href="https://toml.io">TOML</a> format using <a href="https://serde.rs">Serde</a>.</p>
+<p>TOML is designed to be “a config file format for humans”: minimal and easy
+to read due to obvious semantics.</p>
+<div class="example-wrap"><pre class="language-toml"><code>[package]
+name = &quot;basic-toml&quot;
+version = &quot;0.1.10&quot;
+authors = [&quot;Alex Crichton &lt;alex@alexcrichton.com&gt;&quot;]
+
+[dependencies]
+serde = &quot;1.0&quot;</code></pre></div>
+<p>The TOML format is widely used throughout the Rust community for
+configuration, notably being used by <a href="https://crates.io">Cargo</a>, Rust’s package manager.</p>
+<h2 id="deserialization"><a class="doc-anchor" href="#deserialization">§</a>Deserialization</h2>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>semver::{Version, VersionReq};
+<span class="kw">use </span>serde_derive::Deserialize;
+<span class="kw">use </span>std::collections::BTreeMap <span class="kw">as </span>Map;
+
+<span class="attr">#[derive(Deserialize)]
+</span><span class="kw">struct </span>Manifest {
+    package: Package,
+    <span class="attr">#[serde(default)]
+    </span>dependencies: Map&lt;String, VersionReq&gt;,
+}
+
+<span class="attr">#[derive(Deserialize)]
+</span><span class="kw">struct </span>Package {
+    name: String,
+    version: Version,
+    <span class="attr">#[serde(default)]
+    </span>authors: Vec&lt;String&gt;,
+}
+
+<span class="kw">fn </span>main() {
+    <span class="kw">let </span>manifest: Manifest = basic_toml::from_str(<span class="string">r#"
+        [package]
+        name = "basic-toml"
+        version = "0.1.10"
+        authors = ["Alex Crichton &lt;alex@alexcrichton.com&gt;"]
+
+        [dependencies]
+        serde = "^1.0"
+    "#</span>).unwrap();
+
+    <span class="macro">assert_eq!</span>(manifest.package.name, <span class="string">"basic-toml"</span>);
+    <span class="macro">assert_eq!</span>(manifest.package.version, Version::new(<span class="number">0</span>, <span class="number">1</span>, <span class="number">10</span>));
+    <span class="macro">assert_eq!</span>(manifest.package.authors, [<span class="string">"Alex Crichton &lt;alex@alexcrichton.com&gt;"</span>]);
+    <span class="macro">assert_eq!</span>(manifest.dependencies[<span class="string">"serde"</span>].to_string(), <span class="string">"^1.0"</span>);
+}</code></pre></div>
+<h2 id="serialization"><a class="doc-anchor" href="#serialization">§</a>Serialization</h2>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>semver::{Version, VersionReq};
+<span class="kw">use </span>serde_derive::Serialize;
+<span class="kw">use </span>std::collections::BTreeMap <span class="kw">as </span>Map;
+
+<span class="attr">#[derive(Serialize)]
+</span><span class="kw">struct </span>Manifest {
+    package: Package,
+    dependencies: Map&lt;String, VersionReq&gt;,
+}
+
+<span class="attr">#[derive(Serialize)]
+</span><span class="kw">struct </span>Package {
+    name: String,
+    version: Version,
+    authors: Vec&lt;String&gt;,
+}
+
+<span class="kw">fn </span>main() {
+    <span class="kw">let </span>manifest = Manifest {
+        package: Package {
+            name: <span class="string">"basic-toml"</span>.to_owned(),
+            version: Version::new(<span class="number">0</span>, <span class="number">1</span>, <span class="number">10</span>),
+            authors: <span class="macro">vec!</span>[<span class="string">"Alex Crichton &lt;alex@alexcrichton.com&gt;"</span>.to_owned()],
+        },
+        dependencies: {
+            <span class="kw">let </span><span class="kw-2">mut </span>dependencies = Map::new();
+            dependencies.insert(<span class="string">"serde"</span>.to_owned(), <span class="string">"^1.0"</span>.parse().unwrap());
+            dependencies
+        },
+    };
+
+    <span class="kw">let </span>toml = basic_toml::to_string(<span class="kw-2">&amp;</span>manifest).unwrap();
+    <span class="macro">print!</span>(<span class="string">"{}"</span>, toml);
+}</code></pre></div>
+<h2 id="spec-compatibility"><a class="doc-anchor" href="#spec-compatibility">§</a>Spec compatibility</h2>
+<p>TOML v0.5.0.</p>
+<p>TOML’s date and time syntax are not supported.</p>
+</div></details><h2 id="structs" class="section-header">Structs<a href="#structs" class="anchor">§</a></h2><dl class="item-table"><dt><a class="struct" href="struct.Error.html" title="struct basic_toml::Error">Error</a></dt><dd>Errors that can occur when serializing or deserializing TOML.</dd></dl><h2 id="functions" class="section-header">Functions<a href="#functions" class="anchor">§</a></h2><dl class="item-table"><dt><a class="fn" href="fn.from_slice.html" title="fn basic_toml::from_slice">from_<wbr>slice</a></dt><dd>Deserializes a byte slice into a type.</dd><dt><a class="fn" href="fn.from_str.html" title="fn basic_toml::from_str">from_<wbr>str</a></dt><dd>Deserializes a string into a type.</dd><dt><a class="fn" href="fn.to_string.html" title="fn basic_toml::to_string">to_<wbr>string</a></dt><dd>Serialize the given data structure as a String of TOML.</dd></dl></section></div></main></body></html>

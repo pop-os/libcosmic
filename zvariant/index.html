@@ -1,0 +1,160 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="zvariant"><title>zvariant - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../static.files/rustdoc-aa0817cf.css"><meta name="rustdoc-vars" data-root-path="../" data-static-root-path="../static.files/" data-current-crate="zvariant" data-themes="" data-resource-suffix="" data-rustdoc-version="1.90.0 (1159e78c4 2025-09-14)" data-channel="1.90.0" data-search-js="search-fa3e91e5.js" data-settings-js="settings-5514c975.js" ><script src="../static.files/storage-68b7e25d.js"></script><script defer src="../crates.js"></script><script defer src="../static.files/main-eebb9057.js"></script><noscript><link rel="stylesheet" href="../static.files/noscript-32bb7600.css"></noscript><link rel="alternate icon" type="image/png" href="../static.files/favicon-32x32-6580c154.png"><link rel="icon" type="image/svg+xml" href="../static.files/favicon-044be391.svg"></head><body class="rustdoc mod crate"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle" title="show sidebar"></button><a class="logo-container" href="../zvariant/index.html"><img src="https://raw.githubusercontent.com/dbus2/zbus/9f7a90d2b594ddc48b7a5f39fda5e00cd56a7dfb/logo.png" alt=""></a></nav><nav class="sidebar"><div class="sidebar-crate"><a class="logo-container" href="../zvariant/index.html"><img src="https://raw.githubusercontent.com/dbus2/zbus/9f7a90d2b594ddc48b7a5f39fda5e00cd56a7dfb/logo.png" alt="logo"></a><h2><a href="../zvariant/index.html">zvariant</a><span class="version">5.8.0</span></h2></div><div class="sidebar-elems"><ul class="block"><li><a id="all-types" href="all.html">All Items</a></li></ul><section id="rustdoc-toc"><h3><a href="#">Sections</a></h3><ul class="block top-toc"><li><a href="#zvariant" title="zvariant">zvariant</a><ul><li><a href="#example-code" title="Example code">Example code</a></li><li><a href="#no-std" title="no-std">no-std</a></li><li><a href="#optional-features" title="Optional features">Optional features</a></li></ul></li></ul><h3><a href="#reexports">Crate Items</a></h3><ul class="block"><li><a href="#reexports" title="Re-exports">Re-exports</a></li><li><a href="#modules" title="Modules">Modules</a></li><li><a href="#macros" title="Macros">Macros</a></li><li><a href="#structs" title="Structs">Structs</a></li><li><a href="#enums" title="Enums">Enums</a></li><li><a href="#constants" title="Constants">Constants</a></li><li><a href="#traits" title="Traits">Traits</a></li><li><a href="#functions" title="Functions">Functions</a></li><li><a href="#types" title="Type Aliases">Type Aliases</a></li><li><a href="#derives" title="Derive Macros">Derive Macros</a></li></ul></section><div id="rustdoc-modnav"></div></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><div class="width-limiter"><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><h1>Crate <span>zvariant</span><button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"><a class="src" href="../src/zvariant/lib.rs.html#1-113">Source</a> </span></div><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><h2 id="zvariant"><a class="doc-anchor" href="#zvariant">§</a>zvariant</h2>
+<p><a href="https://docs.rs/zvariant/"><img src="https://docs.rs/zvariant/badge.svg" alt="" /></a> <a href="https://crates.io/crates/zvariant"><img src="https://img.shields.io/crates/v/zvariant" alt="" /></a></p>
+<p>This crate provides API for encoding/decoding of data to/from <a href="https://dbus.freedesktop.org/doc/dbus-specification.html#message-protocol-marshaling">D-Bus wire format</a>. This binary
+wire format is simple and very efficient and hence useful outside of D-Bus context as well. A
+modified form of this format, <a href="https://developer.gnome.org/documentation/specifications/gvariant-specification-1.0.html">GVariant</a> is very commonly used for efficient storage of arbitrary
+data and is also supported by this crate (if you enable <code>gvariant</code> cargo feature).</p>
+<p>Since version 2.0, the API is <a href="https://crates.io/crates/serde">serde</a>-based and hence you’ll find it very intuitive if you’re
+already familiar with serde. If you’re not familiar with serde, you may want to first read its
+<a href="https://serde.rs/">tutorial</a> before learning further about this crate.</p>
+<p><strong>Status:</strong> Stable.</p>
+<h3 id="example-code"><a class="doc-anchor" href="#example-code">§</a>Example code</h3>
+<p>Serialization and deserialization is achieved through the <a href="https://docs.rs/zvariant/latest/zvariant/#functions">toplevel functions</a>:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>std::collections::HashMap;
+<span class="kw">use </span>zvariant::{serialized::Context, to_bytes, Type, LE};
+<span class="kw">use </span>serde::{Deserialize, Serialize};
+
+<span class="comment">// All serialization and deserialization API, needs a context.
+</span><span class="kw">let </span>ctxt = Context::new_dbus(LE, <span class="number">0</span>);
+<span class="comment">// You can also use the more efficient GVariant format:
+// let ctxt = Context::new_gvariant(LE, 0);
+
+// i16
+</span><span class="kw">let </span>encoded = to_bytes(ctxt, <span class="kw-2">&amp;</span><span class="number">42i16</span>).unwrap();
+<span class="kw">let </span>decoded: i16 = encoded.deserialize().unwrap().<span class="number">0</span>;
+<span class="macro">assert_eq!</span>(decoded, <span class="number">42</span>);
+
+<span class="comment">// strings
+</span><span class="kw">let </span>encoded = to_bytes(ctxt, <span class="kw-2">&amp;</span><span class="string">"hello"</span>).unwrap();
+<span class="kw">let </span>decoded: <span class="kw-2">&amp;</span>str = encoded.deserialize().unwrap().<span class="number">0</span>;
+<span class="macro">assert_eq!</span>(decoded, <span class="string">"hello"</span>);
+
+<span class="comment">// tuples
+</span><span class="kw">let </span>t = (<span class="string">"hello"</span>, <span class="number">42i32</span>, <span class="bool-val">true</span>);
+<span class="kw">let </span>encoded = to_bytes(ctxt, <span class="kw-2">&amp;</span>t).unwrap();
+<span class="kw">let </span>decoded: (<span class="kw-2">&amp;</span>str, i32, bool) = encoded.deserialize().unwrap().<span class="number">0</span>;
+<span class="macro">assert_eq!</span>(decoded, t);
+
+<span class="comment">// Vec
+</span><span class="kw">let </span>v = <span class="macro">vec!</span>[<span class="string">"hello"</span>, <span class="string">"world!"</span>];
+<span class="kw">let </span>encoded = to_bytes(ctxt, <span class="kw-2">&amp;</span>v).unwrap();
+<span class="kw">let </span>decoded: Vec&lt;<span class="kw-2">&amp;</span>str&gt; = encoded.deserialize().unwrap().<span class="number">0</span>;
+<span class="macro">assert_eq!</span>(decoded, v);
+
+<span class="comment">// Dictionary
+</span><span class="kw">let </span><span class="kw-2">mut </span>map: HashMap&lt;i64, <span class="kw-2">&amp;</span>str&gt; = HashMap::new();
+map.insert(<span class="number">1</span>, <span class="string">"123"</span>);
+map.insert(<span class="number">2</span>, <span class="string">"456"</span>);
+<span class="kw">let </span>encoded = to_bytes(ctxt, <span class="kw-2">&amp;</span>map).unwrap();
+<span class="kw">let </span>decoded: HashMap&lt;i64, <span class="kw-2">&amp;</span>str&gt; = encoded.deserialize().unwrap().<span class="number">0</span>;
+<span class="macro">assert_eq!</span>(decoded[<span class="kw-2">&amp;</span><span class="number">1</span>], <span class="string">"123"</span>);
+<span class="macro">assert_eq!</span>(decoded[<span class="kw-2">&amp;</span><span class="number">2</span>], <span class="string">"456"</span>);
+
+<span class="comment">// derive macros to handle custom types.
+</span><span class="attr">#[derive(Deserialize, Serialize, Type, PartialEq, Debug)]
+</span><span class="kw">struct </span>Struct&lt;<span class="lifetime">'s</span>&gt; {
+    field1: u16,
+    field2: i64,
+    field3: <span class="kw-2">&amp;</span><span class="lifetime">'s </span>str,
+}
+
+<span class="macro">assert_eq!</span>(Struct::SIGNATURE, <span class="string">"(qxs)"</span>);
+<span class="kw">let </span>s = Struct {
+    field1: <span class="number">42</span>,
+    field2: i64::max_value(),
+    field3: <span class="string">"hello"</span>,
+};
+<span class="kw">let </span>ctxt = Context::new_dbus(LE, <span class="number">0</span>);
+<span class="kw">let </span>encoded = to_bytes(ctxt, <span class="kw-2">&amp;</span>s).unwrap();
+<span class="kw">let </span>decoded: Struct = encoded.deserialize().unwrap().<span class="number">0</span>;
+<span class="macro">assert_eq!</span>(decoded, s);
+
+<span class="comment">// It can handle enums too, just that all variants must have the same number and types of fields.
+// Names of fields don't matter though. You can make use of `Value` or `OwnedValue` if you want to
+// encode different data in different fields.
+</span><span class="attr">#[derive(Deserialize, Serialize, Type, PartialEq, Debug)]
+</span><span class="kw">enum </span>Enum&lt;<span class="lifetime">'s</span>&gt; {
+    Variant1 { field1: u16, field2: i64, field3: <span class="kw-2">&amp;</span><span class="lifetime">'s </span>str },
+    Variant2(u16, i64, <span class="kw-2">&amp;</span><span class="lifetime">'s </span>str),
+    Variant3 { f1: u16, f2: i64, f3: <span class="kw-2">&amp;</span><span class="lifetime">'s </span>str },
+}
+
+<span class="comment">// Enum encoding uses a `u32` to denote the variant index. For unit-type enums that's all that's
+// needed so the signature is just `u` but complex enums are encoded as a structure whose first
+// field is the variant index and the second one is the field(s).
+</span><span class="macro">assert_eq!</span>(Enum::SIGNATURE, <span class="string">"(u(qxs))"</span>);
+<span class="kw">let </span>e = Enum::Variant3 {
+    f1: <span class="number">42</span>,
+    f2: i64::max_value(),
+    f3: <span class="string">"hello"</span>,
+};
+<span class="kw">let </span>encoded = to_bytes(ctxt, <span class="kw-2">&amp;</span>e).unwrap();
+<span class="kw">let </span>decoded: Enum = encoded.deserialize().unwrap().<span class="number">0</span>;
+<span class="macro">assert_eq!</span>(decoded, e);
+
+<span class="comment">// Enum encoding can be adjusted by using the `serde_repr` crate
+// and by annotating the representation of the enum with `repr`.
+</span><span class="kw">use </span>serde_repr::{Serialize_repr, Deserialize_repr};
+
+<span class="attr">#[derive(Deserialize_repr, Serialize_repr, Type, PartialEq, Debug)]
+#[repr(u8)]
+</span><span class="kw">enum </span>UnitEnum {
+    Variant1,
+    Variant2,
+    Variant3,
+}
+
+<span class="macro">assert_eq!</span>(UnitEnum::SIGNATURE, <span class="string">"y"</span>);
+<span class="kw">let </span>encoded = to_bytes(ctxt, <span class="kw-2">&amp;</span>UnitEnum::Variant2).unwrap();
+<span class="kw">let </span>e: UnitEnum = encoded.deserialize().unwrap().<span class="number">0</span>;
+<span class="macro">assert_eq!</span>(e, UnitEnum::Variant2);
+
+<span class="comment">// Unit enums can also be (de)serialized as strings.
+</span><span class="attr">#[derive(Deserialize, Serialize, Type, PartialEq, Debug)]
+#[zvariant(signature = <span class="string">"s"</span>)]
+</span><span class="kw">enum </span>StrEnum {
+    Variant1,
+    Variant2,
+    Variant3,
+}
+
+<span class="macro">assert_eq!</span>(StrEnum::SIGNATURE, <span class="string">"s"</span>);</code></pre></div>
+<p>Apart from the obvious requirement of <a href="https://docs.rs/zvariant/latest/serialized/struct.Context.html"><code>serialized::Context</code></a> instance by the main serialization and
+deserialization API, the type being serialized or deserialized must also implement <code>Type</code>
+trait in addition to <a href="https://docs.serde.rs/serde/trait.Serialize.html"><code>Serialize</code></a> or <a href="https://docs.serde.rs/serde/de/trait.Deserialize.html"><code>Deserialize</code></a>, respectively. Please refer to <a href="https://docs.rs/zvariant/latest/zvariant/trait.Type.html"><code>Type</code>
+module documentation</a> for more details.</p>
+<p>Most of the <a href="https://dbus.freedesktop.org/doc/dbus-specification.html#basic-types">basic types</a> of D-Bus match 1-1 with all the primitive Rust types. The only two
+exceptions being, <a href="https://docs.rs/zvariant/latest/zvariant/struct.Signature.html"><code>Signature</code></a> and <a href="https://docs.rs/zvariant/latest/zvariant/struct.ObjectPath.html"><code>ObjectPath</code></a>, which are really just strings. These types
+are covered by the <a href="https://docs.rs/zvariant/latest/zvariant/trait.Basic.html"><code>Basic</code></a> trait.</p>
+<p>Similarly, most of the <a href="https://dbus.freedesktop.org/doc/dbus-specification.html#container-types">container types</a> also map nicely to the usual Rust types and
+collections (as can be seen in the example code above). The only note worthy exception being
+ARRAY type. As arrays in Rust are fixed-sized, serde treats them as tuples and so does this
+crate. This means they are encoded as STRUCT type of D-Bus. If you need to serialize to, or
+deserialize from a D-Bus array, you’ll need to use a <a href="https://doc.rust-lang.org/std/primitive.slice.html">slice</a> (array can easily be converted to a
+slice), a <a href="https://doc.rust-lang.org/std/vec/struct.Vec.html"><code>Vec</code></a> or an <a href="https://docs.rs/arrayvec/0.7.1/arrayvec/struct.ArrayVec.html"><code>arrayvec::ArrayVec</code></a>.</p>
+<p>D-Bus string types, including <a href="https://docs.rs/zvariant/latest/zvariant/struct.Signature.html"><code>Signature</code></a> and <a href="https://docs.rs/zvariant/latest/zvariant/struct.ObjectPath.html"><code>ObjectPath</code></a>, require one additional
+restriction that strings in Rust do not. They must not contain any interior null bytes (<code>'\0'</code>).
+Encoding/Decoding strings that contain this character will return an error.</p>
+<p>The generic D-Bus type, <code>VARIANT</code> is represented by <code>Value</code>, an enum that holds exactly one
+value of any of the other types. Please refer to <a href="https://docs.rs/zvariant/latest/zvariant/enum.Value.html"><code>Value</code> module documentation</a> for examples.</p>
+<h3 id="no-std"><a class="doc-anchor" href="#no-std">§</a>no-std</h3>
+<p>While <code>std</code> is currently a hard requirement, optional <code>no-std</code> support is planned in the future.
+On the other hand, <code>noalloc</code> support is not planned as it will be extremely difficult to
+accomplish. However, community contribution can change that. 😊</p>
+<h3 id="optional-features"><a class="doc-anchor" href="#optional-features">§</a>Optional features</h3><div><table><thead><tr><th>Feature</th><th>Description</th></tr></thead><tbody>
+<tr><td>gvariant</td><td>Enable <a href="https://developer.gnome.org/documentation/specifications/gvariant-specification-1.0.html">GVariant</a> format support</td></tr>
+<tr><td>arrayvec</td><td>Implement <code>Type</code> for <a href="https://docs.rs/arrayvec/0.7.1/arrayvec/struct.ArrayVec.html"><code>arrayvec::ArrayVec</code></a> and <a href="https://docs.rs/arrayvec/0.7.1/arrayvec/struct.ArrayString.html"><code>arrayvec::ArrayString</code></a></td></tr>
+<tr><td>enumflags2</td><td>Implement <code>Type</code> for <a href="https://docs.rs/enumflags2/latest/enumflags2/struct.BitFlags.html"><code>enumflags2::BitFlags</code></a><code>&lt;F&gt;</code></td></tr>
+<tr><td>option-as-array</td><td>Enable <code>Option&lt;T&gt;</code> (de)serialization using array encoding</td></tr>
+</tbody></table>
+</div>
+<p><code>gvariant</code> features conflicts with <code>option-as-array</code> and hence should not be enabled together.</p>
+</div></details><h2 id="reexports" class="section-header">Re-exports<a href="#reexports" class="anchor">§</a></h2><dl class="item-table reexports"><dt id="reexport.DeserializeValue"><code>pub use as_value::<a class="struct" href="as_value/struct.Deserialize.html" title="struct zvariant::as_value::Deserialize">Deserialize</a> as DeserializeValue;</code></dt><dt id="reexport.SerializeValue"><code>pub use as_value::<a class="struct" href="as_value/struct.Serialize.html" title="struct zvariant::as_value::Serialize">Serialize</a> as SerializeValue;</code></dt></dl><h2 id="modules" class="section-header">Modules<a href="#modules" class="anchor">§</a></h2><dl class="item-table"><dt><a class="mod" href="as_value/index.html" title="mod zvariant::as_value">as_<wbr>value</a></dt><dd>Utilities to (de)serialize a value as a <a href="enum.Value.html" title="enum zvariant::Value"><code>zvariant::Value</code></a>.</dd><dt><a class="mod" href="dbus/index.html" title="mod zvariant::dbus">dbus</a></dt><dt><a class="mod" href="serialized/index.html" title="mod zvariant::serialized">serialized</a></dt><dt><a class="mod" href="signature/index.html" title="mod zvariant::signature">signature</a></dt></dl><h2 id="macros" class="section-header">Macros<a href="#macros" class="anchor">§</a></h2><dl class="item-table"><dt><a class="macro" href="macro.impl_type_with_repr.html" title="macro zvariant::impl_type_with_repr">impl_<wbr>type_<wbr>with_<wbr>repr</a></dt><dd>Implements the <a href="trait.Type.html" title="trait zvariant::Type"><code>Type</code></a> trait by delegating the signature to a simpler type (usually a tuple).
+Tests that ensure that the two types are serialize-compatible are auto-generated.</dd><dt><a class="macro" href="macro.static_str_type.html" title="macro zvariant::static_str_type">static_<wbr>str_<wbr>type</a></dt></dl><h2 id="structs" class="section-header">Structs<a href="#structs" class="anchor">§</a></h2><dl class="item-table"><dt><a class="struct" href="struct.Array.html" title="struct zvariant::Array">Array</a></dt><dd>A helper type to wrap arrays in a <a href="enum.Value.html#variant.Array"><code>Value</code></a>.</dd><dt><a class="struct" href="struct.ArraySeed.html" title="struct zvariant::ArraySeed">Array<wbr>Seed</a></dt><dd>Use this to deserialize an <a href="struct.Array.html" title="struct zvariant::Array">Array</a>.</dd><dt><a class="struct" href="struct.Dict.html" title="struct zvariant::Dict">Dict</a></dt><dd>A helper type to wrap dictionaries in a <a href="enum.Value.html#variant.Dict"><code>Value</code></a>.</dd><dt><a class="struct" href="struct.DynamicTuple.html" title="struct zvariant::DynamicTuple">Dynamic<wbr>Tuple</a></dt><dd>A helper type to serialize or deserialize a tuple whose elements implement <a href="trait.DynamicType.html" title="trait zvariant::DynamicType">DynamicType</a> but
+not <a href="trait.Type.html">Type</a>.</dd><dt><a class="struct" href="struct.FilePath.html" title="struct zvariant::FilePath">File<wbr>Path</a></dt><dd>File name represented as a nul-terminated byte array.</dd><dt><a class="struct" href="struct.ObjectPath.html" title="struct zvariant::ObjectPath">Object<wbr>Path</a></dt><dd>String that identifies objects at a given destination on the D-Bus bus.</dd><dt><a class="struct" href="struct.Optional.html" title="struct zvariant::Optional">Optional</a></dt><dd>An optional value.</dd><dt><a class="struct" href="struct.OwnedFd.html" title="struct zvariant::OwnedFd">OwnedFd</a></dt><dd>A file-descriptor type wrapper.</dd><dt><a class="struct" href="struct.OwnedObjectPath.html" title="struct zvariant::OwnedObjectPath">Owned<wbr>Object<wbr>Path</a></dt><dd>Owned <a href="struct.ObjectPath.html"><code>ObjectPath</code></a></dd><dt><a class="struct" href="struct.OwnedStructure.html" title="struct zvariant::OwnedStructure">Owned<wbr>Structure</a></dt><dd>Owned <a href="struct.Structure.html" title="struct zvariant::Structure"><code>Structure</code></a></dd><dt><a class="struct" href="struct.OwnedStructureSeed.html" title="struct zvariant::OwnedStructureSeed">Owned<wbr>Structure<wbr>Seed</a></dt><dd>Use this to deserialize an <a href="struct.OwnedStructure.html" title="struct zvariant::OwnedStructure"><code>OwnedStructure</code></a>.</dd><dt><a class="struct" href="struct.OwnedValue.html" title="struct zvariant::OwnedValue">Owned<wbr>Value</a></dt><dd>Owned <a href="enum.Value.html"><code>Value</code></a></dd><dt><a class="struct" href="struct.Str.html" title="struct zvariant::Str">Str</a></dt><dd>A string wrapper.</dd><dt><a class="struct" href="struct.Structure.html" title="struct zvariant::Structure">Structure</a></dt><dd>A helper type to wrap structs in <a href="enum.Value.html"><code>Value</code></a>.</dd><dt><a class="struct" href="struct.StructureBuilder.html" title="struct zvariant::StructureBuilder">Structure<wbr>Builder</a></dt><dd>Use this to efficiently build a <a href="struct.Structure.html"><code>Structure</code></a>.</dd><dt><a class="struct" href="struct.StructureSeed.html" title="struct zvariant::StructureSeed">Structure<wbr>Seed</a></dt><dd>Use this to deserialize a <a href="struct.Structure.html" title="struct zvariant::Structure"><code>Structure</code></a>.</dd><dt><a class="struct" href="struct.TupleSeed.html" title="struct zvariant::TupleSeed">Tuple<wbr>Seed</a></dt><dd>A helper type for <a href="struct.DynamicTuple.html" title="struct zvariant::DynamicTuple">DynamicTuple</a>’s <a href="trait.DynamicDeserialize.html" title="trait zvariant::DynamicDeserialize">DynamicDeserialize</a> implementation.</dd></dl><h2 id="enums" class="section-header">Enums<a href="#enums" class="anchor">§</a></h2><dl class="item-table"><dt><a class="enum" href="enum.Endian.html" title="enum zvariant::Endian">Endian</a></dt><dd>The endian of the data.</dd><dt><a class="enum" href="enum.Error.html" title="enum zvariant::Error">Error</a></dt><dd>Error type used by zvariant API.</dd><dt><a class="enum" href="enum.Fd.html" title="enum zvariant::Fd">Fd</a></dt><dd>A file-descriptor type wrapper.</dd><dt><a class="enum" href="enum.MaxDepthExceeded.html" title="enum zvariant::MaxDepthExceeded">MaxDepth<wbr>Exceeded</a></dt><dd>Enum representing the max depth exceeded error.</dd><dt><a class="enum" href="enum.Signature.html" title="enum zvariant::Signature">Signature</a></dt><dd>A D-Bus signature in parsed form.</dd><dt><a class="enum" href="enum.Value.html" title="enum zvariant::Value">Value</a></dt><dd>A generic container, in the form of an enum that holds exactly one value of any of the other
+types.</dd></dl><h2 id="constants" class="section-header">Constants<a href="#constants" class="anchor">§</a></h2><dl class="item-table"><dt><a class="constant" href="constant.ARRAY_SIGNATURE_CHAR.html" title="constant zvariant::ARRAY_SIGNATURE_CHAR">ARRAY_<wbr>SIGNATURE_<wbr>CHAR</a></dt><dd>The prefix of ARRAY type signature, as a character. Provided for manual signature creation.</dd><dt><a class="constant" href="constant.ARRAY_SIGNATURE_STR.html" title="constant zvariant::ARRAY_SIGNATURE_STR">ARRAY_<wbr>SIGNATURE_<wbr>STR</a></dt><dd>The prefix of ARRAY type signature, as a string. Provided for manual signature creation.</dd><dt><a class="constant" href="constant.BE.html" title="constant zvariant::BE">BE</a></dt><dd>Alias for <a href="enum.Endian.html#variant.Big" title="variant zvariant::Endian::Big"><code>Endian::Big</code></a>.</dd><dt><a class="constant" href="constant.DICT_ENTRY_SIG_END_CHAR.html" title="constant zvariant::DICT_ENTRY_SIG_END_CHAR">DICT_<wbr>ENTRY_<wbr>SIG_<wbr>END_<wbr>CHAR</a></dt><dd>The closing character of DICT_ENTRY type signature. Provided for manual signature creation.</dd><dt><a class="constant" href="constant.DICT_ENTRY_SIG_END_STR.html" title="constant zvariant::DICT_ENTRY_SIG_END_STR">DICT_<wbr>ENTRY_<wbr>SIG_<wbr>END_<wbr>STR</a></dt><dd>The closing character of DICT_ENTRY type signature, as a string. Provided for manual signature
+creation.</dd><dt><a class="constant" href="constant.DICT_ENTRY_SIG_START_CHAR.html" title="constant zvariant::DICT_ENTRY_SIG_START_CHAR">DICT_<wbr>ENTRY_<wbr>SIG_<wbr>START_<wbr>CHAR</a></dt><dd>The opening character of DICT_ENTRY type signature. Provided for manual signature creation.</dd><dt><a class="constant" href="constant.DICT_ENTRY_SIG_START_STR.html" title="constant zvariant::DICT_ENTRY_SIG_START_STR">DICT_<wbr>ENTRY_<wbr>SIG_<wbr>START_<wbr>STR</a></dt><dd>The opening character of DICT_ENTRY type signature, as a string. Provided for manual signature
+creation.</dd><dt><a class="constant" href="constant.LE.html" title="constant zvariant::LE">LE</a></dt><dd>Alias for <a href="enum.Endian.html#variant.Little" title="variant zvariant::Endian::Little"><code>Endian::Little</code></a>.</dd><dt><a class="constant" href="constant.NATIVE_ENDIAN.html" title="constant zvariant::NATIVE_ENDIAN">NATIVE_<wbr>ENDIAN</a></dt><dd>Same as the return value of <a href="enum.Endian.html#method.native" title="associated function zvariant::Endian::native"><code>Endian::native</code></a>.</dd><dt><a class="constant" href="constant.NETWORK_ENDIAN.html" title="constant zvariant::NETWORK_ENDIAN">NETWORK_<wbr>ENDIAN</a></dt><dd>Alias for <a href="enum.Endian.html#variant.Big" title="variant zvariant::Endian::Big"><code>Endian::Big</code></a>.</dd><dt><a class="constant" href="constant.STRUCT_SIG_END_CHAR.html" title="constant zvariant::STRUCT_SIG_END_CHAR">STRUCT_<wbr>SIG_<wbr>END_<wbr>CHAR</a></dt><dd>The closing character of STRUCT type signature. Provided for manual signature creation.</dd><dt><a class="constant" href="constant.STRUCT_SIG_END_STR.html" title="constant zvariant::STRUCT_SIG_END_STR">STRUCT_<wbr>SIG_<wbr>END_<wbr>STR</a></dt><dd>The closing character of STRUCT type signature, as a string. Provided for manual signature
+creation.</dd><dt><a class="constant" href="constant.STRUCT_SIG_START_CHAR.html" title="constant zvariant::STRUCT_SIG_START_CHAR">STRUCT_<wbr>SIG_<wbr>START_<wbr>CHAR</a></dt><dd>The opening character of STRUCT type signature. Provided for manual signature creation.</dd><dt><a class="constant" href="constant.STRUCT_SIG_START_STR.html" title="constant zvariant::STRUCT_SIG_START_STR">STRUCT_<wbr>SIG_<wbr>START_<wbr>STR</a></dt><dd>The opening character of STRUCT type signature, as a string. Provided for manual signature
+creation.</dd><dt><a class="constant" href="constant.VARIANT_SIGNATURE_CHAR.html" title="constant zvariant::VARIANT_SIGNATURE_CHAR">VARIANT_<wbr>SIGNATURE_<wbr>CHAR</a></dt><dd>The VARIANT type signature. Provided for manual signature creation.</dd><dt><a class="constant" href="constant.VARIANT_SIGNATURE_STR.html" title="constant zvariant::VARIANT_SIGNATURE_STR">VARIANT_<wbr>SIGNATURE_<wbr>STR</a></dt><dd>The VARIANT type signature, as a string. Provided for manual signature creation.</dd></dl><h2 id="traits" class="section-header">Traits<a href="#traits" class="anchor">§</a></h2><dl class="item-table"><dt><a class="trait" href="trait.Basic.html" title="trait zvariant::Basic">Basic</a></dt><dd>Trait for basic types.</dd><dt><a class="trait" href="trait.DynamicDeserialize.html" title="trait zvariant::DynamicDeserialize">Dynamic<wbr>Deserialize</a></dt><dd>Types that deserialize based on dynamic signatures.</dd><dt><a class="trait" href="trait.DynamicType.html" title="trait zvariant::DynamicType">Dynamic<wbr>Type</a></dt><dd>Types with dynamic signatures.</dd><dt><a class="trait" href="trait.NoneValue.html" title="trait zvariant::NoneValue">None<wbr>Value</a></dt><dd>Type that uses a special value to be used as none.</dd><dt><a class="trait" href="trait.ReadBytes.html" title="trait zvariant::ReadBytes">Read<wbr>Bytes</a></dt><dd>A trait for reading bytes.</dd><dt><a class="trait" href="trait.Type.html" title="trait zvariant::Type">Type</a></dt><dd>Trait implemented by all serializable types.</dd><dt><a class="trait" href="trait.WriteBytes.html" title="trait zvariant::WriteBytes">Write<wbr>Bytes</a></dt><dd>A trait for writing bytes.</dd></dl><h2 id="functions" class="section-header">Functions<a href="#functions" class="anchor">§</a></h2><dl class="item-table"><dt><a class="fn" href="fn.serialized_size.html" title="fn zvariant::serialized_size">serialized_<wbr>size</a></dt><dd>Calculate the serialized size of <code>T</code>.</dd><dt><a class="fn" href="fn.to_bytes.html" title="fn zvariant::to_bytes">to_<wbr>bytes</a></dt><dd>Serialize <code>T</code> as a byte vector.</dd><dt><a class="fn" href="fn.to_bytes_for_signature.html" title="fn zvariant::to_bytes_for_signature">to_<wbr>bytes_<wbr>for_<wbr>signature</a></dt><dd>Serialize <code>T</code> that has the given signature, to a new byte vector.</dd><dt><a class="fn" href="fn.to_writer.html" title="fn zvariant::to_writer">to_<wbr>writer</a><sup title="unsafe function">⚠</sup></dt><dd>Serialize <code>T</code> to the given <code>writer</code>.</dd><dt><a class="fn" href="fn.to_writer_for_signature.html" title="fn zvariant::to_writer_for_signature">to_<wbr>writer_<wbr>for_<wbr>signature</a><sup title="unsafe function">⚠</sup></dt><dd>Serialize <code>T</code> that has the given signature, to the given <code>writer</code>.</dd><dt><a class="fn" href="fn.vec_to_cstr.html" title="fn zvariant::vec_to_cstr">vec_<wbr>to_<wbr>cstr</a></dt><dd>Converts a <code>Vec&lt;u8&gt;</code> into a null-terminated <code>CStr</code>.</dd></dl><h2 id="types" class="section-header">Type Aliases<a href="#types" class="anchor">§</a></h2><dl class="item-table"><dt><a class="type" href="type.Result.html" title="type zvariant::Result">Result</a></dt><dd>Alias for a <code>Result</code> with the error type <code>zvariant::Error</code>.</dd></dl><h2 id="derives" class="section-header">Derive Macros<a href="#derives" class="anchor">§</a></h2><dl class="item-table"><dt><a class="derive" href="derive.DeserializeDict.html" title="derive zvariant::DeserializeDict">Deserialize<wbr>Dict</a></dt><dd>Adds <a href="https://docs.serde.rs/serde/de/trait.Deserialize.html"><code>Deserialize</code></a> implementation to structs to be deserialized from <code>a{sv}</code> type.</dd><dt><a class="derive" href="derive.OwnedValue.html" title="derive zvariant::OwnedValue">Owned<wbr>Value</a></dt><dd>Implements conversions for your type to/from <a href="https://docs.rs/zvariant/latest/zvariant/struct.OwnedValue.html"><code>OwnedValue</code></a>.</dd><dt><a class="derive" href="derive.SerializeDict.html" title="derive zvariant::SerializeDict">Serialize<wbr>Dict</a></dt><dd>Adds <a href="https://docs.serde.rs/serde/trait.Serialize.html"><code>Serialize</code></a> implementation to structs to be serialized as <code>a{sv}</code> type.</dd><dt><a class="derive" href="derive.Type.html" title="derive zvariant::Type">Type</a></dt><dd>Derive macro to add <a href="https://docs.rs/zvariant/latest/zvariant/trait.Type.html"><code>Type</code></a> implementation to structs and enums.</dd><dt><a class="derive" href="derive.Value.html" title="derive zvariant::Value">Value</a></dt><dd>Implements conversions for your type to/from <a href="https://docs.rs/zvariant/latest/zvariant/enum.Value.html"><code>Value</code></a>.</dd></dl></section></div></main></body></html>

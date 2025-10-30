@@ -1,0 +1,94 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="The abstractions that make up the core of Taffy’s low-level API"><title>taffy::tree::traits - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../../static.files/rustdoc-aa0817cf.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="taffy" data-themes="" data-resource-suffix="" data-rustdoc-version="1.90.0 (1159e78c4 2025-09-14)" data-channel="1.90.0" data-search-js="search-fa3e91e5.js" data-settings-js="settings-5514c975.js" ><script src="../../../static.files/storage-68b7e25d.js"></script><script defer src="../sidebar-items.js"></script><script defer src="../../../static.files/main-eebb9057.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-32bb7600.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-6580c154.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-044be391.svg"></head><body class="rustdoc mod"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle" title="show sidebar"></button></nav><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../../../taffy/index.html">taffy</a><span class="version">0.9.1</span></h2></div><div class="sidebar-elems"><section id="rustdoc-toc"><h2 class="location"><a href="#">Module traits</a></h2><h3><a href="#">Sections</a></h3><ul class="block top-toc"><li><a href="#examples" title="Examples">Examples</a></li><li><a href="#overview" title="Overview">Overview</a><ul><li><a href="#trait-dependency-tree" title="Trait dependency tree">Trait dependency tree</a></li><li><a href="#a-table-of-traits" title="A table of traits">A table of traits</a></li></ul></li><li><a href="#all-of-the-traits-on-one-page" title="All of the traits on one page">All of the traits on one page</a><ul><li><a href="#traversepartialtree-and-traversetree" title="TraversePartialTree and TraverseTree">TraversePartialTree and TraverseTree</a></li><li><a href="#layoutpartialtree" title="LayoutPartialTree">LayoutPartialTree</a></li><li><a href="#roundtree" title="RoundTree">RoundTree</a></li><li><a href="#printtree" title="PrintTree">PrintTree</a></li></ul></li></ul><h3><a href="#traits">Module Items</a></h3><ul class="block"><li><a href="#traits" title="Traits">Traits</a></li></ul></section><div id="rustdoc-modnav"><h2><a href="../index.html">In taffy::<wbr>tree</a></h2></div></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><div class="width-limiter"><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><div class="rustdoc-breadcrumbs"><a href="../../index.html">taffy</a>::<wbr><a href="../index.html">tree</a></div><h1>Module <span>traits</span><button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"><a class="src" href="../../../src/taffy/tree/traits.rs.html#1-392">Source</a> </span></div><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>The abstractions that make up the core of Taffy’s low-level API</p>
+<h3 id="examples"><a class="doc-anchor" href="#examples">§</a>Examples</h3>
+<p>The following examples demonstrate end-to-end implementation of Taffy’s traits and usage of the low-level compute APIs:</p>
+<ul>
+<li><a href="https://github.com/DioxusLabs/taffy/blob/main/examples/custom_tree_vec.rs">custom_tree_vec</a> which implements a custom Taffy tree using a <code>Vec</code> as an arena with NodeId’s being index’s into the Vec.</li>
+<li><a href="https://github.com/DioxusLabs/taffy/blob/main/examples/custom_tree_owned_partial.rs">custom_tree_owned_partial</a> which implements a custom Taffy tree using directly owned children with NodeId’s being index’s into vec on parent node.</li>
+<li><a href="https://github.com/DioxusLabs/taffy/blob/main/examples/custom_tree_owned_unsafe.rs">custom_tree_owned_unsafe</a> which implements a custom Taffy tree using directly owned children with NodeId’s being pointers.</li>
+</ul>
+<h3 id="overview"><a class="doc-anchor" href="#overview">§</a>Overview</h3><h4 id="trait-dependency-tree"><a class="doc-anchor" href="#trait-dependency-tree">§</a>Trait dependency tree</h4>
+<p>The tree below illustrates which traits depend on which other traits.</p>
+<div class="example-wrap"><pre class="language-text"><code>TraversePartialTree     - Access a node&#39;s children
+├──  LayoutPartialTree  - Run layout algorithms on a node and it&#39;s direct children
+└──  TraverseTree       - Recursively access a node&#39;s descendants
+    ├──  RoundTree      - Round a float-valued`  layout to integer pixels
+    └──  PrintTree      - Print a debug representation of a node tree</code></pre></div><h4 id="a-table-of-traits"><a class="doc-anchor" href="#a-table-of-traits">§</a>A table of traits</h4><div><table><thead><tr><th>Trait</th><th>Requires</th><th>Enables</th></tr></thead><tbody>
+<tr><td><a href="../../trait.LayoutPartialTree.html" title="trait taffy::LayoutPartialTree"><code>LayoutPartialTree</code></a></td><td><a href="../../trait.TraversePartialTree.html" title="trait taffy::TraversePartialTree"><code>TraversePartialTree</code></a></td><td><a href="../../fn.compute_flexbox_layout.html" title="fn taffy::compute_flexbox_layout"><code>compute_flexbox_layout</code></a><br /><a href="../../fn.compute_grid_layout.html" title="fn taffy::compute_grid_layout"><code>compute_grid_layout</code></a><br /><a href="../../fn.compute_block_layout.html" title="fn taffy::compute_block_layout"><code>compute_block_layout</code></a><br /><a href="../../fn.compute_root_layout.html" title="fn taffy::compute_root_layout"><code>compute_root_layout</code></a><br /><a href="../../fn.compute_leaf_layout.html" title="fn taffy::compute_leaf_layout"><code>compute_leaf_layout</code></a><br /><a href="../../fn.compute_hidden_layout.html" title="fn taffy::compute_hidden_layout"><code>compute_hidden_layout</code></a><br /><a href="../../fn.compute_cached_layout.html" title="fn taffy::compute_cached_layout"><code>compute_cached_layout</code></a></td></tr>
+<tr><td><a href="../../trait.RoundTree.html" title="trait taffy::RoundTree"><code>RoundTree</code></a></td><td><a href="../../trait.TraverseTree.html" title="trait taffy::TraverseTree"><code>TraverseTree</code></a></td><td><a href="../../fn.round_layout.html" title="fn taffy::round_layout"><code>round_layout</code></a></td></tr>
+<tr><td><a href="../../trait.PrintTree.html" title="trait taffy::PrintTree"><code>PrintTree</code></a></td><td><a href="../../trait.TraverseTree.html" title="trait taffy::TraverseTree"><code>TraverseTree</code></a></td><td><a href="../../fn.print_tree.html" title="fn taffy::print_tree"><code>print_tree</code></a></td></tr>
+</tbody></table>
+</div><h3 id="all-of-the-traits-on-one-page"><a class="doc-anchor" href="#all-of-the-traits-on-one-page">§</a>All of the traits on one page</h3><h4 id="traversepartialtree-and-traversetree"><a class="doc-anchor" href="#traversepartialtree-and-traversetree">§</a>TraversePartialTree and TraverseTree</h4>
+<p>These traits are Taffy’s abstraction for downward tree traversal:</p>
+<ul>
+<li><a href="../../trait.TraversePartialTree.html" title="trait taffy::TraversePartialTree"><code>TraversePartialTree</code></a> allows access to a single container node, and it’s immediate children. This is the only “traverse” trait that is required
+for use of Taffy’s core layout algorithms (flexbox, grid, etc).</li>
+<li><a href="../../trait.TraverseTree.html" title="trait taffy::TraverseTree"><code>TraverseTree</code></a> is a marker trait which uses the same API signature as <code>TraversePartialTree</code>, but extends it with a guarantee that the child/children methods can be used to recurse
+infinitely down the tree. It is required by the <code>RoundTree</code> and
+the <code>PrintTree</code> traits.</li>
+</ul>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">pub trait </span>TraversePartialTree {
+    <span class="doccomment">/// Type representing an iterator of the children of a node
+    </span><span class="kw">type </span>ChildIter&lt;<span class="lifetime">'a</span>&gt;: Iterator&lt;Item = NodeId&gt;
+    <span class="kw">where
+        </span><span class="self">Self</span>: <span class="lifetime">'a</span>;
+
+    <span class="doccomment">/// Get the list of children IDs for the given node
+    </span><span class="kw">fn </span>child_ids(<span class="kw-2">&amp;</span><span class="self">self</span>, parent_node_id: NodeId) -&gt; <span class="self">Self</span>::ChildIter&lt;<span class="lifetime">'_</span>&gt;;
+
+    <span class="doccomment">/// Get the number of children for the given node
+    </span><span class="kw">fn </span>child_count(<span class="kw-2">&amp;</span><span class="self">self</span>, parent_node_id: NodeId) -&gt; usize;
+
+    <span class="doccomment">/// Get a specific child of a node, where the index represents the nth child
+    </span><span class="kw">fn </span>get_child_id(<span class="kw-2">&amp;</span><span class="self">self</span>, parent_node_id: NodeId, child_index: usize) -&gt; NodeId;
+}
+
+<span class="kw">pub trait </span>TraverseTree: TraversePartialTree {}</code></pre></div>
+<p>You must implement <a href="../../trait.TraversePartialTree.html" title="trait taffy::TraversePartialTree"><code>TraversePartialTree</code></a> to access any of Taffy’s low-level API. If your tree implementation allows you to implement <a href="../../trait.TraverseTree.html" title="trait taffy::TraverseTree"><code>TraverseTree</code></a> with
+the correct semantics (full recursive traversal is available) then you should.</p>
+<h4 id="layoutpartialtree"><a class="doc-anchor" href="#layoutpartialtree">§</a>LayoutPartialTree</h4>
+<p><strong>Requires:</strong> <code>TraversePartialTree</code><br />
+<strong>Enables:</strong> Flexbox, Grid, Block and Leaf layout algorithms from the <a href="../../compute/index.html" title="mod taffy::compute"><code>crate::compute</code></a> module</p>
+<p>Any type that implements <a href="../../trait.LayoutPartialTree.html" title="trait taffy::LayoutPartialTree"><code>LayoutPartialTree</code></a> can be laid out using <a href="../../compute/index.html" title="mod taffy::compute">Taffy’s algorithms</a></p>
+<p>Note that this trait extends <a href="../../trait.TraversePartialTree.html" title="trait taffy::TraversePartialTree"><code>TraversePartialTree</code></a> (not <a href="../../trait.TraverseTree.html" title="trait taffy::TraverseTree"><code>TraverseTree</code></a>). Taffy’s algorithm implementations have been designed such that they can be used for a laying out a single
+node that only has access to it’s immediate children.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">pub trait </span>LayoutPartialTree: TraversePartialTree {
+    <span class="doccomment">/// Get a reference to the [`Style`] for this node.
+    </span><span class="kw">fn </span>get_style(<span class="kw-2">&amp;</span><span class="self">self</span>, node_id: NodeId) -&gt; <span class="kw-2">&amp;</span>Style;
+
+    <span class="doccomment">/// Set the node's unrounded layout
+    </span><span class="kw">fn </span>set_unrounded_layout(<span class="kw-2">&amp;mut </span><span class="self">self</span>, node_id: NodeId, layout: <span class="kw-2">&amp;</span>Layout);
+
+    <span class="doccomment">/// Get a mutable reference to the [`Cache`] for this node.
+    </span><span class="kw">fn </span>get_cache_mut(<span class="kw-2">&amp;mut </span><span class="self">self</span>, node_id: NodeId) -&gt; <span class="kw-2">&amp;mut </span>Cache;
+
+    <span class="doccomment">/// Compute the specified node's size or full layout given the specified constraints
+    </span><span class="kw">fn </span>compute_child_layout(<span class="kw-2">&amp;mut </span><span class="self">self</span>, node_id: NodeId, inputs: LayoutInput) -&gt; LayoutOutput;
+}</code></pre></div>
+<h4 id="roundtree"><a class="doc-anchor" href="#roundtree">§</a>RoundTree</h4>
+<p><strong>Requires:</strong> <code>TraverseTree</code></p>
+<p>Trait used by the <code>round_layout</code> method which takes a tree of unrounded float-valued layouts and performs
+rounding to snap the values to the pixel grid.</p>
+<p>As indicated by it’s dependence on <code>TraverseTree</code>, it required full recursive access to the tree.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">pub trait </span>RoundTree: TraverseTree {
+    <span class="doccomment">/// Get the node's unrounded layout
+    </span><span class="kw">fn </span>get_unrounded_layout(<span class="kw-2">&amp;</span><span class="self">self</span>, node_id: NodeId) -&gt; Layout;
+    <span class="doccomment">/// Get a reference to the node's final layout
+    </span><span class="kw">fn </span>set_final_layout(<span class="kw-2">&amp;mut </span><span class="self">self</span>, node_id: NodeId, layout: <span class="kw-2">&amp;</span>Layout);
+}</code></pre></div>
+<h4 id="printtree"><a class="doc-anchor" href="#printtree">§</a>PrintTree</h4>
+<p><strong>Requires:</strong> <code>TraverseTree</code></p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="doccomment">/// Trait used by the `print_tree` method which prints a debug representation
+///
+/// As indicated by it's dependence on `TraverseTree`, it required full recursive access to the tree.
+</span><span class="kw">pub trait </span>PrintTree: TraverseTree {
+    <span class="doccomment">/// Get a debug label for the node (typically the type of node: flexbox, grid, text, image, etc)
+    </span><span class="kw">fn </span>get_debug_label(<span class="kw-2">&amp;</span><span class="self">self</span>, node_id: NodeId) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">'static </span>str;
+    <span class="doccomment">/// Get a reference to the node's final layout
+    </span><span class="kw">fn </span>get_final_layout(<span class="kw-2">&amp;</span><span class="self">self</span>, node_id: NodeId) -&gt; Layout;
+}</code></pre></div>
+</div></details><h2 id="traits" class="section-header">Traits<a href="#traits" class="anchor">§</a></h2><dl class="item-table"><dt><a class="trait" href="trait.CacheTree.html" title="trait taffy::tree::traits::CacheTree">Cache<wbr>Tree</a></dt><dd>Trait used by the <code>compute_cached_layout</code> method which allows cached layout results to be stored and retrieved.</dd><dt><a class="trait" href="trait.LayoutBlockContainer.html" title="trait taffy::tree::traits::LayoutBlockContainer">Layout<wbr>Block<wbr>Container</a></dt><dd>Extends <a href="../../trait.LayoutPartialTree.html" title="trait taffy::LayoutPartialTree"><code>LayoutPartialTree</code></a> with getters for the styles required for CSS Block layout</dd><dt><a class="trait" href="trait.LayoutFlexboxContainer.html" title="trait taffy::tree::traits::LayoutFlexboxContainer">Layout<wbr>Flexbox<wbr>Container</a></dt><dd>Extends <a href="../../trait.LayoutPartialTree.html" title="trait taffy::LayoutPartialTree"><code>LayoutPartialTree</code></a> with getters for the styles required for Flexbox layout</dd><dt><a class="trait" href="trait.LayoutGridContainer.html" title="trait taffy::tree::traits::LayoutGridContainer">Layout<wbr>Grid<wbr>Container</a></dt><dd>Extends <a href="../../trait.LayoutPartialTree.html" title="trait taffy::LayoutPartialTree"><code>LayoutPartialTree</code></a> with getters for the styles required for CSS Grid layout</dd><dt><a class="trait" href="trait.LayoutPartialTree.html" title="trait taffy::tree::traits::LayoutPartialTree">Layout<wbr>Partial<wbr>Tree</a></dt><dd>Any type that implements <a href="../../trait.LayoutPartialTree.html" title="trait taffy::LayoutPartialTree"><code>LayoutPartialTree</code></a> can be laid out using <a href="../../compute/index.html" title="mod taffy::compute">Taffy’s algorithms</a></dd><dt><a class="trait" href="trait.PrintTree.html" title="trait taffy::tree::traits::PrintTree">Print<wbr>Tree</a></dt><dd>Trait used by the <code>print_tree</code> method which prints a debug representation</dd><dt><a class="trait" href="trait.RoundTree.html" title="trait taffy::tree::traits::RoundTree">Round<wbr>Tree</a></dt><dd>Trait used by the <code>round_layout</code> method which takes a tree of unrounded float-valued layouts and performs
+rounding to snap the values to the pixel grid.</dd><dt><a class="trait" href="trait.TraversePartialTree.html" title="trait taffy::tree::traits::TraversePartialTree">Traverse<wbr>Partial<wbr>Tree</a></dt><dd>Taffy’s abstraction for downward tree traversal.</dd><dt><a class="trait" href="trait.TraverseTree.html" title="trait taffy::tree::traits::TraverseTree">Traverse<wbr>Tree</a></dt><dd>A marker trait which extends <code>TraversePartialTree</code></dd></dl></section></div></main></body></html>

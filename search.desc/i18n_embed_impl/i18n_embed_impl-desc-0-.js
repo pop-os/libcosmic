@@ -1,0 +1,1 @@
+searchState.loadedDescShard("i18n_embed_impl", 0, "A procedural macro to create a new <code>FluentLanguageLoader</code> …")

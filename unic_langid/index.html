@@ -1,0 +1,83 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="`unic-langid` is a core API for parsing, manipulating, and serializing Unicode Language Identifiers."><title>unic_langid - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../static.files/rustdoc-aa0817cf.css"><meta name="rustdoc-vars" data-root-path="../" data-static-root-path="../static.files/" data-current-crate="unic_langid" data-themes="" data-resource-suffix="" data-rustdoc-version="1.90.0 (1159e78c4 2025-09-14)" data-channel="1.90.0" data-search-js="search-fa3e91e5.js" data-settings-js="settings-5514c975.js" ><script src="../static.files/storage-68b7e25d.js"></script><script defer src="../crates.js"></script><script defer src="../static.files/main-eebb9057.js"></script><noscript><link rel="stylesheet" href="../static.files/noscript-32bb7600.css"></noscript><link rel="alternate icon" type="image/png" href="../static.files/favicon-32x32-6580c154.png"><link rel="icon" type="image/svg+xml" href="../static.files/favicon-044be391.svg"></head><body class="rustdoc mod crate"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle" title="show sidebar"></button></nav><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../unic_langid/index.html">unic_<wbr>langid</a><span class="version">0.9.6</span></h2></div><div class="sidebar-elems"><ul class="block"><li><a id="all-types" href="all.html">All Items</a></li></ul><section id="rustdoc-toc"><h3><a href="#">Sections</a></h3><ul class="block top-toc"><li><a href="#examples" title="Examples">Examples</a></li><li><a href="#optional-features" title="Optional features">Optional features</a><ul><li><a href="#langid-langids-and-langid_slice-macros" title="`langid!`, `langids!`, and `langid_slice!` macros"><code>langid!</code>, <code>langids!</code>, and <code>langid_slice!</code> macros</a></li><li><a href="#likely-subtags" title="Likely Subtags">Likely Subtags</a></li></ul></li></ul><h3><a href="#modules">Crate Items</a></h3><ul class="block"><li><a href="#modules" title="Modules">Modules</a></li><li><a href="#structs" title="Structs">Structs</a></li><li><a href="#enums" title="Enums">Enums</a></li><li><a href="#functions" title="Functions">Functions</a></li></ul></section><div id="rustdoc-modnav"></div></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><div class="width-limiter"><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><h1>Crate <span>unic_langid</span><button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"><a class="src" href="../src/unic_langid/lib.rs.html#1-136">Source</a> </span></div><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p><code>unic-langid</code> is a core API for parsing, manipulating, and serializing Unicode Language
+Identifiers.</p>
+<p>The crate provides algorithms for parsing a string into a well-formed language identifier
+as defined by <a href="https://unicode.org/reports/tr35/tr35.html#Unicode_language_identifier"><code>UTS #35: Unicode LDML 3.1 Unicode Language Identifier</code></a>.</p>
+<h2 id="examples"><a class="doc-anchor" href="#examples">§</a>Examples</h2>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>unic_langid::LanguageIdentifier;
+<span class="kw">use </span>unic_langid::subtags::{Language, Script, Region};
+
+<span class="kw">let </span><span class="kw-2">mut </span>li: LanguageIdentifier = <span class="string">"en-US"</span>.parse()
+    .expect(<span class="string">"Parsing failed."</span>);
+
+<span class="kw">let </span>lang: Language = <span class="string">"en"</span>.parse().expect(<span class="string">"Parsing failed."</span>);
+<span class="kw">let </span>region: Region = <span class="string">"US"</span>.parse().expect(<span class="string">"Parsing failed."</span>);
+<span class="macro">assert_eq!</span>(li.language, lang);
+<span class="macro">assert_eq!</span>(li.script, <span class="prelude-val">None</span>);
+<span class="macro">assert_eq!</span>(li.region, <span class="prelude-val">Some</span>(region));
+<span class="macro">assert_eq!</span>(li.variants().len(), <span class="number">0</span>);
+
+<span class="kw">let </span>region: Region = <span class="string">"GB"</span>.parse().expect(<span class="string">"Parsing failed."</span>);
+li.region = <span class="prelude-val">Some</span>(region);
+
+<span class="macro">assert_eq!</span>(li.to_string(), <span class="string">"en-GB"</span>);</code></pre></div>
+<p>For more details, see <a href="./struct.LanguageIdentifier.html"><code>LanguageIdentifier</code></a>.</p>
+<h2 id="optional-features"><a class="doc-anchor" href="#optional-features">§</a>Optional features</h2><h3 id="langid-langids-and-langid_slice-macros"><a class="doc-anchor" href="#langid-langids-and-langid_slice-macros">§</a><code>langid!</code>, <code>langids!</code>, and <code>langid_slice!</code> macros</h3>
+<p>If <code>feature = "macros"</code> is selected, the crate provides a procedural macro
+which allows to construct build-time well-formed language identifiers with zero-cost at runtime.</p>
+
+<div class="example-wrap ignore"><a href="#" class="tooltip" title="This example is not tested">ⓘ</a><pre class="rust rust-example-rendered"><code><span class="kw">use </span>unic_langid::{langid, langid_slice, langids, lang, region, script, variant, LanguageIdentifier};
+<span class="kw">use </span>unic_langid::subtags::{Language, Script, Region, Variant};
+<span class="kw">use </span>std::str::FromStr;
+
+<span class="kw">let </span>es_ar = <span class="macro">langid!</span>(<span class="string">"es-AR"</span>);
+<span class="kw">let </span>en_us = <span class="macro">langid!</span>(<span class="string">"en-US"</span>);
+
+<span class="macro">assert_eq!</span>(<span class="kw-2">&amp;</span>es_ar.to_string(), <span class="string">"es-AR"</span>);
+<span class="macro">assert_eq!</span>(<span class="kw-2">&amp;</span>en_us.to_string(), <span class="string">"en-US"</span>);
+
+<span class="kw">let </span>lang_ids = <span class="macro">langids!</span>(<span class="string">"es-AR"</span>, <span class="string">"en-US"</span>, <span class="string">"de"</span>);
+
+<span class="macro">assert_eq!</span>(lang_ids[<span class="number">0</span>], <span class="string">"es-AR"</span>);
+<span class="macro">assert_eq!</span>(lang_ids[<span class="number">1</span>], <span class="string">"en-US"</span>);
+<span class="macro">assert_eq!</span>(lang_ids[<span class="number">2</span>], <span class="string">"de"</span>);
+
+<span class="kw">const </span>LANGUAGES: <span class="kw-2">&amp;</span>[LanguageIdentifier] = <span class="macro">langid_slice!</span>[<span class="string">"en-GB"</span>, <span class="string">"fr"</span>];
+
+<span class="macro">assert_eq!</span>(<span class="macro">lang!</span>(<span class="string">"pl"</span>), <span class="string">"pl"</span>);
+<span class="macro">assert_eq!</span>(<span class="macro">lang!</span>(<span class="string">"pl"</span>), Language::from_str(<span class="string">"pl"</span>).unwrap());
+
+<span class="macro">assert_eq!</span>(<span class="macro">script!</span>(<span class="string">"latn"</span>), <span class="string">"Latn"</span>);
+<span class="macro">assert_eq!</span>(<span class="macro">script!</span>(<span class="string">"latn"</span>), Script::from_str(<span class="string">"Latn"</span>).unwrap());
+
+<span class="macro">assert_eq!</span>(<span class="macro">region!</span>(<span class="string">"us"</span>), <span class="string">"US"</span>);
+<span class="macro">assert_eq!</span>(<span class="macro">region!</span>(<span class="string">"us"</span>), Region::from_str(<span class="string">"us"</span>).unwrap());
+
+<span class="macro">assert_eq!</span>(<span class="macro">variant!</span>(<span class="string">"macos"</span>), <span class="string">"macos"</span>);
+<span class="macro">assert_eq!</span>(<span class="macro">variant!</span>(<span class="string">"macos"</span>), Variant::from_str(<span class="string">"macos"</span>).unwrap());</code></pre></div>
+<p>The macros produce instances of <code>LanguageIdentifier</code> the same way as parsing from <code>&amp;str</code> does,
+but since the parsing is performed at build time, it doesn’t need a <code>Result</code>.</p>
+<p>At the moment <code>langid!</code> can also be used for const variables, but only if no variants are used.</p>
+<p>The macros are optional to reduce the dependency chain and compilation time of <code>unic-langid</code>.</p>
+<h3 id="likely-subtags"><a class="doc-anchor" href="#likely-subtags">§</a>Likely Subtags</h3>
+<p>If <code>feature = "likelysubtags"</code> is selected, the <code>LanguageIdentifier</code> gains two more methods:</p>
+<ul>
+<li>add_likely_subtags</li>
+<li>remove_likely_subtags</li>
+</ul>
+<p>Both of them operate in place updating the existing <code>LanguageIdentifier</code> by either extending
+subtags to most likely values, or removing the subtags that are not needed.</p>
+<p>Both methods return a <code>bool</code> that indicates if the identifier has been modified.</p>
+
+<div class="example-wrap ignore"><a href="#" class="tooltip" title="This example is not tested">ⓘ</a><pre class="rust rust-example-rendered"><code><span class="kw">use </span>unic_langid::LanuageIdentifier;
+
+<span class="kw">let </span><span class="kw-2">mut </span>li: LanguageIdentifier = <span class="string">"fr-FR"</span>.parse()
+    .expect(<span class="string">"Parsing failed."</span>);
+
+<span class="macro">assert_eq!</span>(li.add_likely_subtags(), <span class="bool-val">true</span>);
+<span class="macro">assert_eq!</span>(li, <span class="string">"fr-Latn-FR"</span>);
+
+<span class="macro">assert_eq!</span>(li.remove_likely_subtags(), <span class="bool-val">true</span>);
+<span class="macro">assert_eq!</span>(li, <span class="string">"fr"</span>);</code></pre></div>
+<p>The feature is optional because it increases the binary size of the library by including
+a data table for CLDR likelySubtags.</p>
+</div></details><h2 id="modules" class="section-header">Modules<a href="#modules" class="anchor">§</a></h2><dl class="item-table"><dt><a class="mod" href="subtags/index.html" title="mod unic_langid::subtags">subtags</a></dt></dl><h2 id="structs" class="section-header">Structs<a href="#structs" class="anchor">§</a></h2><dl class="item-table"><dt><a class="struct" href="struct.LanguageIdentifier.html" title="struct unic_langid::LanguageIdentifier">Language<wbr>Identifier</a></dt><dd><code>LanguageIdentifier</code> is a core struct representing a Unicode Language Identifier.</dd></dl><h2 id="enums" class="section-header">Enums<a href="#enums" class="anchor">§</a></h2><dl class="item-table"><dt><a class="enum" href="enum.CharacterDirection.html" title="enum unic_langid::CharacterDirection">Character<wbr>Direction</a></dt><dd>Enum representing available character direction orientations.</dd><dt><a class="enum" href="enum.LanguageIdentifierError.html" title="enum unic_langid::LanguageIdentifierError">Language<wbr>Identifier<wbr>Error</a></dt><dd>Enum with errors that can be returned by LanguageIdentifier.</dd></dl><h2 id="functions" class="section-header">Functions<a href="#functions" class="anchor">§</a></h2><dl class="item-table"><dt><a class="fn" href="fn.canonicalize.html" title="fn unic_langid::canonicalize">canonicalize</a></dt><dd>This is a best-effort operation that performs all available levels of canonicalization.</dd></dl></section></div></main></body></html>
