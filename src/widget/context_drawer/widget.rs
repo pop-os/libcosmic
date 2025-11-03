@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: MPL-2.0
 
 use super::overlay::Overlay;
-use crate::widget::{LayerContainer, button, column, container, icon, row, scrollable, text};
+use crate::widget::{self, LayerContainer, button, column, container, icon, row, scrollable, text};
 use crate::{Apply, Element, Renderer, Theme, fl};
 use std::borrow::Cow;
 
@@ -25,9 +25,9 @@ pub struct ContextDrawer<'a, Message> {
 impl<'a, Message: Clone + 'static> ContextDrawer<'a, Message> {
     pub fn new_inner<Drawer>(
         title: Option<Cow<'a, str>>,
-        header_actions: Vec<Element<'a, Message>>,
-        header_opt: Option<Element<'a, Message>>,
-        footer_opt: Option<Element<'a, Message>>,
+        actions: Option<Element<'a, Message>>,
+        header: Option<Element<'a, Message>>,
+        footer: Option<Element<'a, Message>>,
         drawer: Drawer,
         on_close: Message,
         max_width: f32,
@@ -38,7 +38,7 @@ impl<'a, Message: Clone + 'static> ContextDrawer<'a, Message> {
         #[inline(never)]
         fn inner<'a, Message: Clone + 'static>(
             title: Option<Cow<'a, str>>,
-            header_actions: Vec<Element<'a, Message>>,
+            actions_opt: Option<Element<'a, Message>>,
             header_opt: Option<Element<'a, Message>>,
             footer_opt: Option<Element<'a, Message>>,
             drawer: Element<'a, Message>,
@@ -53,68 +53,57 @@ impl<'a, Message: Clone + 'static> ContextDrawer<'a, Message> {
                 ..
             } = crate::theme::spacing();
 
-            let (horizontal_padding, title_portion, side_portion) = if max_width < 392.0 {
-                (space_s, 1, 1)
-            } else {
-                (space_l, 2, 1)
-            };
+            let horizontal_padding = if max_width < 392.0 { space_s } else { space_l };
 
             let title = title.map(|title| {
-                text::heading(title)
+                text::title4(title)
                     .apply(container)
-                    .center_x(Length::FillPortion(title_portion))
+                    .padding([if actions_opt.is_some() { space_m } else { 0 }, 0, 0, 0])
+                    .width(Length::Fill)
             });
-
-            let (actions_width, close_width) = if title.is_some() {
-                (
-                    Length::FillPortion(side_portion),
-                    Length::FillPortion(side_portion),
-                )
+            let actions = if let Some(actions) = actions_opt {
+                actions
+                    .apply(container)
+                    .width(Length::Fill)
+                    .apply(Element::from)
             } else {
-                (Length::Fill, Length::Shrink)
+                widget::horizontal_space().apply(Element::from)
             };
 
-            let header_row = row::with_capacity(3)
-                .width(Length::Fixed(480.0))
+            let header_row = row::with_capacity(2)
                 .align_y(Alignment::Center)
-                .push(
-                    row::with_children(header_actions)
-                        .spacing(space_xxs)
-                        .width(actions_width),
-                )
-                .push_maybe(title)
+                .push(actions)
                 .push(
                     button::text(fl!("close"))
                         .trailing_icon(icon::from_name("go-next-symbolic"))
-                        .on_press(on_close)
-                        .apply(container)
-                        .width(close_width)
-                        .align_x(Alignment::End),
+                        .on_press(on_close),
                 );
-            let header = column::with_capacity(2)
-                .width(Length::Fixed(480.0))
+            let header_element =
+                header_opt.map(|el| el.apply(container).padding([space_m, 0, 0, 0]));
+
+            let header = column::with_capacity(3)
                 .align_x(Alignment::Center)
-                .spacing(space_m)
                 .padding([space_m, horizontal_padding])
                 .push(header_row)
-                .push_maybe(header_opt);
+                .push_maybe(title)
+                .push_maybe(header_element);
             let footer = footer_opt.map(|element| {
                 container(element)
-                    .width(Length::Fixed(480.0))
                     .align_y(Alignment::Center)
                     .padding([space_xxs, horizontal_padding])
             });
             let pane = column::with_capacity(3)
                 .push(header)
                 .push(
-                    scrollable(container(drawer).padding([
-                        0,
-                        horizontal_padding,
-                        if footer.is_some() { 0 } else { space_l },
-                        horizontal_padding,
-                    ]))
-                    .height(Length::Fill)
-                    .width(Length::Shrink),
+                    container(drawer)
+                        .padding([
+                            0,
+                            horizontal_padding,
+                            if footer.is_some() { 0 } else { space_l },
+                            horizontal_padding,
+                        ])
+                        .apply(scrollable)
+                        .height(Length::Fill),
                 )
                 .push_maybe(footer);
 
@@ -136,9 +125,9 @@ impl<'a, Message: Clone + 'static> ContextDrawer<'a, Message> {
 
         inner(
             title,
-            header_actions,
-            header_opt,
-            footer_opt,
+            actions,
+            header,
+            footer,
             drawer.into(),
             on_close,
             max_width,
@@ -148,9 +137,9 @@ impl<'a, Message: Clone + 'static> ContextDrawer<'a, Message> {
     /// Creates an empty [`ContextDrawer`].
     pub fn new<Content, Drawer>(
         title: Option<Cow<'a, str>>,
-        header_actions: Vec<Element<'a, Message>>,
-        header_opt: Option<Element<'a, Message>>,
-        footer_opt: Option<Element<'a, Message>>,
+        actions: Option<Element<'a, Message>>,
+        header: Option<Element<'a, Message>>,
+        footer: Option<Element<'a, Message>>,
         content: Content,
         drawer: Drawer,
         on_close: Message,
@@ -160,15 +149,7 @@ impl<'a, Message: Clone + 'static> ContextDrawer<'a, Message> {
         Content: Into<Element<'a, Message>>,
         Drawer: Into<Element<'a, Message>>,
     {
-        let drawer = Self::new_inner(
-            title,
-            header_actions,
-            header_opt,
-            footer_opt,
-            drawer,
-            on_close,
-            max_width,
-        );
+        let drawer = Self::new_inner(title, actions, header, footer, drawer, on_close, max_width);
 
         ContextDrawer {
             id: None,
@@ -188,7 +169,7 @@ impl<'a, Message: Clone + 'static> ContextDrawer<'a, Message> {
     /// Map the message type of the context drawer to another
     #[inline]
     pub fn map<Out: Clone + 'static>(
-        mut self,
+        self,
         on_message: fn(Message) -> Out,
     ) -> ContextDrawer<'a, Out> {
         ContextDrawer {
