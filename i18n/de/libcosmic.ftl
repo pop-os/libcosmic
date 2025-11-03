@@ -1,6 +1,5 @@
 # Context Drawer
 close = Schließen
-
 # About
 license = Lizenz
 links = Links
@@ -9,7 +8,6 @@ designers = Designer*innen
 artists = Künstler*innen
 translators = Übersetzer*innen
 documenters = Dokumentierer*innen
-
 # Calendar
 january = Januar { $year }
 february = Februar { $year }
