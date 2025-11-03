@@ -603,7 +603,7 @@ impl<App: Application> ApplicationExt for App {
                         widgets.push(
                             crate::widget::context_drawer(
                                 context.title,
-                                context.header_actions,
+                                context.actions,
                                 context.header,
                                 context.footer,
                                 context.on_close,
@@ -640,7 +640,7 @@ impl<App: Application> ApplicationExt for App {
                         widgets.push(
                             crate::widget::ContextDrawer::new_inner(
                                 context.title,
-                                context.header_actions,
+                                context.actions,
                                 context.header,
                                 context.footer,
                                 context.content,
