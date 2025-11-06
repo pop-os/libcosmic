@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["ParseColorError"],"fn":["parse"],"static":["NAMED_COLORS"],"struct":["Color"]};

@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["Action","Binding","Edit","Motion","Status"],"fn":["default","focus"],"struct":["Content","Id","KeyPress","State","Style","TextEditor"],"trait":["Catalog"],"type":["StyleFn"]};

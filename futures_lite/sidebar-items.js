@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"macro":["pin","ready"],"mod":["future","io","prelude","stream"]};

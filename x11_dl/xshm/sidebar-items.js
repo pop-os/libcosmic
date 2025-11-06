@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"struct":["XShmCompletionEvent","XShmSegmentInfo","Xext"],"type":["ShmSeg"]};

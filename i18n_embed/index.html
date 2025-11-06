@@ -1,0 +1,367 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Traits and macros to conveniently embed localization assets into your application binary or library in order to localize it at runtime. Works in unison with cargo-i18n."><title>i18n_embed - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../static.files/rustdoc-aa0817cf.css"><meta name="rustdoc-vars" data-root-path="../" data-static-root-path="../static.files/" data-current-crate="i18n_embed" data-themes="" data-resource-suffix="" data-rustdoc-version="1.90.0 (1159e78c4 2025-09-14)" data-channel="1.90.0" data-search-js="search-fa3e91e5.js" data-settings-js="settings-5514c975.js" ><script src="../static.files/storage-68b7e25d.js"></script><script defer src="../crates.js"></script><script defer src="../static.files/main-eebb9057.js"></script><noscript><link rel="stylesheet" href="../static.files/noscript-32bb7600.css"></noscript><link rel="alternate icon" type="image/png" href="../static.files/favicon-32x32-6580c154.png"><link rel="icon" type="image/svg+xml" href="../static.files/favicon-044be391.svg"></head><body class="rustdoc mod crate"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle" title="show sidebar"></button></nav><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../i18n_embed/index.html">i18n_<wbr>embed</a><span class="version">0.16.0</span></h2></div><div class="sidebar-elems"><ul class="block"><li><a id="all-types" href="all.html">All Items</a></li></ul><section id="rustdoc-toc"><h3><a href="#">Sections</a></h3><ul class="block top-toc"><li><a href="#optional-features" title="Optional Features">Optional Features</a></li><li><a href="#examples" title="Examples">Examples</a><ul><li><a href="#fluent-localization-system" title="Fluent Localization System">Fluent Localization System</a></li><li><a href="#gettext-localization-system" title="Gettext Localization System">Gettext Localization System</a></li><li><a href="#automatic-updating-selection" title="Automatic Updating Selection">Automatic Updating Selection</a></li><li><a href="#localizing-libraries" title="Localizing Libraries">Localizing Libraries</a></li><li><a href="#localizing-sub-crates" title="Localizing Sub-crates">Localizing Sub-crates</a></li></ul></li></ul><h3><a href="#reexports">Crate Items</a></h3><ul class="block"><li><a href="#reexports" title="Re-exports">Re-exports</a></li><li><a href="#modules" title="Modules">Modules</a></li><li><a href="#structs" title="Structs">Structs</a></li><li><a href="#enums" title="Enums">Enums</a></li><li><a href="#traits" title="Traits">Traits</a></li><li><a href="#functions" title="Functions">Functions</a></li></ul></section><div id="rustdoc-modnav"></div></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><div class="width-limiter"><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><h1>Crate <span>i18n_embed</span><button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"><a class="src" href="../src/i18n_embed/lib.rs.html#1-775">Source</a> </span></div><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Traits and macros to conveniently embed localization assets into
+your application binary or library in order to localize it at
+runtime. Works in unison with
+<a href="https://crates.io/crates/cargo_i18n">cargo-i18n</a>.</p>
+<p>This library recommends that you make use of
+<a href="https://crates.io/crates/rust-embed">rust-embed</a> to perform the
+actual embedding of the language files, unfortunately using this
+currently requires you to manually add it as a dependency to your
+project and implement its trait on your struct in addition to
+<a href="trait.I18nAssets.html" title="trait i18n_embed::I18nAssets">I18nAssets</a>. <code>RustEmbed</code> will not compile if the
+target <code>folder</code> path is invalid, so it is recommended to either
+run <code>cargo i18n</code> before building your project, or committing the
+localization assets into source control to ensure that the the
+folder exists and project can build without requiring <code>cargo i18n</code>.</p>
+<h2 id="optional-features"><a class="doc-anchor" href="#optional-features">§</a>Optional Features</h2>
+<p>The <code>i18n-embed</code> crate has the following optional Cargo features:</p>
+<ul>
+<li><code>rust-embed</code> (Enabled by default)
+<ul>
+<li>Enable an automatic implementation of <a href="trait.I18nAssets.html" title="trait i18n_embed::I18nAssets">I18nAssets</a> for any
+type that also implements <code>RustEmbed</code>.</li>
+</ul>
+</li>
+<li><code>fluent-system</code>
+<ul>
+<li>Enable support for the
+<a href="https://www.projectfluent.org/">fluent</a> localization system
+via the <code>fluent::FluentLanguageLoader</code> in this crate.</li>
+</ul>
+</li>
+<li><code>gettext-system</code>
+<ul>
+<li>Enable support for the
+<a href="https://www.gnu.org/software/gettext/">gettext</a> localization
+system using the <a href="https://docs.rs/tr/0.1.3/tr/">tr macro</a> and
+the <a href="https://docs.rs/gettext/0.4.0/gettext/">gettext crate</a>
+via the <code>gettext::GettextLanguageLoader</code> in this crate.</li>
+</ul>
+</li>
+<li><code>desktop-requester</code>
+<ul>
+<li>Enables a convenience implementation of
+<a href="trait.LanguageRequester.html" title="trait i18n_embed::LanguageRequester">LanguageRequester</a> trait called
+`DesktopLanguageRequester for the desktop platform (windows,
+mac, linux), which makes use of the
+<a href="https://crates.io/crates/sys-locale">sys-locale</a> crate
+for resolving the current system locale.</li>
+</ul>
+</li>
+<li><code>web-sys-requester</code>
+<ul>
+<li>Enables a convenience implementation of
+<a href="trait.LanguageRequester.html" title="trait i18n_embed::LanguageRequester">LanguageRequester</a> trait called
+<code>WebLanguageRequester</code> which makes use of the
+<a href="https://crates.io/crates/web-sys">web-sys</a> crate for
+resolving the language being requested by the user’s web
+browser in a WASM context.</li>
+</ul>
+</li>
+</ul>
+<h2 id="examples"><a class="doc-anchor" href="#examples">§</a>Examples</h2><h3 id="fluent-localization-system"><a class="doc-anchor" href="#fluent-localization-system">§</a>Fluent Localization System</h3>
+<p>The following is a simple example for how to localize your binary
+using this library when it first runs, using the <code>fluent</code>
+localization system, directly instantiating the
+<code>FluentLanguageLoader</code>.</p>
+<p>First you’ll need the following features enabled in your
+<code>Cargo.toml</code>:</p>
+<div class="example-wrap"><pre class="language-toml"><code>[dependencies]
+i18n-embed = { version = &quot;VERSION&quot;, features = [&quot;fluent-system&quot;, &quot;desktop-requester&quot;]}
+rust-embed = &quot;8&quot;</code></pre></div>
+<p>Set up a minimal <code>i18n.toml</code> in your crate root to use with
+<code>cargo-i18n</code> (see <a href="https://github.com/kellpossible/cargo-i18n#configuration">cargo
+i18n</a>
+for more information on the configuration file format):</p>
+<div class="example-wrap"><pre class="language-toml"><code># (Required) The language identifier of the language used in the
+# source code for gettext system, and the primary fallback language
+# (for which all strings must be present) when using the fluent
+# system.
+fallback_language = &quot;en-GB&quot;
+
+# Use the fluent localization system.
+[fluent]
+# (Required) The path to the assets directory.
+# The paths inside the assets directory should be structured like so:
+# `assets_dir/{language}/{domain}.ftl`
+assets_dir = &quot;i18n&quot;</code></pre></div>
+<p>Next, you want to create your localization resources, per language
+fluent (<code>.ftl</code>) files. <code>language</code> needs to conform to the <a href="https://unicode.org/reports/tr35/tr35.html#Unicode_language_identifier">Unicode
+Language
+Identifier</a>
+standard, and will be parsed via the <a href="https://docs.rs/unic-langid/0.9.0/unic_langid/">unic_langid
+crate</a>:</p>
+<div class="example-wrap"><pre class="language-txt"><code>my_crate/
+  Cargo.toml
+  i18n.toml
+  src/
+  i18n/
+    {language}/
+      {domain}.ftl</code></pre></div>
+<p>Then in your Rust code:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>i18n_embed::{DesktopLanguageRequester, fluent::{
+    FluentLanguageLoader, fluent_language_loader
+}};
+<span class="kw">use </span>rust_embed::RustEmbed;
+
+<span class="attr">#[derive(RustEmbed)]
+#[folder = <span class="string">"i18n"</span>] </span><span class="comment">// path to the compiled localization resources
+</span><span class="kw">struct </span>Localizations;
+
+<span class="kw">fn </span>main() {
+    <span class="kw">let </span>language_loader: FluentLanguageLoader = <span class="macro">fluent_language_loader!</span>();
+
+    <span class="comment">// Use the language requester for the desktop platform (linux, windows, mac).
+    // There is also a requester available for the web-sys WASM platform called
+    // WebLanguageRequester, or you can implement your own.
+    </span><span class="kw">let </span>requested_languages = DesktopLanguageRequester::requested_languages();
+
+    <span class="kw">let </span>_result = i18n_embed::select(
+        <span class="kw-2">&amp;</span>language_loader, <span class="kw-2">&amp;</span>Localizations, <span class="kw-2">&amp;</span>requested_languages);
+
+    <span class="comment">// continue on with your application
+</span>}</code></pre></div>
+<p>To access localizations, you can use <code>FluentLanguageLoader</code>’s
+methods directly, or, for added compile-time checks/safety, you
+can use the <a href="https://crates.io/crates/i18n-embed-fl">fl!() macro</a>.</p>
+<p>Having an <code>i18n.toml</code> configuration file enables you to do the
+following:</p>
+<ul>
+<li>Use the <a href="https://crates.io/crates/cargo-i18n">cargo i18n</a> tool
+to perform validity checks (not yet implemented).</li>
+<li>Integrate with a code-base using the <code>gettext</code> localization
+system.</li>
+<li>Use the <code>fluent::fluent_language_loader!()</code> macro to pull the
+configuration in at compile time to create the
+<code>fluent::FluentLanguageLoader</code>.</li>
+<li>Use the <a href="https://crates.io/crates/i18n-embed-fl">fl!() macro</a> to
+have added compile-time safety when accessing messages.</li>
+</ul>
+<h3 id="gettext-localization-system"><a class="doc-anchor" href="#gettext-localization-system">§</a>Gettext Localization System</h3>
+<p>The following is a simple example for how to localize your binary
+using this library when it first runs, using the <code>gettext</code>
+localization system. Please note that the <code>gettext</code> localization
+system is technically inferior to <code>fluent</code> <a href="https://github.com/projectfluent/fluent/wiki/Fluent-vs-gettext">in a number of
+ways</a>,
+however there are always legacy reasons, and the
+developer/translator ecosystem around <code>gettext</code> is mature.</p>
+<p>The <code>gettext::GettextLanguageLoader</code> in this example is
+instantiated using the <code>gettext::gettext_language_loader!()</code>
+macro, which automatically determines the correct module for the
+crate, and pulls settings in from the <code>i18n.toml</code> configuration
+file.</p>
+<p>First you’ll need the following features enabled in your
+<code>Cargo.toml</code>:</p>
+<div class="example-wrap"><pre class="language-toml"><code>[dependencies]
+i18n-embed = { version = &quot;VERSION&quot;, features = [&quot;gettext-system&quot;, &quot;desktop-requester&quot;]}
+rust-embed = &quot;8&quot;</code></pre></div>
+<p>Set up a minimal <code>i18n.toml</code> in your crate root to use with
+<code>cargo-i18n</code> (see <a href="https://github.com/kellpossible/cargo-i18n#configuration">cargo
+i18n</a>
+for more information on the configuration file format):</p>
+<div class="example-wrap"><pre class="language-toml"><code># (Required) The language identifier of the language used in the
+# source code for gettext system, and the primary fallback language
+# (for which all strings must be present) when using the fluent
+# system.
+fallback_language = &quot;en&quot;
+
+# Use the gettext localization system.
+[gettext]
+# (Required) The languages that the software will be translated into.
+target_languages = [&quot;es&quot;]
+
+# (Required) Path to the output directory, relative to `i18n.toml` of
+# the crate being localized.
+output_dir = &quot;i18n&quot;</code></pre></div>
+<p>Install and run <a href="https://crates.io/crates/cargo-i18n">cargo i18n</a>
+for your crate to generate the language specific <code>po</code> and <code>mo</code>
+files, ready to be translated. It is recommended to add the
+<code>i18n/pot</code> folder to your repository gitignore.</p>
+<p>Then in your Rust code:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>i18n_embed::{DesktopLanguageRequester, gettext::{
+    gettext_language_loader
+}};
+<span class="kw">use </span>rust_embed::RustEmbed;
+
+<span class="attr">#[derive(RustEmbed)]
+</span><span class="comment">// path to the compiled localization resources,
+// as determined by i18n.toml settings
+</span><span class="attr">#[folder = <span class="string">"i18n/mo"</span>]
+</span><span class="kw">struct </span>Localizations;
+
+<span class="kw">fn </span>main() {
+    <span class="comment">// Create the GettextLanguageLoader, pulling in settings from `i18n.toml`
+    // at compile time using the macro.
+    </span><span class="kw">let </span>language_loader = <span class="macro">gettext_language_loader!</span>();
+
+    <span class="comment">// Use the language requester for the desktop platform (linux, windows, mac).
+    // There is also a requester available for the web-sys WASM platform called
+    // WebLanguageRequester, or you can implement your own.
+    </span><span class="kw">let </span>requested_languages = DesktopLanguageRequester::requested_languages();
+
+    <span class="kw">let </span>_result = i18n_embed::select(
+        <span class="kw-2">&amp;</span>language_loader, <span class="kw-2">&amp;</span>Localizations, <span class="kw-2">&amp;</span>requested_languages);
+
+    <span class="comment">// continue on with your application
+</span>}</code></pre></div>
+<h3 id="automatic-updating-selection"><a class="doc-anchor" href="#automatic-updating-selection">§</a>Automatic Updating Selection</h3>
+<p>Depending on the platform, you can also make use of the
+<a href="trait.LanguageRequester.html" title="trait i18n_embed::LanguageRequester">LanguageRequester</a>’s ability to monitor
+changes to the currently requested language, and automatically
+update the selected language using a <a href="trait.Localizer.html" title="trait i18n_embed::Localizer">Localizer</a>:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>std::sync::{Arc, OnceLock};
+<span class="kw">use </span>i18n_embed::{
+    DesktopLanguageRequester, LanguageRequester,
+    DefaultLocalizer, Localizer, fluent::FluentLanguageLoader     
+};
+<span class="kw">use </span>rust_embed::RustEmbed;
+<span class="kw">use </span>unic_langid::LanguageIdentifier;
+
+<span class="attr">#[derive(RustEmbed)]
+#[folder = <span class="string">"i18n/ftl"</span>] </span><span class="comment">// path to localization resources
+</span><span class="kw">struct </span>Localizations;
+
+<span class="kw">pub fn </span>language_loader() -&gt; <span class="kw-2">&amp;</span><span class="lifetime">'static </span>FluentLanguageLoader {
+    <span class="kw">static </span>LANGUAGE_LOADER: OnceLock&lt;FluentLanguageLoader&gt; = OnceLock::new();
+
+    LANGUAGE_LOADER.get_or_init(|| {
+        <span class="comment">// Usually you could use the fluent_language_loader!() macro
+        // to pull values from i18n.toml configuration and current
+        // module here at compile time, but instantiating the loader
+        // manually here instead so the example compiles.
+        </span><span class="kw">let </span>fallback: LanguageIdentifier = <span class="string">"en-US"</span>.parse().unwrap();
+        FluentLanguageLoader::new(<span class="string">"test"</span>, fallback)
+    })
+}
+
+<span class="kw">fn </span>main() {
+    <span class="kw">let </span>localizer = DefaultLocalizer::new(<span class="kw-2">&amp;*</span>language_loader(), <span class="kw-2">&amp;</span>Localizations);
+
+    <span class="kw">let </span>localizer_arc: Arc&lt;<span class="kw">dyn </span>Localizer&gt; = Arc::new(localizer);
+
+    <span class="kw">let </span><span class="kw-2">mut </span>language_requester = DesktopLanguageRequester::new();
+    language_requester.add_listener(Arc::downgrade(<span class="kw-2">&amp;</span>localizer_arc));
+
+    <span class="comment">// Manually check the currently requested system language,
+    // and update the listeners. NOTE: Support for this across systems
+    // currently varies, it may not change when the system requested
+    // language changes during runtime without restarting your application.
+    // In the future some platforms may also gain support for
+    // automatic triggering when the requested display language changes.
+    </span>language_requester.poll().unwrap();
+
+    <span class="comment">// continue on with your application
+</span>}</code></pre></div>
+<p>The above example makes use of the
+<a href="struct.DefaultLocalizer.html" title="struct i18n_embed::DefaultLocalizer">DefaultLocalizer</a>, but you can also implement
+the <a href="trait.Localizer.html" title="trait i18n_embed::Localizer">Localizer</a> trait yourself for a custom solution.
+It also makes use of
+<a href="https://doc.rust-lang.org/beta/std/sync/struct.OnceLock.html">OnceLock</a> to allow the
+<a href="trait.LanguageLoader.html" title="trait i18n_embed::LanguageLoader">LanguageLoader</a> implementation to be stored
+statically, because its constructor is not <code>const</code>.</p>
+<h3 id="localizing-libraries"><a class="doc-anchor" href="#localizing-libraries">§</a>Localizing Libraries</h3>
+<p>If you wish to create a localizable library using <code>i18n-embed</code>,
+you can follow this code pattern in the library itself:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>std::sync::{Arc, OnceLock};
+<span class="kw">use </span>i18n_embed::{
+    DefaultLocalizer, Localizer, LanguageLoader,
+    fluent::{
+        fluent_language_loader, FluentLanguageLoader     
+}};
+<span class="kw">use </span>rust_embed::RustEmbed;
+
+<span class="attr">#[derive(RustEmbed)]
+#[folder = <span class="string">"i18n/mo"</span>] </span><span class="comment">// path to the compiled localization resources
+</span><span class="kw">struct </span>Localizations;
+
+<span class="kw">fn </span>language_loader() -&gt; <span class="kw-2">&amp;</span><span class="lifetime">'static </span>FluentLanguageLoader {
+    <span class="kw">static </span>LANGUAGE_LOADER: OnceLock&lt;FluentLanguageLoader&gt; = OnceLock::new();
+
+    LANGUAGE_LOADER.get_or_init(|| {
+       <span class="kw">let </span>loader = <span class="macro">fluent_language_loader!</span>();
+
+        <span class="comment">// Load the fallback language by default so that users of the
+        // library don't need to if they don't care about localization.
+        // This isn't required for the `gettext` localization system.
+        </span>loader.load_fallback_language(<span class="kw-2">&amp;</span>Localizations)
+            .expect(<span class="string">"Error while loading fallback language"</span>);
+
+        loader
+    })
+}
+
+<span class="comment">// Get the `Localizer` to be used for localizing this library.
+</span><span class="kw">pub fn </span>localizer() -&gt; Arc&lt;<span class="kw">dyn </span>Localizer&gt; {
+    Arc::new(DefaultLocalizer::new(<span class="kw-2">&amp;*</span>language_loader(), <span class="kw-2">&amp;</span>Localizations))
+}</code></pre></div>
+<p>People using this library can call <code>localize()</code> to obtain a
+<a href="trait.Localizer.html" title="trait i18n_embed::Localizer">Localizer</a>, and add this as a listener to their chosen
+<a href="trait.LanguageRequester.html" title="trait i18n_embed::LanguageRequester">LanguageRequester</a>.</p>
+<h3 id="localizing-sub-crates"><a class="doc-anchor" href="#localizing-sub-crates">§</a>Localizing Sub-crates</h3>
+<p>If you want to localize a sub-crate in your project, and want to
+extract strings from this sub-crate and store/embed them in one
+location in the parent crate, you can use the following pattern
+for the library:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="attr">#[cfg(feature = <span class="string">"gettext-system"</span>)]
+</span><span class="kw">use </span>std::sync::{Arc, OnceLock};
+<span class="kw">use </span>i18n_embed::{
+    DefaultLocalizer, Localizer, gettext::{
+    gettext_language_loader, GettextLanguageLoader     
+}};
+<span class="kw">use </span>i18n_embed::I18nAssets;
+
+<span class="kw">fn </span>language_loader() -&gt; <span class="kw-2">&amp;</span><span class="lifetime">'static </span>GettextLanguageLoader {
+    <span class="kw">static </span>LANGUAGE_LOADER: OnceLock&lt;GettextLanguageLoader&gt; = OnceLock::new();
+
+    LANGUAGE_LOADER.get_or_init(|| <span class="macro">gettext_language_loader!</span>())
+}
+
+<span class="doccomment">/// Get the `Localizer` to be used for localizing this library,
+/// using the provided embedded source of language files `embed`.
+</span><span class="kw">pub fn </span>localizer&lt;<span class="lifetime">'a</span>&gt;(embed: <span class="kw-2">&amp;</span><span class="lifetime">'a </span>(<span class="kw">dyn </span>I18nAssets + Send + Sync + <span class="lifetime">'static</span>)) -&gt; Arc&lt;<span class="kw">dyn </span>Localizer + <span class="lifetime">'a</span>&gt; {
+    Arc::new(DefaultLocalizer::new(
+        <span class="kw-2">&amp;*</span>language_loader(),
+        embed
+    ))
+}</code></pre></div>
+<p>For the above example, you can enable the following options in the
+sub-crate’s <code>i18n.toml</code> to ensure that the localization resources
+are extracted and merged with the parent crate’s <code>pot</code> file:</p>
+<div class="example-wrap"><pre class="language-toml"><code># ...
+
+[gettext]
+
+# ...
+
+# (Optional) If this crate is being localized as a subcrate, store the final
+# localization artifacts (the module pot and mo files) with the parent crate&#39;s
+# output. Currently crates which contain subcrates with duplicate names are not
+# supported.
+extract_to_parent = true
+
+# (Optional) If a subcrate has extract_to_parent set to true, then merge the
+# output pot file of that subcrate into this crate&#39;s pot file.
+collate_extracted_subcrates = true</code></pre></div></div></details><h2 id="reexports" class="section-header">Re-exports<a href="#reexports" class="anchor">§</a></h2><dl class="item-table reexports"><dt id="reexport.unic_langid"><code>pub use <a class="mod" href="../unic_langid/index.html" title="mod unic_langid">unic_langid</a>;</code></dt></dl><h2 id="modules" class="section-header">Modules<a href="#modules" class="anchor">§</a></h2><dl class="item-table"><dt><a class="mod" href="fluent/index.html" title="mod i18n_embed::fluent">fluent</a></dt><dd>This module contains the types and functions to interact with the
+<code>fluent</code> localization system.</dd></dl><h2 id="structs" class="section-header">Structs<a href="#structs" class="anchor">§</a></h2><dl class="item-table"><dt><a class="struct" href="struct.AssetsMultiplexor.html" title="struct i18n_embed::AssetsMultiplexor">Assets<wbr>Multiplexor</a></dt><dd>A way to multiplex implementations of <a href="trait.I18nAssets.html" title="trait i18n_embed::I18nAssets"><code>I18nAssets</code></a>.</dd><dt><a class="struct" href="struct.DefaultLocalizer.html" title="struct i18n_embed::DefaultLocalizer">Default<wbr>Localizer</a></dt><dd>A simple default implementation of the <a href="trait.Localizer.html" title="trait i18n_embed::Localizer">Localizer</a> trait.</dd><dt><a class="struct" href="struct.DesktopLanguageRequester.html" title="struct i18n_embed::DesktopLanguageRequester">Desktop<wbr>Language<wbr>Requester</a></dt><dd>A <a href="trait.LanguageRequester.html" title="trait i18n_embed::LanguageRequester">LanguageRequester</a> for the desktop platform,
+supporting windows, linux and mac. It uses
+<a href="sys-locale">sys-locale</a> to select the language based on the
+system selected language.</dd><dt><a class="struct" href="struct.LanguageRequesterImpl.html" title="struct i18n_embed::LanguageRequesterImpl">Language<wbr>Requester<wbr>Impl</a></dt><dd>Provide the functionality for overrides and listeners for a
+<a href="trait.LanguageRequester.html" title="trait i18n_embed::LanguageRequester">LanguageRequester</a> implementation.</dd><dt><a class="struct" href="struct.LanguageResource.html" title="struct i18n_embed::LanguageResource">Language<wbr>Resource</a></dt><dd>A language resource file, and its associated <code>language</code>.</dd></dl><h2 id="enums" class="section-header">Enums<a href="#enums" class="anchor">§</a></h2><dl class="item-table"><dt><a class="enum" href="enum.I18nEmbedError.html" title="enum i18n_embed::I18nEmbedError">I18n<wbr>Embed<wbr>Error</a></dt><dd>An error that occurs in this library.</dd></dl><h2 id="traits" class="section-header">Traits<a href="#traits" class="anchor">§</a></h2><dl class="item-table"><dt><a class="trait" href="trait.I18nAssets.html" title="trait i18n_embed::I18nAssets">I18n<wbr>Assets</a></dt><dd>A trait to handle the retrieval of localization assets.</dd><dt><a class="trait" href="trait.LanguageLoader.html" title="trait i18n_embed::LanguageLoader">Language<wbr>Loader</a></dt><dd>A trait used by <a href="trait.I18nAssets.html" title="trait i18n_embed::I18nAssets">I18nAssets</a> to load a language file for
+a specific rust module using a specific localization system. The
+trait is designed such that the loader could be swapped during
+runtime, or contain state if required.</dd><dt><a class="trait" href="trait.LanguageRequester.html" title="trait i18n_embed::LanguageRequester">Language<wbr>Requester</a></dt><dd>A trait used by <a href="trait.I18nAssets.html" title="trait i18n_embed::I18nAssets">I18nAssets</a> to ascertain which
+languages are being requested.</dd><dt><a class="trait" href="trait.Localizer.html" title="trait i18n_embed::Localizer">Localizer</a></dt><dd>This trait provides dynamic access to an
+<a href="trait.LanguageLoader.html" title="trait i18n_embed::LanguageLoader">LanguageLoader</a> and an <a href="trait.I18nAssets.html" title="trait i18n_embed::I18nAssets">I18nAssets</a>,
+which are used together to localize a library/crate on demand.</dd><dt><a class="trait" href="trait.Watcher.html" title="trait i18n_embed::Watcher">Watcher</a></dt><dd>An entity that watches for changes to localization resources.</dd></dl><h2 id="functions" class="section-header">Functions<a href="#functions" class="anchor">§</a></h2><dl class="item-table"><dt><a class="fn" href="fn.domain_from_module.html" title="fn i18n_embed::domain_from_module">domain_<wbr>from_<wbr>module</a></dt><dd>Get the translation domain from the module path (first module in
+the module path).</dd><dt><a class="fn" href="fn.select.html" title="fn i18n_embed::select">select</a></dt><dd>Select the most suitable available language in order of preference
+by <code>requested_languages</code>, and load it using the provided
+<a href="trait.LanguageLoader.html" title="trait i18n_embed::LanguageLoader">LanguageLoader</a> from the languages available in <a href="trait.I18nAssets.html" title="trait i18n_embed::I18nAssets">I18nAssets</a>.
+Returns the available languages that were negotiated as being the
+most suitable to be selected, and were loaded by
+<a href="trait.LanguageLoader.html#tymethod.load_languages" title="method i18n_embed::LanguageLoader::load_languages">LanguageLoader::load_languages()</a>. If there were no available
+languages, then no languages will be loaded and the returned
+<code>Vec</code> will be empty.</dd></dl></section></div></main></body></html>

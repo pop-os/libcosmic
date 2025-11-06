@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["Theme"],"struct":["XdgSurfaceHandle","XdgToplevelHandle"],"trait":["ActiveEventLoopExtWayland","EventLoopBuilderExtWayland","EventLoopExtWayland","HasXdgSurfaceHandle","HasXdgToplevelHandle","MonitorHandleExtWayland","WindowAttributesExtWayland","WindowExtWayland"]};

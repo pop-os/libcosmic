@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"struct":["Builder","OwnerChangedIterator","PropertyChanged","PropertyIterator","Proxy","SignalIterator"],"trait":["ProxyImpl"]};

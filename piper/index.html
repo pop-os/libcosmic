@@ -1,0 +1,135 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="A bounded single-producer single-consumer pipe."><title>piper - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../static.files/rustdoc-aa0817cf.css"><meta name="rustdoc-vars" data-root-path="../" data-static-root-path="../static.files/" data-current-crate="piper" data-themes="" data-resource-suffix="" data-rustdoc-version="1.90.0 (1159e78c4 2025-09-14)" data-channel="1.90.0" data-search-js="search-fa3e91e5.js" data-settings-js="settings-5514c975.js" ><script src="../static.files/storage-68b7e25d.js"></script><script defer src="../crates.js"></script><script defer src="../static.files/main-eebb9057.js"></script><noscript><link rel="stylesheet" href="../static.files/noscript-32bb7600.css"></noscript><link rel="icon" href="https://raw.githubusercontent.com/smol-rs/smol/master/assets/images/logo_fullsize_transparent.png"></head><body class="rustdoc mod crate"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle" title="show sidebar"></button><a class="logo-container" href="../piper/index.html"><img src="https://raw.githubusercontent.com/smol-rs/smol/master/assets/images/logo_fullsize_transparent.png" alt=""></a></nav><nav class="sidebar"><div class="sidebar-crate"><a class="logo-container" href="../piper/index.html"><img src="https://raw.githubusercontent.com/smol-rs/smol/master/assets/images/logo_fullsize_transparent.png" alt="logo"></a><h2><a href="../piper/index.html">piper</a><span class="version">0.2.4</span></h2></div><div class="sidebar-elems"><ul class="block"><li><a id="all-types" href="all.html">All Items</a></li></ul><section id="rustdoc-toc"><h3><a href="#">Sections</a></h3><ul class="block top-toc"><li><a href="#version-020-notes" title="Version 0.2.0 Notes">Version 0.2.0 Notes</a></li><li><a href="#examples" title="Examples">Examples</a><ul><li><a href="#asynchronous-tasks" title="Asynchronous Tasks">Asynchronous Tasks</a></li><li><a href="#blocking-io" title="Blocking I/O">Blocking I/O</a></li></ul></li></ul><h3><a href="#structs">Crate Items</a></h3><ul class="block"><li><a href="#structs" title="Structs">Structs</a></li><li><a href="#functions" title="Functions">Functions</a></li></ul></section><div id="rustdoc-modnav"></div></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><div class="width-limiter"><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><h1>Crate <span>piper</span><button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"><a class="src" href="../src/piper/lib.rs.html#1-1139">Source</a> </span></div><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>A bounded single-producer single-consumer pipe.</p>
+<p>This crate provides a ring buffer that can be asynchronously read from and written to. It is
+created via the <a href="fn.pipe.html" title="fn piper::pipe"><code>pipe</code></a> function, which returns a pair of <a href="struct.Reader.html" title="struct piper::Reader"><code>Reader</code></a> and <a href="struct.Writer.html" title="struct piper::Writer"><code>Writer</code></a> handles.
+They implement the <a href="../futures_io/if_std/trait.AsyncRead.html" title="trait futures_io::if_std::AsyncRead"><code>AsyncRead</code></a> and <a href="../futures_io/if_std/trait.AsyncWrite.html" title="trait futures_io::if_std::AsyncWrite"><code>AsyncWrite</code></a> traits, respectively.</p>
+<p>The handles are single-producer/single-consumer; to clarify, they cannot be cloned and need <code>&amp;mut</code>
+access to read or write to them. If multiple-producer/multiple-consumer handles are needed,
+consider wrapping them in an <code>Arc&lt;Mutex&lt;...&gt;&gt;</code> or similar.</p>
+<p>When the sender is dropped, remaining bytes in the pipe can still be read. After that, attempts
+to read will result in <code>Ok(0)</code>, i.e. they will always ‘successfully’ read 0 bytes.</p>
+<p>When the receiver is dropped, the pipe is closed and no more bytes and be written into it.
+Further writes will result in <code>Ok(0)</code>, i.e. they will always ‘successfully’ write 0 bytes.</p>
+<h2 id="version-020-notes"><a class="doc-anchor" href="#version-020-notes">§</a>Version 0.2.0 Notes</h2>
+<p>Previously, this crate contained other synchronization primitives, such as bounded channels, locks,
+and event listeners. These have been split out into their own crates:</p>
+<ul>
+<li><a href="https://docs.rs/async-channel"><code>async-channel</code></a></li>
+<li><a href="https://docs.rs/async-dup"><code>async-dup</code></a></li>
+<li><a href="https://docs.rs/async-lock"><code>async-lock</code></a></li>
+<li><a href="https://docs.rs/async-mutex"><code>async-mutex</code></a></li>
+<li><a href="https://docs.rs/event-listener"><code>event-listener</code></a></li>
+</ul>
+<h2 id="examples"><a class="doc-anchor" href="#examples">§</a>Examples</h2><h3 id="asynchronous-tasks"><a class="doc-anchor" href="#asynchronous-tasks">§</a>Asynchronous Tasks</h3>
+<p>Communicate between asynchronous tasks, potentially on other threads.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>async_channel::unbounded;
+<span class="kw">use </span>async_executor::Executor;
+<span class="kw">use </span>easy_parallel::Parallel;
+<span class="kw">use </span>futures_lite::{future, prelude::<span class="kw-2">*</span>};
+<span class="kw">use </span>std::time::Duration;
+
+
+<span class="comment">// Create a pair of handles.
+</span><span class="kw">let </span>(<span class="kw-2">mut </span>reader, <span class="kw-2">mut </span>writer) = piper::pipe(<span class="number">1024</span>);
+
+<span class="comment">// Create the executor.
+</span><span class="kw">let </span>ex = Executor::new();
+<span class="kw">let </span>(signal, shutdown) = unbounded::&lt;()&gt;();
+
+<span class="comment">// Spawn a detached task for random data to the pipe.
+</span><span class="kw">let </span>writer = ex.spawn(<span class="kw">async move </span>{
+    <span class="kw">for _ in </span><span class="number">0</span>..<span class="number">1_000 </span>{
+        <span class="comment">// Generate 8 random numnbers.
+        </span><span class="kw">let </span>random = fastrand::u64(..).to_le_bytes();
+
+        <span class="comment">// Write them to the pipe.
+        </span>writer.write_all(<span class="kw-2">&amp;</span>random).<span class="kw">await</span>.unwrap();
+
+        <span class="comment">// Wait a bit.
+        </span>async_io::Timer::after(Duration::from_millis(<span class="number">5</span>)).<span class="kw">await</span>;
+    }
+
+    <span class="comment">// Drop the writer to close the pipe.
+    </span>drop(writer);
+});
+
+<span class="comment">// Detach the task so that it runs in the background.
+</span>writer.detach();
+
+<span class="comment">// Spawn a task for reading from the pipe.
+</span><span class="kw">let </span>reader = ex.spawn(<span class="kw">async move </span>{
+    <span class="kw">let </span><span class="kw-2">mut </span>buf = <span class="macro">vec!</span>[];
+
+    <span class="comment">// Read all bytes from the pipe.
+    </span>reader.read_to_end(<span class="kw-2">&amp;mut </span>buf).<span class="kw">await</span>.unwrap();
+
+    <span class="macro">println!</span>(<span class="string">"Random data: {:#?}"</span>, buf);
+});
+
+Parallel::new()
+    <span class="comment">// Run four executor threads.
+    </span>.each(<span class="number">0</span>..<span class="number">4</span>, |<span class="kw">_</span>| future::block_on(ex.run(shutdown.recv())))
+    <span class="comment">// Run the main future on the current thread.
+    </span>.finish(|| future::block_on(<span class="kw">async </span>{
+        <span class="comment">// Wait for the reader to finish.
+        </span>reader.<span class="kw">await</span>;
+
+        <span class="comment">// Signal the executor threads to shut down.
+        </span>drop(signal);
+    }));</code></pre></div>
+<h3 id="blocking-io"><a class="doc-anchor" href="#blocking-io">§</a>Blocking I/O</h3>
+<p>File I/O is blocking; therefore, in <code>async</code> code, you must run it on another thread. This example
+spawns another thread for reading a file and writing it to a pipe.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>futures_lite::{future, prelude::<span class="kw-2">*</span>};
+<span class="kw">use </span>std::fs::File;
+<span class="kw">use </span>std::io::prelude::<span class="kw-2">*</span>;
+<span class="kw">use </span>std::thread;
+
+<span class="comment">// Create a pair of handles.
+</span><span class="kw">let </span>(<span class="kw-2">mut </span>r, <span class="kw-2">mut </span>w) = piper::pipe(<span class="number">1024</span>);
+
+<span class="comment">// Spawn a thread for reading a file.
+</span>thread::spawn(<span class="kw">move </span>|| {
+    <span class="kw">let </span><span class="kw-2">mut </span>file = File::open(<span class="string">"Cargo.toml"</span>).unwrap();
+
+    <span class="comment">// Read the file into a buffer.
+    </span><span class="kw">let </span><span class="kw-2">mut </span>buf = [<span class="number">0u8</span>; <span class="number">16384</span>];
+    future::block_on(<span class="kw">async move </span>{
+        <span class="kw">loop </span>{
+            <span class="comment">// Read a chunk of bytes from the file.
+            // Blocking is okay here, since this is a separate thread.
+            </span><span class="kw">let </span>n = file.read(<span class="kw-2">&amp;mut </span>buf).unwrap();
+            <span class="kw">if </span>n == <span class="number">0 </span>{
+                <span class="kw">break</span>;
+            }
+
+            <span class="comment">// Write the chunk to the pipe.
+            </span>w.write_all(<span class="kw-2">&amp;</span>buf[..n]).<span class="kw">await</span>.unwrap();
+        }
+
+        <span class="comment">// Close the pipe.
+        </span>drop(w);
+    });
+});
+
+<span class="comment">// Read bytes from the pipe.
+</span><span class="kw">let </span><span class="kw-2">mut </span>buf = <span class="macro">vec!</span>[];
+r.read_to_end(<span class="kw-2">&amp;mut </span>buf).<span class="kw">await</span>.unwrap();
+
+<span class="macro">println!</span>(<span class="string">"Read {} bytes"</span>, buf.len());</code></pre></div>
+<p>However, the lower-level <a href="struct.Writer.html#method.poll_fill"><code>poll_fill</code></a> and <a href="struct.Reader.html#method.poll_drain"><code>poll_drain</code></a> methods take <code>impl Read</code> and <code>impl Write</code>
+arguments, respectively. This allows you to skip the buffer entirely and read/write directly from
+the file into the pipe. This approach should be preferred when possible, as it avoids an extra
+copy.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="comment">// In the `future::block_on` call above...
+</span><span class="kw">loop </span>{
+    <span class="kw">let </span>n = future::poll_fn(|cx| w.poll_fill(cx, <span class="kw-2">&amp;mut </span>file)).<span class="kw">await</span>.unwrap();
+    <span class="kw">if </span>n == <span class="number">0 </span>{
+        <span class="kw">break</span>;
+    }
+}</code></pre></div>
+<p>The <a href="https://docs.rs/blocking"><code>blocking</code></a> crate is preferred in this use case, since it uses more efficient strategies for
+thread management and pipes.</p>
+</div></details><h2 id="structs" class="section-header">Structs<a href="#structs" class="anchor">§</a></h2><dl class="item-table"><dt><a class="struct" href="struct.Reader.html" title="struct piper::Reader">Reader</a></dt><dd>The reading side of a pipe.</dd><dt><a class="struct" href="struct.Writer.html" title="struct piper::Writer">Writer</a></dt><dd>The writing side of a pipe.</dd></dl><h2 id="functions" class="section-header">Functions<a href="#functions" class="anchor">§</a></h2><dl class="item-table"><dt><a class="fn" href="fn.pipe.html" title="fn piper::pipe">pipe</a></dt><dd>Creates a bounded single-producer single-consumer pipe.</dd></dl></section></div></main></body></html>

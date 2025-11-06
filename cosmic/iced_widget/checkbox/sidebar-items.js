@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["Status"],"fn":["danger","primary","secondary","success"],"struct":["Checkbox","Icon","Style"],"trait":["Catalog"],"type":["StyleFn"]};

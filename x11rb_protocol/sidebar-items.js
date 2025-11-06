@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["DiscardMode"],"mod":["connect","connection","errors","id_allocator","packet_reader","parse_display","protocol","resource_manager","wrapper","x11_utils","xauth"],"type":["BufWithFds","RawEventAndSeqNumber","RawFdContainer","SequenceNumber"]};

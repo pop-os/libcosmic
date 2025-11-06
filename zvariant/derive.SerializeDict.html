@@ -1,0 +1,42 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Adds `Serialize` implementation to structs to be serialized as `a{sv}` type."><title>SerializeDict in zvariant - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../static.files/rustdoc-aa0817cf.css"><meta name="rustdoc-vars" data-root-path="../" data-static-root-path="../static.files/" data-current-crate="zvariant" data-themes="" data-resource-suffix="" data-rustdoc-version="1.90.0 (1159e78c4 2025-09-14)" data-channel="1.90.0" data-search-js="search-fa3e91e5.js" data-settings-js="settings-5514c975.js" ><script src="../static.files/storage-68b7e25d.js"></script><script defer src="sidebar-items.js"></script><script defer src="../static.files/main-eebb9057.js"></script><noscript><link rel="stylesheet" href="../static.files/noscript-32bb7600.css"></noscript><link rel="alternate icon" type="image/png" href="../static.files/favicon-32x32-6580c154.png"><link rel="icon" type="image/svg+xml" href="../static.files/favicon-044be391.svg"></head><body class="rustdoc derive"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle" title="show sidebar"></button><a class="logo-container" href="../zvariant/index.html"><img src="https://raw.githubusercontent.com/dbus2/zbus/9f7a90d2b594ddc48b7a5f39fda5e00cd56a7dfb/logo.png" alt=""></a></nav><nav class="sidebar"><div class="sidebar-crate"><a class="logo-container" href="../zvariant/index.html"><img src="https://raw.githubusercontent.com/dbus2/zbus/9f7a90d2b594ddc48b7a5f39fda5e00cd56a7dfb/logo.png" alt="logo"></a><h2><a href="../zvariant/index.html">zvariant</a><span class="version">5.8.0</span></h2></div><div class="sidebar-elems"><section id="rustdoc-toc"><h2 class="location"><a href="#">Serialize<wbr>Dict</a></h2><h3><a href="#">Sections</a></h3><ul class="block top-toc"><li><a href="#alternative-approaches" title="Alternative Approaches">Alternative Approaches</a></li><li><a href="#example" title="Example">Example</a><ul><li><a href="#approach-1" title="Approach #1">Approach #1</a></li><li><a href="#approach-2" title="Approach #2">Approach #2</a></li></ul></li></ul></section><div id="rustdoc-modnav"><h2 class="in-crate"><a href="index.html">In crate zvariant</a></h2></div></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><div class="width-limiter"><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><div class="rustdoc-breadcrumbs"><a href="index.html">zvariant</a></div><h1>Derive Macro <span class="derive">SerializeDict</span><button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"></span></div><pre class="rust item-decl"><code>#[derive(SerializeDict)]
+{
+    <span class="comment">// Attributes available to this derive:</span>
+    #[zbus]
+    #[zvariant]
+}
+</code></pre><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Adds <a href="https://docs.serde.rs/serde/trait.Serialize.html"><code>Serialize</code></a> implementation to structs to be serialized as <code>a{sv}</code> type.</p>
+<p>This macro serializes the deriving struct as a D-Bus dictionary type, where keys are strings and
+values are generic values. Such dictionary types are very commonly used with
+<a href="https://dbus.freedesktop.org/doc/dbus-specification.html#standard-interfaces-properties">D-Bus</a>
+and GVariant.</p>
+<h2 id="alternative-approaches"><a class="doc-anchor" href="#alternative-approaches">§</a>Alternative Approaches</h2>
+<p>There are two approaches to serializing structs as dictionaries:</p>
+<ol>
+<li>Using this macro (simpler, but less control).</li>
+<li>Using the <code>Serialize</code> derive with <code>zvariant::as_value</code> (more verbose, but more control).</li>
+</ol>
+<p>See the example below and the relevant <a href="https://dbus2.github.io/zbus/faq.html#how-to-use-a-struct-as-a-dictionary">FAQ entry</a> in our book for more details on the
+alternative approach.</p>
+<h2 id="example"><a class="doc-anchor" href="#example">§</a>Example</h2><h3 id="approach-1"><a class="doc-anchor" href="#approach-1">§</a>Approach #1</h3>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>zvariant::{SerializeDict, Type};
+
+<span class="attr">#[derive(Debug, Default, SerializeDict, Type)]
+#[zvariant(signature = <span class="string">"a{sv}"</span>, rename_all = <span class="string">"PascalCase"</span>)]
+</span><span class="kw">pub struct </span>MyStruct {
+    field1: <span class="prelude-ty">Option</span>&lt;u32&gt;,
+    field2: String,
+}</code></pre></div>
+<h3 id="approach-2"><a class="doc-anchor" href="#approach-2">§</a>Approach #2</h3>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>serde::Serialize;
+<span class="kw">use </span>zvariant::{Type, as_value};
+
+<span class="attr">#[derive(Debug, Default, Serialize, Type)]
+#[zvariant(signature = <span class="string">"a{sv}"</span>)]
+#[serde(default, rename_all = <span class="string">"PascalCase"</span>)]
+</span><span class="kw">pub struct </span>MyStruct {
+    <span class="attr">#[serde(with = <span class="string">"as_value::optional"</span>, skip_serializing_if = <span class="string">"Option::is_none"</span>)]
+    </span>field1: <span class="prelude-ty">Option</span>&lt;u32&gt;,
+    <span class="attr">#[serde(with = <span class="string">"as_value"</span>)]
+    </span>field2: String,
+}</code></pre></div>
+</div></details></section></div></main></body></html>

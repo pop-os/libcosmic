@@ -1,0 +1,1 @@
+searchState.loadedDescShard("accesskit_unix", 0, "Returns the argument unchanged.\nCalls <code>U::from(self)</code>.\nCreate a new Unix adapter.\nIf and only if the tree has been initialized, call the …\nUpdate the tree state based on whether the window is …")

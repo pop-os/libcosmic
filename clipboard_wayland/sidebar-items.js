@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["MimeType"],"struct":["Clipboard","DndSender","RectangleWrapper"],"trait":["AllowedMimeTypes","AsMimeTypes"]};

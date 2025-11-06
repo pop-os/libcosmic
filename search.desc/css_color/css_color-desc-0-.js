@@ -1,0 +1,1 @@
+searchState.loadedDescShard("css_color", 0, "A color in the sRGB color space.\nThe alpha component.\nThe blue component.\nReturns the argument unchanged.\nReturns the argument unchanged.\nThe green component.\nCalls <code>U::from(self)</code>.\nCalls <code>U::from(self)</code>.\nThe red component.")

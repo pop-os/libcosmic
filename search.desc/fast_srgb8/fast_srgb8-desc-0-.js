@@ -1,0 +1,1 @@
+searchState.loadedDescShard("fast_srgb8", 0, "Small crate implementing fast conversion between linear …\nConverts linear f32 RGB component to an 8-bit sRGB value.\nPerforms 4 simultaneous calls to <code>f32_to_srgb8</code>, and returns …\nConvert from a 8-bit sRGB component to a linear f32.")

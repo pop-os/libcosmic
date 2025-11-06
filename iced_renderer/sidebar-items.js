@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"mod":["fallback","geometry"],"type":["Compositor","Renderer"]};

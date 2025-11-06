@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["Event"],"fn":["from_recipe","into_recipes"],"struct":["Subscription","Tracker"],"trait":["Recipe"],"type":["EventStream","Hasher"]};

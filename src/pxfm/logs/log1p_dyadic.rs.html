@@ -1,0 +1,129 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `/home/runner/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/pxfm-0.1.25/src/logs/log1p_dyadic.rs`."><title>log1p_dyadic.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../../static.files/rustdoc-aa0817cf.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="pxfm" data-themes="" data-resource-suffix="" data-rustdoc-version="1.90.0 (1159e78c4 2025-09-14)" data-channel="1.90.0" data-search-js="search-fa3e91e5.js" data-settings-js="settings-5514c975.js" ><script src="../../../static.files/storage-68b7e25d.js"></script><script defer src="../../../static.files/src-script-813739b1.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-eebb9057.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-32bb7600.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-6580c154.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-044be391.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><h1><div class="sub-heading">pxfm/logs/</div>log1p_dyadic.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap digits-3"><pre class="rust"><code><a href=#1 id=1 data-nosnippet>1</a><span class="comment">/*
+<a href=#2 id=2 data-nosnippet>2</a> * // Copyright (c) Radzivon Bartoshyk 7/2025. All rights reserved.
+<a href=#3 id=3 data-nosnippet>3</a> * //
+<a href=#4 id=4 data-nosnippet>4</a> * // Redistribution and use in source and binary forms, with or without modification,
+<a href=#5 id=5 data-nosnippet>5</a> * // are permitted provided that the following conditions are met:
+<a href=#6 id=6 data-nosnippet>6</a> * //
+<a href=#7 id=7 data-nosnippet>7</a> * // 1.  Redistributions of source code must retain the above copyright notice, this
+<a href=#8 id=8 data-nosnippet>8</a> * // list of conditions and the following disclaimer.
+<a href=#9 id=9 data-nosnippet>9</a> * //
+<a href=#10 id=10 data-nosnippet>10</a> * // 2.  Redistributions in binary form must reproduce the above copyright notice,
+<a href=#11 id=11 data-nosnippet>11</a> * // this list of conditions and the following disclaimer in the documentation
+<a href=#12 id=12 data-nosnippet>12</a> * // and/or other materials provided with the distribution.
+<a href=#13 id=13 data-nosnippet>13</a> * //
+<a href=#14 id=14 data-nosnippet>14</a> * // 3.  Neither the name of the copyright holder nor the names of its
+<a href=#15 id=15 data-nosnippet>15</a> * // contributors may be used to endorse or promote products derived from
+<a href=#16 id=16 data-nosnippet>16</a> * // this software without specific prior written permission.
+<a href=#17 id=17 data-nosnippet>17</a> * //
+<a href=#18 id=18 data-nosnippet>18</a> * // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+<a href=#19 id=19 data-nosnippet>19</a> * // AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+<a href=#20 id=20 data-nosnippet>20</a> * // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+<a href=#21 id=21 data-nosnippet>21</a> * // DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+<a href=#22 id=22 data-nosnippet>22</a> * // FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+<a href=#23 id=23 data-nosnippet>23</a> * // DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+<a href=#24 id=24 data-nosnippet>24</a> * // SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+<a href=#25 id=25 data-nosnippet>25</a> * // CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+<a href=#26 id=26 data-nosnippet>26</a> * // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+<a href=#27 id=27 data-nosnippet>27</a> * // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+<a href=#28 id=28 data-nosnippet>28</a> */
+<a href=#29 id=29 data-nosnippet>29</a></span><span class="kw">use </span><span class="kw">crate</span>::double_double::DoubleDouble;
+<a href=#30 id=30 data-nosnippet>30</a><span class="kw">use </span><span class="kw">crate</span>::dyadic_float::{DyadicFloat128, DyadicSign};
+<a href=#31 id=31 data-nosnippet>31</a><span class="kw">use </span><span class="kw">crate</span>::logs::log1p_dyadic_tables::{LOG1P_R1, LOG1P_R2, LOG1P_S2, LOG1P_S3, LOGP1_R3};
+<a href=#32 id=32 data-nosnippet>32</a>
+<a href=#33 id=33 data-nosnippet>33</a><span class="attr">#[cold]
+<a href=#34 id=34 data-nosnippet>34</a></span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>log1p_accurate(e_x: i32, index: usize, m_x: DoubleDouble) -&gt; DyadicFloat128 {
+<a href=#35 id=35 data-nosnippet>35</a>    <span class="comment">// Minimax polynomial generated by Sollya with:
+<a href=#36 id=36 data-nosnippet>36</a>    // &gt; P = fpminimax((log(1 + x) - x)/x^2, 3, [|1, 128...|],
+<a href=#37 id=37 data-nosnippet>37</a>    //                 [-0x1.01928p-22 , 0x1p-22]);
+<a href=#38 id=38 data-nosnippet>38</a>    // &gt; P;
+<a href=#39 id=39 data-nosnippet>39</a>    // &gt; dirtyinfnorm(log(1 + x)/x - 1 - x*P, [-0x1.01928p-22 , 0x1p-22]);
+<a href=#40 id=40 data-nosnippet>40</a>    // 0x1.ce1e...p-116
+<a href=#41 id=41 data-nosnippet>41</a>    </span><span class="kw">const </span>BIG_COEFFS: [DyadicFloat128; <span class="number">4</span>] = [
+<a href=#42 id=42 data-nosnippet>42</a>        DyadicFloat128 {
+<a href=#43 id=43 data-nosnippet>43</a>            sign: DyadicSign::Pos,
+<a href=#44 id=44 data-nosnippet>44</a>            exponent: -<span class="number">130</span>,
+<a href=#45 id=45 data-nosnippet>45</a>            mantissa: <span class="number">0xccccccd7_4818e397_7ed78465_d460315b_u128</span>,
+<a href=#46 id=46 data-nosnippet>46</a>        },
+<a href=#47 id=47 data-nosnippet>47</a>        DyadicFloat128 {
+<a href=#48 id=48 data-nosnippet>48</a>            sign: DyadicSign::Neg,
+<a href=#49 id=49 data-nosnippet>49</a>            exponent: -<span class="number">129</span>,
+<a href=#50 id=50 data-nosnippet>50</a>            mantissa: <span class="number">0x80000000_000478b0_c6388a23_871ce156_u128</span>,
+<a href=#51 id=51 data-nosnippet>51</a>        },
+<a href=#52 id=52 data-nosnippet>52</a>        DyadicFloat128 {
+<a href=#53 id=53 data-nosnippet>53</a>            sign: DyadicSign::Pos,
+<a href=#54 id=54 data-nosnippet>54</a>            exponent: -<span class="number">129</span>,
+<a href=#55 id=55 data-nosnippet>55</a>            mantissa: <span class="number">0xaaaaaaaa_aaaaaaaa_aa807bd8_67763262_u128</span>,
+<a href=#56 id=56 data-nosnippet>56</a>        },
+<a href=#57 id=57 data-nosnippet>57</a>        DyadicFloat128 {
+<a href=#58 id=58 data-nosnippet>58</a>            sign: DyadicSign::Neg,
+<a href=#59 id=59 data-nosnippet>59</a>            exponent: -<span class="number">128</span>,
+<a href=#60 id=60 data-nosnippet>60</a>            mantissa: <span class="number">0x80000000_00000000_00000000_00000000_u128</span>,
+<a href=#61 id=61 data-nosnippet>61</a>        },
+<a href=#62 id=62 data-nosnippet>62</a>    ];
+<a href=#63 id=63 data-nosnippet>63</a>
+<a href=#64 id=64 data-nosnippet>64</a>    <span class="comment">// log(2) with 128-bit precision generated by SageMath with:
+<a href=#65 id=65 data-nosnippet>65</a>    // def format_hex(value):
+<a href=#66 id=66 data-nosnippet>66</a>    //     l = hex(value)[2:]
+<a href=#67 id=67 data-nosnippet>67</a>    //     n = 4
+<a href=#68 id=68 data-nosnippet>68</a>    //     x = [l[i:i + n] for i in range(0, len(l), n)]
+<a href=#69 id=69 data-nosnippet>69</a>    //     return "0x" + "_".join(x) + "_u128"
+<a href=#70 id=70 data-nosnippet>70</a>    // (s, m, e) = RealField(128)(2).log().sign_mantissa_exponent();
+<a href=#71 id=71 data-nosnippet>71</a>    // print(format_hex(m));
+<a href=#72 id=72 data-nosnippet>72</a>    </span><span class="kw">const </span>LOG_2: DyadicFloat128 = DyadicFloat128 {
+<a href=#73 id=73 data-nosnippet>73</a>        sign: DyadicSign::Pos,
+<a href=#74 id=74 data-nosnippet>74</a>        exponent: -<span class="number">128</span>,
+<a href=#75 id=75 data-nosnippet>75</a>        mantissa: <span class="number">0xb172_17f7_d1cf_79ab_c9e3_b398_03f2_f6af_u128</span>,
+<a href=#76 id=76 data-nosnippet>76</a>    };
+<a href=#77 id=77 data-nosnippet>77</a>
+<a href=#78 id=78 data-nosnippet>78</a>    <span class="kw">let </span>e_x_f128 = DyadicFloat128::new_from_f64(e_x <span class="kw">as </span>f64);
+<a href=#79 id=79 data-nosnippet>79</a>    <span class="kw">let </span><span class="kw-2">mut </span>sum = LOG_2 * e_x_f128;
+<a href=#80 id=80 data-nosnippet>80</a>    sum = sum + LOG1P_R1[index];
+<a href=#81 id=81 data-nosnippet>81</a>
+<a href=#82 id=82 data-nosnippet>82</a>    <span class="kw">let </span><span class="kw-2">mut </span>v = DyadicFloat128::new_from_f64(m_x.hi) + DyadicFloat128::new_from_f64(m_x.lo);
+<a href=#83 id=83 data-nosnippet>83</a>
+<a href=#84 id=84 data-nosnippet>84</a>    <span class="comment">// Skip 2nd range reduction step if |m_x| &lt;= 2^-15.
+<a href=#85 id=85 data-nosnippet>85</a>    </span><span class="kw">if </span>m_x.hi &gt; f64::from_bits(<span class="number">0x3f00000000000000</span>) || m_x.hi &lt; f64::from_bits(<span class="number">0xbf00000000000000</span>) {
+<a href=#86 id=86 data-nosnippet>86</a>        <span class="comment">// Range reduction - Step 2.
+<a href=#87 id=87 data-nosnippet>87</a>        // For k such that: k * 2^-14 - 2^-15 &lt;= m_x.hi &lt; k * 2^-14 + 2^-15,
+<a href=#88 id=88 data-nosnippet>88</a>        // Let s_k = 2^-18 * round( 2^18 / (1 + k*2^-14) ) - 1
+<a href=#89 id=89 data-nosnippet>89</a>        // Then the 2nd reduced argument is:
+<a href=#90 id=90 data-nosnippet>90</a>        //    (1 + s_k) * (1 + m_x) - 1 =
+<a href=#91 id=91 data-nosnippet>91</a>        //  = s_k + m_x + s_k * m_x
+<a href=#92 id=92 data-nosnippet>92</a>        // Output range:
+<a href=#93 id=93 data-nosnippet>93</a>        //   -0x1.1037c00000040271p-15 &lt;= v2.hi + v2.lo &lt;= 0x1.108480000008096cp-15
+<a href=#94 id=94 data-nosnippet>94</a>        </span><span class="kw">let </span>idx2: i32 = (f64::from_bits(<span class="number">0x40d0000000000000</span>)
+<a href=#95 id=95 data-nosnippet>95</a>            * (m_x.hi
+<a href=#96 id=96 data-nosnippet>96</a>                + (<span class="number">91. </span>* f64::from_bits(<span class="number">0x3f10000000000000</span>) + f64::from_bits(<span class="number">0x3f00000000000000</span>))))
+<a href=#97 id=97 data-nosnippet>97</a>            <span class="kw">as </span>i32;
+<a href=#98 id=98 data-nosnippet>98</a>        sum = sum + LOG1P_R2[idx2 <span class="kw">as </span>usize];
+<a href=#99 id=99 data-nosnippet>99</a>        <span class="kw">let </span>s2 = DyadicFloat128::new_from_f64(f64::from_bits(LOG1P_S2[idx2 <span class="kw">as </span>usize]));
+<a href=#100 id=100 data-nosnippet>100</a>        v = (v + s2) + (v * s2);
+<a href=#101 id=101 data-nosnippet>101</a>    }
+<a href=#102 id=102 data-nosnippet>102</a>
+<a href=#103 id=103 data-nosnippet>103</a>    <span class="comment">// Skip 3rd range reduction step if |v| &lt;= 2^-22.
+<a href=#104 id=104 data-nosnippet>104</a>    </span><span class="kw">if </span>v.exponent &gt; -<span class="number">150 </span>{
+<a href=#105 id=105 data-nosnippet>105</a>        <span class="comment">// Range reduction - Step 3.
+<a href=#106 id=106 data-nosnippet>106</a>        // For k such that: k * 2^-21 - 2^-22 &lt;= v2.hi &lt; k * 2^-21 + 2^-22,
+<a href=#107 id=107 data-nosnippet>107</a>        // Let s_k = 2^-21 * round( 2^21 / (1 + k*2^-21) ) - 1
+<a href=#108 id=108 data-nosnippet>108</a>        // Then the 3rd reduced argument is:
+<a href=#109 id=109 data-nosnippet>109</a>        //    v3.hi + v3.lo ~ (1 + s_k) * (1 + v2.hi + v2.lo) - 1
+<a href=#110 id=110 data-nosnippet>110</a>        // Output range:
+<a href=#111 id=111 data-nosnippet>111</a>        //   -0x1.012bb800000800114p-22 &lt;= v3.hi + v3.lo &lt;= 0x1p-22
+<a href=#112 id=112 data-nosnippet>112</a>        </span><span class="kw">let </span>zv = v.fast_as_f64();
+<a href=#113 id=113 data-nosnippet>113</a>        <span class="kw">let </span>idx3 = (f64::from_bits(<span class="number">0x4140000000000000</span>)
+<a href=#114 id=114 data-nosnippet>114</a>            * (zv
+<a href=#115 id=115 data-nosnippet>115</a>                + (<span class="number">69. </span>* f64::from_bits(<span class="number">0x3ea0000000000000</span>) + f64::from_bits(<span class="number">0x3e90000000000000</span>))))
+<a href=#116 id=116 data-nosnippet>116</a>            <span class="kw">as </span>i32;
+<a href=#117 id=117 data-nosnippet>117</a>        sum = sum + LOGP1_R3[idx3 <span class="kw">as </span>usize];
+<a href=#118 id=118 data-nosnippet>118</a>        <span class="kw">let </span>s3 = DyadicFloat128::new_from_f64(f64::from_bits(LOG1P_S3[idx3 <span class="kw">as </span>usize]));
+<a href=#119 id=119 data-nosnippet>119</a>        v = (v + s3) + (v * s3);
+<a href=#120 id=120 data-nosnippet>120</a>    }
+<a href=#121 id=121 data-nosnippet>121</a>
+<a href=#122 id=122 data-nosnippet>122</a>    <span class="kw">let </span><span class="kw-2">mut </span>p = v * BIG_COEFFS[<span class="number">0</span>];
+<a href=#123 id=123 data-nosnippet>123</a>    p = v * (p + BIG_COEFFS[<span class="number">1</span>]);
+<a href=#124 id=124 data-nosnippet>124</a>    p = v * (p + BIG_COEFFS[<span class="number">2</span>]);
+<a href=#125 id=125 data-nosnippet>125</a>    p = v * (p + BIG_COEFFS[<span class="number">3</span>]);
+<a href=#126 id=126 data-nosnippet>126</a>    p = v + (v * p);
+<a href=#127 id=127 data-nosnippet>127</a>
+<a href=#128 id=128 data-nosnippet>128</a>    sum + p
+<a href=#129 id=129 data-nosnippet>129</a>}</code></pre></div></section></main></body></html>

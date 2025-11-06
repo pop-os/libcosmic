@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"struct":["Task"],"trait":["Also","Apply","CollectionWidget","ColorExt","ElementExt"]};

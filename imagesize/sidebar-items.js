@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["ImageError","ImageType"],"fn":["blob_size","image_type","reader_size","size"],"struct":["ImageSize"],"type":["ImageResult"]};

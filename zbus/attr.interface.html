@@ -1,0 +1,172 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Attribute macro for implementing a D-Bus interface."><title>interface in zbus - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../static.files/rustdoc-aa0817cf.css"><meta name="rustdoc-vars" data-root-path="../" data-static-root-path="../static.files/" data-current-crate="zbus" data-themes="" data-resource-suffix="" data-rustdoc-version="1.90.0 (1159e78c4 2025-09-14)" data-channel="1.90.0" data-search-js="search-fa3e91e5.js" data-settings-js="settings-5514c975.js" ><script src="../static.files/storage-68b7e25d.js"></script><script defer src="sidebar-items.js"></script><script defer src="../static.files/main-eebb9057.js"></script><noscript><link rel="stylesheet" href="../static.files/noscript-32bb7600.css"></noscript><link rel="alternate icon" type="image/png" href="../static.files/favicon-32x32-6580c154.png"><link rel="icon" type="image/svg+xml" href="../static.files/favicon-044be391.svg"></head><body class="rustdoc attr"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle" title="show sidebar"></button><a class="logo-container" href="../zbus/index.html"><img src="https://raw.githubusercontent.com/z-galaxy/zbus/9f7a90d2b594ddc48b7a5f39fda5e00cd56a7dfb/logo.png" alt=""></a></nav><nav class="sidebar"><div class="sidebar-crate"><a class="logo-container" href="../zbus/index.html"><img src="https://raw.githubusercontent.com/z-galaxy/zbus/9f7a90d2b594ddc48b7a5f39fda5e00cd56a7dfb/logo.png" alt="logo"></a><h2><a href="../zbus/index.html">zbus</a><span class="version">5.12.0</span></h2></div><div class="sidebar-elems"><section id="rustdoc-toc"><h2 class="location"><a href="#">interface</a></h2><h3><a href="#">Sections</a></h3><ul class="block top-toc"><li><a href="#example" title="Example">Example</a></li></ul></section><div id="rustdoc-modnav"><h2 class="in-crate"><a href="index.html">In crate zbus</a></h2></div></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><div class="width-limiter"><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><div class="rustdoc-breadcrumbs"><a href="index.html">zbus</a></div><h1>Attribute Macro <span class="attr">interface</span><button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"></span></div><pre class="rust item-decl"><code>#[interface]</code></pre><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Attribute macro for implementing a D-Bus interface.</p>
+<p>The macro must be applied on an <code>impl T</code>. All methods will be exported, either as methods,
+properties or signal depending on the item attributes. It will implement the <a href="https://docs.rs/zbus/latest/zbus/object_server/trait.Interface.html"><code>Interface</code></a> trait
+<code>for T</code> on your behalf, to handle the message dispatching and introspection support.</p>
+<p>The trait accepts the <code>interface</code> attributes:</p>
+<ul>
+<li>
+<p><code>name</code> - the D-Bus interface name</p>
+</li>
+<li>
+<p><code>spawn</code> - Controls the spawning of tasks for method calls. By default, <code>true</code>, allowing zbus
+to spawn a separate task for each method call. This default behavior can lead to methods being
+handled out of their received order, which might not always align with expected or desired
+behavior.</p>
+<ul>
+<li>
+<p><strong>When True (Default):</strong> Suitable for interfaces where method calls are independent of each
+other or can be processed asynchronously without strict ordering. In scenarios where a
+client must wait for a reply before making further dependent calls, this default behavior is
+appropriate.</p>
+</li>
+<li>
+<p><strong>When False:</strong> Use this setting to ensure methods are handled in the order they are
+received, which is crucial for interfaces requiring sequential processing of method calls.
+However, care must be taken to avoid making D-Bus method calls from within your interface
+methods when this setting is false, as it may lead to deadlocks under certain conditions.</p>
+</li>
+</ul>
+</li>
+<li>
+<p><code>proxy</code> - If specified, a proxy type will also be generated for the interface. This attribute
+supports all the <a href="attr.proxy.html" title="attr zbus::proxy"><code>proxy</code></a>-specific sub-attributes (e.g <code>gen_async</code>). The common
+sub-attributes (e.g <code>name</code>) are automatically forwarded to the <a href="attr.proxy.html" title="attr zbus::proxy"><code>proxy</code></a> macro.</p>
+</li>
+<li>
+<p><code>introspection_docs</code> - whether to include the documentation in the introspection data
+(Default: <code>true</code>). If your interface is well-known or well-documented, you may want to set
+this to <code>false</code> to reduce the the size of your binary and D-Bus traffic.</p>
+</li>
+</ul>
+<p>The methods accepts the <code>interface</code> attributes:</p>
+<ul>
+<li>
+<p><code>name</code> - override the D-Bus name (pascal case form of the method by default)</p>
+</li>
+<li>
+<p><code>property</code> - expose the method as a property. If the method takes an argument, it must be a
+setter, with a <code>set_</code> prefix. Otherwise, it’s a getter. If it may fail, a property method must
+return <code>zbus::fdo::Result</code>. An additional sub-attribute exists to control the emission of
+signals on changes to the property:</p>
+<ul>
+<li><code>emits_changed_signal</code> - specifies how property changes are signaled. Valid values are those
+documented in <a href="https://dbus.freedesktop.org/doc/dbus-specification.html#introspection-format">DBus specifications</a>:
+<ul>
+<li><code>"true"</code> - (default) the change signal is always emitted when the property’s setter is
+called. The value of the property is included in the signal.</li>
+<li><code>"invalidates"</code> - the change signal is emitted, but the value is not included in the
+signal.</li>
+<li><code>"const"</code> - the property never changes, thus no signal is ever emitted for it.</li>
+<li><code>"false"</code> - the change signal is not emitted if the property changes. If a property is
+write-only, the change signal will not be emitted in this interface.</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<p><code>signal</code> - the method is a “signal”. It must be a method declaration (without body). Its code
+block will be expanded to emit the signal from the object path associated with the interface
+instance. Moreover, <code>interface</code> will also generate a trait named <code>&lt;Interface&gt;Signals</code> that
+provides all the signal methods but without the <code>SignalEmitter</code> argument. The macro implements
+this trait for two types, <code>zbus::object_server::InterfaceRef&lt;Interface&gt;</code> and
+<code>SignalEmitter&lt;'_&gt;</code>. The former is useful for emitting signals from outside the context of an
+interface method and the latter is useful for emitting signals from inside interface methods.</p>
+<p>You can call a signal method from a an interface method, or from an <a href="https://docs.rs/zbus/latest/zbus/object_server/struct.ObjectServer.html#method.with"><code>ObjectServer::with</code></a>
+function.</p>
+</li>
+<li>
+<p><code>out_args</code> - When returning multiple values from a method, naming the out arguments become
+important. You can use <code>out_args</code> to specify their names.</p>
+</li>
+<li>
+<p><code>proxy</code> - Use this to specify the <a href="attr.proxy.html" title="attr zbus::proxy"><code>proxy</code></a>-specific method sub-attributes (e.g
+<code>object</code>). The common sub-attributes (e.g <code>name</code>) are automatically forworded to the
+<a href="attr.proxy.html" title="attr zbus::proxy"><code>proxy</code></a> macro. Moreover, you can use <code>visibility</code> sub-attribute to specify the
+visibility of the generated proxy type(s).</p>
+<p>In such case, your method must return a tuple containing
+your out arguments, in the same order as passed to <code>out_args</code>.</p>
+</li>
+</ul>
+<p>The <code>struct_return</code> attribute (from zbus 1.x) is no longer supported. If you want to return a
+single structure from a method, declare it to return a tuple containing either a named structure
+or a nested tuple.</p>
+<p>Note: a <code>&lt;property_name_in_snake_case&gt;_changed</code> method is generated for each property: this
+method emits the “PropertiesChanged” signal for the associated property. The setter (if it
+exists) will automatically call this method. For instance, a property setter named <code>set_foo</code>
+will be called to set the property “Foo”, and will emit the “PropertiesChanged” signal with the
+new value for “Foo”. Other changes to the “Foo” property can be signaled manually with the
+generated <code>foo_changed</code> method. In addition, a <code>&lt;property_name_in_snake_case&gt;_invalidated</code>
+method is also generated that much like <code>_changed</code> method, emits a “PropertyChanged” signal
+but does not send over the new value of the property along with it. It is usually best to avoid
+using this since it will force all interested peers to fetch the new value and hence result in
+excess traffic on the bus.</p>
+<p>The method arguments support the following <code>zbus</code> attributes:</p>
+<ul>
+<li><code>object_server</code> - This marks the method argument to receive a reference to the
+<a href="https://docs.rs/zbus/latest/zbus/object_server/struct.ObjectServer.html"><code>ObjectServer</code></a> this method was called by.</li>
+<li><code>connection</code> - This marks the method argument to receive a reference to the <a href="https://docs.rs/zbus/latest/zbus/connection/struct.Connection.html"><code>Connection</code></a> on
+which the method call was received.</li>
+<li><code>header</code> - This marks the method argument to receive the message header associated with the
+D-Bus method call being handled. For property methods, this will be an <code>Option&lt;Header&lt;'_&gt;&gt;</code>,
+which will be set to <code>None</code> if the method is called for reasons other than to respond to an
+external property access.</li>
+<li><code>signal_emitter</code> - This marks the method argument to receive a <a href="https://docs.rs/zbus/latest/zbus/object_server/struct.SignalEmitter.html"><code>SignalEmitter</code></a> instance,
+which is needed for emitting signals the easy way.</li>
+</ul>
+<h2 id="example"><a class="doc-anchor" href="#example">§</a>Example</h2>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>zbus_macros::interface;
+<span class="kw">use </span>zbus::{ObjectServer, object_server::SignalEmitter, message::Header};
+
+<span class="kw">struct </span>Example {
+    _some_data: String,
+}
+
+<span class="attr">#[interface(name = <span class="string">"org.myservice.Example"</span>)]
+</span><span class="kw">impl </span>Example {
+    <span class="comment">// "Quit" method. A method may throw errors.
+    </span><span class="kw">async fn </span>quit(
+        <span class="kw-2">&amp;</span><span class="self">self</span>,
+        <span class="attr">#[zbus(header)]
+        </span>hdr: Header&lt;<span class="lifetime">'_</span>&gt;,
+        <span class="attr">#[zbus(signal_emitter)]
+        </span>emitter: SignalEmitter&lt;<span class="lifetime">'_</span>&gt;,
+        <span class="attr">#[zbus(object_server)]
+        </span>_server: <span class="kw-2">&amp;</span>ObjectServer,
+    ) -&gt; zbus::fdo::Result&lt;()&gt; {
+        <span class="kw">let </span>path = hdr.path().unwrap();
+        <span class="kw">let </span>msg = <span class="macro">format!</span>(<span class="string">"You are leaving me on the {} path?"</span>, path);
+        emitter.bye(<span class="kw-2">&amp;</span>msg).<span class="kw">await</span><span class="question-mark">?</span>;
+
+        <span class="comment">// Do some asynchronous tasks before quitting..
+
+        </span><span class="prelude-val">Ok</span>(())
+    }
+
+    <span class="comment">// "TheAnswer" property (note: the "name" attribute), with its associated getter.
+    // A `the_answer_changed` method has also been generated to emit the
+    // "PropertiesChanged" signal for this property.
+    </span><span class="attr">#[zbus(property, name = <span class="string">"TheAnswer"</span>)]
+    </span><span class="kw">fn </span>answer(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; u32 {
+        <span class="number">2 </span>* <span class="number">3 </span>* <span class="number">7
+    </span>}
+
+    <span class="comment">// "IFail" property with its associated getter.
+    // An `i_fail_changed` method has also been generated to emit the
+    // "PropertiesChanged" signal for this property.
+    </span><span class="attr">#[zbus(property)]
+    </span><span class="kw">fn </span>i_fail(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; zbus::fdo::Result&lt;i32&gt; {
+        <span class="prelude-val">Err</span>(zbus::fdo::Error::UnknownProperty(<span class="string">"IFail"</span>.into()))
+    }
+
+    <span class="comment">// "Bye" signal (note: no implementation body).
+    </span><span class="attr">#[zbus(signal)]
+    </span><span class="kw">async fn </span>bye(signal_emitter: <span class="kw-2">&amp;</span>SignalEmitter&lt;<span class="lifetime">'_</span>&gt;, message: <span class="kw-2">&amp;</span>str) -&gt; zbus::Result&lt;()&gt;;
+
+    <span class="attr">#[zbus(out_args(<span class="string">"answer"</span>, <span class="string">"question"</span>))]
+    </span><span class="kw">fn </span>meaning_of_life(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; zbus::fdo::Result&lt;(i32, String)&gt; {
+        <span class="prelude-val">Ok</span>((<span class="number">42</span>, String::from(<span class="string">"Meaning of life"</span>)))
+    }
+}
+</code></pre></div>
+<p>See also <a href="https://docs.rs/zbus/latest/zbus/object_server/struct.ObjectServer.html"><code>ObjectServer</code></a> documentation to learn how to export an interface over a <code>Connection</code>.</p>
+</div></details></section></div></main></body></html>

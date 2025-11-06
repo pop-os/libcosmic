@@ -1,0 +1,369 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `/home/runner/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/pxfm-0.1.25/src/logs/fast_log_dd.rs`."><title>fast_log_dd.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../../static.files/rustdoc-aa0817cf.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="pxfm" data-themes="" data-resource-suffix="" data-rustdoc-version="1.90.0 (1159e78c4 2025-09-14)" data-channel="1.90.0" data-search-js="search-fa3e91e5.js" data-settings-js="settings-5514c975.js" ><script src="../../../static.files/storage-68b7e25d.js"></script><script defer src="../../../static.files/src-script-813739b1.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-eebb9057.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-32bb7600.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-6580c154.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-044be391.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><h1><div class="sub-heading">pxfm/logs/</div>fast_log_dd.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap digits-3"><pre class="rust"><code><a href=#1 id=1 data-nosnippet>1</a><span class="comment">/*
+<a href=#2 id=2 data-nosnippet>2</a> * // Copyright (c) Radzivon Bartoshyk 8/2025. All rights reserved.
+<a href=#3 id=3 data-nosnippet>3</a> * //
+<a href=#4 id=4 data-nosnippet>4</a> * // Redistribution and use in source and binary forms, with or without modification,
+<a href=#5 id=5 data-nosnippet>5</a> * // are permitted provided that the following conditions are met:
+<a href=#6 id=6 data-nosnippet>6</a> * //
+<a href=#7 id=7 data-nosnippet>7</a> * // 1.  Redistributions of source code must retain the above copyright notice, this
+<a href=#8 id=8 data-nosnippet>8</a> * // list of conditions and the following disclaimer.
+<a href=#9 id=9 data-nosnippet>9</a> * //
+<a href=#10 id=10 data-nosnippet>10</a> * // 2.  Redistributions in binary form must reproduce the above copyright notice,
+<a href=#11 id=11 data-nosnippet>11</a> * // this list of conditions and the following disclaimer in the documentation
+<a href=#12 id=12 data-nosnippet>12</a> * // and/or other materials provided with the distribution.
+<a href=#13 id=13 data-nosnippet>13</a> * //
+<a href=#14 id=14 data-nosnippet>14</a> * // 3.  Neither the name of the copyright holder nor the names of its
+<a href=#15 id=15 data-nosnippet>15</a> * // contributors may be used to endorse or promote products derived from
+<a href=#16 id=16 data-nosnippet>16</a> * // this software without specific prior written permission.
+<a href=#17 id=17 data-nosnippet>17</a> * //
+<a href=#18 id=18 data-nosnippet>18</a> * // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+<a href=#19 id=19 data-nosnippet>19</a> * // AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+<a href=#20 id=20 data-nosnippet>20</a> * // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+<a href=#21 id=21 data-nosnippet>21</a> * // DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+<a href=#22 id=22 data-nosnippet>22</a> * // FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+<a href=#23 id=23 data-nosnippet>23</a> * // DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+<a href=#24 id=24 data-nosnippet>24</a> * // SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+<a href=#25 id=25 data-nosnippet>25</a> * // CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+<a href=#26 id=26 data-nosnippet>26</a> * // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+<a href=#27 id=27 data-nosnippet>27</a> * // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+<a href=#28 id=28 data-nosnippet>28</a> */
+<a href=#29 id=29 data-nosnippet>29</a>
+<a href=#30 id=30 data-nosnippet>30</a>/* Given 2^-1074 &lt;= x &lt;= 0x1.fffffffffffffp+1023, this routine puts in h+l
+<a href=#31 id=31 data-nosnippet>31</a>   an approximation of log(x) such that |l| &lt; 2^-23.89*|h| and
+<a href=#32 id=32 data-nosnippet>32</a>
+<a href=#33 id=33 data-nosnippet>33</a>   | h + l - log(x) | &lt;= elog * |log x|
+<a href=#34 id=34 data-nosnippet>34</a>
+<a href=#35 id=35 data-nosnippet>35</a>   with elog = 2^-73.527  if x &lt; 1/sqrt(2) or sqrt(2) &lt; x,
+<a href=#36 id=36 data-nosnippet>36</a>   and  elog = 2^-67.0544 if 1/sqrt(2) &lt; x &lt; sqrt(2)
+<a href=#37 id=37 data-nosnippet>37</a>   (note that x cannot equal 1/sqrt(2) nor sqrt(2)).
+<a href=#38 id=38 data-nosnippet>38</a>*/
+<a href=#39 id=39 data-nosnippet>39</a></span><span class="kw">use </span><span class="kw">crate</span>::common::dd_fmla;
+<a href=#40 id=40 data-nosnippet>40</a><span class="kw">use </span><span class="kw">crate</span>::double_double::DoubleDouble;
+<a href=#41 id=41 data-nosnippet>41</a><span class="kw">use </span><span class="kw">crate</span>::pow_exec::log_poly_1;
+<a href=#42 id=42 data-nosnippet>42</a><span class="kw">use </span><span class="kw">crate</span>::pow_tables::POW_INVERSE;
+<a href=#43 id=43 data-nosnippet>43</a>
+<a href=#44 id=44 data-nosnippet>44</a><span class="comment">// Generated by SageMath:
+<a href=#45 id=45 data-nosnippet>45</a>// values = POW_INVERSE
+<a href=#46 id=46 data-nosnippet>46</a>// R = RealField(150)
+<a href=#47 id=47 data-nosnippet>47</a>//
+<a href=#48 id=48 data-nosnippet>48</a>// def hex_to_float(h):
+<a href=#49 id=49 data-nosnippet>49</a>//     return struct.unpack('&gt;d', struct.pack('&gt;Q', h))[0]
+<a href=#50 id=50 data-nosnippet>50</a>//
+<a href=#51 id=51 data-nosnippet>51</a>// real_array = [R(hex_to_float(h)) for h in values]
+<a href=#52 id=52 data-nosnippet>52</a>//
+<a href=#53 id=53 data-nosnippet>53</a>// for r in real_array:
+<a href=#54 id=54 data-nosnippet>54</a>//     print_double_double("", -RealField(180)(r).log())
+<a href=#55 id=55 data-nosnippet>55</a></span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">static </span>FAST_LOG_DD_INV: [(u64, u64); <span class="number">182</span>] = [
+<a href=#56 id=56 data-nosnippet>56</a>    (<span class="number">0x3c6bc60efafc6f6e</span>, <span class="number">0xbfd5ff3070a793d4</span>),
+<a href=#57 id=57 data-nosnippet>57</a>    (<span class="number">0x3c78ebcb7dee9a3d</span>, <span class="number">0xbfd5a42ab0f4cfe2</span>),
+<a href=#58 id=58 data-nosnippet>58</a>    (<span class="number">0x3c6819cf7e308ddb</span>, <span class="number">0xbfd548a2c3add263</span>),
+<a href=#59 id=59 data-nosnippet>59</a>    (<span class="number">0x3c742a87d977dc5e</span>, <span class="number">0xbfd4ec973260026a</span>),
+<a href=#60 id=60 data-nosnippet>60</a>    (<span class="number">0x3c69ffc341f177dc</span>, <span class="number">0xbfd49006804009d1</span>),
+<a href=#61 id=61 data-nosnippet>61</a>    (<span class="number">0x3c729931715ac903</span>, <span class="number">0xbfd432ef2a04e814</span>),
+<a href=#62 id=62 data-nosnippet>62</a>    (<span class="number">0x3c70bcfb6082ce6d</span>, <span class="number">0xbfd404308686a7e4</span>),
+<a href=#63 id=63 data-nosnippet>63</a>    (<span class="number">0x3c6c68651945f97c</span>, <span class="number">0xbfd3a64c556945ea</span>),
+<a href=#64 id=64 data-nosnippet>64</a>    (<span class="number">0x3c64dd4c580919f8</span>, <span class="number">0xbfd347dd9a987d55</span>),
+<a href=#65 id=65 data-nosnippet>65</a>    (<span class="number">0x3c78f4cdb95ebdf9</span>, <span class="number">0xbfd2e8e2bae11d31</span>),
+<a href=#66 id=66 data-nosnippet>66</a>    (<span class="number">0xbc77ad24c13f040e</span>, <span class="number">0xbfd2895a13de86a3</span>),
+<a href=#67 id=67 data-nosnippet>67</a>    (<span class="number">0x3c776f5eb09628af</span>, <span class="number">0xbfd22941fbcf7966</span>),
+<a href=#68 id=68 data-nosnippet>68</a>    (<span class="number">0x3c7c9fdf9a0c4b07</span>, <span class="number">0xbfd1f8ff9e48a2f3</span>),
+<a href=#69 id=69 data-nosnippet>69</a>    (<span class="number">0xbc79d3d1b0e4d147</span>, <span class="number">0xbfd1980d2dd4236f</span>),
+<a href=#70 id=70 data-nosnippet>70</a>    (<span class="number">0xbc77b66298edd24a</span>, <span class="number">0xbfd136870293a8b0</span>),
+<a href=#71 id=71 data-nosnippet>71</a>    (<span class="number">0xbc589fa0ab4cb31d</span>, <span class="number">0xbfd1058bf9ae4ad5</span>),
+<a href=#72 id=72 data-nosnippet>72</a>    (<span class="number">0xbc77dcfde8061c03</span>, <span class="number">0xbfd0a324e27390e3</span>),
+<a href=#73 id=73 data-nosnippet>73</a>    (<span class="number">0x3c628ec217a5022d</span>, <span class="number">0xbfd0402594b4d041</span>),
+<a href=#74 id=74 data-nosnippet>74</a>    (<span class="number">0x3c6caaae64f21acb</span>, <span class="number">0xbfcfb9186d5e3e2b</span>),
+<a href=#75 id=75 data-nosnippet>75</a>    (<span class="number">0xbc2c5f6dfd018c37</span>, <span class="number">0xbfcf550a564b7b37</span>),
+<a href=#76 id=76 data-nosnippet>76</a>    (<span class="number">0x3c46e03a39bfc89b</span>, <span class="number">0xbfce8c0252aa5a60</span>),
+<a href=#77 id=77 data-nosnippet>77</a>    (<span class="number">0x3c461578001e0162</span>, <span class="number">0xbfce27076e2af2e6</span>),
+<a href=#78 id=78 data-nosnippet>78</a>    (<span class="number">0xbc66e443597e4d40</span>, <span class="number">0xbfcd5c216b4fbb91</span>),
+<a href=#79 id=79 data-nosnippet>79</a>    (<span class="number">0x3c64f689f8434012</span>, <span class="number">0xbfcc8ff7c79a9a22</span>),
+<a href=#80 id=80 data-nosnippet>80</a>    (<span class="number">0x3c673dee38a3fb6b</span>, <span class="number">0xbfcc2968558c18c1</span>),
+<a href=#81 id=81 data-nosnippet>81</a>    (<span class="number">0xbc6ba27fdc19e1a0</span>, <span class="number">0xbfcb5b519e8fb5a4</span>),
+<a href=#82 id=82 data-nosnippet>82</a>    (<span class="number">0x3c5398cff3641985</span>, <span class="number">0xbfcaf3c94e80bff3</span>),
+<a href=#83 id=83 data-nosnippet>83</a>    (<span class="number">0xbc493711b07a998c</span>, <span class="number">0xbfca23bc1fe2b563</span>),
+<a href=#84 id=84 data-nosnippet>84</a>    (<span class="number">0xbc6575e31f003e0c</span>, <span class="number">0xbfc9bb362e7dfb83</span>),
+<a href=#85 id=85 data-nosnippet>85</a>    (<span class="number">0x3c6569d851a56770</span>, <span class="number">0xbfc8e928de886d41</span>),
+<a href=#86 id=86 data-nosnippet>86</a>    (<span class="number">0x3c6bf7fdbfa08d9a</span>, <span class="number">0xbfc87fa06520c911</span>),
+<a href=#87 id=87 data-nosnippet>87</a>    (<span class="number">0xbc4be36b2d6a0608</span>, <span class="number">0xbfc7ab890210d909</span>),
+<a href=#88 id=88 data-nosnippet>88</a>    (<span class="number">0x3c5b264062a84cdb</span>, <span class="number">0xbfc740f8f54037a5</span>),
+<a href=#89 id=89 data-nosnippet>89</a>    (<span class="number">0x3c6caae268ecd179</span>, <span class="number">0xbfc6d60fe719d21d</span>),
+<a href=#90 id=90 data-nosnippet>90</a>    (<span class="number">0x3c5bc60efafc6f6e</span>, <span class="number">0xbfc5ff3070a793d4</span>),
+<a href=#91 id=91 data-nosnippet>91</a>    (<span class="number">0x3c565d22aa8ad7cf</span>, <span class="number">0xbfc59338d9982086</span>),
+<a href=#92 id=92 data-nosnippet>92</a>    (<span class="number">0xbc668981bcc36756</span>, <span class="number">0xbfc4ba36f39a55e5</span>),
+<a href=#93 id=93 data-nosnippet>93</a>    (<span class="number">0xbc69f4f6543e1f88</span>, <span class="number">0xbfc44d2b6ccb7d1e</span>),
+<a href=#94 id=94 data-nosnippet>94</a>    (<span class="number">0x3c5ab3a8e7d81017</span>, <span class="number">0xbfc3dfc2b0ecc62a</span>),
+<a href=#95 id=95 data-nosnippet>95</a>    (<span class="number">0x3c06b9c7d96091fa</span>, <span class="number">0xbfc303d718e47fd3</span>),
+<a href=#96 id=96 data-nosnippet>96</a>    (<span class="number">0xbc6301771c407dbf</span>, <span class="number">0xbfc29552f81ff523</span>),
+<a href=#97 id=97 data-nosnippet>97</a>    (<span class="number">0xbc6f547bf1809e88</span>, <span class="number">0xbfc2266f190a5acb</span>),
+<a href=#98 id=98 data-nosnippet>98</a>    (<span class="number">0xbc6a28813e3a7f07</span>, <span class="number">0xbfc14785846742ac</span>),
+<a href=#99 id=99 data-nosnippet>99</a>    (<span class="number">0xbc69a5dc5e9030ac</span>, <span class="number">0xbfc0d77e7cd08e59</span>),
+<a href=#100 id=100 data-nosnippet>100</a>    (<span class="number">0xbc550c647eb86499</span>, <span class="number">0xbfc0671512ca596e</span>),
+<a href=#101 id=101 data-nosnippet>101</a>    (<span class="number">0xbc585f325c5bbacd</span>, <span class="number">0xbfbf0a30c01162a6</span>),
+<a href=#102 id=102 data-nosnippet>102</a>    (<span class="number">0x3c361578001e0162</span>, <span class="number">0xbfbe27076e2af2e6</span>),
+<a href=#103 id=103 data-nosnippet>103</a>    (<span class="number">0xbc5790dd951d90fa</span>, <span class="number">0xbfbd4313d66cb35d</span>),
+<a href=#104 id=104 data-nosnippet>104</a>    (<span class="number">0xbc35d617ef8161b1</span>, <span class="number">0xbfbc5e548f5bc743</span>),
+<a href=#105 id=105 data-nosnippet>105</a>    (<span class="number">0xbc5942f48aa70ea9</span>, <span class="number">0xbfba926d3a4ad563</span>),
+<a href=#106 id=106 data-nosnippet>106</a>    (<span class="number">0x3c42099e1c184e8e</span>, <span class="number">0xbfb9ab42462033ad</span>),
+<a href=#107 id=107 data-nosnippet>107</a>    (<span class="number">0x3c24a697ab3424a9</span>, <span class="number">0xbfb8c345d6319b21</span>),
+<a href=#108 id=108 data-nosnippet>108</a>    (<span class="number">0x3c5eeedfcdd94131</span>, <span class="number">0xbfb7da766d7b12cd</span>),
+<a href=#109 id=109 data-nosnippet>109</a>    (<span class="number">0x3c5388458ec21b6a</span>, <span class="number">0xbfb60658a93750c4</span>),
+<a href=#110 id=110 data-nosnippet>110</a>    (<span class="number">0xbc5a49e39a1a8be4</span>, <span class="number">0xbfb51b073f06183f</span>),
+<a href=#111 id=111 data-nosnippet>111</a>    (<span class="number">0xbc4ddd4f935996c9</span>, <span class="number">0xbfb42edcbea646f0</span>),
+<a href=#112 id=112 data-nosnippet>112</a>    (<span class="number">0x3c5b599f227becbb</span>, <span class="number">0xbfb341d7961bd1d1</span>),
+<a href=#113 id=113 data-nosnippet>113</a>    (<span class="number">0x3c1c125963fc4cfd</span>, <span class="number">0xbfb253f62f0a1417</span>),
+<a href=#114 id=114 data-nosnippet>114</a>    (<span class="number">0x3c379da3e8c22cda</span>, <span class="number">0xbfb16536eea37ae1</span>),
+<a href=#115 id=115 data-nosnippet>115</a>    (<span class="number">0xbc485f325c5bbacd</span>, <span class="number">0xbfaf0a30c01162a6</span>),
+<a href=#116 id=116 data-nosnippet>116</a>    (<span class="number">0xbc21e3c53257fd47</span>, <span class="number">0xbfad276b8adb0b52</span>),
+<a href=#117 id=117 data-nosnippet>117</a>    (<span class="number">0x3c3eb9759c130499</span>, <span class="number">0xbfab42dd711971bf</span>),
+<a href=#118 id=118 data-nosnippet>118</a>    (<span class="number">0xbc4f5a0e80520bf2</span>, <span class="number">0xbfa95c830ec8e3eb</span>),
+<a href=#119 id=119 data-nosnippet>119</a>    (<span class="number">0xbc418d3ca87b9296</span>, <span class="number">0xbfa77458f632dcfc</span>),
+<a href=#120 id=120 data-nosnippet>120</a>    (<span class="number">0x3c4ce55c2b4e2b72</span>, <span class="number">0xbfa58a5bafc8e4d5</span>),
+<a href=#121 id=121 data-nosnippet>121</a>    (<span class="number">0x3c45bfa937f551bb</span>, <span class="number">0xbfa39e87b9febd60</span>),
+<a href=#122 id=122 data-nosnippet>122</a>    (<span class="number">0x3c3e9ae889bac481</span>, <span class="number">0xbfa1b0d98923d980</span>),
+<a href=#123 id=123 data-nosnippet>123</a>    (<span class="number">0xbc333e3f04f1ef23</span>, <span class="number">0xbf9f829b0e783300</span>),
+<a href=#124 id=124 data-nosnippet>124</a>    (<span class="number">0x3bf0ae69229dc868</span>, <span class="number">0xbf9b9fc027af9198</span>),
+<a href=#125 id=125 data-nosnippet>125</a>    (<span class="number">0x3c35b602ace3a510</span>, <span class="number">0xbf97b91b07d5b11b</span>),
+<a href=#126 id=126 data-nosnippet>126</a>    (<span class="number">0x3c10cb5a902b3a1c</span>, <span class="number">0xbf93cea44346a575</span>),
+<a href=#127 id=127 data-nosnippet>127</a>    (<span class="number">0x3c183092c59642a1</span>, <span class="number">0xbf8fc0a8b0fc03e4</span>),
+<a href=#128 id=128 data-nosnippet>128</a>    (<span class="number">0x3c116d7687d3df21</span>, <span class="number">0xbf87dc475f810a77</span>),
+<a href=#129 id=129 data-nosnippet>129</a>    (<span class="number">0x3bce44b7e3711ebf</span>, <span class="number">0xbf7fe02a6b106789</span>),
+<a href=#130 id=130 data-nosnippet>130</a>    (<span class="number">0x0000000000000000</span>, <span class="number">0x0000000000000000</span>),
+<a href=#131 id=131 data-nosnippet>131</a>    (<span class="number">0x0000000000000000</span>, <span class="number">0x0000000000000000</span>),
+<a href=#132 id=132 data-nosnippet>132</a>    (<span class="number">0x3bec14b9f9377a1d</span>, <span class="number">0x3f78121214586b54</span>),
+<a href=#133 id=133 data-nosnippet>133</a>    (<span class="number">0xbc2c5517f64bc223</span>, <span class="number">0x3f841929f96832f0</span>),
+<a href=#134 id=134 data-nosnippet>134</a>    (<span class="number">0x3c2806208c04c220</span>, <span class="number">0x3f8c317384c75f06</span>),
+<a href=#135 id=135 data-nosnippet>135</a>    (<span class="number">0xbc2cd7b66e01c26d</span>, <span class="number">0x3f9228fb1fea2e28</span>),
+<a href=#136 id=136 data-nosnippet>136</a>    (<span class="number">0xbbf8ed4d357c9c97</span>, <span class="number">0x3f963d6178690bd6</span>),
+<a href=#137 id=137 data-nosnippet>137</a>    (<span class="number">0x3c1ec1a5f86d41f9</span>, <span class="number">0x3f9a55f548c5c43f</span>),
+<a href=#138 id=138 data-nosnippet>138</a>    (<span class="number">0x3c375b44595cab18</span>, <span class="number">0x3f9e72bf2813ce51</span>),
+<a href=#139 id=139 data-nosnippet>139</a>    (<span class="number">0x3c4c05cf1d753622</span>, <span class="number">0x3fa0415d89e74444</span>),
+<a href=#140 id=140 data-nosnippet>140</a>    (<span class="number">0xbc4947f792615916</span>, <span class="number">0x3fa252f32f8d183f</span>),
+<a href=#141 id=141 data-nosnippet>141</a>    (<span class="number">0xbc4cdd6f7f4a137e</span>, <span class="number">0x3fa466aed42de3ea</span>),
+<a href=#142 id=142 data-nosnippet>142</a>    (<span class="number">0x3c40413e6505e603</span>, <span class="number">0x3fa67c94f2d4bb58</span>),
+<a href=#143 id=143 data-nosnippet>143</a>    (<span class="number">0x3c3a8be97660a23d</span>, <span class="number">0x3fa894aa149fb343</span>),
+<a href=#144 id=144 data-nosnippet>144</a>    (<span class="number">0x3c2a353bb42e0add</span>, <span class="number">0x3faaaef2d0fb10fc</span>),
+<a href=#145 id=145 data-nosnippet>145</a>    (<span class="number">0x3c3e5cf3a0f56f72</span>, <span class="number">0x3fabbcebfc68f420</span>),
+<a href=#146 id=146 data-nosnippet>146</a>    (<span class="number">0x3c44e6c986f44c55</span>, <span class="number">0x3fadda8adc67ee4e</span>),
+<a href=#147 id=147 data-nosnippet>147</a>    (<span class="number">0xbc4cd9f1f95c2eed</span>, <span class="number">0x3faffa6911ab9301</span>),
+<a href=#148 id=148 data-nosnippet>148</a>    (<span class="number">0xbc5a4a128d192686</span>, <span class="number">0x3fb10e45b3cae831</span>),
+<a href=#149 id=149 data-nosnippet>149</a>    (<span class="number">0xbc5cc0fbce104eaa</span>, <span class="number">0x3fb2207b5c78549e</span>),
+<a href=#150 id=150 data-nosnippet>150</a>    (<span class="number">0xbc5d15d38d2fa3f7</span>, <span class="number">0x3fb2aa04a44717a5</span>),
+<a href=#151 id=151 data-nosnippet>151</a>    (<span class="number">0x3c47a976d3b5b45f</span>, <span class="number">0x3fb3bdf5a7d1ee64</span>),
+<a href=#152 id=152 data-nosnippet>152</a>    (<span class="number">0x3c5769f42c7842cc</span>, <span class="number">0x3fb4d3115d207eac</span>),
+<a href=#153 id=153 data-nosnippet>153</a>    (<span class="number">0xbc545f9d61c68c1b</span>, <span class="number">0x3fb55e10050e0384</span>),
+<a href=#154 id=154 data-nosnippet>154</a>    (<span class="number">0xbc59acd8b33f8fdc</span>, <span class="number">0x3fb674f089365a7a</span>),
+<a href=#155 id=155 data-nosnippet>155</a>    (<span class="number">0x3c5abca5b4fdb880</span>, <span class="number">0x3fb78d02263d82d3</span>),
+<a href=#156 id=156 data-nosnippet>156</a>    (<span class="number">0x3c3b9f2dffbeed43</span>, <span class="number">0x3fb8197e2f40e3f0</span>),
+<a href=#157 id=157 data-nosnippet>157</a>    (<span class="number">0xbc5478a85704ccb7</span>, <span class="number">0x3fb9335e5d594989</span>),
+<a href=#158 id=158 data-nosnippet>158</a>    (<span class="number">0xbc55b5ca203e4259</span>, <span class="number">0x3fba4e7640b1bc38</span>),
+<a href=#159 id=159 data-nosnippet>159</a>    (<span class="number">0x3c537d8f39bee659</span>, <span class="number">0x3fbadc77ee5aea8c</span>),
+<a href=#160 id=160 data-nosnippet>160</a>    (<span class="number">0xbc4cdc9f6f5f38c7</span>, <span class="number">0x3fbbf968769fca11</span>),
+<a href=#161 id=161 data-nosnippet>161</a>    (<span class="number">0x3c49daf7df76ad2a</span>, <span class="number">0x3fbd179788219364</span>),
+<a href=#162 id=162 data-nosnippet>162</a>    (<span class="number">0x3c5401fa71733019</span>, <span class="number">0x3fbda727638446a2</span>),
+<a href=#163 id=163 data-nosnippet>163</a>    (<span class="number">0xbc4a2bf991780d3f</span>, <span class="number">0x3fbec739830a1120</span>),
+<a href=#164 id=164 data-nosnippet>164</a>    (<span class="number">0xbc59361574fb24e2</span>, <span class="number">0x3fbf57bc7d9005db</span>),
+<a href=#165 id=165 data-nosnippet>165</a>    (<span class="number">0x3c639e2d3f8b7d10</span>, <span class="number">0x3fc03cdc0a51ec0d</span>),
+<a href=#166 id=166 data-nosnippet>166</a>    (<span class="number">0xbc6dd7009902bf32</span>, <span class="number">0x3fc08598b59e3a07</span>),
+<a href=#167 id=167 data-nosnippet>167</a>    (<span class="number">0xbc50e63a5f01c691</span>, <span class="number">0x3fc1178e8227e47c</span>),
+<a href=#168 id=168 data-nosnippet>168</a>    (<span class="number">0xbc62d56ff61c2bfb</span>, <span class="number">0x3fc160c8024b27b1</span>),
+<a href=#169 id=169 data-nosnippet>169</a>    (<span class="number">0x3c462c9ef939ac5d</span>, <span class="number">0x3fc1f3b925f25d41</span>),
+<a href=#170 id=170 data-nosnippet>170</a>    (<span class="number">0xbc66e38161051d69</span>, <span class="number">0x3fc23d712a49c202</span>),
+<a href=#171 id=171 data-nosnippet>171</a>    (<span class="number">0xbc5499a3f25af95f</span>, <span class="number">0x3fc2d1610c86813a</span>),
+<a href=#172 id=172 data-nosnippet>172</a>    (<span class="number">0xbc5c4716bdfc0cc9</span>, <span class="number">0x3fc31b994d3a4f85</span>),
+<a href=#173 id=173 data-nosnippet>173</a>    (<span class="number">0x3c370d6cdf05266c</span>, <span class="number">0x3fc3b08b6757f2a9</span>),
+<a href=#174 id=174 data-nosnippet>174</a>    (<span class="number">0xbc6d87e6a354d056</span>, <span class="number">0x3fc3fb45a59928cc</span>),
+<a href=#175 id=175 data-nosnippet>175</a>    (<span class="number">0xbc50d5604930f135</span>, <span class="number">0x3fc4913d8333b561</span>),
+<a href=#176 id=176 data-nosnippet>176</a>    (<span class="number">0xbc6927d47803c5f4</span>, <span class="number">0x3fc4dc7b897bc1c8</span>),
+<a href=#177 id=177 data-nosnippet>177</a>    (<span class="number">0x3c64f4d710fec38e</span>, <span class="number">0x3fc5737cc9018cdd</span>),
+<a href=#178 id=178 data-nosnippet>178</a>    (<span class="number">0xbc21f5b44c0df7e7</span>, <span class="number">0x3fc5bf406b543db2</span>),
+<a href=#179 id=179 data-nosnippet>179</a>    (<span class="number">0xbc3d34f0f4621bed</span>, <span class="number">0x3fc6574ebe8c133a</span>),
+<a href=#180 id=180 data-nosnippet>180</a>    (<span class="number">0x3c696332bd4b341f</span>, <span class="number">0x3fc6a399dabbd383</span>),
+<a href=#181 id=181 data-nosnippet>181</a>    (<span class="number">0xbc68de59c21e166c</span>, <span class="number">0x3fc6f0128b756abc</span>),
+<a href=#182 id=182 data-nosnippet>182</a>    (<span class="number">0x3c5ef8f6ebcfb201</span>, <span class="number">0x3fc7898d85444c73</span>),
+<a href=#183 id=183 data-nosnippet>183</a>    (<span class="number">0xbc4ac5f0c075b847</span>, <span class="number">0x3fc7d6903caf5ad0</span>),
+<a href=#184 id=184 data-nosnippet>184</a>    (<span class="number">0x3c6d685f35eea2a0</span>, <span class="number">0x3fc871213750e994</span>),
+<a href=#185 id=185 data-nosnippet>185</a>    (<span class="number">0x3c555aa8b6997a40</span>, <span class="number">0x3fc8beafeb38fe8c</span>),
+<a href=#186 id=186 data-nosnippet>186</a>    (<span class="number">0x3c6054473941ad99</span>, <span class="number">0x3fc90c6db9fcbcd9</span>),
+<a href=#187 id=187 data-nosnippet>187</a>    (<span class="number">0x3c6f47dfd871f87f</span>, <span class="number">0x3fc9a8778debaa38</span>),
+<a href=#188 id=188 data-nosnippet>188</a>    (<span class="number">0x3c435a19605e67ef</span>, <span class="number">0x3fc9f6c407089664</span>),
+<a href=#189 id=189 data-nosnippet>189</a>    (<span class="number">0x3c5df207dc5c34c6</span>, <span class="number">0x3fca454082e6ab05</span>),
+<a href=#190 id=190 data-nosnippet>190</a>    (<span class="number">0x3c6ab5ca9eaa088a</span>, <span class="number">0x3fcae2ca6f672bd4</span>),
+<a href=#191 id=191 data-nosnippet>191</a>    (<span class="number">0xbc66353ab386a94d</span>, <span class="number">0x3fcb31d8575bce3d</span>),
+<a href=#192 id=192 data-nosnippet>192</a>    (<span class="number">0x3c3a0ee735d9f0ec</span>, <span class="number">0x3fcb811730b823d2</span>),
+<a href=#193 id=193 data-nosnippet>193</a>    (<span class="number">0x3c3dd355f6a516d7</span>, <span class="number">0x3fcbd087383bd8ad</span>),
+<a href=#194 id=194 data-nosnippet>194</a>    (<span class="number">0xbc68e58b2c57a4a5</span>, <span class="number">0x3fcc6ffbc6f00f71</span>),
+<a href=#195 id=195 data-nosnippet>195</a>    (<span class="number">0x3c653d154280394f</span>, <span class="number">0x3fccc000c9db3c52</span>),
+<a href=#196 id=196 data-nosnippet>196</a>    (<span class="number">0x3c660629242471a2</span>, <span class="number">0x3fcd1037f2655e7b</span>),
+<a href=#197 id=197 data-nosnippet>197</a>    (<span class="number">0x3c5aa11d49f96cb9</span>, <span class="number">0x3fcdb13db0d48940</span>),
+<a href=#198 id=198 data-nosnippet>198</a>    (<span class="number">0x3c5fea48dd7b81d1</span>, <span class="number">0x3fce020cc6235ab5</span>),
+<a href=#199 id=199 data-nosnippet>199</a>    (<span class="number">0x3c42276041f43042</span>, <span class="number">0x3fce530effe71012</span>),
+<a href=#200 id=200 data-nosnippet>200</a>    (<span class="number">0xbc6d33919ab94074</span>, <span class="number">0x3fcea4449f04aaf5</span>),
+<a href=#201 id=201 data-nosnippet>201</a>    (<span class="number">0xbc527c77ded76aad</span>, <span class="number">0x3fcf474b134df229</span>),
+<a href=#202 id=202 data-nosnippet>202</a>    (<span class="number">0x3c6f665066f980a2</span>, <span class="number">0x3fcf991c6cb3b379</span>),
+<a href=#203 id=203 data-nosnippet>203</a>    (<span class="number">0x3c28de00938b4c40</span>, <span class="number">0x3fcfeb2233ea07cd</span>),
+<a href=#204 id=204 data-nosnippet>204</a>    (<span class="number">0xbc418290bd2932e2</span>, <span class="number">0x3fd01eae5626c691</span>),
+<a href=#205 id=205 data-nosnippet>205</a>    (<span class="number">0xbc70779634061cbc</span>, <span class="number">0x3fd047e60cde83b8</span>),
+<a href=#206 id=206 data-nosnippet>206</a>    (<span class="number">0x3c643c2e68684d53</span>, <span class="number">0x3fd09aa572e6c6d4</span>),
+<a href=#207 id=207 data-nosnippet>207</a>    (<span class="number">0x3c5162c79d5d11ee</span>, <span class="number">0x3fd0c42d676162e3</span>),
+<a href=#208 id=208 data-nosnippet>208</a>    (<span class="number">0xbc692b49ef282b09</span>, <span class="number">0x3fd0edd060b78081</span>),
+<a href=#209 id=209 data-nosnippet>209</a>    (<span class="number">0xbc60e63a5f01c691</span>, <span class="number">0x3fd1178e8227e47c</span>),
+<a href=#210 id=210 data-nosnippet>210</a>    (<span class="number">0x3c1e0936abd4fa6e</span>, <span class="number">0x3fd14167ef367783</span>),
+<a href=#211 id=211 data-nosnippet>211</a>    (<span class="number">0x3c766fbd28b40935</span>, <span class="number">0x3fd16b5ccbacfb73</span>),
+<a href=#212 id=212 data-nosnippet>212</a>    (<span class="number">0xbc612aeb84249223</span>, <span class="number">0x3fd1bf99635a6b95</span>),
+<a href=#213 id=213 data-nosnippet>213</a>    (<span class="number">0x3c7512c3749a1e4e</span>, <span class="number">0x3fd1e9e1678899f4</span>),
+<a href=#214 id=214 data-nosnippet>214</a>    (<span class="number">0x3c6f7ae91aeba60a</span>, <span class="number">0x3fd214456d0eb8d4</span>),
+<a href=#215 id=215 data-nosnippet>215</a>    (<span class="number">0x3c3bb75d1addf870</span>, <span class="number">0x3fd23ec5991eba49</span>),
+<a href=#216 id=216 data-nosnippet>216</a>    (<span class="number">0x3c7e0efadd9db02b</span>, <span class="number">0x3fd269621134db92</span>),
+<a href=#217 id=217 data-nosnippet>217</a>    (<span class="number">0xbc6856e61c515740</span>, <span class="number">0x3fd2941afb186b7c</span>),
+<a href=#218 id=218 data-nosnippet>218</a>    (<span class="number">0xbc782dad7fd86088</span>, <span class="number">0x3fd2bef07cdc9354</span>),
+<a href=#219 id=219 data-nosnippet>219</a>    (<span class="number">0xbc73d69909e5c3dc</span>, <span class="number">0x3fd314f1e1d35ce4</span>),
+<a href=#220 id=220 data-nosnippet>220</a>    (<span class="number">0xbc5cd55b8a4746c0</span>, <span class="number">0x3fd3401e12aecba1</span>),
+<a href=#221 id=221 data-nosnippet>221</a>    (<span class="number">0xbc5324f0e883858e</span>, <span class="number">0x3fd36b6776be1117</span>),
+<a href=#222 id=222 data-nosnippet>222</a>    (<span class="number">0xbc5ce2b31b31e8b0</span>, <span class="number">0x3fd396ce359bbf54</span>),
+<a href=#223 id=223 data-nosnippet>223</a>    (<span class="number">0xbc72ad27e50a8ec6</span>, <span class="number">0x3fd3c25277333184</span>),
+<a href=#224 id=224 data-nosnippet>224</a>    (<span class="number">0x3c783d680d3c1084</span>, <span class="number">0x3fd3edf463c1683e</span>),
+<a href=#225 id=225 data-nosnippet>225</a>    (<span class="number">0x3c60dbb243827392</span>, <span class="number">0x3fd419b423d5e8c7</span>),
+<a href=#226 id=226 data-nosnippet>226</a>    (<span class="number">0xbc72b125247b0fa5</span>, <span class="number">0x3fd44591e0539f49</span>),
+<a href=#227 id=227 data-nosnippet>227</a>    (<span class="number">0x3c38fb4c14c56eef</span>, <span class="number">0x3fd4718dc271c41b</span>),
+<a href=#228 id=228 data-nosnippet>228</a>    (<span class="number">0xbc69964a168ccaca</span>, <span class="number">0x3fd49da7f3bcc41f</span>),
+<a href=#229 id=229 data-nosnippet>229</a>    (<span class="number">0xbc5123615b147a5d</span>, <span class="number">0x3fd4c9e09e172c3c</span>),
+<a href=#230 id=230 data-nosnippet>230</a>    (<span class="number">0xbc758cb3124b9245</span>, <span class="number">0x3fd4f637ebba9810</span>),
+<a href=#231 id=231 data-nosnippet>231</a>    (<span class="number">0xbc68f7e9b38a6979</span>, <span class="number">0x3fd522ae0738a3d8</span>),
+<a href=#232 id=232 data-nosnippet>232</a>    (<span class="number">0xbc7aacfdbbdab914</span>, <span class="number">0x3fd54f431b7be1a9</span>),
+<a href=#233 id=233 data-nosnippet>233</a>    (<span class="number">0xbc60908d15f88b63</span>, <span class="number">0x3fd57bf753c8d1fb</span>),
+<a href=#234 id=234 data-nosnippet>234</a>    (<span class="number">0xbc5e6c2bdfb3e037</span>, <span class="number">0x3fd5a8cadbbedfa1</span>),
+<a href=#235 id=235 data-nosnippet>235</a>    (<span class="number">0xbc76541148cbb8a2</span>, <span class="number">0x3fd5d5bddf595f30</span>),
+<a href=#236 id=236 data-nosnippet>236</a>    (<span class="number">0xbc56e8920c09b73f</span>, <span class="number">0x3fd602d08af091ec</span>),
+<a href=#237 id=237 data-nosnippet>237</a>    (<span class="number">0x3c6dc18ce51fff99</span>, <span class="number">0x3fd630030b3aac49</span>),
+<a href=#238 id=238 data-nosnippet>238</a>];
+<a href=#239 id=239 data-nosnippet>239</a>
+<a href=#240 id=240 data-nosnippet>240</a><span class="attr">#[inline]
+<a href=#241 id=241 data-nosnippet>241</a></span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>fast_log_dd(ddx: DoubleDouble) -&gt; DoubleDouble {
+<a href=#242 id=242 data-nosnippet>242</a>    <span class="comment">// We'll compute log((z+1)+1) as log(xh+xl) = log(xh) + log(1+xl/xh).
+<a href=#243 id=243 data-nosnippet>243</a>    // since xl/xh &lt; ulp(xh) we'll use for log(1+xl/xh)
+<a href=#244 id=244 data-nosnippet>244</a>    // one taylor term what means that log(1+xl/xh) = log_lo + O(x^2)
+<a href=#245 id=245 data-nosnippet>245</a>    </span><span class="kw">let </span>log_lo = <span class="kw">if </span>ddx.hi &lt;= f64::from_bits(<span class="number">0x7fd0000000000000</span>) || ddx.lo.abs() &gt;= <span class="number">4.0 </span>{
+<a href=#246 id=246 data-nosnippet>246</a>        ddx.lo / ddx.hi
+<a href=#247 id=247 data-nosnippet>247</a>    } <span class="kw">else </span>{
+<a href=#248 id=248 data-nosnippet>248</a>        <span class="number">0.
+<a href=#249 id=249 data-nosnippet>249</a>    </span>}; <span class="comment">// avoid spurious underflow
+<a href=#250 id=250 data-nosnippet>250</a>
+<a href=#251 id=251 data-nosnippet>251</a>    </span><span class="kw">let </span>x_u = ddx.hi.to_bits();
+<a href=#252 id=252 data-nosnippet>252</a>    <span class="kw">let </span><span class="kw-2">mut </span>m = x_u &amp; <span class="number">0xfffffffffffff</span>;
+<a href=#253 id=253 data-nosnippet>253</a>    <span class="kw">let </span><span class="kw-2">mut </span>e: i64 = ((x_u &gt;&gt; <span class="number">52</span>) &amp; <span class="number">0x7ff</span>) <span class="kw">as </span>i64;
+<a href=#254 id=254 data-nosnippet>254</a>
+<a href=#255 id=255 data-nosnippet>255</a>    <span class="kw">let </span>t;
+<a href=#256 id=256 data-nosnippet>256</a>    <span class="kw">if </span>e != <span class="number">0 </span>{
+<a href=#257 id=257 data-nosnippet>257</a>        t = m | (<span class="number">0x3ffu64 </span>&lt;&lt; <span class="number">52</span>);
+<a href=#258 id=258 data-nosnippet>258</a>        m = m.wrapping_add(<span class="number">1u64 </span>&lt;&lt; <span class="number">52</span>);
+<a href=#259 id=259 data-nosnippet>259</a>        e -= <span class="number">0x3ff</span>;
+<a href=#260 id=260 data-nosnippet>260</a>    } <span class="kw">else </span>{
+<a href=#261 id=261 data-nosnippet>261</a>        <span class="comment">/* x is a subnormal double  */
+<a href=#262 id=262 data-nosnippet>262</a>        </span><span class="kw">let </span>k = m.leading_zeros() - <span class="number">11</span>;
+<a href=#263 id=263 data-nosnippet>263</a>
+<a href=#264 id=264 data-nosnippet>264</a>        e = -<span class="number">0x3fei64 </span>- k <span class="kw">as </span>i64;
+<a href=#265 id=265 data-nosnippet>265</a>        m = m.wrapping_shl(k);
+<a href=#266 id=266 data-nosnippet>266</a>        t = m | (<span class="number">0x3ffu64 </span>&lt;&lt; <span class="number">52</span>);
+<a href=#267 id=267 data-nosnippet>267</a>    }
+<a href=#268 id=268 data-nosnippet>268</a>
+<a href=#269 id=269 data-nosnippet>269</a>    <span class="comment">/* now |x| = 2^_e*_t = 2^(_e-52)*m with 1 &lt;= _t &lt; 2,
+<a href=#270 id=270 data-nosnippet>270</a>    and 2^52 &lt;= _m &lt; 2^53 */
+<a href=#271 id=271 data-nosnippet>271</a>
+<a href=#272 id=272 data-nosnippet>272</a>    //   log(x) = log(t) + E · log(2)
+<a href=#273 id=273 data-nosnippet>273</a>    </span><span class="kw">let </span><span class="kw-2">mut </span>t = f64::from_bits(t);
+<a href=#274 id=274 data-nosnippet>274</a>
+<a href=#275 id=275 data-nosnippet>275</a>    <span class="comment">// If m &gt; sqrt(2) we divide it by 2 so ensure 1/sqrt(2) &lt; t &lt; sqrt(2)
+<a href=#276 id=276 data-nosnippet>276</a>    </span><span class="kw">let </span>c: usize = (m &gt;= <span class="number">0x16a09e667f3bcd</span>) <span class="kw">as </span>usize;
+<a href=#277 id=277 data-nosnippet>277</a>    <span class="kw">static </span>CY: [f64; <span class="number">2</span>] = [<span class="number">1.0</span>, <span class="number">0.5</span>];
+<a href=#278 id=278 data-nosnippet>278</a>    <span class="kw">static </span>CM: [u64; <span class="number">2</span>] = [<span class="number">44</span>, <span class="number">45</span>];
+<a href=#279 id=279 data-nosnippet>279</a>
+<a href=#280 id=280 data-nosnippet>280</a>    e = e.wrapping_add(c <span class="kw">as </span>i64);
+<a href=#281 id=281 data-nosnippet>281</a>    <span class="kw">let </span>be = e;
+<a href=#282 id=282 data-nosnippet>282</a>    <span class="kw">let </span>i = m &gt;&gt; CM[c]; <span class="comment">/* i/2^8 &lt;= t &lt; (i+1)/2^8 */
+<a href=#283 id=283 data-nosnippet>283</a>    /* when c=1, we have 0x16a09e667f3bcd &lt;= m &lt; 2^53, thus 90 &lt;= i &lt;= 127;
+<a href=#284 id=284 data-nosnippet>284</a>    when c=0, we have 2^52 &lt;= m &lt; 0x16a09e667f3bcd, thus 128 &lt;= i &lt;= 181 */
+<a href=#285 id=285 data-nosnippet>285</a>    </span>t <span class="kw-2">*</span>= CY[c];
+<a href=#286 id=286 data-nosnippet>286</a>    <span class="comment">/* now 0x1.6a09e667f3bcdp-1 &lt;= t &lt; 0x1.6a09e667f3bcdp+0,
+<a href=#287 id=287 data-nosnippet>287</a>    and log(x) = E * log(2) + log(t) */
+<a href=#288 id=288 data-nosnippet>288</a>
+<a href=#289 id=289 data-nosnippet>289</a>    </span><span class="kw">let </span>r = f64::from_bits(POW_INVERSE[(i - <span class="number">181</span>) <span class="kw">as </span>usize]);
+<a href=#290 id=290 data-nosnippet>290</a>    <span class="kw">let </span>log_r = DoubleDouble::from_bit_pair(FAST_LOG_DD_INV[(i - <span class="number">181</span>) <span class="kw">as </span>usize]);
+<a href=#291 id=291 data-nosnippet>291</a>
+<a href=#292 id=292 data-nosnippet>292</a>    <span class="kw">let </span>z = dd_fmla(r, t, -<span class="number">1.0</span>);
+<a href=#293 id=293 data-nosnippet>293</a>
+<a href=#294 id=294 data-nosnippet>294</a>    <span class="kw">const </span>LOG2_DD: DoubleDouble = DoubleDouble::new(
+<a href=#295 id=295 data-nosnippet>295</a>        f64::from_bits(<span class="number">0x3c7abc9e3b39803f</span>),
+<a href=#296 id=296 data-nosnippet>296</a>        f64::from_bits(<span class="number">0x3fe62e42fefa39ef</span>),
+<a href=#297 id=297 data-nosnippet>297</a>    );
+<a href=#298 id=298 data-nosnippet>298</a>
+<a href=#299 id=299 data-nosnippet>299</a>    <span class="kw">let </span>dt = DoubleDouble::mul_f64_add(LOG2_DD, be <span class="kw">as </span>f64, log_r);
+<a href=#300 id=300 data-nosnippet>300</a>
+<a href=#301 id=301 data-nosnippet>301</a>    <span class="kw">let </span><span class="kw-2">mut </span>v = DoubleDouble::f64_add(dt.hi, DoubleDouble::new(dt.lo, z));
+<a href=#302 id=302 data-nosnippet>302</a>    <span class="kw">let </span>p = log_poly_1(z);
+<a href=#303 id=303 data-nosnippet>303</a>    v = DoubleDouble::f64_add(v.hi, DoubleDouble::new(v.lo + p.lo + log_lo, p.hi));
+<a href=#304 id=304 data-nosnippet>304</a>
+<a href=#305 id=305 data-nosnippet>305</a>    v
+<a href=#306 id=306 data-nosnippet>306</a>}
+<a href=#307 id=307 data-nosnippet>307</a>
+<a href=#308 id=308 data-nosnippet>308</a><span class="attr">#[inline]
+<a href=#309 id=309 data-nosnippet>309</a></span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>fast_log_d_to_dd(ddx: f64) -&gt; DoubleDouble {
+<a href=#310 id=310 data-nosnippet>310</a>    <span class="comment">// We'll compute log((z+1)+1) as log(xh+xl) = log(xh) + log(1+xl/xh).
+<a href=#311 id=311 data-nosnippet>311</a>    // since xl/xh &lt; ulp(xh) we'll use for log(1+xl/xh)
+<a href=#312 id=312 data-nosnippet>312</a>    // one taylor term what means that log(1+xl/xh) = log_lo + O(x^2)
+<a href=#313 id=313 data-nosnippet>313</a>
+<a href=#314 id=314 data-nosnippet>314</a>    </span><span class="kw">let </span>x_u = ddx.to_bits();
+<a href=#315 id=315 data-nosnippet>315</a>    <span class="kw">let </span><span class="kw-2">mut </span>m = x_u &amp; <span class="number">0xfffffffffffff</span>;
+<a href=#316 id=316 data-nosnippet>316</a>    <span class="kw">let </span><span class="kw-2">mut </span>e: i64 = ((x_u &gt;&gt; <span class="number">52</span>) &amp; <span class="number">0x7ff</span>) <span class="kw">as </span>i64;
+<a href=#317 id=317 data-nosnippet>317</a>
+<a href=#318 id=318 data-nosnippet>318</a>    <span class="kw">let </span>t;
+<a href=#319 id=319 data-nosnippet>319</a>    <span class="kw">if </span>e != <span class="number">0 </span>{
+<a href=#320 id=320 data-nosnippet>320</a>        t = m | (<span class="number">0x3ffu64 </span>&lt;&lt; <span class="number">52</span>);
+<a href=#321 id=321 data-nosnippet>321</a>        m = m.wrapping_add(<span class="number">1u64 </span>&lt;&lt; <span class="number">52</span>);
+<a href=#322 id=322 data-nosnippet>322</a>        e -= <span class="number">0x3ff</span>;
+<a href=#323 id=323 data-nosnippet>323</a>    } <span class="kw">else </span>{
+<a href=#324 id=324 data-nosnippet>324</a>        <span class="comment">/* x is a subnormal double  */
+<a href=#325 id=325 data-nosnippet>325</a>        </span><span class="kw">let </span>k = m.leading_zeros() - <span class="number">11</span>;
+<a href=#326 id=326 data-nosnippet>326</a>
+<a href=#327 id=327 data-nosnippet>327</a>        e = -<span class="number">0x3fei64 </span>- k <span class="kw">as </span>i64;
+<a href=#328 id=328 data-nosnippet>328</a>        m = m.wrapping_shl(k);
+<a href=#329 id=329 data-nosnippet>329</a>        t = m | (<span class="number">0x3ffu64 </span>&lt;&lt; <span class="number">52</span>);
+<a href=#330 id=330 data-nosnippet>330</a>    }
+<a href=#331 id=331 data-nosnippet>331</a>
+<a href=#332 id=332 data-nosnippet>332</a>    <span class="comment">/* now |x| = 2^_e*_t = 2^(_e-52)*m with 1 &lt;= _t &lt; 2,
+<a href=#333 id=333 data-nosnippet>333</a>    and 2^52 &lt;= _m &lt; 2^53 */
+<a href=#334 id=334 data-nosnippet>334</a>
+<a href=#335 id=335 data-nosnippet>335</a>    //   log(x) = log(t) + E · log(2)
+<a href=#336 id=336 data-nosnippet>336</a>    </span><span class="kw">let </span><span class="kw-2">mut </span>t = f64::from_bits(t);
+<a href=#337 id=337 data-nosnippet>337</a>
+<a href=#338 id=338 data-nosnippet>338</a>    <span class="comment">// If m &gt; sqrt(2) we divide it by 2 so ensure 1/sqrt(2) &lt; t &lt; sqrt(2)
+<a href=#339 id=339 data-nosnippet>339</a>    </span><span class="kw">let </span>c: usize = (m &gt;= <span class="number">0x16a09e667f3bcd</span>) <span class="kw">as </span>usize;
+<a href=#340 id=340 data-nosnippet>340</a>    <span class="kw">static </span>CY: [f64; <span class="number">2</span>] = [<span class="number">1.0</span>, <span class="number">0.5</span>];
+<a href=#341 id=341 data-nosnippet>341</a>    <span class="kw">static </span>CM: [u64; <span class="number">2</span>] = [<span class="number">44</span>, <span class="number">45</span>];
+<a href=#342 id=342 data-nosnippet>342</a>
+<a href=#343 id=343 data-nosnippet>343</a>    e = e.wrapping_add(c <span class="kw">as </span>i64);
+<a href=#344 id=344 data-nosnippet>344</a>    <span class="kw">let </span>be = e;
+<a href=#345 id=345 data-nosnippet>345</a>    <span class="kw">let </span>i = m &gt;&gt; CM[c]; <span class="comment">/* i/2^8 &lt;= t &lt; (i+1)/2^8 */
+<a href=#346 id=346 data-nosnippet>346</a>    /* when c=1, we have 0x16a09e667f3bcd &lt;= m &lt; 2^53, thus 90 &lt;= i &lt;= 127;
+<a href=#347 id=347 data-nosnippet>347</a>    when c=0, we have 2^52 &lt;= m &lt; 0x16a09e667f3bcd, thus 128 &lt;= i &lt;= 181 */
+<a href=#348 id=348 data-nosnippet>348</a>    </span>t <span class="kw-2">*</span>= CY[c];
+<a href=#349 id=349 data-nosnippet>349</a>    <span class="comment">/* now 0x1.6a09e667f3bcdp-1 &lt;= t &lt; 0x1.6a09e667f3bcdp+0,
+<a href=#350 id=350 data-nosnippet>350</a>    and log(x) = E * log(2) + log(t) */
+<a href=#351 id=351 data-nosnippet>351</a>
+<a href=#352 id=352 data-nosnippet>352</a>    </span><span class="kw">let </span>r = f64::from_bits(POW_INVERSE[(i - <span class="number">181</span>) <span class="kw">as </span>usize]);
+<a href=#353 id=353 data-nosnippet>353</a>    <span class="kw">let </span>log_r = DoubleDouble::from_bit_pair(FAST_LOG_DD_INV[(i - <span class="number">181</span>) <span class="kw">as </span>usize]);
+<a href=#354 id=354 data-nosnippet>354</a>
+<a href=#355 id=355 data-nosnippet>355</a>    <span class="kw">let </span>z = dd_fmla(r, t, -<span class="number">1.0</span>);
+<a href=#356 id=356 data-nosnippet>356</a>
+<a href=#357 id=357 data-nosnippet>357</a>    <span class="kw">const </span>LOG2_DD: DoubleDouble = DoubleDouble::new(
+<a href=#358 id=358 data-nosnippet>358</a>        f64::from_bits(<span class="number">0x3c7abc9e3b39803f</span>),
+<a href=#359 id=359 data-nosnippet>359</a>        f64::from_bits(<span class="number">0x3fe62e42fefa39ef</span>),
+<a href=#360 id=360 data-nosnippet>360</a>    );
+<a href=#361 id=361 data-nosnippet>361</a>
+<a href=#362 id=362 data-nosnippet>362</a>    <span class="kw">let </span>dt = DoubleDouble::mul_f64_add(LOG2_DD, be <span class="kw">as </span>f64, log_r);
+<a href=#363 id=363 data-nosnippet>363</a>
+<a href=#364 id=364 data-nosnippet>364</a>    <span class="kw">let </span><span class="kw-2">mut </span>v = DoubleDouble::f64_add(dt.hi, DoubleDouble::new(dt.lo, z));
+<a href=#365 id=365 data-nosnippet>365</a>    <span class="kw">let </span>p = log_poly_1(z);
+<a href=#366 id=366 data-nosnippet>366</a>    v = DoubleDouble::f64_add(v.hi, DoubleDouble::new(v.lo + p.lo, p.hi));
+<a href=#367 id=367 data-nosnippet>367</a>
+<a href=#368 id=368 data-nosnippet>368</a>    DoubleDouble::from_exact_add(v.hi, v.lo)
+<a href=#369 id=369 data-nosnippet>369</a>}</code></pre></div></section></main></body></html>

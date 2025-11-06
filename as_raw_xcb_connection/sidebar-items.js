@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["xcb_connection_t"],"struct":["ValidConnection"],"trait":["AsRawXcbConnection"]};

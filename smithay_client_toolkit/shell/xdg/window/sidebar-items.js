@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["DecorationMode","WindowDecorations"],"struct":["Window","WindowConfigure","WindowData"],"trait":["WindowHandler"]};

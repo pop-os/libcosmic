@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"mod":["clipboard","graphics","image","layout","mouse","overlay","renderer","subscription","svg","text","widget"],"struct":["Layout","Shell","Text"],"trait":["Clipboard","Overlay","Renderer","Widget"]};

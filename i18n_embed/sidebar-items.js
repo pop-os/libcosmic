@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["I18nEmbedError"],"fn":["domain_from_module","select"],"mod":["fluent"],"struct":["AssetsMultiplexor","DefaultLocalizer","DesktopLanguageRequester","LanguageRequesterImpl","LanguageResource"],"trait":["I18nAssets","LanguageLoader","LanguageRequester","Localizer","Watcher"]};

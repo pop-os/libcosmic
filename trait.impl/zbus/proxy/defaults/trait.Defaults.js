@@ -1,0 +1,9 @@
+(function() {
+    var implementors = Object.fromEntries([["cosmic_settings_daemon",[["impl&lt;'a&gt; <a class=\"trait\" href=\"zbus/proxy/defaults/trait.Defaults.html\" title=\"trait zbus::proxy::defaults::Defaults\">Defaults</a> for <a class=\"struct\" href=\"cosmic_settings_daemon/struct.ConfigProxy.html\" title=\"struct cosmic_settings_daemon::ConfigProxy\">ConfigProxy</a>&lt;'a&gt;"],["impl&lt;'a&gt; <a class=\"trait\" href=\"zbus/proxy/defaults/trait.Defaults.html\" title=\"trait zbus::proxy::defaults::Defaults\">Defaults</a> for <a class=\"struct\" href=\"cosmic_settings_daemon/struct.ConfigProxyBlocking.html\" title=\"struct cosmic_settings_daemon::ConfigProxyBlocking\">ConfigProxyBlocking</a>&lt;'a&gt;"],["impl&lt;'a&gt; <a class=\"trait\" href=\"zbus/proxy/defaults/trait.Defaults.html\" title=\"trait zbus::proxy::defaults::Defaults\">Defaults</a> for <a class=\"struct\" href=\"cosmic_settings_daemon/struct.CosmicSettingsDaemonProxy.html\" title=\"struct cosmic_settings_daemon::CosmicSettingsDaemonProxy\">CosmicSettingsDaemonProxy</a>&lt;'a&gt;"],["impl&lt;'a&gt; <a class=\"trait\" href=\"zbus/proxy/defaults/trait.Defaults.html\" title=\"trait zbus::proxy::defaults::Defaults\">Defaults</a> for <a class=\"struct\" href=\"cosmic_settings_daemon/struct.CosmicSettingsDaemonProxyBlocking.html\" title=\"struct cosmic_settings_daemon::CosmicSettingsDaemonProxyBlocking\">CosmicSettingsDaemonProxyBlocking</a>&lt;'a&gt;"]]],["zbus",[]]]);
+    if (window.register_implementors) {
+        window.register_implementors(implementors);
+    } else {
+        window.pending_implementors = implementors;
+    }
+})()
+//{"start":57,"fragment_lengths":[1388,12]}

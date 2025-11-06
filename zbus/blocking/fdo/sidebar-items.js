@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"struct":["DBusProxy","InterfacesAddedIterator","InterfacesRemovedIterator","IntrospectableProxy","MonitoringProxy","NameAcquiredIterator","NameLostIterator","NameOwnerChangedIterator","ObjectManagerProxy","PeerProxy","PropertiesChangedIterator","PropertiesProxy","StatsProxy"]};

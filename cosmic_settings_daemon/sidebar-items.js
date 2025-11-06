@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"struct":["Changed","ChangedArgs","ChangedIterator","ChangedStream","ConfigProxy","ConfigProxyBlocking","CosmicSettingsDaemonProxy","CosmicSettingsDaemonProxyBlocking"]};

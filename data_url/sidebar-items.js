@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["DataUrlError"],"mod":["forgiving_base64","mime"],"struct":["DataUrl","FragmentIdentifier"]};

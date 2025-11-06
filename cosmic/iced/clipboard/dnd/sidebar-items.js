@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["DndEvent","Icon","OfferEvent","SourceEvent"],"mod":["platform"],"struct":["DataWrapper","DndAction","DndDestinationRectangle","DndSurface","Rectangle"],"trait":["Sender"]};

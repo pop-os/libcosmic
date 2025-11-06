@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["dnd_destination","dnd_destination_for_data"],"struct":["DndDestination","DragId","DragOffer","State"]};

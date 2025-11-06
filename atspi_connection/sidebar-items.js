@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["read_session_accessibility","set_session_accessibility"],"struct":["AccessibilityConnection"],"type":["AtspiResult"]};

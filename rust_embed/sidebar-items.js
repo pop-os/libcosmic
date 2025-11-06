@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"derive":["Embed","RustEmbed"],"enum":["Filenames"],"struct":["EmbeddedFile","Metadata"],"trait":["RustEmbed"]};

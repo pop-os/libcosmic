@@ -1,0 +1,1 @@
+searchState.loadedDescShard("fluent_langneg", 0, "fluent-langneg is an API for operating on locales and …\nThis function parses Accept-Language string into a list of …\nLanguage Negotiation is a process in which locales from …\nReturns the argument unchanged.\nCalls <code>U::from(self)</code>.")

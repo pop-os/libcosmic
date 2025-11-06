@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["draw","dropdown","layout","mouse_interaction","overlay","popup_dropdown","update"],"mod":["menu","multi"],"struct":["Dropdown","State"],"type":["DropdownView"]};

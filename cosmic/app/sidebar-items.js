@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["Action"],"fn":["run"],"mod":["context_drawer","cosmic","settings"],"trait":["Application","ApplicationExt","CosmicFlags"],"type":["Task"]};

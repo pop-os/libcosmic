@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"constant":["DEFAULT_PADDING"],"enum":["Side","Status"],"fn":["default","focus","move_cursor_to","move_cursor_to_end","move_cursor_to_front","select_all"],"mod":["cursor"],"struct":["Cursor","Icon","Id","State","Style","TextInput","Value"],"trait":["Catalog"],"type":["StyleFn"]};

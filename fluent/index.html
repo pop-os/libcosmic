@@ -1,0 +1,70 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Fluent is a modern localization system designed to improve how software is translated."><title>fluent - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../static.files/rustdoc-aa0817cf.css"><meta name="rustdoc-vars" data-root-path="../" data-static-root-path="../static.files/" data-current-crate="fluent" data-themes="" data-resource-suffix="" data-rustdoc-version="1.90.0 (1159e78c4 2025-09-14)" data-channel="1.90.0" data-search-js="search-fa3e91e5.js" data-settings-js="settings-5514c975.js" ><script src="../static.files/storage-68b7e25d.js"></script><script defer src="../crates.js"></script><script defer src="../static.files/main-eebb9057.js"></script><noscript><link rel="stylesheet" href="../static.files/noscript-32bb7600.css"></noscript><link rel="alternate icon" type="image/png" href="../static.files/favicon-32x32-6580c154.png"><link rel="icon" type="image/svg+xml" href="../static.files/favicon-044be391.svg"></head><body class="rustdoc mod crate"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle" title="show sidebar"></button></nav><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../fluent/index.html">fluent</a><span class="version">0.17.0</span></h2></div><div class="sidebar-elems"><ul class="block"><li><a id="all-types" href="all.html">All Items</a></li></ul><section id="rustdoc-toc"><h3><a href="#">Sections</a></h3><ul class="block top-toc"><li><a href="#example" title="Example">Example</a></li><li><a href="#ergonomics--higher-level-apis" title="Ergonomics &#38; Higher Level APIs">Ergonomics &amp; Higher Level APIs</a></li></ul><h3><a href="#modules">Crate Items</a></h3><ul class="block"><li><a href="#modules" title="Modules">Modules</a></li><li><a href="#macros" title="Macros">Macros</a></li><li><a href="#structs" title="Structs">Structs</a></li><li><a href="#enums" title="Enums">Enums</a></li><li><a href="#types" title="Type Aliases">Type Aliases</a></li></ul></section><div id="rustdoc-modnav"></div></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><div class="width-limiter"><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><h1>Crate <span>fluent</span><button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"><a class="src" href="../src/fluent/lib.rs.html#1-104">Source</a> </span></div><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Fluent is a modern localization system designed to improve how software is translated.</p>
+<p>The Rust implementation provides the low level components for syntax operations, like parser
+and AST, and the core localization struct - <a href="bundle/struct.FluentBundle.html" title="struct fluent::bundle::FluentBundle"><code>FluentBundle</code></a>.</p>
+<p><a href="bundle/struct.FluentBundle.html" title="struct fluent::bundle::FluentBundle"><code>FluentBundle</code></a> is the low level container for storing and formatting localization messages
+in a single locale.</p>
+<p>This crate provides also a number of structures needed for a localization API such as <a href="struct.FluentResource.html" title="struct fluent::FluentResource"><code>FluentResource</code></a>,
+<a href="struct.FluentMessage.html" title="struct fluent::FluentMessage"><code>FluentMessage</code></a>, <a href="struct.FluentArgs.html" title="struct fluent::FluentArgs"><code>FluentArgs</code></a>, and <a href="enum.FluentValue.html" title="enum fluent::FluentValue"><code>FluentValue</code></a>.</p>
+<p>Together, they allow implementations to build higher-level APIs that use <a href="bundle/struct.FluentBundle.html" title="struct fluent::bundle::FluentBundle"><code>FluentBundle</code></a>
+and add user friendly helpers, framework bindings, error fallbacking,
+language negotiation between user requested languages and available resources,
+and I/O for loading selected resources.</p>
+<h2 id="example"><a class="doc-anchor" href="#example">§</a>Example</h2>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>fluent::{FluentBundle, FluentValue, FluentResource, FluentArgs};
+
+<span class="comment">// Used to provide a locale for the bundle.
+</span><span class="kw">use </span>unic_langid::LanguageIdentifier;
+
+<span class="kw">let </span>ftl_string = String::from(<span class="string">"
+hello-world = Hello, world!
+intro = Welcome, { $name }.
+"</span>);
+<span class="kw">let </span>res = FluentResource::try_new(ftl_string)
+    .expect(<span class="string">"Failed to parse an FTL string."</span>);
+
+<span class="kw">let </span>langid_en: LanguageIdentifier = <span class="string">"en-US"</span>.parse().expect(<span class="string">"Parsing failed"</span>);
+<span class="kw">let </span><span class="kw-2">mut </span>bundle = FluentBundle::new(<span class="macro">vec!</span>[langid_en]);
+
+bundle
+    .add_resource(res)
+    .expect(<span class="string">"Failed to add FTL resources to the bundle."</span>);
+
+<span class="kw">let </span>msg = bundle.get_message(<span class="string">"hello-world"</span>)
+    .expect(<span class="string">"Message doesn't exist."</span>);
+<span class="kw">let </span><span class="kw-2">mut </span>errors = <span class="macro">vec!</span>[];
+<span class="kw">let </span>pattern = msg.value()
+    .expect(<span class="string">"Message has no value."</span>);
+<span class="kw">let </span>value = bundle.format_pattern(<span class="kw-2">&amp;</span>pattern, <span class="prelude-val">None</span>, <span class="kw-2">&amp;mut </span>errors);
+
+<span class="macro">assert_eq!</span>(<span class="kw-2">&amp;</span>value, <span class="string">"Hello, world!"</span>);
+
+<span class="kw">let </span><span class="kw-2">mut </span>args = FluentArgs::new();
+args.set(<span class="string">"name"</span>, FluentValue::from(<span class="string">"John"</span>));
+
+<span class="kw">let </span>msg = bundle.get_message(<span class="string">"intro"</span>)
+    .expect(<span class="string">"Message doesn't exist."</span>);
+<span class="kw">let </span><span class="kw-2">mut </span>errors = <span class="macro">vec!</span>[];
+<span class="kw">let </span>pattern = msg.value().expect(<span class="string">"Message has no value."</span>);
+<span class="kw">let </span>value = bundle.format_pattern(<span class="kw-2">&amp;</span>pattern, <span class="prelude-val">Some</span>(<span class="kw-2">&amp;</span>args), <span class="kw-2">&amp;mut </span>errors);
+
+<span class="comment">// The FSI/PDI isolation marks ensure that the direction of
+// the text from the variable is not affected by the translation.
+</span><span class="macro">assert_eq!</span>(value, <span class="string">"Welcome, \u{2068}John\u{2069}."</span>);</code></pre></div>
+<h2 id="ergonomics--higher-level-apis"><a class="doc-anchor" href="#ergonomics--higher-level-apis">§</a>Ergonomics &amp; Higher Level APIs</h2>
+<p>Reading the example, you may notice how verbose it feels.
+Many core methods are fallible, others accumulate errors, and there
+are intermediate structures used in operations.</p>
+<p>This is intentional as it serves as building blocks for variety of different
+scenarios allowing implementations to handle errors, cache and
+optimize results.</p>
+<p>At the moment it is expected that users will use
+the <a href="../fluent_bundle/index.html" title="mod fluent_bundle"><code>fluent-bundle</code></a> crate directly, while the ecosystem
+matures and higher level APIs are being developed.</p>
+</div></details><h2 id="modules" class="section-header">Modules<a href="#modules" class="anchor">§</a></h2><dl class="item-table"><dt><a class="mod" href="builtins/index.html" title="mod fluent::builtins">builtins</a></dt><dt><a class="mod" href="bundle/index.html" title="mod fluent::bundle">bundle</a></dt><dd><code>FluentBundle</code> is a collection of localization messages in Fluent.</dd><dt><a class="mod" href="concurrent/index.html" title="mod fluent::concurrent">concurrent</a></dt><dt><a class="mod" href="types/index.html" title="mod fluent::types">types</a></dt><dd><code>types</code> module contains types necessary for Fluent runtime
+value handling.
+The core struct is <a href="enum.FluentValue.html" title="enum fluent::FluentValue"><code>FluentValue</code></a> which is a type that can be passed
+to the <a href="bundle/struct.FluentBundle.html" title="struct fluent::bundle::FluentBundle"><code>FluentBundle::format_pattern</code></a> as an argument, it can be passed
+to any Fluent Function, and any function may return it.</dd></dl><h2 id="macros" class="section-header">Macros<a href="#macros" class="anchor">§</a></h2><dl class="item-table"><dt><a class="macro" href="macro.fluent_args.html" title="macro fluent::fluent_args">fluent_<wbr>args</a></dt><dd>A helper macro to simplify creation of <code>FluentArgs</code>.</dd></dl><h2 id="structs" class="section-header">Structs<a href="#structs" class="anchor">§</a></h2><dl class="item-table"><dt><a class="struct" href="struct.FluentArgs.html" title="struct fluent::FluentArgs">Fluent<wbr>Args</a></dt><dd>Fluent messages can use arguments in order to programmatically add values to a
+translated string. For instance, in a localized application you may wish to display
+a user’s email count. This could be done with the following message.</dd><dt><a class="struct" href="struct.FluentAttribute.html" title="struct fluent::FluentAttribute">Fluent<wbr>Attribute</a></dt><dd><a href="struct.FluentAttribute.html" title="struct fluent::FluentAttribute"><code>FluentAttribute</code></a> is a component of a compound <a href="struct.FluentMessage.html" title="struct fluent::FluentMessage"><code>FluentMessage</code></a>.</dd><dt><a class="struct" href="struct.FluentMessage.html" title="struct fluent::FluentMessage">Fluent<wbr>Message</a></dt><dd><a href="struct.FluentMessage.html" title="struct fluent::FluentMessage"><code>FluentMessage</code></a> is a basic translation unit of the Fluent system.</dd><dt><a class="struct" href="struct.FluentResource.html" title="struct fluent::FluentResource">Fluent<wbr>Resource</a></dt><dd>A resource containing a list of localization messages.</dd></dl><h2 id="enums" class="section-header">Enums<a href="#enums" class="anchor">§</a></h2><dl class="item-table"><dt><a class="enum" href="enum.FluentError.html" title="enum fluent::FluentError">Fluent<wbr>Error</a></dt><dd>Core error type for Fluent runtime system.</dd><dt><a class="enum" href="enum.FluentValue.html" title="enum fluent::FluentValue">Fluent<wbr>Value</a></dt><dd>The <code>FluentValue</code> enum represents values which can be formatted to a String.</dd></dl><h2 id="types" class="section-header">Type Aliases<a href="#types" class="anchor">§</a></h2><dl class="item-table"><dt><a class="type" href="type.FluentBundle.html" title="type fluent::FluentBundle">Fluent<wbr>Bundle</a></dt><dd>Specialized <a href="bundle/struct.FluentBundle.html" title="struct fluent::bundle::FluentBundle"><code>FluentBundle</code></a> over
+non-concurrent <a href="../intl_memoizer/struct.IntlLangMemoizer.html" title="struct intl_memoizer::IntlLangMemoizer"><code>IntlLangMemoizer</code></a>.</dd></dl></section></div></main></body></html>

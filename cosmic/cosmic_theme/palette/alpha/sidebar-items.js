@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"derive":["WithAlpha"],"struct":["Alpha","Iter","PreAlpha"],"trait":["WithAlpha"]};

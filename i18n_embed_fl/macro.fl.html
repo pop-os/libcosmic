@@ -1,0 +1,88 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="A macro to obtain localized messages and optionally their attributes, and check the `message_id`, `attribute_id` and arguments at compile time."><title>fl in i18n_embed_fl - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../static.files/rustdoc-aa0817cf.css"><meta name="rustdoc-vars" data-root-path="../" data-static-root-path="../static.files/" data-current-crate="i18n_embed_fl" data-themes="" data-resource-suffix="" data-rustdoc-version="1.90.0 (1159e78c4 2025-09-14)" data-channel="1.90.0" data-search-js="search-fa3e91e5.js" data-settings-js="settings-5514c975.js" ><script src="../static.files/storage-68b7e25d.js"></script><script defer src="sidebar-items.js"></script><script defer src="../static.files/main-eebb9057.js"></script><noscript><link rel="stylesheet" href="../static.files/noscript-32bb7600.css"></noscript><link rel="alternate icon" type="image/png" href="../static.files/favicon-32x32-6580c154.png"><link rel="icon" type="image/svg+xml" href="../static.files/favicon-044be391.svg"></head><body class="rustdoc macro"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle" title="show sidebar"></button></nav><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../i18n_embed_fl/index.html">i18n_<wbr>embed_<wbr>fl</a><span class="version">0.10.0</span></h2></div><div class="sidebar-elems"><section id="rustdoc-toc"><h2 class="location"><a href="#">fl</a></h2><h3><a href="#">Sections</a></h3><ul class="block top-toc"><li><a href="#no-arguments" title="No Arguments">No Arguments</a><ul><li><a href="#example" title="Example">Example</a></li></ul></li><li><a href="#individual-arguments" title="Individual Arguments">Individual Arguments</a><ul><li><a href="#example-1" title="Example">Example</a></li></ul></li><li><a href="#arguments-hashmap" title="Arguments Hashmap">Arguments Hashmap</a><ul><li><a href="#example-2" title="Example">Example</a></li></ul></li><li><a href="#attributes" title="Attributes">Attributes</a><ul><li><a href="#example-3" title="Example">Example</a></li></ul></li></ul></section><div id="rustdoc-modnav"><h2 class="in-crate"><a href="index.html">In crate i18n_<wbr>embed_<wbr>fl</a></h2></div></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><div class="width-limiter"><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><div class="rustdoc-breadcrumbs"><a href="index.html">i18n_embed_fl</a></div><h1>Macro <span class="macro">fl</span><button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"><a class="src" href="../src/i18n_embed_fl/lib.rs.html#395">Source</a> </span></div><pre class="rust item-decl"><code>fl!() { <span class="comment">/* proc-macro */</span> }</code></pre><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>A macro to obtain localized messages and optionally their attributes, and check the <code>message_id</code>, <code>attribute_id</code>
+and arguments at compile time.</p>
+<p>Compile time checks are performed using the <code>fallback_language</code>
+specified in the current crate’s <code>i18n.toml</code> confiration file.</p>
+<p>This macro supports three different calling syntaxes which are
+explained in the following sections.</p>
+<h3 id="no-arguments"><a class="doc-anchor" href="#no-arguments">§</a>No Arguments</h3>
+<div class="example-wrap ignore"><a href="#" class="tooltip" title="This example is not tested">ⓘ</a><pre class="rust rust-example-rendered"><code><span class="macro">fl!</span>(loader: FluentLanguageLoader, <span class="string">"message_id"</span>)</code></pre></div>
+<p>This is the simplest form of the <code>fl!()</code> macro, just obtaining a
+message with no arguments. The <code>message_id</code> should be specified as
+a literal string, and is checked at compile time.</p>
+<h4 id="example"><a class="doc-anchor" href="#example">§</a>Example</h4>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>i18n_embed::{
+    fluent::{fluent_language_loader, FluentLanguageLoader},
+    LanguageLoader,
+};
+<span class="kw">use </span>i18n_embed_fl::fl;
+<span class="kw">use </span>rust_embed::RustEmbed;
+
+<span class="attr">#[derive(RustEmbed)]
+#[folder = <span class="string">"i18n/"</span>]
+</span><span class="kw">struct </span>Localizations;
+
+<span class="kw">let </span>loader: FluentLanguageLoader = <span class="macro">fluent_language_loader!</span>();
+loader
+    .load_languages(<span class="kw-2">&amp;</span>Localizations, <span class="kw-2">&amp;</span>[loader.fallback_language().clone()])
+    .unwrap();
+
+<span class="comment">// Invoke the fl!() macro to obtain the translated message, and
+// check the message id compile time.
+</span><span class="macro">assert_eq!</span>(<span class="string">"Hello World!"</span>, <span class="macro">fl!</span>(loader, <span class="string">"hello-world"</span>));</code></pre></div>
+<h3 id="individual-arguments"><a class="doc-anchor" href="#individual-arguments">§</a>Individual Arguments</h3>
+<div class="example-wrap ignore"><a href="#" class="tooltip" title="This example is not tested">ⓘ</a><pre class="rust rust-example-rendered"><code><span class="macro">fl!</span>(
+    loader: FluentLanguageLoader,
+    <span class="string">"message_id"</span>,
+    arg1 = value,
+    arg2 = <span class="string">"value"</span>,
+    arg3 = function(),
+    ...
+)</code></pre></div>
+<p>This form of the <code>fl!()</code> macro allows individual arguments to be
+specified in the form <code>key = value</code> after the <code>message_id</code>. <code>key</code>
+needs to be a valid literal argument name, and <code>value</code> can be any
+expression that resolves to a type that implements
+<code>Into&lt;FluentValue&gt;</code>. The <code>key</code>s will be checked at compile time to
+ensure that they match the arguments specified in original fluent
+message.</p>
+<h4 id="example-1"><a class="doc-anchor" href="#example-1">§</a>Example</h4>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">let </span>calc_james = || <span class="string">"James"</span>.to_string();
+<span class="macro">pretty_assertions::assert_eq!</span>(
+    <span class="string">"Hello \u{2068}Bob\u{2069} and \u{2068}James\u{2069}!"</span>,
+    <span class="comment">// Invoke the fl!() macro to obtain the translated message, and
+    // check the message id, and arguments at compile time.
+    </span><span class="macro">fl!</span>(loader, <span class="string">"hello-arg-2"</span>, name1 = <span class="string">"Bob"</span>, name2 = calc_james())
+);</code></pre></div>
+<h3 id="arguments-hashmap"><a class="doc-anchor" href="#arguments-hashmap">§</a>Arguments Hashmap</h3>
+<div class="example-wrap ignore"><a href="#" class="tooltip" title="This example is not tested">ⓘ</a><pre class="rust rust-example-rendered"><code><span class="macro">fl!</span>(
+    loader: FluentLanguageLoader,
+    <span class="string">"message_id"</span>,
+    args: HashMap&lt;
+        S <span class="kw">where </span>S: Into&lt;Cow&lt;<span class="lifetime">'a</span>, str&gt;&gt; + Clone,
+        T <span class="kw">where </span>T: Into&lt;FluentValue&gt;&gt; + Clone&gt;
+)</code></pre></div>
+<p>With this form of the <code>fl!()</code> macro, arguments can be specified at
+runtime using a <a href="https://doc.rust-lang.org/1.90.0/std/collections/hash/map/struct.HashMap.html" title="struct std::collections::hash::map::HashMap">HashMap</a>, using the
+same signature as in
+<a href="../i18n_embed/fluent/struct.FluentLanguageLoader.html#method.get_args" title="method i18n_embed::fluent::FluentLanguageLoader::get_args">FluentLanguageLoader::get_args()</a>.
+When using this method of specifying arguments, they are not
+checked at compile time.</p>
+<h4 id="example-2"><a class="doc-anchor" href="#example-2">§</a>Example</h4>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>std::collections::HashMap;
+
+<span class="kw">let </span><span class="kw-2">mut </span>args: HashMap&lt;<span class="kw-2">&amp;</span>str, <span class="kw-2">&amp;</span>str&gt; = HashMap::new();
+args.insert(<span class="string">"name"</span>, <span class="string">"Bob"</span>);
+
+<span class="macro">assert_eq!</span>(<span class="string">"Hello \u{2068}Bob\u{2069}!"</span>, <span class="macro">fl!</span>(loader, <span class="string">"hello-arg"</span>, args));</code></pre></div>
+<h3 id="attributes"><a class="doc-anchor" href="#attributes">§</a>Attributes</h3>
+<p>In all of the above patterns you can optionally include an <code>attribute_id</code>
+after the <code>message_id</code>, in which case <code>fl!</code> will attempt retrieving the specified
+attribute belonging to the specified message, optionally formatted with the provided arguments.</p>
+<h4 id="example-3"><a class="doc-anchor" href="#example-3">§</a>Example</h4>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>std::collections::HashMap;
+
+<span class="kw">let </span><span class="kw-2">mut </span>args: HashMap&lt;<span class="kw-2">&amp;</span>str, <span class="kw-2">&amp;</span>str&gt; = HashMap::new();
+args.insert(<span class="string">"name"</span>, <span class="string">"Bob"</span>);
+
+<span class="macro">assert_eq!</span>(<span class="string">"Hello \u{2068}Bob\u{2069}'s attribute!"</span>, <span class="macro">fl!</span>(loader, <span class="string">"hello-arg"</span>, <span class="string">"attr"</span>, args));</code></pre></div>
+</div></details></section></div></main></body></html>

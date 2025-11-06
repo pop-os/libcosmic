@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["decoding_hook_registered","register_decoding_hook","register_format_detection_hook"],"struct":["GenericReader"],"type":["DecodingHook"]};

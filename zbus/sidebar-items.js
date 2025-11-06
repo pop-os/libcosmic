@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"attr":["interface","proxy"],"derive":["DBusError"],"enum":["AuthMechanism","Error"],"mod":["address","blocking","connection","fdo","match_rule","message","object_server","proxy"],"struct":["Executor","Guid","MessageStream","OwnedGuid"],"trait":["AsyncDrop","DBusError"],"type":["Result"]};
