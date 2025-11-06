@@ -55,38 +55,32 @@ impl<'a, Message: Clone + 'static> ContextDrawer<'a, Message> {
 
             let horizontal_padding = if max_width < 392.0 { space_s } else { space_l };
 
-            let title = title.map(|title| {
-                text::title4(title)
-                    .apply(container)
-                    .padding([if actions_opt.is_some() { space_m } else { 0 }, 0, 0, 0])
-                    .width(Length::Fill)
-            });
-            let actions = if let Some(actions) = actions_opt {
-                actions
+            let (actions_slot, column_title) = if let Some(actions) = actions_opt {
+                let actions = actions
                     .apply(container)
                     .width(Length::Fill)
-                    .apply(Element::from)
+                    .apply(Element::from);
+                let title = title.map(|title| text::title4(title).width(Length::Fill));
+                (actions, title)
             } else {
-                widget::horizontal_space().apply(Element::from)
+                let title = title
+                    .map(|title| text::title4(title).width(Length::Fill).apply(Element::from))
+                    .unwrap_or_else(|| widget::horizontal_space().apply(Element::from));
+                (title, None)
             };
 
-            let header_row = row::with_capacity(2)
-                .align_y(Alignment::Center)
-                .push(actions)
-                .push(
-                    button::text(fl!("close"))
-                        .trailing_icon(icon::from_name("go-next-symbolic"))
-                        .on_press(on_close),
-                );
-            let header_element =
-                header_opt.map(|el| el.apply(container).padding([space_m, 0, 0, 0]));
-
+            let header_row = row::with_capacity(2).push(actions_slot).push(
+                button::text(fl!("close"))
+                    .trailing_icon(icon::from_name("go-next-symbolic"))
+                    .on_press(on_close),
+            );
             let header = column::with_capacity(3)
                 .align_x(Alignment::Center)
                 .padding([space_m, horizontal_padding])
+                .spacing(space_m)
                 .push(header_row)
-                .push_maybe(title)
-                .push_maybe(header_element);
+                .push_maybe(column_title)
+                .push_maybe(header_opt);
             let footer = footer_opt.map(|element| {
                 container(element)
                     .align_y(Alignment::Center)
