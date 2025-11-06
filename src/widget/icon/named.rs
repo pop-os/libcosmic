@@ -41,13 +41,14 @@ pub struct Named {
 impl Named {
     pub fn new(name: impl Into<Arc<str>>) -> Self {
         let name = name.into();
+        let symbolic = name.ends_with("-symbolic");
         Self {
-            symbolic: name.ends_with("-symbolic"),
+            symbolic,
             name,
             fallback: Some(IconFallback::Default),
             size: None,
             scale: None,
-            prefer_svg: false,
+            prefer_svg: symbolic,
         }
     }
 
