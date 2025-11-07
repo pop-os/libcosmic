@@ -14,21 +14,13 @@ pub trait IconSourceExt {
 impl IconSourceExt for fde::IconSource {
     fn as_cosmic_icon(&self) -> crate::widget::icon::Icon {
         match self {
-            fde::IconSource::Name(name) => {
-                // Prefer SVG only for symbolic icons; otherwise allow themed resolver
-                // to select optimal raster assets to avoid small-size SVG rendering issues.
-                let named = if name.ends_with("-symbolic") {
-                    crate::widget::icon::from_name(name.as_str()).prefer_svg(true)
-                } else {
-                    crate::widget::icon::from_name(name.as_str())
-                }
+            fde::IconSource::Name(name) => crate::widget::icon::from_name(name.as_str())
+                .size(128)
                 .fallback(Some(crate::widget::icon::IconFallback::Names(vec![
                     "application-default".into(),
                     "application-x-executable".into(),
-                ])));
-
-                named.into()
-            }
+                ])))
+                .into(),
             fde::IconSource::Path(path) => {
                 crate::widget::icon(crate::widget::icon::from_path(path.clone()))
             }
@@ -347,7 +339,10 @@ pub fn extract_crx_id(value: &str) -> Option<String> {
 }
 
 #[cfg(not(windows))]
-fn match_crx_id(entries: &[fde::DesktopEntry], context: &DesktopLookupContext<'_>) -> Option<fde::DesktopEntry> {
+fn match_crx_id(
+    entries: &[fde::DesktopEntry],
+    context: &DesktopLookupContext<'_>,
+) -> Option<fde::DesktopEntry> {
     let crx = extract_crx_id(context.app_id.as_ref())
         .or_else(|| context.identifier.as_deref().and_then(extract_crx_id))?;
 
@@ -879,7 +874,7 @@ mod tests {
     impl EnvVarGuard {
         fn set(key: &'static str, value: &Path) -> Self {
             let original = env::var(key).ok();
-            env::set_var(key, value);
+            std::env::set_var(key, value);
             Self { key, original }
         }
     }
@@ -887,9 +882,9 @@ mod tests {
     impl Drop for EnvVarGuard {
         fn drop(&mut self) {
             if let Some(ref original) = self.original {
-                env::set_var(self.key, original);
+                std::env::set_var(self.key, original);
             } else {
-                env::remove_var(self.key);
+                std::env::remove_var(self.key);
             }
         }
     }
@@ -946,7 +941,7 @@ StartupWMClass=crx_jnpecgipniidlgicjocehkhajgdnjekh
         let mut cache = DesktopEntryCache::new(locales.clone());
         cache.refresh();
 
-        let ctx = DesktopLookupContext::new("crx_jnpecgipniidlgicjocehkhajgdnjekh".into());
+        let ctx = DesktopLookupContext::new("crx_jnpecgipniidlgicjocehkhajgdnjekh");
         let resolved = resolve_desktop_entry(&mut cache, &ctx, &DesktopResolveOptions::default());
 
         assert_eq!(
@@ -978,8 +973,7 @@ Icon=vmware-workstation\n\
         let mut cache = DesktopEntryCache::new(locales.clone());
         cache.refresh();
 
-        let ctx = DesktopLookupContext::new("vmware".into())
-            .with_title("Library — VMware Workstation".into());
+        let ctx = DesktopLookupContext::new("vmware").with_title("Library — VMware Workstation");
 
         let resolved = resolve_desktop_entry(&mut cache, &ctx, &DesktopResolveOptions::default());
 
@@ -1067,8 +1061,14 @@ Icon=vmware-workstation\n\
     #[test]
     fn crx_id_extraction_variants() {
         let id = "cadlkienfkclaiaibeoongdcgmdikeeg"; // 32 chars a..p
-        assert_eq!(super::extract_crx_id(&format!("chrome-{}-Default", id)), Some(id.to_string()));
-        assert_eq!(super::extract_crx_id(&format!("crx_{}", id)), Some(id.to_string()));
+        assert_eq!(
+            super::extract_crx_id(&format!("chrome-{}-Default", id)),
+            Some(id.to_string())
+        );
+        assert_eq!(
+            super::extract_crx_id(&format!("crx_{}", id)),
+            Some(id.to_string())
+        );
         assert_eq!(super::extract_crx_id(id), Some(id.to_string()));
         // Embedded
         let embedded = format!("org.chromium.Chromium.flextop.chrome-{}-Default", id);
@@ -1086,7 +1086,9 @@ Icon=vmware-workstation\n\
             "[Desktop Entry]\nType=Application\nName=ChatGPT\nExec=chromium --app-id={} --profile-directory=Default\nStartupWMClass=crx_{}\nIcon=chrome-{}-Default\n",
             id, id, id
         );
-        let desktop_path = apps_dir.join("org.chromium.Chromium.flextop.chrome-cadlkienfkclaiaibeoongdcgmdikeeg-Default.desktop");
+        let desktop_path = apps_dir.join(
+            "org.chromium.Chromium.flextop.chrome-cadlkienfkclaiaibeoongdcgmdikeeg-Default.desktop",
+        );
         fs::write(&desktop_path, desktop_contents).expect("write desktop file");
 
         let _guard = EnvVarGuard::set("XDG_DATA_HOME", temp.path());
