@@ -18,7 +18,7 @@ pub enum ConfigUpdate<T> {
 
 #[cold]
 pub fn config_subscription<
-    I: 'static + Copy + Send + Sync + Hash,
+    I: 'static + Hash,
     T: 'static + Send + Sync + PartialEq + Clone + CosmicConfigEntry,
 >(
     id: I,
@@ -30,7 +30,7 @@ pub fn config_subscription<
 
 #[cold]
 pub fn config_state_subscription<
-    I: 'static + Copy + Send + Sync + Hash,
+    I: 'static + Hash,
     T: 'static + Send + Sync + PartialEq + Clone + CosmicConfigEntry,
 >(
     id: I,
