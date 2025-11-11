@@ -28,18 +28,12 @@ pub const fn nav_bar_toggle<Message>() -> NavBarToggle<Message> {
 impl<Message: 'static + Clone> From<NavBarToggle<Message>> for Element<'_, Message> {
     fn from(nav_bar_toggle: NavBarToggle<Message>) -> Self {
         let icon = if nav_bar_toggle.active {
-            widget::icon::from_svg_bytes(
-                &include_bytes!("../../res/icons/navbar-open-symbolic.svg")[..],
-            )
-            .symbolic(true)
+            "navbar-open-symbolic"
         } else {
-            widget::icon::from_svg_bytes(
-                &include_bytes!("../../res/icons/navbar-closed-symbolic.svg")[..],
-            )
-            .symbolic(true)
+            "navbar-closed-symbolic"
         };
 
-        widget::button::icon(icon)
+        widget::button::icon(widget::icon::from_name(icon))
             .padding([8, 16])
             .on_press_maybe(nav_bar_toggle.on_toggle)
             .selected(nav_bar_toggle.selected)

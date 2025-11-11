@@ -449,23 +449,10 @@ impl<'a, Message: Clone + 'static> HeaderBar<'a, Message> {
     fn window_controls(&mut self) -> Element<'a, Message> {
         macro_rules! icon {
             ($name:expr, $size:expr, $on_press:expr) => {{
-                #[cfg(target_os = "linux")]
                 let icon = {
                     widget::icon::from_name($name)
                         .apply(widget::button::icon)
                         .padding(8)
-                };
-
-                #[cfg(not(target_os = "linux"))]
-                let icon = {
-                    widget::icon::from_svg_bytes(include_bytes!(concat!(
-                        "../../res/icons/",
-                        $name,
-                        ".svg"
-                    )))
-                    .symbolic(true)
-                    .apply(widget::button::icon)
-                    .padding(8)
                 };
 
                 icon.class(crate::theme::Button::HeaderBar)
