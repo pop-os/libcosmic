@@ -1,6 +1,5 @@
 # Context Drawer
 close = Затваряне
-
 # About
 license = Лиценз
 links = Връзки
@@ -9,3 +8,22 @@ designers = Дизайнери
 artists = Художници
 translators = Преводачи
 documenters = Документатори
+january = Януари { $year }
+february = Февруари { $year }
+march = Март { $year }
+april = Април { $year }
+may = Май { $year }
+june = Юни { $year }
+july = Юли { $year }
+august = Август { $year }
+september = Септември { $year }
+october = Октомври { $year }
+november = Ноември { $year }
+december = Декември { $year }
+monday = Пн
+tuesday = Вт
+wednesday = Ср
+thursday = Чт
+friday = Пт
+saturday = Сб
+sunday = Нд
