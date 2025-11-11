@@ -407,10 +407,6 @@ impl State {
     pub fn new() -> Self {
         Self {
             icon: match icon::from_name("pan-down-symbolic").size(16).handle().data {
-                icon::Data::Name(named) => named
-                    .path()
-                    .filter(|path| path.extension().is_some_and(|ext| ext == OsStr::new("svg")))
-                    .map(iced_core::svg::Handle::from_path),
                 icon::Data::Svg(handle) => Some(handle),
                 icon::Data::Image(_) => None,
             },
