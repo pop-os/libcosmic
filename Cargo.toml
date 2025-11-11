@@ -200,6 +200,7 @@ optional = true
 
 [dependencies.cosmic-panel-config]
 git = "https://github.com/pop-os/cosmic-panel"
+# path = "../cosmic-panel/cosmic-panel-config"
 optional = true
 
 [dependencies.ron]
