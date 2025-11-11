@@ -25,7 +25,7 @@ where
     #[must_use]
     pub fn insert(
         mut self,
-        builder: impl Fn(BuilderEntity<SelectionMode>) -> BuilderEntity<SelectionMode>,
+        builder: impl FnOnce(BuilderEntity<SelectionMode>) -> BuilderEntity<SelectionMode>,
     ) -> Self {
         let id = self.0.insert().id();
         builder(BuilderEntity { model: self, id }).model
