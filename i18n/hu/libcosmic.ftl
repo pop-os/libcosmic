@@ -1,6 +1,5 @@
 # Context Drawer
 close = Bezárás
-
 # About
 license = Licenc
 links = Linkek
@@ -9,3 +8,22 @@ designers = Tervezők
 artists = Művészek
 translators = Fordítók
 documenters = Dokumentálók
+january = { $year } január
+february = { $year } február
+march = { $year } március
+april = { $year } április
+may = { $year } május
+june = { $year } június
+july = { $year } július
+august = { $year } augusztus
+september = { $year } szeptember
+october = { $year } október
+november = { $year } november
+december = { $year } december
+monday = H
+tuesday = K
+wednesday = Sze
+thursday = Cs
+friday = P
+saturday = Szo
+sunday = V
