@@ -304,7 +304,12 @@ fn match_startup_wm_class(
 
 #[cfg(not(windows))]
 fn is_crx_id(candidate: &str) -> bool {
-    candidate.len() == 32 && candidate.chars().all(|c| matches!(c, 'a'..='p'))
+    is_crx_bytes(candidate.as_bytes())
+}
+
+#[cfg(not(windows))]
+fn is_crx_bytes(bytes: &[u8]) -> bool {
+    bytes.len() == 32 && bytes.iter().all(|b| matches!(b, b'a'..=b'p'))
 }
 
 #[cfg(not(windows))]
@@ -328,13 +333,15 @@ pub fn extract_crx_id(value: &str) -> Option<String> {
     if is_crx_id(value) {
         return Some(value.to_string());
     }
-    let bytes = value.as_bytes();
-    for i in 0..bytes.len().saturating_sub(31) {
-        let slice = &value[i..i + 32];
-        if is_crx_id(slice) {
+
+    for window in value.as_bytes().windows(32) {
+        if is_crx_bytes(window) {
+            // SAFETY: `is_crx_bytes` guarantees the window is ASCII.
+            let slice = std::str::from_utf8(window).expect("ASCII window");
             return Some(slice.to_string());
         }
     }
+
     None
 }
 
@@ -1102,5 +1109,21 @@ Icon=vmware-workstation\n\
         assert!(resolved.icon().is_some());
         assert!(resolved.exec().is_some());
         assert_eq!(resolved.startup_wm_class(), Some(&format!("crx_{}", id)));
+    }
+
+    #[test]
+    fn crx_extraction_handles_utf8_prefixes() {
+        let id = "cadlkienfkclaiaibeoongdcgmdikeeg";
+        let prefixed = format!("å{}", id);
+        assert_eq!(super::extract_crx_id(&prefixed), Some(id.to_string()));
+    }
+
+    #[test]
+    fn crx_extraction_ignores_non_ascii_sequences() {
+        let id = "cadlkienfkclaiaibeoongdcgmdikeeg";
+        let embedded = format!("{id}æøå");
+
+        assert_eq!(super::extract_crx_id(&embedded), Some(id.to_string()));
+        assert_eq!(super::extract_crx_id("æøå"), None);
     }
 }
