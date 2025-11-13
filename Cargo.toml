@@ -219,12 +219,7 @@ exclude = ["iced"]
 [workspace.dependencies]
 dirs = "6.0.0"
 
+[dev-dependencies]
+tempfile = "3.13.0"
 
-[patch."https://github.com/pop-os/libcosmic"]
-libcosmic = { path = "./" }
 
-# FIXME update winit deps where necessary to use this
-# [patch.crates-io]
-# [patch."https://github.com/pop-os/winit.git"]
-# winit = { git = "https://github.com/pop-os/winit.git//", branch = "xdg-toplevel" }
-# winit = { path = "../winit" }
