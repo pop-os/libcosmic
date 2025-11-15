@@ -91,21 +91,15 @@ impl<Message> Button<'_, Message> {
 
 impl<'a, Message: Clone + 'static> From<Button<'a, Message>> for Element<'a, Message> {
     fn from(mut builder: Button<'a, Message>) -> Element<'a, Message> {
-        let trailing_icon = builder.variant.trailing_icon.map(|mut i| {
-            if let icon::Data::Name(ref mut named) = i.data {
-                named.size = Some(builder.icon_size);
-            }
+        let trailing_icon = builder
+            .variant
+            .trailing_icon
+            .map(crate::widget::icon::Handle::icon);
 
-            i.icon()
-        });
-
-        let leading_icon = builder.variant.leading_icon.map(|mut i| {
-            if let icon::Data::Name(ref mut named) = i.data {
-                named.size = Some(builder.icon_size);
-            }
-
-            i.icon()
-        });
+        let leading_icon = builder
+            .variant
+            .leading_icon
+            .map(crate::widget::icon::Handle::icon);
 
         let label: Option<Element<'_, _>> = (!builder.label.is_empty()).then(|| {
             let font = crate::font::Font {

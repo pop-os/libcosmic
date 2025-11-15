@@ -132,10 +132,6 @@ impl<'a, Message: Clone + 'static> From<Button<'a, Message>> for Element<'a, Mes
     fn from(mut builder: Button<'a, Message>) -> Element<'a, Message> {
         let mut content = Vec::with_capacity(2);
 
-        if let icon::Data::Name(ref mut named) = builder.variant.handle.data {
-            named.size = Some(builder.icon_size);
-        }
-
         content.push(
             crate::widget::icon(builder.variant.handle.clone())
                 .size(builder.icon_size)

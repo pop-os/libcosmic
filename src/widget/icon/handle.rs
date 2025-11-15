@@ -1,7 +1,7 @@
 // Copyright 2023 System76 <info@system76.com>
 // SPDX-License-Identifier: MPL-2.0
 
-use super::{Icon, Named};
+use super::Icon;
 use crate::widget::{image, svg};
 use std::borrow::Cow;
 use std::ffi::OsStr;
@@ -26,7 +26,7 @@ impl Handle {
 #[must_use]
 #[derive(Clone, Debug, Hash)]
 pub enum Data {
-    Name(Named),
+    // Name(Named),
     Image(image::Handle),
     Svg(svg::Handle),
 }
@@ -94,7 +94,7 @@ pub fn from_raster_pixels(
 /// Create a SVG handle from memory.
 pub fn from_svg_bytes(bytes: impl Into<Cow<'static, [u8]>>) -> Handle {
     Handle {
-        symbolic: false,
+        symbolic: true,
         data: Data::Svg(svg::Handle::from_memory(bytes)),
     }
 }

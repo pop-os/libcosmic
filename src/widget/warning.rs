@@ -33,19 +33,10 @@ impl<'a, Message: 'static + Clone> Warning<'a, Message> {
     pub fn into_widget(self) -> widget::Container<'a, Message, crate::Theme, Renderer> {
         let label = widget::container(crate::widget::text(self.message)).width(Length::Fill);
 
-        #[cfg(target_os = "linux")]
         let close_button = icon::from_name("window-close-symbolic")
             .size(16)
             .apply(widget::button::icon)
             .on_press_maybe(self.on_close);
-
-        #[cfg(not(target_os = "linux"))]
-        let close_button =
-            icon::from_svg_bytes(include_bytes!("../../res/icons/window-close-symbolic.svg"))
-                .symbolic(true)
-                .apply(widget::button::icon)
-                .icon_size(16)
-                .on_press_maybe(self.on_close);
 
         widget::row::with_capacity(2)
             .push(label)

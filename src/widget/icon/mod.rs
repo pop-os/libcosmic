@@ -3,8 +3,8 @@
 
 //! Lazily-generated SVG icon widget for Iced.
 
+mod bundle;
 mod named;
-use std::ffi::OsStr;
 use std::sync::Arc;
 
 pub use named::{IconFallback, Named};
@@ -58,14 +58,6 @@ impl Icon {
     #[must_use]
     pub fn into_svg_handle(self) -> Option<crate::widget::svg::Handle> {
         match self.handle.data {
-            Data::Name(named) => {
-                if let Some(path) = named.path() {
-                    if path.extension().is_some_and(|ext| ext == OsStr::new("svg")) {
-                        return Some(iced_core::svg::Handle::from_path(path));
-                    }
-                }
-            }
-
             Data::Image(_) => (),
             Data::Svg(handle) => return Some(handle),
         }
@@ -76,12 +68,6 @@ impl Icon {
     #[must_use]
     pub fn size(mut self, size: u16) -> Self {
         self.size = size;
-        // ensures correct icon size variant selection
-        if let Data::Name(named) = &self.handle.data {
-            let mut new_named = named.clone();
-            new_named.size = Some(size);
-            self.handle = new_named.handle();
-        }
         self
     }
 
@@ -120,19 +106,6 @@ impl Icon {
         };
 
         match self.handle.data {
-            Data::Name(named) => {
-                if let Some(path) = named.path() {
-                    if path.extension().is_some_and(|ext| ext == OsStr::new("svg")) {
-                        from_svg(iced_core::svg::Handle::from_path(path))
-                    } else {
-                        from_image(iced_core::image::Handle::from_path(path))
-                    }
-                } else {
-                    let bytes: &'static [u8] = &[];
-                    from_svg(iced_core::svg::Handle::from_memory(bytes))
-                }
-            }
-
             Data::Image(handle) => from_image(handle),
             Data::Svg(handle) => from_svg(handle),
         }
@@ -147,32 +120,14 @@ impl<'a, Message: 'a> From<Icon> for Element<'a, Message> {
 
 /// Draw an icon in the given bounds via the runtime's renderer.
 pub fn draw(renderer: &mut crate::Renderer, handle: &Handle, icon_bounds: Rectangle) {
-    enum IcedHandle {
-        Svg(iced_core::svg::Handle),
-        Image(iced_core::image::Handle),
-    }
-
-    let iced_handle = match handle.clone().data {
-        Data::Name(named) => named.path().map(|path| {
-            if path.extension().is_some_and(|ext| ext == OsStr::new("svg")) {
-                IcedHandle::Svg(iced_core::svg::Handle::from_path(path))
-            } else {
-                IcedHandle::Image(iced_core::image::Handle::from_path(path))
-            }
-        }),
-
-        Data::Image(handle) => Some(IcedHandle::Image(handle)),
-        Data::Svg(handle) => Some(IcedHandle::Svg(handle)),
-    };
-
-    match iced_handle {
-        Some(IcedHandle::Svg(handle)) => iced_core::svg::Renderer::draw_svg(
+    match handle.clone().data {
+        Data::Svg(handle) => iced_core::svg::Renderer::draw_svg(
             renderer,
             iced_core::svg::Svg::new(handle),
             icon_bounds,
         ),
 
-        Some(IcedHandle::Image(handle)) => {
+        Data::Image(handle) => {
             iced_core::image::Renderer::draw_image(
                 renderer,
                 handle,
@@ -183,7 +138,5 @@ pub fn draw(renderer: &mut crate::Renderer, handle: &Handle, icon_bounds: Rectan
                 [0.0; 4],
             );
         }
-
-        None => {}
     }
 }
