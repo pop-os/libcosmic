@@ -2,6 +2,7 @@
 // Copyright 2019 Héctor Ramón, Iced contributors
 // SPDX-License-Identifier: MPL-2.0 AND MIT
 
+use super::Id;
 use super::menu::{self, Menu};
 use crate::widget::icon::{self, Handle};
 use crate::{Element, surface};
@@ -18,19 +19,21 @@ use iced_widget::pick_list::{self, Catalog};
 use std::borrow::Cow;
 use std::ffi::OsStr;
 use std::hash::{DefaultHasher, Hash, Hasher};
-use std::marker::PhantomData;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, LazyLock, Mutex};
 
 pub type DropdownView<Message> = Arc<dyn Fn() -> Element<'static, Message> + Send + Sync>;
 static AUTOSIZE_ID: LazyLock<crate::widget::Id> =
     LazyLock::new(|| crate::widget::Id::new("cosmic-applet-autosize"));
+
 /// A widget for selecting a single value from a list of selections.
 #[derive(Setters)]
 pub struct Dropdown<'a, S: AsRef<str> + Send + Sync + Clone + 'static, Message, AppMessage>
 where
     [S]: std::borrow::ToOwned,
 {
+    #[setters(skip)]
+    id: Option<Id>,
     #[setters(skip)]
     on_selected: Arc<dyn Fn(usize) -> Message + Send + Sync>,
     #[setters(skip)]
@@ -78,6 +81,7 @@ where
         on_selected: impl Fn(usize) -> Message + 'static + Send + Sync,
     ) -> Self {
         Self {
+            id: None,
             on_selected: Arc::new(on_selected),
             selections,
             icons: Cow::Borrowed(&[]),
@@ -100,12 +104,13 @@ where
     /// Handle dropdown requests for popup creation.
     /// Intended to be used with [`crate::app::message::get_popup`]
     pub fn with_popup<NewAppMessage>(
-        mut self,
+        self,
         parent_id: window::Id,
         on_surface_action: impl Fn(surface::Action) -> Message + Send + Sync + 'static,
         action_map: impl Fn(Message) -> NewAppMessage + Send + Sync + 'static,
     ) -> Dropdown<'a, S, Message, NewAppMessage> {
         let Self {
+            id,
             on_selected,
             selections,
             icons,
@@ -121,6 +126,7 @@ where
         } = self;
 
         Dropdown::<'a, S, Message, NewAppMessage> {
+            id,
             on_selected,
             selections,
             icons,
@@ -136,6 +142,11 @@ where
             window_id: Some(parent_id),
             positioner,
         }
+    }
+
+    pub fn id(mut self, id: Id) -> Self {
+        self.id = Some(id);
+        self
     }
 
     #[cfg(all(feature = "winit", feature = "wayland"))]
@@ -299,6 +310,17 @@ where
         );
     }
 
+    fn operate(
+        &self,
+        tree: &mut Tree,
+        _layout: Layout<'_>,
+        _renderer: &crate::Renderer,
+        operation: &mut dyn iced_core::widget::Operation,
+    ) {
+        let state = tree.state.downcast_mut::<State>();
+        operation.custom(state, self.id.as_ref());
+    }
+
     fn overlay<'b>(
         &'b mut self,
         tree: &'b mut Tree,
@@ -364,6 +386,8 @@ pub struct State {
     menu: menu::State,
     keyboard_modifiers: keyboard::Modifiers,
     is_open: Arc<AtomicBool>,
+    close_operation: bool,
+    open_operation: bool,
     hovered_option: Arc<Mutex<Option<usize>>>,
     hashes: Vec<u64>,
     selections: Vec<crate::Plain>,
@@ -389,6 +413,8 @@ impl State {
             selections: Vec::new(),
             hashes: Vec::new(),
             popup_id: window::Id::unique(),
+            close_operation: false,
+            open_operation: false,
         }
     }
 }
@@ -396,6 +422,16 @@ impl State {
 impl Default for State {
     fn default() -> Self {
         Self::new()
+    }
+}
+
+impl super::operation::Dropdown for State {
+    fn close(&mut self) {
+        self.close_operation = true;
+    }
+
+    fn open(&mut self) {
+        self.open_operation = true;
     }
 }
 
@@ -484,10 +520,121 @@ pub fn update<
     font: Option<crate::font::Font>,
     selected_option: Option<usize>,
 ) -> event::Status {
+    let state = state();
+
+    let open = |shell: &mut Shell<'_, Message>,
+                state: &mut State,
+                on_selected: Arc<dyn Fn(usize) -> Message + Send + Sync + 'static>| {
+        state.is_open.store(true, Ordering::Relaxed);
+        let mut hovered_guard = state.hovered_option.lock().unwrap();
+        *hovered_guard = selected;
+        let id = window::Id::unique();
+        state.popup_id = id;
+        #[cfg(all(feature = "winit", feature = "wayland"))]
+        if let Some(((on_surface_action, parent), action_map)) = on_surface_action
+            .as_ref()
+            .zip(_window_id)
+            .zip(action_map.clone())
+        {
+            use iced_runtime::platform_specific::wayland::popup::{
+                SctkPopupSettings, SctkPositioner,
+            };
+            let bounds = layout.bounds();
+            let anchor_rect = Rectangle {
+                x: bounds.x as i32,
+                y: bounds.y as i32,
+                width: bounds.width as i32,
+                height: bounds.height as i32,
+            };
+            let icon_width = if icons.is_empty() { 0.0 } else { 24.0 };
+            let measure = |_label: &str, selection_paragraph: &crate::Paragraph| -> f32 {
+                selection_paragraph.min_width().round()
+            };
+            let pad_width = padding.horizontal().mul_add(2.0, 16.0);
+
+            let selections_width = selections
+                .iter()
+                .zip(state.selections.iter_mut())
+                .map(|(label, selection)| measure(label.as_ref(), selection.raw()))
+                .fold(0.0, |next, current| current.max(next));
+
+            let icons: Cow<'static, [Handle]> = Cow::Owned(icons.to_vec());
+            let selections: Cow<'static, [S]> = Cow::Owned(selections.to_vec());
+            let state = state.clone();
+            let on_close = surface::action::destroy_popup(id);
+            let on_surface_action_clone = on_surface_action.clone();
+            let translation = layout.virtual_offset();
+            let get_popup_action = surface::action::simple_popup::<AppMessage>(
+                move || {
+                    SctkPopupSettings {
+                parent,
+                id,
+                input_zone: None,
+                positioner: SctkPositioner {
+                    size: Some((selections_width as u32 + gap as u32 + pad_width as u32 + icon_width as u32, 10)),
+                    anchor_rect,
+                    // TODO: left or right alignment based on direction?
+                    anchor: cctk::wayland_protocols::xdg::shell::client::xdg_positioner::Anchor::BottomLeft,
+                    gravity: cctk::wayland_protocols::xdg::shell::client::xdg_positioner::Gravity::BottomRight,
+                    reactive: true,
+                    offset: ((-padding.left - translation.x) as i32, -translation.y as i32),
+                    constraint_adjustment: 9,
+                    ..Default::default()
+                },
+                parent_size: None,
+                grab: true,
+                close_with_children: true,
+            }
+                },
+                Some(Box::new(move || {
+                    let action_map = action_map.clone();
+                    let on_selected = on_selected.clone();
+                    let e: Element<'static, crate::Action<AppMessage>> =
+                        Element::from(menu_widget(
+                            bounds,
+                            &state,
+                            gap,
+                            padding,
+                            text_size.unwrap_or(14.0),
+                            selections.clone(),
+                            icons.clone(),
+                            selected_option,
+                            Arc::new(move |i| on_selected.clone()(i)),
+                            Some(on_surface_action_clone(on_close.clone())),
+                        ))
+                        .map(move |m| crate::Action::App(action_map.clone()(m)));
+                    e
+                })),
+            );
+            shell.publish(on_surface_action(get_popup_action));
+        }
+    };
+
+    let is_open = state.is_open.load(Ordering::Relaxed);
+    let refresh = state.close_operation && state.open_operation;
+
+    if state.close_operation {
+        state.close_operation = false;
+        state.is_open.store(false, Ordering::SeqCst);
+        if is_open {
+            #[cfg(all(feature = "winit", feature = "wayland"))]
+            if let Some(ref on_close) = on_surface_action {
+                shell.publish(on_close(surface::action::destroy_popup(state.popup_id)));
+            }
+        }
+    }
+
+    if state.open_operation {
+        state.open_operation = false;
+        state.is_open.store(true, Ordering::SeqCst);
+        if (refresh && is_open) || (!refresh && !is_open) {
+            open(shell, state, on_selected.clone());
+        }
+    }
+
     match event {
         Event::Mouse(mouse::Event::ButtonPressed(mouse::Button::Left))
         | Event::Touch(touch::Event::FingerPressed { .. }) => {
-            let state = state();
             let is_open = state.is_open.load(Ordering::Relaxed);
             if is_open {
                 // Event wasn't processed by overlay, so cursor was clicked either outside it's
@@ -499,87 +646,7 @@ pub fn update<
                 }
                 event::Status::Captured
             } else if cursor.is_over(layout.bounds()) {
-                state.is_open.store(true, Ordering::Relaxed);
-                let mut hovered_guard = state.hovered_option.lock().unwrap();
-                *hovered_guard = selected;
-                let id = window::Id::unique();
-                state.popup_id = id;
-                #[cfg(all(feature = "winit", feature = "wayland"))]
-                if let Some(((on_surface_action, parent), action_map)) =
-                    on_surface_action.zip(_window_id).zip(action_map)
-                {
-                    use iced_runtime::platform_specific::wayland::popup::{
-                        SctkPopupSettings, SctkPositioner,
-                    };
-                    let bounds = layout.bounds();
-                    let anchor_rect = Rectangle {
-                        x: bounds.x as i32,
-                        y: bounds.y as i32,
-                        width: bounds.width as i32,
-                        height: bounds.height as i32,
-                    };
-                    let icon_width = if icons.is_empty() { 0.0 } else { 24.0 };
-                    let measure = |_label: &str, selection_paragraph: &crate::Paragraph| -> f32 {
-                        selection_paragraph.min_width().round()
-                    };
-                    let pad_width = padding.horizontal().mul_add(2.0, 16.0);
-
-                    let selections_width = selections
-                        .iter()
-                        .zip(state.selections.iter_mut())
-                        .map(|(label, selection)| measure(label.as_ref(), selection.raw()))
-                        .fold(0.0, |next, current| current.max(next));
-
-                    let icons: Cow<'static, [Handle]> = Cow::Owned(icons.to_vec());
-                    let selections: Cow<'static, [S]> = Cow::Owned(selections.to_vec());
-                    let state = state.clone();
-                    let on_close = surface::action::destroy_popup(id);
-                    let on_surface_action_clone = on_surface_action.clone();
-                    let translation = layout.virtual_offset();
-                    let get_popup_action = surface::action::simple_popup::<AppMessage>(
-                        move || {
-                            SctkPopupSettings {
-                            parent,
-                            id,
-                            input_zone: None,
-                            positioner: SctkPositioner {
-                                size: Some((selections_width as u32 + gap as u32 + pad_width as u32 + icon_width as u32, 10)),
-                                anchor_rect,
-                                // TODO: left or right alignment based on direction?
-                                anchor: cctk::wayland_protocols::xdg::shell::client::xdg_positioner::Anchor::BottomLeft,
-                                gravity: cctk::wayland_protocols::xdg::shell::client::xdg_positioner::Gravity::BottomRight,
-                                reactive: true,
-                                offset: ((-padding.left - translation.x) as i32, -translation.y as i32),
-                                constraint_adjustment: 9,
-                                ..Default::default()
-                            },
-                            parent_size: None,
-                            grab: true,
-                            close_with_children: true,
-                        }
-                        },
-                        Some(Box::new(move || {
-                            let action_map = action_map.clone();
-                            let on_selected = on_selected.clone();
-                            let e: Element<'static, crate::Action<AppMessage>> =
-                                Element::from(menu_widget(
-                                    bounds,
-                                    &state,
-                                    gap,
-                                    padding,
-                                    text_size.unwrap_or(14.0),
-                                    selections.clone(),
-                                    icons.clone(),
-                                    selected_option,
-                                    Arc::new(move |i| on_selected.clone()(i)),
-                                    Some(on_surface_action_clone(on_close.clone())),
-                                ))
-                                .map(move |m| crate::Action::App(action_map.clone()(m)));
-                            e
-                        })),
-                    );
-                    shell.publish(on_surface_action(get_popup_action));
-                }
+                open(shell, state, on_selected);
                 event::Status::Captured
             } else {
                 event::Status::Ignored
@@ -588,7 +655,6 @@ pub fn update<
         Event::Mouse(mouse::Event::WheelScrolled {
             delta: mouse::ScrollDelta::Lines { .. },
         }) => {
-            let state = state();
             let is_open = state.is_open.load(Ordering::Relaxed);
 
             if state.keyboard_modifiers.command() && cursor.is_over(layout.bounds()) && !is_open {
@@ -604,8 +670,6 @@ pub fn update<
             }
         }
         Event::Keyboard(keyboard::Event::ModifiersChanged(modifiers)) => {
-            let state = state();
-
             state.keyboard_modifiers = *modifiers;
 
             event::Status::Ignored

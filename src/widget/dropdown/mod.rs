@@ -7,15 +7,17 @@
 use std::borrow::Cow;
 
 pub mod menu;
-use iced_core::window;
 pub use menu::Menu;
 
 pub mod multi;
+pub mod operation;
 
 mod widget;
 pub use widget::*;
 
 use crate::surface;
+pub use iced_core::widget::Id;
+use iced_core::window;
 
 /// Displays a list of options in a popover menu on select.
 pub fn dropdown<
@@ -52,4 +54,14 @@ pub fn popup_dropdown<
     let dropdown = dropdown.with_popup(_parent_id, _on_surface_action, _map_action);
 
     dropdown
+}
+
+/// Produces a [`Task`] that closes the [`Dropdown`].
+pub fn close<Message: 'static>(id: Id) -> iced_runtime::Task<Message> {
+    iced_runtime::task::effect(iced_runtime::Action::Widget(Box::new(operation::close(id))))
+}
+
+/// Produces a [`Task`] that opens the [`Dropdown`].
+pub fn open<Message: 'static>(id: Id) -> iced_runtime::Task<Message> {
+    iced_runtime::task::effect(iced_runtime::Action::Widget(Box::new(operation::open(id))))
 }
