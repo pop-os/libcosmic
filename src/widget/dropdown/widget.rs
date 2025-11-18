@@ -178,6 +178,8 @@ where
     fn diff(&mut self, tree: &mut Tree) {
         let state = tree.state.downcast_mut::<State>();
 
+        let mut selections_changed = state.selections.len() != self.selections.len();
+
         state
             .selections
             .resize_with(self.selections.len(), crate::Plain::default);
@@ -192,6 +194,7 @@ where
                 continue;
             }
 
+            selections_changed = true;
             state.hashes[i] = text_hash;
             state.selections[i].update(Text {
                 content: selection.as_ref(),
@@ -205,6 +208,11 @@ where
                 shaping: text::Shaping::Advanced,
                 wrapping: text::Wrapping::default(),
             });
+        }
+
+        if state.is_open.load(Ordering::SeqCst) && selections_changed {
+            state.close_operation = true;
+            state.open_operation = true;
         }
     }
 
