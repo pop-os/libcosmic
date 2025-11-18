@@ -14,18 +14,20 @@ use iced_core::{
     Clipboard, Element, Layout, Length, Point, Rectangle, Shell, Size, Vector, Widget,
 };
 
-pub use iced_widget::container::{Catalog, Style};
-
 pub fn popover<'a, Message, Renderer>(
     content: impl Into<Element<'a, Message, crate::Theme, Renderer>>,
-) -> Popover<'a, Message, Renderer> {
+) -> Popover<'a, Message, Renderer>
+where
+    Renderer: iced_core::Renderer + 'a,
+    Message: 'a,
+{
     Popover::new(content)
 }
 
 #[derive(Clone, Copy, Debug, Default)]
 pub enum Position {
-    #[default]
     Center,
+    #[default]
     Bottom,
     Point(Point),
 }
@@ -40,7 +42,11 @@ pub struct Popover<'a, Message, Renderer> {
     on_close: Option<Message>,
 }
 
-impl<'a, Message, Renderer> Popover<'a, Message, Renderer> {
+impl<'a, Message, Renderer> Popover<'a, Message, Renderer>
+where
+    Renderer: iced_core::Renderer + 'a,
+    Message: 'a,
+{
     pub fn new(content: impl Into<Element<'a, Message, crate::Theme, Renderer>>) -> Self {
         Self {
             content: content.into(),
@@ -67,7 +73,12 @@ impl<'a, Message, Renderer> Popover<'a, Message, Renderer> {
 
     #[inline]
     pub fn popup(mut self, popup: impl Into<Element<'a, Message, crate::Theme, Renderer>>) -> Self {
-        self.popup = Some(popup.into());
+        self.popup = Some(
+            iced_widget::container(popup)
+                .padding(crate::theme::spacing().space_xxs)
+                .class(crate::style::Container::Dropdown)
+                .into(),
+        );
         self
     }
 
