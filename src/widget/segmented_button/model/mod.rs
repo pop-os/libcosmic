@@ -11,6 +11,7 @@ mod selection;
 pub use self::selection::{MultiSelect, Selectable, SingleSelect};
 
 use crate::widget::Icon;
+use crate::widget::segmented_button::InsertPosition;
 use slotmap::{SecondaryMap, SlotMap};
 use std::any::{Any, TypeId};
 use std::borrow::Cow;
@@ -410,6 +411,36 @@ where
         true
     }
 
+    /// Reorder `dragged` relative to `target` based on the provided position.
+    ///
+    /// Returns `true` if the model changed, or `false` if the move was invalid.
+    pub fn reorder(&mut self, dragged: Entity, target: Entity, position: InsertPosition) -> bool {
+        if !self.contains_item(dragged) || !self.contains_item(target) || dragged == target {
+            return false;
+        }
+
+        let len = self.iter().count();
+        let target_pos = self.position(target).map(|pos| pos as usize).unwrap_or(len);
+        let from_pos = self
+            .position(dragged)
+            .map(|pos| pos as usize)
+            .unwrap_or(target_pos);
+        let mut insert_pos = match position {
+            InsertPosition::Before => target_pos,
+            InsertPosition::After => target_pos.saturating_add(1),
+        };
+        if from_pos < insert_pos {
+            insert_pos = insert_pos.saturating_sub(1);
+        }
+        if len > 0 {
+            insert_pos = insert_pos.min(len.saturating_sub(1));
+        }
+
+        self.position_set(dragged, insert_pos as u16);
+        self.activate(dragged);
+        true
+    }
+
     /// Removes an item from the model.
     ///
     /// The generation of the slot for the ID will be incremented, so this ID will no
@@ -467,5 +498,45 @@ where
     #[inline]
     pub fn text_remove(&mut self, id: Entity) -> Option<Cow<'static, str>> {
         self.text.remove(id)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn sample_model() -> (Model<SingleSelect>, Vec<Entity>) {
+        let mut ids = Vec::new();
+        let model = Model::builder()
+            .insert(|b| b.text("Tab1").with_id(|id| ids.push(id)))
+            .insert(|b| b.text("Tab2").with_id(|id| ids.push(id)))
+            .insert(|b| b.text("Tab3").with_id(|id| ids.push(id)))
+            .insert(|b| b.text("Tab4").with_id(|id| ids.push(id)))
+            .build();
+        (model, ids)
+    }
+
+    fn order_of(model: &Model<SingleSelect>) -> Vec<Entity> {
+        model.iter().collect()
+    }
+
+    #[test]
+    fn reorder_inserts_before_target() {
+        let (mut model, ids) = sample_model();
+        assert!(model.reorder(ids[3], ids[1], InsertPosition::Before));
+        assert_eq!(order_of(&model), vec![ids[0], ids[3], ids[1], ids[2]]);
+    }
+
+    #[test]
+    fn reorder_inserts_after_target() {
+        let (mut model, ids) = sample_model();
+        assert!(model.reorder(ids[0], ids[2], InsertPosition::After));
+        assert_eq!(order_of(&model), vec![ids[1], ids[2], ids[0], ids[3]]);
+    }
+
+    #[test]
+    fn reorder_rejects_invalid_entities() {
+        let (mut model, ids) = sample_model();
+        assert!(!model.reorder(ids[0], ids[0], InsertPosition::After));
     }
 }
