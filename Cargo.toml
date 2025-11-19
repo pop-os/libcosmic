@@ -122,6 +122,7 @@ image = { version = "0.25.8", default-features = false, features = [
     "png",
 ] }
 libc = { version = "0.2.175", optional = true }
+log = "0.4"
 mime = { version = "0.3.17", optional = true }
 palette = "0.7.6"
 raw-window-handle = "0.6"
@@ -221,5 +222,4 @@ dirs = "6.0.0"
 
 [dev-dependencies]
 tempfile = "3.13.0"
-
 

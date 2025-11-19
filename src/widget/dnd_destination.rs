@@ -39,6 +39,7 @@ pub fn dnd_destination_for_data<'a, T: AllowedMimeTypes, Message: 'static>(
 }
 
 static DRAG_ID_COUNTER: AtomicU64 = AtomicU64::new(0);
+const DND_DEST_LOG_TARGET: &str = "libcosmic::widget::dnd_destination";
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct DragId(pub u128);
@@ -75,6 +76,12 @@ pub struct DndDestination<'a, Message> {
 }
 
 impl<'a, Message: 'static> DndDestination<'a, Message> {
+    fn mime_matches(&self, offered: &[String]) -> bool {
+        self.mime_types.is_empty()
+            || offered
+                .iter()
+                .any(|mime| self.mime_types.iter().any(|allowed| allowed == mime))
+    }
     pub fn new(child: impl Into<Element<'a, Message>>, mimes: Vec<Cow<'static, str>>) -> Self {
         Self {
             id: Id::unique(),
@@ -324,6 +331,12 @@ impl<Message: 'static> Widget<Message, crate::Theme, crate::Renderer>
 
         let my_id = self.get_drag_id();
 
+        log::trace!(
+            target: DND_DEST_LOG_TARGET,
+            "dnd_destination id={:?}: event {:?}",
+            self.drag_id.unwrap_or_default(),
+            event
+        );
         match event {
             Event::Dnd(DndEvent::Offer(
                 id,
@@ -331,6 +344,18 @@ impl<Message: 'static> Widget<Message, crate::Theme, crate::Renderer>
                     x, y, mime_types, ..
                 },
             )) if id == Some(my_id) => {
+                if !self.mime_matches(&mime_types) {
+                    log::trace!(
+                        target: DND_DEST_LOG_TARGET,
+                        "offer enter id={my_id:?} ignored (mimes={mime_types:?} not in {:?})",
+                        self.mime_types
+                    );
+                    return event::Status::Ignored;
+                }
+                log::trace!(
+                    target: DND_DEST_LOG_TARGET,
+                    "offer enter id={my_id:?} coords=({x},{y}) mimes={mime_types:?}"
+                );
                 if let Some(msg) = state.on_enter(
                     x,
                     y,
@@ -360,6 +385,11 @@ impl<Message: 'static> Widget<Message, crate::Theme, crate::Renderer>
                 return event::Status::Captured;
             }
             Event::Dnd(DndEvent::Offer(_, OfferEvent::Leave)) => {
+                log::trace!(
+                    target: DND_DEST_LOG_TARGET,
+                    "offer leave id={:?}",
+                    my_id
+                );
                 if let Some(msg) =
                     state.on_leave(self.on_leave.as_ref().map(std::convert::AsRef::as_ref))
                 {
@@ -383,6 +413,10 @@ impl<Message: 'static> Widget<Message, crate::Theme, crate::Renderer>
                 return event::Status::Ignored;
             }
             Event::Dnd(DndEvent::Offer(id, OfferEvent::Motion { x, y })) if id == Some(my_id) => {
+                log::trace!(
+                    target: DND_DEST_LOG_TARGET,
+                    "offer motion id={my_id:?} coords=({x},{y})"
+                );
                 if let Some(msg) = state.on_motion(
                     x,
                     y,
@@ -413,6 +447,11 @@ impl<Message: 'static> Widget<Message, crate::Theme, crate::Renderer>
                 return event::Status::Captured;
             }
             Event::Dnd(DndEvent::Offer(_, OfferEvent::LeaveDestination)) => {
+                log::trace!(
+                    target: DND_DEST_LOG_TARGET,
+                    "offer leave-destination id={:?}",
+                    my_id
+                );
                 if let Some(msg) =
                     state.on_leave(self.on_leave.as_ref().map(std::convert::AsRef::as_ref))
                 {
@@ -421,6 +460,10 @@ impl<Message: 'static> Widget<Message, crate::Theme, crate::Renderer>
                 return event::Status::Ignored;
             }
             Event::Dnd(DndEvent::Offer(id, OfferEvent::Drop)) if id == Some(my_id) => {
+                log::trace!(
+                    target: DND_DEST_LOG_TARGET,
+                    "offer drop id={my_id:?}"
+                );
                 if let Some(msg) =
                     state.on_drop(self.on_drop.as_ref().map(std::convert::AsRef::as_ref))
                 {
@@ -431,6 +474,10 @@ impl<Message: 'static> Widget<Message, crate::Theme, crate::Renderer>
             Event::Dnd(DndEvent::Offer(id, OfferEvent::SelectedAction(action)))
                 if id == Some(my_id) =>
             {
+                log::trace!(
+                    target: DND_DEST_LOG_TARGET,
+                    "offer selected-action id={my_id:?} action={action:?}"
+                );
                 if let Some(msg) = state.on_action_selected(
                     action,
                     self.on_action_selected
@@ -444,6 +491,11 @@ impl<Message: 'static> Widget<Message, crate::Theme, crate::Renderer>
             Event::Dnd(DndEvent::Offer(id, OfferEvent::Data { data, mime_type }))
                 if id == Some(my_id) =>
             {
+                log::trace!(
+                    target: DND_DEST_LOG_TARGET,
+                    "offer data id={my_id:?} mime={mime_type:?} bytes={}",
+                    data.len()
+                );
                 if let (Some(msg), ret) = state.on_data_received(
                     mime_type,
                     data,
@@ -521,6 +573,16 @@ impl<Message: 'static> Widget<Message, crate::Theme, crate::Renderer>
     ) {
         let bounds = layout.bounds();
         let my_id = self.get_drag_id();
+        log::trace!(
+            target: DND_DEST_LOG_TARGET,
+            "register destination id={:?} bounds=({:.2},{:.2},{:.2},{:.2}) mimes={:?}",
+            my_id,
+            bounds.x,
+            bounds.y,
+            bounds.width,
+            bounds.height,
+            self.mime_types
+        );
         let my_dest = DndDestinationRectangle {
             id: my_id,
             rectangle: dnd::Rectangle {
@@ -535,12 +597,14 @@ impl<Message: 'static> Widget<Message, crate::Theme, crate::Renderer>
         };
         dnd_rectangles.push(my_dest);
 
-        self.container.as_widget().drag_destinations(
-            &state.children[0],
-            layout,
-            renderer,
-            dnd_rectangles,
-        );
+        if let Some(child_layout) = layout.children().next() {
+            self.container.as_widget().drag_destinations(
+                &state.children[0],
+                child_layout.with_virtual_offset(layout.virtual_offset()),
+                renderer,
+                dnd_rectangles,
+            );
+        }
     }
 
     fn id(&self) -> Option<Id> {
@@ -694,5 +758,73 @@ impl<T> State<T> {
 impl<'a, Message: 'static> From<DndDestination<'a, Message>> for Element<'a, Message> {
     fn from(wrapper: DndDestination<'a, Message>) -> Self {
         Element::new(wrapper)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[derive(Clone, Copy, Debug, PartialEq)]
+    enum TestMsg {
+        Data,
+        Finished,
+    }
+
+    #[test]
+    fn data_before_drop_invokes_data_handler_only() {
+        let mut state: State<()> = State::new();
+        assert!(state.drag_offer.is_none());
+        state.on_enter::<TestMsg>(
+            4.0,
+            2.0,
+            vec!["text/plain".into()],
+            Option::<fn(_, _, _) -> TestMsg>::None,
+            (),
+        );
+        let (message, status) = state.on_data_received(
+            "text/plain".into(),
+            vec![1],
+            Some(|mime, data| {
+                assert_eq!(mime, "text/plain");
+                assert_eq!(data, vec![1]);
+                TestMsg::Data
+            }),
+            Option::<fn(_, _, _, _, _) -> TestMsg>::None,
+        );
+        assert!(matches!(message, Some(TestMsg::Data)));
+        assert_eq!(status, event::Status::Captured);
+        assert!(state.drag_offer.is_some());
+    }
+
+    #[test]
+    fn finish_only_emits_after_drop() {
+        let mut state: State<()> = State::new();
+        state.on_enter::<TestMsg>(
+            5.0,
+            -1.0,
+            vec![],
+            Option::<fn(_, _, _) -> TestMsg>::None,
+            (),
+        );
+        state.on_action_selected::<TestMsg>(DndAction::Move, Option::<fn(_) -> TestMsg>::None);
+        state.on_drop::<TestMsg>(Option::<fn(_, _) -> TestMsg>::None);
+
+        let (message, status) = state.on_data_received(
+            "application/x-test".into(),
+            vec![7],
+            Option::<fn(_, _) -> TestMsg>::None,
+            Some(|mime, data, action, x, y| {
+                assert_eq!(mime, "application/x-test");
+                assert_eq!(data, vec![7]);
+                assert_eq!(action, DndAction::Move);
+                assert_eq!(x, 5.0);
+                assert_eq!(y, -1.0);
+                TestMsg::Finished
+            }),
+        );
+        assert!(matches!(message, Some(TestMsg::Finished)));
+        assert_eq!(status, event::Status::Captured);
+        assert!(state.drag_offer.is_none());
     }
 }

@@ -88,6 +88,19 @@ pub use self::style::{Appearance, ItemAppearance, ItemStatusAppearance, StyleShe
 pub use self::vertical::{VerticalSegmentedButton, vertical};
 pub use self::widget::{Id, SegmentedButton, SegmentedVariant, focus};
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum InsertPosition {
+    Before,
+    After,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct ReorderEvent {
+    pub dragged: Entity,
+    pub target: Entity,
+    pub position: InsertPosition,
+}
+
 /// Associates extra data with an external secondary map.
 ///
 /// The secondary map internally uses a `Vec`, so should only be used for data that
