@@ -881,7 +881,9 @@ mod tests {
     impl EnvVarGuard {
         fn set(key: &'static str, value: &Path) -> Self {
             let original = env::var(key).ok();
-            std::env::set_var(key, value);
+            // std::env::{set_var, remove_var} are unsafe on newer toolchains;
+            // we limit scope here to the test helper that toggles a single key.
+            unsafe { std::env::set_var(key, value) };
             Self { key, original }
         }
     }
@@ -889,9 +891,9 @@ mod tests {
     impl Drop for EnvVarGuard {
         fn drop(&mut self) {
             if let Some(ref original) = self.original {
-                std::env::set_var(self.key, original);
+                unsafe { std::env::set_var(self.key, original) };
             } else {
-                std::env::remove_var(self.key);
+                unsafe { std::env::remove_var(self.key) };
             }
         }
     }
@@ -1108,7 +1110,8 @@ Icon=vmware-workstation\n\
         let resolved = resolve_desktop_entry(&mut cache, &ctx, &DesktopResolveOptions::default());
         assert!(resolved.icon().is_some());
         assert!(resolved.exec().is_some());
-        assert_eq!(resolved.startup_wm_class(), Some(&format!("crx_{}", id)));
+        let expected = format!("crx_{}", id);
+        assert_eq!(resolved.startup_wm_class(), Some(expected.as_str()));
     }
 
     #[test]
