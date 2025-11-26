@@ -4,6 +4,7 @@
 //! Embedded icons for platforms which do not support icon themes yet.
 
 /// Icon bundling is not enabled on unix platforms.
+#[cfg(unix)]
 pub fn get(icon_name: &str) -> Option<super::Data> {
     None
 }
