@@ -6,11 +6,53 @@ use notify::{
 };
 use serde::{Serialize, de::DeserializeOwned};
 use std::{
-    fmt, fs,
+    env, fmt, fs,
     io::Write,
     path::{Path, PathBuf},
     sync::Mutex,
 };
+
+/// Get the config directory, with Flatpak sandbox support.
+/// In Flatpak, HOST_XDG_CONFIG_HOME points to the real user config directory,
+/// allowing sandboxed apps to read host config files.
+fn get_config_dir() -> Option<PathBuf> {
+    // Check if we're running in Flatpak
+    if let Some(flatpak_id) = env::var_os("FLATPAK_ID") {
+        tracing::debug!("Running in Flatpak: {:?}", flatpak_id);
+        // Try HOST_XDG_CONFIG_HOME first (requires --filesystem=xdg-config permission)
+        if let Some(host_config) = env::var_os("HOST_XDG_CONFIG_HOME") {
+            tracing::debug!("Using HOST_XDG_CONFIG_HOME: {:?}", host_config);
+            return Some(PathBuf::from(host_config));
+        }
+        // Fallback: try to construct from HOME (which points to real home in Flatpak)
+        if let Some(home) = env::var_os("HOME") {
+            let config_path = PathBuf::from(&home).join(".config");
+            tracing::debug!("Using HOME fallback for config: {:?}", config_path);
+            return Some(config_path);
+        }
+        tracing::warn!("Flatpak detected but no config directory found");
+    }
+    // Not in Flatpak or no host config available, use standard dirs
+    let config_dir = dirs::config_dir();
+    tracing::debug!("Using standard config dir: {:?}", config_dir);
+    config_dir
+}
+
+/// Get the state directory, with Flatpak sandbox support.
+fn get_state_dir() -> Option<PathBuf> {
+    // Check if we're running in Flatpak
+    if env::var_os("FLATPAK_ID").is_some() {
+        // Try HOST_XDG_STATE_HOME first
+        if let Some(host_state) = env::var_os("HOST_XDG_STATE_HOME") {
+            return Some(PathBuf::from(host_state));
+        }
+        // Fallback: try to construct from HOME
+        if let Some(home) = env::var_os("HOME") {
+            return Some(PathBuf::from(home).join(".local").join("state"));
+        }
+    }
+    dirs::state_dir()
+}
 
 #[cfg(feature = "subscription")]
 mod subscription;
@@ -170,7 +212,7 @@ impl Config {
                 .map(|x| x.join("COSMIC").join(&path));
 
         // Get libcosmic user configuration directory
-        let mut user_path = dirs::config_dir().ok_or(Error::NoConfigDirectory)?;
+        let mut user_path = get_config_dir().ok_or(Error::NoConfigDirectory)?;
         user_path.push("cosmic");
         user_path.push(path);
 
@@ -212,7 +254,7 @@ impl Config {
         let path = sanitize_name(name)?.join(format!("v{}", version));
 
         // Get libcosmic user state directory
-        let mut user_path = dirs::state_dir().ok_or(Error::NoConfigDirectory)?;
+        let mut user_path = get_state_dir().ok_or(Error::NoConfigDirectory)?;
         user_path.push("cosmic");
         user_path.push(path);
         // Create new state directory if not found.
