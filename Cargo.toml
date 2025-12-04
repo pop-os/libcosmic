@@ -107,8 +107,6 @@ cctk = { git = "https://github.com/pop-os/cosmic-protocols", package = "cosmic-c
 chrono = "0.4.42"
 cosmic-config = { path = "cosmic-config" }
 cosmic-settings-config = { git = "https://github.com/pop-os/cosmic-settings-daemon", optional = true }
-# Compile-time generation of code
-crabtime = "1.1.4"
 # Internationalization
 i18n-embed = { version = "0.16.0", features = [
     "fluent-system",
