@@ -1,11 +1,13 @@
+use std::env;
+
 fn main() {
     println!("cargo::rerun-if-changed=build.rs");
 
-    #[cfg(not(unix))]
-    generate_bundled_icons();
+    if env::var_os("CARGO_CFG_UNIX").is_none() {
+        generate_bundled_icons();
+    }
 }
 
-#[cfg(not(unix))]
 fn generate_bundled_icons() {
     println!("cargo::rerun-if-changed=cosmic-icons");
 
