@@ -1,9 +1,11 @@
 fn main() {
     println!("cargo::rerun-if-changed=build.rs");
 
+    #[cfg(not(unix))]
     generate_bundled_icons();
 }
 
+#[cfg(not(unix))]
 fn generate_bundled_icons() {
     println!("cargo::rerun-if-changed=cosmic-icons");
 
