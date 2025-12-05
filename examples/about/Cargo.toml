@@ -4,9 +4,6 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-tracing = "0.1.41"
-tracing-subscriber = "0.3.19"
-tracing-log = "0.2.0"
 open = "5.3.2"
 
 [dependencies.libcosmic]

@@ -5,17 +5,14 @@
 
 use cosmic::app::context_drawer::{self, ContextDrawer};
 use cosmic::app::{Core, Settings, Task};
-use cosmic::iced::widget::column;
-use cosmic::iced_core::Size;
+use cosmic::executor;
+use cosmic::iced::{alignment, Length, Size};
+use cosmic::prelude::*;
 use cosmic::widget::{self, about::About, nav_bar};
-use cosmic::{executor, iced, ApplicationExt, Element};
 
 /// Runs application with these settings
 #[rustfmt::skip]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    tracing_subscriber::fmt::init();
-    let _ = tracing_log::LogTracer::init();
-
     let settings = Settings::default()
         .size(Size::new(1024., 768.));
 
@@ -67,12 +64,12 @@ impl cosmic::Application for App {
 
         let about = About::default()
             .name("About Demo")
-            .icon(Self::APP_ID)
+            .icon(widget::icon::from_name(Self::APP_ID))
             .version("0.1.0")
-            .author("System 76")
+            .author("System76")
             .license("GPL-3.0-only")
-            //.license_url("https://www.some-custom-license-url.com")
-            .developers([("Michael Murphy", "mmstick@system76.com")])
+            .license_url("https://choosealicense.com/licenses/gpl-3.0/")
+            .developers([("Michael Murphy", "info@system76.com")])
             .links([
                 ("Website", "https://system76.com/cosmic"),
                 ("Repository", "https://github.com/pop-os/libcosmic"),
@@ -86,7 +83,11 @@ impl cosmic::Application for App {
             show_about: false,
         };
 
-        let command = app.update_title();
+        app.set_header_title("COSMIC About Example".into());
+        let command = app.set_window_title(
+            "COSMIC About Example".into(),
+            app.core.main_window_id().unwrap(),
+        );
 
         (app, command)
     }
@@ -99,12 +100,17 @@ impl cosmic::Application for App {
     /// Called when a navigation item is selected.
     fn on_nav_select(&mut self, id: nav_bar::Id) -> Task<Self::Message> {
         self.nav_model.activate(id);
-        self.update_title()
+        Task::none()
     }
 
-    fn context_drawer(&self) -> Option<ContextDrawer<Self::Message>> {
-        self.show_about
-            .then(|| context_drawer::about(&self.about, Message::Open, Message::ToggleAbout))
+    fn context_drawer(&self) -> Option<ContextDrawer<'_, Self::Message>> {
+        self.show_about.then(|| {
+            context_drawer::about(
+                &self.about,
+                |url| Message::Open(url.to_owned()),
+                Message::ToggleAbout,
+            )
+        })
     }
 
     /// Handle application events here.
@@ -116,47 +122,27 @@ impl cosmic::Application for App {
             }
             Message::Open(url) => match open::that_detached(url) {
                 Ok(_) => (),
-                Err(err) => tracing::error!("Failed to open URL: {err}"),
+                Err(err) => eprintln!("Failed to open URL: {err}"),
             },
         }
         Task::none()
     }
 
     /// Creates a view after each update.
-    fn view(&self) -> Element<Self::Message> {
+    fn view(&self) -> Element<'_, Self::Message> {
+        let show_about_button = widget::button::text("Show about").on_press(Message::ToggleAbout);
         let centered = cosmic::widget::container(
-            column![widget::button::text("Show about").on_press(Message::ToggleAbout)]
-                .width(iced::Length::Fill)
-                .height(iced::Length::Shrink)
-                .align_x(iced::alignment::Horizontal::Center),
+            widget::column()
+                .push(show_about_button)
+                .width(Length::Fill)
+                .height(Length::Shrink)
+                .align_x(alignment::Horizontal::Center),
         )
-        .width(iced::Length::Fill)
-        .height(iced::Length::Shrink)
-        .align_x(iced::alignment::Horizontal::Center)
-        .align_y(iced::alignment::Vertical::Center);
+        .width(Length::Fill)
+        .height(Length::Shrink)
+        .align_x(alignment::Horizontal::Center)
+        .align_y(alignment::Vertical::Center);
 
         Element::from(centered)
-    }
-}
-
-impl App
-where
-    Self: cosmic::Application,
-{
-    fn active_page_title(&mut self) -> &str {
-        self.nav_model
-            .text(self.nav_model.active())
-            .unwrap_or("Unknown Page")
-    }
-
-    fn update_title(&mut self) -> Task<Message> {
-        let header_title = self.active_page_title().to_owned();
-        let window_title = format!("{header_title} — COSMIC AppDemo");
-        self.set_header_title(header_title);
-        if let Some(id) = self.core.main_window_id() {
-            self.set_window_title(window_title, id)
-        } else {
-            Task::none()
-        }
     }
 }
