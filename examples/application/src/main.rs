@@ -3,24 +3,13 @@
 
 //! Application API example
 
+use cosmic::app::Settings;
+use cosmic::iced::{Alignment, Length, Size};
+use cosmic::widget::menu::{self, KeyBind};
+use cosmic::widget::nav_bar;
+use cosmic::{executor, iced, prelude::*, widget, Core};
 use std::collections::HashMap;
 use std::sync::LazyLock;
-
-use cosmic::app::{Core, Settings, Task};
-use cosmic::iced::alignment::{Horizontal, Vertical};
-use cosmic::iced::widget::column;
-use cosmic::iced::Length;
-use cosmic::iced_core::Size;
-use cosmic::widget::icon::{from_name, Handle};
-use cosmic::widget::menu::KeyBind;
-use cosmic::widget::{button, text};
-use cosmic::widget::{
-    container,
-    menu::menu_button,
-    menu::{self, action::MenuAction},
-    nav_bar, responsive,
-};
-use cosmic::{executor, iced, ApplicationExt, Element};
 
 static MENU_ID: LazyLock<iced::id::Id> = LazyLock::new(|| iced::id::Id::new("menu_id"));
 
@@ -50,7 +39,7 @@ pub enum Action {
     Hi3,
 }
 
-impl MenuAction for Action {
+impl widget::menu::Action for Action {
     type Message = Message;
 
     fn message(&self) -> Message {
@@ -129,7 +118,7 @@ impl cosmic::Application for App {
     }
 
     /// Creates the application, and optionally emits task on initialize.
-    fn init(core: Core, input: Self::Flags) -> (Self, Task<Self::Message>) {
+    fn init(core: Core, input: Self::Flags) -> (Self, cosmic::app::Task<Self::Message>) {
         let mut nav_model = nav_bar::Model::default();
 
         for (title, content) in input {
@@ -158,13 +147,13 @@ impl cosmic::Application for App {
     }
 
     /// Called when a navigation item is selected.
-    fn on_nav_select(&mut self, id: nav_bar::Id) -> Task<Self::Message> {
+    fn on_nav_select(&mut self, id: nav_bar::Id) -> cosmic::app::Task<Self::Message> {
         self.nav_model.activate(id);
         self.update_title()
     }
 
     /// Handle application events here.
-    fn update(&mut self, message: Self::Message) -> Task<Self::Message> {
+    fn update(&mut self, message: Self::Message) -> cosmic::app::Task<Self::Message> {
         match message {
             Message::Input1(v) => {
                 self.input_1 = v;
@@ -195,46 +184,49 @@ impl cosmic::Application for App {
     }
 
     /// Creates a view after each update.
-    fn view(&self) -> Element<Self::Message> {
+    fn view(&self) -> Element<'_, Self::Message> {
         let page_content = self
             .nav_model
             .active_data::<String>()
             .map_or("No page selected", String::as_str);
 
-        let text = cosmic::widget::text(page_content);
-
-        let centered = cosmic::widget::container(
-            column![
-                text,
-                cosmic::widget::text_input::text_input("", &self.input_1)
-                    .on_input(Message::Input1)
-                    .on_clear(Message::Ignore),
-                cosmic::widget::text_input::secure_input(
-                    "",
-                    &self.input_1,
-                    Some(Message::ToggleHide),
-                    self.hidden
+        let centered = widget::container(
+            widget::column()
+                .push(widget::text::body(page_content))
+                .push(
+                    widget::text_input::text_input("", &self.input_1)
+                        .on_input(Message::Input1)
+                        .on_clear(Message::Ignore),
                 )
-                .on_input(Message::Input1),
-                cosmic::widget::text_input::text_input("", &self.input_1).on_input(Message::Input1),
-                cosmic::widget::text_input::search_input("", &self.input_2)
-                    .on_input(Message::Input2)
-                    .on_clear(Message::Ignore),
-            ]
-            .spacing(cosmic::theme::spacing().space_s)
-            .width(iced::Length::Fill)
-            .height(iced::Length::Shrink)
-            .align_x(iced::Alignment::Center),
+                .push(
+                    widget::text_input::secure_input(
+                        "",
+                        &self.input_1,
+                        Some(Message::ToggleHide),
+                        self.hidden,
+                    )
+                    .on_input(Message::Input1),
+                )
+                .push(widget::text_input::text_input("", &self.input_2).on_input(Message::Input2))
+                .push(
+                    widget::text_input::search_input("", &self.input_2)
+                        .on_input(Message::Input2)
+                        .on_clear(Message::Ignore),
+                )
+                .spacing(cosmic::theme::spacing().space_s)
+                .width(Length::Fill)
+                .height(Length::Shrink)
+                .align_x(Alignment::Center),
         )
-        .width(iced::Length::Fill)
-        .height(iced::Length::Shrink)
-        .align_x(iced::Alignment::Center)
-        .align_y(iced::Alignment::Center);
+        .width(Length::Fill)
+        .height(Length::Shrink)
+        .align_x(Alignment::Center)
+        .align_y(Alignment::Center);
 
         Element::from(centered)
     }
 
-    fn header_start(&self) -> Vec<Element<Self::Message>> {
+    fn header_start(&self) -> Vec<Element<'_, Self::Message>> {
         vec![cosmic::widget::responsive_menu_bar().into_element(
             self.core(),
             &self.keybinds,
@@ -322,7 +314,7 @@ where
             .unwrap_or("Unknown Page")
     }
 
-    fn update_title(&mut self) -> Task<Message> {
+    fn update_title(&mut self) -> cosmic::app::Task<Message> {
         let header_title = self.active_page_title().to_owned();
         let window_title = format!("{header_title} — COSMIC AppDemo");
         self.set_header_title(header_title);
