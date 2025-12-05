@@ -84,7 +84,7 @@ impl cosmic::Application for App {
     }
 
     /// Creates a view after each update.
-    fn view(&self) -> Element<Self::Message> {
+    fn view(&self) -> Element<'_, Self::Message> {
         let mut content = cosmic::widget::column().spacing(12);
 
         let calendar = cosmic::widget::calendar(
@@ -111,7 +111,7 @@ impl App
 where
     Self: cosmic::Application,
 {
-    fn update_title(&mut self) -> Task<Message> {
+    fn update_title(&mut self) -> cosmic::app::Task<Message> {
         self.set_header_title(String::from("Calendar Demo"));
         self.set_window_title(String::from("Calendar Demo"))
     }

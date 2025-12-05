@@ -10,6 +10,7 @@ use crate::iced_core::{Alignment, Length, Padding};
 use crate::widget::{Grid, button, column, grid, icon, row, text};
 use apply::Apply;
 use chrono::{Datelike, Days, Local, Month, Months, NaiveDate, Weekday};
+use iced::alignment::Vertical;
 
 /// A widget that displays an interactive calendar.
 pub fn calendar<M>(
@@ -156,17 +157,17 @@ where
         ))
         .size(18);
 
+        let day = text::body(translate_weekday!(this.model.visible.weekday()));
+
         let month_controls = row::with_capacity(2)
             .push(
                 icon::from_name("go-previous-symbolic")
                     .apply(button::icon)
-                    .padding([0, 12])
                     .on_press((this.on_prev)()),
             )
             .push(
                 icon::from_name("go-next-symbolic")
                     .apply(button::icon)
-                    .padding([0, 12])
                     .on_press((this.on_next)()),
             );
 
@@ -216,10 +217,11 @@ where
 
         let content_list = column::with_children([
             row::with_children([
-                date.into(),
+                column().push(date).push(day).into(),
                 crate::widget::Space::with_width(Length::Fill).into(),
                 month_controls.into(),
             ])
+            .align_y(Vertical::Center)
             .padding([12, 20])
             .into(),
             calendar_grid.into(),
