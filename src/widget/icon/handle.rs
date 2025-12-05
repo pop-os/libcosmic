@@ -94,7 +94,7 @@ pub fn from_raster_pixels(
 /// Create a SVG handle from memory.
 pub fn from_svg_bytes(bytes: impl Into<Cow<'static, [u8]>>) -> Handle {
     Handle {
-        symbolic: true,
+        symbolic: false,
         data: Data::Svg(svg::Handle::from_memory(bytes)),
     }
 }
