@@ -1935,6 +1935,7 @@ where
                                 match crate::widget::common::object_select().data() {
                                     crate::iced_core::svg::Data::Bytes(bytes) => {
                                         crate::widget::icon::from_svg_bytes(bytes.as_ref())
+                                            .symbolic(true)
                                     }
                                     crate::iced_core::svg::Data::Path(path) => {
                                         crate::widget::icon::from_path(path.clone())
