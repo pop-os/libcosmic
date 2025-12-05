@@ -52,7 +52,7 @@ where
             content: content.into(),
             modal: false,
             popup: None,
-            position: Position::Bottom,
+            position: Position::Center,
             on_close: None,
         }
     }
