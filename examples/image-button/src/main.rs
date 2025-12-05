@@ -79,7 +79,7 @@ impl cosmic::Application for App {
     }
 
     /// Creates a view after each update.
-    fn view(&self) -> Element<Self::Message> {
+    fn view(&self) -> Element<'_, Self::Message> {
         let mut content = cosmic::widget::column().spacing(12);
 
         for (id, image) in self.images.iter().enumerate() {
@@ -108,6 +108,9 @@ where
 {
     fn update_title(&mut self) -> Task<Message> {
         self.set_header_title(String::from("Image Button Demo"));
-        self.set_window_title(String::from("Image Button Demo"))
+        self.set_window_title(
+            String::from("Image Button Demo"),
+            self.core.main_window_id().unwrap(),
+        )
     }
 }

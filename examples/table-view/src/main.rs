@@ -204,7 +204,7 @@ impl cosmic::Application for App {
     }
 
     /// Creates a view after each update.
-    fn view(&self) -> Element<Self::Message> {
+    fn view(&self) -> Element<'_, Self::Message> {
         cosmic::widget::responsive(|size| {
             if size.width < 600.0 {
                 widget::compact_table(&self.table_model)

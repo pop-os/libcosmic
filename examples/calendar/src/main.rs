@@ -113,6 +113,9 @@ where
 {
     fn update_title(&mut self) -> cosmic::app::Task<Message> {
         self.set_header_title(String::from("Calendar Demo"));
-        self.set_window_title(String::from("Calendar Demo"))
+        self.set_window_title(
+            String::from("Calendar Demo"),
+            self.core.main_window_id().unwrap(),
+        )
     }
 }

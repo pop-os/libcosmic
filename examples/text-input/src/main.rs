@@ -87,7 +87,7 @@ impl cosmic::Application for App {
     }
 
     /// Creates a view after each update.
-    fn view(&self) -> Element<Self::Message> {
+    fn view(&self) -> Element<'_, Self::Message> {
         let editable = cosmic::widget::editable_input(
             "Input text here",
             &self.input,
@@ -118,6 +118,6 @@ where
     fn update_title(&mut self) -> Task<Message> {
         let window_title = format!("COSMIC TextInputs Demo");
         self.set_header_title(window_title.clone());
-        self.set_window_title(window_title)
+        self.set_window_title(window_title, self.core.main_window_id().unwrap())
     }
 }

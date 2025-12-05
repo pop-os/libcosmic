@@ -2,11 +2,11 @@ use std::collections::HashMap;
 
 use cosmic::{
     app::Core,
-    iced::{self, event, window},
+    iced::{self, event, window, Subscription},
     iced_core::{id, Alignment, Length, Point},
     iced_widget::{column, container, scrollable, text},
+    prelude::*,
     widget::{button, header_bar},
-    ApplicationExt, Task,
 };
 
 #[derive(Debug, Clone, PartialEq)]
@@ -57,7 +57,7 @@ impl cosmic::Application for MultiWindow {
         (windows, cosmic::app::Task::none())
     }
 
-    fn subscription(&self) -> cosmic::iced_futures::Subscription<Self::Message> {
+    fn subscription(&self) -> Subscription<Self::Message> {
         event::listen_with(|event, _, id| {
             if let iced::Event::Window(window_event) = event {
                 match window_event {
@@ -74,7 +74,7 @@ impl cosmic::Application for MultiWindow {
         })
     }
 
-    fn update(&mut self, message: Self::Message) -> iced::Task<cosmic::Action<Self::Message>> {
+    fn update(&mut self, message: Self::Message) -> Task<cosmic::Action<Self::Message>> {
         match message {
             Message::CloseWindow(id) => window::close(id),
             Message::WindowClosed(id) => {
@@ -119,7 +119,7 @@ impl cosmic::Application for MultiWindow {
         }
     }
 
-    fn view_window(&self, id: window::Id) -> cosmic::prelude::Element<Self::Message> {
+    fn view_window(&self, id: window::Id) -> Element<'_, Self::Message> {
         let w = self.windows.get(&id).unwrap();
 
         let input_id = w.input_id.clone();
@@ -152,7 +152,7 @@ impl cosmic::Application for MultiWindow {
         }
     }
 
-    fn view(&self) -> cosmic::prelude::Element<Self::Message> {
+    fn view(&self) -> Element<'_, Self::Message> {
         self.view_window(self.core.main_window_id().unwrap())
     }
 }

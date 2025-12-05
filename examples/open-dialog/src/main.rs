@@ -82,7 +82,7 @@ impl cosmic::Application for App {
         (app, cmd)
     }
 
-    fn header_end(&self) -> Vec<Element<Self::Message>> {
+    fn header_end(&self) -> Vec<Element<'_, Self::Message>> {
         // Places a button the header to create open dialogs.
         vec![button::suggested("Open").on_press(Message::OpenFile).into()]
     }
@@ -186,13 +186,17 @@ impl cosmic::Application for App {
             Message::CloseError => {
                 self.error_status = None;
             }
-            Message::Surface(surface) => {}
+            Message::Surface(action) => {
+                return cosmic::task::message(cosmic::Action::Cosmic(
+                    cosmic::app::Action::Surface(action),
+                ));
+            }
         }
 
         Task::none()
     }
 
-    fn view(&self) -> Element<Self::Message> {
+    fn view(&self) -> Element<'_, Self::Message> {
         let mut content = Vec::new();
 
         if let Some(error) = self.error_status.as_deref() {

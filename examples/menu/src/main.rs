@@ -110,7 +110,7 @@ impl cosmic::Application for App {
         (app, Task::none())
     }
 
-    fn header_start(&self) -> Vec<Element<Self::Message>> {
+    fn header_start(&self) -> Vec<Element<'_, Self::Message>> {
         vec![menu_bar(&self.config, &self.key_binds)]
     }
 
@@ -137,7 +137,7 @@ impl cosmic::Application for App {
     }
 
     /// Creates a view after each update.
-    fn view(&self) -> Element<Self::Message> {
+    fn view(&self) -> Element<'_, Self::Message> {
         let text = if self.config.hide_content {
             cosmic::widget::text("")
         } else {

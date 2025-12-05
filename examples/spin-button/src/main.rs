@@ -130,7 +130,7 @@ impl Application for SpinButtonExamplApp {
         Task::none()
     }
 
-    fn view(&self) -> Element<Self::Message> {
+    fn view(&'_ self) -> Element<'_, Self::Message> {
         let space_xs = cosmic::theme::spacing().space_xs;
 
         let vert_spinner_row = iced::widget::row![

@@ -37,7 +37,6 @@ pub enum Message {
 pub struct App {
     core: Core,
     button_label: String,
-    show_context: bool,
     hide_content: bool,
 }
 
@@ -69,7 +68,6 @@ impl cosmic::Application for App {
             core,
             button_label: String::from("Right click me"),
             hide_content: false,
-            show_context: false,
         };
 
         app.set_header_title("COSMIC Context Menu Demo".into());
@@ -102,7 +100,7 @@ impl cosmic::Application for App {
     }
 
     /// Creates a view after each update.
-    fn view(&self) -> Element<Self::Message> {
+    fn view(&self) -> Element<'_, Self::Message> {
         let widget = cosmic::widget::context_menu(
             cosmic::widget::button::text(self.button_label.to_string()).on_press(Message::Clicked),
             self.context_menu(),

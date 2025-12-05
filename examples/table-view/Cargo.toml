@@ -10,6 +10,5 @@ tracing-log = "0.2.0"
 chrono = "*"
 
 [dependencies.libcosmic]
-features = ["debug", "multi-window", "wayland", "winit", "desktop", "tokio"]
+features = ["debug", "wgpu", "winit", "desktop", "tokio"]
 path = "../.."
-default-features = false

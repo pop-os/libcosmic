@@ -10,5 +10,4 @@ chrono = "0.4.40"
 
 [dependencies.libcosmic]
 path = "../../"
-default-features = false
 features = ["debug", "winit", "tokio", "xdg-portal", "wgpu"]

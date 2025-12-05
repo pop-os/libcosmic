@@ -8,18 +8,15 @@ open = "5.3.2"
 
 [dependencies.libcosmic]
 path = "../../"
-default-features = false
 features = [
     "debug",
     "winit",
     "tokio",
     "xdg-portal",
-    "dbus-config",
     "desktop",
     "a11y",
     "wayland",
     "wgpu",
     "single-instance",
-    "multi-window",
     "about",
 ]

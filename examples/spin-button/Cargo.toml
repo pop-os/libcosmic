@@ -7,6 +7,6 @@ edition = "2021"
 fraction = "0.15.3"
 
 [dependencies.libcosmic]
-features = ["debug", "multi-window", "wayland", "winit", "desktop", "tokio"]
+features = ["debug", "wgpu", "winit", "desktop", "tokio"]
 path = "../.."
 default-features = false
