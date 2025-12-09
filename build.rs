@@ -41,6 +41,9 @@ fn generate_bundled_icons() {
         )
         .into_iter()
         .fold(String::new(), |mut output, (name, path)| {
+            // This changes the escape character to the one used by Windows.
+            #[cfg(windows)]
+            let path = path.replace("\\", "/");
             output.push_str(&format!("    \"{name}\" => include_bytes!(\"{path}\"),\n"));
             output
         });
