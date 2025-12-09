@@ -1,5 +1,5 @@
 # Context Drawer
-close = أغلق
+close = أغلِق
 # About
 license = الترخيص
 links = الروابط
