@@ -91,6 +91,7 @@ pub mod icon_theme;
 pub mod keyboard_nav;
 
 mod localize;
+pub use localize::prepend_languages;
 
 #[cfg(all(target_env = "gnu", not(target_os = "windows")))]
 pub(crate) mod malloc;
