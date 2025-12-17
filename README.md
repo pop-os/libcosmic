@@ -10,6 +10,7 @@ A platform toolkit based on iced for creating applets and applications for the C
 ## Templates
 
 - https://github.com/pop-os/cosmic-app-template: Application project template
+- https://github.com/pop-os/cosmic-applet-template: Panel applet project template
 
 ## Dependencies
 
