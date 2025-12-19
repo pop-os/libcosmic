@@ -597,14 +597,12 @@ impl<Message: 'static> Widget<Message, crate::Theme, crate::Renderer>
         };
         dnd_rectangles.push(my_dest);
 
-        if let Some(child_layout) = layout.children().next() {
-            self.container.as_widget().drag_destinations(
-                &state.children[0],
-                child_layout.with_virtual_offset(layout.virtual_offset()),
-                renderer,
-                dnd_rectangles,
-            );
-        }
+        self.container.as_widget().drag_destinations(
+            &state.children[0],
+            layout,
+            renderer,
+            dnd_rectangles,
+        );
     }
 
     fn id(&self) -> Option<Id> {
