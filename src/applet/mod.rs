@@ -281,17 +281,38 @@ impl Context {
         .class(crate::theme::Button::AppletIcon)
     }
 
+    pub fn get_icon_button_icon_with_path<'a, Message: Clone + 'static>(
+        &self,
+        icon_name: &'a str,
+        extra_search_path: Option<Vec<std::path::PathBuf>>,
+    ) -> Named {
+        let suggested_size = self.suggested_size(true);
+        widget::icon::from_name_with_path(icon_name, extra_search_path)
+            .symbolic(true)
+            .size(suggested_size.0)
+            .into()
+    }
+
+    pub fn icon_button<'a, Message: Clone + 'static>(
+        &self,
+        icon_name: &'a str,
+        extra_search_path: Option<Vec<std::path::PathBuf>>,
+    ) -> crate::widget::Button<'a, Message> {
+        self.icon_button_from_handle(self.get_icon_button_icon_with_path(icon_name, extra_search_path))
+    }
+
+    pub fn get_icon_button_icon<'a, Message: Clone + 'static>(
+        &self,
+        icon_name: &'a str,
+    ) -> Named {
+        self.get_icon_button_icon_with_path(icon_name, None)
+    }
+
     pub fn icon_button<'a, Message: Clone + 'static>(
         &self,
         icon_name: &'a str,
     ) -> crate::widget::Button<'a, Message> {
-        let suggested_size = self.suggested_size(true);
-        self.icon_button_from_handle(
-            widget::icon::from_name(icon_name)
-                .symbolic(true)
-                .size(suggested_size.0)
-                .into(),
-        )
+        self.icon_button_from_handle(self.get_icon_button_icon(icon_name))
     }
 
     pub fn applet_tooltip<'a, Message: 'static>(

@@ -36,10 +36,17 @@ pub struct Named {
 
     /// Prioritizes SVG over PNG
     pub prefer_svg: bool,
+
+    // Additional directories to search
+    extra_search_path: Option<Vec<std::path::PathBuf>>,
 }
 
 impl Named {
     pub fn new(name: impl Into<Arc<str>>) -> Self {
+        Named::new_with_path(name, None)
+    }
+
+    pub fn new_with_path(name: impl Into<Arc<str>>, extra_search_path: Option<Vec<std::path::PathBuf>>) -> Self {
         let name = name.into();
         let symbolic = name.ends_with("-symbolic");
         Self {
@@ -49,6 +56,7 @@ impl Named {
             size: None,
             scale: None,
             prefer_svg: symbolic,
+            extra_search_path,
         }
     }
 
@@ -68,6 +76,10 @@ impl Named {
 
             if let Some(size) = self.size {
                 lookup = lookup.with_size(size);
+            }
+            
+            if let Some(extra_search_path) = self.extra_search_path {
+                lookup = lookup.with_extra_search_path(extra_search_path);
             }
 
             if self.prefer_svg {

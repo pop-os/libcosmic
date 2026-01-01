@@ -36,6 +36,11 @@ pub fn from_name(name: impl Into<Arc<str>>) -> Named {
     Named::new(name)
 }
 
+/// Create an icon handle from its XDG icon name and additional search directories.
+pub fn from_name_with_path(name: impl Into<Arc<str>>, extra_search_path: Option<Vec<std::path::PathBuf>>) -> Named {
+    Named::new_with_path(name, extra_search_path)
+}
+
 /// An image which may be an SVG or PNG.
 #[must_use]
 #[derive(Clone, Setters)]
