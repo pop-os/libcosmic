@@ -7,23 +7,22 @@ use std::path::{Path, PathBuf};
 use std::{borrow::Cow, collections::HashSet, ffi::OsStr};
 
 pub trait IconSourceExt {
-    fn as_cosmic_icon(&self) -> crate::widget::icon::Icon;
+    fn as_cosmic_icon(&self) -> crate::widget::icon::Handle;
 }
 
 #[cfg(not(windows))]
 impl IconSourceExt for fde::IconSource {
-    fn as_cosmic_icon(&self) -> crate::widget::icon::Icon {
+    fn as_cosmic_icon(&self) -> crate::widget::icon::Handle {
         match self {
             fde::IconSource::Name(name) => crate::widget::icon::from_name(name.as_str())
+                .prefer_svg(true)
                 .size(128)
                 .fallback(Some(crate::widget::icon::IconFallback::Names(vec![
                     "application-default".into(),
                     "application-x-executable".into(),
                 ])))
-                .into(),
-            fde::IconSource::Path(path) => {
-                crate::widget::icon(crate::widget::icon::from_path(path.clone()))
-            }
+                .handle(),
+            fde::IconSource::Path(path) => crate::widget::icon::from_path(path.clone()),
         }
     }
 }
