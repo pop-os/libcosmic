@@ -33,6 +33,10 @@ impl<'a, Message> Button<'a, Message> {
         Self {
             id: Id::unique(),
             label: Cow::Borrowed(""),
+            #[cfg(feature = "a11y")]
+            name: Cow::Borrowed(""),
+            #[cfg(feature = "a11y")]
+            description: Cow::Borrowed(""),
             tooltip: Cow::Borrowed(""),
             on_press: None,
             width: Length::Shrink,
@@ -79,12 +83,18 @@ where
             .width(builder.width)
             .height(builder.height);
 
-        super::custom_image_button(content, builder.variant.on_remove)
+        let mut button = super::custom_image_button(content, builder.variant.on_remove)
             .padding(0)
             .selected(builder.variant.selected)
             .id(builder.id)
             .on_press_maybe(builder.on_press)
-            .class(builder.class)
-            .into()
+            .class(builder.class);
+
+        #[cfg(feature = "a11y")]
+        {
+            button = button.name(builder.name).description(builder.description);
+        }
+
+        button.into()
     }
 }

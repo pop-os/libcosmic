@@ -63,6 +63,10 @@ impl<Message> Button<'_, Message> {
         Self {
             id: Id::unique(),
             label: Cow::Borrowed(""),
+            #[cfg(feature = "a11y")]
+            name: Cow::Borrowed(""),
+            #[cfg(feature = "a11y")]
+            description: Cow::Borrowed(""),
             tooltip: Cow::Borrowed(""),
             on_press: None,
             width: Length::Shrink,
@@ -136,8 +140,10 @@ impl<'a, Message: Clone + 'static> From<Button<'a, Message>> for Element<'a, Mes
         #[cfg(feature = "a11y")]
         {
             if !builder.label.is_empty() {
-                button = button.name(builder.label);
+                button = button.name(builder.label)
             }
+
+            button = button.description(builder.description);
         }
 
         if builder.tooltip.is_empty() {

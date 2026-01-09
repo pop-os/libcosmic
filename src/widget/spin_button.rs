@@ -16,6 +16,7 @@ use std::ops::{Add, Sub};
 /// Horizontal spin button widget.
 pub fn spin_button<'a, T, M>(
     label: impl Into<Cow<'a, str>>,
+    #[cfg(feature = "a11y")] name: impl Into<Cow<'a, str>>,
     value: T,
     step: T,
     min: T,
@@ -25,7 +26,7 @@ pub fn spin_button<'a, T, M>(
 where
     T: Copy + Sub<Output = T> + Add<Output = T> + PartialOrd,
 {
-    SpinButton::new(
+    let mut button = SpinButton::new(
         label,
         value,
         step,
@@ -33,12 +34,20 @@ where
         max,
         Orientation::Horizontal,
         on_press,
-    )
+    );
+
+    #[cfg(feature = "a11y")]
+    {
+        button = button.name(name.into());
+    }
+
+    button
 }
 
 /// Vertical spin button widget.
 pub fn vertical<'a, T, M>(
     label: impl Into<Cow<'a, str>>,
+    #[cfg(feature = "a11y")] name: impl Into<Cow<'a, str>>,
     value: T,
     step: T,
     min: T,
@@ -48,15 +57,22 @@ pub fn vertical<'a, T, M>(
 where
     T: Copy + Sub<Output = T> + Add<Output = T> + PartialOrd,
 {
-    SpinButton::new(
+    let mut button = SpinButton::new(
         label,
         value,
         step,
         min,
         max,
-        Orientation::Vertical,
+        Orientation::Horizontal,
         on_press,
-    )
+    );
+
+    #[cfg(feature = "a11y")]
+    {
+        button = button.name(name.into());
+    }
+
+    button
 }
 
 #[derive(Clone, Copy)]
@@ -71,6 +87,9 @@ where
 {
     /// The formatted value of the spin button.
     label: Cow<'a, str>,
+    /// A name for screen reader support.
+    #[cfg(feature = "a11y")]
+    name: Cow<'a, str>,
     /// The current value of the spin button.
     value: T,
     /// The amount to increment or decrement the value.
@@ -99,6 +118,8 @@ where
     ) -> Self {
         Self {
             label: label.into(),
+            #[cfg(feature = "a11y")]
+            name: Cow::Borrowed(""),
             step,
             value: if value < min {
                 min
@@ -112,6 +133,12 @@ where
             orientation,
             on_press: Box::from(on_press),
         }
+    }
+
+    #[cfg(feature = "a11y")]
+    pub(self) fn name(mut self, name: Cow<'a, str>) -> Self {
+        self.name = name;
+        self
     }
 }
 
@@ -153,21 +180,28 @@ where
 fn make_button<'a, T, Message>(
     spin_button: &SpinButton<'a, T, Message>,
     icon: &'static str,
+    #[cfg(feature = "a11y")] name: String,
     operation: fn(T, T, T, T) -> T,
 ) -> Element<'a, Message>
 where
     Message: Clone + 'static,
     T: Copy + Sub<Output = T> + Add<Output = T> + PartialOrd,
 {
-    icon::from_name(icon)
+    let mut button = icon::from_name(icon)
         .apply(button::icon)
         .on_press((spin_button.on_press)(operation(
             spin_button.value,
             spin_button.step,
             spin_button.min,
             spin_button.max,
-        )))
-        .into()
+        )));
+
+    #[cfg(feature = "a11y")]
+    {
+        button = button.name(name.clone());
+    }
+
+    button.into()
 }
 
 fn horizontal_variant<T, Message>(spin_button: SpinButton<'_, T, Message>) -> Element<'_, Message>
@@ -175,9 +209,20 @@ where
     Message: Clone + 'static,
     T: Copy + Sub<Output = T> + Add<Output = T> + PartialOrd,
 {
-    let decrement_button = make_button(&spin_button, "list-remove-symbolic", decrement);
-    let increment_button = make_button(&spin_button, "list-add-symbolic", increment);
-
+    let decrement_button = make_button(
+        &spin_button,
+        "list-remove-symbolic",
+        #[cfg(feature = "a11y")]
+        [&spin_button.name, " decrease"].concat(),
+        decrement,
+    );
+    let increment_button = make_button(
+        &spin_button,
+        "list-add-symbolic",
+        #[cfg(feature = "a11y")]
+        [&spin_button.name, " increase"].concat(),
+        increment,
+    );
     let label = text::body(spin_button.label)
         .apply(container)
         .center_x(Length::Fixed(48.0))
@@ -198,8 +243,18 @@ where
     Message: Clone + 'static,
     T: Copy + Sub<Output = T> + Add<Output = T> + PartialOrd,
 {
-    let decrement_button = make_button(&spin_button, "list-remove-symbolic", decrement);
-    let increment_button = make_button(&spin_button, "list-add-symbolic", increment);
+    let decrement_button = make_button(
+        &spin_button,
+        "list-remove-symbolic",
+        [&spin_button.label, " decrease"].concat(),
+        decrement,
+    );
+    let increment_button = make_button(
+        &spin_button,
+        "list-add-symbolic",
+        [&spin_button.label, " increase"].concat(),
+        increment,
+    );
 
     let label = text::body(spin_button.label)
         .apply(container)
