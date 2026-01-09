@@ -69,6 +69,16 @@ pub struct Builder<'a, Message, Variant> {
     #[setters(into)]
     label: Cow<'a, str>,
 
+    /// A name for screen reader support
+    #[cfg(feature = "a11y")]
+    #[setters(into)]
+    name: Cow<'a, str>,
+
+    /// A description for screen reader support
+    #[cfg(feature = "a11y")]
+    #[setters(into)]
+    description: Cow<'a, str>,
+
     // Adds a tooltip to the button.
     #[setters(into)]
     tooltip: Cow<'a, str>,

@@ -34,6 +34,10 @@ impl<'a, Message> Button<'a, Message> {
         Self {
             id: Id::unique(),
             label: label.into(),
+            #[cfg(feature = "a11y")]
+            name: Cow::Borrowed(""),
+            #[cfg(feature = "a11y")]
+            description: Cow::Borrowed(""),
             tooltip: Cow::Borrowed(""),
             on_press: None,
             width: Length::Shrink,
@@ -62,7 +66,7 @@ pub fn icon() -> Handle {
 
 impl<'a, Message: Clone + 'static> From<Button<'a, Message>> for Element<'a, Message> {
     fn from(mut builder: Button<'a, Message>) -> Element<'a, Message> {
-        let button: super::Button<'a, Message> = row::with_capacity(2)
+        let mut button: super::Button<'a, Message> = row::with_capacity(2)
             .push({
                 // TODO: Avoid allocation
                 crate::widget::text(builder.label.to_string())
@@ -88,6 +92,15 @@ impl<'a, Message: Clone + 'static> From<Button<'a, Message>> for Element<'a, Mes
             .id(builder.id)
             .on_press_maybe(builder.on_press.take())
             .class(builder.class);
+
+        #[cfg(feature = "a11y")]
+        {
+            if !builder.label.is_empty() {
+                button = button.name(builder.label);
+            }
+
+            button = button.description(builder.description);
+        }
 
         if builder.tooltip.is_empty() {
             button.into()

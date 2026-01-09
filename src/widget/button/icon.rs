@@ -38,6 +38,10 @@ impl<Message> Button<'_, Message> {
         Self {
             id: Id::unique(),
             label: Cow::Borrowed(""),
+            #[cfg(feature = "a11y")]
+            name: Cow::Borrowed(""),
+            #[cfg(feature = "a11y")]
+            description: Cow::Borrowed(""),
             tooltip: Cow::Borrowed(""),
             on_press: None,
             width: Length::Shrink,
@@ -151,7 +155,7 @@ impl<'a, Message: Clone + 'static> From<Button<'a, Message>> for Element<'a, Mes
             );
         }
 
-        let button = if builder.variant.vertical {
+        let mut button = if builder.variant.vertical {
             crate::widget::column::with_children(content)
                 .padding(builder.padding)
                 .spacing(builder.spacing)
@@ -166,6 +170,11 @@ impl<'a, Message: Clone + 'static> From<Button<'a, Message>> for Element<'a, Mes
                 .align_y(Alignment::Center)
                 .apply(super::custom)
         };
+
+        #[cfg(feature = "a11y")]
+        {
+            button = button.name(builder.name).description(builder.description);
+        }
 
         let button = button
             .padding(0)
