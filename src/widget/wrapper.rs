@@ -58,14 +58,6 @@ impl<T> RcWrapper<T> {
         let my_refmut: &mut T = &mut RefCell::borrow_mut(self.data.as_ref());
         f(my_refmut)
     }
-
-    /// # Panics
-    ///
-    /// Will panic if used outside of original thread.
-    pub(crate) unsafe fn as_ptr(&self) -> *mut T {
-        assert_eq!(self.thread_id, thread::current().id());
-        RefCell::as_ptr(self.data.as_ref())
-    }
 }
 
 #[derive(Clone)]
