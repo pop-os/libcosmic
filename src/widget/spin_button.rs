@@ -246,12 +246,14 @@ where
     let decrement_button = make_button(
         &spin_button,
         "list-remove-symbolic",
+        #[cfg(feature = "a11y")]
         [&spin_button.label, " decrease"].concat(),
         decrement,
     );
     let increment_button = make_button(
         &spin_button,
         "list-add-symbolic",
+        #[cfg(feature = "a11y")]
         [&spin_button.label, " increase"].concat(),
         increment,
     );
