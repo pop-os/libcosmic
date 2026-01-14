@@ -17,8 +17,8 @@ no-default = []
 [dependencies]
 palette = { version = "0.7.6", features = ["serializing"] }
 almost = "0.2"
-serde = { version = "1.0.219", features = ["derive"] }
-serde_json = { version = "1.0.143", optional = true, features = [
+serde = { version = "1.0.228", features = ["derive"] }
+serde_json = { version = "1.0.149", optional = true, features = [
     "preserve_order",
 ] }
 ron = "0.11.0"
@@ -28,4 +28,4 @@ cosmic-config = { path = "../cosmic-config/", default-features = false, features
     "macro",
 ] }
 dirs.workspace = true
-thiserror = "2.0.16"
+thiserror = "2.0.17"
