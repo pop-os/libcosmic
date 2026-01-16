@@ -47,6 +47,8 @@ where
     gap: f32,
     #[setters(into)]
     padding: Padding,
+    #[setters(strip_option, into)]
+    placeholder: Option<Cow<'a, str>>,
     #[setters(strip_option)]
     text_size: Option<f32>,
     text_line_height: text::LineHeight,
@@ -86,6 +88,7 @@ where
             selections,
             icons: Cow::Borrowed(&[]),
             selected,
+            placeholder: None,
             width: Length::Shrink,
             gap: Self::DEFAULT_GAP,
             padding: Self::DEFAULT_PADDING,
@@ -115,6 +118,7 @@ where
             selections,
             icons,
             selected,
+            placeholder,
             width,
             gap,
             padding,
@@ -131,6 +135,7 @@ where
             selections,
             icons,
             selected,
+            placeholder,
             width,
             gap,
             padding,
@@ -241,6 +246,7 @@ where
                     .map(AsRef::as_ref)
                     .zip(tree.state.downcast_mut::<State>().selections.get_mut(id))
             }),
+            self.placeholder.as_deref(),
             !self.icons.is_empty(),
         )
     }
@@ -313,6 +319,7 @@ where
             font,
             self.selected.and_then(|id| self.selections.get(id)),
             self.selected.and_then(|id| self.icons.get(id)),
+            self.placeholder.as_deref(),
             tree.state.downcast_ref::<State>(),
             viewport,
         );
@@ -451,6 +458,7 @@ pub fn layout(
     text_line_height: text::LineHeight,
     font: Option<crate::font::Font>,
     selection: Option<(&str, &mut crate::Plain)>,
+    placeholder: Option<&str>,
     has_icons: bool,
 ) -> layout::Node {
     use std::f32;
@@ -459,8 +467,8 @@ pub fn layout(
 
     let max_width = match width {
         Length::Shrink => {
-            let measure = move |(label, paragraph): (_, &mut crate::Plain)| -> f32 {
-                paragraph.update(Text {
+            let measure = move |(label, paragraph): (_, Option<&mut crate::Plain>)| -> f32 {
+                let text = Text {
                     content: label,
                     bounds: Size::new(f32::MAX, f32::MAX),
                     size: iced::Pixels(text_size),
@@ -470,11 +478,22 @@ pub fn layout(
                     vertical_alignment: alignment::Vertical::Top,
                     shaping: text::Shaping::Advanced,
                     wrapping: text::Wrapping::default(),
-                });
+                };
+                let paragraph = match paragraph {
+                    Some(p) => {
+                        p.update(text);
+                        p
+                    }
+                    None => &mut crate::Plain::new(text),
+                };
                 paragraph.min_width().round()
             };
 
-            selection.map(measure).unwrap_or_default()
+            selection
+                .map(|(l, p)| (l, Some(p)))
+                .or_else(|| placeholder.map(|l| (l, None)))
+                .map(measure)
+                .unwrap_or_default()
         }
         _ => 0.0,
     };
@@ -841,6 +860,7 @@ pub fn draw<'a, S>(
     font: crate::font::Font,
     selected: Option<&'a S>,
     icon: Option<&'a icon::Handle>,
+    placeholder: Option<&'a str>,
     state: &'a State,
     viewport: &Rectangle,
 ) where
@@ -880,7 +900,7 @@ pub fn draw<'a, S>(
         );
     }
 
-    if let Some(content) = selected.map(AsRef::as_ref) {
+    if let Some(content) = selected.map(AsRef::as_ref).or(placeholder) {
         let text_size = text_size.unwrap_or_else(|| text::Renderer::default_size(renderer).0);
 
         let mut bounds = Rectangle {
