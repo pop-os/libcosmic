@@ -181,20 +181,22 @@ fn make_button<'a, T, Message>(
     spin_button: &SpinButton<'a, T, Message>,
     icon: &'static str,
     #[cfg(feature = "a11y")] name: String,
-    operation: fn(T, T, T, T) -> T,
+    operation: Option<fn(T, T, T, T) -> T>,
 ) -> Element<'a, Message>
 where
     Message: Clone + 'static,
     T: Copy + Sub<Output = T> + Add<Output = T> + PartialOrd,
 {
-    let mut button = icon::from_name(icon)
-        .apply(button::icon)
-        .on_press((spin_button.on_press)(operation(
+    let mut button = icon::from_name(icon).apply(button::icon);
+
+    if let Some(f) = operation {
+        button = button.on_press((spin_button.on_press)(f(
             spin_button.value,
             spin_button.step,
             spin_button.min,
             spin_button.max,
-        )));
+        )))
+    };
 
     #[cfg(feature = "a11y")]
     {
@@ -214,14 +216,20 @@ where
         "list-remove-symbolic",
         #[cfg(feature = "a11y")]
         [&spin_button.name, " decrease"].concat(),
-        decrement,
+        match spin_button.value == spin_button.min {
+            true => None,
+            false => Some(decrement),
+        },
     );
     let increment_button = make_button(
         &spin_button,
         "list-add-symbolic",
         #[cfg(feature = "a11y")]
         [&spin_button.name, " increase"].concat(),
-        increment,
+        match spin_button.value == spin_button.max {
+            true => None,
+            false => Some(increment),
+        },
     );
     let label = text::body(spin_button.label)
         .apply(container)
@@ -248,14 +256,20 @@ where
         "list-remove-symbolic",
         #[cfg(feature = "a11y")]
         [&spin_button.label, " decrease"].concat(),
-        decrement,
+        match spin_button.value == spin_button.min {
+            true => None,
+            false => Some(decrement),
+        },
     );
     let increment_button = make_button(
         &spin_button,
         "list-add-symbolic",
         #[cfg(feature = "a11y")]
         [&spin_button.label, " increase"].concat(),
-        increment,
+        match spin_button.value == spin_button.max {
+            true => None,
+            false => Some(increment),
+        },
     );
 
     let label = text::body(spin_button.label)
