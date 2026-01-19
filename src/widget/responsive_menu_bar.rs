@@ -132,7 +132,7 @@ impl ResponsiveMenuBar {
                             key_binds,
                             trees
                                 .into_iter()
-                                .map(|mt| menu::Item::Folder(mt.0, mt.1))
+                                .map(|mt| menu::Item::folder(mt.0, mt.1))
                                 .collect(),
                         )
                         .into_iter()
