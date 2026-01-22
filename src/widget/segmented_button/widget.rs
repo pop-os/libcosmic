@@ -297,11 +297,8 @@ where
     }
 
     /// Enable drag-and-drop support for tabs using the provided payload builder.
-    pub fn enable_tab_drag(
-        mut self,
-        payload: impl Fn(Entity) -> Option<(String, Vec<u8>)> + 'static,
-    ) -> Self {
-        self.tab_drag = Some(TabDragSource::new(payload));
+    pub fn enable_tab_drag(mut self, mime: String) -> Self {
+        self.tab_drag = Some(TabDragSource::new(mime));
         self
     }
 
@@ -664,28 +661,29 @@ where
         bounds: Rectangle,
         cursor: Point,
     ) -> Option<DropHint> {
-        let dragging = state.dragging_tab?;
+        let _ = state.dragging_tab?;
 
         self.variant_bounds(state, bounds)
             .filter_map(|item| match item {
                 ItemBounds::Button(entity, rect) if rect.contains(cursor) => Some((entity, rect)),
                 _ => None,
             })
-            .find_map(|(entity, rect)| {
+            .map(|(entity, rect)| {
                 let before = if Self::VERTICAL {
                     cursor.y < rect.center_y()
                 } else {
                     cursor.x < rect.center_x()
                 };
-                Some(DropHint {
+                DropHint {
                     entity,
                     side: if before {
                         DropSide::Before
                     } else {
                         DropSide::After
                     },
-                })
+                }
             })
+            .next()
     }
 
     fn start_tab_drag(
@@ -713,33 +711,24 @@ where
             tab_drag.threshold
         );
 
-        let Some((mime, data)) = (tab_drag.payload)(entity) else {
-            log::trace!(
-                target: TAB_REORDER_LOG_TARGET,
-                "start_tab_drag aborted entity={:?}: payload builder returned None",
-                entity
-            );
-            return false;
-        };
-
-        let data_len = data.len();
-        let mime_label = mime.clone();
+        let data_len = 0;
 
         iced_core::clipboard::start_dnd::<crate::Theme, crate::Renderer>(
             clipboard,
             false,
             Some(iced_core::clipboard::DndSource::Widget(self.id.0.clone())),
             None,
-            Box::new(SimpleDragData::new(mime, data)),
+            Box::new(SimpleDragData::new(tab_drag.mime.clone(), vec![1])),
             DndAction::Move,
         );
         log::trace!(
             target: TAB_REORDER_LOG_TARGET,
             "tab drag started entity={:?} mime={} bytes={}",
             entity,
-            mime_label,
+            tab_drag.mime,
             data_len
         );
+
         state.dragging_tab = Some(entity);
         state.tab_drag_candidate = None;
         state.pressed_item = None;
@@ -815,6 +804,7 @@ where
             tab_drag_candidate: None,
             dragging_tab: None,
             drop_hint: None,
+            offer_mimes: Vec::new(),
         })
     }
 
@@ -966,26 +956,29 @@ where
                         "offer enter id={my_id:?} entity={entity:?} @ ({x},{y}) mimes={mime_types:?}"
                     );
 
-                    let on_dnd_enter =
-                        self.on_dnd_enter
-                            .as_ref()
-                            .zip(entity)
-                            .map(|(on_enter, entity)| {
-                                move |_, _, mime_types| on_enter(entity, mime_types)
-                            });
+                    let on_dnd_enter = self
+                        .on_dnd_enter
+                        .as_ref()
+                        .zip(entity)
+                        .map(|(on_enter, entity)| move |_, _, mimes| on_enter(entity, mimes));
+                    let mimes = if let Some(mime) = self.tab_drag.as_ref().map(|d| &d.mime)
+                        && mime_types.is_empty()
+                    {
+                        vec![mime.clone()]
+                    } else {
+                        mime_types.clone()
+                    };
+                    state.offer_mimes = mimes.clone();
 
-                    _ = state.dnd_state.on_enter::<Message>(
-                        *x,
-                        *y,
-                        mime_types.clone(),
-                        on_dnd_enter,
-                        entity,
-                    );
+                    _ = state
+                        .dnd_state
+                        .on_enter::<Message>(*x, *y, mimes, on_dnd_enter, entity);
                 }
                 DndEvent::Offer(id, OfferEvent::LeaveDestination) if Some(my_id) != *id => {}
                 DndEvent::Offer(id, OfferEvent::Leave | OfferEvent::LeaveDestination)
                     if Some(my_id) == *id =>
                 {
+                    state.dragging_tab = None;
                     state.drop_hint = None;
                     self.emit_drop_hint(shell, state.drop_hint);
                     if let Some(Some(entity)) = entity {
@@ -999,7 +992,6 @@ where
                     );
                     _ = state.dnd_state.on_leave::<Message>(None);
                 }
-                DndEvent::Offer(_, OfferEvent::Leave | OfferEvent::LeaveDestination) => {}
                 DndEvent::Offer(id, OfferEvent::Motion { x, y }) if Some(my_id) == *id => {
                     log::trace!(
                         target: TAB_REORDER_LOG_TARGET,
@@ -1034,7 +1026,7 @@ where
                                 .as_ref()
                                 .map(|dnd| dnd.selected_action);
                             if let Some(on_dnd_enter) = self.on_dnd_enter.as_ref() {
-                                shell.publish(on_dnd_enter(new_entity, Vec::new()));
+                                shell.publish(on_dnd_enter(new_entity, state.offer_mimes.clone()));
                             }
                             if let Some(dnd) = state.dnd_state.drag_offer.as_mut() {
                                 dnd.data = Some(new_entity);
@@ -1097,7 +1089,11 @@ where
                         .drag_offer
                         .as_ref()
                         .is_some_and(|offer| offer.selected_action.contains(DndAction::Move));
-                    let pending_reorder = if allow_reorder && self.on_reorder.is_some() {
+                    let pending_reorder = if allow_reorder
+                        && self.on_reorder.is_some()
+                        && self.tab_drag.as_ref().is_some_and(|d| d.mime == *mime_type)
+                        && state.dragging_tab.is_some()
+                    {
                         drop_entity.and_then(|target| self.reorder_event_for_drop(state, target))
                     } else {
                         None
@@ -1122,6 +1118,8 @@ where
                             shell.publish(msg);
                         }
                         state.drop_hint = None;
+                        state.dragging_tab = None;
+
                         self.emit_drop_hint(shell, state.drop_hint);
                         if let Some(event) = pending_reorder {
                             if let Some(on_reorder) = self.on_reorder.as_ref() {
@@ -1135,6 +1133,8 @@ where
                             "data received without entity id={my_id:?}"
                         );
                         state.drop_hint = None;
+                        state.dragging_tab = None;
+
                         self.emit_drop_hint(shell, state.drop_hint);
                         if let Some(event) = pending_reorder {
                             if let Some(on_reorder) = self.on_reorder.as_ref() {
@@ -2118,6 +2118,36 @@ where
             }
         }
 
+        if let Some(mime) = self.tab_drag.as_ref().map(|d| &d.mime) {
+            for item in self.variant_bounds(local_state, layout.bounds()) {
+                if let ItemBounds::Button(_entity, rect) = item {
+                    pushed = true;
+                    log::trace!(
+                        target: TAB_REORDER_LOG_TARGET,
+                        "register drag destination id={:?} bounds=({:.2},{:.2},{:.2},{:.2}) mimes={:?}",
+                        my_id,
+                        rect.x,
+                        rect.y,
+                        rect.width,
+                        rect.height,
+                        mime
+                    );
+                    dnd_rectangles.push(DndDestinationRectangle {
+                        id: my_id,
+                        rectangle: dnd::Rectangle {
+                            x: f64::from(rect.x),
+                            y: f64::from(rect.y),
+                            width: f64::from(rect.width),
+                            height: f64::from(rect.height),
+                        },
+                        mime_types: vec![Cow::Owned(mime.clone())],
+                        actions: DndAction::Copy | DndAction::Move,
+                        preferred: DndAction::Move,
+                    });
+                }
+            }
+        }
+
         if !pushed {
             let bounds = layout.bounds();
             log::trace!(
@@ -2165,15 +2195,15 @@ where
 }
 
 struct TabDragSource<Message> {
-    payload: Box<dyn Fn(Entity) -> Option<(String, Vec<u8>)>>,
+    mime: String,
     threshold: f32,
     _marker: PhantomData<Message>,
 }
 
 impl<Message> TabDragSource<Message> {
-    fn new(payload: impl Fn(Entity) -> Option<(String, Vec<u8>)> + 'static) -> Self {
+    fn new(mime: String) -> Self {
         Self {
-            payload: Box::new(payload),
+            mime,
             threshold: 8.0,
             _marker: PhantomData,
         }
@@ -2254,6 +2284,8 @@ pub struct LocalState {
     wheel_timestamp: Option<Instant>,
     /// Dnd state
     pub dnd_state: crate::widget::dnd_destination::State<Option<Entity>>,
+    /// Dnd state
+    pub offer_mimes: Vec<String>,
     /// Tracks multi-touch events
     fingers_pressed: HashSet<Finger>,
     /// The currently pressed item
@@ -2391,6 +2423,7 @@ mod tests {
             tab_drag_candidate: None,
             dragging_tab: Some(dragging),
             drop_hint: None,
+            offer_mimes: Vec::new(),
         };
         state.buttons_visible = len;
         state.known_length = len;
