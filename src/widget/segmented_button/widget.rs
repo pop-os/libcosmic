@@ -968,17 +968,20 @@ where
                     } else {
                         mime_types.clone()
                     };
-                    state.offer_mimes = mimes.clone();
+                    state.offer_mimes.clone_from(&mimes);
 
                     _ = state
                         .dnd_state
                         .on_enter::<Message>(*x, *y, mimes, on_dnd_enter, entity);
                 }
                 DndEvent::Offer(id, OfferEvent::LeaveDestination) if Some(my_id) != *id => {}
-                DndEvent::Offer(id, OfferEvent::Leave | OfferEvent::LeaveDestination)
-                    if Some(my_id) == *id =>
+                DndEvent::Offer(id, leave)
+                    if matches!(leave, OfferEvent::Leave | OfferEvent::LeaveDestination)
+                        && Some(my_id) == *id =>
                 {
-                    state.dragging_tab = None;
+                    if matches!(leave, OfferEvent::Leave) {
+                        state.dragging_tab = None;
+                    }
                     state.drop_hint = None;
                     self.emit_drop_hint(shell, state.drop_hint);
                     if let Some(Some(entity)) = entity {
