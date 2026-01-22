@@ -1121,7 +1121,6 @@ where
                             shell.publish(msg);
                         }
                         state.drop_hint = None;
-                        state.dragging_tab = None;
 
                         self.emit_drop_hint(shell, state.drop_hint);
                         if let Some(event) = pending_reorder {
@@ -1136,7 +1135,6 @@ where
                             "data received without entity id={my_id:?}"
                         );
                         state.drop_hint = None;
-                        state.dragging_tab = None;
 
                         self.emit_drop_hint(shell, state.drop_hint);
                         if let Some(event) = pending_reorder {
