@@ -24,3 +24,4 @@ friday = 周五
 saturday = 周六
 sunday = 周日
 artists = 艺术家
+documenters = 文档作者
