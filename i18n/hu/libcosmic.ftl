@@ -2,7 +2,7 @@
 close = Bezárás
 # About
 license = Licenc
-links = Linkek
+links = Hivatkozások
 developers = Fejlesztők
 designers = Tervezők
 artists = Művészek
