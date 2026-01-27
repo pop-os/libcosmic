@@ -28,6 +28,7 @@ pub fn header_bar<'a, Message>() -> HeaderBar<'a, Message> {
         is_ssd: false,
         on_double_click: None,
         is_condensed: false,
+        transparent: false,
     }
 }
 
@@ -92,6 +93,9 @@ pub struct HeaderBar<'a, Message> {
 
     /// Whether the headerbar should be compact
     is_condensed: bool,
+
+    /// Whether the headerbar should be transparent
+    transparent: bool,
 }
 
 impl<'a, Message: Clone + 'static> HeaderBar<'a, Message> {
@@ -412,6 +416,7 @@ impl<'a, Message: Clone + 'static> HeaderBar<'a, Message> {
             .class(crate::theme::Container::HeaderBar {
                 focused: self.focused,
                 sharp_corners: self.sharp_corners,
+                transparent: self.transparent,
             })
             .center_y(Length::Shrink)
             .apply(widget::mouse_area);

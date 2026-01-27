@@ -689,7 +689,6 @@ impl<App: Application> ApplicationExt for App {
                 .apply(container)
                 .width(iced::Length::Fill)
                 .height(iced::Length::Fill)
-                .class(crate::theme::Container::WindowBackground)
                 .apply(|w| id_container(w, iced_core::id::Id::new("COSMIC_content_container")))
                 .into()
         } else {
@@ -713,6 +712,7 @@ impl<App: Application> ApplicationExt for App {
                         .focused(focused)
                         .maximized(maximized)
                         .sharp_corners(sharp_corners)
+                        .transparent(content_container)
                         .title(&core.window.header_title)
                         .on_drag(crate::Action::Cosmic(Action::Drag))
                         .on_right_click(crate::Action::Cosmic(Action::ShowWindowMenu))
