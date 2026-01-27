@@ -396,6 +396,7 @@ pub enum Container<'a> {
     HeaderBar {
         focused: bool,
         sharp_corners: bool,
+        transparent: bool,
     },
     List,
     Primary,
@@ -511,6 +512,7 @@ impl iced_container::Catalog for Theme {
             Container::HeaderBar {
                 focused,
                 sharp_corners,
+                transparent,
             } => {
                 let (icon_color, text_color) = if *focused {
                     (
@@ -527,7 +529,11 @@ impl iced_container::Catalog for Theme {
                 iced_container::Style {
                     icon_color: Some(icon_color),
                     text_color: Some(text_color),
-                    background: Some(iced::Background::Color(cosmic.background.base.into())),
+                    background: if *transparent {
+                        None
+                    } else {
+                        Some(iced::Background::Color(cosmic.background.base.into()))
+                    },
                     border: Border {
                         radius: [
                             if *sharp_corners {
