@@ -242,6 +242,49 @@ where
         }
     }
 
+    fn update_entity_paragraph(&mut self, state: &mut LocalState, key: Entity) {
+        if let Some(text) = self.model.text.get(key) {
+            let font = if self.button_is_focused(state, key) {
+                self.font_active
+            } else if state.show_context.is_some() || self.button_is_hovered(state, key) {
+                self.font_hovered
+            } else if self.model.is_active(key) {
+                self.font_active
+            } else {
+                self.font_inactive
+            };
+
+            let mut hasher = DefaultHasher::new();
+            text.hash(&mut hasher);
+            font.hash(&mut hasher);
+            let text_hash = hasher.finish();
+
+            if let Some(prev_hash) = state.text_hashes.insert(key, text_hash) {
+                if prev_hash == text_hash {
+                    return;
+                }
+            }
+
+            let text = Text {
+                content: text.as_ref(),
+                size: iced::Pixels(self.font_size),
+                bounds: Size::INFINITY,
+                font,
+                horizontal_alignment: alignment::Horizontal::Left,
+                vertical_alignment: alignment::Vertical::Center,
+                shaping: Shaping::Advanced,
+                wrapping: Wrapping::None,
+                line_height: self.line_height,
+            };
+
+            if let Some(paragraph) = state.paragraphs.get_mut(key) {
+                paragraph.update(text);
+            } else {
+                state.paragraphs.insert(key, crate::Plain::new(text));
+            }
+        }
+    }
+
     pub fn context_menu(mut self, context_menu: Option<Vec<menu::Tree<Message>>>) -> Self
     where
         Message: Clone + 'static,
@@ -761,6 +804,14 @@ where
     SelectionMode: Default,
     Message: 'static + Clone,
 {
+    fn id(&self) -> Option<widget::Id> {
+        Some(self.id.0.clone())
+    }
+
+    fn set_id(&mut self, id: widget::Id) {
+        self.id = Id(id);
+    }
+
     fn children(&self) -> Vec<Tree> {
         let mut children = Vec::new();
 
@@ -812,46 +863,7 @@ where
         let state = tree.state.downcast_mut::<LocalState>();
 
         for key in self.model.order.iter().copied() {
-            if let Some(text) = self.model.text.get(key) {
-                let font = if self.button_is_focused(state, key) {
-                    self.font_active
-                } else if state.show_context.is_some() || self.button_is_hovered(state, key) {
-                    self.font_hovered
-                } else if self.model.is_active(key) {
-                    self.font_active
-                } else {
-                    self.font_inactive
-                };
-
-                let mut hasher = DefaultHasher::new();
-                text.hash(&mut hasher);
-                font.hash(&mut hasher);
-                let text_hash = hasher.finish();
-
-                if let Some(prev_hash) = state.text_hashes.insert(key, text_hash) {
-                    if prev_hash == text_hash {
-                        continue;
-                    }
-                }
-
-                let text = Text {
-                    content: text.as_ref(),
-                    size: iced::Pixels(self.font_size),
-                    bounds: Size::INFINITY,
-                    font,
-                    horizontal_alignment: alignment::Horizontal::Left,
-                    vertical_alignment: alignment::Vertical::Center,
-                    shaping: Shaping::Advanced,
-                    wrapping: Wrapping::None,
-                    line_height: self.line_height,
-                };
-
-                if let Some(paragraph) = state.paragraphs.get_mut(key) {
-                    paragraph.update(text);
-                } else {
-                    state.paragraphs.insert(key, crate::Plain::new(text));
-                }
-            }
+            self.update_entity_paragraph(state, key);
         }
 
         // Diff the context menu
@@ -899,9 +911,8 @@ where
         shell: &mut Shell<'_, Message>,
         _viewport: &iced::Rectangle,
     ) -> event::Status {
-        let bounds = layout.bounds();
+        let my_bounds = layout.bounds();
         let state = tree.state.downcast_mut::<LocalState>();
-        state.hovered = Item::None;
 
         let my_id = self.get_drag_id();
 
@@ -938,7 +949,7 @@ where
                     },
                 ) if Some(my_id) == *id => {
                     let entity = self
-                        .variant_bounds(state, bounds)
+                        .variant_bounds(state, my_bounds)
                         .filter_map(|item| match item {
                             ItemBounds::Button(entity, bounds) => Some((entity, bounds)),
                             _ => None,
@@ -947,7 +958,7 @@ where
                         .map(|(key, _)| key);
                     state.drop_hint = self.drop_hint_for_position(
                         state,
-                        bounds,
+                        my_bounds,
                         Point::new(*x as f32, *y as f32),
                     );
                     self.emit_drop_hint(shell, state.drop_hint);
@@ -979,9 +990,6 @@ where
                     if matches!(leave, OfferEvent::Leave | OfferEvent::LeaveDestination)
                         && Some(my_id) == *id =>
                 {
-                    if matches!(leave, OfferEvent::Leave) {
-                        state.dragging_tab = None;
-                    }
                     state.drop_hint = None;
                     self.emit_drop_hint(shell, state.drop_hint);
                     if let Some(Some(entity)) = entity {
@@ -1001,7 +1009,7 @@ where
                         "offer motion id={my_id:?} cursor=({x},{y}) current_entity={entity:?}"
                     );
                     let new = self
-                        .variant_bounds(state, bounds)
+                        .variant_bounds(state, my_bounds)
                         .filter_map(|item| match item {
                             ItemBounds::Button(entity, bounds) => Some((entity, bounds)),
                             _ => None,
@@ -1018,11 +1026,15 @@ where
                         );
                         state.drop_hint = self.drop_hint_for_position(
                             state,
-                            bounds,
+                            my_bounds,
                             Point::new(*x as f32, *y as f32),
                         );
                         self.emit_drop_hint(shell, state.drop_hint);
                         if Some(Some(new_entity)) != entity {
+                            state.hovered = Item::Tab(new_entity);
+                            for key in self.model.order.iter().copied() {
+                                self.update_entity_paragraph(state, key);
+                            }
                             let prev_action = state
                                 .dnd_state
                                 .drag_offer
@@ -1039,6 +1051,10 @@ where
                             }
                         }
                     } else if entity.is_some() {
+                        state.hovered = Item::None;
+                        for key in self.model.order.iter().copied() {
+                            self.update_entity_paragraph(state, key);
+                        }
                         log::trace!(
                             target: TAB_REORDER_LOG_TARGET,
                             "offer motion leaving id={my_id:?}"
@@ -1124,31 +1140,24 @@ where
 
                         self.emit_drop_hint(shell, state.drop_hint);
                         if let Some(event) = pending_reorder {
+                            state.focused_item = Item::Tab(event.dragged);
+                            state.hovered = Item::None;
+                            for key in self.model.order.iter().copied() {
+                                self.update_entity_paragraph(state, key);
+                            }
                             if let Some(on_reorder) = self.on_reorder.as_ref() {
                                 shell.publish(on_reorder(event));
+                                return event::Status::Captured;
                             }
                         }
                         return ret;
-                    } else {
-                        log::trace!(
-                            target: TAB_REORDER_LOG_TARGET,
-                            "data received without entity id={my_id:?}"
-                        );
-                        state.drop_hint = None;
-
-                        self.emit_drop_hint(shell, state.drop_hint);
-                        if let Some(event) = pending_reorder {
-                            if let Some(on_reorder) = self.on_reorder.as_ref() {
-                                shell.publish(on_reorder(event));
-                            }
-                        }
                     }
                 }
                 _ => {}
             }
         }
 
-        if cursor_position.is_over(bounds) {
+        if cursor_position.is_over(my_bounds) {
             let fingers_pressed = state.fingers_pressed.len();
 
             match event {
@@ -1166,10 +1175,14 @@ where
             // Check for clicks on the previous and next tab buttons, when tabs are collapsed.
             if state.collapsed {
                 // Check if the prev tab button was clicked.
-                if cursor_position.is_over(prev_tab_bounds(&bounds, f32::from(self.button_height)))
+                if cursor_position
+                    .is_over(prev_tab_bounds(&my_bounds, f32::from(self.button_height)))
                     && self.prev_tab_sensitive(state)
                 {
                     state.hovered = Item::PrevButton;
+                    for key in self.model.order.iter().copied() {
+                        self.update_entity_paragraph(state, key);
+                    }
                     if let Event::Mouse(mouse::Event::ButtonReleased(mouse::Button::Left))
                     | Event::Touch(touch::Event::FingerLifted { .. }) = event
                     {
@@ -1178,11 +1191,13 @@ where
                 } else {
                     // Check if the next tab button was clicked.
                     if cursor_position
-                        .is_over(next_tab_bounds(&bounds, f32::from(self.button_height)))
+                        .is_over(next_tab_bounds(&my_bounds, f32::from(self.button_height)))
                         && self.next_tab_sensitive(state)
                     {
                         state.hovered = Item::NextButton;
-
+                        for key in self.model.order.iter().copied() {
+                            self.update_entity_paragraph(state, key);
+                        }
                         if let Event::Mouse(mouse::Event::ButtonReleased(mouse::Button::Left))
                         | Event::Touch(touch::Event::FingerLifted { .. }) = event
                         {
@@ -1193,7 +1208,7 @@ where
             }
 
             for (key, bounds) in self
-                .variant_bounds(state, bounds)
+                .variant_bounds(state, my_bounds)
                 .filter_map(|item| match item {
                     ItemBounds::Button(entity, bounds) => Some((entity, bounds)),
                     _ => None,
@@ -1203,7 +1218,12 @@ where
                 if cursor_position.is_over(bounds) {
                     if self.model.items[key].enabled {
                         // Record that the mouse is hovering over this button.
-                        state.hovered = Item::Tab(key);
+                        if state.hovered != Item::Tab(key) {
+                            state.hovered = Item::Tab(key);
+                            for key in self.model.order.iter().copied() {
+                                self.update_entity_paragraph(state, key);
+                            }
+                        }
 
                         let close_button_bounds =
                             close_bounds(bounds, f32::from(self.close_icon.size));
@@ -1320,6 +1340,9 @@ where
                     }
 
                     break;
+                } else if state.hovered == Item::Tab(key) {
+                    state.hovered = Item::None;
+                    self.update_entity_paragraph(state, key);
                 }
             }
 
@@ -1377,15 +1400,22 @@ where
                     }
                 }
             }
-        } else if state.is_focused() {
-            // Unfocus on clicks outside of the boundaries of the segmented button.
-            if is_pressed(&event) {
-                state.unfocus();
-                state.pressed_item = None;
-                return event::Status::Ignored;
+        } else {
+            if let Item::Tab(key) = std::mem::replace(&mut state.hovered, Item::None) {
+                for key in self.model.order.iter().copied() {
+                    self.update_entity_paragraph(state, key);
+                }
             }
-        } else if is_lifted(&event) {
-            state.pressed_item = None;
+            if state.is_focused() {
+                // Unfocus on clicks outside of the boundaries of the segmented button.
+                if is_pressed(&event) {
+                    state.unfocus();
+                    state.pressed_item = None;
+                    return event::Status::Ignored;
+                }
+            } else if is_lifted(&event) {
+                state.pressed_item = None;
+            }
         }
 
         if let (Some(tab_drag), Some(candidate)) =
