@@ -106,7 +106,7 @@ fn impl_cosmic_config_entry_macro(ast: &syn::DeriveInput) -> TokenStream {
         })
     });
 
-    let gen = quote! {
+    let generate = quote! {
         impl CosmicConfigEntry for #name {
             const VERSION: u64 = #version;
 
@@ -147,5 +147,5 @@ fn impl_cosmic_config_entry_macro(ast: &syn::DeriveInput) -> TokenStream {
         }
     };
 
-    gen.into()
+    generate.into()
 }

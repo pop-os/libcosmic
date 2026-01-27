@@ -1,6 +1,6 @@
 [package]
 name = "cosmic-theme"
-version = "0.1.0"
+version = "1.0.0"
 edition = "2024"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
@@ -21,11 +21,11 @@ serde = { version = "1.0.228", features = ["derive"] }
 serde_json = { version = "1.0.149", optional = true, features = [
     "preserve_order",
 ] }
-ron = "0.11.0"
-csscolorparser = { version = "0.7.2", features = ["serde"] }
+ron = "0.12.0"
+csscolorparser = { version = "0.8.1", features = ["serde"] }
 cosmic-config = { path = "../cosmic-config/", default-features = false, features = [
     "subscription",
     "macro",
 ] }
 dirs.workspace = true
-thiserror = "2.0.17"
+thiserror = "2.0.18"

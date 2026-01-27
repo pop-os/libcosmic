@@ -1,8 +1,8 @@
 [package]
 name = "libcosmic"
-version = "0.1.0"
+version = "1.0.0"
 edition = "2024"
-rust-version = "1.85"
+rust-version = "1.90"
 
 [lib]
 name = "cosmic"
@@ -104,7 +104,7 @@ async-fs = { version = "2.2", optional = true }
 async-std = { version = "1.13", optional = true }
 auto_enums = "0.8.7"
 cctk = { git = "https://github.com/pop-os/cosmic-protocols", package = "cosmic-client-toolkit", rev = "d0e95be", optional = true }
-chrono = "0.4.42"
+chrono = "0.4.43"
 cosmic-config = { path = "cosmic-config" }
 cosmic-settings-config = { git = "https://github.com/pop-os/cosmic-settings-daemon", optional = true }
 # Internationalization
@@ -126,26 +126,26 @@ log = "0.4"
 mime = { version = "0.3.17", optional = true }
 palette = "0.7.6"
 raw-window-handle = "0.6"
-rfd = { version = "0.15.4", default-features = false, features = [
+rfd = { version = "0.16.0", default-features = false, features = [
     "xdg-portal",
 ], optional = true }
 rustix = { version = "1.1", features = ["pipe", "process"], optional = true }
 serde = { version = "1.0.228", features = ["derive"] }
 slotmap = "1.1.1"
 smol = { version = "2.0.2", optional = true }
-thiserror = "2.0.17"
+thiserror = "2.0.18"
 taffy = { version = "0.9.2", features = ["grid"] }
 tokio = { version = "1.49.0", optional = true }
 tracing = "0.1.44"
 unicode-segmentation = "1.12"
 url = "2.5.8"
-zbus = { version = "5.13.1", default-features = false, optional = true }
+zbus = { version = "5.13.2", default-features = false, optional = true }
 
 # Enable DBus feature on Linux targets
 [target.'cfg(target_os = "linux")'.dependencies]
 cosmic-config = { path = "cosmic-config", features = ["dbus"] }
 cosmic-settings-daemon = { git = "https://github.com/pop-os/dbus-settings-bindings" }
-zbus = { version = "5.13.1", default-features = false }
+zbus = { version = "5.13.2", default-features = false }
 
 [target.'cfg(unix)'.dependencies]
 freedesktop-icons = { package = "cosmic-freedesktop-icons", git = "https://github.com/pop-os/freedesktop-icons" }
@@ -209,7 +209,7 @@ git = "https://github.com/pop-os/cosmic-panel"
 optional = true
 
 [dependencies.ron]
-version = "0.11"
+version = "0.12"
 optional = true
 
 [workspace]
