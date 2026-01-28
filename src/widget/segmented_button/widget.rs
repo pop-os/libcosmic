@@ -966,6 +966,13 @@ where
                         target: TAB_REORDER_LOG_TARGET,
                         "offer enter id={my_id:?} entity={entity:?} @ ({x},{y}) mimes={mime_types:?}"
                     );
+                    // force hovered state update
+                    if let Some(entity) = entity {
+                        state.hovered = Item::Tab(entity);
+                        for key in self.model.order.iter().copied() {
+                            self.update_entity_paragraph(state, key);
+                        }
+                    }
 
                     let on_dnd_enter = self
                         .on_dnd_enter
@@ -1001,6 +1008,10 @@ where
                         target: TAB_REORDER_LOG_TARGET,
                         "offer leave id={my_id:?} entity={entity:?}"
                     );
+                    state.hovered = Item::None;
+                    for key in self.model.order.iter().copied() {
+                        self.update_entity_paragraph(state, key);
+                    }
                     _ = state.dnd_state.on_leave::<Message>(None);
                 }
                 DndEvent::Offer(id, OfferEvent::Motion { x, y }) if Some(my_id) == *id => {
