@@ -155,24 +155,12 @@ where
     .class(theme::Button::MenuItem)
 }
 
+/// The type of menu item
 #[derive(Clone)]
-/// Represents a menu item that performs an action when selected or a separator between menu items.
-///
-/// - `Action` - Represents a menu item that performs an action when selected.
-///     - `L` - The label of the menu item.
-///     - `A` - The action to perform when the menu item is selected, the action must implement the `MenuAction` trait.
-/// - `CheckBox` - Represents a checkbox menu item.
-///     - `L` - The label of the menu item.
-///     - `bool` - The state of the checkbox.
-///     - `A` - The action to perform when the menu item is selected, the action must implement the `MenuAction` trait.
-/// - `Folder` - Represents a folder menu item.
-///     - `L` - The label of the menu item.
-///     - `Vec<MenuItem<A, L>>` - A vector of menu items.
-/// - `Divider` - Represents a divider between menu items.
-pub enum MenuItem<A: MenuAction, L: Into<Cow<'static, str>>> {
+pub enum MenuItemKind<A: MenuAction, L: Into<Cow<'static, str>>> {
     /// Represents a button menu item.
     Button(L, Option<icon::Handle>, A),
-    /// Represents a button menu item that is disabled.
+    /// Represents a button menu item that's disabled.
     ButtonDisabled(L, Option<icon::Handle>, A),
     /// Represents a checkbox menu item.
     CheckBox(L, Option<icon::Handle>, bool, A),
@@ -180,6 +168,54 @@ pub enum MenuItem<A: MenuAction, L: Into<Cow<'static, str>>> {
     Folder(L, Vec<MenuItem<A, L>>),
     /// Represents a divider between menu items.
     Divider,
+}
+
+#[derive(Clone)]
+/// A menu item with optional width configuration
+pub struct MenuItem<A: MenuAction, L: Into<Cow<'static, str>>> {
+    /// Kind of menu item.
+    kind: MenuItemKind<A, L>,
+    /// Optional width override for this item's submenu.
+    width: Option<u16>,
+}
+
+impl<A: MenuAction, L: Into<Cow<'static, str>>> MenuItem<A, L> {
+    /// Create from a kind with no width set
+    pub fn new(kind: MenuItemKind<A, L>) -> Self {
+        Self { kind, width: None }
+    }
+
+    /// Builder method to set width
+    pub fn width(mut self, width: u16) -> Self {
+        self.width = Some(width);
+        self
+    }
+
+    pub fn button(label: L, icon: Option<icon::Handle>, action: A) -> Self {
+        Self::new(MenuItemKind::Button(label, icon, action))
+    }
+
+    pub fn button_disabled(label: L, icon: Option<icon::Handle>, action: A) -> Self {
+        Self::new(MenuItemKind::ButtonDisabled(label, icon, action))
+    }
+
+    pub fn checkbox(label: L, icon: Option<icon::Handle>, checked: bool, action: A) -> Self {
+        Self::new(MenuItemKind::CheckBox(label, icon, checked, action))
+    }
+
+    pub fn folder(label: L, children: Vec<MenuItem<A, L>>) -> Self {
+        Self::new(MenuItemKind::Folder(label, children))
+    }
+
+    pub fn divider() -> Self {
+        Self::new(MenuItemKind::Divider)
+    }
+}
+
+impl<A: MenuAction, L: Into<Cow<'static, str>>> From<MenuItemKind<A, L>> for MenuItem<A, L> {
+    fn from(kind: MenuItemKind<A, L>) -> Self {
+        Self::new(kind)
+    }
 }
 
 /// Create a root menu item.
@@ -246,9 +282,10 @@ pub fn menu_items<
         .flat_map(|(i, item)| {
             let mut trees = vec![];
             let spacing = crate::theme::spacing();
+            let item_width = item.width;
 
-            match item {
-                MenuItem::Button(label, icon, action) => {
+            match item.kind {
+                MenuItemKind::Button(label, icon, action) => {
                     let l: Cow<'static, str> = label.into();
                     let key = find_key(&action, key_binds);
                     let mut items = vec![
@@ -264,9 +301,16 @@ pub fn menu_items<
 
                     let menu_button = menu_button(items).on_press(action.message());
 
-                    trees.push(MenuTree::<Message>::from(Element::from(menu_button)));
+                    // Add a user designated width
+                    let mut tree = MenuTree::<Message>::from(Element::from(menu_button));
+
+                    if let Some(width) = item_width {
+                        tree = tree.width(width);
+                    }
+
+                    trees.push(tree);
                 }
-                MenuItem::ButtonDisabled(label, icon, action) => {
+                MenuItemKind::ButtonDisabled(label, icon, action) => {
                     let l: Cow<'static, str> = label.into();
 
                     let key = find_key(&action, key_binds);
@@ -284,9 +328,15 @@ pub fn menu_items<
 
                     let menu_button = menu_button(items);
 
-                    trees.push(MenuTree::<Message>::from(Element::from(menu_button)));
+                    let mut tree = MenuTree::<Message>::from(Element::from(menu_button));
+
+                    if let Some(width) = item_width {
+                        tree = tree.width(width);
+                    }
+
+                    trees.push(tree);
                 }
-                MenuItem::CheckBox(label, icon, value, action) => {
+                MenuItemKind::CheckBox(label, icon, value, action) => {
                     let key = find_key(&action, key_binds);
                     let mut items = vec![
                         if value {
@@ -314,14 +364,20 @@ pub fn menu_items<
                         items.insert(2, widget::icon::icon(icon).size(14).into());
                     }
 
-                    trees.push(MenuTree::from(Element::from(
+                    let mut tree = MenuTree::from(Element::from(
                         menu_button(items).on_press(action.message()),
-                    )));
+                    ));
+
+                    if let Some(width) = item_width {
+                        tree = tree.width(width);
+                    }
+
+                    trees.push(tree);
                 }
-                MenuItem::Folder(label, children) => {
+                MenuItemKind::Folder(label, children) => {
                     let l: Cow<'static, str> = label.into();
 
-                    trees.push(MenuTree::<Message>::with_children(
+                    let mut tree = MenuTree::<Message>::with_children(
                         RcElementWrapper::new(crate::Element::from(
                             menu_button::<'static, _>(vec![
                                 widget::text(l.clone()).into(),
@@ -343,13 +399,25 @@ pub fn menu_items<
                             ),
                         )),
                         menu_items(key_binds, children),
-                    ));
+                    );
+
+                    if let Some(width) = item_width {
+                        tree = tree.width(width);
+                    }
+
+                    trees.push(tree);
                 }
-                MenuItem::Divider => {
+                MenuItemKind::Divider => {
                     if i != size - 1 {
-                        trees.push(MenuTree::<Message>::from(Element::from(
+                        let mut tree = MenuTree::<Message>::from(Element::from(
                             widget::divider::horizontal::light(),
-                        )));
+                        ));
+
+                        if let Some(width) = item_width {
+                            tree = tree.width(width);
+                        }
+
+                        trees.push(tree);
                     }
                 }
             }
