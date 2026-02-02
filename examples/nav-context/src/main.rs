@@ -135,9 +135,9 @@ impl cosmic::Application for App {
         Some(menu::items(
             &HashMap::new(),
             vec![
-                menu::Item::Button("Move Up", None, NavMenuAction::MoveUp(id)),
-                menu::Item::Button("Move Down", None, NavMenuAction::MoveDown(id)),
-                menu::Item::Button("Delete", None, NavMenuAction::Delete(id)),
+                menu::Item::button("Move Up", None, NavMenuAction::MoveUp(id)),
+                menu::Item::button("Move Down", None, NavMenuAction::MoveDown(id)),
+                menu::Item::button("Delete", None, NavMenuAction::Delete(id)),
             ],
         ))
     }

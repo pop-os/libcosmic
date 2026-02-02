@@ -36,6 +36,10 @@ pub struct MenuTree<Message> {
     pub(crate) children: Vec<MenuTree<Message>>,
     /// The width of the menu tree
     pub(crate) width: Option<u16>,
+    /// The min width of the menu tree
+    pub(crate) min_width: Option<u16>,
+    /// The max width of the menu tree
+    pub(crate) max_width: Option<u16>,
     /// The height of the menu tree
     pub(crate) height: Option<u16>,
 }
@@ -48,6 +52,8 @@ impl<Message: Clone + 'static> MenuTree<Message> {
             item: item.into(),
             children: Vec::new(),
             width: None,
+            min_width: None,
+            max_width: None,
             height: None,
         }
     }
@@ -62,6 +68,8 @@ impl<Message: Clone + 'static> MenuTree<Message> {
             item: item.into(),
             children: children.into_iter().map(Into::into).collect(),
             width: None,
+            min_width: None,
+            max_width: None,
             height: None,
         }
     }
@@ -73,6 +81,18 @@ impl<Message: Clone + 'static> MenuTree<Message> {
     #[must_use]
     pub fn width(mut self, width: u16) -> Self {
         self.width = Some(width);
+        self
+    }
+
+    /// Sets the min width of the menu tree.
+    pub fn min_width(mut self, min: u16) -> Self {
+        self.min_width = Some(min);
+        self
+    }
+
+    /// Sets the max width of the menu tree.
+    pub fn max_width(mut self, max: u16) -> Self {
+        self.max_width = Some(max);
         self
     }
 
@@ -170,19 +190,66 @@ pub enum MenuItemKind<A: MenuAction, L: Into<Cow<'static, str>>> {
     Divider,
 }
 
+/// A menu item with optional width configuration.
+///
+/// # Examples
+///
+/// ```ignore
+/// use cosmic::widget::menu;
+///
+/// // Simple button
+/// menu::Item::button("Save", None, Action::Save);
+///
+/// // Button with icon
+/// menu::Item::button(
+///     "Open",
+///     Some(cosmic::widget::icon::from_name("document-open-symbolic").into()),
+///     Action::Open,
+/// );
+///
+/// // Checkbox
+/// menu::Item::checkbox("Show Hidden", None, true, Action::ToggleHidden);
+///
+/// // Folder with custom width
+/// menu::Item::folder("Recent", vec![
+///     menu::Item::button("file1.txt", None, Action::OpenRecent(0)),
+/// ]).width(300);
+///
+/// // Divider
+/// menu::Item::divider();
+///
+/// // Folder with custom width constraints
+/// menu::Item::folder("Recent", vec![
+///     menu::Item::button("file1.txt", None, Action::OpenRecent(0)),
+/// ]).width(300).min_width(200).max_width(400);
+///
+/// // Using min_width to ensure a minimum size
+/// menu::Item::button("Short", None, Action::Short).min_width(150);
+///
+/// // Using max_width to cap the size
+/// menu::Item::button("Very Long Label Here", None, Action::Long).max_width(200);
+/// ```
 #[derive(Clone)]
-/// A menu item with optional width configuration
 pub struct MenuItem<A: MenuAction, L: Into<Cow<'static, str>>> {
     /// Kind of menu item.
     kind: MenuItemKind<A, L>,
-    /// Optional width override for this item's submenu.
+    /// Optional width override for this item.
     width: Option<u16>,
+    /// Optional min width for this item.
+    min_width: Option<u16>,
+    /// Optional max width for this item.
+    max_width: Option<u16>,
 }
 
 impl<A: MenuAction, L: Into<Cow<'static, str>>> MenuItem<A, L> {
     /// Create from a kind with no width set
     pub fn new(kind: MenuItemKind<A, L>) -> Self {
-        Self { kind, width: None }
+        Self {
+            kind,
+            width: None,
+            min_width: None,
+            max_width: None,
+        }
     }
 
     /// Builder method to set width
@@ -191,22 +258,39 @@ impl<A: MenuAction, L: Into<Cow<'static, str>>> MenuItem<A, L> {
         self
     }
 
+    /// Builder method to set minimum width
+    pub fn min_width(mut self, min: u16) -> Self {
+        self.min_width = Some(min);
+        self
+    }
+
+    /// Builder method to set max width
+    pub fn max_width(mut self, max: u16) -> Self {
+        self.max_width = Some(max);
+        self
+    }
+
+    /// Create a button menu item.
     pub fn button(label: L, icon: Option<icon::Handle>, action: A) -> Self {
         Self::new(MenuItemKind::Button(label, icon, action))
     }
 
+    /// Create a disabled button menu item.
     pub fn button_disabled(label: L, icon: Option<icon::Handle>, action: A) -> Self {
         Self::new(MenuItemKind::ButtonDisabled(label, icon, action))
     }
 
+    /// Create a checkbox menu item.
     pub fn checkbox(label: L, icon: Option<icon::Handle>, checked: bool, action: A) -> Self {
         Self::new(MenuItemKind::CheckBox(label, icon, checked, action))
     }
 
+    /// Create a folder (submenu) menu item.
     pub fn folder(label: L, children: Vec<MenuItem<A, L>>) -> Self {
         Self::new(MenuItemKind::Folder(label, children))
     }
 
+    /// Create a divider between menu items.
     pub fn divider() -> Self {
         Self::new(MenuItemKind::Divider)
     }
@@ -283,6 +367,8 @@ pub fn menu_items<
             let mut trees = vec![];
             let spacing = crate::theme::spacing();
             let item_width = item.width;
+            let item_min_width = item.min_width;
+            let item_max_width = item.max_width;
 
             match item.kind {
                 MenuItemKind::Button(label, icon, action) => {
@@ -306,6 +392,14 @@ pub fn menu_items<
 
                     if let Some(width) = item_width {
                         tree = tree.width(width);
+                    }
+
+                    if let Some(min_width) = item_min_width {
+                        tree = tree.min_width(min_width);
+                    }
+
+                    if let Some(max_width) = item_max_width {
+                        tree = tree.max_width(max_width);
                     }
 
                     trees.push(tree);
@@ -332,6 +426,14 @@ pub fn menu_items<
 
                     if let Some(width) = item_width {
                         tree = tree.width(width);
+                    }
+
+                    if let Some(min_width) = item_min_width {
+                        tree = tree.min_width(min_width);
+                    }
+
+                    if let Some(max_width) = item_max_width {
+                        tree = tree.max_width(max_width);
                     }
 
                     trees.push(tree);
@@ -372,6 +474,14 @@ pub fn menu_items<
                         tree = tree.width(width);
                     }
 
+                    if let Some(min_width) = item_min_width {
+                        tree = tree.min_width(min_width);
+                    }
+
+                    if let Some(max_width) = item_max_width {
+                        tree = tree.max_width(max_width);
+                    }
+
                     trees.push(tree);
                 }
                 MenuItemKind::Folder(label, children) => {
@@ -405,6 +515,14 @@ pub fn menu_items<
                         tree = tree.width(width);
                     }
 
+                    if let Some(min_width) = item_min_width {
+                        tree = tree.min_width(min_width);
+                    }
+
+                    if let Some(max_width) = item_max_width {
+                        tree = tree.max_width(max_width);
+                    }
+
                     trees.push(tree);
                 }
                 MenuItemKind::Divider => {
@@ -415,6 +533,14 @@ pub fn menu_items<
 
                         if let Some(width) = item_width {
                             tree = tree.width(width);
+                        }
+
+                        if let Some(min_width) = item_min_width {
+                            tree = tree.min_width(min_width);
+                        }
+
+                        if let Some(max_width) = item_max_width {
+                            tree = tree.max_width(max_width);
                         }
 
                         trees.push(tree);
