@@ -2,7 +2,7 @@
 close = Закрити
 # About
 license = Ліцензія
-links = Посилання
+links = Ланки
 developers = Розробники
 designers = Дизайнери
 artists = Художники
