@@ -792,71 +792,217 @@ pub async fn spawn_desktop_exec<S, I, K, V>(
         exec.as_ref()
     };
 
-    let mut exec = shlex::Shlex::new(exec_str);
+    let mut args = shlex::Shlex::new(exec_str);
 
-    let executable = match exec.next() {
+    let executable = match args.next() {
         Some(executable) if !executable.contains('=') => executable,
         _ => return,
     };
 
-    let mut cmd = std::process::Command::new(&executable);
-
-    for arg in exec {
+    let mut argv: Vec<String> = vec![executable.clone()];
+    for arg in args {
         // TODO handle "%" args here if necessary?
         if !arg.starts_with('%') {
-            cmd.arg(arg);
+            argv.push(arg);
         }
     }
 
-    cmd.envs(env_vars);
+    // Collect environment variables for systemd-based spawning
+    #[cfg(any(feature = "desktop-systemd-service", feature = "desktop-systemd-scope"))]
+    let env_vars: Vec<(String, String)> = env_vars
+        .into_iter()
+        .map(|(k, v)| {
+            (
+                k.as_ref().to_string_lossy().into_owned(),
+                v.as_ref().to_string_lossy().into_owned(),
+            )
+        })
+        .collect();
 
     // https://systemd.io/DESKTOP_ENVIRONMENTS
     //
-    // Similar to what Gnome sets, for now.
-    if let Some(pid) = crate::process::spawn(cmd).await {
-        #[cfg(feature = "desktop-systemd-scope")]
-        if let Ok(session) = zbus::Connection::session().await {
-            if let Ok(systemd_manager) = SystemdMangerProxy::new(&session).await {
-                let _ = systemd_manager
-                    .start_transient_unit(
-                        &format!("app-cosmic-{}-{}.scope", app_id.unwrap_or(&executable), pid),
-                        "fail",
-                        &[
-                            (
-                                "Description".to_string(),
-                                zbus::zvariant::Value::from("Application launched by COSMIC")
-                                    .try_to_owned()
-                                    .unwrap(),
-                            ),
-                            (
-                                "PIDs".to_string(),
-                                zbus::zvariant::Value::from(vec![pid])
-                                    .try_to_owned()
-                                    .unwrap(),
-                            ),
-                            (
-                                "CollectMode".to_string(),
-                                zbus::zvariant::Value::from("inactive-or-failed")
-                                    .try_to_owned()
-                                    .unwrap(),
-                            ),
-                        ],
-                        &[],
-                    )
-                    .await;
-            }
+    // Per systemd recommendations, prefer .service units over .scope units
+    // so that systemd is the direct parent of the process. This ensures proper
+    // process lineage for security tools that verify parent process chains.
+
+    // Try systemd service first if enabled
+    #[cfg(feature = "desktop-systemd-service")]
+    {
+        if spawn_via_systemd_service(&executable, &argv, &env_vars, app_id).await {
+            return;
+        }
+    }
+
+    // Fall back to systemd scope if enabled (or if service failed)
+    #[cfg(feature = "desktop-systemd-scope")]
+    {
+        #[cfg(feature = "desktop-systemd-service")]
+        tracing::debug!("Falling back to systemd scope after service spawn failed");
+
+        if spawn_via_systemd_scope(&executable, &argv, &env_vars, app_id).await {
+            return;
+        }
+    }
+
+    #[cfg(any(feature = "desktop-systemd-service", feature = "desktop-systemd-scope"))]
+    tracing::debug!("Falling back to direct spawn");
+
+    let mut cmd = std::process::Command::new(&executable);
+    cmd.args(&argv[1..]);
+    cmd.envs(env_vars);
+    let _ = crate::process::spawn(cmd).await;
+}
+
+/// Spawn an application via a transient systemd .service unit.
+/// Returns true if the service was started successfully.
+#[cfg(not(windows))]
+#[cfg(feature = "desktop-systemd-service")]
+async fn spawn_via_systemd_service(
+    executable: &str,
+    argv: &[String],
+    env_vars: &[(String, String)],
+    app_id: Option<&str>,
+) -> bool {
+    let unit_name = format!(
+        "app-cosmic-{}@{}.service",
+        app_id.unwrap_or(executable),
+        std::process::id()
+    );
+
+    let Ok(session) = zbus::Connection::session().await else {
+        return false;
+    };
+
+    let Ok(systemd_manager) = SystemdManagerProxy::new(&session).await else {
+        return false;
+    };
+
+    // Build ExecStart property: (path, argv, is_ignore_failure)
+    let exec_start_value = vec![(executable.to_string(), argv.to_vec(), false)];
+
+    // Build Environment property: array of "KEY=VALUE" strings
+    let environment: Vec<String> = env_vars
+        .iter()
+        .map(|(k, v)| format!("{}={}", k, v))
+        .collect();
+
+    let mut properties: Vec<(String, zbus::zvariant::OwnedValue)> = vec![
+        (
+            "Description".to_string(),
+            zbus::zvariant::Value::from("Application launched by COSMIC")
+                .try_to_owned()
+                .unwrap(),
+        ),
+        (
+            "ExecStart".to_string(),
+            zbus::zvariant::Value::from(exec_start_value)
+                .try_to_owned()
+                .unwrap(),
+        ),
+        (
+            "Type".to_string(),
+            zbus::zvariant::Value::from("simple")
+                .try_to_owned()
+                .unwrap(),
+        ),
+        (
+            "CollectMode".to_string(),
+            zbus::zvariant::Value::from("inactive-or-failed")
+                .try_to_owned()
+                .unwrap(),
+        ),
+    ];
+
+    if !environment.is_empty() {
+        properties.push((
+            "Environment".to_string(),
+            zbus::zvariant::Value::from(environment)
+                .try_to_owned()
+                .unwrap(),
+        ));
+    }
+
+    match systemd_manager
+        .start_transient_unit(&unit_name, "fail", &properties, &[])
+        .await
+    {
+        Ok(_) => true,
+        Err(err) => {
+            tracing::warn!("Failed to start transient service unit: {}", err);
+            false
         }
     }
 }
 
+/// Spawn an application and move it into a transient systemd .scope unit.
+/// Returns true if the process was spawned and moved into a scope successfully.
 #[cfg(not(windows))]
 #[cfg(feature = "desktop-systemd-scope")]
+async fn spawn_via_systemd_scope(
+    executable: &str,
+    argv: &[String],
+    env_vars: &[(String, String)],
+    app_id: Option<&str>,
+) -> bool {
+    let mut cmd = std::process::Command::new(executable);
+    for arg in &argv[1..] {
+        cmd.arg(arg);
+    }
+    for (k, v) in env_vars {
+        cmd.env(k, v);
+    }
+
+    let Some(pid) = crate::process::spawn(cmd).await else {
+        return false;
+    };
+
+    let Ok(session) = zbus::Connection::session().await else {
+        return true; // Process spawned, just couldn't create scope
+    };
+
+    let Ok(systemd_manager) = SystemdManagerProxy::new(&session).await else {
+        return true; // Process spawned, just couldn't create scope
+    };
+
+    let _ = systemd_manager
+        .start_transient_unit(
+            &format!("app-cosmic-{}-{}.scope", app_id.unwrap_or(executable), pid),
+            "fail",
+            &[
+                (
+                    "Description".to_string(),
+                    zbus::zvariant::Value::from("Application launched by COSMIC")
+                        .try_to_owned()
+                        .unwrap(),
+                ),
+                (
+                    "PIDs".to_string(),
+                    zbus::zvariant::Value::from(vec![pid])
+                        .try_to_owned()
+                        .unwrap(),
+                ),
+                (
+                    "CollectMode".to_string(),
+                    zbus::zvariant::Value::from("inactive-or-failed")
+                        .try_to_owned()
+                        .unwrap(),
+                ),
+            ],
+            &[],
+        )
+        .await;
+
+    true
+}
+
+#[cfg(not(windows))]
+#[cfg(any(feature = "desktop-systemd-service", feature = "desktop-systemd-scope"))]
 #[zbus::proxy(
     interface = "org.freedesktop.systemd1.Manager",
     default_service = "org.freedesktop.systemd1",
     default_path = "/org/freedesktop/systemd1"
 )]
-trait SystemdManger {
+trait SystemdManager {
     async fn start_transient_unit(
         &self,
         name: &str,
