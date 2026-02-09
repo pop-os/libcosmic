@@ -690,6 +690,9 @@ impl Theme {
         let config =
             Config::new(Self::id(), Self::VERSION).map_err(|e| (vec![e], Self::default()))?;
         let is_dark = ThemeMode::is_dark(&config).map_err(|e| (vec![e], Self::default()))?;
+        Self::get_active_with_brightness(is_dark)
+    }
+    pub fn get_active_with_brightness(is_dark: bool) ->  Result<Self, (Vec<cosmic_config::Error>, Self)> {
         let config = if is_dark {
             Self::dark_config()
         } else {
