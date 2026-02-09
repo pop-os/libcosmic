@@ -369,7 +369,16 @@ where
             crate::Action::Cosmic(message) => self.cosmic_update(message),
             crate::Action::None => iced::Task::none(),
             #[cfg(feature = "single-instance")]
-            crate::Action::DbusActivation(message) => self.app.dbus_activation(message),
+            crate::Action::DbusActivation(message) => {
+                let mut task = self.app.dbus_activation(message);
+
+                if let Some(id) = self.app.core().main_window_id() {
+                    let unminimize = iced_runtime::window::minimize::<()>(id, false);
+                    task = task.chain(unminimize.discard());
+                }
+
+                task
+            }
         };
 
         #[cfg(all(target_env = "gnu", not(target_os = "windows")))]
