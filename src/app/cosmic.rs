@@ -1034,15 +1034,28 @@ impl<T: Application> Cosmic<T> {
                 }
                 return Task::batch(cmds);
             }
-            Action::Activate(_token) =>
-            {
-                #[cfg(feature = "wayland")]
+            Action::Activate(_token) => {
                 if let Some(id) = self.app.core().main_window_id() {
-                    return iced_winit::platform_specific::commands::activation::activate(
-                        id,
-                        #[allow(clippy::used_underscore_binding)]
-                        _token,
-                    );
+                    // Unminimize window before requesting to activate it.
+                    let mut task = iced_runtime::window::minimize(id, false);
+
+                    #[cfg(feature = "wayland")]
+                    {
+                        task = task.chain(
+                            iced_winit::platform_specific::commands::activation::activate(
+                                id,
+                                #[allow(clippy::used_underscore_binding)]
+                                _token,
+                            ),
+                        )
+                    }
+
+                    #[cfg(not(feature = "wayland"))]
+                    {
+                        task = task.chain(iced_runtime::window::gain_focus(id));
+                    }
+
+                    return task;
                 }
             }
 
