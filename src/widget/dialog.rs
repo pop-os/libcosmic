@@ -123,7 +123,7 @@ impl<'a, Message: Clone + 'static> From<Dialog<'a, Message>> for Element<'a, Mes
         if let Some(body) = dialog.body {
             if should_space {
                 content_col = content_col
-                    .push(widget::vertical_space().height(Length::Fixed(space_xxs.into())));
+                    .push(widget::space::vertical().height(Length::Fixed(space_xxs.into())));
             }
             content_col = content_col.push(
                 widget::container(widget::scrollable(widget::text::body(body))).max_height(300.),
@@ -133,7 +133,7 @@ impl<'a, Message: Clone + 'static> From<Dialog<'a, Message>> for Element<'a, Mes
         for control in dialog.controls {
             if should_space {
                 content_col = content_col
-                    .push(widget::vertical_space().height(Length::Fixed(space_s.into())));
+                    .push(widget::space::vertical().height(Length::Fixed(space_s.into())));
             }
             content_col = content_col.push(control);
             should_space = true;
@@ -149,7 +149,7 @@ impl<'a, Message: Clone + 'static> From<Dialog<'a, Message>> for Element<'a, Mes
         if let Some(button) = dialog.tertiary_action {
             button_row = button_row.push(button);
         }
-        button_row = button_row.push(widget::horizontal_space());
+        button_row = button_row.push(widget::space::horizontal());
         if let Some(button) = dialog.secondary_action {
             button_row = button_row.push(button);
         }

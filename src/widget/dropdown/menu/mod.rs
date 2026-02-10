@@ -213,7 +213,7 @@ impl<'a, Message: Clone + 'a> Overlay<'a, Message> {
         }
     }
 
-    fn _layout(&self, renderer: &crate::Renderer, bounds: Size) -> layout::Node {
+    fn _layout(&mut self, renderer: &crate::Renderer, bounds: Size) -> layout::Node {
         let space_below = bounds.height - (self.position.y + self.target_height);
         let space_above = self.position.y;
 
@@ -242,19 +242,19 @@ impl<'a, Message: Clone + 'a> Overlay<'a, Message> {
         })
     }
 
-    fn _on_event(
+    fn _update(
         &mut self,
-        event: Event,
+        event: &Event,
         layout: Layout<'_>,
         cursor: mouse::Cursor,
         renderer: &crate::Renderer,
         clipboard: &mut dyn Clipboard,
         shell: &mut Shell<'_, Message>,
-    ) -> event::Status {
+    ) {
         let bounds = layout.bounds();
 
         self.state.with_data_mut(|tree| {
-            self.container.on_event(
+            self.container.update(
                 tree, event, layout, cursor, renderer, clipboard, shell, &bounds,
             )
         })
@@ -293,6 +293,7 @@ impl<'a, Message: Clone + 'a> Overlay<'a, Message> {
                     radius: appearance.border_radius,
                 },
                 shadow: Shadow::default(),
+                snap: true,
             },
             appearance.background,
         );
@@ -311,26 +312,25 @@ impl<'a, Message: Clone + 'a> iced_core::Overlay<Message, crate::Theme, crate::R
         self._layout(renderer, bounds)
     }
 
-    fn on_event(
+    fn update(
         &mut self,
-        event: Event,
+        event: &Event,
         layout: Layout<'_>,
         cursor: mouse::Cursor,
         renderer: &crate::Renderer,
         clipboard: &mut dyn Clipboard,
         shell: &mut Shell<'_, Message>,
-    ) -> event::Status {
-        self._on_event(event, layout, cursor, renderer, clipboard, shell)
+    ) {
+        self._update(event, layout, cursor, renderer, clipboard, shell)
     }
 
     fn mouse_interaction(
         &self,
         layout: Layout<'_>,
         cursor: mouse::Cursor,
-        viewport: &Rectangle,
         renderer: &crate::Renderer,
     ) -> mouse::Interaction {
-        self._mouse_interaction(layout, cursor, viewport, renderer)
+        self._mouse_interaction(layout, cursor, &layout.bounds(), renderer)
     }
 
     fn draw(
@@ -353,7 +353,7 @@ impl<'a, Message: Clone + 'a> crate::widget::Widget<Message, crate::Theme, crate
     }
 
     fn layout(
-        &self,
+        &mut self,
         _tree: &mut iced_core::widget::Tree,
         renderer: &crate::Renderer,
         limits: &iced::Limits,
@@ -375,18 +375,18 @@ impl<'a, Message: Clone + 'a> crate::widget::Widget<Message, crate::Theme, crate
         self._mouse_interaction(layout, cursor, viewport, renderer)
     }
 
-    fn on_event(
+    fn update(
         &mut self,
         _tree: &mut Tree,
-        event: Event,
+        event: &Event,
         layout: Layout<'_>,
         cursor: mouse::Cursor,
         renderer: &crate::Renderer,
         clipboard: &mut dyn Clipboard,
         shell: &mut Shell<'_, Message>,
         _viewport: &Rectangle,
-    ) -> event::Status {
-        self._on_event(event, layout, cursor, renderer, clipboard, shell)
+    ) {
+        self._update(event, layout, cursor, renderer, clipboard, shell)
     }
 
     fn draw(
@@ -435,7 +435,7 @@ where
     }
 
     fn layout(
-        &self,
+        &mut self,
         _tree: &mut Tree,
         renderer: &crate::Renderer,
         limits: &layout::Limits,
@@ -452,7 +452,7 @@ where
         let size = {
             let intrinsic = Size::new(
                 0.0,
-                (f32::from(text_line_height) + self.padding.vertical()) * self.options.len() as f32,
+                (f32::from(text_line_height) + self.padding.y()) * self.options.len() as f32,
             );
 
             limits.resolve(Length::Fill, Length::Shrink, intrinsic)
@@ -461,17 +461,17 @@ where
         layout::Node::new(size)
     }
 
-    fn on_event(
+    fn update(
         &mut self,
         _state: &mut Tree,
-        event: Event,
+        event: &Event,
         layout: Layout<'_>,
         cursor: mouse::Cursor,
         renderer: &crate::Renderer,
         _clipboard: &mut dyn Clipboard,
         shell: &mut Shell<'_, Message>,
         _viewport: &Rectangle,
-    ) -> event::Status {
+    ) {
         match event {
             Event::Mouse(mouse::Event::ButtonPressed(mouse::Button::Left)) => {
                 let hovered_guard = self.hovered_option.lock().unwrap();
@@ -481,7 +481,8 @@ where
                         if let Some(close_on_selected) = self.close_on_selected.as_ref() {
                             shell.publish(close_on_selected.clone());
                         }
-                        return event::Status::Captured;
+                        shell.capture_event();
+                        return;
                     }
                 }
             }
@@ -493,7 +494,7 @@ where
 
                     let option_height =
                         f32::from(self.text_line_height.to_absolute(Pixels(text_size)))
-                            + self.padding.vertical();
+                            + self.padding.y();
 
                     let new_hovered_option = (cursor_position.y / option_height) as usize;
                     let mut hovered_guard = self.hovered_option.lock().unwrap();
@@ -515,7 +516,7 @@ where
 
                     let option_height =
                         f32::from(self.text_line_height.to_absolute(Pixels(text_size)))
-                            + self.padding.vertical();
+                            + self.padding.y();
                     let mut hovered_guard = self.hovered_option.lock().unwrap();
 
                     *hovered_guard = Some((cursor_position.y / option_height) as usize);
@@ -525,14 +526,13 @@ where
                         if let Some(close_on_selected) = self.close_on_selected.as_ref() {
                             shell.publish(close_on_selected.clone());
                         }
-                        return event::Status::Captured;
+                        shell.capture_event();
+                        return;
                     }
                 }
             }
             _ => {}
         }
-
-        event::Status::Ignored
     }
 
     fn mouse_interaction(
@@ -568,8 +568,8 @@ where
         let text_size = self
             .text_size
             .unwrap_or_else(|| text::Renderer::default_size(renderer).0);
-        let option_height = f32::from(self.text_line_height.to_absolute(Pixels(text_size)))
-            + self.padding.vertical();
+        let option_height =
+            f32::from(self.text_line_height.to_absolute(Pixels(text_size))) + self.padding.y();
 
         let offset = viewport.y - bounds.y;
         let start = (offset / option_height) as usize;
@@ -605,6 +605,7 @@ where
                             ..Default::default()
                         },
                         shadow: Shadow::default(),
+                        snap: true,
                     },
                     appearance.selected_background,
                 );
@@ -614,16 +615,13 @@ where
                         .color(appearance.selected_text_color)
                         .border_radius(appearance.border_radius);
 
-                svg::Renderer::draw_svg(
-                    renderer,
-                    svg_handle,
-                    Rectangle {
-                        x: item_x + item_width - 16.0 - 8.0,
-                        y: bounds.y + (bounds.height / 2.0 - 8.0),
-                        width: 16.0,
-                        height: 16.0,
-                    },
-                );
+                let bounds = Rectangle {
+                    x: item_x + item_width - 16.0 - 8.0,
+                    y: bounds.y + (bounds.height / 2.0 - 8.0),
+                    width: 16.0,
+                    height: 16.0,
+                };
+                svg::Renderer::draw_svg(renderer, svg_handle, bounds, bounds);
 
                 (appearance.selected_text_color, crate::font::semibold())
             } else if *hovered_guard == Some(i) {
@@ -642,6 +640,7 @@ where
                             ..Default::default()
                         },
                         shadow: Shadow::default(),
+                        snap: true,
                     },
                     appearance.hovered_background,
                 );
@@ -678,8 +677,8 @@ where
                     size: Pixels(text_size),
                     line_height: self.text_line_height,
                     font,
-                    horizontal_alignment: alignment::Horizontal::Left,
-                    vertical_alignment: alignment::Vertical::Center,
+                    align_x: text::Alignment::Left,
+                    align_y: alignment::Vertical::Center,
                     shaping: text::Shaping::Advanced,
                     wrapping: text::Wrapping::default(),
                 },

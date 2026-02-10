@@ -45,13 +45,13 @@ where
     }
 
     fn layout(
-        &self,
+        &mut self,
         tree: &mut Tree,
         renderer: &Renderer,
         limits: &layout::Limits,
     ) -> layout::Node {
         self.content
-            .as_widget()
+            .as_widget_mut()
             .layout(&mut tree.children[0], renderer, limits)
     }
 
@@ -85,29 +85,29 @@ where
     }
 
     fn operate<'b>(
-        &'b self,
+        &'b mut self,
         state: &'b mut Tree,
         layout: Layout<'_>,
         renderer: &Renderer,
         operation: &mut dyn Operation<()>,
     ) {
         self.content
-            .as_widget()
+            .as_widget_mut()
             .operate(&mut state.children[0], layout, renderer, operation);
     }
 
-    fn on_event(
+    fn update(
         &mut self,
         state: &mut Tree,
-        event: Event,
+        event: &Event,
         layout: Layout<'_>,
         cursor: mouse::Cursor,
         renderer: &Renderer,
         clipboard: &mut dyn Clipboard,
         shell: &mut Shell<'_, Message>,
         viewport: &Rectangle,
-    ) -> event::Status {
-        self.content.as_widget_mut().on_event(
+    ) {
+        self.content.as_widget_mut().update(
             &mut state.children[0],
             event,
             layout,
@@ -139,8 +139,9 @@ where
     fn overlay<'b>(
         &'b mut self,
         state: &'b mut Tree,
-        layout: Layout<'_>,
+        layout: Layout<'b>,
         renderer: &Renderer,
+        viewport: &Rectangle,
         translation: Vector,
     ) -> Option<overlay::Element<'b, Message, Theme, Renderer>> {
         //TODO: this hides the overlay of the content during the toast
@@ -149,6 +150,7 @@ where
                 &mut state.children[0],
                 layout,
                 renderer,
+                viewport,
                 translation,
             )
         } else {
@@ -201,7 +203,7 @@ where
 
         let node = self
             .element
-            .as_widget()
+            .as_widget_mut()
             .layout(self.state, renderer, &limits);
 
         let offset = 15.;
@@ -228,16 +230,16 @@ where
             .draw(self.state, renderer, theme, style, layout, cursor, &bounds);
     }
 
-    fn on_event(
+    fn update(
         &mut self,
-        event: Event,
+        event: &Event,
         layout: Layout<'_>,
         cursor: mouse::Cursor,
         renderer: &Renderer,
         clipboard: &mut dyn Clipboard,
         shell: &mut Shell<Message>,
-    ) -> event::Status {
-        self.element.as_widget_mut().on_event(
+    ) {
+        self.element.as_widget_mut().update(
             self.state,
             event,
             layout,
@@ -253,22 +255,29 @@ where
         &self,
         layout: Layout<'_>,
         cursor: mouse::Cursor,
-        viewport: &Rectangle,
         renderer: &Renderer,
     ) -> mouse::Interaction {
-        self.element
-            .as_widget()
-            .mouse_interaction(self.state, layout, cursor, viewport, renderer)
+        self.element.as_widget().mouse_interaction(
+            self.state,
+            layout,
+            cursor,
+            &layout.bounds(),
+            renderer,
+        )
     }
 
     fn overlay<'c>(
         &'c mut self,
-        layout: Layout<'_>,
+        layout: Layout<'c>,
         renderer: &Renderer,
     ) -> Option<overlay::Element<'c, Message, Theme, Renderer>> {
-        self.element
-            .as_widget_mut()
-            .overlay(self.state, layout, renderer, Default::default())
+        self.element.as_widget_mut().overlay(
+            self.state,
+            layout,
+            renderer,
+            &layout.bounds(),
+            Default::default(),
+        )
     }
 }
 

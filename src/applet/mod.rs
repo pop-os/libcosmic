@@ -1,7 +1,7 @@
 #[cfg(feature = "applet-token")]
 pub mod token;
 
-use crate::app::cosmic;
+use crate::app::{BootData, BootDataInner, cosmic};
 use crate::{
     Application, Element, Renderer,
     app::iced_settings,
@@ -18,17 +18,19 @@ use crate::{
         self,
         autosize::{self, Autosize, autosize},
         column::Column,
-        horizontal_space, layer_container,
+        layer_container,
         row::Row,
-        vertical_space,
+        space::horizontal,
+        space::vertical,
     },
 };
 pub use cosmic_panel_config;
 use cosmic_panel_config::{CosmicPanelBackground, PanelAnchor, PanelSize};
 use iced_core::{Padding, Shadow};
+use iced_runtime::platform_specific::wayland::popup::{SctkPopupSettings, SctkPositioner};
 use iced_widget::Text;
-use iced_widget::runtime::platform_specific::wayland::popup::{SctkPopupSettings, SctkPositioner};
 use sctk::reexports::protocols::xdg::shell::client::xdg_positioner::{Anchor, Gravity};
+use std::cell::RefCell;
 use std::{borrow::Cow, num::NonZeroU32, rc::Rc, sync::LazyLock, time::Duration};
 use tracing::info;
 
@@ -386,6 +388,7 @@ impl Context {
                         },
                         shadow: Shadow::default(),
                         icon_color: Some(cosmic.background.on.into()),
+                        snap: true,
                     }
                 }),
             )
@@ -567,30 +570,36 @@ pub fn run<App: Application>(flags: App::Flags) -> iced::Result {
     window_settings.decorations = false;
     window_settings.exit_on_close_request = true;
     window_settings.resizable = false;
-    window_settings.resize_border = 0;
+    // window_settings.resize_border = 0;
 
     // TODO make multi-window not mandatory
 
-    let mut app = super::app::multi_window::multi_window::<_, _, _, _, App::Executor>(
-        cosmic::Cosmic::title,
+    let no_main_window = core.main_window.is_none();
+    if no_main_window {
+        // TODO still apply window settings?
+        // window_settings = window_settings.clone();
+        core.main_window = Some(iced_core::window::Id::RESERVED);
+    }
+    let mut app = iced::daemon(
+        BootData(Rc::new(RefCell::new(Some(BootDataInner::<App> {
+            flags,
+            core,
+        })))),
         cosmic::Cosmic::update,
         cosmic::Cosmic::view,
     );
-    if core.main_window.is_none() {
-        app = app.window(window_settings.clone());
-        core.main_window = Some(iced_core::window::Id::RESERVED);
-    }
+
     app.subscription(cosmic::Cosmic::subscription)
         .style(cosmic::Cosmic::style)
         .theme(cosmic::Cosmic::theme)
         .settings(iced_settings)
-        .run_with(move || cosmic::Cosmic::<App>::init((core, flags)))
+        .run()
 }
 
 #[must_use]
-pub fn style() -> iced_runtime::Appearance {
+pub fn style() -> iced::theme::Style {
     let theme = crate::theme::THEME.lock().unwrap();
-    iced_runtime::Appearance {
+    iced::theme::Style {
         background_color: Color::from_rgba(0.0, 0.0, 0.0, 0.0),
         text_color: theme.cosmic().on_bg_color().into(),
         icon_color: theme.cosmic().on_bg_color().into(),

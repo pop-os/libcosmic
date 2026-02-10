@@ -15,7 +15,7 @@ use cosmic_theme::ThemeMode;
 use iced::Application as IcedApplication;
 #[cfg(feature = "wayland")]
 use iced::event::wayland;
-use iced::{Task, window};
+use iced::{Task, theme, window};
 use iced_futures::event::listen_with;
 #[cfg(feature = "wayland")]
 use iced_winit::SurfaceIdWrapper;
@@ -388,15 +388,16 @@ where
         f64::from(self.app.core().scale_factor())
     }
 
-    pub fn style(&self, theme: &Theme) -> iced_runtime::Appearance {
+    pub fn style(&self, theme: &Theme) -> theme::Style {
         if let Some(style) = self.app.style() {
             style
         } else if self.app.core().window.is_maximized {
             let theme = THEME.lock().unwrap();
-            crate::style::iced::application::appearance(theme.borrow())
+            crate::style::iced::application::style(theme.borrow())
         } else {
             let theme = THEME.lock().unwrap();
-            iced_runtime::Appearance {
+
+            theme::Style {
                 background_color: iced_core::Color::TRANSPARENT,
                 icon_color: theme.cosmic().on_bg_color().into(),
                 text_color: theme.cosmic().on_bg_color().into(),
@@ -626,7 +627,7 @@ impl<T: Application> Cosmic<T> {
                 self.app.on_window_resize(id, width, height);
 
                 //TODO: more efficient test of maximized (winit has no event for maximize if set by the OS)
-                return iced::window::get_maximized(id).map(move |maximized| {
+                return iced::window::is_maximized(id).map(move |maximized| {
                     crate::Action::Cosmic(Action::WindowMaximized(id, maximized))
                 });
             }
@@ -702,10 +703,10 @@ impl<T: Application> Cosmic<T> {
 
             Action::KeyboardNav(message) => match message {
                 keyboard_nav::Action::FocusNext => {
-                    return iced::widget::focus_next().map(crate::Action::Cosmic);
+                    return iced::widget::operation::focus_next().map(crate::Action::Cosmic);
                 }
                 keyboard_nav::Action::FocusPrevious => {
-                    return iced::widget::focus_previous().map(crate::Action::Cosmic);
+                    return iced::widget::operation::focus_previous().map(crate::Action::Cosmic);
                 }
                 keyboard_nav::Action::Escape => return self.app.on_escape(),
                 keyboard_nav::Action::Search => return self.app.on_search(),

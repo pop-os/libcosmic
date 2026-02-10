@@ -78,7 +78,7 @@ impl<'a, S: AsRef<str>, Message: 'a, Item: Clone + PartialEq + 'static>
     }
 
     fn layout(
-        &self,
+        &mut self,
         tree: &mut Tree,
         renderer: &crate::Renderer,
         limits: &layout::Limits,
@@ -116,17 +116,17 @@ impl<'a, S: AsRef<str>, Message: 'a, Item: Clone + PartialEq + 'static>
         )
     }
 
-    fn on_event(
+    fn update(
         &mut self,
         tree: &mut Tree,
-        event: Event,
+        event: &Event,
         layout: Layout<'_>,
         cursor: mouse::Cursor,
         _renderer: &crate::Renderer,
         _clipboard: &mut dyn Clipboard,
         shell: &mut Shell<'_, Message>,
         _viewport: &Rectangle,
-    ) -> event::Status {
+    ) {
         update(
             &event,
             layout,
@@ -183,8 +183,9 @@ impl<'a, S: AsRef<str>, Message: 'a, Item: Clone + PartialEq + 'static>
     fn overlay<'b>(
         &'b mut self,
         tree: &'b mut Tree,
-        layout: Layout<'_>,
+        layout: Layout<'b>,
         renderer: &crate::Renderer,
+        _viewport: &Rectangle,
         translation: Vector,
     ) -> Option<overlay::Element<'b, Message, crate::Theme, crate::Renderer>> {
         let state = tree.state.downcast_mut::<State<Item>>();
@@ -275,8 +276,8 @@ pub fn layout(
                     size: iced::Pixels(text_size),
                     line_height: text_line_height,
                     font: font.unwrap_or_else(crate::font::default),
-                    horizontal_alignment: alignment::Horizontal::Left,
-                    vertical_alignment: alignment::Vertical::Top,
+                    align_x: text::Alignment::Left,
+                    align_y: alignment::Vertical::Top,
                     shaping: text::Shaping::Advanced,
                     wrapping: text::Wrapping::default(),
                 });
@@ -313,7 +314,7 @@ pub fn update<'a, S: AsRef<str>, Message, Item: Clone + PartialEq + 'static + 'a
     on_selected: &dyn Fn(Item) -> Message,
     selections: &super::Model<S, Item>,
     state: impl FnOnce() -> &'a mut State<Item>,
-) -> event::Status {
+) {
     match event {
         Event::Mouse(mouse::Event::ButtonPressed(mouse::Button::Left))
         | Event::Touch(touch::Event::FingerPressed { .. }) => {
@@ -324,14 +325,12 @@ pub fn update<'a, S: AsRef<str>, Message, Item: Clone + PartialEq + 'static + 'a
                 // bounds or on the drop-down, either way we close the overlay.
                 state.is_open = false;
 
-                event::Status::Captured
+                shell.capture_event();
             } else if cursor.is_over(layout.bounds()) {
                 state.is_open = true;
                 state.hovered_option = selections.selected.clone();
 
-                event::Status::Captured
-            } else {
-                event::Status::Ignored
+                shell.capture_event();
             }
         }
         Event::Mouse(mouse::Event::WheelScrolled {
@@ -347,19 +346,15 @@ pub fn update<'a, S: AsRef<str>, Message, Item: Clone + PartialEq + 'static + 'a
                     shell.publish((on_selected)(option.1.clone()));
                 }
 
-                event::Status::Captured
-            } else {
-                event::Status::Ignored
+                shell.capture_event();
             }
         }
         Event::Keyboard(keyboard::Event::ModifiersChanged(modifiers)) => {
             let state = state();
 
             state.keyboard_modifiers = *modifiers;
-
-            event::Status::Ignored
         }
-        _ => event::Status::Ignored,
+        _ => {}
     }
 }
 
@@ -419,8 +414,8 @@ pub fn overlay<'a, S: AsRef<str>, Message: 'a, Item: Clone + PartialEq + 'static
                         size: iced::Pixels(text_size),
                         line_height,
                         font: font.unwrap_or_else(crate::font::default),
-                        horizontal_alignment: alignment::Horizontal::Left,
-                        vertical_alignment: alignment::Vertical::Top,
+                        align_x: text::Alignment::Left,
+                        align_y: alignment::Vertical::Top,
                         shaping: text::Shaping::Advanced,
                         wrapping: text::Wrapping::default(),
                     });
@@ -428,7 +423,7 @@ pub fn overlay<'a, S: AsRef<str>, Message: 'a, Item: Clone + PartialEq + 'static
                 };
 
             let mut desc_count = 0;
-            padding.horizontal().mul_add(
+            padding.x().mul_add(
                 2.0,
                 selections
                     .elements()
@@ -515,22 +510,20 @@ pub fn draw<'a, S, Item: Clone + PartialEq + 'static>(
             bounds,
             border: style.border,
             shadow: Shadow::default(),
+            snap: true,
         },
         style.background,
     );
 
     if let Some(handle) = state.icon.as_ref() {
         let svg_handle = iced_core::Svg::new(handle.clone()).color(style.text_color);
-        svg::Renderer::draw_svg(
-            renderer,
-            svg_handle,
-            Rectangle {
-                x: bounds.x + bounds.width - gap - 16.0,
-                y: bounds.center_y() - 8.0,
-                width: 16.0,
-                height: 16.0,
-            },
-        );
+        let svg_bounds = Rectangle {
+            x: bounds.x + bounds.width - gap - 16.0,
+            y: bounds.center_y() - 8.0,
+            width: 16.0,
+            height: 16.0,
+        };
+        svg::Renderer::draw_svg(renderer, svg_handle, svg_bounds, svg_bounds);
     }
 
     if let Some(content) = selected.map(AsRef::as_ref) {
@@ -539,7 +532,7 @@ pub fn draw<'a, S, Item: Clone + PartialEq + 'static>(
         let bounds = Rectangle {
             x: bounds.x + padding.left,
             y: bounds.center_y(),
-            width: bounds.width - padding.horizontal(),
+            width: bounds.width - padding.x(),
             height: f32::from(text_line_height.to_absolute(Pixels(text_size))),
         };
 
@@ -551,8 +544,8 @@ pub fn draw<'a, S, Item: Clone + PartialEq + 'static>(
                 line_height: text_line_height,
                 font,
                 bounds: bounds.size(),
-                horizontal_alignment: alignment::Horizontal::Left,
-                vertical_alignment: alignment::Vertical::Center,
+                align_x: text::Alignment::Left,
+                align_y: alignment::Vertical::Center,
                 shaping: text::Shaping::Advanced,
                 wrapping: text::Wrapping::default(),
             },

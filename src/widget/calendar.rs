@@ -218,7 +218,9 @@ where
         let content_list = column::with_children([
             row::with_children([
                 column().push(date).push(day).into(),
-                crate::widget::Space::with_width(Length::Fill).into(),
+                crate::widget::space::horizontal()
+                    .width(Length::Fill)
+                    .into(),
                 month_controls.into(),
             ])
             .align_y(Vertical::Center)
@@ -227,7 +229,7 @@ where
             calendar_grid.into(),
             padded_control(crate::widget::divider::horizontal::default()).into(),
         ])
-        .width(315)
+        .width(315.)
         .padding([8, 0]);
 
         Self::new(content_list)

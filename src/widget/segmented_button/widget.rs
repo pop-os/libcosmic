@@ -23,7 +23,7 @@ use iced::{
     event, keyboard, mouse, touch, window,
 };
 use iced_core::mouse::ScrollDelta;
-use iced_core::text::{LineHeight, Renderer as TextRenderer, Shaping, Wrapping};
+use iced_core::text::{self, LineHeight, Renderer as TextRenderer, Shaping, Wrapping};
 use iced_core::widget::operation::Focusable;
 use iced_core::widget::{self, operation, tree};
 use iced_core::{Border, Point, Renderer as IcedRenderer, Shadow, Text};
@@ -265,21 +265,31 @@ where
                 }
             }
 
-            let text = Text {
-                content: text.as_ref(),
-                size: iced::Pixels(self.font_size),
-                bounds: Size::INFINITY,
-                font,
-                horizontal_alignment: alignment::Horizontal::Left,
-                vertical_alignment: alignment::Vertical::Center,
-                shaping: Shaping::Advanced,
-                wrapping: Wrapping::None,
-                line_height: self.line_height,
-            };
-
             if let Some(paragraph) = state.paragraphs.get_mut(key) {
+                let text = Text {
+                    content: text.as_ref(),
+                    size: iced::Pixels(self.font_size),
+                    bounds: Size::INFINITE,
+                    font,
+                    align_x: text::Alignment::Left,
+                    align_y: alignment::Vertical::Center,
+                    shaping: Shaping::Advanced,
+                    wrapping: Wrapping::None,
+                    line_height: self.line_height,
+                };
                 paragraph.update(text);
             } else {
+                let text = Text {
+                    content: text.to_string(),
+                    size: iced::Pixels(self.font_size),
+                    bounds: Size::INFINITE,
+                    font,
+                    align_x: text::Alignment::Left,
+                    align_y: alignment::Vertical::Center,
+                    shaping: Shaping::Advanced,
+                    wrapping: Wrapping::None,
+                    line_height: self.line_height,
+                };
                 state.paragraphs.insert(key, crate::Plain::new(text));
             }
         }
@@ -440,7 +450,7 @@ where
     }
 
     /// Item the previous item in the widget.
-    fn focus_previous(&mut self, state: &mut LocalState) -> event::Status {
+    fn focus_previous(&mut self, state: &mut LocalState, shell: &mut Shell<'_, Message>) {
         match state.focused_item {
             Item::Tab(entity) => {
                 let mut keys = self.iterate_visible_tabs(state).rev();
@@ -454,7 +464,8 @@ where
                             }
 
                             state.focused_item = Item::Tab(key);
-                            return event::Status::Captured;
+                            shell.capture_event();
+                            return;
                         }
 
                         break;
@@ -463,24 +474,28 @@ where
 
                 if self.prev_tab_sensitive(state) {
                     state.focused_item = Item::PrevButton;
-                    return event::Status::Captured;
+                    shell.capture_event();
+                    return;
                 }
             }
 
             Item::NextButton => {
                 if let Some(last) = self.last_tab(state) {
                     state.focused_item = Item::Tab(last);
-                    return event::Status::Captured;
+                    shell.capture_event();
+                    return;
                 }
             }
 
             Item::None => {
                 if self.next_tab_sensitive(state) {
                     state.focused_item = Item::NextButton;
-                    return event::Status::Captured;
+                    shell.capture_event();
+                    return;
                 } else if let Some(last) = self.last_tab(state) {
                     state.focused_item = Item::Tab(last);
-                    return event::Status::Captured;
+                    shell.capture_event();
+                    return;
                 }
             }
 
@@ -488,11 +503,10 @@ where
         }
 
         state.focused_item = Item::None;
-        event::Status::Ignored
     }
 
     /// Item the next item in the widget.
-    fn focus_next(&mut self, state: &mut LocalState) -> event::Status {
+    fn focus_next(&mut self, state: &mut LocalState, shell: &mut Shell<'_, Message>) {
         match state.focused_item {
             Item::Tab(entity) => {
                 let mut keys = self.iterate_visible_tabs(state);
@@ -505,7 +519,8 @@ where
                             }
 
                             state.focused_item = Item::Tab(key);
-                            return event::Status::Captured;
+                            shell.capture_event();
+                            return;
                         }
 
                         break;
@@ -514,24 +529,28 @@ where
 
                 if self.next_tab_sensitive(state) {
                     state.focused_item = Item::NextButton;
-                    return event::Status::Captured;
+                    shell.capture_event();
+                    return;
                 }
             }
 
             Item::PrevButton => {
                 if let Some(first) = self.first_tab(state) {
                     state.focused_item = Item::Tab(first);
-                    return event::Status::Captured;
+                    shell.capture_event();
+                    return;
                 }
             }
 
             Item::None => {
                 if self.prev_tab_sensitive(state) {
                     state.focused_item = Item::PrevButton;
-                    return event::Status::Captured;
+                    shell.capture_event();
+                    return;
                 } else if let Some(first) = self.first_tab(state) {
                     state.focused_item = Item::Tab(first);
-                    return event::Status::Captured;
+                    shell.capture_event();
+                    return;
                 }
             }
 
@@ -539,7 +558,6 @@ where
         }
 
         state.focused_item = Item::None;
-        event::Status::Ignored
     }
 
     fn iterate_visible_tabs<'b>(
@@ -594,12 +612,12 @@ where
                 icon_spacing = f32::from(self.button_spacing);
                 let paragraph = entry.or_insert_with(|| {
                     crate::Plain::new(Text {
-                        content: text.as_ref(),
+                        content: text.to_string(), // TODO should we just use String at this point?
                         size: iced::Pixels(self.font_size),
-                        bounds: Size::INFINITY,
+                        bounds: Size::INFINITE,
                         font,
-                        horizontal_alignment: alignment::Horizontal::Left,
-                        vertical_alignment: alignment::Vertical::Center,
+                        align_x: text::Alignment::Left,
+                        align_y: alignment::Vertical::Center,
                         shaping: Shaping::Advanced,
                         wrapping: Wrapping::default(),
                         line_height: self.line_height,
@@ -886,7 +904,7 @@ where
     }
 
     fn layout(
-        &self,
+        &mut self,
         tree: &mut Tree,
         renderer: &Renderer,
         limits: &layout::Limits,
@@ -900,17 +918,17 @@ where
     }
 
     #[allow(clippy::too_many_lines)]
-    fn on_event(
+    fn update(
         &mut self,
         tree: &mut Tree,
-        mut event: Event,
+        mut event: &Event,
         layout: Layout<'_>,
         cursor_position: mouse::Cursor,
         _renderer: &Renderer,
         clipboard: &mut dyn Clipboard,
         shell: &mut Shell<'_, Message>,
         _viewport: &iced::Rectangle,
-    ) -> event::Status {
+    ) {
         let my_bounds = layout.bounds();
         let state = tree.state.downcast_mut::<LocalState>();
 
@@ -939,7 +957,8 @@ where
                             "tab drag source finished id={:?}",
                             my_id
                         );
-                        return event::Status::Captured;
+                        shell.capture_event();
+                        return;
                     }
                 }
                 DndEvent::Offer(
@@ -1135,8 +1154,8 @@ where
                         });
 
                         let (maybe_msg, ret) = state.dnd_state.on_data_received(
-                            mem::take(mime_type),
-                            mem::take(data),
+                            mime_type.clone(),
+                            data.clone(),
                             None::<fn(_, _) -> Message>,
                             on_drop,
                         );
@@ -1158,10 +1177,11 @@ where
                             }
                             if let Some(on_reorder) = self.on_reorder.as_ref() {
                                 shell.publish(on_reorder(event));
-                                return event::Status::Captured;
+                                shell.capture_event();
+                                return;
                             }
                         }
-                        return ret;
+                        return;
                     }
                 }
                 _ => {}
@@ -1173,7 +1193,7 @@ where
 
             match event {
                 Event::Touch(touch::Event::FingerPressed { id, .. }) => {
-                    state.fingers_pressed.insert(id);
+                    state.fingers_pressed.insert(*id);
                 }
 
                 Event::Touch(touch::Event::FingerLifted { id, .. }) => {
@@ -1250,7 +1270,8 @@ where
                                         || (touch_lifted(&event) && fingers_pressed == 1))
                                 {
                                     shell.publish(on_close(key));
-                                    return event::Status::Captured;
+                                    shell.capture_event();
+                                    return;
                                 }
 
                                 if self.on_middle_press.is_none() {
@@ -1261,7 +1282,8 @@ where
                                     {
                                         if state.middle_clicked == Some(Item::Tab(key)) {
                                             shell.publish(on_close(key));
-                                            return event::Status::Captured;
+                                            shell.capture_event();
+                                            return;
                                         }
 
                                         state.middle_clicked = None;
@@ -1313,7 +1335,8 @@ where
                                     state.set_focused();
                                     state.focused_item = Item::Tab(key);
                                     state.pressed_item = None;
-                                    return event::Status::Captured;
+                                    shell.capture_event();
+                                    return;
                                 }
                             }
                         }
@@ -1334,7 +1357,8 @@ where
                                     });
 
                                     shell.publish(on_context(key));
-                                    return event::Status::Captured;
+                                    shell.capture_event();
+                                    return;
                                 }
                             }
                         }
@@ -1345,7 +1369,8 @@ where
                             state.middle_clicked = Some(Item::Tab(key));
                             if let Some(on_middle_press) = self.on_middle_press.as_ref() {
                                 shell.publish(on_middle_press(key));
-                                return event::Status::Captured;
+                                shell.capture_event();
+                                return;
                             }
                         }
                     }
@@ -1372,7 +1397,7 @@ where
                                 ScrollDelta::Lines { y, .. } | ScrollDelta::Pixels { y, .. } => {
                                     let mut activate_key = None;
 
-                                    if y < 0.0 {
+                                    if *y < 0.0 {
                                         let mut prev_key = Entity::null();
 
                                         for key in self.model.order.iter().copied() {
@@ -1384,7 +1409,7 @@ where
                                                 prev_key = key;
                                             }
                                         }
-                                    } else if y > 0.0 {
+                                    } else if *y > 0.0 {
                                         let mut buttons = self.model.order.iter().copied();
                                         while let Some(key) = buttons.next() {
                                             if self.model.is_active(key) {
@@ -1403,7 +1428,8 @@ where
                                         shell.publish(on_activate(key));
                                         state.set_focused();
                                         state.focused_item = Item::Tab(key);
-                                        return event::Status::Captured;
+                                        shell.capture_event();
+                                        return;
                                     }
                                 }
                             }
@@ -1422,7 +1448,7 @@ where
                 if is_pressed(&event) {
                     state.unfocus();
                     state.pressed_item = None;
-                    return event::Status::Ignored;
+                    return;
                 }
             } else if is_lifted(&event) {
                 state.pressed_item = None;
@@ -1450,7 +1476,8 @@ where
                                 position,
                                 clipboard,
                             ) {
-                                return event::Status::Captured;
+                                shell.capture_event();
+                                return;
                             }
                         }
                     }
@@ -1473,12 +1500,10 @@ where
             }) = event
             {
                 state.focused_visible = true;
-                return if modifiers == keyboard::Modifiers::SHIFT {
-                    self.focus_previous(state)
+                return if *modifiers == keyboard::Modifiers::SHIFT {
+                    self.focus_previous(state, shell)
                 } else if modifiers.is_empty() {
-                    self.focus_next(state)
-                } else {
-                    event::Status::Ignored
+                    self.focus_next(state, shell)
                 };
             }
 
@@ -1522,24 +1547,23 @@ where
                         Item::None | Item::Set => (),
                     }
 
-                    return event::Status::Captured;
+                    shell.capture_event();
+                    return;
                 }
             }
         }
-
-        event::Status::Ignored
     }
 
     fn operate(
-        &self,
+        &mut self,
         tree: &mut Tree,
-        _layout: Layout<'_>,
+        layout: Layout<'_>,
         _renderer: &Renderer,
         operation: &mut dyn iced_core::widget::Operation<()>,
     ) {
         let state = tree.state.downcast_mut::<LocalState>();
-        operation.focusable(state, Some(&self.id.0));
-        operation.custom(state, Some(&self.id.0));
+        operation.focusable(Some(&self.id.0), layout.bounds(), state);
+        operation.custom(Some(&self.id.0), layout.bounds(), state);
 
         if let Item::Set = state.focused_item {
             if self.prev_tab_sensitive(state) {
@@ -1614,6 +1638,7 @@ where
                     bounds,
                     border: appearance.border,
                     shadow: Shadow::default(),
+                    snap: true,
                 },
                 background,
             );
@@ -1642,6 +1667,7 @@ where
                             ..Default::default()
                         },
                         shadow: Shadow::default(),
+                        snap: true,
                     },
                     background_appearance
                         .background
@@ -1690,6 +1716,7 @@ where
                             ..Default::default()
                         },
                         shadow: Shadow::default(),
+                        snap: true,
                     },
                     background_appearance
                         .background
@@ -1745,6 +1772,7 @@ where
                             bounds,
                             border: Border::default(),
                             shadow: Shadow::default(),
+                            snap: true,
                         },
                         {
                             let theme = crate::theme::active();
@@ -1840,6 +1868,7 @@ where
                             ..Default::default()
                         },
                         shadow: Shadow::default(),
+                        snap: true,
                     },
                     appearance.active.text_color,
                 );
@@ -1876,6 +1905,7 @@ where
                                             ..Default::default()
                                         },
                                         shadow: Shadow::default(),
+                                        snap: true,
                                     },
                                     divider_background,
                                 );
@@ -1908,6 +1938,7 @@ where
                             button_appearance.border
                         },
                         shadow: Shadow::default(),
+                        snap: true,
                     },
                     status_appearance
                         .background
@@ -2067,8 +2098,9 @@ where
     fn overlay<'b>(
         &'b mut self,
         tree: &'b mut Tree,
-        layout: iced_core::Layout<'_>,
+        layout: iced_core::Layout<'b>,
         _renderer: &Renderer,
+        viewport: &iced_core::Rectangle,
         translation: Vector,
     ) -> Option<iced_core::overlay::Element<'b, Message, crate::Theme, Renderer>> {
         let state = tree.state.downcast_ref::<LocalState>();
@@ -2654,6 +2686,7 @@ fn draw_drop_indicator(
                 ..Default::default()
             },
             shadow: Shadow::default(),
+            snap: true,
         },
         Background::Color(color),
     );

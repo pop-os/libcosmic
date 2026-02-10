@@ -180,5 +180,6 @@ pub fn nav_bar_style(theme: &Theme) -> iced_widget::container::Style {
             radius: cosmic.corner_radii.radius_s.into(),
         },
         shadow: Shadow::default(),
+        snap: true,
     }
 }

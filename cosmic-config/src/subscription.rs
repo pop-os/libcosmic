@@ -25,7 +25,24 @@ pub fn config_subscription<
     config_id: Cow<'static, str>,
     config_version: u64,
 ) -> iced_futures::Subscription<crate::Update<T>> {
-    iced_futures::Subscription::run_with_id(id, watcher_stream(config_id, config_version, false))
+    iced_futures::Subscription::run_with(
+        (id, config_id, config_version, false),
+        // FIXME there are type issues related to the 'static lifetime of the Cow if this is extracted to a named function...
+        |(_, config_id, config_version, is_state)| {
+            let config_id = config_id.clone();
+            let config_version = *config_version;
+            let is_state = *is_state;
+
+            stream::channel(100, move |mut output| async move {
+                let config_id = config_id.clone();
+                let mut state = ConfigState::Init(config_id, config_version, is_state);
+
+                loop {
+                    state = start_listening::<T>(state, &mut output).await;
+                }
+            })
+        },
+    )
 }
 
 #[cold]
@@ -37,25 +54,23 @@ pub fn config_state_subscription<
     config_id: Cow<'static, str>,
     config_version: u64,
 ) -> iced_futures::Subscription<crate::Update<T>> {
-    iced_futures::Subscription::run_with_id(id, watcher_stream(config_id, config_version, true))
-}
-
-fn watcher_stream<T: 'static + Send + Sync + PartialEq + Clone + CosmicConfigEntry>(
-    config_id: Cow<'static, str>,
-    config_version: u64,
-    is_state: bool,
-) -> impl Stream<Item = crate::Update<T>> {
-    stream::channel(100, move |mut output| {
-        let config_id = config_id.clone();
-        async move {
+    iced_futures::Subscription::run_with(
+        (id, config_id, config_version, true),
+        |(_, config_id, config_version, is_state)| {
             let config_id = config_id.clone();
-            let mut state = ConfigState::Init(config_id, config_version, is_state);
+            let config_version = *config_version;
+            let is_state = *is_state;
 
-            loop {
-                state = start_listening::<T>(state, &mut output).await;
-            }
-        }
-    })
+            stream::channel(100, move |mut output| async move {
+                let config_id = config_id.clone();
+                let mut state = ConfigState::Init(config_id, config_version, is_state);
+
+                loop {
+                    state = start_listening::<T>(state, &mut output).await;
+                }
+            })
+        },
+    )
 }
 
 async fn start_listening<T: 'static + Send + Sync + PartialEq + Clone + CosmicConfigEntry>(

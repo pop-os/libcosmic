@@ -15,7 +15,7 @@ use taffy::{AlignContent, TaffyTree};
 pub fn resolve<Message>(
     renderer: &Renderer,
     limits: &Limits,
-    items: &[Element<'_, Message>],
+    items: &mut [Element<'_, Message>],
     padding: Padding,
     column_spacing: f32,
     row_spacing: f32,
@@ -61,8 +61,8 @@ pub fn resolve<Message>(
         ..taffy::Style::default()
     };
 
-    for (child, tree) in items.iter().zip(tree.iter_mut()) {
-        let child_widget = child.as_widget();
+    for (child, tree) in items.iter_mut().zip(tree.iter_mut()) {
+        let child_widget = child.as_widget_mut();
         let child_node = child_widget.layout(tree, renderer, limits);
         let size = child_node.size();
 
@@ -138,7 +138,7 @@ pub fn resolve<Message>(
 
     leafs
         .into_iter()
-        .zip(items.iter())
+        .zip(items.iter_mut())
         .zip(nodes.iter_mut())
         .zip(tree)
         .for_each(|(((leaf, child), node), tree)| {
@@ -146,7 +146,7 @@ pub fn resolve<Message>(
                 return;
             };
 
-            let child_widget = child.as_widget();
+            let child_widget = child.as_widget_mut();
             let c_size = child_widget.size();
             match c_size.width {
                 Length::Fill | Length::FillPortion(_) => {
