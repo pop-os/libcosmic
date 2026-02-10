@@ -6,7 +6,7 @@ use iced_widget::container::Catalog;
 
 use crate::{
     Apply, Element, theme,
-    widget::{container, divider, vertical_space},
+    widget::{container, divider, space::vertical},
 };
 
 #[inline]
@@ -65,7 +65,7 @@ impl<'a, Message: 'static> ListColumn<'a, Message> {
             // Ensure a minimum height of 32.
             let list_item = iced::widget::row![
                 container(item).align_y(iced::Alignment::Center),
-                vertical_space().height(iced::Length::Fixed(32.))
+                vertical().height(iced::Length::Fixed(32.))
             ]
             .padding(this.list_item_padding)
             .align_y(iced::Alignment::Center);

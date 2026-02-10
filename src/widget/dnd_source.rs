@@ -1,6 +1,6 @@
 use std::any::Any;
 
-use iced_core::window;
+use iced_core::{widget::Operation, window};
 
 use crate::{
     Element,
@@ -176,7 +176,7 @@ impl<Message: Clone + 'static, D: iced::clipboard::mime::AsMimeTypes + std::mark
     }
 
     fn layout(
-        &self,
+        &mut self,
         tree: &mut Tree,
         renderer: &crate::Renderer,
         limits: &layout::Limits,
@@ -184,41 +184,48 @@ impl<Message: Clone + 'static, D: iced::clipboard::mime::AsMimeTypes + std::mark
         let state = tree.state.downcast_mut::<State>();
         let node = self
             .container
-            .as_widget()
+            .as_widget_mut()
             .layout(&mut tree.children[0], renderer, limits);
         state.cached_bounds = node.bounds();
         node
     }
 
     fn operate(
-        &self,
+        &mut self,
         tree: &mut Tree,
         layout: layout::Layout<'_>,
         renderer: &crate::Renderer,
-        operation: &mut dyn iced_core::widget::Operation<()>,
+        operation: &mut dyn Operation,
     ) {
-        operation.custom((&mut tree.state) as &mut dyn Any, Some(&self.id));
-        operation.container(Some(&self.id), layout.bounds(), &mut |operation| {
-            self.container
-                .as_widget()
-                .operate(&mut tree.children[0], layout, renderer, operation)
+        operation.container(Some(&self.id), layout.bounds());
+        operation.traverse(&mut |operation| {
+            self.container.as_widget_mut().operate(
+                tree,
+                layout
+                    .children()
+                    .next()
+                    .unwrap()
+                    .with_virtual_offset(layout.virtual_offset()),
+                renderer,
+                operation,
+            );
         });
     }
 
-    fn on_event(
+    fn update(
         &mut self,
         tree: &mut Tree,
-        event: Event,
+        event: &Event,
         layout: layout::Layout<'_>,
         cursor: mouse::Cursor,
         renderer: &crate::Renderer,
         clipboard: &mut dyn Clipboard,
         shell: &mut Shell<'_, Message>,
         viewport: &Rectangle,
-    ) -> event::Status {
-        let ret = self.container.as_widget_mut().on_event(
+    ) {
+        let ret = self.container.as_widget_mut().update(
             &mut tree.children[0],
-            event.clone(),
+            &event,
             layout,
             cursor,
             renderer,
@@ -238,14 +245,16 @@ impl<Message: Clone + 'static, D: iced::clipboard::mime::AsMimeTypes + std::mark
                         }
 
                         state.left_pressed_position = Some(position);
-                        return event::Status::Captured;
+                        shell.capture_event();
+                        return;
                     }
                 }
                 mouse::Event::ButtonReleased(mouse::Button::Left)
                     if state.left_pressed_position.is_some() =>
                 {
                     state.left_pressed_position = None;
-                    return event::Status::Captured;
+                    shell.capture_event();
+                    return;
                 }
                 mouse::Event::CursorMoved { .. } => {
                     if let Some(position) = cursor.position() {
@@ -277,7 +286,8 @@ impl<Message: Clone + 'static, D: iced::clipboard::mime::AsMimeTypes + std::mark
                         } else if cursor.is_over(layout.bounds()) {
                             state.hovered = true;
                         }
-                        return event::Status::Captured;
+                        shell.capture_event();
+                        return;
                     }
                 }
                 _ => return ret,
@@ -288,7 +298,8 @@ impl<Message: Clone + 'static, D: iced::clipboard::mime::AsMimeTypes + std::mark
                         shell.publish(m.clone());
                     }
                     state.is_dragging = false;
-                    return event::Status::Captured;
+                    shell.capture_event();
+                    return;
                 }
                 return ret;
             }
@@ -298,7 +309,8 @@ impl<Message: Clone + 'static, D: iced::clipboard::mime::AsMimeTypes + std::mark
                         shell.publish(m.clone());
                     }
                     state.is_dragging = false;
-                    return event::Status::Captured;
+                    shell.capture_event();
+                    return;
                 }
                 return ret;
             }
@@ -352,13 +364,18 @@ impl<Message: Clone + 'static, D: iced::clipboard::mime::AsMimeTypes + std::mark
     fn overlay<'b>(
         &'b mut self,
         tree: &'b mut Tree,
-        layout: layout::Layout<'_>,
+        layout: layout::Layout<'b>,
         renderer: &crate::Renderer,
+        viewport: &Rectangle,
         translation: Vector,
     ) -> Option<overlay::Element<'b, Message, crate::Theme, crate::Renderer>> {
-        self.container
-            .as_widget_mut()
-            .overlay(&mut tree.children[0], layout, renderer, translation)
+        self.container.as_widget_mut().overlay(
+            &mut tree.children[0],
+            layout,
+            renderer,
+            viewport,
+            translation,
+        )
     }
 
     fn drag_destinations(

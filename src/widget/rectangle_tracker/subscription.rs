@@ -18,10 +18,10 @@ pub fn rectangle_tracker_subscription<
 >(
     id: I,
 ) -> Subscription<(I, RectangleUpdate<R>)> {
-    Subscription::run_with_id(
-        id,
-        stream::unfold(State::Ready, move |state| start_listening(id, state)),
-    )
+    Subscription::run_with(id, |id| {
+        let id = *id;
+        stream::unfold(State::Ready, move |state| start_listening(id, state))
+    })
 }
 
 pub enum State<I> {

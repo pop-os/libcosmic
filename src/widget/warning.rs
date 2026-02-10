@@ -73,5 +73,6 @@ pub fn warning_container(theme: &Theme) -> widget::container::Style {
             offset: iced::Vector::new(0.0, 0.0),
             blur_radius: 0.0,
         },
+        snap: true,
     }
 }

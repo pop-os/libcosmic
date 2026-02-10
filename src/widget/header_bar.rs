@@ -157,7 +157,7 @@ impl<Message: Clone + 'static> Widget<Message, crate::Theme, crate::Renderer>
     }
 
     fn layout(
-        &self,
+        &mut self,
         tree: &mut tree::Tree,
         renderer: &crate::Renderer,
         limits: &iced_core::layout::Limits,
@@ -165,7 +165,7 @@ impl<Message: Clone + 'static> Widget<Message, crate::Theme, crate::Renderer>
         let child_tree = &mut tree.children[0];
         let child = self
             .header_bar_inner
-            .as_widget()
+            .as_widget_mut()
             .layout(child_tree, renderer, limits);
         iced_core::layout::Node::with_children(child.size(), vec![child])
     }
@@ -193,20 +193,20 @@ impl<Message: Clone + 'static> Widget<Message, crate::Theme, crate::Renderer>
         );
     }
 
-    fn on_event(
+    fn update(
         &mut self,
         state: &mut tree::Tree,
-        event: iced_core::Event,
+        event: &iced_core::Event,
         layout: iced_core::Layout<'_>,
         cursor: iced_core::mouse::Cursor,
         renderer: &crate::Renderer,
         clipboard: &mut dyn iced_core::Clipboard,
         shell: &mut iced_core::Shell<'_, Message>,
         viewport: &iced_core::Rectangle,
-    ) -> iced_core::event::Status {
+    ) {
         let child_state = &mut state.children[0];
         let child_layout = layout.children().next().unwrap();
-        self.header_bar_inner.as_widget_mut().on_event(
+        self.header_bar_inner.as_widget_mut().update(
             child_state,
             event,
             child_layout,
@@ -238,7 +238,7 @@ impl<Message: Clone + 'static> Widget<Message, crate::Theme, crate::Renderer>
     }
 
     fn operate(
-        &self,
+        &mut self,
         state: &mut tree::Tree,
         layout: iced_core::Layout<'_>,
         renderer: &crate::Renderer,
@@ -246,16 +246,20 @@ impl<Message: Clone + 'static> Widget<Message, crate::Theme, crate::Renderer>
     ) {
         let child_tree = &mut state.children[0];
         let child_layout = layout.children().next().unwrap();
-        self.header_bar_inner
-            .as_widget()
-            .operate(child_tree, child_layout, renderer, operation);
+        self.header_bar_inner.as_widget_mut().operate(
+            child_tree,
+            child_layout,
+            renderer,
+            operation,
+        );
     }
 
     fn overlay<'b>(
         &'b mut self,
         state: &'b mut tree::Tree,
-        layout: iced_core::Layout<'_>,
+        layout: iced_core::Layout<'b>,
         renderer: &crate::Renderer,
+        viewport: &iced_core::Rectangle,
         translation: Vector,
     ) -> Option<iced_core::overlay::Element<'b, Message, crate::Theme, crate::Renderer>> {
         let child_tree = &mut state.children[0];
@@ -264,6 +268,7 @@ impl<Message: Clone + 'static> Widget<Message, crate::Theme, crate::Renderer>
             child_tree,
             child_layout,
             renderer,
+            viewport,
             translation,
         )
     }

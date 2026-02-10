@@ -203,13 +203,13 @@ where
             state.hashes[i] = text_hash;
             state.selections[i].update(Text {
                 content: selection.as_ref(),
-                bounds: Size::INFINITY,
+                bounds: Size::INFINITE,
                 // TODO use the renderer default size
                 size: iced::Pixels(self.text_size.unwrap_or(14.0)),
                 line_height: self.text_line_height,
                 font: self.font.unwrap_or_else(crate::font::default),
-                horizontal_alignment: alignment::Horizontal::Left,
-                vertical_alignment: alignment::Vertical::Top,
+                align_x: text::Alignment::Left,
+                align_y: alignment::Vertical::Top,
                 shaping: text::Shaping::Advanced,
                 wrapping: text::Wrapping::default(),
                 ellipsize: text::Ellipsize::default(),
@@ -227,7 +227,7 @@ where
     }
 
     fn layout(
-        &self,
+        &mut self,
         tree: &mut Tree,
         renderer: &crate::Renderer,
         limits: &layout::Limits,
@@ -252,17 +252,17 @@ where
         )
     }
 
-    fn on_event(
+    fn update(
         &mut self,
         tree: &mut Tree,
-        event: Event,
+        event: &Event,
         layout: Layout<'_>,
         cursor: mouse::Cursor,
         _renderer: &crate::Renderer,
         _clipboard: &mut dyn Clipboard,
         shell: &mut Shell<'_, Message>,
         _viewport: &Rectangle,
-    ) -> event::Status {
+    ) {
         update::<S, Message, AppMessage>(
             &event,
             layout,
@@ -327,21 +327,23 @@ where
     }
 
     fn operate(
-        &self,
+        &mut self,
         tree: &mut Tree,
         _layout: Layout<'_>,
         _renderer: &crate::Renderer,
         operation: &mut dyn iced_core::widget::Operation,
     ) {
-        let state = tree.state.downcast_mut::<State>();
-        operation.custom(state, self.id.as_ref());
+        // TODO: double check operation handling
+        // let state = tree.state.downcast_mut::<State>();
+        // operation.custom(state, self.id.as_ref());
     }
 
     fn overlay<'b>(
         &'b mut self,
         tree: &'b mut Tree,
-        layout: Layout<'_>,
+        layout: Layout<'b>,
         renderer: &crate::Renderer,
+        viewport: &Rectangle,
         translation: Vector,
     ) -> Option<overlay::Element<'b, Message, crate::Theme, crate::Renderer>> {
         #[cfg(all(feature = "winit", feature = "wayland"))]
@@ -469,24 +471,38 @@ pub fn layout(
     let max_width = match width {
         Length::Shrink => {
             let measure = move |(label, paragraph): (_, Option<&mut crate::Plain>)| -> f32 {
-                let text = Text {
-                    content: label,
-                    bounds: Size::new(f32::MAX, f32::MAX),
-                    size: iced::Pixels(text_size),
-                    line_height: text_line_height,
-                    font: font.unwrap_or_else(crate::font::default),
-                    horizontal_alignment: alignment::Horizontal::Left,
-                    vertical_alignment: alignment::Vertical::Top,
-                    shaping: text::Shaping::Advanced,
-                    wrapping: text::Wrapping::default(),
-                    ellipsize: text::Ellipsize::default(),
-                };
                 let paragraph = match paragraph {
                     Some(p) => {
+                        let text = Text {
+                            content: label,
+                            bounds: Size::new(f32::MAX, f32::MAX),
+                            size: iced::Pixels(text_size),
+                            line_height: text_line_height,
+                            font: font.unwrap_or_else(crate::font::default),
+                            align_x: text::Alignment::Left,
+                            align_y: alignment::Vertical::Top,
+                            shaping: text::Shaping::Advanced,
+                            wrapping: text::Wrapping::default(),
+                            ellipsize: text::Ellipsize::default(),
+                        };
                         p.update(text);
                         p
                     }
-                    None => &mut crate::Plain::new(text),
+                    None => {
+                        let text = Text {
+                            content: label.to_string(),
+                            bounds: Size::new(f32::MAX, f32::MAX),
+                            size: iced::Pixels(text_size),
+                            line_height: text_line_height,
+                            font: font.unwrap_or_else(crate::font::default),
+                            align_x: text::Alignment::Left,
+                            align_y: alignment::Vertical::Top,
+                            shaping: text::Shaping::Advanced,
+                            wrapping: text::Wrapping::default(),
+                            ellipsize: text::Ellipsize::default(),
+                        };
+                        &mut crate::Plain::new(text)
+                    }
                 };
                 paragraph.min_width().round()
             };
@@ -544,7 +560,7 @@ pub fn update<
     text_size: Option<f32>,
     font: Option<crate::font::Font>,
     selected_option: Option<usize>,
-) -> event::Status {
+) {
     let state = state();
 
     let open = |shell: &mut Shell<'_, Message>,
@@ -575,7 +591,7 @@ pub fn update<
             let measure = |_label: &str, selection_paragraph: &crate::Paragraph| -> f32 {
                 selection_paragraph.min_width().round()
             };
-            let pad_width = padding.horizontal().mul_add(2.0, 16.0);
+            let pad_width = padding.x().mul_add(2.0, 16.0);
 
             let selections_width = selections
                 .iter()
@@ -669,12 +685,10 @@ pub fn update<
                 if let Some(on_close) = on_surface_action {
                     shell.publish(on_close(surface::action::destroy_popup(state.popup_id)));
                 }
-                event::Status::Captured
+                shell.capture_event();
             } else if cursor.is_over(layout.bounds()) {
                 open(shell, state, on_selected);
-                event::Status::Captured
-            } else {
-                event::Status::Ignored
+                shell.capture_event();
             }
         }
         Event::Mouse(mouse::Event::WheelScrolled {
@@ -689,17 +703,13 @@ pub fn update<
                     shell.publish((on_selected)(next_index));
                 }
 
-                event::Status::Captured
-            } else {
-                event::Status::Ignored
+                shell.capture_event();
             }
         }
         Event::Keyboard(keyboard::Event::ModifiersChanged(modifiers)) => {
             state.keyboard_modifiers = *modifiers;
-
-            event::Status::Ignored
         }
-        _ => event::Status::Ignored,
+        _ => {}
     }
 }
 
@@ -746,7 +756,7 @@ where
         .zip(state.selections.iter())
         .map(|(label, selection)| measure(label.as_ref(), selection.raw()))
         .fold(0.0, |next, current| current.max(next));
-    let pad_width = padding.horizontal().mul_add(2.0, 16.0);
+    let pad_width = padding.x().mul_add(2.0, 16.0);
 
     let width = selections_width + gap + pad_width + icon_width;
     let is_open = state.is_open.clone();
@@ -822,7 +832,7 @@ where
                 selection_paragraph.min_width().round()
             };
 
-            let pad_width = padding.horizontal().mul_add(2.0, 16.0);
+            let pad_width = padding.x().mul_add(2.0, 16.0);
 
             let icon_width = if icons.is_empty() { 0.0 } else { 24.0 };
 
@@ -883,23 +893,20 @@ pub fn draw<'a, S>(
             bounds,
             border: style.border,
             shadow: Shadow::default(),
+            snap: true,
         },
         style.background,
     );
 
     if let Some(handle) = state.icon.clone() {
         let svg_handle = svg::Svg::new(handle).color(style.text_color);
-
-        svg::Renderer::draw_svg(
-            renderer,
-            svg_handle,
-            Rectangle {
-                x: bounds.x + bounds.width - gap - 16.0,
-                y: bounds.center_y() - 8.0,
-                width: 16.0,
-                height: 16.0,
-            },
-        );
+        let bounds = Rectangle {
+            x: bounds.x + bounds.width - gap - 16.0,
+            y: bounds.center_y() - 8.0,
+            width: 16.0,
+            height: 16.0,
+        };
+        svg::Renderer::draw_svg(renderer, svg_handle, bounds, bounds);
     }
 
     if let Some(content) = selected.map(AsRef::as_ref).or(placeholder) {
@@ -908,7 +915,7 @@ pub fn draw<'a, S>(
         let mut bounds = Rectangle {
             x: bounds.x + padding.left,
             y: bounds.center_y(),
-            width: bounds.width - padding.horizontal(),
+            width: bounds.width - padding.x(),
             height: f32::from(text_line_height.to_absolute(Pixels(text_size))),
         };
 
@@ -932,8 +939,8 @@ pub fn draw<'a, S>(
                 line_height: text_line_height,
                 font,
                 bounds: bounds.size(),
-                horizontal_alignment: alignment::Horizontal::Left,
-                vertical_alignment: alignment::Vertical::Center,
+                align_x: text::Alignment::Left,
+                align_y: alignment::Vertical::Center,
                 shaping: text::Shaping::Advanced,
                 wrapping: text::Wrapping::default(),
                 ellipsize: text::Ellipsize::default(),

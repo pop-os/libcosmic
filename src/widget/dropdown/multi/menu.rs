@@ -209,18 +209,18 @@ impl<Message> iced_core::Overlay<Message, crate::Theme, crate::Renderer> for Ove
         })
     }
 
-    fn on_event(
+    fn update(
         &mut self,
-        event: Event,
+        event: &Event,
         layout: Layout<'_>,
         cursor: mouse::Cursor,
         renderer: &crate::Renderer,
         clipboard: &mut dyn Clipboard,
         shell: &mut Shell<'_, Message>,
-    ) -> event::Status {
+    ) {
         let bounds = layout.bounds();
 
-        self.container.on_event(
+        self.container.update(
             self.state, event, layout, cursor, renderer, clipboard, shell, &bounds,
         )
     }
@@ -229,11 +229,10 @@ impl<Message> iced_core::Overlay<Message, crate::Theme, crate::Renderer> for Ove
         &self,
         layout: Layout<'_>,
         cursor: mouse::Cursor,
-        viewport: &Rectangle,
         renderer: &crate::Renderer,
     ) -> mouse::Interaction {
         self.container
-            .mouse_interaction(self.state, layout, cursor, viewport, renderer)
+            .mouse_interaction(self.state, layout, cursor, &layout.bounds(), renderer)
     }
 
     fn draw(
@@ -256,6 +255,7 @@ impl<Message> iced_core::Overlay<Message, crate::Theme, crate::Renderer> for Ove
                     radius: appearance.border_radius,
                 },
                 shadow: Shadow::default(),
+                snap: true,
             },
             appearance.background,
         );
@@ -287,7 +287,7 @@ where
     }
 
     fn layout(
-        &self,
+        &mut self,
         _tree: &mut Tree,
         renderer: &crate::Renderer,
         limits: &layout::Limits,
@@ -309,7 +309,7 @@ where
             )
         });
 
-        let vertical_padding = self.padding.vertical();
+        let vertical_padding = self.padding.y();
         let text_line_height = f32::from(text_line_height);
 
         let size = {
@@ -328,17 +328,17 @@ where
         layout::Node::new(size)
     }
 
-    fn on_event(
+    fn update(
         &mut self,
         _state: &mut Tree,
-        event: Event,
+        event: &Event,
         layout: Layout<'_>,
         cursor: mouse::Cursor,
         renderer: &crate::Renderer,
         _clipboard: &mut dyn Clipboard,
         shell: &mut Shell<'_, Message>,
         _viewport: &Rectangle,
-    ) -> event::Status {
+    ) {
         let bounds = layout.bounds();
 
         match event {
@@ -346,7 +346,8 @@ where
                 if cursor.is_over(bounds) {
                     if let Some(item) = self.hovered_option.as_ref() {
                         shell.publish((self.on_selected)(item.clone()));
-                        return event::Status::Captured;
+                        shell.capture_event();
+                        return;
                     }
                 }
             }
@@ -361,7 +362,7 @@ where
 
                     let heights = self
                         .options
-                        .element_heights(self.padding.vertical(), text_line_height);
+                        .element_heights(self.padding.y(), text_line_height);
 
                     let mut current_offset = 0.0;
 
@@ -408,7 +409,7 @@ where
 
                     let heights = self
                         .options
-                        .element_heights(self.padding.vertical(), text_line_height);
+                        .element_heights(self.padding.y(), text_line_height);
 
                     let mut current_offset = 0.0;
 
@@ -446,8 +447,6 @@ where
             }
             _ => {}
         }
-
-        event::Status::Ignored
     }
 
     fn mouse_interaction(
@@ -490,7 +489,7 @@ where
         let text_line_height = f32::from(self.text_line_height.to_absolute(Pixels(text_size)));
 
         let visible_options = self.options.visible_options(
-            self.padding.vertical(),
+            self.padding.y(),
             text_line_height,
             offset,
             viewport.height,
@@ -528,24 +527,23 @@ where
                                     ..Default::default()
                                 },
                                 shadow: Shadow::default(),
+                                snap: true,
                             },
                             appearance.selected_background,
                         );
+
+                        let svg_bounds = Rectangle {
+                            x: item_x + item_width - 16.0 - 8.0,
+                            y: bounds.y + (bounds.height / 2.0 - 8.0),
+                            width: 16.0,
+                            height: 16.0,
+                        };
 
                         let svg_handle =
                             svg::Svg::new(crate::widget::common::object_select().clone())
                                 .color(appearance.selected_text_color)
                                 .border_radius(appearance.border_radius);
-                        svg::Renderer::draw_svg(
-                            renderer,
-                            svg_handle,
-                            Rectangle {
-                                x: item_x + item_width - 16.0 - 8.0,
-                                y: bounds.y + (bounds.height / 2.0 - 8.0),
-                                width: 16.0,
-                                height: 16.0,
-                            },
-                        );
+                        svg::Renderer::draw_svg(renderer, svg_handle, svg_bounds, svg_bounds);
 
                         (appearance.selected_text_color, crate::font::semibold())
                     } else if self.hovered_option.as_ref() == Some(item) {
@@ -566,6 +564,7 @@ where
                                     ..Default::default()
                                 },
                                 shadow: Shadow::default(),
+                                snap: true,
                             },
                             appearance.hovered_background,
                         );
@@ -590,8 +589,8 @@ where
                             size: iced::Pixels(text_size),
                             line_height: self.text_line_height,
                             font,
-                            horizontal_alignment: alignment::Horizontal::Left,
-                            vertical_alignment: alignment::Vertical::Center,
+                            align_x: text::Alignment::Left,
+                            align_y: alignment::Vertical::Center,
                             shaping: text::Shaping::Advanced,
                             wrapping: text::Wrapping::default(),
                             ellipsize: text::Ellipsize::default(),
@@ -611,7 +610,7 @@ where
                     })
                     .move_to(Point {
                         x: bounds.x,
-                        y: bounds.y + (self.padding.vertical() / 2.0) - 4.0,
+                        y: bounds.y + (self.padding.y() / 2.0) - 4.0,
                     });
 
                     Widget::<Message, crate::Theme, crate::Renderer>::draw(
@@ -640,8 +639,8 @@ where
                             size: iced::Pixels(text_size),
                             line_height: text::LineHeight::Absolute(Pixels(text_line_height + 4.0)),
                             font: crate::font::default(),
-                            horizontal_alignment: alignment::Horizontal::Center,
-                            vertical_alignment: alignment::Vertical::Center,
+                            align_x: text::Alignment::Center,
+                            align_y: alignment::Vertical::Center,
                             shaping: text::Shaping::Advanced,
                             wrapping: text::Wrapping::default(),
                             ellipsize: text::Ellipsize::default(),

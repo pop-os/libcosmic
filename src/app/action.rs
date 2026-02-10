@@ -8,8 +8,6 @@ use crate::{config::CosmicTk, keyboard_nav};
 #[cfg(feature = "wayland")]
 use cctk::sctk::reexports::csd_frame::{WindowManagerCapabilities, WindowState};
 use cosmic_theme::ThemeMode;
-#[cfg(not(any(feature = "multi-window", feature = "wayland")))]
-use iced::Application as IcedApplication;
 
 /// A message managed internally by COSMIC.
 #[derive(Clone, Debug)]

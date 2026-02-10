@@ -318,7 +318,7 @@ impl<'a, Message: 'a + Clone> Widget<Message, crate::Theme, crate::Renderer>
     }
 
     fn layout(
-        &self,
+        &mut self,
         tree: &mut Tree,
         renderer: &crate::Renderer,
         limits: &layout::Limits,
@@ -331,21 +331,22 @@ impl<'a, Message: 'a + Clone> Widget<Message, crate::Theme, crate::Renderer>
             self.padding,
             |renderer, limits| {
                 self.content
-                    .as_widget()
+                    .as_widget_mut()
                     .layout(&mut tree.children[0], renderer, limits)
             },
         )
     }
 
     fn operate(
-        &self,
+        &mut self,
         tree: &mut Tree,
         layout: Layout<'_>,
         renderer: &crate::Renderer,
         operation: &mut dyn Operation<()>,
     ) {
-        operation.container(None, layout.bounds(), &mut |operation| {
-            self.content.as_widget().operate(
+        operation.container(None, layout.bounds());
+        operation.traverse(&mut |operation| {
+            self.content.as_widget_mut().operate(
                 &mut tree.children[0],
                 layout
                     .children()
@@ -357,20 +358,19 @@ impl<'a, Message: 'a + Clone> Widget<Message, crate::Theme, crate::Renderer>
             );
         });
         let state = tree.state.downcast_mut::<State>();
-        operation.focusable(state, Some(&self.id));
     }
 
-    fn on_event(
+    fn update(
         &mut self,
         tree: &mut Tree,
-        event: Event,
+        event: &Event,
         layout: Layout<'_>,
         cursor: mouse::Cursor,
         renderer: &crate::Renderer,
         clipboard: &mut dyn Clipboard,
         shell: &mut Shell<'_, Message>,
         viewport: &Rectangle,
-    ) -> event::Status {
+    ) {
         if let Variant::Image {
             on_remove: Some(on_remove),
             ..
@@ -383,7 +383,8 @@ impl<'a, Message: 'a + Clone> Widget<Message, crate::Theme, crate::Renderer>
                     if let Some(position) = cursor.position() {
                         if removal_bounds(layout.bounds(), 4.0).contains(position) {
                             shell.publish(on_remove.clone());
-                            return event::Status::Captured;
+                            shell.capture_event();
+                            return;
                         }
                     }
                 }
@@ -391,10 +392,9 @@ impl<'a, Message: 'a + Clone> Widget<Message, crate::Theme, crate::Renderer>
                 _ => (),
             }
         }
-
-        if self.content.as_widget_mut().on_event(
+        self.content.as_widget_mut().update(
             &mut tree.children[0],
-            event.clone(),
+            event,
             layout
                 .children()
                 .next()
@@ -405,9 +405,9 @@ impl<'a, Message: 'a + Clone> Widget<Message, crate::Theme, crate::Renderer>
             clipboard,
             shell,
             viewport,
-        ) == event::Status::Captured
-        {
-            return event::Status::Captured;
+        );
+        if shell.is_event_captured() {
+            return;
         }
 
         update(
@@ -541,6 +541,7 @@ impl<'a, Message: 'a + Clone> Widget<Message, crate::Theme, crate::Renderer>
                                 ..Default::default()
                             },
                             shadow: Shadow::default(),
+                            snap: true,
                         },
                         selection_background,
                     );
@@ -554,7 +555,7 @@ impl<'a, Message: 'a + Clone> Widget<Message, crate::Theme, crate::Renderer>
                         y: bounds.y + (bounds.height - 18.0 - styling.border_width),
                     };
                     if bounds.intersects(viewport) {
-                        iced_core::svg::Renderer::draw_svg(renderer, svg_handle, bounds);
+                        iced_core::svg::Renderer::draw_svg(renderer, svg_handle, bounds, bounds);
                     }
                 }
 
@@ -570,6 +571,7 @@ impl<'a, Message: 'a + Clone> Widget<Message, crate::Theme, crate::Renderer>
                                         radius: c_rad.radius_m.into(),
                                         ..Default::default()
                                     },
+                                    snap: true,
                                 },
                                 selection_background,
                             );
@@ -577,6 +579,12 @@ impl<'a, Message: 'a + Clone> Widget<Message, crate::Theme, crate::Renderer>
                             iced_core::svg::Renderer::draw_svg(
                                 renderer,
                                 svg_handle,
+                                Rectangle {
+                                    width: 16.0,
+                                    height: 16.0,
+                                    x: bounds.x + 4.0,
+                                    y: bounds.y + 4.0,
+                                },
                                 Rectangle {
                                     width: 16.0,
                                     height: 16.0,
@@ -609,8 +617,9 @@ impl<'a, Message: 'a + Clone> Widget<Message, crate::Theme, crate::Renderer>
     fn overlay<'b>(
         &'b mut self,
         tree: &'b mut Tree,
-        layout: Layout<'_>,
+        layout: Layout<'b>,
         renderer: &crate::Renderer,
+        viewport: &Rectangle,
         mut translation: Vector,
     ) -> Option<overlay::Element<'b, Message, crate::Theme, crate::Renderer>> {
         let position = layout.bounds().position();
@@ -624,6 +633,7 @@ impl<'a, Message: 'a + Clone> Widget<Message, crate::Theme, crate::Renderer>
                 .unwrap()
                 .with_virtual_offset(layout.virtual_offset()),
             renderer,
+            viewport,
             translation,
         )
     }
@@ -638,7 +648,7 @@ impl<'a, Message: 'a + Clone> Widget<Message, crate::Theme, crate::Renderer>
     ) -> iced_accessibility::A11yTree {
         use iced_accessibility::{
             A11yNode, A11yTree,
-            accesskit::{Action, DefaultActionVerb, NodeBuilder, NodeId, Rect, Role},
+            accesskit::{Action, Node, NodeId, Rect, Role},
         };
         // TODO why is state None sometimes?
         if matches!(state.state, iced_core::widget::tree::State::None) {
@@ -658,12 +668,12 @@ impl<'a, Message: 'a + Clone> Widget<Message, crate::Theme, crate::Renderer>
         let bounds = Rect::new(x as f64, y as f64, (x + width) as f64, (y + height) as f64);
         let is_hovered = state.state.downcast_ref::<State>().is_hovered;
 
-        let mut node = NodeBuilder::new(Role::Button);
+        let mut node = Node::new(Role::Button);
         node.add_action(Action::Focus);
-        node.add_action(Action::Default);
+        node.add_action(Action::Click);
         node.set_bounds(bounds);
         if let Some(name) = self.name.as_ref() {
-            node.set_name(name.clone());
+            node.set_label(name.clone());
         }
         match self.description.as_ref() {
             Some(iced_accessibility::Description::Id(id)) => {
@@ -682,10 +692,10 @@ impl<'a, Message: 'a + Clone> Widget<Message, crate::Theme, crate::Renderer>
         if self.on_press.is_none() {
             node.set_disabled();
         }
-        if is_hovered {
-            node.set_hovered();
-        }
-        node.set_default_action_verb(DefaultActionVerb::Click);
+        // TODO hover
+        // if is_hovered {
+        //     node.set_hovered();
+        // }
 
         if let Some(child_tree) = child_tree.map(|child_tree| {
             self.content.as_widget().a11y_nodes(
@@ -761,14 +771,14 @@ impl State {
 #[allow(clippy::needless_pass_by_value, clippy::too_many_arguments)]
 pub fn update<'a, Message: Clone>(
     _id: Id,
-    event: Event,
+    event: &Event,
     layout: Layout<'_>,
     cursor: mouse::Cursor,
     shell: &mut Shell<'_, Message>,
     on_press: Option<&dyn Fn(Vector, Rectangle) -> Message>,
     on_press_down: Option<&dyn Fn(Vector, Rectangle) -> Message>,
     state: impl FnOnce() -> &'a mut State,
-) -> event::Status {
+) {
     match event {
         Event::Mouse(mouse::Event::ButtonPressed(mouse::Button::Left))
         | Event::Touch(touch::Event::FingerPressed { .. }) => {
@@ -787,7 +797,8 @@ pub fn update<'a, Message: Clone>(
                         shell.publish(msg);
                     }
 
-                    return event::Status::Captured;
+                    shell.capture_event();
+                    return;
                 }
             }
         }
@@ -806,7 +817,8 @@ pub fn update<'a, Message: Clone>(
                         shell.publish(msg);
                     }
 
-                    return event::Status::Captured;
+                    shell.capture_event();
+                    return;
                 }
             } else if on_press_down.is_some() {
                 let state = state();
@@ -816,7 +828,7 @@ pub fn update<'a, Message: Clone>(
         #[cfg(feature = "a11y")]
         Event::A11y(event_id, iced_accessibility::accesskit::ActionRequest { action, .. }) => {
             let state = state();
-            if let Some(on_press) = matches!(action, iced_accessibility::accesskit::Action::Default)
+            if let Some(on_press) = matches!(action, iced_accessibility::accesskit::Action::Click)
                 .then_some(on_press)
                 .flatten()
             {
@@ -825,17 +837,19 @@ pub fn update<'a, Message: Clone>(
 
                 shell.publish(msg);
             }
-            return event::Status::Captured;
+            shell.capture_event();
+            return;
         }
         Event::Keyboard(keyboard::Event::KeyPressed { key, .. }) => {
             if let Some(on_press) = on_press {
                 let state = state();
-                if state.is_focused && key == keyboard::Key::Named(keyboard::key::Named::Enter) {
+                if state.is_focused && *key == keyboard::Key::Named(keyboard::key::Named::Enter) {
                     state.is_pressed = true;
                     let msg = (on_press)(layout.virtual_offset(), layout.bounds());
 
                     shell.publish(msg);
-                    return event::Status::Captured;
+                    shell.capture_event();
+                    return;
                 }
             }
         }
@@ -846,8 +860,6 @@ pub fn update<'a, Message: Clone>(
         }
         _ => {}
     }
-
-    event::Status::Ignored
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -879,6 +891,7 @@ pub fn draw<Renderer: iced_core::Renderer, Theme>(
                     radius: styling.border_radius,
                 },
                 shadow: Shadow::default(),
+                snap: true,
             },
             Color::TRANSPARENT,
         );
@@ -900,6 +913,7 @@ pub fn draw<Renderer: iced_core::Renderer, Theme>(
                         ..Default::default()
                     },
                     shadow: Shadow::default(),
+                    snap: true,
                 },
                 Background::Color([0.0, 0.0, 0.0, 0.5].into()),
             );
@@ -915,6 +929,7 @@ pub fn draw<Renderer: iced_core::Renderer, Theme>(
                         ..Default::default()
                     },
                     shadow: Shadow::default(),
+                    snap: true,
                 },
                 background,
             );
@@ -930,6 +945,7 @@ pub fn draw<Renderer: iced_core::Renderer, Theme>(
                         ..Default::default()
                     },
                     shadow: Shadow::default(),
+                    snap: true,
                 },
                 overlay,
             );
@@ -953,6 +969,7 @@ pub fn draw<Renderer: iced_core::Renderer, Theme>(
                         radius: styling.border_radius,
                     },
                     shadow: Shadow::default(),
+                    snap: true,
                 },
                 Color::TRANSPARENT,
             );

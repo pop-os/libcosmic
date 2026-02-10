@@ -13,9 +13,8 @@ pub enum Desktop {
 
 #[cold]
 pub fn desktop_settings() -> iced_futures::Subscription<Desktop> {
-    iced_futures::Subscription::run_with_id(
-        std::any::TypeId::of::<Desktop>(),
-        stream::channel(10, |mut tx| {
+    iced_futures::Subscription::run(|| {
+        stream::channel(10, |mut tx: futures::channel::mpsc::Sender<Desktop>| {
             async move {
                 let mut attempts = 0;
                 loop {
@@ -99,6 +98,6 @@ pub fn desktop_settings() -> iced_futures::Subscription<Desktop> {
                     }
                 }
             }
-        }),
-    )
+        })
+    })
 }

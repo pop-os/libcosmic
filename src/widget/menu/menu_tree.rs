@@ -253,13 +253,16 @@ pub fn menu_items<
                     let key = find_key(&action, key_binds);
                     let mut items = vec![
                         widget::text(l).into(),
-                        widget::horizontal_space().into(),
+                        widget::space::horizontal().into(),
                         widget::text(key).class(key_class).into(),
                     ];
 
                     if let Some(icon) = icon {
                         items.insert(0, widget::icon::icon(icon).size(14).into());
-                        items.insert(1, widget::Space::with_width(spacing.space_xxs).into());
+                        items.insert(
+                            1,
+                            widget::space::horizontal().width(spacing.space_xxs).into(),
+                        );
                     }
 
                     let menu_button = menu_button(items).on_press(action.message());
@@ -273,13 +276,16 @@ pub fn menu_items<
 
                     let mut items = vec![
                         widget::text(l).into(),
-                        widget::horizontal_space().into(),
+                        widget::space::horizontal().into(),
                         widget::text(key).class(key_class).into(),
                     ];
 
                     if let Some(icon) = icon {
                         items.insert(0, widget::icon::icon(icon).size(14).into());
-                        items.insert(1, widget::Space::with_width(spacing.space_xxs).into());
+                        items.insert(
+                            1,
+                            widget::space::horizontal().width(spacing.space_xxs).into(),
+                        );
                     }
 
                     let menu_button = menu_button(items);
@@ -301,16 +307,21 @@ pub fn menu_items<
                                 .width(Length::Fixed(16.0))
                                 .into()
                         } else {
-                            widget::Space::with_width(Length::Fixed(16.0)).into()
+                            widget::space::horizontal()
+                                .width(Length::Fixed(16.0))
+                                .into()
                         },
-                        widget::Space::with_width(spacing.space_xxs).into(),
+                        widget::space::horizontal().width(spacing.space_xxs).into(),
                         widget::text(label).align_x(iced::Alignment::Start).into(),
-                        widget::horizontal_space().into(),
+                        widget::space::horizontal().into(),
                         widget::text(key).class(key_class).into(),
                     ];
 
                     if let Some(icon) = icon {
-                        items.insert(1, widget::Space::with_width(spacing.space_xxs).into());
+                        items.insert(
+                            1,
+                            widget::space::horizontal().width(spacing.space_xxs).into(),
+                        );
                         items.insert(2, widget::icon::icon(icon).size(14).into());
                     }
 
@@ -325,7 +336,7 @@ pub fn menu_items<
                         RcElementWrapper::new(crate::Element::from(
                             menu_button::<'static, _>(vec![
                                 widget::text(l.clone()).into(),
-                                widget::horizontal_space().into(),
+                                widget::space::horizontal().into(),
                                 widget::icon::from_name("pan-end-symbolic")
                                     .size(16)
                                     .icon()

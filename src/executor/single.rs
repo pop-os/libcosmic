@@ -30,4 +30,8 @@ impl iced::Executor for Executor {
         let _guard = self.0.enter();
         f()
     }
+
+    fn block_on<T>(&self, future: impl Future<Output = T>) -> T {
+        self.0.block_on(future)
+    }
 }

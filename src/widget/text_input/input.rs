@@ -699,7 +699,7 @@ where
     }
 
     fn layout(
-        &self,
+        &mut self,
         tree: &mut Tree,
         renderer: &crate::Renderer,
         limits: &layout::Limits,
@@ -711,7 +711,7 @@ where
 
             let size = self.size.unwrap_or_else(|| renderer.default_size().0);
 
-            let bounds = limits.resolve(Length::Shrink, Length::Fill, Size::INFINITY);
+            let bounds = limits.resolve(Length::Shrink, Length::Fill, Size::INFINITE);
             let value_paragraph = &mut state.value;
             let v = self.value.to_string();
             value_paragraph.update(Text {
@@ -723,8 +723,8 @@ where
                 font,
                 bounds,
                 size: iced::Pixels(size),
-                horizontal_alignment: alignment::Horizontal::Left,
-                vertical_alignment: alignment::Vertical::Center,
+                align_x: text::Alignment::Left,
+                align_y: alignment::Vertical::Center,
                 line_height: text::LineHeight::default(),
                 shaping: text::Shaping::Advanced,
                 wrapping: text::Wrapping::None,
@@ -743,8 +743,8 @@ where
                 self.width,
                 self.padding,
                 self.size,
-                self.leading_icon.as_ref(),
-                self.trailing_icon.as_ref(),
+                self.leading_icon.as_mut(),
+                self.trailing_icon.as_mut(),
                 self.line_height,
                 self.label.as_deref(),
                 self.helper_text.as_deref(),
@@ -780,24 +780,25 @@ where
     }
 
     fn operate(
-        &self,
+        &mut self,
         tree: &mut Tree,
-        _layout: Layout<'_>,
-        _renderer: &crate::Renderer,
-        operation: &mut dyn Operation<()>,
+        layout: Layout<'_>,
+        renderer: &crate::Renderer,
+        operation: &mut dyn Operation,
     ) {
+        operation.container(Some(&self.id), layout.bounds());
         let state = tree.state.downcast_mut::<State>();
 
-        operation.custom(state, Some(&self.id));
-        operation.focusable(state, Some(&self.id));
-        operation.text_input(state, Some(&self.id));
+        operation.focusable(Some(&self.id), layout.bounds(), state);
+        operation.text_input(Some(&self.id), layout.bounds(), state);
     }
 
     fn overlay<'b>(
         &'b mut self,
         tree: &'b mut Tree,
-        layout: Layout<'_>,
+        layout: Layout<'b>,
         renderer: &crate::Renderer,
+        viewport: &Rectangle,
         translation: Vector,
     ) -> Option<overlay::Element<'b, Message, crate::Theme, crate::Renderer>> {
         let mut layout_ = Vec::with_capacity(2);
@@ -823,24 +824,24 @@ where
             .filter_map(|((child, state), layout)| {
                 child
                     .as_widget_mut()
-                    .overlay(state, layout, renderer, translation)
+                    .overlay(state, layout, renderer, viewport, translation)
             })
             .collect::<Vec<_>>();
 
         (!children.is_empty()).then(|| Group::with_children(children).overlay())
     }
 
-    fn on_event(
+    fn update(
         &mut self,
         tree: &mut Tree,
-        event: Event,
+        event: &Event,
         layout: Layout<'_>,
         cursor_position: mouse::Cursor,
         renderer: &crate::Renderer,
         clipboard: &mut dyn Clipboard,
         shell: &mut Shell<'_, Message>,
         viewport: &Rectangle,
-    ) -> event::Status {
+    ) {
         let text_layout = self.text_layout(layout);
         let mut trailing_icon_layout = None;
         let font = self.font.unwrap_or_else(|| renderer.default_font());
@@ -877,9 +878,9 @@ where
                 // Enable custom buttons defined on the trailing icon position to be handled.
                 if !self.is_editable_variant {
                     if let Some(trailing_layout) = trailing_icon_layout {
-                        let res = trailing_icon.as_widget_mut().on_event(
+                        let res = trailing_icon.as_widget_mut().update(
                             tree,
-                            event.clone(),
+                            event,
                             trailing_layout,
                             cursor_position,
                             renderer,
@@ -888,8 +889,8 @@ where
                             viewport,
                         );
 
-                        if res == event::Status::Captured {
-                            return res;
+                        if shell.is_event_captured() {
+                            return;
                         }
                     }
                 }
@@ -1133,8 +1134,8 @@ pub fn layout<Message>(
     width: Length,
     padding: Padding,
     size: Option<f32>,
-    leading_icon: Option<&Element<'_, Message, crate::Theme, crate::Renderer>>,
-    trailing_icon: Option<&Element<'_, Message, crate::Theme, crate::Renderer>>,
+    leading_icon: Option<&mut Element<'_, Message, crate::Theme, crate::Renderer>>,
+    trailing_icon: Option<&mut Element<'_, Message, crate::Theme, crate::Renderer>>,
     line_height: text::LineHeight,
     label: Option<&str>,
     helper_text: Option<&str>,
@@ -1148,7 +1149,7 @@ pub fn layout<Message>(
     let mut nodes = Vec::with_capacity(3);
 
     let text_pos = if let Some(label) = label {
-        let text_bounds = limits.resolve(width, Length::Shrink, Size::INFINITY);
+        let text_bounds = limits.resolve(width, Length::Shrink, Size::INFINITE);
         let state = tree.state.downcast_mut::<State>();
         let label_paragraph = &mut state.label;
         label_paragraph.update(Text {
@@ -1156,8 +1157,8 @@ pub fn layout<Message>(
             font,
             bounds: text_bounds,
             size: iced::Pixels(size.unwrap_or_else(|| renderer.default_size().0)),
-            horizontal_alignment: alignment::Horizontal::Left,
-            vertical_alignment: alignment::Vertical::Center,
+            align_x: text::Alignment::Left,
+            align_y: alignment::Vertical::Center,
             line_height,
             shaping: text::Shaping::Advanced,
             wrapping: text::Wrapping::None,
@@ -1186,7 +1187,7 @@ pub fn layout<Message>(
         let (leading_icon_width, mut leading_icon) =
             if let Some((icon, tree)) = leading_icon.zip(children.get_mut(c_i)) {
                 let size = icon.as_widget().size();
-                let icon_node = icon.as_widget().layout(
+                let icon_node = icon.as_widget_mut().layout(
                     tree,
                     renderer,
                     &Limits::NONE.width(size.width).height(size.height),
@@ -1201,7 +1202,7 @@ pub fn layout<Message>(
         let (trailing_icon_width, mut trailing_icon) =
             if let Some((icon, tree)) = trailing_icon.zip(children.get_mut(c_i)) {
                 let size = icon.as_widget().size();
-                let icon_node = icon.as_widget().layout(
+                let icon_node = icon.as_widget_mut().layout(
                     tree,
                     renderer,
                     &Limits::NONE.width(size.width).height(size.height),
@@ -1214,7 +1215,7 @@ pub fn layout<Message>(
         let text_limits = limits
             .width(width)
             .height(line_height.to_absolute(text_size.into()));
-        let text_bounds = text_limits.resolve(Length::Shrink, Length::Shrink, Size::INFINITY);
+        let text_bounds = text_limits.resolve(Length::Shrink, Length::Shrink, Size::INFINITE);
         let text_node = layout::Node::new(
             text_bounds - Size::new(leading_icon_width + trailing_icon_width, 0.0),
         )
@@ -1266,9 +1267,9 @@ pub fn layout<Message>(
     } else {
         let limits = limits
             .width(width)
-            .height(text_input_height + padding.vertical())
+            .height(text_input_height + padding.y())
             .shrink(padding);
-        let text_bounds = limits.resolve(Length::Shrink, Length::Shrink, Size::INFINITY);
+        let text_bounds = limits.resolve(Length::Shrink, Length::Shrink, Size::INFINITE);
 
         let text = layout::Node::new(text_bounds).move_to(Point::new(padding.left, padding.top));
 
@@ -1286,7 +1287,7 @@ pub fn layout<Message>(
             .width(width)
             .shrink(padding)
             .height(helper_text_line_height.to_absolute(helper_text_size.into()));
-        let text_bounds = limits.resolve(width, Length::Shrink, Size::INFINITY);
+        let text_bounds = limits.resolve(width, Length::Shrink, Size::INFINITE);
         let state = tree.state.downcast_mut::<State>();
         let helper_text_paragraph = &mut state.helper_text;
         helper_text_paragraph.update(Text {
@@ -1294,8 +1295,8 @@ pub fn layout<Message>(
             font,
             bounds: text_bounds,
             size: iced::Pixels(helper_text_size),
-            horizontal_alignment: alignment::Horizontal::Left,
-            vertical_alignment: alignment::Vertical::Center,
+            align_x: text::Alignment::Left,
+            align_y: alignment::Vertical::Center,
             line_height: helper_text_line_height,
             shaping: text::Shaping::Advanced,
             wrapping: text::Wrapping::None,
@@ -1332,7 +1333,7 @@ pub fn layout<Message>(
 #[allow(clippy::cast_possible_truncation)]
 pub fn update<'a, Message: Clone + 'static>(
     id: Option<Id>,
-    event: Event,
+    event: &Event,
     text_layout: Layout<'_>,
     edit_button_layout: Option<Layout<'_>>,
     cursor: mouse::Cursor,
@@ -1357,7 +1358,7 @@ pub fn update<'a, Message: Clone + 'static>(
     layout: Layout<'_>,
     manage_value: bool,
     drag_threshold: f32,
-) -> event::Status {
+) {
     let update_cache = |state, value| {
         replace_paragraph(
             state,
@@ -1420,7 +1421,8 @@ pub fn update<'a, Message: Clone + 'static>(
                         });
                     }
 
-                    return event::Status::Captured;
+                    shell.capture_event();
+                    return;
                 }
 
                 let target = cursor_position.x - text_layout.bounds().x;
@@ -1461,13 +1463,15 @@ pub fn update<'a, Message: Clone + 'static>(
                         if cursor.is_over(selection_bounds) && (on_input.is_some() || manage_value)
                         {
                             state.dragging_state = Some(DraggingState::PrepareDnd(cursor_position));
-                            return event::Status::Captured;
+                            shell.capture_event();
+                            return;
                         }
                         // clear selection and place cursor at click position
                         update_cache(state, value);
                         state.setting_selection(value, text_layout.bounds(), target);
                         state.dragging_state = None;
-                        return event::Status::Captured;
+                        shell.capture_event();
+                        return;
                     }
                     (None, click::Kind::Single, _) => {
                         state.setting_selection(value, text_layout.bounds(), target);
@@ -1528,7 +1532,8 @@ pub fn update<'a, Message: Clone + 'static>(
 
                 state.last_click = Some(click);
 
-                return event::Status::Captured;
+                shell.capture_event();
+                return;
             } else {
                 state.unfocus();
 
@@ -1551,12 +1556,10 @@ pub fn update<'a, Message: Clone + 'static>(
                 }
             }
             state.dragging_state = None;
-
-            return if cursor.is_over(layout.bounds()) {
-                event::Status::Captured
-            } else {
-                event::Status::Ignored
-            };
+            if cursor.is_over(layout.bounds()) {
+                shell.capture_event();
+            }
+            return;
         }
         Event::Mouse(mouse::Event::CursorMoved { position })
         | Event::Touch(touch::Event::FingerMoved { position, .. }) => {
@@ -1573,7 +1576,8 @@ pub fn update<'a, Message: Clone + 'static>(
                     .cursor
                     .select_range(state.cursor.start(value), position);
 
-                return event::Status::Captured;
+                shell.capture_event();
+                return;
             }
             #[cfg(feature = "wayland")]
             if let Some(DraggingState::PrepareDnd(start_position)) = state.dragging_state {
@@ -1583,7 +1587,7 @@ pub fn update<'a, Message: Clone + 'static>(
 
                 if distance >= drag_threshold {
                     if is_secure {
-                        return event::Status::Ignored;
+                        return;
                     }
 
                     let input_text = state.selected_text(&value.to_string()).unwrap_or_default();
@@ -1625,7 +1629,8 @@ pub fn update<'a, Message: Clone + 'static>(
                     state.dragging_state = Some(DraggingState::PrepareDnd(start_position));
                 }
 
-                return event::Status::Captured;
+                shell.capture_event();
+                return;
             }
         }
         Event::Keyboard(keyboard::Event::KeyPressed {
@@ -1636,11 +1641,11 @@ pub fn update<'a, Message: Clone + 'static>(
             ..
         }) => {
             let state = state();
-            state.keyboard_modifiers = modifiers;
+            state.keyboard_modifiers = *modifiers;
 
             if let Some(focus) = state.is_focused.as_mut().filter(|f| f.focused) {
                 if state.is_read_only || (!manage_value && on_input.is_none()) {
-                    return event::Status::Ignored;
+                    return;
                 };
                 let modifiers = state.keyboard_modifiers;
                 focus.updated_at = Instant::now();
@@ -1724,12 +1729,14 @@ pub fn update<'a, Message: Clone + 'static>(
                             };
 
                             update_cache(state, &value);
-                            return event::Status::Captured;
+                            shell.capture_event();
+                            return;
                         }
 
                         keyboard::Key::Character("a") | keyboard::Key::Character("A") => {
                             state.cursor.select_all(value);
-                            return event::Status::Captured;
+                            shell.capture_event();
+                            return;
                         }
 
                         _ => {}
@@ -1737,9 +1744,12 @@ pub fn update<'a, Message: Clone + 'static>(
                 }
 
                 // Capture keyboard inputs that should be submitted.
-                if let Some(c) = text.and_then(|t| t.chars().next().filter(|c| !c.is_control())) {
+                if let Some(c) = text
+                    .as_ref()
+                    .and_then(|t| t.chars().next().filter(|c| !c.is_control()))
+                {
                     if state.is_read_only || (!manage_value && on_input.is_none()) {
-                        return event::Status::Ignored;
+                        return;
                     };
 
                     state.is_pasting = None;
@@ -1769,7 +1779,8 @@ pub fn update<'a, Message: Clone + 'static>(
 
                         update_cache(state, &value);
 
-                        return event::Status::Captured;
+                        shell.capture_event();
+                        return;
                     }
                 }
 
@@ -1902,19 +1913,20 @@ pub fn update<'a, Message: Clone + 'static>(
                                 shell.publish(on_unfocus.clone());
                             }
 
-                            return event::Status::Ignored;
+                            return;
                         };
                     }
 
                     keyboard::Key::Named(
                         keyboard::key::Named::ArrowUp | keyboard::key::Named::ArrowDown,
                     ) => {
-                        return event::Status::Ignored;
+                        return;
                     }
                     _ => {}
                 }
 
-                return event::Status::Captured;
+                shell.capture_event();
+                return;
             }
         }
         Event::Keyboard(keyboard::Event::KeyReleased { key, .. }) => {
@@ -1928,31 +1940,30 @@ pub fn update<'a, Message: Clone + 'static>(
                     keyboard::Key::Named(keyboard::key::Named::Tab)
                     | keyboard::Key::Named(keyboard::key::Named::ArrowUp)
                     | keyboard::Key::Named(keyboard::key::Named::ArrowDown) => {
-                        return event::Status::Ignored;
+                        return;
                     }
                     _ => {}
                 }
 
-                return event::Status::Captured;
+                shell.capture_event();
+                return;
             }
         }
         Event::Keyboard(keyboard::Event::ModifiersChanged(modifiers)) => {
             let state = state();
 
-            state.keyboard_modifiers = modifiers;
+            state.keyboard_modifiers = *modifiers;
         }
         Event::Window(window::Event::RedrawRequested(now)) => {
             let state = state();
 
             if let Some(focus) = state.is_focused.as_mut().filter(|f| f.focused) {
-                focus.now = now;
+                focus.now = *now;
 
                 let millis_until_redraw = CURSOR_BLINK_INTERVAL_MILLIS
-                    - (now - focus.updated_at).as_millis() % CURSOR_BLINK_INTERVAL_MILLIS;
+                    - (*now - focus.updated_at).as_millis() % CURSOR_BLINK_INTERVAL_MILLIS;
 
-                shell.request_redraw(window::RedrawRequest::At(
-                    now + Duration::from_millis(u64::try_from(millis_until_redraw).unwrap()),
-                ));
+                shell.request_redraw();
             }
         }
         #[cfg(feature = "wayland")]
@@ -1962,7 +1973,8 @@ pub fn update<'a, Message: Clone + 'static>(
             if matches!(state.dragging_state, Some(DraggingState::Dnd(..))) {
                 // TODO: restore value in text input
                 state.dragging_state = None;
-                return event::Status::Captured;
+                shell.capture_event();
+                return;
             }
         }
         #[cfg(feature = "wayland")]
@@ -1974,23 +1986,23 @@ pub fn update<'a, Message: Clone + 'static>(
                 mime_types,
                 surface,
             },
-        )) if rectangle == Some(dnd_id) => {
+        )) if *rectangle == Some(dnd_id) => {
             cold();
             let state = state();
             let is_clicked = text_layout.bounds().contains(Point {
-                x: x as f32,
-                y: y as f32,
+                x: *x as f32,
+                y: *y as f32,
             });
 
             let mut accepted = false;
-            for m in &mime_types {
+            for m in mime_types {
                 if SUPPORTED_TEXT_MIME_TYPES.contains(&m.as_str()) {
                     let clone = m.clone();
                     accepted = true;
                 }
             }
             if accepted {
-                let target = x as f32 - text_layout.bounds().x;
+                let target = *x as f32 - text_layout.bounds().x;
                 state.dnd_offer =
                     DndOfferState::HandlingOffer(mime_types.clone(), DndAction::empty());
                 // existing logic for setting the selection
@@ -2002,16 +2014,17 @@ pub fn update<'a, Message: Clone + 'static>(
                 };
 
                 state.cursor.move_to(position.unwrap_or(0));
-                return event::Status::Captured;
+                shell.capture_event();
+                return;
             }
         }
         #[cfg(feature = "wayland")]
         Event::Dnd(DndEvent::Offer(rectangle, OfferEvent::Motion { x, y }))
-            if rectangle == Some(dnd_id) =>
+            if *rectangle == Some(dnd_id) =>
         {
             let state = state();
 
-            let target = x as f32 - text_layout.bounds().x;
+            let target = *x as f32 - text_layout.bounds().x;
             // existing logic for setting the selection
             let position = if target > 0.0 {
                 update_cache(state, value);
@@ -2021,10 +2034,11 @@ pub fn update<'a, Message: Clone + 'static>(
             };
 
             state.cursor.move_to(position.unwrap_or(0));
-            return event::Status::Captured;
+            shell.capture_event();
+            return;
         }
         #[cfg(feature = "wayland")]
-        Event::Dnd(DndEvent::Offer(rectangle, OfferEvent::Drop)) if rectangle == Some(dnd_id) => {
+        Event::Dnd(DndEvent::Offer(rectangle, OfferEvent::Drop)) if *rectangle == Some(dnd_id) => {
             cold();
             let state = state();
             if let DndOfferState::HandlingOffer(mime_types, _action) = state.dnd_offer.clone() {
@@ -2033,15 +2047,16 @@ pub fn update<'a, Message: Clone + 'static>(
                     .find(|&&m| mime_types.iter().any(|t| t == m))
                 else {
                     state.dnd_offer = DndOfferState::None;
-                    return event::Status::Captured;
+                    shell.capture_event();
+                    return;
                 };
                 state.dnd_offer = DndOfferState::Dropped;
             }
 
-            return event::Status::Ignored;
+            return;
         }
         #[cfg(feature = "wayland")]
-        Event::Dnd(DndEvent::Offer(id, OfferEvent::LeaveDestination)) if Some(dnd_id) != id => {}
+        Event::Dnd(DndEvent::Offer(id, OfferEvent::LeaveDestination)) if Some(dnd_id) != *id => {}
         #[cfg(feature = "wayland")]
         Event::Dnd(DndEvent::Offer(
             rectangle,
@@ -2057,21 +2072,24 @@ pub fn update<'a, Message: Clone + 'static>(
                     state.dnd_offer = DndOfferState::None;
                 }
             };
-            return event::Status::Captured;
+            shell.capture_event();
+            return;
         }
         #[cfg(feature = "wayland")]
         Event::Dnd(DndEvent::Offer(rectangle, OfferEvent::Data { data, mime_type }))
-            if rectangle == Some(dnd_id) =>
+            if *rectangle == Some(dnd_id) =>
         {
             cold();
             let state = state();
             if matches!(&state.dnd_offer, DndOfferState::Dropped) {
                 state.dnd_offer = DndOfferState::None;
                 if !SUPPORTED_TEXT_MIME_TYPES.contains(&mime_type.as_str()) || data.is_empty() {
-                    return event::Status::Captured;
+                    shell.capture_event();
+                    return;
                 }
-                let Ok(content) = String::from_utf8(data) else {
-                    return event::Status::Captured;
+                let Ok(content) = String::from_utf8(data.clone()) else {
+                    shell.capture_event();
+                    return;
                 };
 
                 let mut editor = Editor::new(unsecured_value, &mut state.cursor);
@@ -2091,14 +2109,13 @@ pub fn update<'a, Message: Clone + 'static>(
                     unsecured_value
                 };
                 update_cache(state, &value);
-                return event::Status::Captured;
+                shell.capture_event();
+                return;
             }
-            return event::Status::Ignored;
+            return;
         }
         _ => {}
     }
-
-    event::Status::Ignored
 }
 
 /// Draws the [`TextInput`] with the given [`Renderer`], overriding its
@@ -2212,6 +2229,7 @@ pub fn draw<'a, Message>(
                     color: Color::TRANSPARENT,
                     blur_radius: 0.0,
                 },
+                snap: true,
             },
             appearance.background,
         );
@@ -2228,6 +2246,7 @@ pub fn draw<'a, Message>(
                     color: Color::TRANSPARENT,
                     blur_radius: 0.0,
                 },
+                snap: true,
             },
             Background::Color(Color::TRANSPARENT),
         );
@@ -2245,6 +2264,7 @@ pub fn draw<'a, Message>(
                     color: Color::TRANSPARENT,
                     blur_radius: 0.0,
                 },
+                snap: true,
             },
             appearance.background,
         );
@@ -2258,8 +2278,8 @@ pub fn draw<'a, Message>(
                 size: iced::Pixels(size.unwrap_or_else(|| renderer.default_size().0)),
                 font: font.unwrap_or_else(|| renderer.default_font()),
                 bounds: label_layout.bounds().size(),
-                horizontal_alignment: alignment::Horizontal::Left,
-                vertical_alignment: alignment::Vertical::Top,
+                align_x: text::Alignment::Left,
+                align_y: alignment::Vertical::Top,
                 line_height,
                 shaping: text::Shaping::Advanced,
                 wrapping: text::Wrapping::None,
@@ -2353,6 +2373,7 @@ pub fn draw<'a, Message>(
                                         color: Color::TRANSPARENT,
                                         blur_radius: 0.0,
                                     },
+                                    snap: true,
                                 },
                                 text_color,
                             )),
@@ -2403,6 +2424,7 @@ pub fn draw<'a, Message>(
                                     color: Color::TRANSPARENT,
                                     blur_radius: 0.0,
                                 },
+                                snap: true,
                             },
                             appearance.selected_fill,
                         )),
@@ -2448,8 +2470,8 @@ pub fn draw<'a, Message>(
                 font,
                 bounds: bounds.size(),
                 size: iced::Pixels(size),
-                horizontal_alignment: alignment::Horizontal::Left,
-                vertical_alignment: alignment::Vertical::Center,
+                align_x: text::Alignment::Left,
+                align_y: alignment::Vertical::Center,
                 line_height: text::LineHeight::default(),
                 shaping: text::Shaping::Advanced,
                 wrapping: text::Wrapping::None,
@@ -2497,8 +2519,8 @@ pub fn draw<'a, Message>(
                 size: iced::Pixels(helper_text_size),
                 font,
                 bounds: helper_text_layout.bounds().size(),
-                horizontal_alignment: alignment::Horizontal::Left,
-                vertical_alignment: alignment::Vertical::Top,
+                align_x: text::Alignment::Left,
+                align_y: alignment::Vertical::Top,
                 line_height: helper_line_height,
                 shaping: text::Shaping::Advanced,
                 wrapping: text::Wrapping::None,
@@ -2811,6 +2833,14 @@ impl operation::TextInput for State {
     fn select_all(&mut self) {
         Self::select_all(self);
     }
+
+    fn text(&self) -> &str {
+        todo!()
+    }
+
+    fn select_range(&mut self, start: usize, end: usize) {
+        todo!()
+    }
 }
 
 #[inline(never)]
@@ -2876,11 +2906,11 @@ fn replace_paragraph(
     state.value = crate::Plain::new(Text {
         font,
         line_height,
-        content: &value.to_string(),
+        content: value.to_string(),
         bounds,
         size: text_size,
-        horizontal_alignment: alignment::Horizontal::Left,
-        vertical_alignment: alignment::Vertical::Top,
+        align_x: text::Alignment::Left,
+        align_y: alignment::Vertical::Top,
         shaping: text::Shaping::Advanced,
         wrapping: text::Wrapping::None,
         ellipsize: text::Ellipsize::None,
