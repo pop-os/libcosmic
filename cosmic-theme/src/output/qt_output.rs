@@ -1,5 +1,5 @@
-use crate::{Theme, composite::over};
-use palette::{Mix, Srgba, blend::Compose, rgb::Rgba};
+use crate::Theme;
+use palette::{Mix, Srgba, blend::Compose};
 use std::{
     fs::{self, File},
     io::{self, Write},
@@ -44,6 +44,8 @@ impl Theme {
         let view_colors = IniColors {
             background_alternate: bg.mix(self.accent.base, 0.05),
             background_normal: bg,
+            decoration_focus: self.accent_text_color(),
+            decoration_hover: self.accent_text_color(),
             foreground_active: self.accent_text_color(),
             foreground_inactive: self.background.on.mix(bg, 0.1),
             foreground_link: self.link_button.base,
@@ -67,7 +69,8 @@ impl Theme {
             IniColors {
                 background_alternate: selected.mix(bg, 0.5),
                 background_normal: selected,
-                // TODO: DecorationFocus and DecorationHover should = background_normal not foreground_active here
+                decoration_focus: selected,
+                decoration_hover: selected,
                 foreground_active: selected_text,
                 foreground_inactive: selected_text.mix(selected, 0.5),
                 foreground_link: self.link_button.on,
@@ -95,6 +98,8 @@ impl Theme {
             IniColors {
                 background_alternate: dark.accent.base,
                 background_normal: dark.background.base,
+                decoration_focus: dark.accent_text_color(),
+                decoration_hover: dark.accent_text_color(),
                 foreground_active: dark.accent_text_color(),
                 foreground_inactive: dark.background.on.mix(dark.background.base, 0.1),
                 foreground_link: dark.link_button.base,
@@ -350,9 +355,8 @@ ForegroundPositive={}
 ForegroundVisited={}"#,
         to_rgb(colors.background_alternate, bg),
         to_rgb(colors.background_normal, bg),
-        // Decoration colors are always the same as foreground_active
-        to_rgb(colors.foreground_active, bg),
-        to_rgb(colors.foreground_active, bg),
+        to_rgb(colors.decoration_focus, bg),
+        to_rgb(colors.decoration_hover, bg),
         to_rgb(colors.foreground_active, bg),
         to_rgb(colors.foreground_inactive, bg),
         to_rgb(colors.foreground_link, bg),
@@ -403,6 +407,12 @@ struct IniColors {
     background_alternate: Srgba,
     /// Normal background
     background_normal: Srgba,
+    /// Used for drawing lines or shading UI elements to indicate the item which has active input focus.
+    /// Typically the same as foreground_active.
+    decoration_focus: Srgba,
+    /// Used for drawing lines or shading UI elements for mouse-over effects, e.g. the "illumination" effects for buttons.
+    /// Typically the same as foreground_active.
+    decoration_hover: Srgba,
     /// used to indicate an active element or attract attention, e.g. alerts, notifications; also for hovered hyperlinks
     foreground_active: Srgba,
     /// used for text which should be unobtrusive, e.g. comments, "subtitles", unimportant information, etc.
@@ -422,6 +432,7 @@ struct IniColors {
 }
 
 /// Intensity allows the overall color to be lightened or darkened.
+#[allow(dead_code)]
 enum IntensityEffect {
     /// Makes everything lighter or darker in a controlled manner.
     ///
@@ -445,6 +456,7 @@ impl IntensityEffect {
 
 /// This also changes the overall color like [IntensityEffect],
 /// but is not limited to intensity.
+#[allow(dead_code)]
 enum ColorEffect {
     /// changes the relative chroma
     ///
