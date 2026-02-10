@@ -131,6 +131,7 @@ where
                                         ..Default::default()
                                     },
                                     shadow: Default::default(),
+                                    snap: true,
                                 }
                             }))
                             .apply(widget::mouse_area)

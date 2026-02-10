@@ -175,7 +175,7 @@ where
     }
 
     fn layout(
-        &self,
+        &mut self,
         tree: &mut Tree,
         renderer: &Renderer,
         limits: &layout::Limits,
@@ -186,20 +186,20 @@ where
             |_| layout::Node::new(Size::new(self.size, self.size)),
             |limits| {
                 self.label
-                    .as_widget()
+                    .as_widget_mut()
                     .layout(&mut tree.children[0], renderer, limits)
             },
         )
     }
 
     fn operate(
-        &self,
+        &mut self,
         tree: &mut Tree,
         layout: Layout<'_>,
         renderer: &Renderer,
         operation: &mut dyn iced_core::widget::Operation<()>,
     ) {
-        self.label.as_widget().operate(
+        self.label.as_widget_mut().operate(
             &mut tree.children[0],
             layout.children().nth(1).unwrap(),
             renderer,
@@ -207,20 +207,20 @@ where
         );
     }
 
-    fn on_event(
+    fn update(
         &mut self,
         tree: &mut Tree,
-        event: Event,
+        event: &Event,
         layout: Layout<'_>,
         cursor: mouse::Cursor,
         renderer: &Renderer,
         clipboard: &mut dyn Clipboard,
         shell: &mut Shell<'_, Message>,
         viewport: &Rectangle,
-    ) -> event::Status {
-        let status = self.label.as_widget_mut().on_event(
+    ) {
+        self.label.as_widget_mut().update(
             &mut tree.children[0],
-            event.clone(),
+            event,
             layout.children().nth(1).unwrap(),
             cursor,
             renderer,
@@ -229,22 +229,19 @@ where
             viewport,
         );
 
-        if status == event::Status::Ignored {
+        if !shell.is_event_captured() {
             match event {
                 Event::Mouse(mouse::Event::ButtonPressed(mouse::Button::Left))
                 | Event::Touch(touch::Event::FingerPressed { .. }) => {
                     if cursor.is_over(layout.bounds()) {
                         shell.publish(self.on_click.clone());
 
-                        return event::Status::Captured;
+                        shell.capture_event();
+                        return;
                     }
                 }
                 _ => {}
             }
-
-            event::Status::Ignored
-        } else {
-            status
         }
     }
 
@@ -359,14 +356,16 @@ where
     fn overlay<'b>(
         &'b mut self,
         tree: &'b mut Tree,
-        layout: Layout<'_>,
+        layout: Layout<'b>,
         renderer: &Renderer,
+        viewport: &Rectangle,
         translation: Vector,
     ) -> Option<overlay::Element<'b, Message, Theme, Renderer>> {
         self.label.as_widget_mut().overlay(
             &mut tree.children[0],
             layout.children().nth(1).unwrap(),
             renderer,
+            viewport,
             translation,
         )
     }

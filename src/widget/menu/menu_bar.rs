@@ -26,7 +26,7 @@ use crate::{
     },
 };
 
-use iced::{Point, Shadow, Vector, window};
+use iced::{Point, Shadow, Vector, event::Status, window};
 use iced_core::Border;
 use iced_widget::core::{
     Alignment, Clipboard, Element, Layout, Length, Padding, Rectangle, Shell, Widget, event,
@@ -533,14 +533,14 @@ where
         menu_roots_children(&self.menu_roots)
     }
 
-    fn layout(&self, tree: &mut Tree, renderer: &Renderer, limits: &Limits) -> Node {
+    fn layout(&mut self, tree: &mut Tree, renderer: &Renderer, limits: &Limits) -> Node {
         use super::flex;
 
         let limits = limits.width(self.width).height(self.height);
-        let children = self
+        let mut children = self
             .menu_roots
-            .iter()
-            .map(|root| &root.item)
+            .iter_mut()
+            .map(|root| &mut root.item)
             .collect::<Vec<_>>();
         // the first children of the tree are the menu roots items
         let mut tree_children = tree
@@ -555,28 +555,28 @@ where
             self.padding,
             self.spacing,
             Alignment::Center,
-            &children,
+            &mut children,
             &mut tree_children,
         )
     }
 
     #[allow(clippy::too_many_lines)]
-    fn on_event(
+    fn update(
         &mut self,
         tree: &mut Tree,
-        event: event::Event,
+        event: &event::Event,
         layout: Layout<'_>,
         view_cursor: Cursor,
         renderer: &Renderer,
         clipboard: &mut dyn Clipboard,
         shell: &mut Shell<'_, Message>,
         viewport: &Rectangle,
-    ) -> event::Status {
+    ) {
         use event::Event::{Mouse, Touch};
         use mouse::{Button::Left, Event::ButtonReleased};
         use touch::Event::{FingerLifted, FingerLost};
 
-        let root_status = process_root_events(
+        process_root_events(
             &mut self.menu_roots,
             view_cursor,
             tree,
@@ -638,7 +638,7 @@ where
                 });
 
                 if !create_popup {
-                    return event::Status::Ignored;
+                    return;
                 }
                 #[cfg(all(
                     feature = "multi-window",
@@ -665,8 +665,6 @@ where
             }
             _ => (),
         }
-
-        root_status
     }
 
     fn draw(
@@ -704,6 +702,7 @@ where
                             ..Default::default()
                         },
                         shadow: Shadow::default(),
+                        snap: true,
                     };
 
                     renderer.fill_quad(path_quad, styling.path);
@@ -731,8 +730,9 @@ where
     fn overlay<'b>(
         &'b mut self,
         tree: &'b mut Tree,
-        layout: Layout<'_>,
+        layout: Layout<'b>,
         _renderer: &Renderer,
+        viewport: &Rectangle,
         translation: Vector,
     ) -> Option<overlay::Element<'b, Message, crate::Theme, Renderer>> {
         #[cfg(all(
@@ -799,18 +799,16 @@ fn process_root_events<Message>(
     clipboard: &mut dyn Clipboard,
     shell: &mut Shell<'_, Message>,
     viewport: &Rectangle,
-) -> event::Status
-where
-{
+) {
     menu_roots
         .iter_mut()
         .zip(&mut tree.children)
         .zip(layout.children())
         .map(|((root, t), lo)| {
             // assert!(t.tag == tree::Tag::stateless());
-            root.item.on_event(
+            root.item.update(
                 &mut t.children[root.index],
-                event.clone(),
+                event,
                 lo,
                 view_cursor,
                 renderer,
@@ -818,6 +816,5 @@ where
                 shell,
                 viewport,
             )
-        })
-        .fold(event::Status::Ignored, event::Status::merge)
+        });
 }

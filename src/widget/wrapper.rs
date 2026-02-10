@@ -90,7 +90,7 @@ impl<M> Widget<M, crate::Theme, crate::Renderer> for RcElementWrapper<M> {
     }
 
     fn layout(
-        &self,
+        &mut self,
         tree: &mut tree::Tree,
         renderer: &crate::Renderer,
         limits: &crate::iced_core::layout::Limits,
@@ -132,30 +132,31 @@ impl<M> Widget<M, crate::Theme, crate::Renderer> for RcElementWrapper<M> {
     }
 
     fn operate(
-        &self,
+        &mut self,
         state: &mut tree::Tree,
         layout: crate::iced_core::Layout<'_>,
         renderer: &crate::Renderer,
         operation: &mut dyn widget::Operation,
     ) {
-        self.element.with_data(|e| {
-            e.as_widget().operate(state, layout, renderer, operation);
+        self.element.with_data_mut(|e| {
+            e.as_widget_mut()
+                .operate(state, layout, renderer, operation);
         });
     }
 
-    fn on_event(
+    fn update(
         &mut self,
         state: &mut tree::Tree,
-        event: crate::iced::Event,
+        event: &crate::iced::Event,
         layout: crate::iced_core::Layout<'_>,
         cursor: crate::iced_core::mouse::Cursor,
         renderer: &crate::Renderer,
         clipboard: &mut dyn crate::iced_core::Clipboard,
         shell: &mut crate::iced_core::Shell<'_, M>,
         viewport: &Rectangle,
-    ) -> event::Status {
+    ) {
         self.element.with_data_mut(|e| {
-            e.as_widget_mut().on_event(
+            e.as_widget_mut().update(
                 state, event, layout, cursor, renderer, clipboard, shell, viewport,
             )
         })
@@ -178,15 +179,16 @@ impl<M> Widget<M, crate::Theme, crate::Renderer> for RcElementWrapper<M> {
     fn overlay<'a>(
         &'a mut self,
         state: &'a mut tree::Tree,
-        layout: crate::iced_core::Layout<'_>,
+        layout: crate::iced_core::Layout<'a>,
         renderer: &crate::Renderer,
+        viewport: &Rectangle,
         translation: crate::iced_core::Vector,
     ) -> Option<crate::iced_core::overlay::Element<'a, M, crate::Theme, crate::Renderer>> {
         assert_eq!(self.element.thread_id, thread::current().id());
         Rc::get_mut(&mut self.element.data).and_then(|e| {
             e.get_mut()
                 .as_widget_mut()
-                .overlay(state, layout, renderer, translation)
+                .overlay(state, layout, renderer, viewport, translation)
         })
     }
 

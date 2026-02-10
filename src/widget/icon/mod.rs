@@ -15,7 +15,7 @@ pub use handle::{Data, Handle, from_path, from_raster_bytes, from_raster_pixels,
 use crate::Element;
 use derive_setters::Setters;
 use iced::widget::{Image, Svg};
-use iced::{ContentFit, Length, Rectangle};
+use iced::{ContentFit, Length, Radians, Rectangle};
 use iced_core::Rotation;
 
 /// Create an [`Icon`] from a pre-existing [`Handle`]
@@ -125,17 +125,22 @@ pub fn draw(renderer: &mut crate::Renderer, handle: &Handle, icon_bounds: Rectan
             renderer,
             iced_core::svg::Svg::new(handle),
             icon_bounds,
+            icon_bounds,
         ),
 
         Data::Image(handle) => {
             iced_core::image::Renderer::draw_image(
                 renderer,
-                handle,
-                iced_core::image::FilterMethod::Linear,
+                iced_core::Image {
+                    handle,
+                    filter_method: iced_core::image::FilterMethod::Linear,
+                    rotation: Radians(0.),
+                    border_radius: [0.0; 4].into(),
+                    opacity: 1.0,
+                    snap: true,
+                },
                 icon_bounds,
-                iced_core::Radians::from(0),
-                1.0,
-                [0.0; 4],
+                icon_bounds,
             );
         }
     }

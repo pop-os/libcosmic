@@ -60,7 +60,7 @@ pub use iced::widget::{ComboBox, combo_box};
 pub use iced::widget::{Container, container};
 
 #[doc(inline)]
-pub use iced::widget::{Space, horizontal_space, vertical_space};
+pub use iced::widget::{Space, space};
 
 #[doc(inline)]
 pub use iced::widget::{Image, image};
@@ -175,47 +175,47 @@ pub use dialog::{Dialog, dialog};
 pub mod divider {
     /// Horizontal variant of a divider.
     pub mod horizontal {
-        use iced::widget::{Rule, horizontal_rule};
+        use iced::{widget::Rule, widget::rule};
 
         /// Horizontal divider with default thickness
         #[must_use]
         pub fn default<'a>() -> Rule<'a, crate::Theme> {
-            horizontal_rule(1).class(crate::theme::Rule::Default)
+            rule::horizontal(1).class(crate::theme::Rule::Default)
         }
 
         /// Horizontal divider with light thickness
         #[must_use]
         pub fn light<'a>() -> Rule<'a, crate::Theme> {
-            horizontal_rule(1).class(crate::theme::Rule::LightDivider)
+            rule::horizontal(1).class(crate::theme::Rule::LightDivider)
         }
 
         /// Horizontal divider with heavy thickness.
         #[must_use]
         pub fn heavy<'a>() -> Rule<'a, crate::Theme> {
-            horizontal_rule(4).class(crate::theme::Rule::HeavyDivider)
+            rule::horizontal(4).class(crate::theme::Rule::HeavyDivider)
         }
     }
 
     /// Vertical variant of a divider.
     pub mod vertical {
-        use iced::widget::{Rule, vertical_rule};
+        use iced::widget::{Rule, rule};
 
         /// Vertical divider with default thickness
         #[must_use]
         pub fn default<'a>() -> Rule<'a, crate::Theme> {
-            vertical_rule(1).class(crate::theme::Rule::Default)
+            rule::vertical(1).class(crate::theme::Rule::Default)
         }
 
         /// Vertical divider with light thickness
         #[must_use]
         pub fn light<'a>() -> Rule<'a, crate::Theme> {
-            vertical_rule(4).class(crate::theme::Rule::LightDivider)
+            rule::vertical(4).class(crate::theme::Rule::LightDivider)
         }
 
         /// Vertical divider with heavy thickness.
         #[must_use]
         pub fn heavy<'a>() -> Rule<'a, crate::Theme> {
-            vertical_rule(10).class(crate::theme::Rule::HeavyDivider)
+            rule::vertical(10).class(crate::theme::Rule::HeavyDivider)
         }
     }
 }

@@ -270,13 +270,13 @@ impl<Message: 'static + Clone> Widget<Message, crate::Theme, crate::Renderer>
     }
 
     fn layout(
-        &self,
+        &mut self,
         tree: &mut Tree,
         renderer: &crate::Renderer,
         limits: &iced_core::layout::Limits,
     ) -> iced_core::layout::Node {
         self.content
-            .as_widget()
+            .as_widget_mut()
             .layout(&mut tree.children[0], renderer, limits)
     }
 
@@ -302,29 +302,29 @@ impl<Message: 'static + Clone> Widget<Message, crate::Theme, crate::Renderer>
     }
 
     fn operate(
-        &self,
+        &mut self,
         tree: &mut Tree,
         layout: iced_core::Layout<'_>,
         renderer: &crate::Renderer,
         operation: &mut dyn iced_core::widget::Operation<()>,
     ) {
         self.content
-            .as_widget()
+            .as_widget_mut()
             .operate(&mut tree.children[0], layout, renderer, operation);
     }
 
     #[allow(clippy::too_many_lines)]
-    fn on_event(
+    fn update(
         &mut self,
         tree: &mut Tree,
-        event: iced::Event,
+        event: &iced::Event,
         layout: iced_core::Layout<'_>,
         cursor: iced_core::mouse::Cursor,
         renderer: &crate::Renderer,
         clipboard: &mut dyn iced_core::Clipboard,
         shell: &mut iced_core::Shell<'_, Message>,
         viewport: &iced::Rectangle,
-    ) -> iced_core::event::Status {
+    ) {
         let state = tree.state.downcast_mut::<LocalState>();
         let bounds = layout.bounds();
 
@@ -384,7 +384,7 @@ impl<Message: 'static + Clone> Widget<Message, crate::Theme, crate::Renderer>
 
             match event {
                 Event::Touch(touch::Event::FingerPressed { id, .. }) => {
-                    state.fingers_pressed.insert(id);
+                    state.fingers_pressed.insert(*id);
                 }
 
                 Event::Touch(touch::Event::FingerLifted { id, .. }) => {
@@ -410,7 +410,8 @@ impl<Message: 'static + Clone> Widget<Message, crate::Theme, crate::Renderer>
                     self.create_popup(layout, cursor, renderer, shell, viewport, state);
                 }
 
-                return event::Status::Captured;
+                shell.capture_event();
+                return;
             } else if !was_open && right_button_released(&event)
                 || (touch_lifted(&event))
                 || left_button_released(&event)
@@ -440,7 +441,7 @@ impl<Message: 'static + Clone> Widget<Message, crate::Theme, crate::Renderer>
                 });
             }
         }
-        self.content.as_widget_mut().on_event(
+        self.content.as_widget_mut().update(
             &mut tree.children[0],
             event,
             layout,
@@ -457,6 +458,7 @@ impl<Message: 'static + Clone> Widget<Message, crate::Theme, crate::Renderer>
         tree: &'b mut Tree,
         layout: iced_core::Layout<'_>,
         _renderer: &crate::Renderer,
+        viewport: &iced::Rectangle,
         translation: Vector,
     ) -> Option<iced_core::overlay::Element<'b, Message, crate::Theme, crate::Renderer>> {
         #[cfg(all(feature = "wayland", feature = "winit", feature = "surface-message"))]

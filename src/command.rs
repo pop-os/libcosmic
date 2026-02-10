@@ -39,7 +39,7 @@ pub fn set_theme<M: Send + 'static>(theme: crate::Theme) -> iced::Task<crate::Ac
 
 /// Sets the window mode to windowed.
 pub fn set_windowed<M>(id: window::Id) -> iced::Task<crate::Action<M>> {
-    iced_runtime::window::change_mode(id, window::Mode::Windowed)
+    iced_runtime::window::set_mode(id, window::Mode::Windowed)
 }
 
 /// Toggles the windows' maximize state.

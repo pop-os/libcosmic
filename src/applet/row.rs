@@ -208,7 +208,7 @@ where
     }
 
     fn layout(
-        &self,
+        &mut self,
         tree: &mut Tree,
         renderer: &Renderer,
         limits: &layout::Limits,
@@ -222,25 +222,26 @@ where
             self.padding,
             self.spacing,
             self.align,
-            &self.children,
+            &mut self.children,
             &mut tree.children,
         )
     }
 
     fn operate(
-        &self,
+        &mut self,
         tree: &mut Tree,
         layout: Layout<'_>,
         renderer: &Renderer,
         operation: &mut dyn Operation,
     ) {
-        operation.container(None, layout.bounds(), &mut |operation| {
+        operation.container(None, layout.bounds());
+        operation.traverse(&mut |operation| {
             self.children
-                .iter()
+                .iter_mut()
                 .zip(&mut tree.children)
                 .zip(layout.children())
                 .for_each(|((child, state), c_layout)| {
-                    child.as_widget().operate(
+                    child.as_widget_mut().operate(
                         state,
                         c_layout.with_virtual_offset(layout.virtual_offset()),
                         renderer,
@@ -250,17 +251,17 @@ where
         });
     }
 
-    fn on_event(
+    fn update(
         &mut self,
         tree: &mut Tree,
-        event: Event,
+        event: &Event,
         layout: Layout<'_>,
         cursor: mouse::Cursor,
         renderer: &Renderer,
         clipboard: &mut dyn Clipboard,
         shell: &mut Shell<'_, Message>,
         viewport: &Rectangle,
-    ) -> event::Status {
+    ) {
         let my_state = tree.state.downcast_mut::<State>();
 
         if let Some(hovered) = my_state.hovered {
@@ -274,7 +275,7 @@ where
                         e,
                         mouse::Event::CursorLeft | mouse::Event::ButtonReleased { .. }
                     ) {
-                        return self.children[hovered].as_widget_mut().on_event(
+                        return self.children[hovered].as_widget_mut().update(
                             &mut tree.children[hovered],
                             event,
                             child_layout.with_virtual_offset(layout.virtual_offset()),
@@ -291,7 +292,7 @@ where
                         iced::core::touch::Event::FingerLifted { .. }
                             | iced::core::touch::Event::FingerLost { .. }
                     ) {
-                        return self.children[hovered].as_widget_mut().on_event(
+                        return self.children[hovered].as_widget_mut().update(
                             &mut tree.children[hovered],
                             event,
                             child_layout.with_virtual_offset(layout.virtual_offset()),
@@ -326,9 +327,9 @@ where
                 ) && cursor.is_over(c_layout.bounds())
                 {
                     my_state.hovered = Some(i);
-                    return child.as_widget_mut().on_event(
+                    return child.as_widget_mut().update(
                         state,
-                        event.clone(),
+                        &event,
                         c_layout.with_virtual_offset(layout.virtual_offset()),
                         cursor_virtual,
                         renderer,
@@ -340,9 +341,9 @@ where
                     cursor_virtual = mouse::Cursor::Unavailable;
                 }
 
-                child.as_widget_mut().on_event(
+                child.as_widget_mut().update(
                     state,
-                    event.clone(),
+                    &event,
                     c_layout.with_virtual_offset(layout.virtual_offset()),
                     cursor_virtual,
                     renderer,
@@ -350,8 +351,7 @@ where
                     shell,
                     viewport,
                 )
-            })
-            .fold(event::Status::Ignored, event::Status::merge)
+            });
     }
 
     fn mouse_interaction(
@@ -426,11 +426,19 @@ where
     fn overlay<'b>(
         &'b mut self,
         tree: &'b mut Tree,
-        layout: Layout<'_>,
+        layout: Layout<'b>,
         renderer: &Renderer,
+        viewport: &Rectangle,
         translation: Vector,
     ) -> Option<overlay::Element<'b, Message, Theme, Renderer>> {
-        overlay::from_children(&mut self.children, tree, layout, renderer, translation)
+        overlay::from_children(
+            &mut self.children,
+            tree,
+            layout,
+            renderer,
+            viewport,
+            translation,
+        )
     }
 
     #[cfg(feature = "a11y")]

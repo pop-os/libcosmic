@@ -2,7 +2,7 @@
 
 use iced::Size;
 use iced::widget::Container;
-use iced_core::event::{self, Event};
+use iced_core::event::Event;
 use iced_core::layout;
 use iced_core::mouse;
 use iced_core::overlay;
@@ -172,7 +172,7 @@ where
     }
 
     fn layout(
-        &self,
+        &mut self,
         tree: &mut Tree,
         renderer: &Renderer,
         limits: &layout::Limits,
@@ -186,7 +186,7 @@ where
     }
 
     fn operate(
-        &self,
+        &mut self,
         tree: &mut Tree,
         layout: Layout<'_>,
         renderer: &Renderer,
@@ -195,18 +195,18 @@ where
         self.container.operate(tree, layout, renderer, operation);
     }
 
-    fn on_event(
+    fn update(
         &mut self,
         tree: &mut Tree,
-        event: Event,
+        event: &Event,
         layout: Layout<'_>,
         cursor_position: mouse::Cursor,
         renderer: &Renderer,
         clipboard: &mut dyn Clipboard,
         shell: &mut Shell<'_, Message>,
         viewport: &Rectangle,
-    ) -> event::Status {
-        self.container.on_event(
+    ) {
+        self.container.update(
             tree,
             event,
             layout,
@@ -254,11 +254,13 @@ where
     fn overlay<'b>(
         &'b mut self,
         tree: &'b mut Tree,
-        layout: Layout<'_>,
+        layout: Layout<'b>,
         renderer: &Renderer,
+        viewport: &Rectangle,
         translation: Vector,
     ) -> Option<overlay::Element<'b, Message, crate::Theme, Renderer>> {
-        self.container.overlay(tree, layout, renderer, translation)
+        self.container
+            .overlay(tree, layout, renderer, viewport, translation)
     }
 
     #[cfg(feature = "a11y")]

@@ -8,13 +8,27 @@ rust-version = "1.90"
 name = "cosmic"
 
 [features]
-default = ["dbus-config", "multi-window", "a11y"]
+# default = ["dbus-config", "multi-window", "a11y"]
+default = [ "debug",
+    "winit",
+    "tokio",
+    # "xdg-portal",
+    "a11y",
+    "wgpu",
+    "single-instance",
+    "surface-message",
+    "dbus-config",
+    "x11",
+    "wayland",
+    "multi-window",
+    "about","animated-image","autosize", "dbus-config", "pipewire", "process", "rfd", "desktop", "desktop-systemd-scope", "serde-keycode", "qr_code", "markdown", "highlighter"
+]
 # Accessibility support
 a11y = ["iced/a11y", "iced_accessibility"]
 # Enable about widget
 about = []
 # Builds support for animated images
-animated-image = ["dep:async-fs", "image/gif", "tokio?/io-util", "tokio?/fs"]
+animated-image = ["dep:async-fs", "image/gif", "image/webp", "image/png", "tokio?/io-util", "tokio?/fs"]
 # XXX autosize should not be used on winit windows unless dialogs
 autosize = []
 applet = [
@@ -76,7 +90,7 @@ wayland = [
 ]
 surface-message = []
 # multi-window support
-multi-window = ["iced/multi-window"]
+multi-window = []
 # Render with wgpu
 wgpu = ["iced/wgpu", "iced_wgpu"]
 # X11 window support via winit
@@ -96,6 +110,7 @@ async-std = [
     "zbus?/async-io",
     "iced/async-std",
 ]
+x11 = ["iced/x11", "iced_winit/x11"]
 
 [dependencies]
 apply = "0.3.0"

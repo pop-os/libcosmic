@@ -5,10 +5,11 @@ use std::borrow::Cow;
 
 use crate::{
     Element, theme,
-    widget::{FlexRow, Row, column, container, flex_row, horizontal_space, row, text},
+    widget::{FlexRow, Row, column, container, flex_row, row, text},
 };
 use derive_setters::Setters;
 use iced_core::{Length, text::Wrapping};
+use iced_widget::space;
 use taffy::AlignContent;
 
 /// A settings item aligned in a row
@@ -25,7 +26,7 @@ pub fn item<'a, Message: 'static>(
     ) -> Row<'a, Message> {
         item_row(vec![
             text(title).wrapping(Wrapping::Word).into(),
-            horizontal_space().into(),
+            space::horizontal().into(),
             widget,
         ])
     }

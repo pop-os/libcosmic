@@ -7,7 +7,7 @@ use crate::{Apply, Element, Renderer, Theme, fl};
 use std::borrow::Cow;
 
 use iced_core::Alignment;
-use iced_core::event::{self, Event};
+use iced_core::event::Event;
 use iced_core::widget::{Operation, Tree};
 use iced_core::{
     Clipboard, Layout, Length, Rectangle, Shell, Vector, Widget, layout, mouse,
@@ -65,7 +65,7 @@ impl<'a, Message: Clone + 'static> ContextDrawer<'a, Message> {
             } else {
                 let title = title
                     .map(|title| text::title4(title).width(Length::Fill).apply(Element::from))
-                    .unwrap_or_else(|| widget::horizontal_space().apply(Element::from));
+                    .unwrap_or_else(|| widget::space::horizontal().apply(Element::from));
                 (title, None)
             };
 
@@ -196,40 +196,40 @@ impl<Message: Clone> Widget<Message, crate::Theme, Renderer> for ContextDrawer<'
     }
 
     fn layout(
-        &self,
+        &mut self,
         tree: &mut Tree,
         renderer: &Renderer,
         limits: &layout::Limits,
     ) -> layout::Node {
         self.content
-            .as_widget()
+            .as_widget_mut()
             .layout(&mut tree.children[0], renderer, limits)
     }
 
     fn operate(
-        &self,
+        &mut self,
         tree: &mut Tree,
         layout: Layout<'_>,
         renderer: &Renderer,
         operation: &mut dyn Operation<()>,
     ) {
         self.content
-            .as_widget()
+            .as_widget_mut()
             .operate(&mut tree.children[0], layout, renderer, operation);
     }
 
-    fn on_event(
+    fn update(
         &mut self,
         tree: &mut Tree,
-        event: Event,
+        event: &Event,
         layout: Layout<'_>,
         cursor: mouse::Cursor,
         renderer: &Renderer,
         clipboard: &mut dyn Clipboard,
         shell: &mut Shell<'_, Message>,
         viewport: &Rectangle,
-    ) -> event::Status {
-        self.content.as_widget_mut().on_event(
+    ) {
+        self.content.as_widget_mut().update(
             &mut tree.children[0],
             event,
             layout,
@@ -282,8 +282,9 @@ impl<Message: Clone> Widget<Message, crate::Theme, Renderer> for ContextDrawer<'
     fn overlay<'b>(
         &'b mut self,
         tree: &'b mut Tree,
-        layout: Layout<'_>,
+        layout: Layout<'b>,
         _renderer: &Renderer,
+        _viewport: &Rectangle,
         translation: Vector,
     ) -> Option<iced_overlay::Element<'b, Message, crate::Theme, Renderer>> {
         let bounds = layout.bounds();

@@ -3,6 +3,7 @@
 
 //! A container which displays an overlay when a popup widget is attached.
 
+use iced::widget;
 use iced_core::event::{self, Event};
 use iced_core::layout;
 use iced_core::mouse;
@@ -33,6 +34,7 @@ pub enum Position {
 /// A container which displays overlays when a popup widget is assigned.
 #[must_use]
 pub struct Popover<'a, Message, Renderer> {
+    id: widget::Id,
     content: Element<'a, Message, crate::Theme, Renderer>,
     modal: bool,
     popup: Option<Element<'a, Message, crate::Theme, Renderer>>,
@@ -43,12 +45,20 @@ pub struct Popover<'a, Message, Renderer> {
 impl<'a, Message, Renderer> Popover<'a, Message, Renderer> {
     pub fn new(content: impl Into<Element<'a, Message, crate::Theme, Renderer>>) -> Self {
         Self {
+            id: widget::Id::unique(),
             content: content.into(),
             modal: false,
             popup: None,
             position: Position::Center,
             on_close: None,
         }
+    }
+
+    /// Set the Id
+    #[inline]
+    pub fn id(mut self, id: widget::Id) -> Self {
+        self.id = id;
+        self
     }
 
     /// A modal popup intercepts user inputs while a popup is active.
@@ -83,6 +93,14 @@ impl<Message: Clone, Renderer> Widget<Message, crate::Theme, Renderer>
 where
     Renderer: iced_core::Renderer,
 {
+    fn id(&self) -> Option<widget::Id> {
+        Some(self.id.clone())
+    }
+
+    fn set_id(&mut self, id: widget::Id) {
+        self.id = id;
+    }
+
     fn children(&self) -> Vec<Tree> {
         if let Some(popup) = &self.popup {
             vec![Tree::new(&self.content), Tree::new(popup)]
@@ -104,42 +122,53 @@ where
     }
 
     fn layout(
-        &self,
+        &mut self,
         tree: &mut Tree,
         renderer: &Renderer,
         limits: &layout::Limits,
     ) -> layout::Node {
         let tree = content_tree_mut(tree);
-        self.content.as_widget().layout(tree, renderer, limits)
+        self.content.as_widget_mut().layout(tree, renderer, limits)
     }
 
     fn operate(
-        &self,
+        &mut self,
         tree: &mut Tree,
         layout: Layout<'_>,
         renderer: &Renderer,
-        operation: &mut dyn Operation<()>,
+        operation: &mut dyn Operation,
     ) {
-        self.content
-            .as_widget()
-            .operate(content_tree_mut(tree), layout, renderer, operation);
+        operation.container(Some(&self.id), layout.bounds());
+        operation.traverse(&mut |operation| {
+            self.content.as_widget_mut().operate(
+                tree,
+                layout
+                    .children()
+                    .next()
+                    .unwrap()
+                    .with_virtual_offset(layout.virtual_offset()),
+                renderer,
+                operation,
+            );
+        });
     }
 
-    fn on_event(
+    fn update(
         &mut self,
         tree: &mut Tree,
-        event: Event,
+        event: &Event,
         layout: Layout<'_>,
         cursor_position: mouse::Cursor,
         renderer: &Renderer,
         clipboard: &mut dyn Clipboard,
         shell: &mut Shell<'_, Message>,
         viewport: &Rectangle,
-    ) -> event::Status {
+    ) {
         if self.popup.is_some() {
             if self.modal {
                 if matches!(event, Event::Mouse(_) | Event::Touch(_)) {
-                    return event::Status::Captured;
+                    shell.capture_event();
+                    return;
                 }
             } else if let Some(on_close) = self.on_close.as_ref() {
                 if matches!(
@@ -153,7 +182,7 @@ where
             }
         }
 
-        self.content.as_widget_mut().on_event(
+        self.content.as_widget_mut().update(
             content_tree_mut(tree),
             event,
             layout,
@@ -209,8 +238,9 @@ where
     fn overlay<'b>(
         &'b mut self,
         tree: &'b mut Tree,
-        layout: Layout<'_>,
+        layout: Layout<'b>,
         renderer: &Renderer,
+        viewport: &Rectangle,
         mut translation: Vector,
     ) -> Option<overlay::Element<'b, Message, crate::Theme, Renderer>> {
         if let Some(popup) = &mut self.popup {
@@ -248,6 +278,7 @@ where
                 content_tree_mut(tree),
                 layout,
                 renderer,
+                viewport,
                 translation,
             )
         }
@@ -312,7 +343,7 @@ where
         let limits = layout::Limits::new(Size::UNIT, bounds);
         let node = self
             .content
-            .as_widget()
+            .as_widget_mut()
             .layout(self.tree, renderer, &limits);
         match self.position {
             Position::Center => {
@@ -353,27 +384,28 @@ where
         operation: &mut dyn Operation<()>,
     ) {
         self.content
-            .as_widget()
+            .as_widget_mut()
             .operate(self.tree, layout, renderer, operation);
     }
 
-    fn on_event(
+    fn update(
         &mut self,
-        event: Event,
+        event: &Event,
         layout: Layout<'_>,
         cursor_position: mouse::Cursor,
         renderer: &Renderer,
         clipboard: &mut dyn Clipboard,
         shell: &mut Shell<'_, Message>,
-    ) -> event::Status {
+    ) {
         if self.modal
             && matches!(event, Event::Mouse(_) | Event::Touch(_))
             && !cursor_position.is_over(layout.bounds())
         {
-            return event::Status::Captured;
+            shell.capture_event();
+            return;
         }
 
-        self.content.as_widget_mut().on_event(
+        self.content.as_widget_mut().update(
             self.tree,
             event,
             layout,
@@ -389,7 +421,6 @@ where
         &self,
         layout: Layout<'_>,
         cursor_position: mouse::Cursor,
-        viewport: &Rectangle,
         renderer: &Renderer,
     ) -> mouse::Interaction {
         if self.modal && !cursor_position.is_over(layout.bounds()) {
@@ -400,7 +431,7 @@ where
             self.tree,
             layout,
             cursor_position,
-            viewport,
+            &layout.bounds(),
             renderer,
         )
     }
@@ -427,12 +458,16 @@ where
 
     fn overlay<'c>(
         &'c mut self,
-        layout: Layout<'_>,
+        layout: Layout<'c>,
         renderer: &Renderer,
     ) -> Option<overlay::Element<'c, Message, crate::Theme, Renderer>> {
-        self.content
-            .as_widget_mut()
-            .overlay(self.tree, layout, renderer, Default::default())
+        self.content.as_widget_mut().overlay(
+            self.tree,
+            layout,
+            renderer,
+            &layout.bounds(),
+            Default::default(),
+        )
     }
 }
 

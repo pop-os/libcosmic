@@ -1,7 +1,7 @@
 use crate::{
     Apply, Element, fl,
     iced::{Alignment, Length},
-    widget::{self, horizontal_space},
+    widget::{self, space},
 };
 
 #[derive(Debug, Default, Clone, derive_setters::Setters)]
@@ -99,7 +99,7 @@ pub fn about<'a, Message: Clone + 'static>(
     let section_button = |name: &'a str, url: &'a str| -> Element<'a, Message> {
         widget::row()
             .push(widget::text(name))
-            .push(horizontal_space())
+            .push(space::horizontal())
             .push_maybe(
                 (!url.is_empty()).then_some(crate::widget::icon::from_name("link-symbolic").icon()),
             )
