@@ -212,7 +212,10 @@ contrast=4
         Ok(())
     }
 
-    /// Apply the color scheme by copying it to `~/.config/kdeglobals`.
+    /// Apply the color scheme by:
+    /// - symlinking it to `~/.config/kdeglobals`.
+    /// - symlinking it to `~/.local/share/color-schemes/CosmicAdaptive.colors`.
+    /// - TODO: setting color_scheme_path in `~/.config/qt6ct/qt6ct.conf` to CosmicAdaptive.colors
     ///
     /// See the docs: https://develop.kde.org/docs/plasma/#color-scheme
     ///
@@ -251,8 +254,6 @@ contrast=4
 
             symlink(&src_file, dest_file).map_err(OutputError::Io)?
         }
-
-        // TODO: Point qt6ct to ~/.local/share/color-schemes/CosmicAdaptive.colors
 
         Ok(())
     }
