@@ -36,6 +36,17 @@ impl Theme {
     }
 
     #[inline]
+    /// To avoid rewriting too much code, I replaced calls to `Theme::apply_gtk` with this.
+    /// Note that vscode isn't touched by this function.
+    pub fn apply_exports_static(is_dark: bool) -> Result<(), OutputError> {
+        let gtk_res = Theme::apply_gtk(is_dark);
+        let qt_res = Theme::apply_qt(is_dark);
+        gtk_res?;
+        qt_res?;
+        Ok(())
+    }
+
+    #[inline]
     pub fn write_exports(&self) -> Result<(), OutputError> {
         let gtk_res = self.write_gtk4();
         let qt_res = self.write_qt();
