@@ -283,7 +283,7 @@ contrast=4
     #[cold]
     fn backup_non_cosmic_kdeglobals(path: &Path) -> io::Result<()> {
         if !Self::is_cosmic_kdeglobals(path)?.unwrap_or(true) {
-            let backup_path = path.with_extension("bak");
+            let backup_path = path.with_added_extension("bak");
             fs::rename(path, &backup_path)?;
         }
         Ok(())

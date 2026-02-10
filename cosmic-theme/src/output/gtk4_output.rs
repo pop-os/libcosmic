@@ -235,7 +235,7 @@ impl Theme {
     #[cold]
     fn backup_non_cosmic_css(path: &Path, cosmic_css: &Path) -> io::Result<()> {
         if !Self::is_cosmic_css(path, cosmic_css)?.unwrap_or(true) {
-            let backup_path = path.with_extension("css.bak");
+            let backup_path = path.with_added_extension("bak");
             fs::rename(path, &backup_path)?;
         }
         Ok(())
