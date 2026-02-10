@@ -1,6 +1,7 @@
 use crate::Theme;
 use palette::{Mix, Srgba, blend::Compose};
 use std::{
+    fmt,
     fs::{self, File},
     io::{self, Write},
     path::Path,
@@ -327,13 +328,13 @@ contrast=4
 
 /// Formats a color in the form `r,g,b` e.g. `255,255,255`.
 /// If the color has transparency, it is mixed with bg first.
-fn to_rgb(c: Srgba, bg: Srgba) -> String {
+fn to_rgb(c: Srgba, bg: Srgba) -> fmt::Arguments<'static> {
     let c_u8: Srgba<u8> = c.over(bg).into_format();
-    format!("{},{},{}", c_u8.red, c_u8.green, c_u8.blue)
+    format_args!("{},{},{}", c_u8.red, c_u8.green, c_u8.blue)
 }
 
-fn format_ini_color_effects(color_effects: &IniColorEffects, bg: Srgba) -> String {
-    format!(
+fn format_ini_color_effects(color_effects: &IniColorEffects, bg: Srgba) -> fmt::Arguments<'_> {
+    format_args!(
         r#"Color={}
 ColorAmount={}
 ColorEffect={}
@@ -351,8 +352,8 @@ IntensityEffect={}"#,
     )
 }
 
-fn format_ini_colors(colors: &IniColors, bg: Srgba) -> String {
-    format!(
+fn format_ini_colors(colors: &IniColors, bg: Srgba) -> fmt::Arguments<'_> {
+    format_args!(
         r#"BackgroundAlternate={}
 BackgroundNormal={}
 DecorationFocus={}
@@ -381,12 +382,12 @@ ForegroundVisited={}"#,
 }
 
 /// Sets the colors for the titlebars of active and inactive windows.
-fn format_ini_wm_colors(view_colors: &IniColors, is_dark: bool) -> String {
+fn format_ini_wm_colors(view_colors: &IniColors, is_dark: bool) -> fmt::Arguments<'_> {
     let bg = view_colors.background_normal;
     let fg = view_colors.foreground_active;
     let blend = if is_dark { fg } else { bg };
 
-    format!(
+    format_args!(
         r#"activeBackground={}
 activeBlend={}
 activeForeground={}
