@@ -39,26 +39,24 @@ impl Theme {
             intensity_effect: IntensityEffect::Shade,
         };
 
-        // window elements that are not buttons or views
-        let window_colors = {
-            let window = &self.background.component;
-            IniColors {
-                background_alternate: window.base.mix(self.accent.base, 0.1),
-                background_normal: window.base,
-                foreground_active: self.accent_text_color(),
-                foreground_inactive: self.background.component.on.mix(window.base, 0.1),
-                foreground_link: self.link_button.base,
-                foreground_negative: self.destructive_text_color(),
-                foreground_neutral: self.warning_text_color(),
-                foreground_normal: self.background.component.on,
-                foreground_positive: self.success_text_color(),
-                foreground_visited: self.accent_text_color(),
-            }
-        };
+        // the background container
         let view_colors = IniColors {
-            background_alternate: self.background.base.mix(self.accent.base, 0.1),
+            background_alternate: self.background.base.mix(self.accent.base, 0.05),
             background_normal: self.background.base,
-            ..window_colors
+            foreground_active: self.accent_text_color(),
+            foreground_inactive: self.background.on.mix(self.background.base, 0.1),
+            foreground_link: self.link_button.base,
+            foreground_negative: self.destructive_text_color(),
+            foreground_neutral: self.warning_text_color(),
+            foreground_normal: self.background.on,
+            foreground_positive: self.success_text_color(),
+            foreground_visited: self.accent_text_color(),
+        };
+        // components inside the background container
+        let window_colors = IniColors {
+            background_alternate: self.background.component.base.mix(self.accent.base, 0.05),
+            background_normal: self.background.component.base,
+            ..view_colors
         };
 
         // selected text and items
@@ -83,7 +81,7 @@ impl Theme {
         let button_colors = IniColors {
             background_alternate: self.accent_button.base,
             background_normal: self.button.base,
-            ..window_colors
+            ..view_colors
         };
 
         // Complementary: Areas of applications with an alternative color scheme; usually with a dark background for light color schemes.
@@ -107,14 +105,11 @@ impl Theme {
             }
         };
 
-        let header_colors = IniColors {
-            background_alternate: window_colors.background_normal,
-            background_normal: window_colors.background_alternate,
-            ..window_colors
-        };
-        let header_colors_inactive = &window_colors;
+        // headers in cosmic don't have a background
+        let header_colors = &view_colors;
+        let header_colors_inactive = &view_colors;
         // tool tips, "What's This" tips, and similar elements
-        let tooltip_colors = &header_colors;
+        let tooltip_colors = &window_colors;
 
         let light_or_dark = if self.is_dark { "Dark" } else { "Light" };
 
