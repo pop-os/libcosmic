@@ -116,6 +116,8 @@ impl Theme {
         // tool tips, "What's This" tips, and similar elements
         let tooltip_colors = &header_colors;
 
+        let light_or_dark = if self.is_dark { "Dark" } else { "Light" };
+
         output.push_str(&format!(
             r#"
 [ColorEffects:Disabled]
@@ -151,20 +153,15 @@ Enable=false
 {}
 
 [General]
-ColorScheme=CosmicDark
-Name=COSMIC Dark
+ColorScheme=Cosmic{light_or_dark}
+Name=COSMIC {light_or_dark}
 shadeSortColumn=true
 
 [KDE]
 contrast=4
 
 [WM]
-activeBackground=39,44,49
-activeBlend=252,252,252
-activeForeground=252,252,252
-inactiveBackground=32,36,40
-inactiveBlend=161,169,177
-inactiveForeground=161,169,177
+{}
 "#,
             format_ini_color_effects(&disabled_color_effects),
             format_ini_color_effects(&inactive_color_effects),
@@ -176,6 +173,7 @@ inactiveForeground=161,169,177
             format_ini_colors(&tooltip_colors),
             format_ini_colors(&view_colors),
             format_ini_colors(&window_colors),
+            format_ini_wm_colors(&view_colors, self.is_dark),
         ));
 
         output
@@ -269,7 +267,10 @@ inactiveForeground=161,169,177
         };
         let dest_file = config_dir.join("kdeglobals");
 
-        if Self::is_cosmic_kdeglobals(&dest_file).map_err(OutputError::Io)?.unwrap_or_default() {
+        if Self::is_cosmic_kdeglobals(&dest_file)
+            .map_err(OutputError::Io)?
+            .unwrap_or_default()
+        {
             fs::remove_file(dest_file).map_err(OutputError::Io)?
         }
         Ok(())
@@ -360,6 +361,28 @@ ForegroundVisited={}"#,
         to_rgb(colors.foreground_normal),
         to_rgb(colors.foreground_positive),
         to_rgb(colors.foreground_visited),
+    )
+}
+
+/// Sets the colors for the titlebars of active and inactive windows.
+fn format_ini_wm_colors(view_colors: &IniColors, is_dark: bool) -> String {
+    let bg = view_colors.background_normal;
+    let fg = view_colors.foreground_active;
+    let blend = if is_dark { fg } else { bg };
+
+    format!(
+        r#"activeBackground={}
+activeBlend={}
+activeForeground={}
+inactiveBackground={}
+inactiveBlend={}
+inactiveForeground={}"#,
+        to_rgb(bg),
+        to_rgb(blend),
+        to_rgb(fg),
+        to_rgb(bg),
+        to_rgb(blend),
+        to_rgb(fg),
     )
 }
 
