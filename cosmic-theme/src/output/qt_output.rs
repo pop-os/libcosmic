@@ -1,5 +1,5 @@
-use crate::Theme;
-use palette::{Mix, Srgba, rgb::Rgba};
+use crate::{Theme, composite::over};
+use palette::{Mix, Srgba, blend::Compose, rgb::Rgba};
 use std::{
     fs::{self, File},
     io::{self, Write},
@@ -39,12 +39,13 @@ impl Theme {
             intensity_effect: IntensityEffect::Shade,
         };
 
+        let bg = self.background.base;
         // the background container
         let view_colors = IniColors {
-            background_alternate: self.background.base.mix(self.accent.base, 0.05),
-            background_normal: self.background.base,
+            background_alternate: bg.mix(self.accent.base, 0.05),
+            background_normal: bg,
             foreground_active: self.accent_text_color(),
-            foreground_inactive: self.background.on.mix(self.background.base, 0.1),
+            foreground_inactive: self.background.on.mix(bg, 0.1),
             foreground_link: self.link_button.base,
             foreground_negative: self.destructive_text_color(),
             foreground_neutral: self.warning_text_color(),
@@ -64,7 +65,7 @@ impl Theme {
             let selected = self.background.component.selected;
             let selected_text = self.background.component.selected_text;
             IniColors {
-                background_alternate: selected.mix(self.background.base, 0.5),
+                background_alternate: selected.mix(bg, 0.5),
                 background_normal: selected,
                 // TODO: DecorationFocus and DecorationHover should = background_normal not foreground_active here
                 foreground_active: selected_text,
@@ -158,16 +159,16 @@ contrast=4
 [WM]
 {}
 "#,
-            format_ini_color_effects(&disabled_color_effects),
-            format_ini_color_effects(&inactive_color_effects),
-            format_ini_colors(&button_colors),
-            format_ini_colors(&complementary_colors),
-            format_ini_colors(&header_colors),
-            format_ini_colors(&header_colors_inactive),
-            format_ini_colors(&selection_colors),
-            format_ini_colors(&tooltip_colors),
-            format_ini_colors(&view_colors),
-            format_ini_colors(&window_colors),
+            format_ini_color_effects(&disabled_color_effects, bg),
+            format_ini_color_effects(&inactive_color_effects, bg),
+            format_ini_colors(&button_colors, bg),
+            format_ini_colors(&complementary_colors, bg),
+            format_ini_colors(&header_colors, bg),
+            format_ini_colors(&header_colors_inactive, bg),
+            format_ini_colors(&selection_colors, bg),
+            format_ini_colors(&tooltip_colors, bg),
+            format_ini_colors(&view_colors, bg),
+            format_ini_colors(&window_colors, bg),
             format_ini_wm_colors(&view_colors, self.is_dark),
         ));
 
@@ -304,13 +305,14 @@ contrast=4
     }
 }
 
-/// Formats a color in the form `r,g,b` e.g. `255,255,255`
-fn to_rgb(c: Srgba) -> String {
-    let c_u8: Rgba<palette::encoding::Srgb, u8> = c.into_format();
+/// Formats a color in the form `r,g,b` e.g. `255,255,255`.
+/// If the color has transparency, it is mixed with bg first.
+fn to_rgb(c: Srgba, bg: Srgba) -> String {
+    let c_u8: Srgba<u8> = c.over(bg).into_format();
     format!("{},{},{}", c_u8.red, c_u8.green, c_u8.blue)
 }
 
-fn format_ini_color_effects(color_effects: &IniColorEffects) -> String {
+fn format_ini_color_effects(color_effects: &IniColorEffects, bg: Srgba) -> String {
     format!(
         r#"Color={}
 ColorAmount={}
@@ -319,7 +321,7 @@ ContrastAmount={}
 ContrastEffect={}
 IntensityAmount={}
 IntensityEffect={}"#,
-        to_rgb(color_effects.color),
+        to_rgb(color_effects.color, bg),
         color_effects.color_amount,
         color_effects.color_effect.as_u8(),
         color_effects.contrast_amount,
@@ -329,7 +331,7 @@ IntensityEffect={}"#,
     )
 }
 
-fn format_ini_colors(colors: &IniColors) -> String {
+fn format_ini_colors(colors: &IniColors, bg: Srgba) -> String {
     format!(
         r#"BackgroundAlternate={}
 BackgroundNormal={}
@@ -343,19 +345,19 @@ ForegroundNeutral={}
 ForegroundNormal={}
 ForegroundPositive={}
 ForegroundVisited={}"#,
-        to_rgb(colors.background_alternate),
-        to_rgb(colors.background_normal),
+        to_rgb(colors.background_alternate, bg),
+        to_rgb(colors.background_normal, bg),
         // Decoration colors are always the same as foreground_active
-        to_rgb(colors.foreground_active),
-        to_rgb(colors.foreground_active),
-        to_rgb(colors.foreground_active),
-        to_rgb(colors.foreground_inactive),
-        to_rgb(colors.foreground_link),
-        to_rgb(colors.foreground_negative),
-        to_rgb(colors.foreground_neutral),
-        to_rgb(colors.foreground_normal),
-        to_rgb(colors.foreground_positive),
-        to_rgb(colors.foreground_visited),
+        to_rgb(colors.foreground_active, bg),
+        to_rgb(colors.foreground_active, bg),
+        to_rgb(colors.foreground_active, bg),
+        to_rgb(colors.foreground_inactive, bg),
+        to_rgb(colors.foreground_link, bg),
+        to_rgb(colors.foreground_negative, bg),
+        to_rgb(colors.foreground_neutral, bg),
+        to_rgb(colors.foreground_normal, bg),
+        to_rgb(colors.foreground_positive, bg),
+        to_rgb(colors.foreground_visited, bg),
     )
 }
 
@@ -372,12 +374,12 @@ activeForeground={}
 inactiveBackground={}
 inactiveBlend={}
 inactiveForeground={}"#,
-        to_rgb(bg),
-        to_rgb(blend),
-        to_rgb(fg),
-        to_rgb(bg),
-        to_rgb(blend),
-        to_rgb(fg),
+        to_rgb(bg, bg),
+        to_rgb(blend, bg),
+        to_rgb(fg, bg),
+        to_rgb(bg, bg),
+        to_rgb(blend, bg),
+        to_rgb(fg, bg),
     )
 }
 
