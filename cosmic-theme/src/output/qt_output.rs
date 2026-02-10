@@ -230,10 +230,11 @@ contrast=4
             "CosmicLight.colors"
         });
 
-        let dest_file = config_dir.join("kdeglobals");
+        let cosmic_adaptive_colors = data_dir.join("CosmicAdaptive.colors");
+        let kdeglobals_file = config_dir.join("kdeglobals");
 
         #[cfg(target_family = "unix")]
-        {
+        for dest_file in &[cosmic_adaptive_colors, kdeglobals_file] {
             use std::os::unix::fs::symlink;
             Self::backup_non_cosmic_kdeglobals(&dest_file).map_err(OutputError::Io)?;
 
@@ -243,8 +244,10 @@ contrast=4
                 fs::remove_file(&dest_file).map_err(OutputError::Io)?;
             }
 
-            symlink(src_file, dest_file).map_err(OutputError::Io)?
+            symlink(&src_file, dest_file).map_err(OutputError::Io)?
         }
+
+        // TODO: Point qt6ct to ~/.local/share/color-schemes/CosmicAdaptive.colors
 
         Ok(())
     }
