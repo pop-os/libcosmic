@@ -1,9 +1,8 @@
-use crate::{Component, Theme, composite::over, steps::steps};
-use palette::{Darken, IntoColor, Lighten, Mix, Srgba, WithAlpha, rgb::Rgba};
+use crate::Theme;
+use palette::{Mix, Srgba, rgb::Rgba};
 use std::{
     fs::{self, File},
     io::{self, Write},
-    num::NonZeroUsize,
     path::Path,
 };
 
@@ -12,6 +11,8 @@ use super::OutputError;
 impl Theme {
     #[must_use]
     #[cold]
+    /// Produces a color scheme ini file for Qt.
+    ///
     /// Some high-level documentation for this file can be found at:
     /// https://web.archive.org/web/20250402234329/https://docs.kde.org/stable5/en/plasma-workspace/kcontrol/colors/
     pub fn as_qt(&self) -> String {
@@ -25,7 +26,7 @@ impl Theme {
             contrast_amount: 0.65,
             contrast_effect: ColorEffect::Fade,
             intensity_amount: 0.1,
-            intensity_effect: IntensityEffect::Lighten, // TODO: different for light mode?
+            intensity_effect: IntensityEffect::Lighten,
         };
         // Usually, inactive elements will have reduced contrast (text fades slightly into the background) and may have slightly reduced intensity
         let inactive_color_effects = IniColorEffects {
