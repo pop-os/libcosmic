@@ -237,11 +237,11 @@ contrast=4
 
         let cosmic_adaptive_colors = data_dir.join("CosmicAdaptive.colors");
         let kdeglobals_file = config_dir.join("kdeglobals");
+        Self::backup_non_cosmic_kdeglobals(&kdeglobals_file).map_err(OutputError::Io)?;
 
         #[cfg(target_family = "unix")]
         for dest_file in &[cosmic_adaptive_colors, kdeglobals_file] {
             use std::os::unix::fs::symlink;
-            Self::backup_non_cosmic_kdeglobals(&dest_file).map_err(OutputError::Io)?;
 
             if dest_file.exists() {
                 // Currently we overwrite the file with our symlink.
