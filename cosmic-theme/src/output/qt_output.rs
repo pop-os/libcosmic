@@ -206,8 +206,19 @@ contrast=4
             std::fs::create_dir_all(&data_dir).map_err(OutputError::Io)?;
         }
 
-        let mut file = File::create(data_dir.join(file_name)).map_err(OutputError::Io)?;
-        file.write_all(colors.as_bytes()).map_err(OutputError::Io)?;
+        let file_path = data_dir.join(file_name);
+        let tmp_file_path = data_dir.join(file_name + "~");
+
+        // Write to tmp_file_path first, then move it to file_path
+        let mut tmp_file = File::create(tmp_file_path).map_err(OutputError::Io)?;
+        let res = tmp_file
+            .write_all(colors.as_bytes())
+            .and_then(|| tmp_file.flush()?)
+            .and_then(|| std::fs::rename(tmp_file_path, file_path)?);
+        if let Err(e) = res {
+            _ = std::fs::remove_file(tmp_file);
+            return Err(OutputError::Io(e));
+        }
 
         Ok(())
     }
