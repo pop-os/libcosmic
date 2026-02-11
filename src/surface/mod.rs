@@ -36,6 +36,8 @@ pub enum Action {
     ),
     /// Destroy a subsurface with a view function
     DestroyPopup(iced::window::Id),
+    /// Destroys the global tooltip popup subsurface
+    DestroyTooltipPopup,
 
     /// Create a window with a view function accepting the App as a parameter
     AppWindow(
@@ -85,6 +87,7 @@ impl std::fmt::Debug for Action {
             }
             Self::Popup(arg0, arg1) => f.debug_tuple("Popup").field(arg0).field(arg1).finish(),
             Self::DestroyPopup(arg0) => f.debug_tuple("DestroyPopup").field(arg0).finish(),
+            Self::DestroyTooltipPopup => f.debug_tuple("DestroyTooltipPopup").finish(),
             Self::ResponsiveMenuBar {
                 menu_bar,
                 limits,
