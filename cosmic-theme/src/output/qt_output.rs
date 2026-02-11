@@ -125,7 +125,7 @@ impl Theme {
         } else {
             "COSMIC Light"
         };
-        // COSMIC icons are stuck in light mode, so use breeze instead
+        // COSMIC icons are stuck in light mode, so use breeze icons instead
         let icons_theme = if self.is_dark {
             "breeze-dark"
         } else {
@@ -207,22 +207,7 @@ widgetStyle=qt6ct-style
     #[cold]
     pub fn write_qt(&self) -> Result<(), OutputError> {
         let colors = self.as_qt();
-        let Some(mut data_dir) = dirs::data_dir() else {
-            return Err(OutputError::MissingDataDir);
-        };
-
-        let file_name = if self.is_dark {
-            "CosmicDark.colors"
-        } else {
-            "CosmicLight.colors"
-        };
-
-        data_dir.push("color-schemes");
-        if !data_dir.exists() {
-            std::fs::create_dir_all(&data_dir).map_err(OutputError::Io)?;
-        }
-
-        let file_path = data_dir.join(file_name);
+        let file_path = Self::get_qt_colors_path(self.is_dark)?;
         let tmp_file_path = file_path.with_extension("colors.new");
 
         // Write to tmp_file_path first, then move it to file_path
@@ -251,16 +236,7 @@ widgetStyle=qt6ct-style
         let Some(config_dir) = dirs::config_dir() else {
             return Err(OutputError::MissingConfigDir);
         };
-        let Some(mut data_dir) = dirs::data_dir() else {
-            return Err(OutputError::MissingDataDir);
-        };
-        data_dir.push("color-schemes");
-
-        let src_file = data_dir.join(if is_dark {
-            "CosmicDark.colors"
-        } else {
-            "CosmicLight.colors"
-        });
+        let src_file = Self::get_qt_colors_path(is_dark)?;
 
         let kdeglobals_file = config_dir.join("kdeglobals");
 
@@ -302,6 +278,26 @@ widgetStyle=qt6ct-style
             fs::remove_file(dest_file).map_err(OutputError::Io)?
         }
         Ok(())
+    }
+
+    /// Gets a path like `~/.config/color-schemes/CosmicDark.colors`
+    pub fn get_qt_colors_path(is_dark: bool) -> Result<PathBuf, OutputError> {
+        let Some(mut data_dir) = dirs::data_dir() else {
+            return Err(OutputError::MissingDataDir);
+        };
+
+        let file_name = if is_dark {
+            "CosmicDark.colors"
+        } else {
+            "CosmicLight.colors"
+        };
+
+        data_dir.push("color-schemes");
+        if !data_dir.exists() {
+            std::fs::create_dir_all(&data_dir).map_err(OutputError::Io)?;
+        }
+
+        Ok(data_dir.join(file_name))
     }
 
     #[cold]

@@ -6,6 +6,8 @@ use crate::Theme;
 /// Module for outputting the Cosmic gtk4 theme type as CSS
 pub mod gtk4_output;
 
+/// Module for configuring qt5ct and qt6ct to use our qt theme
+pub mod qt56ct_output;
 /// Module for outputting the Cosmic qt theme type as kdeglobals
 pub mod qt_output;
 
@@ -21,6 +23,8 @@ pub enum OutputError {
     MissingDataDir,
     #[error("Serde Error: {0}")]
     Serde(#[from] serde_json::Error),
+    #[error("Ini Error: {0}")]
+    Ini(String),
 }
 
 impl Theme {
@@ -28,9 +32,11 @@ impl Theme {
     pub fn apply_exports(&self) -> Result<(), OutputError> {
         let gtk_res = Theme::apply_gtk(self.is_dark);
         let qt_res = Theme::apply_qt(self.is_dark);
+        let qt56ct_res = Theme::apply_qt56ct(self.is_dark);
         let vs_res = self.clone().apply_vs_code();
         gtk_res?;
         qt_res?;
+        qt56ct_res?;
         vs_res?;
         Ok(())
     }
@@ -41,8 +47,10 @@ impl Theme {
     pub fn apply_exports_static(is_dark: bool) -> Result<(), OutputError> {
         let gtk_res = Theme::apply_gtk(is_dark);
         let qt_res = Theme::apply_qt(is_dark);
+        let qt56ct_res = Theme::apply_qt56ct(is_dark);
         gtk_res?;
         qt_res?;
+        qt56ct_res?;
         Ok(())
     }
 
