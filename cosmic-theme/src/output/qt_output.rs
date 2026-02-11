@@ -3,18 +3,18 @@ use palette::{Mix, Srgba, blend::Compose};
 use std::{
     fs::{self, File},
     io::{self, Write},
-    path::Path,
+    path::{Path, PathBuf},
 };
 
 use super::OutputError;
 
 impl Theme {
-    #[must_use]
-    #[cold]
     /// Produces a color scheme ini file for Qt.
     ///
     /// Some high-level documentation for this file can be found at:
     /// https://web.archive.org/web/20250402234329/https://docs.kde.org/stable5/en/plasma-workspace/kcontrol/colors/
+    #[must_use]
+    #[cold]
     pub fn as_qt(&self) -> String {
         // Usually, disabled elements will have strongly reduced contrast and are often notably darker or lighter
         let disabled_color_effects = IniColorEffects {
@@ -223,16 +223,16 @@ widgetStyle=qt6ct-style
         }
 
         let file_path = data_dir.join(file_name);
-        let tmp_file_path = data_dir.join(file_name + "~");
+        let tmp_file_path = file_path.with_extension("colors.new");
 
         // Write to tmp_file_path first, then move it to file_path
-        let mut tmp_file = File::create(tmp_file_path).map_err(OutputError::Io)?;
+        let mut tmp_file = File::create(&tmp_file_path).map_err(OutputError::Io)?;
         let res = tmp_file
             .write_all(colors.as_bytes())
-            .and_then(|| tmp_file.flush()?)
-            .and_then(|| std::fs::rename(tmp_file_path, file_path)?);
+            .and_then(|_| tmp_file.flush())
+            .and_then(|_| std::fs::rename(&tmp_file_path, file_path));
         if let Err(e) = res {
-            _ = std::fs::remove_file(tmp_file);
+            _ = std::fs::remove_file(&tmp_file_path);
             return Err(OutputError::Io(e));
         }
 
@@ -269,7 +269,7 @@ widgetStyle=qt6ct-style
             use std::os::unix::fs::symlink;
             Self::backup_non_cosmic_kdeglobals(&kdeglobals_file).map_err(OutputError::Io)?;
 
-            if dest_file.exists() {
+            if kdeglobals_file.exists() {
                 // Currently we overwrite the file with our symlink.
                 // Maybe in the future we could merge kdeglobals with our color scheme ini?
                 fs::remove_file(&kdeglobals_file).map_err(OutputError::Io)?;
@@ -307,7 +307,7 @@ widgetStyle=qt6ct-style
     #[cold]
     fn backup_non_cosmic_kdeglobals(path: &Path) -> io::Result<()> {
         if !Self::is_cosmic_kdeglobals(path)?.unwrap_or(true) {
-            let backup_path = path.with_added_extension("bak");
+            let backup_path = path.with_extension("bak");
             fs::rename(path, &backup_path)?;
         }
         Ok(())

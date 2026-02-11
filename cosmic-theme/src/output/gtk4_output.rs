@@ -164,16 +164,16 @@ impl Theme {
         }
 
         let file_path = config_dir.join(name);
-        let tmp_file_path = config_dir.join(name + "~");
+        let tmp_file_path = config_dir.join(name.to_owned() + "~");
 
         // Write to tmp_file_path first, then move it to file_path
-        let mut tmp_file = File::create(tmp_file_path).map_err(OutputError::Io)?;
+        let mut tmp_file = File::create(&tmp_file_path).map_err(OutputError::Io)?;
         let res = tmp_file
             .write_all(css_str.as_bytes())
-            .and_then(|| tmp_file.flush()?)
-            .and_then(|| std::fs::rename(tmp_file_path, file_path)?);
+            .and_then(|_| tmp_file.flush())
+            .and_then(|_| std::fs::rename(&tmp_file_path, file_path));
         if let Err(e) = res {
-            _ = std::fs::remove_file(tmp_file);
+            _ = std::fs::remove_file(&tmp_file_path);
             return Err(OutputError::Io(e));
         }
 
@@ -245,7 +245,7 @@ impl Theme {
     #[cold]
     fn backup_non_cosmic_css(path: &Path, cosmic_css: &Path) -> io::Result<()> {
         if !Self::is_cosmic_css(path, cosmic_css)?.unwrap_or(true) {
-            let backup_path = path.with_added_extension("bak");
+            let backup_path = path.with_extension("css.bak");
             fs::rename(path, &backup_path)?;
         }
         Ok(())
