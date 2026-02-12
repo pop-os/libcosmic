@@ -8,7 +8,7 @@ use cosmic_config::cosmic_config_derive::CosmicConfigEntry;
 use cosmic_config::{Config, CosmicConfigEntry};
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeSet;
-use std::sync::{LazyLock, Mutex, RwLock};
+use std::sync::{LazyLock, RwLock};
 
 /// ID for the `CosmicTk` config.
 pub const ID: &str = "com.system76.CosmicTk";
@@ -17,7 +17,7 @@ const MONO_FAMILY_DEFAULT: &str = "Noto Sans Mono";
 const SANS_FAMILY_DEFAULT: &str = "Open Sans";
 
 /// Stores static strings of the family names for `iced::Font` compatibility.
-pub static FAMILY_MAP: LazyLock<Mutex<BTreeSet<&'static str>>> = LazyLock::new(Mutex::default);
+pub static FAMILY_MAP: LazyLock<RwLock<BTreeSet<&'static str>>> = LazyLock::new(RwLock::default);
 
 pub static COSMIC_TK: LazyLock<RwLock<CosmicTk>> = LazyLock::new(|| {
     RwLock::new(
@@ -156,14 +156,14 @@ pub struct FontConfig {
 
 impl From<FontConfig> for iced::Font {
     fn from(font: FontConfig) -> Self {
-        let mut family_map = FAMILY_MAP.lock().unwrap();
-
-        let name: &'static str = family_map
+        let name = FAMILY_MAP
+            .read()
+            .unwrap()
             .get(font.family.as_str())
             .copied()
             .unwrap_or_else(|| {
-                let value = font.family.clone().leak();
-                family_map.insert(value);
+                let value: &'static str = font.family.clone().leak();
+                FAMILY_MAP.write().unwrap().insert(value);
                 value
             });
 
