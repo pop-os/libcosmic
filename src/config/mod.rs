@@ -16,9 +16,6 @@ pub const ID: &str = "com.system76.CosmicTk";
 const MONO_FAMILY_DEFAULT: &str = "Noto Sans Mono";
 const SANS_FAMILY_DEFAULT: &str = "Open Sans";
 
-/// Stores static strings of the family names for `iced::Font` compatibility.
-pub static FAMILY_MAP: LazyLock<RwLock<BTreeSet<&'static str>>> = LazyLock::new(RwLock::default);
-
 pub static COSMIC_TK: LazyLock<RwLock<CosmicTk>> = LazyLock::new(|| {
     RwLock::new(
         CosmicTk::config()
@@ -156,16 +153,19 @@ pub struct FontConfig {
 
 impl From<FontConfig> for iced::Font {
     fn from(font: FontConfig) -> Self {
-        let name = FAMILY_MAP
-            .read()
-            .unwrap()
-            .get(font.family.as_str())
-            .copied()
-            .unwrap_or_else(|| {
-                let value: &'static str = font.family.clone().leak();
-                FAMILY_MAP.write().unwrap().insert(value);
-                value
-            });
+        /// Stores static strings of the family names for `iced::Font` compatibility.
+        static FAMILY_MAP: LazyLock<RwLock<BTreeSet<&'static str>>> =
+            LazyLock::new(RwLock::default);
+
+        let read_guard = FAMILY_MAP.read().unwrap();
+        let name: Option<&'static str> = read_guard.get(font.family.as_str()).copied();
+        drop(read_guard);
+
+        let name = name.unwrap_or_else(|| {
+            let value: &'static str = font.family.clone().leak();
+            FAMILY_MAP.write().unwrap().insert(value);
+            value
+        });
 
         Self {
             family: iced::font::Family::Name(name),
