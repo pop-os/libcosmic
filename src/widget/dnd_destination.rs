@@ -250,11 +250,13 @@ impl<'a, Message: 'static> DndDestination<'a, Message> {
     /// Add a message that will be emitted instead of [`on_data_received`](Self::on_data_received) if the dropped files
     /// are offered through the xdg share portal. You can then use [`crate::command::file_transfer_receive`]
     /// with the key to receive the files.
-    ///
-    /// For this to work you will need to add [`FILE_TRANSFER_MIME`] to the allowed mime types.
     #[cfg(feature = "xdg-portal")]
     #[must_use]
     pub fn on_file_transfer(mut self, f: impl Fn(String) -> Message + 'static) -> Self {
+        match self.mime_types.iter().position(|v| v == "text/uri-list") {
+            Some(i) => self.mime_types.insert(i, Cow::Borrowed(FILE_TRANSFER_MIME)),
+            None => self.mime_types.push(Cow::Borrowed(FILE_TRANSFER_MIME)),
+        }
         self.on_file_transfer = Some(Box::new(f));
         self
     }
