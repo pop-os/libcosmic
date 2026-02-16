@@ -3,7 +3,7 @@ close = أغلِق
 # About
 license = الترخيص
 links = الروابط
-developers = المطورون
+developers = المطوِّرون
 designers = المصمّمون
 artists = الفنانون
 translators = المترجمون
