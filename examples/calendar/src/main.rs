@@ -3,10 +3,10 @@
 
 //! Calendar widget example
 
-use chrono::NaiveDate;
 use cosmic::app::{Core, Settings, Task};
 use cosmic::widget::calendar::CalendarModel;
-use cosmic::{executor, iced, ApplicationExt, Element};
+use cosmic::{ApplicationExt, Element, executor, iced};
+use jiff::civil::{Date, Weekday};
 
 /// Runs application with these settings
 #[rustfmt::skip]
@@ -19,7 +19,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 /// Messages that are used specifically by our [`App`].
 #[derive(Clone, Debug)]
 pub enum Message {
-    DateSelected(NaiveDate),
+    DateSelected(Date),
     PrevMonth,
     NextMonth,
 }
@@ -92,7 +92,7 @@ impl cosmic::Application for App {
             |date| Message::DateSelected(date),
             || Message::PrevMonth,
             || Message::NextMonth,
-            chrono::Weekday::Sun,
+            Weekday::Sunday,
         );
 
         content = content.push(calendar);

@@ -104,7 +104,7 @@ async-fs = { version = "2.2", optional = true }
 async-std = { version = "1.13", optional = true }
 auto_enums = "0.8.7"
 cctk = { git = "https://github.com/pop-os/cosmic-protocols", package = "cosmic-client-toolkit", rev = "d0e95be", optional = true }
-chrono = "0.4.43"
+jiff = "0.2"
 cosmic-config = { path = "cosmic-config" }
 cosmic-settings-config = { git = "https://github.com/pop-os/cosmic-settings-daemon", optional = true }
 # Internationalization
