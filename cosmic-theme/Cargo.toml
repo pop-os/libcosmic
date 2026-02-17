@@ -27,5 +27,6 @@ cosmic-config = { path = "../cosmic-config/", default-features = false, features
     "subscription",
     "macro",
 ] }
+configparser = "3.1.0"
 dirs.workspace = true
 thiserror = "2.0.18"
