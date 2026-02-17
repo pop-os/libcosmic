@@ -243,7 +243,8 @@ widgetStyle=qt6ct-style
         let src_file = Self::get_qt_colors_path(is_dark)?;
         let src_ini = Self::read_ini(&src_file)?;
 
-        Self::backup_non_cosmic_kdeglobals(&kdeglobals_file).map_err(OutputError::Io)?;
+        Self::backup_non_cosmic_kdeglobals(&kdeglobals_ini, &kdeglobals_file)
+            .map_err(OutputError::Io)?;
 
         for (section, key_value) in src_ini.get_map_ref() {
             for (key, value) in key_value {
@@ -251,11 +252,14 @@ widgetStyle=qt6ct-style
             }
         }
 
-        kdeglobals_ini.write(kdeglobals_file).map_err(OutputError::Io)?;
+        kdeglobals_ini
+            .write(kdeglobals_file)
+            .map_err(OutputError::Io)?;
         Ok(())
     }
 
-    /// Reset the applied qt colors by deleting the `~/.config/kdeglobals` file.
+    /// Reset the applied qt colors by removing color scheme values from the
+    /// `~/.config/kdeglobals` file.
     ///
     /// This does not restore the backed up kdeglobals file.
     ///
@@ -267,14 +271,30 @@ widgetStyle=qt6ct-style
         let Some(config_dir) = dirs::config_dir() else {
             return Err(OutputError::MissingConfigDir);
         };
-        let dest_file = config_dir.join("kdeglobals");
+        let kdeglobals_file = config_dir.join("kdeglobals");
+        let mut kdeglobals_ini = Self::read_ini(&kdeglobals_file)?;
 
-        if Self::is_cosmic_kdeglobals(&dest_file)
+        if !Self::is_cosmic_kdeglobals(&kdeglobals_ini)
             .map_err(OutputError::Io)?
             .unwrap_or_default()
         {
-            fs::remove_file(dest_file).map_err(OutputError::Io)?
+            // Not a cosmic kdeglobals file, do nothing
+            return Ok(());
         }
+
+        let is_dark = false; // doesn't matter since we're only reading keys
+        let src_file = Self::get_qt_colors_path(is_dark)?;
+        let src_ini = Self::read_ini(&src_file)?;
+
+        for (section, key_value) in src_ini.get_map_ref() {
+            for (key, _) in key_value {
+                kdeglobals_ini.remove_key(section, key);
+            }
+        }
+
+        kdeglobals_ini
+            .write(kdeglobals_file)
+            .map_err(OutputError::Io)?;
         Ok(())
     }
 
@@ -310,8 +330,8 @@ widgetStyle=qt6ct-style
     }
 
     #[cold]
-    fn backup_non_cosmic_kdeglobals(path: &Path) -> io::Result<()> {
-        if !Self::is_cosmic_kdeglobals(path)?.unwrap_or(true) {
+    fn backup_non_cosmic_kdeglobals(ini: &Ini, path: &Path) -> io::Result<()> {
+        if !Self::is_cosmic_kdeglobals(&ini)?.unwrap_or(true) {
             let backup_path = path.with_extension("bak");
             fs::rename(path, &backup_path)?;
         }
@@ -319,26 +339,15 @@ widgetStyle=qt6ct-style
     }
 
     #[cold]
-    fn is_cosmic_kdeglobals(path: &Path) -> io::Result<Option<bool>> {
-        if !path.exists() {
-            return Ok(None);
+    fn is_cosmic_kdeglobals(ini: &Ini) -> io::Result<Option<bool>> {
+        let color_scheme = ini.get("General", "ColorScheme");
+        if let Some(color_scheme) = color_scheme {
+            Ok(Some(
+                color_scheme == "CosmicDark" || color_scheme == "CosmicLight",
+            ))
+        } else {
+            Ok(None)
         }
-
-        if let Ok(metadata) = fs::symlink_metadata(path) {
-            if !metadata.file_type().is_symlink() {
-                return Ok(Some(false));
-            }
-            let Ok(target) = fs::read_link(path) else {
-                return Ok(Some(false));
-            };
-            let Some(target_filename) = target.file_name() else {
-                return Ok(Some(false));
-            };
-            return Ok(Some(
-                target_filename == "CosmicDark.colors" || target_filename == "CosmicLight.colors",
-            ));
-        }
-        Ok(Some(false))
     }
 }
 
