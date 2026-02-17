@@ -48,7 +48,11 @@ pub fn toggle_maximize<M>(id: window::Id) -> iced::Task<crate::Action<M>> {
 }
 
 #[cfg(feature = "xdg-portal")]
-pub fn file_transfer_send(writeable: bool, auto_stop: bool, files: Vec<impl AsFd + Send + Sync + 'static>) -> iced::Task<ashpd::Result<String>> {
+pub fn file_transfer_send(
+    writeable: bool,
+    auto_stop: bool,
+    files: Vec<impl AsFd + Send + Sync + 'static>,
+) -> iced::Task<ashpd::Result<String>> {
     iced::Task::future(async move {
         let file_transfer = ashpd::documents::FileTransfer::new().await?;
         let key = file_transfer.start_transfer(writeable, auto_stop).await?;

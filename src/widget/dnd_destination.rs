@@ -522,7 +522,10 @@ impl<Message: 'static> Widget<Message, crate::Theme, crate::Renderer>
                 );
 
                 #[cfg(feature = "xdg-portal")]
-                if mime_type == FILE_TRANSFER_MIME && let Some(f) = self.on_file_transfer.as_ref() && let Ok(s) = String::from_utf8(data[..data.len() - 1].to_vec()) {
+                if mime_type == FILE_TRANSFER_MIME
+                    && let Some(f) = self.on_file_transfer.as_ref()
+                    && let Ok(s) = String::from_utf8(data[..data.len() - 1].to_vec())
+                {
                     shell.publish(f(s));
                     return event::Status::Captured;
                 }
