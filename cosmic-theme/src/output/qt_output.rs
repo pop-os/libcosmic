@@ -1,4 +1,5 @@
 use crate::Theme;
+use configparser::ini::Ini;
 use palette::{Mix, Srgba, blend::Compose};
 use std::{
     fs::{self, File},
@@ -224,7 +225,7 @@ widgetStyle=qt6ct-style
         Ok(())
     }
 
-    /// Apply the color scheme by symlinking it to `~/.config/kdeglobals`.
+    /// Apply the color scheme by copying its values to `~/.config/kdeglobals`.
     ///
     /// See the docs: https://develop.kde.org/docs/plasma/#color-scheme
     ///
@@ -236,24 +237,21 @@ widgetStyle=qt6ct-style
         let Some(config_dir) = dirs::config_dir() else {
             return Err(OutputError::MissingConfigDir);
         };
-        let src_file = Self::get_qt_colors_path(is_dark)?;
-
         let kdeglobals_file = config_dir.join("kdeglobals");
+        let mut kdeglobals_ini = Self::read_ini(&kdeglobals_file)?;
 
-        #[cfg(target_family = "unix")]
-        {
-            use std::os::unix::fs::symlink;
-            Self::backup_non_cosmic_kdeglobals(&kdeglobals_file).map_err(OutputError::Io)?;
+        let src_file = Self::get_qt_colors_path(is_dark)?;
+        let src_ini = Self::read_ini(&src_file)?;
 
-            if kdeglobals_file.exists() {
-                // Currently we overwrite the file with our symlink.
-                // Maybe in the future we could merge kdeglobals with our color scheme ini?
-                fs::remove_file(&kdeglobals_file).map_err(OutputError::Io)?;
+        Self::backup_non_cosmic_kdeglobals(&kdeglobals_file).map_err(OutputError::Io)?;
+
+        for (section, key_value) in src_ini.get_map_ref() {
+            for (key, value) in key_value {
+                kdeglobals_ini.set(section, key, value.clone());
             }
-
-            symlink(&src_file, kdeglobals_file).map_err(OutputError::Io)?
         }
 
+        kdeglobals_ini.write(kdeglobals_file).map_err(OutputError::Io)?;
         Ok(())
     }
 
@@ -298,6 +296,17 @@ widgetStyle=qt6ct-style
         }
 
         Ok(data_dir.join(file_name))
+    }
+
+    #[cold]
+    fn read_ini(path: &PathBuf) -> Result<Ini, OutputError> {
+        let mut ini = Ini::new_cs();
+        if !path.exists() {
+            return Ok(ini);
+        }
+        let file_content = fs::read_to_string(path).map_err(OutputError::Io)?;
+        ini.read(file_content).map_err(OutputError::Ini)?;
+        Ok(ini)
     }
 
     #[cold]
