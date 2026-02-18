@@ -1,3 +1,4 @@
+use configparser::ini::WriteOptions;
 use palette::{Srgba, rgb::Rgba};
 use thiserror::Error;
 
@@ -77,4 +78,10 @@ pub fn to_rgba(c: Srgba) -> String {
         "rgba({}, {}, {}, {:1.2})",
         c_u8.red, c_u8.green, c_u8.blue, c.alpha
     )
+}
+
+pub fn qt_settings_ini_style() -> WriteOptions {
+    let mut write_options = WriteOptions::default();
+    write_options.blank_lines_between_sections = 1;
+    write_options
 }
