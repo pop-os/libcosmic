@@ -226,3 +226,7 @@ dirs = "6.0.0"
 
 [dev-dependencies]
 tempfile = "3.24.0"
+proptest = "1.6"
+image = { version = "0.25.9", default-features = false, features = ["png"] }
+tiny-skia = "0.11"
+ron = "0.12"

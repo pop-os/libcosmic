@@ -70,6 +70,56 @@ jobs:
         env:
           RUST_BACKTRACE: full
 
+  visual-tests:
+    needs:
+      - format
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v3
+        with:
+          submodules: recursive
+      - name: Get date for registry cache
+        id: date
+        run: echo "::set-output name=date::$(date +'%Y-%m-%d')"
+      - name: Cargo registry cache
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/registry/index
+            ~/.cargo/registry/cache
+            ~/.cargo/git
+          key: ${{ runner.os }}-cargo-registry-visual-${{ steps.date.outputs.date }}
+          restore-keys: ${{ runner.os }}-cargo-registry-visual-
+      - name: System dependencies
+        run: sudo apt-get update; sudo apt-get install -y libxkbcommon-dev libwayland-dev
+      - name: Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+      - name: Run visual snapshot tests
+        run: cargo test --no-default-features --test visual_tests
+        env:
+          RUST_BACKTRACE: full
+      - name: Run theme consistency tests
+        run: cargo test --no-default-features --test theme_tests
+        env:
+          RUST_BACKTRACE: full
+      - name: Run property-based tests
+        run: cargo test --no-default-features --test property_tests
+        env:
+          RUST_BACKTRACE: full
+      - name: Run widget unit tests
+        run: cargo test --no-default-features --test widget_unit_tests
+        env:
+          RUST_BACKTRACE: full
+      - name: Upload snapshot artifacts on failure
+        if: failure()
+        uses: actions/upload-artifact@v3
+        with:
+          name: snapshot-diffs
+          path: |
+            tests/snapshots/*.actual.png
+            tests/snapshots/*.diff.png
+
   examples:
     needs:
       - format

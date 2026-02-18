@@ -318,8 +318,98 @@ fn container_style(theme: &crate::Theme) -> iced_widget::container::Style {
 
 #[cfg(test)]
 mod tests {
+    use super::*;
+
     #[test]
-    fn decrement() {
-        assert_eq!(super::decrement(0i32, 10, 15, 35), 15);
+    fn decrement_clamps_to_min() {
+        assert_eq!(decrement(0i32, 10, 15, 35), 15);
+    }
+
+    #[test]
+    fn decrement_normal_step() {
+        assert_eq!(decrement(20i32, 5, 0, 100), 15);
+    }
+
+    #[test]
+    fn decrement_at_min_stays_at_min() {
+        assert_eq!(decrement(0i32, 1, 0, 100), 0);
+    }
+
+    #[test]
+    fn decrement_near_min_clamps() {
+        assert_eq!(decrement(3i32, 5, 0, 100), 0);
+    }
+
+    #[test]
+    fn increment_normal_step() {
+        assert_eq!(increment(20i32, 5, 0, 100), 25);
+    }
+
+    #[test]
+    fn increment_clamps_to_max() {
+        assert_eq!(increment(98i32, 5, 0, 100), 100);
+    }
+
+    #[test]
+    fn increment_at_max_stays_at_max() {
+        assert_eq!(increment(100i32, 1, 0, 100), 100);
+    }
+
+    #[test]
+    fn increment_near_max_clamps() {
+        assert_eq!(increment(97i32, 5, 0, 100), 100);
+    }
+
+    #[test]
+    fn increment_then_decrement_round_trips() {
+        let val = 50i32;
+        let step = 10;
+        let min = 0;
+        let max = 100;
+        let up = increment(val, step, min, max);
+        let back = decrement(up, step, min, max);
+        assert_eq!(back, val);
+    }
+
+    #[test]
+    fn float_increment() {
+        let result = increment(0.5f64, 0.1, 0.0, 1.0);
+        assert!((result - 0.6).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn float_decrement() {
+        let result = decrement(0.5f64, 0.1, 0.0, 1.0);
+        assert!((result - 0.4).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn new_clamps_value_below_min() {
+        let sb = SpinButton::new("test", -5i32, 1, 0, 100, Orientation::Horizontal, |v| v);
+        assert_eq!(sb.value, 0);
+    }
+
+    #[test]
+    fn new_clamps_value_above_max() {
+        let sb = SpinButton::new("test", 200i32, 1, 0, 100, Orientation::Horizontal, |v| v);
+        assert_eq!(sb.value, 100);
+    }
+
+    #[test]
+    fn new_accepts_value_in_range() {
+        let sb = SpinButton::new("test", 50i32, 1, 0, 100, Orientation::Horizontal, |v| v);
+        assert_eq!(sb.value, 50);
+    }
+
+    #[test]
+    fn new_accepts_value_at_min() {
+        let sb = SpinButton::new("test", 0i32, 1, 0, 100, Orientation::Horizontal, |v| v);
+        assert_eq!(sb.value, 0);
+    }
+
+    #[test]
+    fn new_accepts_value_at_max() {
+        let sb = SpinButton::new("test", 100i32, 1, 0, 100, Orientation::Horizontal, |v| v);
+        assert_eq!(sb.value, 100);
     }
 }
