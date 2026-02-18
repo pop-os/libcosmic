@@ -1,5 +1,6 @@
 use crate::Theme;
 use configparser::ini::Ini;
+use cosmic_config::CosmicConfigEntry;
 use palette::{Mix, Srgba, blend::Compose};
 use std::{
     fs::{self, File},
@@ -92,7 +93,11 @@ impl Theme {
             let dark = if self.is_dark {
                 self.clone()
             } else {
-                Self::get_active_with_brightness(false).unwrap_or_else(|_| self.clone())
+                Theme::light_config()
+                    .ok()
+                    .as_ref()
+                    .and_then(|conf| Theme::get_entry(conf).ok())
+                    .unwrap_or_else(|| self.clone())
             };
             IniColors {
                 background_alternate: dark.accent.base,
