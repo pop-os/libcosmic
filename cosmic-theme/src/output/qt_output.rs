@@ -338,7 +338,7 @@ widgetStyle=qt6ct-style
     fn backup_non_cosmic_kdeglobals(ini: &Ini, path: &Path) -> io::Result<()> {
         if !Self::is_cosmic_kdeglobals(&ini)?.unwrap_or(true) {
             let backup_path = path.with_extension("bak");
-            fs::rename(path, &backup_path)?;
+            fs::copy(path, &backup_path)?;
         }
         Ok(())
     }
