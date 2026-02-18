@@ -5,7 +5,7 @@ use std::{
     path::PathBuf,
 };
 
-use super::OutputError;
+use super::{OutputError, qt_settings_ini_style};
 
 impl Theme {
     /// The "version" of this theme.
@@ -86,7 +86,8 @@ impl Theme {
             }
         }
 
-        ini.write(path).map_err(OutputError::Io)?;
+        ini.pretty_write(path, &qt_settings_ini_style())
+            .map_err(OutputError::Io)?;
         Ok(())
     }
 

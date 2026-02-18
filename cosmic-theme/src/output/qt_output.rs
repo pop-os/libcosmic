@@ -8,7 +8,7 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use super::OutputError;
+use super::{OutputError, qt_settings_ini_style};
 
 impl Theme {
     /// Produces a color scheme ini file for Qt.
@@ -258,7 +258,7 @@ widgetStyle=qt6ct-style
         }
 
         kdeglobals_ini
-            .write(kdeglobals_file)
+            .pretty_write(kdeglobals_file, &qt_settings_ini_style())
             .map_err(OutputError::Io)?;
         Ok(())
     }
