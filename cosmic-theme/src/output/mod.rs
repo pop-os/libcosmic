@@ -29,19 +29,19 @@ pub enum OutputError {
 
 impl Theme {
     #[inline]
+    /// Apply COSMIC theme exports for GTK and Qt applications.
     pub fn apply_exports(&self) -> Result<(), OutputError> {
         let gtk_res = Theme::apply_gtk(self.is_dark);
         let qt_res = Theme::apply_qt(self.is_dark);
         let qt56ct_res = Theme::apply_qt56ct(self.is_dark);
-        let vs_res = self.clone().apply_vs_code();
         gtk_res?;
         qt_res?;
         qt56ct_res?;
-        vs_res?;
         Ok(())
     }
 
     #[inline]
+    /// Write COSMIC theme exports for GTK and Qt applications.
     pub fn write_exports(&self) -> Result<(), OutputError> {
         let gtk_res = self.write_gtk4();
         let qt_res = self.write_qt();
@@ -51,6 +51,7 @@ impl Theme {
     }
 
     #[inline]
+    /// Un-export GTK and Qt theme configurations applied by us.
     pub fn reset_exports() -> Result<(), OutputError> {
         let gtk_res = Theme::reset_gtk();
         let qt_res = Theme::reset_qt();
