@@ -212,6 +212,7 @@ where
                 vertical_alignment: alignment::Vertical::Top,
                 shaping: text::Shaping::Advanced,
                 wrapping: text::Wrapping::default(),
+                ellipsize: text::Ellipsize::default(),
             });
         }
 
@@ -478,6 +479,7 @@ pub fn layout(
                     vertical_alignment: alignment::Vertical::Top,
                     shaping: text::Shaping::Advanced,
                     wrapping: text::Wrapping::default(),
+                    ellipsize: text::Ellipsize::default(),
                 };
                 let paragraph = match paragraph {
                     Some(p) => {
@@ -934,6 +936,7 @@ pub fn draw<'a, S>(
                 vertical_alignment: alignment::Vertical::Center,
                 shaping: text::Shaping::Advanced,
                 wrapping: text::Wrapping::default(),
+                ellipsize: text::Ellipsize::default(),
             },
             bounds.position(),
             style.text_color,
