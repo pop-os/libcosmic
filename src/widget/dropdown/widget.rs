@@ -212,6 +212,7 @@ where
                 align_y: alignment::Vertical::Top,
                 shaping: text::Shaping::Advanced,
                 wrapping: text::Wrapping::default(),
+                ellipsize: text::Ellipsize::default(),
             });
         }
 
@@ -482,6 +483,7 @@ pub fn layout(
                             align_y: alignment::Vertical::Top,
                             shaping: text::Shaping::Advanced,
                             wrapping: text::Wrapping::default(),
+                            ellipsize: text::Ellipsize::default(),
                         };
                         p.update(text);
                         p
@@ -497,6 +499,7 @@ pub fn layout(
                             align_y: alignment::Vertical::Top,
                             shaping: text::Shaping::Advanced,
                             wrapping: text::Wrapping::default(),
+                            ellipsize: text::Ellipsize::default(),
                         };
                         &mut crate::Plain::new(text)
                     }
@@ -940,6 +943,7 @@ pub fn draw<'a, S>(
                 align_y: alignment::Vertical::Center,
                 shaping: text::Shaping::Advanced,
                 wrapping: text::Wrapping::default(),
+                ellipsize: text::Ellipsize::default(),
             },
             bounds.position(),
             style.text_color,

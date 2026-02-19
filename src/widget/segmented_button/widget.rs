@@ -23,7 +23,7 @@ use iced::{
     event, keyboard, mouse, touch, window,
 };
 use iced_core::mouse::ScrollDelta;
-use iced_core::text::{self, LineHeight, Renderer as TextRenderer, Shaping, Wrapping};
+use iced_core::text::{self, Ellipsize, LineHeight, Renderer as TextRenderer, Shaping, Wrapping};
 use iced_core::widget::operation::Focusable;
 use iced_core::widget::{self, operation, tree};
 use iced_core::{Border, Point, Renderer as IcedRenderer, Shadow, Text};
@@ -276,6 +276,7 @@ where
                     shaping: Shaping::Advanced,
                     wrapping: Wrapping::None,
                     line_height: self.line_height,
+                    ellipsize: Ellipsize::None,
                 };
                 paragraph.update(text);
             } else {
@@ -289,6 +290,7 @@ where
                     shaping: Shaping::Advanced,
                     wrapping: Wrapping::None,
                     line_height: self.line_height,
+                    ellipsize: Ellipsize::None,
                 };
                 state.paragraphs.insert(key, crate::Plain::new(text));
             }
@@ -620,6 +622,7 @@ where
                         align_y: alignment::Vertical::Center,
                         shaping: Shaping::Advanced,
                         wrapping: Wrapping::default(),
+                        ellipsize: Ellipsize::default(),
                         line_height: self.line_height,
                     })
                 });
