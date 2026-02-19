@@ -682,6 +682,7 @@ where
                     vertical_alignment: alignment::Vertical::Center,
                     shaping: text::Shaping::Advanced,
                     wrapping: text::Wrapping::default(),
+                    ellipsize: text::Ellipsize::default(),
                 },
                 bounds.position(),
                 color,

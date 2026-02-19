@@ -23,7 +23,7 @@ use iced::{
     event, keyboard, mouse, touch, window,
 };
 use iced_core::mouse::ScrollDelta;
-use iced_core::text::{LineHeight, Renderer as TextRenderer, Shaping, Wrapping};
+use iced_core::text::{Ellipsize, LineHeight, Renderer as TextRenderer, Shaping, Wrapping};
 use iced_core::widget::operation::Focusable;
 use iced_core::widget::{self, operation, tree};
 use iced_core::{Border, Point, Renderer as IcedRenderer, Shadow, Text};
@@ -274,6 +274,7 @@ where
                 vertical_alignment: alignment::Vertical::Center,
                 shaping: Shaping::Advanced,
                 wrapping: Wrapping::None,
+                ellipsize: Ellipsize::None,
                 line_height: self.line_height,
             };
 
@@ -602,6 +603,7 @@ where
                         vertical_alignment: alignment::Vertical::Center,
                         shaping: Shaping::Advanced,
                         wrapping: Wrapping::default(),
+                        ellipsize: Ellipsize::default(),
                         line_height: self.line_height,
                     })
                 });
