@@ -580,7 +580,7 @@ where
             &mut self.menu_roots,
             view_cursor,
             tree,
-            &event,
+            event,
             layout,
             renderer,
             clipboard,
@@ -609,6 +609,13 @@ where
         });
 
         match event {
+            Mouse(mouse::Event::ButtonPressed(Left))
+            | Touch(touch::Event::FingerPressed { .. })
+                if view_cursor.is_over(layout.bounds()) =>
+            {
+                // TODO should we track that it has been pressed?
+                shell.capture_event();
+            }
             Mouse(ButtonReleased(Left)) | Touch(FingerLifted { .. } | FingerLost { .. }) => {
                 let create_popup = my_state.inner.with_data_mut(|state| {
                     let mut create_popup = false;
@@ -627,6 +634,7 @@ where
                         ))]
                         {
                             let surface_action = self.on_surface_action.as_ref().unwrap();
+                            shell.capture_event();
 
                             shell.publish(surface_action(crate::surface::action::destroy_popup(
                                 _id,
@@ -640,6 +648,7 @@ where
                 if !create_popup {
                     return;
                 }
+                shell.capture_event();
                 #[cfg(all(
                     feature = "multi-window",
                     feature = "wayland",
@@ -653,6 +662,7 @@ where
             Mouse(mouse::Event::CursorMoved { .. } | mouse::Event::CursorEntered)
                 if open && view_cursor.is_over(layout.bounds()) =>
             {
+                shell.capture_event();
                 #[cfg(all(
                     feature = "multi-window",
                     feature = "wayland",

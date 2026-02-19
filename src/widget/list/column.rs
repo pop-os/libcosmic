@@ -112,6 +112,7 @@ impl<'a, Message: 'static> ListColumn<'a, Message> {
         crate::widget::column::with_children(self.children)
             .spacing(self.spacing)
             .padding(self.padding)
+            .width(iced::Length::Fill)
             .apply(container)
             .padding([self.spacing, 0])
             .class(self.style)

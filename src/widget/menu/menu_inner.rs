@@ -1008,7 +1008,7 @@ impl<Message: std::clone::Clone + 'static> Widget<Message, crate::Theme, crate::
                     &mut menu,
                     renderer,
                     shell,
-                    cursor.position().unwrap(),
+                    cursor.position().unwrap_or_default(),
                     layout.bounds().size(),
                     Vector::new(0., 0.),
                     layout.bounds(),
@@ -1181,7 +1181,6 @@ pub(crate) fn init_root_menu<Message: Clone>(
                     menu_bounds,
                 };
                 state.menu_states.push(ms);
-
                 // Hack to ensure menu opens properly
                 shell.invalidate_layout();
 

@@ -8,27 +8,28 @@ rust-version = "1.90"
 name = "cosmic"
 
 [features]
-# default = ["dbus-config", "multi-window", "a11y"]
-default = [ "debug",
+default = [
     "winit",
     "tokio",
-    # "xdg-portal",
-    "a11y",
-    "wgpu",
-    "single-instance",
-    "surface-message",
+    "a11y",   
     "dbus-config",
     "x11",
     "wayland",
     "multi-window",
-    "about","animated-image","autosize", "dbus-config", "pipewire", "process", "rfd", "desktop", "desktop-systemd-scope", "serde-keycode", "qr_code", "markdown", "highlighter"
-]
+] # default = ["dbus-config", "multi-window", "a11y"]
 # Accessibility support
 a11y = ["iced/a11y", "iced_accessibility"]
 # Enable about widget
 about = []
 # Builds support for animated images
-animated-image = ["dep:async-fs", "image/gif", "image/webp", "image/png", "tokio?/io-util", "tokio?/fs"]
+animated-image = [
+    "dep:async-fs",
+    "image/gif",
+    "image/webp",
+    "image/png",
+    "tokio?/io-util",
+    "tokio?/fs",
+]
 # XXX autosize should not be used on winit windows unless dialogs
 autosize = []
 applet = [
@@ -155,6 +156,7 @@ tracing = "0.1.44"
 unicode-segmentation = "1.12"
 url = "2.5.8"
 zbus = { version = "5.13.2", default-features = false, optional = true }
+float-cmp = "0.10.0"
 
 # Enable DBus feature on Linux targets
 [target.'cfg(target_os = "linux")'.dependencies]

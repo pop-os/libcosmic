@@ -5,7 +5,7 @@ use crate::cosmic_theme::{Density, Spacing};
 use crate::{Element, theme, widget};
 use apply::Apply;
 use derive_setters::Setters;
-use iced::Length;
+use iced::{Length, mouse};
 use iced_core::{Vector, Widget, widget::tree};
 use std::{borrow::Cow, cmp};
 
@@ -206,6 +206,7 @@ impl<Message: Clone + 'static> Widget<Message, crate::Theme, crate::Renderer>
     ) {
         let child_state = &mut state.children[0];
         let child_layout = layout.children().next().unwrap();
+
         self.header_bar_inner.as_widget_mut().update(
             child_state,
             event,
@@ -215,7 +216,7 @@ impl<Message: Clone + 'static> Widget<Message, crate::Theme, crate::Renderer>
             clipboard,
             shell,
             viewport,
-        )
+        );
     }
 
     fn mouse_interaction(
@@ -435,6 +436,7 @@ impl<'a, Message: Clone + 'static> HeaderBar<'a, Message> {
         if let Some(message) = self.on_maximize.clone() {
             widget = widget.on_release(message);
         }
+
         if let Some(message) = self.on_double_click.clone() {
             widget = widget.on_double_press(message);
         }

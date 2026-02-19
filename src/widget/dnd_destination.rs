@@ -267,7 +267,7 @@ impl<Message: 'static> Widget<Message, crate::Theme, crate::Renderer>
     }
 
     fn diff(&mut self, tree: &mut Tree) {
-        tree.children[0].diff(self.container.as_widget_mut());
+        tree.diff_children(std::slice::from_mut(&mut self.container));
     }
 
     fn state(&self) -> iced_core::widget::tree::State {
@@ -313,7 +313,7 @@ impl<Message: 'static> Widget<Message, crate::Theme, crate::Renderer>
         shell: &mut Shell<'_, Message>,
         viewport: &Rectangle,
     ) {
-        let s = self.container.as_widget_mut().update(
+        self.container.as_widget_mut().update(
             &mut tree.children[0],
             event,
             layout,
