@@ -392,7 +392,7 @@ impl Context {
                     }
                 }),
             )
-            .width(Length::Shrink)
+            .width(Length::Fill)
             .height(Length::Shrink)
             .align_x(horizontal_align)
             .align_y(vertical_align),
@@ -584,6 +584,7 @@ pub fn run<App: Application>(flags: App::Flags) -> iced::Result {
         BootData(Rc::new(RefCell::new(Some(BootDataInner::<App> {
             flags,
             core,
+            settings: window_settings,
         })))),
         cosmic::Cosmic::update,
         cosmic::Cosmic::view,

@@ -54,8 +54,9 @@ impl widget::menu::Action for Action {
 /// Runs application with these settings
 #[rustfmt::skip]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    // tracing_subscriber::fmt::init();
-    // let _ = tracing_log::LogTracer::init();
+    
+    env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("warn")).init();
+
 
     let input = vec![
         (Page::Page1, "🖖 Hello from libcosmic.".into()),
@@ -66,9 +67,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let settings = Settings::default()
         .size(Size::new(1024., 768.));
-
-    cosmic::app::run::<App>(settings, input)?;
-
+    cosmic::app::run::<App>(settings, input).unwrap();
     Ok(())
 }
 

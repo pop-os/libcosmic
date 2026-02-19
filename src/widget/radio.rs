@@ -165,7 +165,7 @@ where
     }
 
     fn diff(&mut self, tree: &mut Tree) {
-        tree.children[0].diff(&mut self.label);
+        tree.diff_children(std::slice::from_mut(&mut self.label));
     }
     fn size(&self) -> Size<Length> {
         Size {

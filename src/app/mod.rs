@@ -12,6 +12,7 @@ use cosmic_config::CosmicConfigEntry;
 pub mod context_drawer;
 pub use context_drawer::{ContextDrawer, context_drawer};
 use iced::application::BootFn;
+use iced_core::Widget;
 pub mod cosmic;
 pub mod settings;
 
@@ -93,6 +94,7 @@ pub(crate) fn iced_settings<App: Application>(
 pub(crate) struct BootDataInner<A: crate::app::Application> {
     pub flags: A::Flags,
     pub core: Core,
+    pub settings: window::Settings,
 }
 
 pub(crate) struct BootData<A: crate::app::Application>(pub Rc<RefCell<Option<BootDataInner<A>>>>);
@@ -102,8 +104,23 @@ impl<A: crate::app::Application> BootFn<cosmic::Cosmic<A>, crate::Action<A::Mess
 {
     fn boot(&self) -> (cosmic::Cosmic<A>, iced::Task<crate::Action<A::Message>>) {
         let mut data = self.0.borrow_mut();
-        let data = data.take().unwrap();
-        cosmic::Cosmic::<A>::init((data.core, data.flags))
+        let mut data = data.take().unwrap();
+        let mut tasks = Vec::new();
+        #[cfg(feature = "multi-window")]
+        if data.core.main_window_id().is_some() {
+            let window_task = iced_runtime::task::oneshot(|channel| {
+                iced_runtime::Action::Window(iced_runtime::window::Action::Open(
+                    window::Id::RESERVED,
+                    data.settings,
+                    channel,
+                ))
+            });
+            data.core.set_main_window_id(Some(window::Id::RESERVED));
+            tasks.push(window_task.discard());
+        }
+        let (a, t) = cosmic::Cosmic::<A>::init((data.core, data.flags));
+        tasks.push(t);
+        (a, Task::batch(tasks))
     }
 }
 /// Launch a COSMIC application with the given [`Settings`].
@@ -127,6 +144,7 @@ pub fn run<App: Application>(settings: Settings, flags: App::Flags) -> iced::Res
             BootData(Rc::new(RefCell::new(Some(BootDataInner::<App> {
                 flags,
                 core,
+                settings: window_settings.clone(),
             })))),
             cosmic::Cosmic::update,
             cosmic::Cosmic::view,
@@ -147,10 +165,11 @@ pub fn run<App: Application>(settings: Settings, flags: App::Flags) -> iced::Res
             // app = app.window(window_settings);
             core.main_window = Some(iced_core::window::Id::RESERVED);
         }
-        let mut app = iced::daemon(
+        let app = iced::daemon(
             BootData(Rc::new(RefCell::new(Some(BootDataInner::<App> {
                 flags,
                 core,
+                settings: window_settings,
             })))),
             cosmic::Cosmic::update,
             cosmic::Cosmic::view,
@@ -240,6 +259,7 @@ where
                 BootData(Rc::new(RefCell::new(Some(BootDataInner::<App> {
                     flags,
                     core,
+                    settings: window_settings.clone(),
                 })))),
                 cosmic::Cosmic::update,
                 cosmic::Cosmic::view,
@@ -263,6 +283,7 @@ where
                 BootData(Rc::new(RefCell::new(Some(BootDataInner::<App> {
                     flags,
                     core,
+                    settings: window_settings,
                 })))),
                 cosmic::Cosmic::update,
                 cosmic::Cosmic::view,
@@ -700,7 +721,7 @@ impl<App: Application> ApplicationExt for App {
                                 [0, 0, 0, 0]
                             })
                             .into(),
-                        )
+                        );
                     } else {
                         //TODO: this element is added to workaround state issues
                         widgets.push(space::horizontal().width(Length::Shrink).into());
@@ -710,6 +731,7 @@ impl<App: Application> ApplicationExt for App {
 
             widgets
         });
+
         let content_col = crate::widget::column::with_capacity(2)
             .push(content_row)
             .push_maybe(self.footer().map(|footer| {

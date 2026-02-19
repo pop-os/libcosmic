@@ -127,7 +127,7 @@ where
         renderer: &Renderer,
         limits: &layout::Limits,
     ) -> layout::Node {
-        let tree = content_tree_mut(tree);
+        let tree = &mut tree.children[0];
         self.content.as_widget_mut().layout(tree, renderer, limits)
     }
 
@@ -138,19 +138,9 @@ where
         renderer: &Renderer,
         operation: &mut dyn Operation,
     ) {
-        operation.container(Some(&self.id), layout.bounds());
-        operation.traverse(&mut |operation| {
-            self.content.as_widget_mut().operate(
-                tree,
-                layout
-                    .children()
-                    .next()
-                    .unwrap()
-                    .with_virtual_offset(layout.virtual_offset()),
-                renderer,
-                operation,
-            );
-        });
+        self.content
+            .as_widget_mut()
+            .operate(content_tree_mut(tree), layout, renderer, operation);
     }
 
     fn update(
@@ -183,7 +173,7 @@ where
         }
 
         self.content.as_widget_mut().update(
-            content_tree_mut(tree),
+            &mut tree.children[0],
             event,
             layout,
             cursor_position,
@@ -265,7 +255,6 @@ where
             overlay_position.y = overlay_position.y.round();
             translation.x += overlay_position.x;
             translation.y += overlay_position.y;
-
             Some(overlay::Element::new(Box::new(Overlay {
                 tree: &mut tree.children[1],
                 content: popup,
@@ -275,7 +264,7 @@ where
             })))
         } else {
             self.content.as_widget_mut().overlay(
-                content_tree_mut(tree),
+                &mut tree.children[0],
                 layout,
                 renderer,
                 viewport,
