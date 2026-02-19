@@ -246,7 +246,7 @@ where
         if let Some(text) = self.model.text.get(key) {
             let font = if self.button_is_focused(state, key) {
                 self.font_active
-            } else if state.show_context.is_some() || self.button_is_hovered(state, key) {
+            } else if state.show_context == Some(key) || self.button_is_hovered(state, key) {
                 self.font_hovered
             } else if self.model.is_active(key) {
                 self.font_active
