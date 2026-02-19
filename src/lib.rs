@@ -18,6 +18,8 @@ pub use apply::{Also, Apply};
 pub mod action;
 pub use action::Action;
 
+pub mod anim;
+
 #[cfg(feature = "winit")]
 pub mod app;
 #[cfg(feature = "winit")]

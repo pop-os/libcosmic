@@ -57,7 +57,7 @@ where
     }
 
     fn diff(&mut self, tree: &mut Tree) {
-        tree.children[0].diff(&mut self.content);
+        tree.diff_children(std::slice::from_mut(&mut self.content));
     }
 
     fn size(&self) -> iced_core::Size<Length> {
@@ -88,7 +88,7 @@ where
         operation.container(Some(&self.id), layout.bounds());
         operation.traverse(&mut |operation| {
             self.content.as_widget_mut().operate(
-                tree,
+                &mut tree.children[0],
                 layout
                     .children()
                     .next()
@@ -124,7 +124,7 @@ where
             clipboard,
             shell,
             viewport,
-        )
+        );
     }
 
     fn mouse_interaction(

@@ -13,6 +13,7 @@ pub struct Window {
     core: Core,
     popup: Option<Id>,
     example_row: bool,
+    toggle: bool,
     selected: Option<usize>,
 }
 
@@ -22,6 +23,7 @@ impl Default for Window {
             core: Core::default(),
             popup: None,
             example_row: false,
+            toggle: false,
             selected: None,
         }
     }
@@ -33,6 +35,7 @@ pub enum Message {
     ToggleExampleRow(bool),
     Selected(usize),
     Surface(cosmic::surface::Action),
+    Toggle(bool),
 }
 
 impl cosmic::Application for Window {
@@ -71,7 +74,6 @@ impl cosmic::Application for Window {
             Message::ToggleExampleRow(toggled) => {
                 self.example_row = toggled;
             }
-
             Message::Surface(a) => {
                 return cosmic::task::message(cosmic::Action::Cosmic(
                     cosmic::app::Action::Surface(a),
@@ -79,6 +81,9 @@ impl cosmic::Application for Window {
             }
             Message::Selected(i) => {
                 self.selected = Some(i);
+            }
+            Message::Toggle(v) => {
+                self.toggle = v;
             }
         };
         Task::none()
@@ -123,9 +128,9 @@ impl cosmic::Application for Window {
                                     "Example row",
                                     cosmic::widget::container(
                                         toggler(state.example_row)
-                                            .on_toggle(|value| Message::ToggleExampleRow(value)),
-                                    )
-                                    .height(Length::Fixed(50.)),
+                                            .on_toggle(Message::ToggleExampleRow)
+                                            .width(Length::Fill),
+                                    ),
                                 ))
                                 .add(popup_dropdown(
                                     &["1", "asdf", "hello", "test"],
@@ -155,7 +160,7 @@ impl cosmic::Application for Window {
         "oops".into()
     }
 
-    fn style(&self) -> Option<cosmic::iced_runtime::Appearance> {
+    fn style(&self) -> Option<cosmic::iced_core::theme::Style> {
         Some(cosmic::applet::style())
     }
 }

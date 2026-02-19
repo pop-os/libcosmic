@@ -357,7 +357,6 @@ impl<'a, Message: 'a + Clone> Widget<Message, crate::Theme, crate::Renderer>
                 operation,
             );
         });
-        let state = tree.state.downcast_mut::<State>();
     }
 
     fn update(

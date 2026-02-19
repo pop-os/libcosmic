@@ -127,6 +127,10 @@ pub use color_picker::{ColorPicker, ColorPickerModel};
 #[doc(inline)]
 pub use iced::widget::qr_code;
 
+mod cards;
+#[doc(inline)]
+pub use cards::cards;
+
 pub mod context_drawer;
 #[doc(inline)]
 pub use context_drawer::{ContextDrawer, context_drawer};

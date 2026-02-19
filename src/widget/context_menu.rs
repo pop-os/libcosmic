@@ -249,7 +249,7 @@ impl<Message: 'static + Clone> Widget<Message, crate::Theme, crate::Renderer>
     }
 
     fn diff(&mut self, tree: &mut Tree) {
-        tree.children[0].diff(self.content.as_widget_mut());
+        tree.diff_children(std::slice::from_mut(&mut self.content));
         let state = tree.state.downcast_mut::<LocalState>();
         state.menu_bar_state.inner.with_data_mut(|inner| {
             menu_roots_diff(self.context_menu.as_mut().unwrap(), &mut inner.tree);

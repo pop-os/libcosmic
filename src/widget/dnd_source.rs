@@ -131,21 +131,25 @@ impl<
         );
     }
 
+    #[must_use]
     pub fn on_start(mut self, on_start: Option<Message>) -> Self {
         self.on_start = on_start;
         self
     }
 
+    #[must_use]
     pub fn on_cancel(mut self, on_cancelled: Option<Message>) -> Self {
         self.on_cancelled = on_cancelled;
         self
     }
 
+    #[must_use]
     pub fn on_finish(mut self, on_finish: Option<Message>) -> Self {
         self.on_finish = on_finish;
         self
     }
 
+    #[must_use]
     pub fn window(mut self, window: window::Id) -> Self {
         self.window = Some(window);
         self
@@ -164,7 +168,7 @@ impl<Message: Clone + 'static, D: iced::clipboard::mime::AsMimeTypes + std::mark
     }
 
     fn diff(&mut self, tree: &mut Tree) {
-        tree.children[0].diff(self.container.as_widget_mut());
+        tree.diff_children(std::slice::from_mut(&mut self.container));
     }
 
     fn state(&self) -> iced_core::widget::tree::State {
@@ -197,19 +201,15 @@ impl<Message: Clone + 'static, D: iced::clipboard::mime::AsMimeTypes + std::mark
         renderer: &crate::Renderer,
         operation: &mut dyn Operation,
     ) {
-        operation.container(Some(&self.id), layout.bounds());
-        operation.traverse(&mut |operation| {
-            self.container.as_widget_mut().operate(
-                tree,
-                layout
-                    .children()
-                    .next()
-                    .unwrap()
-                    .with_virtual_offset(layout.virtual_offset()),
-                renderer,
-                operation,
-            );
-        });
+        operation.custom(
+            Some(&self.id),
+            layout.bounds(),
+            (&mut tree.state) as &mut dyn Any,
+        );
+
+        self.container
+            .as_widget_mut()
+            .operate(&mut tree.children[0], layout, renderer, operation);
     }
 
     fn update(
@@ -223,9 +223,9 @@ impl<Message: Clone + 'static, D: iced::clipboard::mime::AsMimeTypes + std::mark
         shell: &mut Shell<'_, Message>,
         viewport: &Rectangle,
     ) {
-        let ret = self.container.as_widget_mut().update(
+        self.container.as_widget_mut().update(
             &mut tree.children[0],
-            &event,
+            event,
             layout,
             cursor,
             renderer,
@@ -241,12 +241,11 @@ impl<Message: Clone + 'static, D: iced::clipboard::mime::AsMimeTypes + std::mark
                 mouse::Event::ButtonPressed(mouse::Button::Left) => {
                     if let Some(position) = cursor.position() {
                         if !state.hovered {
-                            return ret;
+                            return;
                         }
 
                         state.left_pressed_position = Some(position);
                         shell.capture_event();
-                        return;
                     }
                 }
                 mouse::Event::ButtonReleased(mouse::Button::Left)
@@ -254,7 +253,6 @@ impl<Message: Clone + 'static, D: iced::clipboard::mime::AsMimeTypes + std::mark
                 {
                     state.left_pressed_position = None;
                     shell.capture_event();
-                    return;
                 }
                 mouse::Event::CursorMoved { .. } => {
                     if let Some(position) = cursor.position() {
@@ -262,7 +260,7 @@ impl<Message: Clone + 'static, D: iced::clipboard::mime::AsMimeTypes + std::mark
                             // We ignore motion if we do not possess drag content by now.
                             if self.drag_content.is_none() {
                                 state.left_pressed_position = None;
-                                return ret;
+                                return;
                             }
                             if let Some(left_pressed_position) = state.left_pressed_position {
                                 if position.distance(left_pressed_position) > self.drag_threshold {
@@ -281,16 +279,15 @@ impl<Message: Clone + 'static, D: iced::clipboard::mime::AsMimeTypes + std::mark
                             if !cursor.is_over(layout.bounds()) {
                                 state.hovered = false;
 
-                                return ret;
+                                return;
                             }
                         } else if cursor.is_over(layout.bounds()) {
                             state.hovered = true;
                         }
                         shell.capture_event();
-                        return;
                     }
                 }
-                _ => return ret,
+                _ => (),
             },
             Event::Dnd(DndEvent::Source(SourceEvent::Cancelled)) => {
                 if state.is_dragging {
@@ -301,7 +298,6 @@ impl<Message: Clone + 'static, D: iced::clipboard::mime::AsMimeTypes + std::mark
                     shell.capture_event();
                     return;
                 }
-                return ret;
             }
             Event::Dnd(DndEvent::Source(SourceEvent::Finished)) => {
                 if state.is_dragging {
@@ -312,11 +308,9 @@ impl<Message: Clone + 'static, D: iced::clipboard::mime::AsMimeTypes + std::mark
                     shell.capture_event();
                     return;
                 }
-                return ret;
             }
-            _ => return ret,
+            _ => (),
         }
-        ret
     }
 
     fn mouse_interaction(

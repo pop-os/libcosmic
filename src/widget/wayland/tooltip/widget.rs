@@ -240,7 +240,7 @@ impl<'a, Message: 'static + Clone, TopLevelMessage: 'static + Clone>
         operation.container(Some(&self.id), layout.bounds());
         operation.traverse(&mut |operation| {
             self.content.as_widget_mut().operate(
-                tree,
+                &mut tree.children[0],
                 layout
                     .children()
                     .next()

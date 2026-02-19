@@ -13,6 +13,8 @@ env_logger = "0.10.2"
 log = "0.4.29"
 
 [dependencies.libcosmic]
+# path = "../../"
+branch = "iced-rebase"
 git = "https://github.com/pop-os/libcosmic"
 default-features = false
 features = ["applet-token"]

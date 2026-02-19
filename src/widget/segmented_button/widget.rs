@@ -2047,6 +2047,9 @@ where
             bounds.y = center_y;
 
             if self.model.text(key).is_some_and(|text| !text.is_empty()) {
+                // FIXME why has this behavior changed? Does the center alignment not work with infinite bounds now?
+                bounds.y -= state.paragraphs[key].min_height() / 2.;
+
                 // Draw the text for this segmented button or tab.
                 renderer.fill_paragraph(
                     state.paragraphs[key].raw(),
@@ -2055,7 +2058,9 @@ where
                     Rectangle {
                         x: bounds.x,
                         width: bounds.width,
-                        ..original_bounds
+                        height: original_bounds.height,
+                        y: bounds.y,
+                        //  ..original_bounds,
                     },
                 );
             }
