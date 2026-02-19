@@ -1,5 +1,6 @@
 # Context Drawer
 close = Schließen
+
 # About
 license = Lizenz
 links = Links
@@ -8,6 +9,7 @@ designers = Designer*innen
 artists = Künstler*innen
 translators = Übersetzer*innen
 documenters = Dokumentierer*innen
+
 # Calendar
 january = Januar { $year }
 february = Februar { $year }
@@ -21,10 +23,17 @@ september = September { $year }
 october = Oktober { $year }
 november = November { $year }
 december = Dezember { $year }
-monday = Mo
-tuesday = Di
-wednesday = Mi
-thursday = Do
-friday = Fr
-saturday = Sa
-sunday = So
+monday = Montag
+mon = Mo
+tuesday = Dienstag
+tue = Di
+wednesday = Mittwoch
+wed = Mi
+thursday = Donnerstag
+thu = Do
+friday = Freitag
+fri = Fr
+saturday = Samsstag
+sat = Sa
+sunday = Sonntag
+sun = So
