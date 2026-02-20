@@ -34,6 +34,7 @@ pub struct Toggler<'a, Message> {
     spacing: f32,
     font: Option<crate::font::Font>,
     duration: Duration,
+    ellipsize: text::Ellipsize,
 }
 
 impl<'a, Message> Toggler<'a, Message> {
@@ -63,6 +64,7 @@ impl<'a, Message> Toggler<'a, Message> {
             spacing: 0.0,
             font: None,
             duration: Duration::from_millis(200),
+            ellipsize: text::Ellipsize::None,
         }
     }
 
@@ -105,6 +107,12 @@ impl<'a, Message> Toggler<'a, Message> {
     /// Sets the spacing between the [`Toggler`] and the text.
     pub fn spacing(mut self, spacing: impl Into<Pixels>) -> Self {
         self.spacing = spacing.into().0;
+        self
+    }
+
+    /// Sets the [`text::Ellipsize`] strategy of the [`Toggler`].
+    pub fn ellipsize(mut self, ellipsize: text::Ellipsize) -> Self {
+        self.ellipsize = ellipsize;
         self
     }
 
@@ -188,6 +196,7 @@ impl<'a, Message> Widget<Message, crate::Theme, crate::Renderer> for Toggler<'a,
                             align_y: alignment::Vertical::Top,
                             shaping: self.text_shaping,
                             wrapping: crate::iced_core::text::Wrapping::default(),
+                            ellipsize: self.ellipsize,
                         },
                     );
                     match self.width {
