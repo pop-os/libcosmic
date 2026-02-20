@@ -49,6 +49,11 @@ desktop = [
 ]
 # Enables launching desktop files inside systemd scopes
 desktop-systemd-scope = ["desktop", "dep:zbus"]
+# Enables launching desktop files via systemd transient services.
+# This is preferred over scopes as systemd becomes the direct parent,
+# which satisfies security tools that verify process lineage.
+# If both this and desktop-systemd-scope are enabled, service is tried first.
+desktop-systemd-service = ["desktop", "dep:zbus"]
 # Enables keycode serialization
 serde-keycode = ["iced_core/serde"]
 # Prevents multiple separate process instances.
