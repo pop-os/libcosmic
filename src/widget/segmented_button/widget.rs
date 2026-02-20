@@ -2073,7 +2073,7 @@ where
         _renderer: &Renderer,
         translation: Vector,
     ) -> Option<iced_core::overlay::Element<'b, Message, crate::Theme, Renderer>> {
-        let state = tree.state.downcast_ref::<LocalState>();
+        let state = tree.state.downcast_mut::<LocalState>();
         let menu_state = state.menu_state.clone();
 
         let entity = state.show_context?;
@@ -2089,6 +2089,12 @@ where
 
         if !menu_state.inner.with_data(|data| data.open) {
             // If the menu is not open, we don't need to show it.
+            // We also clear the context entity and update the text
+            // cache so that the item is not bold when the context menu is closed
+            state.show_context = None;
+            for key in self.model.order.iter().copied() {
+                self.update_entity_paragraph(state, key);
+            }
             return None;
         }
         bounds.x = state.context_cursor.x;
