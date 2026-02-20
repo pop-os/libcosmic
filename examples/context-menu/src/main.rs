@@ -122,19 +122,21 @@ impl App {
         Some(menu::items(
             &HashMap::new(),
             vec![
-                menu::Item::Button("New window", None, ContextMenuAction::WindowNew),
-                menu::Item::Divider,
-                menu::Item::Folder(
+                menu::Item::button("New window", None, ContextMenuAction::WindowNew),
+                menu::Item::divider(),
+                menu::Item::folder(
                     "View",
-                    vec![menu::Item::CheckBox(
+                    vec![menu::Item::checkbox(
                         "Hide content",
                         None,
                         self.hide_content,
                         ContextMenuAction::ToggleHideContent,
                     )],
-                ),
-                menu::Item::Divider,
-                menu::Item::Button("Quit", None, ContextMenuAction::WindowClose),
+                )
+                .width(200)
+                .min_width(180),
+                menu::Item::divider(),
+                menu::Item::button("Quit", None, ContextMenuAction::WindowClose),
             ],
         ))
     }

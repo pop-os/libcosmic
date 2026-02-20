@@ -212,7 +212,7 @@ impl cosmic::Application for App {
                     .item_context(move |item| {
                         Some(widget::menu::items(
                             &HashMap::new(),
-                            vec![widget::menu::Item::Button(
+                            vec![widget::menu::Item::button(
                                 format!("Action on {}", item.name.to_string()),
                                 None,
                                 Action::None,
@@ -227,7 +227,7 @@ impl cosmic::Application for App {
                     .item_context(|item| {
                         Some(widget::menu::items(
                             &HashMap::new(),
-                            vec![widget::menu::Item::Button(
+                            vec![widget::menu::Item::button(
                                 format!("Action on {}", item.name),
                                 None,
                                 Action::None,
@@ -238,12 +238,12 @@ impl cosmic::Application for App {
                         Some(widget::menu::items(
                             &HashMap::new(),
                             vec![
-                                widget::menu::Item::Button(
+                                widget::menu::Item::button(
                                     format!("Action on {} category", category.to_string()),
                                     None,
                                     Action::None,
                                 ),
-                                widget::menu::Item::Button(
+                                widget::menu::Item::button(
                                     format!("Other action on {} category", category.to_string()),
                                     None,
                                     Action::None,

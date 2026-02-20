@@ -236,26 +236,26 @@ impl cosmic::Application for App {
                 (
                     "hi 1".into(),
                     vec![
-                        menu::Item::Button("hi 12", None, Action::Hi),
-                        menu::Item::Button("hi 13", None, Action::Hi2),
+                        menu::Item::button("hi 12", None, Action::Hi),
+                        menu::Item::button("hi 13", None, Action::Hi2),
                     ],
                 ),
                 (
                     "hi 2".into(),
                     vec![
-                        menu::Item::Button("hi 21", None, Action::Hi),
-                        menu::Item::Button("hi 22", None, Action::Hi2),
-                        menu::Item::Folder(
+                        menu::Item::button("hi 21", None, Action::Hi),
+                        menu::Item::button("hi 22", None, Action::Hi2),
+                        menu::Item::folder(
                             "nest 3 2 >".into(),
                             vec![
-                                menu::Item::Button("21", None, Action::Hi),
-                                menu::Item::Button("242", None, Action::Hi2),
-                                menu::Item::Button("2443", None, Action::Hi3),
-                                menu::Item::Folder(
+                                menu::Item::button("21", None, Action::Hi),
+                                menu::Item::button("242", None, Action::Hi2),
+                                menu::Item::button("2443", None, Action::Hi3),
+                                menu::Item::folder(
                                     "nest 4 2 >".into(),
                                     vec![
-                                        menu::Item::Button("243", None, Action::Hi2),
-                                        menu::Item::Button("2444", None, Action::Hi),
+                                        menu::Item::button("243", None, Action::Hi2),
+                                        menu::Item::button("2444", None, Action::Hi),
                                     ],
                                 ),
                             ],
@@ -265,34 +265,34 @@ impl cosmic::Application for App {
                 (
                     "hi 3".into(),
                     vec![
-                        menu::Item::Button("hi 31", None, Action::Hi),
-                        menu::Item::Button("hi 332", None, Action::Hi2),
-                        menu::Item::Button("hi 3333", None, Action::Hi3),
-                        menu::Item::Button("hi 33334", None, Action::Hi3),
-                        menu::Item::Button("hi 333335", None, Action::Hi3),
-                        menu::Item::Button("hi 3333336", None, Action::Hi3),
+                        menu::Item::button("hi 31", None, Action::Hi),
+                        menu::Item::button("hi 332", None, Action::Hi2),
+                        menu::Item::button("hi 3333", None, Action::Hi3),
+                        menu::Item::button("hi 33334", None, Action::Hi3),
+                        menu::Item::button("hi 333335", None, Action::Hi3),
+                        menu::Item::button("hi 3333336", None, Action::Hi3),
                     ],
                 ),
                 (
                     "hiiiiiiiiiiiiiiiiiii 4".into(),
                     vec![
-                        menu::Item::Button("hi 4", None, Action::Hi),
-                        menu::Item::Button("hi 44", None, Action::Hi2),
-                        menu::Item::Button("hi 444", None, Action::Hi3),
-                        menu::Item::Folder(
+                        menu::Item::button("hi 4", None, Action::Hi),
+                        menu::Item::button("hi 44", None, Action::Hi2),
+                        menu::Item::button("hi 444", None, Action::Hi3),
+                        menu::Item::folder(
                             "nest 4 >".into(),
                             vec![
-                                menu::Item::Button("hi 41", None, Action::Hi),
-                                menu::Item::Button("hi 442", None, Action::Hi2),
-                                menu::Item::Folder(
+                                menu::Item::button("hi 41", None, Action::Hi),
+                                menu::Item::button("hi 442", None, Action::Hi2),
+                                menu::Item::folder(
                                     "nest 3 4 >".into(),
                                     vec![
-                                        menu::Item::Button("hi 443", None, Action::Hi2),
-                                        menu::Item::Button("hi 4444", None, Action::Hi),
-                                        menu::Item::Button("hi 44444", None, Action::Hi3),
-                                        menu::Item::Button("hi 444445", None, Action::Hi3),
-                                        menu::Item::Button("hi 4444446", None, Action::Hi3),
-                                        menu::Item::Button("hi 44444447", None, Action::Hi3),
+                                        menu::Item::button("hi 443", None, Action::Hi2),
+                                        menu::Item::button("hi 4444", None, Action::Hi),
+                                        menu::Item::button("hi 44444", None, Action::Hi3),
+                                        menu::Item::button("hi 444445", None, Action::Hi3),
+                                        menu::Item::button("hi 4444446", None, Action::Hi3),
+                                        menu::Item::button("hi 44444447", None, Action::Hi3),
                                     ],
                                 ),
                             ],
