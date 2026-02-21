@@ -230,6 +230,10 @@ where
                 iced_winit::commands::popup::destroy_popup(id)
             }
             #[cfg(feature = "wayland")]
+            crate::surface::Action::DestroyTooltipPopup => {
+                iced_winit::commands::popup::destroy_popup(*crate::applet::TOOLTIP_WINDOW_ID)
+            }
+            #[cfg(feature = "wayland")]
             crate::surface::Action::DestroySubsurface(id) => {
                 iced_winit::commands::subsurface::destroy_subsurface(id)
             }

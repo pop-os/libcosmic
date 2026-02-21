@@ -40,7 +40,7 @@ static AUTOSIZE_ID: LazyLock<iced::id::Id> =
 static AUTOSIZE_MAIN_ID: LazyLock<iced::id::Id> =
     LazyLock::new(|| iced::id::Id::new("cosmic-applet-autosize-main"));
 static TOOLTIP_ID: LazyLock<crate::widget::Id> = LazyLock::new(|| iced::id::Id::new("subsurface"));
-static TOOLTIP_WINDOW_ID: LazyLock<window::Id> = LazyLock::new(window::Id::unique);
+pub(crate) static TOOLTIP_WINDOW_ID: LazyLock<window::Id> = LazyLock::new(window::Id::unique);
 
 #[derive(Debug, Clone)]
 pub struct Context {
