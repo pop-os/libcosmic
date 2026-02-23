@@ -95,7 +95,7 @@ where
         limits: &layout::Limits,
     ) -> layout::Node {
         let state = tree.state.downcast_mut::<State>();
-        let unrestricted_size = self.size.unwrap_or_else(|| {
+        let mut unrestricted_size = self.size.unwrap_or_else(|| {
             let node =
                 self.content
                     .as_widget_mut()
@@ -103,21 +103,45 @@ where
             node.size()
         });
 
-        let max_size = limits.max();
-        let old_max = state.limits.max();
-        state.needs_update = (unrestricted_size.width > max_size.width)
-            ^ (state.size.width > old_max.width)
-            || (unrestricted_size.height > max_size.height) ^ (state.size.height > old_max.height);
-        if state.needs_update {
-            state.limits = *limits;
-            state.size = unrestricted_size;
-        }
+        let cur_unrestricted_size = {
+            let node =
+                self.content
+                    .as_widget_mut()
+                    .layout(&mut tree.children[0], renderer, &Limits::NONE);
+            node.size()
+        };
 
+        let max_size = limits.max();
+
+        let old_max = state.limits.max();
+
+        state.needs_update = (cur_unrestricted_size.width > max_size.width)
+            || (cur_unrestricted_size.width > old_max.width)
+            || (cur_unrestricted_size.height > max_size.height)
+            || (cur_unrestricted_size.height > old_max.height)
+            || ((unrestricted_size.width <= max_size.width)
+                && (unrestricted_size.height <= max_size.height)
+                && (unrestricted_size.width - cur_unrestricted_size.width > 1.
+                    || unrestricted_size.height - cur_unrestricted_size.height > 1.));
+
+        if unrestricted_size.width < cur_unrestricted_size.width {
+            state.needs_update = true;
+            unrestricted_size.width = cur_unrestricted_size.width;
+        } else if unrestricted_size.height < cur_unrestricted_size.height {
+            state.needs_update = true;
+            unrestricted_size.height = cur_unrestricted_size.height;
+        }
         let node = self
             .content
             .as_widget_mut()
             .layout(&mut tree.children[0], renderer, limits);
         let size = node.size();
+
+        if state.needs_update {
+            state.limits = *limits;
+            state.size = unrestricted_size;
+        }
+
         layout::Node::with_children(size, vec![node])
     }
 

@@ -11,8 +11,9 @@ wayland = ["libcosmic/wayland"]
 env_logger = "0.11"
 
 [dependencies.libcosmic]
-git = "https://github.com/pop-os/libcosmic"
-branch = "iced-rebase"
+# git = "https://github.com/pop-os/libcosmic"
+# branch = "iced-rebase"
+path = "../.."
 features = [
     "debug",
     "winit",

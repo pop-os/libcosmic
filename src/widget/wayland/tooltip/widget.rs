@@ -263,7 +263,7 @@ impl<'a, Message: 'static + Clone, TopLevelMessage: 'static + Clone>
         shell: &mut Shell<'_, Message>,
         viewport: &Rectangle,
     ) {
-        let status = update(
+        update(
             self.id.clone(),
             event.clone(),
             layout,

@@ -234,6 +234,7 @@ impl Context {
             })
             .width(Length::Fixed(suggested.0 as f32))
             .height(Length::Fixed(suggested.1 as f32));
+        dbg!(suggested);
         self.button_from_element(icon, symbolic)
     }
 
@@ -250,6 +251,7 @@ impl Context {
             (applet_padding_minor_axis, applet_padding_major_axis)
         };
 
+        dbg!(suggested.0 + 2 * horizontal_padding);
         crate::widget::button::custom(layer_container(content).center(Length::Fill))
             .width(Length::Fixed((suggested.0 + 2 * horizontal_padding) as f32))
             .height(Length::Fixed((suggested.1 + 2 * vertical_padding) as f32))
