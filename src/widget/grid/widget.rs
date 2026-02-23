@@ -189,22 +189,23 @@ impl<Message: 'static + Clone> Widget<Message, crate::Theme, Renderer> for Grid<
         shell: &mut Shell<'_, Message>,
         viewport: &Rectangle,
     ) {
-        self.children
+        for ((child, state), c_layout) in self
+            .children
             .iter_mut()
             .zip(&mut tree.children)
             .zip(layout.children())
-            .map(|((child, state), c_layout)| {
-                child.as_widget_mut().update(
-                    state,
-                    event,
-                    c_layout.with_virtual_offset(layout.virtual_offset()),
-                    cursor,
-                    renderer,
-                    clipboard,
-                    shell,
-                    viewport,
-                )
-            });
+        {
+            child.as_widget_mut().update(
+                state,
+                event,
+                c_layout.with_virtual_offset(layout.virtual_offset()),
+                cursor,
+                renderer,
+                clipboard,
+                shell,
+                viewport,
+            );
+        }
     }
 
     fn mouse_interaction(
