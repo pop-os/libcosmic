@@ -810,21 +810,21 @@ fn process_root_events<Message>(
     shell: &mut Shell<'_, Message>,
     viewport: &Rectangle,
 ) {
-    menu_roots
+    for ((root, t), lo) in menu_roots
         .iter_mut()
         .zip(&mut tree.children)
         .zip(layout.children())
-        .map(|((root, t), lo)| {
-            // assert!(t.tag == tree::Tag::stateless());
-            root.item.update(
-                &mut t.children[root.index],
-                event,
-                lo,
-                view_cursor,
-                renderer,
-                clipboard,
-                shell,
-                viewport,
-            )
-        });
+    {
+        // assert!(t.tag == tree::Tag::stateless());
+        root.item.update(
+            &mut t.children[root.index],
+            event,
+            lo,
+            view_cursor,
+            renderer,
+            clipboard,
+            shell,
+            viewport,
+        );
+    }
 }
