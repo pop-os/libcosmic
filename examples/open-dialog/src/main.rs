@@ -207,7 +207,7 @@ impl cosmic::Application for App {
             );
 
             content.push(
-                iced::widget::vertical_space()
+                iced::widget::space::vertical()
                     .height(Length::Fixed(12.0))
                     .into(),
             );
