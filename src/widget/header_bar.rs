@@ -441,9 +441,9 @@ impl<'a, Message: Clone + 'static> HeaderBar<'a, Message> {
             (portion, portion)
         };
 
-        // SSD uses fixed height 54px with 12px padding; non-SSD uses computed height
+        // SSD uses fixed height 48px with 12px horizontal padding; non-SSD uses computed height
         let (header_height, header_padding) = if self.is_ssd {
-            (Length::Fixed(54.0), [11, 12, 11, 12])
+            (Length::Fixed(48.0), [8, 12, 8, 12])
         } else {
             (
                 Length::Fixed(44.0 + padding[0] as f32 + padding[2] as f32),
