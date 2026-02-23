@@ -445,6 +445,10 @@ impl<'a, Message: Clone + 'static> HeaderBar<'a, Message> {
         std::mem::swap(&mut title, &mut self.title);
 
         widget::text::heading(title)
+            .wrapping(iced_core::text::Wrapping::None)
+            .ellipsize(iced_core::text::Ellipsize::End(
+                iced_core::text::EllipsizeHeightLimit::Lines(1),
+            ))
             .apply(widget::container)
             .center(Length::FillPortion(title_portion))
             .into()
