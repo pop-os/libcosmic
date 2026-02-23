@@ -320,38 +320,25 @@ where
             }
         }
 
-        self.children
+        for (((i, child), state), c_layout) in self
+            .children
             .iter_mut()
             .enumerate()
             .zip(&mut tree.children)
             .zip(layout.children())
-            .map(|(((i, child), state), c_layout)| {
-                let mut cursor_virtual = cursor;
-                if matches!(
-                    event,
-                    Event::Mouse(mouse::Event::CursorMoved { .. } | mouse::Event::CursorEntered)
-                        | Event::Touch(
-                            iced_core::touch::Event::FingerMoved { .. }
-                                | iced_core::touch::Event::FingerPressed { .. }
-                        )
-                ) && cursor.is_over(c_layout.bounds())
-                {
-                    my_state.hovered = Some(i);
-                    return child.as_widget_mut().update(
-                        state,
-                        &event,
-                        c_layout.with_virtual_offset(layout.virtual_offset()),
-                        cursor_virtual,
-                        renderer,
-                        clipboard,
-                        shell,
-                        viewport,
-                    );
-                } else if my_state.hovered.is_some_and(|h| i != h) {
-                    cursor_virtual = mouse::Cursor::Unavailable;
-                }
-
-                child.as_widget_mut().update(
+        {
+            let mut cursor_virtual = cursor;
+            if matches!(
+                event,
+                Event::Mouse(mouse::Event::CursorMoved { .. } | mouse::Event::CursorEntered)
+                    | Event::Touch(
+                        iced_core::touch::Event::FingerMoved { .. }
+                            | iced_core::touch::Event::FingerPressed { .. }
+                    )
+            ) && cursor.is_over(c_layout.bounds())
+            {
+                my_state.hovered = Some(i);
+                return child.as_widget_mut().update(
                     state,
                     &event,
                     c_layout.with_virtual_offset(layout.virtual_offset()),
@@ -360,8 +347,22 @@ where
                     clipboard,
                     shell,
                     viewport,
-                )
-            });
+                );
+            } else if my_state.hovered.is_some_and(|h| i != h) {
+                cursor_virtual = mouse::Cursor::Unavailable;
+            }
+
+            child.as_widget_mut().update(
+                state,
+                &event,
+                c_layout.with_virtual_offset(layout.virtual_offset()),
+                cursor_virtual,
+                renderer,
+                clipboard,
+                shell,
+                viewport,
+            );
+        }
     }
 
     fn mouse_interaction(
