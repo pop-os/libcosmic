@@ -139,6 +139,11 @@ impl<'a, Message> Toggler<'a, Message> {
         self
     }
 
+    pub fn on_toggle_maybe(mut self, on_toggle: Option<impl Fn(bool) -> Message + 'a>) -> Self {
+        self.on_toggle = on_toggle.map(|t| Box::new(t) as _);
+        self
+    }
+
     /// Sets the label of the [`Button`].
     pub fn label(mut self, label: impl Into<Option<String>>) -> Self {
         self.label = label.into();
