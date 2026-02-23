@@ -392,7 +392,6 @@ impl Context {
                     }
                 }),
             )
-            .width(Length::Fill)
             .height(Length::Shrink)
             .align_x(horizontal_align)
             .align_y(vertical_align),
