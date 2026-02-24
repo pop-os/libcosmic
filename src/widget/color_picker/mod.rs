@@ -4,7 +4,6 @@
 //! Widgets for selecting colors with a color picker.
 
 use std::borrow::Cow;
-use std::iter;
 use std::rc::Rc;
 use std::sync::LazyLock;
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -90,8 +89,6 @@ pub struct ColorPickerModel {
     #[setters(skip)]
     active_color: palette::Hsv,
     #[setters(skip)]
-    save_next: Option<Color>,
-    #[setters(skip)]
     input_color: String,
     #[setters(skip)]
     applied_color: Option<Color>,
@@ -125,7 +122,6 @@ impl ColorPickerModel {
                 .insert(move |b| b.text(rgb.clone()))
                 .build(),
             active_color: hsv,
-            save_next: None,
             input_color: color_to_string(hsv, true),
             applied_color: initial,
             fallback_color,
@@ -156,22 +152,26 @@ impl ColorPickerModel {
         )
     }
 
+    fn update_recent_colors(&mut self, new_color: Color) {
+        if let Some(pos) = self.recent_colors.iter().position(|c| *c == new_color) {
+            self.recent_colors.remove(pos);
+        }
+        self.recent_colors.insert(0, new_color);
+        self.recent_colors.truncate(MAX_RECENT);
+    }
+
     pub fn update<Message>(&mut self, update: ColorPickerUpdate) -> Task<Message> {
         match update {
             ColorPickerUpdate::ActiveColor(c) => {
                 self.must_clear_cache.store(true, Ordering::SeqCst);
                 self.input_color = color_to_string(c, self.is_hex());
-                if let Some(to_save) = self.save_next.take() {
-                    self.recent_colors.insert(0, to_save);
-                    self.recent_colors.truncate(MAX_RECENT);
-                }
                 self.active_color = c;
                 self.copied_at = None;
             }
-            ColorPickerUpdate::AppliedColor => {
+            ColorPickerUpdate::AppliedColor | ColorPickerUpdate::ActionFinished => {
                 let srgb = palette::Srgb::from_color(self.active_color);
                 if let Some(applied_color) = self.applied_color.take() {
-                    self.recent_colors.push(applied_color);
+                    self.update_recent_colors(applied_color);
                 }
                 self.applied_color = Some(Color::from(srgb));
                 self.active = false;
@@ -212,21 +212,12 @@ impl ColorPickerModel {
                         palette::Hsv::from_color(palette::Srgb::new(c.red, c.green, c.blue));
                 }
             }
-            ColorPickerUpdate::ActionFinished => {
-                let srgb = palette::Srgb::from_color(self.active_color);
-                if let Some(applied_color) = self.applied_color.take() {
-                    self.recent_colors.push(applied_color);
-                }
-                self.applied_color = Some(Color::from(srgb));
-                self.active = false;
-                self.save_next = Some(Color::from(srgb));
-            }
             ColorPickerUpdate::ToggleColorPicker => {
                 self.must_clear_cache.store(true, Ordering::SeqCst);
                 self.active = !self.active;
                 self.copied_at = None;
             }
-        };
+        }
         Task::none()
     }
 
@@ -392,7 +383,8 @@ where
             text_input("", self.input_color)
                 .on_input(move |s| on_update(ColorPickerUpdate::Input(s)))
                 .on_paste(move |s| on_update(ColorPickerUpdate::Input(s)))
-                .on_submit(move |_| on_update(ColorPickerUpdate::AppliedColor))
+                .on_submit(move |_| on_update(ColorPickerUpdate::ActionFinished))
+                // .on_unfocus(on_update(ColorPickerUpdate::ActionFinished)) Somehow this is called even when the field wasn't previously focused
                 .leading_icon(
                     color_button(
                         None,
@@ -733,7 +725,7 @@ where
                     state.dragging = false;
                 }
                 _ => return event::Status::Ignored,
-            };
+            }
             return event::Status::Captured;
         }
 
