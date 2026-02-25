@@ -1123,6 +1123,14 @@ pub fn select_all<Message: 'static>(id: Id) -> Task<Message> {
     task::effect(Action::widget(operation::text_input::select_all(id)))
 }
 
+/// Produces a [`Task`] that selects a range of the content of the [`TextInput`] with the given
+/// [`Id`].
+pub fn select_range<Message: 'static>(id: Id, start: usize, end: usize) -> Task<Message> {
+    task::effect(Action::widget(operation::text_input::select_range(
+        id, start, end,
+    )))
+}
+
 /// Computes the layout of a [`TextInput`].
 #[allow(clippy::cast_precision_loss)]
 #[allow(clippy::too_many_arguments)]
@@ -2756,6 +2764,12 @@ impl State {
         self.cursor.select_range(0, usize::MAX);
     }
 
+    /// Selects a range of the content of the [`TextInput`].
+    #[inline]
+    pub fn select_range(&mut self, start: usize, end: usize) {
+        self.cursor.select_range(start, end);
+    }
+
     pub(super) fn setting_selection(&mut self, value: &Value, bounds: Rectangle<f32>, target: f32) {
         let position = if target > 0.0 {
             find_cursor_position(bounds, value, self, target)
@@ -2810,6 +2824,11 @@ impl operation::TextInput for State {
     #[inline]
     fn select_all(&mut self) {
         Self::select_all(self);
+    }
+
+    #[inline]
+    fn select_range(&mut self, start: usize, end: usize) {
+        Self::select_range(self, start, end);
     }
 }
 
