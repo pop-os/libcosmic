@@ -238,7 +238,7 @@ impl<Message: Clone> Widget<Message, crate::Theme, Renderer> for ContextDrawer<'
             clipboard,
             shell,
             viewport,
-        )
+        );
     }
 
     fn mouse_interaction(
