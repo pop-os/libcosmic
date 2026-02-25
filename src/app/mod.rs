@@ -12,7 +12,6 @@ use cosmic_config::CosmicConfigEntry;
 pub mod context_drawer;
 pub use context_drawer::{ContextDrawer, context_drawer};
 use iced::application::BootFn;
-use iced_core::Widget;
 pub mod cosmic;
 pub mod settings;
 

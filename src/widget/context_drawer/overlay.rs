@@ -8,7 +8,7 @@ use iced::advanced::widget::{self, Operation};
 use iced::advanced::{Clipboard, Shell};
 use iced::advanced::{overlay, renderer};
 use iced::{Event, Point, Size, mouse};
-use iced_core::Renderer;
+use iced_core::{Renderer, touch};
 
 pub(super) struct Overlay<'a, 'b, Message> {
     pub(crate) position: Point,
@@ -65,7 +65,20 @@ where
             clipboard,
             shell,
             &layout.bounds(),
-        )
+        );
+        match event {
+            Event::Mouse(e) if !matches!(e, mouse::Event::CursorLeft) => {
+                if cursor.is_over(layout.bounds()) {
+                    shell.capture_event();
+                }
+            }
+            Event::Touch(e) if !matches!(e, touch::Event::FingerLost { .. }) => {
+                if cursor.is_over(layout.bounds()) {
+                    shell.capture_event();
+                }
+            }
+            _ => {}
+        }
     }
 
     fn draw(
@@ -86,7 +99,7 @@ where
                 cursor,
                 &layout.bounds(),
             );
-        })
+        });
     }
 
     fn operate(
@@ -108,9 +121,16 @@ where
     ) -> mouse::Interaction {
         // TODO how to handle viewport here?
         let viewport = &layout.bounds();
-        self.content
+        let interaction = self
+            .content
             .as_widget()
-            .mouse_interaction(self.tree, layout, cursor, viewport, renderer)
+            .mouse_interaction(self.tree, layout, cursor, viewport, renderer);
+        if let mouse::Interaction::None = interaction
+            && cursor.is_over(layout.bounds())
+        {
+            return mouse::Interaction::Idle;
+        }
+        interaction
     }
 
     fn overlay<'c>(
