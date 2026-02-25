@@ -55,7 +55,7 @@ impl<'a, Message> Toggler<'a, Message> {
             is_toggled,
             on_toggle: None,
             label: None,
-            width: Length::Fill,
+            width: Length::Shrink,
             size: Self::DEFAULT_SIZE,
             text_size: None,
             text_line_height: text::LineHeight::default(),

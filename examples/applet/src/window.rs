@@ -128,8 +128,7 @@ impl cosmic::Application for Window {
                                     "Example row",
                                     cosmic::widget::container(
                                         toggler(state.example_row)
-                                            .on_toggle(Message::ToggleExampleRow)
-                                            .width(Length::Fill),
+                                            .on_toggle(Message::ToggleExampleRow),
                                     ),
                                 ))
                                 .add(popup_dropdown(
