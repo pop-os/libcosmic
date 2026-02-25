@@ -388,7 +388,7 @@ where
                 .into_container()
                 // XXX both must be shrink to avoid flex layout from ignoring it
                 .width(iced::Length::Shrink)
-                .height(iced::Length::Shrink);
+                .height(iced::Length::Fill);
 
         if !self.core().is_condensed() {
             nav = nav.max_width(280);
