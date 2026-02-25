@@ -386,7 +386,6 @@ where
                 .on_context(|id| crate::Action::Cosmic(Action::NavBarContext(id)))
                 .context_menu(self.nav_context_menu(self.core().nav_bar_context()))
                 .into_container()
-                // XXX both must be shrink to avoid flex layout from ignoring it
                 .width(iced::Length::Shrink)
                 .height(iced::Length::Fill);
 
