@@ -85,7 +85,7 @@ impl<Message: Clone + 'static> ContextMenu<'_, Message> {
                     // close existing popups
                     state.menu_states.clear();
                     state.active_root.clear();
-                    dbg!("closing existing popups");
+
                     shell.publish(self.on_surface_action.as_ref().unwrap()(destroy_popup(id)));
                     state.view_cursor = view_cursor;
                     (

@@ -350,7 +350,7 @@ pub use toaster::{Toast, ToastId, Toasts, toaster};
 
 mod toggler;
 #[doc(inline)]
-pub use toggler::toggler;
+pub use toggler::{Toggler, toggler};
 
 #[doc(inline)]
 pub use tooltip::{Tooltip, tooltip};
