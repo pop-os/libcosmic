@@ -531,7 +531,8 @@ impl<Message: 'static> Widget<Message, crate::Theme, crate::Renderer>
                     && let Ok(s) = String::from_utf8(data[..data.len() - 1].to_vec())
                 {
                     shell.publish(f(s));
-                    return event::Status::Captured;
+                    shell.capture_event();
+                    return;
                 }
 
                 if let (Some(msg), ret) = state.on_data_received(
