@@ -69,7 +69,8 @@ pub use menu_bar::{MenuBar, menu_bar as bar};
 mod menu_inner;
 mod menu_tree;
 pub use menu_tree::{
-    MenuItem as Item, MenuTree as Tree, menu_button, menu_items as items, menu_root as root,
+    MenuItem as Item, MenuItemKind as ItemKind, MenuTree as Tree, menu_button, menu_items as items,
+    menu_root as root,
 };
 
 pub use crate::style::menu_bar::{Appearance, StyleSheet};

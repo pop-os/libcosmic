@@ -1647,7 +1647,12 @@ fn get_children_layout<Message>(
 ) -> (Size, Vec<f32>, Vec<Size>) {
     let width = match item_width {
         ItemWidth::Uniform(u) => f32::from(u),
-        ItemWidth::Static(s) => f32::from(menu_tree.width.unwrap_or(s)),
+        ItemWidth::Static(s) => {
+            let base = f32::from(menu_tree.width.unwrap_or(s));
+            let min = menu_tree.min_width.map(f32::from).unwrap_or(0.0);
+            let max = menu_tree.max_width.map(f32::from).unwrap_or(f32::MAX);
+            base.clamp(min, max)
+        }
     };
 
     let child_sizes: Vec<Size> = match item_height {
