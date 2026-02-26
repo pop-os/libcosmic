@@ -357,23 +357,22 @@ impl ConfigGet for Config {
     fn get<T: DeserializeOwned>(&self, key: &str) -> Result<T, Error> {
         match self.get_local(key) {
             Ok(value) => Ok(value),
-            Err(Error::NotFound) => self.get_system_default(key),
+            Err(Error::NoConfigDirectory | Error::NotFound) => self.get_system_default(key),
             Err(why) => Err(why),
         }
     }
 
     fn get_local<T: DeserializeOwned>(&self, key: &str) -> Result<T, Error> {
         // If key path exists
-        match self.key_path(key) {
-            Ok(key_path) if key_path.is_file() => {
-                // Load user override
-                let data = fs::read_to_string(key_path)
-                    .map_err(|err| Error::GetKey(key.to_string(), err))?;
+        let key_path = self.key_path(key)?;
+        if key_path.is_file() {
+            // Load user override
+            let data =
+                fs::read_to_string(key_path).map_err(|err| Error::GetKey(key.to_string(), err))?;
 
-                Ok(ron::from_str(&data)?)
-            }
-
-            _ => Err(Error::NotFound),
+            Ok(ron::from_str(&data)?)
+        } else {
+            Err(Error::NotFound)
         }
     }
 
