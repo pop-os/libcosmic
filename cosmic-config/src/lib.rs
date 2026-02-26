@@ -68,6 +68,8 @@ pub use cosmic_config_derive;
 #[cfg(feature = "calloop")]
 pub mod calloop;
 
+pub mod setting;
+
 #[derive(Debug)]
 pub enum Error {
     AtomicWrites(atomicwrites::Error<std::io::Error>),
