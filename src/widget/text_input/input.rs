@@ -651,11 +651,11 @@ where
 
         // if the previous state was at the end of the text, keep it there
         let old_value = Value::new(&old_value);
-        if state.is_focused() {
-            if let cursor::State::Index(index) = state.cursor.state(&old_value) {
-                if index == old_value.len() {
-                    state.cursor.move_to(self.value.len());
-                }
+        if state.is_focused()
+            && let cursor::State::Index(index) = state.cursor.state(&old_value)
+        {
+            if index == old_value.len() {
+                state.cursor.move_to(self.value.len());
             }
         }
 
@@ -935,7 +935,8 @@ where
             layout,
             self.manage_value,
             self.drag_threshold,
-        )
+            self.always_active,
+        );
     }
 
     #[inline]
@@ -1358,6 +1359,7 @@ pub fn update<'a, Message: Clone + 'static>(
     layout: Layout<'_>,
     manage_value: bool,
     drag_threshold: f32,
+    always_active: bool,
 ) {
     let update_cache = |state, value| {
         replace_paragraph(
@@ -1962,7 +1964,11 @@ pub fn update<'a, Message: Clone + 'static>(
 
                 let millis_until_redraw = CURSOR_BLINK_INTERVAL_MILLIS
                     - (*now - focus.updated_at).as_millis() % CURSOR_BLINK_INTERVAL_MILLIS;
-
+                shell.request_redraw_at(window::RedrawRequest::At(
+                    now.checked_add(Duration::from_millis(millis_until_redraw as u64))
+                        .unwrap_or(*now),
+                ));
+            } else if always_active {
                 shell.request_redraw();
             }
         }
@@ -2340,11 +2346,9 @@ pub fn draw<'a, Message>(
             cursor::State::Index(position) => {
                 let (text_value_width, offset) =
                     measure_cursor_and_scroll_offset(state.value.raw(), text_bounds, position);
-
                 let is_cursor_visible = handling_dnd_offer
                     || ((focus.now - focus.updated_at).as_millis() / CURSOR_BLINK_INTERVAL_MILLIS)
-                        % 2
-                        == 0;
+                        .is_multiple_of(2);
                 if is_cursor_visible {
                     if dnd_icon {
                         (None, 0.0)
@@ -2479,7 +2483,7 @@ pub fn draw<'a, Message>(
             },
             bounds.position(),
             color,
-            *viewport,
+            text_bounds,
         );
     };
 
