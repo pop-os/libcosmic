@@ -56,10 +56,8 @@ impl Theme {
     pub fn reset_exports() -> Result<(), OutputError> {
         let gtk_res = Theme::reset_gtk();
         let qt_res = Theme::reset_qt();
-        let vs_res = Theme::reset_vs_code();
         gtk_res?;
         qt_res?;
-        vs_res?;
         Ok(())
     }
 }
