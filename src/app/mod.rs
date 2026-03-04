@@ -72,7 +72,7 @@ pub(crate) fn iced_settings<App: Application>(
     core.exit_on_main_window_closed = exit_on_close;
 
     if let Some(border_size) = settings.resizable {
-        // window_settings.resize_border = border_size as u32;
+        window_settings.resize_border = border_size as u32;
         window_settings.resizable = true;
     }
     window_settings.decorations = !settings.client_decorations;

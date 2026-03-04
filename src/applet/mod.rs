@@ -569,7 +569,7 @@ pub fn run<App: Application>(flags: App::Flags) -> iced::Result {
     window_settings.decorations = false;
     window_settings.exit_on_close_request = true;
     window_settings.resizable = false;
-    // window_settings.resize_border = 0;
+    window_settings.resize_border = 0;
 
     // TODO make multi-window not mandatory
 
