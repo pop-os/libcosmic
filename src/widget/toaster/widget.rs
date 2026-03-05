@@ -248,7 +248,7 @@ where
             clipboard,
             shell,
             &layout.bounds(),
-        )
+        );
     }
 
     fn mouse_interaction(
