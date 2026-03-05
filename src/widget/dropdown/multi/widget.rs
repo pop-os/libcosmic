@@ -135,7 +135,7 @@ impl<'a, S: AsRef<str>, Message: 'a, Item: Clone + PartialEq + 'static>
             self.on_selected.as_ref(),
             self.selections,
             || tree.state.downcast_mut::<State<Item>>(),
-        )
+        );
     }
 
     fn mouse_interaction(

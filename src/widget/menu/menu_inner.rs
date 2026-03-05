@@ -585,9 +585,9 @@ impl<'b, Message: Clone + 'static> Menu<'b, Message> {
             Cow::Borrowed(_) => panic!(),
             Cow::Owned(o) => o.as_mut_slice(),
         };
-        let menu_status = process_menu_events(
+        process_menu_events(
             self,
-            &event,
+            event,
             view_cursor,
             renderer,
             clipboard,
@@ -629,8 +629,7 @@ impl<'b, Message: Clone + 'static> Menu<'b, Message> {
                 if !self.is_overlay && !view_cursor.is_over(viewport) {
                     return None;
                 }
-
-                let (new_root, status) = process_overlay_events(
+                let new_root = process_overlay_events(
                     self,
                     renderer,
                     viewport_size,
@@ -640,6 +639,10 @@ impl<'b, Message: Clone + 'static> Menu<'b, Message> {
                     self.cross_offset as f32,
                     shell,
                 );
+
+                if self.is_overlay && view_cursor.is_over(viewport) {
+                    shell.capture_event();
+                }
 
                 return new_root;
             }
@@ -680,24 +683,23 @@ impl<'b, Message: Clone + 'static> Menu<'b, Message> {
                                 feature = "winit",
                                 feature = "surface-message"
                             ))]
-                            if matches!(WINDOWING_SYSTEM.get(), Some(WindowingSystem::Wayland)) {
-                                if let Some(handler) = self.on_surface_action.as_ref() {
-                                    let mut root = self.window_id;
-                                    let mut depth = self.depth;
-                                    while let Some(parent) =
-                                        state.popup_id.iter().find(|(_, v)| **v == root)
-                                    {
-                                        // parent of root popup is the window, so we stop.
-                                        if depth == 0 {
-                                            break;
-                                        }
-                                        root = *parent.0;
-                                        depth = depth.saturating_sub(1);
+                            if matches!(WINDOWING_SYSTEM.get(), Some(WindowingSystem::Wayland))
+                                && let Some(handler) = self.on_surface_action.as_ref()
+                            {
+                                let mut root = self.window_id;
+                                let mut depth = self.depth;
+                                while let Some(parent) =
+                                    state.popup_id.iter().find(|(_, v)| **v == root)
+                                {
+                                    // parent of root popup is the window, so we stop.
+                                    if depth == 0 {
+                                        break;
                                     }
-                                    shell.publish((handler)(crate::surface::Action::DestroyPopup(
-                                        root,
-                                    )));
+                                    root = *parent.0;
+                                    depth = depth.saturating_sub(1);
                                 }
+                                shell
+                                    .publish((handler)(crate::surface::Action::DestroyPopup(root)));
                             }
 
                             state.reset();
@@ -708,7 +710,7 @@ impl<'b, Message: Clone + 'static> Menu<'b, Message> {
                     if self.bar_bounds.contains(overlay_cursor) {
                         state.reset();
                     }
-                })
+                });
             }
 
             _ => {}
@@ -804,26 +806,25 @@ impl<'b, Message: Clone + 'static> Menu<'b, Message> {
                             let menu_color = styling.background;
                             r.fill_quad(menu_quad, menu_color);
                             // draw path hightlight
-                            if let (true, Some(active)) = (draw_path, ms.index) {
-                                if let Some(active_layout) = children_layout
+                            if let (true, Some(active)) = (draw_path, ms.index)
+                                && let Some(active_layout) = children_layout
                                     .children()
                                     .nth(active.saturating_sub(start_index))
-                                {
-                                    let path_quad = renderer::Quad {
-                                        bounds: active_layout
-                                            .bounds()
-                                            .intersection(&viewport)
-                                            .unwrap_or_default(),
-                                        border: Border {
-                                            radius: styling.menu_border_radius.into(),
-                                            ..Default::default()
-                                        },
-                                        shadow: Shadow::default(),
-                                        snap: true,
-                                    };
+                            {
+                                let path_quad = renderer::Quad {
+                                    bounds: active_layout
+                                        .bounds()
+                                        .intersection(&viewport)
+                                        .unwrap_or_default(),
+                                    border: Border {
+                                        radius: styling.menu_border_radius.into(),
+                                        ..Default::default()
+                                    },
+                                    shadow: Shadow::default(),
+                                    snap: true,
+                                };
 
-                                    r.fill_quad(path_quad, styling.path);
-                                }
+                                r.fill_quad(path_quad, styling.path);
                             }
                             if start_index < menu_roots.len() {
                                 // draw item
@@ -894,6 +895,19 @@ impl<Message: Clone + 'static> overlay::Overlay<Message, crate::Theme, crate::Re
     ) {
         self.draw(renderer, theme, style, layout, cursor);
     }
+
+    fn mouse_interaction(
+        &self,
+        layout: Layout<'_>,
+        cursor: mouse::Cursor,
+        _renderer: &crate::Renderer,
+    ) -> mouse::Interaction {
+        if cursor.is_over(layout.bounds()) {
+            mouse::Interaction::Idle
+        } else {
+            mouse::Interaction::None
+        }
+    }
 }
 
 impl<Message: std::clone::Clone + 'static> Widget<Message, crate::Theme, crate::Renderer>
@@ -948,73 +962,74 @@ impl<Message: std::clone::Clone + 'static> Widget<Message, crate::Theme, crate::
             feature = "winit",
             feature = "surface-message"
         ))]
-        if matches!(WINDOWING_SYSTEM.get(), Some(WindowingSystem::Wayland)) {
-            if let Some((new_root, new_ms)) = new_root {
-                use iced_runtime::platform_specific::wayland::popup::{
-                    SctkPopupSettings, SctkPositioner,
+        if matches!(WINDOWING_SYSTEM.get(), Some(WindowingSystem::Wayland))
+            && let Some((new_root, new_ms)) = new_root
+        {
+            use iced_runtime::platform_specific::wayland::popup::{
+                SctkPopupSettings, SctkPositioner,
+            };
+            let overlay_offset = Point::ORIGIN - viewport.position();
+
+            let overlay_cursor = cursor.position().unwrap_or_default() - overlay_offset;
+
+            let Some((mut menu, popup_id)) = self.tree.inner.with_data_mut(|state| {
+                let popup_id = *state
+                    .popup_id
+                    .entry(self.window_id)
+                    .or_insert_with(window::Id::unique);
+                let active_roots = state
+                    .active_root
+                    .get(self.depth)
+                    .cloned()
+                    .unwrap_or_default();
+
+                let root_bounds_list = layout
+                    .children()
+                    .next()
+                    .unwrap()
+                    .children()
+                    .map(|lo| lo.bounds())
+                    .collect();
+
+                let mut popup_menu = Menu {
+                    tree: self.tree.clone(),
+                    menu_roots: Cow::Owned(Cow::into_owned(self.menu_roots.clone())),
+                    bounds_expand: self.bounds_expand,
+                    menu_overlays_parent: false,
+                    close_condition: self.close_condition,
+                    item_width: self.item_width,
+                    item_height: self.item_height,
+                    bar_bounds: layout.bounds(),
+                    main_offset: self.main_offset,
+                    cross_offset: self.cross_offset,
+                    root_bounds_list,
+                    path_highlight: self.path_highlight,
+                    style: Cow::Owned(Cow::into_owned(self.style.clone())),
+                    position: Point::new(0., 0.),
+                    is_overlay: false,
+                    window_id: popup_id,
+                    depth: self.depth + 1,
+                    on_surface_action: self.on_surface_action.clone(),
                 };
-                let overlay_offset = Point::ORIGIN - viewport.position();
 
-                let overlay_cursor = cursor.position().unwrap_or_default() - overlay_offset;
+                state.active_root.push(new_root);
 
-                let Some((mut menu, popup_id)) = self.tree.inner.with_data_mut(|state| {
-                    let popup_id = *state
-                        .popup_id
-                        .entry(self.window_id)
-                        .or_insert_with(window::Id::unique);
-                    let active_roots = state
-                        .active_root
-                        .get(self.depth)
-                        .cloned()
-                        .unwrap_or_default();
-
-                    let root_bounds_list = layout
-                        .children()
-                        .next()
-                        .unwrap()
-                        .children()
-                        .map(|lo| lo.bounds())
-                        .collect();
-
-                    let mut popup_menu = Menu {
-                        tree: self.tree.clone(),
-                        menu_roots: Cow::Owned(Cow::into_owned(self.menu_roots.clone())),
-                        bounds_expand: self.bounds_expand,
-                        menu_overlays_parent: false,
-                        close_condition: self.close_condition,
-                        item_width: self.item_width,
-                        item_height: self.item_height,
-                        bar_bounds: layout.bounds(),
-                        main_offset: self.main_offset,
-                        cross_offset: self.cross_offset,
-                        root_bounds_list,
-                        path_highlight: self.path_highlight,
-                        style: Cow::Owned(Cow::into_owned(self.style.clone())),
-                        position: Point::new(0., 0.),
-                        is_overlay: false,
-                        window_id: popup_id,
-                        depth: self.depth + 1,
-                        on_surface_action: self.on_surface_action.clone(),
-                    };
-
-                    state.active_root.push(new_root);
-
-                    Some((popup_menu, popup_id))
-                }) else {
-                    return;
-                };
-                // XXX we push a new active root manually instead
-                init_root_popup_menu(
-                    &mut menu,
-                    renderer,
-                    shell,
-                    cursor.position().unwrap_or_default(),
-                    layout.bounds().size(),
-                    Vector::new(0., 0.),
-                    layout.bounds(),
-                    self.main_offset as f32,
-                );
-                let (anchor_rect, gravity) = self.tree.inner.with_data_mut(|state| {
+                Some((popup_menu, popup_id))
+            }) else {
+                return;
+            };
+            // XXX we push a new active root manually instead
+            init_root_popup_menu(
+                &mut menu,
+                renderer,
+                shell,
+                cursor.position().unwrap_or_default(),
+                layout.bounds().size(),
+                Vector::new(0., 0.),
+                layout.bounds(),
+                self.main_offset as f32,
+            );
+            let (anchor_rect, gravity) = self.tree.inner.with_data_mut(|state| {
                 (state
                     .menu_states
                     .get(self.depth + 1)
@@ -1043,51 +1058,63 @@ impl<Message: std::clone::Clone + 'static> Widget<Message, crate::Theme, crate::
                     })
             });
 
-                let menu_node = Widget::layout(
-                    &mut menu,
-                    &mut Tree::empty(),
-                    renderer,
-                    &Limits::NONE.min_width(1.).min_height(1.),
-                );
+            let menu_node = Widget::layout(
+                &mut menu,
+                &mut Tree::empty(),
+                renderer,
+                &Limits::NONE.min_width(1.).min_height(1.),
+            );
 
-                let popup_size = menu_node.size();
-                let mut positioner = SctkPositioner {
-                    size: Some((
-                        popup_size.width.ceil() as u32 + 2,
-                        popup_size.height.ceil() as u32 + 2,
-                    )),
-                    anchor_rect,
-                    anchor:
-                        cctk::wayland_protocols::xdg::shell::client::xdg_positioner::Anchor::TopRight,
-                    gravity,
-                    reactive: true,
-                    ..Default::default()
-                };
-                // disable slide_x if it is set in the default
-                positioner.constraint_adjustment &= !(1 << 0);
-                let parent = self.window_id;
-                shell.publish((self.on_surface_action.as_ref().unwrap())(
-                    crate::surface::action::simple_popup(
-                        move || SctkPopupSettings {
-                            parent,
-                            id: popup_id,
-                            positioner: positioner.clone(),
-                            parent_size: None,
-                            grab: true,
-                            close_with_children: false,
-                            input_zone: None,
-                        },
-                        Some(move || {
-                            crate::Element::from(
-                                crate::widget::container(menu.clone()).center(Length::Fill),
-                            )
-                            .map(crate::action::app)
-                        }),
-                    ),
-                ));
+            let popup_size = menu_node.size();
+            let mut positioner = SctkPositioner {
+                size: Some((
+                    popup_size.width.ceil() as u32 + 2,
+                    popup_size.height.ceil() as u32 + 2,
+                )),
+                anchor_rect,
+                anchor:
+                    cctk::wayland_protocols::xdg::shell::client::xdg_positioner::Anchor::TopRight,
+                gravity,
+                reactive: true,
+                ..Default::default()
+            };
+            // disable slide_x if it is set in the default
+            positioner.constraint_adjustment &= !(1 << 0);
+            let parent = self.window_id;
+            shell.publish((self.on_surface_action.as_ref().unwrap())(
+                crate::surface::action::simple_popup(
+                    move || SctkPopupSettings {
+                        parent,
+                        id: popup_id,
+                        positioner: positioner.clone(),
+                        parent_size: None,
+                        grab: true,
+                        close_with_children: false,
+                        input_zone: None,
+                    },
+                    Some(move || {
+                        crate::Element::from(
+                            crate::widget::container(menu.clone()).center(Length::Fill),
+                        )
+                        .map(crate::action::app)
+                    }),
+                ),
+            ));
+        }
+    }
 
-                return;
-            }
+    fn mouse_interaction(
+        &self,
+        _tree: &Tree,
+        layout: Layout<'_>,
+        cursor: mouse::Cursor,
+        _viewport: &Rectangle,
+        _renderer: &crate::Renderer,
+    ) -> mouse::Interaction {
+        if cursor.is_over(layout.bounds()) {
+            mouse::Interaction::Idle
+        } else {
+            mouse::Interaction::None
         }
     }
 }
@@ -1331,7 +1358,7 @@ fn process_menu_events<Message: std::clone::Clone>(
             shell,
             &Rectangle::default(),
         );
-    })
+    });
 }
 
 #[allow(unused_results, clippy::too_many_lines, clippy::too_many_arguments)]
@@ -1343,12 +1370,11 @@ fn process_overlay_events<Message>(
     view_cursor: Cursor,
     overlay_cursor: Point,
     cross_offset: f32,
-    _shell: &mut Shell<'_, Message>,
-) -> (Option<(usize, MenuState)>, event::Status)
+    shell: &mut Shell<'_, Message>,
+) -> Option<(usize, MenuState)>
 where
     Message: std::clone::Clone,
 {
-    use event::Status::{Captured, Ignored};
     /*
     if no active root || pressed:
         return
@@ -1431,8 +1457,8 @@ where
                     state.open = false;
                 }
             }
-
-            return (new_menu_root, Captured);
+            shell.capture_event();
+            return new_menu_root;
         };
 
         let last_menu_bounds = &last_menu_state.menu_bounds;
@@ -1446,7 +1472,8 @@ where
         {
 
             last_menu_state.index = None;
-            return (new_menu_root, Captured);
+            shell.capture_event();
+            return new_menu_root;
         }
 
         // calc new index
@@ -1461,7 +1488,7 @@ where
         };
 
         if state.pressed {
-            return (new_menu_root, Ignored);
+            return new_menu_root;
         }
         let roots = active_root.iter().skip(1).fold(
             &menu.menu_roots[active_root[0]].children,
@@ -1494,7 +1521,7 @@ where
         if matches!(WINDOWING_SYSTEM.get(), Some(WindowingSystem::Wayland)) && remove {
             if let Some(id) = state.popup_id.remove(&menu.window_id) {
                 state.active_root.truncate(menu.depth + 1);
-                _shell.publish((menu.on_surface_action.as_ref().unwrap())({
+                shell.publish((menu.on_surface_action.as_ref().unwrap())({
                     crate::surface::action::destroy_popup(id)
                 }));
             }
@@ -1555,7 +1582,8 @@ where
             state.menu_states.truncate(menu.depth + 1);
         }
 
-        (new_menu_root, Captured)
+        shell.capture_event();
+        new_menu_root
     })
 }
 
