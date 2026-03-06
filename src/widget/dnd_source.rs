@@ -240,7 +240,7 @@ impl<Message: Clone + 'static, D: iced::clipboard::mime::AsMimeTypes + std::mark
             Event::Mouse(mouse_event) => match mouse_event {
                 mouse::Event::ButtonPressed(mouse::Button::Left) => {
                     if let Some(position) = cursor.position() {
-                        if !state.hovered {
+                        if !cursor.is_over(layout.bounds()) {
                             return;
                         }
 
@@ -256,33 +256,27 @@ impl<Message: Clone + 'static, D: iced::clipboard::mime::AsMimeTypes + std::mark
                 }
                 mouse::Event::CursorMoved { .. } => {
                     if let Some(position) = cursor.position() {
-                        if state.hovered {
-                            // We ignore motion if we do not possess drag content by now.
-                            if self.drag_content.is_none() {
-                                state.left_pressed_position = None;
-                                return;
+                        // We ignore motion if we do not possess drag content by now.
+                        if self.drag_content.is_none() {
+                            state.left_pressed_position = None;
+                            return;
+                        }
+                        if let Some(left_pressed_position) = state.left_pressed_position
+                            && position.distance(left_pressed_position) > self.drag_threshold
+                        {
+                            if let Some(on_start) = self.on_start.as_ref() {
+                                shell.publish(on_start.clone());
                             }
-                            if let Some(left_pressed_position) = state.left_pressed_position {
-                                if position.distance(left_pressed_position) > self.drag_threshold {
-                                    if let Some(on_start) = self.on_start.as_ref() {
-                                        shell.publish(on_start.clone())
-                                    }
-                                    let offset = Vector::new(
-                                        left_pressed_position.x - layout.bounds().x,
-                                        left_pressed_position.y - layout.bounds().y,
-                                    );
-                                    self.start_dnd(clipboard, state.cached_bounds, offset);
-                                    state.is_dragging = true;
-                                    state.left_pressed_position = None;
-                                }
-                            }
-                            if !cursor.is_over(layout.bounds()) {
-                                state.hovered = false;
-
-                                return;
-                            }
-                        } else if cursor.is_over(layout.bounds()) {
-                            state.hovered = true;
+                            let offset = Vector::new(
+                                left_pressed_position.x - layout.bounds().x,
+                                left_pressed_position.y - layout.bounds().y,
+                            );
+                            self.start_dnd(clipboard, state.cached_bounds, offset);
+                            state.is_dragging = true;
+                            state.left_pressed_position = None;
+                        }
+                        if !cursor.is_over(layout.bounds()) {
+                            return;
                         }
                         shell.capture_event();
                     }
@@ -296,7 +290,6 @@ impl<Message: Clone + 'static, D: iced::clipboard::mime::AsMimeTypes + std::mark
                     }
                     state.is_dragging = false;
                     shell.capture_event();
-                    return;
                 }
             }
             Event::Dnd(DndEvent::Source(SourceEvent::Finished)) => {
@@ -306,7 +299,6 @@ impl<Message: Clone + 'static, D: iced::clipboard::mime::AsMimeTypes + std::mark
                     }
                     state.is_dragging = false;
                     shell.capture_event();
-                    return;
                 }
             }
             _ => (),
@@ -422,7 +414,6 @@ impl<
 /// Local state of the [`MouseListener`].
 #[derive(Debug, Default)]
 struct State {
-    hovered: bool,
     left_pressed_position: Option<Point>,
     is_dragging: bool,
     cached_bounds: Rectangle,
