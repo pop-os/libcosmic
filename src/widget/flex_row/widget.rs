@@ -119,8 +119,8 @@ impl<Message: 'static + Clone> Widget<Message, crate::Theme, Renderer> for FlexR
             f32::from(self.column_spacing),
             f32::from(self.row_spacing),
             self.min_item_width,
-            self.align_items,
             self.justify_items,
+            self.align_items,
             self.justify_content,
             &mut tree.children,
         )
