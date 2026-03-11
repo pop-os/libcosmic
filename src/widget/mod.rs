@@ -259,7 +259,7 @@ pub use id_container::{IdContainer, id_container};
 #[cfg(feature = "animated-image")]
 pub mod frames;
 
-pub use taffy::JustifyContent;
+pub use taffy::{JustifyContent, JustifyItems};
 
 pub mod list;
 #[doc(inline)]
