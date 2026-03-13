@@ -28,35 +28,9 @@ pub struct KeyBind {
 }
 
 impl KeyBind {
-    /// Checks if the given key and modifiers match the `KeyBind`.
-    ///
-    /// # Arguments
-    ///
-    /// * `modifiers` - A `Modifiers` instance representing the current active modifiers.
-    /// * `key` - A reference to the `Key` that is being checked.
-    ///
-    /// # Returns
-    ///
-    /// * `bool` - `true` if the key and modifiers match the `KeyBind`, `false` otherwise.
-    #[deprecated(note = "Use `matches_layout_aware` instead for correct non-Latin keyboard layout support")]
-    pub fn matches(&self, modifiers: Modifiers, key: &Key) -> bool {
-        let key_eq = match (key, &self.key) {
-            // CapsLock and Shift change the case of Key::Character, so we compare these in a case insensitive way
-            (Key::Character(a), Key::Character(b)) => a.eq_ignore_ascii_case(b),
-            (a, b) => a.eq(b),
-        };
-        key_eq
-            && modifiers.logo() == self.modifiers.contains(&Modifier::Super)
-            && modifiers.control() == self.modifiers.contains(&Modifier::Ctrl)
-            && modifiers.alt() == self.modifiers.contains(&Modifier::Alt)
-            && modifiers.shift() == self.modifiers.contains(&Modifier::Shift)
-    }
-
-    /// Checks if the given key and modifiers match the `KeyBind`, with a
-    /// fallback to the physical key position for non-Latin keyboard layouts.
-    ///
-    /// This is the recommended replacement for [`Self::matches`], which does not
-    /// handle non-Latin layouts correctly.
+    /// Checks if the given key and modifiers match the `KeyBind`, with an
+    /// optional fallback to the physical key position for non-Latin keyboard
+    /// layouts.
     ///
     /// # Arguments
     ///
@@ -70,18 +44,24 @@ impl KeyBind {
     /// # Returns
     ///
     /// * `bool` - `true` if the key and modifiers match the `KeyBind`, `false` otherwise.
-    #[allow(deprecated)]
-    pub fn matches_layout_aware(
-        &self,
-        modifiers: Modifiers,
-        key: &Key,
-        physical_key: Option<&Physical>,
-    ) -> bool {
-        self.matches(modifiers, key)
+    pub fn matches(&self, modifiers: Modifiers, key: &Key, physical_key: Option<&Physical>) -> bool {
+        let key_eq = self.key_eq(key)
             || physical_key
                 .and_then(physical_key_to_latin)
-                .map(|latin| self.matches(modifiers, &latin))
-                .unwrap_or(false)
+                .is_some_and(|latin| self.key_eq(&latin));
+        key_eq
+            && modifiers.logo() == self.modifiers.contains(&Modifier::Super)
+            && modifiers.control() == self.modifiers.contains(&Modifier::Ctrl)
+            && modifiers.alt() == self.modifiers.contains(&Modifier::Alt)
+            && modifiers.shift() == self.modifiers.contains(&Modifier::Shift)
+    }
+
+    fn key_eq(&self, key: &Key) -> bool {
+        match (key, &self.key) {
+            // CapsLock and Shift change the case of Key::Character, so we compare these in a case insensitive way
+            (Key::Character(a), Key::Character(b)) => a.eq_ignore_ascii_case(b),
+            (a, b) => a.eq(b),
+        }
     }
 }
 
