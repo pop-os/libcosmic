@@ -41,7 +41,7 @@ impl Theme {
 
         let bg = self.background.base;
         // the background container
-        let view_colors = IniColors {
+        let window_colors = IniColors {
             background_alternate: bg.mix(self.accent.base, 0.05),
             background_normal: bg,
             decoration_focus: self.accent_text_color(),
@@ -56,10 +56,10 @@ impl Theme {
             foreground_visited: self.accent_text_color(),
         };
         // components inside the background container
-        let window_colors = IniColors {
+        let view_colors = IniColors {
             background_alternate: self.background.component.base.mix(self.accent.base, 0.05),
             background_normal: self.background.component.base,
-            ..view_colors
+            ..window_colors
         };
 
         // selected text and items
@@ -116,10 +116,10 @@ impl Theme {
         };
 
         // headers in cosmic don't have a background
-        let header_colors = &view_colors;
-        let header_colors_inactive = &view_colors;
+        let header_colors = &window_colors;
+        let header_colors_inactive = &window_colors;
         // tool tips, "What's This" tips, and similar elements
-        let tooltip_colors = &window_colors;
+        let tooltip_colors = &view_colors;
 
         let general_color_scheme = if self.is_dark {
             "CosmicDark"
@@ -198,7 +198,7 @@ widgetStyle=qt6ct-style
             format_ini_colors(&tooltip_colors, bg),
             format_ini_colors(&view_colors, bg),
             format_ini_colors(&window_colors, bg),
-            format_ini_wm_colors(&view_colors, self.is_dark),
+            format_ini_wm_colors(&window_colors, self.is_dark),
         )
     }
 
