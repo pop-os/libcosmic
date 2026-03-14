@@ -305,7 +305,7 @@ widgetStyle=qt6ct-style
     }
 
     /// Gets a path like `~/.local/share/color-schemes/CosmicDark.colors`
-    pub fn get_kcolorscheme_path(is_dark: bool) -> Result<PathBuf, OutputError> {
+    fn get_kcolorscheme_path(is_dark: bool) -> Result<PathBuf, OutputError> {
         let Some(mut data_dir) = dirs::data_dir() else {
             return Err(OutputError::MissingDataDir);
         };
