@@ -14,10 +14,11 @@ impl Theme {
     /// Produces a color scheme ini file for Qt.
     ///
     /// Some high-level documentation for this file can be found at:
-    /// https://web.archive.org/web/20250402234329/https://docs.kde.org/stable5/en/plasma-workspace/kcontrol/colors/
+    /// - https://api.kde.org/kcolorscheme.html
+    /// - https://web.archive.org/web/20250402234329/https://docs.kde.org/stable5/en/plasma-workspace/kcontrol/colors/
     #[must_use]
     #[cold]
-    pub fn as_qt(&self) -> String {
+    pub fn as_kcolorscheme(&self) -> String {
         // Usually, disabled elements will have strongly reduced contrast and are often notably darker or lighter
         let disabled_color_effects = IniColorEffects {
             color: self.button.disabled,
@@ -212,14 +213,14 @@ widgetStyle=qt6ct-style
     /// Returns an `OutputError` if there is an error writing the colors file.
     #[cold]
     pub fn write_qt(&self) -> Result<(), OutputError> {
-        let colors = self.as_qt();
-        let file_path = Self::get_qt_colors_path(self.is_dark)?;
+        let kcolorscheme = self.as_kcolorscheme();
+        let file_path = Self::get_kcolorscheme_path(self.is_dark)?;
         let tmp_file_path = file_path.with_extension("colors.new");
 
         // Write to tmp_file_path first, then move it to file_path
         let mut tmp_file = File::create(&tmp_file_path).map_err(OutputError::Io)?;
         let res = tmp_file
-            .write_all(colors.as_bytes())
+            .write_all(kcolorscheme.as_bytes())
             .and_then(|_| tmp_file.flush())
             .and_then(|_| std::fs::rename(&tmp_file_path, file_path));
         if let Err(e) = res {
@@ -245,7 +246,7 @@ widgetStyle=qt6ct-style
         let kdeglobals_file = config_dir.join("kdeglobals");
         let mut kdeglobals_ini = Self::read_ini(&kdeglobals_file)?;
 
-        let src_file = Self::get_qt_colors_path(is_dark)?;
+        let src_file = Self::get_kcolorscheme_path(is_dark)?;
         let src_ini = Self::read_ini(&src_file)?;
 
         Self::backup_non_cosmic_kdeglobals(&kdeglobals_ini, &kdeglobals_file)
@@ -288,7 +289,7 @@ widgetStyle=qt6ct-style
         }
 
         let is_dark = false; // doesn't matter since we're only reading keys
-        let src_file = Self::get_qt_colors_path(is_dark)?;
+        let src_file = Self::get_kcolorscheme_path(is_dark)?;
         let src_ini = Self::read_ini(&src_file)?;
 
         for (section, key_value) in src_ini.get_map_ref() {
@@ -303,8 +304,8 @@ widgetStyle=qt6ct-style
         Ok(())
     }
 
-    /// Gets a path like `~/.config/color-schemes/CosmicDark.colors`
-    pub fn get_qt_colors_path(is_dark: bool) -> Result<PathBuf, OutputError> {
+    /// Gets a path like `~/.local/share/color-schemes/CosmicDark.colors`
+    pub fn get_kcolorscheme_path(is_dark: bool) -> Result<PathBuf, OutputError> {
         let Some(mut data_dir) = dirs::data_dir() else {
             return Err(OutputError::MissingDataDir);
         };

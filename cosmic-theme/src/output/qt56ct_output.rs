@@ -39,7 +39,7 @@ impl Theme {
             .map_err(OutputError::Ini)?
             .unwrap_or_default();
 
-        let color_scheme_path = Self::get_qt_colors_path(is_dark)?;
+        let color_scheme_path = Self::get_kcolorscheme_path(is_dark)?;
         let icon_theme = if is_dark { "breeze-dark" } else { "breeze" };
 
         ini.set(
