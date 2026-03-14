@@ -1,6 +1,6 @@
 use crate::Theme;
 use configparser::ini::Ini;
-use palette::{Mix, Srgba, WithAlpha, rgb::Rgba};
+use palette::{Mix, Srgba, WithAlpha, blend::Compose, rgb::Rgba};
 use std::{
     fs::{self, File},
     io::Write,
@@ -348,29 +348,32 @@ struct QPaletteGroup {
 impl QPaletteGroup {
     /// Returns a comma-separated list of the colors as hex codes.
     /// E.g. `#ff000000, #ffdcdcdc, ...`
+    ///
+    /// Any transparent colors are flattened with [base] to avoid issues with
+    /// the Fusion style.
     fn as_list(&self) -> String {
         let colors = vec![
-            to_argb_hex(self.window_text),
-            to_argb_hex(self.button),
-            to_argb_hex(self.light),
-            to_argb_hex(self.midlight),
-            to_argb_hex(self.dark),
-            to_argb_hex(self.mid),
-            to_argb_hex(self.text),
-            to_argb_hex(self.bright_text),
-            to_argb_hex(self.button_text),
-            to_argb_hex(self.base),
-            to_argb_hex(self.window),
-            to_argb_hex(self.shadow),
-            to_argb_hex(self.highlight),
-            to_argb_hex(self.highlighted_text),
-            to_argb_hex(self.link),
-            to_argb_hex(self.link_visited),
-            to_argb_hex(self.alternate_base),
-            to_argb_hex(self.no_role),
-            to_argb_hex(self.tool_tip_base),
-            to_argb_hex(self.tool_tip_text),
-            to_argb_hex(self.placeholder_text),
+            to_argb_hex(self.window_text.over(self.base)),
+            to_argb_hex(self.button.over(self.base)),
+            to_argb_hex(self.light.over(self.base)),
+            to_argb_hex(self.midlight.over(self.base)),
+            to_argb_hex(self.dark.over(self.base)),
+            to_argb_hex(self.mid.over(self.base)),
+            to_argb_hex(self.text.over(self.base)),
+            to_argb_hex(self.bright_text.over(self.base)),
+            to_argb_hex(self.button_text.over(self.base)),
+            to_argb_hex(self.base.over(self.base)),
+            to_argb_hex(self.window.over(self.base)),
+            to_argb_hex(self.shadow.over(self.base)),
+            to_argb_hex(self.highlight.over(self.base)),
+            to_argb_hex(self.highlighted_text.over(self.base)),
+            to_argb_hex(self.link.over(self.base)),
+            to_argb_hex(self.link_visited.over(self.base)),
+            to_argb_hex(self.alternate_base.over(self.base)),
+            to_argb_hex(self.no_role.over(self.base)),
+            to_argb_hex(self.tool_tip_base.over(self.base)),
+            to_argb_hex(self.tool_tip_text.over(self.base)),
+            to_argb_hex(self.placeholder_text.over(self.base)),
         ];
         colors.join(", ")
     }
