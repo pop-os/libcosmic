@@ -162,9 +162,14 @@ pub fn resolve<Message>(
             });
         });
 
+    let actual_height = nodes
+        .iter()
+        .map(|node| node.bounds().y + node.bounds().height)
+        .fold(0.0f32, f32::max);
+
     let size = Size {
         width: flex_layout.content_size.width,
-        height: flex_layout.content_size.height,
+        height: actual_height.max(flex_layout.content_size.height),
     };
 
     Node::with_children(size, nodes)
