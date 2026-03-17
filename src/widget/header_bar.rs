@@ -394,7 +394,7 @@ impl<'a, Message: Clone + 'static> HeaderBar<'a, Message> {
         end.push(self.window_controls(space_xxs));
 
         let padding = if self.is_ssd {
-            [0, 8, 0, 8]
+            [2, 8, 2, 8]
         } else {
             match (
                 self.density.unwrap_or_else(crate::config::header_size),
