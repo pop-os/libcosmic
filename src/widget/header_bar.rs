@@ -5,9 +5,8 @@ use crate::cosmic_theme::{Density, Spacing};
 use crate::{Element, theme, widget};
 use apply::Apply;
 use derive_setters::Setters;
-use iced::{Length, mouse};
-use iced_core::{Vector, Widget, widget::tree};
-use std::{borrow::Cow, cmp};
+use iced_core::{Length, Size, Vector, Widget, layout, text, widget::tree};
+use std::borrow::Cow;
 
 #[must_use]
 pub fn header_bar<'a, Message>() -> HeaderBar<'a, Message> {
@@ -27,7 +26,6 @@ pub fn header_bar<'a, Message>() -> HeaderBar<'a, Message> {
         sharp_corners: false,
         is_ssd: false,
         on_double_click: None,
-        is_condensed: false,
         transparent: false,
     }
 }
@@ -91,9 +89,6 @@ pub struct HeaderBar<'a, Message> {
     /// HeaderBar used for server-side decorations
     is_ssd: bool,
 
-    /// Whether the headerbar should be compact
-    is_condensed: bool,
-
     /// Whether the headerbar should be transparent
     transparent: bool,
 }
@@ -126,48 +121,120 @@ impl<'a, Message: Clone + 'static> HeaderBar<'a, Message> {
         self.end.push(widget.into());
         self
     }
-
-    /// Build the widget
-    #[must_use]
-    #[inline]
-    pub fn build(self) -> HeaderBarWidget<'a, Message> {
-        HeaderBarWidget {
-            header_bar_inner: self.view(),
-        }
-    }
 }
 
 pub struct HeaderBarWidget<'a, Message> {
-    header_bar_inner: Element<'a, Message>,
+    start: Element<'a, Message>,
+    center: Option<Element<'a, Message>>,
+    end: Element<'a, Message>,
 }
 
-impl<Message: Clone + 'static> Widget<Message, crate::Theme, crate::Renderer>
-    for HeaderBarWidget<'_, Message>
+impl<'a, Message> HeaderBarWidget<'a, Message> {
+    pub fn new(
+        start: Element<'a, Message>,
+        center: Option<Element<'a, Message>>,
+        end: Element<'a, Message>,
+    ) -> Self {
+        Self { start, center, end }
+    }
+
+    fn elems(&self) -> impl Iterator<Item = &Element<'a, Message>> {
+        std::iter::once(&self.start)
+            .chain(std::iter::once(&self.end))
+            .chain(self.center.as_ref())
+    }
+
+    fn elems_mut(&mut self) -> impl Iterator<Item = &mut Element<'a, Message>> {
+        std::iter::once(&mut self.start)
+            .chain(std::iter::once(&mut self.end))
+            .chain(self.center.as_mut())
+    }
+}
+
+impl<'a, Message: Clone + 'static> Widget<Message, crate::Theme, crate::Renderer>
+    for HeaderBarWidget<'a, Message>
 {
     fn diff(&mut self, tree: &mut tree::Tree) {
-        tree.diff_children(&mut [&mut self.header_bar_inner]);
+        if let Some(center) = &mut self.center {
+            tree.diff_children(&mut [&mut self.start, &mut self.end, center]);
+        } else {
+            tree.diff_children(&mut [&mut self.start, &mut self.end]);
+        }
     }
 
     fn children(&self) -> Vec<tree::Tree> {
-        vec![tree::Tree::new(&self.header_bar_inner)]
+        self.elems().map(tree::Tree::new).collect()
     }
 
-    fn size(&self) -> iced_core::Size<Length> {
-        self.header_bar_inner.as_widget().size()
+    fn size(&self) -> Size<Length> {
+        Size {
+            width: Length::Fill,
+            height: Length::Shrink,
+        }
     }
 
     fn layout(
         &mut self,
         tree: &mut tree::Tree,
         renderer: &crate::Renderer,
-        limits: &iced_core::layout::Limits,
-    ) -> iced_core::layout::Node {
-        let child_tree = &mut tree.children[0];
-        let child = self
-            .header_bar_inner
-            .as_widget_mut()
-            .layout(child_tree, renderer, limits);
-        iced_core::layout::Node::with_children(child.size(), vec![child])
+        limits: &layout::Limits,
+    ) -> layout::Node {
+        let width = limits.max().width;
+        let height = limits.max().height;
+        let gap = 8.0;
+
+        let end_node =
+            self.end
+                .as_widget_mut()
+                .layout(&mut tree.children[1], renderer, &limits.loose());
+        let end_width = end_node.size().width;
+
+        let start_available = (width - end_width - gap).max(0.0);
+        let start_node = self.start.as_widget_mut().layout(
+            &mut tree.children[0],
+            renderer,
+            &layout::Limits::new(Size::ZERO, Size::new(start_available, height)),
+        );
+        let start_width = start_node.size().width;
+
+        let (center_node, center_x) = if let Some(center) = &mut self.center {
+            let slot_start = start_width + gap;
+            let slot_end = (width - end_width - gap).max(slot_start);
+            let slot_width = slot_end - slot_start;
+            // this instead of `node.size().width` prevents center jitter as text ellipsizes
+            let natural_width = center
+                .as_widget_mut()
+                .layout(&mut tree.children[2], renderer, &limits.loose())
+                .size()
+                .width;
+
+            let node = center.as_widget_mut().layout(
+                &mut tree.children[2],
+                renderer,
+                &layout::Limits::new(Size::ZERO, Size::new(slot_width, height)),
+            );
+
+            let ideal_x = (width - natural_width) / 2.0;
+            let max_x = (width - end_width - gap - natural_width).max(slot_start);
+            let center_x = ideal_x.clamp(slot_start, max_x);
+            (Some(node), center_x)
+        } else {
+            (None, 0.0)
+        };
+
+        let vcenter = |node: layout::Node, x: f32| -> layout::Node {
+            let dy = ((height - node.size().height) / 2.0).max(0.0);
+            node.translate(Vector::new(x, dy))
+        };
+
+        let mut child_nodes = Vec::with_capacity(3);
+        child_nodes.push(vcenter(start_node, 0.0));
+        child_nodes.push(vcenter(end_node, width - end_width));
+        if let Some(cn) = center_node {
+            child_nodes.push(vcenter(cn, center_x));
+        }
+
+        layout::Node::with_children(Size::new(width, height), child_nodes)
     }
 
     fn draw(
@@ -180,17 +247,10 @@ impl<Message: Clone + 'static> Widget<Message, crate::Theme, crate::Renderer>
         cursor: iced_core::mouse::Cursor,
         viewport: &iced_core::Rectangle,
     ) {
-        let layout_children = layout.children().next().unwrap();
-        let state_children = &tree.children[0];
-        self.header_bar_inner.as_widget().draw(
-            state_children,
-            renderer,
-            theme,
-            style,
-            layout_children,
-            cursor,
-            viewport,
-        );
+        for ((e, s), l) in self.elems().zip(&tree.children).zip(layout.children()) {
+            e.as_widget()
+                .draw(s, renderer, theme, style, l, cursor, viewport);
+        }
     }
 
     fn update(
@@ -204,19 +264,14 @@ impl<Message: Clone + 'static> Widget<Message, crate::Theme, crate::Renderer>
         shell: &mut iced_core::Shell<'_, Message>,
         viewport: &iced_core::Rectangle,
     ) {
-        let child_state = &mut state.children[0];
-        let child_layout = layout.children().next().unwrap();
-
-        self.header_bar_inner.as_widget_mut().update(
-            child_state,
-            event,
-            child_layout,
-            cursor,
-            renderer,
-            clipboard,
-            shell,
-            viewport,
-        );
+        for ((e, s), l) in self
+            .elems_mut()
+            .zip(&mut state.children)
+            .zip(layout.children())
+        {
+            e.as_widget_mut()
+                .update(s, event, l, cursor, renderer, clipboard, shell, viewport);
+        }
     }
 
     fn mouse_interaction(
@@ -227,15 +282,15 @@ impl<Message: Clone + 'static> Widget<Message, crate::Theme, crate::Renderer>
         viewport: &iced_core::Rectangle,
         renderer: &crate::Renderer,
     ) -> iced_core::mouse::Interaction {
-        let child_tree = &state.children[0];
-        let child_layout = layout.children().next().unwrap();
-        self.header_bar_inner.as_widget().mouse_interaction(
-            child_tree,
-            child_layout,
-            cursor,
-            viewport,
-            renderer,
-        )
+        self.elems()
+            .zip(&state.children)
+            .zip(layout.children())
+            .map(|((e, s), l)| {
+                e.as_widget()
+                    .mouse_interaction(s, l, cursor, viewport, renderer)
+            })
+            .max()
+            .unwrap_or(iced_core::mouse::Interaction::None)
     }
 
     fn operate(
@@ -245,14 +300,13 @@ impl<Message: Clone + 'static> Widget<Message, crate::Theme, crate::Renderer>
         renderer: &crate::Renderer,
         operation: &mut dyn iced_core::widget::Operation<()>,
     ) {
-        let child_tree = &mut state.children[0];
-        let child_layout = layout.children().next().unwrap();
-        self.header_bar_inner.as_widget_mut().operate(
-            child_tree,
-            child_layout,
-            renderer,
-            operation,
-        );
+        for ((e, s), l) in self
+            .elems_mut()
+            .zip(&mut state.children)
+            .zip(layout.children())
+        {
+            e.as_widget_mut().operate(s, l, renderer, operation);
+        }
     }
 
     fn overlay<'b>(
@@ -263,15 +317,27 @@ impl<Message: Clone + 'static> Widget<Message, crate::Theme, crate::Renderer>
         viewport: &iced_core::Rectangle,
         translation: Vector,
     ) -> Option<iced_core::overlay::Element<'b, Message, crate::Theme, crate::Renderer>> {
-        let child_tree = &mut state.children[0];
-        let child_layout = layout.children().next().unwrap();
-        self.header_bar_inner.as_widget_mut().overlay(
-            child_tree,
-            child_layout,
-            renderer,
-            viewport,
-            translation,
-        )
+        let mut layouts = layout.children();
+        let mut try_overlay = |elem: &'b mut Element<'a, Message>,
+                               state: &'b mut tree::Tree|
+         -> Option<
+            iced_core::overlay::Element<'b, Message, crate::Theme, crate::Renderer>,
+        > {
+            elem.as_widget_mut()
+                .overlay(state, layouts.next()?, renderer, viewport, translation)
+        };
+
+        if let Some(center) = &mut self.center {
+            let (start_slice, end_center) = state.children.split_at_mut(1);
+            let (end_slice, center_slice) = end_center.split_at_mut(1);
+            try_overlay(&mut self.start, &mut start_slice[0])
+                .or_else(|| try_overlay(&mut self.end, &mut end_slice[0]))
+                .or_else(|| try_overlay(center, &mut center_slice[0]))
+        } else {
+            let (start_slice, end_slice) = state.children.split_at_mut(1);
+            try_overlay(&mut self.start, &mut start_slice[0])
+                .or_else(|| try_overlay(&mut self.end, &mut end_slice[0]))
+        }
     }
 
     fn drag_destinations(
@@ -281,15 +347,9 @@ impl<Message: Clone + 'static> Widget<Message, crate::Theme, crate::Renderer>
         renderer: &crate::Renderer,
         dnd_rectangles: &mut iced_core::clipboard::DndDestinationRectangles,
     ) {
-        if let Some((child_tree, child_layout)) =
-            state.children.iter().zip(layout.children()).next()
-        {
-            self.header_bar_inner.as_widget().drag_destinations(
-                child_tree,
-                child_layout,
-                renderer,
-                dnd_rectangles,
-            );
+        for ((e, s), l) in self.elems().zip(&state.children).zip(layout.children()) {
+            e.as_widget()
+                .drag_destinations(s, l, renderer, dnd_rectangles);
         }
     }
 
@@ -301,16 +361,22 @@ impl<Message: Clone + 'static> Widget<Message, crate::Theme, crate::Renderer>
         state: &tree::Tree,
         p: iced::mouse::Cursor,
     ) -> iced_accessibility::A11yTree {
-        let c_layout = layout.children().next().unwrap();
-        let c_state = &state.children[0];
-        self.header_bar_inner
-            .as_widget()
-            .a11y_nodes(c_layout, c_state, p)
+        iced_accessibility::A11yTree::join(
+            self.elems()
+                .zip(&state.children)
+                .zip(layout.children())
+                .map(|((e, s), l)| e.as_widget().a11y_nodes(l, s, p)),
+        )
+    }
+}
+
+impl<'a, Message: Clone + 'static> From<HeaderBarWidget<'a, Message>> for Element<'a, Message> {
+    fn from(w: HeaderBarWidget<'a, Message>) -> Self {
+        Element::new(w)
     }
 }
 
 impl<'a, Message: Clone + 'static> HeaderBar<'a, Message> {
-    #[allow(clippy::too_many_lines)]
     /// Converts the headerbar builder into an Iced element.
     pub fn view(mut self) -> Element<'a, Message> {
         let Spacing {
@@ -324,154 +390,85 @@ impl<'a, Message: Clone + 'static> HeaderBar<'a, Message> {
         let center = std::mem::take(&mut self.center);
         let mut end = std::mem::take(&mut self.end);
 
-        let window_control_cnt = self.on_close.is_some() as usize
-            + self.on_maximize.is_some() as usize
-            + self.on_minimize.is_some() as usize;
         // Also packs the window controls at the very end.
-        end.push(self.window_controls());
+        end.push(self.window_controls(space_xxs));
 
-        // Center content depending on window border
-        let padding = match self.density.unwrap_or_else(crate::config::header_size) {
-            Density::Compact => {
-                if self.maximized {
-                    [4, 8, 4, 8]
-                } else {
-                    [3, 7, 4, 7]
-                }
-            }
-            _ => {
-                if self.maximized {
-                    [8, 8, 8, 8]
-                } else {
-                    [7, 7, 8, 7]
-                }
+        let padding = if self.is_ssd {
+            [0, 8, 0, 8]
+        } else {
+            match (
+                self.density.unwrap_or_else(crate::config::header_size),
+                // Center content depending on window border
+                self.maximized,
+            ) {
+                (Density::Compact, true) => [4, 8, 4, 8],
+                (Density::Compact, false) => [3, 7, 4, 7],
+                (_, true) => [8, 8, 8, 8],
+                (_, false) => [7, 7, 8, 7],
             }
         };
 
-        let acc_count = |v: &[Element<'a, Message>]| {
-            v.iter().fold(0, |acc, e| {
-                acc + match e.as_widget().size().width {
-                    Length::Fixed(w) if w > 30. => (w / 30.0).ceil() as usize,
-                    _ => 1,
-                }
-            })
-        };
-
-        let left_len = acc_count(&start);
-        let right_len = acc_count(&end);
-
-        let portion = ((left_len.max(right_len + window_control_cnt) as f32
-            / center.len().max(1) as f32)
-            .round() as u16)
-            .max(1);
-        let (left_portion, right_portion) =
-            if center.is_empty() && (self.title.is_empty() || self.is_condensed) {
-                let left_to_right_ratio = left_len as f32 / right_len.max(1) as f32;
-                let right_to_left_ratio = right_len as f32 / left_len.max(1) as f32;
-                if right_to_left_ratio > 2. || left_len < 1 {
-                    (1, 2)
-                } else if left_to_right_ratio > 2. || right_len < 1 {
-                    (2, 1)
-                } else {
-                    (left_len as u16, (right_len + window_control_cnt) as u16)
-                }
-            } else {
-                (portion, portion)
-            };
-        let title_portion = cmp::max(left_portion, right_portion) * 2;
-        // Creates the headerbar widget.
-        let mut widget = widget::row::with_capacity(3)
-            // If elements exist in the start region, append them here.
-            .push(
-                widget::row::with_children(start)
+        let start = widget::row::with_children(start)
+            .spacing(space_xxxs)
+            .align_y(iced::Alignment::Center)
+            .into();
+        let center = if !center.is_empty() {
+            Some(
+                widget::row::with_children(center)
                     .spacing(space_xxxs)
                     .align_y(iced::Alignment::Center)
-                    .apply(widget::container)
-                    .align_x(iced::Alignment::Start)
-                    .width(Length::FillPortion(left_portion)),
+                    .into(),
             )
-            // If elements exist in the center region, use them here.
-            // This will otherwise use the title as a widget if a title was defined.
-            .push_maybe(if !center.is_empty() {
-                Some(
-                    widget::row::with_children(center)
-                        .spacing(space_xxxs)
-                        .align_y(iced::Alignment::Center)
-                        .apply(widget::container)
-                        .center_x(Length::Fill)
-                        .into(),
-                )
-            } else if !self.title.is_empty() && !self.is_condensed {
-                Some(self.title_widget(title_portion))
-            } else {
-                None
-            })
-            .push(
-                widget::row::with_children(end)
-                    .spacing(space_xxs)
-                    .align_y(iced::Alignment::Center)
-                    .apply(widget::container)
-                    .align_x(iced::Alignment::End)
-                    .width(Length::FillPortion(right_portion)),
+        } else if !self.title.is_empty() {
+            Some(
+                widget::text::heading(self.title)
+                    .wrapping(text::Wrapping::None)
+                    .ellipsize(text::Ellipsize::End(text::EllipsizeHeightLimit::Lines(1)))
+                    .into(),
             )
+        } else {
+            None
+        };
+        let end = widget::row::with_children(end)
+            .spacing(space_xxs)
             .align_y(iced::Alignment::Center)
-            .height(Length::Fixed(32.0 + padding[0] as f32 + padding[2] as f32))
-            .padding(if self.is_ssd { [0, 8, 0, 8] } else { padding })
-            .spacing(8)
+            .into();
+
+        let mut widget = HeaderBarWidget::new(start, center, end)
             .apply(widget::container)
             .class(crate::theme::Container::HeaderBar {
                 focused: self.focused,
                 sharp_corners: self.sharp_corners,
                 transparent: self.transparent,
             })
-            .center_y(Length::Shrink)
+            .height(Length::Fixed(32.0 + padding[0] as f32 + padding[2] as f32))
+            .padding(padding)
             .apply(widget::mouse_area);
 
-        // Assigns a message to emit when the headerbar is dragged.
-        if let Some(message) = self.on_drag.clone() {
+        if let Some(message) = self.on_drag {
             widget = widget.on_drag(message);
         }
-
-        // Assigns a message to emit when the headerbar is double-clicked.
-        if let Some(message) = self.on_maximize.clone() {
+        if let Some(message) = self.on_maximize {
             widget = widget.on_release(message);
         }
-
-        if let Some(message) = self.on_double_click.clone() {
+        if let Some(message) = self.on_double_click {
             widget = widget.on_double_press(message);
         }
-        if let Some(message) = self.on_right_click.clone() {
+        if let Some(message) = self.on_right_click {
             widget = widget.on_right_press(message);
         }
 
         widget.into()
     }
 
-    fn title_widget(&mut self, title_portion: u16) -> Element<'a, Message> {
-        let mut title = Cow::default();
-        std::mem::swap(&mut title, &mut self.title);
-
-        widget::text::heading(title)
-            .wrapping(iced_core::text::Wrapping::None)
-            .ellipsize(iced_core::text::Ellipsize::End(
-                iced_core::text::EllipsizeHeightLimit::Lines(1),
-            ))
-            .apply(widget::container)
-            .center(Length::FillPortion(title_portion))
-            .into()
-    }
-
     /// Creates the widget for window controls.
-    fn window_controls(&mut self) -> Element<'a, Message> {
+    fn window_controls(&mut self, spacing: u16) -> Element<'a, Message> {
         macro_rules! icon {
             ($name:expr, $size:expr, $on_press:expr) => {{
-                let icon = {
-                    widget::icon::from_name($name)
-                        .apply(widget::button::icon)
-                        .padding(8)
-                };
-
-                icon.class(crate::theme::Button::HeaderBar)
+                widget::icon::from_name($name)
+                    .apply(widget::button::icon)
+                    .padding(8)
+                    .class(crate::theme::Button::HeaderBar)
                     .selected(self.focused)
                     .icon_size($size)
                     .on_press($on_press)
@@ -482,7 +479,7 @@ impl<'a, Message: Clone + 'static> HeaderBar<'a, Message> {
             .push_maybe(
                 self.on_minimize
                     .take()
-                    .map(|m: Message| icon!("window-minimize-symbolic", 16, m)),
+                    .map(|m| icon!("window-minimize-symbolic", 16, m)),
             )
             .push_maybe(self.on_maximize.take().map(|m| {
                 if self.maximized {
@@ -496,21 +493,14 @@ impl<'a, Message: Clone + 'static> HeaderBar<'a, Message> {
                     .take()
                     .map(|m| icon!("window-close-symbolic", 16, m)),
             )
-            .spacing(theme::spacing().space_xxs)
-            .apply(widget::container)
-            .center_y(Length::Fill)
+            .spacing(spacing)
+            .align_y(iced::Alignment::Center)
             .into()
     }
 }
 
 impl<'a, Message: Clone + 'static> From<HeaderBar<'a, Message>> for Element<'a, Message> {
     fn from(headerbar: HeaderBar<'a, Message>) -> Self {
-        Element::new(headerbar.build())
-    }
-}
-
-impl<'a, Message: Clone + 'static> From<HeaderBarWidget<'a, Message>> for Element<'a, Message> {
-    fn from(headerbar: HeaderBarWidget<'a, Message>) -> Self {
-        Element::new(headerbar)
+        headerbar.view()
     }
 }

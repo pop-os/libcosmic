@@ -742,9 +742,6 @@ impl<App: Application> ApplicationExt for App {
             }));
         let content: Element<_> = if content_container {
             content_col
-                .apply(container)
-                .width(iced::Length::Fill)
-                .height(iced::Length::Fill)
                 .apply(|w| id_container(w, iced_core::id::Id::new("COSMIC_content_container")))
                 .into()
         } else {
@@ -772,8 +769,7 @@ impl<App: Application> ApplicationExt for App {
                         .title(&core.window.header_title)
                         .on_drag(crate::Action::Cosmic(Action::Drag))
                         .on_right_click(crate::Action::Cosmic(Action::ShowWindowMenu))
-                        .on_double_click(crate::Action::Cosmic(Action::Maximize))
-                        .is_condensed(is_condensed);
+                        .on_double_click(crate::Action::Cosmic(Action::Maximize));
 
                     if self.nav_model().is_some() {
                         let toggle = crate::widget::nav_bar_toggle()
