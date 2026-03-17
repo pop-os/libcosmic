@@ -1596,7 +1596,7 @@ where
             }
         }
 
-        iced_core::mouse::Interaction::Idle
+        iced_core::mouse::Interaction::default()
     }
 
     #[allow(clippy::too_many_lines)]
