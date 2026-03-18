@@ -28,13 +28,14 @@ impl State {
             column!(
                 list_column().add(settings::item(
                     "Bluetooth",
-                    toggler(None, self.enabled, Message::Enable)
+                    toggler(self.enabled).on_toggle(Message::Enable)
                 )),
                 text("Now visible as \"TODO\", just kidding")
             )
             .spacing(8)
             .into(),
-            settings::view_section("Devices")
+            settings::section()
+                .title("Devices")
                 .add(settings::item("No devices found", text("")))
                 .into(),
         ])
