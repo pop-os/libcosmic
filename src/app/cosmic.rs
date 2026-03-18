@@ -49,8 +49,8 @@ pub fn windowing_system() -> Option<WindowingSystem> {
     WINDOWING_SYSTEM.get().copied()
 }
 
-fn init_windowing_system<M>(handle: raw_window_handle::WindowHandle) -> crate::Action<M> {
-    let raw: &raw_window_handle::RawWindowHandle = handle.as_ref();
+fn init_windowing_system<M>(handle: window::raw_window_handle::WindowHandle) -> crate::Action<M> {
+    let raw = handle.as_ref();
     let system = match raw {
         window::raw_window_handle::RawWindowHandle::UiKit(_) => WindowingSystem::UiKit,
         window::raw_window_handle::RawWindowHandle::AppKit(_) => WindowingSystem::AppKit,

@@ -22,7 +22,7 @@ serde_json = { version = "1.0.149", optional = true, features = [
     "preserve_order",
 ] }
 ron = "0.12.0"
-csscolorparser = { version = "0.8.1", features = ["serde"] }
+csscolorparser = { version = "0.8.3", features = ["serde"] }
 cosmic-config = { path = "../cosmic-config/", default-features = false, features = [
     "subscription",
     "macro",
