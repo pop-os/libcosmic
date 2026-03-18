@@ -197,7 +197,16 @@ impl<'a, Message: Clone + 'static> Widget<Message, crate::Theme, crate::Renderer
         );
         let start_width = start_node.size().width;
 
-        let (center_node, center_x) = if let Some(center) = &mut self.center {
+        let vcenter = |node: layout::Node, x: f32| -> layout::Node {
+            let dy = ((height - node.size().height) / 2.0).max(0.0);
+            node.translate(Vector::new(x, dy))
+        };
+
+        let mut child_nodes = Vec::with_capacity(3);
+        child_nodes.push(vcenter(start_node, 0.0));
+        child_nodes.push(vcenter(end_node, width - end_width));
+
+        if let Some(center) = &mut self.center {
             let slot_start = start_width + gap;
             let slot_end = (width - end_width - gap).max(slot_start);
             let slot_width = slot_end - slot_start;
@@ -217,21 +226,8 @@ impl<'a, Message: Clone + 'static> Widget<Message, crate::Theme, crate::Renderer
             let ideal_x = (width - natural_width) / 2.0;
             let max_x = (width - end_width - gap - natural_width).max(slot_start);
             let center_x = ideal_x.clamp(slot_start, max_x);
-            (Some(node), center_x)
-        } else {
-            (None, 0.0)
-        };
 
-        let vcenter = |node: layout::Node, x: f32| -> layout::Node {
-            let dy = ((height - node.size().height) / 2.0).max(0.0);
-            node.translate(Vector::new(x, dy))
-        };
-
-        let mut child_nodes = Vec::with_capacity(3);
-        child_nodes.push(vcenter(start_node, 0.0));
-        child_nodes.push(vcenter(end_node, width - end_width));
-        if let Some(cn) = center_node {
-            child_nodes.push(vcenter(cn, center_x));
+            child_nodes.push(vcenter(node, center_x))
         }
 
         layout::Node::with_children(Size::new(width, height), child_nodes)
@@ -398,8 +394,7 @@ impl<'a, Message: Clone + 'static> HeaderBar<'a, Message> {
         } else {
             match (
                 self.density.unwrap_or_else(crate::config::header_size),
-                // Center content depending on window border
-                self.maximized,
+                self.maximized, // window border handling
             ) {
                 (Density::Compact, true) => [4, 8, 4, 8],
                 (Density::Compact, false) => [3, 7, 4, 7],

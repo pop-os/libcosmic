@@ -258,12 +258,13 @@ impl State {
             match self.tab_bar.active_data() {
                 None => panic!("no tab is active"),
                 Some(DemoView::TabA) => settings::view_column(vec![
-                    settings::view_section("Debug")
+                    settings::section()
+                        .title("Debug")
                         .add(settings::item("Debug theme", choose_theme))
                         .add(settings::item("Debug icon theme", choose_icon_theme))
                         .add(settings::item(
                             "Debug layout",
-                            toggler(None, window.debug, Message::Debug),
+                            toggler(window.debug).on_toggle(Message::Debug),
                         ))
                         .add(settings::item(
                             "Scaling Factor",
@@ -276,10 +277,11 @@ impl State {
                                 .into(),
                         ]))
                         .into(),
-                    settings::view_section("Controls")
+                    settings::section()
+                        .title("Controls")
                         .add(settings::item(
                             "Toggler",
-                            toggler(None, self.toggler_value, Message::TogglerToggled),
+                            toggler(self.toggler_value).on_toggle(Message::TogglerToggled),
                         ))
                         .add(settings::item(
                             "Pick List (TODO)",
@@ -299,15 +301,13 @@ impl State {
                         .add(settings::item(
                             "Progress",
                             progress_bar(0.0..=100.0, self.slider_value)
-                                .width(Length::Fixed(250.0))
-                                .height(Length::Fixed(4.0)),
+                                .length(Length::Fixed(250.0))
+                                .girth(Length::Fixed(4.0)),
                         ))
-                        .add(settings::item_row(vec![checkbox(
-                            "Checkbox",
-                            self.checkbox_value,
-                            Message::CheckboxToggled,
-                        )
-                        .into()]))
+                        .add(settings::item_row(vec![checkbox(self.checkbox_value)
+                            .label("Checkbox")
+                            .on_toggle(Message::CheckboxToggled)
+                            .into()]))
                         .add(settings::item(
                             format!(
                                 "Spin Button (Range {}:{})",
@@ -354,8 +354,7 @@ impl State {
                         .width(Length::Shrink)
                         .on_activate(Message::MultiSelection)
                         .apply(container)
-                        .center_x()
-                        .width(Length::Fill)
+                        .center_x(Length::Fill)
                         .into(),
                     text("Vertical With Spacing").into(),
                     cosmic::iced::widget::row(vec![
@@ -424,13 +423,12 @@ impl State {
                 ])
                 .padding(0)
                 .into(),
-                Some(DemoView::TabC) => {
-                    settings::view_column(vec![settings::view_section("Tab C")
-                        .add(text("Nothing here yet").width(Length::Fill))
-                        .into()])
-                    .padding(0)
-                    .into()
-                }
+                Some(DemoView::TabC) => settings::view_column(vec![settings::section()
+                    .title("Tab C")
+                    .add(text("Nothing here yet").width(Length::Fill))
+                    .into()])
+                .padding(0)
+                .into(),
             },
             container(text("Background container with some text").size(24))
                 .layer(cosmic_theme::Layer::Background)

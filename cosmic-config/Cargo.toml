@@ -11,9 +11,9 @@ subscription = ["iced_futures"]
 
 [dependencies]
 cosmic-settings-daemon = { git = "https://github.com/pop-os/dbus-settings-bindings", optional = true }
-zbus = { version = "5.13.2", default-features = false, optional = true }
+zbus = { version = "5.14.0", default-features = false, optional = true }
 atomicwrites = { git = "https://github.com/jackpot51/rust-atomicwrites" }
-calloop = { version = "0.14.3", optional = true }
+calloop = { version = "0.14.4", optional = true }
 notify = "8.2.0"
 ron = "0.12.0"
 serde = "1.0.228"
@@ -22,7 +22,7 @@ iced = { path = "../iced/", default-features = false, optional = true }
 iced_futures = { path = "../iced/futures/", default-features = false, optional = true }
 futures-util = { version = "0.3", optional = true }
 dirs.workspace = true
-tokio = { version = "1.49", optional = true, features = ["time"] }
+tokio = { version = "1.50", optional = true, features = ["time"] }
 async-std = { version = "1.13", optional = true }
 tracing = "0.1"
 
@@ -30,4 +30,4 @@ tracing = "0.1"
 xdg = "3.0"
 
 [target.'cfg(windows)'.dependencies]
-known-folders = "1.4.0"
+known-folders = "1.4.2"
