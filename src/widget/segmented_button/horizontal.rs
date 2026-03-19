@@ -213,6 +213,18 @@ where
             state.buttons_offset = num - state.buttons_visible;
         }
 
+        // Resize paragraph bounds so that text ellipsis can take effect.
+        if !matches!(self.width, Length::Shrink) || state.collapsed {
+            let num = state.buttons_visible.max(1) as f32;
+            let spacing = f32::from(self.spacing);
+            let mut width_offset = 0.0;
+            if state.collapsed {
+                width_offset = f32::from(self.button_height) * 2.0;
+            }
+            let button_width = ((num).mul_add(-spacing, size.width - width_offset) + spacing) / num;
+            self.resize_paragraphs(state, button_width);
+        }
+
         size
     }
 }

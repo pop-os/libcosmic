@@ -117,10 +117,15 @@ where
             height += item_height;
         }
 
-        limits.height(Length::Fixed(height)).resolve(
+        let size = limits.height(Length::Fixed(height)).resolve(
             self.width,
             self.height,
             Size::new(width, height),
-        )
+        );
+
+        // Resize paragraph bounds so that text ellipsis can take effect.
+        self.resize_paragraphs(state, size.width);
+
+        size
     }
 }
