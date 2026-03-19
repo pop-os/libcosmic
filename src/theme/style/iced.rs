@@ -599,11 +599,11 @@ impl iced_container::Catalog for Theme {
             Container::ContentArea => iced_container::Style {
                 icon_color: Some(Color::from(cosmic.background.on)),
                 text_color: Some(Color::from(cosmic.background.on)),
-                background: Some(iced::Background::Color(cosmic.background.base.into())),
+                background: Some(iced::Background::Color(Color::from_rgb8(245, 245, 245))),
                 border: Border {
-                    radius: cosmic.corner_radii.radius_s.into(),
-                    width: 1.0,
-                    color: cosmic.background.divider.into(),
+                    radius: [0.0; 4].into(),
+                    width: 0.0,
+                    color: Color::TRANSPARENT,
                 },
                 shadow: Shadow::default(),
             },
@@ -693,56 +693,42 @@ impl slider::Catalog for Theme {
 
     fn style(&self, class: &Self::Class<'_>, status: slider::Status) -> slider::Style {
         let cosmic: &cosmic_theme::Theme = self.cosmic();
-        let hc = self.theme_type.is_high_contrast();
-        let is_dark = self.theme_type.is_dark();
 
         let mut appearance = match class {
             Slider::Standard =>
             //TODO: no way to set rail thickness
             {
-                let (active_track, inactive_track) = if hc {
-                    (
-                        cosmic.accent_text_color(),
-                        if is_dark {
-                            cosmic.palette.neutral_5
-                        } else {
-                            cosmic.palette.neutral_3
-                        },
-                    )
-                } else {
-                    (cosmic.accent.base, cosmic.palette.neutral_6)
-                };
+                let empty_track: Color = Color::from_rgb8(224, 224, 224);
                 slider::Style {
                     rail: Rail {
                         backgrounds: (
-                            Background::Color(active_track.into()),
-                            Background::Color(inactive_track.into()),
+                            Background::Color(crate::theme::STATE_DEFAULT_COLOR),
+                            Background::Color(empty_track),
                         ),
                         border: Border {
                             radius: cosmic.corner_radii.radius_xs.into(),
-                            color: if hc && !is_dark {
-                                self.current_container().component.border.into()
-                            } else {
-                                Color::TRANSPARENT
-                            },
-                            width: if hc && !is_dark { 1. } else { 0. },
+                            color: Color::TRANSPARENT,
+                            width: 0.0,
                         },
                         width: 4.0,
                     },
 
                     handle: slider::Handle {
-                        shape: slider::HandleShape::Rectangle {
-                            height: 20,
-                            width: 20,
-                            border_radius: cosmic.corner_radii.radius_m.into(),
+                        shape: slider::HandleShape::Circle {
+                            radius: 8.0,
                         },
-                        border_color: Color::TRANSPARENT,
-                        border_width: 0.0,
-                        background: Background::Color(cosmic.accent.base.into()),
+                        border_color: Color::from_rgba8(0, 0, 0, 0.12),
+                        border_width: 1.0,
+                        background: Background::Color(Color::WHITE),
+                        shadow: Shadow {
+                            color: Color::from_rgba8(0, 0, 0, 0.10),
+                            offset: Vector::new(0.0, 1.0),
+                            blur_radius: 3.0,
+                        },
                     },
 
                     breakpoint: slider::Breakpoint {
-                        color: cosmic.on_bg_color().into(),
+                        color: crate::theme::STATE_DEFAULT_COLOR,
                     },
                 }
             }
@@ -752,34 +738,33 @@ impl slider::Catalog for Theme {
             slider::Status::Active => appearance,
             slider::Status::Hovered => match class {
                 Slider::Standard => {
-                    appearance.handle.shape = slider::HandleShape::Rectangle {
-                        height: 26,
-                        width: 26,
-                        border_radius: cosmic.corner_radii.radius_m.into(),
+                    appearance.handle.shape = slider::HandleShape::Circle {
+                        radius: 10.0,
                     };
-                    appearance.handle.border_width = 3.0;
-                    appearance.handle.border_color =
-                        self.cosmic().palette.neutral_10.with_alpha(0.1).into();
+                    appearance.handle.border_width = 1.0;
+                    appearance.handle.border_color = Color::from_rgba8(0, 0, 0, 0.12);
+                    appearance.handle.shadow = Shadow {
+                        color: Color::from_rgba8(0, 0, 0, 0.12),
+                        offset: Vector::new(0.0, 1.0),
+                        blur_radius: 4.0,
+                    };
                     appearance
                 }
                 Slider::Custom { hovered, .. } => hovered(self),
             },
             slider::Status::Dragged => match class {
                 Slider::Standard => {
-                    let mut style = {
-                        appearance.handle.shape = slider::HandleShape::Rectangle {
-                            height: 26,
-                            width: 26,
-                            border_radius: cosmic.corner_radii.radius_m.into(),
-                        };
-                        appearance.handle.border_width = 3.0;
-                        appearance.handle.border_color =
-                            self.cosmic().palette.neutral_10.with_alpha(0.1).into();
-                        appearance
+                    appearance.handle.shape = slider::HandleShape::Circle {
+                        radius: 10.0,
                     };
-                    style.handle.border_color =
-                        self.cosmic().palette.neutral_10.with_alpha(0.2).into();
-                    style
+                    appearance.handle.border_width = 1.0;
+                    appearance.handle.border_color = Color::from_rgba8(0, 0, 0, 0.12);
+                    appearance.handle.shadow = Shadow {
+                        color: Color::from_rgba8(0, 0, 0, 0.12),
+                        offset: Vector::new(0.0, 1.0),
+                        blur_radius: 4.0,
+                    };
+                    appearance
                 }
                 Slider::Custom { dragging, .. } => dragging(self),
             },
@@ -802,8 +787,8 @@ impl menu::Catalog for Theme {
                 radius: cosmic.corner_radii.radius_m.into(),
                 ..Default::default()
             },
-            selected_text_color: cosmic.accent_text_color().into(),
-            selected_background: Background::Color(cosmic.background.component.hover.into()),
+            selected_text_color: crate::theme::STATE_DEFAULT_COLOR,
+            selected_background: Background::Color(crate::theme::STATE_DEFAULT_BG),
         }
     }
 }

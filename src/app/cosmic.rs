@@ -747,10 +747,11 @@ impl<T: Application> Cosmic<T> {
                     self.app.core_mut().theme_sub_counter += 1;
 
                     let portal_accent = self.app.core().portal_accent;
-                    if let Some(a) = portal_accent {
+                    if let Some(_a) = portal_accent {
                         let t_inner = theme.cosmic();
-                        if a.distance_squared(*t_inner.accent_color()) > 0.00001 {
-                            theme = Theme::system(Arc::new(t_inner.with_accent(a)));
+                        let state_default = crate::theme::STATE_DEFAULT_ACCENT;
+                        if state_default.distance_squared(*t_inner.accent_color()) > 0.00001 {
+                            theme = Theme::system(Arc::new(t_inner.with_accent(state_default)));
                         }
                     };
                 }
@@ -777,15 +778,14 @@ impl<T: Application> Cosmic<T> {
                         prefer_dark,
                     } = cosmic_theme.theme_type
                     {
-                        let mut new_theme = if let Some(a) = portal_accent {
+                        let state_default = crate::theme::STATE_DEFAULT_ACCENT;
+                        let mut new_theme = {
                             let t_inner = theme.cosmic();
-                            if a.distance_squared(*t_inner.accent_color()) > 0.00001 {
-                                Theme::system(Arc::new(t_inner.with_accent(a)))
+                            if state_default.distance_squared(*t_inner.accent_color()) > 0.00001 {
+                                Theme::system(Arc::new(t_inner.with_accent(state_default)))
                             } else {
                                 theme
                             }
-                        } else {
-                            theme
                         };
                         new_theme.theme_type.prefer_dark(prefer_dark);
 
@@ -918,15 +918,14 @@ impl<T: Application> Cosmic<T> {
                     cmds.push(self.app.system_theme_update(&[], new_theme.cosmic()));
 
                     let core = self.app.core_mut();
-                    new_theme = if let Some(a) = core.portal_accent {
+                    new_theme = {
+                        let state_default = crate::theme::STATE_DEFAULT_ACCENT;
                         let t_inner = new_theme.cosmic();
-                        if a.distance_squared(*t_inner.accent_color()) > 0.00001 {
-                            Theme::system(Arc::new(t_inner.with_accent(a)))
+                        if state_default.distance_squared(*t_inner.accent_color()) > 0.00001 {
+                            Theme::system(Arc::new(t_inner.with_accent(state_default)))
                         } else {
                             new_theme
                         }
-                    } else {
-                        new_theme
                     };
 
                     core.system_theme = new_theme.clone();
@@ -1120,13 +1119,12 @@ impl<T: Application> Cosmic<T> {
             }
             #[cfg(feature = "xdg-portal")]
             Action::DesktopSettings(crate::theme::portal::Desktop::Accent(c)) => {
-                use palette::Srgba;
-                let c = Srgba::new(c.red() as f32, c.green() as f32, c.blue() as f32, 1.0);
+                let state_default = crate::theme::STATE_DEFAULT_ACCENT;
                 let core = self.app.core_mut();
-                core.portal_accent = Some(c);
+                core.portal_accent = Some(state_default);
                 let cur_accent = core.system_theme.cosmic().accent_color();
 
-                if cur_accent.distance_squared(*c) < 0.00001 {
+                if cur_accent.distance_squared(*state_default) < 0.00001 {
                     // skip calculations if we already have the same color
                     return iced::Task::none();
                 }
@@ -1141,7 +1139,7 @@ impl<T: Application> Cosmic<T> {
                     } = cosmic_theme.theme_type.clone()
                     {
                         cosmic_theme.set_theme(ThemeType::System {
-                            theme: Arc::new(t.with_accent(c)),
+                            theme: Arc::new(t.with_accent(state_default)),
                             prefer_dark,
                         });
                     }

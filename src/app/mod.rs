@@ -563,22 +563,12 @@ impl<App: Application> ApplicationExt for App {
         let maximized = core.window.is_maximized;
         let content_container = core.window.content_container;
         let show_context = core.window.show_context;
-        let nav_bar_active = core.nav_bar_active();
         let focused = core
             .focus_chain()
             .iter()
             .any(|i| Some(*i) == self.core().main_window_id());
 
-        let border_padding = if maximized { 8 } else { 7 };
-
-        let main_content_padding = if !content_container {
-            [0, 0, 0, 0]
-        } else {
-            let right_padding = if show_context { 0 } else { border_padding };
-            let left_padding = if nav_bar_active { 0 } else { border_padding };
-
-            [0, right_padding, 0, left_padding]
-        };
+        let main_content_padding = [0, 0, 0, 0];
 
         let content_row = crate::widget::row::with_children({
             let mut widgets = Vec::with_capacity(3);
@@ -590,14 +580,27 @@ impl<App: Application> ApplicationExt for App {
             {
                 widgets.push(
                     container(nav)
-                        .padding([
-                            0,
-                            if is_condensed { border_padding } else { 8 },
-                            border_padding,
-                            border_padding,
-                        ])
+                        .padding([0, 0, 0, 0])
                         .into(),
                 );
+
+                // Vertical divider between nav bar and content
+                {
+                    use iced::widget::{vertical_rule, rule};
+                    widgets.push(
+                        vertical_rule(1)
+                            .class(crate::theme::Rule::Custom(Box::new(
+                                |_: &crate::Theme| rule::Style {
+                                    color: iced_core::Color::from_rgba8(224, 224, 224, 1.0),
+                                    width: 1,
+                                    radius: 0.0.into(),
+                                    fill_mode: rule::FillMode::Full,
+                                },
+                            )))
+                            .into(),
+                    );
+                }
+
                 true
             } else {
                 false
@@ -628,7 +631,7 @@ impl<App: Application> ApplicationExt for App {
                                 ))
                             })
                             .apply(container)
-                            .padding([0, if content_container { border_padding } else { 0 }, 0, 0])
+                            .padding([0, 0, 0, 0])
                             .apply(Element::from)
                             .map(crate::Action::App),
                         );
@@ -668,13 +671,9 @@ impl<App: Application> ApplicationExt for App {
                                 ))
                             })
                             .apply(container)
-                            .padding(if content_container {
-                                [0, border_padding, border_padding, border_padding]
-                            } else {
-                                [0, 0, 0, 0]
-                            })
+                            .padding([0, 0, 0, 0])
                             .into(),
-                        )
+                        );
                     } else {
                         //TODO: this element is added to workaround state issues
                         widgets.push(horizontal_space().width(Length::Shrink).into());
@@ -687,25 +686,19 @@ impl<App: Application> ApplicationExt for App {
         let content_col = crate::widget::column::with_capacity(2)
             .push(content_row)
             .push_maybe(self.footer().map(|footer| {
-                container(footer.map(crate::Action::App)).padding([
-                    0,
-                    border_padding,
-                    border_padding,
-                    border_padding,
-                ])
+                container(footer.map(crate::Action::App)).padding([0, 0, 0, 0])
             }));
-        let content_inset = if maximized { 0 } else { 16 };
         let content: Element<_> = if content_container {
             let inner: Element<_> = content_col
                 .apply(container)
-                .padding([7, 0, 0, 0])
+                .padding([0, 0, 0, 0])
                 .width(iced::Length::Fill)
                 .height(iced::Length::Fill)
                 .class(crate::theme::Container::ContentArea)
                 .into();
 
             container(inner)
-                .padding([8, content_inset, content_inset, content_inset])
+                .padding([0, 0, 0, 0])
                 .width(iced::Length::Fill)
                 .height(iced::Length::Fill)
                 .apply(|w| id_container(w, iced_core::id::Id::new("COSMIC_content_container")))
@@ -782,20 +775,13 @@ impl<App: Application> ApplicationExt for App {
                         // Needed to avoid header bar corner gaps for apps without a content container
                         header
                             .apply(container)
-                            .class(crate::theme::Container::custom(move |theme| {
-                                let cosmic = theme.cosmic();
+                            .class(crate::theme::Container::custom(move |_theme| {
                                 container::Style {
                                     background: Some(iced::Background::Color(
-                                        cosmic.background.base.into(),
+                                        iced_core::Color::WHITE,
                                     )),
                                     border: iced::Border {
-                                        radius: [
-                                            (window_corner_radius[0] - 1.0).max(0.0),
-                                            (window_corner_radius[1] - 1.0).max(0.0),
-                                            cosmic.radius_0()[2],
-                                            cosmic.radius_0()[3],
-                                        ]
-                                        .into(),
+                                        radius: [0.0; 4].into(),
                                         ..Default::default()
                                     },
                                     ..Default::default()
@@ -810,19 +796,13 @@ impl<App: Application> ApplicationExt for App {
             // The content element contains every element beneath the header.
             .push(content)
             .apply(container)
-            .padding(if maximized { 0 } else { 1 })
-            .class(crate::theme::Container::custom(move |theme| {
+            .padding(0)
+            .class(crate::theme::Container::custom(move |_theme| {
                 container::Style {
-                    background: if content_container {
-                        Some(iced::Background::Color(
-                            theme.cosmic().background.base.into(),
-                        ))
-                    } else {
-                        None
-                    },
+                    background: Some(iced::Background::Color(iced_core::Color::WHITE)),
                     border: iced::Border {
-                        color: theme.cosmic().bg_divider().into(),
-                        width: if maximized { 0.0 } else { 1.0 },
+                        color: iced_core::Color::TRANSPARENT,
+                        width: 0.0,
                         radius: window_corner_radius.into(),
                     },
                     ..Default::default()

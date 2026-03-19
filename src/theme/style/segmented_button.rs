@@ -71,10 +71,41 @@ impl StyleSheet for Theme {
                 }
             }
 
-            SegmentedButton::NavBar | SegmentedButton::FileNav => Appearance {
-                active_width: 0.0,
-                ..horizontal::tab_bar(cosmic, container)
-            },
+            SegmentedButton::NavBar | SegmentedButton::FileNav => {
+                let rad_m = cosmic.corner_radii.radius_m;
+                let item_border = ItemAppearance {
+                    border: Border {
+                        radius: rad_m.into(),
+                        ..Default::default()
+                    },
+                };
+                let active = ItemStatusAppearance {
+                    background: Some(Background::Color(crate::theme::STATE_DEFAULT_BG)),
+                    first: item_border,
+                    middle: item_border,
+                    last: item_border,
+                    text_color: crate::theme::STATE_DEFAULT_COLOR,
+                };
+                let inactive = ItemStatusAppearance {
+                    background: None,
+                    first: item_border,
+                    middle: item_border,
+                    last: item_border,
+                    text_color: container.component.on.into(),
+                };
+                Appearance {
+                    active_width: 0.0,
+                    border: Border {
+                        radius: cosmic.corner_radii.radius_0.into(),
+                        ..Default::default()
+                    },
+                    inactive,
+                    hover: inactive,
+                    pressed: inactive,
+                    active,
+                    ..Default::default()
+                }
+            }
 
             SegmentedButton::TabBar => horizontal::tab_bar(cosmic, container),
 
@@ -126,10 +157,51 @@ impl StyleSheet for Theme {
                 }
             }
 
-            SegmentedButton::NavBar | SegmentedButton::FileNav => Appearance {
-                active_width: 0.0,
-                ..vertical::tab_bar(cosmic, container)
-            },
+            SegmentedButton::NavBar | SegmentedButton::FileNav => {
+                let rad_m = cosmic.corner_radii.radius_m;
+                let active = ItemStatusAppearance {
+                    background: Some(Background::Color(crate::theme::STATE_DEFAULT_BG)),
+                    first: ItemAppearance {
+                        border: Border {
+                            radius: rad_m.into(),
+                            ..Default::default()
+                        },
+                    },
+                    middle: ItemAppearance {
+                        border: Border {
+                            radius: rad_m.into(),
+                            ..Default::default()
+                        },
+                    },
+                    last: ItemAppearance {
+                        border: Border {
+                            radius: rad_m.into(),
+                            ..Default::default()
+                        },
+                    },
+                    text_color: crate::theme::STATE_DEFAULT_COLOR,
+                };
+                let inactive = ItemStatusAppearance {
+                    background: None,
+                    first: active.first,
+                    middle: active.middle,
+                    last: active.last,
+                    text_color: container.component.on.into(),
+                };
+                let hover_state = inactive;
+                Appearance {
+                    active_width: 0.0,
+                    border: Border {
+                        radius: cosmic.corner_radii.radius_0.into(),
+                        ..Default::default()
+                    },
+                    inactive,
+                    hover: hover_state,
+                    pressed: hover_state,
+                    active,
+                    ..Default::default()
+                }
+            }
 
             SegmentedButton::TabBar => vertical::tab_bar(cosmic, container),
 

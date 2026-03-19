@@ -441,15 +441,7 @@ impl<'a, Message: Clone + 'static> HeaderBar<'a, Message> {
             (portion, portion)
         };
 
-        // SSD uses fixed height 48px with 12px horizontal padding; non-SSD uses computed height
-        let (header_height, header_padding) = if self.is_ssd {
-            (Length::Fixed(48.0), [8, 12, 8, 12])
-        } else {
-            (
-                Length::Fixed(44.0 + padding[0] as f32 + padding[2] as f32),
-                if self.is_ssd { [0, 8, 0, 8] } else { padding },
-            )
-        };
+        let (header_height, header_padding) = (Length::Fixed(48.0), [8, 12, 8, 12]);
 
         // Creates the headerbar widget.
         let widget = widget::row::with_capacity(3)
@@ -498,50 +490,31 @@ impl<'a, Message: Clone + 'static> HeaderBar<'a, Message> {
             .padding(header_padding)
             .spacing(8)
             .apply(widget::container)
-            .class(if self.is_ssd {
-                // SSD: custom container with white background and top corner radii
-                let sharp = self.sharp_corners;
-                let explicit_radius = self.corner_radius;
+            .class({
                 crate::theme::Container::custom(move |theme| {
                     let cosmic = theme.cosmic();
-                    let window_radius = explicit_radius.unwrap_or_else(|| cosmic.radius_window());
                     iced_widget::container::Style {
                         icon_color: Some(Color::from(cosmic.background.on)),
                         text_color: Some(Color::from(cosmic.background.on)),
-                        background: Some(iced::Background::Color(Color::from_rgba8(
-                            255, 255, 255, 0.99,
-                        ))),
+                        background: Some(iced::Background::Color(Color::WHITE)),
                         border: Border {
-                            radius: [
-                                if sharp { 0.0 } else { window_radius[0] },
-                                if sharp { 0.0 } else { window_radius[1] },
-                                0.0,
-                                0.0,
-                            ]
-                            .into(),
+                            radius: [0.0; 4].into(),
                             ..Default::default()
                         },
                         shadow: Default::default(),
                     }
                 })
-            } else {
-                crate::theme::Container::HeaderBar {
-                    focused: self.focused,
-                    sharp_corners: self.sharp_corners,
-                    transparent: self.transparent,
-                }
             })
             .center_y(Length::Shrink);
 
-        // SSD: add 1px horizontal rule below header with color #F0F0F1
-        let widget = if self.is_ssd {
+        let widget = {
             use iced::widget::{horizontal_rule, rule};
             widget::column::with_capacity(2)
                 .push(widget)
                 .push(
                     horizontal_rule(1).class(crate::theme::Rule::Custom(Box::new(
                         |_: &crate::Theme| rule::Style {
-                            color: Color::from_rgba8(240, 240, 241, 1.0),
+                            color: Color::from_rgba8(224, 224, 224, 1.0),
                             width: 1,
                             radius: 0.0.into(),
                             fill_mode: rule::FillMode::Full,
@@ -549,8 +522,6 @@ impl<'a, Message: Clone + 'static> HeaderBar<'a, Message> {
                     ))),
                 )
                 .apply(widget::mouse_area)
-        } else {
-            widget.apply(widget::mouse_area)
         };
 
         let mut widget = widget;
@@ -586,89 +557,98 @@ impl<'a, Message: Clone + 'static> HeaderBar<'a, Message> {
         const ICON_RESTORE: &[u8] = include_bytes!("../../res/icons/window-restore.svg");
         const ICON_CLOSE: &[u8] = include_bytes!("../../res/icons/window-close.svg");
 
-        // SSD uses custom styling: fill_strong bg, space_xs padding, 2px gap
-        let is_ssd = self.is_ssd;
-
-        macro_rules! icon {
-            ($svg_bytes:expr, $size:expr, $on_press:expr) => {{
-                let padding = if is_ssd { [6, 6] } else { [8, 8] };
-                let result: Element<'a, Message> = if is_ssd {
-                    // SSD: create icon widget with dark tint, wrap in custom button
-                    let icon_w = widget::icon::icon(widget::icon::from_svg_bytes($svg_bytes))
-                        .size($size)
-                        .class(crate::theme::Svg::custom(|_| iced::widget::svg::Style {
-                            color: Some(Color::from_rgb8(0x1B, 0x1B, 0x1B)),
-                        }));
-                    widget::button::custom(icon_w)
-                        .padding(padding)
-                        .class(crate::theme::Button::HeaderBar)
-                        .selected(self.focused)
-                        .on_press($on_press)
-                        .into()
-                } else {
-                    widget::icon::from_svg_bytes($svg_bytes)
-                        .apply(widget::button::icon)
-                        .padding(padding)
-                        .class(crate::theme::Button::HeaderBar)
-                        .selected(self.focused)
-                        .icon_size($size)
-                        .on_press($on_press)
-                        .into()
-                };
-                result
+        macro_rules! wc_icon {
+            ($svg_bytes:expr, $size:expr, $on_press:expr, $is_close:expr) => {{
+                let icon_w = widget::icon::icon(widget::icon::from_svg_bytes($svg_bytes))
+                    .size($size)
+                    .class(crate::theme::Svg::custom(|_| iced::widget::svg::Style {
+                        color: Some(Color::from_rgb8(0x3D, 0x3D, 0x3D)),
+                    }));
+                let btn: Element<'a, Message> = widget::button::custom(icon_w)
+                    .padding([4, 6])
+                    .class(crate::theme::Button::Custom {
+                        active: Box::new(move |_focused, _theme| {
+                            crate::widget::button::Style {
+                                background: Some(iced::Background::Color(Color::TRANSPARENT)),
+                                text_color: Some(Color::from_rgb8(0x3D, 0x3D, 0x3D)),
+                                icon_color: Some(Color::from_rgb8(0x3D, 0x3D, 0x3D)),
+                                border_radius: [6.0; 4].into(),
+                                ..Default::default()
+                            }
+                        }),
+                        disabled: Box::new(|_theme| crate::widget::button::Style::default()),
+                        hovered: Box::new(move |_focused, _theme| {
+                            let bg = if $is_close {
+                                Color::from_rgba8(224, 64, 64, 0.20)
+                            } else {
+                                Color::from_rgb8(208, 208, 208)
+                            };
+                            let icon_c = if $is_close {
+                                Color::from_rgb8(224, 64, 64)
+                            } else {
+                                Color::from_rgb8(0x3D, 0x3D, 0x3D)
+                            };
+                            crate::widget::button::Style {
+                                background: Some(iced::Background::Color(bg)),
+                                text_color: Some(icon_c),
+                                icon_color: Some(icon_c),
+                                border_radius: [6.0; 4].into(),
+                                ..Default::default()
+                            }
+                        }),
+                        pressed: Box::new(move |_focused, _theme| {
+                            let bg = if $is_close {
+                                Color::from_rgba8(200, 50, 50, 0.30)
+                            } else {
+                                Color::from_rgb8(190, 190, 190)
+                            };
+                            let icon_c = if $is_close {
+                                Color::from_rgb8(200, 50, 50)
+                            } else {
+                                Color::from_rgb8(0x3D, 0x3D, 0x3D)
+                            };
+                            crate::widget::button::Style {
+                                background: Some(iced::Background::Color(bg)),
+                                text_color: Some(icon_c),
+                                icon_color: Some(icon_c),
+                                border_radius: [6.0; 4].into(),
+                                ..Default::default()
+                            }
+                        }),
+                    })
+                    .on_press($on_press)
+                    .into();
+                btn
             }};
         }
-
-        // SSD: 2px gap between icons; non-SSD: space_xxs
-        let icon_spacing = if self.is_ssd {
-            2
-        } else {
-            theme::spacing().space_xxs
-        };
 
         widget::row::with_capacity(3)
             .push_maybe(
                 self.on_minimize
                     .take()
-                    .map(|m: Message| icon!(ICON_MINIMIZE, 16, m)),
+                    .map(|m: Message| wc_icon!(ICON_MINIMIZE, 14, m, false)),
             )
             .push_maybe(self.on_maximize.take().map(|m| {
                 if self.maximized {
-                    icon!(ICON_RESTORE, 16, m)
+                    wc_icon!(ICON_RESTORE, 14, m, false)
                 } else {
-                    icon!(ICON_MAXIMIZE, 16, m)
+                    wc_icon!(ICON_MAXIMIZE, 14, m, false)
                 }
             }))
-            .push_maybe(self.on_close.take().map(|m| icon!(ICON_CLOSE, 16, m)))
-            .spacing(icon_spacing)
+            .push_maybe(self.on_close.take().map(|m| wc_icon!(ICON_CLOSE, 14, m, true)))
+            .spacing(2)
             .apply(widget::container)
-            .class(crate::theme::Container::custom(move |theme| {
-                let cosmic = theme.cosmic();
-                // SSD uses white at 80% opacity; non-SSD uses component base
-                let background = if is_ssd {
-                    Color::from_rgba8(0xFF, 0xFF, 0xFF, 0.80)
-                } else {
-                    Color::from(cosmic.background.component.base)
-                };
+            .class(crate::theme::Container::custom(move |_theme| {
                 iced_widget::container::Style {
-                    background: Some(iced::Background::Color(background)),
+                    background: Some(iced::Background::Color(Color::from_rgb8(232, 232, 232))),
                     border: Border {
-                        radius: cosmic.corner_radii.radius_xl.into(),
+                        radius: [8.0; 4].into(),
                         ..Default::default()
                     },
                     ..Default::default()
                 }
             }))
-            // SSD: 8px horizontal, 2px vertical; non-SSD: [4, 8]
-            .padding(if self.is_ssd { [2, 8] } else { [4, 8] })
-            .center_y(Length::Fill)
-            // SSD: 18px left margin so title never gets too close
-            .apply(widget::container)
-            .padding(if self.is_ssd {
-                iced::Padding::from([0, 0, 0, 18])
-            } else {
-                iced::Padding::ZERO
-            })
+            .padding([2, 4])
             .center_y(Length::Fill)
             .into()
     }

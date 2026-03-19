@@ -2,8 +2,9 @@
 // SPDX-License-Identifier: MPL-2.0
 
 use crate::Theme;
+use crate::theme::{STATE_DEFAULT_BG, STATE_DEFAULT_COLOR};
 use crate::widget::dropdown;
-use iced::{Background, Color};
+use iced::Background;
 
 impl dropdown::menu::StyleSheet for Theme {
     type Style = ();
@@ -16,13 +17,13 @@ impl dropdown::menu::StyleSheet for Theme {
             background: Background::Color(cosmic.background.component.base.into()),
             border_width: 0.0,
             border_radius: cosmic.corner_radii.radius_m.into(),
-            border_color: Color::TRANSPARENT,
+            border_color: iced::Color::TRANSPARENT,
 
             hovered_text_color: cosmic.on_bg_color().into(),
-            hovered_background: Background::Color(cosmic.primary.component.hover.into()),
+            hovered_background: Background::Color(STATE_DEFAULT_BG),
 
-            selected_text_color: cosmic.accent_text_color().into(),
-            selected_background: Background::Color(cosmic.primary.component.hover.into()),
+            selected_text_color: STATE_DEFAULT_COLOR,
+            selected_background: Background::Color(STATE_DEFAULT_BG),
 
             description_color: cosmic.primary.component.on_disabled.into(),
         }

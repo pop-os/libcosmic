@@ -145,9 +145,14 @@ impl Theme {
     /// This produces a clean, minimal light theme with pure white backgrounds,
     /// generous window rounding, and subtle gray surfaces.
     pub fn light_default() -> Self {
+        // stateDefault: rgb(0, 150, 136)
+        let state_default = Srgb::new(0.0, 150.0 / 255.0, 136.0 / 255.0);
+
         let mut builder = ThemeBuilder::light()
             .bg_color(Srgba::new(1.0, 1.0, 1.0, 1.0))
             .primary_container_bg(Srgba::new(0.96, 0.96, 0.96, 1.0))
+            .accent(state_default)
+            .text_tint(Srgb::new(0.0, 0.0, 0.0))
             .corner_radii(CornerRadii {
                 radius_window: [16.0; 4],
                 ..CornerRadii::default()
@@ -159,7 +164,10 @@ impl Theme {
     #[inline]
     /// get the built in dark theme
     pub fn dark_default() -> Self {
-        DARK_PALETTE.clone().into()
+        let state_default = Srgb::new(0.0, 150.0 / 255.0, 136.0 / 255.0);
+        ThemeBuilder::dark()
+            .accent(state_default)
+            .build()
     }
 
     #[inline]
@@ -1358,6 +1366,26 @@ impl ThemeBuilder {
         };
         theme.spacing = spacing;
         theme.corner_radii = corner_radii;
+
+        // Force white container/component backgrounds for light themes
+        // to eliminate any brownish derived tint from color stepping.
+        if !is_dark {
+            let white = Srgba::new(1.0, 1.0, 1.0, 1.0);
+            let light_gray = Srgba::new(0.96, 0.96, 0.96, 1.0);
+
+            // Background container: pure white base, white component
+            theme.background.base = white;
+            theme.background.component.base = white;
+
+            // Primary container: very light gray base, white component
+            theme.primary.base = light_gray;
+            theme.primary.component.base = white;
+
+            // Secondary container: light gray base, white component
+            theme.secondary.base = Srgba::new(0.93, 0.93, 0.93, 1.0);
+            theme.secondary.component.base = white;
+        }
+
         theme
     }
 

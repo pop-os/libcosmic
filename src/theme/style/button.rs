@@ -154,9 +154,9 @@ pub fn appearance(
 
             if selected {
                 appearance.background =
-                    Some(Background::Color(cosmic.primary.component.hover.into()));
-                appearance.icon_color = Some(cosmic.accent.base.into());
-                appearance.text_color = Some(cosmic.accent_text_color().into());
+                    Some(Background::Color(crate::theme::STATE_DEFAULT_BG));
+                appearance.icon_color = Some(crate::theme::STATE_DEFAULT_COLOR);
+                appearance.text_color = Some(crate::theme::STATE_DEFAULT_COLOR);
             } else {
                 appearance.background = Some(Background::Color(background));
                 appearance.icon_color = icon;
@@ -254,7 +254,15 @@ impl Catalog for crate::Theme {
                     Some(component.on.into())
                 };
 
-                (component.hover.into(), text_color, text_color)
+                if matches!(style, Button::ListItem) {
+                    (
+                        crate::theme::STATE_DEFAULT_BG,
+                        text_color,
+                        text_color,
+                    )
+                } else {
+                    (component.hover.into(), text_color, text_color)
+                }
             },
         )
     }
@@ -275,7 +283,15 @@ impl Catalog for crate::Theme {
                 Some(component.on.into())
             };
 
-            (component.pressed.into(), text_color, text_color)
+            if matches!(style, Button::ListItem) {
+                (
+                    crate::theme::STATE_DEFAULT_BG,
+                    text_color,
+                    text_color,
+                )
+            } else {
+                (component.pressed.into(), text_color, text_color)
+            }
         })
     }
 

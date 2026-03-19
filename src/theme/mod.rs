@@ -8,15 +8,25 @@ pub mod portal;
 pub mod style;
 
 use cosmic_config::CosmicConfigEntry;
-use cosmic_config::config_subscription;
 use cosmic_theme::Component;
 use cosmic_theme::LayeredTheme;
 use cosmic_theme::Spacing;
 use cosmic_theme::ThemeMode;
-use iced_futures::Subscription;
 use iced_runtime::{Appearance, DefaultStyle};
+use palette::Srgba;
 use std::sync::{Arc, LazyLock, Mutex};
 pub use style::*;
+
+/// `state_default` color: rgb(0, 150, 136)
+pub const STATE_DEFAULT_ACCENT: Srgba = Srgba::new(0.0, 0.588_235_3, 0.533_333_36, 1.0);
+
+/// `state_default` as an iced Color
+pub const STATE_DEFAULT_COLOR: iced_core::Color =
+    iced_core::Color::from_rgb(0.0, 0.588_235_3, 0.533_333_3);
+
+/// `state_default` as an iced Color at 10% opacity
+pub const STATE_DEFAULT_BG: iced_core::Color =
+    iced_core::Color::from_rgba(0.0, 0.588_235_3, 0.533_333_3, 0.10);
 
 pub type CosmicColor = ::palette::rgb::Srgba;
 pub type CosmicComponent = cosmic_theme::Component;
@@ -126,6 +136,7 @@ pub fn system_dark() -> Theme {
         theme
     });
 
+    let t = t.with_accent(STATE_DEFAULT_ACCENT);
     Theme::system(Arc::new(t))
 }
 
@@ -141,6 +152,7 @@ pub fn system_light() -> Theme {
         theme
     });
 
+    let t = t.with_accent(STATE_DEFAULT_ACCENT);
     Theme::system(Arc::new(t))
 }
 

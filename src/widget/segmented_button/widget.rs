@@ -216,8 +216,8 @@ where
             minimum_button_width: u16::MIN,
             maximum_button_width: u16::MAX,
             indent_spacing: 16,
-            font_active: crate::font::semibold(),
-            font_hovered: crate::font::semibold(),
+            font_active: crate::font::default(),
+            font_hovered: crate::font::default(),
             font_inactive: crate::font::default(),
             font_size: 14.0,
             height: Length::Shrink,
@@ -1796,10 +1796,10 @@ where
             let key_is_hovered = self.button_is_hovered(state, key);
             let status_appearance = if self.button_is_pressed(state, key) {
                 appearance.pressed
-            } else if key_is_hovered || menu_open() {
-                appearance.hover
             } else if key_is_active {
                 appearance.active
+            } else if key_is_hovered || menu_open() {
+                appearance.hover
             } else {
                 appearance.inactive
             };
