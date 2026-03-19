@@ -156,6 +156,8 @@ where
     pub(super) spacing: u16,
     /// LineHeight of the font.
     pub(super) line_height: LineHeight,
+    /// Ellipsize strategy for button text.
+    pub(super) ellipsize: Ellipsize,
     /// Style to draw the widget in.
     #[setters(into)]
     pub(super) style: Style,
@@ -223,6 +225,7 @@ where
             width: Length::Fill,
             spacing: 0,
             line_height: LineHeight::default(),
+            ellipsize: Ellipsize::default(),
             style: Style::default(),
             context_menu: None,
             on_activate: None,
@@ -275,7 +278,7 @@ where
                     shaping: Shaping::Advanced,
                     wrapping: Wrapping::None,
                     line_height: self.line_height,
-                    ellipsize: Ellipsize::default(),
+                    ellipsize: self.ellipsize,
                 };
                 paragraph.update(text);
             } else {
@@ -289,7 +292,7 @@ where
                     shaping: Shaping::Advanced,
                     wrapping: Wrapping::None,
                     line_height: self.line_height,
-                    ellipsize: Ellipsize::default(),
+                    ellipsize: self.ellipsize,
                 };
                 state.paragraphs.insert(key, crate::Plain::new(text));
             }
@@ -621,7 +624,7 @@ where
                     align_y: alignment::Vertical::Center,
                     shaping: Shaping::Advanced,
                     wrapping: Wrapping::default(),
-                    ellipsize: Ellipsize::default(),
+                    ellipsize: self.ellipsize,
                     line_height: self.line_height,
                 })
             });
@@ -655,6 +658,50 @@ where
         width = width.min(f32::from(self.maximum_button_width));
 
         (width, f32::from(self.button_height))
+    }
+
+    /// Resizes paragraph bounds based on the actual available button width so that
+    /// text ellipsis can take effect. Call this after `variant_layout` has populated
+    /// `state.internal_layout` with final button sizes.
+    pub(super) fn resize_paragraphs(&self, state: &mut LocalState, available_width: f32) {
+        if matches!(self.ellipsize, Ellipsize::None) {
+            return;
+        }
+
+        for (nth, key) in self.model.order.iter().copied().enumerate() {
+            if self.model.text(key).is_some_and(|text| !text.is_empty()) {
+                let mut non_text_width =
+                    f32::from(self.button_padding[0]) + f32::from(self.button_padding[2]);
+
+                if let Some(icon) = self.model.icon(key) {
+                    non_text_width += f32::from(icon.size) + f32::from(self.button_spacing);
+                } else if self.model.is_active(key) {
+                    if let crate::theme::SegmentedButton::Control = self.style {
+                        non_text_width += 16.0 + f32::from(self.button_spacing);
+                    }
+                }
+
+                if self.model.is_closable(key) {
+                    non_text_width +=
+                        f32::from(self.close_icon.size) + f32::from(self.button_spacing);
+                }
+
+                let text_width = (available_width - non_text_width).max(0.0);
+
+                if let Some(paragraph) = state.paragraphs.get_mut(key) {
+                    paragraph.resize(Size::new(text_width, f32::INFINITY));
+
+                    // Update internal_layout actual content width so that
+                    // button_alignment centering uses the ellipsized size.
+                    let content_width = paragraph.min_bounds().width + non_text_width
+                        - f32::from(self.button_padding[0])
+                        - f32::from(self.button_padding[2]);
+                    if let Some(entry) = state.internal_layout.get_mut(nth) {
+                        entry.1.width = content_width;
+                    }
+                }
+            }
+        }
     }
 
     pub(super) fn max_button_dimensions(
