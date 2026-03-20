@@ -742,6 +742,8 @@ impl<App: Application> ApplicationExt for App {
             }));
         let content: Element<_> = if content_container {
             content_col
+                .width(iced::Length::Fill)
+                .height(iced::Length::Fill)
                 .apply(|w| id_container(w, iced_core::id::Id::new("COSMIC_content_container")))
                 .into()
         } else {
