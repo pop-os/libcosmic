@@ -1985,7 +1985,9 @@ where
 
             // Align contents of the button to the requested `button_alignment`.
             {
-                let actual_width = state.internal_layout[nth].1.width;
+                // Avoid shifting content outside the left edge when the measured content is
+                // wider than the available button bounds (for example, non-ellipsized text).
+                let actual_width = state.internal_layout[nth].1.width.min(bounds.width);
 
                 let offset = match self.button_alignment {
                     Alignment::Start => None,
