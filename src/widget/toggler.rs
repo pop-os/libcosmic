@@ -7,7 +7,7 @@ use iced_core::{
     Clipboard, Event, Layout, Length, Pixels, Rectangle, Shell, Size, Widget, alignment, event,
     layout, mouse,
     renderer::{self, Renderer},
-    text,
+    text, touch,
     widget::{self, Tree, tree},
     window,
 };
@@ -239,7 +239,8 @@ impl<'a, Message> Widget<Message, crate::Theme, crate::Renderer> for Toggler<'a,
         };
         let state = tree.state.downcast_mut::<State>();
         match event {
-            Event::Mouse(mouse::Event::ButtonPressed(mouse::Button::Left)) => {
+            Event::Mouse(mouse::Event::ButtonPressed(mouse::Button::Left))
+            | Event::Touch(touch::Event::FingerPressed { .. }) => {
                 let mouse_over = cursor_position.is_over(layout.bounds());
 
                 if mouse_over {
