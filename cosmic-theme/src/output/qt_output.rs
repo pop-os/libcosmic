@@ -65,8 +65,9 @@ impl Theme {
 
         // selected text and items
         let selection_colors = {
-            let selected = self.background.component.selected;
-            let selected_text = self.background.component.selected_text;
+            // selection colors are swapped to fix menu bar contrast
+            let selected = self.background.component.selected_text;
+            let selected_text = self.background.component.selected;
             IniColors {
                 background_alternate: selected.mix(bg, 0.5),
                 background_normal: selected,

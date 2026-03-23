@@ -49,8 +49,9 @@ impl Theme {
             base: self.background.component.base,
             window: self.background.base,
             shadow: darkest,
-            highlight: self.background.component.selected,
-            highlighted_text: self.background.component.selected_text,
+            // selection colors are swapped to fix menu bar contrast
+            highlight: self.background.component.selected_text,
+            highlighted_text: self.background.component.selected,
             link: self.link_button.on,
             link_visited: self.link_button.on.mix(self.secondary.component.base, 0.2),
             alternate_base: self.background.base.mix(self.accent.base, 0.05),
