@@ -8,6 +8,8 @@ use std::path::Path;
 use std::time::{Duration, Instant};
 
 use ::image as image_rs;
+use iced::Task;
+use iced::mouse;
 use iced_core::image::Renderer as ImageRenderer;
 use iced_core::mouse::Cursor;
 use iced_core::widget::{Tree, tree};
@@ -15,7 +17,6 @@ use iced_core::{
     Clipboard, ContentFit, Element, Event, Layout, Length, Rectangle, Shell, Size, Vector, Widget,
     event, layout, renderer, window,
 };
-use iced_runtime::Command;
 use iced_widget::image::{self, Handle};
 use image_rs::AnimationDecoder;
 use image_rs::codecs::gif::GifDecoder;
@@ -27,7 +28,7 @@ use iced_futures::futures::{AsyncRead, AsyncReadExt};
 #[cfg(feature = "tokio")]
 use tokio::io::{AsyncRead, AsyncReadExt};
 
-use super::icon::load_icon;
+use crate::widget::icon;
 
 #[must_use]
 /// Creates a new [`AnimatedImage`] with the given [`animated_image::Frames`]
@@ -74,13 +75,13 @@ impl Frames {
         size: u16,
         theme: Option<&str>,
         default_fallbacks: bool,
-    ) -> Command<Result<Frames, Error>> {
+    ) -> Task<Result<Frames, Error>> {
         let mut name_path_buffer = None;
-        if let Some(path) = load_icon(name, size, theme) {
+        if let Some(path) = icon::Named::new(name).size(size).path() {
             name_path_buffer = Some(path);
         } else if default_fallbacks {
             for name in name.rmatch_indices('-').map(|(pos, _)| &name[..pos]) {
-                if let Some(path) = load_icon(name, size, theme) {
+                if let Some(path) = icon::Named::new(name).size(size).path() {
                     name_path_buffer = Some(path);
                     break;
                 }
@@ -90,14 +91,14 @@ impl Frames {
         if let Some(name_path_buffer) = name_path_buffer {
             Self::load_from_path(name_path_buffer)
         } else {
-            Command::perform(async { Err(Error::Missing) }, std::convert::identity)
+            Task::perform(async { Err(Error::Missing) }, std::convert::identity)
         }
     }
 
     /// Load [`Frames`] from the supplied path
-    pub fn load_from_path(path: impl AsRef<Path>) -> Command<Result<Frames, Error>> {
+    pub fn load_from_path(path: impl AsRef<Path>) -> Task<Result<Frames, Error>> {
         #[inline(never)]
-        fn inner(path: &Path) -> Command<Result<Frames, Error>> {
+        fn inner(path: &Path) -> Task<Result<Frames, Error>> {
             #[cfg(feature = "tokio")]
             use tokio::fs::File;
             #[cfg(feature = "tokio")]
@@ -108,7 +109,7 @@ impl Frames {
             #[cfg(not(feature = "tokio"))]
             use iced_futures::futures::io::BufReader;
 
-            let path = path.as_ref().to_path_buf();
+            let path = path.to_path_buf();
 
             let f = async move {
                 let image_type = match &path.extension() {
@@ -119,10 +120,10 @@ impl Frames {
                 };
                 let reader = BufReader::new(File::open(path).await?);
 
-                Self::from_reader(reader, image_type).await
+                Frames::from_reader(reader, image_type).await
             };
 
-            Command::perform(f, std::convert::identity)
+            Task::perform(f, std::convert::identity)
         }
 
         inner(path.as_ref())
@@ -168,9 +169,9 @@ impl Frames {
         let total_bytes = frames
             .iter()
             .map(|f| match f.handle.data() {
-                iced_core::image::Data::Path(_) => 0,
-                iced_core::image::Data::Bytes(b) => b.len(),
-                iced_core::image::Data::Rgba { pixels, .. } => pixels.len(),
+                iced_core::image::Handle::Path(..) => 0,
+                iced_core::image::Handle::Bytes(_, b) => b.len(),
+                iced_core::image::Handle::Rgba { pixels, .. } => pixels.len(),
             })
             .sum::<usize>()
             .try_into()
@@ -195,7 +196,7 @@ impl From<image_rs::Frame> for Frame {
 
         let delay = frame.delay().into();
 
-        let handle = image::Handle::from_pixels(width, height, frame.into_buffer().into_vec());
+        let handle = image::Handle::from_rgba(width, height, frame.into_buffer().into_vec());
 
         Self { delay, handle }
     }
@@ -278,12 +279,8 @@ impl<'a, Message, Renderer> Widget<Message, crate::Theme, Renderer> for Animated
 where
     Renderer: ImageRenderer<Handle = Handle>,
 {
-    fn width(&self) -> Length {
-        self.width
-    }
-
-    fn height(&self) -> Length {
-        self.height
+    fn size(&self) -> Size<Length> {
+        Size::new(self.width.into(), self.height.into())
     }
 
     fn tag(&self) -> tree::Tag {
@@ -315,7 +312,12 @@ where
         }
     }
 
-    fn layout(&self, renderer: &Renderer, limits: &layout::Limits) -> layout::Node {
+    fn layout(
+        &mut self,
+        tree: &mut Tree,
+        renderer: &Renderer,
+        limits: &layout::Limits,
+    ) -> layout::Node {
         iced_widget::image::layout(
             renderer,
             limits,
@@ -326,19 +328,20 @@ where
         )
     }
 
-    fn on_event(
+    fn update(
         &mut self,
         tree: &mut Tree,
-        event: Event,
-        _layout: Layout<'_>,
-        _cursor_position: Cursor,
-        _renderer: &Renderer,
-        _clipboard: &mut dyn Clipboard,
+        event: &Event,
+        layout: Layout<'_>,
+        cursor_position: mouse::Cursor,
+        renderer: &Renderer,
+        clipboard: &mut dyn Clipboard,
         shell: &mut Shell<'_, Message>,
-    ) -> event::Status {
+        viewport: &Rectangle,
+    ) {
         let state = tree.state.downcast_mut::<State>();
 
-        if let Event::Window(_, window::Event::RedrawRequested(now)) = event {
+        if let Event::Window(window::Event::RedrawRequested(now)) = event {
             let elapsed = now.duration_since(state.current.started);
 
             if elapsed > state.current.frame.delay {
@@ -346,15 +349,14 @@ where
 
                 state.current = self.frames.frames[state.index].clone().into();
 
-                shell.request_redraw(window::RedrawRequest::At(now + state.current.frame.delay));
+                shell
+                    .request_redraw_at(window::RedrawRequest::At(*now + state.current.frame.delay));
             } else {
                 let remaining = state.current.frame.delay - elapsed;
 
-                shell.request_redraw(window::RedrawRequest::At(now + remaining));
+                shell.request_redraw_at(window::RedrawRequest::At(*now + remaining));
             }
         }
-
-        event::Status::Ignored
     }
 
     fn draw(

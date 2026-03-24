@@ -7,8 +7,8 @@ use iced::advanced::layout::{self, Layout};
 use iced::advanced::widget::{self, Operation};
 use iced::advanced::{Clipboard, Shell};
 use iced::advanced::{overlay, renderer};
-use iced::{Event, Point, Rectangle, Size, event, mouse};
-use iced_core::Renderer;
+use iced::{Event, Point, Size, mouse};
+use iced_core::{Renderer, touch};
 
 pub(super) struct Overlay<'a, 'b, Message> {
     pub(crate) position: Point,
@@ -29,7 +29,7 @@ where
 
         let node = self
             .content
-            .as_widget()
+            .as_widget_mut()
             .layout(self.tree, renderer, &limits);
         let node_size = node.size();
 
@@ -47,16 +47,16 @@ where
         })
     }
 
-    fn on_event(
+    fn update(
         &mut self,
-        event: Event,
+        event: &Event,
         layout: Layout<'_>,
         cursor: mouse::Cursor,
         renderer: &crate::Renderer,
         clipboard: &mut dyn Clipboard,
         shell: &mut Shell<'_, Message>,
-    ) -> event::Status {
-        self.content.as_widget_mut().on_event(
+    ) {
+        self.content.as_widget_mut().update(
             self.tree,
             event,
             layout,
@@ -65,7 +65,20 @@ where
             clipboard,
             shell,
             &layout.bounds(),
-        )
+        );
+        match event {
+            Event::Mouse(e) if !matches!(e, mouse::Event::CursorLeft) => {
+                if cursor.is_over(layout.bounds()) {
+                    shell.capture_event();
+                }
+            }
+            Event::Touch(e) if !matches!(e, touch::Event::FingerLost { .. }) => {
+                if cursor.is_over(layout.bounds()) {
+                    shell.capture_event();
+                }
+            }
+            _ => {}
+        }
     }
 
     fn draw(
@@ -86,7 +99,7 @@ where
                 cursor,
                 &layout.bounds(),
             );
-        })
+        });
     }
 
     fn operate(
@@ -104,21 +117,35 @@ where
         &self,
         layout: Layout<'_>,
         cursor: mouse::Cursor,
-        viewport: &Rectangle,
         renderer: &crate::Renderer,
     ) -> mouse::Interaction {
-        self.content
+        // TODO how to handle viewport here?
+        let viewport = &layout.bounds();
+        let interaction = self
+            .content
             .as_widget()
-            .mouse_interaction(self.tree, layout, cursor, viewport, renderer)
+            .mouse_interaction(self.tree, layout, cursor, viewport, renderer);
+        if let mouse::Interaction::None = interaction
+            && cursor.is_over(layout.bounds())
+        {
+            return mouse::Interaction::Idle;
+        }
+        interaction
     }
 
     fn overlay<'c>(
         &'c mut self,
-        layout: Layout<'_>,
+        layout: Layout<'c>,
         renderer: &crate::Renderer,
     ) -> Option<overlay::Element<'c, Message, crate::Theme, crate::Renderer>> {
-        self.content
-            .as_widget_mut()
-            .overlay(self.tree, layout, renderer, iced::Vector::default())
+        let viewport = &layout.bounds();
+
+        self.content.as_widget_mut().overlay(
+            self.tree,
+            layout,
+            renderer,
+            viewport,
+            iced::Vector::default(),
+        )
     }
 }

@@ -69,14 +69,16 @@ impl State {
             list_column()
                 .add(settings::item("Device name", text("TODO")))
                 .into(),
-            settings::view_section("Hardware")
+            settings::section()
+                .title("Hardware")
                 .add(settings::item("Hardware model", text("TODO")))
                 .add(settings::item("Memory", text("TODO")))
                 .add(settings::item("Processor", text("TODO")))
                 .add(settings::item("Graphics", text("TODO")))
                 .add(settings::item("Disk Capacity", text("TODO")))
                 .into(),
-            settings::view_section("Operating System")
+            settings::section()
+                .title("Operating System")
                 .add(settings::item("Operating system", text("TODO")))
                 .add(settings::item(
                     "Operating system architecture",
@@ -85,7 +87,8 @@ impl State {
                 .add(settings::item("Desktop environment", text("TODO")))
                 .add(settings::item("Windowing system", text("TODO")))
                 .into(),
-            settings::view_section("Related settings")
+            settings::section()
+                .title("Related settings")
                 .add(settings::item("Get support", text("TODO")))
                 .into(),
         ])

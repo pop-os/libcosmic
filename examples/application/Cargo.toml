@@ -8,12 +8,10 @@ default = ["wayland"]
 wayland = ["libcosmic/wayland"]
 
 [dependencies]
-tracing = "0.1.44"
-tracing-subscriber = "0.3.22"
-tracing-log = "0.2.0"
+env_logger = "0.11"
 
 [dependencies.libcosmic]
-path = "../../"
+git = "https://github.com/pop-os/libcosmic"
 features = [
     "debug",
     "winit",
@@ -23,4 +21,5 @@ features = [
     "wgpu",
     "single-instance",
     "surface-message",
+    "multi-window",
 ]

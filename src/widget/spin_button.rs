@@ -313,6 +313,7 @@ fn container_style(theme: &crate::Theme) -> iced_widget::container::Style {
         background: None,
         border,
         shadow: Shadow::default(),
+        snap: true,
     }
 }
 

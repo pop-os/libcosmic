@@ -310,7 +310,7 @@ pub(crate) struct MenuState {
 }
 impl MenuState {
     pub(super) fn layout<Message>(
-        &self,
+        &mut self,
         overlay_offset: Vector,
         slice: MenuSlice,
         renderer: &crate::Renderer,
@@ -329,8 +329,8 @@ impl MenuState {
         // viewport space children bounds
         let children_bounds = self.menu_bounds.children_bounds + overlay_offset;
         let child_nodes = self.menu_bounds.child_positions[start_index..=end_index]
-            .iter()
-            .zip(self.menu_bounds.child_sizes[start_index..=end_index].iter())
+            .iter_mut()
+            .zip(self.menu_bounds.child_sizes[start_index..=end_index].iter_mut())
             .zip(menu_tree[start_index..=end_index].iter())
             .map(|((cp, size), mt)| {
                 let mut position = *cp;
@@ -347,7 +347,11 @@ impl MenuState {
                 let limits = Limits::new(size, size);
 
                 mt.item
-                    .layout(&mut tree[mt.index], renderer, &limits)
+                    .element
+                    .with_data_mut(|e| {
+                        e.as_widget_mut()
+                            .layout(&mut tree[mt.index], renderer, &limits)
+                    })
                     .move_to(Point::new(0.0, position + self.scroll_offset))
             })
             .collect::<Vec<_>>();
@@ -360,7 +364,7 @@ impl MenuState {
         overlay_offset: Vector,
         index: usize,
         renderer: &crate::Renderer,
-        menu_tree: &MenuTree<Message>,
+        menu_tree: &mut MenuTree<Message>,
         tree: &mut Tree,
     ) -> Node {
         // viewport space children bounds
@@ -499,7 +503,7 @@ impl<'b, Message: Clone + 'static> Menu<'b, Message> {
                         } else {
                             self.depth
                         }]
-                        .iter()
+                        .iter_mut()
                         .enumerate()
                         .filter(|ms| self.is_overlay || ms.0 < 1)
                         .fold(
@@ -545,15 +549,15 @@ impl<'b, Message: Clone + 'static> Menu<'b, Message> {
     }
 
     #[allow(clippy::too_many_lines)]
-    fn on_event(
+    fn update(
         &mut self,
-        event: event::Event,
+        event: &event::Event,
         layout: Layout<'_>,
         view_cursor: Cursor,
         renderer: &crate::Renderer,
         clipboard: &mut dyn Clipboard,
         shell: &mut Shell<'_, Message>,
-    ) -> (Option<(usize, MenuState)>, event::Status) {
+    ) -> Option<(usize, MenuState)> {
         use event::{
             Event::{Mouse, Touch},
             Status::{Captured, Ignored},
@@ -569,7 +573,7 @@ impl<'b, Message: Clone + 'static> Menu<'b, Message> {
             .inner
             .with_data(|data| data.open || data.active_root.len() <= self.depth)
         {
-            return (None, Ignored);
+            return None;
         }
 
         let viewport = layout.bounds();
@@ -581,9 +585,9 @@ impl<'b, Message: Clone + 'static> Menu<'b, Message> {
             Cow::Borrowed(_) => panic!(),
             Cow::Owned(o) => o.as_mut_slice(),
         };
-        let menu_status = process_menu_events(
+        process_menu_events(
             self,
-            event.clone(),
+            event,
             view_cursor,
             renderer,
             clipboard,
@@ -602,28 +606,30 @@ impl<'b, Message: Clone + 'static> Menu<'b, Message> {
             self.main_offset as f32,
         );
 
-        let ret = match event {
-            Mouse(WheelScrolled { delta }) => {
-                process_scroll_events(self, delta, overlay_cursor, viewport_size, overlay_offset)
-                    .merge(menu_status)
-            }
+        match event {
+            Mouse(WheelScrolled { delta }) => process_scroll_events(
+                self,
+                shell,
+                *delta,
+                overlay_cursor,
+                viewport_size,
+                overlay_offset,
+            ),
 
             Mouse(ButtonPressed(Left)) | Touch(FingerPressed { .. }) => {
                 self.tree.inner.with_data_mut(|data| {
                     data.pressed = true;
                     data.view_cursor = view_cursor;
                 });
-                Captured
             }
 
             Mouse(CursorMoved { position }) | Touch(FingerMoved { position, .. }) => {
-                let view_cursor = Cursor::Available(position);
+                let view_cursor = Cursor::Available(*position);
                 let overlay_cursor = view_cursor.position().unwrap_or_default() - overlay_offset;
                 if !self.is_overlay && !view_cursor.is_over(viewport) {
-                    return (None, menu_status);
+                    return None;
                 }
-
-                let (new_root, status) = process_overlay_events(
+                let new_root = process_overlay_events(
                     self,
                     renderer,
                     viewport_size,
@@ -634,7 +640,11 @@ impl<'b, Message: Clone + 'static> Menu<'b, Message> {
                     shell,
                 );
 
-                return (new_root, status.merge(menu_status));
+                if self.is_overlay && view_cursor.is_over(viewport) {
+                    shell.capture_event();
+                }
+
+                return new_root;
             }
 
             Mouse(ButtonReleased(_)) | Touch(FingerLifted { .. }) => {
@@ -673,44 +683,39 @@ impl<'b, Message: Clone + 'static> Menu<'b, Message> {
                                 feature = "winit",
                                 feature = "surface-message"
                             ))]
-                            if matches!(WINDOWING_SYSTEM.get(), Some(WindowingSystem::Wayland)) {
-                                if let Some(handler) = self.on_surface_action.as_ref() {
-                                    let mut root = self.window_id;
-                                    let mut depth = self.depth;
-                                    while let Some(parent) =
-                                        state.popup_id.iter().find(|(_, v)| **v == root)
-                                    {
-                                        // parent of root popup is the window, so we stop.
-                                        if depth == 0 {
-                                            break;
-                                        }
-                                        root = *parent.0;
-                                        depth = depth.saturating_sub(1);
+                            if matches!(WINDOWING_SYSTEM.get(), Some(WindowingSystem::Wayland))
+                                && let Some(handler) = self.on_surface_action.as_ref()
+                            {
+                                let mut root = self.window_id;
+                                let mut depth = self.depth;
+                                while let Some(parent) =
+                                    state.popup_id.iter().find(|(_, v)| **v == root)
+                                {
+                                    // parent of root popup is the window, so we stop.
+                                    if depth == 0 {
+                                        break;
                                     }
-                                    shell.publish((handler)(crate::surface::Action::DestroyPopup(
-                                        root,
-                                    )));
+                                    root = *parent.0;
+                                    depth = depth.saturating_sub(1);
                                 }
+                                shell
+                                    .publish((handler)(crate::surface::Action::DestroyPopup(root)));
                             }
 
                             state.reset();
-                            return Captured;
                         }
                     }
 
                     // close all menus when clicking inside the menu bar
                     if self.bar_bounds.contains(overlay_cursor) {
                         state.reset();
-                        Captured
-                    } else {
-                        menu_status
                     }
-                })
+                });
             }
 
-            _ => menu_status,
+            _ => {}
         };
-        (None, ret)
+        None
     }
 
     #[allow(unused_results, clippy::too_many_lines)]
@@ -734,7 +739,7 @@ impl<'b, Message: Clone + 'static> Menu<'b, Message> {
             let render_bounds = if self.is_overlay {
                 Rectangle::new(Point::ORIGIN, viewport.size())
             } else {
-                Rectangle::new(Point::ORIGIN, Size::INFINITY)
+                Rectangle::new(Point::ORIGIN, Size::INFINITE)
             };
 
             let styling = theme.appearance(&self.style);
@@ -796,29 +801,30 @@ impl<'b, Message: Clone + 'static> Menu<'b, Message> {
                                     color: styling.border_color,
                                 },
                                 shadow: Shadow::default(),
+                                snap: true,
                             };
                             let menu_color = styling.background;
                             r.fill_quad(menu_quad, menu_color);
                             // draw path hightlight
-                            if let (true, Some(active)) = (draw_path, ms.index) {
-                                if let Some(active_layout) = children_layout
+                            if let (true, Some(active)) = (draw_path, ms.index)
+                                && let Some(active_layout) = children_layout
                                     .children()
                                     .nth(active.saturating_sub(start_index))
-                                {
-                                    let path_quad = renderer::Quad {
-                                        bounds: active_layout
-                                            .bounds()
-                                            .intersection(&viewport)
-                                            .unwrap_or_default(),
-                                        border: Border {
-                                            radius: styling.menu_border_radius.into(),
-                                            ..Default::default()
-                                        },
-                                        shadow: Shadow::default(),
-                                    };
+                            {
+                                let path_quad = renderer::Quad {
+                                    bounds: active_layout
+                                        .bounds()
+                                        .intersection(&viewport)
+                                        .unwrap_or_default(),
+                                    border: Border {
+                                        radius: styling.menu_border_radius.into(),
+                                        ..Default::default()
+                                    },
+                                    shadow: Shadow::default(),
+                                    snap: true,
+                                };
 
-                                    r.fill_quad(path_quad, styling.path);
-                                }
+                                r.fill_quad(path_quad, styling.path);
                             }
                             if start_index < menu_roots.len() {
                                 // draw item
@@ -867,17 +873,16 @@ impl<Message: Clone + 'static> overlay::Overlay<Message, crate::Theme, crate::Re
         )
     }
 
-    fn on_event(
+    fn update(
         &mut self,
-        event: iced::Event,
+        event: &iced::Event,
         layout: Layout<'_>,
         cursor: mouse::Cursor,
         renderer: &crate::Renderer,
         clipboard: &mut dyn Clipboard,
         shell: &mut Shell<'_, Message>,
-    ) -> event::Status {
-        self.on_event(event, layout, cursor, renderer, clipboard, shell)
-            .1
+    ) {
+        self.update(event, layout, cursor, renderer, clipboard, shell);
     }
 
     fn draw(
@@ -889,6 +894,19 @@ impl<Message: Clone + 'static> overlay::Overlay<Message, crate::Theme, crate::Re
         cursor: mouse::Cursor,
     ) {
         self.draw(renderer, theme, style, layout, cursor);
+    }
+
+    fn mouse_interaction(
+        &self,
+        layout: Layout<'_>,
+        cursor: mouse::Cursor,
+        _renderer: &crate::Renderer,
+    ) -> mouse::Interaction {
+        if cursor.is_over(layout.bounds()) {
+            mouse::Interaction::Idle
+        } else {
+            mouse::Interaction::None
+        }
     }
 }
 
@@ -903,7 +921,7 @@ impl<Message: std::clone::Clone + 'static> Widget<Message, crate::Theme, crate::
     }
 
     fn layout(
-        &self,
+        &mut self,
         _tree: &mut Tree,
         renderer: &crate::Renderer,
         limits: &iced_core::layout::Limits,
@@ -925,18 +943,18 @@ impl<Message: std::clone::Clone + 'static> Widget<Message, crate::Theme, crate::
     }
 
     #[allow(clippy::too_many_lines)]
-    fn on_event(
+    fn update(
         &mut self,
         tree: &mut Tree,
-        event: iced::Event,
+        event: &iced::Event,
         layout: Layout<'_>,
         cursor: mouse::Cursor,
         renderer: &crate::Renderer,
         clipboard: &mut dyn Clipboard,
         shell: &mut Shell<'_, Message>,
         viewport: &Rectangle,
-    ) -> event::Status {
-        let (new_root, status) = self.on_event(event, layout, cursor, renderer, clipboard, shell);
+    ) {
+        let new_root = self.update(event, layout, cursor, renderer, clipboard, shell);
 
         #[cfg(all(
             feature = "multi-window",
@@ -944,73 +962,74 @@ impl<Message: std::clone::Clone + 'static> Widget<Message, crate::Theme, crate::
             feature = "winit",
             feature = "surface-message"
         ))]
-        if matches!(WINDOWING_SYSTEM.get(), Some(WindowingSystem::Wayland)) {
-            if let Some((new_root, new_ms)) = new_root {
-                use iced_runtime::platform_specific::wayland::popup::{
-                    SctkPopupSettings, SctkPositioner,
+        if matches!(WINDOWING_SYSTEM.get(), Some(WindowingSystem::Wayland))
+            && let Some((new_root, new_ms)) = new_root
+        {
+            use iced_runtime::platform_specific::wayland::popup::{
+                SctkPopupSettings, SctkPositioner,
+            };
+            let overlay_offset = Point::ORIGIN - viewport.position();
+
+            let overlay_cursor = cursor.position().unwrap_or_default() - overlay_offset;
+
+            let Some((mut menu, popup_id)) = self.tree.inner.with_data_mut(|state| {
+                let popup_id = *state
+                    .popup_id
+                    .entry(self.window_id)
+                    .or_insert_with(window::Id::unique);
+                let active_roots = state
+                    .active_root
+                    .get(self.depth)
+                    .cloned()
+                    .unwrap_or_default();
+
+                let root_bounds_list = layout
+                    .children()
+                    .next()
+                    .unwrap()
+                    .children()
+                    .map(|lo| lo.bounds())
+                    .collect();
+
+                let mut popup_menu = Menu {
+                    tree: self.tree.clone(),
+                    menu_roots: Cow::Owned(Cow::into_owned(self.menu_roots.clone())),
+                    bounds_expand: self.bounds_expand,
+                    menu_overlays_parent: false,
+                    close_condition: self.close_condition,
+                    item_width: self.item_width,
+                    item_height: self.item_height,
+                    bar_bounds: layout.bounds(),
+                    main_offset: self.main_offset,
+                    cross_offset: self.cross_offset,
+                    root_bounds_list,
+                    path_highlight: self.path_highlight,
+                    style: Cow::Owned(Cow::into_owned(self.style.clone())),
+                    position: Point::new(0., 0.),
+                    is_overlay: false,
+                    window_id: popup_id,
+                    depth: self.depth + 1,
+                    on_surface_action: self.on_surface_action.clone(),
                 };
-                let overlay_offset = Point::ORIGIN - viewport.position();
 
-                let overlay_cursor = cursor.position().unwrap_or_default() - overlay_offset;
+                state.active_root.push(new_root);
 
-                let Some((mut menu, popup_id)) = self.tree.inner.with_data_mut(|state| {
-                    let popup_id = *state
-                        .popup_id
-                        .entry(self.window_id)
-                        .or_insert_with(window::Id::unique);
-                    let active_roots = state
-                        .active_root
-                        .get(self.depth)
-                        .cloned()
-                        .unwrap_or_default();
-
-                    let root_bounds_list = layout
-                        .children()
-                        .next()
-                        .unwrap()
-                        .children()
-                        .map(|lo| lo.bounds())
-                        .collect();
-
-                    let mut popup_menu = Menu {
-                        tree: self.tree.clone(),
-                        menu_roots: Cow::Owned(Cow::into_owned(self.menu_roots.clone())),
-                        bounds_expand: self.bounds_expand,
-                        menu_overlays_parent: false,
-                        close_condition: self.close_condition,
-                        item_width: self.item_width,
-                        item_height: self.item_height,
-                        bar_bounds: layout.bounds(),
-                        main_offset: self.main_offset,
-                        cross_offset: self.cross_offset,
-                        root_bounds_list,
-                        path_highlight: self.path_highlight,
-                        style: Cow::Owned(Cow::into_owned(self.style.clone())),
-                        position: Point::new(0., 0.),
-                        is_overlay: false,
-                        window_id: popup_id,
-                        depth: self.depth + 1,
-                        on_surface_action: self.on_surface_action.clone(),
-                    };
-
-                    state.active_root.push(new_root);
-
-                    Some((popup_menu, popup_id))
-                }) else {
-                    return status;
-                };
-                // XXX we push a new active root manually instead
-                init_root_popup_menu(
-                    &mut menu,
-                    renderer,
-                    shell,
-                    cursor.position().unwrap(),
-                    layout.bounds().size(),
-                    Vector::new(0., 0.),
-                    layout.bounds(),
-                    self.main_offset as f32,
-                );
-                let (anchor_rect, gravity) = self.tree.inner.with_data_mut(|state| {
+                Some((popup_menu, popup_id))
+            }) else {
+                return;
+            };
+            // XXX we push a new active root manually instead
+            init_root_popup_menu(
+                &mut menu,
+                renderer,
+                shell,
+                cursor.position().unwrap_or_default(),
+                layout.bounds().size(),
+                Vector::new(0., 0.),
+                layout.bounds(),
+                self.main_offset as f32,
+            );
+            let (anchor_rect, gravity) = self.tree.inner.with_data_mut(|state| {
                 (state
                     .menu_states
                     .get(self.depth + 1)
@@ -1039,53 +1058,64 @@ impl<Message: std::clone::Clone + 'static> Widget<Message, crate::Theme, crate::
                     })
             });
 
-                let menu_node = Widget::layout(
-                    &menu,
-                    &mut Tree::empty(),
-                    renderer,
-                    &Limits::NONE.min_width(1.).min_height(1.),
-                );
+            let menu_node = Widget::layout(
+                &mut menu,
+                &mut Tree::empty(),
+                renderer,
+                &Limits::NONE.min_width(1.).min_height(1.),
+            );
 
-                let popup_size = menu_node.size();
-                let mut positioner = SctkPositioner {
-                    size: Some((
-                        popup_size.width.ceil() as u32 + 2,
-                        popup_size.height.ceil() as u32 + 2,
-                    )),
-                    anchor_rect,
-                    anchor:
-                        cctk::wayland_protocols::xdg::shell::client::xdg_positioner::Anchor::TopRight,
-                    gravity,
-                    reactive: true,
-                    ..Default::default()
-                };
-                // disable slide_x if it is set in the default
-                positioner.constraint_adjustment &= !(1 << 0);
-                let parent = self.window_id;
-                shell.publish((self.on_surface_action.as_ref().unwrap())(
-                    crate::surface::action::simple_popup(
-                        move || SctkPopupSettings {
-                            parent,
-                            id: popup_id,
-                            positioner: positioner.clone(),
-                            parent_size: None,
-                            grab: true,
-                            close_with_children: false,
-                            input_zone: None,
-                        },
-                        Some(move || {
-                            crate::Element::from(
-                                crate::widget::container(menu.clone()).center(Length::Fill),
-                            )
-                            .map(crate::action::app)
-                        }),
-                    ),
-                ));
-
-                return status;
-            }
+            let popup_size = menu_node.size();
+            let mut positioner = SctkPositioner {
+                size: Some((
+                    popup_size.width.ceil() as u32 + 2,
+                    popup_size.height.ceil() as u32 + 2,
+                )),
+                anchor_rect,
+                anchor:
+                    cctk::wayland_protocols::xdg::shell::client::xdg_positioner::Anchor::TopRight,
+                gravity,
+                reactive: true,
+                ..Default::default()
+            };
+            // disable slide_x if it is set in the default
+            positioner.constraint_adjustment &= !(1 << 0);
+            let parent = self.window_id;
+            shell.publish((self.on_surface_action.as_ref().unwrap())(
+                crate::surface::action::simple_popup(
+                    move || SctkPopupSettings {
+                        parent,
+                        id: popup_id,
+                        positioner: positioner.clone(),
+                        parent_size: None,
+                        grab: true,
+                        close_with_children: false,
+                        input_zone: None,
+                    },
+                    Some(move || {
+                        crate::Element::from(
+                            crate::widget::container(menu.clone()).center(Length::Fill),
+                        )
+                        .map(crate::action::app)
+                    }),
+                ),
+            ));
         }
-        status
+    }
+
+    fn mouse_interaction(
+        &self,
+        _tree: &Tree,
+        layout: Layout<'_>,
+        cursor: mouse::Cursor,
+        _viewport: &Rectangle,
+        _renderer: &crate::Renderer,
+    ) -> mouse::Interaction {
+        if cursor.is_over(layout.bounds()) {
+            mouse::Interaction::Idle
+        } else {
+            mouse::Interaction::None
+        }
     }
 }
 
@@ -1103,8 +1133,8 @@ fn pad_rectangle(rect: Rectangle, padding: Padding) -> Rectangle {
     Rectangle {
         x: rect.x - padding.left,
         y: rect.y - padding.top,
-        width: rect.width + padding.horizontal(),
-        height: rect.height + padding.vertical(),
+        width: rect.width + padding.x(),
+        height: rect.height + padding.y(),
     }
 }
 
@@ -1178,7 +1208,6 @@ pub(crate) fn init_root_menu<Message: Clone>(
                     menu_bounds,
                 };
                 state.menu_states.push(ms);
-
                 // Hack to ensure menu opens properly
                 shell.invalidate_layout();
 
@@ -1274,15 +1303,13 @@ pub(super) fn init_root_popup_menu<Message>(
 #[allow(clippy::too_many_arguments)]
 fn process_menu_events<Message: std::clone::Clone>(
     menu: &mut Menu<Message>,
-    event: event::Event,
+    event: &event::Event,
     view_cursor: Cursor,
     renderer: &crate::Renderer,
     clipboard: &mut dyn Clipboard,
     shell: &mut Shell<'_, Message>,
     overlay_offset: Vector,
-) -> event::Status {
-    use event::Status;
-
+) {
     let my_state = &mut menu.tree;
     let menu_roots = match &mut menu.menu_roots {
         Cow::Borrowed(_) => panic!(),
@@ -1290,15 +1317,15 @@ fn process_menu_events<Message: std::clone::Clone>(
     };
     my_state.inner.with_data_mut(|state| {
         if state.active_root.len() <= menu.depth {
-            return event::Status::Ignored;
+            return;
         }
 
         let Some(hover) = state.menu_states.last_mut() else {
-            return Status::Ignored;
+            return;
         };
 
         let Some(hover_index) = hover.index else {
-            return Status::Ignored;
+            return;
         };
 
         let mt = state.active_root.iter().skip(1).fold(
@@ -1321,7 +1348,7 @@ fn process_menu_events<Message: std::clone::Clone>(
         let child_layout = Layout::new(&child_node);
 
         // process only the last widget
-        mt.item.on_event(
+        mt.item.update(
             tree,
             event,
             child_layout,
@@ -1330,8 +1357,8 @@ fn process_menu_events<Message: std::clone::Clone>(
             clipboard,
             shell,
             &Rectangle::default(),
-        )
-    })
+        );
+    });
 }
 
 #[allow(unused_results, clippy::too_many_lines, clippy::too_many_arguments)]
@@ -1343,12 +1370,11 @@ fn process_overlay_events<Message>(
     view_cursor: Cursor,
     overlay_cursor: Point,
     cross_offset: f32,
-    _shell: &mut Shell<'_, Message>,
-) -> (Option<(usize, MenuState)>, event::Status)
+    shell: &mut Shell<'_, Message>,
+) -> Option<(usize, MenuState)>
 where
     Message: std::clone::Clone,
 {
-    use event::Status::{Captured, Ignored};
     /*
     if no active root || pressed:
         return
@@ -1431,8 +1457,8 @@ where
                     state.open = false;
                 }
             }
-
-            return (new_menu_root, Captured);
+            shell.capture_event();
+            return new_menu_root;
         };
 
         let last_menu_bounds = &last_menu_state.menu_bounds;
@@ -1446,7 +1472,8 @@ where
         {
 
             last_menu_state.index = None;
-            return (new_menu_root, Captured);
+            shell.capture_event();
+            return new_menu_root;
         }
 
         // calc new index
@@ -1461,7 +1488,7 @@ where
         };
 
         if state.pressed {
-            return (new_menu_root, Ignored);
+            return new_menu_root;
         }
         let roots = active_root.iter().skip(1).fold(
             &menu.menu_roots[active_root[0]].children,
@@ -1494,7 +1521,7 @@ where
         if matches!(WINDOWING_SYSTEM.get(), Some(WindowingSystem::Wayland)) && remove {
             if let Some(id) = state.popup_id.remove(&menu.window_id) {
                 state.active_root.truncate(menu.depth + 1);
-                _shell.publish((menu.on_surface_action.as_ref().unwrap())({
+                shell.publish((menu.on_surface_action.as_ref().unwrap())({
                     crate::surface::action::destroy_popup(id)
                 }));
             }
@@ -1555,18 +1582,19 @@ where
             state.menu_states.truncate(menu.depth + 1);
         }
 
-        (new_menu_root, Captured)
+        shell.capture_event();
+        new_menu_root
     })
 }
 
 fn process_scroll_events<Message>(
     menu: &mut Menu<'_, Message>,
+    shell: &mut Shell<'_, Message>,
     delta: mouse::ScrollDelta,
     overlay_cursor: Point,
     viewport_size: Size,
     overlay_offset: Vector,
-) -> event::Status
-where
+) where
     Message: Clone,
 {
     use event::Status::{Captured, Ignored};
@@ -1590,12 +1618,12 @@ where
 
         // update
         if state.menu_states.is_empty() {
-            return Ignored;
+            return;
         } else if state.menu_states.len() == 1 {
             let last_ms = &mut state.menu_states[0];
 
             if last_ms.index.is_none() {
-                return Captured;
+                return;
             }
 
             let (max_offset, min_offset) = calc_offset_bounds(last_ms, viewport_size);
@@ -1616,7 +1644,8 @@ where
                     .children_bounds
                     .contains(overlay_cursor)
                 {
-                    return Captured;
+                    shell.capture_event();
+                    return;
                 }
 
                 // scroll the second last one
@@ -1632,8 +1661,8 @@ where
                 last_two[1].menu_bounds.check_bounds.y += clamped_delta_y;
             }
         }
-        Captured
-    })
+        shell.capture_event();
+    });
 }
 
 #[allow(clippy::pedantic)]
@@ -1666,11 +1695,11 @@ fn get_children_layout<Message>(
             .map(|mt| {
                 mt.item
                     .element
-                    .with_data(|w| match w.as_widget().size().height {
+                    .with_data_mut(|w| match w.as_widget_mut().size().height {
                         Length::Fixed(f) => Size::new(width, f),
                         Length::Shrink => {
                             let l_height = w
-                                .as_widget()
+                                .as_widget_mut()
                                 .layout(
                                     &mut tree[mt.index],
                                     renderer,

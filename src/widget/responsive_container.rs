@@ -6,7 +6,7 @@ use iced_core::layout;
 use iced_core::mouse;
 use iced_core::overlay;
 use iced_core::renderer;
-use iced_core::widget::{Id, Tree, tree};
+use iced_core::widget::{Id, Operation, Tree, tree};
 use iced_core::{Clipboard, Element, Layout, Length, Rectangle, Shell, Vector, Widget};
 
 pub(crate) fn responsive_container<'a, Message: 'static, Theme, E>(
@@ -81,7 +81,7 @@ where
     }
 
     fn diff(&mut self, tree: &mut Tree) {
-        tree.children[0].diff(&mut self.content);
+        tree.diff_children(std::slice::from_mut(&mut self.content));
     }
 
     fn size(&self) -> iced_core::Size<Length> {
@@ -89,47 +89,72 @@ where
     }
 
     fn layout(
-        &self,
+        &mut self,
         tree: &mut Tree,
         renderer: &Renderer,
         limits: &layout::Limits,
     ) -> layout::Node {
         let state = tree.state.downcast_mut::<State>();
-        let unrestricted_size = self.size.unwrap_or_else(|| {
+        let mut unrestricted_size = self.size.unwrap_or_else(|| {
             let node =
                 self.content
-                    .as_widget()
+                    .as_widget_mut()
                     .layout(&mut tree.children[0], renderer, &Limits::NONE);
             node.size()
         });
 
+        let cur_unrestricted_size = {
+            let node =
+                self.content
+                    .as_widget_mut()
+                    .layout(&mut tree.children[0], renderer, &Limits::NONE);
+            node.size()
+        };
+
         let max_size = limits.max();
+
         let old_max = state.limits.max();
-        state.needs_update = (unrestricted_size.width > max_size.width)
-            ^ (state.size.width > old_max.width)
-            || (unrestricted_size.height > max_size.height) ^ (state.size.height > old_max.height);
+
+        state.needs_update = (cur_unrestricted_size.width > max_size.width)
+            || (cur_unrestricted_size.width > old_max.width)
+            || (cur_unrestricted_size.height > max_size.height)
+            || (cur_unrestricted_size.height > old_max.height)
+            || ((unrestricted_size.width <= max_size.width)
+                && (unrestricted_size.height <= max_size.height)
+                && (unrestricted_size.width - cur_unrestricted_size.width > 1.
+                    || unrestricted_size.height - cur_unrestricted_size.height > 1.));
+
+        if unrestricted_size.width < cur_unrestricted_size.width {
+            state.needs_update = true;
+            unrestricted_size.width = cur_unrestricted_size.width;
+        } else if unrestricted_size.height < cur_unrestricted_size.height {
+            state.needs_update = true;
+            unrestricted_size.height = cur_unrestricted_size.height;
+        }
+        let node = self
+            .content
+            .as_widget_mut()
+            .layout(&mut tree.children[0], renderer, limits);
+        let size = node.size();
+
         if state.needs_update {
             state.limits = *limits;
             state.size = unrestricted_size;
         }
 
-        let node = self
-            .content
-            .as_widget()
-            .layout(&mut tree.children[0], renderer, limits);
-        let size = node.size();
         layout::Node::with_children(size, vec![node])
     }
 
     fn operate(
-        &self,
+        &mut self,
         tree: &mut Tree,
         layout: Layout<'_>,
         renderer: &Renderer,
-        operation: &mut dyn iced_core::widget::Operation<()>,
+        operation: &mut dyn Operation,
     ) {
-        operation.container(Some(&self.id), layout.bounds(), &mut |operation| {
-            self.content.as_widget().operate(
+        operation.container(Some(&self.id), layout.bounds());
+        operation.traverse(&mut |operation| {
+            self.content.as_widget_mut().operate(
                 &mut tree.children[0],
                 layout
                     .children()
@@ -142,17 +167,17 @@ where
         });
     }
 
-    fn on_event(
+    fn update(
         &mut self,
         tree: &mut Tree,
-        event: Event,
+        event: &Event,
         layout: Layout<'_>,
         cursor_position: mouse::Cursor,
         renderer: &Renderer,
         clipboard: &mut dyn Clipboard,
         shell: &mut Shell<'_, Message>,
         viewport: &Rectangle,
-    ) -> event::Status {
+    ) {
         let state = tree.state.downcast_mut::<State>();
 
         if state.needs_update {
@@ -166,7 +191,7 @@ where
             state.needs_update = false;
         }
 
-        self.content.as_widget_mut().on_event(
+        self.content.as_widget_mut().update(
             &mut tree.children[0],
             event,
             layout
@@ -225,8 +250,9 @@ where
     fn overlay<'b>(
         &'b mut self,
         tree: &'b mut Tree,
-        layout: Layout<'_>,
+        layout: Layout<'b>,
         renderer: &Renderer,
+        viewport: &Rectangle,
         translation: Vector,
     ) -> Option<overlay::Element<'b, Message, Theme, Renderer>> {
         self.content.as_widget_mut().overlay(
@@ -237,6 +263,7 @@ where
                 .unwrap()
                 .with_virtual_offset(layout.virtual_offset()),
             renderer,
+            viewport,
             translation,
         )
     }

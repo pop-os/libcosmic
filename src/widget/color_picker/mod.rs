@@ -26,7 +26,10 @@ use iced_core::{
 };
 
 use iced_widget::slider::HandleShape;
-use iced_widget::{Row, canvas, column, horizontal_space, row, scrollable, vertical_space};
+use iced_widget::{
+    Row, canvas, column, row, scrollable,
+    space::{horizontal, vertical},
+};
 use palette::{FromColor, RgbHue};
 
 use super::divider::horizontal;
@@ -334,7 +337,7 @@ where
                 .width(self.width),
             // canvas with gradient for the current color
             // still needs the canvas and the handle to be drawn on it
-            container(vertical_space().height(self.height))
+            container(vertical().height(self.height))
                 .width(self.width)
                 .height(self.height),
             slider(
@@ -548,13 +551,13 @@ where
     }
 
     fn layout(
-        &self,
+        &mut self,
         tree: &mut Tree,
         renderer: &crate::Renderer,
         limits: &layout::Limits,
     ) -> layout::Node {
         self.inner
-            .as_widget()
+            .as_widget_mut()
             .layout(&mut tree.children[0], renderer, limits)
     }
 
@@ -657,6 +660,7 @@ where
                             radius: (1.0 + handle_radius).into(),
                         },
                         shadow: Shadow::default(),
+                        snap: true,
                     },
                     Color::TRANSPARENT,
                 );
@@ -674,6 +678,7 @@ where
                             radius: handle_radius.into(),
                         },
                         shadow: Shadow::default(),
+                        snap: true,
                     },
                     Color::TRANSPARENT,
                 );
@@ -684,26 +689,31 @@ where
     fn overlay<'b>(
         &'b mut self,
         state: &'b mut Tree,
-        layout: Layout<'_>,
+        layout: Layout<'b>,
         renderer: &crate::Renderer,
+        viewport: &Rectangle,
         translation: Vector,
     ) -> Option<iced_core::overlay::Element<'b, Message, crate::Theme, crate::Renderer>> {
-        self.inner
-            .as_widget_mut()
-            .overlay(&mut state.children[0], layout, renderer, translation)
+        self.inner.as_widget_mut().overlay(
+            &mut state.children[0],
+            layout,
+            renderer,
+            viewport,
+            translation,
+        )
     }
 
-    fn on_event(
+    fn update(
         &mut self,
         tree: &mut Tree,
-        event: Event,
+        event: &Event,
         layout: Layout<'_>,
         cursor: mouse::Cursor,
         renderer: &crate::Renderer,
         clipboard: &mut dyn Clipboard,
         shell: &mut Shell<'_, Message>,
         viewport: &Rectangle,
-    ) -> event::Status {
+    ) {
         // if the pointer is performing a drag, intercept pointer motion and button events
         // else check if event is handled by child elements
         // if the event is not handled by a child element, check if it is over the canvas when pressing a button
@@ -732,24 +742,26 @@ where
                     shell.publish((self.on_update)(ColorPickerUpdate::ActionFinished));
                     state.dragging = false;
                 }
-                _ => return event::Status::Ignored,
+                _ => return,
             };
-            return event::Status::Captured;
+            shell.capture_event();
+            return;
         }
 
         let column_tree = &mut tree.children[0];
-        if self.inner.as_widget_mut().on_event(
+        self.inner.as_widget_mut().update(
             column_tree,
-            event.clone(),
+            &event,
             column_layout,
             cursor,
             renderer,
             clipboard,
             shell,
             viewport,
-        ) == event::Status::Captured
-        {
-            return event::Status::Captured;
+        );
+        if shell.is_event_captured() {
+            shell.capture_event();
+            return;
         }
 
         match event {
@@ -764,12 +776,10 @@ where
                     state.dragging = true;
                     let hsv: palette::Hsv = palette::Hsv::new(self.active_color.hue, s, v);
                     shell.publish((self.on_update)(ColorPickerUpdate::ActiveColor(hsv)));
-                    event::Status::Captured
-                } else {
-                    event::Status::Ignored
+                    shell.capture_event();
                 }
             }
-            _ => event::Status::Ignored,
+            _ => {}
         }
     }
 
@@ -812,12 +822,12 @@ pub fn color_button<'a, Message: Clone + 'static>(
     let spacing = THEME.lock().unwrap().cosmic().spacing;
 
     button::custom(if color.is_some() {
-        Element::from(vertical_space().height(Length::Fixed(f32::from(spacing.space_s))))
+        Element::from(vertical().height(Length::Fixed(f32::from(spacing.space_s))))
     } else {
         Element::from(column![
-            vertical_space().height(Length::FillPortion(6)),
+            vertical().height(Length::FillPortion(6)),
             row![
-                horizontal_space().width(Length::FillPortion(6)),
+                horizontal().width(Length::FillPortion(6)),
                 Icon::from(
                     icon::from_name("list-add-symbolic")
                         .prefer_svg(true)
@@ -827,11 +837,11 @@ pub fn color_button<'a, Message: Clone + 'static>(
                 .width(icon_portion)
                 .height(Length::Fill)
                 .content_fit(iced_core::ContentFit::Contain),
-                horizontal_space().width(Length::FillPortion(6)),
+                horizontal().width(Length::FillPortion(6)),
             ]
             .height(icon_portion)
             .width(Length::Fill),
-            vertical_space().height(Length::FillPortion(6)),
+            vertical().height(Length::FillPortion(6)),
         ])
     })
     .width(Length::Fixed(f32::from(spacing.space_s)))

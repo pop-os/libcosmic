@@ -5,10 +5,11 @@ use std::borrow::Cow;
 
 use crate::{
     Element, theme,
-    widget::{FlexRow, Row, column, container, flex_row, horizontal_space, row, text},
+    widget::{FlexRow, Row, column, container, flex_row, row, text},
 };
 use derive_setters::Setters;
 use iced_core::{Length, text::Wrapping};
+use iced_widget::space;
 use taffy::AlignContent;
 
 /// A settings item aligned in a row
@@ -25,7 +26,7 @@ pub fn item<'a, Message: 'static>(
     ) -> Row<'a, Message> {
         item_row(vec![
             text(title).wrapping(Wrapping::Word).into(),
-            horizontal_space().into(),
+            space::horizontal().into(),
             widget,
         ])
     }
@@ -40,6 +41,7 @@ pub fn item_row<Message>(children: Vec<Element<Message>>) -> Row<Message> {
     row::with_children(children)
         .spacing(theme::spacing().space_xs)
         .align_y(iced::Alignment::Center)
+        .width(Length::Fill)
 }
 
 /// A settings item aligned in a flex row
@@ -58,8 +60,9 @@ pub fn flex_item<'a, Message: 'static>(
                 .wrapping(Wrapping::Word)
                 .width(Length::Fill)
                 .into(),
-            container(widget).into(),
+            container(widget).width(Length::Shrink).into(),
         ])
+        .width(Length::Fill)
     }
 
     inner(title.into(), widget.into())
@@ -140,6 +143,10 @@ impl<'a, Message: 'static> Item<'a, Message> {
         is_checked: bool,
         message: impl Fn(bool) -> Message + 'static,
     ) -> Row<'a, Message> {
-        self.control(crate::widget::toggler(is_checked).on_toggle(message))
+        self.control(
+            crate::widget::toggler(is_checked)
+                .width(Length::Shrink)
+                .on_toggle(message),
+        )
     }
 }

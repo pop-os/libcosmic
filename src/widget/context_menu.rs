@@ -13,7 +13,7 @@ use derive_setters::Setters;
 use iced::touch::Finger;
 use iced::{Event, Vector, keyboard, window};
 use iced_core::widget::{Tree, Widget, tree};
-use iced_core::{Length, Point, Size, event, mouse, touch};
+use iced_core::{Length, Point, Size, mouse, touch};
 use std::collections::HashSet;
 use std::sync::Arc;
 
@@ -85,6 +85,7 @@ impl<Message: Clone + 'static> ContextMenu<'_, Message> {
                     // close existing popups
                     state.menu_states.clear();
                     state.active_root.clear();
+
                     shell.publish(self.on_surface_action.as_ref().unwrap()(destroy_popup(id)));
                     state.view_cursor = view_cursor;
                     (
@@ -249,7 +250,7 @@ impl<Message: 'static + Clone> Widget<Message, crate::Theme, crate::Renderer>
     }
 
     fn diff(&mut self, tree: &mut Tree) {
-        tree.children[0].diff(self.content.as_widget_mut());
+        tree.diff_children(std::slice::from_mut(&mut self.content));
         let state = tree.state.downcast_mut::<LocalState>();
         state.menu_bar_state.inner.with_data_mut(|inner| {
             menu_roots_diff(self.context_menu.as_mut().unwrap(), &mut inner.tree);
@@ -270,13 +271,13 @@ impl<Message: 'static + Clone> Widget<Message, crate::Theme, crate::Renderer>
     }
 
     fn layout(
-        &self,
+        &mut self,
         tree: &mut Tree,
         renderer: &crate::Renderer,
         limits: &iced_core::layout::Limits,
     ) -> iced_core::layout::Node {
         self.content
-            .as_widget()
+            .as_widget_mut()
             .layout(&mut tree.children[0], renderer, limits)
     }
 
@@ -302,29 +303,29 @@ impl<Message: 'static + Clone> Widget<Message, crate::Theme, crate::Renderer>
     }
 
     fn operate(
-        &self,
+        &mut self,
         tree: &mut Tree,
         layout: iced_core::Layout<'_>,
         renderer: &crate::Renderer,
         operation: &mut dyn iced_core::widget::Operation<()>,
     ) {
         self.content
-            .as_widget()
+            .as_widget_mut()
             .operate(&mut tree.children[0], layout, renderer, operation);
     }
 
     #[allow(clippy::too_many_lines)]
-    fn on_event(
+    fn update(
         &mut self,
         tree: &mut Tree,
-        event: iced::Event,
+        event: &iced::Event,
         layout: iced_core::Layout<'_>,
         cursor: iced_core::mouse::Cursor,
         renderer: &crate::Renderer,
         clipboard: &mut dyn iced_core::Clipboard,
         shell: &mut iced_core::Shell<'_, Message>,
         viewport: &iced::Rectangle,
-    ) -> iced_core::event::Status {
+    ) {
         let state = tree.state.downcast_mut::<LocalState>();
         let bounds = layout.bounds();
 
@@ -336,13 +337,12 @@ impl<Message: 'static + Clone> Widget<Message, crate::Theme, crate::Renderer>
                 .with_data(|d| !d.open && !d.active_root.is_empty());
 
         let open = state.menu_bar_state.inner.with_data_mut(|state| {
-            if reset {
-                if let Some(popup_id) = state.popup_id.get(&self.window_id).copied() {
-                    if let Some(handler) = self.on_surface_action.as_ref() {
-                        shell.publish((handler)(crate::surface::Action::DestroyPopup(popup_id)));
-                        state.reset();
-                    }
-                }
+            if reset
+                && let Some(popup_id) = state.popup_id.get(&self.window_id).copied()
+                && let Some(handler) = self.on_surface_action.as_ref()
+            {
+                shell.publish((handler)(crate::surface::Action::DestroyPopup(popup_id)));
+                state.reset();
             }
             state.open
         });
@@ -356,7 +356,6 @@ impl<Message: 'static + Clone> Widget<Message, crate::Theme, crate::Renderer>
                 mouse::Button::Right | mouse::Button::Left,
             ))
             | Event::Touch(touch::Event::FingerPressed { .. })
-            | Event::Window(window::Event::Focused)
                 if open )
         {
             state.menu_bar_state.inner.with_data_mut(|state| {
@@ -366,15 +365,14 @@ impl<Message: 'static + Clone> Widget<Message, crate::Theme, crate::Renderer>
                 state.open = false;
 
                 #[cfg(all(feature = "wayland", feature = "winit", feature = "surface-message"))]
-                if matches!(WINDOWING_SYSTEM.get(), Some(WindowingSystem::Wayland)) {
-                    if let Some(id) = state.popup_id.remove(&self.window_id) {
-                        {
-                            let surface_action = self.on_surface_action.as_ref().unwrap();
-                            shell
-                                .publish(surface_action(crate::surface::action::destroy_popup(id)));
-                        }
-                        state.view_cursor = cursor;
+                if matches!(WINDOWING_SYSTEM.get(), Some(WindowingSystem::Wayland))
+                    && let Some(id) = state.popup_id.remove(&self.window_id)
+                {
+                    {
+                        let surface_action = self.on_surface_action.as_ref().unwrap();
+                        shell.publish(surface_action(crate::surface::action::destroy_popup(id)));
                     }
+                    state.view_cursor = cursor;
                 }
             });
         }
@@ -384,11 +382,11 @@ impl<Message: 'static + Clone> Widget<Message, crate::Theme, crate::Renderer>
 
             match event {
                 Event::Touch(touch::Event::FingerPressed { id, .. }) => {
-                    state.fingers_pressed.insert(id);
+                    state.fingers_pressed.insert(*id);
                 }
 
                 Event::Touch(touch::Event::FingerLifted { id, .. }) => {
-                    state.fingers_pressed.remove(&id);
+                    state.fingers_pressed.remove(id);
                 }
 
                 _ => (),
@@ -397,7 +395,7 @@ impl<Message: 'static + Clone> Widget<Message, crate::Theme, crate::Renderer>
             // Present a context menu on a right click event.
             if !was_open
                 && self.context_menu.is_some()
-                && (right_button_released(&event) || (touch_lifted(&event) && fingers_pressed == 2))
+                && (right_button_released(event) || (touch_lifted(event) && fingers_pressed == 2))
             {
                 state.context_cursor = cursor.position().unwrap_or_default();
                 let state = tree.state.downcast_mut::<LocalState>();
@@ -410,10 +408,11 @@ impl<Message: 'static + Clone> Widget<Message, crate::Theme, crate::Renderer>
                     self.create_popup(layout, cursor, renderer, shell, viewport, state);
                 }
 
-                return event::Status::Captured;
-            } else if !was_open && right_button_released(&event)
-                || (touch_lifted(&event))
-                || left_button_released(&event)
+                shell.capture_event();
+                return;
+            } else if !was_open && right_button_released(event)
+                || (touch_lifted(event))
+                || left_button_released(event)
             {
                 state.menu_bar_state.inner.with_data_mut(|state| {
                     was_open = true;
@@ -426,21 +425,20 @@ impl<Message: 'static + Clone> Widget<Message, crate::Theme, crate::Renderer>
                         feature = "winit",
                         feature = "surface-message"
                     ))]
-                    if matches!(WINDOWING_SYSTEM.get(), Some(WindowingSystem::Wayland)) {
-                        if let Some(id) = state.popup_id.remove(&self.window_id) {
-                            {
-                                let surface_action = self.on_surface_action.as_ref().unwrap();
-                                shell.publish(surface_action(
-                                    crate::surface::action::destroy_popup(id),
-                                ));
-                            }
-                            state.view_cursor = cursor;
+                    if matches!(WINDOWING_SYSTEM.get(), Some(WindowingSystem::Wayland))
+                        && let Some(id) = state.popup_id.remove(&self.window_id)
+                    {
+                        {
+                            let surface_action = self.on_surface_action.as_ref().unwrap();
+                            shell
+                                .publish(surface_action(crate::surface::action::destroy_popup(id)));
                         }
+                        state.view_cursor = cursor;
                     }
                 });
             }
         }
-        self.content.as_widget_mut().on_event(
+        self.content.as_widget_mut().update(
             &mut tree.children[0],
             event,
             layout,
@@ -449,7 +447,7 @@ impl<Message: 'static + Clone> Widget<Message, crate::Theme, crate::Renderer>
             clipboard,
             shell,
             viewport,
-        )
+        );
     }
 
     fn overlay<'b>(
@@ -457,6 +455,7 @@ impl<Message: 'static + Clone> Widget<Message, crate::Theme, crate::Renderer>
         tree: &'b mut Tree,
         layout: iced_core::Layout<'_>,
         _renderer: &crate::Renderer,
+        _viewport: &iced::Rectangle,
         translation: Vector,
     ) -> Option<iced_core::overlay::Element<'b, Message, crate::Theme, crate::Renderer>> {
         #[cfg(all(feature = "wayland", feature = "winit", feature = "surface-message"))]

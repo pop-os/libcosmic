@@ -100,7 +100,7 @@ impl<Message: 'static + Clone> Widget<Message, crate::Theme, Renderer> for FlexR
     }
 
     fn layout(
-        &self,
+        &mut self,
         tree: &mut Tree,
         renderer: &Renderer,
         limits: &layout::Limits,
@@ -114,32 +114,32 @@ impl<Message: 'static + Clone> Widget<Message, crate::Theme, Renderer> for FlexR
         super::layout::resolve(
             renderer,
             &limits,
-            &self.children,
+            &mut self.children,
             self.padding,
             f32::from(self.column_spacing),
             f32::from(self.row_spacing),
             self.min_item_width,
-            self.align_items,
             self.justify_items,
+            self.align_items,
             self.justify_content,
             &mut tree.children,
         )
     }
 
     fn operate(
-        &self,
+        &mut self,
         tree: &mut Tree,
         layout: Layout<'_>,
         renderer: &Renderer,
         operation: &mut dyn Operation<()>,
     ) {
-        operation.container(None, layout.bounds(), &mut |operation| {
+        operation.traverse(&mut |operation| {
             self.children
-                .iter()
+                .iter_mut()
                 .zip(&mut tree.children)
                 .zip(layout.children())
                 .for_each(|((child, state), c_layout)| {
-                    child.as_widget().operate(
+                    child.as_widget_mut().operate(
                         state,
                         c_layout.with_virtual_offset(layout.virtual_offset()),
                         renderer,
@@ -149,34 +149,34 @@ impl<Message: 'static + Clone> Widget<Message, crate::Theme, Renderer> for FlexR
         });
     }
 
-    fn on_event(
+    fn update(
         &mut self,
         tree: &mut Tree,
-        event: Event,
+        event: &Event,
         layout: Layout<'_>,
         cursor: mouse::Cursor,
         renderer: &Renderer,
         clipboard: &mut dyn Clipboard,
         shell: &mut Shell<'_, Message>,
         viewport: &Rectangle,
-    ) -> event::Status {
-        self.children
+    ) {
+        for ((child, state), c_layout) in self
+            .children
             .iter_mut()
             .zip(&mut tree.children)
             .zip(layout.children())
-            .map(|((child, state), c_layout)| {
-                child.as_widget_mut().on_event(
-                    state,
-                    event.clone(),
-                    c_layout.with_virtual_offset(layout.virtual_offset()),
-                    cursor,
-                    renderer,
-                    clipboard,
-                    shell,
-                    viewport,
-                )
-            })
-            .fold(event::Status::Ignored, event::Status::merge)
+        {
+            child.as_widget_mut().update(
+                state,
+                event,
+                c_layout.with_virtual_offset(layout.virtual_offset()),
+                cursor,
+                renderer,
+                clipboard,
+                shell,
+                viewport,
+            );
+        }
     }
 
     fn mouse_interaction(
@@ -235,11 +235,19 @@ impl<Message: 'static + Clone> Widget<Message, crate::Theme, Renderer> for FlexR
     fn overlay<'b>(
         &'b mut self,
         tree: &'b mut Tree,
-        layout: Layout<'_>,
+        layout: Layout<'b>,
         renderer: &Renderer,
+        viewport: &Rectangle,
         translation: Vector,
     ) -> Option<overlay::Element<'b, Message, crate::Theme, Renderer>> {
-        overlay::from_children(&mut self.children, tree, layout, renderer, translation)
+        overlay::from_children(
+            &mut self.children,
+            tree,
+            layout,
+            renderer,
+            viewport,
+            translation,
+        )
     }
 
     #[cfg(feature = "a11y")]

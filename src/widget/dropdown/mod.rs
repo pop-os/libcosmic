@@ -56,12 +56,12 @@ pub fn popup_dropdown<
     dropdown
 }
 
-/// Produces a [`Task`] that closes the [`Dropdown`].
-pub fn close<Message: 'static>(id: Id) -> iced_runtime::Task<Message> {
-    iced_runtime::task::effect(iced_runtime::Action::Widget(Box::new(operation::close(id))))
-}
+// /// Produces a [`Task`] that closes the [`Dropdown`].
+// pub fn close<Message: 'static>(id: Id) -> iced_runtime::Task<Message> {
+//     iced_runtime::task::effect(iced_runtime::Action::Widget(Box::new(operation::close(id))))
+// }
 
-/// Produces a [`Task`] that opens the [`Dropdown`].
-pub fn open<Message: 'static>(id: Id) -> iced_runtime::Task<Message> {
-    iced_runtime::task::effect(iced_runtime::Action::Widget(Box::new(operation::open(id))))
-}
+// /// Produces a [`Task`] that opens the [`Dropdown`].
+// pub fn open<Message: 'static>(id: Id) -> iced_runtime::Task<Message> {
+//     iced_runtime::task::effect(iced_runtime::Action::Widget(Box::new(operation::open(id))))
+// }

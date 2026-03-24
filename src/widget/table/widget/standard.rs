@@ -192,6 +192,7 @@ where
                                         ..Default::default()
                                     },
                                     shadow: Default::default(),
+                                    snap: true,
                                 }
                             }))
                             .apply(widget::mouse_area)
@@ -205,7 +206,7 @@ where
                             })
                             // Double click
                             .apply(|mouse_area| {
-                                if let Some(ref on_item_mb) = val.on_item_mb_left {
+                                if let Some(ref on_item_mb) = val.on_item_mb_double {
                                     mouse_area.on_double_click((on_item_mb)(entity))
                                 } else {
                                     mouse_area

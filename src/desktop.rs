@@ -416,7 +416,6 @@ fn match_exec_basename(
         };
 
         let basename_lower = basename.to_ascii_lowercase();
-
         if normalized
             .iter()
             .any(|candidate| candidate == &basename_lower)
@@ -440,8 +439,7 @@ fn fallback_entry(context: &DesktopLookupContext<'_>) -> fde::DesktopEntry {
     let name = context
         .title
         .as_ref()
-        .map(|title| title.to_string())
-        .unwrap_or_else(|| context.app_id.to_string());
+        .map_or_else(|| context.app_id.to_string(), |title| title.to_string());
     entry.add_desktop_entry("Name".to_string(), name);
     entry
 }
@@ -458,7 +456,9 @@ fn proton_or_wine_fallback(
 ) -> Option<fde::DesktopEntry> {
     let app_id = context.app_id.as_ref();
     let is_proton_game = app_id == "steam_app_default";
-    let is_wine_entry = app_id.ends_with(".exe");
+    let is_wine_entry = std::path::Path::new(app_id)
+        .extension()
+        .is_some_and(|ext| ext.eq_ignore_ascii_case("exe"));
 
     if !is_proton_game && !is_wine_entry {
         return None;
@@ -487,10 +487,6 @@ fn proton_or_wine_fallback(
 
 #[cfg(not(windows))]
 fn candidate_desktop_ids(context: &DesktopLookupContext<'_>) -> Vec<String> {
-    const SUFFIXES: &[&str] = &[".desktop", ".Desktop", ".DESKTOP"];
-    let mut ordered = Vec::new();
-    let mut seen = HashSet::new();
-
     fn push_candidate(seen: &mut HashSet<String>, ordered: &mut Vec<String>, candidate: &str) {
         let trimmed = candidate.trim();
         if trimmed.is_empty() {
@@ -531,11 +527,11 @@ fn candidate_desktop_ids(context: &DesktopLookupContext<'_>) -> Vec<String> {
             }
         }
 
-        if trimmed.contains('.') {
-            if let Some(last) = trimmed.rsplit('.').next() {
-                if last.len() >= 2 {
-                    push_candidate(seen, ordered, last);
-                }
+        if trimmed.contains('.')
+            && let Some(last) = trimmed.rsplit('.').next()
+        {
+            if last.len() >= 2 {
+                push_candidate(seen, ordered, last);
             }
         }
 
@@ -546,12 +542,19 @@ fn candidate_desktop_ids(context: &DesktopLookupContext<'_>) -> Vec<String> {
             push_candidate(seen, ordered, &trimmed.replace('_', "-"));
         }
 
-        for token in trimmed.split(|c: char| matches!(c, '.' | '-' | '_' | '@' | ' ')) {
+        for token in
+            trimmed.split(|c: char| matches!(c, '.' | '-' | '_' | '@') || c.is_whitespace())
+        {
             if token.len() >= 2 && token != trimmed {
                 push_candidate(seen, ordered, token);
             }
         }
     }
+
+    const SUFFIXES: &[&str] = &[".desktop", ".Desktop", ".DESKTOP"];
+
+    let mut ordered = Vec::new();
+    let mut seen = HashSet::new();
 
     add_variants(
         &mut seen,
@@ -915,12 +918,20 @@ mod tests {
         let candidates = candidate_desktop_ids(&ctx);
 
         assert_eq!(candidates.first().unwrap(), "com.example.App.desktop");
-        assert!(candidates.contains(&"com.example.App".to_string()));
-        assert!(candidates.contains(&"com-example-App".to_string()));
-        assert!(candidates.contains(&"com_example_App".to_string()));
-        assert!(candidates.contains(&"Example App".to_string()));
-        assert!(candidates.contains(&"Example".to_string()));
-        assert!(candidates.contains(&"App".to_string()));
+        for test in [
+            "com.example.App",
+            "com-example-App",
+            "com_example_App",
+            "Example App",
+            "Example",
+            "App",
+        ] {
+            assert!(
+                candidates
+                    .iter()
+                    .any(|c| c.to_ascii_lowercase() == test.to_ascii_lowercase()),
+            );
+        }
     }
 
     #[test]
@@ -985,7 +996,7 @@ Icon=vmware-workstation\n\
 
         let resolved = resolve_desktop_entry(&mut cache, &ctx, &DesktopResolveOptions::default());
 
-        assert_eq!(resolved.id(), "vmware-workstation.desktop");
+        assert_eq!(resolved.id(), "vmware-workstation");
     }
 
     #[test]

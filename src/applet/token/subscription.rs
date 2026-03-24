@@ -14,16 +14,15 @@ use super::wayland_handler::wayland_handler;
 pub fn activation_token_subscription<I: 'static + Hash + Copy + Send + Sync + Debug>(
     id: I,
 ) -> iced::Subscription<TokenUpdate> {
-    Subscription::run_with_id(
-        id,
+    Subscription::run_with(id, |_| {
         stream::channel(50, move |mut output| async move {
             let mut state = State::Ready;
 
             loop {
                 state = start_listening(state, &mut output).await;
             }
-        }),
-    )
+        })
+    })
 }
 
 pub enum State {

@@ -20,10 +20,10 @@ use iced::clipboard::mime::AllowedMimeTypes;
 use iced::touch::Finger;
 use iced::{
     Alignment, Background, Color, Event, Length, Padding, Rectangle, Size, Task, Vector, alignment,
-    event, keyboard, mouse, touch, window,
+    keyboard, mouse, touch, window,
 };
 use iced_core::mouse::ScrollDelta;
-use iced_core::text::{Ellipsize, LineHeight, Renderer as TextRenderer, Shaping, Wrapping};
+use iced_core::text::{self, Ellipsize, LineHeight, Renderer as TextRenderer, Shaping, Wrapping};
 use iced_core::widget::operation::Focusable;
 use iced_core::widget::{self, operation, tree};
 use iced_core::{Border, Point, Renderer as IcedRenderer, Shadow, Text};
@@ -36,7 +36,6 @@ use std::collections::HashSet;
 use std::collections::hash_map::DefaultHasher;
 use std::hash::{Hash, Hasher};
 use std::marker::PhantomData;
-use std::mem;
 use std::time::{Duration, Instant};
 
 thread_local! {
@@ -157,6 +156,8 @@ where
     pub(super) spacing: u16,
     /// LineHeight of the font.
     pub(super) line_height: LineHeight,
+    /// Ellipsize strategy for button text.
+    pub(super) ellipsize: Ellipsize,
     /// Style to draw the widget in.
     #[setters(into)]
     pub(super) style: Style,
@@ -224,6 +225,7 @@ where
             width: Length::Fill,
             spacing: 0,
             line_height: LineHeight::default(),
+            ellipsize: Ellipsize::default(),
             style: Style::default(),
             context_menu: None,
             on_activate: None,
@@ -265,22 +267,33 @@ where
                 }
             }
 
-            let text = Text {
-                content: text.as_ref(),
-                size: iced::Pixels(self.font_size),
-                bounds: Size::INFINITY,
-                font,
-                horizontal_alignment: alignment::Horizontal::Left,
-                vertical_alignment: alignment::Vertical::Center,
-                shaping: Shaping::Advanced,
-                wrapping: Wrapping::None,
-                ellipsize: Ellipsize::None,
-                line_height: self.line_height,
-            };
-
             if let Some(paragraph) = state.paragraphs.get_mut(key) {
+                let text = Text {
+                    content: text.as_ref(),
+                    size: iced::Pixels(self.font_size),
+                    bounds: Size::INFINITE,
+                    font,
+                    align_x: text::Alignment::Left,
+                    align_y: alignment::Vertical::Center,
+                    shaping: Shaping::Advanced,
+                    wrapping: Wrapping::None,
+                    line_height: self.line_height,
+                    ellipsize: self.ellipsize,
+                };
                 paragraph.update(text);
             } else {
+                let text = Text {
+                    content: text.to_string(),
+                    size: iced::Pixels(self.font_size),
+                    bounds: Size::INFINITE,
+                    font,
+                    align_x: text::Alignment::Left,
+                    align_y: alignment::Vertical::Center,
+                    shaping: Shaping::Advanced,
+                    wrapping: Wrapping::None,
+                    line_height: self.line_height,
+                    ellipsize: self.ellipsize,
+                };
                 state.paragraphs.insert(key, crate::Plain::new(text));
             }
         }
@@ -441,7 +454,7 @@ where
     }
 
     /// Item the previous item in the widget.
-    fn focus_previous(&mut self, state: &mut LocalState) -> event::Status {
+    fn focus_previous(&mut self, state: &mut LocalState, shell: &mut Shell<'_, Message>) {
         match state.focused_item {
             Item::Tab(entity) => {
                 let mut keys = self.iterate_visible_tabs(state).rev();
@@ -455,7 +468,8 @@ where
                             }
 
                             state.focused_item = Item::Tab(key);
-                            return event::Status::Captured;
+                            shell.capture_event();
+                            return;
                         }
 
                         break;
@@ -464,24 +478,28 @@ where
 
                 if self.prev_tab_sensitive(state) {
                     state.focused_item = Item::PrevButton;
-                    return event::Status::Captured;
+                    shell.capture_event();
+                    return;
                 }
             }
 
             Item::NextButton => {
                 if let Some(last) = self.last_tab(state) {
                     state.focused_item = Item::Tab(last);
-                    return event::Status::Captured;
+                    shell.capture_event();
+                    return;
                 }
             }
 
             Item::None => {
                 if self.next_tab_sensitive(state) {
                     state.focused_item = Item::NextButton;
-                    return event::Status::Captured;
+                    shell.capture_event();
+                    return;
                 } else if let Some(last) = self.last_tab(state) {
                     state.focused_item = Item::Tab(last);
-                    return event::Status::Captured;
+                    shell.capture_event();
+                    return;
                 }
             }
 
@@ -489,11 +507,10 @@ where
         }
 
         state.focused_item = Item::None;
-        event::Status::Ignored
     }
 
     /// Item the next item in the widget.
-    fn focus_next(&mut self, state: &mut LocalState) -> event::Status {
+    fn focus_next(&mut self, state: &mut LocalState, shell: &mut Shell<'_, Message>) {
         match state.focused_item {
             Item::Tab(entity) => {
                 let mut keys = self.iterate_visible_tabs(state);
@@ -506,7 +523,8 @@ where
                             }
 
                             state.focused_item = Item::Tab(key);
-                            return event::Status::Captured;
+                            shell.capture_event();
+                            return;
                         }
 
                         break;
@@ -515,24 +533,28 @@ where
 
                 if self.next_tab_sensitive(state) {
                     state.focused_item = Item::NextButton;
-                    return event::Status::Captured;
+                    shell.capture_event();
+                    return;
                 }
             }
 
             Item::PrevButton => {
                 if let Some(first) = self.first_tab(state) {
                     state.focused_item = Item::Tab(first);
-                    return event::Status::Captured;
+                    shell.capture_event();
+                    return;
                 }
             }
 
             Item::None => {
                 if self.prev_tab_sensitive(state) {
                     state.focused_item = Item::PrevButton;
-                    return event::Status::Captured;
+                    shell.capture_event();
+                    return;
                 } else if let Some(first) = self.first_tab(state) {
                     state.focused_item = Item::Tab(first);
-                    return event::Status::Captured;
+                    shell.capture_event();
+                    return;
                 }
             }
 
@@ -540,7 +562,6 @@ where
         }
 
         state.focused_item = Item::None;
-        event::Status::Ignored
     }
 
     fn iterate_visible_tabs<'b>(
@@ -590,27 +611,26 @@ where
             .text
             .get(button)
             .zip(state.paragraphs.entry(button))
+            && !text.is_empty()
         {
-            if !text.is_empty() {
-                icon_spacing = f32::from(self.button_spacing);
-                let paragraph = entry.or_insert_with(|| {
-                    crate::Plain::new(Text {
-                        content: text.as_ref(),
-                        size: iced::Pixels(self.font_size),
-                        bounds: Size::INFINITY,
-                        font,
-                        horizontal_alignment: alignment::Horizontal::Left,
-                        vertical_alignment: alignment::Vertical::Center,
-                        shaping: Shaping::Advanced,
-                        wrapping: Wrapping::default(),
-                        ellipsize: Ellipsize::default(),
-                        line_height: self.line_height,
-                    })
-                });
+            icon_spacing = f32::from(self.button_spacing);
+            let paragraph = entry.or_insert_with(|| {
+                crate::Plain::new(Text {
+                    content: text.to_string(), // TODO should we just use String at this point?
+                    size: iced::Pixels(self.font_size),
+                    bounds: Size::INFINITE,
+                    font,
+                    align_x: text::Alignment::Left,
+                    align_y: alignment::Vertical::Center,
+                    shaping: Shaping::Advanced,
+                    wrapping: Wrapping::default(),
+                    ellipsize: self.ellipsize,
+                    line_height: self.line_height,
+                })
+            });
 
-                let size = paragraph.min_bounds();
-                width += size.width;
-            }
+            let size = paragraph.min_bounds();
+            width += size.width;
         }
 
         // Add indent to measurement if found.
@@ -638,6 +658,50 @@ where
         width = width.min(f32::from(self.maximum_button_width));
 
         (width, f32::from(self.button_height))
+    }
+
+    /// Resizes paragraph bounds based on the actual available button width so that
+    /// text ellipsis can take effect. Call this after `variant_layout` has populated
+    /// `state.internal_layout` with final button sizes.
+    pub(super) fn resize_paragraphs(&self, state: &mut LocalState, available_width: f32) {
+        if matches!(self.ellipsize, Ellipsize::None) {
+            return;
+        }
+
+        for (nth, key) in self.model.order.iter().copied().enumerate() {
+            if self.model.text(key).is_some_and(|text| !text.is_empty()) {
+                let mut non_text_width =
+                    f32::from(self.button_padding[0]) + f32::from(self.button_padding[2]);
+
+                if let Some(icon) = self.model.icon(key) {
+                    non_text_width += f32::from(icon.size) + f32::from(self.button_spacing);
+                } else if self.model.is_active(key) {
+                    if let crate::theme::SegmentedButton::Control = self.style {
+                        non_text_width += 16.0 + f32::from(self.button_spacing);
+                    }
+                }
+
+                if self.model.is_closable(key) {
+                    non_text_width +=
+                        f32::from(self.close_icon.size) + f32::from(self.button_spacing);
+                }
+
+                let text_width = (available_width - non_text_width).max(0.0);
+
+                if let Some(paragraph) = state.paragraphs.get_mut(key) {
+                    paragraph.resize(Size::new(text_width, f32::INFINITY));
+
+                    // Update internal_layout actual content width so that
+                    // button_alignment centering uses the ellipsized size.
+                    let content_width = paragraph.min_bounds().width + non_text_width
+                        - f32::from(self.button_padding[0])
+                        - f32::from(self.button_padding[2]);
+                    if let Some(entry) = state.internal_layout.get_mut(nth) {
+                        entry.1.width = content_width;
+                    }
+                }
+            }
+        }
     }
 
     pub(super) fn max_button_dimensions(
@@ -876,10 +940,10 @@ where
         }
 
         // Unfocus if another segmented control was focused.
-        if let Some(f) = state.focused.as_ref() {
-            if f.updated_at != LAST_FOCUS_UPDATE.with(|f| f.get()) {
-                state.unfocus();
-            }
+        if let Some(f) = state.focused.as_ref()
+            && f.updated_at != LAST_FOCUS_UPDATE.with(|f| f.get())
+        {
+            state.unfocus();
         }
     }
 
@@ -888,7 +952,7 @@ where
     }
 
     fn layout(
-        &self,
+        &mut self,
         tree: &mut Tree,
         renderer: &Renderer,
         limits: &layout::Limits,
@@ -902,17 +966,17 @@ where
     }
 
     #[allow(clippy::too_many_lines)]
-    fn on_event(
+    fn update(
         &mut self,
         tree: &mut Tree,
-        mut event: Event,
+        mut event: &Event,
         layout: Layout<'_>,
         cursor_position: mouse::Cursor,
         _renderer: &Renderer,
         clipboard: &mut dyn Clipboard,
         shell: &mut Shell<'_, Message>,
         _viewport: &iced::Rectangle,
-    ) -> event::Status {
+    ) {
         let my_bounds = layout.bounds();
         let state = tree.state.downcast_mut::<LocalState>();
 
@@ -941,7 +1005,8 @@ where
                             "tab drag source finished id={:?}",
                             my_id
                         );
-                        return event::Status::Captured;
+                        shell.capture_event();
+                        return;
                     }
                 }
                 DndEvent::Offer(
@@ -1137,11 +1202,14 @@ where
                         });
 
                         let (maybe_msg, ret) = state.dnd_state.on_data_received(
-                            mem::take(mime_type),
-                            mem::take(data),
+                            mime_type.clone(),
+                            data.clone(),
                             None::<fn(_, _) -> Message>,
                             on_drop,
                         );
+                        if matches!(ret, iced::event::Status::Captured) {
+                            shell.capture_event();
+                        }
                         if let Some(msg) = maybe_msg {
                             log::trace!(
                                 target: TAB_REORDER_LOG_TARGET,
@@ -1160,10 +1228,11 @@ where
                             }
                             if let Some(on_reorder) = self.on_reorder.as_ref() {
                                 shell.publish(on_reorder(event));
-                                return event::Status::Captured;
+                                shell.capture_event();
+                                return;
                             }
                         }
-                        return ret;
+                        return;
                     }
                 }
                 _ => {}
@@ -1175,13 +1244,12 @@ where
 
             match event {
                 Event::Touch(touch::Event::FingerPressed { id, .. }) => {
-                    state.fingers_pressed.insert(id);
+                    state.fingers_pressed.insert(*id);
                 }
 
                 Event::Touch(touch::Event::FingerLifted { id, .. }) => {
-                    state.fingers_pressed.remove(&id);
+                    state.fingers_pressed.remove(id);
                 }
-
                 _ => (),
             }
 
@@ -1252,7 +1320,8 @@ where
                                         || (touch_lifted(&event) && fingers_pressed == 1))
                                 {
                                     shell.publish(on_close(key));
-                                    return event::Status::Captured;
+                                    shell.capture_event();
+                                    return;
                                 }
 
                                 if self.on_middle_press.is_none() {
@@ -1263,7 +1332,8 @@ where
                                     {
                                         if state.middle_clicked == Some(Item::Tab(key)) {
                                             shell.publish(on_close(key));
-                                            return event::Status::Captured;
+                                            shell.capture_event();
+                                            return;
                                         }
 
                                         state.middle_clicked = None;
@@ -1278,27 +1348,26 @@ where
                                 Event::Mouse(mouse::Event::ButtonPressed(mouse::Button::Left))
                             )
                             && !over_close_button
+                            && let Some(position) = cursor_position.position()
                         {
-                            if let Some(position) = cursor_position.position() {
-                                state.tab_drag_candidate = Some(TabDragCandidate {
-                                    entity: key,
-                                    bounds,
-                                    origin: position,
-                                });
-                                if let Some(tab_drag) = self.tab_drag.as_ref() {
-                                    log::trace!(
-                                        target: TAB_REORDER_LOG_TARGET,
-                                        "tab drag candidate entity={:?} origin=({:.2},{:.2}) bounds=({:.2},{:.2},{:.2},{:.2}) threshold={}",
-                                        key,
-                                        position.x,
-                                        position.y,
-                                        bounds.x,
-                                        bounds.y,
-                                        bounds.width,
-                                        bounds.height,
-                                        tab_drag.threshold
-                                    );
-                                }
+                            state.tab_drag_candidate = Some(TabDragCandidate {
+                                entity: key,
+                                bounds,
+                                origin: position,
+                            });
+                            if let Some(tab_drag) = self.tab_drag.as_ref() {
+                                log::trace!(
+                                    target: TAB_REORDER_LOG_TARGET,
+                                    "tab drag candidate entity={:?} origin=({:.2},{:.2}) bounds=({:.2},{:.2},{:.2},{:.2}) threshold={}",
+                                    key,
+                                    position.x,
+                                    position.y,
+                                    bounds.x,
+                                    bounds.y,
+                                    bounds.width,
+                                    bounds.height,
+                                    tab_drag.threshold
+                                );
                             }
                         }
 
@@ -1307,38 +1376,35 @@ where
                         }
 
                         if let Some(on_activate) = self.on_activate.as_ref() {
-                            if is_pressed(&event) {
+                            if is_pressed(event) {
                                 state.pressed_item = Some(Item::Tab(key));
-                            } else if is_lifted(&event) {
-                                if self.button_is_pressed(state, key) {
-                                    shell.publish(on_activate(key));
-                                    state.set_focused();
-                                    state.focused_item = Item::Tab(key);
-                                    state.pressed_item = None;
-                                    return event::Status::Captured;
-                                }
+                            } else if is_lifted(&event) && self.button_is_pressed(state, key) {
+                                shell.publish(on_activate(key));
+                                state.set_focused();
+                                state.focused_item = Item::Tab(key);
+                                state.pressed_item = None;
+                                shell.capture_event();
+                                return;
                             }
                         }
 
                         // Present a context menu on a right click event.
-                        if self.context_menu.is_some() {
-                            if let Some(on_context) = self.on_context.as_ref() {
-                                if right_button_released(&event)
-                                    || (touch_lifted(&event) && fingers_pressed == 2)
-                                {
-                                    state.show_context = Some(key);
-                                    state.context_cursor =
-                                        cursor_position.position().unwrap_or_default();
+                        if self.context_menu.is_some()
+                            && let Some(on_context) = self.on_context.as_ref()
+                            && (right_button_released(&event)
+                                || (touch_lifted(&event) && fingers_pressed == 2))
+                        {
+                            state.show_context = Some(key);
+                            state.context_cursor = cursor_position.position().unwrap_or_default();
 
-                                    state.menu_state.inner.with_data_mut(|data| {
-                                        data.open = true;
-                                        data.view_cursor = cursor_position;
-                                    });
+                            state.menu_state.inner.with_data_mut(|data| {
+                                data.open = true;
+                                data.view_cursor = cursor_position;
+                            });
 
-                                    shell.publish(on_context(key));
-                                    return event::Status::Captured;
-                                }
-                            }
+                            shell.publish(on_context(key));
+                            shell.capture_event();
+                            return;
                         }
 
                         if let Event::Mouse(mouse::Event::ButtonPressed(mouse::Button::Middle)) =
@@ -1347,7 +1413,8 @@ where
                             state.middle_clicked = Some(Item::Tab(key));
                             if let Some(on_middle_press) = self.on_middle_press.as_ref() {
                                 shell.publish(on_middle_press(key));
-                                return event::Status::Captured;
+                                shell.capture_event();
+                                return;
                             }
                         }
                     }
@@ -1359,55 +1426,55 @@ where
                 }
             }
 
-            if self.scrollable_focus {
-                if let Some(on_activate) = self.on_activate.as_ref() {
-                    if let Event::Mouse(mouse::Event::WheelScrolled { delta }) = event {
-                        let current = Instant::now();
+            if self.scrollable_focus
+                && let Some(on_activate) = self.on_activate.as_ref()
+                && let Event::Mouse(mouse::Event::WheelScrolled { delta }) = event
+            {
+                let current = Instant::now();
 
-                        // Permit successive scroll wheel events only after a given delay.
-                        if state.wheel_timestamp.is_none_or(|previous| {
-                            current.duration_since(previous) > Duration::from_millis(250)
-                        }) {
-                            state.wheel_timestamp = Some(current);
+                // Permit successive scroll wheel events only after a given delay.
+                if state.wheel_timestamp.is_none_or(|previous| {
+                    current.duration_since(previous) > Duration::from_millis(250)
+                }) {
+                    state.wheel_timestamp = Some(current);
 
-                            match delta {
-                                ScrollDelta::Lines { y, .. } | ScrollDelta::Pixels { y, .. } => {
-                                    let mut activate_key = None;
+                    match delta {
+                        ScrollDelta::Lines { y, .. } | ScrollDelta::Pixels { y, .. } => {
+                            let mut activate_key = None;
 
-                                    if y < 0.0 {
-                                        let mut prev_key = Entity::null();
+                            if *y < 0.0 {
+                                let mut prev_key = Entity::null();
 
-                                        for key in self.model.order.iter().copied() {
-                                            if self.model.is_active(key) && !prev_key.is_null() {
-                                                activate_key = Some(prev_key);
-                                            }
+                                for key in self.model.order.iter().copied() {
+                                    if self.model.is_active(key) && !prev_key.is_null() {
+                                        activate_key = Some(prev_key);
+                                    }
 
+                                    if self.model.is_enabled(key) {
+                                        prev_key = key;
+                                    }
+                                }
+                            } else if *y > 0.0 {
+                                let mut buttons = self.model.order.iter().copied();
+                                while let Some(key) = buttons.next() {
+                                    if self.model.is_active(key) {
+                                        for key in buttons {
                                             if self.model.is_enabled(key) {
-                                                prev_key = key;
-                                            }
-                                        }
-                                    } else if y > 0.0 {
-                                        let mut buttons = self.model.order.iter().copied();
-                                        while let Some(key) = buttons.next() {
-                                            if self.model.is_active(key) {
-                                                for key in buttons {
-                                                    if self.model.is_enabled(key) {
-                                                        activate_key = Some(key);
-                                                        break;
-                                                    }
-                                                }
+                                                activate_key = Some(key);
                                                 break;
                                             }
                                         }
-                                    }
-
-                                    if let Some(key) = activate_key {
-                                        shell.publish(on_activate(key));
-                                        state.set_focused();
-                                        state.focused_item = Item::Tab(key);
-                                        return event::Status::Captured;
+                                        break;
                                     }
                                 }
+                            }
+
+                            if let Some(key) = activate_key {
+                                shell.publish(on_activate(key));
+                                state.set_focused();
+                                state.focused_item = Item::Tab(key);
+                                shell.capture_event();
+                                return;
                             }
                         }
                     }
@@ -1424,7 +1491,7 @@ where
                 if is_pressed(&event) {
                     state.unfocus();
                     state.pressed_item = None;
-                    return event::Status::Ignored;
+                    return;
                 }
             } else if is_lifted(&event) {
                 state.pressed_item = None;
@@ -1433,30 +1500,27 @@ where
 
         if let (Some(tab_drag), Some(candidate)) =
             (self.tab_drag.as_ref(), state.tab_drag_candidate)
+            && let Event::Mouse(mouse::Event::CursorMoved { .. }) = event
+            && let Some(position) = cursor_position.position()
+            && position.distance(candidate.origin) >= tab_drag.threshold
+            && let Some(candidate) = state.tab_drag_candidate.take()
         {
-            if let Event::Mouse(mouse::Event::CursorMoved { .. }) = event {
-                if let Some(position) = cursor_position.position() {
-                    if position.distance(candidate.origin) >= tab_drag.threshold {
-                        if let Some(candidate) = state.tab_drag_candidate.take() {
-                            log::trace!(
-                                target: TAB_REORDER_LOG_TARGET,
-                                "tab drag threshold met entity={:?} distance={:.2} threshold={}",
-                                candidate.entity,
-                                position.distance(candidate.origin),
-                                tab_drag.threshold
-                            );
-                            if self.start_tab_drag(
-                                state,
-                                candidate.entity,
-                                candidate.bounds,
-                                position,
-                                clipboard,
-                            ) {
-                                return event::Status::Captured;
-                            }
-                        }
-                    }
-                }
+            log::trace!(
+                target: TAB_REORDER_LOG_TARGET,
+                "tab drag threshold met entity={:?} distance={:.2} threshold={}",
+                candidate.entity,
+                position.distance(candidate.origin),
+                tab_drag.threshold
+            );
+            if self.start_tab_drag(
+                state,
+                candidate.entity,
+                candidate.bounds,
+                position,
+                clipboard,
+            ) {
+                shell.capture_event();
+                return;
             }
         }
 
@@ -1475,73 +1539,68 @@ where
             }) = event
             {
                 state.focused_visible = true;
-                return if modifiers == keyboard::Modifiers::SHIFT {
-                    self.focus_previous(state)
+                return if *modifiers == keyboard::Modifiers::SHIFT {
+                    self.focus_previous(state, shell);
                 } else if modifiers.is_empty() {
-                    self.focus_next(state)
-                } else {
-                    event::Status::Ignored
+                    self.focus_next(state, shell);
                 };
             }
 
-            if let Some(on_activate) = self.on_activate.as_ref() {
-                if let Event::Keyboard(keyboard::Event::KeyReleased {
+            if let Some(on_activate) = self.on_activate.as_ref()
+                && let Event::Keyboard(keyboard::Event::KeyReleased {
                     key: keyboard::Key::Named(keyboard::key::Named::Enter),
                     ..
                 }) = event
-                {
-                    match state.focused_item {
-                        Item::Tab(entity) => {
-                            shell.publish(on_activate(entity));
-                        }
-
-                        Item::PrevButton => {
-                            if self.prev_tab_sensitive(state) {
-                                state.buttons_offset -= 1;
-
-                                // If the change would cause it to be insensitive, focus the first tab.
-                                if !self.prev_tab_sensitive(state) {
-                                    if let Some(first) = self.first_tab(state) {
-                                        state.focused_item = Item::Tab(first);
-                                    }
-                                }
-                            }
-                        }
-
-                        Item::NextButton => {
-                            if self.next_tab_sensitive(state) {
-                                state.buttons_offset += 1;
-
-                                // If the change would cause it to be insensitive, focus the last tab.
-                                if !self.next_tab_sensitive(state) {
-                                    if let Some(last) = self.last_tab(state) {
-                                        state.focused_item = Item::Tab(last);
-                                    }
-                                }
-                            }
-                        }
-
-                        Item::None | Item::Set => (),
+            {
+                match state.focused_item {
+                    Item::Tab(entity) => {
+                        shell.publish(on_activate(entity));
                     }
 
-                    return event::Status::Captured;
+                    Item::PrevButton => {
+                        if self.prev_tab_sensitive(state) {
+                            state.buttons_offset -= 1;
+
+                            // If the change would cause it to be insensitive, focus the first tab.
+                            if !self.prev_tab_sensitive(state)
+                                && let Some(first) = self.first_tab(state)
+                            {
+                                state.focused_item = Item::Tab(first);
+                            }
+                        }
+                    }
+
+                    Item::NextButton => {
+                        if self.next_tab_sensitive(state) {
+                            state.buttons_offset += 1;
+
+                            // If the change would cause it to be insensitive, focus the last tab.
+                            if !self.next_tab_sensitive(state)
+                                && let Some(last) = self.last_tab(state)
+                            {
+                                state.focused_item = Item::Tab(last);
+                            }
+                        }
+                    }
+
+                    Item::None | Item::Set => (),
                 }
+
+                shell.capture_event();
             }
         }
-
-        event::Status::Ignored
     }
 
     fn operate(
-        &self,
+        &mut self,
         tree: &mut Tree,
-        _layout: Layout<'_>,
+        layout: Layout<'_>,
         _renderer: &Renderer,
         operation: &mut dyn iced_core::widget::Operation<()>,
     ) {
         let state = tree.state.downcast_mut::<LocalState>();
-        operation.focusable(state, Some(&self.id.0));
-        operation.custom(state, Some(&self.id.0));
+        operation.focusable(Some(&self.id.0), layout.bounds(), state);
+        operation.custom(Some(&self.id.0), layout.bounds(), state);
 
         if let Item::Set = state.focused_item {
             if self.prev_tab_sensitive(state) {
@@ -1584,7 +1643,7 @@ where
             }
         }
 
-        iced_core::mouse::Interaction::Idle
+        iced_core::mouse::Interaction::default()
     }
 
     #[allow(clippy::too_many_lines)]
@@ -1616,6 +1675,7 @@ where
                     bounds,
                     border: appearance.border,
                     shadow: Shadow::default(),
+                    snap: true,
                 },
                 background,
             );
@@ -1644,6 +1704,7 @@ where
                             ..Default::default()
                         },
                         shadow: Shadow::default(),
+                        snap: true,
                     },
                     background_appearance
                         .background
@@ -1692,6 +1753,7 @@ where
                             ..Default::default()
                         },
                         shadow: Shadow::default(),
+                        snap: true,
                     },
                     background_appearance
                         .background
@@ -1747,6 +1809,7 @@ where
                             bounds,
                             border: Border::default(),
                             shadow: Shadow::default(),
+                            snap: true,
                         },
                         {
                             let theme = crate::theme::active();
@@ -1765,22 +1828,22 @@ where
             let original_bounds = bounds;
             let center_y = bounds.center_y();
 
-            if show_drop_hint_marker {
-                if matches!(
+            if show_drop_hint_marker
+                && matches!(
                     drop_hint_marker,
                     Some(DropHint {
                         entity,
                         side: DropSide::Before
                     }) if entity == key
-                ) {
-                    draw_drop_indicator(
-                        renderer,
-                        original_bounds,
-                        DropSide::Before,
-                        Self::VERTICAL,
-                        appearance.active.text_color,
-                    );
-                }
+                )
+            {
+                draw_drop_indicator(
+                    renderer,
+                    original_bounds,
+                    DropSide::Before,
+                    Self::VERTICAL,
+                    appearance.active.text_color,
+                );
             }
 
             let menu_open = || {
@@ -1842,6 +1905,7 @@ where
                             ..Default::default()
                         },
                         shadow: Shadow::default(),
+                        snap: true,
                     },
                     appearance.active.text_color,
                 );
@@ -1852,40 +1916,41 @@ where
             let mut indent_padding = 0.0;
 
             // Adjust bounds by indent
-            if let Some(indent) = self.model.indent(key) {
-                if indent > 0 {
-                    let adjustment = f32::from(indent) * f32::from(self.indent_spacing);
-                    bounds.x += adjustment;
-                    bounds.width -= adjustment;
+            if let Some(indent) = self.model.indent(key)
+                && indent > 0
+            {
+                let adjustment = f32::from(indent) * f32::from(self.indent_spacing);
+                bounds.x += adjustment;
+                bounds.width -= adjustment;
 
-                    // Draw indent line
-                    if let crate::theme::SegmentedButton::FileNav = self.style {
-                        if indent > 1 {
-                            indent_padding = 7.0;
+                // Draw indent line
+                if let crate::theme::SegmentedButton::FileNav = self.style
+                    && indent > 1
+                {
+                    indent_padding = 7.0;
 
-                            for level in 1..indent {
-                                renderer.fill_quad(
-                                    renderer::Quad {
-                                        bounds: Rectangle {
-                                            x: (level as f32)
-                                                .mul_add(-(self.indent_spacing as f32), bounds.x)
-                                                + indent_padding,
-                                            width: 1.0,
-                                            ..bounds
-                                        },
-                                        border: Border {
-                                            radius: rad_0.into(),
-                                            ..Default::default()
-                                        },
-                                        shadow: Shadow::default(),
-                                    },
-                                    divider_background,
-                                );
-                            }
-
-                            indent_padding += 4.0;
-                        }
+                    for level in 1..indent {
+                        renderer.fill_quad(
+                            renderer::Quad {
+                                bounds: Rectangle {
+                                    x: (level as f32)
+                                        .mul_add(-(self.indent_spacing as f32), bounds.x)
+                                        + indent_padding,
+                                    width: 1.0,
+                                    ..bounds
+                                },
+                                border: Border {
+                                    radius: rad_0.into(),
+                                    ..Default::default()
+                                },
+                                shadow: Shadow::default(),
+                                snap: true,
+                            },
+                            divider_background,
+                        );
                     }
+
+                    indent_padding += 4.0;
                 }
             }
 
@@ -1910,6 +1975,7 @@ where
                             button_appearance.border
                         },
                         shadow: Shadow::default(),
+                        snap: true,
                     },
                     status_appearance
                         .background
@@ -1919,7 +1985,9 @@ where
 
             // Align contents of the button to the requested `button_alignment`.
             {
-                let actual_width = state.internal_layout[nth].1.width;
+                // Avoid shifting content outside the left edge when the measured content is
+                // wider than the available button bounds (for example, non-ellipsized text).
+                let actual_width = state.internal_layout[nth].1.width.min(bounds.width);
 
                 let offset = match self.button_alignment {
                     Alignment::Start => None,
@@ -1958,40 +2026,35 @@ where
                 bounds.x += offset;
             } else {
                 // Draw the selection indicator if widget is a segmented selection, and the item is selected.
-                if key_is_active {
-                    if let crate::theme::SegmentedButton::Control = self.style {
-                        let mut image_bounds = bounds;
-                        image_bounds.y = center_y - 8.0;
+                if key_is_active && let crate::theme::SegmentedButton::Control = self.style {
+                    let mut image_bounds = bounds;
+                    image_bounds.y = center_y - 8.0;
 
-                        draw_icon::<Message>(
-                            renderer,
-                            theme,
-                            style,
-                            cursor,
-                            viewport,
-                            status_appearance.text_color,
-                            Rectangle {
-                                width: 16.0,
-                                height: 16.0,
-                                ..image_bounds
-                            },
-                            crate::widget::icon(
-                                match crate::widget::common::object_select().data() {
-                                    crate::iced_core::svg::Data::Bytes(bytes) => {
-                                        crate::widget::icon::from_svg_bytes(bytes.as_ref())
-                                            .symbolic(true)
-                                    }
-                                    crate::iced_core::svg::Data::Path(path) => {
-                                        crate::widget::icon::from_path(path.clone())
-                                    }
-                                },
-                            ),
-                        );
+                    draw_icon::<Message>(
+                        renderer,
+                        theme,
+                        style,
+                        cursor,
+                        viewport,
+                        status_appearance.text_color,
+                        Rectangle {
+                            width: 16.0,
+                            height: 16.0,
+                            ..image_bounds
+                        },
+                        crate::widget::icon(match crate::widget::common::object_select().data() {
+                            crate::iced_core::svg::Data::Bytes(bytes) => {
+                                crate::widget::icon::from_svg_bytes(bytes.as_ref()).symbolic(true)
+                            }
+                            crate::iced_core::svg::Data::Path(path) => {
+                                crate::widget::icon::from_path(path.clone())
+                            }
+                        }),
+                    );
 
-                        let offset = 16.0 + f32::from(self.button_spacing);
+                    let offset = 16.0 + f32::from(self.button_spacing);
 
-                        bounds.x += offset;
-                    }
+                    bounds.x += offset;
                 }
             }
 
@@ -2015,6 +2078,9 @@ where
             bounds.y = center_y;
 
             if self.model.text(key).is_some_and(|text| !text.is_empty()) {
+                // FIXME why has this behavior changed? Does the center alignment not work with infinite bounds now?
+                bounds.y -= state.paragraphs[key].min_height() / 2.;
+
                 // Draw the text for this segmented button or tab.
                 renderer.fill_paragraph(
                     state.paragraphs[key].raw(),
@@ -2023,7 +2089,9 @@ where
                     Rectangle {
                         x: bounds.x,
                         width: bounds.width,
-                        ..original_bounds
+                        height: original_bounds.height,
+                        y: bounds.y,
+                        //  ..original_bounds,
                     },
                 );
             }
@@ -2069,8 +2137,9 @@ where
     fn overlay<'b>(
         &'b mut self,
         tree: &'b mut Tree,
-        layout: iced_core::Layout<'_>,
+        layout: iced_core::Layout<'b>,
         _renderer: &Renderer,
+        viewport: &iced_core::Rectangle,
         translation: Vector,
     ) -> Option<iced_core::overlay::Element<'b, Message, crate::Theme, Renderer>> {
         let state = tree.state.downcast_mut::<LocalState>();
@@ -2662,6 +2731,7 @@ fn draw_drop_indicator(
                 ..Default::default()
             },
             shadow: Shadow::default(),
+            snap: true,
         },
         Background::Color(color),
     );

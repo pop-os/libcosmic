@@ -11,9 +11,8 @@ pub use action::Action;
 use cosmic_config::CosmicConfigEntry;
 pub mod context_drawer;
 pub use context_drawer::{ContextDrawer, context_drawer};
+use iced::application::BootFn;
 pub mod cosmic;
-#[cfg(all(feature = "winit", feature = "multi-window"))]
-pub(crate) mod multi_window;
 pub mod settings;
 
 pub type Task<M> = iced::Task<crate::Action<M>>;
@@ -21,12 +20,13 @@ pub type Task<M> = iced::Task<crate::Action<M>>;
 pub use crate::Core;
 use crate::prelude::*;
 use crate::theme::THEME;
-use crate::widget::{container, horizontal_space, id_container, menu, nav_bar, popover};
+use crate::widget::{container, id_container, menu, nav_bar, popover, space};
 use apply::Apply;
-use iced::window;
 use iced::{Length, Subscription};
+use iced::{theme, window};
 pub use settings::Settings;
 use std::borrow::Cow;
+use std::{cell::RefCell, rc::Rc};
 
 #[cold]
 pub(crate) fn iced_settings<App: Application>(
@@ -82,7 +82,7 @@ pub(crate) fn iced_settings<App: Application>(
         window_settings.min_size = Some(min_size);
     }
     let max_size = settings.size_limits.max();
-    if max_size != iced::Size::INFINITY {
+    if max_size != iced::Size::INFINITE {
         window_settings.max_size = Some(max_size);
     }
 
@@ -90,6 +90,38 @@ pub(crate) fn iced_settings<App: Application>(
     (iced, (core, flags), window_settings)
 }
 
+pub(crate) struct BootDataInner<A: crate::app::Application> {
+    pub flags: A::Flags,
+    pub core: Core,
+    pub settings: window::Settings,
+}
+
+pub(crate) struct BootData<A: crate::app::Application>(pub Rc<RefCell<Option<BootDataInner<A>>>>);
+
+impl<A: crate::app::Application> BootFn<cosmic::Cosmic<A>, crate::Action<A::Message>>
+    for BootData<A>
+{
+    fn boot(&self) -> (cosmic::Cosmic<A>, iced::Task<crate::Action<A::Message>>) {
+        let mut data = self.0.borrow_mut();
+        let mut data = data.take().unwrap();
+        let mut tasks = Vec::new();
+        #[cfg(feature = "multi-window")]
+        if data.core.main_window_id().is_some() {
+            let window_task = iced_runtime::task::oneshot(|channel| {
+                iced_runtime::Action::Window(iced_runtime::window::Action::Open(
+                    window::Id::RESERVED,
+                    data.settings,
+                    channel,
+                ))
+            });
+            data.core.set_main_window_id(Some(window::Id::RESERVED));
+            tasks.push(window_task.discard());
+        }
+        let (a, t) = cosmic::Cosmic::<A>::init((data.core, data.flags));
+        tasks.push(t);
+        (a, Task::batch(tasks))
+    }
+}
 /// Launch a COSMIC application with the given [`Settings`].
 ///
 /// # Errors
@@ -102,39 +134,52 @@ pub fn run<App: Application>(settings: Settings, flags: App::Flags) -> iced::Res
     }
 
     let default_font = settings.default_font;
-    let (settings, mut flags, window_settings) = iced_settings::<App>(settings, flags);
+    let (settings, (mut core, flags), window_settings) = iced_settings::<App>(settings, flags);
     #[cfg(not(feature = "multi-window"))]
     {
-        flags.0.main_window = Some(iced::window::Id::RESERVED);
+        core.main_window = Some(iced::window::Id::RESERVED);
+
         iced::application(
-            cosmic::Cosmic::title,
+            BootData(Rc::new(RefCell::new(Some(BootDataInner::<App> {
+                flags,
+                core,
+                settings: window_settings.clone(),
+            })))),
             cosmic::Cosmic::update,
             cosmic::Cosmic::view,
         )
         .subscription(cosmic::Cosmic::subscription)
+        .title(cosmic::Cosmic::title)
         .style(cosmic::Cosmic::style)
         .theme(cosmic::Cosmic::theme)
         .window_size((500.0, 800.0))
         .settings(settings)
         .window(window_settings)
-        .run_with(move || cosmic::Cosmic::<App>::init(flags))
+        .run()
     }
     #[cfg(feature = "multi-window")]
     {
-        let mut app = multi_window::multi_window::<_, _, _, _, App::Executor>(
-            cosmic::Cosmic::title,
+        let no_main_window = core.main_window.is_none();
+        if no_main_window {
+            // app = app.window(window_settings);
+            core.main_window = Some(iced_core::window::Id::RESERVED);
+        }
+        let app = iced::daemon(
+            BootData(Rc::new(RefCell::new(Some(BootDataInner::<App> {
+                flags,
+                core,
+                settings: window_settings,
+            })))),
             cosmic::Cosmic::update,
             cosmic::Cosmic::view,
         );
-        if flags.0.main_window.is_none() {
-            app = app.window(window_settings);
-            flags.0.main_window = Some(iced_core::window::Id::RESERVED);
-        }
+
         app.subscription(cosmic::Cosmic::subscription)
+            .title(cosmic::Cosmic::title)
             .style(cosmic::Cosmic::style)
             .theme(cosmic::Cosmic::theme)
             .settings(settings)
-            .run_with(move || cosmic::Cosmic::<App>::init(flags))
+            .run()
     }
 }
 
@@ -204,13 +249,17 @@ where
         tracing::info!("Another instance is running");
         Ok(())
     } else {
-        let (settings, mut flags, window_settings) = iced_settings::<App>(settings, flags);
-        flags.0.single_instance = true;
+        let (settings, (mut core, flags), window_settings) = iced_settings::<App>(settings, flags);
+        core.single_instance = true;
 
         #[cfg(not(feature = "multi-window"))]
         {
             iced::application(
-                cosmic::Cosmic::title,
+                BootData(Rc::new(RefCell::new(Some(BootDataInner::<App> {
+                    flags,
+                    core,
+                    settings: window_settings.clone(),
+                })))),
                 cosmic::Cosmic::update,
                 cosmic::Cosmic::view,
             )
@@ -220,24 +269,31 @@ where
             .window_size((500.0, 800.0))
             .settings(settings)
             .window(window_settings)
-            .run_with(move || cosmic::Cosmic::<App>::init(flags))
+            .run()
         }
         #[cfg(feature = "multi-window")]
         {
-            let mut app = multi_window::multi_window::<_, _, _, _, App::Executor>(
-                cosmic::Cosmic::title,
+            let no_main_window = core.main_window.is_none();
+            if no_main_window {
+                // app = app.window(window_settings);
+                core.main_window = Some(iced_core::window::Id::RESERVED);
+            }
+            let mut app = iced::daemon(
+                BootData(Rc::new(RefCell::new(Some(BootDataInner::<App> {
+                    flags,
+                    core,
+                    settings: window_settings,
+                })))),
                 cosmic::Cosmic::update,
                 cosmic::Cosmic::view,
             );
-            if flags.0.main_window.is_none() {
-                app = app.window(window_settings);
-                flags.0.main_window = Some(iced_core::window::Id::RESERVED);
-            }
+
             app.subscription(cosmic::Cosmic::subscription)
                 .style(cosmic::Cosmic::style)
+                .title(cosmic::Cosmic::title)
                 .theme(cosmic::Cosmic::theme)
                 .settings(settings)
-                .run_with(move || cosmic::Cosmic::<App>::init(flags))
+                .run()
         }
     }
 }
@@ -329,9 +385,8 @@ where
                 .on_context(|id| crate::Action::Cosmic(Action::NavBarContext(id)))
                 .context_menu(self.nav_context_menu(self.core().nav_bar_context()))
                 .into_container()
-                // XXX both must be shrink to avoid flex layout from ignoring it
                 .width(iced::Length::Shrink)
-                .height(iced::Length::Shrink);
+                .height(iced::Length::Fill);
 
         if !self.core().is_condensed() {
             nav = nav.max_width(280);
@@ -428,7 +483,7 @@ where
     }
 
     /// Overrides the default style for applications
-    fn style(&self) -> Option<iced_runtime::Appearance> {
+    fn style(&self) -> Option<theme::Style> {
         None
     }
 
@@ -664,16 +719,17 @@ impl<App: Application> ApplicationExt for App {
                                 [0, 0, 0, 0]
                             })
                             .into(),
-                        )
+                        );
                     } else {
                         //TODO: this element is added to workaround state issues
-                        widgets.push(horizontal_space().width(Length::Shrink).into());
+                        widgets.push(space::horizontal().width(Length::Shrink).into());
                     }
                 }
             }
 
             widgets
         });
+
         let content_col = crate::widget::column::with_capacity(2)
             .push(content_row)
             .push_maybe(self.footer().map(|footer| {
@@ -686,7 +742,6 @@ impl<App: Application> ApplicationExt for App {
             }));
         let content: Element<_> = if content_container {
             content_col
-                .apply(container)
                 .width(iced::Length::Fill)
                 .height(iced::Length::Fill)
                 .apply(|w| id_container(w, iced_core::id::Id::new("COSMIC_content_container")))
@@ -716,8 +771,7 @@ impl<App: Application> ApplicationExt for App {
                         .title(&core.window.header_title)
                         .on_drag(crate::Action::Cosmic(Action::Drag))
                         .on_right_click(crate::Action::Cosmic(Action::ShowWindowMenu))
-                        .on_double_click(crate::Action::Cosmic(Action::Maximize))
-                        .is_condensed(is_condensed);
+                        .on_double_click(crate::Action::Cosmic(Action::Maximize));
 
                     if self.nav_model().is_some() {
                         let toggle = crate::widget::nav_bar_toggle()
