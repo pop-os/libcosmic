@@ -986,19 +986,19 @@ impl ThemeBuilder {
         let success = if let Some(success) = success {
             success.into_color()
         } else {
-            palette.as_ref().accent_green
+            palette.as_ref().bright_green
         };
 
         let warning = if let Some(warning) = warning {
             warning.into_color()
         } else {
-            palette.as_ref().accent_yellow
+            palette.as_ref().bright_orange
         };
 
         let destructive = if let Some(destructive) = destructive {
             destructive.into_color()
         } else {
-            palette.as_ref().accent_red
+            palette.as_ref().bright_red
         };
 
         let text_steps_array = text_tint.map(|c| steps(c, NonZeroUsize::new(100).unwrap()));
