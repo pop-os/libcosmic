@@ -789,7 +789,7 @@ pub async fn spawn_desktop_exec<S, I, K, V>(
             })
             .unwrap_or_else(|| String::from("cosmic-term"));
 
-        term_exec = format!("{term} -- {}", exec.as_ref());
+        term_exec = format!("{term} -e {}", exec.as_ref());
         &term_exec
     } else {
         exec.as_ref()
