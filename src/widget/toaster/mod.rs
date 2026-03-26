@@ -42,7 +42,7 @@ pub fn toaster<'a, Message: Clone + 'static>(
                         button::text(&action.description).on_press((action.message)(id))
                     }))
                     .push(
-                        button::icon(icon::from_name("window-close-symbolic"))
+                        button::icon(icon::from_svg_bytes(icetron_assets::icons::system::CLOSE_LINE))
                             .on_press((toasts.on_close)(id)),
                     )
                     .align_y(iced::Alignment::Center)

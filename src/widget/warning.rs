@@ -33,8 +33,7 @@ impl<'a, Message: 'static + Clone> Warning<'a, Message> {
     pub fn into_widget(self) -> widget::Container<'a, Message, crate::Theme, Renderer> {
         let label = widget::container(crate::widget::text(self.message)).width(Length::Fill);
 
-        let close_button = icon::from_name("window-close-symbolic")
-            .size(16)
+        let close_button = icon::from_svg_bytes(icetron_assets::icons::system::CLOSE_LINE)
             .apply(widget::button::icon)
             .on_press_maybe(self.on_close);
 

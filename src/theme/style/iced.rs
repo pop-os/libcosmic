@@ -654,16 +654,16 @@ impl iced_container::Catalog for Theme {
             Container::Dialog => iced_container::Style {
                 icon_color: Some(Color::from(cosmic.primary.on)),
                 text_color: Some(Color::from(cosmic.primary.on)),
-                background: Some(iced::Background::Color(cosmic.primary.base.into())),
+                background: Some(iced::Background::Color(Color::from_rgb8(245, 245, 245))),
                 border: Border {
-                    color: cosmic.primary.divider.into(),
-                    width: 1.0,
+                    color: Color::TRANSPARENT,
+                    width: 0.0,
                     radius: cosmic.corner_radii.radius_m.into(),
                 },
                 shadow: Shadow {
-                    color: cosmic.shade.into(),
-                    offset: Vector::new(0.0, 4.0),
-                    blur_radius: 16.0,
+                    color: Color::from_rgba(0.0, 0.0, 0.0, 0.25),
+                    offset: Vector::new(0.0, 8.0),
+                    blur_radius: 32.0,
                 },
             },
         }
@@ -698,7 +698,7 @@ impl slider::Catalog for Theme {
             Slider::Standard =>
             //TODO: no way to set rail thickness
             {
-                let empty_track: Color = Color::from_rgb8(224, 224, 224);
+                let empty_track: Color = Color::from_rgb8(240, 240, 240);
                 slider::Style {
                     rail: Rail {
                         backgrounds: (
@@ -715,7 +715,7 @@ impl slider::Catalog for Theme {
 
                     handle: slider::Handle {
                         shape: slider::HandleShape::Circle {
-                            radius: 8.0,
+                            radius: 6.0,
                         },
                         border_color: Color::from_rgba8(0, 0, 0, 0.12),
                         border_width: 1.0,
@@ -739,7 +739,7 @@ impl slider::Catalog for Theme {
             slider::Status::Hovered => match class {
                 Slider::Standard => {
                     appearance.handle.shape = slider::HandleShape::Circle {
-                        radius: 10.0,
+                        radius: 7.0,
                     };
                     appearance.handle.border_width = 1.0;
                     appearance.handle.border_color = Color::from_rgba8(0, 0, 0, 0.12);
@@ -755,7 +755,7 @@ impl slider::Catalog for Theme {
             slider::Status::Dragged => match class {
                 Slider::Standard => {
                     appearance.handle.shape = slider::HandleShape::Circle {
-                        radius: 10.0,
+                        radius: 7.0,
                     };
                     appearance.handle.border_width = 1.0;
                     appearance.handle.border_color = Color::from_rgba8(0, 0, 0, 0.12);
@@ -897,17 +897,22 @@ impl toggler::Catalog for Theme {
     fn style(&self, class: &Self::Class<'_>, status: toggler::Status) -> toggler::Style {
         let cosmic = self.cosmic();
         const HANDLE_MARGIN: f32 = 2.0;
-        let neutral_10 = cosmic.palette.neutral_10.with_alpha(0.1);
 
-        let mut active = toggler::Style {
-            background: if matches!(status, toggler::Status::Active { is_toggled: true }) {
-                cosmic.accent.base.into()
-            } else if cosmic.is_dark {
-                cosmic.palette.neutral_6.into()
-            } else {
-                cosmic.palette.neutral_5.into()
-            },
-            foreground: cosmic.palette.neutral_2.into(),
+        let is_toggled = matches!(
+            status,
+            toggler::Status::Active { is_toggled: true }
+                | toggler::Status::Hovered { is_toggled: true }
+        );
+
+        let track_color = if is_toggled {
+            crate::theme::STATE_DEFAULT_COLOR
+        } else {
+            Color::from_rgb8(224, 224, 224)
+        };
+
+        let mut style = toggler::Style {
+            background: track_color,
+            foreground: Color::WHITE,
             border_radius: cosmic.radius_xl().into(),
             handle_radius: cosmic
                 .radius_xl()
@@ -920,30 +925,10 @@ impl toggler::Catalog for Theme {
             foreground_border_color: Color::TRANSPARENT,
         };
         match status {
-            toggler::Status::Active { is_toggled } => active,
-            toggler::Status::Hovered { is_toggled } => {
-                let is_active = matches!(status, toggler::Status::Hovered { is_toggled: true });
-                toggler::Style {
-                    background: if is_active {
-                        over(neutral_10, cosmic.accent_color())
-                    } else {
-                        over(
-                            neutral_10,
-                            if cosmic.is_dark {
-                                cosmic.palette.neutral_6
-                            } else {
-                                cosmic.palette.neutral_5
-                            },
-                        )
-                    }
-                    .into(),
-                    ..active
-                }
-            }
+            toggler::Status::Active { .. } | toggler::Status::Hovered { .. } => style,
             toggler::Status::Disabled => {
-                active.background.a /= 2.;
-                active.foreground.a /= 2.;
-                active
+                style.background.a /= 2.;
+                style
             }
         }
     }
@@ -1334,7 +1319,6 @@ impl text_input::Catalog for Theme {
 
     fn style(&self, class: &Self::Class<'_>, status: text_input::Status) -> text_input::Style {
         let palette = self.cosmic();
-        let bg = self.current_container().small_widget.with_alpha(0.25);
 
         let neutral_9 = palette.palette.neutral_9;
         let value = neutral_9.into();
@@ -1343,7 +1327,7 @@ impl text_input::Catalog for Theme {
 
         let mut appearance = match class {
             TextInput::Default => text_input::Style {
-                background: Color::from(bg).into(),
+                background: Color::WHITE.into(),
                 border: Border {
                     radius: palette.corner_radii.radius_s.into(),
                     width: 1.0,
@@ -1355,7 +1339,7 @@ impl text_input::Catalog for Theme {
                 selection,
             },
             TextInput::Search => text_input::Style {
-                background: Color::from(bg).into(),
+                background: Color::WHITE.into(),
                 border: Border {
                     radius: palette.corner_radii.radius_m.into(),
                     ..Default::default()
@@ -1370,11 +1354,9 @@ impl text_input::Catalog for Theme {
         match status {
             text_input::Status::Active => appearance,
             text_input::Status::Hovered => {
-                let bg = self.current_container().small_widget.with_alpha(0.25);
-
                 match class {
                     TextInput::Default => text_input::Style {
-                        background: Color::from(bg).into(),
+                        background: Color::WHITE.into(),
                         border: Border {
                             radius: palette.corner_radii.radius_s.into(),
                             width: 1.0,
@@ -1386,7 +1368,7 @@ impl text_input::Catalog for Theme {
                         selection,
                     },
                     TextInput::Search => text_input::Style {
-                        background: Color::from(bg).into(),
+                        background: Color::WHITE.into(),
                         border: Border {
                             radius: palette.corner_radii.radius_m.into(),
                             ..Default::default()
@@ -1399,11 +1381,9 @@ impl text_input::Catalog for Theme {
                 }
             }
             text_input::Status::Focused => {
-                let bg = self.current_container().small_widget.with_alpha(0.25);
-
                 match class {
                     TextInput::Default => text_input::Style {
-                        background: Color::from(bg).into(),
+                        background: Color::WHITE.into(),
                         border: Border {
                             radius: palette.corner_radii.radius_s.into(),
                             width: 1.0,
@@ -1415,7 +1395,7 @@ impl text_input::Catalog for Theme {
                         selection,
                     },
                     TextInput::Search => text_input::Style {
-                        background: Color::from(bg).into(),
+                        background: Color::WHITE.into(),
                         border: Border {
                             radius: palette.corner_radii.radius_m.into(),
                             ..Default::default()

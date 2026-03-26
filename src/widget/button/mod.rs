@@ -32,7 +32,7 @@ mod text;
 #[doc(inline)]
 pub use text::Button as TextButton;
 #[doc(inline)]
-pub use text::{destructive, standard, suggested, text};
+pub use text::{destructive, secondary, standard, suggested, text};
 
 mod widget;
 #[doc(inline)]

@@ -71,7 +71,7 @@ impl<'a, Message: Clone + 'static> ContextDrawer<'a, Message> {
 
             let header_row = row::with_capacity(2).push(actions_slot).push(
                 button::text(fl!("close"))
-                    .trailing_icon(icon::from_name("go-next-symbolic"))
+                    .trailing_icon(icon::from_svg_bytes(icetron_assets::icons::system::ARROW_RIGHT_S_LINE))
                     .on_press(on_close),
             );
             let header = column::with_capacity(3)

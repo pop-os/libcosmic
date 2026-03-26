@@ -413,10 +413,7 @@ impl State {
     /// Creates a new [`State`] for a [`Dropdown`].
     pub fn new() -> Self {
         Self {
-            icon: match icon::from_name("pan-down-symbolic").size(16).handle().data {
-                icon::Data::Svg(handle) => Some(handle),
-                icon::Data::Image(_) => None,
-            },
+            icon: Some(iced_core::svg::Handle::from_memory(icetron_assets::icons::system::ARROW_DOWN_S_LINE)),
             menu: menu::State::default(),
             keyboard_modifiers: keyboard::Modifiers::default(),
             is_open: Arc::new(AtomicBool::new(false)),

@@ -105,14 +105,7 @@ impl<'a, Message: Clone + 'a> Button<'a, Message> {
             style: crate::theme::Button::default(),
             variant: Variant::Image {
                 on_remove,
-                close_icon: crate::widget::icon::from_name("window-close-symbolic")
-                    .size(8)
-                    .icon()
-                    .into_svg_handle()
-                    .unwrap_or_else(|| {
-                        let bytes: &'static [u8] = &[];
-                        iced_core::svg::Handle::from_memory(bytes)
-                    }),
+                close_icon: iced_core::svg::Handle::from_memory(icetron_assets::icons::system::CLOSE_LINE),
             },
         }
     }

@@ -161,12 +161,12 @@ where
 
         let month_controls = row::with_capacity(2)
             .push(
-                icon::from_name("go-previous-symbolic")
+                icon::from_svg_bytes(icetron_assets::icons::system::ARROW_LEFT_S_LINE)
                     .apply(button::icon)
                     .on_press((this.on_prev)()),
             )
             .push(
-                icon::from_name("go-next-symbolic")
+                icon::from_svg_bytes(icetron_assets::icons::system::ARROW_RIGHT_S_LINE)
                     .apply(button::icon)
                     .on_press((this.on_next)()),
             );

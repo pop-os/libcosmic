@@ -6,7 +6,6 @@
 use crate::ext::ColorExt;
 use crate::widget::text_input::{Appearance, StyleSheet};
 use iced_core::Color;
-use palette::WithAlpha;
 
 #[derive(Default)]
 pub enum TextInput {
@@ -32,13 +31,11 @@ impl StyleSheet for crate::Theme {
         let palette = self.cosmic();
         let container = self.current_container();
 
-        let background: Color = container.small_widget.with_alpha(0.25).into();
-
         let corner = palette.corner_radii;
         let label_color = palette.palette.neutral_9;
         match style {
             TextInput::Default => Appearance {
-                background: background.into(),
+                background: Color::WHITE.into(),
                 border_radius: corner.radius_s.into(),
                 border_width: 2.0,
                 border_offset: None,
@@ -47,7 +44,7 @@ impl StyleSheet for crate::Theme {
                 text_color: None,
                 placeholder_color: {
                     let color: Color = container.on.into();
-                    color.blend_alpha(background, 0.7)
+                    color.blend_alpha(Color::WHITE, 0.7)
                 },
                 selected_text_color: palette.on_accent_color().into(),
                 selected_fill: palette.accent_color().into(),
@@ -63,7 +60,7 @@ impl StyleSheet for crate::Theme {
                 text_color: None,
                 placeholder_color: {
                     let color: Color = container.on.into();
-                    color.blend_alpha(background, 0.7)
+                    color.blend_alpha(Color::WHITE, 0.7)
                 },
                 selected_text_color: palette.on_accent_color().into(),
                 selected_fill: palette.accent_color().into(),
@@ -79,14 +76,14 @@ impl StyleSheet for crate::Theme {
                 text_color: None,
                 placeholder_color: {
                     let color: Color = container.on.into();
-                    color.blend_alpha(background, 0.7)
+                    color.blend_alpha(Color::WHITE, 0.7)
                 },
                 selected_text_color: palette.on_accent_color().into(),
                 selected_fill: palette.accent_color().into(),
                 label_color: label_color.into(),
             },
             TextInput::Search => Appearance {
-                background: background.into(),
+                background: Color::WHITE.into(),
                 border_radius: corner.radius_xl.into(),
                 border_width: 2.0,
                 border_offset: None,
@@ -95,7 +92,7 @@ impl StyleSheet for crate::Theme {
                 text_color: None,
                 placeholder_color: {
                     let color: Color = container.on.into();
-                    color.blend_alpha(background, 0.7)
+                    color.blend_alpha(Color::WHITE, 0.7)
                 },
                 selected_text_color: palette.on_accent_color().into(),
                 selected_fill: palette.accent_color().into(),
@@ -111,7 +108,7 @@ impl StyleSheet for crate::Theme {
                 text_color: None,
                 placeholder_color: {
                     let color: Color = container.on.into();
-                    color.blend_alpha(background, 0.7)
+                    color.blend_alpha(Color::WHITE, 0.7)
                 },
                 selected_text_color: palette.on_accent_color().into(),
                 selected_fill: palette.accent_color().into(),
@@ -125,15 +122,12 @@ impl StyleSheet for crate::Theme {
         let palette = self.cosmic();
         let container = self.current_container();
 
-        let mut background: Color = container.small_widget.into();
-        background.a = 0.25;
-
         let corner = palette.corner_radii;
         let label_color = palette.palette.neutral_9;
 
         match style {
             TextInput::Default => Appearance {
-                background: background.into(),
+                background: Color::WHITE.into(),
                 border_radius: corner.radius_s.into(),
                 border_width: 2.0,
                 border_offset: Some(2.0),
@@ -142,14 +136,14 @@ impl StyleSheet for crate::Theme {
                 text_color: None,
                 placeholder_color: {
                     let color: Color = container.on.into();
-                    color.blend_alpha(background, 0.7)
+                    color.blend_alpha(Color::WHITE, 0.7)
                 },
                 selected_text_color: palette.on_accent_color().into(),
                 selected_fill: palette.accent_color().into(),
                 label_color: label_color.into(),
             },
             TextInput::Search | TextInput::ExpandableSearch => Appearance {
-                background: background.into(),
+                background: Color::WHITE.into(),
                 border_radius: corner.radius_xl.into(),
                 border_width: 0.0,
                 border_offset: None,
@@ -158,7 +152,7 @@ impl StyleSheet for crate::Theme {
                 text_color: None,
                 placeholder_color: {
                     let color: Color = container.on.into();
-                    color.blend_alpha(background, 0.7)
+                    color.blend_alpha(Color::WHITE, 0.7)
                 },
                 selected_text_color: palette.on_accent_color().into(),
                 selected_fill: palette.accent_color().into(),
@@ -174,7 +168,7 @@ impl StyleSheet for crate::Theme {
                 text_color: None,
                 placeholder_color: {
                     let color: Color = container.on.into();
-                    color.blend_alpha(background, 0.7)
+                    color.blend_alpha(Color::WHITE, 0.7)
                 },
                 selected_text_color: palette.on_accent_color().into(),
                 selected_fill: palette.accent_color().into(),
@@ -188,15 +182,12 @@ impl StyleSheet for crate::Theme {
         let palette = self.cosmic();
         let container = self.current_container();
 
-        let mut background: Color = container.small_widget.into();
-        background.a = 0.25;
-
         let corner = palette.corner_radii;
         let label_color = palette.palette.neutral_9;
 
         match style {
             TextInput::Default => Appearance {
-                background: background.into(),
+                background: Color::WHITE.into(),
                 border_radius: corner.radius_s.into(),
                 border_width: 2.0,
                 border_offset: None,
@@ -205,14 +196,14 @@ impl StyleSheet for crate::Theme {
                 text_color: None,
                 placeholder_color: {
                     let color: Color = container.on.into();
-                    color.blend_alpha(background, 0.7)
+                    color.blend_alpha(Color::WHITE, 0.7)
                 },
                 selected_text_color: palette.on_accent_color().into(),
                 selected_fill: palette.accent_color().into(),
                 label_color: label_color.into(),
             },
             TextInput::Search => Appearance {
-                background: background.into(),
+                background: Color::WHITE.into(),
                 border_radius: corner.radius_xl.into(),
                 border_offset: None,
                 border_width: 2.0,
@@ -221,14 +212,14 @@ impl StyleSheet for crate::Theme {
                 text_color: None,
                 placeholder_color: {
                     let color: Color = container.on.into();
-                    color.blend_alpha(background, 0.7)
+                    color.blend_alpha(Color::WHITE, 0.7)
                 },
                 selected_text_color: palette.on_accent_color().into(),
                 selected_fill: palette.accent_color().into(),
                 label_color: label_color.into(),
             },
             TextInput::ExpandableSearch => Appearance {
-                background: background.into(),
+                background: Color::WHITE.into(),
                 border_radius: corner.radius_xl.into(),
                 border_offset: None,
                 border_width: 0.0,
@@ -237,7 +228,7 @@ impl StyleSheet for crate::Theme {
                 text_color: None,
                 placeholder_color: {
                     let color: Color = container.on.into();
-                    color.blend_alpha(background, 0.7)
+                    color.blend_alpha(Color::WHITE, 0.7)
                 },
                 selected_text_color: palette.on_accent_color().into(),
                 selected_fill: palette.accent_color().into(),
@@ -253,7 +244,7 @@ impl StyleSheet for crate::Theme {
                 text_color: None,
                 placeholder_color: {
                     let color: Color = container.on.into();
-                    color.blend_alpha(background, 0.7)
+                    color.blend_alpha(Color::WHITE, 0.7)
                 },
                 selected_text_color: palette.on_accent_color().into(),
                 selected_fill: palette.accent_color().into(),
@@ -269,7 +260,7 @@ impl StyleSheet for crate::Theme {
                 text_color: None,
                 placeholder_color: {
                     let color: Color = container.on.into();
-                    color.blend_alpha(background, 0.7)
+                    color.blend_alpha(Color::WHITE, 0.7)
                 },
                 selected_text_color: palette.on_accent_color().into(),
                 selected_fill: palette.accent_color().into(),
@@ -283,15 +274,12 @@ impl StyleSheet for crate::Theme {
         let palette = self.cosmic();
         let container = self.current_container();
 
-        let mut background: Color = container.small_widget.into();
-        background.a = 0.25;
-
         let corner = palette.corner_radii;
         let label_color = palette.palette.neutral_9;
 
         match style {
             TextInput::Default => Appearance {
-                background: background.into(),
+                background: Color::WHITE.into(),
                 border_radius: corner.radius_s.into(),
                 border_width: 2.0,
                 border_offset: Some(2.0),
@@ -300,14 +288,14 @@ impl StyleSheet for crate::Theme {
                 text_color: None,
                 placeholder_color: {
                     let color: Color = container.on.into();
-                    color.blend_alpha(background, 0.7)
+                    color.blend_alpha(Color::WHITE, 0.7)
                 },
                 selected_text_color: palette.on_accent_color().into(),
                 selected_fill: palette.accent_color().into(),
                 label_color: label_color.into(),
             },
             TextInput::Search | TextInput::ExpandableSearch => Appearance {
-                background: background.into(),
+                background: Color::WHITE.into(),
                 border_radius: corner.radius_xl.into(),
                 border_width: 2.0,
                 border_offset: Some(2.0),
@@ -316,7 +304,7 @@ impl StyleSheet for crate::Theme {
                 text_color: None,
                 placeholder_color: {
                     let color: Color = container.on.into();
-                    color.blend_alpha(background, 0.7)
+                    color.blend_alpha(Color::WHITE, 0.7)
                 },
                 selected_text_color: palette.on_accent_color().into(),
                 selected_fill: palette.accent_color().into(),
@@ -332,7 +320,7 @@ impl StyleSheet for crate::Theme {
                 text_color: None,
                 placeholder_color: {
                     let color: Color = container.on.into();
-                    color.blend_alpha(background, 0.7)
+                    color.blend_alpha(Color::WHITE, 0.7)
                 },
                 selected_text_color: palette.on_accent_color().into(),
                 selected_fill: palette.accent_color().into(),
@@ -348,7 +336,7 @@ impl StyleSheet for crate::Theme {
                 text_color: None,
                 placeholder_color: {
                     let color: Color = container.on.into();
-                    color.blend_alpha(background, 0.7)
+                    color.blend_alpha(Color::WHITE, 0.7)
                 },
                 selected_text_color: palette.on_accent_color().into(),
                 selected_fill: palette.accent_color().into(),

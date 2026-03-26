@@ -103,8 +103,8 @@ where
                     .spacing(val.icon_spacing)
                     .push(widget::text::heading(category.to_string()))
                     .push_maybe(match sort_state {
-                        1 => Some(widget::icon::from_name("pan-up-symbolic").icon()),
-                        2 => Some(widget::icon::from_name("pan-down-symbolic").icon()),
+                        1 => Some(widget::icon::from_svg_bytes(icetron_assets::icons::system::ARROW_UP_S_LINE).icon()),
+                        2 => Some(widget::icon::from_svg_bytes(icetron_assets::icons::system::ARROW_DOWN_S_LINE).icon()),
                         _ => None,
                     })
                     .apply(container)

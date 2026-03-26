@@ -32,6 +32,7 @@ pub enum Button {
     MenuItem,
     MenuRoot,
     NavToggle,
+    Secondary,
     #[default]
     Standard,
     Suggested,
@@ -52,14 +53,32 @@ pub fn appearance(
     let mut appearance = Style::new();
     let hc = theme.theme_type.is_high_contrast();
     match style {
-        Button::Standard
-        | Button::Text
-        | Button::Suggested
+        Button::Standard => {
+            corner_radii = &cosmic.corner_radii.radius_m;
+            appearance.background = Some(Background::Color(crate::theme::STATE_DEFAULT_COLOR));
+            appearance.text_color = Some(Color::WHITE);
+            appearance.icon_color = Some(Color::WHITE);
+        }
+
+        Button::Secondary => {
+            corner_radii = &cosmic.corner_radii.radius_m;
+            appearance.background = Some(Background::Color(Color::from_rgb8(224, 224, 224)));
+            appearance.text_color = Some(Color::BLACK);
+            appearance.icon_color = Some(Color::BLACK);
+        }
+
+        Button::Text => {
+            let (background, _, _) = color(&cosmic.text_button);
+            appearance.background = Some(Background::Color(background));
+            appearance.text_color = Some(crate::theme::STATE_DEFAULT_COLOR);
+            appearance.icon_color = Some(crate::theme::STATE_DEFAULT_COLOR);
+            corner_radii = &cosmic.corner_radii.radius_m;
+        }
+
+        Button::Suggested
         | Button::Destructive
         | Button::Transparent => {
             let style_component = match style {
-                Button::Standard => &cosmic.button,
-                Button::Text => &cosmic.text_button,
                 Button::Suggested => &cosmic.accent_button,
                 Button::Destructive => &cosmic.destructive_button,
                 Button::Transparent => &TRANSPARENT_COMPONENT,
@@ -68,13 +87,8 @@ pub fn appearance(
 
             let (background, text, icon) = color(style_component);
             appearance.background = Some(Background::Color(background));
-            if !matches!(style, Button::Standard) {
-                appearance.text_color = text;
-                appearance.icon_color = icon;
-            } else if hc {
-                appearance.border_color = style_component.border.into();
-                appearance.border_width = 1.;
-            }
+            appearance.text_color = text;
+            appearance.icon_color = icon;
         }
 
         Button::Icon | Button::IconVertical | Button::HeaderBar | Button::NavToggle => {
@@ -254,9 +268,15 @@ impl Catalog for crate::Theme {
                     Some(component.on.into())
                 };
 
-                if matches!(style, Button::ListItem) {
+                if matches!(style, Button::ListItem | Button::Text) {
                     (
                         crate::theme::STATE_DEFAULT_BG,
+                        text_color,
+                        text_color,
+                    )
+                } else if matches!(style, Button::MenuItem | Button::MenuFolder) {
+                    (
+                        Color::from_rgb8(230, 230, 230),
                         text_color,
                         text_color,
                     )
@@ -283,9 +303,15 @@ impl Catalog for crate::Theme {
                 Some(component.on.into())
             };
 
-            if matches!(style, Button::ListItem) {
+            if matches!(style, Button::ListItem | Button::Text) {
                 (
                     crate::theme::STATE_DEFAULT_BG,
+                    text_color,
+                    text_color,
+                )
+            } else if matches!(style, Button::MenuItem | Button::MenuFolder) {
+                (
+                    Color::from_rgb8(220, 220, 220),
                     text_color,
                     text_color,
                 )

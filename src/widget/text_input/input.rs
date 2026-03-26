@@ -96,7 +96,8 @@ where
         .padding([0, spacing])
         .style(crate::theme::TextInput::Search)
         .leading_icon(
-            crate::widget::icon::from_name("system-search-symbolic")
+            crate::widget::icon::from_svg_bytes(icetron_assets::icons::system::SEARCH_LINE)
+                .icon()
                 .size(16)
                 .apply(crate::widget::container)
                 .padding(8)
@@ -120,7 +121,8 @@ where
         .padding([0, spacing])
         .style(crate::theme::TextInput::Default)
         .leading_icon(
-            crate::widget::icon::from_name("system-lock-screen-symbolic")
+            crate::widget::icon::from_svg_bytes(icetron_assets::icons::system::LOCK_LINE)
+                .icon()
                 .size(16)
                 .apply(crate::widget::container)
                 .padding(8)
@@ -131,11 +133,12 @@ where
     }
     if let Some(msg) = on_visible_toggle {
         input.trailing_icon(
-            crate::widget::icon::from_name(if hidden {
-                "document-properties-symbolic"
+            crate::widget::icon::from_svg_bytes(if hidden {
+                icetron_assets::icons::system::EYE_LINE
             } else {
-                "image-red-eye-symbolic"
+                icetron_assets::icons::system::EYE_OFF_LINE
             })
+            .icon()
             .size(16)
             .apply(crate::widget::button::custom)
             .class(crate::theme::Button::Icon)
@@ -537,7 +540,8 @@ where
 
     pub fn on_clear(self, on_clear: Message) -> Self {
         self.trailing_icon(
-            crate::widget::icon::from_name("edit-clear-symbolic")
+            crate::widget::icon::from_svg_bytes(icetron_assets::icons::system::CLOSE_CIRCLE_LINE)
+                .icon()
                 .size(16)
                 .apply(crate::widget::button::custom)
                 .class(crate::theme::Button::Icon)

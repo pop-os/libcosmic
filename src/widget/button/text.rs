@@ -35,6 +35,13 @@ pub fn text<'a, Message>(label: impl Into<Cow<'a, str>>) -> Button<'a, Message> 
         .class(ButtonClass::Text)
 }
 
+/// A text button with the secondary style
+pub fn secondary<'a, Message>(label: impl Into<Cow<'a, str>>) -> Button<'a, Message> {
+    Button::new(Text::new())
+        .label(label)
+        .class(ButtonClass::Secondary)
+}
+
 /// The text variant of a button.
 pub struct Text {
     pub(super) leading_icon: Option<icon::Handle>,

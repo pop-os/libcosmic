@@ -30,7 +30,7 @@ use iced_widget::{Row, canvas, column, horizontal_space, row, scrollable, vertic
 use palette::{FromColor, RgbHue};
 
 use super::divider::horizontal;
-use super::icon::{self, from_name};
+use super::icon;
 use super::segmented_button::{self, SingleSelect};
 use super::{Icon, button, segmented_control, text, text_input, tooltip};
 
@@ -404,8 +404,8 @@ where
                 // TODO copy paste input contents
                 .trailing_icon({
                     let button = button::custom(crate::widget::icon(
-                        from_name("edit-copy-symbolic").size(spacing.space_s).into(),
-                    ))
+                        icon::from_svg_bytes(icetron_assets::icons::document::FILE_COPY_LINE),
+                    ).size(spacing.space_s))
                     .on_press(on_update(ColorPickerUpdate::Copied(Instant::now())))
                     .class(Button::Text);
 
@@ -819,9 +819,8 @@ pub fn color_button<'a, Message: Clone + 'static>(
             row![
                 horizontal_space().width(Length::FillPortion(6)),
                 Icon::from(
-                    icon::from_name("list-add-symbolic")
-                        .prefer_svg(true)
-                        .symbolic(true)
+                    icon::from_svg_bytes(icetron_assets::icons::system::ADD_LINE)
+                        .icon()
                         .size(64)
                 )
                 .width(icon_portion)

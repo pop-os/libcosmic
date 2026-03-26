@@ -61,7 +61,7 @@ impl<'a, Message> Button<'a, Message> {
 
 #[inline(never)]
 pub fn icon() -> Handle {
-    icon::from_svg_bytes(&include_bytes!("external-link.svg")[..]).symbolic(true)
+    icon::from_svg_bytes(icetron_assets::icons::system::EXTERNAL_LINK_LINE).symbolic(true)
 }
 
 impl<'a, Message: Clone + 'static> From<Button<'a, Message>> for Element<'a, Message> {

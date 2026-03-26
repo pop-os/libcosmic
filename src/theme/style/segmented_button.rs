@@ -289,7 +289,7 @@ mod horizontal {
         let rad_0 = cosmic.corner_radii.radius_0;
         ItemStatusAppearance {
             background: Some(Background::Color(
-                cosmic.palette.neutral_5.with_alpha(0.2).into(),
+                cosmic.palette.neutral_5.with_alpha(0.05).into(),
             )),
             first: ItemAppearance {
                 border: Border {
@@ -381,7 +381,7 @@ mod vertical {
     pub fn tab_bar_active(cosmic: &cosmic_theme::Theme) -> ItemStatusAppearance {
         ItemStatusAppearance {
             background: Some(Background::Color(
-                cosmic.palette.neutral_5.with_alpha(0.2).into(),
+                cosmic.palette.neutral_5.with_alpha(0.05).into(),
             )),
             first: ItemAppearance {
                 border: Border {

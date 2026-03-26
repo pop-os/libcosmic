@@ -552,10 +552,10 @@ impl<'a, Message: Clone + 'static> HeaderBar<'a, Message> {
 
     /// Creates the widget for window controls.
     fn window_controls(&mut self) -> Element<'a, Message> {
-        const ICON_MINIMIZE: &[u8] = include_bytes!("../../res/icons/window-minimize.svg");
-        const ICON_MAXIMIZE: &[u8] = include_bytes!("../../res/icons/window-maximize.svg");
-        const ICON_RESTORE: &[u8] = include_bytes!("../../res/icons/window-restore.svg");
-        const ICON_CLOSE: &[u8] = include_bytes!("../../res/icons/window-close.svg");
+        const ICON_MINIMIZE: &[u8] = icetron_assets::icons::system::SUBTRACT_LINE;
+        const ICON_MAXIMIZE: &[u8] = icetron_assets::icons::system::CHECKBOX_BLANK_LINE;
+        const ICON_RESTORE: &[u8] = icetron_assets::icons::system::CHECKBOX_MULTIPLE_BLANK_LINE;
+        const ICON_CLOSE: &[u8] = icetron_assets::icons::system::CLOSE_LINE;
 
         macro_rules! wc_icon {
             ($svg_bytes:expr, $size:expr, $on_press:expr, $is_close:expr) => {{

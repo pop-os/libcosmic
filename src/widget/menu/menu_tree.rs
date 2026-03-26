@@ -290,9 +290,9 @@ pub fn menu_items<
                     let key = find_key(&action, key_binds);
                     let mut items = vec![
                         if value {
-                            widget::icon::from_name("object-select-symbolic")
-                                .size(16)
+                            widget::icon::from_svg_bytes(icetron_assets::icons::system::CHECK_LINE)
                                 .icon()
+                                .size(16)
                                 .class(theme::Svg::Custom(Rc::new(|theme| {
                                     iced_widget::svg::Style {
                                         color: Some(theme.cosmic().accent_text_color().into()),
@@ -326,9 +326,9 @@ pub fn menu_items<
                             menu_button::<'static, _>(vec![
                                 widget::text(l.clone()).into(),
                                 widget::horizontal_space().into(),
-                                widget::icon::from_name("pan-end-symbolic")
-                                    .size(16)
+                                widget::icon::from_svg_bytes(icetron_assets::icons::system::ARROW_RIGHT_S_LINE)
                                     .icon()
+                                    .size(16)
                                     .into(),
                             ])
                             .class(

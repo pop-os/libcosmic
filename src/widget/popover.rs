@@ -343,7 +343,12 @@ where
         position.x = position.x.round();
         position.y = position.y.round();
 
-        node.move_to(position)
+        if self.modal {
+            let child = node.move_to(Point::new(position.x, position.y));
+            layout::Node::with_children(bounds, vec![child])
+        } else {
+            node.move_to(position)
+        }
     }
 
     fn operate(
@@ -352,9 +357,14 @@ where
         renderer: &Renderer,
         operation: &mut dyn Operation<()>,
     ) {
+        let content_layout = if self.modal {
+            layout.children().next().unwrap()
+        } else {
+            layout
+        };
         self.content
             .as_widget()
-            .operate(self.tree, layout, renderer, operation);
+            .operate(self.tree, content_layout, renderer, operation);
     }
 
     fn on_event(
@@ -366,9 +376,15 @@ where
         clipboard: &mut dyn Clipboard,
         shell: &mut Shell<'_, Message>,
     ) -> event::Status {
+        let content_layout = if self.modal {
+            layout.children().next().unwrap()
+        } else {
+            layout
+        };
+
         if self.modal
             && matches!(event, Event::Mouse(_) | Event::Touch(_))
-            && !cursor_position.is_over(layout.bounds())
+            && !cursor_position.is_over(content_layout.bounds())
         {
             return event::Status::Captured;
         }
@@ -376,12 +392,12 @@ where
         self.content.as_widget_mut().on_event(
             self.tree,
             event,
-            layout,
+            content_layout,
             cursor_position,
             renderer,
             clipboard,
             shell,
-            &layout.bounds(),
+            &content_layout.bounds(),
         )
     }
 
@@ -392,13 +408,19 @@ where
         viewport: &Rectangle,
         renderer: &Renderer,
     ) -> mouse::Interaction {
-        if self.modal && !cursor_position.is_over(layout.bounds()) {
+        let content_layout = if self.modal {
+            layout.children().next().unwrap()
+        } else {
+            layout
+        };
+
+        if self.modal && !cursor_position.is_over(content_layout.bounds()) {
             return mouse::Interaction::None;
         }
 
         self.content.as_widget().mouse_interaction(
             self.tree,
-            layout,
+            content_layout,
             cursor_position,
             viewport,
             renderer,
@@ -413,16 +435,42 @@ where
         layout: Layout<'_>,
         cursor_position: mouse::Cursor,
     ) {
-        let bounds = layout.bounds();
-        self.content.as_widget().draw(
-            self.tree,
-            renderer,
-            theme,
-            style,
-            layout,
-            cursor_position,
-            &bounds,
-        );
+        if self.modal {
+            // Draw over the full window (layout covers entire window)
+            let full_bounds = layout.bounds();
+            renderer.fill_quad(
+                renderer::Quad {
+                    bounds: full_bounds,
+                    border: iced_core::Border::default(),
+                    shadow: iced_core::Shadow::default(),
+                },
+                iced_core::Background::Color(iced_core::Color::from_rgba(0.0, 0.0, 0.0, 0.4)),
+            );
+
+            // Draw dialog content from the child node
+            let content_layout = layout.children().next().unwrap();
+            let content_bounds = content_layout.bounds();
+            self.content.as_widget().draw(
+                self.tree,
+                renderer,
+                theme,
+                style,
+                content_layout,
+                cursor_position,
+                &content_bounds,
+            );
+        } else {
+            let bounds = layout.bounds();
+            self.content.as_widget().draw(
+                self.tree,
+                renderer,
+                theme,
+                style,
+                layout,
+                cursor_position,
+                &bounds,
+            );
+        }
     }
 
     fn overlay<'c>(
@@ -430,9 +478,14 @@ where
         layout: Layout<'_>,
         renderer: &Renderer,
     ) -> Option<overlay::Element<'c, Message, crate::Theme, Renderer>> {
+        let content_layout = if self.modal {
+            layout.children().next().unwrap()
+        } else {
+            layout
+        };
         self.content
             .as_widget_mut()
-            .overlay(self.tree, layout, renderer, Default::default())
+            .overlay(self.tree, content_layout, renderer, Default::default())
     }
 }
 
