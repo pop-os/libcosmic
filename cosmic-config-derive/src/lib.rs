@@ -4,11 +4,7 @@ use syn;
 
 #[proc_macro_derive(CosmicConfigEntry, attributes(version, id, cosmic_config_entry))]
 pub fn cosmic_config_entry_derive(input: TokenStream) -> TokenStream {
-    // Construct a representation of Rust code as a syntax tree
-    // that we can manipulate
     let ast = syn::parse(input).unwrap();
-
-    // Build the trait implementation
     impl_cosmic_config_entry_macro(&ast)
 }
 
