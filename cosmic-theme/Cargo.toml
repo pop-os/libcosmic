@@ -16,6 +16,7 @@ no-default = []
 
 [dependencies]
 palette = { workspace = true, features = ["serializing"] }
+hex_color = { version = "3", features = ["serde"] }
 almost = "0.2"
 serde = { workspace = true, features = ["derive"] }
 serde_json = { version = "1.0.149", optional = true, features = [

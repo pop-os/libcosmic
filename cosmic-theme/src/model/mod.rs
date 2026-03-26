@@ -5,6 +5,7 @@ pub use mode::*;
 pub use spacing::*;
 pub use theme::*;
 
+pub mod color;
 mod corner;
 mod cosmic_palette;
 mod derivation;
