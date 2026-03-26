@@ -3,6 +3,7 @@ use crate::steps::{color_index, get_small_widget_color, get_surface_color, get_t
 use crate::{
     Component, Container, CornerRadii, CosmicPalette, CosmicPaletteInner, DARK_PALETTE,
     LIGHT_PALETTE, NAME, Spacing, ThemeMode,
+    color::{ColorRepr, ColorReprOption, color_serde, color_serde::option as color_serde_option},
 };
 use cosmic_config::{Config, CosmicConfigEntry};
 use palette::color_difference::Wcag21RelativeContrast;
@@ -45,7 +46,7 @@ pub enum Layer {
     PartialEq,
     cosmic_config::cosmic_config_derive::CosmicConfigEntry,
 )]
-#[version = 1]
+#[version = 2]
 pub struct Theme {
     /// name of the theme
     pub name: String,
@@ -100,13 +101,21 @@ pub struct Theme {
     /// enables blurred transparency
     pub is_frosted: bool,
     /// shade color for dialogs
+    #[serde(with = "color_serde")]
+    #[cosmic_config_entry(with = ColorRepr)]
     pub shade: Srgba,
     /// accent text colors
     /// If None, accent base color is the accent text color.
+    #[serde(with = "color_serde_option")]
+    #[cosmic_config_entry(with = ColorReprOption)]
     pub accent_text: Option<Srgba>,
     /// control tint color
+    #[serde(with = "color_serde_option")]
+    #[cosmic_config_entry(with = ColorReprOption)]
     pub control_tint: Option<Srgb>,
     /// text tint color
+    #[serde(with = "color_serde_option")]
+    #[cosmic_config_entry(with = ColorReprOption)]
     pub text_tint: Option<Srgb>,
 }
 
@@ -741,7 +750,7 @@ impl Theme {
             if color_scheme.trim().contains("default") || color_scheme.trim().contains("light") {
                 return Self::light_default();
             }
-        };
+        }
 
         Self::dark_default()
     }
@@ -750,10 +759,10 @@ impl Theme {
     pub fn preferred_theme() -> Self {
         let current_desktop = std::env::var("XDG_CURRENT_DESKTOP");
 
-        if let Ok(desktop) = current_desktop {
-            if desktop.trim().to_lowercase().contains("gnome") {
-                return Self::gtk_prefer_colorscheme();
-            }
+        if let Ok(desktop) = current_desktop
+            && desktop.trim().to_lowercase().contains("gnome")
+        {
+            return Self::gtk_prefer_colorscheme();
         }
 
         Self::dark_default()
@@ -776,7 +785,7 @@ impl From<CosmicPalette> for Theme {
     cosmic_config::cosmic_config_derive::CosmicConfigEntry,
     PartialEq,
 )]
-#[version = 1]
+#[version = 2]
 pub struct ThemeBuilder {
     /// override the palette for the builder
     pub palette: CosmicPalette,
@@ -785,22 +794,40 @@ pub struct ThemeBuilder {
     /// override corner radii for the builder
     pub corner_radii: CornerRadii,
     /// override neutral_tint for the builder
+    #[serde(with = "color_serde_option")]
+    #[cosmic_config_entry(with = ColorReprOption)]
     pub neutral_tint: Option<Srgb>,
     /// override bg_color for the builder
+    #[serde(with = "color_serde_option")]
+    #[cosmic_config_entry(with = ColorReprOption)]
     pub bg_color: Option<Srgba>,
     /// override the primary container bg color for the builder
+    #[serde(with = "color_serde_option")]
+    #[cosmic_config_entry(with = ColorReprOption)]
     pub primary_container_bg: Option<Srgba>,
     /// override the secontary container bg color for the builder
+    #[serde(with = "color_serde_option")]
+    #[cosmic_config_entry(with = ColorReprOption)]
     pub secondary_container_bg: Option<Srgba>,
     /// override the text tint for the builder
+    #[serde(with = "color_serde_option")]
+    #[cosmic_config_entry(with = ColorReprOption)]
     pub text_tint: Option<Srgb>,
     /// override the accent color for the builder
+    #[serde(with = "color_serde_option")]
+    #[cosmic_config_entry(with = ColorReprOption)]
     pub accent: Option<Srgb>,
     /// override the success color for the builder
+    #[serde(with = "color_serde_option")]
+    #[cosmic_config_entry(with = ColorReprOption)]
     pub success: Option<Srgb>,
     /// override the warning color for the builder
+    #[serde(with = "color_serde_option")]
+    #[cosmic_config_entry(with = ColorReprOption)]
     pub warning: Option<Srgb>,
     /// override the destructive color for the builder
+    #[serde(with = "color_serde_option")]
+    #[cosmic_config_entry(with = ColorReprOption)]
     pub destructive: Option<Srgb>,
     /// enabled blurred transparency
     pub is_frosted: bool, // TODO handle
@@ -809,6 +836,8 @@ pub struct ThemeBuilder {
     /// cosmic-comp active hint window outline width
     pub active_hint: u32,
     /// cosmic-comp custom window hint color
+    #[serde(with = "color_serde_option")]
+    #[cosmic_config_entry(with = ColorReprOption)]
     pub window_hint: Option<Srgb>,
 }
 

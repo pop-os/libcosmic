@@ -1,3 +1,4 @@
+use crate::color::color_serde;
 use palette::Srgba;
 use serde::{Deserialize, Serialize};
 use std::sync::LazyLock;
@@ -95,75 +96,107 @@ pub struct CosmicPaletteInner {
 
     /// Utility Colors
     /// Colors used for various points of emphasis in the UI.
+    #[serde(with = "color_serde")]
     pub bright_red: Srgba,
     /// Colors used for various points of emphasis in the UI.
+    #[serde(with = "color_serde")]
     pub bright_green: Srgba,
     /// Colors used for various points of emphasis in the UI.
+    #[serde(with = "color_serde")]
     pub bright_orange: Srgba,
 
     /// Surface Grays
     /// Colors used for three levels of surfaces in the UI.
+    #[serde(with = "color_serde")]
     pub gray_1: Srgba,
     /// Colors used for three levels of surfaces in the UI.
+    #[serde(with = "color_serde")]
     pub gray_2: Srgba,
 
     /// System Neutrals
     /// A wider spread of dark colors for more general use.
+    #[serde(with = "color_serde")]
     pub neutral_0: Srgba,
     /// A wider spread of dark colors for more general use.
+    #[serde(with = "color_serde")]
     pub neutral_1: Srgba,
     /// A wider spread of dark colors for more general use.
+    #[serde(with = "color_serde")]
     pub neutral_2: Srgba,
     /// A wider spread of dark colors for more general use.
+    #[serde(with = "color_serde")]
     pub neutral_3: Srgba,
     /// A wider spread of dark colors for more general use.
+    #[serde(with = "color_serde")]
     pub neutral_4: Srgba,
     /// A wider spread of dark colors for more general use.
+    #[serde(with = "color_serde")]
     pub neutral_5: Srgba,
     /// A wider spread of dark colors for more general use.
+    #[serde(with = "color_serde")]
     pub neutral_6: Srgba,
     /// A wider spread of dark colors for more general use.
+    #[serde(with = "color_serde")]
     pub neutral_7: Srgba,
     /// A wider spread of dark colors for more general use.
+    #[serde(with = "color_serde")]
     pub neutral_8: Srgba,
     /// A wider spread of dark colors for more general use.
+    #[serde(with = "color_serde")]
     pub neutral_9: Srgba,
     /// A wider spread of dark colors for more general use.
+    #[serde(with = "color_serde")]
     pub neutral_10: Srgba,
 
     /// Potential Accent Color Combos
+    #[serde(with = "color_serde")]
     pub accent_blue: Srgba,
     /// Potential Accent Color Combos
+    #[serde(with = "color_serde")]
     pub accent_indigo: Srgba,
     /// Potential Accent Color Combos
+    #[serde(with = "color_serde")]
     pub accent_purple: Srgba,
     /// Potential Accent Color Combos
+    #[serde(with = "color_serde")]
     pub accent_pink: Srgba,
     /// Potential Accent Color Combos
+    #[serde(with = "color_serde")]
     pub accent_red: Srgba,
     /// Potential Accent Color Combos
+    #[serde(with = "color_serde")]
     pub accent_orange: Srgba,
     /// Potential Accent Color Combos
+    #[serde(with = "color_serde")]
     pub accent_yellow: Srgba,
     /// Potential Accent Color Combos
+    #[serde(with = "color_serde")]
     pub accent_green: Srgba,
     /// Potential Accent Color Combos
+    #[serde(with = "color_serde")]
     pub accent_warm_grey: Srgba,
 
     /// Extended Color Palette
     /// Colors used for themes, app icons, illustrations, and other brand purposes.
+    #[serde(with = "color_serde")]
     pub ext_warm_grey: Srgba,
     /// Colors used for themes, app icons, illustrations, and other brand purposes.
+    #[serde(with = "color_serde")]
     pub ext_orange: Srgba,
     /// Colors used for themes, app icons, illustrations, and other brand purposes.
+    #[serde(with = "color_serde")]
     pub ext_yellow: Srgba,
     /// Colors used for themes, app icons, illustrations, and other brand purposes.
+    #[serde(with = "color_serde")]
     pub ext_blue: Srgba,
     /// Colors used for themes, app icons, illustrations, and other brand purposes.
+    #[serde(with = "color_serde")]
     pub ext_purple: Srgba,
     /// Colors used for themes, app icons, illustrations, and other brand purposes.
+    #[serde(with = "color_serde")]
     pub ext_pink: Srgba,
     /// Colors used for themes, app icons, illustrations, and other brand purposes.
+    #[serde(with = "color_serde")]
     pub ext_indigo: Srgba,
 }
 
