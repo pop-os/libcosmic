@@ -252,9 +252,18 @@ pub fn menu_items<
                     let l: Cow<'static, str> = label.into();
                     let key = find_key(&action, key_binds);
                     let mut items = vec![
-                        widget::text(l).into(),
+                        widget::text(l)
+                            .ellipsize(iced_core::text::Ellipsize::Middle(
+                                iced_core::text::EllipsizeHeightLimit::Lines(1),
+                            ))
+                            .into(),
                         widget::space::horizontal().into(),
-                        widget::text(key).class(key_class).into(),
+                        widget::text(key)
+                            .class(key_class)
+                            .ellipsize(iced_core::text::Ellipsize::Middle(
+                                iced_core::text::EllipsizeHeightLimit::Lines(1),
+                            ))
+                            .into(),
                     ];
 
                     if let Some(icon) = icon {
@@ -275,9 +284,18 @@ pub fn menu_items<
                     let key = find_key(&action, key_binds);
 
                     let mut items = vec![
-                        widget::text(l).into(),
+                        widget::text(l)
+                            .ellipsize(iced_core::text::Ellipsize::Middle(
+                                iced_core::text::EllipsizeHeightLimit::Lines(1),
+                            ))
+                            .into(),
                         widget::space::horizontal().into(),
-                        widget::text(key).class(key_class).into(),
+                        widget::text(key)
+                            .ellipsize(iced_core::text::Ellipsize::Middle(
+                                iced_core::text::EllipsizeHeightLimit::Lines(1),
+                            ))
+                            .class(key_class)
+                            .into(),
                     ];
 
                     if let Some(icon) = icon {
@@ -312,9 +330,19 @@ pub fn menu_items<
                                 .into()
                         },
                         widget::space::horizontal().width(spacing.space_xxs).into(),
-                        widget::text(label).align_x(iced::Alignment::Start).into(),
+                        widget::text(label)
+                            .ellipsize(iced_core::text::Ellipsize::Middle(
+                                iced_core::text::EllipsizeHeightLimit::Lines(1),
+                            ))
+                            .align_x(iced::Alignment::Start)
+                            .into(),
                         widget::space::horizontal().into(),
-                        widget::text(key).class(key_class).into(),
+                        widget::text(key)
+                            .class(key_class)
+                            .ellipsize(iced_core::text::Ellipsize::Middle(
+                                iced_core::text::EllipsizeHeightLimit::Lines(1),
+                            ))
+                            .into(),
                     ];
 
                     if let Some(icon) = icon {
@@ -335,7 +363,11 @@ pub fn menu_items<
                     trees.push(MenuTree::<Message>::with_children(
                         RcElementWrapper::new(crate::Element::from(
                             menu_button::<'static, _>(vec![
-                                widget::text(l.clone()).into(),
+                                widget::text(l.clone())
+                                    .ellipsize(iced_core::text::Ellipsize::Middle(
+                                        iced_core::text::EllipsizeHeightLimit::Lines(1),
+                                    ))
+                                    .into(),
                                 widget::space::horizontal().into(),
                                 widget::icon::from_name("pan-end-symbolic")
                                     .size(16)
