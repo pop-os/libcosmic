@@ -765,7 +765,13 @@ impl<'b, Message: Clone + 'static> Menu<'b, Message> {
                             PathHighlight::OmitActive => {
                                 !indices.is_empty() && i < indices.len() - 1
                             }
-                            PathHighlight::MenuActive => self.depth == state.active_root.len() - 1,
+                            PathHighlight::MenuActive => {
+                                !indices.is_empty()
+                                    && i < indices.len()
+                                    && menu_roots.len() > indices[i]
+                                    && (i < indices.len() - 1
+                                        || !menu_roots[indices[i]].children.is_empty())
+                            }
                         });
 
                         // react only to the last menu
