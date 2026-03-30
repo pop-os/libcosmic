@@ -16,7 +16,7 @@ pub struct Settings {
     pub(crate) antialiasing: bool,
 
     /// Autosize the window to fit its contents
-    #[cfg(feature = "wayland")]
+    #[cfg(all(feature = "wayland", target_os = "linux"))]
     pub(crate) autosize: bool,
 
     /// Set the application to not create a main window
@@ -80,7 +80,7 @@ impl Default for Settings {
     fn default() -> Self {
         Self {
             antialiasing: true,
-            #[cfg(feature = "wayland")]
+            #[cfg(all(feature = "wayland", target_os = "linux"))]
             autosize: false,
             no_main_window: false,
             client_decorations: true,

@@ -12,6 +12,7 @@ use super::{
 #[cfg(all(
     feature = "multi-window",
     feature = "wayland",
+    target_os = "linux",
     feature = "winit",
     feature = "surface-message"
 ))]
@@ -195,7 +196,12 @@ pub struct MenuBar<Message> {
     menu_roots: Vec<MenuTree<Message>>,
     style: <crate::Theme as StyleSheet>::Style,
     window_id: window::Id,
-    #[cfg(all(feature = "multi-window", feature = "wayland", feature = "winit"))]
+    #[cfg(all(
+        feature = "multi-window",
+        feature = "wayland",
+        feature = "winit",
+        target_os = "linux"
+    ))]
     positioner: iced_runtime::platform_specific::wayland::popup::SctkPositioner,
     pub(crate) on_surface_action:
         Option<Arc<dyn Fn(crate::surface::Action) -> Message + Send + Sync + 'static>>,
@@ -230,7 +236,12 @@ where
             menu_roots,
             style: <crate::Theme as StyleSheet>::Style::default(),
             window_id: window::Id::NONE,
-            #[cfg(all(feature = "multi-window", feature = "wayland", feature = "winit"))]
+            #[cfg(all(
+                feature = "multi-window",
+                feature = "wayland",
+                feature = "winit",
+                target_os = "linux"
+            ))]
             positioner: iced_runtime::platform_specific::wayland::popup::SctkPositioner::default(),
             on_surface_action: None,
         }
@@ -324,7 +335,12 @@ where
         self
     }
 
-    #[cfg(all(feature = "multi-window", feature = "wayland", feature = "winit"))]
+    #[cfg(all(
+        feature = "multi-window",
+        feature = "wayland",
+        feature = "winit",
+        target_os = "linux"
+    ))]
     pub fn with_positioner(
         mut self,
         positioner: iced_runtime::platform_specific::wayland::popup::SctkPositioner,
@@ -359,6 +375,7 @@ where
     #[cfg(all(
         feature = "multi-window",
         feature = "wayland",
+        target_os = "linux",
         feature = "winit",
         feature = "surface-message"
     ))]
@@ -629,6 +646,7 @@ where
                         state.open = false;
                         #[cfg(all(
                             feature = "wayland",
+                            target_os = "linux",
                             feature = "winit",
                             feature = "surface-message"
                         ))]
@@ -652,6 +670,7 @@ where
                 #[cfg(all(
                     feature = "multi-window",
                     feature = "wayland",
+                    target_os = "linux",
                     feature = "winit",
                     feature = "surface-message"
                 ))]
@@ -666,6 +685,7 @@ where
                 #[cfg(all(
                     feature = "multi-window",
                     feature = "wayland",
+                    target_os = "linux",
                     feature = "winit",
                     feature = "surface-message"
                 ))]
@@ -748,6 +768,7 @@ where
         #[cfg(all(
             feature = "multi-window",
             feature = "wayland",
+            target_os = "linux",
             feature = "winit",
             feature = "surface-message"
         ))]

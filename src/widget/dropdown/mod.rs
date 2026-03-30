@@ -50,7 +50,7 @@ pub fn popup_dropdown<
     let dropdown: Dropdown<'_, S, Message, AppMessage> =
         Dropdown::new(selections.into(), selected, on_selected);
 
-    #[cfg(all(feature = "winit", feature = "wayland"))]
+    #[cfg(all(feature = "winit", feature = "wayland", target_os = "linux"))]
     let dropdown = dropdown.with_popup(_parent_id, _on_surface_action, _map_action);
 
     dropdown

@@ -14,7 +14,7 @@ default = [
     "a11y",
     "dbus-config",
     "x11",
-    "wayland",
+    "iced-wayland",
     "multi-window",
 ] # default = ["dbus-config", "multi-window", "a11y"]
 # Accessibility support
@@ -80,14 +80,19 @@ tokio = [
 ]
 # Tokio async runtime
 # Wayland window support
-wayland = [
+iced-wayland = [
     "ashpd?/wayland",
     "autosize",
-    "iced_runtime/wayland",
     "iced/wayland",
     "iced_winit/wayland",
-    "cctk",
     "surface-message",
+]
+wayland = [
+    "iced-wayland",
+    "iced_runtime/cctk",
+    "iced_winit/cctk",
+    "iced/cctk",
+    "dep:cctk",
 ]
 surface-message = []
 # multi-window support

@@ -25,7 +25,7 @@ impl Default for ResponsiveMenuBar {
     fn default() -> ResponsiveMenuBar {
         ResponsiveMenuBar {
             collapsed_item_width: {
-                #[cfg(all(feature = "winit", feature = "wayland"))]
+                #[cfg(all(feature = "winit", feature = "wayland", target_os = "linux"))]
                 if matches!(
                     crate::app::cosmic::WINDOWING_SYSTEM.get(),
                     Some(crate::app::cosmic::WindowingSystem::Wayland)
@@ -34,7 +34,7 @@ impl Default for ResponsiveMenuBar {
                 } else {
                     ItemWidth::Static(84)
                 }
-                #[cfg(not(all(feature = "winit", feature = "wayland")))]
+                #[cfg(not(all(feature = "winit", feature = "wayland", target_os = "linux")))]
                 {
                     ItemWidth::Static(84)
                 }
