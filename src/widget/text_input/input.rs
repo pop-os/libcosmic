@@ -513,7 +513,7 @@ where
     }
 
     /// Sets the start dnd handler of the [`TextInput`].
-    #[cfg(feature = "wayland")]
+    #[cfg(all(feature = "wayland", target_os = "linux"))]
     pub fn on_start_dnd(mut self, on_start_dnd: impl Fn(State) -> Message + 'a) -> Self {
         self.on_create_dnd_source = Some(Box::new(on_start_dnd));
         self
@@ -1445,7 +1445,7 @@ pub fn update<'a, Message: Clone + 'static>(
                     click.kind(),
                     state.cursor().state(value),
                 ) {
-                    #[cfg(feature = "wayland")]
+                    #[cfg(all(feature = "wayland", target_os = "linux"))]
                     (None, click::Kind::Single, cursor::State::Selection { start, end }) => {
                         let left = start.min(end);
                         let right = end.max(start);
@@ -1556,7 +1556,7 @@ pub fn update<'a, Message: Clone + 'static>(
         | Event::Touch(touch::Event::FingerLifted { .. } | touch::Event::FingerLost { .. }) => {
             cold();
             let state = state();
-            #[cfg(feature = "wayland")]
+            #[cfg(all(feature = "wayland", target_os = "linux"))]
             if matches!(state.dragging_state, Some(DraggingState::PrepareDnd(_))) {
                 // clear selection and place cursor at click position
                 update_cache(state, value);
@@ -1589,7 +1589,7 @@ pub fn update<'a, Message: Clone + 'static>(
                 shell.capture_event();
                 return;
             }
-            #[cfg(feature = "wayland")]
+            #[cfg(all(feature = "wayland", target_os = "linux"))]
             if let Some(DraggingState::PrepareDnd(start_position)) = state.dragging_state {
                 let distance = ((position.x - start_position.x).powi(2)
                     + (position.y - start_position.y).powi(2))
@@ -1980,7 +1980,7 @@ pub fn update<'a, Message: Clone + 'static>(
                 shell.request_redraw();
             }
         }
-        #[cfg(feature = "wayland")]
+        #[cfg(all(feature = "wayland", target_os = "linux"))]
         Event::Dnd(DndEvent::Source(SourceEvent::Finished | SourceEvent::Cancelled)) => {
             cold();
             let state = state();
@@ -1991,7 +1991,7 @@ pub fn update<'a, Message: Clone + 'static>(
                 return;
             }
         }
-        #[cfg(feature = "wayland")]
+        #[cfg(all(feature = "wayland", target_os = "linux"))]
         Event::Dnd(DndEvent::Offer(
             rectangle,
             OfferEvent::Enter {
@@ -2032,7 +2032,7 @@ pub fn update<'a, Message: Clone + 'static>(
                 return;
             }
         }
-        #[cfg(feature = "wayland")]
+        #[cfg(all(feature = "wayland", target_os = "linux"))]
         Event::Dnd(DndEvent::Offer(rectangle, OfferEvent::Motion { x, y }))
             if *rectangle == Some(dnd_id) =>
         {
@@ -2051,7 +2051,7 @@ pub fn update<'a, Message: Clone + 'static>(
             shell.capture_event();
             return;
         }
-        #[cfg(feature = "wayland")]
+        #[cfg(all(feature = "wayland", target_os = "linux"))]
         Event::Dnd(DndEvent::Offer(rectangle, OfferEvent::Drop)) if *rectangle == Some(dnd_id) => {
             cold();
             let state = state();
@@ -2069,9 +2069,9 @@ pub fn update<'a, Message: Clone + 'static>(
 
             return;
         }
-        #[cfg(feature = "wayland")]
+        #[cfg(all(feature = "wayland", target_os = "linux"))]
         Event::Dnd(DndEvent::Offer(id, OfferEvent::LeaveDestination)) if Some(dnd_id) != *id => {}
-        #[cfg(feature = "wayland")]
+        #[cfg(all(feature = "wayland", target_os = "linux"))]
         Event::Dnd(DndEvent::Offer(
             rectangle,
             OfferEvent::Leave | OfferEvent::LeaveDestination,
@@ -2089,7 +2089,7 @@ pub fn update<'a, Message: Clone + 'static>(
             shell.capture_event();
             return;
         }
-        #[cfg(feature = "wayland")]
+        #[cfg(all(feature = "wayland", target_os = "linux"))]
         Event::Dnd(DndEvent::Offer(rectangle, OfferEvent::Data { data, mime_type }))
             if *rectangle == Some(dnd_id) =>
         {
@@ -2336,9 +2336,9 @@ pub fn draw<'a, Message>(
     let actual_width = text_width.max(text_bounds.width);
 
     let radius_0 = THEME.lock().unwrap().cosmic().corner_radii.radius_0.into();
-    #[cfg(feature = "wayland")]
+    #[cfg(all(feature = "wayland", target_os = "linux"))]
     let handling_dnd_offer = !matches!(state.dnd_offer, DndOfferState::None);
-    #[cfg(not(feature = "wayland"))]
+    #[cfg(not(all(feature = "wayland", target_os = "linux")))]
     let handling_dnd_offer = false;
     let (cursor, offset) = if let Some(focus) =
         state.is_focused.filter(|f| f.focused).or_else(|| {
@@ -2567,7 +2567,7 @@ pub fn mouse_interaction(
 #[derive(Debug, Clone)]
 pub struct TextInputString(pub String);
 
-#[cfg(feature = "wayland")]
+#[cfg(all(feature = "wayland", target_os = "linux"))]
 impl AsMimeTypes for TextInputString {
     fn available(&self) -> Cow<'static, [String]> {
         Cow::Owned(
@@ -2591,13 +2591,13 @@ impl AsMimeTypes for TextInputString {
 #[derive(Debug, Clone, PartialEq)]
 pub(crate) enum DraggingState {
     Selection,
-    #[cfg(feature = "wayland")]
+    #[cfg(all(feature = "wayland", target_os = "linux"))]
     PrepareDnd(Point),
-    #[cfg(feature = "wayland")]
+    #[cfg(all(feature = "wayland", target_os = "linux"))]
     Dnd(DndAction, String),
 }
 
-#[cfg(feature = "wayland")]
+#[cfg(all(feature = "wayland", target_os = "linux"))]
 #[derive(Debug, Default, Clone)]
 pub(crate) enum DndOfferState {
     #[default]
@@ -2606,7 +2606,7 @@ pub(crate) enum DndOfferState {
     Dropped,
 }
 #[derive(Debug, Default, Clone)]
-#[cfg(not(feature = "wayland"))]
+#[cfg(not(all(feature = "wayland", target_os = "linux")))]
 pub(crate) struct DndOfferState;
 
 /// The state of a [`TextInput`].
@@ -2680,7 +2680,7 @@ impl State {
         }
     }
 
-    #[cfg(feature = "wayland")]
+    #[cfg(all(feature = "wayland", target_os = "linux"))]
     /// Returns the current value of the dragged text in the [`TextInput`].
     #[must_use]
     pub fn dragged_text(&self) -> Option<String> {

@@ -9,25 +9,25 @@ use iced::window;
 use std::{any::Any, sync::Arc};
 
 /// Used to produce a destroy popup message from within a widget.
-#[cfg(feature = "wayland")]
+#[cfg(all(feature = "wayland", target_os = "linux"))]
 #[must_use]
 pub fn destroy_popup(id: iced_core::window::Id) -> Action {
     Action::DestroyPopup(id)
 }
 
-#[cfg(feature = "wayland")]
+#[cfg(all(feature = "wayland", target_os = "linux"))]
 #[must_use]
 pub fn destroy_subsurface(id: iced_core::window::Id) -> Action {
     Action::DestroySubsurface(id)
 }
 
-#[cfg(feature = "wayland")]
+#[cfg(all(feature = "wayland", target_os = "linux"))]
 #[must_use]
 pub fn destroy_window(id: iced_core::window::Id) -> Action {
     Action::DestroyWindow(id)
 }
 
-#[cfg(all(feature = "wayland", feature = "winit"))]
+#[cfg(all(feature = "wayland", target_os = "linux", feature = "winit"))]
 #[must_use]
 pub fn app_window<App: Application>(
     settings: impl Fn(&mut App) -> window::Settings + Send + Sync + 'static,
@@ -60,7 +60,7 @@ pub fn app_window<App: Application>(
 }
 
 /// Used to create a window message from within a widget.
-#[cfg(all(feature = "wayland", feature = "winit"))]
+#[cfg(all(feature = "wayland", target_os = "linux", feature = "winit"))]
 #[must_use]
 pub fn simple_window<Message: 'static>(
     settings: impl Fn() -> window::Settings + Send + Sync + 'static,
@@ -92,7 +92,7 @@ pub fn simple_window<Message: 'static>(
     )
 }
 
-#[cfg(all(feature = "wayland", feature = "winit"))]
+#[cfg(all(feature = "wayland", target_os = "linux", feature = "winit"))]
 #[must_use]
 pub fn app_popup<App: Application>(
     settings: impl Fn(&mut App) -> iced_runtime::platform_specific::wayland::popup::SctkPopupSettings
@@ -126,7 +126,7 @@ pub fn app_popup<App: Application>(
 }
 
 /// Used to create a subsurface message from within a widget.
-#[cfg(all(feature = "wayland", feature = "winit"))]
+#[cfg(all(feature = "wayland", target_os = "linux", feature = "winit"))]
 #[must_use]
 pub fn simple_subsurface<Message: 'static, V>(
     settings: impl Fn() -> iced_runtime::platform_specific::wayland::subsurface::SctkSubsurfaceSettings
@@ -155,7 +155,7 @@ pub fn simple_subsurface<Message: 'static, V>(
 }
 
 /// Used to create a popup message from within a widget.
-#[cfg(all(feature = "wayland", feature = "winit"))]
+#[cfg(all(feature = "wayland", target_os = "linux", feature = "winit"))]
 #[must_use]
 pub fn simple_popup<Message: 'static>(
     settings: impl Fn() -> iced_runtime::platform_specific::wayland::popup::SctkPopupSettings
@@ -186,7 +186,7 @@ pub fn simple_popup<Message: 'static>(
     )
 }
 
-#[cfg(all(feature = "wayland", feature = "winit"))]
+#[cfg(all(feature = "wayland", target_os = "linux", feature = "winit"))]
 #[must_use]
 pub fn subsurface<App: Application>(
     settings: impl Fn(

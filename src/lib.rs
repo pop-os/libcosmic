@@ -100,7 +100,7 @@ pub(crate) mod malloc;
 #[cfg(all(feature = "process", not(windows)))]
 pub mod process;
 
-#[cfg(feature = "wayland")]
+#[cfg(all(feature = "wayland", target_os = "linux"))]
 pub use cctk;
 
 pub mod surface;

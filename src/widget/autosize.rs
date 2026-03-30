@@ -170,7 +170,7 @@ where
         shell: &mut Shell<'_, Message>,
         viewport: &Rectangle,
     ) {
-        #[cfg(feature = "wayland")]
+        #[cfg(all(feature = "wayland", target_os = "linux"))]
         if matches!(
             event,
             Event::PlatformSpecific(event::PlatformSpecific::Wayland(

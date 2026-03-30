@@ -99,7 +99,7 @@ pub struct Core {
 
     pub(crate) menu_bars: HashMap<crate::widget::Id, (Limits, Size)>,
 
-    #[cfg(feature = "wayland")]
+    #[cfg(all(feature = "wayland", target_os = "linux"))]
     pub(crate) sync_window_border_radii_to_theme: bool,
 }
 
@@ -159,7 +159,7 @@ impl Default for Core {
             main_window: None,
             exit_on_main_window_closed: true,
             menu_bars: HashMap::new(),
-            #[cfg(feature = "wayland")]
+            #[cfg(all(feature = "wayland", target_os = "linux"))]
             sync_window_border_radii_to_theme: true,
         }
     }
@@ -493,12 +493,12 @@ impl Core {
     }
 
     // TODO should we emit tasks setting the corner radius or unsetting it if this is changed?
-    #[cfg(feature = "wayland")]
+    #[cfg(all(feature = "wayland", target_os = "linux"))]
     pub fn set_sync_window_border_radii_to_theme(&mut self, sync: bool) {
         self.sync_window_border_radii_to_theme = sync;
     }
 
-    #[cfg(feature = "wayland")]
+    #[cfg(all(feature = "wayland", target_os = "linux"))]
     pub fn sync_window_border_radii_to_theme(&self) -> bool {
         self.sync_window_border_radii_to_theme
     }
