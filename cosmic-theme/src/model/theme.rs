@@ -91,6 +91,8 @@ pub struct Theme {
     pub is_high_contrast: bool,
     /// cosmic-comp window gaps size (outer, inner)
     pub gaps: (u32, u32),
+    /// cosmic-comp height of server-side decorations
+    pub ssd_height: u32,
     /// cosmic-comp active hint window outline width
     pub active_hint: u32,
     /// cosmic-comp custom window hint color
@@ -804,6 +806,8 @@ pub struct ThemeBuilder {
     pub is_frosted: bool, // TODO handle
     /// cosmic-comp window gaps size (outer, inner)
     pub gaps: (u32, u32),
+    /// cosmic-comp height of server-side decorations
+    pub ssd_height: u32,
     /// cosmic-comp active hint window outline width
     pub active_hint: u32,
     /// cosmic-comp custom window hint color
@@ -828,6 +832,7 @@ impl Default for ThemeBuilder {
             is_frosted: false,
             // cosmic-comp theme settings
             gaps: (0, 8),
+            ssd_height: 36,
             active_hint: 3,
             window_hint: None,
         }
@@ -969,6 +974,7 @@ impl ThemeBuilder {
             warning,
             destructive,
             gaps,
+            ssd_height,
             active_hint,
             window_hint,
             is_frosted,
@@ -1330,6 +1336,7 @@ impl ThemeBuilder {
             is_dark,
             is_high_contrast,
             gaps,
+            ssd_height,
             active_hint,
             window_hint,
             is_frosted,
