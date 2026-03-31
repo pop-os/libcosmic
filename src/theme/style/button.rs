@@ -62,7 +62,7 @@ pub fn appearance(
 
         Button::Secondary => {
             corner_radii = &cosmic.corner_radii.radius_m;
-            appearance.background = Some(Background::Color(Color::from_rgb8(224, 224, 224)));
+            appearance.background = Some(Background::Color(crate::theme::LIGHT_GRAY));
             appearance.text_color = Some(Color::BLACK);
             appearance.icon_color = Some(Color::BLACK);
         }

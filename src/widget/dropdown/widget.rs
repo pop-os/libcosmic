@@ -883,7 +883,7 @@ pub fn draw<'a, S>(
     );
 
     if let Some(handle) = state.icon.clone() {
-        let svg_handle = svg::Svg::new(handle).color(style.text_color);
+        let svg_handle = svg::Svg::new(handle).color(style.handle_color);
 
         svg::Renderer::draw_svg(
             renderer,

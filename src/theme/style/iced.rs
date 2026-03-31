@@ -710,12 +710,12 @@ impl slider::Catalog for Theme {
                             color: Color::TRANSPARENT,
                             width: 0.0,
                         },
-                        width: 4.0,
+                        width: 6.0,
                     },
 
                     handle: slider::Handle {
                         shape: slider::HandleShape::Circle {
-                            radius: 6.0,
+                            radius: 9.0,
                         },
                         border_color: Color::from_rgba8(0, 0, 0, 0.12),
                         border_width: 1.0,
@@ -739,7 +739,7 @@ impl slider::Catalog for Theme {
             slider::Status::Hovered => match class {
                 Slider::Standard => {
                     appearance.handle.shape = slider::HandleShape::Circle {
-                        radius: 7.0,
+                        radius: 11.0,
                     };
                     appearance.handle.border_width = 1.0;
                     appearance.handle.border_color = Color::from_rgba8(0, 0, 0, 0.12);
@@ -755,7 +755,7 @@ impl slider::Catalog for Theme {
             slider::Status::Dragged => match class {
                 Slider::Standard => {
                     appearance.handle.shape = slider::HandleShape::Circle {
-                        radius: 7.0,
+                        radius: 11.0,
                     };
                     appearance.handle.border_width = 1.0;
                     appearance.handle.border_color = Color::from_rgba8(0, 0, 0, 0.12);
@@ -810,16 +810,11 @@ impl pick_list::Catalog for Theme {
             background: Color::TRANSPARENT.into(),
             placeholder_color: cosmic.on_bg_color().into(),
             border: Border {
-                radius: cosmic.corner_radii.radius_m.into(),
-                width: if hc { 1. } else { 0. },
-                color: if hc {
-                    self.current_container().component.border.into()
-                } else {
-                    Color::TRANSPARENT
-                },
+                radius: cosmic.corner_radii.radius_s.into(),
+                width: 1.0,
+                color: crate::theme::LIGHT_GRAY,
             },
-            // icon_size: 0.7, // TODO: how to replace
-            handle_color: cosmic.on_bg_color().into(),
+            handle_color: crate::theme::HANDLE_GRAY,
         };
 
         match status {
@@ -907,7 +902,7 @@ impl toggler::Catalog for Theme {
         let track_color = if is_toggled {
             crate::theme::STATE_DEFAULT_COLOR
         } else {
-            Color::from_rgb8(224, 224, 224)
+            crate::theme::LIGHT_GRAY
         };
 
         let mut style = toggler::Style {

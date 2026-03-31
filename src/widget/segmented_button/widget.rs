@@ -2060,9 +2060,23 @@ where
                             },
                             shadow: Shadow::default(),
                         },
-                        Background::Color(iced_core::Color::from_rgba(1.0, 0.0, 0.0, 0.1)),
+                        Background::Color(crate::theme::CLOSE_RED_BG),
                     );
                 }
+
+                let close_color = if state.close_hovered == Some(key) {
+                    crate::theme::CLOSE_RED
+                } else {
+                    status_appearance.text_color
+                };
+
+                let close_icon = self.close_icon.clone().class(
+                    crate::theme::Svg::Custom(std::rc::Rc::new(
+                        move |_theme| iced::widget::svg::Style {
+                            color: Some(close_color),
+                        },
+                    )),
+                );
 
                 draw_icon::<Message>(
                     renderer,
@@ -2070,9 +2084,9 @@ where
                     style,
                     cursor,
                     viewport,
-                    status_appearance.text_color,
+                    close_color,
                     close_button_bounds,
-                    self.close_icon.clone(),
+                    close_icon,
                 );
             }
 

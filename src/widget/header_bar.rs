@@ -514,7 +514,7 @@ impl<'a, Message: Clone + 'static> HeaderBar<'a, Message> {
                 .push(
                     horizontal_rule(1).class(crate::theme::Rule::Custom(Box::new(
                         |_: &crate::Theme| rule::Style {
-                            color: Color::from_rgba8(224, 224, 224, 1.0),
+                            color: crate::theme::LIGHT_GRAY,
                             width: 1,
                             radius: 0.0.into(),
                             fill_mode: rule::FillMode::Full,
