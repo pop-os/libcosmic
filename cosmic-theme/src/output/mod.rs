@@ -46,8 +46,10 @@ impl Theme {
     pub fn write_exports(&self) -> Result<(), OutputError> {
         let gtk_res = self.write_gtk4();
         let qt_res = self.write_qt();
+        let qt56ct_res = self.write_qt56ct();
         gtk_res?;
         qt_res?;
+        qt56ct_res?;
         Ok(())
     }
 
@@ -56,8 +58,10 @@ impl Theme {
     pub fn reset_exports() -> Result<(), OutputError> {
         let gtk_res = Theme::reset_gtk();
         let qt_res = Theme::reset_qt();
+        let qt56ct_res = Theme::reset_qt56ct();
         gtk_res?;
         qt_res?;
+        qt56ct_res?;
         Ok(())
     }
 }
