@@ -94,6 +94,9 @@ impl Theme {
         let complementary_colors = {
             let dark = if self.is_dark {
                 self.clone()
+            } else if cfg!(test) {
+                // For reproducible results in tests, use the default dark theme
+                Theme::dark_default()
             } else {
                 Theme::dark_config()
                     .ok()
