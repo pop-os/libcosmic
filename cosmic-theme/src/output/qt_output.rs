@@ -95,7 +95,7 @@ impl Theme {
             let dark = if self.is_dark {
                 self.clone()
             } else {
-                Theme::light_config()
+                Theme::dark_config()
                     .ok()
                     .as_ref()
                     .and_then(|conf| Theme::get_entry(conf).ok())
