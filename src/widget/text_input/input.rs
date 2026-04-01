@@ -26,7 +26,7 @@ use iced_core::input_method::{self, InputMethod, Preedit};
 use iced_core::mouse::{self, click};
 use iced_core::overlay::Group;
 use iced_core::renderer::{self, Renderer as CoreRenderer};
-use iced_core::text::{self, Paragraph, Renderer, Text};
+use iced_core::text::{self, Affinity, Paragraph, Renderer, Text};
 use iced_core::time::{Duration, Instant};
 use iced_core::touch;
 use iced_core::widget::Id;
@@ -2347,8 +2347,14 @@ fn input_method<'b>(
         cursor::State::Index(position) => position,
         cursor::State::Selection { start, end } => start.min(end),
     };
-    let (cursor, offset) =
-        measure_cursor_and_scroll_offset(state.value.raw(), text_bounds, cursor_index);
+    let (cursor, offset) = measure_cursor_and_scroll_offset(
+        state.value.raw(),
+        text_bounds,
+        cursor_index,
+        value,
+        state.cursor.affinity(),
+        state.scroll_offset,
+    );
     InputMethod::Enabled {
         cursor: Rectangle::new(
             Point::new(text_bounds.x + cursor - offset, text_bounds.y),
