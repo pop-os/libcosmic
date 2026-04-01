@@ -1719,13 +1719,10 @@ pub fn update<'a, Message: Clone + 'static>(
                 focus.updated_at = Instant::now();
                 LAST_FOCUS_UPDATE.with(|x| x.set(focus.updated_at));
 
-                // Check if Ctrl+A/C/V/X was pressed.
-                if state.keyboard_modifiers == keyboard::Modifiers::COMMAND
-                    || state.keyboard_modifiers
-                        == keyboard::Modifiers::COMMAND | keyboard::Modifiers::CAPS_LOCK
-                {
-                    match key.as_ref() {
-                        keyboard::Key::Character("c") | keyboard::Key::Character("C") => {
+                // Check if Ctrl/Command+A/C/V/X was pressed.
+                if state.keyboard_modifiers.command() {
+                    match key.to_latin(*physical_key) {
+                        Some('c') => {
                             if !is_secure {
                                 if let Some((start, end)) = state.cursor.selection(value) {
                                     clipboard.write(
@@ -1737,7 +1734,7 @@ pub fn update<'a, Message: Clone + 'static>(
                         }
                         // XXX if we want to allow cutting of secure text, we need to
                         // update the cache and decide which value to cut
-                        keyboard::Key::Character("x") | keyboard::Key::Character("X") => {
+                        Some('x') => {
                             if !is_secure {
                                 if let Some((start, end)) = state.cursor.selection(value) {
                                     clipboard.write(
@@ -1756,7 +1753,7 @@ pub fn update<'a, Message: Clone + 'static>(
                                 }
                             }
                         }
-                        keyboard::Key::Character("v") | keyboard::Key::Character("V") => {
+                        Some('v') => {
                             let content = if let Some(content) = state.is_pasting.take() {
                                 content
                             } else {
@@ -1801,7 +1798,7 @@ pub fn update<'a, Message: Clone + 'static>(
                             return;
                         }
 
-                        keyboard::Key::Character("a") | keyboard::Key::Character("A") => {
+                        Some('a') => {
                             state.cursor.select_all(value);
                             shell.capture_event();
                             return;
