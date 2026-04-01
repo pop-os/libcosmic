@@ -66,18 +66,20 @@ pub fn editable_input<'a, Message: Clone + 'static>(
     editing: bool,
     on_toggle_edit: impl Fn(bool) -> Message + 'a,
 ) -> TextInput<'a, Message> {
-    let icon = crate::widget::icon::from_name(if editing {
-        "edit-clear-symbolic"
-    } else {
-        "edit-symbolic"
-    });
-
+    // The trailing icon is a placeholder; diff() rebuilds it reactively
+    // based on the current is_read_only state and value content.
     TextInput::new(placeholder, text)
         .style(crate::theme::TextInput::EditableText)
         .editable()
         .editing(editing)
         .on_toggle_edit(on_toggle_edit)
-        .trailing_icon(icon.size(16).into())
+        .trailing_icon(
+            crate::widget::icon::from_name("edit-symbolic")
+                .size(16)
+                .apply(crate::widget::container)
+                .padding(8)
+                .into(),
+        )
 }
 
 /// Creates a new search [`TextInput`].
@@ -666,7 +668,36 @@ where
             }
         }
 
-        self.is_read_only = state.is_read_only;
+        if self.is_editable_variant {
+            if !state.is_focused() {
+                // Not yet interacted, use the widget's value
+                state.is_read_only = self.is_read_only;
+            } else {
+                // Already interacted, use the state
+                self.is_read_only = state.is_read_only;
+            }
+
+            let editing = !self.is_read_only;
+            let icon_name = if editing {
+                if self.value.is_empty() {
+                    "window-close-symbolic"
+                } else {
+                    "edit-clear-symbolic"
+                }
+            } else {
+                "edit-symbolic"
+            };
+
+            self.trailing_icon = Some(
+                crate::widget::icon::from_name(icon_name)
+                    .size(16)
+                    .apply(crate::widget::container)
+                    .padding(8)
+                    .into(),
+            );
+        } else {
+            self.is_read_only = state.is_read_only;
+        }
 
         // Stop pasting if input becomes disabled
         if !self.manage_value && self.on_input.is_none() {
@@ -855,9 +886,6 @@ where
                 if !state.is_read_only && state.is_focused.is_some_and(|f| !f.focused) {
                     state.is_read_only = true;
                     shell.publish((on_edit)(false));
-                } else if state.is_focused() && state.is_read_only {
-                    state.is_read_only = false;
-                    shell.publish((on_edit)(true));
                 } else if let Some(f) = state.is_focused.as_mut().filter(|f| f.needs_update) {
                     // TODO do we want to just move this to on_focus or on_unfocus for all inputs?
                     f.needs_update = false;
@@ -1018,9 +1046,7 @@ where
             index += 1;
         }
 
-        if let (Some(trailing_icon), Some(tree)) =
-            (self.trailing_icon.as_ref(), state.children.get(index))
-        {
+        if self.trailing_icon.is_some() {
             let mut children = layout.children();
             children.next();
             // skip if there is no leading icon
@@ -1030,13 +1056,21 @@ where
             let trailing_icon_layout = children.next().unwrap();
 
             if cursor_position.is_over(trailing_icon_layout.bounds()) {
-                return trailing_icon.as_widget().mouse_interaction(
-                    tree,
-                    layout,
-                    cursor_position,
-                    viewport,
-                    renderer,
-                );
+                if self.is_editable_variant {
+                    return mouse::Interaction::Pointer;
+                }
+
+                if let Some((trailing_icon, tree)) =
+                    self.trailing_icon.as_ref().zip(state.children.get(index))
+                {
+                    return trailing_icon.as_widget().mouse_interaction(
+                        tree,
+                        layout,
+                        cursor_position,
+                        viewport,
+                        renderer,
+                    );
+                }
             }
         }
         let mut children = layout.children();
@@ -1426,21 +1460,54 @@ pub fn update<'a, Message: Clone + 'static>(
                     && edit_button_layout.is_some_and(|l| cursor.is_over(l.bounds()))
                 {
                     if is_editable_variant {
-                        state.is_read_only = !state.is_read_only;
-                        state.move_cursor_to_end();
+                        let has_content = !unsecured_value.is_empty();
+                        let is_editing = !state.is_read_only;
 
-                        if let Some(on_toggle_edit) = on_toggle_edit {
-                            shell.publish(on_toggle_edit(!state.is_read_only));
+                        if is_editing && has_content {
+                            if let Some(on_input) = on_input {
+                                shell.publish((on_input)(String::new()));
+                            }
+
+                            if manage_value {
+                                *unsecured_value = Value::new("");
+                                state.tracked_value = unsecured_value.clone();
+
+                                let cleared_value = if is_secure {
+                                    unsecured_value.secure()
+                                } else {
+                                    unsecured_value.clone()
+                                };
+
+                                update_cache(state, &cleared_value);
+                            }
+
+                            state.move_cursor_to_end();
+                        } else if is_editing {
+                            // Close: toggle back to read-only and unfocus.
+                            state.is_read_only = true;
+                            state.unfocus();
+
+                            if let Some(on_toggle_edit) = on_toggle_edit {
+                                shell.publish(on_toggle_edit(false));
+                            }
+                        } else {
+                            // Edit: toggle to editing, select all, and focus.
+                            state.is_read_only = false;
+                            state.cursor.select_range(0, value.len());
+
+                            if let Some(on_toggle_edit) = on_toggle_edit {
+                                shell.publish(on_toggle_edit(true));
+                            }
+
+                            let now = Instant::now();
+                            LAST_FOCUS_UPDATE.with(|x| x.set(now));
+                            state.is_focused = Some(Focus {
+                                updated_at: now,
+                                now,
+                                focused: true,
+                                needs_update: false,
+                            });
                         }
-
-                        let now = Instant::now();
-                        LAST_FOCUS_UPDATE.with(|x| x.set(now));
-                        state.is_focused = Some(Focus {
-                            updated_at: now,
-                            now,
-                            focused: true,
-                            needs_update: false,
-                        });
                     }
 
                     shell.capture_event();
@@ -1550,15 +1617,18 @@ pub fn update<'a, Message: Clone + 'static>(
                 }
 
                 // Focus on click of the text input, and ensure that the input is writable.
-                if !state.is_focused()
-                    && matches!(state.dragging_state, None | Some(DraggingState::Selection))
+                if matches!(state.dragging_state, None | Some(DraggingState::Selection))
+                    && (!state.is_focused() || (is_editable_variant && state.is_read_only))
                 {
-                    if let Some(on_focus) = on_focus {
-                        shell.publish(on_focus.clone());
+                    if !state.is_focused() {
+                        if let Some(on_focus) = on_focus {
+                            shell.publish(on_focus.clone());
+                        }
                     }
 
                     if state.is_read_only {
                         state.is_read_only = false;
+                        state.cursor.select_range(0, value.len());
                         if let Some(on_toggle_edit) = on_toggle_edit {
                             let message = (on_toggle_edit)(true);
                             shell.publish(message);
