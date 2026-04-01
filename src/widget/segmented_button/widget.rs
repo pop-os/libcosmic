@@ -305,7 +305,7 @@ where
     {
         self.context_menu = context_menu.map(|menus| {
             vec![menu::Tree::with_children(
-                crate::Element::from(crate::widget::row::<'static, Message>()),
+                crate::Element::from(crate::widget::Row::new()),
                 menus,
             )]
         });
@@ -1481,7 +1481,7 @@ where
                 }
             }
         } else {
-            if let Item::Tab(key) = std::mem::replace(&mut state.hovered, Item::None) {
+            if let Item::Tab(_key) = std::mem::replace(&mut state.hovered, Item::None) {
                 for key in self.model.order.iter().copied() {
                     self.update_entity_paragraph(state, key);
                 }
@@ -2139,7 +2139,7 @@ where
         tree: &'b mut Tree,
         layout: iced_core::Layout<'b>,
         _renderer: &Renderer,
-        viewport: &iced_core::Rectangle,
+        _viewport: &iced_core::Rectangle,
         translation: Vector,
     ) -> Option<iced_core::overlay::Element<'b, Message, crate::Theme, Renderer>> {
         let state = tree.state.downcast_mut::<LocalState>();

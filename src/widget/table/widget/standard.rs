@@ -99,7 +99,7 @@ where
                 };
 
                 // Build the category header
-                widget::row()
+                widget::row::with_capacity(2)
                     .spacing(val.icon_spacing)
                     .push(widget::text::heading(category.to_string()))
                     .push_maybe(match sort_state {
@@ -152,7 +152,7 @@ where
                         categories
                             .iter()
                             .map(|category| {
-                                widget::row()
+                                widget::row::with_capacity(2)
                                     .spacing(val.icon_spacing)
                                     .push_maybe(
                                         item.get_icon(*category)

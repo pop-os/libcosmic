@@ -65,7 +65,7 @@ where
                 let selected = val.model.is_active(entity);
                 let context_menu = (val.item_context_builder)(item);
 
-                widget::column()
+                widget::column::with_capacity(2)
                     .spacing(val.item_spacing)
                     .push(
                         widget::divider::horizontal::default()
@@ -73,7 +73,7 @@ where
                             .padding(val.divider_padding),
                     )
                     .push(
-                        widget::row()
+                        widget::row::with_capacity(2)
                             .spacing(space_xxxs)
                             .align_y(Alignment::Center)
                             .push_maybe(
@@ -81,7 +81,7 @@ where
                                     .map(|icon| icon.size(val.icon_size)),
                             )
                             .push(
-                                widget::column()
+                                widget::column::with_capacity(2)
                                     .push(widget::text::body(item.get_text(Category::default())))
                                     .push({
                                         let mut elements = val

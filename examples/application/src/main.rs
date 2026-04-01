@@ -54,7 +54,7 @@ impl widget::menu::Action for Action {
 /// Runs application with these settings
 #[rustfmt::skip]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    
+
     env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("warn")).init();
 
 
@@ -190,7 +190,7 @@ impl cosmic::Application for App {
             .map_or("No page selected", String::as_str);
 
         let centered = widget::container(
-            widget::column()
+            widget::column::with_capacity(5)
                 .push(widget::text::body(page_content))
                 .push(
                     widget::text_input::text_input("", &self.input_1)

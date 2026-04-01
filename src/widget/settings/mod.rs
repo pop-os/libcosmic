@@ -8,10 +8,10 @@ pub use self::item::{flex_item, flex_item_row, item, item_row};
 pub use self::section::{Section, section};
 
 use crate::widget::{Column, column};
-use crate::{Element, theme};
+use crate::{Element, Theme, theme};
 
 /// A column with a predefined style for creating a settings panel
 #[must_use]
-pub fn view_column<Message: 'static>(children: Vec<Element<Message>>) -> Column<Message> {
+pub fn view_column<Message: 'static>(children: Vec<Element<Message>>) -> Column<Message, Theme> {
     column::with_children(children).spacing(theme::spacing().space_m)
 }

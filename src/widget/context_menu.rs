@@ -32,7 +32,7 @@ pub fn context_menu<'a, Message: 'static + Clone>(
         content: content.into(),
         context_menu: context_menu.map(|menus| {
             vec![menu::Tree::with_children(
-                crate::Element::from(crate::widget::row::<'static, Message>()),
+                crate::Element::from(crate::widget::Row::new()),
                 menus,
             )]
         }),

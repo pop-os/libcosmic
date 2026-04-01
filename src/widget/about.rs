@@ -47,32 +47,40 @@ pub struct About {
 fn add_contributors(contributors: Vec<(&str, &str)>) -> Vec<(String, String)> {
     contributors
         .into_iter()
-        .map(|(name, email)| (name.to_string(), format!("mailto:{email}")))
+        .map(|(name, email)| (name.into(), format!("mailto:{email}")))
         .collect()
 }
 
-macro_rules! set_contributors {
-    ($field:ident, $doc:expr) => {
-        #[doc = $doc]
-        pub fn $field(mut self, contributors: impl Into<Vec<(&'a str, &'a str)>>) -> Self {
-            self.$field = add_contributors(contributors.into());
-            self
-        }
-    };
-}
-
 impl<'a> About {
-    set_contributors!(artists, "Artists who contributed to the application.");
-    set_contributors!(designers, "Designers who contributed to the application.");
-    set_contributors!(developers, "Developers who contributed to the application.");
-    set_contributors!(
-        documenters,
-        "Documenters who contributed to the application."
-    );
-    set_contributors!(
-        translators,
-        "Translators who contributed to the application."
-    );
+    /// Artists who contributed to the application.
+    pub fn artists(mut self, contributors: impl Into<Vec<(&'a str, &'a str)>>) -> Self {
+        self.artists = add_contributors(contributors.into());
+        self
+    }
+
+    /// Designers who contributed to the application.
+    pub fn designers(mut self, contributors: impl Into<Vec<(&'a str, &'a str)>>) -> Self {
+        self.designers = add_contributors(contributors.into());
+        self
+    }
+
+    /// Developers who contributed to the application.
+    pub fn developers(mut self, contributors: impl Into<Vec<(&'a str, &'a str)>>) -> Self {
+        self.developers = add_contributors(contributors.into());
+        self
+    }
+
+    /// Documenters who contributed to the application.
+    pub fn documenters(mut self, contributors: impl Into<Vec<(&'a str, &'a str)>>) -> Self {
+        self.documenters = add_contributors(contributors.into());
+        self
+    }
+
+    /// Translators who contributed to the application.
+    pub fn translators(mut self, contributors: impl Into<Vec<(&'a str, &'a str)>>) -> Self {
+        self.translators = add_contributors(contributors.into());
+        self
+    }
 
     /// Links associated with the application.
     pub fn links<K: Into<String>, V: Into<String>>(
@@ -97,7 +105,7 @@ pub fn about<'a, Message: Clone + 'static>(
     } = crate::theme::spacing();
 
     let section_button = |name: &'a str, url: &'a str| -> Element<'a, Message> {
-        widget::row()
+        widget::row::with_capacity(3)
             .push(widget::text(name))
             .push(space::horizontal())
             .push_maybe(
@@ -158,7 +166,7 @@ pub fn about<'a, Message: Clone + 'static>(
     let copyright = about.copyright.as_ref().map(widget::text::body);
     let comments = about.comments.as_ref().map(widget::text::body);
 
-    widget::column()
+    widget::column::with_capacity(10)
         .push_maybe(header)
         .push_maybe(links_section)
         .push_maybe(developers_section)

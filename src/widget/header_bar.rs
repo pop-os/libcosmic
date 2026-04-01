@@ -243,10 +243,13 @@ impl<'a, Message: Clone + 'static> Widget<Message, crate::Theme, crate::Renderer
         cursor: iced_core::mouse::Cursor,
         viewport: &iced_core::Rectangle,
     ) {
-        for ((e, s), l) in self.elems().zip(&tree.children).zip(layout.children()) {
-            e.as_widget()
-                .draw(s, renderer, theme, style, l, cursor, viewport);
-        }
+        self.elems()
+            .zip(&tree.children)
+            .zip(layout.children())
+            .for_each(|((e, s), l)| {
+                e.as_widget()
+                    .draw(s, renderer, theme, style, l, cursor, viewport);
+            });
     }
 
     fn update(
@@ -260,14 +263,13 @@ impl<'a, Message: Clone + 'static> Widget<Message, crate::Theme, crate::Renderer
         shell: &mut iced_core::Shell<'_, Message>,
         viewport: &iced_core::Rectangle,
     ) {
-        for ((e, s), l) in self
-            .elems_mut()
+        self.elems_mut()
             .zip(&mut state.children)
             .zip(layout.children())
-        {
-            e.as_widget_mut()
-                .update(s, event, l, cursor, renderer, clipboard, shell, viewport);
-        }
+            .for_each(|((e, s), l)| {
+                e.as_widget_mut()
+                    .update(s, event, l, cursor, renderer, clipboard, shell, viewport);
+            });
     }
 
     fn mouse_interaction(
@@ -296,13 +298,12 @@ impl<'a, Message: Clone + 'static> Widget<Message, crate::Theme, crate::Renderer
         renderer: &crate::Renderer,
         operation: &mut dyn iced_core::widget::Operation<()>,
     ) {
-        for ((e, s), l) in self
-            .elems_mut()
+        self.elems_mut()
             .zip(&mut state.children)
             .zip(layout.children())
-        {
-            e.as_widget_mut().operate(s, l, renderer, operation);
-        }
+            .for_each(|((e, s), l)| {
+                e.as_widget_mut().operate(s, l, renderer, operation);
+            });
     }
 
     fn overlay<'b>(
@@ -313,27 +314,13 @@ impl<'a, Message: Clone + 'static> Widget<Message, crate::Theme, crate::Renderer
         viewport: &iced_core::Rectangle,
         translation: Vector,
     ) -> Option<iced_core::overlay::Element<'b, Message, crate::Theme, crate::Renderer>> {
-        let mut layouts = layout.children();
-        let mut try_overlay = |elem: &'b mut Element<'a, Message>,
-                               state: &'b mut tree::Tree|
-         -> Option<
-            iced_core::overlay::Element<'b, Message, crate::Theme, crate::Renderer>,
-        > {
-            elem.as_widget_mut()
-                .overlay(state, layouts.next()?, renderer, viewport, translation)
-        };
-
-        if let Some(center) = &mut self.center {
-            let (start_slice, end_center) = state.children.split_at_mut(1);
-            let (end_slice, center_slice) = end_center.split_at_mut(1);
-            try_overlay(&mut self.start, &mut start_slice[0])
-                .or_else(|| try_overlay(&mut self.end, &mut end_slice[0]))
-                .or_else(|| try_overlay(center, &mut center_slice[0]))
-        } else {
-            let (start_slice, end_slice) = state.children.split_at_mut(1);
-            try_overlay(&mut self.start, &mut start_slice[0])
-                .or_else(|| try_overlay(&mut self.end, &mut end_slice[0]))
-        }
+        self.elems_mut()
+            .zip(&mut state.children)
+            .zip(layout.children())
+            .find_map(|((e, s), l)| {
+                e.as_widget_mut()
+                    .overlay(s, l, renderer, viewport, translation)
+            })
     }
 
     fn drag_destinations(
@@ -343,10 +330,13 @@ impl<'a, Message: Clone + 'static> Widget<Message, crate::Theme, crate::Renderer
         renderer: &crate::Renderer,
         dnd_rectangles: &mut iced_core::clipboard::DndDestinationRectangles,
     ) {
-        for ((e, s), l) in self.elems().zip(&state.children).zip(layout.children()) {
-            e.as_widget()
-                .drag_destinations(s, l, renderer, dnd_rectangles);
-        }
+        self.elems()
+            .zip(&state.children)
+            .zip(layout.children())
+            .for_each(|((e, s), l)| {
+                e.as_widget()
+                    .drag_destinations(s, l, renderer, dnd_rectangles);
+            });
     }
 
     #[cfg(feature = "a11y")]
@@ -431,7 +421,7 @@ impl<'a, Message: Clone + 'static> HeaderBar<'a, Message> {
 
         let mut widget = HeaderBarWidget::new(start, center, end)
             .apply(widget::container)
-            .class(crate::theme::Container::HeaderBar {
+            .class(theme::Container::HeaderBar {
                 focused: self.focused,
                 sharp_corners: self.sharp_corners,
                 transparent: self.transparent,
@@ -463,7 +453,7 @@ impl<'a, Message: Clone + 'static> HeaderBar<'a, Message> {
                 widget::icon::from_name($name)
                     .apply(widget::button::icon)
                     .padding(8)
-                    .class(crate::theme::Button::HeaderBar)
+                    .class(theme::Button::HeaderBar)
                     .selected(self.focused)
                     .icon_size($size)
                     .on_press($on_press)
