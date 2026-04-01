@@ -3,10 +3,7 @@
 
 use super::{Builder, ButtonClass};
 use crate::Element;
-use crate::widget::{
-    icon::{self, Handle},
-    tooltip,
-};
+use crate::widget::{icon::Handle, tooltip};
 use apply::Apply;
 use iced_core::{Alignment, Length, Padding, font::Weight, text::LineHeight, widget::Id};
 use std::borrow::Cow;
@@ -133,7 +130,7 @@ impl<Message> Button<'_, Message> {
 }
 
 impl<'a, Message: Clone + 'static> From<Button<'a, Message>> for Element<'a, Message> {
-    fn from(mut builder: Button<'a, Message>) -> Element<'a, Message> {
+    fn from(builder: Button<'a, Message>) -> Element<'a, Message> {
         let mut content = Vec::with_capacity(2);
 
         content.push(

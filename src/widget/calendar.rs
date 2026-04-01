@@ -212,7 +212,7 @@ where
 
         let content_list = column::with_children([
             row::with_children([
-                column().push(date).push(day).into(),
+                column([date.into(), day.into()]).into(),
                 crate::widget::space::horizontal()
                     .width(Length::Fill)
                     .into(),

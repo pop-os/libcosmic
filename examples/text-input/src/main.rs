@@ -99,7 +99,9 @@ impl cosmic::Application for App {
 
         let inline = cosmic::widget::inline_input("", &self.input).on_input(Message::Input);
 
-        let column = cosmic::widget::column().push(editable).push(inline);
+        let column = cosmic::widget::column::with_capacity(2)
+            .push(editable)
+            .push(inline);
 
         let centered = cosmic::widget::container(column.width(200))
             .width(iced::Length::Fill)

@@ -34,10 +34,10 @@ pub fn toaster<'a, Message: Clone + 'static>(
     } = theme.cosmic().spacing;
 
     let make_toast = move |(id, toast): (ToastId, &'a Toast<Message>)| {
-        let row = row()
+        let row = row::with_capacity(2)
             .push(text(&toast.message))
             .push(
-                row()
+                row::with_capacity(2)
                     .push_maybe(toast.action.as_ref().map(|action| {
                         button::text(&action.description).on_press((action.message)(id))
                     }))

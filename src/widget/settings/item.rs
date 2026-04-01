@@ -4,7 +4,7 @@
 use std::borrow::Cow;
 
 use crate::{
-    Element, theme,
+    Element, Theme, theme,
     widget::{FlexRow, Row, column, container, flex_row, row, text},
 };
 use derive_setters::Setters;
@@ -18,12 +18,12 @@ use taffy::AlignContent;
 pub fn item<'a, Message: 'static>(
     title: impl Into<Cow<'a, str>> + 'a,
     widget: impl Into<Element<'a, Message>> + 'a,
-) -> Row<'a, Message> {
+) -> Row<'a, Message, Theme> {
     #[inline(never)]
     fn inner<'a, Message: 'static>(
         title: Cow<'a, str>,
         widget: Element<'a, Message>,
-    ) -> Row<'a, Message> {
+    ) -> Row<'a, Message, Theme> {
         item_row(vec![
             text(title).wrapping(Wrapping::Word).into(),
             space::horizontal().into(),
@@ -37,7 +37,7 @@ pub fn item<'a, Message: 'static>(
 /// A settings item aligned in a row
 #[must_use]
 #[allow(clippy::module_name_repetitions)]
-pub fn item_row<Message>(children: Vec<Element<Message>>) -> Row<Message> {
+pub fn item_row<Message>(children: Vec<Element<Message>>) -> Row<Message, Theme> {
     row::with_children(children)
         .spacing(theme::spacing().space_xs)
         .align_y(iced::Alignment::Center)
@@ -105,7 +105,7 @@ pub struct Item<'a, Message> {
 
 impl<'a, Message: 'static> Item<'a, Message> {
     /// Assigns a control to the item.
-    pub fn control(self, widget: impl Into<Element<'a, Message>>) -> Row<'a, Message> {
+    pub fn control(self, widget: impl Into<Element<'a, Message>>) -> Row<'a, Message, Theme> {
         item_row(self.control_(widget.into()))
     }
 
@@ -142,7 +142,7 @@ impl<'a, Message: 'static> Item<'a, Message> {
         self,
         is_checked: bool,
         message: impl Fn(bool) -> Message + 'static,
-    ) -> Row<'a, Message> {
+    ) -> Row<'a, Message, Theme> {
         self.control(
             crate::widget::toggler(is_checked)
                 .width(Length::Shrink)

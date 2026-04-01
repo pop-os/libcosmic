@@ -80,7 +80,7 @@ impl cosmic::Application for App {
 
     /// Creates a view after each update.
     fn view(&self) -> Element<'_, Self::Message> {
-        let mut content = cosmic::widget::column().spacing(12);
+        let mut content = cosmic::widget::column::with_capacity(self.images.len()).spacing(12);
 
         for (id, image) in self.images.iter().enumerate() {
             content = content.push(

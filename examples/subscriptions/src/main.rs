@@ -64,7 +64,7 @@ impl cosmic::Application for App {
 
     /// Creates a view after each update.
     fn view(&self) -> Element<'_, Self::Message> {
-        widget::row().into()
+        widget::Row::new().into()
     }
 }
 
