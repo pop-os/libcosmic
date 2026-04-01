@@ -145,7 +145,6 @@ pub fn is_valid_srgb(c: Srgba) -> bool {
 
 #[cfg(test)]
 mod tests {
-    use almost::equal;
     use palette::{OklabHue, Srgba};
 
     use super::{is_valid_srgb, oklch_to_srgba_nearest_chroma};
@@ -173,16 +172,16 @@ mod tests {
     fn test_conversion_boundaries() {
         let c1 = palette::Oklcha::new(0.0, 0.288, OklabHue::from_degrees(0.0), 1.0);
         let srgb = oklch_to_srgba_nearest_chroma(c1);
-        equal(srgb.red, 0.0);
-        equal(srgb.blue, 0.0);
-        equal(srgb.green, 0.0);
+        almost::zero(srgb.red);
+        almost::zero(srgb.blue);
+        almost::zero(srgb.green);
 
         let c1 = palette::Oklcha::new(1.0, 0.288, OklabHue::from_degrees(0.0), 1.0);
         let srgb = oklch_to_srgba_nearest_chroma(c1);
 
-        equal(srgb.red, 1.0);
-        equal(srgb.blue, 1.0);
-        equal(srgb.green, 1.0);
+        almost::equal(srgb.red, 1.0);
+        almost::equal(srgb.blue, 1.0);
+        almost::equal(srgb.green, 1.0);
     }
 
     #[test]
