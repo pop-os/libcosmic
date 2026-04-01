@@ -33,16 +33,17 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        features:
-        - "" # for cosmic-comp, don't remove!
-        - 'winit_debug'
-        - 'winit_tokio'
-        - winit
-        - winit_wgpu
-        - wayland
-        - applet
-        - desktop,smol
-        - desktop,tokio
+        test_args:
+        - --no-default-features --features "" # for cosmic-comp, don't remove!
+        - --no-default-features --features "winit_debug"
+        - --no-default-features --features "winit_tokio"
+        - --no-default-features --features "winit"
+        - --no-default-features --features "winit_wgpu"
+        - --no-default-features --features "wayland"
+        - --no-default-features --features "applet"
+        - --no-default-features --features "desktop,smol"
+        - --no-default-features --features "desktop,tokio"
+        - -p cosmic-theme
     runs-on: ubuntu-22.04
     steps:
       - name: Checkout sources
@@ -66,7 +67,7 @@ jobs:
       - name: Rust toolchain
         uses: dtolnay/rust-toolchain@stable
       - name: Test features
-        run: cargo test --no-default-features --features "${{ matrix.features }}" -- --test-threads=1
+        run: cargo test ${{ matrix.test_args }} -- --test-threads=1
         env:
           RUST_BACKTRACE: full
 
@@ -103,7 +104,7 @@ jobs:
         run: sudo apt-get update; sudo apt-get install -y libxkbcommon-dev libwayland-dev
       - name: Rust toolchain
         uses: dtolnay/rust-toolchain@stable
-      - name: Test example
+      - name: Check example
         run: cargo check -p "${{ matrix.examples }}"
         env:
           RUST_BACKTRACE: full
