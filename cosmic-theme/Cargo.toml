@@ -30,3 +30,10 @@ cosmic-config = { path = "../cosmic-config/", default-features = false, features
 configparser = "3.1.0"
 dirs.workspace = true
 thiserror = "2.0.18"
+
+[dev-dependencies]
+insta = "1.47.2"
+
+[profile.dev.package]
+insta.opt-level = 3
+similar.opt-level = 3
