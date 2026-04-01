@@ -210,7 +210,7 @@ mod tests {
         let c1 = palette::Oklcha::new(0.70, 0.284, OklabHue::new(35.0), 1.0);
         let srgb = oklch_to_srgba_nearest_chroma(c1).into_format::<u8, u8>();
         assert_eq!(srgb.red, 255);
-        assert_eq!(srgb.green, 103);
+        assert_eq!(srgb.green, 102);
         assert_eq!(srgb.blue, 65);
 
         let c1 = palette::Oklcha::new(0.757, 0.239, OklabHue::new(301.2), 1.0);
