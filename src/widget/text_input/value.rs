@@ -132,11 +132,34 @@ impl Value {
             graphemes: std::iter::repeat_n(String::from("•"), self.graphemes.len()).collect(),
         }
     }
+
+    /// Converts a grapheme index to a byte index in the underlying string.
+    #[must_use]
+    pub fn byte_index_at_grapheme(&self, grapheme_index: usize) -> usize {
+        self.graphemes[..grapheme_index.min(self.graphemes.len())]
+            .iter()
+            .map(|g| g.len())
+            .sum()
+    }
+
+    /// Converts a byte index to a grapheme index.
+    #[must_use]
+    pub fn grapheme_index_at_byte(&self, byte_index: usize) -> usize {
+        let mut bytes = 0;
+        for (i, g) in self.graphemes.iter().enumerate() {
+            if bytes >= byte_index {
+                return i;
+            }
+            bytes += g.len();
+        }
+
+        self.graphemes.len()
+    }
 }
 
-impl ToString for Value {
+impl std::fmt::Display for Value {
     #[inline]
-    fn to_string(&self) -> String {
-        self.graphemes.concat()
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(&self.graphemes.concat())
     }
 }
