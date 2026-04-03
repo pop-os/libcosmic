@@ -357,6 +357,8 @@ impl<'a, Message: 'a + Clone> Widget<Message, crate::Theme, crate::Renderer>
                 operation,
             );
         });
+        let state = tree.state.downcast_mut::<State>();
+        operation.focusable(Some(&self.id), layout.bounds(), state);
     }
 
     fn update(
