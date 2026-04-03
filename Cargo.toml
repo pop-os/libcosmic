@@ -9,6 +9,7 @@ name = "cosmic"
 
 [features]
 default = [
+    "advanced-shaping",
     "winit",
     "tokio",
     "a11y",
@@ -16,7 +17,8 @@ default = [
     "x11",
     "iced-wayland",
     "multi-window",
-] # default = ["dbus-config", "multi-window", "a11y"]
+]
+advanced-shaping = ["iced/advanced-shaping"]
 # Accessibility support
 a11y = ["iced/a11y", "iced_accessibility"]
 # Enable about widget
