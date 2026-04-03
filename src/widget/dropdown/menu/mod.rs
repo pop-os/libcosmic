@@ -9,14 +9,14 @@ use std::sync::{Arc, Mutex};
 pub use appearance::{Appearance, StyleSheet};
 
 use crate::surface;
-use crate::widget::{Container, RcWrapper, icon};
+use crate::widget::{icon, Container, RcWrapper};
 use iced_core::event::{self, Event};
 use iced_core::layout::{self, Layout};
 use iced_core::text::{self, Text};
 use iced_core::widget::Tree;
 use iced_core::{
-    Border, Clipboard, Element, Length, Padding, Pixels, Point, Rectangle, Renderer, Shadow, Shell,
-    Size, Vector, Widget, alignment, mouse, overlay, renderer, svg, touch,
+    alignment, mouse, overlay, renderer, svg, touch, Border, Clipboard, Element, Length, Padding,
+    Pixels, Point, Rectangle, Renderer, Shadow, Shell, Size, Vector, Widget,
 };
 use iced_widget::scrollable::Scrollable;
 
@@ -666,7 +666,7 @@ where
                 };
 
                 bounds.x += 24.0;
-                icon::draw_with_scale(renderer, handle, icon_bounds, style.scale_factor as f32);
+                icon::draw(renderer, handle, icon_bounds);
             }
 
             text::Renderer::fill_text(
