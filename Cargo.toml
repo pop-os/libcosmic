@@ -93,6 +93,7 @@ wayland = [
     "iced-wayland",
     "iced_runtime/cctk",
     "iced_winit/cctk",
+    "iced_wgpu/cctk",
     "iced/cctk",
     "dep:cctk",
 ]
