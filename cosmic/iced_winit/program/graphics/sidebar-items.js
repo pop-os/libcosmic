@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["Antialiasing","Error","Gradient","Image","Mesh","Text"],"mod":["cache","color","compositor","damage","error","geometry","gradient","image","layer","mesh","shell","text"],"struct":["Cache","Settings","Shell","Viewport"],"trait":["Compositor","Layer"]};

@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["DndSource","Kind"],"fn":["peek_dnd","read_data","read_primary_data","start_dnd"],"struct":["DndDestinationRectangles","IconSurface","Null"],"trait":["Clipboard"],"type":["DynIconSurface"]};

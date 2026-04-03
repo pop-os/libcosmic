@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["cursor_position","fullscreen","icon","ime_purpose","key","key_code","mode","modifiers","mouse_button","mouse_interaction","native_key_code","physical_key","position","resize_direction","theme_mode","touch_event","user_attention","visible","window_attributes","window_event","window_level","window_theme","winit_key_code"],"struct":["RawImage"]};

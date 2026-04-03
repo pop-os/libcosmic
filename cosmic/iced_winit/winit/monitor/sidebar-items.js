@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["Fullscreen"],"struct":["MonitorHandle","VideoMode"],"trait":["MonitorHandleProvider"]};

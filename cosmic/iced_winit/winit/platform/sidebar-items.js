@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"mod":["scancode","startup_notify","wayland","x11"]};

@@ -1,0 +1,33 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Creates an iced `Application` given its boot, update, and view logic."><title>application in cosmic::iced - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../static.files/rustdoc-77263533.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="cosmic" data-themes="" data-resource-suffix="" data-rustdoc-version="1.94.1 (e408947bf 2026-03-25)" data-channel="1.94.1" data-search-js="search-9e2438ea.js" data-stringdex-js="stringdex-b897f86f.js" data-settings-js="settings-c38705f0.js" ><script src="../../static.files/storage-e2aeef58.js"></script><script defer src="sidebar-items.js"></script><script defer src="../../static.files/main-7bab91a1.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-ffcac47a.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-eab170b8.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-044be391.svg"></head><body class="rustdoc fn"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><rustdoc-topbar><h2><a href="#">application</a></h2></rustdoc-topbar><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../../cosmic/index.html">cosmic</a><span class="version">1.0.0</span></h2></div><div class="sidebar-elems"><section id="rustdoc-toc"><h2 class="location"><a href="#">application</a></h2><h3><a href="#">Sections</a></h3><ul class="block top-toc"><li><a href="#example" title="Example">Example</a></li></ul></section><div id="rustdoc-modnav"><h2><a href="index.html">In cosmic::<wbr>iced</a></h2></div></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><div class="width-limiter"><section id="main-content" class="content"><div class="main-heading"><div class="rustdoc-breadcrumbs"><a href="../index.html">cosmic</a>::<wbr><a href="index.html">iced</a></div><h1>Function <span class="fn">application</span>&nbsp;<button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"></span></div><pre class="rust item-decl"><code>pub fn application&lt;State, Message, Theme, Renderer&gt;(
+    boot: impl <a class="trait" href="application/trait.BootFn.html" title="trait cosmic::iced::application::BootFn">BootFn</a>&lt;State, Message&gt;,
+    update: impl <a class="trait" href="application/trait.UpdateFn.html" title="trait cosmic::iced::application::UpdateFn">UpdateFn</a>&lt;State, Message&gt;,
+    view: impl for&lt;'a&gt; <a class="trait" href="application/trait.ViewFn.html" title="trait cosmic::iced::application::ViewFn">ViewFn</a>&lt;'a, State, Message, Theme, Renderer&gt;,
+) -&gt; <a class="struct" href="struct.Application.html" title="struct cosmic::iced::Application">Application</a>&lt;impl <a class="trait" href="trait.Program.html" title="trait cosmic::iced::Program">Program</a>&lt;State = State, Message = Message, Theme = Theme&gt;&gt;<div class="where">where
+    State: 'static,
+    Message: <a class="trait" href="https://doc.rust-lang.org/1.94.1/core/marker/trait.Send.html" title="trait core::marker::Send">Send</a> + 'static,
+    Theme: <a class="trait" href="../iced_core/theme/trait.Base.html" title="trait cosmic::iced_core::theme::Base">Base</a>,
+    Renderer: <a class="trait" href="../iced_winit/program/trait.Renderer.html" title="trait cosmic::iced_winit::program::Renderer">Renderer</a>,</div></code></pre><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Creates an iced <a href="struct.Application.html" title="struct cosmic::iced::Application"><code>Application</code></a> given its boot, update, and view logic.</p>
+<h2 id="example"><a class="doc-anchor" href="#example">§</a>Example</h2>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>iced::widget::{button, column, text, Column};
+
+<span class="kw">pub fn </span>main() -&gt; iced::Result {
+    iced::application(u64::default, update, view).run()
+}
+
+<span class="attr">#[derive(Debug, Clone)]
+</span><span class="kw">enum </span>Message {
+    Increment,
+}
+
+<span class="kw">fn </span>update(value: <span class="kw-2">&amp;mut </span>u64, message: Message) {
+    <span class="kw">match </span>message {
+        Message::Increment =&gt; <span class="kw-2">*</span>value += <span class="number">1</span>,
+    }
+}
+
+<span class="kw">fn </span>view(value: <span class="kw-2">&amp;</span>u64) -&gt; Column&lt;Message&gt; {
+    <span class="macro">column!</span>[
+        text(value),
+        button(<span class="string">"+"</span>).on_press(Message::Increment),
+    ]
+}</code></pre></div></div></details></section></div></main></body></html>

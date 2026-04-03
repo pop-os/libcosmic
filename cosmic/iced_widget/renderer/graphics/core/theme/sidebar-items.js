@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["Mode","Theme"],"fn":["default"],"mod":["palette"],"struct":["Custom","Palette","Style"],"trait":["Base"]};

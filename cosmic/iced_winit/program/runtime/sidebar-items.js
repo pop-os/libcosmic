@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["Action"],"fn":["default","exit"],"mod":["clipboard","dnd","font","image","keyboard","platform_specific","system","task","user_interface","widget","window"],"struct":["Appearance","Task","UserInterface"],"trait":["DefaultStyle","Window"]};

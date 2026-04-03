@@ -1,0 +1,211 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Winit is a cross-platform window creation and event loop management library."><title>cosmic::iced_winit::winit - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../../static.files/rustdoc-77263533.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="cosmic" data-themes="" data-resource-suffix="" data-rustdoc-version="1.94.1 (e408947bf 2026-03-25)" data-channel="1.94.1" data-search-js="search-9e2438ea.js" data-stringdex-js="stringdex-b897f86f.js" data-settings-js="settings-c38705f0.js" ><script src="../../../static.files/storage-e2aeef58.js"></script><script defer src="../../../crates.js"></script><script defer src="../../../static.files/main-7bab91a1.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-ffcac47a.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-eab170b8.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-044be391.svg"></head><body class="rustdoc mod crate"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><rustdoc-topbar><h2><a href="#">Crate winit</a></h2></rustdoc-topbar><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../../../cosmic/index.html">cosmic</a><span class="version">1.0.0</span></h2></div><div class="sidebar-elems"><ul class="block"><li><a id="all-types" href="all.html">All Items</a></li></ul><section id="rustdoc-toc"><h3><a href="#">Sections</a></h3><ul class="block top-toc"><li><a href="#building-windows" title="Building windows">Building windows</a></li><li><a href="#event-handling" title="Event handling">Event handling</a></li><li><a href="#drawing-on-the-window" title="Drawing on the window">Drawing on the window</a></li><li><a href="#coordinate-systems" title="Coordinate systems">Coordinate systems</a></li><li><a href="#ui-scaling" title="UI scaling">UI scaling</a></li><li><a href="#cargo-features" title="Cargo Features">Cargo Features</a></li><li><a href="#platformarchitecture-support" title="Platform/Architecture Support">Platform/Architecture Support</a><ul><li><a href="#tier-1-targets" title="Tier 1 Targets">Tier 1 Targets</a></li><li><a href="#tier-2-targets" title="Tier 2 Targets">Tier 2 Targets</a></li></ul></li></ul><h3><a href="#modules">Crate Items</a></h3><ul class="block"><li><a href="#modules" title="Modules">Modules</a></li></ul></section><div id="rustdoc-modnav"><h2><a href="../index.html">In cosmic::<wbr>iced_<wbr>winit</a></h2></div></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><div class="width-limiter"><section id="main-content" class="content"><div class="main-heading"><div class="rustdoc-breadcrumbs"><a href="../../index.html">cosmic</a>::<wbr><a href="../index.html">iced_winit</a></div><h1>Crate <span>winit</span>&nbsp;<button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"></span></div><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Winit is a cross-platform window creation and event loop management library.</p>
+<h2 id="building-windows"><a class="doc-anchor" href="#building-windows">§</a>Building windows</h2>
+<p>Before you can create a <a href="window/trait.Window.html" title="trait cosmic::iced_winit::winit::window::Window"><code>Window</code></a>, you first need to build an <a href="event_loop/struct.EventLoop.html" title="struct cosmic::iced_winit::winit::event_loop::EventLoop"><code>EventLoop</code></a>. This is done with
+the <a href="event_loop/struct.EventLoop.html#method.new" title="associated function cosmic::iced_winit::winit::event_loop::EventLoop::new"><code>EventLoop::new()</code></a> function.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>winit::event_loop::EventLoop;
+
+<span class="kw">fn </span>main() {
+    <span class="kw">let </span>event_loop = EventLoop::new().unwrap();
+    <span class="comment">// ...
+</span>}</code></pre></div>
+<p>Then you create a <a href="window/trait.Window.html" title="trait cosmic::iced_winit::winit::window::Window"><code>Window</code></a> with <a href="event_loop/trait.ActiveEventLoop.html#tymethod.create_window" title="method cosmic::iced_winit::winit::event_loop::ActiveEventLoop::create_window"><code>create_window</code></a>.</p>
+<h2 id="event-handling"><a class="doc-anchor" href="#event-handling">§</a>Event handling</h2>
+<p>Once a <a href="window/trait.Window.html" title="trait cosmic::iced_winit::winit::window::Window"><code>Window</code></a> has been created, it will generate different <em>events</em>. A <a href="window/trait.Window.html" title="trait cosmic::iced_winit::winit::window::Window"><code>Window</code></a> object can
+generate <a href="event/enum.WindowEvent.html" title="enum cosmic::iced_winit::winit::event::WindowEvent"><code>WindowEvent</code></a>s when certain input events occur, such as a cursor moving over the
+window or a key getting pressed while the window is focused. Devices can generate
+<a href="event/enum.DeviceEvent.html" title="enum cosmic::iced_winit::winit::event::DeviceEvent"><code>DeviceEvent</code></a>s, which contain unfiltered event data that isn’t specific to a certain window.
+Some user activity, like mouse movement, can generate both a <a href="event/enum.WindowEvent.html" title="enum cosmic::iced_winit::winit::event::WindowEvent"><code>WindowEvent</code></a> <em>and</em> a
+<a href="event/enum.DeviceEvent.html" title="enum cosmic::iced_winit::winit::event::DeviceEvent"><code>DeviceEvent</code></a>.</p>
+<p>You can retrieve events by calling <a href="event_loop/struct.EventLoop.html#method.run_app" title="method cosmic::iced_winit::winit::event_loop::EventLoop::run_app"><code>EventLoop::run_app()</code></a>. This function will dispatch events
+for every <a href="window/trait.Window.html" title="trait cosmic::iced_winit::winit::window::Window"><code>Window</code></a> that was created with that particular <a href="event_loop/struct.EventLoop.html" title="struct cosmic::iced_winit::winit::event_loop::EventLoop"><code>EventLoop</code></a>.</p>
+<p>Winit no longer uses a <code>EventLoop::poll_events() -&gt; impl Iterator&lt;Event&gt;</code>-based event loop
+model, since that can’t be implemented properly on some platforms (e.g Web, iOS) and works
+poorly on most other platforms. However, this model can be re-implemented to an extent with
+<a href="event_loop/pump_events/trait.EventLoopExtPumpEvents.html#tymethod.pump_app_events" title="method cosmic::iced_winit::winit::event_loop::pump_events::EventLoopExtPumpEvents::pump_app_events"><code>EventLoopExtPumpEvents::pump_app_events()</code></a> <sup id="fnref1"><a href="#fn1">1</a></sup>. See that method’s documentation for more
+reasons about why it’s discouraged beyond compatibility reasons.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>winit::application::ApplicationHandler;
+<span class="kw">use </span>winit::event::WindowEvent;
+<span class="kw">use </span>winit::event_loop::{ActiveEventLoop, ControlFlow, EventLoop};
+<span class="kw">use </span>winit::window::{Window, WindowId, WindowAttributes};
+
+<span class="attr">#[derive(Default)]
+</span><span class="kw">struct </span>App {
+    window: <span class="prelude-ty">Option</span>&lt;Box&lt;<span class="kw">dyn </span>Window&gt;&gt;,
+}
+
+<span class="kw">impl </span>ApplicationHandler <span class="kw">for </span>App {
+    <span class="kw">fn </span>can_create_surfaces(<span class="kw-2">&amp;mut </span><span class="self">self</span>, event_loop: <span class="kw-2">&amp;</span><span class="kw">dyn </span>ActiveEventLoop) {
+        <span class="comment">// The event loop has launched, and we can initialize our UI state.
+
+        // Create a simple window with default attributes.
+        </span><span class="self">self</span>.window = <span class="prelude-val">Some</span>(event_loop.create_window(WindowAttributes::default()).unwrap());
+    }
+
+    <span class="kw">fn </span>window_event(
+        <span class="kw-2">&amp;mut </span><span class="self">self</span>,
+        event_loop: <span class="kw-2">&amp;</span><span class="kw">dyn </span>ActiveEventLoop,
+        id: WindowId,
+        event: WindowEvent,
+    ) {
+        <span class="comment">// Called by `EventLoop::run_app` when a new event happens on the window.
+        </span><span class="kw">match </span>event {
+            WindowEvent::CloseRequested =&gt; {
+                <span class="macro">println!</span>(<span class="string">"The close button was pressed; stopping"</span>);
+                event_loop.exit();
+            },
+            WindowEvent::RedrawRequested =&gt; {
+                <span class="comment">// Redraw the application.
+                //
+                // It's preferable for applications that do not render continuously to render in
+                // this event rather than in AboutToWait, since rendering in here allows
+                // the program to gracefully handle redraws requested by the OS.
+
+                // Draw.
+
+                // Queue a RedrawRequested event.
+                //
+                // You only need to call this if you've determined that you need to redraw in
+                // applications which do not always need to. Applications that redraw continuously
+                // can render here instead.
+                </span><span class="self">self</span>.window.as_ref().unwrap().request_redraw();
+            },
+            <span class="kw">_ </span>=&gt; (),
+        }
+    }
+}
+
+<span class="kw">fn </span>main() -&gt; <span class="prelude-ty">Result</span>&lt;(), Box&lt;<span class="kw">dyn </span>std::error::Error&gt;&gt; {
+    <span class="comment">// Create a new event loop.
+    </span><span class="kw">let </span>event_loop = EventLoop::new()<span class="question-mark">?</span>;
+
+    <span class="comment">// Configure settings before launching.
+
+    // ControlFlow::Poll continuously runs the event loop, even if the OS hasn't
+    // dispatched any events. This is ideal for games and similar applications.
+    </span>event_loop.set_control_flow(ControlFlow::Poll);
+
+    <span class="comment">// ControlFlow::Wait pauses the event loop if no events are available to process.
+    // This is ideal for non-game applications that only update in response to user
+    // input, and uses significantly less power/CPU time than ControlFlow::Poll.
+    </span>event_loop.set_control_flow(ControlFlow::Wait);
+
+    <span class="comment">// Launch and begin running the event loop.
+    </span>event_loop.run_app(App::default())<span class="question-mark">?</span>;
+
+    <span class="prelude-val">Ok</span>(())
+}</code></pre></div>
+<p><a href="event/enum.WindowEvent.html" title="enum cosmic::iced_winit::winit::event::WindowEvent"><code>WindowEvent</code></a> has a <a href="window/struct.WindowId.html" title="struct cosmic::iced_winit::winit::window::WindowId"><code>WindowId</code></a> member. In multi-window environments, it should be
+compared to the value returned by <a href="window/trait.Window.html#tymethod.id" title="method cosmic::iced_winit::winit::window::Window::id"><code>Window::id()</code></a> to determine which <a href="window/trait.Window.html" title="trait cosmic::iced_winit::winit::window::Window"><code>Window</code></a>
+dispatched the event.</p>
+<h2 id="drawing-on-the-window"><a class="doc-anchor" href="#drawing-on-the-window">§</a>Drawing on the window</h2>
+<p>Winit doesn’t directly provide any methods for drawing on a <a href="window/trait.Window.html" title="trait cosmic::iced_winit::winit::window::Window"><code>Window</code></a>. However, it allows you
+to retrieve the raw handle of the window and display (see the <a href="platform/index.html" title="mod cosmic::iced_winit::winit::platform"><code>platform</code></a> module and/or the
+<a href="./window/struct.Window.html#method.raw_window_handle"><code>raw_window_handle</code></a> and <a href="./window/struct.Window.html#method.raw_display_handle"><code>raw_display_handle</code></a> methods), which in turn allows
+you to create an OpenGL/Vulkan/DirectX/Metal/etc. context that can be used to render graphics.</p>
+<p>Note that many platforms will display garbage data in the window’s client area if the
+application doesn’t render anything to the window by the time the desktop compositor is ready to
+display the window to the user. If you notice this happening, you should create the window with
+<a href="window/struct.WindowAttributes.html#method.with_visible" title="method cosmic::iced_winit::winit::window::WindowAttributes::with_visible"><code>visible</code> set to <code>false</code></a> and explicitly make
+the window visible only once you’re ready to render into it.</p>
+<p>There is another important concept you need to know about when drawing: the “safe area”. This
+can be accessed with <a href="window/trait.Window.html#tymethod.safe_area" title="method cosmic::iced_winit::winit::window::Window::safe_area"><code>Window::safe_area</code></a>, and describes a rectangle in the surface that is not
+obscured by notches, the status bar, and so on. You should be drawing your background and
+non-important content on the entire surface, but restrict important content (such as
+interactable UIs, text, etc.) to only being drawn inside the safe area.</p>
+<h2 id="coordinate-systems"><a class="doc-anchor" href="#coordinate-systems">§</a>Coordinate systems</h2>
+<p>Windowing systems use many different coordinate systems, and this is reflected in Winit as well;
+there are “desktop coordinates”, which is the coordinates of a window or monitor relative to the
+desktop at large, “window coordinates” which is the coordinates of the surface, relative to the
+window, and finally “surface coordinates”, which is the coordinates relative to the drawn
+surface. All of these coordinates are relative to the top-left corner of their respective
+origin.</p>
+<p>Most of the functionality in Winit works with surface coordinates, so usually you only need to
+concern yourself with those. In case you need to convert to some other coordinate system, Winit
+provides <a href="window/trait.Window.html#tymethod.surface_position" title="method cosmic::iced_winit::winit::window::Window::surface_position"><code>Window::surface_position</code></a> and <a href="window/trait.Window.html#tymethod.surface_size" title="method cosmic::iced_winit::winit::window::Window::surface_size"><code>Window::surface_size</code></a> to describe the surface’s
+location in window coordinates, and Winit provides <a href="window/trait.Window.html#tymethod.outer_position" title="method cosmic::iced_winit::winit::window::Window::outer_position"><code>Window::outer_position</code></a> and
+<a href="window/trait.Window.html#tymethod.outer_size" title="method cosmic::iced_winit::winit::window::Window::outer_size"><code>Window::outer_size</code></a> to describe the window’s location in desktop coordinates. Using these
+methods, you should be able to convert a position in one coordinate system to another.</p>
+<p>An overview of how these four methods fit together can be seen in the image below:</p>
+<p><svg xmlns="http://www.w3.org/2000/svg" width="1000" height="500" viewBox="-0.5 -0.5 1000 500" class="ge-export-svg-auto"><defs><style><![CDATA[@media (prefers-color-scheme:dark){svg.ge-export-svg-auto svg:not(mjx-container>svg),svg.ge-export-svg-auto:not(mjx-container>svg){filter:invert(100%) hue-rotate(180deg)}}]]></style></defs><g data-cell-id="0"><g data-cell-id="1"><path fill="#e8e8e8" stroke="#666" pointer-events="all" d="M200 80h480v360H200z" data-cell-id="cRYnzpdCW-J0f_YpP3mc-1"/><rect x="260" y="340" width="360" height="40" rx="6" ry="6" fill="#d5e8d4" stroke="#666" pointer-events="all" data-cell-id="cRYnzpdCW-J0f_YpP3mc-4"/><rect x="260" y="140" width="360" height="80" rx="12" ry="12" fill="#dae8fc" stroke="#666" pointer-events="all" data-cell-id="cRYnzpdCW-J0f_YpP3mc-2"/><path fill="#dbdbdb" stroke="#666" pointer-events="all" d="M200 60h480v20H200z" data-cell-id="cRYnzpdCW-J0f_YpP3mc-3"/><path fill="#d5e8d4" pointer-events="all" d="M260 180h360v180H260z" data-cell-id="cRYnzpdCW-J0f_YpP3mc-5"/><path d="M260 360V180" fill="none" stroke="#666" stroke-miterlimit="10" pointer-events="stroke" data-cell-id="cRYnzpdCW-J0f_YpP3mc-6"/><path d="M620 360V180" fill="none" stroke="#666" stroke-miterlimit="10" pointer-events="stroke" data-cell-id="cRYnzpdCW-J0f_YpP3mc-7"/><path d="M260 180h360" fill="none" stroke="#666" stroke-miterlimit="10" pointer-events="stroke" data-cell-id="cRYnzpdCW-J0f_YpP3mc-8"/><g data-cell-id="cRYnzpdCW-J0f_YpP3mc-9"><path d="m201.8 62.4 50.79 67.72" fill="none" stroke="#6c8ebf" stroke-width="3" stroke-miterlimit="10" stroke-dasharray="9 9" pointer-events="stroke"/><circle cx="200" cy="60" fill="#6c8ebf" stroke="#6c8ebf" stroke-width="3" pointer-events="all" r="3"/><path d="m257.99 137.32-7.8-5.4 4.8-3.6Z" fill="#6c8ebf" stroke="#6c8ebf" stroke-width="3" stroke-miterlimit="10" pointer-events="all"/><switch transform="translate(-.5 -.5)"><foreignObject style="overflow:visible;text-align:left" pointer-events="none" width="101%" height="101%" requiredFeatures="http://www.w3.org/TR/SVG11/feature#Extensibility"><div xmlns="http://www.w3.org/1999/xhtml" style="display:flex;align-items:unsafe center;justify-content:unsafe flex-end;width:1px;height:1px;padding-top:100px;margin-left:185px"><div style="box-sizing:border-box;font-size:0;text-align:right" data-drawio-colors="color: #6C8EBF;"><div style="display:inline-block;font-size:20px;font-family:&quot;monospace&quot;;color:#6c8ebf;line-height:1.2;pointer-events:all;white-space:nowrap"><font>outer_position</font></div></div></div></foreignObject><text x="185" y="106" fill="#6C8EBF" font-family="&quot;monospace&quot;" font-size="20" text-anchor="end">outer…</text></switch></g><g data-cell-id="cRYnzpdCW-J0f_YpP3mc-10"><path d="M620 140h240v240H620" fill="none" stroke="#6c8ebf" stroke-width="3" stroke-miterlimit="10" stroke-dasharray="9 9" pointer-events="stroke"/><switch transform="translate(-.5 -.5)"><foreignObject style="overflow:visible;text-align:left" pointer-events="none" width="101%" height="101%" requiredFeatures="http://www.w3.org/TR/SVG11/feature#Extensibility"><div xmlns="http://www.w3.org/1999/xhtml" style="display:flex;align-items:unsafe center;justify-content:unsafe flex-start;width:1px;height:1px;padding-top:260px;margin-left:875px"><div style="box-sizing:border-box;font-size:0;text-align:left" data-drawio-colors="color: #6C8EBF;"><div style="display:inline-block;font-size:20px;font-family:&quot;monospace&quot;;color:#6c8ebf;line-height:1.2;pointer-events:all;white-space:nowrap"><font>outer_size</font></div></div></div></foreignObject><text x="875" y="266" fill="#6C8EBF" font-family="&quot;monospace&quot;" font-size="20">outer…</text></switch></g><g data-cell-id="cRYnzpdCW-J0f_YpP3mc-11"><path d="M600 180h100v200h-80" fill="none" stroke="#82b366" stroke-width="3" stroke-miterlimit="10" stroke-dasharray="9 9" pointer-events="stroke"/><switch transform="translate(-.5 -.5)"><foreignObject style="overflow:visible;text-align:left" pointer-events="none" width="101%" height="101%" requiredFeatures="http://www.w3.org/TR/SVG11/feature#Extensibility"><div xmlns="http://www.w3.org/1999/xhtml" style="display:flex;align-items:unsafe center;justify-content:unsafe flex-start;width:1px;height:1px;padding-top:280px;margin-left:715px"><div style="box-sizing:border-box;font-size:0;text-align:left" data-drawio-colors="color: #82B366;"><div style="display:inline-block;font-size:20px;font-family:&quot;monospace&quot;;color:#82b366;line-height:1.2;pointer-events:all;white-space:nowrap"><font>surface_size</font></div></div></div></foreignObject><text x="715" y="286" fill="#82B366" font-family="&quot;monospace&quot;" font-size="20">surfa…</text></switch></g><g data-cell-id="cRYnzpdCW-J0f_YpP3mc-12"><path d="M258.66 142.68Q250 160 254.48 168.95" fill="none" stroke="#82b366" stroke-width="3" stroke-miterlimit="10" stroke-dasharray="9 9" pointer-events="stroke"/><circle cx="260" cy="140" fill="#82b366" stroke="#82b366" stroke-width="3" pointer-events="all" r="3"/><path d="m258.5 177-6.71-6.71 5.37-2.68Z" fill="#82b366" stroke="#82b366" stroke-width="3" stroke-miterlimit="10" pointer-events="all"/><switch transform="translate(-.5 -.5)"><foreignObject style="overflow:visible;text-align:left" pointer-events="none" width="101%" height="101%" requiredFeatures="http://www.w3.org/TR/SVG11/feature#Extensibility"><div xmlns="http://www.w3.org/1999/xhtml" style="display:flex;align-items:unsafe center;justify-content:unsafe flex-end;width:1px;height:1px;padding-top:160px;margin-left:185px"><div style="box-sizing:border-box;font-size:0;text-align:right" data-drawio-colors="color: #82B366;"><div style="display:inline-block;font-size:20px;font-family:&quot;monospace&quot;;color:#82b366;line-height:1.2;pointer-events:all;white-space:nowrap"><font>surface_position</font></div></div></div></foreignObject><text x="185" y="166" fill="#82B366" font-family="&quot;monospace&quot;" font-size="20" text-anchor="end">surfa…</text></switch></g></g></g></svg></p>
+<p>On mobile, the situation is usually a bit different; because of the smaller screen space,
+windows usually fill the whole screen at a time, and as such there is <em>rarely</em> a difference
+between these three coordinate systems, although you should still strive to handle this, as
+they’re still relevant in more niche area such as Mac Catalyst, or multi-tasking on tablets.</p>
+<p>This is illustrated in the image below, along with the safe area since it’s often relevant on
+mobile.</p>
+<p><svg xmlns="http://www.w3.org/2000/svg" width="720" height="720" viewBox="-0.5 -0.5 720 720" class="ge-export-svg-auto"><defs><style><![CDATA[@media (prefers-color-scheme:dark){svg.ge-export-svg-auto svg:not(mjx-container>svg),svg.ge-export-svg-auto:not(mjx-container>svg){filter:invert(100%) hue-rotate(180deg)}}]]></style></defs><g data-cell-id="0"><g data-cell-id="1"><rect x="200" y="40" width="320" height="640" rx="48" ry="48" fill="#e8e8e8" stroke="#666" pointer-events="all" data-cell-id="RxwCrVmIsQwV7z5iJ9nY-1"/><rect x="210" y="50" width="300" height="620" rx="45" ry="45" fill="#d5e8d4" stroke="#82b366" pointer-events="all" data-cell-id="RxwCrVmIsQwV7z5iJ9nY-2"/><path fill="#ffe6cc" stroke="#d79b00" pointer-events="all" d="M210 90h300v540H210z" data-cell-id="RxwCrVmIsQwV7z5iJ9nY-4"/><rect x="290" y="640" width="140" height="10" rx="1.5" ry="1.5" fill="#dbdbdb" stroke="#666" pointer-events="all" data-cell-id="RxwCrVmIsQwV7z5iJ9nY-20"/><rect x="300" y="50" width="120" height="30" rx="4.5" ry="4.5" fill="#dbdbdb" stroke="#666" pointer-events="all" data-cell-id="RxwCrVmIsQwV7z5iJ9nY-3"/><g data-cell-id="RxwCrVmIsQwV7z5iJ9nY-12"><path d="M510 50h50v620h-50" fill="none" stroke="#82b366" stroke-width="3" stroke-miterlimit="10" stroke-dasharray="9 9" pointer-events="stroke"/><switch transform="translate(-.5 -.5)"><foreignObject style="overflow:visible;text-align:left" pointer-events="none" width="100%" height="100%" requiredFeatures="http://www.w3.org/TR/SVG11/feature#Extensibility"><div xmlns="http://www.w3.org/1999/xhtml" style="display:flex;align-items:unsafe center;justify-content:unsafe flex-start;width:1px;height:1px;padding-top:360px;margin-left:575px"><div style="box-sizing:border-box;font-size:0;text-align:left" data-drawio-colors="color: #82B366;"><div style="display:inline-block;font-size:20px;font-family:&quot;monospace&quot;;color:#82b366;line-height:1.2;pointer-events:all;white-space:nowrap"><font>surface_size</font></div></div></div></foreignObject><text x="575" y="366" fill="#82B366" font-family="&quot;monospace&quot;" font-size="20">surfa…</text></switch></g><g data-cell-id="NrHAzeOh65jb3hkBOxW9-1"><path d="M180 62.35v15.3" fill="none" stroke="#d79b00" stroke-width="3" stroke-miterlimit="10" pointer-events="stroke"/><path d="m180 53.35 3 9h-6ZM180 86.65l-3-9h6Z" fill="#d79b00" stroke="#d79b00" stroke-width="3" stroke-miterlimit="10" pointer-events="all"/><switch transform="translate(-.5 -.5)"><foreignObject style="overflow:visible;text-align:left" pointer-events="none" width="100%" height="100%" requiredFeatures="http://www.w3.org/TR/SVG11/feature#Extensibility"><div xmlns="http://www.w3.org/1999/xhtml" style="display:flex;align-items:unsafe center;justify-content:unsafe flex-end;width:1px;height:1px;padding-top:70px;margin-left:165px"><div style="box-sizing:border-box;font-size:0;text-align:right" data-drawio-colors="color: #D79B00;"><div style="display:inline-block;font-size:20px;font-family:&quot;monospace&quot;;color:#d79b00;line-height:1.2;pointer-events:all;white-space:nowrap"><div>safe_area.top</div></div></div></div></foreignObject><text x="165" y="76" fill="#D79B00" font-family="&quot;monospace&quot;" font-size="20" text-anchor="end">safe_…</text></switch></g><g data-cell-id="NrHAzeOh65jb3hkBOxW9-5"><path d="M180 657.65v-15.3" fill="none" stroke="#d79b00" stroke-width="3" stroke-miterlimit="10" pointer-events="stroke"/><path d="m180 666.65-3-9h6ZM180 633.35l3 9h-6Z" fill="#d79b00" stroke="#d79b00" stroke-width="3" stroke-miterlimit="10" pointer-events="all"/><switch transform="translate(-.5 -.5)"><foreignObject style="overflow:visible;text-align:left" pointer-events="none" width="100%" height="100%" requiredFeatures="http://www.w3.org/TR/SVG11/feature#Extensibility"><div xmlns="http://www.w3.org/1999/xhtml" style="display:flex;align-items:unsafe center;justify-content:unsafe flex-end;width:1px;height:1px;padding-top:650px;margin-left:165px"><div style="box-sizing:border-box;font-size:0;text-align:right" data-drawio-colors="color: #D79B00;"><div style="display:inline-block;font-size:20px;font-family:&quot;monospace&quot;;color:#d79b00;line-height:1.2;pointer-events:all;white-space:nowrap"><div>safe_area.bottom</div></div></div></div></foreignObject><text x="165" y="656" fill="#D79B00" font-family="&quot;monospace&quot;" font-size="20" text-anchor="end">safe_…</text></switch></g></g></g></svg></p>
+<h2 id="ui-scaling"><a class="doc-anchor" href="#ui-scaling">§</a>UI scaling</h2>
+<p>UI scaling is important, go read the docs for the <a href="dpi/index.html" title="mod cosmic::iced_winit::winit::dpi"><code>dpi</code></a> crate for an
+introduction.</p>
+<p>All of Winit’s functions return physical types, but can take either logical or physical
+coordinates as input, allowing you to use the most convenient coordinate system for your
+particular application.</p>
+<p>Winit will dispatch a <a href="event/enum.WindowEvent.html#variant.ScaleFactorChanged" title="variant cosmic::iced_winit::winit::event::WindowEvent::ScaleFactorChanged"><code>ScaleFactorChanged</code></a> event whenever a window’s scale factor has changed.
+This can happen if the user drags their window from a standard-resolution monitor to a high-DPI
+monitor or if the user changes their DPI settings. This allows you to rescale your application’s
+UI elements and adjust how the platform changes the window’s size to reflect the new scale
+factor. If a window hasn’t received a <a href="event/enum.WindowEvent.html#variant.ScaleFactorChanged" title="variant cosmic::iced_winit::winit::event::WindowEvent::ScaleFactorChanged"><code>ScaleFactorChanged</code></a> event, its scale factor
+can be found by calling <a href="window/trait.Window.html#tymethod.scale_factor" title="method cosmic::iced_winit::winit::window::Window::scale_factor"><code>window.scale_factor()</code></a>.</p>
+<h2 id="cargo-features"><a class="doc-anchor" href="#cargo-features">§</a>Cargo Features</h2>
+<p>Winit provides the following Cargo features:</p>
+<ul>
+<li><code>x11</code> (enabled by default): On Unix platforms, enables the X11 backend.</li>
+<li><code>wayland</code> (enabled by default): On Unix platforms, enables the Wayland backend.</li>
+<li><code>rwh_06</code>: Implement <code>raw-window-handle v0.6</code> traits.</li>
+<li><code>serde</code>: Enables serialization/deserialization of certain types with <a href="https://crates.io/crates/serde">Serde</a>.</li>
+<li><code>mint</code>: Enables mint (math interoperability standard types) conversions.</li>
+</ul>
+<p>See the <a href="platform/index.html" title="mod cosmic::iced_winit::winit::platform"><code>platform</code></a> module for documentation on platform-specific cargo
+features.</p>
+<h2 id="platformarchitecture-support"><a class="doc-anchor" href="#platformarchitecture-support">§</a>Platform/Architecture Support</h2>
+<p>Platform support on <code>winit</code> has two tiers: Tier 1 and Tier 2.</p>
+<ul>
+<li>Tier 1 is <strong>guaranteed to work</strong>. Targets in this tier are actively tested both in CI and by
+maintainers.</li>
+<li>Tier 2 is <strong>guaranteed to build</strong>. Code compilation is tested in CI, but deeper testing is not
+done.</li>
+</ul>
+<p>Please open an issue if you would like to add a Tier 2 target, or if you would
+like a Tier 2 target moved to Tier 1.</p>
+<h3 id="tier-1-targets"><a class="doc-anchor" href="#tier-1-targets">§</a>Tier 1 Targets</h3><div><table><thead><tr><th>Target Name</th><th>Target Triple</th><th>APIs</th></tr></thead><tbody>
+<tr><td>32-Bit x86 Windows with MSVC</td><td><code>i686-pc-windows-msvc</code></td><td>Win32</td></tr>
+<tr><td>64-Bit x86 Windows with MSVC</td><td><code>x86_64-pc-windows-msvc</code></td><td>Win32</td></tr>
+<tr><td>32-Bit x86 Windows with glibc</td><td><code>i686-pc-windows-gnu</code></td><td>Win32</td></tr>
+<tr><td>64-Bit x86 Windows with glibc</td><td><code>x86_64-pc-windows-gnu</code></td><td>Win32</td></tr>
+<tr><td>32-Bit x86 Linux with glibc</td><td><code>i686-unknown-linux-gnu</code></td><td>X11, Wayland</td></tr>
+<tr><td>64-Bit x86 Linux with glibc</td><td><code>x86_64-unknown-linux-gnu</code></td><td>X11, Wayland</td></tr>
+<tr><td>64-Bit ARM Android</td><td><code>aarch64-linux-android</code></td><td>Android</td></tr>
+<tr><td>64-Bit x86 Redox OS</td><td><code>x86_64-unknown-redox</code></td><td>Orbital</td></tr>
+<tr><td>32-Bit x86 Redox OS</td><td><code>i686-unknown-redox</code></td><td>Orbital</td></tr>
+<tr><td>64-Bit ARM Redox OS</td><td><code>aarch64-unknown-redox</code></td><td>Orbital</td></tr>
+<tr><td>64-bit x64 macOS</td><td><code>x86_64-apple-darwin</code></td><td>AppKit</td></tr>
+<tr><td>64-bit ARM macOS</td><td><code>aarch64-apple-darwin</code></td><td>AppKit</td></tr>
+<tr><td>32-bit Wasm Web browser</td><td><code>wasm32-unknown-unknown</code></td><td><code>wasm-bindgen</code></td></tr>
+</tbody></table>
+</div><h3 id="tier-2-targets"><a class="doc-anchor" href="#tier-2-targets">§</a>Tier 2 Targets</h3><div><table><thead><tr><th>Target Name</th><th>Target Triple</th><th>APIs</th></tr></thead><tbody>
+<tr><td>64-Bit ARM Windows with MSVC</td><td><code>aarch64-pc-windows-msvc</code></td><td>Win32</td></tr>
+<tr><td>32-Bit x86 Windows 7 with MSVC</td><td><code>i686-win7-windows-msvc</code></td><td>Win32</td></tr>
+<tr><td>64-Bit x86 Windows 7 with MSVC</td><td><code>x86_64-win7-windows-msvc</code></td><td>Win32</td></tr>
+<tr><td>64-bit x86 Linux with Musl</td><td><code>x86_64-unknown-linux-musl</code></td><td>X11, Wayland</td></tr>
+<tr><td>64-bit x86 Linux with 32-bit glibc</td><td><code>x86_64-unknown-linux-gnux32</code></td><td>X11, Wayland</td></tr>
+<tr><td>64-bit x86 Android</td><td><code>x86_64-linux-android</code></td><td>Android</td></tr>
+<tr><td>64-bit x64 iOS</td><td><code>x86_64-apple-ios</code></td><td>UIKit</td></tr>
+<tr><td>64-bit ARM iOS</td><td><code>aarch64-apple-ios</code></td><td>UIKit</td></tr>
+<tr><td>64-bit ARM Mac Catalyst</td><td><code>aarch64-apple-ios-macabi</code></td><td>UIKit</td></tr>
+<tr><td>32-bit x86 Android</td><td><code>i686-linux-android</code></td><td>Android</td></tr>
+<tr><td>64-bit x86 FreeBSD</td><td><code>x86_64-unknown-freebsd</code></td><td>X11, Wayland</td></tr>
+<tr><td>64-bit x86 NetBSD</td><td><code>x86_64-unknown-netbsd</code></td><td>X11</td></tr>
+<tr><td>32-bit x86 Linux with Musl</td><td><code>i686-unknown-linux-musl</code></td><td>X11, Wayland</td></tr>
+<tr><td>64-bit RISC-V Linux with glibc</td><td><code>riscv64gc-unknown-linux-gnu</code></td><td>X11, Wayland</td></tr>
+<tr><td>64-bit ARM Linux with glibc</td><td><code>aarch64-unknown-linux-gnu</code></td><td>X11, Wayland</td></tr>
+<tr><td>64-bit ARM Linux with Musl</td><td><code>aarch64-unknown-linux-musl</code></td><td>X11, Wayland</td></tr>
+<tr><td>64-bit PowerPC Linux with glibc</td><td><code>powerpc64le-unknown-linux-gnu</code></td><td>X11, Wayland</td></tr>
+<tr><td>32-Bit ARM Linux with glibc</td><td><code>armv5te-unknown-linux-gnueabi</code></td><td>X11, Wayland</td></tr>
+<tr><td>64-Bit Linux on IBM Supercomputers</td><td><code>s390x-unknown-linux-gnu</code></td><td>X11, Wayland</td></tr>
+<tr><td>32-bit ARM Android</td><td><code>arm-linux-androideabi</code></td><td>Android</td></tr>
+<tr><td>64-bit SPARC Linux with glibc</td><td><code>sparc64-unknown-linux-gnu</code></td><td>X11, Wayland</td></tr>
+</tbody></table>
+</div><div class="footnotes"><hr><ol><li id="fn1"><p><code>EventLoopExtPumpEvents::pump_app_events()</code> is only available on Windows, macOS, Android, X11 and Wayland.&nbsp;<a href="#fnref1">↩</a></p></li></ol></div></div></details><h2 id="modules" class="section-header">Modules<a href="#modules" class="anchor">§</a></h2><dl class="item-table"><dt><a class="mod" href="application/index.html" title="mod cosmic::iced_winit::winit::application">application</a></dt><dd>End user application handling.</dd><dt><a class="mod" href="cursor/index.html" title="mod cosmic::iced_winit::winit::cursor">cursor</a></dt><dt><a class="mod" href="dpi/index.html" title="mod cosmic::iced_winit::winit::dpi">dpi</a></dt><dd>DPI</dd><dt><a class="mod" href="error/index.html" title="mod cosmic::iced_winit::winit::error">error</a></dt><dt><a class="mod" href="event/index.html" title="mod cosmic::iced_winit::winit::event">event</a></dt><dd>The event enums and assorted supporting types.</dd><dt><a class="mod" href="event_loop/index.html" title="mod cosmic::iced_winit::winit::event_loop">event_<wbr>loop</a></dt><dd>The <a href="event_loop/struct.EventLoop.html" title="struct cosmic::iced_winit::winit::event_loop::EventLoop"><code>EventLoop</code></a> struct and assorted supporting types, including
+<a href="event_loop/enum.ControlFlow.html" title="enum cosmic::iced_winit::winit::event_loop::ControlFlow"><code>ControlFlow</code></a>.</dd><dt><a class="mod" href="icon/index.html" title="mod cosmic::iced_winit::winit::icon">icon</a></dt><dt><a class="mod" href="keyboard/index.html" title="mod cosmic::iced_winit::winit::keyboard">keyboard</a></dt><dd>Types related to the keyboard.</dd><dt><a class="mod" href="monitor/index.html" title="mod cosmic::iced_winit::winit::monitor">monitor</a></dt><dd>Types useful for interacting with a user’s monitors.</dd><dt><a class="mod" href="platform/index.html" title="mod cosmic::iced_winit::winit::platform">platform</a></dt><dd>Platform implementations</dd><dt><a class="mod" href="window/index.html" title="mod cosmic::iced_winit::winit::window">window</a></dt><dd>The <a href="window/trait.Window.html" title="trait cosmic::iced_winit::winit::window::Window"><code>Window</code></a> trait and associated types.</dd></dl></section></div></main></body></html>

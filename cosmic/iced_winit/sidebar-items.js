@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["Error","SurfaceIdWrapper"],"fn":["build_user_interfaces","run","user_force_quit"],"mod":["a11y","clipboard","conversion","debug","platform_specific","program","winit"],"struct":["Clipboard","PlatformSpecific","Proxy"],"type":["UserInterfaces"]};

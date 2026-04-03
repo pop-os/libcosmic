@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["BadIcon"],"struct":["Icon","RgbaIcon"],"trait":["IconProvider"]};

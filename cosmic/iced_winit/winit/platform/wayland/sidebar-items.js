@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"struct":["ActiveEventLoop","EventLoop","Window","WindowAttributesWayland","XdgSurfaceHandle"],"trait":["ActiveEventLoopExtWayland","EventLoopBuilderExtWayland","EventLoopExtWayland","HasXdgSurfaceHandle","WindowExtWayland"]};
