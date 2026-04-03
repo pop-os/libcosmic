@@ -302,7 +302,7 @@ where
         tree: &Tree,
         renderer: &mut crate::Renderer,
         theme: &crate::Theme,
-        _style: &iced_core::renderer::Style,
+        style: &iced_core::renderer::Style,
         layout: Layout<'_>,
         cursor: mouse::Cursor,
         viewport: &Rectangle,
@@ -311,6 +311,7 @@ where
         draw(
             renderer,
             theme,
+            style,
             layout,
             cursor,
             self.gap,
@@ -863,6 +864,7 @@ where
 pub fn draw<'a, S>(
     renderer: &mut crate::Renderer,
     theme: &crate::Theme,
+    renderer_style: &iced_core::renderer::Style,
     layout: Layout<'_>,
     cursor: mouse::Cursor,
     gap: f32,
@@ -928,7 +930,12 @@ pub fn draw<'a, S>(
             };
 
             bounds.x += 24.0;
-            icon::draw(renderer, handle, icon_bounds);
+            icon::draw_with_scale(
+                renderer,
+                handle,
+                icon_bounds,
+                renderer_style.scale_factor as f32,
+            );
         }
 
         text::Renderer::fill_text(

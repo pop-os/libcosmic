@@ -163,6 +163,7 @@ unicode-segmentation = "1.12"
 url = "2.5.8"
 zbus = { version = "5.14.0", default-features = false, optional = true }
 float-cmp = "0.10.0"
+fast_image_resize = { version = "5.5.0", features = ["image"] }
 
 # Enable DBus feature on Linux targets
 [target.'cfg(target_os = "linux")'.dependencies]

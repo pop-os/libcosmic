@@ -666,7 +666,7 @@ where
                 };
 
                 bounds.x += 24.0;
-                icon::draw(renderer, handle, icon_bounds);
+                icon::draw_with_scale(renderer, handle, icon_bounds, style.scale_factor as f32);
             }
 
             text::Renderer::fill_text(
