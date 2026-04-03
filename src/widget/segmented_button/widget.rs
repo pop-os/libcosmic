@@ -218,7 +218,7 @@ where
             maximum_button_width: u16::MAX,
             indent_spacing: 16,
             font_active: crate::font::semibold(),
-            font_hovered: crate::font::semibold(),
+            font_hovered: crate::font::default(),
             font_inactive: crate::font::default(),
             font_size: 14.0,
             height: Length::Shrink,
