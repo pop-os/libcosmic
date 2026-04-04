@@ -2,16 +2,19 @@
 // SPDX-License-Identifier: MPL-2.0
 
 use crate::Element;
+use crate::widget::list_column::IntoListItem;
 use crate::widget::{ListColumn, column, text};
 use std::borrow::Cow;
 
 /// A section within a settings view column.
-pub fn section<'a, Message: 'static>() -> Section<'a, Message> {
+pub fn section<'a, Message: Clone + 'static>() -> Section<'a, Message> {
     with_column(ListColumn::default())
 }
 
 /// A section with a pre-defined list column.
-pub fn with_column<Message: 'static>(children: ListColumn<'_, Message>) -> Section<'_, Message> {
+pub fn with_column<Message: Clone + 'static>(
+    children: ListColumn<'_, Message>,
+) -> Section<'_, Message> {
     Section {
         header: None,
         children,
@@ -24,9 +27,9 @@ pub struct Section<'a, Message> {
     children: ListColumn<'a, Message>,
 }
 
-impl<'a, Message: 'static> Section<'a, Message> {
+impl<'a, Message: Clone + 'static> Section<'a, Message> {
     /// Define an optional title for the section.
-    pub fn title(mut self, title: impl Into<Cow<'a, str>>) -> Self {
+    pub fn title(self, title: impl Into<Cow<'a, str>>) -> Self {
         self.header(text::heading(title.into()))
     }
 
@@ -38,8 +41,8 @@ impl<'a, Message: 'static> Section<'a, Message> {
 
     /// Add a child element to the section's list column.
     #[allow(clippy::should_implement_trait)]
-    pub fn add(mut self, item: impl Into<Element<'a, Message>>) -> Self {
-        self.children = self.children.add(item.into());
+    pub fn add(mut self, item: impl IntoListItem<'a, Message>) -> Self {
+        self.children = self.children.add(item);
         self
     }
 
@@ -61,7 +64,7 @@ impl<'a, Message: 'static> Section<'a, Message> {
     }
 }
 
-impl<'a, Message: 'static> From<Section<'a, Message>> for Element<'a, Message> {
+impl<'a, Message: Clone + 'static> From<Section<'a, Message>> for Element<'a, Message> {
     fn from(data: Section<'a, Message>) -> Self {
         column::with_capacity(2)
             .spacing(8)
