@@ -27,7 +27,7 @@ pub enum Button {
     IconVertical,
     Image,
     Link,
-    ListItem,
+    ListItem([f32; 4]),
     MenuFolder,
     MenuItem,
     MenuRoot,
@@ -148,9 +148,9 @@ pub fn appearance(
             appearance.text_color = Some(component.on.into());
             corner_radii = &cosmic.corner_radii.radius_s;
         }
-        Button::ListItem => {
-            corner_radii = &[0.0; 4];
-            let (background, text, icon) = color(&cosmic.background.component);
+        Button::ListItem(radii) => {
+            corner_radii = radii;
+            let (background, text, icon) = color(&theme.current_container().component);
 
             if selected {
                 appearance.background =
