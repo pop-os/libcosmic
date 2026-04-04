@@ -54,6 +54,22 @@ fn get_state_dir() -> Option<PathBuf> {
     dirs::state_dir()
 }
 
+/// Get the data directory, with Flatpak sandbox support.
+fn get_data_dir() -> Option<PathBuf> {
+    // Check if we're running in Flatpak
+    if env::var_os("FLATPAK_ID").is_some() {
+        // Try HOST_XDG_DATA_HOME first
+        if let Some(host_data) = env::var_os("HOST_XDG_DATA_HOME") {
+            return Some(PathBuf::from(host_data));
+        }
+        // Fallback: try to construct from HOME
+        if let Some(home) = env::var_os("HOME") {
+            return Some(PathBuf::from(home).join(".local").join("share"));
+        }
+    }
+    dirs::data_dir()
+}
+
 #[cfg(feature = "subscription")]
 mod subscription;
 #[cfg(feature = "subscription")]
@@ -258,6 +274,24 @@ impl Config {
         user_path.push("cosmic");
         user_path.push(path);
         // Create new state directory if not found.
+        fs::create_dir_all(&user_path)?;
+
+        Ok(Self {
+            system_path: None,
+            user_path: Some(user_path),
+        })
+    }
+
+    /// Get data for the given application name and config version.
+    pub fn new_data(name: &str, version: u64) -> Result<Self, Error> {
+        // Look for [name]/v[version]
+        let path = sanitize_name(name)?.join(format!("v{}", version));
+
+        // Get libcosmic user data directory
+        let mut user_path = get_data_dir().ok_or(Error::NoConfigDirectory)?;
+        user_path.push("cosmic");
+        user_path.push(path);
+        // Create new data directory if not found.
         fs::create_dir_all(&user_path)?;
 
         Ok(Self {
