@@ -13,6 +13,17 @@ pub fn list_column<'a, Message: 'static>() -> ListColumn<'a, Message> {
     ListColumn::default()
 }
 
+pub fn with_capacity<'a, Message: 'static>(capacity: usize) -> ListColumn<'a, Message> {
+    let cosmic_theme::Spacing {
+        space_xxs, space_m, ..
+    } = theme::spacing();
+
+    ListColumn {
+        list_item_padding: [space_xxs, space_m].into(),
+        children: Vec::with_capacity(capacity),
+    }
+}
+
 enum ListItem<'a, Message> {
     Element(Element<'a, Message>),
     Button {
@@ -29,14 +40,7 @@ pub struct ListColumn<'a, Message> {
 
 impl<Message: 'static> Default for ListColumn<'_, Message> {
     fn default() -> Self {
-        let cosmic_theme::Spacing {
-            space_xxs, space_m, ..
-        } = theme::spacing();
-
-        Self {
-            list_item_padding: [space_xxs, space_m].into(),
-            children: Vec::with_capacity(4),
-        }
+        with_capacity(4)
     }
 }
 
