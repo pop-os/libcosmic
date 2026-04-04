@@ -5,7 +5,7 @@ use std::borrow::Cow;
 
 use crate::{
     Element, Theme, theme,
-    widget::{FlexRow, Row, column, container, flex_row, row, text},
+    widget::{FlexRow, Row, column, container, flex_row, list, row, text},
 };
 use derive_setters::Setters;
 use iced_core::{Length, text::Wrapping};
@@ -114,39 +114,95 @@ impl<'a, Message: 'static> Item<'a, Message> {
         flex_item_row(self.control_(widget.into()))
     }
 
-    #[inline(never)]
-    fn control_(self, widget: Element<'a, Message>) -> Vec<Element<'a, Message>> {
-        let mut contents = Vec::with_capacity(4);
-
-        if let Some(icon) = self.icon {
-            contents.push(icon);
-        }
-
+    fn label(self) -> Element<'a, Message> {
         if let Some(description) = self.description {
-            let column = column::with_capacity(2)
+            column::with_capacity(2)
                 .spacing(2)
                 .push(text::body(self.title).wrapping(Wrapping::Word))
                 .push(text::caption(description).wrapping(Wrapping::Word))
-                .width(Length::Fill);
-
-            contents.push(column.into());
+                .width(Length::Fill)
+                .into()
         } else {
-            contents.push(text(self.title).width(Length::Fill).into());
+            text(self.title).width(Length::Fill).into()
         }
+    }
 
+    #[inline(never)]
+    fn control_(mut self, widget: Element<'a, Message>) -> Vec<Element<'a, Message>> {
+        let mut contents = Vec::with_capacity(3);
+        if let Some(icon) = self.icon.take() {
+            contents.push(icon);
+        }
+        contents.push(self.label());
         contents.push(widget);
         contents
+    }
+
+    fn control_start(self, widget: impl Into<Element<'a, Message>>) -> Row<'a, Message, Theme> {
+        item_row(vec![widget.into(), self.label()])
     }
 
     pub fn toggler(
         self,
         is_checked: bool,
         message: impl Fn(bool) -> Message + 'static,
-    ) -> Row<'a, Message, Theme> {
-        self.control(
-            crate::widget::toggler(is_checked)
-                .width(Length::Shrink)
-                .on_toggle(message),
+    ) -> list::ListButton<'a, Message> {
+        let on_press = message(!is_checked);
+        list::button(
+            self.control(
+                crate::widget::toggler(is_checked)
+                    .width(Length::Shrink)
+                    .on_toggle(message),
+            ),
         )
+        .on_press(on_press)
+    }
+
+    pub fn toggler_maybe(
+        self,
+        is_checked: bool,
+        message: Option<impl Fn(bool) -> Message + 'static>,
+    ) -> list::ListButton<'a, Message> {
+        let on_press = message.as_ref().map(|f| f(!is_checked));
+        list::button(
+            self.control(
+                crate::widget::toggler(is_checked)
+                    .width(Length::Shrink)
+                    .on_toggle_maybe(message),
+            ),
+        )
+        .on_press_maybe(on_press)
+    }
+
+    pub fn checkbox(
+        self,
+        is_checked: bool,
+        message: impl Fn(bool) -> Message + 'static,
+    ) -> list::ListButton<'a, Message> {
+        let on_press = message(!is_checked);
+        list::button(
+            self.control_start(
+                crate::widget::checkbox(is_checked)
+                    .width(Length::Shrink)
+                    .on_toggle(message),
+            ),
+        )
+        .on_press(on_press)
+    }
+
+    pub fn checkbox_maybe(
+        self,
+        is_checked: bool,
+        message: Option<impl Fn(bool) -> Message + 'static>,
+    ) -> list::ListButton<'a, Message> {
+        let on_press = message.as_ref().map(|f| f(!is_checked));
+        list::button(
+            self.control_start(
+                crate::widget::checkbox(is_checked)
+                    .width(Length::Shrink)
+                    .on_toggle_maybe(message),
+            ),
+        )
+        .on_press_maybe(on_press)
     }
 }

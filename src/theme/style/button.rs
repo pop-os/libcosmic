@@ -27,7 +27,7 @@ pub enum Button {
     IconVertical,
     Image,
     Link,
-    ListItem,
+    ListItem([f32; 4]),
     MenuFolder,
     MenuItem,
     MenuRoot,
@@ -148,8 +148,8 @@ pub fn appearance(
             appearance.text_color = Some(component.on.into());
             corner_radii = &cosmic.corner_radii.radius_s;
         }
-        Button::ListItem => {
-            corner_radii = &[0.0; 4];
+        Button::ListItem(radii) => {
+            corner_radii = radii;
             let (background, text, icon) = color(&cosmic.background.component);
 
             if selected {
@@ -197,7 +197,7 @@ impl Catalog for crate::Theme {
             return active(focused, self);
         }
 
-        appearance(self, focused, selected, false, style, move |component| {
+        let mut s = appearance(self, focused, selected, false, style, move |component| {
             let text_color = if matches!(
                 style,
                 Button::Icon | Button::IconVertical | Button::HeaderBar
@@ -209,7 +209,15 @@ impl Catalog for crate::Theme {
             };
 
             (component.base.into(), text_color, text_color)
-        })
+        });
+
+        if let Button::ListItem(_) = style {
+            if !selected {
+                s.background = None;
+            }
+        }
+
+        s
     }
 
     fn disabled(&self, style: &Self::Class) -> Style {
@@ -237,7 +245,7 @@ impl Catalog for crate::Theme {
             return hovered(focused, self);
         }
 
-        appearance(
+        let mut s = appearance(
             self,
             focused || matches!(style, Button::Image),
             selected,
@@ -256,7 +264,15 @@ impl Catalog for crate::Theme {
 
                 (component.hover.into(), text_color, text_color)
             },
-        )
+        );
+
+        if let Button::ListItem(_) = style {
+            if !selected {
+                s.background = None;
+            }
+        }
+
+        s
     }
 
     fn pressed(&self, focused: bool, selected: bool, style: &Self::Class) -> Style {
