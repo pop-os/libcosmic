@@ -161,7 +161,10 @@ impl<'a, Message> Widget<Message, crate::Theme, crate::Renderer> for Toggler<'a,
     }
 
     fn state(&self) -> tree::State {
-        tree::State::new(State::default())
+        tree::State::new(State {
+            prev_toggled: self.is_toggled,
+            ..State::default()
+        })
     }
 
     fn id(&self) -> Option<Id> {
@@ -238,6 +241,14 @@ impl<'a, Message> Widget<Message, crate::Theme, crate::Renderer> for Toggler<'a,
             return;
         };
         let state = tree.state.downcast_mut::<State>();
+
+        // animate external changes
+        if state.prev_toggled != self.is_toggled {
+            state.anim.changed(self.duration);
+            shell.request_redraw();
+            state.prev_toggled = self.is_toggled;
+        }
+
         match event {
             Event::Mouse(mouse::Event::ButtonPressed(mouse::Button::Left))
             | Event::Touch(touch::Event::FingerPressed { .. }) => {
@@ -246,6 +257,7 @@ impl<'a, Message> Widget<Message, crate::Theme, crate::Renderer> for Toggler<'a,
                 if mouse_over {
                     shell.publish((on_toggle)(!self.is_toggled));
                     state.anim.changed(self.duration);
+                    state.prev_toggled = !self.is_toggled;
                     shell.capture_event();
                 }
             }
@@ -430,4 +442,5 @@ pub fn next_to_each_other(
 pub struct State {
     text: widget::text::State<<crate::Renderer as iced_core::text::Renderer>::Paragraph>,
     anim: anim::State,
+    prev_toggled: bool,
 }
