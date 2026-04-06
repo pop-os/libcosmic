@@ -2,18 +2,18 @@
 
 use std::time::{Duration, Instant};
 
-use crate::{Element, anim, iced_core::Border, iced_widget::toggler::Status};
+use crate::{Element, anim};
 use iced_core::{
-    Clipboard, Event, Layout, Length, Pixels, Rectangle, Shell, Size, Widget, alignment, event,
-    layout, mouse,
+    Border, Clipboard, Event, Layout, Length, Pixels, Rectangle, Shell, Size, Widget, alignment,
+    event, layout, mouse,
     renderer::{self, Renderer},
     text, touch,
     widget::{self, Tree, tree},
     window,
 };
-use iced_widget::Id;
+use iced_widget::{Id, toggler::Status};
 
-pub use crate::iced_widget::toggler::{Catalog, Style};
+pub use iced_widget::toggler::{Catalog, Style};
 
 pub fn toggler<'a, Message>(is_checked: bool) -> Toggler<'a, Message> {
     Toggler::new(is_checked)
@@ -200,7 +200,7 @@ impl<'a, Message> Widget<Message, crate::Theme, crate::Renderer> for Toggler<'a,
                             align_x: self.text_alignment,
                             align_y: alignment::Vertical::Top,
                             shaping: self.text_shaping,
-                            wrapping: crate::iced_core::text::Wrapping::default(),
+                            wrapping: iced_core::text::Wrapping::default(),
                             ellipsize: self.ellipsize,
                         },
                     );

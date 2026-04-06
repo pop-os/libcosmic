@@ -4,16 +4,16 @@ use iced_core::{widget::Operation, window};
 
 use crate::{
     Element,
-    iced::{
-        Event, Length, Point, Rectangle, Vector,
-        clipboard::dnd::{DndAction, DndEvent, SourceEvent},
-        event, mouse, overlay,
-    },
-    iced_core::{
-        self, Clipboard, Shell, layout, renderer,
-        widget::{Tree, tree},
-    },
     widget::{Id, Widget, container},
+};
+use iced::{
+    Event, Length, Point, Rectangle, Vector,
+    clipboard::dnd::{DndAction, DndEvent, SourceEvent},
+    event, mouse, overlay,
+};
+use iced_core::{
+    self, Clipboard, Shell, layout, renderer,
+    widget::{Tree, tree},
 };
 
 pub fn dnd_source<

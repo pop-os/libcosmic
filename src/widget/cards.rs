@@ -1,13 +1,8 @@
 //! An expandable stack of cards
 use std::time::Duration;
 
-use self::iced_core::{
-    Element, Event, Length, Size, Vector, Widget, border::Radius, id::Id, layout::Node,
-    renderer::Quad, widget::Tree,
-};
 use crate::{
     anim,
-    iced_core::{self, Border, Shadow},
     widget::{
         button,
         card::style::Style,
@@ -18,6 +13,10 @@ use crate::{
 };
 use float_cmp::approx_eq;
 use iced::widget;
+use iced_core::{
+    Border, Element, Event, Length, Shadow, Size, Vector, Widget, border::Radius, id::Id,
+    layout::Node, renderer::Quad, widget::Tree,
+};
 use iced_core::{widget::tree, window};
 
 const ICON_SIZE: u16 = 16;

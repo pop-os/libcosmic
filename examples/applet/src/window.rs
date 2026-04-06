@@ -1,8 +1,8 @@
 use cosmic::app::{Core, Task};
 
+use cosmic::iced::core::window;
 use cosmic::iced::window::Id;
 use cosmic::iced::{Length, Rectangle};
-use cosmic::iced_runtime::core::window;
 use cosmic::surface::action::{app_popup, destroy_popup};
 use cosmic::widget::{dropdown::popup_dropdown, list_column, settings, toggler};
 use cosmic::Element;
@@ -159,7 +159,7 @@ impl cosmic::Application for Window {
         "oops".into()
     }
 
-    fn style(&self) -> Option<cosmic::iced_core::theme::Style> {
+    fn style(&self) -> Option<cosmic::iced::theme::Style> {
         Some(cosmic::applet::style())
     }
 }

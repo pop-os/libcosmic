@@ -9,11 +9,11 @@ use std::rc::Rc;
 use iced::advanced::widget::text::Style as TextStyle;
 use iced_widget::core::{Element, renderer};
 
-use crate::iced_core::{Alignment, Length};
 use crate::widget::menu::action::MenuAction;
 use crate::widget::menu::key_bind::KeyBind;
 use crate::widget::{Button, RcElementWrapper, icon};
 use crate::{theme, widget};
+use iced_core::{Alignment, Length};
 
 /// Nested menu is essentially a tree of items, a menu is a collection of items
 /// a menu itself can also be an item of another menu.

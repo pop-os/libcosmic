@@ -4,7 +4,7 @@
 //! Application API example
 
 use cosmic::app::{Core, Settings, Task};
-use cosmic::iced_core::Size;
+use cosmic::iced::Size;
 use cosmic::widget::menu;
 use cosmic::{executor, iced, ApplicationExt, Element};
 use std::collections::HashMap;

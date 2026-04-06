@@ -67,21 +67,6 @@ pub mod font;
 pub use iced;
 
 #[doc(inline)]
-pub use iced_core;
-
-#[doc(inline)]
-pub use iced_futures;
-
-#[doc(inline)]
-pub use iced_renderer;
-
-#[doc(inline)]
-pub use iced_runtime;
-
-#[doc(inline)]
-pub use iced_widget;
-
-#[doc(inline)]
 #[cfg(feature = "winit")]
 pub use iced_winit;
 

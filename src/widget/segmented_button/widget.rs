@@ -3,7 +3,6 @@
 
 use super::model::{Entity, Model, Selectable};
 use super::{InsertPosition, ReorderEvent};
-use crate::iced_core::id::Internal;
 use crate::theme::{SegmentedButton as Style, THEME};
 use crate::widget::dnd_destination::DragId;
 use crate::widget::menu::{
@@ -22,6 +21,7 @@ use iced::{
     Alignment, Background, Color, Event, Length, Padding, Rectangle, Size, Task, Vector, alignment,
     keyboard, mouse, touch, window,
 };
+use iced_core::id::Internal;
 use iced_core::mouse::ScrollDelta;
 use iced_core::text::{self, Ellipsize, LineHeight, Renderer as TextRenderer, Shaping, Wrapping};
 use iced_core::widget::operation::Focusable;
@@ -2043,10 +2043,10 @@ where
                             ..image_bounds
                         },
                         crate::widget::icon(match crate::widget::common::object_select().data() {
-                            crate::iced_core::svg::Data::Bytes(bytes) => {
+                            iced_core::svg::Data::Bytes(bytes) => {
                                 crate::widget::icon::from_svg_bytes(bytes.as_ref()).symbolic(true)
                             }
-                            crate::iced_core::svg::Data::Path(path) => {
+                            iced_core::svg::Data::Path(path) => {
                                 crate::widget::icon::from_path(path.clone())
                             }
                         }),
