@@ -9,7 +9,6 @@ name = "cosmic"
 
 [features]
 default = [
-    "advanced-shaping",
     "winit",
     "tokio",
     "a11y",
