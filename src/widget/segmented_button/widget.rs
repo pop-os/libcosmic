@@ -246,12 +246,13 @@ where
 
     fn update_entity_paragraph(&mut self, state: &mut LocalState, key: Entity) {
         if let Some(text) = self.model.text.get(key) {
-            let font = if self.button_is_focused(state, key) {
+            let font = if self.button_is_focused(state, key)
+                || state.show_context == Some(key)
+                || self.model.is_active(key)
+            {
                 self.font_active
-            } else if state.show_context == Some(key) || self.button_is_hovered(state, key) {
+            } else if self.button_is_hovered(state, key) {
                 self.font_hovered
-            } else if self.model.is_active(key) {
-                self.font_active
             } else {
                 self.font_inactive
             };
