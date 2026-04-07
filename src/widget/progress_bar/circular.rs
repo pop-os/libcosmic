@@ -41,7 +41,7 @@ where
             size: 40.0,
             bar_height: 4.0,
             style: <Theme as StyleSheet>::Style::default(),
-            cycle_duration: Duration::from_millis(600),
+            cycle_duration: Duration::from_millis(1500),
             rotation_duration: Duration::from_secs(2),
             progress: None,
         }

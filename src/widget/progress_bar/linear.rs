@@ -36,7 +36,7 @@ where
             width: Length::Fixed(100.0),
             girth: Length::Fixed(4.0),
             style: Theme::Style::default(),
-            cycle_duration: Duration::from_millis(600),
+            cycle_duration: Duration::from_millis(1500),
             progress: None,
         }
     }
