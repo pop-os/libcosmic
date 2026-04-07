@@ -2,10 +2,22 @@ pub mod circular;
 pub mod linear;
 pub mod style;
 
-pub fn circular_progress<Message>() -> circular::Circular<crate::Theme> {
+/// A spinner / throbber widget that can be used to indicate that some operation is in progress.
+pub fn indeterminate_circular<Message>() -> circular::Circular<crate::Theme> {
     circular::Circular::new()
 }
 
-pub fn linear_progress<Message>() -> linear::Linear<crate::Theme> {
+/// A linear throbber widget that can be used to indicate that some operation is in progress.
+pub fn indeterminate_linear<Message>() -> linear::Linear<crate::Theme> {
     linear::Linear::new()
+}
+
+/// A circular progress spinner widget that can be used to indicate the progress of some operation.
+pub fn determinate_circular<Message>(progress: f32) -> circular::Circular<crate::Theme> {
+    circular::Circular::new().progress(progress)
+}
+
+/// A linear progress bar widget that can be used to indicate the progress of some operation.
+pub fn determinate_linear<Message>(progress: f32) -> linear::Linear<crate::Theme> {
+    linear::Linear::new().progress(progress)
 }
