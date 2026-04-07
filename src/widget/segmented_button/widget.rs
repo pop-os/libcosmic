@@ -262,10 +262,10 @@ where
             font.hash(&mut hasher);
             let text_hash = hasher.finish();
 
-            if let Some(prev_hash) = state.text_hashes.insert(key, text_hash) {
-                if prev_hash == text_hash {
-                    return;
-                }
+            if let Some(prev_hash) = state.text_hashes.insert(key, text_hash)
+                && prev_hash == text_hash
+            {
+                return;
             }
 
             if let Some(paragraph) = state.paragraphs.get_mut(key) {
@@ -928,7 +928,6 @@ where
 
     fn diff(&mut self, tree: &mut Tree) {
         let state = tree.state.downcast_mut::<LocalState>();
-
         for key in self.model.order.iter().copied() {
             self.update_entity_paragraph(state, key);
         }

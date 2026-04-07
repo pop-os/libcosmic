@@ -306,6 +306,33 @@ where
             );
 
             if let Some(progress) = self.progress {
+                // outer border
+                if let Some(border_color) = custom_style.border_color {
+                    let border_path =
+                        canvas::Path::circle(frame.center(), track_radius + self.bar_height / 2.0);
+
+                    frame.stroke(
+                        &border_path,
+                        canvas::Stroke::default()
+                            .with_color(border_color)
+                            .with_width(1.0),
+                    );
+                }
+
+                // inner border
+                if let Some(border_color) = custom_style.border_color {
+                    let border_path =
+                        canvas::Path::circle(frame.center(), track_radius - self.bar_height / 2.0);
+
+                    frame.stroke(
+                        &border_path,
+                        canvas::Stroke::default()
+                            .with_color(border_color)
+                            .with_width(1.0),
+                    );
+                }
+
+                // bar
                 let mut builder = canvas::path::Builder::new();
 
                 builder.arc(canvas::path::Arc {
@@ -323,29 +350,53 @@ where
                         .with_color(custom_style.bar_color)
                         .with_width(self.bar_height),
                 );
+
+                let mut builder = canvas::path::Builder::new();
+
+                // get center of end of arc for rounded cap
+                let end_angle = -PI / 2.0 + progress * 2.0 * PI;
+                let end_center =
+                    frame.center() + Vector::new(end_angle.cos(), end_angle.sin()) * track_radius;
+                builder.arc(canvas::path::Arc {
+                    center: end_center,
+                    radius: self.bar_height / 2.0,
+                    start_angle: Radians(end_angle),
+                    end_angle: Radians(end_angle + PI),
+                });
+
+                // get center of start of arc for rounded cap
+                let start_angle = -PI / 2.0;
+                let start_center = frame.center()
+                    + Vector::new(start_angle.cos(), start_angle.sin()) * track_radius;
+                builder.arc(canvas::path::Arc {
+                    center: start_center,
+                    radius: self.bar_height / 2.0,
+                    start_angle: Radians(start_angle - PI),
+                    end_angle: Radians(start_angle),
+                });
+
+                let cap_path = builder.build();
+                frame.fill(&cap_path, custom_style.bar_color);
             } else {
                 let mut builder = canvas::path::Builder::new();
 
                 let start = Radians(state.animation.rotation() * 2.0 * PI);
-
-                match state.animation {
-                    Animation::Expanding { progress, .. } => {
-                        builder.arc(canvas::path::Arc {
-                            center: frame.center(),
-                            radius: track_radius,
-                            start_angle: start,
-                            end_angle: start + MIN_ANGLE + WRAP_ANGLE * (smootherstep(progress)),
-                        });
-                    }
-                    Animation::Contracting { progress, .. } => {
-                        builder.arc(canvas::path::Arc {
-                            center: frame.center(),
-                            radius: track_radius,
-                            start_angle: start + WRAP_ANGLE * (smootherstep(progress)),
-                            end_angle: start + MIN_ANGLE + WRAP_ANGLE,
-                        });
-                    }
-                }
+                let (start_angle, end_angle) = match state.animation {
+                    Animation::Expanding { progress, .. } => (
+                        start,
+                        start + MIN_ANGLE + WRAP_ANGLE * (smootherstep(progress)),
+                    ),
+                    Animation::Contracting { progress, .. } => (
+                        start + WRAP_ANGLE * (smootherstep(progress)),
+                        start + MIN_ANGLE + WRAP_ANGLE,
+                    ),
+                };
+                builder.arc(canvas::path::Arc {
+                    center: frame.center(),
+                    radius: track_radius,
+                    start_angle,
+                    end_angle,
+                });
 
                 let bar_path = builder.build();
 
@@ -355,6 +406,31 @@ where
                         .with_color(custom_style.bar_color)
                         .with_width(self.bar_height),
                 );
+
+                let mut builder = canvas::path::Builder::new();
+
+                // get center of end of arc for rounded cap
+                let end_center = frame.center()
+                    + Vector::new(end_angle.0.cos(), end_angle.0.sin()) * track_radius;
+                builder.arc(canvas::path::Arc {
+                    center: end_center,
+                    radius: self.bar_height / 2.0,
+                    start_angle: Radians(end_angle.0),
+                    end_angle: Radians(end_angle.0 + PI),
+                });
+
+                // get center of start of arc for rounded cap
+                let start_center = frame.center()
+                    + Vector::new(start_angle.0.cos(), start_angle.0.sin()) * track_radius;
+                builder.arc(canvas::path::Arc {
+                    center: start_center,
+                    radius: self.bar_height / 2.0,
+                    start_angle: Radians(start_angle.0 - PI),
+                    end_angle: Radians(start_angle.0),
+                });
+
+                let cap_path = builder.build();
+                frame.fill(&cap_path, custom_style.bar_color);
             }
         });
 

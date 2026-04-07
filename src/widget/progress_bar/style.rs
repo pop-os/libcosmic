@@ -8,6 +8,8 @@ pub struct Appearance {
     pub bar_color: Color,
     /// The border [`Color`] of the progress indicator.
     pub border_color: Option<Color>,
+    /// The border radius of the progress indicator.
+    pub border_radius: f32,
 }
 
 impl std::default::Default for Appearance {
@@ -16,6 +18,7 @@ impl std::default::Default for Appearance {
             track_color: Color::TRANSPARENT,
             bar_color: Color::BLACK,
             border_color: None,
+            border_radius: 0.0,
         }
     }
 }
@@ -49,6 +52,7 @@ impl StyleSheet for iced::Theme {
             track_color: palette.background.weak.color,
             bar_color: palette.primary.base.color,
             border_color: None,
+            border_radius: 0.0,
         }
     }
 }
@@ -63,7 +67,8 @@ impl StyleSheet for crate::Theme {
         is_circular: bool,
     ) -> Appearance {
         let cur = self.current_container();
-        let cur_divider = cur.divider;
+        let mut cur_divider = cur.divider;
+        cur_divider.alpha = 0.5;
         let theme = self.cosmic();
 
         let (mut track_color, bar_color) = if theme.is_dark && theme.is_high_contrast {
@@ -94,6 +99,7 @@ impl StyleSheet for crate::Theme {
             } else {
                 None
             },
+            border_radius: theme.corner_radii.radius_xl[0],
         }
     }
 }

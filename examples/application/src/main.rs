@@ -230,6 +230,7 @@ impl cosmic::Application for App {
                 )
                 .push(
                     widget::progress_bar::circular::Circular::new()
+                        .bar_height(10.0)
                         .size(50.0)
                         .progress(self.progress),
                 )

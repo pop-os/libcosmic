@@ -216,6 +216,16 @@ where
                     width: bounds.width,
                     height: bounds.height,
                 },
+                border: iced::Border {
+                    width: if custom_style.border_color.is_some() {
+                        1.0
+                    } else {
+                        0.0
+                    },
+                    color: custom_style.border_color.unwrap_or(custom_style.bar_color),
+                    radius: custom_style.border_radius.into(),
+                },
+                snap: true,
                 ..renderer::Quad::default()
             },
             Background::Color(custom_style.track_color),
@@ -230,6 +240,12 @@ where
                         width: progress * bounds.width,
                         height: bounds.height,
                     },
+                    border: iced::Border {
+                        width: 0.,
+                        color: iced::Color::TRANSPARENT,
+                        radius: custom_style.border_radius.into(),
+                    },
+                    snap: true,
                     ..renderer::Quad::default()
                 },
                 Background::Color(custom_style.bar_color),
@@ -244,6 +260,12 @@ where
                             width: smootherstep(*progress) * bounds.width,
                             height: bounds.height,
                         },
+                        border: iced::Border {
+                            width: 0.,
+                            color: iced::Color::TRANSPARENT,
+                            radius: custom_style.border_radius.into(),
+                        },
+                        snap: true,
                         ..renderer::Quad::default()
                     },
                     Background::Color(custom_style.bar_color),
@@ -257,6 +279,12 @@ where
                             width: (1.0 - smootherstep(*progress)) * bounds.width,
                             height: bounds.height,
                         },
+                        border: iced::Border {
+                            width: 0.,
+                            color: iced::Color::TRANSPARENT,
+                            radius: custom_style.border_radius.into(),
+                        },
+                        snap: true,
                         ..renderer::Quad::default()
                     },
                     Background::Color(custom_style.bar_color),
