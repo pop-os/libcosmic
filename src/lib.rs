@@ -66,14 +66,6 @@ pub mod font;
 #[doc(inline)]
 pub use iced;
 
-#[doc(inline)]
-#[cfg(feature = "winit")]
-pub use iced_winit;
-
-#[doc(inline)]
-#[cfg(feature = "wgpu")]
-pub use iced_wgpu;
-
 pub mod icon_theme;
 pub mod keyboard_nav;
 
