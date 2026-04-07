@@ -188,6 +188,7 @@ pub struct TextInput<'a, Message> {
     is_editable_variant: bool,
     is_read_only: bool,
     select_on_focus: bool,
+    double_click_select_delimiter: Option<char>,
     font: Option<<crate::Renderer as iced_core::text::Renderer>::Font>,
     width: Length,
     padding: Padding,
@@ -238,6 +239,7 @@ where
             is_editable_variant: false,
             is_read_only: false,
             select_on_focus: false,
+            double_click_select_delimiter: None,
             font: None,
             width: Length::Fill,
             padding: spacing.into(),
@@ -340,6 +342,17 @@ where
     #[inline]
     pub const fn select_on_focus(mut self, select_on_focus: bool) -> Self {
         self.select_on_focus = select_on_focus;
+        self
+    }
+
+    /// Sets a delimiter character for double-click selection behavior.
+    ///
+    /// When set, double-clicking before the last occurrence of this character
+    /// selects from the start to that character. Double-clicking after the
+    /// delimiter uses normal word selection.
+    #[inline]
+    pub const fn double_click_select_delimiter(mut self, delimiter: char) -> Self {
+        self.double_click_select_delimiter = Some(delimiter);
         self
     }
 
@@ -598,6 +611,7 @@ where
             self.value = state.tracked_value.clone();
             // std::mem::swap(&mut state.tracked_value, &mut self.value);
         }
+        state.double_click_select_delimiter = self.double_click_select_delimiter;
         // Unfocus text input if it becomes disabled
         if self.on_input.is_none() && !self.manage_value {
             state.last_click = None;
@@ -1180,6 +1194,14 @@ pub fn select_range<Message: 'static>(id: Id, start: usize, end: usize) -> Task<
     )))
 }
 
+/// Produces a [`Task`] that selects from the front to the last occurrence of the given character
+/// in the [`TextInput`] with the given [`Id`], or selects all if not found.
+pub fn select_until_last<Message: 'static>(id: Id, value: &str, ch: char) -> Task<Message> {
+    let v = Value::new(value);
+    let end = v.rfind_char(ch).unwrap_or(v.len());
+    select_range(id, 0, end)
+}
+
 /// Computes the layout of a [`TextInput`].
 #[allow(clippy::cast_precision_loss)]
 #[allow(clippy::too_many_arguments)]
@@ -1600,10 +1622,23 @@ pub fn update<'a, Message: Clone + 'static>(
                                     .unwrap_or((0, text::Affinity::Before));
 
                             state.cursor.set_affinity(affinity);
-                            state.cursor.select_range(
-                                value.previous_start_of_word(position),
-                                value.next_end_of_word(position),
-                            );
+
+                            if let Some(delimiter) = state.double_click_select_delimiter {
+                                if let Some(delim_pos) = value.rfind_char(delimiter) {
+                                    if position <= delim_pos {
+                                        state.cursor.select_range(0, delim_pos);
+                                    } else {
+                                        state.cursor.select_range(delim_pos + 1, value.len());
+                                    }
+                                } else {
+                                    state.cursor.select_all(value);
+                                }
+                            } else {
+                                state.cursor.select_range(
+                                    value.previous_start_of_word(position),
+                                    value.next_end_of_word(position),
+                                );
+                            }
                         }
                         state.dragging_state = Some(DraggingState::Selection);
                     }
@@ -2882,6 +2917,7 @@ pub struct State {
     pub is_read_only: bool,
     pub emit_unfocus: bool,
     select_on_focus: bool,
+    double_click_select_delimiter: Option<char>,
     is_focused: Option<Focus>,
     dragging_state: Option<DraggingState>,
     dnd_offer: DndOfferState,
@@ -2963,6 +2999,7 @@ impl State {
             emit_unfocus: false,
             is_focused: None,
             select_on_focus: false,
+            double_click_select_delimiter: None,
             dragging_state: None,
             dnd_offer: DndOfferState::default(),
             is_pasting: None,
