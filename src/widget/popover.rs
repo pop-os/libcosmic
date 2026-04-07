@@ -138,6 +138,10 @@ where
         renderer: &Renderer,
         operation: &mut dyn Operation,
     ) {
+        // Skip operating on background content, prevents Tab from escaping
+        if self.modal && self.popup.is_some() {
+            return;
+        }
         self.content
             .as_widget_mut()
             .operate(content_tree_mut(tree), layout, renderer, operation);
@@ -172,11 +176,17 @@ where
             }
         }
 
+        // Hide cursor from background content when modal popup is active
+        let cursor = if self.modal && self.popup.is_some() {
+            mouse::Cursor::Unavailable
+        } else {
+            cursor_position
+        };
         self.content.as_widget_mut().update(
             &mut tree.children[0],
             event,
             layout,
-            cursor_position,
+            cursor,
             renderer,
             clipboard,
             shell,
@@ -214,13 +224,19 @@ where
         cursor_position: mouse::Cursor,
         viewport: &Rectangle,
     ) {
+        // Hide cursor from background content when a modal popup is active
+        let cursor = if self.modal && self.popup.is_some() {
+            mouse::Cursor::Unavailable
+        } else {
+            cursor_position
+        };
         self.content.as_widget().draw(
             content_tree(tree),
             renderer,
             theme,
             renderer_style,
             layout,
-            cursor_position,
+            cursor,
             viewport,
         );
     }
