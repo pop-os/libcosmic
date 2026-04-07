@@ -78,9 +78,6 @@ pub use iced::widget::{MouseArea, mouse_area};
 pub use iced::widget::{PaneGrid, pane_grid};
 
 #[doc(inline)]
-pub use iced::widget::{ProgressBar, progress_bar};
-
-#[doc(inline)]
 pub use iced::widget::{Responsive, responsive};
 
 #[doc(inline)]
@@ -256,6 +253,12 @@ pub use nav_bar_toggle::{NavBarToggle, nav_bar_toggle};
 pub mod popover;
 #[doc(inline)]
 pub use popover::{Popover, popover};
+
+pub mod progress_bar;
+#[doc(inline)]
+pub use progress_bar::{
+    circular, circular::Circular, circular_progress, linear, linear::Linear, linear_progress, style,
+};
 
 pub mod radio;
 #[doc(inline)]
