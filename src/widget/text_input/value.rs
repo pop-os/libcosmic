@@ -142,6 +142,14 @@ impl Value {
             .sum()
     }
 
+    /// Returns the grapheme index of the last occurrence of the given character,
+    /// searching from the end.
+    #[must_use]
+    pub fn rfind_char(&self, ch: char) -> Option<usize> {
+        let needle = ch.to_string();
+        self.graphemes.iter().rposition(|g| g == &needle)
+    }
+
     /// Converts a byte index to a grapheme index.
     #[must_use]
     pub fn grapheme_index_at_byte(&self, byte_index: usize) -> usize {
