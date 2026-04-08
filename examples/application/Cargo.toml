@@ -18,7 +18,6 @@ features = [
     "tokio",
     "xdg-portal",
     "a11y",
-    "wgpu",
     "single-instance",
     "surface-message",
     "multi-window",

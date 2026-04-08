@@ -2740,14 +2740,14 @@ pub fn draw<'a, Message>(
             effective_alignment(state.value.raw()),
         );
 
-        if !cursors.is_empty() {
+        if cursors.is_empty() {
+            renderer.with_translation(Vector::ZERO, |_| {});
+        } else {
             renderer.with_translation(Vector::new(alignment_offset - offset, 0.0), |renderer| {
                 for (quad, color) in &cursors {
                     renderer.fill_quad(*quad, *color);
                 }
             });
-        } else {
-            renderer.with_translation(Vector::ZERO, |_| {});
         }
 
         let bounds = Rectangle {
@@ -2785,11 +2785,9 @@ pub fn draw<'a, Message>(
         );
     };
 
-    if is_selecting {
-        renderer.with_layer(bounds, render);
-    } else {
-        render(renderer);
-    }
+    // FIXME: we always must clip with a layer because of what appears to be a tiny-skia text clipping issue.
+    // Otherwise overflowing text escapes the bounds of the input.
+    renderer.with_layer(text_bounds, render);
 
     let trailing_icon_tree = children.get(child_index);
 
