@@ -771,7 +771,10 @@ where
         bounds: Rectangle,
         cursor: Point,
     ) -> Option<DropHint> {
-        let _ = state.dragging_tab?;
+        // Allow drop hints for both internal tab reorder and external DnD
+        if state.dragging_tab.is_none() && state.dnd_state.drag_offer.is_none() {
+            return None;
+        }
 
         self.variant_bounds(state, bounds)
             .filter_map(|item| match item {
@@ -983,18 +986,20 @@ where
 
         let my_id = self.get_drag_id();
 
-        if let Event::Dnd(e) = &mut event {
+        if let Event::Dnd(e) = &event {
+            // When on_dnd_drop is configured (external DnD, not tab reorder),
+            // accept offers regardless of ID, as the Wayland compositor may
+            // assign a different ID than our registered DragId.
+            let id_matches = |id: &Option<u128>| -> bool {
+                Some(my_id) == *id || (self.on_dnd_drop.is_some() && id.is_some())
+            };
+            let _ = id_matches; // used below in match arms
+
             let entity = state
                 .dnd_state
                 .drag_offer
                 .as_ref()
                 .map(|dnd_state| dnd_state.data);
-            log::trace!(
-                target: TAB_REORDER_LOG_TARGET,
-                "segmented button {:?} received DnD event: {:?} entity={entity:?}",
-                my_id,
-                e
-            );
             match e {
                 DndEvent::Source(SourceEvent::Cancelled | SourceEvent::Finished) => {
                     if state.dragging_tab.take().is_some() {
@@ -1015,13 +1020,15 @@ where
                     OfferEvent::Enter {
                         x, y, mime_types, ..
                     },
-                ) if Some(my_id) == *id => {
-                    let entity = self
+                ) if id_matches(id) => {
+                    let buttons: Vec<_> = self
                         .variant_bounds(state, my_bounds)
                         .filter_map(|item| match item {
                             ItemBounds::Button(entity, bounds) => Some((entity, bounds)),
                             _ => None,
                         })
+                        .collect();
+                    let entity = buttons.into_iter()
                         .find(|(_key, bounds)| bounds.contains(Point::new(*x as f32, *y as f32)))
                         .map(|(key, _)| key);
                     state.drop_hint = self.drop_hint_for_position(
@@ -1060,10 +1067,10 @@ where
                         .dnd_state
                         .on_enter::<Message>(*x, *y, mimes, on_dnd_enter, entity);
                 }
-                DndEvent::Offer(id, OfferEvent::LeaveDestination) if Some(my_id) != *id => {}
+                DndEvent::Offer(id, OfferEvent::LeaveDestination) if !id_matches(id) => {}
                 DndEvent::Offer(id, leave)
                     if matches!(leave, OfferEvent::Leave | OfferEvent::LeaveDestination)
-                        && Some(my_id) == *id =>
+                        && id_matches(id) =>
                 {
                     state.drop_hint = None;
                     self.emit_drop_hint(shell, state.drop_hint);
@@ -1082,7 +1089,7 @@ where
                     }
                     _ = state.dnd_state.on_leave::<Message>(None);
                 }
-                DndEvent::Offer(id, OfferEvent::Motion { x, y }) if Some(my_id) == *id => {
+                DndEvent::Offer(id, OfferEvent::Motion { x, y }) if id_matches(id) => {
                     log::trace!(
                         target: TAB_REORDER_LOG_TARGET,
                         "offer motion id={my_id:?} cursor=({x},{y}) current_entity={entity:?}"
@@ -1154,7 +1161,7 @@ where
                         }
                     }
                 }
-                DndEvent::Offer(id, OfferEvent::Drop) if Some(my_id) == *id => {
+                DndEvent::Offer(id, OfferEvent::Drop) if id_matches(id) => {
                     log::trace!(
                         target: TAB_REORDER_LOG_TARGET,
                         "offer drop id={my_id:?} entity={entity:?}"
@@ -1163,7 +1170,7 @@ where
                         .dnd_state
                         .on_drop::<Message>(None::<fn(_, _) -> Message>);
                 }
-                DndEvent::Offer(id, OfferEvent::SelectedAction(action)) if Some(my_id) == *id => {
+                DndEvent::Offer(id, OfferEvent::SelectedAction(action)) if id_matches(id) => {
                     if state.dnd_state.drag_offer.is_some() {
                         log::trace!(
                             target: TAB_REORDER_LOG_TARGET,
@@ -1174,7 +1181,7 @@ where
                             .on_action_selected::<Message>(*action, None::<fn(_) -> Message>);
                     }
                 }
-                DndEvent::Offer(id, OfferEvent::Data { data, mime_type }) if Some(my_id) == *id => {
+                DndEvent::Offer(id, OfferEvent::Data { data, mime_type }) if id_matches(id) => {
                     log::trace!(
                         target: TAB_REORDER_LOG_TARGET,
                         "offer data id={my_id:?} entity={entity:?} mime={mime_type:?}"
@@ -1662,13 +1669,13 @@ where
         let appearance = Self::variant_appearance(theme, &self.style);
         let bounds: Rectangle = layout.bounds();
         let button_amount = self.model.items.len();
-        let show_drop_hint = state.dragging_tab.is_some();
+        let show_drop_hint = state.dragging_tab.is_some()
+            || state.dnd_state.drag_offer.is_some();
         let drop_hint = if show_drop_hint {
             state.drop_hint
         } else {
             None
         };
-
         // Draw the background, if a background was defined.
         if let Some(background) = appearance.background {
             renderer.fill_quad(

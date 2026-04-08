@@ -256,9 +256,7 @@ impl<Message: Clone + 'static, D: iced::clipboard::mime::AsMimeTypes + std::mark
                 }
                 mouse::Event::CursorMoved { .. } => {
                     if let Some(position) = cursor.position() {
-                        // We ignore motion if we do not possess drag content by now.
                         if self.drag_content.is_none() {
-                            state.left_pressed_position = None;
                             return;
                         }
                         if let Some(left_pressed_position) = state.left_pressed_position
