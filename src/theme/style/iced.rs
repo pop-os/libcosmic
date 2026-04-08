@@ -43,7 +43,7 @@ pub mod application {
         iced::theme::Style {
             background_color: cosmic.bg_color().into(),
             text_color: cosmic.on_bg_color().into(),
-            icon_color: cosmic.bg_color().into(),
+            icon_color: cosmic.on_bg_color().into(),
         }
     }
 }
