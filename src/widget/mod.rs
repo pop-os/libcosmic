@@ -119,8 +119,6 @@ pub mod calendar;
 pub use calendar::{Calendar, calendar};
 
 pub mod card;
-#[doc(inline)]
-pub use card::*;
 
 pub mod color_picker;
 #[doc(inline)]
