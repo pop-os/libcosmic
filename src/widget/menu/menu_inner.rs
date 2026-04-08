@@ -559,10 +559,7 @@ impl<'b, Message: Clone + 'static> Menu<'b, Message> {
         clipboard: &mut dyn Clipboard,
         shell: &mut Shell<'_, Message>,
     ) -> Option<(usize, MenuState)> {
-        use event::{
-            Event::{Mouse, Touch},
-            Status::{Captured, Ignored},
-        };
+        use event::Event::{Mouse, Touch};
         use mouse::{
             Button::Left,
             Event::{ButtonPressed, ButtonReleased, CursorMoved, WheelScrolled},
@@ -582,7 +579,7 @@ impl<'b, Message: Clone + 'static> Menu<'b, Message> {
         let viewport_size = viewport.size();
         let overlay_offset = Point::ORIGIN - viewport.position();
         let overlay_cursor = view_cursor.position().unwrap_or_default() - overlay_offset;
-        let menu_roots = match &mut self.menu_roots {
+        let _menu_roots = match &mut self.menu_roots {
             Cow::Borrowed(_) => panic!(),
             Cow::Owned(o) => o.as_mut_slice(),
         };
@@ -950,6 +947,7 @@ impl<Message: std::clone::Clone + 'static> Widget<Message, crate::Theme, crate::
         Menu::draw(self, renderer, theme, style, layout, cursor);
     }
 
+    #[allow(unused)]
     #[allow(clippy::too_many_lines)]
     fn update(
         &mut self,
@@ -1607,7 +1605,6 @@ fn process_scroll_events<Message>(
 ) where
     Message: Clone,
 {
-    use event::Status::{Captured, Ignored};
     use mouse::ScrollDelta;
 
     menu.tree.inner.with_data_mut(|state| {

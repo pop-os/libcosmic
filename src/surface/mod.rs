@@ -6,7 +6,6 @@ pub mod action;
 use iced::Limits;
 use iced::Size;
 use iced::Task;
-use std::future::Future;
 use std::sync::Arc;
 
 /// Ignore this message in your application. It will be intercepted.

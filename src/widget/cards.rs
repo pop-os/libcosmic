@@ -98,7 +98,7 @@ where
     /// Get an expandable stack of cards
     #[allow(clippy::too_many_arguments)]
     pub fn new<F, G>(
-        id: widget::Id,
+        _id: widget::Id,
         card_inner_elements: Vec<Element<'a, Message, crate::Theme, crate::Renderer>>,
         on_clear_all: Message,
         on_show_more: Option<F>,

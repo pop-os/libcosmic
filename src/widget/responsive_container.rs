@@ -1,7 +1,7 @@
 //! Responsive Container, which will notify of size changes.
 
 use iced::{Limits, Size};
-use iced_core::event::{self, Event};
+use iced_core::event::Event;
 use iced_core::layout;
 use iced_core::mouse;
 use iced_core::overlay;

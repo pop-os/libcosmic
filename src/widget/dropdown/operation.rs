@@ -2,9 +2,9 @@
 // SPDX-License-Identifier: MPL-2.0 AND MIT
 //! Operate on dropdown widgets.
 
-use super::State;
-use iced::Rectangle;
-use iced_core::widget::{Id, Operation};
+//use super::State;
+//use iced::Rectangle;
+//use iced_core::widget::{Id, Operation};
 
 pub trait Dropdown {
     fn close(&mut self);

@@ -9,7 +9,7 @@ use crate::{
 use iced::{
     Event, Length, Point, Rectangle, Vector,
     clipboard::dnd::{DndAction, DndEvent, SourceEvent},
-    event, mouse, overlay,
+    mouse, overlay,
 };
 use iced_core::{
     self, Clipboard, Shell, layout, renderer,

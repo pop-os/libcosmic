@@ -1,7 +1,7 @@
 use crate::Theme;
 use cosmic_theme::LayeredTheme;
 use iced::widget::Container;
-use iced_core::event::{self, Event};
+use iced_core::event::Event;
 use iced_core::layout;
 use iced_core::mouse;
 use iced_core::overlay;

@@ -2,7 +2,7 @@ use super::Model;
 pub use crate::widget::dropdown::menu::{Appearance, StyleSheet};
 
 use crate::widget::Container;
-use iced_core::event::{self, Event};
+use iced_core::event::Event;
 use iced_core::layout::{self, Layout};
 use iced_core::text::{self, Text};
 use iced_core::widget::Tree;

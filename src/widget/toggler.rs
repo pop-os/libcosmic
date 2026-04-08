@@ -1,11 +1,11 @@
 //! Show toggle controls using togglers.
 
-use std::time::{Duration, Instant};
+use std::time::Duration;
 
 use crate::{Element, anim};
 use iced_core::{
     Border, Clipboard, Event, Layout, Length, Pixels, Rectangle, Shell, Size, Widget, alignment,
-    event, layout, mouse,
+    layout, mouse,
     renderer::{self, Renderer},
     text, touch,
     widget::{self, Tree, tree},
@@ -13,7 +13,7 @@ use iced_core::{
 };
 use iced_widget::{Id, toggler::Status};
 
-pub use iced_widget::toggler::{Catalog, Style};
+pub use iced_widget::toggler::Catalog;
 
 pub fn toggler<'a, Message>(is_checked: bool) -> Toggler<'a, Message> {
     Toggler::new(is_checked)
@@ -249,7 +249,7 @@ impl<'a, Message> Widget<Message, crate::Theme, crate::Renderer> for Toggler<'a,
                     shell.capture_event();
                 }
             }
-            Event::Window(window::Event::RedrawRequested(now)) => {
+            Event::Window(window::Event::RedrawRequested(_now)) => {
                 state.anim.anim_done(self.duration);
                 if state.anim.last_change.is_some() {
                     shell.request_redraw();

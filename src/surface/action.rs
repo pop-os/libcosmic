@@ -1,11 +1,19 @@
 // Copyright 2025 System76 <info@system76.com>
 // SPDX-License-Identifier: MPL-2.0
 
+#[cfg(any(
+    all(feature = "wayland", target_os = "linux"),
+    all(feature = "wayland", target_os = "linux", feature = "winit")
+))]
 use super::Action;
-#[cfg(feature = "winit")]
+
+#[cfg(all(feature = "wayland", target_os = "linux", feature = "winit"))]
 use crate::Application;
 
+#[cfg(all(feature = "wayland", target_os = "linux", feature = "winit"))]
 use iced::window;
+
+#[cfg(all(feature = "wayland", target_os = "linux", feature = "winit"))]
 use std::{any::Any, sync::Arc};
 
 /// Used to produce a destroy popup message from within a widget.

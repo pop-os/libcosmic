@@ -9,7 +9,7 @@
 use iced_runtime::core::widget::Id;
 use iced_runtime::{Action, Task, keyboard, task};
 
-use iced_core::event::{self, Event};
+use iced_core::event::Event;
 use iced_core::renderer::{self, Quad, Renderer};
 use iced_core::touch;
 use iced_core::widget::Operation;
@@ -667,7 +667,7 @@ impl<'a, Message: 'a + Clone> Widget<Message, crate::Theme, crate::Renderer>
             height,
         } = layout.bounds();
         let bounds = Rect::new(x as f64, y as f64, (x + width) as f64, (y + height) as f64);
-        let is_hovered = state.state.downcast_ref::<State>().is_hovered;
+        //let is_hovered = state.state.downcast_ref::<State>().is_hovered;
 
         let mut node = Node::new(Role::Button);
         node.add_action(Action::Focus);
@@ -827,7 +827,7 @@ pub fn update<'a, Message: Clone>(
             }
         }
         #[cfg(feature = "a11y")]
-        Event::A11y(event_id, iced_accessibility::accesskit::ActionRequest { action, .. }) => {
+        Event::A11y(_event_id, iced_accessibility::accesskit::ActionRequest { action, .. }) => {
             let state = state();
             if let Some(on_press) = matches!(action, iced_accessibility::accesskit::Action::Click)
                 .then_some(on_press)
@@ -870,7 +870,7 @@ pub fn draw<Renderer: iced_core::Renderer, Theme>(
     viewport_bounds: Rectangle,
     styling: &super::style::Style,
     draw_contents: impl FnOnce(&mut Renderer, &Style),
-    is_image: bool,
+    _is_image: bool,
 ) where
     Theme: super::style::Catalog,
 {

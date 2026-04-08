@@ -19,14 +19,18 @@ pub use super::value::Value;
 
 use apply::Apply;
 use iced::Limits;
-use iced::clipboard::dnd::{DndAction, DndEvent, OfferEvent, SourceEvent};
-use iced::clipboard::mime::AsMimeTypes;
-use iced_core::event::{self, Event};
+use iced::clipboard::dnd::DndAction;
+#[cfg(all(feature = "wayland", target_os = "linux"))]
+use iced::clipboard::{
+    dnd::{DndEvent, OfferEvent, SourceEvent},
+    mime::AsMimeTypes,
+};
+use iced_core::event::Event;
 use iced_core::input_method::{self, InputMethod, Preedit};
 use iced_core::mouse::{self, click};
 use iced_core::overlay::Group;
 use iced_core::renderer::{self, Renderer as CoreRenderer};
-use iced_core::text::{self, Affinity, Paragraph, Renderer, Text};
+use iced_core::text::{self, Paragraph, Renderer, Text};
 use iced_core::time::{Duration, Instant};
 use iced_core::touch;
 use iced_core::widget::Id;
@@ -829,7 +833,7 @@ where
         &mut self,
         tree: &mut Tree,
         layout: Layout<'_>,
-        renderer: &crate::Renderer,
+        _renderer: &crate::Renderer,
         operation: &mut dyn Operation,
     ) {
         operation.container(Some(&self.id), layout.bounds());
@@ -921,7 +925,7 @@ where
                 // Enable custom buttons defined on the trailing icon position to be handled.
                 if !self.is_editable_variant {
                     if let Some(trailing_layout) = trailing_icon_layout {
-                        let res = trailing_icon.as_widget_mut().update(
+                        let _res = trailing_icon.as_widget_mut().update(
                             tree,
                             event,
                             trailing_layout,
@@ -1410,7 +1414,7 @@ pub fn layout<Message>(
 #[allow(clippy::cast_lossless)]
 #[allow(clippy::cast_possible_truncation)]
 pub fn update<'a, Message: Clone + 'static>(
-    id: Option<Id>,
+    _id: Option<Id>,
     event: &Event,
     text_layout: Layout<'_>,
     edit_button_layout: Option<Layout<'_>>,
@@ -1435,7 +1439,7 @@ pub fn update<'a, Message: Clone + 'static>(
     line_height: text::LineHeight,
     layout: Layout<'_>,
     manage_value: bool,
-    drag_threshold: f32,
+    _drag_threshold: f32,
     always_active: bool,
 ) {
     let update_cache = |state, value| {

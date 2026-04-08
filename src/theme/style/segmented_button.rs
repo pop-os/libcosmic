@@ -181,7 +181,7 @@ mod horizontal {
 
     pub fn selection_active(
         cosmic: &cosmic_theme::Theme,
-        component: &Component,
+        _component: &Component,
     ) -> ItemStatusAppearance {
         let rad_xl = cosmic.corner_radii.radius_xl;
         let rad_0 = cosmic.corner_radii.radius_0;
@@ -275,7 +275,7 @@ mod vertical {
 
     pub fn selection_active(
         cosmic: &cosmic_theme::Theme,
-        component: &Component,
+        _component: &Component,
     ) -> ItemStatusAppearance {
         let rad_0 = cosmic.corner_radii.radius_0;
         let rad_xl = cosmic.corner_radii.radius_xl;

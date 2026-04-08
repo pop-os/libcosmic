@@ -9,6 +9,7 @@ use super::{
     },
     menu_tree::MenuTree,
 };
+use crate::{Renderer, style::menu_bar::StyleSheet, widget::RcWrapper};
 #[cfg(all(
     feature = "multi-window",
     feature = "wayland",
@@ -16,18 +17,12 @@ use super::{
     feature = "winit",
     feature = "surface-message"
 ))]
-use crate::app::cosmic::{WINDOWING_SYSTEM, WindowingSystem};
 use crate::{
-    Renderer,
-    style::menu_bar::StyleSheet,
-    widget::{
-        RcWrapper,
-        dropdown::menu::{self, State},
-        menu::menu_inner::init_root_menu,
-    },
+    app::cosmic::{WINDOWING_SYSTEM, WindowingSystem},
+    menu::menu_inner::init_root_menu,
 };
 
-use iced::{Point, Shadow, Vector, event::Status, window};
+use iced::{Point, Shadow, Vector, window};
 use iced_core::Border;
 use iced_widget::core::{
     Alignment, Clipboard, Element, Layout, Length, Padding, Rectangle, Shell, Widget, event,
@@ -762,7 +757,7 @@ where
         tree: &'b mut Tree,
         layout: Layout<'b>,
         _renderer: &Renderer,
-        viewport: &Rectangle,
+        _viewport: &Rectangle,
         translation: Vector,
     ) -> Option<overlay::Element<'b, Message, crate::Theme, Renderer>> {
         #[cfg(all(

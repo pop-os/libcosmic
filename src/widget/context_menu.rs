@@ -11,9 +11,15 @@
 ))]
 use crate::app::cosmic::{WINDOWING_SYSTEM, WindowingSystem};
 use crate::widget::menu::{
-    self, CloseCondition, Direction, ItemHeight, ItemWidth, MenuBarState, PathHighlight,
-    init_root_menu, menu_roots_diff,
+    self, CloseCondition, ItemHeight, ItemWidth, MenuBarState, PathHighlight, menu_roots_diff,
 };
+#[cfg(all(
+    feature = "wayland",
+    target_os = "linux",
+    feature = "winit",
+    feature = "surface-message"
+))]
+use crate::widget::menu::{Direction, init_root_menu};
 use derive_setters::Setters;
 use iced::touch::Finger;
 use iced::{Event, Vector, keyboard, window};

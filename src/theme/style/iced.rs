@@ -792,7 +792,7 @@ impl menu::Catalog for Theme {
 
     fn default<'a>() -> <Self as menu::Catalog>::Class<'a> {}
 
-    fn style(&self, class: &<Self as menu::Catalog>::Class<'_>) -> menu::Style {
+    fn style(&self, _class: &<Self as menu::Catalog>::Class<'_>) -> menu::Style {
         let cosmic = self.cosmic();
 
         menu::Style {
@@ -816,7 +816,7 @@ impl pick_list::Catalog for Theme {
 
     fn style(
         &self,
-        class: &<Self as pick_list::Catalog>::Class<'_>,
+        _class: &<Self as pick_list::Catalog>::Class<'_>,
         status: pick_list::Status,
     ) -> pick_list::Style {
         let cosmic = &self.cosmic();
@@ -857,7 +857,7 @@ impl radio::Catalog for Theme {
 
     fn default<'a>() -> Self::Class<'a> {}
 
-    fn style(&self, class: &Self::Class<'_>, status: radio::Status) -> radio::Style {
+    fn style(&self, _class: &Self::Class<'_>, status: radio::Status) -> radio::Style {
         let cur_container = self.current_container();
         let theme = self.cosmic();
 
@@ -910,7 +910,7 @@ impl toggler::Catalog for Theme {
 
     fn default<'a>() -> Self::Class<'a> {}
 
-    fn style(&self, class: &Self::Class<'_>, status: toggler::Status) -> toggler::Style {
+    fn style(&self, _class: &Self::Class<'_>, status: toggler::Status) -> toggler::Style {
         let cosmic = self.cosmic();
         const HANDLE_MARGIN: f32 = 2.0;
         let neutral_10 = cosmic.palette.neutral_10.with_alpha(0.1);
@@ -938,8 +938,8 @@ impl toggler::Catalog for Theme {
             padding_ratio: 0.0,
         };
         match status {
-            toggler::Status::Active { is_toggled } => active,
-            toggler::Status::Hovered { is_toggled } => {
+            toggler::Status::Active { .. } => active,
+            toggler::Status::Hovered { .. } => {
                 let is_active = matches!(status, toggler::Status::Hovered { is_toggled: true });
                 toggler::Style {
                     background: if is_active {
@@ -958,7 +958,7 @@ impl toggler::Catalog for Theme {
                     ..active
                 }
             }
-            toggler::Status::Disabled { is_toggled } => {
+            toggler::Status::Disabled { .. } => {
                 active.background = active.background.scale_alpha(0.5);
                 active.foreground = active.foreground.scale_alpha(0.5);
                 active
@@ -975,7 +975,7 @@ impl pane_grid::Catalog for Theme {
 
     fn default<'a>() -> <Self as pane_grid::Catalog>::Class<'a> {}
 
-    fn style(&self, class: &<Self as pane_grid::Catalog>::Class<'_>) -> pane_grid::Style {
+    fn style(&self, _class: &<Self as pane_grid::Catalog>::Class<'_>) -> pane_grid::Style {
         let theme = self.cosmic();
 
         pane_grid::Style {
@@ -1142,10 +1142,7 @@ impl scrollable::Catalog for Theme {
 
     fn style(&self, class: &Self::Class<'_>, status: scrollable::Status) -> scrollable::Style {
         match status {
-            scrollable::Status::Active {
-                is_horizontal_scrollbar_disabled,
-                is_vertical_scrollbar_disabled,
-            } => {
+            scrollable::Status::Active { .. } => {
                 let cosmic = self.cosmic();
                 let neutral_5 = cosmic.palette.neutral_5.with_alpha(0.7);
                 let neutral_6 = cosmic.palette.neutral_6.with_alpha(0.7);
@@ -1303,7 +1300,7 @@ impl svg::Catalog for Theme {
         Svg::default()
     }
 
-    fn style(&self, class: &Self::Class<'_>, status: svg::Status) -> svg::Style {
+    fn style(&self, class: &Self::Class<'_>, _status: svg::Status) -> svg::Style {
         #[allow(clippy::match_same_arms)]
         match class {
             Svg::Default => svg::Style::default(),
@@ -1433,7 +1430,7 @@ impl text_input::Catalog for Theme {
                     },
                 }
             }
-            text_input::Status::Focused { is_hovered } => {
+            text_input::Status::Focused { .. } => {
                 let bg = self.current_container().small_widget.with_alpha(0.25);
 
                 match class {
@@ -1510,7 +1507,7 @@ impl iced_widget::text_editor::Catalog for Theme {
         let selection = cosmic.accent.base.into();
         let value = cosmic.palette.neutral_9.into();
         let placeholder = cosmic.palette.neutral_9.with_alpha(0.7).into();
-        let icon: Color = cosmic.background.on.into();
+        // let icon: Color = cosmic.background.on.into();
         // TODO do we need to add icon color back?
 
         match status {
@@ -1527,19 +1524,17 @@ impl iced_widget::text_editor::Catalog for Theme {
                 value,
                 selection,
             },
-            iced_widget::text_editor::Status::Focused { is_hovered } => {
-                iced_widget::text_editor::Style {
-                    background: iced::Color::from(cosmic.bg_color()).into(),
-                    border: Border {
-                        radius: cosmic.corner_radii.radius_0.into(),
-                        width: f32::from(cosmic.space_xxxs()),
-                        color: iced::Color::from(cosmic.accent.base),
-                    },
-                    placeholder,
-                    value,
-                    selection,
-                }
-            }
+            iced_widget::text_editor::Status::Focused { .. } => iced_widget::text_editor::Style {
+                background: iced::Color::from(cosmic.bg_color()).into(),
+                border: Border {
+                    radius: cosmic.corner_radii.radius_0.into(),
+                    width: f32::from(cosmic.space_xxxs()),
+                    color: iced::Color::from(cosmic.accent.base),
+                },
+                placeholder,
+                value,
+                selection,
+            },
         }
     }
 }
@@ -1630,8 +1625,8 @@ impl Base for Theme {
             crate::theme::ThemeType::Light => "Cosmic Light Theme",
             crate::theme::ThemeType::HighContrastDark => "Cosmic High Contrast Dark Theme",
             crate::theme::ThemeType::HighContrastLight => "Cosmic High Contrast Light Theme",
-            crate::theme::ThemeType::Custom(theme) => "Custom Cosmic Theme",
-            crate::theme::ThemeType::System { prefer_dark, theme } => &theme.name,
+            crate::theme::ThemeType::Custom(_theme) => "Custom Cosmic Theme",
+            crate::theme::ThemeType::System { theme, .. } => &theme.name,
         }
     }
 }

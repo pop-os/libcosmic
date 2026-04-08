@@ -408,7 +408,7 @@ where
         f64::from(self.app.core().scale_factor())
     }
 
-    pub fn style(&self, theme: &Theme) -> theme::Style {
+    pub fn style(&self, _theme: &Theme) -> theme::Style {
         if let Some(style) = self.app.style() {
             style
         } else if self.app.core().window.is_maximized {

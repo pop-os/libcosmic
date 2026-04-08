@@ -133,7 +133,7 @@ pub fn run<App: Application>(settings: Settings, flags: App::Flags) -> iced::Res
         crate::malloc::limit_mmap_threshold(threshold);
     }
 
-    let default_font = settings.default_font;
+    // let default_font = settings.default_font;
     let (settings, (mut core, flags), window_settings) = iced_settings::<App>(settings, flags);
     #[cfg(not(feature = "multi-window"))]
     {

@@ -1,4 +1,3 @@
-use iced::Task;
 use iced::mouse::ScrollDelta;
 use std::time::{Duration, Instant};
 

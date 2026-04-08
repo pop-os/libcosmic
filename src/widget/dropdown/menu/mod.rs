@@ -8,9 +8,8 @@ use std::sync::{Arc, Mutex};
 
 pub use appearance::{Appearance, StyleSheet};
 
-use crate::surface;
 use crate::widget::{Container, RcWrapper, icon};
-use iced_core::event::{self, Event};
+use iced_core::event::Event;
 use iced_core::layout::{self, Layout};
 use iced_core::text::{self, Text};
 use iced_core::widget::Tree;
@@ -391,7 +390,7 @@ impl<'a, Message: Clone + 'a> crate::widget::Widget<Message, crate::Theme, crate
 
     fn draw(
         &self,
-        tree: &Tree,
+        _tree: &Tree,
         renderer: &mut crate::Renderer,
         theme: &crate::Theme,
         style: &renderer::Style,
@@ -554,12 +553,12 @@ where
 
     fn draw(
         &self,
-        state: &Tree,
+        _state: &Tree,
         renderer: &mut crate::Renderer,
         theme: &crate::Theme,
-        style: &renderer::Style,
+        _style: &renderer::Style,
         layout: Layout<'_>,
-        cursor: mouse::Cursor,
+        _cursor: mouse::Cursor,
         viewport: &Rectangle,
     ) {
         let appearance = theme.appearance(&());

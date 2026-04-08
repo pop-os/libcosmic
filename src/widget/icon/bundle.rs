@@ -5,7 +5,7 @@
 
 /// Icon bundling is not enabled on unix platforms.
 #[cfg(unix)]
-pub fn get(icon_name: &str) -> Option<super::Data> {
+pub fn get(_icon_name: &str) -> Option<super::Data> {
     None
 }
 

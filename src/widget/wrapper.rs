@@ -6,7 +6,7 @@ use std::{
 };
 
 use crate::Element;
-use iced::{Length, Rectangle, Size, event};
+use iced::{Length, Rectangle, Size};
 use iced_core::{Widget, id::Id, widget, widget::tree};
 
 #[derive(Debug)]

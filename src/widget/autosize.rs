@@ -1,6 +1,8 @@
 //! Autosize Container, which will resize the window to its contents.
 
-use iced_core::event::{self, Event};
+#[cfg(all(feature = "wayland", target_os = "linux"))]
+use iced::core::event;
+use iced_core::event::Event;
 use iced_core::layout;
 use iced_core::mouse;
 use iced_core::overlay;
