@@ -307,7 +307,7 @@ impl DefaultStyle for Theme {
     fn default_style(&self) -> Appearance {
         let cosmic = self.cosmic();
         Appearance {
-            icon_color: cosmic.bg_color().into(),
+            icon_color: cosmic.on_bg_color().into(),
             background_color: cosmic.bg_color().into(),
             text_color: cosmic.on_bg_color().into(),
         }
