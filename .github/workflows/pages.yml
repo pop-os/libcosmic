@@ -7,21 +7,24 @@ on:
 
 jobs:
   pages:
-
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout sources
-      uses: actions/checkout@v3
-      with:
-        submodules: recursive
-    - name: System dependencies
-      run: sudo apt-get update; sudo apt-get install -y libxkbcommon-dev libwayland-dev
-    - name: Build documentation
-      run: cargo doc --no-deps --verbose --features tokio,winit
-    - name: Deploy documentation
-      uses: peaceiris/actions-gh-pages@v3
-      with:
-        github_token: ${{ secrets.GITHUB_TOKEN }}
-        publish_dir: ./target/doc
-        force_orphan: true
+      - name: Checkout sources
+        uses: actions/checkout@v3
+        with:
+          submodules: recursive
+      - name: Install Rust nightly
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: nightly-2025-07-31
+      - name: System dependencies
+        run: sudo apt-get update; sudo apt-get install -y libxkbcommon-dev libwayland-dev
+      - name: Build documentation
+        run: RUSTDOCFLAGS="--cfg docsrs" cargo +nightly-2025-07-31 doc --no-deps -p cosmic-client-toolkit -p libcosmic --verbose --features tokio,winit,wayland,process,desktop,single-instance
+      - name: Deploy documentation
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./target/doc
+          force_orphan: true
