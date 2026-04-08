@@ -25,9 +25,6 @@ jobs:
           cargo +nightly-2025-07-31 doc --no-deps \
           -p cosmic-client-toolkit \
           -p cosmic-protocols \
-          -p smithay-client-toolkit \
-          -p wayland-protocols \
-          -p wayland-client \
           -p libcosmic \
           --verbose --features tokio,winit,wayland,desktop,single-instance,applet,xdg-portal,multi-window
       - name: Deploy documentation
