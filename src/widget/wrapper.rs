@@ -93,8 +93,8 @@ impl<M> Widget<M, crate::Theme, crate::Renderer> for RcElementWrapper<M> {
         &mut self,
         tree: &mut tree::Tree,
         renderer: &crate::Renderer,
-        limits: &crate::iced_core::layout::Limits,
-    ) -> crate::iced_core::layout::Node {
+        limits: &iced_core::layout::Limits,
+    ) -> iced_core::layout::Node {
         self.element
             .with_data_mut(|e| e.as_widget_mut().layout(tree, renderer, limits))
     }
@@ -104,9 +104,9 @@ impl<M> Widget<M, crate::Theme, crate::Renderer> for RcElementWrapper<M> {
         tree: &tree::Tree,
         renderer: &mut crate::Renderer,
         theme: &crate::Theme,
-        style: &crate::iced_core::renderer::Style,
-        layout: crate::iced_core::Layout<'_>,
-        cursor: crate::iced_core::mouse::Cursor,
+        style: &iced_core::renderer::Style,
+        layout: iced_core::Layout<'_>,
+        cursor: iced_core::mouse::Cursor,
         viewport: &Rectangle,
     ) {
         self.element.with_data(move |e| {
@@ -134,7 +134,7 @@ impl<M> Widget<M, crate::Theme, crate::Renderer> for RcElementWrapper<M> {
     fn operate(
         &mut self,
         state: &mut tree::Tree,
-        layout: crate::iced_core::Layout<'_>,
+        layout: iced_core::Layout<'_>,
         renderer: &crate::Renderer,
         operation: &mut dyn widget::Operation,
     ) {
@@ -148,11 +148,11 @@ impl<M> Widget<M, crate::Theme, crate::Renderer> for RcElementWrapper<M> {
         &mut self,
         state: &mut tree::Tree,
         event: &crate::iced::Event,
-        layout: crate::iced_core::Layout<'_>,
-        cursor: crate::iced_core::mouse::Cursor,
+        layout: iced_core::Layout<'_>,
+        cursor: iced_core::mouse::Cursor,
         renderer: &crate::Renderer,
-        clipboard: &mut dyn crate::iced_core::Clipboard,
-        shell: &mut crate::iced_core::Shell<'_, M>,
+        clipboard: &mut dyn iced_core::Clipboard,
+        shell: &mut iced_core::Shell<'_, M>,
         viewport: &Rectangle,
     ) {
         self.element.with_data_mut(|e| {
@@ -165,11 +165,11 @@ impl<M> Widget<M, crate::Theme, crate::Renderer> for RcElementWrapper<M> {
     fn mouse_interaction(
         &self,
         state: &tree::Tree,
-        layout: crate::iced_core::Layout<'_>,
-        cursor: crate::iced_core::mouse::Cursor,
+        layout: iced_core::Layout<'_>,
+        cursor: iced_core::mouse::Cursor,
         viewport: &Rectangle,
         renderer: &crate::Renderer,
-    ) -> crate::iced_core::mouse::Interaction {
+    ) -> iced_core::mouse::Interaction {
         self.element.with_data(|e| {
             e.as_widget()
                 .mouse_interaction(state, layout, cursor, viewport, renderer)
@@ -179,11 +179,11 @@ impl<M> Widget<M, crate::Theme, crate::Renderer> for RcElementWrapper<M> {
     fn overlay<'a>(
         &'a mut self,
         state: &'a mut tree::Tree,
-        layout: crate::iced_core::Layout<'a>,
+        layout: iced_core::Layout<'a>,
         renderer: &crate::Renderer,
         viewport: &Rectangle,
-        translation: crate::iced_core::Vector,
-    ) -> Option<crate::iced_core::overlay::Element<'a, M, crate::Theme, crate::Renderer>> {
+        translation: iced_core::Vector,
+    ) -> Option<iced_core::overlay::Element<'a, M, crate::Theme, crate::Renderer>> {
         assert_eq!(self.element.thread_id, thread::current().id());
         Rc::get_mut(&mut self.element.data).and_then(|e| {
             e.get_mut()
@@ -203,9 +203,9 @@ impl<M> Widget<M, crate::Theme, crate::Renderer> for RcElementWrapper<M> {
     fn drag_destinations(
         &self,
         state: &tree::Tree,
-        layout: crate::iced_core::Layout<'_>,
+        layout: iced_core::Layout<'_>,
         renderer: &crate::Renderer,
-        dnd_rectangles: &mut crate::iced_core::clipboard::DndDestinationRectangles,
+        dnd_rectangles: &mut iced_core::clipboard::DndDestinationRectangles,
     ) {
         self.element.with_data_mut(|e| {
             e.as_widget_mut()

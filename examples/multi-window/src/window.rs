@@ -2,9 +2,9 @@ use std::collections::HashMap;
 
 use cosmic::{
     app::Core,
+    iced::core::{id, Alignment, Length, Point},
+    iced::widget::{column, container, scrollable, text},
     iced::{self, event, window, Subscription},
-    iced_core::{id, Alignment, Length, Point},
-    iced_widget::{column, container, scrollable, text},
     prelude::*,
     widget::{button, header_bar},
 };

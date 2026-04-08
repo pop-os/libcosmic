@@ -7,21 +7,22 @@ use iced::Vector;
 
 use crate::{
     Element,
-    iced::{
-        Event, Length, Rectangle,
-        clipboard::{
-            dnd::{self, DndAction, DndDestinationRectangle, DndEvent, OfferEvent},
-            mime::AllowedMimeTypes,
-        },
-        event,
-        id::Internal,
-        mouse, overlay,
-    },
-    iced_core::{
-        self, Clipboard, Shell, layout,
-        widget::{Tree, tree},
-    },
     widget::{Id, Widget},
+};
+
+use iced::{
+    Event, Length, Rectangle,
+    clipboard::{
+        dnd::{self, DndAction, DndDestinationRectangle, DndEvent, OfferEvent},
+        mime::AllowedMimeTypes,
+    },
+    event,
+    id::Internal,
+    mouse, overlay,
+};
+use iced_core::{
+    self, Clipboard, Shell, layout,
+    widget::{Tree, tree},
 };
 
 pub fn dnd_destination<'a, Message: 'static>(

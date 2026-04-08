@@ -6,13 +6,6 @@ use crate::{
     Application, Element, Renderer,
     app::iced_settings,
     cctk::sctk,
-    iced::{
-        self, Color, Length, Limits, Rectangle,
-        alignment::{Alignment, Horizontal, Vertical},
-        widget::Container,
-        window,
-    },
-    iced_widget,
     theme::{self, Button, THEME, system_dark, system_light},
     widget::{
         self,
@@ -24,8 +17,15 @@ use crate::{
         space::vertical,
     },
 };
+
 pub use cosmic_panel_config;
 use cosmic_panel_config::{CosmicPanelBackground, PanelAnchor, PanelSize};
+use iced::{
+    self, Color, Length, Limits, Rectangle,
+    alignment::{Alignment, Horizontal, Vertical},
+    widget::Container,
+    window,
+};
 use iced_core::{Padding, Shadow};
 use iced_runtime::platform_specific::wayland::popup::{SctkPopupSettings, SctkPositioner};
 use iced_widget::Text;
@@ -226,7 +226,7 @@ impl Context {
         let symbolic = icon.symbolic;
         let icon = widget::icon(icon)
             .class(if symbolic {
-                theme::Svg::Custom(Rc::new(|theme| crate::iced_widget::svg::Style {
+                theme::Svg::Custom(Rc::new(|theme| iced_widget::svg::Style {
                     color: Some(theme.cosmic().background.on.into()),
                 }))
             } else {

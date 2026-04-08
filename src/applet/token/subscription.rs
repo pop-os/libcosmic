@@ -1,11 +1,11 @@
 use crate::iced;
-use crate::iced_futures::futures;
 use cctk::sctk::reexports::calloop;
 use futures::{
     SinkExt, StreamExt,
     channel::mpsc::{UnboundedReceiver, unbounded},
 };
 use iced::Subscription;
+use iced_futures::futures;
 use iced_futures::stream;
 use std::{fmt::Debug, hash::Hash, thread::JoinHandle};
 
