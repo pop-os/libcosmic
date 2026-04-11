@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["destroy_popup","get_popup","set_size"]};

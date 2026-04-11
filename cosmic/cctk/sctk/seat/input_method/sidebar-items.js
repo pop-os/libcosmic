@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["Active","CursorPosition"],"struct":["InputMethod","InputMethodData","InputMethodEventState","InputMethodManager","SurroundingText","ZwpInputMethodV2"],"trait":["InputMethodDataExt","InputMethodHandler"]};

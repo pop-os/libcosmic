@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"mod":["__interfaces","cosmic_corner_radius_manager_v1","cosmic_corner_radius_toplevel_v1"]};
