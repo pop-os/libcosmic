@@ -65,7 +65,6 @@ pub fn file_transfer_send(
 /// Returns a list of file paths.
 #[cfg(feature = "xdg-portal")]
 pub fn file_transfer_receive(key: String) -> iced::Task<ashpd::Result<Vec<String>>> {
-    dbg!(&key);
     iced::Task::future(async move {
         let file_transfer = ashpd::documents::FileTransfer::new().await?;
         file_transfer.retrieve_files(&key).await

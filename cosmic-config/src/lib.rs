@@ -162,6 +162,7 @@ pub trait ConfigSet {
 pub struct Config {
     system_path: Option<PathBuf>,
     user_path: Option<PathBuf>,
+    previous: Option<Box<Config>>,
 }
 
 /// Check that the name is relative and doesn't contain . or ..
@@ -180,9 +181,13 @@ fn sanitize_name(name: &str) -> Result<&Path, Error> {
 impl Config {
     /// Get a system config for the given name and config version
     pub fn system(name: &str, version: u64) -> Result<Self, Error> {
+        Self::system_inner(name, version, true)
+    }
+
+    fn system_inner(name: &str, version: u64, look_for_previous: bool) -> Result<Self, Error> {
         let path = sanitize_name(name)?.join(format!("v{version}"));
         #[cfg(unix)]
-        let system_path = xdg::BaseDirectories::with_prefix("cosmic").find_data_file(path);
+        let system_path = xdg::BaseDirectories::with_prefix("cosmic").find_data_file(&path);
 
         #[cfg(windows)]
         let system_path =
@@ -192,6 +197,13 @@ impl Config {
         Ok(Self {
             system_path,
             user_path: None,
+            previous: if version > 1 && look_for_previous {
+                Self::system_inner(name, version - 1, false)
+                    .ok()
+                    .map(Box::new)
+            } else {
+                None
+            },
         })
     }
 
@@ -199,6 +211,10 @@ impl Config {
     // Use folder at XDG config/name for config storage, return Config if successful
     //TODO: fallbacks for flatpak (HOST_XDG_CONFIG_HOME, xdg-desktop settings proxy)
     pub fn new(name: &str, version: u64) -> Result<Self, Error> {
+        Self::new_inner(name, version, true)
+    }
+
+    fn new_inner(name: &str, version: u64, look_for_previous: bool) -> Result<Self, Error> {
         // Look for [name]/v[version]
         let path = sanitize_name(name)?.join(format!("v{}", version));
 
@@ -223,15 +239,29 @@ impl Config {
         Ok(Self {
             system_path,
             user_path: Some(user_path),
+            previous: if version > 1 && look_for_previous {
+                Self::new_inner(name, version - 1, false).ok().map(Box::new)
+            } else {
+                None
+            },
         })
     }
 
     /// Get config for the given application name and config version and custom path.
     pub fn with_custom_path(name: &str, version: u64, custom_path: PathBuf) -> Result<Self, Error> {
+        Self::with_custom_path_inner(name, version, custom_path, true)
+    }
+
+    fn with_custom_path_inner(
+        name: &str,
+        version: u64,
+        custom_path: PathBuf,
+        look_for_previous: bool,
+    ) -> Result<Self, Error> {
         // Look for [name]/v[version]
         let path = sanitize_name(name)?.join(format!("v{version}"));
 
-        let mut user_path = custom_path;
+        let mut user_path = custom_path.clone();
         user_path.push("cosmic");
         user_path.push(path);
         // Create new configuration directory if not found.
@@ -241,6 +271,13 @@ impl Config {
         Ok(Self {
             system_path: None,
             user_path: Some(user_path),
+            previous: if version > 1 && look_for_previous {
+                Self::with_custom_path_inner(name, version - 1, custom_path.clone(), false)
+                    .ok()
+                    .map(Box::new)
+            } else {
+                None
+            },
         })
     }
 
@@ -250,6 +287,10 @@ impl Config {
     // Use folder at XDG config/name for config storage, return Config if successful
     //TODO: fallbacks for flatpak (HOST_XDG_CONFIG_HOME, xdg-desktop settings proxy)
     pub fn new_state(name: &str, version: u64) -> Result<Self, Error> {
+        Self::new_state_inner(name, version, true)
+    }
+
+    fn new_state_inner(name: &str, version: u64, look_for_previous: bool) -> Result<Self, Error> {
         // Look for [name]/v[version]
         let path = sanitize_name(name)?.join(format!("v{}", version));
 
@@ -263,6 +304,13 @@ impl Config {
         Ok(Self {
             system_path: None,
             user_path: Some(user_path),
+            previous: if version > 1 && look_for_previous {
+                Self::new_state_inner(name, version - 1, false)
+                    .ok()
+                    .map(Box::new)
+            } else {
+                None
+            },
         })
     }
 
@@ -373,7 +421,13 @@ impl ConfigGet for Config {
                 Ok(ron::from_str(&data)?)
             }
 
-            _ => Err(Error::NotFound),
+            _ => {
+                if let Some(previous) = self.previous.as_ref() {
+                    previous.get_local(key)
+                } else {
+                    Err(Error::NotFound)
+                }
+            }
         }
     }
 

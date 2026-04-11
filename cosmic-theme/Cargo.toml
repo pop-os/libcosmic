@@ -15,6 +15,7 @@ export = ["serde_json"]
 no-default = []
 
 [dependencies]
+hex_color = { version = "3", features = ["serde"] }
 palette = { version = "0.7.6", features = ["serializing"] }
 almost = "0.2"
 serde = { version = "1.0.228", features = ["derive"] }
