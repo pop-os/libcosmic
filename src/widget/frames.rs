@@ -14,10 +14,10 @@ use iced_core::image::Renderer as ImageRenderer;
 use iced_core::mouse::Cursor;
 use iced_core::widget::{Tree, tree};
 use iced_core::{
-    Clipboard, ContentFit, Element, Event, Layout, Length, Rectangle, Shell, Size, Vector, Widget,
-    event, layout, renderer, window,
+    Clipboard, ContentFit, Element, Event, Layout, Length, Rectangle, Rotation, Shell, Size,
+    Widget, event, layout, renderer, window,
 };
-use iced_widget::image::{self, Handle};
+use iced_widget::image::{self, FilterMethod, Handle};
 use image_rs::AnimationDecoder;
 use image_rs::codecs::gif::GifDecoder;
 use image_rs::codecs::png::PngDecoder;
@@ -146,7 +146,7 @@ impl Frames {
 
         match image_type {
             ImageType::Gif => Self::from_decoder(GifDecoder::new(io::Cursor::new(bytes))?),
-            ImageType::Apng => Self::from_decoder(PngDecoder::new(io::Cursor::new(bytes))?.apng()),
+            ImageType::Apng => Self::from_decoder(PngDecoder::new(io::Cursor::new(bytes))?.apng()?),
             ImageType::WebP => Self::from_decoder(WebPDecoder::new(io::Cursor::new(bytes))?),
         }
     }
@@ -168,10 +168,10 @@ impl Frames {
         let first = frames.first().cloned().unwrap();
         let total_bytes = frames
             .iter()
-            .map(|f| match f.handle.data() {
-                iced_core::image::Handle::Path(..) => 0,
-                iced_core::image::Handle::Bytes(_, b) => b.len(),
-                iced_core::image::Handle::Rgba { pixels, .. } => pixels.len(),
+            .map(|f| match &f.handle {
+                Handle::Path(..) => 0,
+                Handle::Bytes(_, b) => b.len(),
+                Handle::Rgba { pixels, .. } => pixels.len(),
             })
             .sum::<usize>()
             .try_into()
@@ -324,7 +324,11 @@ where
             &self.frames.first.handle,
             self.width,
             self.height,
+            None,
             self.content_fit,
+            Rotation::default(),
+            false,
+            [0.0; 4],
         )
     }
 
@@ -371,37 +375,18 @@ where
     ) {
         let state = tree.state.downcast_ref::<State>();
 
-        // Pulled from iced_native::widget::<Image as Widget>::draw
-        //
-        // TODO: export iced_native::widget::image::draw as standalone function
-        {
-            let Size { width, height } = renderer.dimensions(&state.current.frame.handle);
-            let image_size = Size::new(width as f32, height as f32);
-
-            let bounds = layout.bounds();
-            let adjusted_fit = self.content_fit.fit(image_size, bounds.size());
-
-            let render = |renderer: &mut Renderer| {
-                let offset = Vector::new(
-                    (bounds.width - adjusted_fit.width).max(0.0) / 2.0,
-                    (bounds.height - adjusted_fit.height).max(0.0) / 2.0,
-                );
-
-                let drawing_bounds = Rectangle {
-                    width: adjusted_fit.width,
-                    height: adjusted_fit.height,
-                    ..bounds
-                };
-
-                renderer.draw(state.current.frame.handle.clone(), drawing_bounds + offset);
-            };
-
-            if adjusted_fit.width > bounds.width || adjusted_fit.height > bounds.height {
-                renderer.with_layer(bounds, render);
-            } else {
-                render(renderer);
-            }
-        }
+        iced_widget::image::draw(
+            renderer,
+            layout,
+            &state.current.frame.handle,
+            None,
+            iced_core::border::Radius::default(),
+            self.content_fit,
+            FilterMethod::default(),
+            Rotation::default(),
+            1.0,
+            1.0,
+        );
     }
 }
 
