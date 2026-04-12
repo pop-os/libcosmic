@@ -6,7 +6,7 @@ links = Links
 developers = Entwickler(innen)
 designers = Designer(innen)
 artists = Künstler(innen)
-translators = Übersetzer*innen
+translators = Übersetzer(innen)
 documenters = Dokumentierer(innen)
 # Calendar
 january = Januar { $year }
