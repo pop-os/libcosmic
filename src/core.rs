@@ -101,6 +101,8 @@ pub struct Core {
 
     #[cfg(all(feature = "wayland", target_os = "linux"))]
     pub(crate) sync_window_border_radii_to_theme: bool,
+
+    pub(crate) auto_blur: bool,
 }
 
 impl Default for Core {
@@ -161,6 +163,7 @@ impl Default for Core {
             menu_bars: HashMap::new(),
             #[cfg(all(feature = "wayland", target_os = "linux"))]
             sync_window_border_radii_to_theme: true,
+            auto_blur: true,
         }
     }
 }
@@ -501,5 +504,9 @@ impl Core {
     #[cfg(all(feature = "wayland", target_os = "linux"))]
     pub fn sync_window_border_radii_to_theme(&self) -> bool {
         self.sync_window_border_radii_to_theme
+    }
+
+    pub fn set_auto_blur(&mut self, auto_blur: bool) {
+        self.auto_blur = auto_blur;
     }
 }

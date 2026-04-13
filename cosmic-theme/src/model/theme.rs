@@ -90,7 +90,8 @@ pub struct Theme {
     /// cosmic-comp custom window hint color
     pub window_hint: Option<Srgb>,
     /// enables blurred transparency
-    pub is_frosted: bool,
+    /// If None, frosted effect is disabled.
+    pub frosted: Option<BlurStrength>,
     /// shade color for dialogs
     #[serde(with = "color_serde")]
     #[cosmic_config_entry(with = ColorRepr)]
@@ -814,7 +815,7 @@ pub struct ThemeBuilder {
     #[cosmic_config_entry(with = ColorReprOption)]
     pub destructive: Option<Srgb>,
     /// enabled blurred transparency
-    pub is_frosted: bool, // TODO handle
+    pub frosted: Option<BlurStrength>,
     /// cosmic-comp window gaps size (outer, inner)
     pub gaps: (u32, u32),
     /// cosmic-comp active hint window outline width
@@ -840,7 +841,7 @@ impl Default for ThemeBuilder {
             success: Default::default(),
             warning: Default::default(),
             destructive: Default::default(),
-            is_frosted: false,
+            frosted: None,
             // cosmic-comp theme settings
             gaps: (0, 8),
             active_hint: 3,
@@ -986,8 +987,10 @@ impl ThemeBuilder {
             gaps,
             active_hint,
             window_hint,
-            is_frosted,
+            frosted,
         } = self;
+
+        let container_alpha = frosted.map_or(1.0, |f| f.alpha());
 
         let is_dark = palette.is_dark();
         let is_high_contrast = palette.is_high_contrast();
@@ -1034,11 +1037,13 @@ impl ThemeBuilder {
             NonZeroUsize::new(100).unwrap(),
         );
 
-        let bg = if let Some(bg_color) = bg_color {
+        let mut bg = if let Some(bg_color) = bg_color {
             bg_color
         } else {
             p_ref.gray_1
         };
+
+        bg.alpha = container_alpha;
 
         let step_array = steps(bg, NonZeroUsize::new(100).unwrap());
         let bg_index = color_index(bg, step_array.len());
@@ -1070,11 +1075,12 @@ impl ThemeBuilder {
         );
 
         let primary = {
-            let container_bg = if let Some(primary_container_bg_color) = primary_container_bg {
+            let mut container_bg = if let Some(primary_container_bg_color) = primary_container_bg {
                 primary_container_bg_color
             } else {
                 get_surface_color(bg_index, 5, &step_array, is_dark, &control_steps_array[1])
             };
+            container_bg.alpha = container_alpha;
 
             let step_array = steps(container_bg, NonZeroUsize::new(100).unwrap());
             let base_index: usize = color_index(container_bg, step_array.len());
@@ -1191,11 +1197,13 @@ impl ThemeBuilder {
             ),
             primary,
             secondary: {
-                let container_bg = if let Some(secondary_container_bg) = secondary_container_bg {
+                let mut container_bg = if let Some(secondary_container_bg) = secondary_container_bg
+                {
                     secondary_container_bg
                 } else {
                     get_surface_color(bg_index, 10, &step_array, is_dark, &control_steps_array[2])
                 };
+                container_bg.alpha = container_alpha;
 
                 let step_array = steps(container_bg, NonZeroUsize::new(100).unwrap());
                 let base_index = color_index(container_bg, step_array.len());
@@ -1347,7 +1355,7 @@ impl ThemeBuilder {
             gaps,
             active_hint,
             window_hint,
-            is_frosted,
+            frosted,
             accent_text,
             control_tint: neutral_tint,
             text_tint,
@@ -1367,5 +1375,71 @@ impl ThemeBuilder {
     /// Get the builder for the light config
     pub fn light_config() -> Result<Config, cosmic_config::Error> {
         Config::new(LIGHT_THEME_BUILDER_ID, Self::VERSION)
+    }
+}
+
+#[repr(u8)]
+#[derive(Copy, Clone, Debug, Serialize, Deserialize, PartialEq)]
+pub enum BlurStrength {
+    ExtremelyLow = 1,
+    ExtremelyLow2,
+    VeryLow,
+    VeryLow2,
+    Low,
+    Low2,
+    Medium,
+    Medium2,
+    High,
+    High2,
+    VeryHigh,
+    VeryHigh2,
+    ExtremelyHigh,
+    ExtremelyHigh2,
+}
+
+impl BlurStrength {
+    /// Get the alpha value corresponding to the blur strength
+    /// Lower alpha values correspond to stronger blur effects, and higher alpha values correspond to weaker blur effects. The mapping is as follows:
+    pub fn alpha(&self) -> f32 {
+        match self {
+            Self::ExtremelyLow => 0.95,
+            Self::ExtremelyLow2 => 0.85,
+            Self::VeryLow => 0.8,
+            Self::VeryLow2 => 0.75,
+            Self::Low => 0.7,
+            Self::Low2 => 0.65,
+            Self::Medium => 0.6,
+            Self::Medium2 => 0.55,
+            Self::High => 0.5,
+            Self::High2 => 0.45,
+            Self::VeryHigh => 0.4,
+            Self::VeryHigh2 => 0.35,
+            Self::ExtremelyHigh => 0.2,
+            Self::ExtremelyHigh2 => 0.05,
+        }
+    }
+}
+
+impl TryFrom<u8> for BlurStrength {
+    type Error = ();
+
+    fn try_from(value: u8) -> Result<Self, Self::Error> {
+        match value {
+            1 => Ok(BlurStrength::ExtremelyLow),
+            2 => Ok(BlurStrength::ExtremelyLow2),
+            3 => Ok(BlurStrength::VeryLow),
+            4 => Ok(BlurStrength::VeryLow2),
+            5 => Ok(BlurStrength::Low),
+            6 => Ok(BlurStrength::Low2),
+            7 => Ok(BlurStrength::Medium),
+            8 => Ok(BlurStrength::Medium2),
+            9 => Ok(BlurStrength::High),
+            10 => Ok(BlurStrength::High2),
+            11 => Ok(BlurStrength::VeryHigh),
+            12 => Ok(BlurStrength::VeryHigh2),
+            13 => Ok(BlurStrength::ExtremelyHigh),
+            14 => Ok(BlurStrength::ExtremelyHigh2),
+            _ => Err(()),
+        }
     }
 }
