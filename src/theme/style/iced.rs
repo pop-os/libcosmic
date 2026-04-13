@@ -565,6 +565,9 @@ impl iced_container::Catalog for Theme {
 
             Container::ContextDrawer => {
                 let mut a = Container::primary(cosmic);
+                if let Some(Background::Color(ref mut color)) = a.background {
+                    color.a = 1.;
+                }
 
                 if cosmic.is_high_contrast {
                     a.border.width = 1.;
