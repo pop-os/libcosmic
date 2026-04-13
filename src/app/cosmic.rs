@@ -773,10 +773,31 @@ impl<T: Application> Cosmic<T> {
                         if a.distance_squared(*t_inner.accent_color()) > 0.00001 {
                             theme = Theme::system(Arc::new(t_inner.with_accent(a)));
                         }
-                    };
+                    }
                 }
 
+                let new_blur = theme.cosmic().frosted.is_some();
                 THEME.lock().unwrap().set_theme(theme.theme_type);
+
+                let core = self.app.core();
+                if core.auto_blur {
+                    let mut cmds = Vec::with_capacity(1 + self.tracked_windows.len());
+                    let blur = if new_blur {
+                        iced::window::enable_blur
+                    } else {
+                        iced::window::disable_blur
+                    };
+                    cmds.push(blur(
+                        self.app
+                            .core()
+                            .main_window_id()
+                            .unwrap_or(window::Id::RESERVED),
+                    ));
+                    for id in &self.tracked_windows {
+                        cmds.push(blur(*id));
+                    }
+                    return Task::batch(cmds);
+                }
             }
 
             Action::SystemThemeChange(keys, theme) => {
@@ -809,6 +830,8 @@ impl<T: Application> Cosmic<T> {
                             theme
                         };
                         new_theme.theme_type.prefer_dark(prefer_dark);
+                        // TODO adjust theme container alphas to remove transparency?
+                        // if auto-blur is disabled & theme is frosted, should we make container colors in theme opaque?
 
                         cosmic_theme.set_theme(new_theme.theme_type);
                         #[cfg(all(feature = "wayland", target_os = "linux"))]
@@ -873,7 +896,7 @@ impl<T: Application> Cosmic<T> {
                                 }
                             }
                             // Update radius for all tracked windows
-                            for id in self.tracked_windows.iter() {
+                            for id in &self.tracked_windows {
                                 cmds.push(
                                     corner_radius(
                                         *id,
@@ -956,6 +979,9 @@ impl<T: Application> Cosmic<T> {
 
                         // Only apply update if the theme is set to load a system theme
                         if let ThemeType::System { .. } = cosmic_theme.theme_type {
+                            // TODO adjust theme container alphas to remove transparency?
+                            // if auto-blur is disabled & theme is frosted, should we make container colors in theme opaque?
+                            let new_blur = new_theme.cosmic().frosted.is_some();
                             cosmic_theme.set_theme(new_theme.theme_type);
                             #[cfg(all(feature = "wayland", target_os = "linux"))]
                             if self.app.core().sync_window_border_radii_to_theme() {
@@ -1019,7 +1045,7 @@ impl<T: Application> Cosmic<T> {
                                     }
                                 }
                                 // Update radius for all tracked windows
-                                for id in self.tracked_windows.iter() {
+                                for id in &self.tracked_windows {
                                     cmds.push(
                                         corner_radius(
                                             *id,
@@ -1037,6 +1063,25 @@ impl<T: Application> Cosmic<T> {
                                         )
                                         .discard(),
                                     );
+                                }
+
+                                let core = self.app.core();
+                                if core.auto_blur {
+                                    let blur = if new_blur {
+                                        iced::window::enable_blur
+                                    } else {
+                                        iced::window::disable_blur
+                                    };
+
+                                    cmds.push(blur(
+                                        self.app
+                                            .core()
+                                            .main_window_id()
+                                            .unwrap_or(window::Id::RESERVED),
+                                    ));
+                                    for id in &self.tracked_windows {
+                                        cmds.push(blur(*id));
+                                    }
                                 }
 
                                 return Task::batch(cmds);
@@ -1147,7 +1192,26 @@ impl<T: Application> Cosmic<T> {
 
                         // Only apply update if the theme is set to load a system theme
                         if let ThemeType::System { theme: _, .. } = cosmic_theme.theme_type {
+                            let mut cmds = Vec::with_capacity(1 + self.tracked_windows.len());
+
+                            if core.auto_blur {
+                                let blur = if new_theme.cosmic().frosted.is_some() {
+                                    iced::window::enable_blur
+                                } else {
+                                    iced::window::disable_blur
+                                };
+                                cmds.push(blur(
+                                    self.app
+                                        .core()
+                                        .main_window_id()
+                                        .unwrap_or(window::Id::RESERVED),
+                                ));
+                                for id in &self.tracked_windows {
+                                    cmds.push(blur(*id));
+                                }
+                            }
                             cosmic_theme.set_theme(new_theme.theme_type);
+                            return Task::batch(cmds);
                         }
                     }
                 }
@@ -1263,8 +1327,24 @@ impl<T: Application> Cosmic<T> {
                     };
                     // TODO do we need per window sharp corners?
                     let rounded = !self.app.core().window.sharp_corners;
-
+                    let core = self.app.core();
+                    let blur_cmd = if core.auto_blur {
+                        let blur = if t.frosted.is_some() {
+                            iced::window::enable_blur
+                        } else {
+                            iced::window::disable_blur
+                        };
+                        let mut cmds = Vec::with_capacity(1 + self.tracked_windows.len());
+                        cmds.push(blur(id));
+                        for id in &self.tracked_windows {
+                            cmds.push(blur(*id));
+                        }
+                        Task::batch(cmds)
+                    } else {
+                        Task::none()
+                    };
                     return Task::batch([
+                        blur_cmd,
                         corner_radius(
                             id,
                             if rounded {
