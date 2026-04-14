@@ -52,7 +52,7 @@ impl Named {
         }
     }
 
-    #[cfg(not(windows))]
+    #[cfg(all(unix, not(target_os = "macos")))]
     #[must_use]
     pub fn path(self) -> Option<PathBuf> {
         let name = &*self.name;
@@ -107,7 +107,7 @@ impl Named {
         result
     }
 
-    #[cfg(windows)]
+    #[cfg(any(not(unix), target_os = "macos"))]
     #[must_use]
     pub fn path(self) -> Option<PathBuf> {
         //TODO: implement icon lookup for Windows

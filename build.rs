@@ -3,7 +3,9 @@ use std::env;
 fn main() {
     println!("cargo::rerun-if-changed=build.rs");
 
-    if env::var_os("CARGO_CFG_UNIX").is_none() {
+    if env::var_os("CARGO_CFG_UNIX").is_none()
+        || env::var("CARGO_CFG_TARGET_OS").as_deref() == Ok("macos")
+    {
         generate_bundled_icons();
     }
 }
