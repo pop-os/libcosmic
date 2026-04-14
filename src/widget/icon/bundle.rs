@@ -4,12 +4,12 @@
 //! Embedded icons for platforms which do not support icon themes yet.
 
 /// Icon bundling is not enabled on unix platforms.
-#[cfg(unix)]
+#[cfg(all(unix, not(target_os = "macos")))]
 pub fn get(icon_name: &str) -> Option<super::Data> {
     None
 }
 
-#[cfg(not(unix))]
+#[cfg(any(not(unix), target_os = "macos"))]
 /// Get a bundled icon on non-unix platforms.
 pub fn get(icon_name: &str) -> Option<super::Data> {
     ICONS
@@ -17,5 +17,5 @@ pub fn get(icon_name: &str) -> Option<super::Data> {
         .map(|bytes| super::Data::Svg(crate::iced::widget::svg::Handle::from_memory(*bytes)))
 }
 
-#[cfg(not(unix))]
+#[cfg(any(not(unix), target_os = "macos"))]
 include!(concat!(env!("OUT_DIR"), "/bundled_icons.rs"));
