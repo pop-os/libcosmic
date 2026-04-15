@@ -58,6 +58,7 @@ desktop = [
     "process",
     "dep:cosmic-settings-config",
     "dep:freedesktop-desktop-entry",
+    "dep:image-extras",
     "dep:mime",
     "dep:shlex",
     "tokio?/io-util",
@@ -141,9 +142,14 @@ css-color = "0.2.8"
 derive_setters = "0.1.9"
 futures = "0.3"
 image = { version = "0.25.10", default-features = false, features = [
+    "ico",
     "jpeg",
     "png",
 ] }
+image-extras = { version = "0.1.0", default-features = false, features = [
+    "xpm",
+    "xbm",
+], optional = true }
 libc = { version = "0.2.183", optional = true }
 log = "0.4"
 mime = { version = "0.3.17", optional = true }
