@@ -197,6 +197,9 @@ where
     App::Flags: CosmicFlags,
     App::Message: Clone + std::fmt::Debug + Send + 'static,
 {
+    #[cfg(feature = "desktop")]
+    image_extras::register();
+
     use std::collections::HashMap;
 
     let activation_token = std::env::var("XDG_ACTIVATION_TOKEN").ok();
